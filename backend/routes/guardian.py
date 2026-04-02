@@ -1149,7 +1149,7 @@ async def export_checklist_pdf(
     )
 
     # Return PDF
-    pdf_bytes = pdf.output()
+    pdf_bytes = bytes(pdf.output())
     await audit_log(
         action="guardian.checklist_export",
         user_id=current_user["id"],
@@ -1294,7 +1294,7 @@ async def export_todo_pdf(
         new_y="NEXT",
     )
 
-    pdf_bytes = pdf.output()
+    pdf_bytes = bytes(pdf.output())
     if estate_id:
         await audit_log(
             action="guardian.todo_export",
@@ -1501,7 +1501,7 @@ async def export_iac_report_pdf(
         new_y="NEXT",
     )
 
-    pdf_bytes = pdf.output()
+    pdf_bytes = bytes(pdf.output())
     if estate_id:
         await audit_log(
             action="guardian.iac_report_export",
@@ -1662,7 +1662,7 @@ async def export_conversation_pdf(
     )
     pdf.cell(0, 5, "carryon.us  |  CarryOn Technologies", new_x="LMARGIN", new_y="NEXT")
 
-    pdf_bytes = pdf.output()
+    pdf_bytes = bytes(pdf.output())
     if estate_id:
         await audit_log(
             action="guardian.conversation_export",
@@ -1839,7 +1839,7 @@ CONVERSATION:
     )
     pdf.cell(0, 5, "carryon.us  |  CarryOn Technologies", new_x="LMARGIN", new_y="NEXT")
 
-    pdf_bytes = pdf.output()
+    pdf_bytes = bytes(pdf.output())
     if estate_id:
         await audit_log(
             action="guardian.plan_of_action_export",
@@ -1998,7 +1998,7 @@ async def beneficiary_export_checklist_pdf(
         new_y="NEXT",
     )
 
-    pdf_bytes = pdf.output()
+    pdf_bytes = bytes(pdf.output())
     return Response(
         content=bytes(pdf_bytes),
         media_type="application/pdf",

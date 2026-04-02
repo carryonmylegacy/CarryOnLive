@@ -420,7 +420,7 @@ async def _handle_ccp_plan(user: dict, params: dict, filename: str) -> Response:
         "known to all family members. Review and update this plan regularly.",
     )
 
-    pdf_bytes = pdf.output()
+    pdf_bytes = bytes(pdf.output())
     safe_plan_name = "".join(c for c in plan.get("name", "plan") if c.isalnum() or c in " _-")[:40].strip() or "plan"
 
     return Response(

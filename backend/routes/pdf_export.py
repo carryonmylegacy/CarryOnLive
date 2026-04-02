@@ -409,7 +409,7 @@ async def export_estate_pdf(estate_id: str, current_user: dict = Depends(get_cur
     )
 
     # Return PDF
-    pdf_bytes = pdf.output()
+    pdf_bytes = bytes(pdf.output())
     owner_name = f"{user.get('first_name', 'Estate')}_{user.get('last_name', 'Plan')}"
     filename = f"CarryOn_Estate_Plan_{owner_name}_{datetime.now(timezone.utc).strftime('%Y%m%d')}.pdf"
 
