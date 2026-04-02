@@ -868,7 +868,7 @@ const VaultPage = () => {
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <Users className="w-4 h-4 text-[var(--gold)]" />
-                          <span className="text-sm font-bold text-[var(--t)]">Bulk Assign Beneficiaries</span>
+                          <span className="text-sm font-bold text-[var(--t)]">Bulk Assign</span>
                           <span className="text-xs text-[var(--t5)]">({bulkSelected.length} selected)</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -878,7 +878,7 @@ const VaultPage = () => {
                             className="text-xs text-[var(--t5)]"
                             onClick={() => setBulkSelected(bulkSelected.length === filteredDocs.length ? [] : filteredDocs.map(d => d.id))}
                           >
-                            {bulkSelected.length === filteredDocs.length ? 'Deselect All' : 'Select All Docs'}
+                            {bulkSelected.length === filteredDocs.length ? 'Deselect All' : 'Select All'}
                           </Button>
                           <Button
                             variant="ghost"
@@ -891,27 +891,41 @@ const VaultPage = () => {
                         </div>
                       </div>
                       {bulkSelected.length > 0 && (
-                        <div className="flex flex-wrap gap-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                          <Button
-                            size="sm"
-                            className="text-xs gap-1 gold-button"
+                        <div className="space-y-2 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                          <p className="text-xs font-semibold mb-2" style={{ color: 'var(--t5)' }}>Assign {bulkSelected.length} document{bulkSelected.length !== 1 ? 's' : ''} to:</p>
+                          <button
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all"
+                            style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.35)' }}
                             onClick={() => handleBulkDesignate(['all'])}
                             data-testid="bulk-designate-all"
                           >
-                            All Beneficiaries
-                          </Button>
-                          {beneficiaries.map(ben => (
-                            <Button
-                              key={ben.id}
-                              variant="outline"
-                              size="sm"
-                              className="text-xs gap-1"
-                              onClick={() => handleBulkDesignate([ben.id])}
-                              data-testid={`bulk-designate-${ben.id}`}
-                            >
-                              {ben.first_name} {ben.last_name} Only
-                            </Button>
-                          ))}
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#d4af37' }}>
+                              <Users className="w-4 h-4" style={{ color: '#080e1a' }} />
+                            </div>
+                            <span className="text-sm font-bold" style={{ color: '#F1F3F8' }}>All Beneficiaries</span>
+                          </button>
+                          {beneficiaries.map(ben => {
+                            const initials = `${ben.first_name?.charAt(0) || ''}${ben.last_name?.charAt(0) || ''}`;
+                            return (
+                              <button
+                                key={ben.id}
+                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all"
+                                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                                onClick={() => handleBulkDesignate([ben.id])}
+                                data-testid={`bulk-designate-${ben.id}`}
+                              >
+                                <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)', color: '#A0AABF' }}>
+                                  {ben.photo_url
+                                    ? <img src={ben.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+                                    : initials}
+                                </div>
+                                <div className="text-left flex-1 min-w-0">
+                                  <div className="text-sm font-semibold truncate" style={{ color: '#F1F3F8' }}>{ben.first_name} {ben.last_name}</div>
+                                  {ben.relation && <div className="text-xs" style={{ color: '#7B879E' }}>{ben.relation}</div>}
+                                </div>
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </CardContent>

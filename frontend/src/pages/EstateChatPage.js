@@ -278,10 +278,33 @@ export default function EstateChatPage() {
 
   const voiceRecorder = useVoiceRecorder();
 
-  // ── Hide bottom nav and top header when in ECT ──
+  // ── Handle iOS keyboard / visual viewport changes ──
   useEffect(() => {
     document.body.classList.add('ect-active');
-    return () => document.body.classList.remove('ect-active');
+
+    const container = document.getElementById('ect-root');
+    const handleResize = () => {
+      if (!container) return;
+      const vv = window.visualViewport;
+      if (vv) {
+        container.style.height = `${vv.height}px`;
+        container.style.top = `${vv.offsetTop}px`;
+      }
+    };
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
+      window.visualViewport.addEventListener('scroll', handleResize);
+      handleResize();
+    }
+
+    return () => {
+      document.body.classList.remove('ect-active');
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize);
+        window.visualViewport.removeEventListener('scroll', handleResize);
+      }
+    };
   }, []);
 
   const fetchChannels = useCallback(async () => {
@@ -1003,7 +1026,6 @@ export default function EstateChatPage() {
         WebkitBackdropFilter: 'blur(20px)',
         borderTop: '1px solid rgba(255,255,255,0.1)',
         boxShadow: '0 -4px 24px rgba(0,0,0,0.3)',
-        paddingBottom: 'env(safe-area-inset-bottom, 8px)',
       }}>
         {/* Typing indicator */}
         {typers.length > 0 && (
@@ -1103,14 +1125,15 @@ export default function EstateChatPage() {
   );
 
   return (
-    <div data-testid="estate-chat-page" className="flex flex-col" style={{
+    <div id="ect-root" data-testid="estate-chat-page" className="flex flex-col" style={{
       background: 'var(--bg)',
       position: 'fixed',
       top: 0,
       left: 0,
       right: 0,
-      bottom: 0,
+      height: '100dvh',
       zIndex: 45,
+      overflow: 'hidden',
     }}>
       {/* Pad for status bar on native */}
       <div style={{ height: 'env(safe-area-inset-top, 0px)', flexShrink: 0 }} />
