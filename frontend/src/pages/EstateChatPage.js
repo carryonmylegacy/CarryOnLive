@@ -334,10 +334,13 @@ export default function EstateChatPage() {
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Re-sync viewport when switching channels (keyboard may still be open) ──
+  // ── Re-sync viewport when switching channels (clear stale transform + re-check keyboard) ──
   useEffect(() => {
     if (!activeChannel) return;
-    const fix = () => { const vv = window.visualViewport; const r = document.getElementById('ect-root'); if (vv && r && vv.height < window.innerHeight * 0.8) { r.style.height = `${vv.height}px`; r.style.bottom = 'auto'; r.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : ''; } };
+    const r = document.getElementById('ect-root');
+    if (r) { r.style.transform = ''; r.style.height = ''; r.style.bottom = '0'; }
+    window.scrollTo(0, 0);
+    const fix = () => { const vv = window.visualViewport; const root = document.getElementById('ect-root'); if (vv && root) { if (vv.height < window.innerHeight * 0.8) { root.style.height = `${vv.height}px`; root.style.bottom = 'auto'; root.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : ''; } else { root.style.transform = ''; root.style.height = ''; root.style.bottom = '0'; } } };
     setTimeout(fix, 100); setTimeout(fix, 300); setTimeout(fix, 600);
   }, [activeChannel]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1117,8 +1120,8 @@ export default function EstateChatPage() {
             {uploading ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /> : <Paperclip className="w-5 h-5" style={{ color: '#C8D0E0' }} />}
           </button>
 
-          {/* Voice recording / preview / input */}
-          {voiceRecorder.recording ? (
+          {/* Voice recording / preview overlay (rendered on top of input) */}
+          {voiceRecorder.recording && (
             <div className="flex-1 flex items-center gap-3 rounded-2xl px-4 py-2.5" style={{
               background: '#2A1519',
               border: '1px solid #5C2A2A',
@@ -1131,44 +1134,51 @@ export default function EstateChatPage() {
               <button onMouseDown={(e) => e.preventDefault()} onClick={stopAndPreview} className="ml-auto p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-stop">
                 <Square className="w-4 h-4" style={{ color: '#F1F3F8', fill: '#F1F3F8' }} />
               </button>
-              <button onMouseDown={(e) => e.preventDefault()} onClick={voiceRecorder.cancel} className="p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-cancel">
+              <button onMouseDown={(e) => e.preventDefault()} onClick={() => { voiceRecorder.cancel(); inputRef.current?.focus(); }} className="p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-cancel">
                 <X className="w-4 h-4" style={{ color: '#ef4444' }} />
               </button>
             </div>
-          ) : voicePreview ? (
+          )}
+          {!voiceRecorder.recording && voicePreview && (
             <div className="flex-1 flex items-center gap-2 rounded-2xl px-3 py-2" style={{
               background: '#1A2235',
               border: '1px solid #3A4560',
             }}>
               <audio src={voicePreview.url} controls className="h-8 flex-1" style={{ maxWidth: '100%', filter: 'invert(1) hue-rotate(180deg)', opacity: 0.8 }} />
-              <button onMouseDown={(e) => e.preventDefault()} onClick={discardPreview} className="p-2 rounded-full flex-shrink-0" style={{ background: '#1A1F2E' }} data-testid="ect-voice-discard">
+              <button onMouseDown={(e) => e.preventDefault()} onClick={() => { discardPreview(); inputRef.current?.focus(); }} className="p-2 rounded-full flex-shrink-0" style={{ background: '#1A1F2E' }} data-testid="ect-voice-discard">
                 <X className="w-4 h-4" style={{ color: '#ef4444' }} />
               </button>
             </div>
-          ) : (
-            <input
-              ref={inputRef}
-              value={draft}
-              onChange={handleDraftChange}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-              onFocus={() => {
-                setInputFocused(true);
-                const fix = () => { const vv = window.visualViewport; const r = document.getElementById('ect-root'); if (vv && r && vv.height < window.innerHeight * 0.8) { r.style.height = `${vv.height}px`; r.style.bottom = 'auto'; r.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : ''; } };
-                setTimeout(fix, 300); setTimeout(fix, 600);
-              }}
-              onBlur={() => setInputFocused(false)}
-              placeholder="Type a message..."
-              className="flex-1 rounded-2xl px-4 py-2.5 text-base"
-              data-testid="ect-message-input"
-              style={{
-                background: '#1E2840',
-                border: '2px solid #4A5575',
-                color: '#FFFFFF',
-                fontSize: '16px',
-                outline: 'none',
-              }}
-            />
           )}
+          {/* Input - always in DOM to keep keyboard alive; hidden during recording/preview */}
+          <input
+            ref={inputRef}
+            value={draft}
+            onChange={handleDraftChange}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+            onFocus={() => {
+              setInputFocused(true);
+              const fix = () => { const vv = window.visualViewport; const r = document.getElementById('ect-root'); if (vv && r && vv.height < window.innerHeight * 0.8) { r.style.height = `${vv.height}px`; r.style.bottom = 'auto'; r.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : ''; } };
+              setTimeout(fix, 300); setTimeout(fix, 600);
+            }}
+            onBlur={() => setInputFocused(false)}
+            placeholder="Type a message..."
+            className="rounded-2xl px-4 py-2.5 text-base"
+            data-testid="ect-message-input"
+            style={{
+              background: '#1E2840',
+              border: '2px solid #4A5575',
+              color: '#FFFFFF',
+              fontSize: '16px',
+              outline: 'none',
+              flex: (voiceRecorder.recording || voicePreview) ? undefined : 1,
+              position: (voiceRecorder.recording || voicePreview) ? 'absolute' : undefined,
+              opacity: (voiceRecorder.recording || voicePreview) ? 0 : 1,
+              pointerEvents: (voiceRecorder.recording || voicePreview) ? 'none' : undefined,
+              width: (voiceRecorder.recording || voicePreview) ? 1 : undefined,
+              height: (voiceRecorder.recording || voicePreview) ? 1 : undefined,
+            }}
+          />
 
           {/* Send / Voice toggle */}
           {draft.trim() ? (
