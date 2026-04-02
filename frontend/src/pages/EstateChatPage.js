@@ -325,12 +325,12 @@ export default function EstateChatPage() {
       }
     };
     vv.addEventListener('resize', sync);
+    vv.addEventListener('scroll', sync);
     window.addEventListener('scroll', onScroll);
-    const poll = setInterval(sync, 50);
     return () => {
       vv.removeEventListener('resize', sync);
+      vv.removeEventListener('scroll', sync);
       window.removeEventListener('scroll', onScroll);
-      clearInterval(poll);
       root.style.height = '';
       root.style.bottom = '0';
       root.style.transform = '';
@@ -351,8 +351,13 @@ export default function EstateChatPage() {
   const fetchChannels = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/estate-chat/channels`, { headers });
-      if (res.ok) setChannels(await res.json());
-    } catch {} // eslint-disable-line no-empty
+      if (res.ok) {
+        const data = await res.json();
+        setChannels(data);
+      } else {
+        console.error('fetchChannels failed:', res.status);
+      }
+    } catch (err) { console.error('fetchChannels error:', err); } // eslint-disable-line no-empty
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchContacts = useCallback(async () => {
@@ -1104,7 +1109,7 @@ export default function EstateChatPage() {
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
       <div className="flex-shrink-0" style={{
         background: '#151D30',
-        paddingBottom: (inputFocused && !voiceRecorder.recording && !voicePreview) ? '8px' : 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
+        paddingBottom: '8px',
       }}>
         {/* Typing indicator */}
         {typers.length > 0 && (
@@ -1243,6 +1248,8 @@ export default function EstateChatPage() {
           )}
         </div>
       </div>
+      {/* Safe-area bottom fill — solid background when keyboard is closed */}
+      {!inputFocused && <div style={{ background: '#151D30', height: 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />}
     </div>
   );
 

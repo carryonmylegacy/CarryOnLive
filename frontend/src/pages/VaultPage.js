@@ -485,11 +485,11 @@ const VaultPage = () => {
       });
     } catch (error) {
       console.error('Download error:', error);
-      if (error.response?.status === 401) {
+      if (error.response?.status === 401 || (error.message && error.message.includes('locked'))) {
         setSelectedDoc(doc);
         setShowLockModal(true);
       } else {
-        toast.error('Failed to download document');
+        toast.error(error.message || 'Failed to download document');
       }
     } finally {
       setDownloading(null);
