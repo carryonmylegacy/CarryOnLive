@@ -498,25 +498,29 @@ const MessagesPage = () => {
     }
   };
 
-  const triggerDownload = (blobOrUrl, filename) => {
-    // iOS PWA/Safari doesn't support a.click() blob downloads
-    // Use window.open for media, or create a visible link for files
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    if (isIOS) {
-      // On iOS, open blob in a new tab — user can long-press to save
-      const w = window.open(blobOrUrl, '_blank');
-      if (!w) {
-        // Popup blocked — fall back to replacing current page
-        window.location.href = blobOrUrl;
+  const triggerDownload = async (blobUrl, filename, mimeType) => {
+    // Try navigator.share first (works on iOS Safari 15+)
+    if (navigator.share && navigator.canShare) {
+      try {
+        const response = await fetch(blobUrl);
+        const blob = await response.blob();
+        const file = new File([blob], filename, { type: mimeType || blob.type });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: filename });
+          return;
+        }
+      } catch (err) {
+        // User cancelled share or not supported — fall through
+        if (err.name === 'AbortError') return;
       }
-    } else {
-      const a = document.createElement('a');
-      a.href = blobOrUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
     }
+    // Standard download for desktop browsers
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   const handleDownload = async (msg) => {
@@ -526,22 +530,22 @@ const MessagesPage = () => {
         const res = await axios.get(`${API_URL}/messages/video/${msg.video_url}`, {
           ...getAuthHeaders(), responseType: 'blob',
         });
-        const url = URL.createObjectURL(new Blob([res.data], { type: res.data.type || 'video/webm' }));
-        triggerDownload(url, `${(msg.title || 'video').replace(/[^a-zA-Z0-9 _-]/g, '')}.webm`);
+        const url = URL.createObjectURL(new Blob([res.data], { type: res.data.type || 'video/mp4' }));
+        await triggerDownload(url, `${(msg.title || 'video').replace(/[^a-zA-Z0-9 _-]/g, '')}.mp4`, 'video/mp4');
       } else if (msgType === 'voice' && msg.voice_url) {
         const res = await axios.get(`${API_URL}/messages/voice/${msg.voice_url}`, {
           ...getAuthHeaders(), responseType: 'blob',
         });
-        const url = URL.createObjectURL(new Blob([res.data], { type: res.data.type || 'audio/webm' }));
-        triggerDownload(url, `${(msg.title || 'voice').replace(/[^a-zA-Z0-9 _-]/g, '')}.webm`);
+        const url = URL.createObjectURL(new Blob([res.data], { type: res.data.type || 'audio/mpeg' }));
+        await triggerDownload(url, `${(msg.title || 'voice').replace(/[^a-zA-Z0-9 _-]/g, '')}.mp3`, 'audio/mpeg');
       } else {
         const res = await axios.get(`${API_URL}/messages/${msg.id}/download`, {
           ...getAuthHeaders(), responseType: 'blob',
         });
         const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-        triggerDownload(url, `${(msg.title || 'message').replace(/[^a-zA-Z0-9 _-]/g, '')}.pdf`);
+        await triggerDownload(url, `${(msg.title || 'message').replace(/[^a-zA-Z0-9 _-]/g, '')}.pdf`, 'application/pdf');
       }
-      toast.success('Download started');
+      toast.success('Download ready');
     } catch {
       toast.error('Failed to download');
     }
