@@ -41,7 +41,8 @@ A full-stack estate planning application allowing benefactors to manage digital 
 **Text MM PDF Fix**
 - Root cause: Hand-rolled PDF builder produced invalid xref byte offsets — iOS PDF reader rejected them (blank doc)
 - Replaced with `fpdf2` library (already installed) producing properly structured PDFs
-- Tested: valid header, correct xref offsets, proper EOF marker
+- Added `_pdf_safe()` Unicode→Latin-1 sanitizer (smart quotes, em dashes, ellipsis, emoji, etc.) to prevent fpdf2 encoding crashes
+- Tested: valid header, correct xref offsets, proper EOF marker, 9 Unicode test cases pass
 
 **ECT Avatar Photos Fix**
 - Root cause: Backend returned raw S3 keys from MongoDB, frontend checked `startsWith('http')` — all fell through to initials

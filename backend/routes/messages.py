@@ -689,9 +689,42 @@ async def download_message(message_id: str, current_user: dict = Depends(get_cur
     )
 
 
+def _pdf_safe(text: str) -> str:
+    """Replace common Unicode characters with Latin-1 safe equivalents for PDF."""
+    replacements = {
+        "\u2018": "'",
+        "\u2019": "'",  # smart single quotes
+        "\u201c": '"',
+        "\u201d": '"',  # smart double quotes
+        "\u2014": "--",
+        "\u2013": "-",  # em/en dash
+        "\u2026": "...",  # ellipsis
+        "\u2022": "*",  # bullet
+        "\u2122": "(TM)",  # trademark
+        "\u00a9": "(c)",  # copyright
+        "\u00ae": "(R)",  # registered
+        "\u2764": "<3",  # heart
+        "\u2665": "<3",  # heart suit
+        "\u2003": " ",
+        "\u2002": " ",
+        "\u00a0": " ",  # special spaces
+        "\u200b": "",
+        "\u200c": "",
+        "\u200d": "",
+        "\ufeff": "",  # zero-width
+    }
+    for char, repl in replacements.items():
+        text = text.replace(char, repl)
+    return text.encode("latin-1", errors="replace").decode("latin-1")
+
+
 def _build_text_pdf(title: str, content: str, created: str, estate_name: str) -> bytes:
     """Build a valid PDF from message text using fpdf2."""
     from fpdf import FPDF
+
+    title = _pdf_safe(title)
+    content = _pdf_safe(content)
+    estate_name = _pdf_safe(estate_name)
 
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=40)
