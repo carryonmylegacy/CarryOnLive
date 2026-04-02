@@ -293,13 +293,6 @@ export default function EstateChatPage() {
     return () => document.body.classList.remove('ect-active');
   }, []);
 
-  // ── Scroll messages into view when keyboard opens ──
-  useEffect(() => {
-    if (inputFocused && activeChannel) {
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 150);
-    }
-  }, [inputFocused, activeChannel]);
-
   const fetchChannels = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/estate-chat/channels`, { headers });
