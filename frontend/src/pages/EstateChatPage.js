@@ -301,7 +301,6 @@ export default function EstateChatPage() {
       const root = document.getElementById('ect-root');
       if (root) {
         root.style.height = `${vv.height}px`;
-        root.style.top = `${vv.offsetTop}px`;
       }
     };
     vv.addEventListener('resize', onResize);
