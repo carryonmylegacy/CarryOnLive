@@ -538,8 +538,9 @@ const MessagesPage = () => {
           },
         });
       }
-      toast.success('Download started');
-    } catch {
+      toast.success('Download ready');
+    } catch (err) {
+      if (err?.name === 'AbortError') return; // User cancelled share sheet
       toast.error('Failed to download');
     }
   };

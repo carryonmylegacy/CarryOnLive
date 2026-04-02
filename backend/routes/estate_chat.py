@@ -229,14 +229,16 @@ async def _enrich_channel(channel: dict, current_user_id: str) -> dict:
             "sender_name": last_msg.get("sender_name", ""),
             "created_at": last_msg.get("created_at", ""),
         }
-    # For direct channels, resolve the other person's name
+    # For direct channels, resolve the other person's name and photo
     display_name = channel.get("name", "")
+    other_photo_url = ""
     if channel["type"] == "direct":
         other_ids = [m for m in channel.get("members", []) if m != current_user_id]
         if other_ids:
-            other = await db.users.find_one({"id": other_ids[0]}, {"_id": 0, "id": 1, "name": 1})
+            other = await db.users.find_one({"id": other_ids[0]}, {"_id": 0, "id": 1, "name": 1, "photo_url": 1})
             if other:
                 display_name = other["name"]
+                other_photo_url = other.get("photo_url", "")
     # Get estate name for the tag
     estate_name = ""
     estate = await db.estates.find_one({"id": channel.get("estate_id", "")}, {"_id": 0, "id": 1, "name": 1})
@@ -248,6 +250,7 @@ async def _enrich_channel(channel: dict, current_user_id: str) -> dict:
         "estate_name": estate_name,
         "type": channel["type"],
         "name": display_name,
+        "photo_url": other_photo_url,
         "members": channel.get("members", []),
         "created_by": channel.get("created_by", ""),
         "created_at": channel.get("created_at", ""),

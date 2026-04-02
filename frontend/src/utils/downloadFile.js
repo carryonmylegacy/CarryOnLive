@@ -1,16 +1,23 @@
 /**
  * Cross-platform file download utility.
  *
- * - Web: triggers a standard browser download (user configures folder in browser settings).
- * - iOS/Android (Capacitor): writes to the Documents directory and opens the
- *   native Share sheet so the user can save to Files, iCloud, etc.
- * - iOS PWA: uses token-based backend download to trigger native iOS download tile.
+ * iOS PWA Strategy:
+ *   1. Fetch the file as a blob through the download proxy (which converts WebM→MP4, etc.)
+ *   2. Use navigator.share() to present the native iOS share sheet from the bottom
+ *      → "Save Video" for MP4, "Save to Files" for PDFs/documents
+ *   3. Falls back to <a download> blob approach if share API unavailable
+ *
+ * Desktop:
+ *   Uses standard blob + <a download> approach via the onFallback callback.
+ *
+ * Capacitor Native:
+ *   Writes to filesystem + native Share sheet.
  */
 
 import { API_URL } from '../config';
 
 /**
- * Detect if running on iOS (Safari, PWA, or WebView).
+ * Detect iOS (Safari, PWA, or WebView).
  */
 export function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
@@ -18,21 +25,10 @@ export function isIOS() {
 }
 
 /**
- * Platform-aware download for iOS PWA.
- *
- * On iOS: Creates a download token, then navigates the browser to the backend
- * download URL — this triggers the native iOS "download" tile from the bottom.
- *
- * On non-iOS: Calls the provided fallback function (standard blob download).
- *
- * @param {Object} opts
- * @param {string} opts.action    - Download action type (e.g., 'document', 'message_pdf')
- * @param {Object} opts.params    - Action-specific parameters
- * @param {string} opts.filename  - Desired filename for the download
- * @param {Function} [opts.onFallback] - Optional callback for non-iOS platforms
+ * Platform-aware download — iOS gets the native share sheet, desktop gets blob download.
  */
 export async function platformDownload({ action, params = {}, filename = 'download', onFallback }) {
-  // For native Capacitor apps, always use the fallback (native file system)
+  // Native Capacitor app → use native fallback
   try {
     const { Capacitor } = await import('@capacitor/core');
     if (Capacitor.isNativePlatform()) {
@@ -44,21 +40,60 @@ export async function platformDownload({ action, params = {}, filename = 'downlo
   }
 
   if (isIOS()) {
-    const token = localStorage.getItem('carryon_token');
-    const res = await fetch(`${API_URL}/downloads/prepare`, {
+    const authToken = localStorage.getItem('carryon_token');
+
+    // Step 1: Create a download token
+    const prepRes = await fetch(`${API_URL}/downloads/prepare`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${authToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ action, params, filename }),
     });
-    if (!res.ok) {
-      throw new Error('Failed to prepare download');
+    if (!prepRes.ok) throw new Error('Failed to prepare download');
+    const { token: dt } = await prepRes.json();
+
+    // Step 2: Fetch the actual file blob (backend converts WebM→MP4 etc.)
+    const fileRes = await fetch(`${API_URL}/downloads/${dt}`);
+    if (!fileRes.ok) throw new Error('Download failed');
+    const blob = await fileRes.blob();
+
+    // Determine correct MIME type and filename
+    const contentType = blob.type || fileRes.headers.get('content-type') || 'application/octet-stream';
+    let finalFilename = filename;
+
+    // Fix filename extension to match actual content type
+    if (contentType.includes('mp4') && !finalFilename.endsWith('.mp4')) {
+      finalFilename = finalFilename.replace(/\.\w+$/, '.mp4');
+      if (!finalFilename.includes('.')) finalFilename += '.mp4';
+    } else if (contentType.includes('pdf') && !finalFilename.endsWith('.pdf')) {
+      finalFilename = finalFilename.replace(/\.\w+$/, '.pdf');
+      if (!finalFilename.includes('.')) finalFilename += '.pdf';
     }
-    const data = await res.json();
-    // Navigate to the download URL — triggers native iOS download tile
-    window.location.href = `${API_URL}/downloads/${data.token}`;
+
+    // Step 3: Use Web Share API — this opens the native iOS share sheet
+    const file = new File([blob], finalFilename, { type: contentType });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
+        return;
+      } catch (shareErr) {
+        // User cancelled share sheet — that's OK, not an error
+        if (shareErr.name === 'AbortError') return;
+        // Other share errors — fall through to blob download
+      }
+    }
+
+    // Step 4: Fallback — blob URL + <a download>
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = finalFilename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
     return;
   }
 

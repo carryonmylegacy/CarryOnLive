@@ -604,6 +604,7 @@ export default function EstateChatPage() {
             </label>
             {(contacts.find(c => c.estate_id === (newChatEstate || contacts[0]?.estate_id))?.members || []).map(m => {
               const isSelected = selectedMembers.includes(m.id);
+              const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
               return (
                 <button
                   key={m.id}
@@ -614,23 +615,28 @@ export default function EstateChatPage() {
                   className="w-full flex items-center gap-3 p-3 rounded-xl mb-2 transition-all"
                   data-testid={`ect-member-${m.id}`}
                   style={{
-                    background: isSelected ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.03)',
-                    border: `1px solid ${isSelected ? 'rgba(212,175,55,0.4)' : 'rgba(255,255,255,0.06)'}`,
+                    background: isSelected ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${isSelected ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.06)'}`,
                   }}
                 >
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: isSelected ? '#d4af37' : 'rgba(255,255,255,0.08)', color: isSelected ? '#080e1a' : '#A0AABF' }}>
-                    {m.name?.charAt(0) || '?'}
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden" style={{
+                    background: isSelected ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.08)',
+                    color: isSelected ? '#080e1a' : '#A0AABF',
+                  }}>
+                    {m.photo_url
+                      ? <img src={m.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+                      : initials}
                   </div>
-                  <div className="flex-1 text-left">
+                  <div className="flex-1 text-left min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-semibold" style={{ color: '#F1F3F8' }}>{m.name}</span>
+                      <span className="text-sm font-semibold truncate" style={{ color: '#F1F3F8' }}>{m.name}</span>
                       {m.is_ffn && (
                         <span className="text-[11px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623' }}>EXTERNAL</span>
                       )}
                     </div>
-                    <div className="text-xs" style={{ color: '#7B879E' }}>{m.relation || m.role_in_estate}</div>
+                    <div className="text-xs truncate" style={{ color: '#7B879E' }}>{m.relation || m.role_in_estate}</div>
                   </div>
-                  {isSelected && <Check className="w-5 h-5" style={{ color: '#d4af37' }} />}
+                  {isSelected && <Check className="w-5 h-5 flex-shrink-0" style={{ color: '#d4af37' }} />}
                 </button>
               );
             })}
@@ -773,8 +779,10 @@ export default function EstateChatPage() {
                   border: activeChannel?.id === ch.id ? '1px solid rgba(212,175,55,0.2)' : '1px solid transparent',
                 }}
               >
-                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                  {getChannelIcon(ch.type)}
+                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: ch.photo_url ? 'transparent' : 'rgba(255,255,255,0.06)' }}>
+                  {ch.type === 'direct' && ch.photo_url
+                    ? <img src={ch.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    : getChannelIcon(ch.type)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">

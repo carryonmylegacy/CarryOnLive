@@ -108,18 +108,24 @@ async def _handle_message_pdf(user: dict, params: dict, filename: str) -> Respon
 async def _handle_message_video(user: dict, params: dict, filename: str) -> Response:
     from routes.messages import get_message_video
 
+    logger.info(f"Download proxy: video request video_id={params.get('video_id')}, user={user.get('id')}")
     response = await get_message_video(params["video_id"], user)
 
     content = response.body
     media_type = response.media_type or "video/webm"
+    logger.info(f"Download proxy: video fetched, media_type={media_type}, size={len(content)} bytes")
 
     # Convert WebM → MP4 for iOS compatibility
     if "webm" in media_type:
         try:
+            logger.info("Download proxy: starting WebM→MP4 conversion via ffmpeg")
             content, media_type = _convert_webm_to_mp4(content)
             filename = filename.rsplit(".", 1)[0] + ".mp4"
+            logger.info(f"Download proxy: conversion OK, new size={len(content)} bytes")
         except Exception as e:
-            logger.warning(f"WebM→MP4 conversion failed, serving original: {e}")
+            logger.error(f"Download proxy: WebM→MP4 conversion FAILED: {e}")
+    else:
+        logger.info("Download proxy: video is already MP4, no conversion needed")
 
     safe_filename = _sanitize_filename(filename)
     ext = "mp4" if "mp4" in media_type else "webm"
