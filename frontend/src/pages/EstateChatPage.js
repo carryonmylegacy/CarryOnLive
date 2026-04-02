@@ -293,24 +293,6 @@ export default function EstateChatPage() {
     return () => document.body.classList.remove('ect-active');
   }, []);
 
-  // ── iOS Visual Viewport: keep ECT pinned to visible area ──
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const root = document.getElementById('ect-root');
-    if (root) {
-      root.style.transition = 'height 0.28s ease-out';
-      root.style.height = `${vv.height}px`;
-    }
-    const onResize = () => {
-      if (root) {
-        root.style.height = `${vv.height}px`;
-      }
-    };
-    vv.addEventListener('resize', onResize);
-    return () => vv.removeEventListener('resize', onResize);
-  }, []);
-
   // ── Scroll messages into view when keyboard opens ──
   useEffect(() => {
     if (inputFocused && activeChannel) {
@@ -1155,7 +1137,7 @@ export default function EstateChatPage() {
       top: 0,
       left: 0,
       right: 0,
-      height: '100%',
+      bottom: 0,
       zIndex: 45,
       overflow: 'hidden',
     }}>
