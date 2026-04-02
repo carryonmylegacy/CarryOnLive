@@ -76,6 +76,13 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Settings**: Added to both `SettingsPage.js` and `BeneficiarySettingsPage.js`
 - **Roles**: All roles supported (benefactor, beneficiary, admin, operator)
 
+### 12. ECT Bulk Delete Conversations
+- **Status**: IMPLEMENTED (April 2, 2026)
+- **Backend**: `routes/estate_chat.py` — `POST /api/estate-chat/channels/batch-delete` accepts `{channel_ids: [...]}`, returns `{deleted: [...], failed: [...]}`
+- **Frontend**: `EstateChatPage.js` — Select mode toggle (CheckSquare2 icon) in header, checkboxes on channels, Select All/Deselect All, bulk delete confirmation modal
+- **Behavior**: Tap select button → tap channels to select → tap trash icon → confirm → done. Swipe-to-delete is disabled during select mode.
+- **DO NOT**: Allow batch-delete of more than 50 channels in a single request
+
 ---
 
 ## Blocked Items
@@ -87,6 +94,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
 ### P0
 - ECT Keyboard + ECT Delete + MM Download - FIXES DEPLOYED, awaiting user iOS verification
 - Customizable Dock - IMPLEMENTED, awaiting user verification
+- ECT Bulk Delete - IMPLEMENTED, awaiting user verification
 
 ### P1
 - Google Play Store Launch (operational steps)
