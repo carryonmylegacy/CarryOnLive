@@ -294,49 +294,42 @@ export default function EstateChatPage() {
     return () => document.body.classList.remove('ect-active');
   }, []);
 
-  // ── iOS PWA: compensate for keyboard scroll + resize to fit above keyboard ──
+  // ── iOS PWA: compensate for keyboard scroll ──
   useEffect(() => {
     if (loading) return;
     const root = document.getElementById('ect-root');
     if (!root) return;
     const vv = window.visualViewport;
     if (!vv) return;
-    let kbVisible = false;
-    let rafId = 0;
-    const applyScroll = () => {
-      if (!kbVisible) return;
-      root.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : '';
-    };
-    const onScroll = () => {
-      if (!kbVisible) return;
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(applyScroll);
-    };
+    let kbOpen = false;
     const sync = () => {
-      const kbOpen = vv.height < window.innerHeight * 0.8;
-      if (kbOpen) {
+      const open = vv.height < window.innerHeight * 0.8;
+      if (open !== kbOpen) {
+        kbOpen = open;
+        if (kbOpen) {
+          // Override to exact keyboard-visible height
+          root.style.height = `${vv.height}px`;
+        } else {
+          // Reset — let CSS 100dvh handle it
+          root.style.height = '';
+          root.style.transform = '';
+          window.scrollTo(0, 0);
+        }
+      } else if (kbOpen) {
+        // Keyboard still open but height may have changed (e.g., predictive bar)
         root.style.height = `${vv.height}px`;
-        root.style.bottom = 'auto';
-        kbVisible = true;
-        applyScroll();
-      } else if (kbVisible) {
-        kbVisible = false;
-        root.style.height = '';
-        root.style.bottom = '0';
-        root.style.transform = '';
-        window.scrollTo(0, 0);
-        setTimeout(() => { window.scrollTo(0, 0); root.style.transform = ''; }, 100);
-        setTimeout(() => { window.scrollTo(0, 0); root.style.transform = ''; }, 300);
+      }
+      // Compensate for iOS page scroll while keyboard is open
+      if (kbOpen && window.scrollY > 0) {
+        root.style.transform = `translateY(${window.scrollY}px)`;
       }
     };
     vv.addEventListener('resize', sync);
-    window.addEventListener('scroll', onScroll, { passive: true });
+    vv.addEventListener('scroll', sync);
     return () => {
       vv.removeEventListener('resize', sync);
-      window.removeEventListener('scroll', onScroll);
-      cancelAnimationFrame(rafId);
+      vv.removeEventListener('scroll', sync);
       root.style.height = '';
-      root.style.bottom = '0';
       root.style.transform = '';
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -345,7 +338,7 @@ export default function EstateChatPage() {
   useEffect(() => {
     if (!activeChannel) return;
     const r = document.getElementById('ect-root');
-    if (r) { r.style.transform = ''; r.style.height = ''; r.style.bottom = '0'; }
+    if (r) { r.style.transform = ''; r.style.height = ''; }
     window.scrollTo(0, 0);
     setInputFocused(false);
   }, [activeChannel]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -603,7 +596,7 @@ export default function EstateChatPage() {
       setShowChannelList(true);
       setInputFocused(false);
       const r = document.getElementById('ect-root');
-      if (r) { r.style.transform = ''; r.style.height = ''; r.style.bottom = '0'; }
+      if (r) { r.style.transform = ''; r.style.height = ''; }
       window.scrollTo(0, 0);
       // Refresh channel list to show latest messages/new chats
       fetchChannels();
@@ -1258,7 +1251,7 @@ export default function EstateChatPage() {
       top: 0,
       left: 0,
       right: 0,
-      bottom: 0,
+      height: '100dvh',
       zIndex: 45,
       overflow: 'hidden',
     }}>

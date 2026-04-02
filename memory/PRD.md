@@ -1,95 +1,79 @@
 # CarryOn - Estate Planning Application
 
 ## ZERO TOLERANCE: Perfect Code Every Push
-**This is the #1 rule of this project. No exceptions. No excuses.**
-Every push to GitHub must be production-perfect. No artifacts, no hanging chads, no "it's just a small thing." Fix everything proactively — dirty git diffs, stale files, unused imports, console.logs, TODO comments, version drift, lock file noise — before declaring anything ready to push. The agent must catch and resolve ALL of these without being told. This project did not get here by accepting little bullshit things along the way. The standard is perfection. Every. Single. Time.
-
-**MANDATORY: Before EVERY push, run `bash /app/housekeeping.sh` — the 60-check CarryOn Housekeeping Protocol + SOC 2 Compliance Audit. ALL 60 checks must PASS. Do NOT tell the user "ready to push" without running this script first. No exceptions. Ever.**
+**MANDATORY: Before EVERY push, run `bash /app/housekeeping.sh`. ALL 60 checks must PASS.**
 
 ## Original Problem Statement
-A full-stack estate planning application allowing benefactors to manage digital estates, beneficiaries, documents, and messages. Features role-based access (admin, benefactor, beneficiary), invitation system, orbit visualization for family connections, and Stripe/IAP subscriptions.
+A full-stack estate planning application allowing benefactors to manage digital estates, beneficiaries, documents, and messages.
 
 ## Core Architecture
 - **Frontend**: React (CRA) + Shadcn/UI + TailwindCSS + Capacitor (iOS/Android)
 - **Backend**: FastAPI + MongoDB (motor async)
-- **Auth**: JWT-based with optional OTP, supports login via username or email
-- **Storage**: AWS S3 for documents AND photos (presigned URLs)
-- **Integrations**: xAI (Grok), Stripe, Apple IAP, AWS S3, Resend, Google Places, Capgo, CodeMagic, Railway, Vercel
+- **Auth**: JWT-based with optional OTP
+- **Storage**: AWS S3 (presigned URLs)
+- **Integrations**: xAI (Grok), Stripe, Apple IAP, AWS S3, Resend, Google Places, Capgo
 
 ## CRITICAL: User Deployment & Testing Workflow
-**The user ALWAYS pushes to GitHub, deploys through Railway (backend) and Vercel (frontend), and tests EXCLUSIVELY on their production site (carryon.us) via iOS/PWA. NEVER suggest "check the preview URL" or "push to GitHub to see changes" — they already do this every time.**
+**User deploys via GitHub → Railway (backend) + Vercel (frontend), tests on carryon.us via iOS/PWA.**
 
 ---
 
 ## LOCKED-IN FEATURES — DO NOT REGRESS
 
 ### 1. Download Token System (MongoDB-backed)
-- **Status**: RE-IMPLEMENTED (April 2, 2026)
-- **What**: Download tokens moved from in-memory dict to MongoDB collection `download_tokens`
-- **Why**: In-memory tokens failed on Railway multi-instance deployments and restarts
-- **Files**: `services/download_tokens.py` (async create/consume via MongoDB), `routes/downloads.py` (await calls)
-- **Index**: `download_tokens.token` (unique), `download_tokens.created_at`
+- **Status**: FIXED (April 2, 2026) — moved from in-memory to MongoDB
+- **Root cause was**: In-memory dict lost tokens on Railway restarts/multi-instance
+- **Files**: `services/download_tokens.py`, `routes/downloads.py`
 - **DO NOT**: Revert to in-memory `_tokens` dict
 
-### 2. ECT iOS Keyboard / Visual Viewport Handling
+### 2. ECT Channel List
+- **Status**: FIXED (April 2, 2026) — `NoneType` crash in sort lambda
+- **Root cause was**: `c.get("last_message", {}).get(...)` — when `last_message` is `None` (not `{}`), `.get()` crashes. The API returned 500, `fetchChannels` swallowed the error silently. Channels never loaded.
+- **Fix**: `(c.get("last_message") or {}).get(...)`
+- **Files**: `routes/estate_chat.py` line 373
+- **DO NOT**: Use `dict.get(key, {}).get(...)` pattern without `or {}` guard — MongoDB stores `null` not `{}`
+
+### 3. ECT iOS Keyboard Handling
 - **Status**: RE-IMPLEMENTED (April 2, 2026)
-- **Approach**: Height-only resizing + scroll prevention. NO transforms.
-- **Key behavior**: `vv.height` sets container height when keyboard is open. `window.scrollTo(0, 0)` kills page scroll immediately.
-- **Safe-area**: Separate `#151D30` div below input bar when keyboard is closed
-- **Input bar**: Always has `paddingBottom: 8px` (identical look regardless of keyboard state)
-- **DO NOT**: Use `transform: translateY` — causes ratchet/jitter on iOS
+- **Approach**: `100dvh` CSS height + visualViewport resize handler + scroll compensation via transform
+- **Key**: Only apply `translateY(scrollY)` when keyboard IS open. Listen to `resize` + `scroll` on visualViewport.
 - **DO NOT**: Use `setInterval` polling — causes scroll jank
+- **DO NOT**: Use `window.scrollTo(0,0)` on every scroll event — fights iOS
 - **DO NOT**: Use `body { position: fixed }` or `overflow: hidden` on body/html
-- **DO NOT**: Use `scrollIntoView` — scrolls entire window on iOS PWA
-- **DO NOT**: Re-add `backdrop-filter: blur()` or translucent backgrounds on input bar
-- **Files**: `EstateChatPage.js` (visualViewport useEffect, inputFocused state)
 
-### 3. Video MM Download (iOS PWA)
-- **Status**: CONFIRMED WORKING
-
-### 4. Text MM PDF Download (iOS PWA)
-- **Status**: CONFIRMED WORKING
-
-### 5. ECT Beneficiary Avatars
-- **Status**: CONFIRMED WORKING
-
-### 6. CCP Plan PDF Download
-- **Status**: CONFIRMED WORKING
-
-### 7. MM Download Progress Indicators
-- **Status**: IMPLEMENTED (April 2, 2026)
-
-### 8. ECT Channel List Refresh on Back-out
-- **Status**: IMPLEMENTED (April 2, 2026)
-- **What**: `handleBackOut` calls `fetchChannels()` to refresh the channel list
+### 4. Video MM Download (iOS PWA) — CONFIRMED WORKING
+### 5. Text MM PDF Download (iOS PWA) — CONFIRMED WORKING
+### 6. ECT Beneficiary Avatars — CONFIRMED WORKING
+### 7. CCP Plan PDF Download — CONFIRMED WORKING
+### 8. MM Download Progress Indicators — IMPLEMENTED
+### 9. ECT Channel List Refresh on Back-out — IMPLEMENTED
 
 ---
 
 ## Blocked Items
-- **Apple IAP**: Waiting on Paid Applications Agreement approval
-- **Twilio SMS OTP**: Waiting on A2P 10DLC campaign approval
+- **Apple IAP**: Waiting on Paid Applications Agreement
+- **Twilio SMS OTP**: Waiting on A2P 10DLC approval
 
-## P0/P1/P2 Prioritized Backlog
+## Prioritized Backlog
 
 ### P0
-- ECT iOS Keyboard Fix — RE-IMPLEMENTED with height-only approach, awaiting user verification
-- SDV Download Fix — RE-IMPLEMENTED with MongoDB tokens, awaiting user verification
+- SDV Download error investigation — improved error messages deployed, awaiting user feedback
+- ECT Keyboard — awaiting user verification on iOS device
 
 ### P1
-- ECT Channel List — Code is correct. If still empty on production, need browser console logs
-- **Google Play Store Launch**: User/CoS operational steps
-- **Share Extension Setup**: Wire up iOS Extension per `/app/memory/SHARE_EXTENSION_SETUP.md`
-- **iOS Live Updates**: Test Capgo OTA update flow
+- Google Play Store Launch (operational steps)
+- Share Extension Setup
+- iOS Live Updates (Capgo)
 
 ### P2
-- **Readiness Scoring Policy Page**: Informational page explaining readiness score calculation
-- **Scalability Enhancements**: Horizontal scaling, background workers, CDN
+- Readiness Scoring Policy Page
+- Scalability Enhancements
 
 ### P3
-- **ECT Security Comparison Landing Page**: Public page at `/security`
+- ECT Security Comparison Landing Page at `/security`
 
 ## Critical Notes
-- **Voice Biometrics**: Completely removed. Do not reintroduce.
 - **Downloads**: ALL file downloads MUST go through `platformDownload()`.
 - **Railway Build**: `requirements.txt` MUST have `--extra-index-url` as first line.
-- **ECT Avatars**: Always use `resolve_photo_url()` for any `photo_url` from MongoDB.
+- **ECT Avatars**: Always use `resolve_photo_url()`.
+- **MongoDB null safety**: Always use `(doc.get("field") or {}).get(...)` instead of `doc.get("field", {}).get(...)` — MongoDB stores explicit `null` which overrides the default `{}`.

@@ -370,7 +370,7 @@ async def get_channels(current_user: dict = Depends(get_current_user)):
     enriched.sort(
         key=lambda c: (
             {"circle": 0, "group": 1, "direct": 2}.get(c["type"], 9),
-            -(len(c.get("last_message", {}).get("created_at", "") or "0")),
+            -(len((c.get("last_message") or {}).get("created_at", "") or "0")),
         )
     )
     return enriched
