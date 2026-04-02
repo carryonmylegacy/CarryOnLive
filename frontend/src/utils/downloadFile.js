@@ -34,9 +34,8 @@ function promptToSave(file) {
     overlay.setAttribute('data-testid', 'save-prompt-overlay');
     overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(8,14,26,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);';
 
-    const isVideo = file.type && file.type.startsWith('video/');
-    const icon = isVideo ? '\u25B6' : '\u2193';
-    const label = isVideo ? 'Video Ready' : 'File Ready';
+    const icon = '\u2193'; // ↓ download arrow for all file types
+    const label = 'File Ready';
     const size = file.size > 1048576
       ? `${(file.size / 1048576).toFixed(1)} MB`
       : `${(file.size / 1024).toFixed(0)} KB`;

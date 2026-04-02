@@ -305,13 +305,13 @@ export default function EstateChatPage() {
     // When leaving a chat (going back to channel list), force-reset all inline styles
     if (!activeChannel) {
       const r = document.getElementById('ect-root');
-      if (r) { r.style.transform = ''; r.style.height = ''; }
+      if (r) { r.style.transform = ''; r.style.bottom = '0'; }
       window.scrollTo(0, 0);
       setInputFocused(false);
     }
   }, [activeChannel]);
 
-  // ── iOS PWA: compensate for keyboard scroll ──
+  // ── iOS PWA: compensate for keyboard by adjusting bottom ──
   useEffect(() => {
     if (loading) return;
     const root = document.getElementById('ect-root');
@@ -322,19 +322,19 @@ export default function EstateChatPage() {
 
     const resetStyles = () => {
       kbOpen = false;
-      root.style.height = '';
+      root.style.bottom = '0';
       root.style.transform = '';
       window.scrollTo(0, 0);
     };
 
     const sync = () => {
-      // Skip keyboard handling entirely when on channel list (no active chat)
+      // Skip keyboard handling when on channel list (no active chat)
       if (!activeChannelRef.current) {
         if (kbOpen) resetStyles();
         return;
       }
 
-      // Only detect keyboard when an input/textarea inside the chat is actually focused
+      // Only detect keyboard when an input/textarea is actually focused
       const focused = document.activeElement;
       const inputActive = focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.isContentEditable);
 
@@ -342,20 +342,24 @@ export default function EstateChatPage() {
       if (open !== kbOpen) {
         kbOpen = open;
         if (kbOpen) {
-          root.style.height = `${vv.height}px`;
+          // Shrink root from bottom to stay above keyboard
+          const kbHeight = window.innerHeight - vv.height;
+          root.style.bottom = `${kbHeight}px`;
         } else {
           resetStyles();
         }
       } else if (kbOpen) {
-        root.style.height = `${vv.height}px`;
+        // Update keyboard height (e.g., predictive bar changed)
+        const kbHeight = window.innerHeight - vv.height;
+        root.style.bottom = `${kbHeight}px`;
       }
-      // Only compensate scroll when keyboard is confirmed open
+      // Compensate for iOS page scroll while keyboard is open
       if (kbOpen && window.scrollY > 0) {
         root.style.transform = `translateY(${window.scrollY}px)`;
       }
     };
 
-    // Safety: when input loses focus (keyboard closes), reset after a delay
+    // Safety: when input loses focus, reset after a delay
     const handleFocusOut = () => {
       setTimeout(() => {
         if (!activeChannelRef.current) return;
@@ -374,7 +378,7 @@ export default function EstateChatPage() {
       vv.removeEventListener('resize', sync);
       vv.removeEventListener('scroll', sync);
       root.removeEventListener('focusout', handleFocusOut);
-      root.style.height = '';
+      root.style.bottom = '0';
       root.style.transform = '';
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -453,7 +457,7 @@ export default function EstateChatPage() {
     setSwipedChannel(null);
     // Reset any lingering keyboard styles
     const r = document.getElementById('ect-root');
-    if (r) { r.style.transform = ''; r.style.height = ''; }
+    if (r) { r.style.transform = ''; r.style.bottom = '0'; }
     window.scrollTo(0, 0);
     fetchMessages(ch.id).then(() => setMsgLoading(false));
   };
@@ -609,7 +613,11 @@ export default function EstateChatPage() {
 
   const deleteChannel = async (chId) => {
     try {
-      const res = await fetch(`${API_URL}/estate-chat/channels/${chId}`, { method: 'DELETE', headers });
+      // Use minimal headers for DELETE (no Content-Type avoids CORS preflight)
+      const res = await fetch(`${API_URL}/estate-chat/channels/${chId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (res.ok) {
         setChannels(prev => prev.filter(c => c.id !== chId));
         setActiveChannel(null);
@@ -994,7 +1002,7 @@ export default function EstateChatPage() {
 
   // ── Message Area ──
   const messageArea = activeChannel && (
-    <div className={`${!showChannelList || activeChannel ? 'flex' : 'hidden'} lg:flex flex-col flex-1`} style={{ minHeight: 0, height: '100%' }}>
+    <div className={`${!showChannelList || activeChannel ? 'flex' : 'hidden'} lg:flex flex-col flex-1`} style={{ minHeight: 0 }}>
       {/* Header */}
       <div className="flex items-center gap-3 p-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <button
@@ -1350,7 +1358,7 @@ export default function EstateChatPage() {
       top: 0,
       left: 0,
       right: 0,
-      height: '100dvh',
+      bottom: 0,
       zIndex: 45,
       overflow: 'hidden',
     }}>
@@ -1371,7 +1379,7 @@ export default function EstateChatPage() {
         )}</div>
       </div>
       {/* Mobile: toggle between list and messages */}
-      <div className="flex lg:hidden flex-1 min-h-0">
+      <div className="flex flex-col lg:hidden flex-1 min-h-0">
         {showChannelList && !activeChannel ? channelPanel : messageArea}
       </div>
     </div>

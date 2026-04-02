@@ -504,13 +504,8 @@ const MessagesPage = () => {
       const msgType = msg.message_type || 'text';
       const safeTitle = (msg.title || msgType).replace(/[^a-zA-Z0-9 _-]/g, '').trim() || 'message';
 
-      const onProgress = (stage) => {
-        if (stage === 'preparing') {
-          toast.info('Preparing download...');
-        } else if (stage === 'ready') {
-          toast.info('Ready to save');
-        }
-      };
+      // No progress toasts — the promptToSave overlay handles user interaction
+      const onProgress = undefined;
 
       let result;
       if ((msgType === 'video' && msg.video_url) || (msgType === 'voice' && msg.voice_url)) {

@@ -34,15 +34,13 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **DO NOT**: Use `dict.get(key, {}).get(...)` pattern without `or {}` guard
 
 ### 3. ECT iOS Keyboard Handling
-- **Status**: RE-FIXED (April 2, 2026) - Added activeChannelRef guard + focusout safety + mic button blur
-- **Approach**: `100dvh` CSS height + visualViewport resize handler + scroll compensation via transform
-- **Key change**: Keyboard handler now uses `activeChannelRef.current` to skip entirely when on channel list. Added `focusout` listener as safety to reset styles when no input is focused. Mic button no longer prevents input blur.
-- **Key**: Only apply `translateY(scrollY)` when keyboard IS open AND activeChannel exists
+- **Status**: RE-FIXED (April 2, 2026) - Switched from `height: 100dvh` to `top:0; bottom:0` with `bottom` adjustments
+- **Approach**: `position:fixed; top:0; bottom:0` (no `100dvh`!) + visualViewport resize handler + `bottom` adjustment for keyboard + scroll compensation via transform
+- **Key change**: Uses `root.style.bottom = kbHeight + 'px'` instead of `root.style.height`. `100dvh` was unreliable on iOS PWA. Keyboard handler checks `document.activeElement` — only activates when INPUT/TEXTAREA is focused. `focusout` safety resets bottom after 400ms delay.
+- **DO NOT**: Use `height: 100dvh` — it's unreliable on iOS PWA standalone mode
 - **DO NOT**: Apply viewport transforms when on the channel list (no active chat)
-- **DO NOT**: Add `onMouseDown={e => e.preventDefault()}` on the mic button — it blocks keyboard dismiss
-- **DO NOT**: Use `setInterval` polling - causes scroll jank
-- **DO NOT**: Use `window.scrollTo(0,0)` on every scroll event - fights iOS
-- **DO NOT**: Use `body { position: fixed }` or `overflow: hidden` on body/html
+- **DO NOT**: Add `onMouseDown={e => e.preventDefault()}` on the mic button
+- **DO NOT**: Use `setInterval` polling, `body { position: fixed }`, or `overflow: hidden` on body/html
 
 ### 4. SDV Document Download via Download Proxy
 - **Status**: RE-FIXED (April 2, 2026) — Switched from direct fetch to `platformDownload` utility
@@ -58,11 +56,10 @@ A full-stack estate planning application allowing benefactors to manage digital 
 ### 7. ECT Beneficiary Avatars - CONFIRMED WORKING
 ### 8. CCP Plan PDF Download - CONFIRMED WORKING
 ### 9. MM Download Progress Indicators — FIXED
-- **Status**: RE-FIXED (April 2, 2026) — `toast.loading()` TypeError crash
-- **Root cause was**: Custom toast utility (`utils/toast.js`) replaced sonner but did NOT implement `.loading()` or `.dismiss()` methods. MessagesPage called `toast.loading('Preparing download...')` which threw TypeError, caught by outer try/catch → showed `toast.error('Failed to download')`. **The download never even started.**
-- **Fix**: Added `loading` and `dismiss` shims to toast utility. Simplified MessagesPage onProgress to use `toast.info()` instead.
-- **Files**: `utils/toast.js`, `MessagesPage.js` (handleDownload)
-- **DO NOT**: Call `toast.loading()` or `toast.dismiss()` without verifying the toast utility supports them
+- **Status**: RE-FIXED (April 2, 2026) — `toast.loading()` TypeError crash + play button confusion + yellow toast confusion
+- **Root cause was**: Custom toast utility replaced sonner but did NOT implement `.loading()` or `.dismiss()` methods. Added shims. Removed intermediate progress toasts that confused users with "yellow" (gold-bordered info toasts). Changed `promptToSave` overlay's play icon (▶) to download arrow (↓) since users expected play functionality.
+- **Files**: `utils/toast.js`, `MessagesPage.js` (handleDownload), `utils/downloadFile.js` (promptToSave)
+- **DO NOT**: Call `toast.loading()` without the shim. Use `toast.info()` instead.
 ### 10. ECT Channel List Refresh on Back-out - IMPLEMENTED
 ### 11. ECT Swipe-to-Delete Channels - IMPLEMENTED
 
