@@ -293,7 +293,7 @@ export default function EstateChatPage() {
     return () => document.body.classList.remove('ect-active');
   }, []);
 
-  // ── iOS PWA: resize #ect-root ONLY when keyboard is open + prevent scroll ──
+  // ── iOS PWA: compensate for keyboard scroll + resize to fit above keyboard ──
   useEffect(() => {
     if (loading) return;
     const root = document.getElementById('ect-root');
@@ -301,6 +301,10 @@ export default function EstateChatPage() {
     const vv = window.visualViewport;
     if (!vv) return;
     let resized = false;
+    // Instead of fighting iOS scroll with scrollTo(0,0), compensate visually
+    const onScroll = () => {
+      root.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : '';
+    };
     const sync = () => {
       const kbOpen = vv.height < window.innerHeight * 0.8;
       if (kbOpen) {
@@ -310,11 +314,12 @@ export default function EstateChatPage() {
       } else if (resized) {
         root.style.height = '';
         root.style.bottom = '0';
+        root.style.transform = '';
         resized = false;
+        if (window.scrollY > 0) window.scrollTo(0, 0);
       }
-      if (window.scrollY !== 0) window.scrollTo(0, 0);
+      onScroll();
     };
-    const onScroll = () => { if (window.scrollY !== 0) window.scrollTo(0, 0); };
     vv.addEventListener('resize', sync);
     window.addEventListener('scroll', onScroll);
     const poll = setInterval(sync, 120);
@@ -324,6 +329,7 @@ export default function EstateChatPage() {
       clearInterval(poll);
       root.style.height = '';
       root.style.bottom = '0';
+      root.style.transform = '';
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
