@@ -285,7 +285,7 @@ export default function EstateChatPage() {
   const fileInputRef = useRef(null);
 
   const voiceRecorder = useVoiceRecorder();
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
 
   // ── Hide bottom nav when in ECT ──
   useEffect(() => {
@@ -293,7 +293,7 @@ export default function EstateChatPage() {
     return () => document.body.classList.remove('ect-active');
   }, []);
 
-  // ── iOS Visual Viewport: keep ECT pinned to visible area, detect keyboard ──
+  // ── iOS Visual Viewport: keep ECT pinned to visible area ──
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
@@ -303,7 +303,6 @@ export default function EstateChatPage() {
         root.style.height = `${vv.height}px`;
         root.style.top = `${vv.offsetTop}px`;
       }
-      setKeyboardVisible(vv.height < window.innerHeight * 0.82);
     };
     vv.addEventListener('resize', onResize);
     vv.addEventListener('scroll', onResize);
@@ -316,10 +315,10 @@ export default function EstateChatPage() {
 
   // ── Scroll messages into view when keyboard opens ──
   useEffect(() => {
-    if (keyboardVisible && activeChannel) {
+    if (inputFocused && activeChannel) {
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 150);
     }
-  }, [keyboardVisible, activeChannel]);
+  }, [inputFocused, activeChannel]);
 
   const fetchChannels = useCallback(async () => {
     try {
@@ -852,8 +851,12 @@ export default function EstateChatPage() {
         >
           <ArrowLeft className="w-4 h-4" style={{ color: '#A0AABF' }} />
         </button>
-        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
-          {getChannelIcon(activeChannel.type)}
+        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold" style={{ background: 'rgba(255,255,255,0.06)', color: '#A0AABF' }}>
+          {activeChannel.type === 'direct' && activeChannel.photo_url && activeChannel.photo_url.startsWith('http')
+            ? <img src={activeChannel.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; }} />
+            : activeChannel.type === 'direct'
+              ? (activeChannel.name?.charAt(0)?.toUpperCase() || '?')
+              : getChannelIcon(activeChannel.type)}
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-bold truncate" style={{ color: '#F1F3F8' }}>{activeChannel.name}</div>
@@ -1048,7 +1051,7 @@ export default function EstateChatPage() {
         background: '#0B1222',
         borderTop: '1.5px solid rgba(255,255,255,0.22)',
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
-        paddingBottom: keyboardVisible ? '0px' : 'env(safe-area-inset-bottom, 0px)',
+        paddingBottom: inputFocused ? '0px' : 'env(safe-area-inset-bottom, 0px)',
       }}>
         {/* Typing indicator */}
         {typers.length > 0 && (
@@ -1099,6 +1102,8 @@ export default function EstateChatPage() {
               value={draft}
               onChange={handleDraftChange}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+              onFocus={() => setInputFocused(true)}
+              onBlur={() => setInputFocused(false)}
               placeholder="Type a message..."
               className="flex-1 rounded-2xl px-4 py-2.5 text-base"
               data-testid="ect-message-input"
