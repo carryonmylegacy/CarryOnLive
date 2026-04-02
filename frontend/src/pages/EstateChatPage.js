@@ -322,7 +322,7 @@ export default function EstateChatPage() {
     };
     vv.addEventListener('resize', sync);
     window.addEventListener('scroll', onScroll);
-    const poll = setInterval(sync, 120);
+    const poll = setInterval(sync, 50);
     return () => {
       vv.removeEventListener('resize', sync);
       window.removeEventListener('scroll', onScroll);
@@ -1131,6 +1131,7 @@ export default function EstateChatPage() {
           {/* Send / Voice toggle */}
           {draft.trim() ? (
             <button
+              onMouseDown={(e) => e.preventDefault()}
               onClick={sendMessage}
               disabled={sending}
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
@@ -1141,6 +1142,7 @@ export default function EstateChatPage() {
             </button>
           ) : voiceRecorder.recording ? (
             <button
+              onMouseDown={(e) => e.preventDefault()}
               onClick={sendVoiceMessage}
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
               data-testid="ect-voice-send"
