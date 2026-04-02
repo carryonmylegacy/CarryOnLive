@@ -1049,9 +1049,8 @@ export default function EstateChatPage() {
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
       <div className="flex-shrink-0" style={{
         background: '#0B1222',
-        borderTop: '1.5px solid rgba(255,255,255,0.22)',
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
-        paddingBottom: inputFocused ? '14px' : 'env(safe-area-inset-bottom, 0px)',
+        paddingBottom: inputFocused ? '8px' : 'env(safe-area-inset-bottom, 0px)',
       }}>
         {/* Typing indicator */}
         {typers.length > 0 && (
@@ -1076,9 +1075,9 @@ export default function EstateChatPage() {
             disabled={uploading || voiceRecorder.recording}
             className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
             data-testid="ect-attach-btn"
-            style={{ background: 'rgba(255,255,255,0.08)' }}
+            style={{ background: 'rgba(255,255,255,0.12)' }}
           >
-            {uploading ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /> : <Paperclip className="w-5 h-5" style={{ color: '#7B879E' }} />}
+            {uploading ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /> : <Paperclip className="w-5 h-5" style={{ color: '#A0AABF' }} />}
           </button>
 
           {/* Voice recording state */}
@@ -1108,10 +1107,10 @@ export default function EstateChatPage() {
               className="flex-1 rounded-2xl px-4 py-2.5 text-base"
               data-testid="ect-message-input"
               style={{
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.20)',
-                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.2)',
-                color: '#F1F3F8',
+                background: 'rgba(255,255,255,0.14)',
+                border: '1.5px solid rgba(255,255,255,0.45)',
+                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.25), 0 1px 0 rgba(255,255,255,0.08)',
+                color: '#FFFFFF',
                 fontSize: '16px',
                 outline: 'none',
               }}
@@ -1143,9 +1142,9 @@ export default function EstateChatPage() {
               onClick={voiceRecorder.start}
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
               data-testid="ect-voice-btn"
-              style={{ background: 'rgba(255,255,255,0.08)' }}
+              style={{ background: 'rgba(255,255,255,0.12)' }}
             >
-              <Mic className="w-5 h-5" style={{ color: '#7B879E' }} />
+              <Mic className="w-5 h-5" style={{ color: '#A0AABF' }} />
             </button>
           )}
         </div>
