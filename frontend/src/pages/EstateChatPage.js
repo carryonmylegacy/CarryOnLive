@@ -317,7 +317,10 @@ export default function EstateChatPage() {
         root.style.bottom = '0';
         root.style.transform = '';
         resized = false;
-        if (window.scrollY > 0) window.scrollTo(0, 0);
+        // Force scroll reset multiple times as iOS animates keyboard away
+        window.scrollTo(0, 0);
+        setTimeout(() => { window.scrollTo(0, 0); root.style.transform = ''; }, 100);
+        setTimeout(() => { window.scrollTo(0, 0); root.style.transform = ''; }, 300);
       }
       onScroll();
     };
@@ -1129,7 +1132,11 @@ export default function EstateChatPage() {
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               onFocus={() => {
                 setInputFocused(true);
-                const fix = () => { const vv = window.visualViewport; const r = document.getElementById('ect-root'); if (vv && r && vv.height < window.innerHeight * 0.8) { r.style.height = `${vv.height}px`; r.style.bottom = 'auto'; r.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : ''; } };
+                // Clear stale transform before keyboard animation starts
+                const r = document.getElementById('ect-root');
+                if (r) r.style.transform = '';
+                window.scrollTo(0, 0);
+                const fix = () => { const vv = window.visualViewport; if (vv && r && vv.height < window.innerHeight * 0.8) { r.style.height = `${vv.height}px`; r.style.bottom = 'auto'; r.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : ''; } };
                 setTimeout(fix, 300); setTimeout(fix, 600);
               }}
               onBlur={() => setInputFocused(false)}
@@ -1213,7 +1220,7 @@ export default function EstateChatPage() {
             <button
               onMouseDown={(e) => e.preventDefault()}
               onPointerDown={(e) => e.preventDefault()}
-              onClick={() => { voiceRecorder.start(); setTimeout(() => inputRef.current?.focus(), 150); }}
+              onClick={() => { voiceRecorder.start(); }}
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
               data-testid="ect-voice-btn"
               style={{ background: '#222B42' }}
