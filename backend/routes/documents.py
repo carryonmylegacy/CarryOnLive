@@ -708,10 +708,32 @@ async def download_document(
         },
     )
 
+    # Ensure filename has proper extension for iOS compatibility
+    doc_name = document.get("name", "document")
+    file_type = document.get("file_type", "application/octet-stream")
+    ext_map = {
+        "application/pdf": ".pdf",
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/heic": ".heic",
+        "image/heif": ".heif",
+        "image/webp": ".webp",
+        "image/tiff": ".tiff",
+        "text/plain": ".txt",
+    }
+    import re as _re
+
+    has_ext = bool(_re.search(r"\.\w{2,5}$", doc_name))
+    if not has_ext and file_type in ext_map:
+        doc_name = f"{doc_name}{ext_map[file_type]}"
+
     return Response(
         content=decrypted_data,
-        media_type=document.get("file_type", "application/octet-stream"),
-        headers={"Content-Disposition": f'attachment; filename="{document["name"]}"'},
+        media_type=file_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{doc_name}"',
+            "Content-Length": str(len(decrypted_data)),
+        },
     )
 
 

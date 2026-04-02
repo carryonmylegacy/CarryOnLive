@@ -284,6 +284,7 @@ export default function EstateChatPage() {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
+  const activeChannelRef = useRef(null);
 
   const voiceRecorder = useVoiceRecorder();
   const [voicePreview, setVoicePreview] = useState(null); // {blob, url}
@@ -298,6 +299,18 @@ export default function EstateChatPage() {
     return () => document.body.classList.remove('ect-active');
   }, []);
 
+  // ── Keep ref in sync with activeChannel state ──
+  useEffect(() => {
+    activeChannelRef.current = activeChannel;
+    // When leaving a chat (going back to channel list), force-reset all inline styles
+    if (!activeChannel) {
+      const r = document.getElementById('ect-root');
+      if (r) { r.style.transform = ''; r.style.height = ''; }
+      window.scrollTo(0, 0);
+      setInputFocused(false);
+    }
+  }, [activeChannel]);
+
   // ── iOS PWA: compensate for keyboard scroll ──
   useEffect(() => {
     if (loading) return;
@@ -307,23 +320,29 @@ export default function EstateChatPage() {
     if (!vv) return;
     let kbOpen = false;
     const sync = () => {
-      const open = vv.height < window.innerHeight * 0.8;
+      // Skip keyboard handling entirely when on channel list (no active chat)
+      if (!activeChannelRef.current) {
+        if (kbOpen) {
+          kbOpen = false;
+          root.style.height = '';
+          root.style.transform = '';
+        }
+        return;
+      }
+      const open = vv.height < window.innerHeight * 0.75;
       if (open !== kbOpen) {
         kbOpen = open;
         if (kbOpen) {
-          // Override to exact keyboard-visible height
           root.style.height = `${vv.height}px`;
         } else {
-          // Reset — let CSS 100dvh handle it
           root.style.height = '';
           root.style.transform = '';
           window.scrollTo(0, 0);
         }
       } else if (kbOpen) {
-        // Keyboard still open but height may have changed (e.g., predictive bar)
         root.style.height = `${vv.height}px`;
       }
-      // Compensate for iOS page scroll while keyboard is open
+      // Only compensate scroll when keyboard is open
       if (kbOpen && window.scrollY > 0) {
         root.style.transform = `translateY(${window.scrollY}px)`;
       }
@@ -337,15 +356,6 @@ export default function EstateChatPage() {
       root.style.transform = '';
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Re-sync viewport when switching channels ──
-  useEffect(() => {
-    if (!activeChannel) return;
-    const r = document.getElementById('ect-root');
-    if (r) { r.style.transform = ''; r.style.height = ''; }
-    window.scrollTo(0, 0);
-    setInputFocused(false);
-  }, [activeChannel]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchChannels = useCallback(async () => {
     try {
@@ -418,6 +428,11 @@ export default function EstateChatPage() {
     setShowChannelList(false);
     setMsgLoading(true);
     setTypers([]);
+    setSwipedChannel(null);
+    // Reset any lingering keyboard styles
+    const r = document.getElementById('ect-root');
+    if (r) { r.style.transform = ''; r.style.height = ''; }
+    window.scrollTo(0, 0);
     fetchMessages(ch.id).then(() => setMsgLoading(false));
   };
 
@@ -604,12 +619,13 @@ export default function EstateChatPage() {
 
   const handleBackOut = () => {
     if (activeChannel) {
+      // Force blur any focused input first (closes iOS keyboard)
+      if (document.activeElement) document.activeElement.blur();
       setActiveChannel(null);
       setShowChannelList(true);
       setInputFocused(false);
-      const r = document.getElementById('ect-root');
-      if (r) { r.style.transform = ''; r.style.height = ''; }
-      window.scrollTo(0, 0);
+      setSwipedChannel(null);
+      // Style cleanup happens in the activeChannel ref sync effect
       // Refresh channel list to show latest messages/new chats
       fetchChannels();
     } else {

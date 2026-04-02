@@ -419,6 +419,27 @@ const VaultPage = () => {
     }
   };
 
+  // Resolve a proper filename with extension from MIME type
+  const resolveFileName = (name, mimeType) => {
+    const base = name || 'document';
+    // If name already has a known extension, keep it
+    const extMatch = base.match(/\.(pdf|jpg|jpeg|png|heic|heif|webp|tiff|tif|txt|doc|docx)$/i);
+    if (extMatch) return base;
+    // Append extension based on MIME
+    const mimeMap = {
+      'application/pdf': '.pdf',
+      'image/jpeg': '.jpg',
+      'image/png': '.png',
+      'image/heic': '.heic',
+      'image/heif': '.heif',
+      'image/webp': '.webp',
+      'image/tiff': '.tiff',
+      'text/plain': '.txt',
+    };
+    const ext = mimeMap[mimeType] || '';
+    return ext ? `${base}${ext}` : base;
+  };
+
   const handleDownload = async (doc, password = null, backupCode = null) => {
     setDownloading(doc.id);
     try {
@@ -430,6 +451,10 @@ const VaultPage = () => {
       if (qp.length > 0) url += `?${qp.join('&')}`;
 
       const authToken = localStorage.getItem('carryon_token');
+      if (!authToken) {
+        toast.error('Session expired. Please log in again.');
+        return;
+      }
 
       // Direct fetch with JWT — works on all platforms
       const res = await fetch(url, {
@@ -437,7 +462,7 @@ const VaultPage = () => {
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => null);
-        const detail = errData?.detail || `HTTP ${res.status}`;
+        const detail = errData?.detail || `Server error (${res.status})`;
         if (res.status === 401) {
           setSelectedDoc(doc);
           setShowLockModal(true);
@@ -452,22 +477,29 @@ const VaultPage = () => {
       }
 
       const blob = await res.blob();
-      const fileName = doc.name || 'document';
+      if (blob.size < 10) throw new Error('Server returned an empty file');
+
       const contentType = res.headers.get('content-type') || doc.file_type || 'application/octet-stream';
+      const fileName = resolveFileName(doc.name, contentType);
 
       // iOS PWA: use navigator.share if available
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-      if (isIOS && isPWA && navigator.canShare) {
+      if (isiOS && isPWA && navigator.canShare) {
         const file = new File([blob], fileName, { type: contentType });
         if (navigator.canShare({ files: [file] })) {
           try {
             await navigator.share({ files: [file] });
             toast.success('Saved');
           } catch (shareErr) {
-            if (shareErr.name !== 'AbortError') throw shareErr;
+            if (shareErr.name === 'AbortError') return; // user cancelled
+            // Share failed (user activation expired) — open in new tab as fallback
+            const blobUrl = URL.createObjectURL(blob);
+            window.open(blobUrl, '_blank');
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+            toast.success('Opened in new tab');
           }
           return;
         }
@@ -501,8 +533,15 @@ const VaultPage = () => {
       window.URL.revokeObjectURL(downloadUrl);
       toast.success('Document saved');
     } catch (error) {
-      console.error('Download error:', error);
-      toast.error(error?.message || 'Download failed');
+      console.error('SDV Download error:', error);
+      const msg = error?.message || '';
+      if (msg.includes('locked') || msg.includes('Locked')) {
+        toast.error('Vault is locked. Unlock it first.');
+      } else if (msg.includes('Session expired') || msg.includes('401')) {
+        toast.error('Session expired. Please log in again.');
+      } else {
+        toast.error(msg || 'Download failed — check your connection and try again');
+      }
     } finally {
       setDownloading(null);
     }
