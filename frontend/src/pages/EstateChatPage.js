@@ -328,6 +328,9 @@ export default function EstateChatPage() {
       window.scrollTo(0, 0);
     };
 
+    let lastBottom = 0;
+    let lastTransform = 0;
+
     const sync = () => {
       // Skip keyboard handling when on channel list (no active chat)
       if (!activeChannelRef.current) {
@@ -345,19 +348,31 @@ export default function EstateChatPage() {
         if (kbOpen) {
           // Shrink root from bottom to stay above keyboard
           const kbHeight = window.innerHeight - vv.height;
-          root.style.transition = 'bottom 0.15s ease-out';
+          root.style.transition = 'bottom 0.2s ease-out, transform 0.2s ease-out';
           root.style.bottom = `${kbHeight}px`;
+          lastBottom = kbHeight;
         } else {
           resetStyles();
+          lastBottom = 0;
+          lastTransform = 0;
         }
       } else if (kbOpen) {
-        // Update keyboard height (e.g., predictive bar changed)
+        // Update keyboard height only if change > 5px (ignore micro-jitter)
         const kbHeight = window.innerHeight - vv.height;
-        root.style.bottom = `${kbHeight}px`;
+        if (Math.abs(kbHeight - lastBottom) > 5) {
+          root.style.bottom = `${kbHeight}px`;
+          lastBottom = kbHeight;
+        }
       }
       // Compensate for iOS page scroll while keyboard is open
       if (kbOpen && window.scrollY > 0) {
-        root.style.transform = `translateY(${window.scrollY}px)`;
+        if (Math.abs(window.scrollY - lastTransform) > 2) {
+          root.style.transform = `translateY(${window.scrollY}px)`;
+          lastTransform = window.scrollY;
+        }
+      } else if (kbOpen && lastTransform !== 0) {
+        root.style.transform = '';
+        lastTransform = 0;
       }
     };
 
@@ -378,7 +393,10 @@ export default function EstateChatPage() {
     // not fire for that scroll. This eliminates the "wiggle to fix" issue.
     const handleWindowScroll = () => {
       if (kbOpen && activeChannelRef.current && window.scrollY > 0) {
-        root.style.transform = `translateY(${window.scrollY}px)`;
+        if (Math.abs(window.scrollY - lastTransform) > 2) {
+          root.style.transform = `translateY(${window.scrollY}px)`;
+          lastTransform = window.scrollY;
+        }
       }
     };
 
@@ -691,9 +709,6 @@ export default function EstateChatPage() {
     const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
     const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
     if (Math.abs(dy) > Math.abs(dx)) return; // vertical scroll, ignore
-    // Don't allow swiping to delete circle channels (estate-wide chat)
-    const ch = channels.find(c => c.id === channelId);
-    if (ch?.type === 'circle') return;
     if (dx < -60) {
       setSwipedChannel(channelId);
     } else if (dx > 30) {

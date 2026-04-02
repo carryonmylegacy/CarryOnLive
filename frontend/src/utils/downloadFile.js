@@ -67,7 +67,7 @@ function promptToSave(file) {
 
     document.getElementById('__co_cancel_btn').addEventListener('click', () => {
       cleanup();
-      resolve(true); // treat cancel as handled (don't fall through to window.open)
+      resolve(false); // user cancelled — don't show success toast
     });
   });
 }

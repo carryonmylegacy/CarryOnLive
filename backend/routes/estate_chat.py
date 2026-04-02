@@ -835,12 +835,10 @@ async def delete_channel(
     channel_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    """Delete a channel. Benefactor or channel member can delete group and direct channels. Cannot delete circles."""
+    """Delete a channel and its messages. Circle channels auto-recreate when the estate chat is next opened."""
     channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0})
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
-    if channel["type"] == "circle":
-        raise HTTPException(status_code=400, detail="Cannot delete the estate circle")
     # Allow estate owner, admins, or channel members to delete
     user_id = current_user["id"]
     is_owner = await _is_estate_owner(user_id, channel["estate_id"])
