@@ -6,7 +6,6 @@ import { Shield, LogOut, Loader2, ShieldCheck } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Switch } from '../components/ui/switch';
 import { Button } from '../components/ui/button';
-import { SubscriptionManagement } from '../components/settings/SubscriptionManagement';
 import NotificationSettings from '../components/NotificationSettings';
 import { NotificationPrefsCard } from '../components/settings/NotificationPrefsCard';
 import ProfileCard from '../components/settings/ProfileCard';
@@ -97,9 +96,6 @@ const SettingsPage = () => {
       </Card>
 
       <PersonalInfoCard initialEditAddress={editAddress || fromOnboarding} />
-
-      {/* Subscription Management */}
-      <SubscriptionManagement />
 
       {/* Estate Photo — benefactors only */}
       {!isStaff && <EstatePhotoCard />}

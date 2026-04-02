@@ -79,9 +79,15 @@ A full-stack estate planning application allowing benefactors to manage digital 
 ### 12. ECT Bulk Delete Conversations
 - **Status**: IMPLEMENTED (April 2, 2026)
 - **Backend**: `routes/estate_chat.py` — `POST /api/estate-chat/channels/batch-delete` accepts `{channel_ids: [...]}`, returns `{deleted: [...], failed: [...]}`
-- **Frontend**: `EstateChatPage.js` — Select mode toggle (CheckSquare2 icon) in header, checkboxes on channels, Select All/Deselect All, bulk delete confirmation modal
-- **Behavior**: Tap select button → tap channels to select → tap trash icon → confirm → done. Swipe-to-delete is disabled during select mode.
+- **Frontend**: `EstateChatPage.js` — Select mode toggle (CheckSquare2 icon) in header + long-press gesture (500ms hold), checkboxes on channels, Select All/Deselect All, bulk delete confirmation modal
+- **Behavior**: Tap select button OR long-press any channel → tap channels to select → tap trash icon → confirm → done. Swipe-to-delete is disabled during select mode.
 - **DO NOT**: Allow batch-delete of more than 50 channels in a single request
+
+### 13. Settings Page — Subscription Removed
+- **Status**: IMPLEMENTED (April 2, 2026)
+- **Change**: Removed `<SubscriptionManagement />` from `SettingsPage.js` and `BeneficiarySettingsPage.js`
+- **Reason**: Subscriptions have their own dedicated page; no need for duplication in Settings
+- **DO NOT**: Re-add SubscriptionManagement to settings pages
 
 ---
 

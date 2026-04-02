@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Button } from '../../components/ui/button';
 import { Switch } from '../../components/ui/switch';
 import { Separator } from '../../components/ui/separator';
-import { SubscriptionManagement } from '../../components/settings/SubscriptionManagement';
 import NotificationSettings from '../../components/NotificationSettings';
 import { NotificationPrefsCard } from '../../components/settings/NotificationPrefsCard';
 import { PhotoPicker } from '../../components/PhotoPicker';
@@ -16,7 +15,7 @@ import { API_URL } from '../../config';
 import DockCustomizer from '../../components/DockCustomizer';
 
 const BeneficiarySettingsPage = () => {
-  const { user, logout, getAuthHeaders, subscriptionStatus, refreshSubscription } = useAuth();
+  const { user, logout, getAuthHeaders } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   
@@ -150,14 +149,6 @@ const BeneficiarySettingsPage = () => {
 
       {/* Notification Preferences (granular category controls) */}
       <NotificationPrefsCard />
-
-      {/* Subscription — uses the shared SubscriptionManagement component */}
-      <SubscriptionManagement
-        subscriptionStatus={subscriptionStatus}
-        refreshSubscription={refreshSubscription}
-        getAuthHeaders={() => getAuthHeaders()}
-        onShowPaywall={() => {}}
-      />
 
       {/* Appearance */}
       <Card className="glass-card">

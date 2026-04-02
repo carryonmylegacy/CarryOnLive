@@ -297,6 +297,8 @@ export default function EstateChatPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const touchStartRef = useRef({ x: 0, y: 0 });
+  const longPressTimerRef = useRef(null);
+  const longPressTriggeredRef = useRef(false);
 
   // ── Hide bottom nav when in ECT ──
   useEffect(() => {
@@ -767,9 +769,40 @@ export default function EstateChatPage() {
 
   const handleTouchStart = (e, channelId) => {
     touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    longPressTriggeredRef.current = false;
+    // Start long-press timer (500ms) — only when NOT already in select mode
+    if (!selectMode) {
+      longPressTimerRef.current = setTimeout(() => {
+        longPressTriggeredRef.current = true;
+        setSelectMode(true);
+        setSelectedChannels(new Set([channelId]));
+        setSwipedChannel(null);
+        // Haptic feedback if available
+        if (navigator.vibrate) navigator.vibrate(30);
+      }, 500);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    // Cancel long-press if finger moves too much
+    if (longPressTimerRef.current) {
+      const dx = Math.abs(e.touches[0].clientX - touchStartRef.current.x);
+      const dy = Math.abs(e.touches[0].clientY - touchStartRef.current.y);
+      if (dx > 10 || dy > 10) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+    }
   };
 
   const handleTouchEnd = (e, channelId) => {
+    clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = null;
+    // If long-press just triggered select mode, don't also process as swipe/tap
+    if (longPressTriggeredRef.current) {
+      longPressTriggeredRef.current = false;
+      return;
+    }
     const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
     const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
     if (Math.abs(dy) > Math.abs(dx)) return; // vertical scroll, ignore
@@ -1087,6 +1120,7 @@ export default function EstateChatPage() {
                 key={ch.id}
                 className="relative overflow-hidden rounded-xl mb-1"
                 onTouchStart={(e) => !selectMode && handleTouchStart(e, ch.id)}
+                onTouchMove={(e) => !selectMode && handleTouchMove(e)}
                 onTouchEnd={(e) => !selectMode && handleTouchEnd(e, ch.id)}
               >
                 {/* Delete action (behind the card) — hidden in select mode */}
