@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
+import AddressAutocomplete from '../components/AddressAutocomplete';
 import {
   Shield,
   AlertTriangle,
@@ -596,8 +597,10 @@ export default function ConnectedProtocolPage() {
               <input value={rp.name || ''} onChange={(e) => { const arr = [...(editPlan.rendezvous_points || [])]; arr[i] = { ...arr[i], name: e.target.value }; setEditPlan({ ...editPlan, rendezvous_points: arr }); }}
                 placeholder="Name" className="flex-1 rounded-xl px-3 py-2.5 text-base"
                 style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#F1F3F8', fontSize: '16px' }} />
-              <input value={rp.address || ''} onChange={(e) => { const arr = [...(editPlan.rendezvous_points || [])]; arr[i] = { ...arr[i], address: e.target.value }; setEditPlan({ ...editPlan, rendezvous_points: arr }); }}
+              <AddressAutocomplete value={rp.address || ''} onChange={(e) => { const arr = [...(editPlan.rendezvous_points || [])]; arr[i] = { ...arr[i], address: e.target.value }; setEditPlan({ ...editPlan, rendezvous_points: arr }); }}
+                onSelect={({ street, city, state, zip }) => { const full = [street, city, [state, zip].filter(Boolean).join(' ')].filter(Boolean).join(', '); const arr = [...(editPlan.rendezvous_points || [])]; arr[i] = { ...arr[i], address: full }; setEditPlan({ ...editPlan, rendezvous_points: arr }); }}
                 placeholder="Address" className="flex-1 rounded-xl px-3 py-2.5 text-base"
+                data-testid={`ccp-rendezvous-address-${i}`}
                 style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#F1F3F8', fontSize: '16px' }} />
               <button onClick={() => { const arr = (editPlan.rendezvous_points || []).filter((_, j) => j !== i); setEditPlan({ ...editPlan, rendezvous_points: arr }); }}
                 className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(240,82,82,0.1)' }}>
@@ -629,8 +632,10 @@ export default function ConnectedProtocolPage() {
               <input value={rl.name || ''} onChange={(e) => { const arr = [...(editPlan.resource_locations || [])]; arr[i] = { ...arr[i], name: e.target.value }; setEditPlan({ ...editPlan, resource_locations: arr }); }}
                 placeholder="What" className="flex-1 rounded-xl px-3 py-2.5 text-base"
                 style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#F1F3F8', fontSize: '16px' }} />
-              <input value={rl.location || ''} onChange={(e) => { const arr = [...(editPlan.resource_locations || [])]; arr[i] = { ...arr[i], location: e.target.value }; setEditPlan({ ...editPlan, resource_locations: arr }); }}
+              <AddressAutocomplete value={rl.location || ''} onChange={(e) => { const arr = [...(editPlan.resource_locations || [])]; arr[i] = { ...arr[i], location: e.target.value }; setEditPlan({ ...editPlan, resource_locations: arr }); }}
+                onSelect={({ street, city, state, zip }) => { const full = [street, city, [state, zip].filter(Boolean).join(' ')].filter(Boolean).join(', '); const arr = [...(editPlan.resource_locations || [])]; arr[i] = { ...arr[i], location: full }; setEditPlan({ ...editPlan, resource_locations: arr }); }}
                 placeholder="Where" className="flex-1 rounded-xl px-3 py-2.5 text-base"
+                data-testid={`ccp-resource-location-${i}`}
                 style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#F1F3F8', fontSize: '16px' }} />
               <button onClick={() => { const arr = (editPlan.resource_locations || []).filter((_, j) => j !== i); setEditPlan({ ...editPlan, resource_locations: arr }); }}
                 className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(240,82,82,0.1)' }}>
