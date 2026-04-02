@@ -1252,6 +1252,14 @@ body.ect-active .dashboard-content-area {
   padding-bottom: 0 !important;
   margin-bottom: 0 !important;
 }
+/* Lock body when ECT is active — prevents iOS keyboard from scrolling the page */
+body.ect-active {
+  position: fixed !important;
+  overflow: hidden !important;
+  width: 100% !important;
+  height: 100% !important;
+  overscroll-behavior: none !important;
+}
 
 
 /* ── iOS button highlight fix ────────────────────────────── */

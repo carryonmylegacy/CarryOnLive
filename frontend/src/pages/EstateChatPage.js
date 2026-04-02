@@ -288,13 +288,24 @@ export default function EstateChatPage() {
   const [voicePreview, setVoicePreview] = useState(null); // {blob, url}
   const [inputFocused, setInputFocused] = useState(false);
 
-  // ── Hide bottom nav when in ECT ──
+  // ── Hide bottom nav + lock html/body scroll when in ECT ──
   useEffect(() => {
     document.body.classList.add('ect-active');
-    return () => document.body.classList.remove('ect-active');
+    const de = document.documentElement;
+    de.style.position = 'fixed';
+    de.style.overflow = 'hidden';
+    de.style.width = '100%';
+    de.style.height = '100%';
+    return () => {
+      document.body.classList.remove('ect-active');
+      de.style.position = '';
+      de.style.overflow = '';
+      de.style.width = '';
+      de.style.height = '';
+    };
   }, []);
 
-  // ── iOS PWA: compensate for keyboard scroll + resize to fit above keyboard ──
+  // ── iOS PWA: resize #ect-root when keyboard opens (body lock prevents scroll) ──
   useEffect(() => {
     if (loading) return;
     const root = document.getElementById('ect-root');
@@ -302,10 +313,6 @@ export default function EstateChatPage() {
     const vv = window.visualViewport;
     if (!vv) return;
     let resized = false;
-    // Instead of fighting iOS scroll with scrollTo(0,0), compensate visually
-    const onScroll = () => {
-      root.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : '';
-    };
     const sync = () => {
       const kbOpen = vv.height < window.innerHeight * 0.8;
       if (kbOpen) {
@@ -315,35 +322,25 @@ export default function EstateChatPage() {
       } else if (resized) {
         root.style.height = '';
         root.style.bottom = '0';
-        root.style.transform = '';
         resized = false;
-        // Force scroll reset multiple times as iOS animates keyboard away
-        window.scrollTo(0, 0);
-        setTimeout(() => { window.scrollTo(0, 0); root.style.transform = ''; }, 100);
-        setTimeout(() => { window.scrollTo(0, 0); root.style.transform = ''; }, 300);
       }
-      onScroll();
     };
     vv.addEventListener('resize', sync);
-    window.addEventListener('scroll', onScroll);
-    const poll = setInterval(sync, 50);
+    const poll = setInterval(sync, 80);
     return () => {
       vv.removeEventListener('resize', sync);
-      window.removeEventListener('scroll', onScroll);
       clearInterval(poll);
       root.style.height = '';
       root.style.bottom = '0';
-      root.style.transform = '';
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Re-sync viewport when switching channels (clear stale transform + re-check keyboard) ──
+  // ── Re-sync viewport when switching channels ──
   useEffect(() => {
     if (!activeChannel) return;
     const r = document.getElementById('ect-root');
-    if (r) { r.style.transform = ''; r.style.height = ''; r.style.bottom = '0'; }
-    window.scrollTo(0, 0);
-    const fix = () => { const vv = window.visualViewport; const root = document.getElementById('ect-root'); if (vv && root) { if (vv.height < window.innerHeight * 0.8) { root.style.height = `${vv.height}px`; root.style.bottom = 'auto'; root.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : ''; } else { root.style.transform = ''; root.style.height = ''; root.style.bottom = '0'; } } };
+    if (r) { r.style.height = ''; r.style.bottom = '0'; }
+    const fix = () => { const vv = window.visualViewport; const root = document.getElementById('ect-root'); if (vv && root && vv.height < window.innerHeight * 0.8) { root.style.height = `${vv.height}px`; root.style.bottom = 'auto'; } };
     setTimeout(fix, 100); setTimeout(fix, 300); setTimeout(fix, 600);
   }, [activeChannel]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1132,11 +1129,7 @@ export default function EstateChatPage() {
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               onFocus={() => {
                 setInputFocused(true);
-                // Clear stale transform before keyboard animation starts
-                const r = document.getElementById('ect-root');
-                if (r) r.style.transform = '';
-                window.scrollTo(0, 0);
-                const fix = () => { const vv = window.visualViewport; if (vv && r && vv.height < window.innerHeight * 0.8) { r.style.height = `${vv.height}px`; r.style.bottom = 'auto'; r.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : ''; } };
+                const fix = () => { const vv = window.visualViewport; const r = document.getElementById('ect-root'); if (vv && r && vv.height < window.innerHeight * 0.8) { r.style.height = `${vv.height}px`; r.style.bottom = 'auto'; } };
                 setTimeout(fix, 300); setTimeout(fix, 600);
               }}
               onBlur={() => setInputFocused(false)}
