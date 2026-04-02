@@ -382,37 +382,48 @@ async def _handle_ccp_plan(user: dict, params: dict, filename: str) -> Response:
 
 def _convert_webm_to_mp4(webm_bytes: bytes) -> tuple[bytes, str]:
     """Convert WebM video to MP4 (H.264) using ffmpeg for iOS compatibility."""
-    with tempfile.NamedTemporaryFile(suffix=".webm", delete=True) as inp:
-        inp.write(webm_bytes)
-        inp.flush()
-        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=True) as out:
-            result = subprocess.run(
-                [
-                    "ffmpeg",
-                    "-y",
-                    "-i",
-                    inp.name,
-                    "-c:v",
-                    "libx264",
-                    "-preset",
-                    "fast",
-                    "-crf",
-                    "23",
-                    "-c:a",
-                    "aac",
-                    "-b:a",
-                    "128k",
-                    "-movflags",
-                    "+faststart",
-                    out.name,
-                ],
-                capture_output=True,
-                timeout=120,
-            )
-            if result.returncode != 0:
-                raise RuntimeError(f"ffmpeg failed: {result.stderr.decode()[:500]}")
-            out.seek(0)
-            return out.read(), "video/mp4"
+    import os
+
+    inp_path = tempfile.mktemp(suffix=".webm")
+    out_path = tempfile.mktemp(suffix=".mp4")
+    try:
+        with open(inp_path, "wb") as f:
+            f.write(webm_bytes)
+
+        result = subprocess.run(
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                inp_path,
+                "-c:v",
+                "libx264",
+                "-preset",
+                "fast",
+                "-crf",
+                "23",
+                "-c:a",
+                "aac",
+                "-b:a",
+                "128k",
+                "-movflags",
+                "+faststart",
+                out_path,
+            ],
+            capture_output=True,
+            timeout=120,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"ffmpeg failed: {result.stderr.decode()[:500]}")
+
+        with open(out_path, "rb") as f:
+            return f.read(), "video/mp4"
+    finally:
+        for p in (inp_path, out_path):
+            try:
+                os.unlink(p)
+            except OSError:
+                pass
 
 
 def _sanitize_filename(name: str) -> str:

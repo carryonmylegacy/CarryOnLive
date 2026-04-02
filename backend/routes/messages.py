@@ -7,6 +7,7 @@ Architecture:
 """
 
 import base64
+import subprocess
 import uuid
 from datetime import datetime, timezone
 
@@ -253,6 +254,56 @@ async def download_video_direct(video_id: str, dt: str = QueryParam(...)):
         or b"ftyp" in decrypted[:12]
         else "video/webm"
     )
+
+    # Convert WebM → MP4 for iOS compatibility (iOS Photos cannot save WebM)
+    if video_mime == "video/webm":
+        try:
+            import os
+            import tempfile
+
+            inp_path = tempfile.mktemp(suffix=".webm")
+            out_path = tempfile.mktemp(suffix=".mp4")
+            try:
+                with open(inp_path, "wb") as f:
+                    f.write(decrypted)
+                proc = subprocess.run(
+                    [
+                        "ffmpeg",
+                        "-y",
+                        "-i",
+                        inp_path,
+                        "-c:v",
+                        "libx264",
+                        "-preset",
+                        "fast",
+                        "-crf",
+                        "23",
+                        "-c:a",
+                        "aac",
+                        "-b:a",
+                        "128k",
+                        "-movflags",
+                        "+faststart",
+                        out_path,
+                    ],
+                    capture_output=True,
+                    timeout=120,
+                )
+                if proc.returncode == 0:
+                    with open(out_path, "rb") as f:
+                        decrypted = f.read()
+                    video_mime = "video/mp4"
+                else:
+                    logger.warning(f"WebM→MP4 conversion failed: {proc.stderr.decode()[:300]}")
+            finally:
+                for p in (inp_path, out_path):
+                    try:
+                        os.unlink(p)
+                    except OSError:
+                        pass
+        except Exception as conv_err:
+            logger.warning(f"Video conversion error: {conv_err}")
+
     video_ext = "mp4" if video_mime == "video/mp4" else "webm"
     return Response(
         content=decrypted,
