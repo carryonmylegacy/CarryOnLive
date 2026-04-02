@@ -703,7 +703,12 @@ ALLOWED_FILE_TYPES = {
     "audio/mpeg",
     "audio/wav",
     "audio/x-m4a",
+    "audio/aac",
+    "audio/m4a",
+    "audio/x-wav",
+    "audio/webm;codecs=opus",
     "video/webm",
+    "video/mp4",
 }
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
@@ -721,7 +726,10 @@ async def upload_attachment(
     if current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Not a member of this channel")
     if file.content_type not in ALLOWED_FILE_TYPES:
-        raise HTTPException(status_code=400, detail="File type not allowed")
+        # Also allow by checking the base MIME type (e.g. "audio/mp4" from "audio/mp4;codecs=...")
+        base_type = (file.content_type or "").split(";")[0].strip()
+        if base_type not in ALLOWED_FILE_TYPES:
+            raise HTTPException(status_code=400, detail=f"File type not allowed: {file.content_type}")
     data = await file.read()
     if len(data) > MAX_FILE_SIZE:
         raise HTTPException(status_code=400, detail="File too large (max 10 MB)")

@@ -301,8 +301,10 @@ export default function EstateChatPage() {
     if (!root) return;
     const vv = window.visualViewport;
     if (!vv) return;
-    let resized = false;
+    let kbVisible = false;
     const onScroll = () => {
+      // Only apply scroll compensation while keyboard is actually open
+      if (!kbVisible) return;
       root.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : '';
     };
     const sync = () => {
@@ -310,17 +312,17 @@ export default function EstateChatPage() {
       if (kbOpen) {
         root.style.height = `${vv.height}px`;
         root.style.bottom = 'auto';
-        resized = true;
-      } else if (resized) {
+        kbVisible = true;
+        onScroll();
+      } else if (kbVisible) {
+        kbVisible = false;
         root.style.height = '';
         root.style.bottom = '0';
         root.style.transform = '';
-        resized = false;
         window.scrollTo(0, 0);
         setTimeout(() => { window.scrollTo(0, 0); root.style.transform = ''; }, 100);
         setTimeout(() => { window.scrollTo(0, 0); root.style.transform = ''; }, 300);
       }
-      onScroll();
     };
     vv.addEventListener('resize', sync);
     window.addEventListener('scroll', onScroll);
@@ -342,7 +344,7 @@ export default function EstateChatPage() {
     if (r) { r.style.transform = ''; r.style.height = ''; r.style.bottom = '0'; }
     window.scrollTo(0, 0);
     setInputFocused(false);
-    const fix = () => { const vv = window.visualViewport; const root = document.getElementById('ect-root'); if (vv && root) { if (vv.height < window.innerHeight * 0.8) { root.style.height = `${vv.height}px`; root.style.bottom = 'auto'; root.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : ''; } else { root.style.transform = ''; root.style.height = ''; root.style.bottom = '0'; } } };
+    const fix = () => { const vv = window.visualViewport; const root = document.getElementById('ect-root'); if (vv && root) { if (vv.height < window.innerHeight * 0.8) { root.style.height = `${vv.height}px`; root.style.bottom = 'auto'; } else { root.style.transform = ''; root.style.height = ''; root.style.bottom = '0'; window.scrollTo(0, 0); } } };
     setTimeout(fix, 100); setTimeout(fix, 300); setTimeout(fix, 600);
   }, [activeChannel]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -509,7 +511,7 @@ export default function EstateChatPage() {
     if (voicePreview) { URL.revokeObjectURL(voicePreview.url); setVoicePreview(null); }
     setUploading(true);
     try {
-      const ext = blob.type.includes('mp4') ? 'm4a' : 'webm';
+      const ext = blob.type.includes('mp4') || blob.type.includes('m4a') || blob.type.includes('aac') ? 'm4a' : 'webm';
       const formData = new FormData();
       formData.append('file', blob, `voice-message.${ext}`);
       const res = await fetch(`${API_URL}/estate-chat/channels/${activeChannel.id}/upload`, {
@@ -520,8 +522,11 @@ export default function EstateChatPage() {
       if (res.ok) {
         await fetchMessages(activeChannel.id);
         await fetchChannels();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        console.error('Voice upload failed:', res.status, errData);
       }
-    } catch {} finally { setUploading(false); } // eslint-disable-line no-empty
+    } catch (err) { console.error('Voice send error:', err); } finally { setUploading(false); } // eslint-disable-line no-empty
   };
 
   const stopAndPreview = async () => {
@@ -1099,7 +1104,7 @@ export default function EstateChatPage() {
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
       <div className="flex-shrink-0" style={{
         background: '#151D30',
-        paddingBottom: (inputFocused && !voiceRecorder.recording && !voicePreview) ? '8px' : 'env(safe-area-inset-bottom, 0px)',
+        paddingBottom: (inputFocused && !voiceRecorder.recording && !voicePreview) ? '8px' : 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
       }}>
         {/* Typing indicator */}
         {typers.length > 0 && (
@@ -1141,7 +1146,7 @@ export default function EstateChatPage() {
                 const r = document.getElementById('ect-root');
                 if (r) r.style.transform = '';
                 window.scrollTo(0, 0);
-                const fix = () => { const vv = window.visualViewport; if (vv && r && vv.height < window.innerHeight * 0.8) { r.style.height = `${vv.height}px`; r.style.bottom = 'auto'; r.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : ''; } };
+                const fix = () => { const vv = window.visualViewport; if (vv && r && vv.height < window.innerHeight * 0.8) { r.style.height = `${vv.height}px`; r.style.bottom = 'auto'; } };
                 setTimeout(fix, 300); setTimeout(fix, 600);
               }}
               onBlur={() => setInputFocused(false)}
