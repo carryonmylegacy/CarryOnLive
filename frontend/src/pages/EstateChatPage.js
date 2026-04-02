@@ -30,6 +30,7 @@ import {
   Play,
   Pause,
 } from 'lucide-react';
+import { platformDownload } from '../utils/downloadFile';
 
 const ECT_POLL_INTERVAL = 8000;
 
@@ -210,18 +211,25 @@ function AuthImage({ fileId, fileName, msgId }) {
 function AuthFileLink({ fileId, fileName, fileSize, msgId }) {
   const handleDownload = async (e) => {
     e.stopPropagation();
-    const token = localStorage.getItem('carryon_token');
     try {
-      const res = await fetch(`${API_URL}/estate-chat/files/${fileId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      await platformDownload({
+        action: 'ect_file',
+        params: { file_id: fileId },
+        filename: fileName || 'file',
+        onFallback: async () => {
+          const token = localStorage.getItem('carryon_token');
+          const res = await fetch(`${API_URL}/estate-chat/files/${fileId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          a.click();
+          URL.revokeObjectURL(url);
+        },
       });
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      a.click();
-      URL.revokeObjectURL(url);
     } catch { /* silent */ }
   };
 

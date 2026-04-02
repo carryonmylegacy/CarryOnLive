@@ -74,7 +74,7 @@ import {
 } from 'lucide-react';
 
 import { toast } from '../utils/toast';
-import { downloadFile } from '../utils/downloadFile';
+import { downloadFile, platformDownload } from '../utils/downloadFile';
 import { API_URL } from '../config';
 // removed unused SectionLock from '../components/security/SectionLock';
 
@@ -443,9 +443,18 @@ const GuardianPage = () => {
   const handleChecklistExport = async () => {
     setChecklistExporting(true);
     try {
-      const headers = getAuthHeaders()?.headers;
-      const res = await axios.post(`${API_URL}/guardian/export-checklist`, {}, { headers, responseType: 'blob' });
-      await downloadFile(new Blob([res.data], { type: 'application/pdf' }), `CarryOn_IAC_${new Date().toISOString().split('T')[0]}.pdf`);
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `CarryOn_IAC_${dateStr}.pdf`;
+      await platformDownload({
+        action: 'ega_checklist',
+        params: {},
+        filename,
+        onFallback: async () => {
+          const headers = getAuthHeaders()?.headers;
+          const res = await axios.post(`${API_URL}/guardian/export-checklist`, {}, { headers, responseType: 'blob' });
+          await downloadFile(new Blob([res.data], { type: 'application/pdf' }), filename);
+        },
+      });
     } catch (err) {
       toast.error(err.response?.status === 404 ? 'No IAC items found — generate one first' : 'Failed to export checklist');
     }
@@ -454,9 +463,18 @@ const GuardianPage = () => {
 
   const handleTodoDownload = async (content) => {
     try {
-      const headers = getAuthHeaders()?.headers;
-      const res = await axios.post(`${API_URL}/guardian/export-todo`, { content }, { headers, responseType: 'blob' });
-      await downloadFile(new Blob([res.data], { type: 'application/pdf' }), `CarryOn_ToDo_${new Date().toISOString().split('T')[0]}.pdf`);
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `CarryOn_ToDo_${dateStr}.pdf`;
+      await platformDownload({
+        action: 'ega_todo',
+        params: { content },
+        filename,
+        onFallback: async () => {
+          const headers = getAuthHeaders()?.headers;
+          const res = await axios.post(`${API_URL}/guardian/export-todo`, { content }, { headers, responseType: 'blob' });
+          await downloadFile(new Blob([res.data], { type: 'application/pdf' }), filename);
+        },
+      });
       toast.success('To-Do List downloaded');
     } catch (err) {
       toast.error('Failed to generate PDF');
@@ -465,9 +483,18 @@ const GuardianPage = () => {
 
   const handleIacDownload = async (content) => {
     try {
-      const headers = getAuthHeaders()?.headers;
-      const res = await axios.post(`${API_URL}/guardian/export-iac-report`, { content }, { headers, responseType: 'blob' });
-      await downloadFile(new Blob([res.data], { type: 'application/pdf' }), `CarryOn_IAC_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `CarryOn_IAC_Report_${dateStr}.pdf`;
+      await platformDownload({
+        action: 'ega_iac_report',
+        params: { content },
+        filename,
+        onFallback: async () => {
+          const headers = getAuthHeaders()?.headers;
+          const res = await axios.post(`${API_URL}/guardian/export-iac-report`, { content }, { headers, responseType: 'blob' });
+          await downloadFile(new Blob([res.data], { type: 'application/pdf' }), filename);
+        },
+      });
       toast.success('IAC Report downloaded');
     } catch (err) {
       toast.error('Failed to generate IAC Report PDF');
@@ -478,9 +505,18 @@ const GuardianPage = () => {
     if (!sessionId) { toast.error('No active conversation'); return; }
     setExporting(true);
     try {
-      const headers = getAuthHeaders()?.headers;
-      const res = await axios.post(`${API_URL}/guardian/export-conversation`, { session_id: sessionId }, { headers, responseType: 'blob' });
-      await downloadFile(new Blob([res.data], { type: 'application/pdf' }), `CarryOn_Transcript_${new Date().toISOString().split('T')[0]}.pdf`);
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `CarryOn_Transcript_${dateStr}.pdf`;
+      await platformDownload({
+        action: 'ega_transcript',
+        params: { session_id: sessionId },
+        filename,
+        onFallback: async () => {
+          const headers = getAuthHeaders()?.headers;
+          const res = await axios.post(`${API_URL}/guardian/export-conversation`, { session_id: sessionId }, { headers, responseType: 'blob' });
+          await downloadFile(new Blob([res.data], { type: 'application/pdf' }), filename);
+        },
+      });
       toast.success('Transcript downloaded');
     } catch (err) { toast.error('Failed to export transcript'); }
     setExporting(false);
@@ -491,9 +527,18 @@ const GuardianPage = () => {
     if (!sessionId) { toast.error('No active conversation'); return; }
     setPlanExporting(true);
     try {
-      const headers = getAuthHeaders()?.headers;
-      const res = await axios.post(`${API_URL}/guardian/export-plan-of-action`, { session_id: sessionId }, { headers, responseType: 'blob' });
-      await downloadFile(new Blob([res.data], { type: 'application/pdf' }), `CarryOn_Plan_of_Action_${new Date().toISOString().split('T')[0]}.pdf`);
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `CarryOn_Plan_of_Action_${dateStr}.pdf`;
+      await platformDownload({
+        action: 'ega_plan',
+        params: { session_id: sessionId },
+        filename,
+        onFallback: async () => {
+          const headers = getAuthHeaders()?.headers;
+          const res = await axios.post(`${API_URL}/guardian/export-plan-of-action`, { session_id: sessionId }, { headers, responseType: 'blob' });
+          await downloadFile(new Blob([res.data], { type: 'application/pdf' }), filename);
+        },
+      });
       toast.success('Plan of Action downloaded');
     } catch (err) { toast.error('Failed to generate Plan of Action'); }
     setPlanExporting(false);

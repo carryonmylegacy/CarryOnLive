@@ -10,7 +10,7 @@ import { Input } from '../../components/ui/input';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { API_URL } from '../../config';
 import { toast } from '../../utils/toast';
-import { downloadFile } from '../../utils/downloadFile';
+import { downloadFile, platformDownload } from '../../utils/downloadFile';
 
 const BeneficiaryGuardianPage = () => {
   const { user, getAuthHeaders } = useAuth();
@@ -50,10 +50,19 @@ const BeneficiaryGuardianPage = () => {
 
   const handleIacDownload = async () => {
     try {
-      const res = await axios.post(`${API_URL}/guardian/beneficiary-export-checklist`, {}, {
-        ...getAuthHeaders(), responseType: 'blob',
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const filename = `CarryOn_IAC_${dateStr}.pdf`;
+      await platformDownload({
+        action: 'beneficiary_iac',
+        params: {},
+        filename,
+        onFallback: async () => {
+          const res = await axios.post(`${API_URL}/guardian/beneficiary-export-checklist`, {}, {
+            ...getAuthHeaders(), responseType: 'blob',
+          });
+          downloadFile(res.data, filename);
+        },
       });
-      downloadFile(res.data, `CarryOn_IAC_${new Date().toISOString().slice(0, 10)}.pdf`);
       toast.success('IAC downloaded');
     } catch {
       toast.error('Failed to download IAC');

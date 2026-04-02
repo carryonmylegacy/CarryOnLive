@@ -1,30 +1,35 @@
 <analysis>**original_problem_statement**: 
-The user requested several major platform enhancements and bug fixes:
-1. Allow assigning multiple admin/operator roles (e.g., Operations Manager + Marketing Admin + Finance Admin) to a single existing user account.
-2. Change the portal navigation UI from a dropdown to stacked, distinct buttons above the Sign Out button (similar to benefactor/beneficiary portal switching).
-3. Fix a bug where the Founder Portal view was truncated upon login and required manually restoring the view via the logo. Fix navigation bugs where clicking tabs within a scoped portal dropped the scope.
-4. Add the ability for Benefactors to download their Milestone Messages (Text to PDF, Video to video file, Voice to audio file).
-5. Add the ability for Beneficiaries to download their generated IAC (Plan of Action) from their Guardian page.
-6. Add a beneficiary selector on SDV (Secure Document Vault) tiles so a benefactor can designate which specific beneficiaries get access to which documents, including a bulk designation mode.
+The user originally requested the addition of two major features: Estate Communication Tool (ECT) and CarryOn Contingency Protocols (CCP), along with push notification preferences, feature gating, and strict 60/60 iOS/PWA compliance checks. In the current session, the user requested heavy UX/UI refinements to the Secure Document Vault (SDV) beneficiary selection, the ECT chat interface (keyboard avoidance, read receipts, layout), and a fix for downloading Milestone Messages (videos and PDFs) within the iOS PWA environment.
 
 **User's preferred language**: English (INSTRUCT next agent to respond in English only)
 
 **what currently exists?** 
-A heavily fortified, SOC 2-compliant, multi-role full-stack application (React, FastAPI, MongoDB) featuring highly complex administrative controls, real-time WebSockets, shift scheduling, internal team chat, and a sophisticated Dev Switcher. The platform uses URL query parameters for robust scope-based portal navigation, supports granular Secure Document Vault (SDV) access controls per beneficiary, and has downloadable AI-driven IAC (Plan of Action) reports. The codebase strictly adheres to an internal 60/60 housekeeping validation suite and is 100% ruff-compliant.
+A highly secure, SOC 2-compliant, multi-role full-stack application (React, FastAPI, MongoDB) featuring real-time WebSockets, internal chat (ECT) with 3-state read receipts (Sent/Delivered/Read), emergency contingency tools (CCP), and Secure Document Vault (SDV) with pre/post-transition file access controls. The application strictly adheres to an internal 60/60 housekeeping validation suite.
 
 **Last working item**: 
-    - Last item agent was working: Implemented the Bulk Beneficiary Designation mode for SDV documents (allowing benefactors to assign access to multiple vault items simultaneously), followed by a complete Housekeeping (60/60) and Ruff check.
-    - Status: COMPLETED
-    - Agent Testing Done: Y
-    - Which testing method agent to use? testing_agent_v3_fork (used for backend and frontend validation across 4 iterations), manual bash scripts.
-    - User Testing Done: N
+    - Last item agent was working: Fixing Milestone Message (MM) video and text (PDF) downloads on iOS PWA/Safari. The user specifically wants the native iOS save tile/sheet to pop up from the bottom.
+    - Status: IN PROGRESS
+    - Agent Testing Done: Y (Failed to properly resolve the iOS-specific behavior)
+    - Which testing method agent to use? manual testing by curl/ python -c / screenshot tool + user feedback
+    - User Testing Done: Y
 
 **All Pending/In progress Issue list**: 
-  Issue 1: 🔴 Apple IAP flow is non-functional (P0 - BLOCKED)
-  Issue 2: 🔴 Twilio SMS OTP delivery is failing (P0 - BLOCKED)
+  Issue 1: 🔴 Milestone Message Downloads Failing/Incorrect UX on iOS PWA (P0)
+  Issue 2: 🔴 Apple IAP flow is non-functional (P0 - BLOCKED)
+  Issue 3: 🔴 Twilio SMS OTP delivery is failing (P0 - BLOCKED)
   
   Issues Detail:
   - Issue 1: 
+     - Attempted fixes: The agent tried , , and finally tokenized redirects to a server URL serving the file inline. All failed user expectations. Videos recorded in Chrome/Desktop are saved as WebM, which iOS Photos does not support natively, causing Save Video to fail. For text PDFs,  results in a blank Safari screen due to popup blocking in PWAs.
+     - Next debug checklist: 
+        - Backend: Add FFmpeg/server-side conversion to ensure all videos served to iOS are strictly  (H.264) so they can be saved to the Photos library.
+        - Backend/Frontend: Ensure endpoints return  and use  on the frontend. This directly triggers the native iOS Do you want to download [file]? bottom tile without opening weird new windows or blank tabs.
+     - Why fix this issue and what will be achieved with the fix? Critical user feature for preserving milestone legacy media.
+     - Status: IN PROGRESS
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? Both
+     - Blocked on other issue: None
+  - Issue 2: 
      - Attempted fixes: Code is fully implemented.
      - Next debug checklist: Await user action with Apple.
      - Why fix this issue and what will be achieved with the fix? Monetization on iOS.
@@ -32,7 +37,7 @@ A heavily fortified, SOC 2-compliant, multi-role full-stack application (React, 
      - Is recurring issue? Y
      - Should Test frontend/backend/both after fix? Both
      - Blocked on other issue: User's Apple Developer Paid Applications Agreement approval.
-  - Issue 2: 
+  - Issue 3: 
      - Attempted fixes: Code is fully implemented.
      - Next debug checklist: Await user action with Twilio.
      - Why fix this issue and what will be achieved with the fix? SMS Auth.
@@ -46,96 +51,405 @@ A heavily fortified, SOC 2-compliant, multi-role full-stack application (React, 
 
 **Upcoming and Future Tasks**
     Upcoming Tasks:
-    - 🔴 (P0) Google Play Store Launch: User/CoS needs to execute operational steps in . No code changes required.
+    - 🔴 (P0) Google Play Store Launch: User/CoS needs to execute operational steps.
     - 🟡 (P1) Share Extension Setup: Wire up iOS Extension ().
-    - 🟡 (P1) iOS Live Updates (Capgo): Set up over-the-air updates (Post App Store approval).
+    - 🟡 (P1) iOS Live Updates (Capgo): Set up over-the-air updates.
+    
     Future Tasks:
     - 🟢 (P2) Readiness Scoring Policy Page: Informational page explaining how the estate readiness score is calculated.
-    - 🟢 (P2) Scalability Enhancements.
+    - 🟢 (P2) Scalability Enhancements: Horizontal scaling, background workers, CDN.
+    - 🟢 (P3) ECT Security Comparison Landing Page: A marketing/conversion page at  comparing ECT's closed-network privacy against Signal/WhatsApp/iMessage.
 
 **Completed work in this session**
-- **Unified Admin Accounts**: Modified backend routes to gracefully merge  roles when attempting to create an admin for an existing operator email (,  added as valid scopes). (DONE)
-- **Section Members Tab**: Added a dedicated sub-tab so Founders can see all members authorized for specific admin sections. (DONE)
-- **Portal Switcher Redesign**: Replaced the dropdown portal switcher with stacked buttons in both desktop  and . (DONE)
-- **Robust Portal Navigation (URL-Based)**: Fixed the truncated Founder Dashboard bug and scope-dropping bug.  is no longer improperly mutated in React context. Portal switching now relies purely on URL query params (), naturally preserving state across tabs and properly restoring the full Founder view upon navigation to . (DONE)
-- **Milestone Message Downloads**: Added  and frontend UI for downloading text (as PDF), video, and voice messages. (DONE)
-- **Beneficiary IAC Download**: Added backend support and a download button to  for IAC (Plan of Action) exports. (DONE)
-- **SDV Beneficiary Designation**: Added backend endpoint () and frontend UI on vault tiles to restrict document access to specific beneficiaries. Implemented a robust Bulk Select Mode for mass designations. (DONE)
-- **Housekeeping**: Fixed sub-11px font compliance for iOS across 7 files. Ran and passed 60/60 Housekeeping and Ruff validations. (DONE)
+- SDV beneficiary selector overhaul (Avatar buttons, ON/OFF toggles, Pre/Post-transition access) (DONE)
+- Removal of confusing Bulk Assign feature from SDV (DONE)
+- Fixed ECT chat layout (keyboard spacing, removed frosted glass to prevent ghosting, locked header) (DONE)
+- Added iMessage-style Read Receipts (Sent/Delivered/Read) to ECT (DONE)
+- Fixed iOS touch target sizes (44px) and minimum font sizes globally, passing 60/60 validation (DONE)
+- Generated Marketing Brief HTML page (DONE)
+- Implemented backend storage of  for SDV pre/post transition permissions (DONE)
+- Fixed toast notification spamming and stacking (DONE)
 
 **Earlier issues found/mentioned but not fixed**
-- None. All issues raised were addressed and passed validations.
+- None.
 
 **Known issue recurrence from previous fork**
   - Issue recurrence in previous fork: Apple IAP block / Twilio block.
-  - Recurrence count: 13
+  - Recurrence count: 15+
   - Status: BLOCKED
 
 **Code Architecture**
-PUT /api/documents/{doc_id}/designate-beneficiariesGET /api/messages/{msg_id}/download
+
 
 **Key Technical Concepts**
-- **URL-Driven Portal Scoping**: The application used to mutate the  directly in React state, causing aggressive regressions on PWA resume and lost scopes during tab changes. It now uses the  parameter via  which is passed into endpoints and preserves context cleanly.
-- **SDV Bulk Beneficiary Designation**: Managed directly in . Employs a specific array configuration where  strictly equates to all beneficiaries rather than mapping individual IDs, while specific selections map as .
-- **Milestone Downloads**: Video uses Cloudfront signed URLs, Voice downloads raw /, and Text dynamically generates an FPDF compilation on the backend using .
+- **Housekeeping Suite**: The application strictly enforces a custom linting/best-practices suite. Run 
+==========================================
+  CarryOn™ Housekeeping Protocol
+  + SOC 2 Compliance Audit
+==========================================
+
+[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
+------------------------------------------
+  [0;36mINFO[0m No fixes needed — already clean
+
+[1mSECTION A: Standard Housekeeping[0m
+------------------------------------------
+1.  Backend ruff check ............ [0;32mPASS[0m
+2.  Backend ruff format ........... [0;32mPASS[0m
+3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
+4.  Frontend build ................ [0;32mPASS[0m
+5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: eb9c37fcc7f5)
+6.  MongoDB _id leak scan ......... [0;32mPASS[0m
+7.  Hardcoded secrets scan ........ [0;32mPASS[0m
+8.  Sensitive console.log scan .... [0;32mPASS[0m
+9.  Deprecated datetime scan ...... [0;32mPASS[0m
+10. Backend health check .......... [0;32mPASS[0m
+11. Unprotected endpoint audit .... [0;32mPASS[0m (47 route files audited)
+
+[1mSECTION B: SOC 2 Compliance Audit[0m
+------------------------------------------
+12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
+13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
+14. [CC6.1] Password hashing ...... [0;32mPASS[0m
+15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
+16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
+17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
+18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
+19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
+20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
+21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
+22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
+23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
+24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
+25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (7 hard deletes — reviewed)
+26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
+27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
+28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
+29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
+30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
+31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
+32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (75 indexes defined)
+33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
+34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
+35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
+36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
+37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
+38. [A1.2]  Mongo projection safety  [0;32mPASS[0m
+
+[1mSECTION C: iOS / App Store Readiness[0m
+------------------------------------------
+39. [iOS]   Capacitor sync ......... [0;32mPASS[0m (11 plugins for iOS)
+40. [iOS]   Native purchases plugin  [0;32mPASS[0m (package.json + Capacitor + Podfile, v^8.1.2)
+41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (37 products, no duplicates)
+42. [iOS]   Stripe gated on iOS .... [0;32mPASS[0m (all Stripe redirects gated behind isNative)
+43. [iOS]   IAP imports present .... [0;32mPASS[0m (iap/useIAPPurchase + native imported in both subscription components)
+44. [iOS]   Apple disclosures ...... [0;32mPASS[0m (auto-renew, 24h cancel, Terms, Privacy, Restore)
+45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
+46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
+47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
+48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 60 JS bundles)
+49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
+50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
+
+[1mSECTION E: Mobile / PWA / iOS UX Compliance[0m
+------------------------------------------
+51. [PWA]   viewport-fit=cover ..... [0;32mPASS[0m
+52. [PWA]   Fixed nav safe-area .... [0;32mPASS[0m
+53. [PWA]   Page safe-area insets .. [0;32mPASS[0m
+54. [iOS]   Input font-size zoom ... [0;32mPASS[0m (all text inputs use fontSize >= 16px)
+55. [PWA]   Modal scroll safety .... [0;32mPASS[0m
+56. [iOS]   Touch target size ...... [0;32mPASS[0m
+57. [PWA]   Horizontal overflow .... [0;32mPASS[0m (overflow-x contained at root level)
+58. [PWA]   Fixed bottom safe-area . [0;32mPASS[0m
+59. [PWA]   Responsive padding ..... [0;32mPASS[0m
+60. [PWA]   Manifest & theme ....... [0;32mPASS[0m
+
+[1mSECTION D: Post-Check Verification[0m
+------------------------------------------
+R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
+
+==========================================
+  [0;32mALL CHECKS PASSED[0m — codebase is clean
+  [0;32mREADY TO PUSH[0m — CodeMagic → TestFlight → App Store
+==========================================
+
+Safety reminder: Do NOT run yarn add/remove.
+To fix ruff format: cd /app/backend && ruff format .
+
+SOC 2 Trust Service Criteria Reference:
+  CC6.1  Logical access security
+  CC7.2  System monitoring & audit
+  CC8.1  Change management
+  A1.2   System availability
+  PI1.1  Privacy (GDPR)
+
+Mobile / PWA / iOS UX Reference:
+  E1-E3  Safe-area insets (viewport, nav, pages)
+  E4     Input zoom prevention (fontSize >= 16px)
+  E5-E6  Modal scroll + touch target sizing
+  E7-E8  Overflow + bottom bar safe-area
+  E9-E10 Responsive padding + PWA manifest to verify.
+- **PWA/iOS Safe-Areas**: The application strictly enforces  and  for fixed-height components.
+- **WebM vs MP4 iOS limitations**: MediaRecorder on non-Safari browsers records WebM, which iOS Photos cannot save. Backend conversion is required for true cross-platform video downloads.
 
 **key DB schema**
-  - :  is maintained properly as a strict list. Operator scopes like  and  are normalized.
-  - : Now supports the  field (List of Strings;  or  defaults to all beneficiaries).
+  - : 
+  - : 
+  - : 
 
 **changes in tech stack**
   - None
 
 **All files of reference**
-  -  (Admin account role merging)
-  -  (Auth state preservation)
-  -  (URL-based portal switcher routing)
-  -  &  (Stacked portal navigation buttons)
-  -  (SDV Beneficiary Designation)
-  -  (SDV Bulk Designation frontend)
-  -  (Message downloads)
+  -  (Contains the failing download/video serving endpoints)
+  -  (Contains the failing frontend download trigger logic)
+  - 
+==========================================
+  CarryOn™ Housekeeping Protocol
+  + SOC 2 Compliance Audit
+==========================================
+
+[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
+------------------------------------------
+  [0;36mINFO[0m No fixes needed — already clean
+
+[1mSECTION A: Standard Housekeeping[0m
+------------------------------------------
+1.  Backend ruff check ............ [0;32mPASS[0m
+2.  Backend ruff format ........... [0;32mPASS[0m
+3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
+4.  Frontend build ................ [0;32mPASS[0m
+5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: eb9c37fcc7f5)
+6.  MongoDB _id leak scan ......... [0;32mPASS[0m
+7.  Hardcoded secrets scan ........ [0;32mPASS[0m
+8.  Sensitive console.log scan .... [0;32mPASS[0m
+9.  Deprecated datetime scan ...... [0;32mPASS[0m
+10. Backend health check .......... [0;32mPASS[0m
+11. Unprotected endpoint audit .... [0;32mPASS[0m (47 route files audited)
+
+[1mSECTION B: SOC 2 Compliance Audit[0m
+------------------------------------------
+12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
+13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
+14. [CC6.1] Password hashing ...... [0;32mPASS[0m
+15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
+16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
+17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
+18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
+19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
+20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
+21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
+22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
+23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
+24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
+25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (7 hard deletes — reviewed)
+26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
+27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
+28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
+29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
+30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
+31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
+32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (75 indexes defined)
+33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
+34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
+35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
+36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
+37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
+38. [A1.2]  Mongo projection safety  [0;32mPASS[0m
+
+[1mSECTION C: iOS / App Store Readiness[0m
+------------------------------------------
+39. [iOS]   Capacitor sync ......... [0;32mPASS[0m (11 plugins for iOS)
+40. [iOS]   Native purchases plugin  [0;32mPASS[0m (package.json + Capacitor + Podfile, v^8.1.2)
+41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (37 products, no duplicates)
+42. [iOS]   Stripe gated on iOS .... [0;32mPASS[0m (all Stripe redirects gated behind isNative)
+43. [iOS]   IAP imports present .... [0;32mPASS[0m (iap/useIAPPurchase + native imported in both subscription components)
+44. [iOS]   Apple disclosures ...... [0;32mPASS[0m (auto-renew, 24h cancel, Terms, Privacy, Restore)
+45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
+46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
+47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
+48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 60 JS bundles)
+49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
+50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
+
+[1mSECTION E: Mobile / PWA / iOS UX Compliance[0m
+------------------------------------------
+51. [PWA]   viewport-fit=cover ..... [0;32mPASS[0m
+52. [PWA]   Fixed nav safe-area .... [0;32mPASS[0m
+53. [PWA]   Page safe-area insets .. [0;32mPASS[0m
+54. [iOS]   Input font-size zoom ... [0;32mPASS[0m (all text inputs use fontSize >= 16px)
+55. [PWA]   Modal scroll safety .... [0;32mPASS[0m
+56. [iOS]   Touch target size ...... [0;32mPASS[0m
+57. [PWA]   Horizontal overflow .... [0;32mPASS[0m (overflow-x contained at root level)
+58. [PWA]   Fixed bottom safe-area . [0;32mPASS[0m
+59. [PWA]   Responsive padding ..... [0;32mPASS[0m
+60. [PWA]   Manifest & theme ....... [0;32mPASS[0m
+
+[1mSECTION D: Post-Check Verification[0m
+------------------------------------------
+R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
+
+==========================================
+  [0;32mALL CHECKS PASSED[0m — codebase is clean
+  [0;32mREADY TO PUSH[0m — CodeMagic → TestFlight → App Store
+==========================================
+
+Safety reminder: Do NOT run yarn add/remove.
+To fix ruff format: cd /app/backend && ruff format .
+
+SOC 2 Trust Service Criteria Reference:
+  CC6.1  Logical access security
+  CC7.2  System monitoring & audit
+  CC8.1  Change management
+  A1.2   System availability
+  PI1.1  Privacy (GDPR)
+
+Mobile / PWA / iOS UX Reference:
+  E1-E3  Safe-area insets (viewport, nav, pages)
+  E4     Input zoom prevention (fontSize >= 16px)
+  E5-E6  Modal scroll + touch target sizing
+  E7-E8  Overflow + bottom bar safe-area
+  E9-E10 Responsive padding + PWA manifest (Executed validation script)
+  - 
 
 **Areas that need refactoring**: 
-  - None.
+  -  and  download logic. The current tokenized redirect approach is convoluted and still failing on iOS Safari. Revert to standard HTTP attachment downloads.
 
 **key api endpoints**
-  -  (New)
-  -  (New)
-  -  (Now extended for beneficiary consumption)
+  -  (PDF generation for text messages)
+  -  (Video serving)
+  -  (Temporary token generation)
 
 **Critical Info for New Agent**
-- **DO NOT mutate  in frontend React context.** Scope navigation strictly uses the URL  query param format.
-- If adding any PDF generation, ensure text passes through the custom  utility located in the codebase to prevent  character encoding crashes.
-- Any change to global navigation (Sidebar) MUST be replicated precisely in .
-- Always run the strict Housekeeping suite  and ensure a 60/60 pass rate before task completion.
+- **Housekeeping Suite**: Always run 
+==========================================
+  CarryOn™ Housekeeping Protocol
+  + SOC 2 Compliance Audit
+==========================================
+
+[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
+------------------------------------------
+  [0;36mINFO[0m No fixes needed — already clean
+
+[1mSECTION A: Standard Housekeeping[0m
+------------------------------------------
+1.  Backend ruff check ............ [0;32mPASS[0m
+2.  Backend ruff format ........... [0;32mPASS[0m
+3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
+4.  Frontend build ................ [0;32mPASS[0m
+5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: eb9c37fcc7f5)
+6.  MongoDB _id leak scan ......... [0;32mPASS[0m
+7.  Hardcoded secrets scan ........ [0;32mPASS[0m
+8.  Sensitive console.log scan .... [0;32mPASS[0m
+9.  Deprecated datetime scan ...... [0;32mPASS[0m
+10. Backend health check .......... [0;32mPASS[0m
+11. Unprotected endpoint audit .... [0;32mPASS[0m (47 route files audited)
+
+[1mSECTION B: SOC 2 Compliance Audit[0m
+------------------------------------------
+12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
+13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
+14. [CC6.1] Password hashing ...... [0;32mPASS[0m
+15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
+16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
+17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
+18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
+19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
+20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
+21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
+22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
+23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
+24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
+25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (7 hard deletes — reviewed)
+26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
+27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
+28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
+29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
+30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
+31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
+32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (75 indexes defined)
+33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
+34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
+35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
+36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
+37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
+38. [A1.2]  Mongo projection safety  [0;32mPASS[0m
+
+[1mSECTION C: iOS / App Store Readiness[0m
+------------------------------------------
+39. [iOS]   Capacitor sync ......... [0;32mPASS[0m (11 plugins for iOS)
+40. [iOS]   Native purchases plugin  [0;32mPASS[0m (package.json + Capacitor + Podfile, v^8.1.2)
+41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (37 products, no duplicates)
+42. [iOS]   Stripe gated on iOS .... [0;32mPASS[0m (all Stripe redirects gated behind isNative)
+43. [iOS]   IAP imports present .... [0;32mPASS[0m (iap/useIAPPurchase + native imported in both subscription components)
+44. [iOS]   Apple disclosures ...... [0;32mPASS[0m (auto-renew, 24h cancel, Terms, Privacy, Restore)
+45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
+46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
+47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
+48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 60 JS bundles)
+49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
+50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
+
+[1mSECTION E: Mobile / PWA / iOS UX Compliance[0m
+------------------------------------------
+51. [PWA]   viewport-fit=cover ..... [0;32mPASS[0m
+52. [PWA]   Fixed nav safe-area .... [0;32mPASS[0m
+53. [PWA]   Page safe-area insets .. [0;32mPASS[0m
+54. [iOS]   Input font-size zoom ... [0;32mPASS[0m (all text inputs use fontSize >= 16px)
+55. [PWA]   Modal scroll safety .... [0;32mPASS[0m
+56. [iOS]   Touch target size ...... [0;32mPASS[0m
+57. [PWA]   Horizontal overflow .... [0;32mPASS[0m (overflow-x contained at root level)
+58. [PWA]   Fixed bottom safe-area . [0;32mPASS[0m
+59. [PWA]   Responsive padding ..... [0;32mPASS[0m
+60. [PWA]   Manifest & theme ....... [0;32mPASS[0m
+
+[1mSECTION D: Post-Check Verification[0m
+------------------------------------------
+R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
+
+==========================================
+  [0;32mALL CHECKS PASSED[0m — codebase is clean
+  [0;32mREADY TO PUSH[0m — CodeMagic → TestFlight → App Store
+==========================================
+
+Safety reminder: Do NOT run yarn add/remove.
+To fix ruff format: cd /app/backend && ruff format .
+
+SOC 2 Trust Service Criteria Reference:
+  CC6.1  Logical access security
+  CC7.2  System monitoring & audit
+  CC8.1  Change management
+  A1.2   System availability
+  PI1.1  Privacy (GDPR)
+
+Mobile / PWA / iOS UX Reference:
+  E1-E3  Safe-area insets (viewport, nav, pages)
+  E4     Input zoom prevention (fontSize >= 16px)
+  E5-E6  Modal scroll + touch target sizing
+  E7-E8  Overflow + bottom bar safe-area
+  E9-E10 Responsive padding + PWA manifest and ensure a 60/60 score before calling finish.
+- **iOS Downloads**: Do not use  for blob URLs in the frontend—it results in blank tabs on iOS PWAs. Do not use  for downloads, as the user strictly wants the native iOS Download bottom sheet. Use standard anchor tags or  pointing to an endpoint that sets .
+- **WebM Videos**: If a video is stored in WebM, iOS Safari will refuse to save it to the Photos app. You must ensure the backend converts WebM to MP4 (H.264) using FFmpeg before sending it as an attachment, or properly configure the headers so iOS handles it as a standard file download.
 
 **documents and test reports created in this job**
-  -  (Backend tests: Unified Scoped Admins)
-  -  (Frontend tests: Stacked Portal Navigation)
-  -  (Frontend tests: URL Query Param Navigation Architecture)
-  -  (Backend tests: Milestone Downloads, IAC Export, SDV Designation)
+  - 
   - 
   - 
 
 **Last 10 User Messages and any pending HUMAN messages** 
-1. **User**: Added details for Bulk SDV Beneficiary selector.
-2. **Agent**: Refactored  bug to use URL queries, fixed tab state drops.
-3. **User**: Pressure test this from every direction... Make sure it works.
-4. **Agent**: Ran iteration 37 against 19 paths; 100% passed.
-5. **User**: Requested 3 new features: Download Milestone Messages, Download IAC on Beneficiary side, SDV Beneficiary Selector tiles.
-6. **Agent**: Planned implementation, checked existing document handling/PDF generation flows, requested confirmation.
-7. **User**: Confirmed plan, added detail that Beneficiary Selector must be persistent checkboxes (not a dropdown) defaulting to All.
-8. **Agent**: Built backend  and  endpoints, updated , added UI. Passed iteration 38. Proposed Bulk Designation.
-9. **User**: Sure, implement the bulk designation mode. Then conduct a full housekeeping script and ruff check for vercel.
-10. **Agent**: Added bulk checkbox UI to , wired mass-update handler, ran Housekeeping (60/60) & Ruff. Finished.
+1. **User**: Tapping Save Video should put it in my iPhoto library, right?
+2. **Agent**: Explained Web Share API, MP4 vs WebM, updated frontend to use correct MIME type.
+3. **User**: Initially tapping download for the text file of the MM opened some strange window... WhatsApp. Second time... iOS slide up... Save Video did NOT put it in my iPhoto library.
+4. **Agent**: Replaced  with a direct tokenized backend redirect to bypass blob limitations.
+5. **User**: STILL NOT WORKING!!!! clicking download video MM now opens a new window that looks totally strange... we are going backwards now because I want it to pull up the iOS save tile from the bottom. clicking download text MM gave me a blank white screen. (PENDING ACTION)
 
 **Project Health Check:**
-  - Broken: None
+  - Broken: Milestone Message Downloads on iOS PWA
   - Mocked: None
   - Blocked: Apple IAP, Twilio SMS (Waiting on 3rd party vendor approvals)
 
 **3rd Party Integrations**
-  - Firebase Analytics (Prepared for Android push) — requires User config keys
+  - Firebase Analytics (Android push) — requires User config keys
   - Stripe (Payments) — LIVE/Production Ready (uses User API Key)
   - Twilio SMS — Blocked by Twilio A2P
   - @capgo/native-purchases — Blocked by Apple
@@ -143,13 +457,26 @@ PUT /api/documents/{doc_id}/designate-beneficiariesGET /api/messages/{msg_id}/do
   - YouTube (Iframe Embeds) — dynamically managed via DB 
 
 **Testing status**
-  - Testing agent used after significant changes: YES (, , , )
+  - Testing agent used after significant changes: YES
   - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: None explicitly created by main agent, all tested via test subagent scripts.
-  - Known regressions: None
+  - Test files created: None
+  - Known regressions: iOS Safari/PWA downloading mechanism.
 
 **Credentials to test flow:**
   - App Admin:  / 
+  - Test credentials file: 
 
 **What agent forgot to execute**
-Nothing. The agent successfully addressed complex architectural bugs stemming from React state mutation by shifting to robust URL query parameter-based scoping, completed three major feature sets (Downloads, IAC, SDV Designation), and ensured full adherence to the strict 60/60 compliance checks.</analysis>
+The agent failed to realize that iOS strictly requires MP4 for video saving to Photos, and failed to implement server-side FFmpeg conversion for WebM files. The agent also over-engineered the frontend download logic (,  blobs, tokenized redirects) instead of simply navigating to an endpoint with .
+
+**Debugging checklist for current issue**
+    Issue: Milestone Message Downloads (Video & PDF) failing to trigger native iOS download tile, and video not saving to Photos.
+
+    Frontend files to check: 
+    -  (Search for  and  functions. Refactor to use  to trigger native behavior).
+  
+    Backend files to check:
+    -  (Search for  and . Ensure  is set. Add logic to convert WebM to MP4 using  and  if the stored file is WebM).
+
+    Database to check:
+    -  (to verify stored format of videos).</analysis>

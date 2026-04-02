@@ -37,6 +37,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from '../utils/toast';
+import { platformDownload, downloadFile } from '../utils/downloadFile';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import { Checkbox } from '../components/ui/checkbox';
@@ -498,65 +499,46 @@ const MessagesPage = () => {
     }
   };
 
-  const triggerDownload = async (blobUrl, filename, mimeType, blob) => {
-    // Desktop: standard download
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
   const handleDownload = async (msg) => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
     try {
       const msgType = msg.message_type || 'text';
+      const safeTitle = (msg.title || msgType).replace(/[^a-zA-Z0-9 _-]/g, '').trim() || 'message';
 
       if ((msgType === 'video' && msg.video_url) || (msgType === 'voice' && msg.voice_url)) {
-        if (isIOS) {
-          // iOS: get a download token, then open a direct URL — Safari handles natively
-          const tokenRes = await axios.post(`${API_URL}/messages/${msg.id}/download-token`, {}, getAuthHeaders());
-          const dt = tokenRes.data.token;
-          const mediaId = msgType === 'video' ? msg.video_url : msg.voice_url;
-          const dlUrl = `${API_URL}/messages/video-dl/${mediaId}?dt=${dt}`;
-          // Open in Safari — it will play the video with native controls + share button
-          window.location.href = dlUrl;
-          toast.success('Opening download...');
-          return;
-        }
-        // Desktop: blob download
-        const endpoint = msgType === 'video'
-          ? `${API_URL}/messages/video/${msg.video_url}`
-          : `${API_URL}/messages/voice/${msg.voice_url}`;
-        const res = await axios.get(endpoint, { ...getAuthHeaders(), responseType: 'blob' });
-        const actualType = res.data.type || (msgType === 'video' ? 'video/mp4' : 'audio/mpeg');
-        const ext = actualType.includes('mp4') ? 'mp4' : actualType.includes('mpeg') ? 'mp3' : 'webm';
-        const blob = new Blob([res.data], { type: actualType });
-        const url = URL.createObjectURL(blob);
-        triggerDownload(url, `${(msg.title || msgType).replace(/[^a-zA-Z0-9 _-]/g, '')}.${ext}`, actualType, blob);
+        const isVideo = msgType === 'video';
+        const action = isVideo ? 'message_video' : 'message_voice';
+        const params = isVideo ? { video_id: msg.video_url } : { voice_id: msg.voice_url };
+        const ext = isVideo ? 'mp4' : 'webm';
+        const filename = `${safeTitle}.${ext}`;
+
+        await platformDownload({
+          action,
+          params,
+          filename,
+          onFallback: async () => {
+            const endpoint = isVideo
+              ? `${API_URL}/messages/video/${msg.video_url}`
+              : `${API_URL}/messages/voice/${msg.voice_url}`;
+            const res = await axios.get(endpoint, { ...getAuthHeaders(), responseType: 'blob' });
+            const blob = new Blob([res.data], { type: res.data.type || (isVideo ? 'video/mp4' : 'audio/webm') });
+            await downloadFile(blob, filename);
+          },
+        });
       } else {
         // Text message → PDF
-        if (isIOS) {
-          // iOS: get PDF and open inline in Safari's PDF viewer
-          const res = await axios.get(`${API_URL}/messages/${msg.id}/download`, { ...getAuthHeaders(), responseType: 'blob' });
-          const blob = new Blob([res.data], { type: 'application/pdf' });
-          const url = URL.createObjectURL(blob);
-          const w = window.open('', '_blank');
-          if (w) {
-            w.document.write(`<html><head><title>${msg.title || 'Message'}</title></head><body style="margin:0"><iframe src="${url}" style="width:100%;height:100vh;border:none"></iframe></body></html>`);
-            w.document.close();
-          }
-          toast.success('PDF opened');
-          return;
-        }
-        const res = await axios.get(`${API_URL}/messages/${msg.id}/download`, { ...getAuthHeaders(), responseType: 'blob' });
-        const blob = new Blob([res.data], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        triggerDownload(url, `${(msg.title || 'message').replace(/[^a-zA-Z0-9 _-]/g, '')}.pdf`, 'application/pdf', blob);
+        const filename = `${safeTitle}.pdf`;
+        await platformDownload({
+          action: 'message_pdf',
+          params: { message_id: msg.id },
+          filename,
+          onFallback: async () => {
+            const res = await axios.get(`${API_URL}/messages/${msg.id}/download`, { ...getAuthHeaders(), responseType: 'blob' });
+            const blob = new Blob([res.data], { type: 'application/pdf' });
+            await downloadFile(blob, filename);
+          },
+        });
       }
-      toast.success('Download ready');
+      toast.success('Download started');
     } catch {
       toast.error('Failed to download');
     }

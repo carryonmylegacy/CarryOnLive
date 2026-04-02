@@ -32,7 +32,10 @@ import {
   KeyRound,
   ExternalLink,
   Mail,
+  Download,
+  Printer,
 } from 'lucide-react';
+import { platformDownload } from '../utils/downloadFile';
 
 const STATUS_CONFIG = {
   safe: { label: 'SAFE', color: '#22C993', bg: 'rgba(34,201,147,0.15)', border: 'rgba(34,201,147,0.4)', icon: Check },
@@ -232,6 +235,31 @@ export default function ConnectedProtocolPage() {
       await fetch(`${API_URL}/ccp/plans/${planId}`, { method: 'DELETE', headers });
       await fetchPlans();
     } catch {}
+  };
+
+  const downloadPlan = async (plan) => {
+    try {
+      const safeName = (plan.name || 'plan').replace(/[^a-zA-Z0-9 _-]/g, '').trim() || 'plan';
+      await platformDownload({
+        action: 'ccp_plan',
+        params: { plan_id: plan.id },
+        filename: `CCP_${safeName}.pdf`,
+        onFallback: async () => {
+          const token = localStorage.getItem('carryon_token');
+          // Use the download proxy even on desktop for simplicity
+          const res = await fetch(`${API_URL}/downloads/prepare`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'ccp_plan', params: { plan_id: plan.id }, filename: `CCP_${safeName}.pdf` }),
+          });
+          if (!res.ok) throw new Error('Failed to prepare download');
+          const data = await res.json();
+          window.location.href = `${API_URL}/downloads/${data.token}`;
+        },
+      });
+    } catch {
+      alert('Failed to download plan');
+    }
   };
 
   const fetchHistory = async () => {
@@ -689,11 +717,19 @@ export default function ConnectedProtocolPage() {
               </div>
               {isBenefactor && (
                 <div className="flex gap-1.5">
+                  <button onClick={() => downloadPlan(p)} className="w-8 h-8 rounded-lg flex items-center justify-center" data-testid={`ccp-print-${p.id}`}
+                    title="Download / Print"
+                    style={{ background: 'rgba(34,201,147,0.1)' }}><Printer className="w-4 h-4" style={{ color: '#22C993' }} /></button>
                   <button onClick={() => { setEditPlan(p); fetchAvailableResources(); setView('plan-edit'); }} className="w-8 h-8 rounded-lg flex items-center justify-center" data-testid={`ccp-edit-${p.id}`}
                     style={{ background: 'rgba(255,255,255,0.05)' }}><Edit className="w-4 h-4" style={{ color: '#A0AABF' }} /></button>
                   <button onClick={() => deletePlan(p.id)} className="w-8 h-8 rounded-lg flex items-center justify-center" data-testid={`ccp-delete-${p.id}`}
                     style={{ background: 'rgba(240,82,82,0.1)' }}><Trash2 className="w-4 h-4" style={{ color: '#F05252' }} /></button>
                 </div>
+              )}
+              {!isBenefactor && (
+                <button onClick={() => downloadPlan(p)} className="w-8 h-8 rounded-lg flex items-center justify-center" data-testid={`ccp-print-${p.id}`}
+                  title="Download / Print"
+                  style={{ background: 'rgba(34,201,147,0.1)' }}><Printer className="w-4 h-4" style={{ color: '#22C993' }} /></button>
               )}
             </div>
             {/* Action buttons */}

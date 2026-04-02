@@ -44,6 +44,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Textarea } from '../components/ui/textarea';
 import { toast } from '../utils/toast';
+import { platformDownload } from '../utils/downloadFile';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import DocThumbnail from '../components/DocThumbnail';
@@ -421,69 +422,70 @@ const VaultPage = () => {
   const handleDownload = async (doc, password = null, backupCode = null) => {
     setDownloading(doc.id);
     try {
-      let url = `${API_URL}/documents/${doc.id}/download`;
-      const params = [];
-      if (password) params.push(`password=${encodeURIComponent(password)}`);
-      if (backupCode) params.push(`backup_code=${encodeURIComponent(backupCode)}`);
-      if (params.length > 0) url += `?${params.join('&')}`;
-      
-      const response = await axios.get(url, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('carryon_token')}` },
-        responseType: 'blob'
-      });
-      
-      // Native app: write to filesystem then open share sheet
-      const { Capacitor } = await import('@capacitor/core');
-      if (Capacitor.isNativePlatform()) {
-        try {
-          const { Filesystem, Directory } = await import('@capacitor/filesystem');
-          const { Share } = await import('@capacitor/share');
-          
-          // Convert blob to base64
-          const reader = new FileReader();
-          const base64Data = await new Promise((resolve) => {
-            reader.onloadend = () => resolve(reader.result.split(',')[1]);
-            reader.readAsDataURL(response.data);
+      await platformDownload({
+        action: 'document',
+        params: {
+          document_id: doc.id,
+          ...(password ? { password } : {}),
+          ...(backupCode ? { backup_code: backupCode } : {}),
+        },
+        filename: doc.name || 'document',
+        onFallback: async () => {
+          let url = `${API_URL}/documents/${doc.id}/download`;
+          const params = [];
+          if (password) params.push(`password=${encodeURIComponent(password)}`);
+          if (backupCode) params.push(`backup_code=${encodeURIComponent(backupCode)}`);
+          if (params.length > 0) url += `?${params.join('&')}`;
+
+          const response = await axios.get(url, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('carryon_token')}` },
+            responseType: 'blob'
           });
-          
-          // Write to cache directory
-          const fileName = doc.name || 'document';
-          const result = await Filesystem.writeFile({
-            path: fileName,
-            data: base64Data,
-            directory: Directory.Cache,
-          });
-          
-          // Open native share sheet so user can save/share the file
-          await Share.share({
-            title: doc.name,
-            url: result.uri,
-          });
-        } catch (nativeErr) {
-          // "Share canceled" is normal when user dismisses share sheet after saving — not an error
-          const msg = nativeErr?.message || '';
-          if (!msg.toLowerCase().includes('cancel')) {
-            console.error('Native download fallback:', nativeErr);
-            toast.error('Could not save file. Please try again.');
+
+          // Native app: write to filesystem then open share sheet
+          try {
+            const { Capacitor } = await import('@capacitor/core');
+            if (Capacitor.isNativePlatform()) {
+              const { Filesystem, Directory } = await import('@capacitor/filesystem');
+              const { Share } = await import('@capacitor/share');
+              const reader = new FileReader();
+              const base64Data = await new Promise((resolve) => {
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.readAsDataURL(response.data);
+              });
+              const fileName = doc.name || 'document';
+              const result = await Filesystem.writeFile({
+                path: fileName,
+                data: base64Data,
+                directory: Directory.Cache,
+              });
+              await Share.share({ title: doc.name, url: result.uri });
+              return;
+            }
+          } catch (nativeErr) {
+            const msg = nativeErr?.message || '';
+            if (!msg.toLowerCase().includes('cancel')) {
+              console.error('Native download fallback:', nativeErr);
+              toast.error('Could not save file. Please try again.');
+            }
+            return;
           }
-        }
-        setDownloading(null);
-      } else {
-        // Web/PWA: standard blob download
-        const blob = new Blob([response.data], { type: doc.file_type });
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = doc.name;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(downloadUrl);
-      }
+
+          // Web/PWA: standard blob download
+          const blob = new Blob([response.data], { type: doc.file_type });
+          const downloadUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = doc.name;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(downloadUrl);
+        },
+      });
     } catch (error) {
       console.error('Download error:', error);
       if (error.response?.status === 401) {
-        // Need to unlock first
         setSelectedDoc(doc);
         setShowLockModal(true);
       } else {
