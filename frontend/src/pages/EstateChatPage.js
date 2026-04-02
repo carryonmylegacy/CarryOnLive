@@ -287,20 +287,13 @@ export default function EstateChatPage() {
   const voiceRecorder = useVoiceRecorder();
   const [inputFocused, setInputFocused] = useState(false);
 
-  // ── Hide bottom nav + lock html/body scroll when in ECT ──
+  // ── Hide bottom nav when in ECT ──
   useEffect(() => {
     document.body.classList.add('ect-active');
-    const de = document.documentElement;
-    de.style.overflow = 'hidden';
-    de.style.height = '100%';
-    return () => {
-      document.body.classList.remove('ect-active');
-      de.style.overflow = '';
-      de.style.height = '';
-    };
+    return () => document.body.classList.remove('ect-active');
   }, []);
 
-  // ── iOS PWA: resize #ect-root ONLY when keyboard is open ──
+  // ── iOS PWA: resize #ect-root ONLY when keyboard is open + prevent scroll ──
   useEffect(() => {
     if (loading) return;
     const root = document.getElementById('ect-root');
@@ -312,18 +305,25 @@ export default function EstateChatPage() {
       const kbOpen = vv.height < window.innerHeight * 0.8;
       if (kbOpen) {
         root.style.height = `${vv.height}px`;
+        root.style.bottom = 'auto';
         resized = true;
       } else if (resized) {
         root.style.height = '';
+        root.style.bottom = '0';
         resized = false;
       }
+      if (window.scrollY !== 0) window.scrollTo(0, 0);
     };
+    const onScroll = () => { if (window.scrollY !== 0) window.scrollTo(0, 0); };
     vv.addEventListener('resize', sync);
+    window.addEventListener('scroll', onScroll);
     const poll = setInterval(sync, 120);
     return () => {
       vv.removeEventListener('resize', sync);
+      window.removeEventListener('scroll', onScroll);
       clearInterval(poll);
       root.style.height = '';
+      root.style.bottom = '0';
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1158,13 +1158,14 @@ export default function EstateChatPage() {
   );
 
   return (
+    <>
     <div id="ect-root" data-testid="estate-chat-page" className="flex flex-col" style={{
       background: 'var(--bg)',
       position: 'fixed',
       top: 0,
       left: 0,
       right: 0,
-      height: '100%',
+      bottom: 0,
       zIndex: 45,
       overflow: 'hidden',
     }}>
@@ -1188,44 +1189,45 @@ export default function EstateChatPage() {
       <div className="flex lg:hidden flex-1 min-h-0">
         {showChannelList && !activeChannel ? channelPanel : messageArea}
       </div>
-      {newChatModal}
-      {/* Security Intro Glass Panel */}
-      {showSecurityIntro && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 overflow-y-auto" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)' }}>
-          <div className="w-full max-w-md rounded-2xl p-6" data-testid="ect-security-intro" style={{ background: 'rgba(15,22,41,0.95)', border: '1px solid rgba(212,175,55,0.3)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
-            <div className="text-center mb-5">
-              <Shield className="w-12 h-12 mx-auto mb-3" style={{ color: '#d4af37' }} />
-              <h2 className="text-xl font-bold" style={{ color: '#F1F3F8' }}>The Most Private Chat You'll Ever Use</h2>
-              <p className="text-sm mt-2" style={{ color: '#A0AABF' }}>Estate Comms isn't like other messaging apps. Here's why.</p>
-            </div>
-            <div className="space-y-3 mb-6">
-              {[
-                { icon: Lock, title: 'Closed Network', desc: 'No strangers can ever find you. Only people explicitly connected to your estate can message you.' },
-                { icon: Shield, title: 'No Phone Number Needed', desc: 'Your phone number is never exposed. No contact list scanning. No profile discovery by outsiders.' },
-                { icon: Users, title: 'Owner-Controlled Access', desc: 'The estate benefactor controls who is in and who is out. No one can add themselves.' },
-                { icon: X, title: 'Zero Data Mining', desc: 'No ads. No tracking. No metadata sold to third parties. Your conversations exist for your family.' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <item.icon className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#d4af37' }} />
-                  <div>
-                    <div className="text-sm font-bold" style={{ color: '#F1F3F8' }}>{item.title}</div>
-                    <div className="text-xs mt-0.5" style={{ color: '#7B879E' }}>{item.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-center mb-4" style={{ color: '#525C72' }}>
-              The most private messaging system isn't the one with the strongest lock — it's the one where strangers can never find the door.
-            </p>
-            <button
-              onClick={() => { setShowSecurityIntro(false); localStorage.setItem('ect_security_seen', '1'); }}
-              className="w-full py-3 rounded-xl text-base font-bold transition-all active:scale-[0.97]"
-              data-testid="ect-security-dismiss"
-              style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}
-            >I Understand — Start Chatting</button>
-          </div>
-        </div>
-      )}
     </div>
+    {newChatModal}
+    {/* Security Intro Glass Panel */}
+    {showSecurityIntro && (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 overflow-y-auto" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)' }}>
+        <div className="w-full max-w-md rounded-2xl p-6" data-testid="ect-security-intro" style={{ background: 'rgba(15,22,41,0.95)', border: '1px solid rgba(212,175,55,0.3)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
+          <div className="text-center mb-5">
+            <Shield className="w-12 h-12 mx-auto mb-3" style={{ color: '#d4af37' }} />
+            <h2 className="text-xl font-bold" style={{ color: '#F1F3F8' }}>The Most Private Chat You'll Ever Use</h2>
+            <p className="text-sm mt-2" style={{ color: '#A0AABF' }}>Estate Comms isn't like other messaging apps. Here's why.</p>
+          </div>
+          <div className="space-y-3 mb-6">
+            {[
+              { icon: Lock, title: 'Closed Network', desc: 'No strangers can ever find you. Only people explicitly connected to your estate can message you.' },
+              { icon: Shield, title: 'No Phone Number Needed', desc: 'Your phone number is never exposed. No contact list scanning. No profile discovery by outsiders.' },
+              { icon: Users, title: 'Owner-Controlled Access', desc: 'The estate benefactor controls who is in and who is out. No one can add themselves.' },
+              { icon: X, title: 'Zero Data Mining', desc: 'No ads. No tracking. No metadata sold to third parties. Your conversations exist for your family.' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <item.icon className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#d4af37' }} />
+                <div>
+                  <div className="text-sm font-bold" style={{ color: '#F1F3F8' }}>{item.title}</div>
+                  <div className="text-xs mt-0.5" style={{ color: '#7B879E' }}>{item.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-center mb-4" style={{ color: '#525C72' }}>
+            The most private messaging system isn't the one with the strongest lock — it's the one where strangers can never find the door.
+          </p>
+          <button
+            onClick={() => { setShowSecurityIntro(false); localStorage.setItem('ect_security_seen', '1'); }}
+            className="w-full py-3 rounded-xl text-base font-bold transition-all active:scale-[0.97]"
+            data-testid="ect-security-dismiss"
+            style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}
+          >I Understand — Start Chatting</button>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

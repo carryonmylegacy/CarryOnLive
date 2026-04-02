@@ -1252,12 +1252,6 @@ body.ect-active .dashboard-content-area {
   padding-bottom: 0 !important;
   margin-bottom: 0 !important;
 }
-/* Lock body scroll so iOS keyboard cannot push the page up */
-body.ect-active {
-  overflow: hidden !important;
-  height: 100% !important;
-  overscroll-behavior: none !important;
-}
 
 
 /* ── iOS button highlight fix ────────────────────────────── */
