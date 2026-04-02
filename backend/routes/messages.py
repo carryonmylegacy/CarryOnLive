@@ -10,7 +10,7 @@ import base64
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query as QueryParam, Response, UploadFile
 
 from config import db, logger
 from guards import require_benefactor_role
@@ -27,6 +27,44 @@ from services.storage import storage
 from utils import get_current_user, log_activity, update_estate_readiness
 
 router = APIRouter()
+
+# Temporary download tokens (in-memory, short-lived)
+_download_tokens: dict[str, dict] = {}
+
+
+@router.post("/messages/{message_id}/download-token")
+async def create_download_token(message_id: str, current_user: dict = Depends(get_current_user)):
+    """Create a short-lived token for direct browser downloads (iOS Safari)."""
+    msg = await db.messages.find_one(
+        {"id": message_id}, {"_id": 0, "id": 1, "estate_id": 1, "video_url": 1, "voice_url": 1}
+    )
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    estate = await db.estates.find_one({"id": msg["estate_id"]}, {"_id": 0, "id": 1, "owner_id": 1, "beneficiaries": 1})
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
+    is_owner = estate["owner_id"] == current_user["id"]
+    is_ben = current_user["id"] in estate.get("beneficiaries", [])
+    is_admin = current_user["role"] in ("admin", "operator")
+    if not (is_owner or is_ben or is_admin):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    token = str(uuid.uuid4())
+    _download_tokens[token] = {
+        "message_id": message_id,
+        "user_id": current_user["id"],
+        "created_at": datetime.now(timezone.utc),
+        "video_url": msg.get("video_url"),
+        "voice_url": msg.get("voice_url"),
+        "estate_id": msg["estate_id"],
+    }
+    # Clean up old tokens (older than 5 minutes)
+    cutoff = datetime.now(timezone.utc).timestamp() - 300
+    expired = [k for k, v in _download_tokens.items() if v["created_at"].timestamp() < cutoff]
+    for k in expired:
+        del _download_tokens[k]
+
+    return {"token": token}
 
 
 # ===================== HELPERS =====================
@@ -181,6 +219,49 @@ async def get_message_video(video_id: str, current_user: dict = Depends(get_curr
     except Exception as e:
         logger.error(f"Video decode error: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve video")
+
+
+@router.get("/messages/video-dl/{video_id}")
+async def download_video_direct(video_id: str, dt: str = QueryParam(...)):
+    """Direct video download using a short-lived download token.
+    Used by iOS Safari to enable native 'Save Video' to Photos."""
+    token_data = _download_tokens.pop(dt, None)
+    if not token_data:
+        raise HTTPException(status_code=401, detail="Invalid or expired download token")
+    if token_data.get("video_url") != video_id:
+        raise HTTPException(status_code=403, detail="Token does not match video")
+
+    estate_id = token_data["estate_id"]
+    video_storage_key = f"estates/{estate_id}/{video_id}"
+    try:
+        encrypted_blob = await storage.download(video_storage_key)
+        estate_salt = await get_estate_salt(estate_id)
+        decrypted = decrypt_aes256(encrypted_blob.decode("ascii"), estate_salt)
+    except FileNotFoundError:
+        # Try legacy MongoDB storage
+        video = await db.video_storage.find_one({"id": video_id}, {"_id": 0})
+        if not video:
+            raise HTTPException(status_code=404, detail="Video not found")
+        try:
+            decrypted = base64.b64decode(video["data"])
+        except Exception:
+            raise HTTPException(status_code=500, detail="Failed to retrieve video")
+
+    video_mime = (
+        "video/mp4"
+        if decrypted[:4] in (b"\x00\x00\x00\x18", b"\x00\x00\x00\x1c", b"\x00\x00\x00 ", b"\x00\x00\x00\x14")
+        or b"ftyp" in decrypted[:12]
+        else "video/webm"
+    )
+    video_ext = "mp4" if video_mime == "video/mp4" else "webm"
+    return Response(
+        content=decrypted,
+        media_type=video_mime,
+        headers={
+            "Content-Disposition": f'attachment; filename="milestone-video.{video_ext}"',
+            "Cache-Control": "no-store",
+        },
+    )
 
 
 @router.get("/messages/voice/{voice_id}")

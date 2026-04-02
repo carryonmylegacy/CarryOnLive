@@ -499,41 +499,6 @@ const MessagesPage = () => {
   };
 
   const triggerDownload = async (blobUrl, filename, mimeType, blob) => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const isVideo = mimeType && mimeType.startsWith('video/');
-    const isPDF = mimeType === 'application/pdf';
-
-    if (isIOS) {
-      if (isVideo && navigator.share && navigator.canShare) {
-        // Video on iOS: use share sheet — shows "Save Video" for MP4
-        try {
-          const file = new File([blob], filename, { type: mimeType, lastModified: Date.now() });
-          if (navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file] });
-            return;
-          }
-        } catch (err) {
-          if (err.name === 'AbortError') return;
-        }
-      }
-      // PDF or fallback: open inline — Safari shows native PDF viewer / video player
-      // with its own share/download button
-      const w = window.open('', '_blank');
-      if (w) {
-        w.document.write(`<html><head><title>${filename}</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh">`);
-        if (isPDF) {
-          w.document.write(`<iframe src="${blobUrl}" style="width:100%;height:100vh;border:none"></iframe>`);
-        } else if (isVideo) {
-          w.document.write(`<video src="${blobUrl}" controls playsinline autoplay style="max-width:100%;max-height:100vh"></video>`);
-        } else {
-          w.document.write(`<iframe src="${blobUrl}" style="width:100%;height:100vh;border:none"></iframe>`);
-        }
-        w.document.write('</body></html>');
-        w.document.close();
-      }
-      return;
-    }
-
     // Desktop: standard download
     const a = document.createElement('a');
     a.href = blobUrl;
@@ -544,35 +509,52 @@ const MessagesPage = () => {
   };
 
   const handleDownload = async (msg) => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
     try {
       const msgType = msg.message_type || 'text';
-      if (msgType === 'video' && msg.video_url) {
-        const res = await axios.get(`${API_URL}/messages/video/${msg.video_url}`, {
-          ...getAuthHeaders(), responseType: 'blob',
-        });
-        const actualType = res.data.type || 'video/mp4';
-        const ext = actualType.includes('mp4') ? 'mp4' : 'webm';
+
+      if ((msgType === 'video' && msg.video_url) || (msgType === 'voice' && msg.voice_url)) {
+        if (isIOS) {
+          // iOS: get a download token, then open a direct URL — Safari handles natively
+          const tokenRes = await axios.post(`${API_URL}/messages/${msg.id}/download-token`, {}, getAuthHeaders());
+          const dt = tokenRes.data.token;
+          const mediaId = msgType === 'video' ? msg.video_url : msg.voice_url;
+          const dlUrl = `${API_URL}/messages/video-dl/${mediaId}?dt=${dt}`;
+          // Open in Safari — it will play the video with native controls + share button
+          window.location.href = dlUrl;
+          toast.success('Opening download...');
+          return;
+        }
+        // Desktop: blob download
+        const endpoint = msgType === 'video'
+          ? `${API_URL}/messages/video/${msg.video_url}`
+          : `${API_URL}/messages/voice/${msg.voice_url}`;
+        const res = await axios.get(endpoint, { ...getAuthHeaders(), responseType: 'blob' });
+        const actualType = res.data.type || (msgType === 'video' ? 'video/mp4' : 'audio/mpeg');
+        const ext = actualType.includes('mp4') ? 'mp4' : actualType.includes('mpeg') ? 'mp3' : 'webm';
         const blob = new Blob([res.data], { type: actualType });
         const url = URL.createObjectURL(blob);
-        const safeName = `${(msg.title || 'video').replace(/[^a-zA-Z0-9 _-]/g, '')}.${ext}`;
-        await triggerDownload(url, safeName, actualType, blob);
-      } else if (msgType === 'voice' && msg.voice_url) {
-        const res = await axios.get(`${API_URL}/messages/voice/${msg.voice_url}`, {
-          ...getAuthHeaders(), responseType: 'blob',
-        });
-        const actualType = res.data.type || 'audio/mpeg';
-        const blob = new Blob([res.data], { type: actualType });
-        const url = URL.createObjectURL(blob);
-        const safeName = `${(msg.title || 'voice').replace(/[^a-zA-Z0-9 _-]/g, '')}.mp3`;
-        await triggerDownload(url, safeName, actualType, blob);
+        triggerDownload(url, `${(msg.title || msgType).replace(/[^a-zA-Z0-9 _-]/g, '')}.${ext}`, actualType, blob);
       } else {
-        const res = await axios.get(`${API_URL}/messages/${msg.id}/download`, {
-          ...getAuthHeaders(), responseType: 'blob',
-        });
+        // Text message → PDF
+        if (isIOS) {
+          // iOS: get PDF and open inline in Safari's PDF viewer
+          const res = await axios.get(`${API_URL}/messages/${msg.id}/download`, { ...getAuthHeaders(), responseType: 'blob' });
+          const blob = new Blob([res.data], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          const w = window.open('', '_blank');
+          if (w) {
+            w.document.write(`<html><head><title>${msg.title || 'Message'}</title></head><body style="margin:0"><iframe src="${url}" style="width:100%;height:100vh;border:none"></iframe></body></html>`);
+            w.document.close();
+          }
+          toast.success('PDF opened');
+          return;
+        }
+        const res = await axios.get(`${API_URL}/messages/${msg.id}/download`, { ...getAuthHeaders(), responseType: 'blob' });
         const blob = new Blob([res.data], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
-        const safeName = `${(msg.title || 'message').replace(/[^a-zA-Z0-9 _-]/g, '')}.pdf`;
-        await triggerDownload(url, safeName, 'application/pdf', blob);
+        triggerDownload(url, `${(msg.title || 'message').replace(/[^a-zA-Z0-9 _-]/g, '')}.pdf`, 'application/pdf', blob);
       }
       toast.success('Download ready');
     } catch {
