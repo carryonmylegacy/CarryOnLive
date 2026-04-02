@@ -192,7 +192,6 @@ async def get_pre_transition_documents(estate_id: str, current_user: dict = Depe
     return result
 
 
-
 @router.post("/documents/upload")
 async def upload_document(
     estate_id: str,

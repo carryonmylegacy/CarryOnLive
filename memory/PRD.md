@@ -36,6 +36,51 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (April 2, 2026 — SDV + ECT UX Overhaul)
+
+**SDV Beneficiary Selector Redesign**
+- Replaced bland checkbox list with polished avatar-button cards for each beneficiary
+- Each card shows profile photo (or initials), name, and relation with highlight on selection
+- Added Pre-Transition / Post-Transition visibility toggles per beneficiary
+- Backend: `PUT /api/documents/{doc_id}/designate-beneficiaries` now accepts `visibility_timing` dict ({ben_id: {pre: bool, post: bool}})
+- Backend: New `GET /api/documents/{estate_id}/pre-transition` endpoint returns docs visible to a beneficiary pre-transition (emergency docs + docs with pre=true in visibility_timing)
+- "Select All" card with Users icon and gold highlight
+
+**ECT Full-Screen Overhaul**
+- ECT now renders as full-screen overlay (position:fixed, z-index:45) covering the entire viewport
+- Bottom navigation bar hidden when ECT is active (via body.ect-active CSS class)
+- Back arrow in ECT header navigates to previous page
+- iMessage Liquid Glass-style input bar: backdrop-blur(20px), elevated shadow, sits at bottom with safe-area padding
+- Correct height calculation — no more clipped headers or wasted space
+- All modals (new chat, security intro) work within the full-screen layout
+
+**Voice Message Recording**
+- Microphone button in ECT input bar (replaces send button when input is empty)
+- Tap to start recording — shows recording indicator with duration timer, cancel button
+- Tap send to stop recording and send as voice message
+- Backend: ALLOWED_FILE_TYPES expanded to include audio/webm, audio/ogg, audio/mp4, audio/mpeg, audio/wav, audio/x-m4a, video/webm
+- Backend: message_type "voice" detected for audio uploads
+- Inline VoiceMessagePlayer component with play/pause, progress bar, duration display
+
+**ECT Attachment Auth Fix**
+- Images and files in ECT now load via authenticated fetch() with blob URLs
+- AuthImage component: fetches image with Bearer token, renders blob URL
+- AuthFileLink component: authenticated download via fetch + createObjectURL
+- No more "Not authenticated" error when clicking attachments
+
+**Beneficiary Pre-Transition Document Access**
+- PreTransitionPage shows "View Additional Documents" button when benefactor has shared pre-transition docs
+- BeneficiaryVaultPage uses new `/api/documents/{estateId}/pre-transition` endpoint
+- Pre-transition docs include emergency categories (POA, Living Will) + any doc with visibility_timing.pre=true
+
+**Font Size & Accessibility**
+- Minimum font size CSS enforcement for mobile: font-size: max(12px, inherit)
+- PRD rule: No interactive/content font below 12px for 40+ demographic
+- Permissions-Policy updated to allow camera=(self) and microphone=(self)
+
+### Completed (April 1, 2026 — Logo Refinement)
+- Logo `carryon-logo.png` pixel-perfected: cleared "a" bowl transparency, removed stray dots, applied color decontamination to dark fringes
+
 ### Completed (April 1, 2026 — CCP Phase 2 + FFN Chat Integration)
 
 **CCP Phase 2: Linked SDV/FFN/DAV Access from Active Emergency**
@@ -86,7 +131,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - Frontend: `ConnectedProtocolPage.js` with crisis-friendly big bubble buttons (80px+ touch targets), color-coded status indicators
 - DB collections: `emergency_plans`, `emergency_activations`, `member_checkins` with indexes
 - Added to both benefactor and beneficiary sidebar/mobile nav as "Contingency Protocols (CCP)"
-- iOS compliance: All font sizes >= 11px, proper touch targets
+- iOS compliance: All font sizes >= 12px (40+ demographic — glasses!), proper touch targets
 - Housekeeping: 60/60 PASS, Ruff clean
 
 **Push Notifications + Notification Preferences**
@@ -145,13 +190,13 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 **SDV Beneficiary Designation**
 - New `PUT /api/documents/{id}/designate-beneficiaries` endpoint
-- Accepts `{ beneficiary_ids: ["all"] }` (default) or specific beneficiary IDs
-- `designated_beneficiaries` field stored on each document
-- Expandable checkbox list UI on each vault tile
-- Shows "Select All" + individual beneficiary checkboxes
+- Accepts `{ beneficiary_ids: ["all"], visibility_timing: {ben_id: {pre: bool, post: bool}} }` (default: post-only)
+- `designated_beneficiaries` and `visibility_timing` fields stored on each document
+- Avatar-button card UI on each vault tile with profile photos/initials
+- Shows "Select All" + individual beneficiary cards with Pre/Post-Transition toggles
 - "All beneficiaries" vs "X of Y beneficiaries" summary label
 - Beneficiary list fetched alongside documents on VaultPage load
-- Test report: `iteration_38.json` — 11/11 passed (100%)
+- Test report: `iteration_38.json` — 11/11 passed (100%), `iteration_42.json` — 100% passed
 
 
 
