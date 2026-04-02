@@ -36,6 +36,9 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (April 2, 2026 — Railway Build Fix)
+- Added `--extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/` to `requirements.txt` line 1 so Railway's pip can find `emergentintegrations==0.1.0` from Emergent's private PyPI index
+
 ### Completed (April 2, 2026 — iOS Downloads Fix v3 — ROOT CAUSE FOUND)
 
 **Root Cause**: `insert_text` tool broke `execute_download` function by inserting diagnostic code IN THE MIDDLE of its body → function returned `null` for ALL downloads → blank screens & corrupt files.
