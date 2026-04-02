@@ -30,6 +30,7 @@ import {
   Square,
   Play,
   Pause,
+  CheckSquare2,
 } from 'lucide-react';
 import { platformDownload } from '../utils/downloadFile';
 
@@ -291,6 +292,10 @@ export default function EstateChatPage() {
   const [inputFocused, setInputFocused] = useState(false);
   const [swipedChannel, setSwipedChannel] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedChannels, setSelectedChannels] = useState(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const touchStartRef = useRef({ x: 0, y: 0 });
 
   // ── Hide bottom nav when in ECT ──
@@ -330,8 +335,15 @@ export default function EstateChatPage() {
 
     let lastBottom = 0;
     let lastTransform = 0;
+    let rafId = 0;
 
     const sync = () => {
+      // Batch into a single rAF to avoid multiple paints per frame
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(syncImpl);
+    };
+
+    const syncImpl = () => {
       // Skip keyboard handling when on channel list (no active chat)
       if (!activeChannelRef.current) {
         if (kbOpen) resetStyles();
@@ -348,7 +360,7 @@ export default function EstateChatPage() {
         if (kbOpen) {
           // Shrink root from bottom to stay above keyboard
           const kbHeight = window.innerHeight - vv.height;
-          root.style.transition = 'bottom 0.2s ease-out, transform 0.2s ease-out';
+          root.style.transition = 'bottom 0.25s ease-out, transform 0.25s ease-out';
           root.style.bottom = `${kbHeight}px`;
           lastBottom = kbHeight;
         } else {
@@ -357,16 +369,16 @@ export default function EstateChatPage() {
           lastTransform = 0;
         }
       } else if (kbOpen) {
-        // Update keyboard height only if change > 5px (ignore micro-jitter)
+        // Update keyboard height only if change > 10px (ignore micro-jitter)
         const kbHeight = window.innerHeight - vv.height;
-        if (Math.abs(kbHeight - lastBottom) > 5) {
+        if (Math.abs(kbHeight - lastBottom) > 10) {
           root.style.bottom = `${kbHeight}px`;
           lastBottom = kbHeight;
         }
       }
       // Compensate for iOS page scroll while keyboard is open
       if (kbOpen && window.scrollY > 0) {
-        if (Math.abs(window.scrollY - lastTransform) > 2) {
+        if (Math.abs(window.scrollY - lastTransform) > 3) {
           root.style.transform = `translateY(${window.scrollY}px)`;
           lastTransform = window.scrollY;
         }
@@ -393,7 +405,7 @@ export default function EstateChatPage() {
     // not fire for that scroll. This eliminates the "wiggle to fix" issue.
     const handleWindowScroll = () => {
       if (kbOpen && activeChannelRef.current && window.scrollY > 0) {
-        if (Math.abs(window.scrollY - lastTransform) > 2) {
+        if (Math.abs(window.scrollY - lastTransform) > 3) {
           root.style.transform = `translateY(${window.scrollY}px)`;
           lastTransform = window.scrollY;
         }
@@ -405,6 +417,7 @@ export default function EstateChatPage() {
     window.addEventListener('scroll', handleWindowScroll, { passive: true });
     root.addEventListener('focusout', handleFocusOut);
     return () => {
+      cancelAnimationFrame(rafId);
       vv.removeEventListener('resize', sync);
       vv.removeEventListener('scroll', sync);
       window.removeEventListener('scroll', handleWindowScroll);
@@ -671,6 +684,57 @@ export default function EstateChatPage() {
     }
   };
 
+  const bulkDeleteChannels = async () => {
+    if (selectedChannels.size === 0) return;
+    setBulkDeleting(true);
+    try {
+      const res = await fetch(`${API_URL}/estate-chat/channels/batch-delete`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ channel_ids: Array.from(selectedChannels) }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        setChannels(prev => prev.filter(c => !result.deleted.includes(c.id)));
+        toast.success(`Deleted ${result.deleted.length} conversation${result.deleted.length !== 1 ? 's' : ''}`);
+        if (result.failed.length > 0) {
+          toast.error(`${result.failed.length} could not be deleted`);
+        }
+      } else {
+        toast.error('Failed to delete conversations');
+      }
+    } catch {
+      toast.error('Connection error — try again');
+    } finally {
+      setBulkDeleting(false);
+      setBulkDeleteConfirm(false);
+      setSelectMode(false);
+      setSelectedChannels(new Set());
+    }
+  };
+
+  const toggleChannelSelection = (chId) => {
+    setSelectedChannels(prev => {
+      const next = new Set(prev);
+      if (next.has(chId)) next.delete(chId);
+      else next.add(chId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedChannels.size === channels.length) {
+      setSelectedChannels(new Set());
+    } else {
+      setSelectedChannels(new Set(channels.map(c => c.id)));
+    }
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelectedChannels(new Set());
+  };
+
   const toggleMember = (id) => {
     setSelectedMembers(prev =>
       prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
@@ -860,33 +924,89 @@ export default function EstateChatPage() {
       {/* ECT-own header */}
       <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="w-9 h-9 rounded-full flex items-center justify-center"
-            data-testid="ect-back-nav"
-            style={{ background: 'rgba(255,255,255,0.06)' }}
-          >
-            <ArrowLeft className="w-4 h-4" style={{ color: '#A0AABF' }} />
-          </button>
-          <h2 className="text-lg font-bold" style={{ color: '#F1F3F8' }}>Estate Comms</h2>
+          {selectMode ? (
+            <button
+              onClick={exitSelectMode}
+              className="w-9 h-9 rounded-full flex items-center justify-center"
+              data-testid="ect-select-cancel"
+              style={{ background: 'rgba(255,255,255,0.06)' }}
+            >
+              <X className="w-4 h-4" style={{ color: '#A0AABF' }} />
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate(-1)}
+              className="w-9 h-9 rounded-full flex items-center justify-center"
+              data-testid="ect-back-nav"
+              style={{ background: 'rgba(255,255,255,0.06)' }}
+            >
+              <ArrowLeft className="w-4 h-4" style={{ color: '#A0AABF' }} />
+            </button>
+          )}
+          <h2 className="text-lg font-bold" style={{ color: '#F1F3F8' }}>
+            {selectMode ? `${selectedChannels.size} Selected` : 'Estate Comms'}
+          </h2>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={() => setShowSearch(!showSearch)}
-            className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105"
-            data-testid="ect-search-btn"
-            style={{ background: showSearch ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.06)' }}
-          >
-            <Search className="w-5 h-5" style={{ color: showSearch ? '#d4af37' : '#7B879E' }} />
-          </button>
-          <button
-            onClick={() => setShowNewChat(true)}
-            className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105"
-            data-testid="ect-new-chat-btn"
-            style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}
-          >
-            <Plus className="w-5 h-5" style={{ color: '#080e1a' }} />
-          </button>
+          {selectMode ? (
+            <>
+              <button
+                onClick={toggleSelectAll}
+                className="h-10 px-3 rounded-full flex items-center justify-center gap-1.5 transition-all"
+                data-testid="ect-select-all-btn"
+                style={{
+                  background: selectedChannels.size === channels.length ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.06)',
+                  border: `1px solid ${selectedChannels.size === channels.length ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                }}
+              >
+                <span className="text-xs font-semibold" style={{ color: selectedChannels.size === channels.length ? '#d4af37' : '#7B879E' }}>
+                  {selectedChannels.size === channels.length ? 'Deselect All' : 'Select All'}
+                </span>
+              </button>
+              <button
+                onClick={() => { if (selectedChannels.size > 0) setBulkDeleteConfirm(true); }}
+                disabled={selectedChannels.size === 0}
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-all"
+                data-testid="ect-bulk-delete-btn"
+                style={{
+                  background: selectedChannels.size > 0 ? 'rgba(220,38,38,0.15)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${selectedChannels.size > 0 ? 'rgba(220,38,38,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                  cursor: selectedChannels.size > 0 ? 'pointer' : 'not-allowed',
+                }}
+              >
+                <Trash2 className="w-5 h-5" style={{ color: selectedChannels.size > 0 ? '#dc2626' : '#525C72' }} />
+              </button>
+            </>
+          ) : (
+            <>
+              {channels.length > 0 && (
+                <button
+                  onClick={() => { setSelectMode(true); setSwipedChannel(null); }}
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105"
+                  data-testid="ect-select-mode-btn"
+                  style={{ background: 'rgba(255,255,255,0.06)' }}
+                >
+                  <CheckSquare2 className="w-5 h-5" style={{ color: '#7B879E' }} />
+                </button>
+              )}
+              <button
+                onClick={() => setShowSearch(!showSearch)}
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105"
+                data-testid="ect-search-btn"
+                style={{ background: showSearch ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.06)' }}
+              >
+                <Search className="w-5 h-5" style={{ color: showSearch ? '#d4af37' : '#7B879E' }} />
+              </button>
+              <button
+                onClick={() => setShowNewChat(true)}
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105"
+                data-testid="ect-new-chat-btn"
+                style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}
+              >
+                <Plus className="w-5 h-5" style={{ color: '#080e1a' }} />
+              </button>
+            </>
+          )}
         </div>
       </div>
       {showSearch && (
@@ -966,10 +1086,11 @@ export default function EstateChatPage() {
               <div
                 key={ch.id}
                 className="relative overflow-hidden rounded-xl mb-1"
-                onTouchStart={(e) => handleTouchStart(e, ch.id)}
-                onTouchEnd={(e) => handleTouchEnd(e, ch.id)}
+                onTouchStart={(e) => !selectMode && handleTouchStart(e, ch.id)}
+                onTouchEnd={(e) => !selectMode && handleTouchEnd(e, ch.id)}
               >
-                {/* Delete action (behind the card) */}
+                {/* Delete action (behind the card) — hidden in select mode */}
+                {!selectMode && (
                 <div className="absolute inset-y-0 right-0 flex items-center" style={{
                   width: '72px',
                   background: '#dc2626',
@@ -986,19 +1107,45 @@ export default function EstateChatPage() {
                     <Trash2 className="w-5 h-5" style={{ color: '#fff' }} />
                   </button>
                 </div>
+                )}
                 {/* Channel card */}
                 <button
-                  onClick={() => { if (swipedChannel === ch.id) { setSwipedChannel(null); } else { openChannel(ch); } }}
+                  onClick={() => {
+                    if (selectMode) {
+                      toggleChannelSelection(ch.id);
+                    } else if (swipedChannel === ch.id) {
+                      setSwipedChannel(null);
+                    } else {
+                      openChannel(ch);
+                    }
+                  }}
                   className="w-full flex items-center gap-3 p-3 transition-transform text-left relative"
                   data-testid={`ect-channel-${ch.id}`}
                   style={{
-                    background: activeChannel?.id === ch.id ? 'rgba(212,175,55,0.1)' : 'var(--bg, #0B1120)',
-                    border: activeChannel?.id === ch.id ? '1px solid rgba(212,175,55,0.2)' : '1px solid transparent',
+                    background: selectMode && selectedChannels.has(ch.id)
+                      ? 'rgba(220,38,38,0.08)'
+                      : activeChannel?.id === ch.id
+                        ? 'rgba(212,175,55,0.1)'
+                        : 'var(--bg, #0B1120)',
+                    border: selectMode && selectedChannels.has(ch.id)
+                      ? '1px solid rgba(220,38,38,0.25)'
+                      : activeChannel?.id === ch.id
+                        ? '1px solid rgba(212,175,55,0.2)'
+                        : '1px solid transparent',
                     borderRadius: '12px',
-                    transform: swipedChannel === ch.id ? 'translateX(-72px)' : 'translateX(0)',
+                    transform: !selectMode && swipedChannel === ch.id ? 'translateX(-72px)' : 'translateX(0)',
                     transition: 'transform 0.2s ease',
                   }}
                 >
+                {/* Selection checkbox */}
+                {selectMode && (
+                  <div className="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center transition-all" style={{
+                    background: selectedChannels.has(ch.id) ? '#dc2626' : 'rgba(255,255,255,0.06)',
+                    border: `2px solid ${selectedChannels.has(ch.id) ? '#dc2626' : 'rgba(255,255,255,0.15)'}`,
+                  }}>
+                    {selectedChannels.has(ch.id) && <Check className="w-3.5 h-3.5" style={{ color: '#fff' }} />}
+                  </div>
+                )}
                 <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold" style={{ background: 'rgba(255,255,255,0.06)', color: '#A0AABF' }}>
                   {ch.type === 'direct' && ch.photo_url && ch.photo_url.startsWith('http')
                     ? <img src={ch.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; }} />
@@ -1442,6 +1589,36 @@ export default function EstateChatPage() {
               data-testid="ect-delete-confirm"
               style={{ background: '#dc2626', color: '#fff' }}
             >Delete</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {/* Bulk Delete Confirmation */}
+    {bulkDeleteConfirm && (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }}>
+        <div className="w-full max-w-xs rounded-2xl p-6 text-center" style={{ background: '#0F1629', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <Trash2 className="w-10 h-10 mx-auto mb-3" style={{ color: '#dc2626' }} />
+          <h3 className="text-base font-bold mb-1" style={{ color: '#F1F3F8' }}>Delete {selectedChannels.size} Conversation{selectedChannels.size !== 1 ? 's' : ''}</h3>
+          <p className="text-sm mb-5" style={{ color: '#7B879E' }}>
+            This will permanently delete {selectedChannels.size} conversation{selectedChannels.size !== 1 ? 's' : ''} and all their messages. This cannot be undone.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setBulkDeleteConfirm(false)}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+              data-testid="ect-bulk-delete-cancel"
+              style={{ background: 'rgba(255,255,255,0.06)', color: '#A0AABF' }}
+            >Cancel</button>
+            <button
+              onClick={bulkDeleteChannels}
+              disabled={bulkDeleting}
+              className="flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+              data-testid="ect-bulk-delete-confirm"
+              style={{ background: '#dc2626', color: '#fff' }}
+            >
+              {bulkDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {bulkDeleting ? 'Deleting...' : `Delete ${selectedChannels.size}`}
+            </button>
           </div>
         </div>
       </div>

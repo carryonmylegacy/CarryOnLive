@@ -1,85 +1,7 @@
-<analysis>**original_problem_statement**: The user requested fixing file downloads universally on the iOS PWA using the native share sheet with progress indicators. Additional requirements included perfecting the native iOS look and feel of the Estate Chat (ECT) input bar (fixing massive UI jumps, fading, and spacing issues when the iOS keyboard opens), fixing ECT beneficiary avatars, enforcing perfect 60/60 iOS/PWA compliance via the housekeeping script, integrating Google Places API for CCP, and ensuring the ECT channel list properly refreshes after a chat is created.
-**PRODUCT REQUIREMENTS**: Zero regressions. Perfect iOS PWA keyboard handling. Secure, SOC 2 compliant application. MUST run housekeeping script and ruff checks before every push.
+<analysis>**original_problem_statement**: 
+The user requested fixing file downloads universally on the iOS PWA using the native share sheet with progress indicators, and perfecting the native iOS look and feel of the Estate Chat (ECT) input bar (fixing massive UI jumps, fading, spacing issues when the iOS keyboard opens). The user also requested fixing ECT beneficiary avatars, enforcing perfect 60/60 iOS/PWA compliance via the housekeeping script, integrating Google Places API for CCP, and ensuring the ECT channel list properly refreshes after a chat is created. Later, the user requested a new feature to customize the PWA dock (bottom navigation) allowing all user types to choose and order 5 features. 
 
-**User's preferred language**: English (INSTRUCT next agent to respond in English only)
-
-**what currently exists?**: A highly secure, SOC 2-compliant full-stack application (React, FastAPI, MongoDB) featuring WebSockets, internal chat (ECT), Carriage Contingency Protocols (CCP), and a Secure Document Vault (SDV). The ECT channel list API was recently fixed from a 500 error crash, Vault SDV downloads were refactored to bypass the proxy using direct authenticated fetches, and a swipe-to-delete channel UI was added.
-
-**Last working item**: 
-    - Last item agent was working: Reverting the iOS ECT keyboard to a stable  approach with  (after a / attempt broke the UI), bypassing the download proxy for SDV to fix a persistent Failed to download error, and adding a swipe-to-delete UI for ECT channels.
-    - Status: USER VERIFICATION PENDING
-    - Agent Testing Done: Y
-    - Which testing method agent to use? manual testing by curl/ python -c / screenshot tool (Backend APIs and build successfully tested, but physical iOS testing by the user is required for the keyboard and PWA download flow).
-    - User Testing Done: N
-
-**All Pending/In progress Issue list**:  
-  Issue 1: 🔴 ECT iOS Keyboard Jump to Top / Skew / Fade (P0)
-     - Attempted fixes: The agent tried  and removing , which caused the input bar to completely disappear off-screen. Agent then reverted to the  approach but added  debouncing and removed aggressive  logic that was fighting native iOS scrolling.
-     - Next debug checklist: Await user feedback on the physical iOS device. Do NOT make sweeping changes to the ECT CSS without user verification. Check if the input bar still fades at the bottom.
-     - Why fix this issue and what will be achieved with the fix? Core usability blocker for chat on iOS PWA.
-     - Status: USER VERIFICATION PENDING
-     - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? Frontend (Physical iOS device strictly required)
-     - Blocked on other issue: None
-
-  Issue 2: 🔴 Apple IAP flow is non-functional (P0)
-     - Attempted fixes: Code is fully implemented.
-     - Next debug checklist: Await user action with Apple.
-     - Why fix this issue and what will be achieved with the fix? Unblocks payments.
-     - Status: BLOCKED
-     - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? Both
-     - Blocked on other issue: User's Apple Developer Paid Applications Agreement approval.
-
-  Issue 3: 🔴 Twilio SMS OTP delivery is failing (P0)
-     - Attempted fixes: Code is fully implemented.
-     - Next debug checklist: Await user action with Twilio.
-     - Why fix this issue and what will be achieved with the fix? Unblocks SMS notifications.
-     - Status: BLOCKED
-     - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? Backend
-     - Blocked on other issue: Twilio A2P 10DLC campaign approval.
-
-**In progress Task List**: 
-  *(None - Currently focused strictly on zero-regression bug fixes)*
-
-**Upcoming and Future Tasks**
-    Upcoming Tasks:
-    - 🔴 (P0) Google Play Store Launch: User/CoS needs to execute operational steps.
-    - 🟡 (P1) Share Extension Setup: Wire up iOS Extension ().
-    - 🟡 (P1) iOS Live Updates (Capgo): Set up over-the-air updates.
-    
-    Future Tasks:
-    - 🟢 (P2) Readiness Scoring Policy Page: Informational page explaining how the estate readiness score is calculated.
-    - 🟢 (P2) Scalability Enhancements: Horizontal scaling, background workers, CDN.
-    - 🟢 (P3) ECT Security Comparison Landing Page: A marketing/conversion page at .
-
-**Completed work in this session**
-- Fixed 500 Internal Server Error in  (NoneType error on ) causing the blank channel list (DONE)
-- Added Swipe-to-Delete UI for ECT channels with confirmation modal connected to the DELETE API (DONE)
-- Migrated VaultPage SDV downloads to a direct authenticated fetch bypassing the download proxy to fix persistent download failures (DONE)
-- Fixed audio MIME type handling so iOS voice messages successfully save and send (DONE)
-- Re-ran and passed 60/60 Housekeeping and Ruff lint validation (DONE)
-
-**Earlier issues found/mentioned but not fixed**
-   - Issue 1: ECT beneficiary avatars
-   - Debug checklist: Ensure  is properly used for avatars in the chat list.
-   - Why to solve this issue and what will be achieved with this? Mentioned in the original problem statement but delayed due to critical keyboard/download issues.
-   - Should Test frontend/backend/both after fix: Frontend
-   - Is recurring issue? N
-
-**Known issue recurrence from previous fork**
-  - Issue recurrence in previous fork: iOS PWA Keyboard jitter/skew/disappearance.
-  - Recurrence count: 20+
-  - Status: USER VERIFICATION PENDING
-  - Note: This is extremely sensitive. The user yells if regressions occur here.
-
-**Code Architecture**
-
-
-**Key Technical Concepts**
-- **iOS PWA Keyboard Layouts**: The combination of iOS Safari, PWAs, and the on-screen keyboard completely breaks standard viewport logic ( / ). The baseline is using  to manually offset the viewport. 
-- **Zero Regression / Housekeeping**: The project mandates running  with the custom housekeeping script (
+PRODUCT REQUIREMENTS: Zero regressions. Perfect iOS PWA keyboard handling. Secure, SOC 2 compliant application. MUST run housekeeping script (
 ==========================================
   CarryOn™ Housekeeping Protocol
   + SOC 2 Compliance Audit
@@ -101,7 +23,7 @@
 8.  Sensitive console.log scan .... [0;32mPASS[0m
 9.  Deprecated datetime scan ...... [0;32mPASS[0m
 10. Backend health check .......... [0;32mPASS[0m
-11. Unprotected endpoint audit .... [0;32mPASS[0m (48 route files audited)
+11. Unprotected endpoint audit .... [0;32mPASS[0m (49 route files audited)
 
 [1mSECTION B: SOC 2 Compliance Audit[0m
 ------------------------------------------
@@ -144,7 +66,7 @@
 45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
 46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
 47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
-48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 60 JS bundles)
+48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 61 JS bundles)
 49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
 50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
 
@@ -185,7 +107,304 @@ Mobile / PWA / iOS UX Reference:
   E4     Input zoom prevention (fontSize >= 16px)
   E5-E6  Modal scroll + touch target sizing
   E7-E8  Overflow + bottom bar safe-area
-  E9-E10 Responsive padding + PWA manifest or similar) and All checks passed! before EVERY push.
+  E9-E10 Responsive padding + PWA manifest) and ruff checks before every push. 60/60 checks must pass.
+
+**User's preferred language**: English (INSTRUCT next agent to respond in English only)
+
+**what currently exists?**: 
+A highly secure, SOC 2-compliant full-stack application (React, FastAPI, MongoDB). Contains an Estate Communication Tool (ECT), Secure Document Vault (SDV), Milestone Messages (MM), and a dynamic Mobile Navigation menu. ECT keyboard uses a highly specialized viewport-locked native offset logic. File downloads on iOS PWA use a download proxy combined with a  utility. Users can now customize their bottom dock via Settings.
+
+**Last working item**: 
+    - Last item agent was working: Fixing three specific Round 5 user issues: 1) MM Download cancel button showing a false Success Saved toast, 2) Restoring the ECT swipe-to-delete workflow which was accidentally hidden for circle/estate channels, and 3) Smoothing the ECT keyboard jitter by adding a  CSS transition and update thresholds.
+    - Status: USER VERIFICATION PENDING
+    - Agent Testing Done: Y
+    - Which testing method agent to use? manual testing by curl, frontend log review, and linting (All checks passed! and 
+==========================================
+  CarryOn™ Housekeeping Protocol
+  + SOC 2 Compliance Audit
+==========================================
+
+[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
+------------------------------------------
+  [0;36mINFO[0m No fixes needed — already clean
+
+[1mSECTION A: Standard Housekeeping[0m
+------------------------------------------
+1.  Backend ruff check ............ [0;32mPASS[0m
+2.  Backend ruff format ........... [0;32mPASS[0m
+3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
+4.  Frontend build ................ [0;32mPASS[0m
+5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: eb9c37fcc7f5)
+6.  MongoDB _id leak scan ......... [0;32mPASS[0m
+7.  Hardcoded secrets scan ........ [0;32mPASS[0m
+8.  Sensitive console.log scan .... [0;32mPASS[0m
+9.  Deprecated datetime scan ...... [0;32mPASS[0m
+10. Backend health check .......... [0;32mPASS[0m
+11. Unprotected endpoint audit .... [0;32mPASS[0m (49 route files audited)
+
+[1mSECTION B: SOC 2 Compliance Audit[0m
+------------------------------------------
+12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
+13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
+14. [CC6.1] Password hashing ...... [0;32mPASS[0m
+15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
+16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
+17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
+18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
+19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
+20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
+21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
+22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
+23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
+24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
+25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (7 hard deletes — reviewed)
+26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
+27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
+28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
+29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
+30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
+31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
+32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (77 indexes defined)
+33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
+34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
+35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
+36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
+37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
+38. [A1.2]  Mongo projection safety  [0;32mPASS[0m
+
+[1mSECTION C: iOS / App Store Readiness[0m
+------------------------------------------
+39. [iOS]   Capacitor sync ......... [0;32mPASS[0m (11 plugins for iOS)
+40. [iOS]   Native purchases plugin  [0;32mPASS[0m (package.json + Capacitor + Podfile, v^8.1.2)
+41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (37 products, no duplicates)
+42. [iOS]   Stripe gated on iOS .... [0;32mPASS[0m (all Stripe redirects gated behind isNative)
+43. [iOS]   IAP imports present .... [0;32mPASS[0m (iap/useIAPPurchase + native imported in both subscription components)
+44. [iOS]   Apple disclosures ...... [0;32mPASS[0m (auto-renew, 24h cancel, Terms, Privacy, Restore)
+45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
+46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
+47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
+48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 61 JS bundles)
+49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
+50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
+
+[1mSECTION E: Mobile / PWA / iOS UX Compliance[0m
+------------------------------------------
+51. [PWA]   viewport-fit=cover ..... [0;32mPASS[0m
+52. [PWA]   Fixed nav safe-area .... [0;32mPASS[0m
+53. [PWA]   Page safe-area insets .. [0;32mPASS[0m
+54. [iOS]   Input font-size zoom ... [0;32mPASS[0m (all text inputs use fontSize >= 16px)
+55. [PWA]   Modal scroll safety .... [0;32mPASS[0m
+56. [iOS]   Touch target size ...... [0;32mPASS[0m
+57. [PWA]   Horizontal overflow .... [0;32mPASS[0m (overflow-x contained at root level)
+58. [PWA]   Fixed bottom safe-area . [0;32mPASS[0m
+59. [PWA]   Responsive padding ..... [0;32mPASS[0m
+60. [PWA]   Manifest & theme ....... [0;32mPASS[0m
+
+[1mSECTION D: Post-Check Verification[0m
+------------------------------------------
+R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
+
+==========================================
+  [0;32mALL CHECKS PASSED[0m — codebase is clean
+  [0;32mREADY TO PUSH[0m — CodeMagic → TestFlight → App Store
+==========================================
+
+Safety reminder: Do NOT run yarn add/remove.
+To fix ruff format: cd /app/backend && ruff format .
+
+SOC 2 Trust Service Criteria Reference:
+  CC6.1  Logical access security
+  CC7.2  System monitoring & audit
+  CC8.1  Change management
+  A1.2   System availability
+  PI1.1  Privacy (GDPR)
+
+Mobile / PWA / iOS UX Reference:
+  E1-E3  Safe-area insets (viewport, nav, pages)
+  E4     Input zoom prevention (fontSize >= 16px)
+  E5-E6  Modal scroll + touch target sizing
+  E7-E8  Overflow + bottom bar safe-area
+  E9-E10 Responsive padding + PWA manifest). Testing agent was previously used for dock features.
+    - User Testing Done: N
+
+**All Pending/In progress Issue list**:  
+  Issue 1: 🔴 ECT Beneficiary avatars not loading properly (P1)
+     - Attempted fixes: None in this session (overridden by critical PWA/keyboard priorities).
+     - Next debug checklist: Ensure  is properly used for avatars in the chat list and header inside .
+     - Why fix this issue and what will be achieved with the fix? Mentioned in the original problem statement but sidelined due to critical keyboard/download issues. Improves UI completeness.
+     - Status: NOT STARTED
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? Frontend
+     - Blocked on other issue: None
+
+  Issue 2: 🔴 Apple IAP flow is non-functional (P0)
+     - Attempted fixes: Code is implemented.
+     - Next debug checklist: Await user action with Apple.
+     - Why fix this issue and what will be achieved with the fix? Unblocks payments.
+     - Status: BLOCKED
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? Both
+     - Blocked on other issue: User's Apple Developer Paid Applications Agreement approval.
+
+  Issue 3: 🔴 Twilio SMS OTP delivery is failing (P0)
+     - Attempted fixes: Code is implemented.
+     - Next debug checklist: Await user action with Twilio.
+     - Why fix this issue and what will be achieved with the fix? Unblocks SMS notifications.
+     - Status: BLOCKED
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? Backend
+     - Blocked on other issue: Twilio A2P 10DLC campaign approval.
+
+**In progress Task List**: 
+  *(None - Currently strictly focused on zero-regression bug fixes based on user's feedback)*
+
+**Upcoming and Future Tasks**
+    Upcoming Tasks:
+    - 🔴 (P0) Google Play Store Launch: User/CoS needs to execute operational steps.
+    - 🟡 (P1) Share Extension Setup: Wire up iOS Extension ().
+    - 🟡 (P1) iOS Live Updates (Capgo): Set up over-the-air updates.
+    
+    Future Tasks:
+    - 🟢 (P2) Readiness Scoring Policy Page: Informational page explaining how the estate readiness score is calculated.
+    - 🟢 (P2) Scalability Enhancements: Horizontal scaling, background workers, CDN.
+    - 🟢 (P3) ECT Security Comparison Landing Page: A marketing/conversion page at .
+
+**Completed work in this session**
+- Added Customizable Dock feature: Created  backend endpoint, updated  to fetch preferences, built  UI, and embedded it into Admin and Beneficiary settings pages. (DONE)
+- Fixed ECT chat delete toast: Changed import from  to custom  to stop silent failures. (DONE)
+- Fixed ECT swipe-to-delete restrictions: Re-allowed swiping and deleting for circle channels after it was incorrectly locked out. (DONE)
+- Added MM Download loading UI: Integrated a loading spinner during the video download fetch state on . (DONE)
+- Fixed MM Cancel Download Toast: Updated  in  to resolve  upon cancellation instead of , preventing false success toasts. (DONE)
+- Improved ECT Keyboard Jitter: Removed delayed re-syncs, added smooth CSS transitions for  and , and added a threshold logic to prevent micro-updates during iOS keyboard rendering. (DONE)
+- Handled Test Agent formatting bugs: Ran All checks passed! to resolve trailing whitespaces left by the testing agent. (DONE)
+- Passed 60/60 Housekeeping and Ruff lint validation continuously. (DONE)
+
+**Earlier issues found/mentioned but not fixed**
+   - Issue 1: ECT Beneficiary Avatars
+   - Debug checklist: Check  list items and top navigation. Make sure image sources pass through .
+   - Why to solve this issue and what will be achieved with this? Improve UI completeness, requested in previous fork and originally noted in problem statement.
+   - Should Test frontend/backend/both after fix: Frontend
+   - Is recurring issue? N
+
+**Known issue recurrence from previous fork**
+  - Issue recurrence in previous fork: iOS PWA Keyboard jitter/skew/disappearance and stuck input heights.
+  - Recurrence count: 20+
+  - Status: USER VERIFICATION PENDING
+  - Note: This is extremely sensitive. DO NOT change ECT CSS layout blindly. Added CSS transitions and thresholds in this session to reduce micro-jitter. Wait for physical device feedback.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+- **iOS PWA Keyboard Layouts**:  and  break on iOS PWA standalone mode. The baseline uses viewport-locked constraints (), offsetting the  via JS, accompanied by CSS  on  to hide native iOS jittering.
+- **iOS PWA File Downloads**: Proxy token +  utility. Generates an overlay () to re-establish user activation before triggering the native share sheet. Resolves  on cancel to avoid firing .
+- **Zero Regression / Housekeeping**: 
+==========================================
+  CarryOn™ Housekeeping Protocol
+  + SOC 2 Compliance Audit
+==========================================
+
+[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
+------------------------------------------
+  [0;36mINFO[0m No fixes needed — already clean
+
+[1mSECTION A: Standard Housekeeping[0m
+------------------------------------------
+1.  Backend ruff check ............ [0;32mPASS[0m
+2.  Backend ruff format ........... [0;32mPASS[0m
+3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
+4.  Frontend build ................ [0;32mPASS[0m
+5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: eb9c37fcc7f5)
+6.  MongoDB _id leak scan ......... [0;32mPASS[0m
+7.  Hardcoded secrets scan ........ [0;32mPASS[0m
+8.  Sensitive console.log scan .... [0;32mPASS[0m
+9.  Deprecated datetime scan ...... [0;32mPASS[0m
+10. Backend health check .......... [0;32mPASS[0m
+11. Unprotected endpoint audit .... [0;32mPASS[0m (49 route files audited)
+
+[1mSECTION B: SOC 2 Compliance Audit[0m
+------------------------------------------
+12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
+13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
+14. [CC6.1] Password hashing ...... [0;32mPASS[0m
+15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
+16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
+17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
+18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
+19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
+20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
+21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
+22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
+23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
+24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
+25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (7 hard deletes — reviewed)
+26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
+27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
+28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
+29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
+30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
+31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
+32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (77 indexes defined)
+33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
+34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
+35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
+36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
+37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
+38. [A1.2]  Mongo projection safety  [0;32mPASS[0m
+
+[1mSECTION C: iOS / App Store Readiness[0m
+------------------------------------------
+39. [iOS]   Capacitor sync ......... [0;32mPASS[0m (11 plugins for iOS)
+40. [iOS]   Native purchases plugin  [0;32mPASS[0m (package.json + Capacitor + Podfile, v^8.1.2)
+41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (37 products, no duplicates)
+42. [iOS]   Stripe gated on iOS .... [0;32mPASS[0m (all Stripe redirects gated behind isNative)
+43. [iOS]   IAP imports present .... [0;32mPASS[0m (iap/useIAPPurchase + native imported in both subscription components)
+44. [iOS]   Apple disclosures ...... [0;32mPASS[0m (auto-renew, 24h cancel, Terms, Privacy, Restore)
+45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
+46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
+47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
+48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 61 JS bundles)
+49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
+50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
+
+[1mSECTION E: Mobile / PWA / iOS UX Compliance[0m
+------------------------------------------
+51. [PWA]   viewport-fit=cover ..... [0;32mPASS[0m
+52. [PWA]   Fixed nav safe-area .... [0;32mPASS[0m
+53. [PWA]   Page safe-area insets .. [0;32mPASS[0m
+54. [iOS]   Input font-size zoom ... [0;32mPASS[0m (all text inputs use fontSize >= 16px)
+55. [PWA]   Modal scroll safety .... [0;32mPASS[0m
+56. [iOS]   Touch target size ...... [0;32mPASS[0m
+57. [PWA]   Horizontal overflow .... [0;32mPASS[0m (overflow-x contained at root level)
+58. [PWA]   Fixed bottom safe-area . [0;32mPASS[0m
+59. [PWA]   Responsive padding ..... [0;32mPASS[0m
+60. [PWA]   Manifest & theme ....... [0;32mPASS[0m
+
+[1mSECTION D: Post-Check Verification[0m
+------------------------------------------
+R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
+
+==========================================
+  [0;32mALL CHECKS PASSED[0m — codebase is clean
+  [0;32mREADY TO PUSH[0m — CodeMagic → TestFlight → App Store
+==========================================
+
+Safety reminder: Do NOT run yarn add/remove.
+To fix ruff format: cd /app/backend && ruff format .
+
+SOC 2 Trust Service Criteria Reference:
+  CC6.1  Logical access security
+  CC7.2  System monitoring & audit
+  CC8.1  Change management
+  A1.2   System availability
+  PI1.1  Privacy (GDPR)
+
+Mobile / PWA / iOS UX Reference:
+  E1-E3  Safe-area insets (viewport, nav, pages)
+  E4     Input zoom prevention (fontSize >= 16px)
+  E5-E6  Modal scroll + touch target sizing
+  E7-E8  Overflow + bottom bar safe-area
+  E9-E10 Responsive padding + PWA manifest and All checks passed! MUST pass 60/60 before EVERY push.
 
 **key DB schema**
   - Unchanged.
@@ -194,34 +413,142 @@ Mobile / PWA / iOS UX Reference:
   - None.
 
 **All files of reference**
-  -  (Updated extensively)
-  -  (Updated for direct downloads)
-  -  (Fixed channel sort crashing API)
-  -  (Migrated proxy tokens from in-memory to MongoDB)
+  -  (New: endpoint to manage customizable dock items)
+  -  (New: dock configuration UI)
+  -  (Updated to pull dynamic preferences via session)
+  -  (Heavily modified for Keyboard Transition, and restored swipe-to-delete)
+  -  (Updated to add loading spinner overlay during download fetch)
+  -  (Overlay UI UX cancellation fix)
 
 **Areas that need refactoring**: 
-  - **ECT Keyboard**: Do not refactor unless directed. Revert back immediately if user reports regressions.
+  - **ECT Keyboard & Layouts**: Do not refactor. Await user physical device feedback on the transition/jitter fixes.
 
 **key api endpoints**
-  -  (Sort logic fixed)
+  - 
   - 
 
 **Critical Info for New Agent**
-- **MANDATORY HOUSEKEEPING**: The user became extremely angry when the previous agent forgot to run the housekeeping script and python lint checks before finishing a task. You MUST run them and ensure 60/60 passing status before concluding any coding task.
-- **SDV DOWNLOADS**: The previous proxy-token logic failed repeatedly in production (possibly due to Railway instance cycling clearing in-memory tokens). VaultPage now completely bypasses the proxy and fetches the blob directly with a JWT.
-- **CHANNEL LIST**: The reason the channel list was empty for the user was a hidden 500 error in the backend ( failing when  was ). It is now fixed, but always check backend logs if frontend lists are empty.
+- **MANDATORY HOUSEKEEPING**: Run 
+==========================================
+  CarryOn™ Housekeeping Protocol
+  + SOC 2 Compliance Audit
+==========================================
+
+[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
+------------------------------------------
+  [0;36mINFO[0m No fixes needed — already clean
+
+[1mSECTION A: Standard Housekeeping[0m
+------------------------------------------
+1.  Backend ruff check ............ [0;32mPASS[0m
+2.  Backend ruff format ........... [0;32mPASS[0m
+3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
+4.  Frontend build ................ [0;32mPASS[0m
+5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: eb9c37fcc7f5)
+6.  MongoDB _id leak scan ......... [0;32mPASS[0m
+7.  Hardcoded secrets scan ........ [0;32mPASS[0m
+8.  Sensitive console.log scan .... [0;32mPASS[0m
+9.  Deprecated datetime scan ...... [0;32mPASS[0m
+10. Backend health check .......... [0;32mPASS[0m
+11. Unprotected endpoint audit .... [0;32mPASS[0m (49 route files audited)
+
+[1mSECTION B: SOC 2 Compliance Audit[0m
+------------------------------------------
+12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
+13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
+14. [CC6.1] Password hashing ...... [0;32mPASS[0m
+15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
+16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
+17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
+18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
+19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
+20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
+21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
+22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
+23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
+24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
+25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (7 hard deletes — reviewed)
+26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
+27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
+28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
+29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
+30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
+31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
+32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (77 indexes defined)
+33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
+34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
+35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
+36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
+37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
+38. [A1.2]  Mongo projection safety  [0;32mPASS[0m
+
+[1mSECTION C: iOS / App Store Readiness[0m
+------------------------------------------
+39. [iOS]   Capacitor sync ......... [0;32mPASS[0m (11 plugins for iOS)
+40. [iOS]   Native purchases plugin  [0;32mPASS[0m (package.json + Capacitor + Podfile, v^8.1.2)
+41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (37 products, no duplicates)
+42. [iOS]   Stripe gated on iOS .... [0;32mPASS[0m (all Stripe redirects gated behind isNative)
+43. [iOS]   IAP imports present .... [0;32mPASS[0m (iap/useIAPPurchase + native imported in both subscription components)
+44. [iOS]   Apple disclosures ...... [0;32mPASS[0m (auto-renew, 24h cancel, Terms, Privacy, Restore)
+45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
+46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
+47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
+48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 61 JS bundles)
+49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
+50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
+
+[1mSECTION E: Mobile / PWA / iOS UX Compliance[0m
+------------------------------------------
+51. [PWA]   viewport-fit=cover ..... [0;32mPASS[0m
+52. [PWA]   Fixed nav safe-area .... [0;32mPASS[0m
+53. [PWA]   Page safe-area insets .. [0;32mPASS[0m
+54. [iOS]   Input font-size zoom ... [0;32mPASS[0m (all text inputs use fontSize >= 16px)
+55. [PWA]   Modal scroll safety .... [0;32mPASS[0m
+56. [iOS]   Touch target size ...... [0;32mPASS[0m
+57. [PWA]   Horizontal overflow .... [0;32mPASS[0m (overflow-x contained at root level)
+58. [PWA]   Fixed bottom safe-area . [0;32mPASS[0m
+59. [PWA]   Responsive padding ..... [0;32mPASS[0m
+60. [PWA]   Manifest & theme ....... [0;32mPASS[0m
+
+[1mSECTION D: Post-Check Verification[0m
+------------------------------------------
+R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
+
+==========================================
+  [0;32mALL CHECKS PASSED[0m — codebase is clean
+  [0;32mREADY TO PUSH[0m — CodeMagic → TestFlight → App Store
+==========================================
+
+Safety reminder: Do NOT run yarn add/remove.
+To fix ruff format: cd /app/backend && ruff format .
+
+SOC 2 Trust Service Criteria Reference:
+  CC6.1  Logical access security
+  CC7.2  System monitoring & audit
+  CC8.1  Change management
+  A1.2   System availability
+  PI1.1  Privacy (GDPR)
+
+Mobile / PWA / iOS UX Reference:
+  E1-E3  Safe-area insets (viewport, nav, pages)
+  E4     Input zoom prevention (fontSize >= 16px)
+  E5-E6  Modal scroll + touch target sizing
+  E7-E8  Overflow + bottom bar safe-area
+  E9-E10 Responsive padding + PWA manifest. ALL 60/60 checks must pass. The user has zero tolerance for regressions.
+- **Testing Agent Artifacts**: The testing agent has previously generated python test files (e.g. ) containing trailing whitespaces, which fails the backend All checks passed! validator. Use All checks passed! to automate cleanup if you hit this wall.
+- **ECT Delete Behavior**: circle channels represent the core estate chat. The user implicitly wants to be able to swipe-delete them from their local view. Do not block channel deletion on the frontend based on .
 
 **documents and test reports created in this job**
-  -  (Updated)
+  -  (Continuously updated)
   - 
 
 **Last 10 User Messages and any pending HUMAN messages** 
- - *User*: YOU JUST WENT BACKWARDS AGAIN!!!!! Now when I go to the chat it does the whole scroll to the top... text input field is totally gone... STILL the SDV Download button returns a toast that says Error Failed to download only.
- - *Agent*: Reverted the keyboard CSS regression back to the stable  approach with . Bypassed the download token proxy entirely for SDV to use a direct JWT fetch. Implemented the requested swipe-to-delete channel UI. Verified 60/60 checks. Awaiting user verification on their physical iOS device.
- - *Pending Human Message*: The user is currently testing the newest push on their iOS device and will reply with the results for the SDV download, the swipe-to-delete UI, and the keyboard behavior.
+ - *User*: Ok! for downloading MMs, I love the little rotating circle thing... Just this..when it goes to the File Ready screen and I hit Cancel, it still says Success Saved which feels like a lie... For ECT, I have now COMPLETELY lost the delete chat conversation work flow, gone... When I enter a chat, the up/down jitter is less, but definitely still there, so do more of what you did I suppose...
+ - *Agent*: Found the root causes. 1) Fixed  to resolve  instead of  on Cancel. 2) Removed the aggressive circle block allowing swipe-to-delete to function again. 3) Added  to the CSS transition with a threshold limit to avoid micro-updates on the keyboard jitter. Cleaned lint rules, passed 60/60 housekeeping, pushed update, and finished task.
+ - *Pending Human Message*: The user is currently testing the Round 5 fixes on their physical iOS PWA. Wait for their feedback regarding the ECT Delete UI, the MM Download Cancel logic, and the remaining ECT Keyboard jitter.
 
 **Project Health Check:**
-  - Broken: ECT iOS Keyboard (Awaiting manual validation)
+  - Broken: iOS PWA specific behaviors (ECT Keyboard Layout) and ECT Beneficiary avatars.
   - Mocked: None
   - Blocked: Apple IAP, Twilio SMS
 
@@ -233,14 +560,14 @@ Mobile / PWA / iOS UX Reference:
   - Resend (Emails) — uses User API Key
 
 **Testing status**
-  - Testing agent used after significant changes: YES
+  - Testing agent used after significant changes: YES (iteration 33)
   - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: None
-  - Known regressions: Keyboard disappearing bug (agent reverted the code attempting to fix this, pending user verification).
+  - Test files created: 
+  - Known regressions: ECT layout and PWA behaviors are highly volatile and require device-specific testing.
 
 **Credentials to test flow:**
   - Admin:  / 
   - Check  for specific test personas.
 
 **What agent forgot to execute**
-The agent addressed all of the immediate user complaints (channel list, direct SDV download, reverting the broken keyboard logic, adding swipe-to-delete) and successfully ran the housekeeping checks. Nothing was explicitly forgotten, but physical iOS testing by the user is the strict blocker for verifying success.</analysis>
+The agent successfully fulfilled the dock feature, the download improvements, and the iterative ECT behaviors. However, the agent did NOT address the missing **ECT Beneficiary Avatars** that were noted in the initial original handoff summary. This remains a pending P1 item.</analysis>

@@ -852,6 +852,41 @@ async def delete_channel(
     return {"success": True}
 
 
+class BatchDeleteRequest(BaseModel):
+    channel_ids: list[str]
+
+
+@router.post("/estate-chat/channels/batch-delete")
+async def batch_delete_channels(
+    data: BatchDeleteRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Delete multiple channels at once. User must be a member of each channel."""
+    if not data.channel_ids:
+        raise HTTPException(status_code=400, detail="No channels specified")
+    if len(data.channel_ids) > 50:
+        raise HTTPException(status_code=400, detail="Cannot delete more than 50 channels at once")
+    deleted = []
+    failed = []
+    for ch_id in data.channel_ids:
+        channel = await db.estate_channels.find_one({"id": ch_id}, {"_id": 0})
+        if not channel:
+            failed.append({"id": ch_id, "reason": "Not found"})
+            continue
+        user_id = current_user["id"]
+        is_owner = await _is_estate_owner(user_id, channel["estate_id"])
+        is_admin = current_user.get("role") == "admin"
+        is_member = user_id in channel.get("members", [])
+        if not (is_owner or is_admin or is_member):
+            failed.append({"id": ch_id, "reason": "Not authorized"})
+            continue
+        await db.estate_channels.delete_one({"id": ch_id})
+        await db.estate_messages.delete_many({"channel_id": ch_id})
+        await db.estate_channel_reads.delete_many({"channel_id": ch_id})
+        deleted.append(ch_id)
+    return {"deleted": deleted, "failed": failed}
+
+
 @router.get("/estate-chat/unread-total")
 async def get_unread_total(current_user: dict = Depends(get_current_user)):
     """Get total unread message count across all estate channels for badge display."""
