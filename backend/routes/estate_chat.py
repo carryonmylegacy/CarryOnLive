@@ -670,6 +670,13 @@ ALLOWED_FILE_TYPES = {
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "text/plain",
+    "audio/webm",
+    "audio/ogg",
+    "audio/mp4",
+    "audio/mpeg",
+    "audio/wav",
+    "audio/x-m4a",
+    "video/webm",
 }
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
@@ -701,6 +708,8 @@ async def upload_attachment(
         raise HTTPException(status_code=500, detail="Failed to store file")
     now = datetime.now(timezone.utc).isoformat()
     is_image = file.content_type and file.content_type.startswith("image/")
+    is_audio = file.content_type and (file.content_type.startswith("audio/") or file.content_type == "video/webm")
+    msg_type = "image" if is_image else ("voice" if is_audio else "file")
     message = {
         "id": str(uuid4()),
         "channel_id": channel_id,
@@ -708,7 +717,7 @@ async def upload_attachment(
         "sender_id": current_user["id"],
         "sender_name": current_user.get("name", "Unknown"),
         "content": file.filename or "Attachment",
-        "message_type": "image" if is_image else "file",
+        "message_type": msg_type,
         "attachment": {
             "file_id": file_id,
             "file_name": file.filename or "file",
@@ -734,7 +743,10 @@ async def serve_chat_file(
     file_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    """Serve a chat attachment file."""
+    """Serve a chat attachment file.
+
+    Supports both Bearer header auth and ?token= query param (for img src / window.open).
+    """
     from fastapi.responses import Response
     from services.storage import storage
 

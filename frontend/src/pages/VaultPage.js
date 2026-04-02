@@ -32,7 +32,8 @@ import {
   Heart,
   Users,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Check
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -323,15 +324,17 @@ const VaultPage = () => {
     }
   };
 
-  const handleDesignateBeneficiaries = async (docId, beneficiaryIds) => {
+  const handleDesignateBeneficiaries = async (docId, beneficiaryIds, visibilityTiming) => {
     try {
+      const payload = { beneficiary_ids: beneficiaryIds };
+      if (visibilityTiming) payload.visibility_timing = visibilityTiming;
       await axios.put(`${API_URL}/documents/${docId}/designate-beneficiaries`,
-        { beneficiary_ids: beneficiaryIds },
+        payload,
         { ...getAuthHeaders(), headers: { ...getAuthHeaders().headers, 'Content-Type': 'application/json' } }
       );
       // Update local state
       setDocuments(prev => prev.map(d =>
-        d.id === docId ? { ...d, designated_beneficiaries: beneficiaryIds } : d
+        d.id === docId ? { ...d, designated_beneficiaries: beneficiaryIds, visibility_timing: visibilityTiming || d.visibility_timing } : d
       ));
       toast.success('Beneficiary access updated');
     } catch {
@@ -339,11 +342,11 @@ const VaultPage = () => {
     }
   };
 
-  const toggleBeneficiaryForDoc = (docId, benId, currentDesignation) => {
+  const toggleBeneficiaryForDoc = (docId, benId, currentDesignation, currentDoc) => {
     const current = currentDesignation || ['all'];
     const isAll = current.includes('all');
     if (benId === 'all') {
-      handleDesignateBeneficiaries(docId, ['all']);
+      handleDesignateBeneficiaries(docId, ['all'], currentDoc?.visibility_timing);
       return;
     }
     let newList;
@@ -358,7 +361,18 @@ const VaultPage = () => {
       // If all are now selected, set back to "all"
       if (newList.length === beneficiaries.length) newList = ['all'];
     }
-    handleDesignateBeneficiaries(docId, newList);
+    handleDesignateBeneficiaries(docId, newList, currentDoc?.visibility_timing);
+  };
+
+  const toggleVisibilityTiming = (docId, benId, period, currentDoc) => {
+    const timing = { ...(currentDoc?.visibility_timing || {}) };
+    const benTiming = timing[benId] || { pre: false, post: true };
+    timing[benId] = { ...benTiming, [period]: !benTiming[period] };
+    // Ensure at least one is true
+    if (!timing[benId].pre && !timing[benId].post) {
+      timing[benId].post = true;
+    }
+    handleDesignateBeneficiaries(docId, currentDoc?.designated_beneficiaries || ['all'], timing);
   };
 
   const handleBulkDesignate = async (beneficiaryIds) => {
@@ -1040,47 +1054,118 @@ const VaultPage = () => {
                       {user?.role === 'benefactor' && beneficiaries.length > 0 && (
                         <div className="mt-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                           <button
-                            className="flex items-center gap-1.5 w-full text-left text-[11px] text-[var(--t5)] hover:text-[var(--t4)] transition-colors"
+                            className="flex items-center gap-2 w-full text-left text-sm font-semibold transition-colors"
+                            style={{ color: 'var(--t4)' }}
                             onClick={(e) => { e.stopPropagation(); setExpandedDesignation(expandedDesignation === doc.id ? null : doc.id); }}
                             data-testid={`designation-toggle-${doc.id}`}
                           >
-                            <Users className="w-3.5 h-3.5" />
-                            <span className="font-medium">
+                            <Users className="w-4 h-4" style={{ color: '#d4af37' }} />
+                            <span>
                               {(!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
                                 ? 'All beneficiaries'
                                 : `${doc.designated_beneficiaries.length} of ${beneficiaries.length} beneficiaries`}
                             </span>
                             {expandedDesignation === doc.id
-                              ? <ChevronUp className="w-3 h-3 ml-auto" />
-                              : <ChevronDown className="w-3 h-3 ml-auto" />}
+                              ? <ChevronUp className="w-4 h-4 ml-auto" />
+                              : <ChevronDown className="w-4 h-4 ml-auto" />}
                           </button>
                           {expandedDesignation === doc.id && (
-                            <div className="mt-1.5 space-y-1" onClick={(e) => e.stopPropagation()}>
-                              <label className="flex items-center gap-2 py-1 px-1.5 rounded text-[11px] cursor-pointer hover:bg-white/5">
-                                <input
-                                  type="checkbox"
-                                  checked={!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all')}
-                                  onChange={() => toggleBeneficiaryForDoc(doc.id, 'all', doc.designated_beneficiaries)}
-                                  className="rounded accent-[#d4af37]"
-                                  data-testid={`designation-all-${doc.id}`}
-                                />
-                                <span className="font-bold text-[var(--t4)]">Select All</span>
-                              </label>
+                            <div className="mt-3 space-y-2" onClick={(e) => e.stopPropagation()}>
+                              {/* Select All toggle */}
+                              <button
+                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all"
+                                style={{
+                                  background: (!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
+                                    ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
+                                  border: `1px solid ${(!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
+                                    ? 'rgba(212,175,55,0.35)' : 'rgba(255,255,255,0.06)'}`,
+                                }}
+                                onClick={() => toggleBeneficiaryForDoc(doc.id, 'all', doc.designated_beneficiaries, doc)}
+                                data-testid={`designation-all-${doc.id}`}
+                              >
+                                <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{
+                                  background: (!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
+                                    ? '#d4af37' : 'rgba(255,255,255,0.08)',
+                                }}>
+                                  <Users className="w-4 h-4" style={{
+                                    color: (!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
+                                      ? '#080e1a' : '#7B879E',
+                                  }} />
+                                </div>
+                                <span className="text-sm font-bold" style={{ color: '#F1F3F8' }}>Select All</span>
+                                {(!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all')) && (
+                                  <Check className="w-5 h-5 ml-auto" style={{ color: '#d4af37' }} />
+                                )}
+                              </button>
+                              {/* Individual beneficiaries */}
                               {beneficiaries.map(ben => {
                                 const designation = doc.designated_beneficiaries || ['all'];
                                 const isAll = designation.includes('all');
                                 const isSelected = isAll || designation.includes(ben.id);
+                                const timing = doc.visibility_timing?.[ben.id] || { pre: false, post: true };
+                                const initials = `${ben.first_name?.charAt(0) || ''}${ben.last_name?.charAt(0) || ''}`;
                                 return (
-                                  <label key={ben.id} className="flex items-center gap-2 py-1 px-1.5 rounded text-[11px] cursor-pointer hover:bg-white/5">
-                                    <input
-                                      type="checkbox"
-                                      checked={isSelected}
-                                      onChange={() => toggleBeneficiaryForDoc(doc.id, ben.id, doc.designated_beneficiaries)}
-                                      className="rounded accent-[#d4af37]"
+                                  <div key={ben.id} className="rounded-xl overflow-hidden transition-all" style={{
+                                    background: isSelected ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.02)',
+                                    border: `1px solid ${isSelected ? 'rgba(212,175,55,0.25)' : 'rgba(255,255,255,0.06)'}`,
+                                  }}>
+                                    <button
+                                      className="w-full flex items-center gap-3 px-3 py-2.5 transition-all"
+                                      onClick={() => toggleBeneficiaryForDoc(doc.id, ben.id, doc.designated_beneficiaries, doc)}
                                       data-testid={`designation-ben-${ben.id}-${doc.id}`}
-                                    />
-                                    <span className="text-[var(--t4)]">{ben.first_name} {ben.last_name}</span>
-                                  </label>
+                                    >
+                                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{
+                                        background: isSelected
+                                          ? 'linear-gradient(135deg, #d4af37, #F0C95C)'
+                                          : 'rgba(255,255,255,0.08)',
+                                        color: isSelected ? '#080e1a' : '#7B879E',
+                                      }}>
+                                        {ben.profile_photo_url
+                                          ? <img src={ben.profile_photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+                                          : initials}
+                                      </div>
+                                      <div className="text-left flex-1 min-w-0">
+                                        <div className="text-sm font-semibold truncate" style={{ color: '#F1F3F8' }}>
+                                          {ben.first_name} {ben.last_name}
+                                        </div>
+                                        {ben.relation && (
+                                          <div className="text-xs" style={{ color: '#7B879E' }}>{ben.relation}</div>
+                                        )}
+                                      </div>
+                                      {isSelected && <Check className="w-5 h-5 flex-shrink-0" style={{ color: '#d4af37' }} />}
+                                    </button>
+                                    {/* Pre/Post Transition Toggles — shown when selected */}
+                                    {isSelected && !isAll && (
+                                      <div className="flex gap-2 px-3 pb-3 pt-1" onClick={(e) => e.stopPropagation()}>
+                                        <button
+                                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all"
+                                          onClick={() => toggleVisibilityTiming(doc.id, ben.id, 'pre', doc)}
+                                          data-testid={`timing-pre-${ben.id}-${doc.id}`}
+                                          style={{
+                                            background: timing.pre ? 'rgba(34,201,147,0.15)' : 'rgba(255,255,255,0.04)',
+                                            border: `1px solid ${timing.pre ? 'rgba(34,201,147,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                                            color: timing.pre ? '#22C993' : '#525C72',
+                                          }}
+                                        >
+                                          {timing.pre && <Check className="w-3.5 h-3.5" />}
+                                          Pre-Transition
+                                        </button>
+                                        <button
+                                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all"
+                                          onClick={() => toggleVisibilityTiming(doc.id, ben.id, 'post', doc)}
+                                          data-testid={`timing-post-${ben.id}-${doc.id}`}
+                                          style={{
+                                            background: timing.post ? 'rgba(59,123,247,0.15)' : 'rgba(255,255,255,0.04)',
+                                            border: `1px solid ${timing.post ? 'rgba(59,123,247,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                                            color: timing.post ? '#3B7BF7' : '#525C72',
+                                          }}
+                                        >
+                                          {timing.post && <Check className="w-3.5 h-3.5" />}
+                                          Post-Transition
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
                                 );
                               })}
                             </div>

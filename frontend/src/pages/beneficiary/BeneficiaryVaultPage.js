@@ -34,10 +34,14 @@ const BeneficiaryVaultPage = () => {
       const estateRes = await axios.get(`${API_URL}/estates/${estateId}`, getAuthHeaders());
       const transitioned = estateRes.data?.status === 'transitioned';
 
-      const res = await axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders());
-      // Pre-transition: only show POA and Living Will
-      const docs = transitioned ? res.data : res.data.filter(d => PRE_TRANSITION_CATEGORIES.includes(d.category));
-      setDocuments(docs);
+      if (transitioned) {
+        const res = await axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders());
+        setDocuments(res.data);
+      } else {
+        // Pre-transition: use the dedicated endpoint that respects visibility_timing
+        const res = await axios.get(`${API_URL}/documents/${estateId}/pre-transition`, getAuthHeaders());
+        setDocuments(res.data);
+      }
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };

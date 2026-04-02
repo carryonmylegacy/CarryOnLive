@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { Lock, Shield, FileText, Upload, ChevronLeft, MessageCircle } from 'lucide-react';
+import { Lock, Shield, FileText, Upload, ChevronLeft, MessageCircle, FolderOpen } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
@@ -13,6 +13,7 @@ const PreTransitionPage = () => {
   const navigate = useNavigate();
   const [estate, setEstate] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasExtraDocs, setHasExtraDocs] = useState(false);
 
   useEffect(() => {
     const fetchEstate = async () => {
@@ -27,6 +28,12 @@ const PreTransitionPage = () => {
             navigate('/beneficiary/dashboard');
             return;
           }
+          // Check if there are extra pre-transition docs
+          try {
+            const docsRes = await axios.get(`${API_URL}/documents/${estateId}/pre-transition`, getAuthHeaders());
+            const extraDocs = (docsRes.data || []).filter(d => !['living_will', 'poa'].includes(d.category));
+            setHasExtraDocs(extraDocs.length > 0);
+          } catch { /* ok */ }
         }
       } catch (err) {
         // Estate may have been deleted — clear stale reference and go back to hub
@@ -128,6 +135,25 @@ const PreTransitionPage = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Pre-Transition Vault Access */}
+      {hasExtraDocs && (
+        <Card className="glass-card mb-6 cursor-pointer hover:border-[var(--gold)]/30 transition-all"
+          onClick={() => navigate('/beneficiary/vault')}
+          data-testid="pre-transition-vault-btn">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.1)' }}>
+              <FolderOpen className="w-6 h-6 text-[var(--gold)]" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-[var(--t)] mb-0.5">View Additional Documents</h3>
+              <p className="text-sm text-[var(--t4)] leading-relaxed">
+                Your benefactor has shared additional files for you to view before transition.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Transition Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

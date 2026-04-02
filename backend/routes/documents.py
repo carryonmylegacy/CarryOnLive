@@ -135,6 +135,64 @@ async def get_documents(estate_id: str, current_user: dict = Depends(get_current
     return documents
 
 
+@router.get("/documents/{estate_id}/pre-transition")
+async def get_pre_transition_documents(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """Get documents visible to the current beneficiary pre-transition.
+
+    Returns:
+      - Emergency docs (living_will, poa) that are designated to this beneficiary
+      - Any other documents where visibility_timing[ben_record_id].pre == True
+    """
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
+
+    is_beneficiary = current_user["id"] in estate.get("beneficiaries", [])
+    is_admin = current_user["role"] == "admin"
+    if not (is_beneficiary or is_admin):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # Find this user's beneficiary record ID for the estate
+    ben_record = await db.beneficiaries.find_one(
+        {"estate_id": estate_id, "user_id": current_user["id"]}, {"_id": 0, "id": 1}
+    )
+    ben_id = ben_record["id"] if ben_record else None
+
+    documents = await db.documents.find(
+        {"estate_id": estate_id, "deleted_at": None},
+        {"_id": 0, "file_data": 0, "lock_password_hash": 0, "backup_code": 0},
+    ).to_list(200)
+
+    emergency_categories = {"living_will", "poa"}
+    result = []
+    for doc in documents:
+        designation = doc.get("designated_beneficiaries", ["all"])
+        is_designated = "all" in designation or (ben_id and ben_id in designation)
+        if not is_designated:
+            continue
+
+        cat = doc.get("category", "")
+        if cat in emergency_categories:
+            result.append(doc)
+            continue
+
+        # Check visibility_timing for pre-transition access
+        timing = doc.get("visibility_timing", {})
+        if ben_id and ben_id in timing:
+            if timing[ben_id].get("pre", False):
+                result.append(doc)
+        elif "all" in designation and not timing:
+            # Legacy: all + no timing = post-only (default behavior)
+            pass
+
+    for doc in result:
+        doc["encryption_version"] = doc.get("encryption_version", "aes-256-gcm")
+        doc["storage_type"] = "cloud" if doc.get("storage_key") else "legacy"
+
+    return result
+
+
+
 @router.post("/documents/upload")
 async def upload_document(
     estate_id: str,
@@ -1031,6 +1089,7 @@ async def update_document(
 
 class DesignateBeneficiariesRequest(BaseModel):
     beneficiary_ids: list[str]
+    visibility_timing: Optional[dict] = None  # {ben_id: {"pre": bool, "post": bool}}
 
 
 @router.put("/documents/{document_id}/designate-beneficiaries")
@@ -1039,10 +1098,11 @@ async def designate_beneficiaries(
     data: DesignateBeneficiariesRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    """Set which beneficiaries should receive this document post-transition.
+    """Set which beneficiaries should receive this document and when.
 
     beneficiary_ids: ["all"] means every beneficiary sees it (default).
     Otherwise provide specific beneficiary record IDs.
+    visibility_timing: optional dict mapping ben_id -> {"pre": bool, "post": bool}
     """
     require_benefactor_role(current_user, "designate document beneficiaries")
 
@@ -1054,14 +1114,16 @@ async def designate_beneficiaries(
     if not estate:
         raise HTTPException(status_code=403, detail="Access denied")
 
+    update_fields = {
+        "designated_beneficiaries": data.beneficiary_ids,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    if data.visibility_timing is not None:
+        update_fields["visibility_timing"] = data.visibility_timing
+
     await db.documents.update_one(
         {"id": document_id},
-        {
-            "$set": {
-                "designated_beneficiaries": data.beneficiary_ids,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-            }
-        },
+        {"$set": update_fields},
     )
 
     await audit_log(
@@ -1072,4 +1134,8 @@ async def designate_beneficiaries(
         estate_id=doc["estate_id"],
     )
 
-    return {"document_id": document_id, "designated_beneficiaries": data.beneficiary_ids}
+    return {
+        "document_id": document_id,
+        "designated_beneficiaries": data.beneficiary_ids,
+        "visibility_timing": data.visibility_timing,
+    }

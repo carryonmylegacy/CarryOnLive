@@ -1228,3 +1228,26 @@
     padding-top: env(safe-area-inset-top, 0px);
   }
 }
+
+
+/* ── Minimum Font Size Enforcement ────────────────────────── */
+/* Demographics: 40+ user base. No interactive/content text below 12px.
+   Exceptions: decorative labels like "or" dividers, fine-print timestamps. */
+@media (max-width: 1024px) {
+  p, span, label, button, a, li, td, th, div, input, textarea, select {
+    font-size: max(var(--min-font, 12px), inherit);
+  }
+}
+
+
+/* ── ECT (Estate Communication Tool) Full-screen mode ────── */
+/* When ECT is active, hide the mobile bottom nav and header so chat
+   takes the full viewport.  The ECT page has its own back arrow. */
+body.ect-active .mobile-bottom-nav,
+body.ect-active .mobile-header {
+  display: none !important;
+}
+body.ect-active .dashboard-content-area {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
