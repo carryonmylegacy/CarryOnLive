@@ -1016,10 +1016,13 @@ export default function EstateChatPage() {
 
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
       <div className="flex-shrink-0" style={{
-        background: '#0B1222',
-        borderTop: '1px solid rgba(255,255,255,0.12)',
-        boxShadow: '0 -4px 20px rgba(0,0,0,0.4)',
-        paddingBottom: 'env(safe-area-inset-bottom, 4px)',
+        background: 'rgba(11,18,34,0.85)',
+        WebkitBackdropFilter: 'blur(20px)',
+        backdropFilter: 'blur(20px)',
+        borderTop: '1.5px solid rgba(255,255,255,0.22)',
+        borderBottom: '1.5px solid rgba(255,255,255,0.10)',
+        boxShadow: '0 -6px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}>
         {/* Typing indicator */}
         {typers.length > 0 && (
@@ -1034,7 +1037,7 @@ export default function EstateChatPage() {
             </span>
           </div>
         )}
-        <div className="flex items-center gap-2 px-3 py-2">
+        <div className="flex items-center gap-2 px-3 py-1.5">
           <input type="file" ref={fileInputRef} className="hidden"
             accept="image/*,.pdf,.doc,.docx,.txt"
             onChange={(e) => { if (e.target.files?.[0]) uploadFile(e.target.files[0]); e.target.value = ''; }}
@@ -1075,7 +1078,8 @@ export default function EstateChatPage() {
               data-testid="ect-message-input"
               style={{
                 background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                border: '1.5px solid rgba(255,255,255,0.18)',
+                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3), 0 0.5px 0 rgba(255,255,255,0.05)',
                 color: '#F1F3F8',
                 fontSize: '16px',
                 outline: 'none',
