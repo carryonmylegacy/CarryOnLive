@@ -36,6 +36,19 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (April 2, 2026 — Text MM PDF Fix + ECT Avatar Photos)
+
+**Text MM PDF Fix**
+- Root cause: Hand-rolled PDF builder produced invalid xref byte offsets — iOS PDF reader rejected them (blank doc)
+- Replaced with `fpdf2` library (already installed) producing properly structured PDFs
+- Tested: valid header, correct xref offsets, proper EOF marker
+
+**ECT Avatar Photos Fix**
+- Root cause: Backend returned raw S3 keys from MongoDB, frontend checked `startsWith('http')` — all fell through to initials
+- Imported `resolve_photo_url()` in `estate_chat.py` to convert S3 keys to presigned URLs (same pattern as `auth.py`, `beneficiaries.py`)
+- Added beneficiary record photo fallback when user record has no photo
+- Applied to both `_enrich_channel()` (channel list) and `get_contacts()` (member picker)
+
 ### Completed (April 2, 2026 — Railway Build Fix)
 - Added `--extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/` to `requirements.txt` line 1 so Railway's pip can find `emergentintegrations==0.1.0` from Emergent's private PyPI index
 

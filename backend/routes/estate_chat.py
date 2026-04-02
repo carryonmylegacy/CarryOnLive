@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from config import db
+from services.photo_urls import resolve_photo_url
 from utils import get_current_user
 
 router = APIRouter()
@@ -238,7 +239,20 @@ async def _enrich_channel(channel: dict, current_user_id: str) -> dict:
             other = await db.users.find_one({"id": other_ids[0]}, {"_id": 0, "id": 1, "name": 1, "photo_url": 1})
             if other:
                 display_name = other["name"]
-                other_photo_url = other.get("photo_url", "")
+                photo = other.get("photo_url", "")
+                # Fallback: check beneficiary record photo
+                if not photo:
+                    ben = await db.beneficiaries.find_one(
+                        {
+                            "user_id": other_ids[0],
+                            "deleted_at": None,
+                            "photo_url": {"$exists": True, "$nin": [None, ""]},
+                        },
+                        {"_id": 0, "photo_url": 1},
+                    )
+                    if ben:
+                        photo = ben.get("photo_url", "")
+                other_photo_url = resolve_photo_url(photo)
     # Get estate name for the tag
     estate_name = ""
     estate = await db.estates.find_one({"id": channel.get("estate_id", "")}, {"_id": 0, "id": 1, "name": 1})
@@ -283,17 +297,20 @@ async def get_contacts(current_user: dict = Depends(get_current_user)):
         # Get relationship info from beneficiaries collection
         ben_records = await db.beneficiaries.find(
             {"estate_id": eid, "user_id": {"$in": all_member_ids}, "deleted_at": None},
-            {"_id": 0, "id": 1, "user_id": 1, "relation": 1},
+            {"_id": 0, "id": 1, "user_id": 1, "relation": 1, "photo_url": 1},
         ).to_list(100)
         relation_map = {b["user_id"]: b.get("relation", "") for b in ben_records}
+        ben_photo_map = {b["user_id"]: b["photo_url"] for b in ben_records if b.get("photo_url")}
         members = []
         for u in users:
             is_owner = u["id"] == estate["owner_id"]
+            # Use user photo first, fall back to beneficiary record photo
+            photo = u.get("photo_url", "") or ben_photo_map.get(u["id"], "")
             members.append(
                 {
                     "id": u["id"],
                     "name": u.get("name", "Unknown"),
-                    "photo_url": u.get("photo_url", ""),
+                    "photo_url": resolve_photo_url(photo),
                     "role_in_estate": "benefactor" if is_owner else "beneficiary",
                     "relation": relation_map.get(u["id"], "benefactor" if is_owner else ""),
                 }
