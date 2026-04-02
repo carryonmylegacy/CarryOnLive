@@ -46,7 +46,7 @@ async def prepare_download(data: PrepareRequest, current_user: dict = Depends(ge
     }
     if data.action not in valid_actions:
         raise HTTPException(status_code=400, detail=f"Invalid download action: {data.action}")
-    token = create_token(current_user, data.action, data.params, data.filename)
+    token = await create_token(current_user, data.action, data.params, data.filename)
     return {"token": token}
 
 
@@ -100,7 +100,7 @@ async def ffmpeg_check():
 @router.get("/downloads/{token}")
 async def execute_download(token: str):
     """Serve a file download using a one-time token. No JWT required."""
-    data = consume_token(token)
+    data = await consume_token(token)
     if not data:
         raise HTTPException(status_code=401, detail="Invalid or expired download link")
 

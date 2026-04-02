@@ -175,6 +175,9 @@ async def lifespan(app):
         # Notification preferences indexes
         await db.notification_preferences.create_index("user_id", unique=True)
         await db.notification_categories.create_index("order")
+        # Download token indexes
+        await db.download_tokens.create_index("token", unique=True)
+        await db.download_tokens.create_index("created_at")
         logger.info("Database indexes created/verified")
     except Exception as e:
         logger.warning(f"Index creation warning (may already exist): {e}")

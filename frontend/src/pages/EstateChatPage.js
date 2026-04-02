@@ -294,46 +294,35 @@ export default function EstateChatPage() {
     return () => document.body.classList.remove('ect-active');
   }, []);
 
-  // ── iOS PWA: compensate for keyboard scroll + resize to fit above keyboard ──
+  // ── iOS PWA: resize container to fit above keyboard ──
+  // Strategy: ONLY adjust height. No transforms. Prevent iOS page scroll aggressively.
   useEffect(() => {
     if (loading) return;
     const root = document.getElementById('ect-root');
     if (!root) return;
     const vv = window.visualViewport;
     if (!vv) return;
-    let kbVisible = false;
-    const onScroll = () => {
-      // Only apply scroll compensation while keyboard is actually open
-      if (!kbVisible) return;
-      root.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : '';
-    };
+    let wasKbOpen = false;
     const sync = () => {
       const kbOpen = vv.height < window.innerHeight * 0.8;
       if (kbOpen) {
         root.style.height = `${vv.height}px`;
-        root.style.bottom = 'auto';
-        kbVisible = true;
-        onScroll();
-      } else if (kbVisible) {
-        kbVisible = false;
+        wasKbOpen = true;
+      } else if (wasKbOpen) {
         root.style.height = '';
-        root.style.bottom = '0';
-        root.style.transform = '';
-        window.scrollTo(0, 0);
-        setTimeout(() => { window.scrollTo(0, 0); root.style.transform = ''; }, 100);
-        setTimeout(() => { window.scrollTo(0, 0); root.style.transform = ''; }, 300);
+        wasKbOpen = false;
       }
+      // Always kill iOS page scroll — the ect-root is fixed and fills the screen
+      if (window.scrollY !== 0) window.scrollTo(0, 0);
     };
     vv.addEventListener('resize', sync);
-    vv.addEventListener('scroll', sync);
-    window.addEventListener('scroll', onScroll);
+    // Also catch any stray page scrolls iOS causes
+    const killScroll = () => { if (window.scrollY !== 0) window.scrollTo(0, 0); };
+    window.addEventListener('scroll', killScroll, { passive: true });
     return () => {
       vv.removeEventListener('resize', sync);
-      vv.removeEventListener('scroll', sync);
-      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', killScroll);
       root.style.height = '';
-      root.style.bottom = '0';
-      root.style.transform = '';
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -341,11 +330,9 @@ export default function EstateChatPage() {
   useEffect(() => {
     if (!activeChannel) return;
     const r = document.getElementById('ect-root');
-    if (r) { r.style.transform = ''; r.style.height = ''; r.style.bottom = '0'; }
+    if (r) r.style.height = '';
     window.scrollTo(0, 0);
     setInputFocused(false);
-    const fix = () => { const vv = window.visualViewport; const root = document.getElementById('ect-root'); if (vv && root) { if (vv.height < window.innerHeight * 0.8) { root.style.height = `${vv.height}px`; root.style.bottom = 'auto'; } else { root.style.transform = ''; root.style.height = ''; root.style.bottom = '0'; window.scrollTo(0, 0); } } };
-    setTimeout(fix, 100); setTimeout(fix, 300); setTimeout(fix, 600);
   }, [activeChannel]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchChannels = useCallback(async () => {
@@ -600,9 +587,8 @@ export default function EstateChatPage() {
       setActiveChannel(null);
       setShowChannelList(true);
       setInputFocused(false);
-      // Reset any lingering iOS keyboard transform
       const r = document.getElementById('ect-root');
-      if (r) { r.style.transform = ''; r.style.height = ''; r.style.bottom = '0'; }
+      if (r) r.style.height = '';
       window.scrollTo(0, 0);
       // Refresh channel list to show latest messages/new chats
       fetchChannels();
@@ -1148,11 +1134,7 @@ export default function EstateChatPage() {
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               onFocus={() => {
                 setInputFocused(true);
-                const r = document.getElementById('ect-root');
-                if (r) r.style.transform = '';
                 window.scrollTo(0, 0);
-                const fix = () => { const vv = window.visualViewport; if (vv && r && vv.height < window.innerHeight * 0.8) { r.style.height = `${vv.height}px`; r.style.bottom = 'auto'; } };
-                setTimeout(fix, 300); setTimeout(fix, 600);
               }}
               onBlur={() => setInputFocused(false)}
               placeholder="Type a message..."
