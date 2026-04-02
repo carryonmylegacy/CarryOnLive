@@ -7,7 +7,7 @@ import pytest
 import requests
 from uuid import uuid4
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://pdf-export-bytes.preview.emergentagent.com")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://estate-chat-ios.preview.emergentagent.com")
 
 
 # Read admin token from file
