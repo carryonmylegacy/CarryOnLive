@@ -285,6 +285,7 @@ export default function EstateChatPage() {
   const fileInputRef = useRef(null);
 
   const voiceRecorder = useVoiceRecorder();
+  const [voicePreview, setVoicePreview] = useState(null); // {blob, url}
   const [inputFocused, setInputFocused] = useState(false);
 
   // ── Hide bottom nav when in ECT ──
@@ -332,6 +333,13 @@ export default function EstateChatPage() {
       root.style.transform = '';
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Re-sync viewport when switching channels (keyboard may still be open) ──
+  useEffect(() => {
+    if (!activeChannel) return;
+    const fix = () => { const vv = window.visualViewport; const r = document.getElementById('ect-root'); if (vv && r && vv.height < window.innerHeight * 0.8) { r.style.height = `${vv.height}px`; r.style.bottom = 'auto'; r.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : ''; } };
+    setTimeout(fix, 100); setTimeout(fix, 300); setTimeout(fix, 600);
+  }, [activeChannel]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchChannels = useCallback(async () => {
     try {
@@ -490,9 +498,10 @@ export default function EstateChatPage() {
     inputRef.current?.focus();
   };
 
-  const sendVoiceMessage = async () => {
-    const blob = await voiceRecorder.stop();
+  const sendVoiceMessage = async (previewBlob) => {
+    const blob = previewBlob || await voiceRecorder.stop();
     if (!blob || !activeChannel) return;
+    if (voicePreview) { URL.revokeObjectURL(voicePreview.url); setVoicePreview(null); }
     setUploading(true);
     try {
       const ext = blob.type.includes('mp4') ? 'm4a' : 'webm';
@@ -508,6 +517,18 @@ export default function EstateChatPage() {
         await fetchChannels();
       }
     } catch {} finally { setUploading(false); } // eslint-disable-line no-empty
+  };
+
+  const stopAndPreview = async () => {
+    const blob = await voiceRecorder.stop();
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      setVoicePreview({ blob, url });
+    }
+  };
+
+  const discardPreview = () => {
+    if (voicePreview) { URL.revokeObjectURL(voicePreview.url); setVoicePreview(null); }
   };
 
   const createChannel = async () => {
@@ -578,14 +599,15 @@ export default function EstateChatPage() {
 
   // ── New Chat Modal ──
   const newChatModal = showNewChat && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" style={{ background: 'rgba(0,0,0,0.7)' }}>
-      <div className="w-full max-w-md rounded-2xl p-6 overflow-y-auto" style={{ background: '#0F1629', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '80vh' }}>
-        <div className="flex items-center justify-between mb-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.7)', padding: '16px', paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
+      <div className="w-full max-w-md rounded-2xl flex flex-col" style={{ background: '#0F1629', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '80vh' }}>
+        <div className="flex items-center justify-between p-6 pb-4 flex-shrink-0">
           <h3 className="text-lg font-bold" style={{ color: '#F1F3F8' }}>New Conversation</h3>
           <button onClick={() => { setShowNewChat(false); setSelectedMembers([]); setGroupName(''); }} data-testid="ect-new-chat-close">
             <X className="w-5 h-5" style={{ color: '#7B879E' }} />
           </button>
         </div>
+        <div className="flex-1 overflow-y-auto px-6 min-h-0">
         <div className="flex gap-2 mb-4">
           <button
             onClick={() => { setNewChatType('direct'); setSelectedMembers([]); }}
@@ -683,6 +705,8 @@ export default function EstateChatPage() {
             })}
           </div>
         )}
+        </div>
+        <div className="p-6 pt-4 flex-shrink-0">
         <button
           onClick={createChannel}
           disabled={!selectedMembers.length || (newChatType === 'group' && !groupName.trim())}
@@ -694,6 +718,7 @@ export default function EstateChatPage() {
             cursor: selectedMembers.length ? 'pointer' : 'not-allowed',
           }}
         >Start Conversation</button>
+        </div>
       </div>
     </div>
   );
@@ -1092,7 +1117,7 @@ export default function EstateChatPage() {
             {uploading ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /> : <Paperclip className="w-5 h-5" style={{ color: '#C8D0E0' }} />}
           </button>
 
-          {/* Voice recording state */}
+          {/* Voice recording / preview / input */}
           {voiceRecorder.recording ? (
             <div className="flex-1 flex items-center gap-3 rounded-2xl px-4 py-2.5" style={{
               background: '#2A1519',
@@ -1103,7 +1128,20 @@ export default function EstateChatPage() {
                 {Math.floor(voiceRecorder.duration / 60)}:{(voiceRecorder.duration % 60).toString().padStart(2, '0')}
               </span>
               <span className="text-xs" style={{ color: '#A0AABF' }}>Recording...</span>
-              <button onClick={voiceRecorder.cancel} className="ml-auto p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-cancel">
+              <button onMouseDown={(e) => e.preventDefault()} onClick={stopAndPreview} className="ml-auto p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-stop">
+                <Square className="w-4 h-4" style={{ color: '#F1F3F8', fill: '#F1F3F8' }} />
+              </button>
+              <button onMouseDown={(e) => e.preventDefault()} onClick={voiceRecorder.cancel} className="p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-cancel">
+                <X className="w-4 h-4" style={{ color: '#ef4444' }} />
+              </button>
+            </div>
+          ) : voicePreview ? (
+            <div className="flex-1 flex items-center gap-2 rounded-2xl px-3 py-2" style={{
+              background: '#1A2235',
+              border: '1px solid #3A4560',
+            }}>
+              <audio src={voicePreview.url} controls className="h-8 flex-1" style={{ maxWidth: '100%', filter: 'invert(1) hue-rotate(180deg)', opacity: 0.8 }} />
+              <button onMouseDown={(e) => e.preventDefault()} onClick={discardPreview} className="p-2 rounded-full flex-shrink-0" style={{ background: '#1A1F2E' }} data-testid="ect-voice-discard">
                 <X className="w-4 h-4" style={{ color: '#ef4444' }} />
               </button>
             </div>
@@ -1147,15 +1185,27 @@ export default function EstateChatPage() {
           ) : voiceRecorder.recording ? (
             <button
               onMouseDown={(e) => e.preventDefault()}
-              onClick={sendVoiceMessage}
+              onClick={() => sendVoiceMessage()}
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
               data-testid="ect-voice-send"
               style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}
             >
               <Send className="w-5 h-5" style={{ color: '#080e1a' }} />
             </button>
+          ) : voicePreview ? (
+            <button
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => sendVoiceMessage(voicePreview.blob)}
+              disabled={uploading}
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
+              data-testid="ect-voice-preview-send"
+              style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}
+            >
+              {uploading ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#080e1a' }} /> : <Send className="w-5 h-5" style={{ color: '#080e1a' }} />}
+            </button>
           ) : (
             <button
+              onMouseDown={(e) => e.preventDefault()}
               onClick={voiceRecorder.start}
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
               data-testid="ect-voice-btn"
