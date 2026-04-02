@@ -123,6 +123,7 @@ const VaultPage = () => {
   const [globalDragOver, setGlobalDragOver] = useState(false);
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [expandedDesignation, setExpandedDesignation] = useState(null);
+  const [expandedTiming, setExpandedTiming] = useState({});
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkSelected, setBulkSelected] = useState([]);
   const dragCounterRef = useRef(0);
@@ -1070,32 +1071,49 @@ const VaultPage = () => {
                           </button>
                           {expandedDesignation === doc.id && (
                             <div className="mt-3 space-y-2" onClick={(e) => e.stopPropagation()}>
-                              {/* Select All toggle */}
-                              <button
-                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all"
-                                style={{
-                                  background: (!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
-                                    ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
-                                  border: `1px solid ${(!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
-                                    ? 'rgba(212,175,55,0.35)' : 'rgba(255,255,255,0.06)'}`,
-                                }}
-                                onClick={() => toggleBeneficiaryForDoc(doc.id, 'all', doc.designated_beneficiaries, doc)}
-                                data-testid={`designation-all-${doc.id}`}
-                              >
-                                <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{
-                                  background: (!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
-                                    ? '#d4af37' : 'rgba(255,255,255,0.08)',
-                                }}>
-                                  <Users className="w-4 h-4" style={{
-                                    color: (!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
-                                      ? '#080e1a' : '#7B879E',
-                                  }} />
-                                </div>
-                                <span className="text-sm font-bold" style={{ color: '#F1F3F8' }}>Select All</span>
-                                {(!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all')) && (
-                                  <Check className="w-5 h-5 ml-auto" style={{ color: '#d4af37' }} />
-                                )}
-                              </button>
+                              {/* Select All toggle + expand timing button */}
+                              <div className="flex items-center gap-2">
+                                <button
+                                  className="flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all"
+                                  style={{
+                                    background: (!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
+                                      ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
+                                    border: `1px solid ${(!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
+                                      ? 'rgba(212,175,55,0.35)' : 'rgba(255,255,255,0.06)'}`,
+                                  }}
+                                  onClick={() => toggleBeneficiaryForDoc(doc.id, 'all', doc.designated_beneficiaries, doc)}
+                                  data-testid={`designation-all-${doc.id}`}
+                                >
+                                  <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{
+                                    background: (!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
+                                      ? '#d4af37' : 'rgba(255,255,255,0.08)',
+                                  }}>
+                                    <Users className="w-4 h-4" style={{
+                                      color: (!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
+                                        ? '#080e1a' : '#7B879E',
+                                    }} />
+                                  </div>
+                                  <span className="text-sm font-bold" style={{ color: '#F1F3F8' }}>Select All</span>
+                                  {(!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all')) && (
+                                    <Check className="w-5 h-5 ml-auto" style={{ color: '#d4af37' }} />
+                                  )}
+                                </button>
+                                <button
+                                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
+                                  style={{
+                                    background: expandedTiming[doc.id]
+                                      ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.06)',
+                                    border: `1px solid ${expandedTiming[doc.id]
+                                      ? 'rgba(212,175,55,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                                    transform: expandedTiming[doc.id] ? 'rotate(45deg)' : 'none',
+                                  }}
+                                  onClick={() => setExpandedTiming(prev => ({ ...prev, [doc.id]: !prev[doc.id] }))}
+                                  data-testid={`timing-expand-${doc.id}`}
+                                  title="Configure Pre/Post-Transition access"
+                                >
+                                  <Plus className="w-5 h-5" style={{ color: expandedTiming[doc.id] ? '#d4af37' : '#7B879E' }} />
+                                </button>
+                              </div>
                               {/* Individual beneficiaries */}
                               {beneficiaries.map(ben => {
                                 const designation = doc.designated_beneficiaries || ['all'];
@@ -1133,8 +1151,8 @@ const VaultPage = () => {
                                       </div>
                                       {isSelected && <Check className="w-5 h-5 flex-shrink-0" style={{ color: '#d4af37' }} />}
                                     </button>
-                                    {/* Pre/Post Transition Toggles — shown when selected */}
-                                    {isSelected && !isAll && (
+                                    {/* Pre/Post Transition Toggles — shown when expanded or individually selected */}
+                                    {isSelected && (expandedTiming[doc.id] || !isAll) && (
                                       <div className="flex gap-2 px-3 pb-3 pt-1" onClick={(e) => e.stopPropagation()}>
                                         <button
                                           className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all"
