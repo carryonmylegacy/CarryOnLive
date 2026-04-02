@@ -341,6 +341,7 @@ export default function EstateChatPage() {
     const r = document.getElementById('ect-root');
     if (r) { r.style.transform = ''; r.style.height = ''; r.style.bottom = '0'; }
     window.scrollTo(0, 0);
+    setInputFocused(false);
     const fix = () => { const vv = window.visualViewport; const root = document.getElementById('ect-root'); if (vv && root) { if (vv.height < window.innerHeight * 0.8) { root.style.height = `${vv.height}px`; root.style.bottom = 'auto'; root.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : ''; } else { root.style.transform = ''; root.style.height = ''; root.style.bottom = '0'; } } };
     setTimeout(fix, 100); setTimeout(fix, 300); setTimeout(fix, 600);
   }, [activeChannel]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -588,6 +589,13 @@ export default function EstateChatPage() {
     if (activeChannel) {
       setActiveChannel(null);
       setShowChannelList(true);
+      setInputFocused(false);
+      // Reset any lingering iOS keyboard transform
+      const r = document.getElementById('ect-root');
+      if (r) { r.style.transform = ''; r.style.height = ''; r.style.bottom = '0'; }
+      window.scrollTo(0, 0);
+      // Refresh channel list to show latest messages/new chats
+      fetchChannels();
     } else {
       navigate(-1);
     }
@@ -1217,7 +1225,10 @@ export default function EstateChatPage() {
             <button
               onMouseDown={(e) => e.preventDefault()}
               onPointerDown={(e) => e.preventDefault()}
-              onClick={() => { voiceRecorder.start(); }}
+              onClick={() => {
+                setInputFocused(false);
+                voiceRecorder.start();
+              }}
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
               data-testid="ect-voice-btn"
               style={{ background: '#222B42' }}

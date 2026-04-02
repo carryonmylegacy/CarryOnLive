@@ -75,10 +75,11 @@ function promptToSave(file) {
 
 /**
  * Platform-aware download — iOS gets native share sheet, desktop gets blob download.
+ * Returns 'shared' | 'saved' | 'cancelled' so the caller can show appropriate toast.
  */
-export async function platformDownload({ action, params = {}, filename = 'download', onFallback }) {
+export async function platformDownload({ action, params = {}, filename = 'download', onFallback, onProgress }) {
   // Prevent double-tap issues
-  if (_downloadInProgress) return;
+  if (_downloadInProgress) return 'busy';
   _downloadInProgress = true;
 
   try {
@@ -87,7 +88,7 @@ export async function platformDownload({ action, params = {}, filename = 'downlo
       const { Capacitor } = await import('@capacitor/core');
       if (Capacitor.isNativePlatform()) {
         if (onFallback) await onFallback();
-        return;
+        return 'shared';
       }
     } catch {
       // Not a Capacitor app
@@ -96,7 +97,7 @@ export async function platformDownload({ action, params = {}, filename = 'downlo
     if (!isIOS()) {
       // Non-iOS: use provided fallback (existing blob download logic)
       if (onFallback) await onFallback();
-      return;
+      return 'shared';
     }
 
     // ── iOS PWA path ──
@@ -104,6 +105,7 @@ export async function platformDownload({ action, params = {}, filename = 'downlo
     if (!authToken) throw new Error('Not authenticated');
 
     // Step 1: Create a download token
+    if (onProgress) onProgress('preparing');
     const prepRes = await fetch(`${API_URL}/downloads/prepare`, {
       method: 'POST',
       headers: {
@@ -115,11 +117,29 @@ export async function platformDownload({ action, params = {}, filename = 'downlo
     if (!prepRes.ok) throw new Error('Failed to prepare download');
     const { token: dt } = await prepRes.json();
 
-    // Step 2: Fetch the actual file blob (backend converts WebM→MP4 etc.)
+    // Step 2: Fetch the actual file blob with progress tracking
+    if (onProgress) onProgress('downloading', 0);
     const fileRes = await fetch(`${API_URL}/downloads/${dt}`);
     if (!fileRes.ok) throw new Error(`Download failed (${fileRes.status})`);
 
-    const blob = await fileRes.blob();
+    let blob;
+    const contentLength = parseInt(fileRes.headers.get('content-length') || '0', 10);
+    if (contentLength > 0 && fileRes.body && typeof fileRes.body.getReader === 'function') {
+      // Stream the response to track progress
+      const reader = fileRes.body.getReader();
+      const chunks = [];
+      let received = 0;
+      while (true) { // eslint-disable-line no-constant-condition
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.length;
+        if (onProgress) onProgress('downloading', Math.min(99, Math.round((received / contentLength) * 100)));
+      }
+      blob = new Blob(chunks);
+    } else {
+      blob = await fileRes.blob();
+    }
     if (blob.size < 50) throw new Error('Downloaded file is too small — server error');
 
     // Verify the response is the expected type (not an error JSON)
@@ -137,24 +157,22 @@ export async function platformDownload({ action, params = {}, filename = 'downlo
     }
 
     // Step 3: Use Web Share API — native iOS share sheet
+    if (onProgress) onProgress('ready', 100);
     const file = new File([blob], finalFilename, { type: contentType });
 
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      // Try immediate share (works for small/fast files like PDFs)
       try {
         await navigator.share({ files: [file] });
-        return;
+        return 'shared';
       } catch (shareErr) {
-        if (shareErr.name === 'AbortError') return; // User cancelled — OK
+        if (shareErr.name === 'AbortError') return 'cancelled';
         // Share failed — likely user activation expired (large file / slow fetch).
-        // Show "Tap to Save" overlay to get a fresh user activation.
         const handled = await promptToSave(file);
-        if (handled) return;
+        return handled ? 'saved' : 'cancelled';
       }
     } else {
-      // canShare returned false — show save prompt as primary path
       const handled = await promptToSave(file);
-      if (handled) return;
+      return handled ? 'saved' : 'cancelled';
     }
 
   } finally {

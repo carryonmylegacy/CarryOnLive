@@ -500,10 +500,23 @@ const MessagesPage = () => {
   };
 
   const handleDownload = async (msg) => {
+    let toastId;
     try {
       const msgType = msg.message_type || 'text';
       const safeTitle = (msg.title || msgType).replace(/[^a-zA-Z0-9 _-]/g, '').trim() || 'message';
 
+      const onProgress = (stage, pct) => {
+        if (stage === 'preparing') {
+          toastId = toast.loading('Preparing download...');
+        } else if (stage === 'downloading') {
+          toast.loading(pct > 0 ? `Downloading... ${pct}%` : 'Downloading...', { id: toastId });
+        } else if (stage === 'ready') {
+          toast.dismiss(toastId);
+          toastId = undefined;
+        }
+      };
+
+      let result;
       if ((msgType === 'video' && msg.video_url) || (msgType === 'voice' && msg.voice_url)) {
         const isVideo = msgType === 'video';
         const action = isVideo ? 'message_video' : 'message_voice';
@@ -511,10 +524,11 @@ const MessagesPage = () => {
         const ext = isVideo ? 'mp4' : 'webm';
         const filename = `${safeTitle}.${ext}`;
 
-        await platformDownload({
+        result = await platformDownload({
           action,
           params,
           filename,
+          onProgress,
           onFallback: async () => {
             const endpoint = isVideo
               ? `${API_URL}/messages/video/${msg.video_url}`
@@ -527,10 +541,11 @@ const MessagesPage = () => {
       } else {
         // Text message → PDF
         const filename = `${safeTitle}.pdf`;
-        await platformDownload({
+        result = await platformDownload({
           action: 'message_pdf',
           params: { message_id: msg.id },
           filename,
+          onProgress,
           onFallback: async () => {
             const res = await axios.get(`${API_URL}/messages/${msg.id}/download`, { ...getAuthHeaders(), responseType: 'blob' });
             const blob = new Blob([res.data], { type: 'application/pdf' });
@@ -538,8 +553,10 @@ const MessagesPage = () => {
           },
         });
       }
-      toast.success('Download ready');
+      if (toastId) toast.dismiss(toastId);
+      if (result === 'shared' || result === 'saved') toast.success('Saved');
     } catch (err) {
+      if (toastId) toast.dismiss(toastId);
       if (err?.name === 'AbortError') return; // User cancelled share sheet
       toast.error('Failed to download');
     }
