@@ -287,32 +287,42 @@ export default function EstateChatPage() {
   const voiceRecorder = useVoiceRecorder();
   const [inputFocused, setInputFocused] = useState(false);
 
-  // ── Hide bottom nav when in ECT ──
+  // ── Hide bottom nav + lock html/body scroll when in ECT ──
   useEffect(() => {
     document.body.classList.add('ect-active');
-    return () => document.body.classList.remove('ect-active');
+    const de = document.documentElement;
+    de.style.overflow = 'hidden';
+    de.style.height = '100%';
+    return () => {
+      document.body.classList.remove('ect-active');
+      de.style.overflow = '';
+      de.style.height = '';
+    };
   }, []);
 
-  // ── iOS PWA: resize #ect-root to visualViewport height so keyboard doesn't hide header ──
-  // Must depend on `loading` because #ect-root only exists after loading=false
+  // ── iOS PWA: resize #ect-root ONLY when keyboard is open ──
   useEffect(() => {
     if (loading) return;
     const root = document.getElementById('ect-root');
     if (!root) return;
-    let rafId = 0;
-    let lastH = 0;
-    const sync = () => {
-      const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-      if (Math.abs(h - lastH) > 1) { root.style.height = `${h}px`; lastH = h; }
-      if (window.scrollY > 0) window.scrollTo(0, 0);
-      rafId = requestAnimationFrame(sync);
-    };
-    rafId = requestAnimationFrame(sync);
     const vv = window.visualViewport;
-    if (vv) { vv.addEventListener('resize', sync); vv.addEventListener('scroll', sync); }
+    if (!vv) return;
+    let resized = false;
+    const sync = () => {
+      const kbOpen = vv.height < window.innerHeight * 0.8;
+      if (kbOpen) {
+        root.style.height = `${vv.height}px`;
+        resized = true;
+      } else if (resized) {
+        root.style.height = '';
+        resized = false;
+      }
+    };
+    vv.addEventListener('resize', sync);
+    const poll = setInterval(sync, 120);
     return () => {
-      cancelAnimationFrame(rafId);
-      if (vv) { vv.removeEventListener('resize', sync); vv.removeEventListener('scroll', sync); }
+      vv.removeEventListener('resize', sync);
+      clearInterval(poll);
       root.style.height = '';
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
