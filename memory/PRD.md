@@ -73,9 +73,21 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **DO NOT**: Use `bottom: 0` on #ect-root — iOS doesn't resize fixed elements for keyboard
 - **DO NOT**: Re-add `scrollIntoView()` anywhere — use `parentElement.scrollTop = scrollHeight` instead
 - **DO NOT**: Re-add `backdrop-filter: blur()` or translucent `rgba()` background on input bar
+- **DO NOT**: Use `position: fixed` or `overflow: hidden` on `<body>` or `<html>` tags
 
 ### 8. iOS PWA Download Utility (`downloadFile.js`)
 - **Status**: CONFIRMED WORKING
+
+### 9. MM Download Progress Indicators
+- **Status**: IMPLEMENTED (April 2, 2026)
+- **What**: `handleDownload` in `MessagesPage.js` shows loading toasts during iOS PWA downloads
+- **Stages**: "Preparing download..." → "Downloading... X%" → dismiss on ready → "Saved" success
+- **Files**: `MessagesPage.js` (onProgress callback), `downloadFile.js` (streaming progress tracking)
+
+### 10. ECT Channel List Refresh on Back-out
+- **Status**: IMPLEMENTED (April 2, 2026)
+- **What**: `handleBackOut` in `EstateChatPage.js` calls `fetchChannels()` to refresh the channel list
+- **Also resets**: `inputFocused`, `ect-root` transform/height/bottom, `window.scrollTo(0, 0)`
 
 ---
 
@@ -86,7 +98,8 @@ A full-stack estate planning application allowing benefactors to manage digital 
 ## P0/P1/P2 Prioritized Backlog
 
 ### P0
-- ECT iOS Keyboard Fix — RE-IMPLEMENTED, awaiting user verification
+- ECT iOS Keyboard Fix — RE-IMPLEMENTED, awaiting user verification on physical device
+- MM Download Progress — IMPLEMENTED, awaiting user verification
 
 ### P1
 - **Google Play Store Launch**: User/CoS needs to execute operational steps
