@@ -294,14 +294,18 @@ export default function EstateChatPage() {
   }, []);
 
   // ── iOS Visual Viewport: keep ECT pinned to visible area ──
+  const vvTimerRef = useRef(null);
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
     const onResize = () => {
-      const root = document.getElementById('ect-root');
-      if (root) {
-        root.style.height = `${vv.height}px`;
-      }
+      clearTimeout(vvTimerRef.current);
+      vvTimerRef.current = setTimeout(() => {
+        const root = document.getElementById('ect-root');
+        if (root) {
+          root.style.height = `${vv.height}px`;
+        }
+      }, 250);
     };
     vv.addEventListener('resize', onResize);
     vv.addEventListener('scroll', onResize);
@@ -309,6 +313,7 @@ export default function EstateChatPage() {
     return () => {
       vv.removeEventListener('resize', onResize);
       vv.removeEventListener('scroll', onResize);
+      clearTimeout(vvTimerRef.current);
     };
   }, []);
 
