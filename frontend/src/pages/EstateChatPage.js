@@ -1051,7 +1051,7 @@ export default function EstateChatPage() {
         background: '#0B1222',
         borderTop: '1.5px solid rgba(255,255,255,0.22)',
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
-        paddingBottom: inputFocused ? '0px' : 'env(safe-area-inset-bottom, 0px)',
+        paddingBottom: inputFocused ? '14px' : 'env(safe-area-inset-bottom, 0px)',
       }}>
         {/* Typing indicator */}
         {typers.length > 0 && (
