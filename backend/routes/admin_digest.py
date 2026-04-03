@@ -52,9 +52,11 @@ async def gather_weekly_analytics():
     )
 
     # MRR
-    from routes.subscriptions import DEFAULT_PLANS, get_price_for_cycle
+    from routes.subscriptions import DEFAULT_PLANS, get_subscription_settings, get_price_for_cycle
 
-    plan_lookup = {p["id"]: p for p in DEFAULT_PLANS}
+    digest_settings = await get_subscription_settings()
+    digest_plans = digest_settings.get("plans", DEFAULT_PLANS)
+    plan_lookup = {p["id"]: p for p in digest_plans}
     mrr = 0.0
     tier_counts = {}
     active_sub_docs = await db.user_subscriptions.find({"status": "active"}, {"_id": 0}).to_list(5000)
@@ -101,6 +103,7 @@ async def gather_weekly_analytics():
         "daily_signups": daily_signups,
         "period_start": week_ago,
         "period_end": now_iso,
+        "dynamic_plans": digest_plans,
     }
 
 
@@ -131,8 +134,9 @@ def build_analytics_digest_html(data, app_url="https://app.carryon.us"):
     # Tier breakdown rows
     from routes.subscriptions import DEFAULT_PLANS
 
+    tier_plans = data.get("dynamic_plans", DEFAULT_PLANS)
     tier_rows = ""
-    for plan in DEFAULT_PLANS:
+    for plan in tier_plans:
         count = data["tier_counts"].get(plan["id"], 0)
         rev = round(count * plan["price"], 2)
         tier_rows += f"""

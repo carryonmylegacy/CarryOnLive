@@ -12,6 +12,7 @@ from utils import get_current_user
 from routes.subscriptions.plans import (
     router,
     DEFAULT_PLANS,
+    get_subscription_settings,
     get_price_for_cycle,
     VerificationReviewRequest,
     GRACE_PERIOD_DAYS,
@@ -332,7 +333,9 @@ async def get_subscription_stats(current_user: dict = Depends(get_current_user))
     # --- MRR ---
     mrr = 0.0
     active_sub_docs = await db.user_subscriptions.find({"status": "active"}, {"_id": 0}).to_list(5000)
-    plan_lookup = {p["id"]: p for p in DEFAULT_PLANS}
+    settings = await get_subscription_settings()
+    dynamic_plans = settings.get("plans", DEFAULT_PLANS)
+    plan_lookup = {p["id"]: p for p in dynamic_plans}
     tier_counts = {}
     for sub in active_sub_docs:
         plan_id = sub.get("plan_id", "")
@@ -352,7 +355,7 @@ async def get_subscription_stats(current_user: dict = Depends(get_current_user))
 
     # --- Tier distribution ---
     tier_distribution = []
-    for plan in DEFAULT_PLANS:
+    for plan in dynamic_plans:
         count = tier_counts.get(plan["id"], 0)
         tier_distribution.append(
             {
@@ -387,7 +390,7 @@ async def get_subscription_stats(current_user: dict = Depends(get_current_user))
 
     # --- Revenue by tier ---
     revenue_by_tier = []
-    for plan in DEFAULT_PLANS:
+    for plan in dynamic_plans:
         count = tier_counts.get(plan["id"], 0)
         revenue_by_tier.append(
             {
