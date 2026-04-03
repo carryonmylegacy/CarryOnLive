@@ -438,6 +438,15 @@ async def get_subscription_settings():
                         if stored_plan.get("features") != plan.get("features"):
                             stored_plan["features"] = plan["features"]
                             needs_update = True
+                        # Ensure quarterly/annual prices stay in sync with monthly price
+                        expected_q = round(stored_plan["price"] * 0.9, 2)
+                        expected_a = round(stored_plan["price"] * 0.8, 2)
+                        if stored_plan.get("quarterly_price") != expected_q:
+                            stored_plan["quarterly_price"] = expected_q
+                            needs_update = True
+                        if stored_plan.get("annual_price") != expected_a:
+                            stored_plan["annual_price"] = expected_a
+                            needs_update = True
                         break
         if needs_update:
             await db.subscription_settings.update_one({"_id": "global"}, {"$set": {"plans": settings["plans"]}})
