@@ -10,7 +10,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://holistic-journey-5.preview.emergentagent.com")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://holistic-hub-10.preview.emergentagent.com")
 
 # Expected step order and configuration
 EXPECTED_STEPS = [

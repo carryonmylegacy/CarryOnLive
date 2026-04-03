@@ -164,6 +164,13 @@ A full-stack estate planning application allowing benefactors to manage digital 
   - Landing page "Eight Pillars" redesign (April 3, 2026): Removed circuit-board texture, widened arrow (18px), scoped arrow to tile container only (doesn't pierce end-state tile), single arrowhead, gap-6 between tiles, opaque tile backgrounds, warmer gold text (#e8c972), fully opaque end-state "Holistic Family Preparedness" tile. Synced to both LoginPage.js and HomePage.js.
   - Arrow widened to 180px, arrowhead connects to end-state tile top, acronyms made more visible (#8b97ab font-semibold tracking-wider). Removed sardine/life insurance copy; replaced with "value now and later" messaging. Fixed ECT description: removed false "end-to-end encrypted" claim (ECT uses server-side encryption + access controls, NOT E2E). CCP bold text reworded from "pre-built" to "plans your family can build now". All synced to LoginPage.js + HomePage.js.
   - Arrow reduced to 126px (30% reduction), extended below tile 08 for full arrowhead visibility. "Scroll to explore" button enlarged to unmissable size with animate-bounce on entire button, gold border, xl/2xl font. Five Steps section spacing increased (space-y-12). All synced to both pages.
+  - **Landing Page Refactoring (April 3, 2026)**: Extracted ~800 lines of duplicated JSX from `LoginPage.js` and `HomePage.js` into reusable shared components:
+    - `components/landing/RevealSection.js` — scroll-reveal hook + component
+    - `components/landing/LandingContent.js` — all shared marketing sections (About, Reframe, Eight Pillars, Platform Features, Five Steps, Security, Hospice, Final CTA, Footer)
+    - LoginPage.js now passes the video section as `beforeAbout` slot; HomePage.js uses `testIdSuffix="-home"` for distinct data-testids
+    - Eliminated sync bug risk: future content changes only need editing in one file
+    - Fixed 12 pre-existing iOS input font-size zoom warnings (text-sm → text-base on forgot password inputs)
+    - Housekeeping: 60/60 PASS
 
 ### P1
 - Google Play Store Launch (operational steps)

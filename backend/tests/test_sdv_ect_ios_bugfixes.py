@@ -17,7 +17,7 @@ import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 if not BASE_URL:
-    BASE_URL = "https://holistic-journey-5.preview.emergentagent.com"
+    BASE_URL = "https://holistic-hub-10.preview.emergentagent.com"
 
 # Test credentials
 ADMIN_EMAIL = "info@carryon.us"
