@@ -86,7 +86,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Behavior**: Tap select button OR long-press any channel → tap channels to select → tap trash icon → confirm → done. Swipe-to-delete is disabled during select mode.
 - **DO NOT**: Allow batch-delete of more than 50 channels in a single request
 
-### 13. Settings Page — Subscription Removed
+### 14. CCP Emergency Plan — Layout Fix & Beneficiary Assignment
+- **Status**: IMPLEMENTED (April 3, 2026)
+- **Layout**: Rendezvous Points and Resource Locations fields stacked vertically (Name on line 1, Address on line 2). `overflowX: hidden` on plan-edit container prevents horizontal slide.
+- **Beneficiary Assignment**: New `assigned_beneficiary_ids` field on plans. `null` = all beneficiaries (default). Array of user IDs = specific beneficiaries only.
+- **Backend filtering**: `GET /api/ccp/plans/{estate_id}` — benefactors see all plans; beneficiaries only see plans where `assigned_beneficiary_ids` is null OR contains their ID.
+- **New endpoint**: `GET /api/ccp/members/{estate_id}` — returns estate members for the selector UI.
 - **Status**: IMPLEMENTED (April 2, 2026)
 - **Change**: Removed `<SubscriptionManagement />` from `SettingsPage.js` and `BeneficiarySettingsPage.js`
 - **Reason**: Subscriptions have their own dedicated page; no need for duplication in Settings
