@@ -166,10 +166,9 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                     <div className="rounded-2xl p-6 lg:p-8 relative overflow-hidden"
                       style={{
                         background: 'linear-gradient(135deg, rgba(20,33,56,0.98) 0%, rgba(16,28,48,0.98) 100%)',
-                        border: '1px solid rgba(212,175,55,0.10)',
+                        border: '1.5px solid rgba(212,175,55,0.45)',
                         boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
                       }}>
-                      <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-2xl" style={{ background: 'linear-gradient(180deg, rgba(212,175,55,0.3), rgba(212,175,55,0.6), rgba(212,175,55,0.3))' }} />
                       <div className="flex items-start gap-5">
                         <div className="flex flex-col items-center gap-2.5 flex-shrink-0 pt-0.5">
                           <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm"
