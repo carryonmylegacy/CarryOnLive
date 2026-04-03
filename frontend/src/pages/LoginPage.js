@@ -947,7 +947,7 @@ const LoginPage = () => {
             </button>
             <RevealSection delay={0.2}>
               <p className="mt-10 text-[#d4af37] text-sm lg:text-base italic font-medium">
-                We can&apos;t fill your pantry with sardine cans. But we can give your family the one tool that brings it all together &mdash; so they can CarryOn.
+                CarryOn&#8482; helps your family stay organized, connected, and prepared &mdash; not just for the unexpected, but for everything in between. It&apos;s just as valuable today as it is decades from now.
               </p>
             </RevealSection>
           </RevealSection>
@@ -969,7 +969,7 @@ const LoginPage = () => {
             </p>
             <RevealSection delay={0.15}>
               <p className="text-white text-base lg:text-lg font-semibold italic leading-relaxed">
-                You don&apos;t buy life insurance because you plan to die. You buy it because you plan to take care of your family. CarryOn works the same way &mdash; it&apos;s just as valuable today as it is decades from now.
+                CarryOn&#8482; isn&apos;t something you set up and forget. It&apos;s a living system your family uses today &mdash; to organize, coordinate, and communicate &mdash; and relies on tomorrow when it matters most.
               </p>
             </RevealSection>
           </RevealSection>
@@ -998,11 +998,11 @@ const LoginPage = () => {
                 {/* Wide gentle arrow shaft — scoped to tile container only */}
                 <div className="absolute left-1/2 -translate-x-1/2 z-0 rounded-full"
                   style={{
-                    width: '18px',
+                    width: '180px',
                     top: '30px',
-                    bottom: '30px',
+                    bottom: '0px',
                     background: 'linear-gradient(180deg, rgba(212,175,55,0.05) 0%, rgba(212,175,55,0.13) 15%, rgba(212,175,55,0.13) 85%, rgba(212,175,55,0.18) 100%)',
-                    borderRadius: '9px',
+                    borderRadius: '90px',
                   }} />
 
                 {/* Feature tiles — full width, stacked with generous gaps to show arrow */}
@@ -1021,11 +1021,11 @@ const LoginPage = () => {
                     bold: 'A step-by-step guide your family can follow on the hardest days of their lives.',
                     desc: 'Partially auto-created by EGA from your documents and fully customizable by you. When a crisis hits, your family opens the IAC and knows exactly what to do, who to call, where to find every document, and what deadlines matter. No guessing. No searching. No overwhelm.' },
                   { num: '05', icon: Radio, title: 'Contingency Protocols', abbr: 'CCP',
-                    bold: 'Pre-built response plans for the scenarios your family might face \u2014 ready to activate at a moment\u2019s notice.',
+                    bold: 'Response plans your family can build now for the scenarios they might face \u2014 ready to activate at a moment\u2019s notice.',
                     desc: 'Build contingency protocols for any situation: medical emergencies, natural disasters, financial disruptions, or the passing of a family member. Each protocol connects your people, your documents, your checklists, and your communication channels into one coordinated plan your family can execute together.' },
                   { num: '06', icon: MessageCircle, title: 'Estate Communications Tool', abbr: 'ECT',
-                    bold: 'Secure, encrypted family messaging that powers your protocols and keeps your family connected when it counts.',
-                    desc: 'ECT is the communication backbone of your family\'s readiness infrastructure. End-to-end encrypted conversations between benefactors and beneficiaries, purpose-built for sensitive family coordination. When a contingency protocol activates, ECT is how your family stays in sync \u2014 privately and securely.' },
+                    bold: 'Secure, private family messaging that powers your protocols and keeps your family connected when it counts.',
+                    desc: 'ECT is the communication backbone of your family\'s readiness infrastructure. Encrypted, access-controlled conversations between benefactors and beneficiaries, purpose-built for sensitive family coordination. When a contingency protocol activates, ECT is how your family stays in sync \u2014 privately and securely.' },
                   { num: '07', icon: Key, title: 'Digital Access Vault', abbr: 'DAV',
                     bold: 'Passwords, accounts, crypto keys, and digital credentials \u2014 saved, encrypted, and assigned to the right people.',
                     desc: 'The modern family has dozens of digital accounts, subscriptions, financial platforms, and access credentials that need to be passed down and organized. DAV stores them all in your encrypted vault, assigned to specific beneficiaries, so nothing is lost and nothing is forgotten.' },
@@ -1055,7 +1055,7 @@ const LoginPage = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline gap-3 mb-2">
                             <h4 className="text-white text-lg font-bold leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>{title}</h4>
-                            <span className="text-[#4a5568] text-xs font-mono flex-shrink-0">{abbr}</span>
+                            <span className="text-[#8b97ab] text-xs font-semibold tracking-wider flex-shrink-0">{abbr}</span>
                           </div>
                           <p className="text-sm font-medium mb-2.5 leading-relaxed" style={{ color: '#e8c972' }}>{bold}</p>
                           <p className="text-[#8b97ab] text-sm leading-relaxed">{desc}</p>
@@ -1068,16 +1068,17 @@ const LoginPage = () => {
               {/* Close tile stack container — arrow is scoped here */}
               </div>
 
-              {/* Single gentle arrowhead — sits between tiles and end-state */}
-              <div className="flex justify-center py-8 relative z-10">
-                <svg width="36" height="20" viewBox="0 0 36 20" fill="none">
-                  <path d="M6 4 L18 16 L30 4" stroke="#d4af37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity="0.35" />
+              {/* Single gentle arrowhead — connects shaft to end-state tile */}
+              <div className="flex justify-center relative z-10 -mt-1 mb-0">
+                <svg width="180" height="40" viewBox="0 0 180 40" fill="none">
+                  <path d="M0 0 L90 36 L180 0" fill="rgba(212,175,55,0.18)" />
+                  <path d="M20 0 L90 30 L160 0" fill="rgba(212,175,55,0.10)" />
                 </svg>
               </div>
 
               {/* End-state tile — warm, fully opaque, clearly separated from arrow */}
               <RevealSection delay={0.5}>
-                <div className="relative z-20 mx-auto max-w-[640px] rounded-[1.75rem] p-8 lg:p-10 text-center"
+                <div className="relative z-20 mx-auto max-w-[640px] rounded-[1.75rem] p-8 lg:p-10 text-center -mt-1"
                   data-testid="holistic-preparedness-tile"
                   style={{
                     background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)',
