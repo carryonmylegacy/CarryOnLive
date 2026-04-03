@@ -1067,6 +1067,12 @@ export default function EstateChatPage() {
                 <div><span className="text-xs font-bold" style={{ color: '#F1F3F8' }}>{t}</span><span className="text-xs" style={{ color: '#7B879E' }}> — {d}</span></div>
               </div>
             ))}
+            <button
+              onClick={() => setShowSecurityIntro(true)}
+              className="w-full py-2 mt-2 rounded-xl text-xs font-bold transition-all active:scale-[0.97]"
+              data-testid="ect-show-full-security"
+              style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}
+            >Learn More</button>
           </div>
         )}
         {showSearch && searchQuery.trim() ? (
@@ -1680,6 +1686,12 @@ export default function EstateChatPage() {
             data-testid="ect-security-dismiss"
             style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}
           >I Understand — Start Chatting</button>
+          <button
+            onClick={() => { setShowSecurityIntro(false); navigate(-1); }}
+            className="w-full py-2 mt-2 text-sm font-medium transition-all active:scale-[0.97]"
+            data-testid="ect-security-back"
+            style={{ color: '#7B879E', background: 'transparent' }}
+          >&lt; Previous Page</button>
         </div>
       </div>
     )}
