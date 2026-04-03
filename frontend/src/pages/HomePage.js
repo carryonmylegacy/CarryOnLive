@@ -119,7 +119,7 @@ const HomePage = () => {
             </div>
           </RevealSection>
           <RevealSection delay={0.4}>
-            <a href="#about" className="inline-flex flex-col items-center justify-center gap-2 mt-6 w-full max-w-md py-5 rounded-2xl cursor-pointer animate-bounce text-center"
+            <a href="#about" className="inline-flex flex-col items-center justify-center gap-2 mt-10 w-full max-w-md py-5 rounded-2xl cursor-pointer animate-bounce text-center"
               data-testid="scroll-explore-home"
               style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20), 0 0 50px rgba(212,175,55,0.08)', backdropFilter: 'blur(8px)' }}>
               <span className="text-white text-2xl sm:text-3xl font-bold text-center" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
@@ -198,8 +198,8 @@ const HomePage = () => {
             {/* Flow container — arrow behind the gaps between tiles */}
             <div data-testid="pillars-flow-home">
               {/* Tile stack with arrow behind it */}
-              <div className="relative" style={{ marginBottom: '60px' }}>
-                {/* Arrow shaft — extends from top of tiles to below bottom tile */}
+              <div className="relative" style={{ marginBottom: '20px' }}>
+                {/* Arrow shaft */}
                 <div className="absolute left-1/2 -translate-x-1/2 z-0"
                   style={{
                     width: '100px',
@@ -208,7 +208,7 @@ const HomePage = () => {
                     background: 'linear-gradient(180deg, rgba(212,175,55,0.04) 0%, rgba(212,175,55,0.12) 10%, rgba(212,175,55,0.14) 100%)',
                     borderRadius: '50px 50px 0 0',
                   }} />
-                {/* Arrow head — triangle flush at bottom of shaft, visible below last tile */}
+                {/* Arrow head — tip reaches the end-state tile */}
                 <div className="absolute left-1/2 -translate-x-1/2 z-0"
                   style={{
                     width: '0',
@@ -216,7 +216,7 @@ const HomePage = () => {
                     bottom: '-60px',
                     borderLeft: '70px solid transparent',
                     borderRight: '70px solid transparent',
-                    borderTop: '42px solid rgba(212,175,55,0.16)',
+                    borderTop: '40px solid rgba(212,175,55,0.16)',
                   }} />
 
                 {/* Feature tiles — full width, stacked with generous gaps to show arrow */}
@@ -367,7 +367,7 @@ const HomePage = () => {
                 You don&apos;t need to do it all at once. Start with what matters most and build your family&apos;s readiness over time.
               </p>
             </RevealSection>
-            <div className="space-y-12 text-left">
+            <div className="space-y-16 text-left">
               {[
                 { step: '1', title: 'Enroll Your Family', desc: 'Invite your beneficiaries \u2014 the people who matter most. Set their roles, permissions, and access levels. Your family\'s readiness starts with the people in it.' },
                 { step: '2', title: 'Leave Your Messages', desc: 'Record Milestone Messages for the moments you want to be part of \u2014 graduations, weddings, birthdays, or just a Tuesday. Create them over time, as many as you want, delivered exactly as you envision.' },
