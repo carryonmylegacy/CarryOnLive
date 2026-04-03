@@ -901,8 +901,8 @@ export default function EstateChatPage() {
                     background: isSelected ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.08)',
                     color: isSelected ? '#080e1a' : '#A0AABF',
                   }}>
-                    {m.photo_url && m.photo_url.startsWith('http')
-                      ? <img src={m.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; }} />
+                    {m.photo_url
+                      ? <img src={m.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = initials; }} />
                       : initials}
                   </div>
                   <div className="flex-1 text-left min-w-0">
@@ -1171,8 +1171,8 @@ export default function EstateChatPage() {
                   </div>
                 )}
                 <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold" style={{ background: 'rgba(255,255,255,0.06)', color: '#A0AABF' }}>
-                  {ch.type === 'direct' && ch.photo_url && ch.photo_url.startsWith('http')
-                    ? <img src={ch.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; }} />
+                  {ch.type === 'direct' && ch.photo_url
+                    ? <img src={ch.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = ch.name?.charAt(0)?.toUpperCase() || '?'; }} />
                     : ch.type === 'direct'
                       ? (ch.name?.charAt(0)?.toUpperCase() || '?')
                       : getChannelIcon(ch.type)}
@@ -1216,8 +1216,8 @@ export default function EstateChatPage() {
           <ArrowLeft className="w-4 h-4" style={{ color: '#A0AABF' }} />
         </button>
         <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold" style={{ background: 'rgba(255,255,255,0.06)', color: '#A0AABF' }}>
-          {activeChannel.type === 'direct' && activeChannel.photo_url && activeChannel.photo_url.startsWith('http')
-            ? <img src={activeChannel.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; }} />
+          {activeChannel.type === 'direct' && activeChannel.photo_url
+            ? <img src={activeChannel.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = activeChannel.name?.charAt(0)?.toUpperCase() || '?'; }} />
             : activeChannel.type === 'direct'
               ? (activeChannel.name?.charAt(0)?.toUpperCase() || '?')
               : getChannelIcon(activeChannel.type)}
