@@ -312,7 +312,7 @@ export default function EstateChatPage() {
     // When leaving a chat (going back to channel list), force-reset all inline styles
     if (!activeChannel) {
       const r = document.getElementById('ect-root');
-      if (r) { r.style.transform = ''; r.style.bottom = '0'; }
+      if (r) { r.style.transition = 'none'; r.style.transform = ''; r.style.bottom = '0'; }
       window.scrollTo(0, 0);
       setInputFocused(false);
     }
@@ -491,9 +491,9 @@ export default function EstateChatPage() {
     setMsgLoading(true);
     setTypers([]);
     setSwipedChannel(null);
-    // Reset any lingering keyboard styles
+    // Kill any residual keyboard transition so the view switch is instant
     const r = document.getElementById('ect-root');
-    if (r) { r.style.transform = ''; r.style.bottom = '0'; }
+    if (r) { r.style.transition = 'none'; r.style.transform = ''; r.style.bottom = '0'; }
     window.scrollTo(0, 0);
     fetchMessages(ch.id).then(() => setMsgLoading(false));
   };
