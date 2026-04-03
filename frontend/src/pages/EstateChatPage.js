@@ -493,6 +493,7 @@ export default function EstateChatPage() {
     setSwipedChannel(null);
     const r = document.getElementById('ect-root');
     if (r) { r.style.transform = ''; r.style.bottom = '0'; }
+    window.scrollTo(0, 0);
     fetchMessages(ch.id).then(() => setMsgLoading(false));
   };
 
@@ -1202,7 +1203,7 @@ export default function EstateChatPage() {
 
   // ── Message Area ──
   const messageArea = activeChannel && (
-    <div className={`${!showChannelList || activeChannel ? 'grid' : 'hidden'} lg:flex lg:flex-col flex-1`} style={{ minHeight: 0, gridTemplateRows: 'auto 1fr auto auto' }}>
+    <div className={`${!showChannelList || activeChannel ? 'flex' : 'hidden'} lg:flex flex-col flex-1`} style={{ minHeight: 0 }}>
       {/* Header */}
       <div className="flex items-center gap-3 p-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <button
@@ -1239,7 +1240,7 @@ export default function EstateChatPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3 min-h-0">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {pinnedMsgs.length > 0 && (
           <div className="mb-2">
             <button onClick={() => setShowPinned(!showPinned)}
