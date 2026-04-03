@@ -1038,6 +1038,7 @@ const BeneficiariesPage = () => {
                   onChange={(e) => setAddressLine2(e.target.value)}
                   placeholder="Apt 4B, Suite 200, etc."
                   className="input-field"
+                  autoComplete="one-time-code"
                 />
               </div>
               

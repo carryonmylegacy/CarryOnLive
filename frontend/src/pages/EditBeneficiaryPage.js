@@ -460,7 +460,7 @@ export default function EditBeneficiaryPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[#94a3b8]">Apt, Suite, Unit (optional)</Label>
-                  <Input value={form.addressLine2} onChange={(event) => updateField('addressLine2', event.target.value)} placeholder="Apt 4B, Suite 200, etc." className="input-field" data-testid="edit-beneficiary-address-line2-input" />
+                  <Input value={form.addressLine2} onChange={(event) => updateField('addressLine2', event.target.value)} placeholder="Apt 4B, Suite 200, etc." className="input-field" data-testid="edit-beneficiary-address-line2-input" autoComplete="one-time-code" />
                 </div>
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="space-y-2">

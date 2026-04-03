@@ -475,7 +475,7 @@ const CreateEstatePage = () => {
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-[#7b879e] text-sm font-medium">Apt / Unit / Suite</Label>
-                          <Input value={addressLine2} onChange={(e) => setAddressLine2(e.target.value)} placeholder="Apartment, unit, suite, etc." className={inputClass} data-testid="create-estate-address-line2" />
+                          <Input value={addressLine2} onChange={(e) => setAddressLine2(e.target.value)} placeholder="Apartment, unit, suite, etc." className={inputClass} data-testid="create-estate-address-line2" autoComplete="one-time-code" />
                         </div>
                         <div className="grid grid-cols-3 gap-2">
                           <Input value={addressCity} onChange={(e) => setAddressCity(e.target.value)} placeholder="City" className={inputClass} />

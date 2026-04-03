@@ -17,6 +17,7 @@ from typing import Optional
 
 from config import db
 from utils import get_current_user
+from services.photo_urls import resolve_photo_url
 
 router = APIRouter()
 
@@ -114,7 +115,7 @@ async def _get_estate_members(estate_id: str) -> list[dict]:
             {
                 "id": u["id"],
                 "name": u.get("name", "Unknown"),
-                "photo_url": u.get("photo_url", ""),
+                "photo_url": resolve_photo_url(u.get("photo_url", "")),
                 "role_in_estate": "benefactor" if is_owner else "beneficiary",
                 "relation": relation_map.get(u["id"], "benefactor" if is_owner else ""),
             }
