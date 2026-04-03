@@ -769,7 +769,7 @@ export default function ConnectedProtocolPage() {
           <ArrowLeft className="w-4 h-4" />Back
         </button>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold" style={{ color: '#F1F3F8' }}>Emergency Plans</h2>
+          <h2 className="text-lg font-bold" style={{ color: '#F1F3F8', fontFamily: 'Outfit, sans-serif' }}>Emergency Plans</h2>
           {isBenefactor && (
             <button onClick={() => { setEditPlan({ name: '', plan_type: 'custom', rendezvous_points: [], communication_plan: '', resource_locations: [], instructions: '', linked_document_ids: [], linked_ffn_contact_ids: [], linked_dav_entry_ids: [], assigned_beneficiary_ids: null }); fetchAvailableResources(); setView('plan-edit'); }}
               className="w-10 h-10 rounded-full flex items-center justify-center" data-testid="ccp-new-plan-btn"
@@ -862,44 +862,45 @@ export default function ConnectedProtocolPage() {
 
   // ===================== HOME VIEW — Big Bubble Buttons =====================
   return (
-    <div data-testid="ccp-home" className="max-w-lg mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-5">
-      <div className="text-center mb-6">
-        <Shield className="w-14 h-14 mx-auto mb-3" style={{ color: '#d4af37' }} />
-        <h1 className="text-2xl font-bold" style={{ color: '#F1F3F8' }}>Contingency Protocols</h1>
+    <div data-testid="ccp-home" className="max-w-lg mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-4">
+      <div className="text-center mb-4">
+        <Shield className="w-10 h-10 mx-auto mb-2" style={{ color: '#d4af37' }} />
+        <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#F1F3F8', fontFamily: 'Outfit, sans-serif' }}>Contingency Protocols</h1>
         <p className="text-sm mt-1" style={{ color: '#7B879E' }}>Family disaster preparedness</p>
       </div>
 
       {/* Emergency Alert Banner */}
       {activeEmergency && (
         <button onClick={() => setView('active')}
-          className="w-full py-5 rounded-2xl text-lg font-bold transition-all active:scale-[0.97] animate-pulse"
+          className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center gap-3 px-5 animate-pulse"
           data-testid="ccp-active-alert"
-          style={{ background: activeEmergency.is_drill ? 'rgba(59,123,247,0.2)' : 'rgba(240,82,82,0.2)', border: `2px solid ${activeEmergency.is_drill ? 'rgba(59,123,247,0.5)' : 'rgba(240,82,82,0.5)'}`, color: activeEmergency.is_drill ? '#3B7BF7' : '#F05252' }}>
-          <AlertTriangle className="w-6 h-6 mx-auto mb-1" />
-          {activeEmergency.is_drill ? 'DRILL ACTIVE' : 'EMERGENCY ACTIVE'} — Tap to View
+          style={{ background: activeEmergency.is_drill ? 'rgba(59,123,247,0.12)' : 'rgba(240,82,82,0.12)', border: `1px solid ${activeEmergency.is_drill ? 'rgba(59,123,247,0.3)' : 'rgba(240,82,82,0.3)'}`, color: activeEmergency.is_drill ? '#3B7BF7' : '#F05252' }}>
+          <AlertTriangle className="w-6 h-6 flex-shrink-0" />
+          <span className="flex-1 text-left" style={{ fontFamily: 'Outfit, sans-serif' }}>{activeEmergency.is_drill ? 'Drill Active' : 'Emergency Active'} — Tap to View</span>
+          <ChevronRight className="w-5 h-5 flex-shrink-0" />
         </button>
       )}
 
       {/* Big Navigation Buttons */}
       <button onClick={() => setView('plans')}
-        className="w-full py-6 rounded-2xl text-lg font-bold transition-all active:scale-[0.97] flex items-center justify-center gap-3"
+        className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center gap-3 px-5"
         data-testid="ccp-plans-btn"
-        style={{ background: 'rgba(212,175,55,0.1)', border: '2px solid rgba(212,175,55,0.3)', color: '#d4af37', minHeight: 80 }}>
-        <FileText className="w-8 h-8" />
-        <div className="text-left">
-          <div>EMERGENCY PLANS</div>
-          <div className="text-xs font-normal" style={{ color: '#A0AABF' }}>{plans.length} plan{plans.length !== 1 ? 's' : ''} created</div>
+        style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)', color: '#d4af37' }}>
+        <FileText className="w-6 h-6 flex-shrink-0" />
+        <div className="text-left flex-1">
+          <div style={{ fontFamily: 'Outfit, sans-serif' }}>Emergency Plans</div>
+          <div className="text-xs font-normal" style={{ color: '#7B879E' }}>{plans.length} plan{plans.length !== 1 ? 's' : ''} created</div>
         </div>
-        <ChevronRight className="w-6 h-6 ml-auto" />
+        <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: '#7B879E' }} />
       </button>
 
       <button onClick={() => { fetchHistory(); setView('history'); }}
-        className="w-full py-5 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center justify-center gap-3"
+        className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center gap-3 px-5"
         data-testid="ccp-history-btn"
-        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#A0AABF', minHeight: 64 }}>
-        <Clock className="w-6 h-6" />
-        Past Activations
-        <ChevronRight className="w-5 h-5 ml-auto" />
+        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#A0AABF' }}>
+        <Clock className="w-6 h-6 flex-shrink-0" />
+        <span className="flex-1 text-left" style={{ fontFamily: 'Outfit, sans-serif' }}>Past Activations</span>
+        <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: '#7B879E' }} />
       </button>
     </div>
   );

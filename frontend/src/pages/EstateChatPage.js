@@ -1574,7 +1574,7 @@ export default function EstateChatPage() {
       {/* Desktop: side-by-side layout */}
       <div className="hidden lg:flex flex-1 min-h-0">
         <div style={{ width: 340, minWidth: 340 }}>{channelPanel}</div>
-        <div className="flex-1">{activeChannel ? messageArea : (
+        <div className="flex-1 flex flex-col">{activeChannel ? messageArea : (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <MessageCircle className="w-16 h-16 mx-auto mb-4" style={{ color: '#525C72' }} />
