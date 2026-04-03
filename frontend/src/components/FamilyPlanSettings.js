@@ -350,40 +350,51 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
             })}
           </div>
 
-          {/* Total row */}
-          <div className="px-4 py-4" style={{ background: 'rgba(212,175,55,0.04)', borderTop: '2px solid var(--b)' }} data-testid="family-total-row">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-bold text-[var(--t)]">
-                Total {fpBilling === 'annual' ? '(billed annually)' : fpBilling === 'quarterly' ? '(billed quarterly)' : '(monthly)'}
-              </span>
-            </div>
-            <div className="flex items-baseline gap-3">
-              <span className="text-2xl font-bold underline" style={{ color: '#22C993', fontFamily: 'Outfit, sans-serif' }} data-testid="family-total-price">
-                ${totalFamily.toFixed(2)}{billingLabel}
-              </span>
+          {/* Total row — Family Plan Price vs Without */}
+          <div className="px-4 py-5" style={{ background: 'rgba(212,175,55,0.04)', borderTop: '2px solid var(--b)' }} data-testid="family-total-row">
+            <div className="grid grid-cols-2 gap-6">
+              {/* Family Plan Price column */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#22C993' }}>With Family Plan</p>
+                <p className="text-2xl font-bold underline" style={{ color: '#22C993', fontFamily: 'Outfit, sans-serif' }} data-testid="family-total-price">
+                  ${totalFamily.toFixed(2)}{billingLabel}
+                </p>
+                {fpBilling !== 'monthly' && (
+                  <p className="text-sm font-semibold mt-1" style={{ color: '#22C993' }}>
+                    ${(totalFamily * (fpBilling === 'annual' ? 12 : 3)).toFixed(2)} {fpBilling === 'annual' ? 'per year' : 'per quarter'}
+                  </p>
+                )}
+              </div>
+
+              {/* Without Family Plan column */}
               {totalSavings > 0 && (
-                <span className="text-sm italic" style={{ color: '#EF4444' }} data-testid="family-total-original">
-                  (${totalCurrent.toFixed(2)}{billingLabel})
-                </span>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#EF4444' }}>Without Family Plan</p>
+                  <p className="text-lg italic line-through" style={{ color: '#EF4444' }} data-testid="family-total-original">
+                    ${totalCurrent.toFixed(2)}{billingLabel}
+                  </p>
+                  {fpBilling !== 'monthly' && (
+                    <p className="text-sm italic mt-1" style={{ color: '#EF4444' }}>
+                      ${(totalCurrent * (fpBilling === 'annual' ? 12 : 3)).toFixed(2)} {fpBilling === 'annual' ? 'per year' : 'per quarter'}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
+
+            {/* Savings summary */}
+            {totalSavings > 0 && (
+              <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--b)' }}>
+                <p className="text-xs font-bold" style={{ color: '#22C993' }}>
+                  You save ${totalSavings.toFixed(2)}{billingLabel} with your Family Plan
+                  {fpBilling !== 'monthly' && (
+                    <span> &mdash; ${(totalSavings * (fpBilling === 'annual' ? 12 : 3)).toFixed(2)} {fpBilling === 'annual' ? 'per year' : 'per quarter'}</span>
+                  )}
+                </p>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Per-billing-period total callout */}
-        {fpBilling !== 'monthly' && (
-          <div className="p-3 rounded-xl text-center" style={{ background: 'rgba(34,201,147,0.06)', border: '1px solid rgba(34,201,147,0.12)' }} data-testid="family-period-total">
-            <span className="text-xs text-[var(--t4)]">
-              {fpBilling === 'annual' ? 'Annual' : 'Quarterly'} total:{' '}
-              <span className="font-bold text-[var(--t)]">
-                ${(totalFamily * (fpBilling === 'annual' ? 12 : 3)).toFixed(2)}
-              </span>
-              <span className="text-[#22C993] font-bold ml-2">
-                vs ${(totalCurrent * (fpBilling === 'annual' ? 12 : 3)).toFixed(2)} without family plan
-              </span>
-            </span>
-          </div>
-        )}
 
         {/* Successor info */}
         {fp.successor_name && (
