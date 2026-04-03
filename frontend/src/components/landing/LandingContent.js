@@ -310,8 +310,8 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {SECURITY_ITEMS.map(({ icon: Icon, text }, i) => (
               <RevealSection key={i} delay={i * 0.08}>
-                <div className="rounded-xl p-6 text-center h-full backdrop-blur-xl"
-                  style={{ background: 'rgba(15,26,46,0.75)', border: '1.5px solid rgba(255,255,255,0.18)', boxShadow: '0 8px 48px rgba(0,0,0,0.5), 0 0 30px rgba(15,26,46,0.4), inset 0 1px 0 rgba(255,255,255,0.1)' }}>
+                <div className="rounded-xl p-6 text-center h-full backdrop-blur-md"
+                  style={{ background: 'rgba(14,24,41,0.35)', border: '1.5px solid rgba(255,255,255,0.12)', boxShadow: '0 8px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)' }}>
                   <Icon className="w-6 h-6 text-[#7b879e] mx-auto mb-4 transition-colors duration-300 group-hover:text-[#d4af37]" />
                   <p className="text-[#94a3b8] text-sm leading-relaxed">{text}</p>
                 </div>
