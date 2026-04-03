@@ -329,50 +329,58 @@ export default function EstateChatPage() {
 
     const resetStyles = () => {
       kbOpen = false;
-      root.style.transition = '';
       root.style.bottom = '0';
       root.style.transform = '';
       window.scrollTo(0, 0);
     };
 
     let lastBottom = 0;
-    let lastTransform = 0;
     let settleTimer = null;
+    let scrollLockRaf = null;
+
+    // Lock page scroll to 0 during keyboard open animation.
+    // iOS PWA pushes fixed elements upward by scrolling the page — this prevents it.
+    const startScrollLock = () => {
+      const lockUntil = Date.now() + 350;
+      const lock = () => {
+        if (window.scrollY !== 0) window.scrollTo(0, 0);
+        if (Date.now() < lockUntil && kbOpen) {
+          scrollLockRaf = requestAnimationFrame(lock);
+        }
+      };
+      scrollLockRaf = requestAnimationFrame(lock);
+    };
+
+    const stopScrollLock = () => {
+      if (scrollLockRaf) { cancelAnimationFrame(scrollLockRaf); scrollLockRaf = null; }
+    };
 
     const sync = () => {
-      // Keyboard CLOSE detection — must be immediate, no debounce
       const focused = document.activeElement;
       const inputActive = focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.isContentEditable);
       const open = inputActive && vv.height < window.innerHeight * 0.75;
 
+      // Keyboard CLOSE — immediate
       if (kbOpen && !open) {
         clearTimeout(settleTimer);
+        stopScrollLock();
         resetStyles();
         lastBottom = 0;
-        lastTransform = 0;
         return;
       }
 
       // Skip if on channel list
       if (!activeChannelRef.current) {
-        if (kbOpen) { clearTimeout(settleTimer); resetStyles(); }
+        if (kbOpen) { clearTimeout(settleTimer); stopScrollLock(); resetStyles(); }
         return;
       }
 
-      // Scroll compensation — apply immediately (no debounce)
-      if (kbOpen && window.scrollY > 0) {
-        if (Math.abs(window.scrollY - lastTransform) > 3) {
-          root.style.transform = `translateY(${window.scrollY}px)`;
-          lastTransform = window.scrollY;
-        }
-      } else if (kbOpen && lastTransform !== 0) {
-        root.style.transform = '';
-        lastTransform = 0;
+      // Keyboard OPENING — start scroll lock to prevent iOS page push
+      if (!kbOpen && open) {
+        startScrollLock();
       }
 
-      // Keyboard OPEN / HEIGHT CHANGE — debounce to let iOS finish animating.
-      // iOS fires 5-15 resize events over ~300ms as the keyboard slides up.
-      // We wait until they stop, then snap into position ONCE.
+      // Debounce the bottom adjustment — wait for iOS keyboard to finish animating
       clearTimeout(settleTimer);
       settleTimer = setTimeout(() => {
         const f = document.activeElement;
@@ -383,17 +391,14 @@ export default function EstateChatPage() {
           const kbHeight = window.innerHeight - vv.height;
           if (!kbOpen || Math.abs(kbHeight - lastBottom) > 5) {
             kbOpen = true;
-            root.style.transition = 'none';
             root.style.bottom = `${kbHeight}px`;
             lastBottom = kbHeight;
           }
         }
-        // Also handle any scroll that happened during the settle
-        if (kbOpen && window.scrollY > 0) {
-          root.style.transform = `translateY(${window.scrollY}px)`;
-          lastTransform = window.scrollY;
-        }
-      }, 120);
+        // Final scroll reset after positioning
+        if (window.scrollY !== 0) window.scrollTo(0, 0);
+        root.style.transform = '';
+      }, 150);
     };
 
     // Safety: when input loses focus, reset after a delay
@@ -404,29 +409,20 @@ export default function EstateChatPage() {
         const isInput = el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
         if (!isInput && kbOpen) {
           clearTimeout(settleTimer);
+          stopScrollLock();
           resetStyles();
         }
       }, 400);
     };
 
-    const handleWindowScroll = () => {
-      if (kbOpen && activeChannelRef.current && window.scrollY > 0) {
-        if (Math.abs(window.scrollY - lastTransform) > 3) {
-          root.style.transform = `translateY(${window.scrollY}px)`;
-          lastTransform = window.scrollY;
-        }
-      }
-    };
-
     vv.addEventListener('resize', sync);
     vv.addEventListener('scroll', sync);
-    window.addEventListener('scroll', handleWindowScroll, { passive: true });
     root.addEventListener('focusout', handleFocusOut);
     return () => {
       clearTimeout(settleTimer);
+      stopScrollLock();
       vv.removeEventListener('resize', sync);
       vv.removeEventListener('scroll', sync);
-      window.removeEventListener('scroll', handleWindowScroll);
       root.removeEventListener('focusout', handleFocusOut);
       root.style.bottom = '0';
       root.style.transform = '';
