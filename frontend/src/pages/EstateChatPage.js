@@ -313,7 +313,7 @@ export default function EstateChatPage() {
     if (!activeChannel) {
       const r = document.getElementById('ect-root');
       if (r) { r.style.transition = 'none'; r.style.transform = ''; r.style.bottom = '0'; }
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, behavior: 'instant' });
       setInputFocused(false);
     }
   }, [activeChannel]);
@@ -332,7 +332,7 @@ export default function EstateChatPage() {
       root.style.transition = '';
       root.style.bottom = '0';
       root.style.transform = '';
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, behavior: 'instant' });
     };
 
     let lastBottom = 0;
@@ -486,15 +486,26 @@ export default function EstateChatPage() {
   }, [contacts, newChatEstate]);
 
   const openChannel = (ch) => {
+    // Hide ect-root during the DOM swap so iOS doesn't show intermediate layout frames
+    const r = document.getElementById('ect-root');
+    if (r) {
+      r.style.visibility = 'hidden';
+      r.style.transition = 'none';
+      r.style.transform = '';
+      r.style.bottom = '0';
+    }
+    window.scrollTo({ top: 0, behavior: 'instant' });
     setActiveChannel(ch);
     setShowChannelList(false);
     setMsgLoading(true);
     setTypers([]);
     setSwipedChannel(null);
-    // Kill any residual keyboard transition so the view switch is instant
-    const r = document.getElementById('ect-root');
-    if (r) { r.style.transition = 'none'; r.style.transform = ''; r.style.bottom = '0'; }
-    window.scrollTo(0, 0);
+    // Reveal after browser has completed layout + paint (double-rAF)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (r) r.style.visibility = '';
+      });
+    });
     fetchMessages(ch.id).then(() => setMsgLoading(false));
   };
 
@@ -1455,9 +1466,9 @@ export default function EstateChatPage() {
                 // iOS PWA scrolls the page when keyboard opens.
                 // Reset scroll immediately AND after the keyboard animation
                 // settles, so the fixed root stays aligned.
-                window.scrollTo(0, 0);
-                setTimeout(() => window.scrollTo(0, 0), 150);
-                setTimeout(() => window.scrollTo(0, 0), 350);
+                window.scrollTo({ top: 0, behavior: 'instant' });
+                setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 150);
+                setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 350);
               }}
               onBlur={() => setInputFocused(false)}
               placeholder="Type a message..."
@@ -1568,6 +1579,7 @@ export default function EstateChatPage() {
       bottom: 0,
       zIndex: 45,
       overflow: 'hidden',
+      willChange: 'transform',
     }}>
       {/* Pad for status bar on native */}
       <div style={{ height: 'env(safe-area-inset-top, 0px)', flexShrink: 0 }} />
