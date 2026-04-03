@@ -80,6 +80,13 @@ const LoginPage = () => {
   const [installBannerDismissed, setInstallBannerDismissed] = useState(() => !!localStorage.getItem('carryon_install_dismissed'));
   const isPWAMode = isPWA();
   const isMobileNonPWA = isMobileBrowser();
+  const [footerInfo, setFooterInfo] = useState({ line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209 U.S.A.', phone: '(703) 884-1527' });
+
+  useEffect(() => {
+    axios.get(`${API_URL}/public/site-content`).then(r => {
+      setFooterInfo({ line1: r.data.footer_address_line1, line2: r.data.footer_address_line2, phone: r.data.footer_phone });
+    }).catch(() => {});
+  }, []);
 
   const navigateWithFade = (path) => {
     setExiting(true);
@@ -1295,9 +1302,9 @@ const LoginPage = () => {
               <span className="text-[#334155] text-xs">Accessibility</span>
             </div>
             <div className="text-right text-[#334155] text-xs leading-relaxed">
-              <p>1550 Wilson Boulevard 7th Floor</p>
-              <p>Arlington, VA 22209 U.S.A.</p>
-              <p>(703) 884-1527</p>
+              <p>{footerInfo.line1}</p>
+              <p>{footerInfo.line2}</p>
+              <p>{footerInfo.phone}</p>
             </div>
           </div>
           <p className="text-center text-[#2A3C55] text-xs mt-6">&copy; {new Date().getFullYear()} CarryOn Technologies LLC. All rights reserved.</p>

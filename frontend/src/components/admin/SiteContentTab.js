@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Save, ExternalLink, Play, Loader2 } from 'lucide-react';
+import { Save, ExternalLink, Play, Loader2, MapPin } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
@@ -8,8 +8,13 @@ import { API_URL } from '../../config';
 export const SiteContentTab = ({ getAuthHeaders }) => {
   const [videoId, setVideoId] = useState('');
   const [savedVideoId, setSavedVideoId] = useState('');
+  const [footerLine1, setFooterLine1] = useState('');
+  const [footerLine2, setFooterLine2] = useState('');
+  const [footerPhone, setFooterPhone] = useState('');
+  const [savedFooter, setSavedFooter] = useState({ line1: '', line2: '', phone: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingFooter, setSavingFooter] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
@@ -18,6 +23,13 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
         const id = res.data?.homepage_video_id || 'EhU-jojs1jk';
         setVideoId(id);
         setSavedVideoId(id);
+        const l1 = res.data?.footer_address_line1 || '1550 Wilson Boulevard 7th Floor';
+        const l2 = res.data?.footer_address_line2 || 'Arlington, VA 22209 U.S.A.';
+        const ph = res.data?.footer_phone || '(703) 884-1527';
+        setFooterLine1(l1);
+        setFooterLine2(l2);
+        setFooterPhone(ph);
+        setSavedFooter({ line1: l1, line2: l2, phone: ph });
       } catch { /* ignore */ }
       setLoading(false);
     };
@@ -53,6 +65,22 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
   };
 
   const hasChanges = parseVideoId(videoId) !== savedVideoId;
+  const hasFooterChanges = footerLine1 !== savedFooter.line1 || footerLine2 !== savedFooter.line2 || footerPhone !== savedFooter.phone;
+
+  const handleSaveFooter = async () => {
+    setSavingFooter(true);
+    try {
+      await axios.put(`${API_URL}/admin/platform-settings`, {
+        footer_address_line1: footerLine1.trim(),
+        footer_address_line2: footerLine2.trim(),
+        footer_phone: footerPhone.trim(),
+      }, getAuthHeaders());
+      const updated = { line1: footerLine1.trim(), line2: footerLine2.trim(), phone: footerPhone.trim() };
+      setSavedFooter(updated);
+      toast.success('Footer contact info updated');
+    } catch { toast.error('Failed to save footer info'); }
+    setSavingFooter(false);
+  };
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[var(--t4)]" /></div>;
 
@@ -120,6 +148,49 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Footer Contact Info */}
+      <Card className="border-[var(--b)] bg-[var(--s)]">
+        <CardContent className="p-5 space-y-5">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-[var(--gold)]" />
+            <h3 className="text-base font-bold text-[var(--t)]">Footer Contact Info</h3>
+          </div>
+          <p className="text-sm text-[var(--t4)]">
+            Update the address and phone number displayed in the footer of the landing pages.
+          </p>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-bold text-[var(--t4)] block mb-1">Address Line 1</label>
+              <input type="text" value={footerLine1} onChange={e => setFooterLine1(e.target.value)}
+                placeholder="e.g. 1550 Wilson Boulevard 7th Floor"
+                className="w-full px-3 py-2.5 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-base focus:outline-none focus:border-[var(--gold)]"
+                data-testid="footer-line1-input" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-[var(--t4)] block mb-1">Address Line 2</label>
+              <input type="text" value={footerLine2} onChange={e => setFooterLine2(e.target.value)}
+                placeholder="e.g. Arlington, VA 22209 U.S.A."
+                className="w-full px-3 py-2.5 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-base focus:outline-none focus:border-[var(--gold)]"
+                data-testid="footer-line2-input" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-[var(--t4)] block mb-1">Phone Number</label>
+              <input type="text" value={footerPhone} onChange={e => setFooterPhone(e.target.value)}
+                placeholder="e.g. (703) 884-1527"
+                className="w-full px-3 py-2.5 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-base focus:outline-none focus:border-[var(--gold)]"
+                data-testid="footer-phone-input" />
+            </div>
+          </div>
+          <button onClick={handleSaveFooter} disabled={savingFooter || !hasFooterChanges}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-40"
+            style={{ background: hasFooterChanges ? 'var(--gold)' : 'var(--b2)', color: hasFooterChanges ? '#0F1629' : 'var(--t4)' }}
+            data-testid="save-footer-btn">
+            {savingFooter ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Save Footer Info
+          </button>
         </CardContent>
       </Card>
     </div>

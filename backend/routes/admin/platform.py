@@ -15,9 +15,14 @@ router = APIRouter()
 
 @router.get("/public/site-content")
 async def get_public_site_content():
-    """Public endpoint — returns non-sensitive site content settings (video ID, etc.)."""
+    """Public endpoint — returns non-sensitive site content settings (video ID, footer info, etc.)."""
     settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0}) or {}
-    return {"homepage_video_id": settings.get("homepage_video_id", "EhU-jojs1jk")}
+    return {
+        "homepage_video_id": settings.get("homepage_video_id", "EhU-jojs1jk"),
+        "footer_address_line1": settings.get("footer_address_line1", "1550 Wilson Boulevard 7th Floor"),
+        "footer_address_line2": settings.get("footer_address_line2", "Arlington, VA 22209 U.S.A."),
+        "footer_phone": settings.get("footer_phone", "(703) 884-1527"),
+    }
 
 
 @router.get("/admin/platform-settings")
@@ -32,7 +37,7 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
     """Update platform-wide settings (admin only).
     When otp_disabled is changed from True to False (turning 2FA ON),
     all users' otp_enabled is reset to True."""
-    allowed_keys = {"otp_disabled", "homepage_video_id"}
+    allowed_keys = {"otp_disabled", "homepage_video_id", "footer_address_line1", "footer_address_line2", "footer_phone"}
     update = {k: v for k, v in data.items() if k in allowed_keys}
     if update:
         # Check if we're turning 2FA ON (otp_disabled going from True to False)
