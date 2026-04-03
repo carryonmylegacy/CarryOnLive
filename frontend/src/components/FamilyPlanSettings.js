@@ -291,7 +291,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
               >
                 {c.label}
                 {c.save && fpBilling !== c.id && (
-                  <span className="absolute -top-2 -right-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: '#22C993', color: '#fff' }}>
+                  <span className="absolute -top-2 -right-1 text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: '#22C993', color: '#fff' }}>
                     -{c.save}
                   </span>
                 )}
