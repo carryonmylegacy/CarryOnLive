@@ -978,32 +978,35 @@ const LoginPage = () => {
 
       {/* ═══════════════════ EIGHT PILLARS — stacked with arrow spine ═══════════════════ */}
       <section id="features" className="relative z-30 -mt-1">
-        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#0E1829', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-          <div className="absolute inset-0 opacity-[0.16]" style={{ backgroundImage: 'url(/texture-circuit.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(14,24,41,0.4) 0%, rgba(14,24,41,0.8) 100%)' }} />
-          <div className="max-w-[1100px] mx-auto px-6 relative z-10">
+        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0f1d30 0%, #132240 50%, #0f1d30 100%)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+          {/* Warm subtle texture — no circuit boards */}
+          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 20% 30%, rgba(212,175,55,0.3) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(212,175,55,0.2) 0%, transparent 50%)' }} />
+          <div className="max-w-[900px] mx-auto px-6 relative z-10">
             <RevealSection>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
                 Eight Pillars of Family Readiness.
               </h2>
-              <p className="text-[#7b879e] text-base text-center max-w-[700px] mx-auto mb-16 leading-relaxed">
+              <p className="text-[#a0aec0] text-base text-center max-w-[650px] mx-auto mb-16 leading-relaxed">
                 Each pillar builds on the last &mdash; creating a complete family preparedness architecture, one step at a time.
               </p>
             </RevealSection>
 
-            {/* Flow container with central arrow spine */}
-            <div className="relative">
-              {/* Continuous arrow spine */}
-              <div className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-[3px] z-0"
-                style={{ background: 'linear-gradient(180deg, rgba(212,175,55,0.05) 0%, rgba(212,175,55,0.35) 8%, rgba(212,175,55,0.35) 92%, rgba(212,175,55,0.5) 100%)' }} />
-              {[12, 25, 38, 50, 62, 75, 88].map((pct, i) => (
-                <div key={i} className="absolute left-1/2 -translate-x-1/2 z-[1]" style={{ top: `${pct}%` }}>
-                  <ChevronDown className="w-5 h-5 text-[#d4af37]/30" />
-                </div>
-              ))}
+            {/* Flow container — arrow behind the gaps between tiles */}
+            <div data-testid="pillars-flow">
+              {/* Tile stack with arrow behind it — arrow is scoped to ONLY the tile area */}
+              <div className="relative">
+                {/* Wide gentle arrow shaft — scoped to tile container only */}
+                <div className="absolute left-1/2 -translate-x-1/2 z-0 rounded-full"
+                  style={{
+                    width: '18px',
+                    top: '30px',
+                    bottom: '30px',
+                    background: 'linear-gradient(180deg, rgba(212,175,55,0.05) 0%, rgba(212,175,55,0.13) 15%, rgba(212,175,55,0.13) 85%, rgba(212,175,55,0.18) 100%)',
+                    borderRadius: '9px',
+                  }} />
 
-              {/* Feature tiles — full width, stacked */}
-              <div className="relative z-10 space-y-5">
+                {/* Feature tiles — full width, stacked with generous gaps to show arrow */}
+                <div className="relative z-10 flex flex-col gap-6">
                 {[
                   { num: '01', icon: MessageSquare, title: 'Milestone Messages', abbr: 'MM',
                     bold: 'Your words at their wedding. Your voice on their birthday. Your love \u2014 delivered exactly when it matters.',
@@ -1030,61 +1033,66 @@ const LoginPage = () => {
                     bold: 'The people who matter most should never hear important news through the grapevine.',
                     desc: 'Build a personalized notification list of family, friends, colleagues, and anyone your beneficiaries should contact during a transition or emergency. Names, phone numbers, relationships, and special notes \u2014 all organized and ready so your family can coordinate outreach without scrambling.' },
                 ].map(({ num, icon: Icon, title, abbr, bold, desc }, i) => (
-                  <RevealSection key={num} delay={i * 0.05}>
-                    <div className="rounded-2xl p-6 lg:p-7 relative overflow-hidden transition-all duration-500 hover:border-[#d4af37]/20"
-                      style={{ background: 'rgba(15,26,46,0.75)', border: '1px solid rgba(14,165,233,0.06)', backdropFilter: 'blur(8px)' }}>
-                      <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ background: '#d4af37' }} />
+                  <RevealSection key={num} delay={i * 0.04}>
+                    <div className="rounded-2xl p-6 lg:p-8 relative overflow-hidden"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(20,33,56,0.98) 0%, rgba(16,28,48,0.98) 100%)',
+                        border: '1px solid rgba(212,175,55,0.10)',
+                        boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
+                      }}>
+                      <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-2xl" style={{ background: 'linear-gradient(180deg, rgba(212,175,55,0.3), rgba(212,175,55,0.6), rgba(212,175,55,0.3))' }} />
                       <div className="flex items-start gap-5">
-                        <div className="flex flex-col items-center gap-2 flex-shrink-0 pt-1">
-                          <div className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-sm"
-                            style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)', color: '#d4af37' }}>
+                        <div className="flex flex-col items-center gap-2.5 flex-shrink-0 pt-0.5">
+                          <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm"
+                            style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.06))', border: '1.5px solid rgba(212,175,55,0.25)', color: '#d4af37' }}>
                             {num}
                           </div>
-                          <div className="w-9 h-9 rounded-lg flex items-center justify-center"
-                            style={{ background: 'rgba(212,175,55,0.08)' }}>
-                            <Icon className="w-4 h-4 text-[#d4af37]" />
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center"
+                            style={{ background: 'rgba(212,175,55,0.06)' }}>
+                            <Icon className="w-4 h-4 text-[#d4af37]/70" />
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline gap-3 mb-2">
-                            <h4 className="text-white text-lg font-bold leading-tight">{title}</h4>
+                            <h4 className="text-white text-lg font-bold leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>{title}</h4>
                             <span className="text-[#4a5568] text-xs font-mono flex-shrink-0">{abbr}</span>
                           </div>
-                          <p className="text-sm font-medium mb-2 leading-relaxed text-[#d4af37]">{bold}</p>
-                          <p className="text-[#6b7a90] text-sm leading-relaxed">{desc}</p>
+                          <p className="text-sm font-medium mb-2.5 leading-relaxed" style={{ color: '#e8c972' }}>{bold}</p>
+                          <p className="text-[#8b97ab] text-sm leading-relaxed">{desc}</p>
                         </div>
                       </div>
                     </div>
                   </RevealSection>
                 ))}
               </div>
-
-              {/* Arrow terminus */}
-              <div className="flex justify-center pt-2 relative z-10">
-                <div className="flex flex-col items-center">
-                  <ChevronDown className="w-6 h-6 text-[#d4af37]/40" />
-                  <ChevronDown className="w-6 h-6 text-[#d4af37]/50 -mt-3" />
-                  <ChevronDown className="w-7 h-7 text-[#d4af37]/60 -mt-3" />
-                </div>
+              {/* Close tile stack container — arrow is scoped here */}
               </div>
 
-              {/* End-state bubble */}
+              {/* Single gentle arrowhead — sits between tiles and end-state */}
+              <div className="flex justify-center py-8 relative z-10">
+                <svg width="36" height="20" viewBox="0 0 36 20" fill="none">
+                  <path d="M6 4 L18 16 L30 4" stroke="#d4af37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity="0.35" />
+                </svg>
+              </div>
+
+              {/* End-state tile — warm, fully opaque, clearly separated from arrow */}
               <RevealSection delay={0.5}>
-                <div className="relative z-10 mt-2 mx-auto max-w-[600px] rounded-[2rem] p-8 lg:p-10 text-center"
+                <div className="relative z-20 mx-auto max-w-[640px] rounded-[1.75rem] p-8 lg:p-10 text-center"
+                  data-testid="holistic-preparedness-tile"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.03) 100%)',
-                    border: '2px solid rgba(212,175,55,0.3)',
-                    boxShadow: '0 0 60px rgba(212,175,55,0.08), 0 0 120px rgba(212,175,55,0.04)',
+                    background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)',
+                    border: '2px solid rgba(212,175,55,0.30)',
+                    boxShadow: '0 8px 48px rgba(0,0,0,0.35), 0 0 60px rgba(212,175,55,0.08), inset 0 1px 0 rgba(212,175,55,0.06)',
                   }}>
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
-                    style={{ background: 'rgba(212,175,55,0.12)', border: '2px solid rgba(212,175,55,0.25)', boxShadow: '0 0 30px rgba(212,175,55,0.15)' }}>
-                    <Shield className="w-7 h-7 text-[#d4af37]" />
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+                    style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.08))', border: '1.5px solid rgba(212,175,55,0.25)' }}>
+                    <Shield className="w-6 h-6 text-[#d4af37]" />
                   </div>
                   <h3 className="text-2xl sm:text-3xl font-bold text-[#d4af37] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
                     Holistic Family Preparedness.
                   </h3>
-                  <p className="text-[#94a3b8] text-sm lg:text-base leading-relaxed mb-4">
-                    Eight pillars. One architecture. A living system that grows with your family, protects what matters most, and ensures that no matter what life brings &mdash; your family is never left searching, wondering, or scrambling.
+                  <p className="text-[#a0aec0] text-sm lg:text-base leading-relaxed mb-4">
+                    Eight pillars. One family. A living system that grows with you, protects what matters most, and ensures that no matter what life brings &mdash; your family is never left searching, wondering, or scrambling.
                   </p>
                   <p className="text-white text-base font-semibold italic">
                     They&apos;re ready. Because you prepared.

@@ -161,6 +161,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
   - Updated LoginPage, SignupPage, AboutPage to remove "estate planning" / "death tech" references
   - Warm & family-focused tone with security baked in, not tech-forward
   - Files: HomePage.js, LoginPage.js, SignupPage.js, AboutPage.js
+  - Landing page "Eight Pillars" redesign (April 3, 2026): Removed circuit-board texture, widened arrow (18px), scoped arrow to tile container only (doesn't pierce end-state tile), single arrowhead, gap-6 between tiles, opaque tile backgrounds, warmer gold text (#e8c972), fully opaque end-state "Holistic Family Preparedness" tile. Synced to both LoginPage.js and HomePage.js.
 
 ### P1
 - Google Play Store Launch (operational steps)
