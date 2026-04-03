@@ -40,15 +40,19 @@ async def get_subscription_plans():
     from routes.feature_gates import get_feature_gates, PLATFORM_FEATURES, TIER_IDS
 
     gates = await get_feature_gates()
-    # Build per-tier enabled feature labels
+    # Build per-tier feature list — ALL features in consistent order, with enabled flag
     tier_features = {}
     for tid in TIER_IDS:
-        enabled_labels = []
+        feature_list = []
         for f in PLATFORM_FEATURES:
             tier_gates = gates.get(f["key"], {})
-            if tier_gates.get(tid, True):
-                enabled_labels.append(f["label"])
-        tier_features[tid] = enabled_labels
+            feature_list.append(
+                {
+                    "label": f["label"],
+                    "enabled": tier_gates.get(tid, True),
+                }
+            )
+        tier_features[tid] = feature_list
 
     return {
         "plans": settings.get("plans", DEFAULT_PLANS),

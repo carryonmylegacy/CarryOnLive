@@ -532,21 +532,27 @@ export default function SubscriptionPaywall({ onDismiss }) {
                   {/* Divider */}
                   <div className="h-px mb-4" style={{ background: `linear-gradient(90deg, transparent, ${colors.accent}30, transparent)` }} />
 
-                  {/* Features — dynamic from feature gates + static plan features */}
+                  {/* Features — dynamic from feature gates, all listed in consistent order */}
                   <div className="space-y-2.5 mb-5">
-                    {/* Show dynamic platform features from gates if available, else fall back to static */}
                     {(tierFeatures[plan.id] && tierFeatures[plan.id].length > 0
                       ? tierFeatures[plan.id]
-                      : (plan.features || [])
-                    ).map((f, i) => (
-                      <div key={i} className="flex items-start gap-2.5 text-sm">
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" 
-                          style={{ background: `${colors.accent}15` }}>
-                          <Check className="w-3 h-3" style={{ color: colors.accent }} />
+                      : (plan.features || []).map(f => typeof f === 'string' ? { label: f, enabled: true } : f)
+                    ).map((f, i) => {
+                      const label = typeof f === 'string' ? f : f.label;
+                      const enabled = typeof f === 'string' ? true : f.enabled !== false;
+                      return (
+                        <div key={i} className="flex items-start gap-2.5 text-sm">
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5`}
+                            style={{ background: enabled ? `${colors.accent}15` : 'rgba(127,127,127,0.08)' }}>
+                            {enabled
+                              ? <Check className="w-3 h-3" style={{ color: colors.accent }} />
+                              : <X className="w-3 h-3 text-[var(--t6)]" />
+                            }
+                          </div>
+                          <span className={enabled ? 'text-[var(--t4)]' : 'text-[var(--t6)] line-through'}>{label}</span>
                         </div>
-                        <span className="text-[var(--t4)]">{f}</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {plan.note && (

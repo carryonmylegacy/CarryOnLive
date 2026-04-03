@@ -21,7 +21,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
   const [savingsPreview, setSavingsPreview] = useState(null);
   const [loadingSavings, setLoadingSavings] = useState(false);
   const [familyDiscounts, setFamilyDiscounts] = useState({ benefactor: 0, beneficiary: 0 });
-  const [fpBilling, setFpBilling] = useState('monthly');
+  const [fpBilling, setFpBilling] = useState('annual');
 
   const headers = getAuthHeaders()?.headers || {};
 
@@ -272,9 +272,9 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
         <div className="flex justify-center" data-testid="family-billing-toggle">
           <div className="inline-flex p-1 rounded-2xl" style={{ background: 'var(--s)', border: '1px solid var(--b)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)' }}>
             {[
-              { id: 'monthly', label: 'Monthly', save: null },
-              { id: 'quarterly', label: 'Quarterly', save: '10%' },
               { id: 'annual', label: 'Annual', save: '20%' },
+              { id: 'quarterly', label: 'Quarterly', save: '10%' },
+              { id: 'monthly', label: 'Monthly', save: null },
             ].map(c => (
               <button
                 key={c.id}
@@ -351,15 +351,22 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
           </div>
 
           {/* Total row */}
-          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center px-4 py-3" style={{ background: 'rgba(212,175,55,0.04)', borderTop: '2px solid var(--b)' }} data-testid="family-total-row">
-            <span className="text-sm font-bold text-[var(--t)]">
-              Total {fpBilling === 'annual' ? '(billed annually)' : fpBilling === 'quarterly' ? '(billed quarterly)' : '(monthly)'}
-            </span>
-            <span className="text-right w-20 text-sm text-[var(--t5)] line-through">${totalCurrent.toFixed(2)}</span>
-            <span className="text-right w-20 text-base font-bold text-[var(--gold)]" style={{ fontFamily: 'Outfit, sans-serif' }}>${totalFamily.toFixed(2)}</span>
-            <span className="text-right w-16 text-xs font-bold text-[#22C993]">
-              {totalSavings > 0 ? `-$${totalSavings.toFixed(2)}` : '—'}
-            </span>
+          <div className="px-4 py-4" style={{ background: 'rgba(212,175,55,0.04)', borderTop: '2px solid var(--b)' }} data-testid="family-total-row">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm font-bold text-[var(--t)]">
+                Total {fpBilling === 'annual' ? '(billed annually)' : fpBilling === 'quarterly' ? '(billed quarterly)' : '(monthly)'}
+              </span>
+            </div>
+            <div className="flex items-baseline gap-3">
+              <span className="text-2xl font-bold underline" style={{ color: '#22C993', fontFamily: 'Outfit, sans-serif' }} data-testid="family-total-price">
+                ${totalFamily.toFixed(2)}{billingLabel}
+              </span>
+              {totalSavings > 0 && (
+                <span className="text-sm italic" style={{ color: '#EF4444' }} data-testid="family-total-original">
+                  (${totalCurrent.toFixed(2)}{billingLabel})
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
