@@ -77,6 +77,7 @@ export default function ConnectedProtocolPage() {
   const [submitting, setSubmitting] = useState(false);
   const [linkedResources, setLinkedResources] = useState({ documents: [], ffn_contacts: [], dav_entries: [] });
   const [availableResources, setAvailableResources] = useState({ documents: [], ffn_contacts: [], dav_entries: [] });
+  const [estateMembers, setEstateMembers] = useState([]);
 
   const isBenefactor = user?.role === 'benefactor' || user?.is_also_benefactor;
 
@@ -116,15 +117,18 @@ export default function ConnectedProtocolPage() {
   const fetchAvailableResources = useCallback(async () => {
     if (!estateId) return;
     try {
-      const [docsRes, ffnRes, davRes] = await Promise.all([
+      const [docsRes, ffnRes, davRes, membersRes] = await Promise.all([
         fetch(`${API_URL}/documents/${estateId}`, { headers }),
         fetch(`${API_URL}/ffn/${estateId}`, { headers }),
         fetch(`${API_URL}/digital-wallet/${estateId}`, { headers }),
+        fetch(`${API_URL}/ccp/members/${estateId}`, { headers }),
       ]);
       const docs = docsRes.ok ? await docsRes.json() : [];
       const ffn = ffnRes.ok ? await ffnRes.json() : [];
       const dav = davRes.ok ? await davRes.json() : [];
+      const members = membersRes.ok ? await membersRes.json() : [];
       setAvailableResources({ documents: Array.isArray(docs) ? docs : docs.documents || [], ffn_contacts: ffn, dav_entries: dav });
+      setEstateMembers(members);
     } catch {}
   }, [estateId]);
 
@@ -565,7 +569,7 @@ export default function ConnectedProtocolPage() {
   // ===================== PLAN EDITOR VIEW =====================
   if (view === 'plan-edit' && editPlan) {
     return (
-      <div data-testid="ccp-plan-edit" className="max-w-2xl mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-4">
+      <div data-testid="ccp-plan-edit" className="max-w-2xl mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-4" style={{ overflowX: 'hidden' }}>
         <button onClick={() => { setEditPlan(null); setView('plans'); }} className="flex items-center gap-2 text-sm font-semibold mb-2" style={{ color: '#A0AABF' }}>
           <ArrowLeft className="w-4 h-4" />Back to Plans
         </button>
@@ -593,19 +597,22 @@ export default function ConnectedProtocolPage() {
         <div>
           <label className="text-xs font-bold mb-1 block" style={{ color: '#A0AABF' }}>Rendezvous Points</label>
           {(editPlan.rendezvous_points || []).map((rp, i) => (
-            <div key={i} className="flex gap-2 mb-2">
-              <input value={rp.name || ''} onChange={(e) => { const arr = [...(editPlan.rendezvous_points || [])]; arr[i] = { ...arr[i], name: e.target.value }; setEditPlan({ ...editPlan, rendezvous_points: arr }); }}
-                placeholder="Name" className="flex-1 rounded-xl px-3 py-2.5 text-base"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#F1F3F8', fontSize: '16px' }} />
+            <div key={i} className="mb-3 rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="flex gap-2 mb-2">
+                <input value={rp.name || ''} onChange={(e) => { const arr = [...(editPlan.rendezvous_points || [])]; arr[i] = { ...arr[i], name: e.target.value }; setEditPlan({ ...editPlan, rendezvous_points: arr }); }}
+                  placeholder="Name" className="flex-1 rounded-xl px-3 py-2.5 text-base"
+                  data-testid={`ccp-rendezvous-name-${i}`}
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#F1F3F8', fontSize: '16px' }} />
+                <button onClick={() => { const arr = (editPlan.rendezvous_points || []).filter((_, j) => j !== i); setEditPlan({ ...editPlan, rendezvous_points: arr }); }}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(240,82,82,0.1)' }}>
+                  <X className="w-4 h-4" style={{ color: '#F05252' }} />
+                </button>
+              </div>
               <AddressAutocomplete value={rp.address || ''} onChange={(e) => { const arr = [...(editPlan.rendezvous_points || [])]; arr[i] = { ...arr[i], address: e.target.value }; setEditPlan({ ...editPlan, rendezvous_points: arr }); }}
                 onSelect={({ street, city, state, zip }) => { const full = [street, city, [state, zip].filter(Boolean).join(' ')].filter(Boolean).join(', '); const arr = [...(editPlan.rendezvous_points || [])]; arr[i] = { ...arr[i], address: full }; setEditPlan({ ...editPlan, rendezvous_points: arr }); }}
-                placeholder="Address" className="flex-1 rounded-xl px-3 py-2.5 text-base"
+                placeholder="Address" className="w-full rounded-xl px-3 py-2.5 text-base"
                 data-testid={`ccp-rendezvous-address-${i}`}
                 style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#F1F3F8', fontSize: '16px' }} />
-              <button onClick={() => { const arr = (editPlan.rendezvous_points || []).filter((_, j) => j !== i); setEditPlan({ ...editPlan, rendezvous_points: arr }); }}
-                className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(240,82,82,0.1)' }}>
-                <X className="w-4 h-4" style={{ color: '#F05252' }} />
-              </button>
             </div>
           ))}
           <button onClick={() => setEditPlan({ ...editPlan, rendezvous_points: [...(editPlan.rendezvous_points || []), { name: '', address: '', notes: '' }] })}
@@ -628,19 +635,22 @@ export default function ConnectedProtocolPage() {
         <div>
           <label className="text-xs font-bold mb-1 block" style={{ color: '#A0AABF' }}>Resource / Supply Locations</label>
           {(editPlan.resource_locations || []).map((rl, i) => (
-            <div key={i} className="flex gap-2 mb-2">
-              <input value={rl.name || ''} onChange={(e) => { const arr = [...(editPlan.resource_locations || [])]; arr[i] = { ...arr[i], name: e.target.value }; setEditPlan({ ...editPlan, resource_locations: arr }); }}
-                placeholder="What" className="flex-1 rounded-xl px-3 py-2.5 text-base"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#F1F3F8', fontSize: '16px' }} />
+            <div key={i} className="mb-3 rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="flex gap-2 mb-2">
+                <input value={rl.name || ''} onChange={(e) => { const arr = [...(editPlan.resource_locations || [])]; arr[i] = { ...arr[i], name: e.target.value }; setEditPlan({ ...editPlan, resource_locations: arr }); }}
+                  placeholder="Name / What" className="flex-1 rounded-xl px-3 py-2.5 text-base"
+                  data-testid={`ccp-resource-name-${i}`}
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#F1F3F8', fontSize: '16px' }} />
+                <button onClick={() => { const arr = (editPlan.resource_locations || []).filter((_, j) => j !== i); setEditPlan({ ...editPlan, resource_locations: arr }); }}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(240,82,82,0.1)' }}>
+                  <X className="w-4 h-4" style={{ color: '#F05252' }} />
+                </button>
+              </div>
               <AddressAutocomplete value={rl.location || ''} onChange={(e) => { const arr = [...(editPlan.resource_locations || [])]; arr[i] = { ...arr[i], location: e.target.value }; setEditPlan({ ...editPlan, resource_locations: arr }); }}
                 onSelect={({ street, city, state, zip }) => { const full = [street, city, [state, zip].filter(Boolean).join(' ')].filter(Boolean).join(', '); const arr = [...(editPlan.resource_locations || [])]; arr[i] = { ...arr[i], location: full }; setEditPlan({ ...editPlan, resource_locations: arr }); }}
-                placeholder="Where" className="flex-1 rounded-xl px-3 py-2.5 text-base"
-                data-testid={`ccp-resource-location-${i}`}
+                placeholder="Address" className="w-full rounded-xl px-3 py-2.5 text-base"
+                data-testid={`ccp-resource-address-${i}`}
                 style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#F1F3F8', fontSize: '16px' }} />
-              <button onClick={() => { const arr = (editPlan.resource_locations || []).filter((_, j) => j !== i); setEditPlan({ ...editPlan, resource_locations: arr }); }}
-                className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(240,82,82,0.1)' }}>
-                <X className="w-4 h-4" style={{ color: '#F05252' }} />
-              </button>
             </div>
           ))}
           <button onClick={() => setEditPlan({ ...editPlan, resource_locations: [...(editPlan.resource_locations || []), { name: '', location: '', notes: '' }] })}
@@ -658,6 +668,67 @@ export default function ConnectedProtocolPage() {
             data-testid="ccp-instructions"
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#F1F3F8', fontSize: '16px' }} />
         </div>
+
+        {/* Assign to Beneficiaries */}
+        {estateMembers.filter(m => m.role_in_estate === 'beneficiary').length > 0 && (
+          <div>
+            <label className="text-xs font-bold mb-2 block" style={{ color: '#A0AABF' }}>Assign to Beneficiaries</label>
+            <p className="text-xs mb-3" style={{ color: '#525C72' }}>Choose which beneficiaries this plan applies to. All are selected by default.</p>
+            <div className="space-y-2">
+              {estateMembers.filter(m => m.role_in_estate === 'beneficiary').map(member => {
+                const assignedIds = editPlan.assigned_beneficiary_ids;
+                const isSelected = assignedIds === null || assignedIds === undefined || assignedIds.includes(member.id);
+                return (
+                  <button
+                    key={member.id}
+                    onClick={() => {
+                      const beneficiaryIds = estateMembers.filter(m => m.role_in_estate === 'beneficiary').map(m => m.id);
+                      let current = editPlan.assigned_beneficiary_ids;
+                      // If null/undefined (all selected), create explicit list with this one removed
+                      if (current === null || current === undefined) {
+                        current = beneficiaryIds.filter(id => id !== member.id);
+                      } else if (current.includes(member.id)) {
+                        // Deselect — but don't allow empty (at least one must be selected)
+                        const next = current.filter(id => id !== member.id);
+                        current = next.length > 0 ? next : current;
+                      } else {
+                        // Select
+                        current = [...current, member.id];
+                        // If all are now selected, set back to null (meaning "all")
+                        if (current.length === beneficiaryIds.length) current = null;
+                      }
+                      setEditPlan({ ...editPlan, assigned_beneficiary_ids: current });
+                    }}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl transition-all"
+                    data-testid={`ccp-assign-beneficiary-${member.id}`}
+                    style={{
+                      background: isSelected ? 'rgba(59,123,247,0.08)' : 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${isSelected ? 'rgba(59,123,247,0.25)' : 'rgba(255,255,255,0.06)'}`,
+                    }}
+                  >
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold" style={{ background: isSelected ? 'rgba(59,123,247,0.15)' : 'rgba(255,255,255,0.06)', color: isSelected ? '#3B7BF7' : '#525C72' }}>
+                      {member.photo_url ? (
+                        <img src={member.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+                      ) : (
+                        (member.name || '?').charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="text-sm font-semibold" style={{ color: isSelected ? '#F1F3F8' : '#7B879E' }}>{member.name || 'Unknown'}</div>
+                      {member.relation && <div className="text-xs" style={{ color: '#525C72' }}>{member.relation}</div>}
+                    </div>
+                    <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{
+                      background: isSelected ? '#3B7BF7' : 'rgba(255,255,255,0.06)',
+                      border: `2px solid ${isSelected ? '#3B7BF7' : 'rgba(255,255,255,0.15)'}`,
+                    }}>
+                      {isSelected && <Check className="w-3.5 h-3.5" style={{ color: '#fff' }} />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Link Resources */}
         <ResourceLinker
@@ -700,7 +771,7 @@ export default function ConnectedProtocolPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold" style={{ color: '#F1F3F8' }}>Emergency Plans</h2>
           {isBenefactor && (
-            <button onClick={() => { setEditPlan({ name: '', plan_type: 'custom', rendezvous_points: [], communication_plan: '', resource_locations: [], instructions: '', linked_document_ids: [], linked_ffn_contact_ids: [], linked_dav_entry_ids: [] }); fetchAvailableResources(); setView('plan-edit'); }}
+            <button onClick={() => { setEditPlan({ name: '', plan_type: 'custom', rendezvous_points: [], communication_plan: '', resource_locations: [], instructions: '', linked_document_ids: [], linked_ffn_contact_ids: [], linked_dav_entry_ids: [], assigned_beneficiary_ids: null }); fetchAvailableResources(); setView('plan-edit'); }}
               className="w-10 h-10 rounded-full flex items-center justify-center" data-testid="ccp-new-plan-btn"
               style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}>
               <Plus className="w-5 h-5" style={{ color: '#080e1a' }} />

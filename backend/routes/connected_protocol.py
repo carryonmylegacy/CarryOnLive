@@ -44,6 +44,7 @@ class PlanCreate(BaseModel):
     linked_document_ids: list[str] = []
     linked_ffn_contact_ids: list[str] = []
     linked_dav_entry_ids: list[str] = []
+    assigned_beneficiary_ids: Optional[list[str]] = None  # None = all beneficiaries
 
 
 class PlanUpdate(BaseModel):
@@ -56,6 +57,7 @@ class PlanUpdate(BaseModel):
     linked_document_ids: Optional[list[str]] = None
     linked_ffn_contact_ids: Optional[list[str]] = None
     linked_dav_entry_ids: Optional[list[str]] = None
+    assigned_beneficiary_ids: Optional[list[str]] = None
 
 
 class ActivatePlanRequest(BaseModel):
@@ -120,12 +122,20 @@ async def _get_estate_members(estate_id: str) -> list[dict]:
     return members
 
 
+@router.get("/ccp/members/{estate_id}")
+async def get_estate_members_endpoint(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """Get all members of an estate for beneficiary selector."""
+    if not await _is_estate_member(current_user["id"], estate_id):
+        raise HTTPException(status_code=403, detail="Not a member of this estate")
+    return await _get_estate_members(estate_id)
+
+
 # ===================== PLANS CRUD =====================
 
 
 @router.get("/ccp/plans/{estate_id}")
 async def get_plans(estate_id: str, current_user: dict = Depends(get_current_user)):
-    """Get all emergency plans for an estate."""
+    """Get all emergency plans for an estate. Beneficiaries only see plans assigned to them."""
     if not await _is_estate_member(current_user["id"], estate_id):
         raise HTTPException(status_code=403, detail="Not a member of this estate")
     plans = (
@@ -133,6 +143,14 @@ async def get_plans(estate_id: str, current_user: dict = Depends(get_current_use
         .sort("created_at", -1)
         .to_list(50)
     )
+    # Benefactors (estate owners) see all plans; beneficiaries see only assigned ones
+    is_owner = await _is_estate_owner(current_user["id"], estate_id)
+    if not is_owner:
+        plans = [
+            p
+            for p in plans
+            if p.get("assigned_beneficiary_ids") is None or current_user["id"] in p["assigned_beneficiary_ids"]
+        ]
     return plans
 
 
@@ -158,6 +176,7 @@ async def create_plan(data: PlanCreate, current_user: dict = Depends(get_current
         "linked_document_ids": data.linked_document_ids,
         "linked_ffn_contact_ids": data.linked_ffn_contact_ids,
         "linked_dav_entry_ids": data.linked_dav_entry_ids,
+        "assigned_beneficiary_ids": data.assigned_beneficiary_ids,
         "created_by": current_user["id"],
         "created_at": now,
         "updated_at": now,
@@ -186,6 +205,7 @@ async def update_plan(plan_id: str, data: PlanUpdate, current_user: dict = Depen
         "linked_document_ids",
         "linked_ffn_contact_ids",
         "linked_dav_entry_ids",
+        "assigned_beneficiary_ids",
     ]:
         val = getattr(data, field)
         if val is not None:
