@@ -359,7 +359,7 @@ async def get_channels(current_user: dict = Depends(get_current_user)):
     # Filter out channels this user has dismissed
     dismissed = await db.estate_channel_dismissals.find(
         {"user_id": current_user["id"]},
-        {"_id": 0, "channel_id": 1},
+        {"_id": 0, "id": 1, "channel_id": 1},
     ).to_list(500)
     dismissed_ids = {d["channel_id"] for d in dismissed}
     channels = [ch for ch in channels if ch["id"] not in dismissed_ids]
@@ -591,9 +591,11 @@ async def send_message(
         upsert=True,
     )
     # Clear typing indicator on send
-    await db.estate_typing.delete_one({"channel_id": channel_id, "user_id": current_user["id"]})
+    await db.estate_typing.delete_one(
+        {"channel_id": channel_id, "user_id": current_user["id"]}
+    )  # cleanup ephemeral typing indicator
     # Un-dismiss channel for all members so they see new activity
-    await db.estate_channel_dismissals.delete_many({"channel_id": channel_id})
+    await db.estate_channel_dismissals.delete_many({"channel_id": channel_id})  # cleanup: un-dismiss on new message
     # Deliver to FFN contacts via email/SMS
     ffn_members = [m for m in channel.get("members", []) if m.startswith("ffn_")]
     if ffn_members:
@@ -778,9 +780,11 @@ async def upload_attachment(
         {"$set": {"last_read_at": now}},
         upsert=True,
     )
-    await db.estate_typing.delete_one({"channel_id": channel_id, "user_id": current_user["id"]})
+    await db.estate_typing.delete_one(
+        {"channel_id": channel_id, "user_id": current_user["id"]}
+    )  # cleanup ephemeral typing indicator
     # Un-dismiss channel for all members so they see new activity
-    await db.estate_channel_dismissals.delete_many({"channel_id": channel_id})
+    await db.estate_channel_dismissals.delete_many({"channel_id": channel_id})  # cleanup: un-dismiss on new message
     return message
 
 
@@ -929,7 +933,7 @@ async def get_unread_total(current_user: dict = Depends(get_current_user)):
     # Exclude dismissed channels from unread count
     dismissed = await db.estate_channel_dismissals.find(
         {"user_id": current_user["id"]},
-        {"_id": 0, "channel_id": 1},
+        {"_id": 0, "id": 1, "channel_id": 1},
     ).to_list(500)
     dismissed_ids = {d["channel_id"] for d in dismissed}
     total = 0
