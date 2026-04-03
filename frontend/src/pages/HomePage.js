@@ -119,9 +119,9 @@ const HomePage = () => {
             </div>
           </RevealSection>
           <RevealSection delay={0.4}>
-            <a href="#about" className="inline-flex flex-col items-center justify-center gap-2 mt-6 w-[280px] sm:w-[320px] py-4 rounded-2xl cursor-pointer animate-bounce text-center"
+            <a href="#about" className="inline-flex flex-col items-center justify-center gap-2 mt-6 w-full max-w-md py-4 rounded-2xl cursor-pointer animate-bounce text-center"
               data-testid="scroll-explore-home"
-              style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.22), rgba(212,175,55,0.12))', border: '2px solid rgba(212,175,55,0.40)', boxShadow: '0 4px 24px rgba(212,175,55,0.15)', backdropFilter: 'blur(8px)' }}>
+              style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20), 0 0 50px rgba(212,175,55,0.08)', backdropFilter: 'blur(8px)' }}>
               <span className="text-white text-lg sm:text-xl font-bold" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
               <ChevronDown className="w-7 h-7 text-[#d4af37]" />
             </a>
@@ -197,16 +197,16 @@ const HomePage = () => {
 
             {/* Flow container — arrow behind the gaps between tiles */}
             <div data-testid="pillars-flow-home">
-              {/* Tile stack with arrow behind it — arrow is scoped to ONLY the tile area */}
+              {/* Tile stack with one-piece arrow behind it */}
               <div className="relative">
-                {/* Wide gentle arrow shaft — scoped to tile container only */}
-                <div className="absolute left-1/2 -translate-x-1/2 z-0 rounded-full"
+                {/* Single arrow shape — shaft + arrowhead as one piece, layered behind tiles */}
+                <div className="absolute left-1/2 -translate-x-1/2 z-0"
                   style={{
-                    width: '180px',
-                    top: '30px',
-                    bottom: '0px',
-                    background: 'linear-gradient(180deg, rgba(212,175,55,0.05) 0%, rgba(212,175,55,0.13) 15%, rgba(212,175,55,0.13) 85%, rgba(212,175,55,0.18) 100%)',
-                    borderRadius: '90px',
+                    width: '140px',
+                    top: '20px',
+                    bottom: '-10px',
+                    background: 'linear-gradient(180deg, rgba(212,175,55,0.04) 0%, rgba(212,175,55,0.12) 10%, rgba(212,175,55,0.12) 88%, rgba(212,175,55,0.18) 100%)',
+                    clipPath: 'polygon(15% 0%, 85% 0%, 85% 88%, 100% 88%, 50% 100%, 0% 88%, 15% 88%)',
                   }} />
 
                 {/* Feature tiles — full width, stacked with generous gaps to show arrow */}
@@ -271,14 +271,8 @@ const HomePage = () => {
                 </div>
               </div>
 
-              {/* Single gentle arrowhead — sits between tiles and end-state */}
-              <div className="flex justify-center py-8 relative z-10">
-                <svg width="36" height="20" viewBox="0 0 36 20" fill="none">
-                  <path d="M6 4 L18 16 L30 4" stroke="#d4af37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity="0.35" />
-                </svg>
-              </div>
-
-              {/* End-state tile — warm, fully opaque, clearly separated from arrow */}
+              {/* End-state tile — warm, fully opaque */}
+              <div className="pt-10">
               <RevealSection delay={0.5}>
                 <div className="relative z-20 mx-auto max-w-[640px] rounded-[1.75rem] p-8 lg:p-10 text-center"
                   data-testid="holistic-preparedness-tile-home"
@@ -302,6 +296,7 @@ const HomePage = () => {
                   </p>
                 </div>
               </RevealSection>
+              </div>
             </div>
           </div>
         </div>
