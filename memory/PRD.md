@@ -153,7 +153,8 @@ A full-stack estate planning application allowing benefactors to manage digital 
   - Price propagation: all surfaces (paywall, checkout, stats, digest, family plan) read dynamically from DB
   - ben_price sync: updating beneficiary plan prices auto-syncs ben_price on benefactor plan cards
   - Quarterly/annual prices recalculate in lockstep with monthly price changes
-  - Family Plan Management UI: billing toggle (monthly/quarterly/annual), per-member pricing breakdown with current vs family pricing, total row with period aggregation
+  - Family Plan Management UI: billing toggle (annual/quarterly/monthly default annual), per-member pricing breakdown with current vs family pricing, total row with green bold underlined family price and red italic original price
+  - Paywall feature lists: dynamically connected to Feature Gates toggles, all features in consistent order across tiers, disabled features shown with X icon and strikethrough
   - Files: checkout.py, plans.py, family_plan.py, verification_and_lifecycle.py, admin_digest.py, SubscriptionsTab.js, SubscriptionPaywall.js, SubscriptionManagement.js, FamilyPlanSettings.js
 
 ### P1
