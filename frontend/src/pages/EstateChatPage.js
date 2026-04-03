@@ -360,9 +360,10 @@ export default function EstateChatPage() {
       if (open !== kbOpen) {
         kbOpen = open;
         if (kbOpen) {
-          // Shrink root from bottom to stay above keyboard
+          // Snap root into position INSTANTLY — no transition.
+          // Transitions cause the visible "slide up then down" on keyboard open.
           const kbHeight = window.innerHeight - vv.height;
-          root.style.transition = 'bottom 0.25s ease-out, transform 0.25s ease-out';
+          root.style.transition = 'none';
           root.style.bottom = `${kbHeight}px`;
           lastBottom = kbHeight;
         } else {
@@ -371,9 +372,11 @@ export default function EstateChatPage() {
           lastTransform = 0;
         }
       } else if (kbOpen) {
-        // Update keyboard height only if change > 10px (ignore micro-jitter)
+        // Keyboard is already open — only adjust for significant height changes
+        // (iOS keyboard animates its height over several frames)
         const kbHeight = window.innerHeight - vv.height;
         if (Math.abs(kbHeight - lastBottom) > 10) {
+          root.style.transition = 'none';
           root.style.bottom = `${kbHeight}px`;
           lastBottom = kbHeight;
         }
@@ -381,6 +384,7 @@ export default function EstateChatPage() {
       // Compensate for iOS page scroll while keyboard is open
       if (kbOpen && window.scrollY > 0) {
         if (Math.abs(window.scrollY - lastTransform) > 3) {
+          root.style.transition = 'none';
           root.style.transform = `translateY(${window.scrollY}px)`;
           lastTransform = window.scrollY;
         }
