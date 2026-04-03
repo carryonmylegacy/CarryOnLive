@@ -145,6 +145,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - ECT Keyboard + ECT Delete + MM Download - FIXES DEPLOYED, awaiting user iOS verification
 - Customizable Dock - IMPLEMENTED, awaiting user verification
 - ECT Bulk Delete - IMPLEMENTED, awaiting user verification
+- Dynamic Subscription Pricing Editor - IMPLEMENTED (April 3, 2026)
+  - All tier prices editable from Founder Portal (including Military, Hospice, Veteran, New Adult, Enterprise)
+  - Family discount pricing: configurable % discount per benefactor and per beneficiary in family plans
+  - Backend: PUT /admin/plans/{plan_id}/price (all tiers), PUT /admin/family-discount-settings
+  - Frontend: Family Discount Pricing card in SubscriptionsTab.js
+  - Files: checkout.py, family_plan.py, SubscriptionsTab.js
 
 ### P1
 - Google Play Store Launch (operational steps)
