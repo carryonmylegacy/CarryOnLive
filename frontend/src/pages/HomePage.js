@@ -193,120 +193,156 @@ const HomePage = () => {
                 Each pillar builds on the last &mdash; creating a complete family preparedness architecture, one step at a time.
               </p>
             </RevealSection>
-            <div className="max-w-[720px] mx-auto">
-              {[
-                {
-                  num: '01',
-                  icon: MessageSquare,
-                  title: 'Milestone Messages',
-                  abbr: 'MM',
-                  bold: 'Your words at their wedding. Your voice on their birthday. Your love \u2014 delivered exactly when it matters.',
-                  desc: 'Record written, audio, or video messages for the milestones you want to be part of \u2014 even if you can\'t be there. Graduations, births, first homes, or any moment you choose. Create them infinitely over time, and they\'re delivered exactly as you envision.',
-                  bridge: 'Your messages start the journey. But your family also needs access to the documents behind your wishes.',
-                },
-                {
-                  num: '02',
-                  icon: LockIcon,
-                  title: 'Secure Document Vault',
-                  abbr: 'SDV',
-                  bold: 'Every will, trust, policy, and deed \u2014 encrypted, organized, and accessible to the right people at the right time.',
-                  desc: 'Upload your most critical family documents into a per-estate encrypted vault with AES-256 encryption and Triple Lock protection. Your beneficiaries access exactly what you authorize \u2014 and your documents become the foundation that powers everything else.',
-                  bridge: 'Once your documents are uploaded, the platform can start working for you automatically.',
-                },
-                {
-                  num: '03',
-                  icon: Sparkles,
-                  title: 'Estate Guardian\u2122 AI',
-                  abbr: 'EGA',
-                  bold: 'An AI analyst trained on U.S. law across all 50 states \u2014 working inside your encrypted vault to find what you missed.',
-                  desc: 'EGA analyzes your uploaded documents for contradictions, gaps, outdated provisions, and missing pieces. It identifies critical details \u2014 claim phone numbers, executor contacts, filing deadlines \u2014 and auto-populates the beginnings of your personalized action plan. No team reads your documents. The AI works entirely within your encryption.',
-                  bridge: 'What EGA finds feeds directly into a clear, actionable plan your family can follow.',
-                },
-                {
-                  num: '04',
-                  icon: ClipboardCheck,
-                  title: 'Immediate Action Checklist',
-                  abbr: 'IAC',
-                  bold: 'A step-by-step guide your family can follow on the hardest days of their lives.',
-                  desc: 'Partially auto-created by EGA from your documents and fully customizable by you. When a crisis hits, your family opens the IAC and knows exactly what to do, who to call, where to find every document, and what deadlines matter. No guessing. No searching. No overwhelm.',
-                  bridge: 'Your checklist handles the immediate steps. Contingency Protocols handle the bigger scenarios.',
-                },
-                {
-                  num: '05',
-                  icon: Radio,
-                  title: 'Contingency Protocols',
-                  abbr: 'CCP',
-                  bold: 'Pre-built response plans for the scenarios your family might face \u2014 ready to activate at a moment\u2019s notice.',
-                  desc: 'Build contingency protocols for any situation: medical emergencies, natural disasters, financial disruptions, or the passing of a family member. Each protocol connects your people, your documents, your checklists, and your communication channels into one coordinated plan your family can execute together.',
-                  bridge: 'Every protocol needs a secure, private channel for your family to coordinate through.',
-                },
-                {
-                  num: '06',
-                  icon: MessageCircle,
-                  title: 'Estate Communications Tool',
-                  abbr: 'ECT',
-                  bold: 'Secure, encrypted family messaging that powers your protocols and keeps your family connected when it counts.',
-                  desc: 'ECT is the communication backbone of your family\'s readiness infrastructure. End-to-end encrypted conversations between benefactors and beneficiaries, purpose-built for sensitive family coordination. When a contingency protocol activates, ECT is how your family stays in sync \u2014 privately and securely.',
-                  bridge: 'With your plans and communication secured, the last step is organizing your digital life.',
-                },
-                {
-                  num: '07',
-                  icon: Key,
-                  title: 'Digital Access Vault',
-                  abbr: 'DAV',
-                  bold: 'Passwords, accounts, crypto keys, and digital credentials \u2014 saved, encrypted, and assigned to the right people.',
-                  desc: 'The modern family has dozens of digital accounts, subscriptions, financial platforms, and access credentials that need to be passed down and organized. DAV stores them all in your encrypted vault, assigned to specific beneficiaries, so nothing is lost and nothing is forgotten.',
-                  bridge: 'Finally, make sure the right people know how to reach the right people.',
-                },
-                {
-                  num: '08',
-                  icon: Users,
-                  title: 'Family & Friends Notification',
-                  abbr: 'FFN',
-                  bold: 'The people who matter most should never hear important news through the grapevine.',
-                  desc: 'Build a personalized notification list of family, friends, colleagues, and anyone your beneficiaries should contact during a transition or emergency. Names, phone numbers, relationships, and special notes \u2014 all organized and ready so your family can coordinate outreach without scrambling.',
-                  bridge: null,
-                },
-              ].map(({ num, icon: Icon, title, abbr, bold, desc, bridge }, i) => (
-                <div key={num}>
-                  <RevealSection delay={i * 0.06}>
-                    <div className="rounded-xl p-6 lg:p-8 relative"
-                      style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
-                      {/* Number badge */}
-                      <div className="absolute -top-4 -left-2 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
-                        style={{ background: '#d4af37', color: '#0B1221', boxShadow: '0 4px 16px rgba(212,175,55,0.3)' }}>
-                        {num}
-                      </div>
-                      <div className="flex items-center gap-3 mb-4 ml-6">
-                        <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.15)' }}>
-                          <Icon className="w-5 h-5 text-[#d4af37]" />
-                        </div>
-                        <div>
-                          <h4 className="text-white text-lg font-semibold leading-tight">{title}</h4>
-                          <span className="text-[#6b7a90] text-xs font-mono">{abbr}</span>
-                        </div>
-                      </div>
-                      <p className="text-[#d4af37] text-sm font-medium mb-3 leading-relaxed">{bold}</p>
-                      <p className="text-[#6b7a90] text-sm leading-relaxed">{desc}</p>
-                    </div>
-                  </RevealSection>
-                  {/* Bridge connector — the organic link to the next feature */}
-                  {bridge && (
-                    <RevealSection delay={i * 0.06 + 0.04}>
-                      <div className="flex items-stretch gap-0 py-4 pl-4">
-                        <div className="w-px flex-shrink-0" style={{ background: 'linear-gradient(180deg, rgba(212,175,55,0.3), rgba(212,175,55,0.08))' }} />
-                        <p className="text-[#7b879e] text-xs italic pl-5 leading-relaxed">{bridge}</p>
-                      </div>
-                    </RevealSection>
-                  )}
+
+            {/* Flow container with central arrow spine */}
+            <div className="relative">
+              {/* Continuous arrow spine — runs behind all tiles */}
+              <div className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-[3px] z-0"
+                style={{ background: 'linear-gradient(180deg, rgba(212,175,55,0.05) 0%, rgba(212,175,55,0.35) 8%, rgba(212,175,55,0.35) 92%, rgba(212,175,55,0.5) 100%)' }} />
+              {/* Arrow chevrons flowing down */}
+              {[12, 25, 38, 50, 62, 75, 88].map((pct, i) => (
+                <div key={i} className="absolute left-1/2 -translate-x-1/2 z-[1]" style={{ top: `${pct}%` }}>
+                  <ChevronDown className="w-5 h-5 text-[#d4af37]/30" />
                 </div>
               ))}
 
-              {/* Completion statement */}
-              <RevealSection delay={0.6}>
-                <div className="mt-8 text-center rounded-xl p-6" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.15)' }}>
-                  <p className="text-[#d4af37] text-base font-semibold italic leading-relaxed">
-                    Together, these eight pillars create a complete family readiness architecture &mdash; one that grows with your family, protects what matters most, and ensures your loved ones can CarryOn through anything.
+              {/* Feature tiles — full width, stacked */}
+              <div className="relative z-10 space-y-5">
+                {[
+                  {
+                    num: '01',
+                    icon: MessageSquare,
+                    title: 'Milestone Messages',
+                    abbr: 'MM',
+                    accent: '#d4af37',
+                    bold: 'Your words at their wedding. Your voice on their birthday. Your love \u2014 delivered exactly when it matters.',
+                    desc: 'Record written, audio, or video messages for the milestones you want to be part of \u2014 even if you can\'t be there. Graduations, births, first homes, or any moment you choose. Create them infinitely over time, and they\'re delivered exactly as you envision.',
+                  },
+                  {
+                    num: '02',
+                    icon: LockIcon,
+                    title: 'Secure Document Vault',
+                    abbr: 'SDV',
+                    accent: '#d4af37',
+                    bold: 'Every will, trust, policy, and deed \u2014 encrypted, organized, and accessible to the right people at the right time.',
+                    desc: 'Upload your most critical family documents into a per-estate encrypted vault with AES-256 encryption and Triple Lock protection. Your beneficiaries access exactly what you authorize \u2014 and your documents become the foundation that powers everything else.',
+                  },
+                  {
+                    num: '03',
+                    icon: Sparkles,
+                    title: 'Estate Guardian\u2122 AI',
+                    abbr: 'EGA',
+                    accent: '#d4af37',
+                    bold: 'An AI analyst trained on U.S. law across all 50 states \u2014 working inside your encrypted vault to find what you missed.',
+                    desc: 'EGA analyzes your uploaded documents for contradictions, gaps, outdated provisions, and missing pieces. It identifies critical details \u2014 claim phone numbers, executor contacts, filing deadlines \u2014 and auto-populates the beginnings of your personalized action plan. No team reads your documents. The AI works entirely within your encryption.',
+                  },
+                  {
+                    num: '04',
+                    icon: ClipboardCheck,
+                    title: 'Immediate Action Checklist',
+                    abbr: 'IAC',
+                    accent: '#d4af37',
+                    bold: 'A step-by-step guide your family can follow on the hardest days of their lives.',
+                    desc: 'Partially auto-created by EGA from your documents and fully customizable by you. When a crisis hits, your family opens the IAC and knows exactly what to do, who to call, where to find every document, and what deadlines matter. No guessing. No searching. No overwhelm.',
+                  },
+                  {
+                    num: '05',
+                    icon: Radio,
+                    title: 'Contingency Protocols',
+                    abbr: 'CCP',
+                    accent: '#d4af37',
+                    bold: 'Pre-built response plans for the scenarios your family might face \u2014 ready to activate at a moment\u2019s notice.',
+                    desc: 'Build contingency protocols for any situation: medical emergencies, natural disasters, financial disruptions, or the passing of a family member. Each protocol connects your people, your documents, your checklists, and your communication channels into one coordinated plan your family can execute together.',
+                  },
+                  {
+                    num: '06',
+                    icon: MessageCircle,
+                    title: 'Estate Communications Tool',
+                    abbr: 'ECT',
+                    accent: '#d4af37',
+                    bold: 'Secure, encrypted family messaging that powers your protocols and keeps your family connected when it counts.',
+                    desc: 'ECT is the communication backbone of your family\'s readiness infrastructure. End-to-end encrypted conversations between benefactors and beneficiaries, purpose-built for sensitive family coordination. When a contingency protocol activates, ECT is how your family stays in sync \u2014 privately and securely.',
+                  },
+                  {
+                    num: '07',
+                    icon: Key,
+                    title: 'Digital Access Vault',
+                    abbr: 'DAV',
+                    accent: '#d4af37',
+                    bold: 'Passwords, accounts, crypto keys, and digital credentials \u2014 saved, encrypted, and assigned to the right people.',
+                    desc: 'The modern family has dozens of digital accounts, subscriptions, financial platforms, and access credentials that need to be passed down and organized. DAV stores them all in your encrypted vault, assigned to specific beneficiaries, so nothing is lost and nothing is forgotten.',
+                  },
+                  {
+                    num: '08',
+                    icon: Users,
+                    title: 'Family & Friends Notification',
+                    abbr: 'FFN',
+                    accent: '#d4af37',
+                    bold: 'The people who matter most should never hear important news through the grapevine.',
+                    desc: 'Build a personalized notification list of family, friends, colleagues, and anyone your beneficiaries should contact during a transition or emergency. Names, phone numbers, relationships, and special notes \u2014 all organized and ready so your family can coordinate outreach without scrambling.',
+                  },
+                ].map(({ num, icon: Icon, title, abbr, accent, bold, desc }, i) => (
+                  <RevealSection key={num} delay={i * 0.05}>
+                    <div className="rounded-2xl p-6 lg:p-7 relative overflow-hidden transition-all duration-500 hover:border-[#d4af37]/20"
+                      style={{ background: 'rgba(15,26,46,0.75)', border: '1px solid rgba(14,165,233,0.06)', backdropFilter: 'blur(8px)' }}>
+                      {/* Left accent bar */}
+                      <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ background: accent }} />
+                      <div className="flex items-start gap-5">
+                        {/* Number + icon column */}
+                        <div className="flex flex-col items-center gap-2 flex-shrink-0 pt-1">
+                          <div className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-sm"
+                            style={{ background: `${accent}18`, border: `1px solid ${accent}25`, color: accent }}>
+                            {num}
+                          </div>
+                          <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+                            style={{ background: `${accent}10` }}>
+                            <Icon className="w-4 h-4" style={{ color: accent }} />
+                          </div>
+                        </div>
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline gap-3 mb-2">
+                            <h4 className="text-white text-lg font-bold leading-tight">{title}</h4>
+                            <span className="text-[#4a5568] text-xs font-mono flex-shrink-0">{abbr}</span>
+                          </div>
+                          <p className="text-sm font-medium mb-2 leading-relaxed" style={{ color: accent }}>{bold}</p>
+                          <p className="text-[#6b7a90] text-sm leading-relaxed">{desc}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </RevealSection>
+                ))}
+              </div>
+
+              {/* Arrow terminus — converges into the end-state bubble */}
+              <div className="flex justify-center pt-2 relative z-10">
+                <div className="flex flex-col items-center">
+                  <ChevronDown className="w-6 h-6 text-[#d4af37]/40" />
+                  <ChevronDown className="w-6 h-6 text-[#d4af37]/50 -mt-3" />
+                  <ChevronDown className="w-7 h-7 text-[#d4af37]/60 -mt-3" />
+                </div>
+              </div>
+
+              {/* End-state bubble — Holistic Family Preparedness */}
+              <RevealSection delay={0.5}>
+                <div className="relative z-10 mt-2 mx-auto max-w-[600px] rounded-[2rem] p-8 lg:p-10 text-center"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.03) 100%)',
+                    border: '2px solid rgba(212,175,55,0.3)',
+                    boxShadow: '0 0 60px rgba(212,175,55,0.08), 0 0 120px rgba(212,175,55,0.04)',
+                  }}>
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+                    style={{ background: 'rgba(212,175,55,0.12)', border: '2px solid rgba(212,175,55,0.25)', boxShadow: '0 0 30px rgba(212,175,55,0.15)' }}>
+                    <Shield className="w-7 h-7 text-[#d4af37]" />
+                  </div>
+                  <h3 className="text-2xl sm:text-3xl font-bold text-[#d4af37] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                    Holistic Family Preparedness.
+                  </h3>
+                  <p className="text-[#94a3b8] text-sm lg:text-base leading-relaxed mb-4">
+                    Eight pillars. One architecture. A living system that grows with your family, protects what matters most, and ensures that no matter what life brings &mdash; your family is never left searching, wondering, or scrambling.
+                  </p>
+                  <p className="text-white text-base font-semibold italic">
+                    They&apos;re ready. Because you prepared.
                   </p>
                 </div>
               </RevealSection>
