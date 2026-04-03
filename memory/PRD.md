@@ -3,6 +3,38 @@
 ## ZERO TOLERANCE: Perfect Code Every Push
 **MANDATORY: Before EVERY push, run `bash /app/housekeeping.sh`. ALL 60 checks must PASS.**
 
+
+---
+
+## ⛔ DO NOT TOUCH — ECT Chat View Transition Settling (iOS PWA)
+
+**Priority: DOCUMENTED PERMANENT — DO NOT ATTEMPT TO FIX**
+
+**Issue**: When tapping a channel to open a chat on iOS PWA, the entire chat view (header + message area + input bar) slides up then ratchets down into position before settling. The text input bar may also appear with a slight delay or flash into position separately.
+
+**What was tried (April 3, 2026) — ALL FAILED, ZERO EFFECT:**
+
+1. **Clearing CSS transitions** on `ect-root` in `openChannel()` — `r.style.transition = 'none'` before resetting transform/bottom. **No effect.**
+2. **`visibility: hidden` + double-`requestAnimationFrame` reveal** — hide ect-root during DOM swap, reveal after browser completes layout+paint. **Made keyboard behavior WORSE — header jumped twice, input bar ratcheted.**
+3. **`willChange: 'transform'`** on ect-root to force GPU compositing layer. **Made keyboard behavior WORSE (same as #2, applied together).**
+4. **`window.scrollTo({ behavior: 'instant' })`** instead of `scrollTo(0,0)`. **Made keyboard behavior WORSE (same as #2/#3, applied together).**
+5. **`animation: fadeIn 0.12s ease-out`** CSS opacity mask on messageArea container. **No effect.**
+6. **`min-height: 0` (`min-h-0`)** on the messages scroll container to fix iOS flex sizing bug. **No effect.**
+7. **CSS Grid** (`display: grid; grid-template-rows: auto 1fr auto auto`) instead of Flexbox on messageArea to force single-pass layout. **No effect.**
+8. **Removing `window.scrollTo(0, 0)`** from `openChannel()` entirely. **No effect.**
+9. **DOM persistence** — keeping both channelPanel and messageArea always in the DOM and toggling with CSS `display: none`/`flex` classes instead of React ternary swap. Eliminates DOM insertion/removal entirely. **No effect.**
+10. **Fixed wrapper + absolute inner** — wrapping `ect-root` in a `position: fixed` parent and changing `ect-root` to `position: absolute`. Standard iOS developer workaround for fixed-element rendering bugs. **No effect.**
+
+**Conclusion**: This is an iOS Safari rendering behavior with `position: fixed` containers that cannot be resolved through CSS, JavaScript, DOM strategy, or positioning changes made remotely. Every approach — from CSS transitions to GPU compositing to DOM mutation avoidance to positioning strategy changes — produced either zero effect or made the keyboard behavior worse. The settling animation is baked into how iOS Safari handles content changes inside fixed-position elements.
+
+**Cost**: Thousands of tokens and multiple screen recordings were spent reaching this conclusion. **DO NOT re-attempt any of the above fixes or variations thereof.** Any future agent encountering this issue must read this section first and not repeat these approaches.
+
+**The only approaches NOT tried** (and may warrant future investigation with physical device access):
+- Native iOS WKWebView configuration flags
+- Capacitor-level viewport management plugins
+- Replacing `position: fixed` entirely with a different layout paradigm (e.g., full-page CSS Grid with no fixed positioning)
+
+---
 ## Original Problem Statement
 A full-stack estate planning application allowing benefactors to manage digital estates, beneficiaries, documents, and messages.
 
