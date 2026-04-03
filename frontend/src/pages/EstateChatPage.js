@@ -1202,8 +1202,9 @@ export default function EstateChatPage() {
   );
 
   // ── Message Area ──
-  const messageArea = activeChannel && (
-    <div className={`${!showChannelList || activeChannel ? 'flex' : 'hidden'} lg:flex flex-col flex-1`} style={{ minHeight: 0 }}>
+  const messageArea = (
+    <div className={`${!showChannelList && activeChannel ? 'flex' : 'hidden'} lg:flex flex-col flex-1`} style={{ minHeight: 0 }}>
+      {activeChannel && (<>
       {/* Header */}
       <div className="flex items-center gap-3 p-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <button
@@ -1553,6 +1554,7 @@ export default function EstateChatPage() {
       </div>
       {/* Safe-area bottom fill — solid background when keyboard is closed */}
       {!inputFocused && <div style={{ background: '#151D30', height: 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />}
+      </>)}
     </div>
   );
 
@@ -1586,7 +1588,8 @@ export default function EstateChatPage() {
       </div>
       {/* Mobile: toggle between list and messages */}
       <div className="flex flex-col lg:hidden flex-1 min-h-0">
-        {showChannelList && !activeChannel ? channelPanel : messageArea}
+        {channelPanel}
+        {messageArea}
       </div>
     </div>
     {newChatModal}
