@@ -100,7 +100,7 @@ const HomePage = () => {
             </div>
           </RevealSection>
           <RevealSection delay={0.4}>
-            <a href="#about" className="inline-flex flex-col items-center justify-center gap-2 mt-10 w-full max-w-md py-5 rounded-2xl cursor-pointer animate-bounce text-center"
+            <a href="#about" className="inline-flex flex-col items-center justify-center gap-2 mt-10 px-12 sm:px-16 py-5 rounded-2xl cursor-pointer animate-bounce text-center"
               data-testid="scroll-explore-home"
               style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20), 0 0 50px rgba(212,175,55,0.08)', backdropFilter: 'blur(8px)' }}>
               <span className="text-white text-2xl sm:text-3xl font-bold text-center" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
