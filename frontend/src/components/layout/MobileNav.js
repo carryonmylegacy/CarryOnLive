@@ -260,15 +260,33 @@ const MobileNav = () => {
     return () => clearInterval(interval);
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Compute role key for dock preferences
+  const dockRole = React.useMemo(() => {
+    const path = window.location.pathname;
+    if (user?.role === 'admin' && path.startsWith('/ops')) return 'operator';
+    if (user?.role === 'admin') return 'admin';
+    if (user?.role === 'operator') return 'operator';
+    if (user?.role === 'beneficiary' && user?.is_also_benefactor && !path.startsWith('/beneficiary')) return 'benefactor';
+    if (user?.role === 'beneficiary') return 'beneficiary';
+    if (user?.role === 'benefactor' && path.startsWith('/beneficiary')) return 'beneficiary';
+    return 'benefactor';
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Fetch custom dock preferences
   React.useEffect(() => {
     const tk = localStorage.getItem('carryon_token');
     if (!tk) return;
-    fetch(`${BASE_URL}/api/user-preferences/dock`, { headers: { Authorization: `Bearer ${tk}` } })
+    fetch(`${BASE_URL}/api/user-preferences/dock?role=${dockRole}`, { headers: { Authorization: `Bearer ${tk}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d && d.items && d.items.length > 0) setCustomDockItems(d.items); })
+      .then(d => {
+        if (d && d.items && d.items.length > 0) {
+          const availRoutes = new Set((DOCK_REGISTRY[dockRole] || []).map(i => i.to));
+          const valid = d.items.filter(route => availRoutes.has(route));
+          if (valid.length > 0) setCustomDockItems(valid);
+        }
+      })
       .catch(() => {});
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, dockRole]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Dev portal switcher (founder only)
   const [devOpen, setDevOpen] = useState(false);

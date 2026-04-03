@@ -329,100 +329,90 @@ export default function EstateChatPage() {
 
     const resetStyles = () => {
       kbOpen = false;
+      root.style.transition = '';
       root.style.bottom = '0';
       root.style.transform = '';
       window.scrollTo(0, 0);
     };
 
     let lastBottom = 0;
-    let settleTimer = null;
-    let scrollLockRaf = null;
-
-    // Lock page scroll to 0 during keyboard open animation.
-    // iOS PWA pushes fixed elements upward by scrolling the page — this prevents it.
-    const startScrollLock = () => {
-      const lockUntil = Date.now() + 350;
-      const lock = () => {
-        if (window.scrollY !== 0) window.scrollTo(0, 0);
-        if (Date.now() < lockUntil && kbOpen) {
-          scrollLockRaf = requestAnimationFrame(lock);
-        }
-      };
-      scrollLockRaf = requestAnimationFrame(lock);
-    };
-
-    const stopScrollLock = () => {
-      if (scrollLockRaf) { cancelAnimationFrame(scrollLockRaf); scrollLockRaf = null; }
-    };
+    let lastTransform = 0;
+    let rafId = 0;
 
     const sync = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(syncImpl);
+    };
+
+    const syncImpl = () => {
+      if (!activeChannelRef.current) {
+        if (kbOpen) resetStyles();
+        return;
+      }
+
       const focused = document.activeElement;
       const inputActive = focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.isContentEditable);
       const open = inputActive && vv.height < window.innerHeight * 0.75;
 
-      // Keyboard CLOSE — immediate
-      if (kbOpen && !open) {
-        clearTimeout(settleTimer);
-        stopScrollLock();
-        resetStyles();
-        lastBottom = 0;
-        return;
-      }
-
-      // Skip if on channel list
-      if (!activeChannelRef.current) {
-        if (kbOpen) { clearTimeout(settleTimer); stopScrollLock(); resetStyles(); }
-        return;
-      }
-
-      // Keyboard OPENING — start scroll lock to prevent iOS page push
-      if (!kbOpen && open) {
-        startScrollLock();
-      }
-
-      // Debounce the bottom adjustment — wait for iOS keyboard to finish animating
-      clearTimeout(settleTimer);
-      settleTimer = setTimeout(() => {
-        const f = document.activeElement;
-        const ia = f && (f.tagName === 'INPUT' || f.tagName === 'TEXTAREA' || f.isContentEditable);
-        const isOpen = ia && vv.height < window.innerHeight * 0.75;
-
-        if (isOpen) {
+      if (open !== kbOpen) {
+        kbOpen = open;
+        if (kbOpen) {
           const kbHeight = window.innerHeight - vv.height;
-          if (!kbOpen || Math.abs(kbHeight - lastBottom) > 5) {
-            kbOpen = true;
-            root.style.bottom = `${kbHeight}px`;
-            lastBottom = kbHeight;
-          }
+          root.style.transition = 'bottom 0.25s ease-out, transform 0.25s ease-out';
+          root.style.bottom = `${kbHeight}px`;
+          lastBottom = kbHeight;
+        } else {
+          resetStyles();
+          lastBottom = 0;
+          lastTransform = 0;
         }
-        // Final scroll reset after positioning
-        if (window.scrollY !== 0) window.scrollTo(0, 0);
+      } else if (kbOpen) {
+        const kbHeight = window.innerHeight - vv.height;
+        if (Math.abs(kbHeight - lastBottom) > 10) {
+          root.style.bottom = `${kbHeight}px`;
+          lastBottom = kbHeight;
+        }
+      }
+      if (kbOpen && window.scrollY > 0) {
+        if (Math.abs(window.scrollY - lastTransform) > 3) {
+          root.style.transform = `translateY(${window.scrollY}px)`;
+          lastTransform = window.scrollY;
+        }
+      } else if (kbOpen && lastTransform !== 0) {
         root.style.transform = '';
-      }, 150);
+        lastTransform = 0;
+      }
     };
 
-    // Safety: when input loses focus, reset after a delay
     const handleFocusOut = () => {
       setTimeout(() => {
         if (!activeChannelRef.current) return;
         const el = document.activeElement;
         const isInput = el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
         if (!isInput && kbOpen) {
-          clearTimeout(settleTimer);
-          stopScrollLock();
           resetStyles();
         }
       }, 400);
     };
 
+    const handleWindowScroll = () => {
+      if (kbOpen && activeChannelRef.current && window.scrollY > 0) {
+        if (Math.abs(window.scrollY - lastTransform) > 3) {
+          root.style.transform = `translateY(${window.scrollY}px)`;
+          lastTransform = window.scrollY;
+        }
+      }
+    };
+
     vv.addEventListener('resize', sync);
     vv.addEventListener('scroll', sync);
+    window.addEventListener('scroll', handleWindowScroll, { passive: true });
     root.addEventListener('focusout', handleFocusOut);
     return () => {
-      clearTimeout(settleTimer);
-      stopScrollLock();
+      cancelAnimationFrame(rafId);
       vv.removeEventListener('resize', sync);
       vv.removeEventListener('scroll', sync);
+      window.removeEventListener('scroll', handleWindowScroll);
       root.removeEventListener('focusout', handleFocusOut);
       root.style.bottom = '0';
       root.style.transform = '';

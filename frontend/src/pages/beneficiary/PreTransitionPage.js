@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { Lock, Shield, FileText, Upload, ChevronLeft, MessageCircle, FolderOpen } from 'lucide-react';
+import { Lock, Shield, FileText, Upload, ChevronLeft, MessageCircle, FolderOpen, AlertTriangle } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
@@ -101,6 +101,22 @@ const PreTransitionPage = () => {
           <p className="text-sm text-[var(--t4)] mb-4 leading-relaxed">
             These documents are available before transition verification for emergency medical and legal decision-making.
           </p>
+
+          {/* Connected Contingency Plans */}
+          <div
+            className="flex items-center gap-3 p-4 rounded-xl mb-2 cursor-pointer transition-transform duration-150 active:scale-[0.98]"
+            style={{ background: 'rgba(16,185,129,0.04)', border: '1px solid rgba(16,185,129,0.12)' }}
+            onClick={() => navigate('/beneficiary/connected-protocol')}
+            data-testid="pre-ccp"
+          >
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.12)' }}>
+              <AlertTriangle className="w-5 h-5 text-[var(--gn2)]" />
+            </div>
+            <div className="flex-1">
+              <div className="font-bold text-[var(--t)]">Emergency Plans (CCP)</div>
+              <div className="text-xs text-[var(--gn2)]">View contingency plans assigned to you</div>
+            </div>
+          </div>
 
           {/* Medical Directive */}
           <div

@@ -45,6 +45,7 @@ const TrusteePage = lazy(() => import('./pages/TrusteePage'));
 const FFNPage = lazy(() => import('./pages/FFNPage'));
 const EstateChatPage = lazy(() => import('./pages/EstateChatPage'));
 const ConnectedProtocolPage = lazy(() => import('./pages/ConnectedProtocolPage'));
+const BeneficiaryCCPPage = lazy(() => import('./pages/beneficiary/BeneficiaryCCPPage'));
 const TransitionPage = lazy(() => import('./pages/TransitionPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
@@ -311,7 +312,7 @@ function AppRoutes() {
         <Route path="/beneficiary/upload-certificate" element={<UploadCertificatePage />} />
         <Route path="/beneficiary/condolence" element={<CondolencePage />} />
         <Route path="/beneficiary/estate-chat" element={<EstateChatPage />} />
-        <Route path="/beneficiary/connected-protocol" element={<ConnectedProtocolPage />} />
+        <Route path="/beneficiary/connected-protocol" element={<BeneficiaryCCPPage />} />
       </Route>
 
       {/* Admin Routes */}

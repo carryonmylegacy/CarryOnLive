@@ -133,6 +133,39 @@ async def get_estate_members_endpoint(estate_id: str, current_user: dict = Depen
 # ===================== PLANS CRUD =====================
 
 
+@router.get("/ccp/my-plans")
+async def get_my_plans(current_user: dict = Depends(get_current_user)):
+    """Get all CCP plans across all estates where this user is an assigned beneficiary."""
+    user_id = current_user["id"]
+    # Find all estates where user is a beneficiary
+    estates = await db.estates.find(
+        {"beneficiaries": user_id, "deleted_at": None},
+        {"_id": 0, "id": 1, "name": 1, "owner_id": 1},
+    ).to_list(50)
+    if not estates:
+        return []
+    estate_map = {e["id"]: e for e in estates}
+    estate_ids = list(estate_map.keys())
+    # Fetch all plans from these estates
+    plans = await db.emergency_plans.find(
+        {"estate_id": {"$in": estate_ids}, "deleted_at": None},
+        {"_id": 0},
+    ).to_list(200)
+    # Filter: only include plans where this user is assigned (or all are assigned)
+    result = []
+    for p in plans:
+        assigned = p.get("assigned_beneficiary_ids")
+        if assigned is None or user_id in assigned:
+            estate = estate_map.get(p["estate_id"], {})
+            # Look up benefactor name
+            owner_id = estate.get("owner_id")
+            owner = await db.users.find_one({"id": owner_id}, {"_id": 0, "id": 1, "name": 1}) if owner_id else None
+            p["estate_name"] = estate.get("name", "Unknown Estate")
+            p["benefactor_name"] = owner["name"] if owner else "Unknown"
+            result.append(p)
+    return result
+
+
 @router.get("/ccp/plans/{estate_id}")
 async def get_plans(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get all emergency plans for an estate. Beneficiaries only see plans assigned to them."""

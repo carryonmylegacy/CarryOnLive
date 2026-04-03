@@ -40,11 +40,14 @@ const DockCustomizer = () => {
   useEffect(() => {
     const tk = localStorage.getItem('carryon_token');
     if (!tk) return;
-    fetch(`${API_URL}/api/user-preferences/dock`, { headers: { Authorization: `Bearer ${tk}` } })
+    const availableRoutes = new Set((DOCK_REGISTRY[roleKey] || []).map(i => i.to));
+    fetch(`${API_URL}/api/user-preferences/dock?role=${roleKey}`, { headers: { Authorization: `Bearer ${tk}` } })
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (d?.items?.length > 0) {
-          setSelected(d.items);
+          // Only keep items that exist in the current role's registry
+          const valid = d.items.filter(route => availableRoutes.has(route));
+          setSelected(valid.length > 0 ? valid : (DEFAULTS[roleKey] || []));
         } else {
           setSelected(DEFAULTS[roleKey] || []);
         }
@@ -93,7 +96,7 @@ const DockCustomizer = () => {
       const res = await fetch(`${API_URL}/api/user-preferences/dock`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${tk}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: selected }),
+        body: JSON.stringify({ items: selected, role: roleKey }),
       });
       if (!res.ok) throw new Error('Save failed');
       toast.success('Dock updated! Changes will appear on next refresh.');
