@@ -337,54 +337,31 @@ export default function EstateChatPage() {
 
     let lastBottom = 0;
     let lastTransform = 0;
-    let rafId = 0;
+    let settleTimer = null;
 
     const sync = () => {
-      // Batch into a single rAF to avoid multiple paints per frame
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(syncImpl);
-    };
+      // Keyboard CLOSE detection — must be immediate, no debounce
+      const focused = document.activeElement;
+      const inputActive = focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.isContentEditable);
+      const open = inputActive && vv.height < window.innerHeight * 0.75;
 
-    const syncImpl = () => {
-      // Skip keyboard handling when on channel list (no active chat)
-      if (!activeChannelRef.current) {
-        if (kbOpen) resetStyles();
+      if (kbOpen && !open) {
+        clearTimeout(settleTimer);
+        resetStyles();
+        lastBottom = 0;
+        lastTransform = 0;
         return;
       }
 
-      // Only detect keyboard when an input/textarea is actually focused
-      const focused = document.activeElement;
-      const inputActive = focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.isContentEditable);
-
-      const open = inputActive && vv.height < window.innerHeight * 0.75;
-      if (open !== kbOpen) {
-        kbOpen = open;
-        if (kbOpen) {
-          // Snap root into position INSTANTLY — no transition.
-          // Transitions cause the visible "slide up then down" on keyboard open.
-          const kbHeight = window.innerHeight - vv.height;
-          root.style.transition = 'none';
-          root.style.bottom = `${kbHeight}px`;
-          lastBottom = kbHeight;
-        } else {
-          resetStyles();
-          lastBottom = 0;
-          lastTransform = 0;
-        }
-      } else if (kbOpen) {
-        // Keyboard is already open — only adjust for significant height changes
-        // (iOS keyboard animates its height over several frames)
-        const kbHeight = window.innerHeight - vv.height;
-        if (Math.abs(kbHeight - lastBottom) > 10) {
-          root.style.transition = 'none';
-          root.style.bottom = `${kbHeight}px`;
-          lastBottom = kbHeight;
-        }
+      // Skip if on channel list
+      if (!activeChannelRef.current) {
+        if (kbOpen) { clearTimeout(settleTimer); resetStyles(); }
+        return;
       }
-      // Compensate for iOS page scroll while keyboard is open
+
+      // Scroll compensation — apply immediately (no debounce)
       if (kbOpen && window.scrollY > 0) {
         if (Math.abs(window.scrollY - lastTransform) > 3) {
-          root.style.transition = 'none';
           root.style.transform = `translateY(${window.scrollY}px)`;
           lastTransform = window.scrollY;
         }
@@ -392,6 +369,31 @@ export default function EstateChatPage() {
         root.style.transform = '';
         lastTransform = 0;
       }
+
+      // Keyboard OPEN / HEIGHT CHANGE — debounce to let iOS finish animating.
+      // iOS fires 5-15 resize events over ~300ms as the keyboard slides up.
+      // We wait until they stop, then snap into position ONCE.
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(() => {
+        const f = document.activeElement;
+        const ia = f && (f.tagName === 'INPUT' || f.tagName === 'TEXTAREA' || f.isContentEditable);
+        const isOpen = ia && vv.height < window.innerHeight * 0.75;
+
+        if (isOpen) {
+          const kbHeight = window.innerHeight - vv.height;
+          if (!kbOpen || Math.abs(kbHeight - lastBottom) > 5) {
+            kbOpen = true;
+            root.style.transition = 'none';
+            root.style.bottom = `${kbHeight}px`;
+            lastBottom = kbHeight;
+          }
+        }
+        // Also handle any scroll that happened during the settle
+        if (kbOpen && window.scrollY > 0) {
+          root.style.transform = `translateY(${window.scrollY}px)`;
+          lastTransform = window.scrollY;
+        }
+      }, 120);
     };
 
     // Safety: when input loses focus, reset after a delay
@@ -401,14 +403,12 @@ export default function EstateChatPage() {
         const el = document.activeElement;
         const isInput = el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
         if (!isInput && kbOpen) {
+          clearTimeout(settleTimer);
           resetStyles();
         }
       }, 400);
     };
 
-    // Also listen to window scroll — iOS PWA can scroll the page behind our
-    // fixed root when the keyboard opens, and the visualViewport events may
-    // not fire for that scroll. This eliminates the "wiggle to fix" issue.
     const handleWindowScroll = () => {
       if (kbOpen && activeChannelRef.current && window.scrollY > 0) {
         if (Math.abs(window.scrollY - lastTransform) > 3) {
@@ -423,7 +423,7 @@ export default function EstateChatPage() {
     window.addEventListener('scroll', handleWindowScroll, { passive: true });
     root.addEventListener('focusout', handleFocusOut);
     return () => {
-      cancelAnimationFrame(rafId);
+      clearTimeout(settleTimer);
       vv.removeEventListener('resize', sync);
       vv.removeEventListener('scroll', sync);
       window.removeEventListener('scroll', handleWindowScroll);
