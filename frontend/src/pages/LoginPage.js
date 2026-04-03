@@ -754,10 +754,11 @@ const LoginPage = () => {
                       </div>
                     ))}
                   </div>
-                  <a href="#about" className="inline-flex flex-col items-center gap-1 mt-4 px-5 py-2.5 rounded-lg hover:bg-white/5 transition-colors group cursor-pointer"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <span className="text-white/70 text-lg font-bold group-hover:text-[#d4af37] transition-colors" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
-                    <ChevronDown className="w-6 h-6 text-white/50 animate-bounce group-hover:text-[#d4af37]" />
+                  <a href="#about" className="inline-flex flex-col items-center gap-2 mt-6 px-14 py-4 rounded-2xl cursor-pointer animate-bounce"
+                    data-testid="scroll-explore-desktop"
+                    style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.08))', border: '2px solid rgba(212,175,55,0.35)', boxShadow: '0 4px 24px rgba(212,175,55,0.12)', backdropFilter: 'blur(8px)' }}>
+                    <span className="text-white text-xl sm:text-2xl font-bold" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
+                    <ChevronDown className="w-8 h-8 text-[#d4af37]" />
                   </a>
                 </div>
               </div>
@@ -881,10 +882,11 @@ const LoginPage = () => {
                       </div>
                     ))}
                   </div>
-                  <a href="#about" className="flex flex-col items-center gap-1 mt-4 mb-20 px-6 py-3 rounded-xl hover:bg-white/5 transition-colors group cursor-pointer"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)' }}>
-                    <span className="text-white/70 text-lg font-bold group-hover:text-[#d4af37] transition-colors" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
-                    <ChevronDown className="w-6 h-6 text-white/50 animate-bounce group-hover:text-[#d4af37]" />
+                  <a href="#about" className="flex flex-col items-center gap-2 mt-4 mb-20 px-14 py-4 rounded-2xl cursor-pointer animate-bounce"
+                    data-testid="scroll-explore-mobile"
+                    style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.08))', border: '2px solid rgba(212,175,55,0.35)', boxShadow: '0 4px 24px rgba(212,175,55,0.12)', backdropFilter: 'blur(8px)' }}>
+                    <span className="text-white text-xl font-bold" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
+                    <ChevronDown className="w-8 h-8 text-[#d4af37]" />
                   </a>
                 </div>
               </RevealSection>
@@ -998,9 +1000,9 @@ const LoginPage = () => {
                 {/* Wide gentle arrow shaft — scoped to tile container only */}
                 <div className="absolute left-1/2 -translate-x-1/2 z-0 rounded-full"
                   style={{
-                    width: '180px',
+                    width: '126px',
                     top: '30px',
-                    bottom: '0px',
+                    bottom: '-20px',
                     background: 'linear-gradient(180deg, rgba(212,175,55,0.05) 0%, rgba(212,175,55,0.13) 15%, rgba(212,175,55,0.13) 85%, rgba(212,175,55,0.18) 100%)',
                     borderRadius: '90px',
                   }} />
@@ -1070,9 +1072,9 @@ const LoginPage = () => {
 
               {/* Single gentle arrowhead — connects shaft to end-state tile */}
               <div className="flex justify-center relative z-10 -mt-1 mb-0">
-                <svg width="180" height="40" viewBox="0 0 180 40" fill="none">
-                  <path d="M0 0 L90 36 L180 0" fill="rgba(212,175,55,0.18)" />
-                  <path d="M20 0 L90 30 L160 0" fill="rgba(212,175,55,0.10)" />
+                <svg width="126" height="36" viewBox="0 0 126 36" fill="none">
+                  <path d="M0 0 L63 32 L126 0" fill="rgba(212,175,55,0.18)" />
+                  <path d="M14 0 L63 26 L112 0" fill="rgba(212,175,55,0.10)" />
                 </svg>
               </div>
 
@@ -1160,7 +1162,7 @@ const LoginPage = () => {
                 You don&apos;t need to do it all at once. Start with what matters most and build your family&apos;s readiness over time.
               </p>
             </RevealSection>
-            <div className="space-y-8 text-left">
+            <div className="space-y-12 text-left">
               {[
                 { step: '1', title: 'Enroll Your Family', desc: 'Invite your beneficiaries \u2014 the people who matter most. Set their roles, permissions, and access levels. Your family\'s readiness starts with the people in it.' },
                 { step: '2', title: 'Leave Your Messages', desc: 'Record Milestone Messages for the moments you want to be part of \u2014 graduations, weddings, birthdays, or just a Tuesday. Create them over time, as many as you want, delivered exactly as you envision.' },
