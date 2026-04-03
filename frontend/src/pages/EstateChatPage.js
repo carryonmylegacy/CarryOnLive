@@ -1560,14 +1560,14 @@ export default function EstateChatPage() {
 
   return (
     <>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 45, overflow: 'hidden' }}>
     <div id="ect-root" data-testid="estate-chat-page" className="flex flex-col" style={{
       background: 'var(--bg)',
-      position: 'fixed',
+      position: 'absolute',
       top: 0,
       left: 0,
       right: 0,
       bottom: 0,
-      zIndex: 45,
       overflow: 'hidden',
     }}>
       {/* Pad for status bar on native */}
@@ -1591,6 +1591,7 @@ export default function EstateChatPage() {
         {channelPanel}
         {messageArea}
       </div>
+    </div>
     </div>
     {newChatModal}
     {/* Delete Confirmation */}
