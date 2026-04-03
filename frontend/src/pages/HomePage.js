@@ -301,7 +301,7 @@ const HomePage = () => {
                   <p className="text-[#a0aec0] text-sm lg:text-base leading-relaxed mb-4">
                     Eight pillars. One family. A living system that grows with you, protects what matters most, and ensures that no matter what life brings &mdash; your family is never left searching, wondering, or scrambling.
                   </p>
-                  <p className="text-white text-base font-semibold italic">
+                  <p className="text-white text-2xl font-semibold italic">
                     They&apos;re ready. Because you prepared.
                   </p>
                 </div>
