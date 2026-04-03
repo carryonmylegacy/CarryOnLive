@@ -754,11 +754,11 @@ const LoginPage = () => {
                       </div>
                     ))}
                   </div>
-                  <a href="#about" className="inline-flex flex-col items-center gap-2 mt-6 px-14 py-4 rounded-2xl cursor-pointer animate-bounce"
+                  <a href="#about" className="inline-flex flex-col items-center justify-center gap-2 mt-6 w-[280px] sm:w-[320px] py-4 rounded-2xl cursor-pointer animate-bounce text-center"
                     data-testid="scroll-explore-desktop"
-                    style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.08))', border: '2px solid rgba(212,175,55,0.35)', boxShadow: '0 4px 24px rgba(212,175,55,0.12)', backdropFilter: 'blur(8px)' }}>
-                    <span className="text-white text-xl sm:text-2xl font-bold" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
-                    <ChevronDown className="w-8 h-8 text-[#d4af37]" />
+                    style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.22), rgba(212,175,55,0.12))', border: '2px solid rgba(212,175,55,0.40)', boxShadow: '0 4px 24px rgba(212,175,55,0.15)', backdropFilter: 'blur(8px)' }}>
+                    <span className="text-white text-lg sm:text-xl font-bold" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
+                    <ChevronDown className="w-7 h-7 text-[#d4af37]" />
                   </a>
                 </div>
               </div>
@@ -882,11 +882,11 @@ const LoginPage = () => {
                       </div>
                     ))}
                   </div>
-                  <a href="#about" className="flex flex-col items-center gap-2 mt-4 mb-20 px-14 py-4 rounded-2xl cursor-pointer animate-bounce"
+                  <a href="#about" className="flex flex-col items-center justify-center gap-2 mt-4 mb-20 w-[260px] sm:w-[300px] mx-auto py-4 rounded-2xl cursor-pointer animate-bounce text-center"
                     data-testid="scroll-explore-mobile"
-                    style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.08))', border: '2px solid rgba(212,175,55,0.35)', boxShadow: '0 4px 24px rgba(212,175,55,0.12)', backdropFilter: 'blur(8px)' }}>
-                    <span className="text-white text-xl font-bold" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
-                    <ChevronDown className="w-8 h-8 text-[#d4af37]" />
+                    style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.22), rgba(212,175,55,0.12))', border: '2px solid rgba(212,175,55,0.40)', boxShadow: '0 4px 24px rgba(212,175,55,0.15)', backdropFilter: 'blur(8px)' }}>
+                    <span className="text-white text-lg font-bold" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
+                    <ChevronDown className="w-7 h-7 text-[#d4af37]" />
                   </a>
                 </div>
               </RevealSection>
@@ -1070,17 +1070,16 @@ const LoginPage = () => {
               {/* Close tile stack container — arrow is scoped here */}
               </div>
 
-              {/* Single gentle arrowhead — connects shaft to end-state tile */}
-              <div className="flex justify-center relative z-10 -mt-1 mb-0">
-                <svg width="126" height="36" viewBox="0 0 126 36" fill="none">
-                  <path d="M0 0 L63 32 L126 0" fill="rgba(212,175,55,0.18)" />
-                  <path d="M14 0 L63 26 L112 0" fill="rgba(212,175,55,0.10)" />
+              {/* Single gentle arrowhead — sits between tiles and end-state */}
+              <div className="flex justify-center py-8 relative z-10">
+                <svg width="36" height="20" viewBox="0 0 36 20" fill="none">
+                  <path d="M6 4 L18 16 L30 4" stroke="#d4af37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity="0.35" />
                 </svg>
               </div>
 
               {/* End-state tile — warm, fully opaque, clearly separated from arrow */}
               <RevealSection delay={0.5}>
-                <div className="relative z-20 mx-auto max-w-[640px] rounded-[1.75rem] p-8 lg:p-10 text-center -mt-1"
+                <div className="relative z-20 mx-auto max-w-[640px] rounded-[1.75rem] p-8 lg:p-10 text-center"
                   data-testid="holistic-preparedness-tile"
                   style={{
                     background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)',
