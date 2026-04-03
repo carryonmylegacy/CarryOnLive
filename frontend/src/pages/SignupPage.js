@@ -457,7 +457,7 @@ const SignupPage = () => {
                     <div className="flex items-start gap-3">
                       <AlertCircle className="w-4 h-4 text-[#d4af37] flex-shrink-0 mt-0.5" />
                       <p className="text-[#d4af37] text-xs leading-relaxed">
-                        Please enter your name exactly as it appears on your legal documents for estate planning verification.
+                        Please enter your name exactly as it appears on your legal documents for identity verification.
                       </p>
                     </div>
                   </div>
@@ -609,14 +609,14 @@ const SignupPage = () => {
                         {/* One account clarification */}
                         <div className="rounded-xl p-3" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
                           <p className="text-xs text-[var(--gold)] leading-relaxed">
-                            One email, one account. If someone has already added you as a beneficiary, choose Beneficiary below and enter their email. You can always start your own estate plan later from within your account.
+                            One email, one account. If someone has already added you as a beneficiary, choose Beneficiary below and enter their email. You can always start your own family preparedness plan later from within your account.
                           </p>
                         </div>
 
                         <div className="space-y-2">
                           {[
                             { value: 'benefactor', title: 'Benefactor', subtitle: 'Estate Owner', desc: 'I want to organize and protect my estate for my family.', color: '#d4af37' },
-                            { value: 'beneficiary', title: 'Beneficiary', subtitle: 'Family Member', desc: 'A loved one has set up an estate plan and added me.', color: '#60A5FA' },
+                            { value: 'beneficiary', title: 'Beneficiary', subtitle: 'Family Member', desc: 'A loved one has set up a family preparedness plan and added me.', color: '#60A5FA' },
                           ].map(r => (
                             <button key={r.value} type="button" onClick={() => { setRole(r.value); if (r.value === 'benefactor') setBenefactorEmail(''); }}
                               className="w-full text-left p-3 rounded-xl transition-all duration-300"
@@ -685,7 +685,7 @@ const SignupPage = () => {
                           {benefactorEmailError ? (
                             <p className="text-red-400 text-xs">{benefactorEmailError}</p>
                           ) : (
-                            <p className="text-[#525c72] text-[11px]">This links your account to their estate plan.</p>
+                            <p className="text-[#525c72] text-[11px]">This links your account to their family preparedness plan.</p>
                           )}
                         </div>
                         <div className="p-3 rounded-xl" style={{ background: 'rgba(96,165,250,0.06)', border: '1px solid rgba(96,165,250,0.15)' }}>
@@ -770,7 +770,7 @@ const SignupPage = () => {
                       <div className="space-y-4 sm:space-y-5">
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Secure your account</h2>
-                          <p className="text-[#6b7a90] text-sm">Choose a strong password to protect your estate plan.</p>
+                          <p className="text-[#6b7a90] text-sm">Choose a strong password to protect your family&apos;s data.</p>
                         </div>
                         <div className="space-y-2">
                           <Label className="text-[#7b879e] text-sm font-medium">Email <span className="text-red-400">*</span></Label>

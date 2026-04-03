@@ -388,7 +388,7 @@ const LoginPage = () => {
                 boxShadow: '0 3px 10px rgba(180,140,40,0.3), inset 0 1px 0 rgba(255,240,160,0.5)',
                 transition: 'transform 0.12s ease, box-shadow 0.12s ease',
               }}>
-              New to estate planning?<br/>See what CarryOn can do
+              New to family preparedness?<br/>See what CarryOn can do
             </button>
           </div>
         </div>
@@ -568,7 +568,7 @@ const LoginPage = () => {
                   padding: '0.5rem 1.25rem', borderRadius: '0.625rem',
                   boxShadow: '0 3px 10px rgba(180,140,40,0.3), inset 0 1px 0 rgba(255,240,160,0.5)',
                 }}>
-                New to estate planning?<br/>See what CarryOn can do!
+                New to family preparedness?<br/>See what CarryOn can do!
               </button>
             </div>
           </div>
@@ -744,7 +744,7 @@ const LoginPage = () => {
                     <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>Ready.</span>
                   </h1>
                   <p className="text-white/80 text-sm lg:text-base max-w-lg leading-relaxed mb-5" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-                    Secure your estate plan with AI-powered estate planning. Protect what matters, guide who you love.
+                    The digital family preparedness platform that brings together every aspect of your life &mdash; so your loved ones can CarryOn through anything.
                   </p>
                   <div className="flex items-center gap-5 justify-center sm:justify-start mb-5">
                     {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (
@@ -853,7 +853,7 @@ const LoginPage = () => {
                           boxShadow: '0 3px 10px rgba(180,140,40,0.3), inset 0 1px 0 rgba(255,240,160,0.5)',
                           transition: 'transform 0.12s ease, box-shadow 0.12s ease',
                         }}>
-                        New to estate planning?<br/>See what CarryOn can do!
+                        New to family preparedness?<br/>See what CarryOn can do!
                       </button>
                     </div>
                   </div>
@@ -871,7 +871,7 @@ const LoginPage = () => {
                     <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>Ready.</span>
                   </h2>
                   <p className="text-white/80 text-base max-w-sm leading-relaxed mb-5" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-                    Secure your estate plan with AI-powered estate planning. Protect what matters, guide who you love.
+                    The digital family preparedness platform that brings together every aspect of your life &mdash; so your loved ones can CarryOn through anything.
                   </p>
                   <div className="flex items-center gap-4 justify-center mb-4">
                     {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (
@@ -943,7 +943,7 @@ const LoginPage = () => {
             </button>
             <RevealSection delay={0.2}>
               <p className="mt-10 text-[#d4af37] text-sm lg:text-base italic font-medium">
-                76% of American families have no estate plan. CarryOn ensures yours isn&apos;t one of them.
+                76% of American families aren&apos;t prepared. CarryOn makes sure yours is.
               </p>
             </RevealSection>
           </RevealSection>
@@ -1148,7 +1148,7 @@ const LoginPage = () => {
                 Security That Doesn&apos;t Compromise. Ever.
               </h2>
               <p className="text-[#7b879e] text-base max-w-[700px] mx-auto mb-14 leading-relaxed">
-                CarryOn&#8482; is not &ldquo;death tech.&rdquo; We&apos;re a family readiness platform &mdash; built for the living, used by the living, valued by the living. Our security architecture reflects that: your data is yours alone.
+                CarryOn&#8482; is a holistic digital family preparedness platform &mdash; built for the living, used by the living, valued by the living. Our security architecture reflects that: your data is yours alone.
               </p>
             </RevealSection>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -1184,7 +1184,7 @@ const LoginPage = () => {
                 Free for Every American in Hospice Care.
               </h2>
               <p className="text-[#7b879e] text-base leading-relaxed mb-6">
-                At any given time, over 300,000 Americans are in hospice &mdash; and the vast majority have no estate plan. CarryOn&#8482; is offered at no cost to all U.S. citizens and resident aliens enrolled in certified hospice care. Full platform access. No exceptions.
+                At any given time, over 300,000 Americans are in hospice &mdash; and the vast majority have no plan in place for their families. CarryOn&#8482; is offered at no cost to all U.S. citizens and resident aliens enrolled in certified hospice care. Full platform access. No exceptions.
               </p>
               <p className="text-white text-base font-semibold italic leading-relaxed">
                 No one approaching the end of life should be denied the ability to organize their affairs and prepare their family &mdash; simply because they can&apos;t afford to.

@@ -155,8 +155,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
   - ben_price sync: updating beneficiary plan prices auto-syncs ben_price on benefactor plan cards
   - Quarterly/annual prices recalculate in lockstep with monthly price changes
   - Family Plan Management UI: billing toggle (annual/quarterly/monthly default annual), per-member pricing breakdown with current vs family pricing, total row with green bold underlined family price and red italic original price
-  - Paywall feature lists: dynamically connected to Feature Gates toggles, all features in consistent order across tiers, disabled features shown with X icon and strikethrough
-  - Files: checkout.py, plans.py, family_plan.py, verification_and_lifecycle.py, admin_digest.py, SubscriptionsTab.js, SubscriptionPaywall.js, SubscriptionManagement.js, FamilyPlanSettings.js
+  - Homepage rewrite: Shifted narrative from estate planning to "holistic digital family preparedness" (April 3, 2026)
+  - 8 features showcased in priority order: MM, SDV, EGA, IAC, CCP, ECT, DAV, FFN
+  - New sections: About (the new category), Reframe (why now), 5-step journey, security woven into family narrative
+  - Updated LoginPage, SignupPage, AboutPage to remove "estate planning" / "death tech" references
+  - Warm & family-focused tone with security baked in, not tech-forward
+  - Files: HomePage.js, LoginPage.js, SignupPage.js, AboutPage.js
 
 ### P1
 - Google Play Store Launch (operational steps)
