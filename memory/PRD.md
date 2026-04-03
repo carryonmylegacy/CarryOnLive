@@ -69,7 +69,11 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ### 8. ECT Channel List Refresh on Back-out - IMPLEMENTED
 ### 9. CCP Plan PDF Download - CONFIRMED WORKING
-### 10. ECT Beneficiary Avatars - CONFIRMED WORKING
+### 10. ECT Beneficiary Avatars - FIXED (April 3, 2026)
+- **Root Cause**: Frontend had `.startsWith('http')` filter on `photo_url`, which excluded `data:image/...` base64 URLs stored by some users
+- **Fix**: Removed `.startsWith('http')` check at 3 locations (contact modal, channel list, chat header) — now accepts any truthy `photo_url`
+- **Files**: `EstateChatPage.js` lines ~904, ~1174, ~1219
+- **DO NOT**: Re-add `startsWith('http')` filter — `resolve_photo_url()` already handles all URL types
 
 ### 11. Customizable Dock (Bottom Nav)
 - **Status**: IMPLEMENTED (April 2, 2026)
