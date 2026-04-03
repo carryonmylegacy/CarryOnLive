@@ -105,17 +105,19 @@ async def _get_estate_members(estate_id: str) -> list[dict]:
     ).to_list(100)
     ben_records = await db.beneficiaries.find(
         {"estate_id": estate_id, "user_id": {"$in": all_ids}, "deleted_at": None},
-        {"_id": 0, "id": 1, "user_id": 1, "relation": 1},
+        {"_id": 0, "id": 1, "user_id": 1, "relation": 1, "photo_url": 1},
     ).to_list(100)
     relation_map = {b["user_id"]: b.get("relation", "") for b in ben_records}
+    ben_photo_map = {b["user_id"]: b.get("photo_url", "") for b in ben_records}
     members = []
     for u in users:
         is_owner = u["id"] == estate["owner_id"]
+        photo = u.get("photo_url", "") or ben_photo_map.get(u["id"], "")
         members.append(
             {
                 "id": u["id"],
                 "name": u.get("name", "Unknown"),
-                "photo_url": resolve_photo_url(u.get("photo_url", "")),
+                "photo_url": resolve_photo_url(photo),
                 "role_in_estate": "benefactor" if is_owner else "beneficiary",
                 "relation": relation_map.get(u["id"], "benefactor" if is_owner else ""),
             }
