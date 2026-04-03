@@ -493,7 +493,6 @@ export default function EstateChatPage() {
     setSwipedChannel(null);
     const r = document.getElementById('ect-root');
     if (r) { r.style.transform = ''; r.style.bottom = '0'; }
-    window.scrollTo(0, 0);
     fetchMessages(ch.id).then(() => setMsgLoading(false));
   };
 
