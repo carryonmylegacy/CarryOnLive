@@ -55,6 +55,8 @@ async def get_subscription_plans():
         "beneficiary_plans": settings.get("beneficiary_plans", BENEFICIARY_PLANS),
         "beta_mode": settings.get("beta_mode", True),
         "family_plan_enabled": settings.get("family_plan_enabled", True),
+        "family_benefactor_discount_percent": settings.get("family_benefactor_discount_percent", 0),
+        "family_beneficiary_discount_percent": settings.get("family_beneficiary_discount_percent", 0),
         "tier_features": tier_features,
     }
 
@@ -1231,11 +1233,21 @@ async def update_beneficiary_plan_price(
     if not found:
         raise HTTPException(status_code=404, detail=f"Beneficiary plan not found: {plan_id}")
 
+    # Also sync ben_price on the corresponding benefactor plan
+    # Mapping: ben_premium → premium, ben_standard → standard, etc.
+    benefactor_plan_id = plan_id.replace("ben_", "", 1)
+    plans = settings.get("plans", DEFAULT_PLANS)
+    for p in plans:
+        if p["id"] == benefactor_plan_id:
+            p["ben_price"] = price
+            break
+
     await db.subscription_settings.update_one(
         {"_id": "global"},
         {
             "$set": {
                 "beneficiary_plans": ben_plans,
+                "plans": plans,
                 "updated_at": datetime.now(timezone.utc).isoformat(),
             }
         },

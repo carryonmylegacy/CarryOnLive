@@ -18,6 +18,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
   const [plans, setPlans] = useState([]);
   const [savingsPreview, setSavingsPreview] = useState(null);
   const [loadingSavings, setLoadingSavings] = useState(false);
+  const [familyDiscounts, setFamilyDiscounts] = useState({ benefactor: 0, beneficiary: 0 });
 
   const headers = getAuthHeaders()?.headers || {};
 
@@ -32,6 +33,13 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
       ]);
       setStatus(statusRes.data);
       setPlans(plansRes.data.plans || []);
+      // Extract family discounts from the subscription settings
+      if (plansRes.data.family_benefactor_discount_percent !== undefined) {
+        setFamilyDiscounts({
+          benefactor: plansRes.data.family_benefactor_discount_percent,
+          beneficiary: plansRes.data.family_beneficiary_discount_percent || 0,
+        });
+      }
       // Auto-load savings preview if no family plan yet
       if (!statusRes.data.family_plan) {
         fetchSavingsPreview();
@@ -117,7 +125,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
             Family Plan
           </CardTitle>
           <p className="text-xs text-[var(--t4)] mt-1">
-            Bundle your household for savings. Benefactors save $1/mo, all beneficiaries pay a flat $3.49/mo.
+            Bundle your household for savings. Benefactors save {familyDiscounts.benefactor}%, beneficiaries save {familyDiscounts.beneficiary}% on all tiers.
           </p>
         </CardHeader>
         <CardContent>
@@ -129,8 +137,10 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
                 <div className="flex items-center gap-3">
                   <span className="text-lg line-through text-[var(--t5)]">${currentTierPlan.price?.toFixed(2)}/mo</span>
                   <ArrowRight className="w-4 h-4 text-[var(--gold)]" />
-                  <span className="text-2xl font-bold text-[var(--gold)]" style={{ fontFamily: 'Outfit, sans-serif' }}>${(currentTierPlan.price - 1).toFixed(2)}/mo</span>
-                  <span className="text-xs font-bold px-2 py-1 rounded-full bg-[#22C993]/15 text-[#22C993]">Save $1/mo</span>
+                  <span className="text-2xl font-bold text-[var(--gold)]" style={{ fontFamily: 'Outfit, sans-serif' }}>${(currentTierPlan.price * (1 - familyDiscounts.benefactor / 100)).toFixed(2)}/mo</span>
+                  {familyDiscounts.benefactor > 0 && (
+                    <span className="text-xs font-bold px-2 py-1 rounded-full bg-[#22C993]/15 text-[#22C993]">Save {familyDiscounts.benefactor}%</span>
+                  )}
                 </div>
               </div>
             )}
@@ -294,7 +304,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
               </Button>
             </div>
             <p className="text-[11px] text-[var(--t5)] mt-2">
-              Benefactors save $1/mo (except floor-rate tiers). Beneficiaries pay flat $3.49/mo.
+              Benefactors save {familyDiscounts.benefactor}% on their tier. Beneficiaries save {familyDiscounts.beneficiary}% on their tier.
             </p>
           </div>
         )}

@@ -448,8 +448,22 @@ async def get_subscription_settings():
                             stored_plan["annual_price"] = expected_a
                             needs_update = True
                         break
+        # Self-heal ben_price on benefactor plans from beneficiary plan prices
+        ben_plans = settings.get("beneficiary_plans", [])
+        ben_price_map = {}
+        for bp in ben_plans:
+            benefactor_id = bp["id"].replace("ben_", "", 1)
+            ben_price_map[benefactor_id] = bp["price"]
+        for stored_plan in settings.get("plans", []):
+            expected_ben = ben_price_map.get(stored_plan["id"])
+            if expected_ben is not None and stored_plan.get("ben_price") != expected_ben:
+                stored_plan["ben_price"] = expected_ben
+                needs_update = True
         if needs_update:
-            await db.subscription_settings.update_one({"_id": "global"}, {"$set": {"plans": settings["plans"]}})
+            await db.subscription_settings.update_one(
+                {"_id": "global"},
+                {"$set": {"plans": settings["plans"]}},
+            )
     return settings
 
 
