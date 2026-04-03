@@ -941,6 +941,8 @@ async def get_admin_subscription_settings(
     return {
         **settings,
         "beneficiary_plans": settings.get("beneficiary_plans", BENEFICIARY_PLANS),
+        "family_benefactor_discount_percent": settings.get("family_benefactor_discount_percent", 0),
+        "family_beneficiary_discount_percent": settings.get("family_beneficiary_discount_percent", 0),
         "stats": {
             "active_subscriptions": total_subs,
             "free_access_users": free_overrides,
@@ -1177,8 +1179,6 @@ async def update_plan_price(
     found = False
     for plan in plans:
         if plan["id"] == plan_id:
-            if not plan.get("adjustable", True):
-                raise HTTPException(status_code=400, detail=f"{plan['name']} pricing is fixed")
             plan["price"] = price
             found = True
             break
@@ -1236,6 +1236,58 @@ async def update_beneficiary_plan_price(
     )
 
     return {"success": True, "message": f"Beneficiary price updated to ${price:.2f}"}
+
+
+@router.get("/admin/family-discount-settings")
+async def get_family_discount_settings(current_user: dict = Depends(get_current_user)):
+    """Get family discount percentages (admin only)"""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    settings = await get_subscription_settings()
+    return {
+        "family_benefactor_discount_percent": settings.get("family_benefactor_discount_percent", 0),
+        "family_beneficiary_discount_percent": settings.get("family_beneficiary_discount_percent", 0),
+    }
+
+
+@router.put("/admin/family-discount-settings")
+async def update_family_discount_settings(
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    """Update family discount percentages (admin only).
+    Accepts: { family_benefactor_discount_percent: float, family_beneficiary_discount_percent: float }
+    """
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    data = await request.json()
+    update = {}
+
+    if "family_benefactor_discount_percent" in data:
+        val = float(data["family_benefactor_discount_percent"])
+        if val < 0 or val > 100:
+            raise HTTPException(status_code=400, detail="Benefactor discount must be 0-100%")
+        update["family_benefactor_discount_percent"] = val
+
+    if "family_beneficiary_discount_percent" in data:
+        val = float(data["family_beneficiary_discount_percent"])
+        if val < 0 or val > 100:
+            raise HTTPException(status_code=400, detail="Beneficiary discount must be 0-100%")
+        update["family_beneficiary_discount_percent"] = val
+
+    if not update:
+        raise HTTPException(status_code=400, detail="No valid fields provided")
+
+    update["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.subscription_settings.update_one({"_id": "global"}, {"$set": update}, upsert=True)
+
+    return {
+        "success": True,
+        "message": "Family discount settings updated",
+        **{k: v for k, v in update.items() if k != "updated_at"},
+    }
 
 
 @router.put("/admin/plans/{plan_id}/paired-price")

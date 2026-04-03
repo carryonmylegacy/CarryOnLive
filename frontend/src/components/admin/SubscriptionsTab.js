@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { ToggleLeft, Users, DollarSign, Loader2, Search, Plus, Trash2, Copy, Check, Briefcase, RotateCcw } from 'lucide-react';
+import { ToggleLeft, Users, DollarSign, Loader2, Search, Plus, Trash2, Copy, Check, Briefcase, RotateCcw, Percent } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -25,6 +25,9 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
   const [showNewCode, setShowNewCode] = useState(false);
   const [newCodeForm, setNewCodeForm] = useState({ code: '', partner_name: '', discount_percent: 100, max_uses: 0 });
   const [copiedCode, setCopiedCode] = useState(null);
+  // Family discounts
+  const [editingFamilyDiscount, setEditingFamilyDiscount] = useState(null);
+  const [familyDiscountValue, setFamilyDiscountValue] = useState('');
 
   const headers = getAuthHeaders()?.headers || {};
 
@@ -99,6 +102,16 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const updateFamilyDiscount = async (field) => {
+    try {
+      const val = parseFloat(familyDiscountValue);
+      if (isNaN(val) || val < 0 || val > 100) { toast.error('Discount must be 0-100%'); return; }
+      await axios.put(`${API_URL}/admin/family-discount-settings`, { [field]: val }, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      setEditingFamilyDiscount(null);
+      fetchData();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update'); }
   };
 
   const resetSubscription = async (userId, userEmail, expireTrial = false) => {
@@ -179,7 +192,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
               </h3>
               <p className="text-sm text-[var(--t4)] mt-1">
                 {settings?.family_plan_enabled
-                  ? 'Family plans are visible to users. FPOs get $1/mo discount for added benefactors, flat $3.49/mo for beneficiaries.'
+                  ? `Family plans are visible to users. Benefactors get ${settings?.family_benefactor_discount_percent || 0}% discount, beneficiaries get ${settings?.family_beneficiary_discount_percent || 0}% discount.`
                   : 'Family plans are hidden from all users. Toggle ON when ready to launch (recommended L+3 to L+4 months).'}
               </p>
             </div>
@@ -197,6 +210,65 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
                 }}
                 data-testid="family-plan-toggle"
               />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      )}
+
+      {/* Family Discount Pricing — Founder only */}
+      {!operatorMode && (
+      <Card className="glass-card">
+        <CardContent className="p-5">
+          <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2 mb-2">
+            <Percent className="w-5 h-5 text-[var(--gold)]" />
+            Family Discount Pricing
+          </h3>
+          <p className="text-xs text-[var(--t5)] mb-4">Percentage discounts applied to all tiers for family plan members.</p>
+          <div className="space-y-2">
+            {/* Benefactor discount */}
+            <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--s)]" data-testid="family-benefactor-discount-row">
+              <div>
+                <span className="font-bold text-[var(--t)] text-sm">Benefactor Discount</span>
+                <span className="text-xs text-[var(--t5)] ml-2">(per benefactor in family)</span>
+              </div>
+              <div className="flex items-center gap-3">
+                {editingFamilyDiscount === 'benefactor' ? (
+                  <div className="flex items-center gap-2">
+                    <Input type="number" step="0.1" min="0" max="100" value={familyDiscountValue} onChange={e => setFamilyDiscountValue(e.target.value)} className="input-field w-20 text-base" autoFocus data-testid="family-benefactor-discount-input" />
+                    <span className="text-[var(--t4)]">%</span>
+                    <Button size="sm" className="gold-button text-xs" onClick={() => updateFamilyDiscount('family_benefactor_discount_percent')} data-testid="family-benefactor-discount-save">Save</Button>
+                    <Button size="sm" variant="outline" className="text-xs border-[var(--b)]" onClick={() => setEditingFamilyDiscount(null)}>Cancel</Button>
+                  </div>
+                ) : (
+                  <>
+                    <span className="text-[var(--gold)] font-bold text-lg">{settings?.family_benefactor_discount_percent ?? 0}%</span>
+                    <Button size="sm" variant="outline" className="text-xs border-[var(--b)] text-[var(--t4)]" onClick={() => { setEditingFamilyDiscount('benefactor'); setFamilyDiscountValue((settings?.family_benefactor_discount_percent ?? 0).toString()); }} data-testid="family-benefactor-discount-edit">Edit</Button>
+                  </>
+                )}
+              </div>
+            </div>
+            {/* Beneficiary discount */}
+            <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--s)]" data-testid="family-beneficiary-discount-row">
+              <div>
+                <span className="font-bold text-[var(--t)] text-sm">Beneficiary Discount</span>
+                <span className="text-xs text-[var(--t5)] ml-2">(per beneficiary in family)</span>
+              </div>
+              <div className="flex items-center gap-3">
+                {editingFamilyDiscount === 'beneficiary' ? (
+                  <div className="flex items-center gap-2">
+                    <Input type="number" step="0.1" min="0" max="100" value={familyDiscountValue} onChange={e => setFamilyDiscountValue(e.target.value)} className="input-field w-20 text-base" autoFocus data-testid="family-beneficiary-discount-input" />
+                    <span className="text-[var(--t4)]">%</span>
+                    <Button size="sm" className="gold-button text-xs" onClick={() => updateFamilyDiscount('family_beneficiary_discount_percent')} data-testid="family-beneficiary-discount-save">Save</Button>
+                    <Button size="sm" variant="outline" className="text-xs border-[var(--b)]" onClick={() => setEditingFamilyDiscount(null)}>Cancel</Button>
+                  </div>
+                ) : (
+                  <>
+                    <span className="text-[#60A5FA] font-bold text-lg">{settings?.family_beneficiary_discount_percent ?? 0}%</span>
+                    <Button size="sm" variant="outline" className="text-xs border-[var(--b)] text-[var(--t4)]" onClick={() => { setEditingFamilyDiscount('beneficiary'); setFamilyDiscountValue((settings?.family_beneficiary_discount_percent ?? 0).toString()); }} data-testid="family-beneficiary-discount-edit">Edit</Button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </CardContent>

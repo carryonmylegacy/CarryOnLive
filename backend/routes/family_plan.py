@@ -14,9 +14,19 @@ router = APIRouter()
 
 # ===================== FAMILY PLAN =====================
 
+# Legacy defaults — overridden by dynamic settings from subscription_settings collection
 FAMILY_BENEFICIARY_FLAT_RATE = 3.49
 FAMILY_BENEFACTOR_DISCOUNT = 1.00
 FLOOR_EXEMPT_TIERS = ["new_adult", "military", "hospice"]
+
+
+async def get_family_discount_settings():
+    """Get dynamic family discount percentages from DB settings."""
+    settings = await get_subscription_settings()
+    return {
+        "benefactor_discount_percent": settings.get("family_benefactor_discount_percent", 0),
+        "beneficiary_discount_percent": settings.get("family_beneficiary_discount_percent", 0),
+    }
 
 
 class FamilyPlanCreate(BaseModel):
@@ -104,8 +114,13 @@ async def preview_family_savings(current_user: dict = Depends(get_current_user))
     total_current_cost = float(current_plan["price"])  # FPO's current cost
     total_family_cost = float(current_plan["price"])  # FPO pays same in family plan
 
-    # FPO (the current user)
-    fpo_discount = 1.0  # benefactors save $1/mo
+    # Get dynamic family discount settings
+    family_discounts = await get_family_discount_settings()
+    benefactor_disc_pct = family_discounts["benefactor_discount_percent"]
+    beneficiary_disc_pct = family_discounts["beneficiary_discount_percent"]
+
+    # FPO (the current user) — benefactors get % discount
+    fpo_discount = round(float(current_plan["price"]) * benefactor_disc_pct / 100, 2)
     family_tree.append(
         {
             "name": current_user.get("name", "You"),
@@ -113,14 +128,13 @@ async def preview_family_savings(current_user: dict = Depends(get_current_user))
             "role": "benefactor",
             "relation": "You (FPO)",
             "current_price": float(current_plan["price"]),
-            "family_price": float(current_plan["price"]) - fpo_discount,
+            "family_price": round(float(current_plan["price"]) - fpo_discount, 2),
             "savings": fpo_discount,
         }
     )
     total_family_cost -= fpo_discount
 
     # Each beneficiary
-    ben_flat_price = 3.49
     for ben in beneficiaries:
         ben_email = ben.get("email", "")
         ben_name = ben.get("name", ben.get("first_name", "Unknown"))
@@ -144,10 +158,11 @@ async def preview_family_savings(current_user: dict = Depends(get_current_user))
             ben_current_price = float(current_plan.get("ben_price", 4.49))
 
         if is_also_benefactor:
-            # Benefactors in family plan save $1/mo
+            # Benefactors in family plan get % discount
             ben_plan = plans.get(ben_sub.get("plan_id", current_plan_id) if ben_sub else current_plan_id)
             ben_current_as_benefactor = float(ben_plan["price"]) if ben_plan else float(current_plan["price"])
-            ben_family_price = ben_current_as_benefactor - 1.0
+            ben_discount = round(ben_current_as_benefactor * benefactor_disc_pct / 100, 2)
+            ben_family_price = round(ben_current_as_benefactor - ben_discount, 2)
             family_tree.append(
                 {
                     "name": ben_name,
@@ -156,12 +171,15 @@ async def preview_family_savings(current_user: dict = Depends(get_current_user))
                     "relation": ben.get("relation", "Beneficiary") + " (also Benefactor)",
                     "current_price": ben_current_as_benefactor,
                     "family_price": ben_family_price,
-                    "savings": ben_current_as_benefactor - ben_family_price,
+                    "savings": ben_discount,
                 }
             )
             total_current_cost += ben_current_as_benefactor
             total_family_cost += ben_family_price
         else:
+            # Beneficiaries get % discount on their current price
+            ben_discount = round(ben_current_price * beneficiary_disc_pct / 100, 2)
+            ben_family_price = round(ben_current_price - ben_discount, 2)
             family_tree.append(
                 {
                     "name": ben_name,
@@ -169,12 +187,12 @@ async def preview_family_savings(current_user: dict = Depends(get_current_user))
                     "role": "beneficiary",
                     "relation": ben.get("relation", "Beneficiary"),
                     "current_price": ben_current_price,
-                    "family_price": ben_flat_price,
-                    "savings": max(0, ben_current_price - ben_flat_price),
+                    "family_price": ben_family_price,
+                    "savings": ben_discount,
                 }
             )
             total_current_cost += ben_current_price
-            total_family_cost += ben_flat_price
+            total_family_cost += ben_family_price
 
     total_savings = total_current_cost - total_family_cost
 
@@ -271,6 +289,11 @@ async def add_family_member(plan_id: str, data: FamilyPlanInvite, current_user: 
     settings = await get_subscription_settings()
     plans = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
 
+    # Get dynamic family discount settings
+    family_discounts = await get_family_discount_settings()
+    benefactor_disc_pct = family_discounts["benefactor_discount_percent"]
+    beneficiary_disc_pct = family_discounts["beneficiary_discount_percent"]
+
     if data.role == "benefactor":
         # Get their current subscription tier or default
         user_sub = await db.user_subscriptions.find_one({"user_id": member_user["id"]}, {"_id": 0})
@@ -278,13 +301,9 @@ async def add_family_member(plan_id: str, data: FamilyPlanInvite, current_user: 
         plan_info = plans.get(member_plan_id, plans.get("base"))
         original_price = float(plan_info["price"]) if plan_info else 6.99
 
-        # Apply $1 discount unless floor-exempt
-        if member_plan_id in FLOOR_EXEMPT_TIERS:
-            discount = 0
-            family_price = original_price
-        else:
-            discount = FAMILY_BENEFACTOR_DISCOUNT
-            family_price = round(original_price - discount, 2)
+        # Apply % discount
+        discount = round(original_price * benefactor_disc_pct / 100, 2)
+        family_price = round(original_price - discount, 2)
 
         member = {
             "user_id": member_user["id"],
@@ -299,11 +318,21 @@ async def add_family_member(plan_id: str, data: FamilyPlanInvite, current_user: 
             "original_price": original_price,
             "family_price": family_price,
             "discount": discount,
-            "floor_exempt": member_plan_id in FLOOR_EXEMPT_TIERS,
+            "discount_percent": benefactor_disc_pct,
             "joined_at": datetime.now(timezone.utc).isoformat(),
         }
     else:
-        # Beneficiary — flat rate
+        # Beneficiary — apply % discount on their tier price
+        # Determine beneficiary price from their tier
+        ben_plan_map = {"premium": "ben_premium", "standard": "ben_standard", "base": "ben_base"}
+        fpo_plan_id = fp.get("fpo_plan_id", "base")
+        ben_plan_id = ben_plan_map.get(fpo_plan_id, "ben_base")
+        ben_plans = {p["id"]: p for p in settings.get("beneficiary_plans", [])}
+        ben_plan_info = ben_plans.get(ben_plan_id)
+        ben_original_price = float(ben_plan_info["price"]) if ben_plan_info else 4.99
+        ben_discount = round(ben_original_price * beneficiary_disc_pct / 100, 2)
+        ben_family_price = round(ben_original_price - ben_discount, 2)
+
         member = {
             "user_id": member_user["id"],
             "name": member_user.get(
@@ -314,9 +343,10 @@ async def add_family_member(plan_id: str, data: FamilyPlanInvite, current_user: 
             "role": "beneficiary",
             "member_type": "beneficiary",
             "plan_id": None,
-            "original_price": 0,
-            "family_price": FAMILY_BENEFICIARY_FLAT_RATE,
-            "discount": 0,
+            "original_price": ben_original_price,
+            "family_price": ben_family_price,
+            "discount": ben_discount,
+            "discount_percent": beneficiary_disc_pct,
             "joined_at": datetime.now(timezone.utc).isoformat(),
         }
 

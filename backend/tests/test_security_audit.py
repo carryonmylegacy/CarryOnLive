@@ -9,7 +9,7 @@ import requests
 import os
 import uuid
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://dock-customizer-role.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://founder-subs.preview.emergentagent.com").rstrip("/")
 
 # Test credentials from problem statement
 ADMIN_EMAIL = "founder@carryon.us"
