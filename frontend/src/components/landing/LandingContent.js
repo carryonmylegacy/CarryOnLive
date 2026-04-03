@@ -165,7 +165,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                   <RevealSection key={num} delay={i * 0.04}>
                     <div className="rounded-2xl p-6 lg:p-8 relative overflow-hidden"
                       style={{
-                        background: 'linear-gradient(135deg, rgba(20,33,56,0.98) 0%, rgba(16,28,48,0.98) 100%)',
+                        background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)',
                         border: '1.5px solid rgba(212,175,55,0.45)',
                         boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
                       }}>
