@@ -754,11 +754,11 @@ const LoginPage = () => {
                       </div>
                     ))}
                   </div>
-                  <a href="#about" className="inline-flex flex-col items-center justify-center gap-2 mt-6 w-full max-w-lg py-4 rounded-2xl cursor-pointer animate-bounce text-center"
+                  <a href="#about" className="inline-flex flex-col items-center justify-center gap-2 mt-6 w-full max-w-lg py-5 rounded-2xl cursor-pointer animate-bounce text-center"
                     data-testid="scroll-explore-desktop"
                     style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20), 0 0 50px rgba(212,175,55,0.08)', backdropFilter: 'blur(8px)' }}>
-                    <span className="text-white text-lg sm:text-xl font-bold" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
-                    <ChevronDown className="w-7 h-7 text-[#d4af37]" />
+                    <span className="text-white text-2xl sm:text-3xl font-bold text-center" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
+                    <ChevronDown className="w-10 h-10 text-[#d4af37]" strokeWidth={3} />
                   </a>
                 </div>
               </div>
@@ -882,11 +882,11 @@ const LoginPage = () => {
                       </div>
                     ))}
                   </div>
-                  <a href="#about" className="flex flex-col items-center justify-center gap-2 mt-4 mb-20 w-full max-w-sm mx-auto py-4 rounded-2xl cursor-pointer animate-bounce text-center"
+                  <a href="#about" className="flex flex-col items-center justify-center gap-2 mt-4 mb-20 w-full max-w-sm mx-auto py-5 rounded-2xl cursor-pointer animate-bounce text-center"
                     data-testid="scroll-explore-mobile"
                     style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20), 0 0 50px rgba(212,175,55,0.08)', backdropFilter: 'blur(8px)' }}>
-                    <span className="text-white text-lg font-bold" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
-                    <ChevronDown className="w-7 h-7 text-[#d4af37]" />
+                    <span className="text-white text-xl sm:text-2xl font-bold text-center" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
+                    <ChevronDown className="w-9 h-9 text-[#d4af37]" strokeWidth={3} />
                   </a>
                 </div>
               </RevealSection>
@@ -995,16 +995,26 @@ const LoginPage = () => {
 
             {/* Flow container — single arrow behind tiles */}
             <div data-testid="pillars-flow">
-              {/* Tile stack with one-piece arrow behind it */}
-              <div className="relative">
-                {/* Single arrow shape — shaft + arrowhead as one piece, layered behind tiles */}
+              {/* Tile stack with arrow behind it */}
+              <div className="relative" style={{ marginBottom: '60px' }}>
+                {/* Arrow shaft — extends from top of tiles to below bottom tile */}
                 <div className="absolute left-1/2 -translate-x-1/2 z-0"
                   style={{
-                    width: '140px',
+                    width: '100px',
                     top: '20px',
-                    bottom: '-10px',
-                    background: 'linear-gradient(180deg, rgba(212,175,55,0.04) 0%, rgba(212,175,55,0.12) 10%, rgba(212,175,55,0.12) 88%, rgba(212,175,55,0.18) 100%)',
-                    clipPath: 'polygon(15% 0%, 85% 0%, 85% 88%, 100% 88%, 50% 100%, 0% 88%, 15% 88%)',
+                    bottom: '-20px',
+                    background: 'linear-gradient(180deg, rgba(212,175,55,0.04) 0%, rgba(212,175,55,0.12) 10%, rgba(212,175,55,0.14) 100%)',
+                    borderRadius: '50px 50px 0 0',
+                  }} />
+                {/* Arrow head — triangle flush at bottom of shaft, visible below last tile */}
+                <div className="absolute left-1/2 -translate-x-1/2 z-0"
+                  style={{
+                    width: '0',
+                    height: '0',
+                    bottom: '-60px',
+                    borderLeft: '70px solid transparent',
+                    borderRight: '70px solid transparent',
+                    borderTop: '42px solid rgba(212,175,55,0.16)',
                   }} />
 
                 {/* Feature tiles — full width, stacked with generous gaps to show arrow */}
