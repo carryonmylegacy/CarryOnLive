@@ -150,7 +150,11 @@ A full-stack estate planning application allowing benefactors to manage digital 
   - Family discount pricing: configurable % discount per benefactor and per beneficiary in family plans
   - Backend: PUT /admin/plans/{plan_id}/price (all tiers), PUT /admin/family-discount-settings
   - Frontend: Family Discount Pricing card in SubscriptionsTab.js
-  - Files: checkout.py, family_plan.py, SubscriptionsTab.js
+  - Price propagation: all surfaces (paywall, checkout, stats, digest, family plan) read dynamically from DB
+  - ben_price sync: updating beneficiary plan prices auto-syncs ben_price on benefactor plan cards
+  - Quarterly/annual prices recalculate in lockstep with monthly price changes
+  - Family Plan Management UI: billing toggle (monthly/quarterly/annual), per-member pricing breakdown with current vs family pricing, total row with period aggregation
+  - Files: checkout.py, plans.py, family_plan.py, verification_and_lifecycle.py, admin_digest.py, SubscriptionsTab.js, SubscriptionPaywall.js, SubscriptionManagement.js, FamilyPlanSettings.js
 
 ### P1
 - Google Play Store Launch (operational steps)

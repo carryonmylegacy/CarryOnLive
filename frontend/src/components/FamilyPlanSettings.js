@@ -8,6 +8,8 @@ import { toast } from '../utils/toast';
 import axios from 'axios';
 import { API_URL } from '../config';
 
+function round2(v) { return Math.round(v * 100) / 100; }
+
 const FamilyPlanSettings = ({ getAuthHeaders }) => {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,6 +21,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
   const [savingsPreview, setSavingsPreview] = useState(null);
   const [loadingSavings, setLoadingSavings] = useState(false);
   const [familyDiscounts, setFamilyDiscounts] = useState({ benefactor: 0, beneficiary: 0 });
+  const [fpBilling, setFpBilling] = useState('monthly');
 
   const headers = getAuthHeaders()?.headers || {};
 
@@ -221,52 +224,159 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
   }
 
   // Has a family plan — show management UI
+
+  const billingMultiplier = fpBilling === 'annual' ? 0.8 : fpBilling === 'quarterly' ? 0.9 : 1;
+  const billingLabel = fpBilling === 'annual' ? '/mo (annual)' : fpBilling === 'quarterly' ? '/mo (quarterly)' : '/mo';
+
+  // Compute member prices with billing cycle applied
+  const memberPricing = (fp.members || []).map(m => {
+    const origMonthly = m.original_price || 0;
+    const isBenefactorRole = m.member_type === 'benefactor' || m.role === 'fpo';
+    const discPct = isBenefactorRole ? familyDiscounts.benefactor : familyDiscounts.beneficiary;
+
+    // Recalculate family price from current discount % (handles FPO too)
+    const discountAmt = round2(origMonthly * discPct / 100);
+    const familyMonthly = round2(origMonthly - discountAmt);
+
+    return {
+      ...m,
+      currentDisplay: round2(origMonthly * billingMultiplier),
+      familyDisplay: round2(familyMonthly * billingMultiplier),
+      savingsDisplay: round2(origMonthly * billingMultiplier - familyMonthly * billingMultiplier),
+      discountPct: discPct,
+    };
+  });
+
+  const totalCurrent = round2(memberPricing.reduce((s, m) => s + m.currentDisplay, 0));
+  const totalFamily = round2(memberPricing.reduce((s, m) => s + m.familyDisplay, 0));
+  const totalSavings = round2(totalCurrent - totalFamily);
+
   return (
     <Card className="glass-card" data-testid="family-plan-card">
-      <CardHeader>
-        <CardTitle className="text-[var(--t)] flex items-center gap-2">
-          <Users className="w-5 h-5 text-[var(--gold)]" />
-          Family Plan {isFPO && <span className="text-xs bg-[var(--gold)]/20 text-[var(--gold)] px-2 py-0.5 rounded-full">FPO</span>}
-          {isMember && <span className="text-xs bg-[var(--pr2)]/20 text-[var(--pr2)] px-2 py-0.5 rounded-full">Member</span>}
-        </CardTitle>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-[var(--t)] flex items-center gap-2">
+            <Users className="w-5 h-5 text-[var(--gold)]" />
+            Family Plan {isFPO && <span className="text-xs bg-[var(--gold)]/20 text-[var(--gold)] px-2 py-0.5 rounded-full">FPO</span>}
+            {isMember && !isFPO && <span className="text-xs bg-[var(--pr2)]/20 text-[var(--pr2)] px-2 py-0.5 rounded-full">Member</span>}
+          </CardTitle>
+          {totalSavings > 0 && (
+            <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: 'rgba(34,201,147,0.12)', color: '#22C993' }} data-testid="family-total-savings-badge">
+              Saving ${totalSavings.toFixed(2)}{billingLabel}
+            </span>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Members List */}
-        <div className="space-y-2">
-          <h4 className="text-sm font-bold text-[var(--t4)]">Members ({fp.members?.length || 0})</h4>
-          {(fp.members || []).map(m => (
-            <div key={m.user_id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--s)]">
-              <div className="flex items-center gap-3">
-                {m.role === 'fpo' && <Crown className="w-4 h-4 text-[var(--gold)]" />}
-                {m.role !== 'fpo' && m.user_id === fp.successor_user_id && <Star className="w-4 h-4 text-[var(--pr2)]" />}
-                <div>
-                  <span className="font-bold text-[var(--t)] text-sm">{m.name || m.email}</span>
-                  <div className="text-xs text-[var(--t5)]">
-                    {m.role === 'fpo' ? 'Family Plan Owner' : m.member_type === 'benefactor' ? 'Benefactor' : 'Beneficiary'}
-                    {m.user_id === fp.successor_user_id && ' · Successor'}
-                    {m.floor_exempt && ' · Floor rate'}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[var(--gold)] font-bold text-sm">${m.family_price?.toFixed(2)}/mo</span>
-                {m.discount > 0 && <span className="text-[11px] text-[var(--gn2)]">-${m.discount.toFixed(2)}</span>}
-                {isFPO && m.role !== 'fpo' && (
-                  <div className="flex gap-1 ml-2">
-                    {m.member_type !== 'beneficiary' || true ? (
-                      <button onClick={() => handleSetSuccessor(m.user_id)} className="text-xs text-[var(--bl3)] hover:underline" title="Designate as successor">
-                        {m.user_id === fp.successor_user_id ? '' : 'Successor'}
-                      </button>
-                    ) : null}
-                    <button onClick={() => handleRemoveMember(m.user_id)} className="p-1 text-[var(--t5)] hover:text-[var(--rd2)]">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+        {/* Billing toggle */}
+        <div className="flex justify-center" data-testid="family-billing-toggle">
+          <div className="inline-flex p-1 rounded-2xl" style={{ background: 'var(--s)', border: '1px solid var(--b)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)' }}>
+            {[
+              { id: 'monthly', label: 'Monthly', save: null },
+              { id: 'quarterly', label: 'Quarterly', save: '10%' },
+              { id: 'annual', label: 'Annual', save: '20%' },
+            ].map(c => (
+              <button
+                key={c.id}
+                onClick={() => setFpBilling(c.id)}
+                className="relative px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300"
+                style={{
+                  background: fpBilling === c.id
+                    ? c.id === 'annual' ? 'linear-gradient(135deg, #22C993, #10b981)' : 'linear-gradient(135deg, #d4af37, #c9a033)'
+                    : 'transparent',
+                  color: fpBilling === c.id ? '#0F1629' : 'var(--t5)',
+                  boxShadow: fpBilling === c.id ? (c.id === 'annual' ? '0 4px 16px rgba(34,201,147,0.35)' : '0 4px 16px rgba(212,175,55,0.35)') : 'none',
+                }}
+                data-testid={`family-billing-${c.id}`}
+              >
+                {c.label}
+                {c.save && fpBilling !== c.id && (
+                  <span className="absolute -top-2 -right-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: '#22C993', color: '#fff' }}>
+                    -{c.save}
+                  </span>
                 )}
-              </div>
-            </div>
-          ))}
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* Members pricing breakdown */}
+        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--b)' }} data-testid="family-members-pricing">
+          {/* Header */}
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 px-4 py-2.5 text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider" style={{ background: 'var(--s)' }}>
+            <span>Member</span>
+            <span className="text-right w-20">Current</span>
+            <span className="text-right w-20">Family</span>
+            <span className="text-right w-16">Saved</span>
+          </div>
+
+          {/* Member rows */}
+          <div className="divide-y divide-[var(--b)]">
+            {memberPricing.map(m => {
+              const isBen = m.member_type === 'beneficiary';
+              return (
+                <div key={m.user_id} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center px-4 py-3" data-testid={`family-member-${m.user_id}`}>
+                  {/* Member info */}
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                      isBen ? 'bg-[#60A5FA]/15 text-[#60A5FA]' : 'bg-[var(--gold)]/15 text-[var(--gold)]'
+                    }`}>
+                      {m.role === 'fpo' ? <Crown className="w-3.5 h-3.5" /> : (m.name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-[var(--t)] truncate">{m.name || m.email}</div>
+                      <div className="text-[11px] text-[var(--t5)]">
+                        {m.role === 'fpo' ? 'You (FPO)' : isBen ? 'Beneficiary' : 'Benefactor'}
+                        {m.user_id === fp.successor_user_id && ' · Successor'}
+                        {m.discountPct > 0 && <span className="text-[#22C993] ml-1">-{m.discountPct}%</span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Current price */}
+                  <span className="text-right w-20 text-sm text-[var(--t5)] line-through">${m.currentDisplay.toFixed(2)}</span>
+
+                  {/* Family price */}
+                  <span className="text-right w-20 text-sm font-bold" style={{ color: isBen ? '#60A5FA' : 'var(--gold)' }}>
+                    ${m.familyDisplay.toFixed(2)}
+                  </span>
+
+                  {/* Savings */}
+                  <span className="text-right w-16 text-[11px] font-bold text-[#22C993]">
+                    {m.savingsDisplay > 0 ? `-$${m.savingsDisplay.toFixed(2)}` : '—'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Total row */}
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center px-4 py-3" style={{ background: 'rgba(212,175,55,0.04)', borderTop: '2px solid var(--b)' }} data-testid="family-total-row">
+            <span className="text-sm font-bold text-[var(--t)]">
+              Total {fpBilling === 'annual' ? '(billed annually)' : fpBilling === 'quarterly' ? '(billed quarterly)' : '(monthly)'}
+            </span>
+            <span className="text-right w-20 text-sm text-[var(--t5)] line-through">${totalCurrent.toFixed(2)}</span>
+            <span className="text-right w-20 text-base font-bold text-[var(--gold)]" style={{ fontFamily: 'Outfit, sans-serif' }}>${totalFamily.toFixed(2)}</span>
+            <span className="text-right w-16 text-xs font-bold text-[#22C993]">
+              {totalSavings > 0 ? `-$${totalSavings.toFixed(2)}` : '—'}
+            </span>
+          </div>
+        </div>
+
+        {/* Per-billing-period total callout */}
+        {fpBilling !== 'monthly' && (
+          <div className="p-3 rounded-xl text-center" style={{ background: 'rgba(34,201,147,0.06)', border: '1px solid rgba(34,201,147,0.12)' }} data-testid="family-period-total">
+            <span className="text-xs text-[var(--t4)]">
+              {fpBilling === 'annual' ? 'Annual' : 'Quarterly'} total:{' '}
+              <span className="font-bold text-[var(--t)]">
+                ${(totalFamily * (fpBilling === 'annual' ? 12 : 3)).toFixed(2)}
+              </span>
+              <span className="text-[#22C993] font-bold ml-2">
+                vs ${(totalCurrent * (fpBilling === 'annual' ? 12 : 3)).toFixed(2)} without family plan
+              </span>
+            </span>
+          </div>
+        )}
 
         {/* Successor info */}
         {fp.successor_name && (
@@ -309,9 +419,37 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
           </div>
         )}
 
-        {/* Dissolve (FPO only) */}
+        {/* FPO Actions */}
         {isFPO && (
-          <Button variant="outline" className="w-full border-[var(--rd2)]/30 text-[var(--rd2)] text-sm" onClick={handleDissolve}>
+          <div className="flex gap-2">
+            {(fp.members || []).filter(m => m.role !== 'fpo').map(m => (
+              <React.Fragment key={`actions-${m.user_id}`}>
+                {m.user_id !== fp.successor_user_id && (
+                  <button onClick={() => handleSetSuccessor(m.user_id)} className="text-[11px] text-[var(--bl3)] hover:underline px-2 py-1 rounded-lg hover:bg-[var(--bl3)]/5 transition-colors" title="Designate as successor">
+                    Set {m.name?.split(' ')[0]} as Successor
+                  </button>
+                )}
+              </React.Fragment>
+            )).filter(Boolean)}
+          </div>
+        )}
+
+        {/* Remove members + Dissolve (FPO only) */}
+        {isFPO && (fp.members || []).filter(m => m.role !== 'fpo').length > 0 && (
+          <div className="rounded-xl p-3" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+            <p className="text-[11px] text-[var(--t5)] mb-2">Manage members</p>
+            <div className="flex flex-wrap gap-2">
+              {(fp.members || []).filter(m => m.role !== 'fpo').map(m => (
+                <button key={`rm-${m.user_id}`} onClick={() => handleRemoveMember(m.user_id)} className="flex items-center gap-1.5 text-xs text-[var(--t4)] hover:text-[var(--rd2)] px-2.5 py-1.5 rounded-lg border border-[var(--b)] hover:border-[var(--rd2)]/30 transition-colors" data-testid={`remove-member-${m.user_id}`}>
+                  <Trash2 className="w-3 h-3" /> {m.name?.split(' ')[0] || m.email}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {isFPO && (
+          <Button variant="outline" className="w-full border-[var(--rd2)]/30 text-[var(--rd2)] text-sm" onClick={handleDissolve} data-testid="dissolve-family-plan">
             Dissolve Family Plan
           </Button>
         )}
