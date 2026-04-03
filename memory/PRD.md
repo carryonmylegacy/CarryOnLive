@@ -2,6 +2,7 @@
 
 ## ZERO TOLERANCE: Perfect Code Every Push
 **MANDATORY: Before EVERY push, run `bash /app/housekeeping.sh`. ALL 60 checks must PASS.**
+**MANDATORY: After EVERY testing agent call, run `cd /app/backend && ruff format . && ruff check .` — testing agents create files with trailing whitespace that fail Vercel CI.**
 
 
 ---
