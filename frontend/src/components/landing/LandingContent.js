@@ -146,7 +146,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                   width: '100px',
                   top: '20px',
                   bottom: '-20px',
-                  background: 'linear-gradient(180deg, rgba(212,175,55,0.04) 0%, rgba(212,175,55,0.12) 10%, rgba(212,175,55,0.14) 100%)',
+                  background: 'linear-gradient(180deg, rgba(212,175,55,0.10) 0%, rgba(212,175,55,0.25) 10%, rgba(212,175,55,0.30) 100%)',
                   borderRadius: '50px 50px 0 0',
                 }} />
               {/* Arrow head */}
@@ -157,7 +157,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                   bottom: '-60px',
                   borderLeft: '70px solid transparent',
                   borderRight: '70px solid transparent',
-                  borderTop: '40px solid rgba(212,175,55,0.16)',
+                  borderTop: '40px solid rgba(212,175,55,0.32)',
                 }} />
 
               <div className="relative z-10 flex flex-col gap-6">
