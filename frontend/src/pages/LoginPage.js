@@ -709,20 +709,20 @@ const LoginPage = () => {
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
 
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 w-full relative z-10">
-          <div className="grid lg:grid-cols-[1fr_420px] gap-10 lg:gap-14 items-center">
+          <div className="grid xl:grid-cols-[1fr_420px] gap-10 xl:gap-14 items-center">
 
             {/* Logo + Tagline — desktop: left side */}
-            <RevealSection delay={0.1} className="hidden lg:block">
-              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 lg:gap-8">
+            <RevealSection delay={0.1} className="hidden xl:block">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 xl:gap-8">
                 <div className="flex-shrink-0">
-                  <img src="/carryon-logo.png" alt="CarryOn" className="w-[200px] lg:w-[260px] h-auto" />
+                  <img src="/carryon-logo.png" alt="CarryOn" className="w-[200px] xl:w-[260px] h-auto" />
                 </div>
                 <div className="text-center sm:text-left flex-1 sm:pt-2">
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'Outfit, sans-serif', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>
+                  <h1 className="text-3xl sm:text-4xl xl:text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'Outfit, sans-serif', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>
                     Every American Family.
                     <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>Ready.</span>
                   </h1>
-                  <p className="text-white/80 text-sm lg:text-base max-w-lg leading-relaxed mb-5" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
+                  <p className="text-white/80 text-sm xl:text-base max-w-lg leading-relaxed mb-5" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
                     The digital family preparedness platform that brings together every aspect of your life &mdash; so you and your loved ones can CarryOn through anything.
                   </p>
                   <div className="flex items-center gap-5 justify-center sm:justify-start mb-5">
@@ -745,7 +745,7 @@ const LoginPage = () => {
 
             {/* Login Card */}
             <RevealSection delay={0.3} direction="right">
-              <div className="flex justify-center lg:justify-end">
+              <div className="flex justify-center xl:justify-end">
                 <div className="w-full rounded-2xl p-8 relative login-card-glow" style={{
                   background: 'linear-gradient(160deg, rgba(17,27,48,0.97), rgba(13,22,40,0.99))',
                   border: '1px solid rgba(212,175,55,0.12)',
@@ -842,7 +842,7 @@ const LoginPage = () => {
             </RevealSection>
 
             {/* Logo + Tagline — mobile only, below login card */}
-            <div className="lg:hidden col-span-full">
+            <div className="xl:hidden col-span-full">
               <RevealSection delay={0.5}>
                 <div className="flex flex-col items-center text-center mt-2">
                   <img src="/carryon-logo.png" alt="CarryOn" className="w-[240px] h-auto mb-5" />
