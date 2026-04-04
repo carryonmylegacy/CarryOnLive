@@ -6,8 +6,8 @@
     "@capacitor/android": "^6",
     "@capacitor/app": "^8.0.1",
     "@capacitor/camera": "^6",
-    "@capacitor/cli": "^6",
-    "@capacitor/core": "^6",
+    "@capacitor/cli": "^8",
+    "@capacitor/core": "^8",
     "@capacitor/filesystem": "^8.1.2",
     "@capacitor/ios": "^6",
     "@capacitor/push-notifications": "^6",
@@ -68,6 +68,7 @@
     "react-dom": "^19.0.0",
     "react-easy-crop": "^5.5.6",
     "react-hook-form": "^7.56.2",
+    "react-is": "^19.2.4",
     "react-pdf": "^10.4.1",
     "react-resizable-panels": "^3.0.1",
     "react-router-dom": "^7.13.1",
@@ -106,7 +107,10 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@babel/plugin-syntax-flow": "^7.28.6",
+    "@babel/plugin-transform-react-jsx": "^7.28.6",
     "@craco/craco": "^7.1.0",
+    "@types/node": "^25.5.2",
     "autoprefixer": "^10.4.20",
     "eslint": "8.57.1",
     "eslint-plugin-react-hooks": "4.6.2",
@@ -115,5 +119,9 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.9.3"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "resolutions": {
+    "react-day-picker/react": "^19.0.0",
+    "react-day-picker/date-fns": "^4.1.0"
+  }
 }

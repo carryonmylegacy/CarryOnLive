@@ -48,6 +48,11 @@ const webpackConfig = {
     },
     configure: (webpackConfig) => {
 
+      // Suppress source-map-loader warnings from packages that ship without source files
+      webpackConfig.ignoreWarnings = [
+        /Failed to parse source map/,
+      ];
+
       // Add ignored patterns to reduce watched directories
         webpackConfig.watchOptions = {
           ...webpackConfig.watchOptions,
