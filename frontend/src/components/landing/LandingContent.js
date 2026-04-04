@@ -127,7 +127,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
     {/* ═══════════════════ EIGHT PILLARS ═══════════════════ */}
     <section id="features" className="relative z-30 -mt-1">
       <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0f1d30 0%, #132240 50%, #0f1d30 100%)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-        <div className="absolute inset-0 opacity-[0.35]" style={{ backgroundImage: 'url(/texture-pillars.jpg)', backgroundSize: '160%', backgroundPosition: '30% 15%' }} />
+        <div className="absolute inset-0 opacity-[0.35]" style={{ backgroundImage: 'url(/texture-pillars.jpg)', backgroundSize: '160%', backgroundPosition: '30% 0%' }} />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(15,29,48,0.4) 0%, rgba(15,29,48,0.7) 100%)' }} />
         <div className="max-w-[900px] mx-auto px-6 relative z-10">
           <RevealSection>
