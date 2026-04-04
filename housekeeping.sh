@@ -1002,6 +1002,118 @@ else
 fi
 
 echo ""
+
+# ══════════════════════════════════════════════════════════════
+# SECTION F: VERCEL DEPLOYMENT READINESS
+# Catches build-breaking issues that only surface on Vercel CI
+# ══════════════════════════════════════════════════════════════
+echo -e "${BOLD}SECTION F: Vercel Deployment Readiness${NC}"
+echo "------------------------------------------"
+VERCEL_ISSUES=0
+
+# ── F1. Unresolved Package Imports ───────────────────────────────────
+echo -n "61. [VCL]   Unresolved imports ..... "
+cd /app/frontend
+MISSING_PKGS=""
+MISSING_COUNT=0
+# Extract non-relative imports from actual import statements in src/
+STATIC_IMPORTS=$(grep -rhE "^\s*import " src/ --include="*.js" --include="*.jsx" 2>/dev/null | grep -oE "from ['\"][^'\"]+['\"]" | sed "s/from //g;s/['\"]//g" | grep -v "^\.\|^/" | sort -u)
+DYNAMIC_IMPORTS=$(grep -rhoE "import\(['\"][^'\"]+['\"]\)" src/ --include="*.js" --include="*.jsx" 2>/dev/null | sed "s/import(//;s/)//;s/['\"]//g" | grep -v "^\.\|^/" | sort -u)
+for imp in $STATIC_IMPORTS $DYNAMIC_IMPORTS; do
+  # Skip relative imports, react, react-dom, and built-in node modules
+  case "$imp" in
+    react|react-dom|react/*|path|fs|crypto|util|stream|events|buffer|url|http|https|os|child_process) continue ;;
+  esac
+  # Check if package exists in node_modules
+  PKG_ROOT=$(echo "$imp" | sed 's|/.*||')
+  if echo "$imp" | grep -q "^@"; then
+    PKG_ROOT=$(echo "$imp" | cut -d'/' -f1,2)
+  fi
+  if [ ! -d "node_modules/$PKG_ROOT" ]; then
+    MISSING_PKGS="${MISSING_PKGS}  $imp\n"
+    MISSING_COUNT=$((MISSING_COUNT + 1))
+  fi
+done
+if [ "$MISSING_COUNT" = "0" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL ($MISSING_COUNT unresolved package(s) — will cause Module not found on Vercel)"
+  echo -e "$MISSING_PKGS"
+  echo "    Fix: yarn add <package>"
+  VERCEL_ISSUES=$((VERCEL_ISSUES + 1))
+fi
+
+# ── F2. Source Map Suppression ───────────────────────────────────────
+echo -n "62. [VCL]   Source map suppression .. "
+SM_OK=1
+SM_DETAILS=""
+if ! grep -q "GENERATE_SOURCEMAP=false" /app/frontend/.env 2>/dev/null; then
+  SM_OK=0; SM_DETAILS="GENERATE_SOURCEMAP=false missing from .env"
+fi
+if ! grep -q "ignoreWarnings" /app/frontend/craco.config.js 2>/dev/null; then
+  SM_OK=0; SM_DETAILS="${SM_DETAILS}${SM_DETAILS:+, }ignoreWarnings missing from craco.config.js"
+fi
+if [ "$SM_OK" = "1" ]; then
+  echo -e "$PASS (env + craco ignoreWarnings)"
+else
+  echo -e "$FAIL ($SM_DETAILS)"
+  VERCEL_ISSUES=$((VERCEL_ISSUES + 1))
+fi
+
+# ── F3. Capacitor Core/Plugin Version Alignment ─────────────────────
+echo -n "63. [VCL]   Capacitor version sync .. "
+cd /app/frontend
+CAP_CORE_VER=$(node -e "try{console.log(require('@capacitor/core/package.json').version.split('.')[0])}catch(e){console.log('0')}" 2>/dev/null)
+CAP_MISMATCHES=0
+CAP_MISMATCH_DETAILS=""
+for pkg in @capacitor/app @capacitor/filesystem @capacitor/share @capacitor/camera @capacitor/ios @capacitor/android @capacitor/push-notifications @capacitor/status-bar @capgo/native-purchases @capgo/capacitor-native-biometric @capgo/capacitor-share-target @capgo/capacitor-updater; do
+  PKG_VER=$(node -e "try{const p=require('$pkg/package.json');const peer=p.peerDependencies?.['@capacitor/core']||'';const major=peer.replace(/[^0-9]/g,' ').trim().split(' ')[0];console.log(major||'0')}catch(e){console.log('skip')}" 2>/dev/null)
+  if [ "$PKG_VER" != "skip" ] && [ "$PKG_VER" != "0" ] && [ "$PKG_VER" != "$CAP_CORE_VER" ]; then
+    CAP_MISMATCHES=$((CAP_MISMATCHES + 1))
+    CAP_MISMATCH_DETAILS="${CAP_MISMATCH_DETAILS}  $pkg wants core v$PKG_VER, have v$CAP_CORE_VER\n"
+  fi
+done
+if [ "$CAP_MISMATCHES" = "0" ]; then
+  echo -e "$PASS (all plugins aligned with @capacitor/core v$CAP_CORE_VER)"
+else
+  echo -e "$FAIL ($CAP_MISMATCHES plugin(s) misaligned with @capacitor/core v$CAP_CORE_VER)"
+  echo -e "$CAP_MISMATCH_DETAILS"
+  VERCEL_ISSUES=$((VERCEL_ISSUES + 1))
+fi
+
+# ── F4. Engine Compatibility (.yarnrc) ───────────────────────────────
+echo -n "64. [VCL]   Engine ignore flag ..... "
+if grep -q "ignore-engines" /app/frontend/.yarnrc 2>/dev/null; then
+  echo -e "$PASS (.yarnrc has --ignore-engines)"
+else
+  echo -e "$FAIL (.yarnrc missing --ignore-engines — Vercel yarn install may fail on Node version mismatch)"
+  echo "    Fix: echo '--ignore-engines true' > /app/frontend/.yarnrc"
+  VERCEL_ISSUES=$((VERCEL_ISSUES + 1))
+fi
+
+# ── F5. Key Peer Dependencies Satisfied ──────────────────────────────
+echo -n "65. [VCL]   Key peer deps .......... "
+PEER_ISSUES=0
+PEER_DETAILS=""
+# Check critical peer deps that have caused build failures
+for pkg_check in "react-is:recharts" "@babel/core:@babel/plugin-proposal-private-property-in-object" "@types/node:@craco/craco"; do
+  PEER_PKG=$(echo "$pkg_check" | cut -d: -f1)
+  NEEDED_BY=$(echo "$pkg_check" | cut -d: -f2)
+  if [ ! -d "node_modules/$PEER_PKG" ]; then
+    PEER_ISSUES=$((PEER_ISSUES + 1))
+    PEER_DETAILS="${PEER_DETAILS}  $PEER_PKG (needed by $NEEDED_BY)\n"
+  fi
+done
+if [ "$PEER_ISSUES" = "0" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL ($PEER_ISSUES missing peer dep(s))"
+  echo -e "$PEER_DETAILS"
+  echo "    Fix: yarn add <package>"
+  VERCEL_ISSUES=$((VERCEL_ISSUES + 1))
+fi
+
+echo ""
 echo -e "${BOLD}SECTION D: Post-Check Verification${NC}"
 echo "------------------------------------------"
 
@@ -1031,7 +1143,7 @@ echo ""
 # SUMMARY
 # ══════════════════════════════════════════════════════════════
 echo "=========================================="
-TOTAL_ISSUES=$((ISSUES + SOC2_ISSUES + IOS_ISSUES + MOBILE_ISSUES))
+TOTAL_ISSUES=$((ISSUES + SOC2_ISSUES + IOS_ISSUES + MOBILE_ISSUES + VERCEL_ISSUES))
 if [ "$TOTAL_ISSUES" = "0" ]; then
   echo -e "  ${GREEN}ALL CHECKS PASSED${NC} — codebase is clean"
   echo -e "  ${GREEN}READY TO PUSH${NC} — CodeMagic → TestFlight → App Store"
@@ -1047,6 +1159,9 @@ else
   fi
   if [ "$MOBILE_ISSUES" -gt 0 ]; then
     echo -e "  ${YELLOW}$MOBILE_ISSUES MOBILE / PWA UX ISSUE(S)${NC} — fix before deploy"
+  fi
+  if [ "$VERCEL_ISSUES" -gt 0 ]; then
+    echo -e "  ${RED}$VERCEL_ISSUES VERCEL DEPLOYMENT ISSUE(S)${NC} — will break CI build"
   fi
 fi
 if [ "$REPAIRS" -gt 0 ]; then
@@ -1070,4 +1185,11 @@ echo "  E4     Input zoom prevention (fontSize >= 16px)"
 echo "  E5-E6  Modal scroll + touch target sizing"
 echo "  E7-E8  Overflow + bottom bar safe-area"
 echo "  E9-E10 Responsive padding + PWA manifest"
+echo ""
+echo "Vercel Deployment Reference:"
+echo "  F1     Unresolved package imports"
+echo "  F2     Source map suppression (env + craco)"
+echo "  F3     Capacitor core/plugin version alignment"
+echo "  F4     Engine compatibility (.yarnrc)"
+echo "  F5     Key peer dependencies satisfied"
 echo ""
