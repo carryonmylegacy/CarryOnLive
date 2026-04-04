@@ -3,16 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@capacitor/android": "^6",
+    "@capacitor/android": "^8",
     "@capacitor/app": "^8.0.1",
-    "@capacitor/camera": "^6",
+    "@capacitor/camera": "^8",
     "@capacitor/cli": "^8",
     "@capacitor/core": "^8",
     "@capacitor/filesystem": "^8.1.2",
-    "@capacitor/ios": "^6",
-    "@capacitor/push-notifications": "^6",
+    "@capacitor/ios": "^8",
+    "@capacitor/push-notifications": "^8",
     "@capacitor/share": "^8.0.1",
-    "@capacitor/status-bar": "^6",
+    "@capacitor/status-bar": "^8",
     "@capgo/capacitor-native-biometric": "^8.4.2",
     "@capgo/capacitor-share-target": "^8.0.20",
     "@capgo/capacitor-updater": "^8.43.8",
@@ -64,7 +64,7 @@
     "lucide-react": "^0.507.0",
     "next-themes": "^0.4.6",
     "react": "^19.0.0",
-    "react-day-picker": "8.10.1",
+    "react-day-picker": "^9.14.0",
     "react-dom": "^19.0.0",
     "react-easy-crop": "^5.5.6",
     "react-hook-form": "^7.56.2",
@@ -106,22 +106,18 @@
     }
   },
   "devDependencies": {
+    "@babel/core": "^7.29.0",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@babel/plugin-syntax-flow": "^7.28.6",
     "@babel/plugin-transform-react-jsx": "^7.28.6",
     "@craco/craco": "^7.1.0",
     "@types/node": "^25.5.2",
     "autoprefixer": "^10.4.20",
-    "eslint": "8.57.1",
     "eslint-plugin-react-hooks": "4.6.2",
     "eslint-plugin-unused-imports": "^4.4.1",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.9.3"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
-  "resolutions": {
-    "react-day-picker/react": "^19.0.0",
-    "react-day-picker/date-fns": "^4.1.0"
-  }
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
