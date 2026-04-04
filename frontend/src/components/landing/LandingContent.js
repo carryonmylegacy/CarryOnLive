@@ -362,8 +362,10 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
 
     {/* ═══════════════════ FINAL CTA ═══════════════════ */}
     <section className="relative z-[70] -mt-1">
-      <div className="rounded-t-[2rem] py-24 lg:py-32" style={{ background: '#0E1829', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-        <RevealSection className="max-w-[600px] mx-auto px-6 text-center">
+      <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#0E1829', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+        <div className="absolute inset-0 opacity-[0.5]" style={{ backgroundImage: 'url(/texture-dawn.jpg)', backgroundSize: 'cover', backgroundPosition: 'center 60%' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 50%, rgba(14,24,41,0.3) 0%, rgba(14,24,41,0.75) 100%)' }} />
+        <RevealSection className="max-w-[600px] mx-auto px-6 text-center relative z-10">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-5" style={{ fontFamily: 'Outfit, sans-serif' }}>
             Readiness Starts Today.
           </h2>
