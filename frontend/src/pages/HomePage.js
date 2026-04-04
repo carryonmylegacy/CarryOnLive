@@ -117,11 +117,11 @@ const HomePage = () => {
         testIdSuffix="-home"
         beforeAbout={
           <section className="relative z-10 -mt-2">
-            <div className="py-16 lg:py-24 relative overflow-hidden">
+            <div className="pt-24 pb-16 lg:pt-32 lg:pb-24 relative overflow-hidden">
               <div className="absolute inset-0 z-0">
                 <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(0.7) contrast(1.05) saturate(0.9)' }} />
               </div>
-              <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.75) 0%, rgba(11,18,33,0.6) 40%, rgba(11,18,33,0.8) 100%)' }} />
+              <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.15) 0%, rgba(11,18,33,0.70) 100px, rgba(11,18,33,0.6) 40%, rgba(11,18,33,0.8) 100%)' }} />
               <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
               <RevealSection className="max-w-[900px] mx-auto px-6 text-center relative z-10">
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
