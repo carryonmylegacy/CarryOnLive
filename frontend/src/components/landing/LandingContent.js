@@ -165,7 +165,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
 
               <div className="relative z-10 flex flex-col gap-6">
                 {PILLARS.map(({ num, icon: Icon, title, abbr, bold, desc }, i) => (
-                  <RevealSection key={num} delay={i * 0.04}>
+                  <RevealSection key={num} delay={i * 0.1} distance={40} duration={0.8}>
                     <div className="rounded-2xl p-6 lg:p-8 relative overflow-hidden"
                       style={{
                         background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)',
@@ -332,8 +332,8 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
     {/* ═══════════════════ HOSPICE ═══════════════════ */}
     <section className="relative z-[60] -mt-1">
       <div className="rounded-t-[2rem] py-20 lg:py-24 relative overflow-hidden" style={{ background: '#111F34', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-        <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden opacity-[0.6]" style={{ backgroundImage: 'url(/texture-pulse.jpg)', backgroundSize: 'cover', backgroundPosition: 'center top' }} />
-        <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden" style={{ background: 'linear-gradient(180deg, transparent 40%, #111F34 100%)' }} />
+        <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden opacity-[0.45]" style={{ backgroundImage: 'url(/texture-pulse.jpg)', backgroundSize: 'cover', backgroundPosition: 'center 30%' }} />
+        <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden" style={{ background: 'linear-gradient(180deg, transparent 30%, #111F34 100%)' }} />
         <div className="absolute inset-0 opacity-[0.3] hidden sm:block" style={{ backgroundImage: 'url(/texture-pulse.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
         <div className="absolute inset-0 hidden sm:block" style={{ background: 'radial-gradient(ellipse 80% 80% at 50% 50%, rgba(17,31,52,0.4) 0%, rgba(17,31,52,0.75) 60%, #111F34 100%)' }} />
         <RevealSection className="max-w-[800px] mx-auto px-6 relative z-10">
