@@ -709,11 +709,11 @@ const LoginPage = () => {
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
 
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 w-full relative z-10">
-          <div className="grid xl:grid-cols-[1fr_420px] gap-10 xl:gap-14 items-center">
+          <div className="grid lg:grid-cols-[1fr_350px] xl:grid-cols-[1fr_420px] gap-10 lg:gap-10 xl:gap-14 items-center">
 
             {/* Logo + Tagline — desktop: left side */}
-            <RevealSection delay={0.1} className="hidden xl:block">
-              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 xl:gap-8">
+            <RevealSection delay={0.1} className="hidden lg:block">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 lg:gap-8">
                 <div className="flex-shrink-0">
                   <img src="/carryon-logo.png" alt="CarryOn" className="w-[200px] xl:w-[260px] h-auto" />
                 </div>
@@ -745,7 +745,7 @@ const LoginPage = () => {
 
             {/* Login Card */}
             <RevealSection delay={0.3} direction="right">
-              <div className="flex justify-center xl:justify-end">
+              <div className="flex justify-center lg:justify-end">
                 <div className="w-full rounded-2xl p-8 relative login-card-glow" style={{
                   background: 'linear-gradient(160deg, rgba(17,27,48,0.97), rgba(13,22,40,0.99))',
                   border: '1px solid rgba(212,175,55,0.12)',
@@ -842,7 +842,7 @@ const LoginPage = () => {
             </RevealSection>
 
             {/* Logo + Tagline — mobile only, below login card */}
-            <div className="xl:hidden col-span-full">
+            <div className="lg:hidden col-span-full">
               <RevealSection delay={0.5}>
                 <div className="flex flex-col items-center text-center mt-2">
                   <img src="/carryon-logo.png" alt="CarryOn" className="w-[240px] h-auto mb-5" />
