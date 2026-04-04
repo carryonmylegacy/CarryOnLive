@@ -11,7 +11,7 @@ import time
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://holistic-hub-10.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://ui-responsive-fix-10.preview.emergentagent.com").rstrip("/")
 
 
 class TestSpecialStatusRegistration:

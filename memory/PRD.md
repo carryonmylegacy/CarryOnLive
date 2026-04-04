@@ -7,7 +7,7 @@
 
 ---
 
-## ⛔ DO NOT TOUCH — ECT Chat View Transition Settling (iOS PWA)
+## DO NOT TOUCH — ECT Chat View Transition Settling (iOS PWA)
 
 **Priority: DOCUMENTED PERMANENT — DO NOT ATTEMPT TO FIX**
 
@@ -82,7 +82,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ### 5. MM Download — Always promptToSave (no double-tap)
 - **Status**: RE-FIXED (April 2, 2026) — Removed initial `navigator.share()` attempt. Always goes straight to `promptToSave` overlay. Added **loading spinner** on download button during fetch.
-- **Files**: `utils/downloadFile.js` (platformDownload → always promptToSave), `MessagesPage.js` (downloadingId state + Loader2 spinner)
+- **Files**: `utils/downloadFile.js` (platformDownload -> always promptToSave), `MessagesPage.js` (downloadingId state + Loader2 spinner)
 - **DO NOT**: Add back `navigator.share()` before `promptToSave` — user gesture always expires during async download
 
 ### 6. ECT Toast Import
@@ -120,7 +120,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Status**: IMPLEMENTED (April 2, 2026)
 - **Backend**: `routes/estate_chat.py` — `POST /api/estate-chat/channels/batch-delete` accepts `{channel_ids: [...]}`, returns `{deleted: [...], failed: [...]}`
 - **Frontend**: `EstateChatPage.js` — Select mode toggle (CheckSquare2 icon) in header + long-press gesture (500ms hold), checkboxes on channels, Select All/Deselect All, bulk delete confirmation modal
-- **Behavior**: Tap select button OR long-press any channel → tap channels to select → tap trash icon → confirm → done. Swipe-to-delete is disabled during select mode.
+- **Behavior**: Tap select button OR long-press any channel -> tap channels to select -> tap trash icon -> confirm -> done. Swipe-to-delete is disabled during select mode.
 - **DO NOT**: Allow batch-delete of more than 50 channels in a single request
 
 ### 14. CCP Emergency Plan — Layout Fix & Beneficiary Assignment
@@ -133,6 +133,14 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Change**: Removed `<SubscriptionManagement />` from `SettingsPage.js` and `BeneficiarySettingsPage.js`
 - **Reason**: Subscriptions have their own dedicated page; no need for duplication in Settings
 - **DO NOT**: Re-add SubscriptionManagement to settings pages
+
+### 15. Mobile/PWA Background Images — Gradient-Fade Banner (April 4, 2026)
+- **Status**: FIXED
+- **Issue**: Landscape background images (Pillars, Stepping Stones, Adult/Baby Hands) cropped poorly on mobile: `cover` was too zoomed in, `contain` was too small/meaningless.
+- **Fix**: All three sections use a 280px tall banner at the top with `backgroundSize: 'cover'` and a `linear-gradient` fade to the section background color. Desktop retains full `inset-0` cover.
+- **Sections**: Eight Pillars (`texture-pillars.jpg`), Five Steps (`texture-pathway.jpg`), Built for Real Families (`texture-families.jpg`)
+- **File**: `components/landing/LandingContent.js`
+- **DO NOT**: Revert to `contain` or full `inset-0 cover` on mobile for these landscape images
 
 ---
 
@@ -155,7 +163,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
   - ben_price sync: updating beneficiary plan prices auto-syncs ben_price on benefactor plan cards
   - Quarterly/annual prices recalculate in lockstep with monthly price changes
   - Family Plan Management UI: billing toggle (annual/quarterly/monthly default annual), per-member pricing breakdown with current vs family pricing, total row with green bold underlined family price and red italic original price
-  - Homepage rewrite: Shifted narrative from estate planning to "holistic digital family preparedness" (April 3, 2026)
+  - Homepage rewrite: Shifted narrative from estate planning to "complete digital family preparedness" (April 3, 2026)
   - 8 features showcased in priority order: MM, SDV, EGA, IAC, CCP, ECT, DAV, FFN
   - New sections: About (the new category), Reframe (why now), 5-step journey, security woven into family narrative
   - Updated LoginPage, SignupPage, AboutPage to remove "estate planning" / "death tech" references
@@ -169,8 +177,9 @@ A full-stack estate planning application allowing benefactors to manage digital 
     - `components/landing/LandingContent.js` — all shared marketing sections (About, Reframe, Eight Pillars, Platform Features, Five Steps, Security, Hospice, Final CTA, Footer)
     - LoginPage.js now passes the video section as `beforeAbout` slot; HomePage.js uses `testIdSuffix="-home"` for distinct data-testids
     - Eliminated sync bug risk: future content changes only need editing in one file
-    - Fixed 12 pre-existing iOS input font-size zoom warnings (text-sm → text-base on forgot password inputs)
+    - Fixed 12 pre-existing iOS input font-size zoom warnings (text-sm -> text-base on forgot password inputs)
     - Housekeeping: 60/60 PASS
+  - **Mobile/PWA Background Fix (April 4, 2026)**: Applied gradient-fade banner approach to all 3 landscape background sections for mobile viewports. See Locked-In Feature #15.
 
 ### P1
 - Google Play Store Launch (operational steps)
