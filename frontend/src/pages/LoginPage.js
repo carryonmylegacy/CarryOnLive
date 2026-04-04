@@ -879,12 +879,12 @@ const LoginPage = () => {
         footerInfo={footerInfo}
         beforeAbout={
           /* ═══════════════════ VIDEO — See CarryOn in Action ═══════════════════ */
-          <section className="relative z-10 -mt-4" style={{ background: '#0d1627' }}>
-            <div className="pt-24 pb-16 lg:pt-32 lg:pb-24 relative overflow-hidden rounded-t-[2.5rem]" style={{ background: '#0d1627', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
+          <section className="relative z-10">
+            <div className="py-16 lg:py-24 relative overflow-hidden">
               <div className="absolute inset-0 z-0">
                 <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(0.7) contrast(1.05) saturate(0.9)' }} />
               </div>
-              <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, #0d1627 0%, #0d1627 60px, rgba(11,18,33,0.6) 50%, rgba(11,18,33,0.8) 100%)' }} />
+              <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(8,14,26,1) 0%, rgba(8,14,26,0.97) 80px, rgba(11,18,33,0.6) 50%, rgba(11,18,33,0.8) 100%)' }} />
               <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
               <RevealSection className="max-w-[900px] mx-auto px-6 text-center relative z-10">
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
