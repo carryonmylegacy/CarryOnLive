@@ -87,7 +87,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
             Life doesn&apos;t wait for the perfect moment to throw a challenge your way. A sudden illness. A natural disaster. An unexpected loss. The families that get through it aren&apos;t the ones who saw it coming &mdash; they&apos;re the ones who were prepared.
           </p>
           <p className="text-[#7b879e] text-base lg:text-lg leading-relaxed mb-8">
-            CarryOn&#8482; is the first holistic digital family preparedness platform &mdash; a secure place to organize your documents, leave messages for the people you love, build action plans for any scenario, and ensure that no matter what happens, your family has everything they need to maintain continuity, stay connected, and move forward together.
+            CarryOn&#8482; is the first complete digital family preparedness platform &mdash; a secure place to organize your documents, leave messages for the people you love, build action plans for any scenario, and ensure that no matter what happens, your family has everything they need to maintain continuity, stay connected, and move forward together.
           </p>
           <button onClick={() => navigateWithFade('/signup')} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-transform duration-150 active:scale-95"
             style={{ background: '#d4af37', color: '#0B1221', transition: 'all 0.3s' }}>
@@ -200,7 +200,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
             <div className="pt-10">
               <RevealSection delay={0.5}>
                 <div className="relative z-20 mx-auto max-w-[640px] rounded-[1.75rem] p-8 lg:p-10 text-center"
-                  data-testid={`holistic-preparedness-tile${testIdSuffix}`}
+                  data-testid={`complete-preparedness-tile${testIdSuffix}`}
                   style={{
                     background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)',
                     border: '2px solid rgba(212,175,55,0.30)',
@@ -211,7 +211,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                     <Shield className="w-6 h-6 text-[#d4af37]" />
                   </div>
                   <h3 className="text-2xl sm:text-3xl font-bold text-[#d4af37] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                    Holistic Family Preparedness.
+                    Comprehensive Family Preparedness.
                   </h3>
                   <p className="text-[#a0aec0] text-sm lg:text-base leading-relaxed mb-4">
                     Eight pillars. One family. A living system that grows with you, protects what matters most, and ensures that no matter what life brings &mdash; your family is never left searching, wondering, or scrambling.
