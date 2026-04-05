@@ -51,6 +51,7 @@
     "@simplewebauthn/browser": "^13.3.0",
     "@stripe/react-stripe-js": "^5.6.0",
     "@stripe/stripe-js": "^8.8.0",
+    "@vercel/speed-insights": "^2.0.0",
     "axios": "^1.13.5",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",

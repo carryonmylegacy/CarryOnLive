@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SectionLockProvider } from './components/security/SectionLock';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { isNative } from './services/native';
 import SubscriptionPaywall from './components/SubscriptionPaywall';
@@ -414,6 +415,7 @@ function App() {
           <AppRoutes />
           <ShareHandler />
         </BrowserRouter>
+        <SpeedInsights />
         </SectionLockProvider>
       </AuthProvider>
     </ThemeProvider>
