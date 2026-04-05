@@ -296,6 +296,8 @@ export default function EstateChatPage() {
   const [selectedChannels, setSelectedChannels] = useState(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [showHeaderMembers, setShowHeaderMembers] = useState(false);
+  const [showListMembersId, setShowListMembersId] = useState(null);
   const touchStartRef = useRef({ x: 0, y: 0 });
   const longPressTimerRef = useRef(null);
   const longPressTriggeredRef = useRef(false);
@@ -491,6 +493,8 @@ export default function EstateChatPage() {
     setMsgLoading(true);
     setTypers([]);
     setSwipedChannel(null);
+    setShowListMembersId(null);
+    setShowHeaderMembers(false);
     const r = document.getElementById('ect-root');
     if (r) { r.style.transform = ''; r.style.bottom = '0'; }
     window.scrollTo(0, 0);
@@ -740,6 +744,23 @@ export default function EstateChatPage() {
 
   const isBenefactor = user?.role === 'benefactor' || user?.is_also_benefactor;
 
+  const resolveChannelMembers = useCallback((memberIds, estateId) => {
+    const estate = contacts.find(c => c.estate_id === estateId);
+    const members = (estate?.members || []);
+    const resolved = [];
+    for (const mid of memberIds) {
+      const found = members.find(m => m.id === mid);
+      if (found) {
+        resolved.push(found);
+      } else if (mid === user?.id) {
+        resolved.push({ id: mid, name: user?.name || 'You', photo_url: user?.photo_url || '', role_in_estate: user?.role || '', relation: '' });
+      } else {
+        resolved.push({ id: mid, name: 'Unknown', photo_url: '', role_in_estate: '', relation: '' });
+      }
+    }
+    return resolved;
+  }, [contacts, user]);
+
   const handleBackOut = () => {
     if (activeChannel) {
       // Force blur any focused input first (closes iOS keyboard)
@@ -748,6 +769,7 @@ export default function EstateChatPage() {
       setShowChannelList(true);
       setInputFocused(false);
       setSwipedChannel(null);
+      setShowHeaderMembers(false);
       // Style cleanup happens in the activeChannel ref sync effect
       // Refresh channel list to show latest messages/new chats
       fetchChannels();
@@ -1113,7 +1135,7 @@ export default function EstateChatPage() {
             {channels.map(ch => (
               <div
                 key={ch.id}
-                className="relative overflow-hidden rounded-xl mb-1"
+                className={`relative rounded-xl mb-1 ${showListMembersId === ch.id ? '' : 'overflow-hidden'}`}
                 onTouchStart={(e) => !selectMode && handleTouchStart(e, ch.id)}
                 onTouchMove={(e) => !selectMode && handleTouchMove(e)}
                 onTouchEnd={(e) => !selectMode && handleTouchEnd(e, ch.id)}
@@ -1182,7 +1204,7 @@ export default function EstateChatPage() {
                       ? (ch.name?.charAt(0)?.toUpperCase() || '?')
                       : getChannelIcon(ch.type)}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 relative">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold truncate" style={{ color: '#F1F3F8' }}>{ch.name}</span>
                     {ch.unread_count > 0 && (
@@ -1192,11 +1214,53 @@ export default function EstateChatPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-[11px] font-medium px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.04)', color: '#7B879E' }}>{ch.estate_name}</span>
+                    <span
+                      className="text-[11px] font-medium px-1.5 py-0.5 rounded cursor-pointer"
+                      data-testid={`ect-list-members-link-${ch.id}`}
+                      onClick={(e) => { e.stopPropagation(); setShowListMembersId(showListMembersId === ch.id ? null : ch.id); }}
+                      style={{ background: 'rgba(212,175,55,0.08)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.15)' }}
+                    >{ch.estate_name}</span>
                     {ch.last_message && (
                       <span className="text-xs truncate" style={{ color: '#525C72' }}>{ch.last_message.content}</span>
                     )}
                   </div>
+                  {showListMembersId === ch.id && (
+                    <div
+                      className="absolute left-0 top-full mt-1 rounded-xl overflow-hidden z-50"
+                      data-testid={`ect-list-members-dropdown-${ch.id}`}
+                      style={{
+                        background: '#1A2238',
+                        border: '1px solid rgba(212,175,55,0.25)',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                        minWidth: '220px',
+                        maxWidth: '280px',
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                      }}
+                    >
+                      {resolveChannelMembers(ch.members || [], ch.estate_id).map(m => {
+                        const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
+                        const isYou = m.id === user?.id;
+                        return (
+                          <div key={m.id} className="flex items-center gap-2.5 px-3 py-2" data-testid={`list-member-${ch.id}-${m.id}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-[10px] font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
+                              {m.photo_url
+                                ? <img src={m.photo_url} alt="" className="w-7 h-7 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = initials; }} />
+                                : initials}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[11px] font-semibold truncate" style={{ color: '#F1F3F8' }}>
+                                {m.name}{isYou ? ' (You)' : ''}
+                              </div>
+                              {(m.relation || m.role_in_estate) && (
+                                <div className="text-[10px] truncate" style={{ color: '#7B879E' }}>{m.relation || m.role_in_estate}</div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
                 </button>
               </div>
@@ -1227,11 +1291,53 @@ export default function EstateChatPage() {
               ? (activeChannel.name?.charAt(0)?.toUpperCase() || '?')
               : getChannelIcon(activeChannel.type)}
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 relative">
           <div className="text-sm font-bold truncate" style={{ color: '#F1F3F8' }}>{activeChannel.name}</div>
-          <div className="text-[11px]" style={{ color: '#7B879E' }}>
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowHeaderMembers(!showHeaderMembers); }}
+            className="text-[11px] cursor-pointer"
+            data-testid="ect-header-members-link"
+            style={{ color: '#d4af37', background: 'none', border: 'none', padding: 0, font: 'inherit', textDecoration: 'none' }}
+          >
             {activeChannel.type === 'circle' ? 'All estate members' : activeChannel.type === 'group' ? `${activeChannel.members?.length || 0} members` : 'Direct message'}
-          </div>
+          </button>
+          {showHeaderMembers && (
+            <div
+              className="absolute left-0 top-full mt-1 rounded-xl overflow-hidden z-50"
+              data-testid="ect-header-members-dropdown"
+              style={{
+                background: '#1A2238',
+                border: '1px solid rgba(212,175,55,0.25)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                minWidth: '220px',
+                maxWidth: '280px',
+                maxHeight: '240px',
+                overflowY: 'auto',
+              }}
+            >
+              {resolveChannelMembers(activeChannel.members || [], activeChannel.estate_id).map(m => {
+                const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
+                const isYou = m.id === user?.id;
+                return (
+                  <div key={m.id} className="flex items-center gap-2.5 px-3 py-2" data-testid={`header-member-${m.id}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-xs font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
+                      {m.photo_url
+                        ? <img src={m.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = initials; }} />
+                        : initials}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold truncate" style={{ color: '#F1F3F8' }}>
+                        {m.name}{isYou ? ' (You)' : ''}
+                      </div>
+                      {(m.relation || m.role_in_estate) && (
+                        <div className="text-[10px] truncate" style={{ color: '#7B879E' }}>{m.relation || m.role_in_estate}</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
         {activeChannel.type === 'group' && isBenefactor && (
           <button

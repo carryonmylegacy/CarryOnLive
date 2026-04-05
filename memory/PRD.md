@@ -1,7 +1,7 @@
 # CarryOn - Estate Planning Application
 
 ## ZERO TOLERANCE: Perfect Code Every Push
-**MANDATORY: Before EVERY push, run `bash /app/housekeeping.sh`. ALL 60 checks must PASS.**
+**MANDATORY: Before EVERY push, run `bash /app/housekeeping.sh`. ALL 65 checks must PASS.**
 **MANDATORY: After EVERY testing agent call, run `cd /app/backend && ruff format . && ruff check .` — testing agents create files with trailing whitespace that fail Vercel CI.**
 
 
@@ -180,6 +180,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
     - Fixed 12 pre-existing iOS input font-size zoom warnings (text-sm -> text-base on forgot password inputs)
     - Housekeeping: 60/60 PASS
   - **Mobile/PWA Background Fix (April 4, 2026)**: Applied gradient-fade banner approach to all 3 landscape background sections for mobile viewports. See Locked-In Feature #15.
+  - **ECT Member Dropdown (April 5, 2026)**: Added gold clickable links for "X members" text in chat header and estate name in channel list. Clicking opens a scrollable dropdown showing member avatars, names, and roles.
 
 ### P1
 - Google Play Store Launch (operational steps)
