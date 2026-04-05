@@ -308,6 +308,26 @@ export default function EstateChatPage() {
     return () => document.body.classList.remove('ect-active');
   }, []);
 
+  // ── Close member dropdowns on outside tap ──
+  useEffect(() => {
+    if (!showHeaderMembers && !showListMembersId) return;
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest('[data-testid="ect-header-members-dropdown"]') &&
+          !e.target.closest('[data-testid="ect-header-members-link"]') &&
+          !e.target.closest('[data-testid^="ect-list-members-dropdown-"]') &&
+          !e.target.closest('[data-testid^="ect-list-members-link-"]')) {
+        setShowHeaderMembers(false);
+        setShowListMembersId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+    };
+  }, [showHeaderMembers, showListMembersId]);
+
   // ── Keep ref in sync with activeChannel state ──
   useEffect(() => {
     activeChannelRef.current = activeChannel;
