@@ -127,7 +127,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
     {/* ═══════════════════ EIGHT PILLARS ═══════════════════ */}
     <section id="features" className="relative z-30 -mt-1">
       <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0f1d30 0%, #132240 50%, #0f1d30 100%)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-        <div className="absolute top-0 left-0 right-0 h-[280px] sm:hidden opacity-[0.6]" style={{ backgroundImage: 'url(/texture-pillars.jpg)', backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'blur(2px)' }} />
+        <div className="absolute top-0 left-0 right-0 h-[280px] sm:hidden opacity-[0.55]" style={{ backgroundImage: 'url(/texture-pillars.jpg)', backgroundSize: 'cover', backgroundPosition: 'center top' }} />
         <div className="absolute top-0 left-0 right-0 h-[280px] sm:hidden" style={{ background: 'linear-gradient(180deg, transparent 40%, #0f1d30 100%)' }} />
         <div className="absolute inset-0 opacity-[0.35] hidden sm:block" style={{ backgroundImage: 'url(/texture-pillars.jpg)', backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'blur(6px)' }} />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(15,29,48,0.4) 0%, rgba(15,29,48,0.7) 100%)' }} />
@@ -165,7 +165,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
 
               <div className="relative z-10 flex flex-col gap-6">
                 {PILLARS.map(({ num, icon: Icon, title, abbr, bold, desc }, i) => (
-                  <RevealSection key={num} delay={i * 0.1} distance={40} duration={0.8}>
+                  <RevealSection key={num} delay={i * 0.06} distance={40} duration={0.8}>
                     <div className="rounded-2xl p-6 lg:p-8 relative overflow-hidden"
                       style={{
                         background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)',
@@ -266,7 +266,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
     {/* ═══════════════════ FIVE STEPS ═══════════════════ */}
     <section id="steps" className="relative z-40 -mt-1">
       <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111F34, #0E1829)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-        <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden opacity-[0.85]" style={{ backgroundImage: 'url(/texture-pathway.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+        <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden opacity-[0.85]" style={{ backgroundImage: 'url(/texture-pathway.jpg)', backgroundSize: '140%', backgroundPosition: 'center 40%' }} />
         <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden" style={{ background: 'linear-gradient(180deg, transparent 50%, #111F34 100%)' }} />
         <div className="absolute inset-0 opacity-[0.4] hidden sm:block" style={{ backgroundImage: 'url(/texture-pathway.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 30%, rgba(212,175,55,0.03) 0%, transparent 70%)' }} />
@@ -279,7 +279,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
               You don&apos;t need to do it all at once. Start with what matters most and build your family&apos;s readiness over time.
             </p>
           </RevealSection>
-          <div className="space-y-16 text-left">
+          <div className="space-y-12 text-left">
             {FIVE_STEPS.map(({ step, title, desc }, i) => (
               <RevealSection key={step} delay={i * 0.15}>
                 <div className="flex gap-5 group">
@@ -332,8 +332,8 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
     {/* ═══════════════════ HOSPICE ═══════════════════ */}
     <section className="relative z-[60] -mt-1">
       <div className="rounded-t-[2rem] py-20 lg:py-24 relative overflow-hidden" style={{ background: '#111F34', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-        <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden opacity-[0.45]" style={{ backgroundImage: 'url(/texture-pulse.jpg)', backgroundSize: 'cover', backgroundPosition: 'center 30%' }} />
-        <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden" style={{ background: 'linear-gradient(180deg, transparent 30%, #111F34 100%)' }} />
+        <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden opacity-[0.5]" style={{ backgroundImage: 'url(/texture-pulse.jpg)', backgroundSize: '160%', backgroundPosition: 'center 100%' }} />
+        <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden" style={{ background: 'linear-gradient(180deg, transparent 55%, #111F34 100%)' }} />
         <div className="absolute inset-0 opacity-[0.3] hidden sm:block" style={{ backgroundImage: 'url(/texture-pulse.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
         <div className="absolute inset-0 hidden sm:block" style={{ background: 'radial-gradient(ellipse 80% 80% at 50% 50%, rgba(17,31,52,0.4) 0%, rgba(17,31,52,0.75) 60%, #111F34 100%)' }} />
         <RevealSection className="max-w-[800px] mx-auto px-6 relative z-10">
@@ -411,4 +411,3 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
 );
 
 export default LandingContent;
-
