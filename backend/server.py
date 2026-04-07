@@ -83,6 +83,47 @@ async def lifespan(app):
 
     logger.info("CarryOn™ API started - ready for real accounts")
 
+    # Run username migration BEFORE index creation — fixes duplicate username_lower
+    # values that would block the unique index build
+    try:
+        migration_done = await db.migrations.find_one({"_id": "username_migration_v1"})
+        if not migration_done:
+            import re as _re
+
+            users_to_migrate = await db.users.find(
+                {"$or": [{"username": {"$regex": "@"}}, {"username": {"$exists": False}}, {"username": None}]},
+                {"_id": 0, "id": 1, "first_name": 1, "last_name": 1, "email": 1, "username": 1},
+            ).to_list(10000)
+            migrated_count = 0
+            for u in users_to_migrate:
+                first = u.get("first_name", "")
+                last = u.get("last_name", "")
+                clean_first = _re.sub(r"[^a-zA-Z0-9]", "", first).lower()
+                clean_last = _re.sub(r"[^a-zA-Z0-9]", "", last).lower()
+                base = clean_first + clean_last
+                if len(base) < 3:
+                    base = "user" + str(random.randint(1000, 9999))
+                candidate = base
+                suffix = 2
+                while True:
+                    exists = await db.users.find_one(
+                        {"username_lower": candidate, "id": {"$ne": u["id"]}},
+                        {"_id": 0, "id": 1},
+                    )
+                    if not exists:
+                        break
+                    candidate = f"{base}{suffix}"
+                    suffix += 1
+                await db.users.update_one(
+                    {"id": u["id"]},
+                    {"$set": {"username": candidate, "username_lower": candidate, "needs_username_review": True}},
+                )
+                migrated_count += 1
+            await db.migrations.insert_one({"_id": "username_migration_v1", "migrated": migrated_count})
+            logger.info(f"Username migration complete: {migrated_count} users migrated")
+    except Exception as e:
+        logger.warning(f"Username migration warning: {e}")
+
     # Create security-critical database indexes
     try:
         # Email is no longer unique — multiple users can share an email
@@ -192,46 +233,6 @@ async def lifespan(app):
         logger.info("Database indexes created/verified")
     except Exception as e:
         logger.warning(f"Index creation warning (may already exist): {e}")
-
-    # One-time migration: generate usernames for existing users who still have email as username
-    try:
-        migration_done = await db.migrations.find_one({"_id": "username_migration_v1"})
-        if not migration_done:
-            import re as _re
-
-            users_to_migrate = await db.users.find(
-                {"$or": [{"username": {"$regex": "@"}}, {"username": {"$exists": False}}, {"username": None}]},
-                {"_id": 0, "id": 1, "first_name": 1, "last_name": 1, "email": 1, "username": 1},
-            ).to_list(10000)
-            migrated_count = 0
-            for u in users_to_migrate:
-                first = u.get("first_name", "")
-                last = u.get("last_name", "")
-                clean_first = _re.sub(r"[^a-zA-Z0-9]", "", first).lower()
-                clean_last = _re.sub(r"[^a-zA-Z0-9]", "", last).lower()
-                base = clean_first + clean_last
-                if len(base) < 3:
-                    base = "user" + str(random.randint(1000, 9999))
-                candidate = base
-                suffix = 2
-                while True:
-                    exists = await db.users.find_one(
-                        {"username_lower": candidate, "id": {"$ne": u["id"]}},
-                        {"_id": 0, "id": 1},
-                    )
-                    if not exists:
-                        break
-                    candidate = f"{base}{suffix}"
-                    suffix += 1
-                await db.users.update_one(
-                    {"id": u["id"]},
-                    {"$set": {"username": candidate, "username_lower": candidate, "needs_username_review": True}},
-                )
-                migrated_count += 1
-            await db.migrations.insert_one({"_id": "username_migration_v1", "migrated": migrated_count})
-            logger.info(f"Username migration complete: {migrated_count} users migrated")
-    except Exception as e:
-        logger.warning(f"Username migration warning: {e}")
 
     digest_task = asyncio.create_task(weekly_digest_scheduler())
     reminder_task = asyncio.create_task(trial_reminder_scheduler())
