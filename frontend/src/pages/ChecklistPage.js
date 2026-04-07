@@ -95,7 +95,7 @@ const ChecklistPage = () => {
   const [feedbackText, setFeedbackText] = useState('');
   const [egaRunning, setEgaRunning] = useState(false);
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('iac_view_mode') || 'priority');
-  const [expandedGroups, setExpandedGroups] = useState(new Set(['critical']));
+  const [expandedGroups, setExpandedGroups] = useState(new Set());
   const aiAbortRef = useRef(null);
   const aiTimerRef = useRef(null);
   const lastCompletedAtRef = useRef(null);
@@ -330,8 +330,7 @@ const ChecklistPage = () => {
   const changeViewMode = (mode) => {
     setViewMode(mode);
     localStorage.setItem('iac_view_mode', mode);
-    if (mode === 'priority') setExpandedGroups(new Set(['critical']));
-    else if (mode === 'category') setExpandedGroups(new Set());
+    setExpandedGroups(new Set());
   };
 
   if (loading) {
