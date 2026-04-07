@@ -150,43 +150,36 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## Prioritized Backlog
 
-### P0
-- ECT Keyboard + ECT Delete + MM Download - FIXES DEPLOYED, awaiting user iOS verification
-- Customizable Dock - IMPLEMENTED, awaiting user verification
-- ECT Bulk Delete - IMPLEMENTED, awaiting user verification
+### P0 — Username-Based Auth Migration (IN PROGRESS — April 2026)
+**Goal**: Switch from email-based login to username-based login. Email becomes non-unique (shared families). Beneficiaries join via invitation only.
+- **23 backend/frontend touchpoints** — validated by testing agent pre-implementation review
+- See "Username Auth Migration Plan" section below for full details
+
+### P0 — Immediate Follow-On (Post-Auth Migration)
+These items come from real user beta feedback and should be addressed immediately after the auth migration:
+
+1. **DOB Auto-Slashes on Mobile** (Low effort) — `DateMaskInput.js` auto-inserts `/` on desktop but may not work consistently on mobile web. Test and fix `inputMode="numeric"` behavior across mobile browsers.
+2. **Beneficiary Photo Purpose Hint** (Low effort) — Add tooltip/contextual hint on the beneficiary photo upload explaining: "Adding a photo helps your family instantly recognize each member across the platform."
+3. **Beneficiary Email Change Notifications** (Medium effort) — When a beneficiary updates their email/profile, notify the benefactor via in-app notification + optional email: "[Name] updated their contact info."
+4. **IAC "Accept" Button Tooltip** (Low effort) — Add `?` hover/info icon next to the Accept action explaining: "Accepting this task means you've reviewed it and confirmed it's relevant to your estate plan."
+5. **IAC Collapsed/Prioritized View** (Medium effort) — Default: show only "Critical" items expanded. Collapse all other categories into accordion sections (e.g., "Financial (3 items)"). Progressive disclosure with "Show all tasks" toggle.
+6. **Death Initiation UX Copy** (Low effort) — Rename/augment "Request Emergency Access" with more empathetic entry: "Report a Loved One's Passing." Add guided flow explanation.
+7. **SEO Improvements** (Medium effort) — Add proper meta tags, structured data (JSON-LD), Open Graph tags. Add `robots.txt` and `sitemap.xml`. Ensure `<title>` includes "CarryOn - Secure Estate Planning" on every page. Improve discoverability for "CarryOn" searches.
+
+### P0 (Previously Completed)
+- ECT Keyboard + ECT Delete + MM Download - DEPLOYED
+- Customizable Dock - IMPLEMENTED
+- ECT Bulk Delete - IMPLEMENTED
 - Dynamic Subscription Pricing Editor - IMPLEMENTED (April 3, 2026)
-  - All tier prices editable from Founder Portal (including Military, Hospice, Veteran, New Adult, Enterprise)
-  - Family discount pricing: configurable % discount per benefactor and per beneficiary in family plans
-  - Backend: PUT /admin/plans/{plan_id}/price (all tiers), PUT /admin/family-discount-settings
-  - Frontend: Family Discount Pricing card in SubscriptionsTab.js
-  - Price propagation: all surfaces (paywall, checkout, stats, digest, family plan) read dynamically from DB
-  - ben_price sync: updating beneficiary plan prices auto-syncs ben_price on benefactor plan cards
-  - Quarterly/annual prices recalculate in lockstep with monthly price changes
-  - Family Plan Management UI: billing toggle (annual/quarterly/monthly default annual), per-member pricing breakdown with current vs family pricing, total row with green bold underlined family price and red italic original price
-  - Homepage rewrite: Shifted narrative from estate planning to "complete digital family preparedness" (April 3, 2026)
-  - 8 features showcased in priority order: MM, SDV, EGA, IAC, CCP, ECT, DAV, FFN
-  - New sections: About (the new category), Reframe (why now), 5-step journey, security woven into family narrative
-  - Updated LoginPage, SignupPage, AboutPage to remove "estate planning" / "death tech" references
-  - Warm & family-focused tone with security baked in, not tech-forward
-  - Files: HomePage.js, LoginPage.js, SignupPage.js, AboutPage.js
-  - Landing page "Eight Pillars" redesign (April 3, 2026): Removed circuit-board texture, widened arrow (18px), scoped arrow to tile container only (doesn't pierce end-state tile), single arrowhead, gap-6 between tiles, opaque tile backgrounds, warmer gold text (#e8c972), fully opaque end-state "Comprehensive Family Preparedness" tile. Synced to both LoginPage.js and HomePage.js.
-  - Arrow widened to 180px, arrowhead connects to end-state tile top, acronyms made more visible (#8b97ab font-semibold tracking-wider). Removed sardine/life insurance copy; replaced with "value now and later" messaging. Fixed ECT description: removed false "end-to-end encrypted" claim (ECT uses server-side encryption + access controls, NOT E2E). CCP bold text reworded from "pre-built" to "plans your family can build now". All synced to LoginPage.js + HomePage.js.
-  - Arrow reduced to 126px (30% reduction), extended below tile 08 for full arrowhead visibility. "Scroll to explore" button enlarged to unmissable size with animate-bounce on entire button, gold border, xl/2xl font. Five Steps section spacing increased (space-y-12). All synced to both pages.
-  - **Landing Page Refactoring (April 3, 2026)**: Extracted ~800 lines of duplicated JSX from `LoginPage.js` and `HomePage.js` into reusable shared components:
-    - `components/landing/RevealSection.js` — scroll-reveal hook + component
-    - `components/landing/LandingContent.js` — all shared marketing sections (About, Reframe, Eight Pillars, Platform Features, Five Steps, Security, Hospice, Final CTA, Footer)
-    - LoginPage.js now passes the video section as `beforeAbout` slot; HomePage.js uses `testIdSuffix="-home"` for distinct data-testids
-    - Eliminated sync bug risk: future content changes only need editing in one file
-    - Fixed 12 pre-existing iOS input font-size zoom warnings (text-sm -> text-base on forgot password inputs)
-    - Housekeeping: 60/60 PASS
-  - **Mobile/PWA Background Fix (April 4, 2026)**: Applied gradient-fade banner approach to all 3 landscape background sections for mobile viewports. See Locked-In Feature #15.
-  - **ECT Member Dropdown (April 5, 2026)**: Added gold clickable links for "X members" text in chat header and estate name in channel list. Clicking opens a scrollable dropdown showing member avatars, names, and roles.
+- Homepage rewrite - IMPLEMENTED (April 3, 2026)
+- Landing Page Refactoring - IMPLEMENTED (April 3, 2026)
+- Mobile/PWA Background Fix - IMPLEMENTED (April 4, 2026)
+- ECT Member Dropdown - IMPLEMENTED (April 5, 2026)
 
 ### P1
 - Google Play Store Launch (operational steps)
 - Share Extension Setup
 - iOS Live Updates (Capgo)
-- ECT Beneficiary Avatars fix (if still broken after user testing)
 
 ### P2
 - Readiness Scoring Policy Page
@@ -194,6 +187,26 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ### P3
 - ECT Security Comparison Landing Page at `/security`
+
+---
+
+## Username Auth Migration Plan (April 2026)
+
+### Architecture Decision
+- **Username** = unique login identifier (not an email, 3-30 chars, alphanumeric + underscores)
+- **Email** = non-unique communication channel (OTP delivery, notifications)
+- **Beneficiaries** = invitation-only (no self-signup)
+- **OTPs** = keyed by `user_id` (not email) to prevent collision with shared emails
+- **Auto-generated usernames** = `firstnamelastname` (lowercase, no dot, no spaces)
+- **Migration** = existing users get auto-generated usernames with `needs_username_review: true`
+
+### 23 Touchpoints (Validated by Testing Agent)
+**Backend `models.py`**: UserCreate (add username, remove benefactor_email/role), ForgotPasswordRequest (email→username), ResetPasswordRequest (email→username)
+**Backend `auth.py`**: check-email→check-username, remove check-benefactor-email, login (reverse lookup order), register (username uniqueness), OTP storage ×3 (email→user_id), verify-otp (resolve by identifier), resend-otp, forgot-password (username-based), reset-password (username-based), NEW forgot-username, verify-password, _user_response (include username), dev-login (support username)
+**Backend `beneficiaries.py`**: invitations/accept (auto-generate username)
+**Backend `webauthn.py`**: login-options (support username lookup — CAUGHT BY TESTING AGENT)
+**Backend `family_plan.py`**: member lookup (use user_id — CAUGHT BY TESTING AGENT)
+**Frontend**: SignupPage (remove role/benefactor_email steps, add username), LoginPage ×3 forgot-password modals (email→username, add forgot-username), AcceptInvitationPage (add username field), AuthContext (pendingEmail→pendingIdentifier)
 
 ## Critical Notes
 - **Downloads**: ALL file downloads MUST go through `platformDownload()` with `promptToSave` (never direct `navigator.share`)
