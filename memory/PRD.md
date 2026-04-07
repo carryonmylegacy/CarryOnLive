@@ -150,6 +150,13 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## Prioritized Backlog
 
+### P0 — UsernameReviewModal Save Bug (FIXED — April 7, 2026)
+- **Root cause**: `UsernameReviewModal.js` defined `const API_URL = process.env.REACT_APP_BACKEND_URL` locally, missing the `/api` prefix. The app's `config.js` exports `API_URL = ${REACT_APP_BACKEND_URL}/api`. The modal's PUT call hit the frontend server (port 3000) instead of the backend (port 8001), receiving HTML instead of JSON → axios error.
+- **Additional issue**: Toast imported from `sonner` instead of `../utils/toast`, making the error invisible to users.
+- **Fix**: Import `API_URL` from `../config`, import `toast` from `../utils/toast`, add `acknowledged` ref to prevent useEffect re-triggering modal after save, and await `refreshUser()`.
+- **Files changed**: `frontend/src/components/UsernameReviewModal.js`
+- **DO NOT**: Use `process.env.REACT_APP_BACKEND_URL` directly for API calls in components — always import `API_URL` from `../config`
+
 ### P0 — Username-Based Auth Migration (COMPLETED — April 7, 2026)
 **Goal**: Switch from email-based login to username-based login. Email becomes non-unique (shared families). Beneficiaries join via invitation only.
 - **23 touchpoints across 9 files** — validated by testing agent (17/17 backend, all frontend UI tests passed)

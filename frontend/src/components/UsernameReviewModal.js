@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { User, Check, AlertCircle, Loader2, X } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { toast } from 'sonner';
-
-const API_URL = process.env.REACT_APP_BACKEND_URL;
+import { toast } from '../utils/toast';
+import { API_URL } from '../config';
 
 const UsernameReviewModal = () => {
   const { user, token, refreshUser } = useAuth();
@@ -13,8 +12,10 @@ const UsernameReviewModal = () => {
   const [usernameError, setUsernameError] = useState('');
   const [checking, setChecking] = useState(false);
   const [saving, setSaving] = useState(false);
+  const acknowledged = useRef(false);
 
   useEffect(() => {
+    if (acknowledged.current) return;
     if (user?.needs_username_review && token) {
       setUsername(user.username || '');
       setShow(true);
@@ -34,11 +35,13 @@ const UsernameReviewModal = () => {
       await axios.put(`${API_URL}/auth/username`, { username }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      toast.success(`Your username is now: ${username}`);
+      acknowledged.current = true;
       setShow(false);
-      if (refreshUser) refreshUser();
+      toast.success(`Your username is now: ${username}`);
+      if (refreshUser) await refreshUser();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to update username');
+      const detail = err.response?.data?.detail || 'Failed to update username. Please try again.';
+      toast.error(detail);
     } finally {
       setSaving(false);
     }
@@ -50,9 +53,11 @@ const UsernameReviewModal = () => {
       await axios.put(`${API_URL}/auth/username`, { username: user.username || username }, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      acknowledged.current = true;
       setShow(false);
-      if (refreshUser) refreshUser();
+      if (refreshUser) await refreshUser();
     } catch {
+      acknowledged.current = true;
       setShow(false);
     } finally {
       setSaving(false);
