@@ -295,8 +295,28 @@ const ChecklistPage = () => {
   };
 
   const totalCount = checklists.length;
-  const priColors = { critical: '#ef4444', high: '#f97316', medium: '#eab308', low: '#22c55e' };
+  const priColors = { critical: '#ef4444', high: '#f97316', medium: '#eab308', low: '#22c55e', immediate: '#ef4444', first_week: '#f97316', two_weeks: '#eab308', first_month: '#22c55e' };
   const getCatInfo = (cat) => CATEGORIES.find(c => c.value === cat) || CATEGORIES[7];
+
+  // Map time-based categories to priority keys (items may use either system)
+  const CATEGORY_TO_PRIORITY = { immediate: 'critical', first_week: 'high', two_weeks: 'medium', first_month: 'low' };
+  const getEffectivePriority = (item) => item.priority || CATEGORY_TO_PRIORITY[item.category] || 'medium';
+
+  // Build actual groups from the data for category view
+  const CATEGORY_LABELS = {
+    immediate: { label: 'Do Immediately', icon: Shield, color: '#ef4444' },
+    first_week: { label: 'First Week', icon: FileText, color: '#f97316' },
+    two_weeks: { label: 'First 2 Weeks', icon: Briefcase, color: '#eab308' },
+    first_month: { label: 'First Month', icon: Heart, color: '#22c55e' },
+    legal: { label: 'Legal', icon: FileText, color: '#3b82f6' },
+    financial: { label: 'Financial', icon: Briefcase, color: '#8b5cf6' },
+    insurance: { label: 'Insurance', icon: Shield, color: '#06b6d4' },
+    property: { label: 'Property', icon: Building, color: '#f59e0b' },
+    medical: { label: 'Medical', icon: Stethoscope, color: '#ef4444' },
+    personal: { label: 'Personal', icon: Heart, color: '#ec4899' },
+    government: { label: 'Government', icon: Users, color: '#14b8a6' },
+    general: { label: 'General', icon: CheckSquare, color: '#6b7280' },
+  };
 
   const toggleGroup = (key) => {
     setExpandedGroups(prev => {
@@ -325,7 +345,8 @@ const ChecklistPage = () => {
   }
 
   const renderItemCard = (item) => {
-    const priColor = priColors[item.priority] || priColors.medium;
+    const effectivePri = getEffectivePriority(item);
+    const priColor = priColors[effectivePri] || priColors.medium;
     const catInfo = getCatInfo(item.category);
     const CatIcon = catInfo.icon;
 
@@ -378,7 +399,7 @@ const ChecklistPage = () => {
             <span className="text-xs px-2 py-0.5 rounded font-bold capitalize" style={{
               background: priColor + '15', color: priColor, border: `1px solid ${priColor}33`
             }}>
-              {item.priority}
+              {effectivePri}
             </span>
             {item.ai_suggested && item.ai_accepted === null && (
               <>
@@ -752,7 +773,7 @@ const ChecklistPage = () => {
           ) : viewMode === 'priority' ? (
             <div className="space-y-3">
               {PRIORITIES.map(pri => {
-                const items = checklists.filter(i => i.priority === pri.value).sort((a, b) => a.order - b.order);
+                const items = checklists.filter(i => getEffectivePriority(i) === pri.value).sort((a, b) => a.order - b.order);
                 if (items.length === 0) return null;
                 const isExpanded = expandedGroups.has(pri.value);
                 return (
@@ -763,7 +784,7 @@ const ChecklistPage = () => {
                     >
                       <div className="w-1 h-6 rounded-full" style={{ background: pri.color }} />
                       {isExpanded ? <ChevronDown className="w-4 h-4 text-[var(--t4)]" /> : <ChevronRight className="w-4 h-4 text-[var(--t4)]" />}
-                      <span className="text-sm font-bold text-[var(--t)] capitalize">{pri.value}</span>
+                      <span className="text-sm font-bold text-[var(--t)]">{pri.label}</span>
                       <span className="text-[11px] text-[var(--t5)] ml-auto">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
                     </button>
                     {isExpanded && (
@@ -777,30 +798,34 @@ const ChecklistPage = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {CATEGORIES.map(cat => {
-                const items = checklists.filter(i => i.category === cat.value).sort((a, b) => a.order - b.order);
-                if (items.length === 0) return null;
-                const isExpanded = expandedGroups.has(cat.value);
-                const CatIcon = cat.icon;
-                return (
-                  <div key={cat.value} className="glass-card overflow-hidden" data-testid={`category-group-${cat.value}`}>
-                    <button
-                      onClick={() => toggleGroup(cat.value)}
-                      className="w-full flex items-center gap-3 p-3 text-left hover:bg-[var(--s)] transition-colors"
-                    >
-                      <CatIcon className="w-4 h-4" style={{ color: cat.color }} />
-                      {isExpanded ? <ChevronDown className="w-4 h-4 text-[var(--t4)]" /> : <ChevronRight className="w-4 h-4 text-[var(--t4)]" />}
-                      <span className="text-sm font-bold text-[var(--t)]">{cat.label}</span>
-                      <span className="text-[11px] text-[var(--t5)] ml-auto">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
-                    </button>
-                    {isExpanded && (
-                      <div className="space-y-1.5 px-3 pb-3">
-                        {items.map(item => renderItemCard(item))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {(() => {
+                const catKeys = [...new Set(checklists.map(i => i.category))].sort();
+                return catKeys.map(catKey => {
+                  const items = checklists.filter(i => i.category === catKey).sort((a, b) => a.order - b.order);
+                  if (items.length === 0) return null;
+                  const isExpanded = expandedGroups.has(catKey);
+                  const info = CATEGORY_LABELS[catKey] || { label: catKey, icon: CheckSquare, color: '#6b7280' };
+                  const CatIcon = info.icon;
+                  return (
+                    <div key={catKey} className="glass-card overflow-hidden" data-testid={`category-group-${catKey}`}>
+                      <button
+                        onClick={() => toggleGroup(catKey)}
+                        className="w-full flex items-center gap-3 p-3 text-left hover:bg-[var(--s)] transition-colors"
+                      >
+                        <CatIcon className="w-4 h-4" style={{ color: info.color }} />
+                        {isExpanded ? <ChevronDown className="w-4 h-4 text-[var(--t4)]" /> : <ChevronRight className="w-4 h-4 text-[var(--t4)]" />}
+                        <span className="text-sm font-bold text-[var(--t)]">{info.label}</span>
+                        <span className="text-[11px] text-[var(--t5)] ml-auto">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
+                      </button>
+                      {isExpanded && (
+                        <div className="space-y-1.5 px-3 pb-3">
+                          {items.map(item => renderItemCard(item))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
             </div>
           )}
         </>
