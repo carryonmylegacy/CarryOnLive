@@ -153,20 +153,24 @@ A full-stack estate planning application allowing benefactors to manage digital 
 ### P0 — Username-Based Auth Migration (COMPLETED — April 7, 2026)
 **Goal**: Switch from email-based login to username-based login. Email becomes non-unique (shared families). Beneficiaries join via invitation only.
 - **23 touchpoints across 9 files** — validated by testing agent (17/17 backend, all frontend UI tests passed)
-- **Housekeeping: 65/65 PASS**
+- **4 additional UX fixes** — validated by testing agent (14/14 backend, all frontend UI tests passed)
+- **Housekeeping: 65/65 PASS, Ruff check PASS, Ruff format PASS**
 - **Key changes**:
   - Username is the unique login identifier (not email)
   - Email is a non-unique communication channel (couples/families can share)
   - OTPs keyed by `user_id` instead of `email` (prevents collision)
   - Forgot-password uses username, not email
   - New `forgot-username` endpoint: sends username list to email
+  - "Forgot Username?" link visible directly on all 3 login form variants
+  - Shared-email error message is actionable with clear instructions
+  - First-login username review modal for migrated users
+  - Admin endpoint to proactively email all migrated users their new username
   - Signup is 3 steps: name → eligibility → credentials (with username)
   - Role selection removed (always benefactor)
   - Beneficiary self-signup removed (invitation-only)
   - Under-18 users blocked from direct signup with invitation message
-  - 102 existing users auto-migrated with generated usernames
+  - Existing users auto-migrated with generated usernames
   - Login supports both username and email (username takes priority)
-  - Shared-email users get "Multiple accounts use this email. Please use your username." error
 
 ### P0 — Immediate Follow-On (Post-Auth Migration)
 These items come from real user beta feedback and should be addressed immediately after the auth migration:
