@@ -8,7 +8,7 @@ import {
   CheckSquare, Plus, Trash2, Edit2, Phone, Mail, MapPin, FileText,
   Briefcase, Users, Heart, Shield, Building, Stethoscope,
   Sparkles, Save, X,
-  Check, XCircle, Loader2
+  Check, XCircle, Loader2, HelpCircle, ChevronDown, ChevronRight
 } from 'lucide-react';
 import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
@@ -94,6 +94,8 @@ const ChecklistPage = () => {
   const [feedbackItem, setFeedbackItem] = useState(null);
   const [feedbackText, setFeedbackText] = useState('');
   const [egaRunning, setEgaRunning] = useState(false);
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem('iac_view_mode') || 'priority');
+  const [expandedGroups, setExpandedGroups] = useState(new Set(['critical']));
   const aiAbortRef = useRef(null);
   const aiTimerRef = useRef(null);
   const lastCompletedAtRef = useRef(null);
@@ -296,6 +298,22 @@ const ChecklistPage = () => {
   const priColors = { critical: '#ef4444', high: '#f97316', medium: '#eab308', low: '#22c55e' };
   const getCatInfo = (cat) => CATEGORIES.find(c => c.value === cat) || CATEGORIES[7];
 
+  const toggleGroup = (key) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const changeViewMode = (mode) => {
+    setViewMode(mode);
+    localStorage.setItem('iac_view_mode', mode);
+    if (mode === 'priority') setExpandedGroups(new Set(['critical']));
+    else if (mode === 'category') setExpandedGroups(new Set());
+  };
+
   if (loading) {
     return (
       <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6">
@@ -305,6 +323,124 @@ const ChecklistPage = () => {
       </div>
     );
   }
+
+  const renderItemCard = (item) => {
+    const priColor = priColors[item.priority] || priColors.medium;
+    const catInfo = getCatInfo(item.category);
+    const CatIcon = catInfo.icon;
+
+    return (
+      <div
+        key={item.id}
+        className="glass-card p-4 transition-all"
+        style={{
+          borderLeft: `3px solid ${priColor}`,
+          outline: item.ai_suggested && item.ai_accepted !== true ? '1.5px solid rgba(20,184,166,0.4)' : 'none',
+          background: item.ai_suggested && item.ai_accepted !== true ? 'rgba(20,184,166,0.03)' : undefined,
+        }}
+        data-testid={`iac-item-${item.id}`}
+      >
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+            style={{ background: catInfo.color + '15' }}>
+            {item.ai_suggested ? (
+              <Sparkles className="w-4 h-4 text-[#14b8a6]" />
+            ) : (
+              <CatIcon className="w-4 h-4" style={{ color: catInfo.color }} />
+            )}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-[var(--t)]">{item.title}</h3>
+            {item.description && <p className="text-xs text-[var(--t5)] mt-0.5 line-clamp-2">{item.description}</p>}
+            {(item.contact_name || item.contact_phone || item.contact_email) && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {item.contact_name && (
+                  <span className="inline-flex items-center gap-1 text-xs text-[var(--t3)] bg-[var(--s)] px-2 py-0.5 rounded">
+                    <Users className="w-3 h-3" /> {item.contact_name}
+                  </span>
+                )}
+                {item.contact_phone && (
+                  <span className="inline-flex items-center gap-1 text-xs text-[var(--t3)] bg-[var(--s)] px-2 py-0.5 rounded">
+                    <Phone className="w-3 h-3" /> {item.contact_phone}
+                  </span>
+                )}
+                {item.contact_email && (
+                  <span className="inline-flex items-center gap-1 text-xs text-[var(--t3)] bg-[var(--s)] px-2 py-0.5 rounded">
+                    <Mail className="w-3 h-3" /> {item.contact_email}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <span className="text-xs px-2 py-0.5 rounded font-bold capitalize" style={{
+              background: priColor + '15', color: priColor, border: `1px solid ${priColor}33`
+            }}>
+              {item.priority}
+            </span>
+            {item.ai_suggested && item.ai_accepted === null && (
+              <>
+                <div className="flex items-center gap-0.5">
+                  <button onClick={() => handleAcceptItem(item.id)} className="p-1.5 rounded-lg text-[#14b8a6] active:scale-90 transition-transform" title="Accept AI suggestion" data-testid={`ai-accept-${item.id}`}>
+                    <Check className="w-4 h-4" />
+                  </button>
+                  <div className="group relative">
+                    <HelpCircle className="w-3.5 h-3.5 text-[var(--t5)] cursor-help" />
+                    <div className="absolute bottom-full right-0 mb-1 w-48 p-2 rounded-lg bg-[#1a2744] border border-[var(--b)] text-xs text-[var(--t3)] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                      This task was suggested based on your estate profile. Accept to keep it in your checklist, or reject to remove it.
+                    </div>
+                  </div>
+                </div>
+                <button onClick={() => handleRejectItem(item.id)} className="p-1.5 rounded-lg text-[#ef4444] active:scale-90 transition-transform" title="Reject" data-testid={`ai-reject-${item.id}`}>
+                  <XCircle className="w-4 h-4" />
+                </button>
+              </>
+            )}
+            {item.ai_suggested && item.ai_accepted === true && (
+              <span className="text-[11px] text-[#14b8a6] font-bold">Accepted</span>
+            )}
+            {item.is_default && !item.activation_status && (
+              <>
+                <div className="flex items-center gap-0.5">
+                  <button onClick={() => handleActivationAction(item.id, 'accepted')} className="px-2 py-1 rounded-lg text-[11px] font-bold text-[#10b981] active:scale-90 transition-transform" style={{ border: '1px solid rgba(16,185,129,0.3)' }} data-testid={`default-accept-${item.id}`}>
+                    Accept
+                  </button>
+                  <div className="group relative">
+                    <HelpCircle className="w-3.5 h-3.5 text-[var(--t5)] cursor-help" data-testid={`accept-help-${item.id}`} />
+                    <div className="absolute bottom-full right-0 mb-1 w-48 p-2 rounded-lg bg-[#1a2744] border border-[var(--b)] text-xs text-[var(--t3)] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                      Accepting means you've reviewed this task and confirmed it's relevant to your family's plan.
+                    </div>
+                  </div>
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); openEdit(item); handleActivationAction(item.id, 'edited'); }} className="px-2 py-1 rounded-lg text-[11px] font-bold text-[#d4af37] active:scale-90 transition-transform" style={{ border: '1px solid rgba(212,175,55,0.3)' }}>
+                  Edit
+                </button>
+                <button onClick={() => handleActivationAction(item.id, 'remove')} className="px-2 py-1 rounded-lg text-[11px] font-bold text-[#ef4444] active:scale-90 transition-transform" style={{ border: '1px solid rgba(239,68,68,0.3)' }}>
+                  Remove
+                </button>
+              </>
+            )}
+            {item.is_default && item.activation_status && (
+              <span className="text-[11px] text-[#10b981] font-bold capitalize">{item.activation_status}</span>
+            )}
+            <button onClick={(e) => { e.stopPropagation(); openEdit(item); }} className="p-1.5 rounded-lg text-[var(--t5)] active:text-[var(--gold)] transition-colors">
+              <Edit2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }}
+              disabled={deleting === item.id}
+              className="p-1.5 rounded-lg text-[var(--t5)] active:text-red-400 transition-colors disabled:opacity-50"
+              data-testid={`delete-iac-${item.id}`}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="action-checklist"
@@ -584,113 +720,90 @@ const ChecklistPage = () => {
           </button>
         </div>
       ) : (
-        <div className="space-y-2">
-          {checklists.sort((a, b) => a.order - b.order).map((item) => {
-            const priColor = priColors[item.priority] || priColors.medium;
-            const catInfo = getCatInfo(item.category);
-            const CatIcon = catInfo.icon;
-
-            return (
-              <div
-                key={item.id}
-                className="glass-card p-4 transition-all"
+        <>
+          {/* View mode toggle */}
+          <div className="flex items-center gap-1.5 mb-3" data-testid="iac-view-toggle">
+            {[
+              { key: 'priority', label: 'By Priority' },
+              { key: 'category', label: 'By Category' },
+              { key: 'all', label: 'Show All' },
+            ].map(v => (
+              <button
+                key={v.key}
+                onClick={() => changeViewMode(v.key)}
+                className="px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all"
                 style={{
-                  borderLeft: `3px solid ${priColor}`,
-                  outline: item.ai_suggested && item.ai_accepted !== true ? '1.5px solid rgba(20,184,166,0.4)' : 'none',
-                  background: item.ai_suggested && item.ai_accepted !== true ? 'rgba(20,184,166,0.03)' : undefined,
+                  background: viewMode === v.key ? 'linear-gradient(135deg, #d4af37, #b8941f)' : 'var(--s)',
+                  color: viewMode === v.key ? '#0b1120' : 'var(--t4)',
+                  border: `1px solid ${viewMode === v.key ? 'transparent' : 'var(--b)'}`,
                 }}
+                data-testid={`view-mode-${v.key}`}
               >
-                <div className="flex items-start gap-3">
-                  {/* Category icon */}
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-                    style={{ background: catInfo.color + '15' }}>
-                    {item.ai_suggested ? (
-                      <Sparkles className="w-4 h-4 text-[#14b8a6]" />
-                    ) : (
-                      <CatIcon className="w-4 h-4" style={{ color: catInfo.color }} />
-                    )}
-                  </div>
+                {v.label}
+              </button>
+            ))}
+          </div>
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-[var(--t)]">{item.title}</h3>
-                    {item.description && <p className="text-xs text-[var(--t5)] mt-0.5 line-clamp-2">{item.description}</p>}
-
-                    {/* Contact info chips */}
-                    {(item.contact_name || item.contact_phone || item.contact_email) && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {item.contact_name && (
-                          <span className="inline-flex items-center gap-1 text-xs text-[var(--t3)] bg-[var(--s)] px-2 py-0.5 rounded">
-                            <Users className="w-3 h-3" /> {item.contact_name}
-                          </span>
-                        )}
-                        {item.contact_phone && (
-                          <span className="inline-flex items-center gap-1 text-xs text-[var(--t3)] bg-[var(--s)] px-2 py-0.5 rounded">
-                            <Phone className="w-3 h-3" /> {item.contact_phone}
-                          </span>
-                        )}
-                        {item.contact_email && (
-                          <span className="inline-flex items-center gap-1 text-xs text-[var(--t3)] bg-[var(--s)] px-2 py-0.5 rounded">
-                            <Mail className="w-3 h-3" /> {item.contact_email}
-                          </span>
-                        )}
+          {/* Grouped or flat list */}
+          {viewMode === 'all' ? (
+            <div className="space-y-2">
+              {checklists.sort((a, b) => a.order - b.order).map((item) => renderItemCard(item))}
+            </div>
+          ) : viewMode === 'priority' ? (
+            <div className="space-y-3">
+              {PRIORITIES.map(pri => {
+                const items = checklists.filter(i => i.priority === pri.value).sort((a, b) => a.order - b.order);
+                if (items.length === 0) return null;
+                const isExpanded = expandedGroups.has(pri.value);
+                return (
+                  <div key={pri.value} className="glass-card overflow-hidden" data-testid={`priority-group-${pri.value}`}>
+                    <button
+                      onClick={() => toggleGroup(pri.value)}
+                      className="w-full flex items-center gap-3 p-3 text-left hover:bg-[var(--s)] transition-colors"
+                    >
+                      <div className="w-1 h-6 rounded-full" style={{ background: pri.color }} />
+                      {isExpanded ? <ChevronDown className="w-4 h-4 text-[var(--t4)]" /> : <ChevronRight className="w-4 h-4 text-[var(--t4)]" />}
+                      <span className="text-sm font-bold text-[var(--t)] capitalize">{pri.value}</span>
+                      <span className="text-[11px] text-[var(--t5)] ml-auto">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
+                    </button>
+                    {isExpanded && (
+                      <div className="space-y-1.5 px-3 pb-3">
+                        {items.map(item => renderItemCard(item))}
                       </div>
                     )}
                   </div>
-
-                  {/* Tags + Actions */}
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <span className="text-xs px-2 py-0.5 rounded font-bold capitalize" style={{
-                      background: priColor + '15', color: priColor, border: `1px solid ${priColor}33`
-                    }}>
-                      {item.priority}
-                    </span>
-                    {item.ai_suggested && item.ai_accepted === null && (
-                      <>
-                        <button onClick={() => handleAcceptItem(item.id)} className="p-1.5 rounded-lg text-[#14b8a6] active:scale-90 transition-transform" title="Accept">
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => handleRejectItem(item.id)} className="p-1.5 rounded-lg text-[#ef4444] active:scale-90 transition-transform" title="Reject">
-                          <XCircle className="w-4 h-4" />
-                        </button>
-                      </>
-                    )}
-                    {item.ai_suggested && item.ai_accepted === true && (
-                      <span className="text-[11px] text-[#14b8a6] font-bold">Accepted</span>
-                    )}
-                    {item.is_default && !item.activation_status && (
-                      <>
-                        <button onClick={() => handleActivationAction(item.id, 'accepted')} className="px-2 py-1 rounded-lg text-[11px] font-bold text-[#10b981] active:scale-90 transition-transform" style={{ border: '1px solid rgba(16,185,129,0.3)' }}>
-                          Accept
-                        </button>
-                        <button onClick={(e) => { e.stopPropagation(); openEdit(item); handleActivationAction(item.id, 'edited'); }} className="px-2 py-1 rounded-lg text-[11px] font-bold text-[#d4af37] active:scale-90 transition-transform" style={{ border: '1px solid rgba(212,175,55,0.3)' }}>
-                          Edit
-                        </button>
-                        <button onClick={() => handleActivationAction(item.id, 'remove')} className="px-2 py-1 rounded-lg text-[11px] font-bold text-[#ef4444] active:scale-90 transition-transform" style={{ border: '1px solid rgba(239,68,68,0.3)' }}>
-                          Remove
-                        </button>
-                      </>
-                    )}
-                    {item.is_default && item.activation_status && (
-                      <span className="text-[11px] text-[#10b981] font-bold capitalize">{item.activation_status}</span>
-                    )}
-                    <button onClick={(e) => { e.stopPropagation(); openEdit(item); }} className="p-1.5 rounded-lg text-[var(--t5)] active:text-[var(--gold)] transition-colors">
-                      <Edit2 className="w-4 h-4" />
-                    </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {CATEGORIES.map(cat => {
+                const items = checklists.filter(i => i.category === cat.value).sort((a, b) => a.order - b.order);
+                if (items.length === 0) return null;
+                const isExpanded = expandedGroups.has(cat.value);
+                const CatIcon = cat.icon;
+                return (
+                  <div key={cat.value} className="glass-card overflow-hidden" data-testid={`category-group-${cat.value}`}>
                     <button
-                      onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }}
-                      disabled={deleting === item.id}
-                      className="p-1.5 rounded-lg text-[var(--t5)] active:text-red-400 transition-colors disabled:opacity-50"
-                      data-testid={`delete-iac-${item.id}`}
+                      onClick={() => toggleGroup(cat.value)}
+                      className="w-full flex items-center gap-3 p-3 text-left hover:bg-[var(--s)] transition-colors"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <CatIcon className="w-4 h-4" style={{ color: cat.color }} />
+                      {isExpanded ? <ChevronDown className="w-4 h-4 text-[var(--t4)]" /> : <ChevronRight className="w-4 h-4 text-[var(--t4)]" />}
+                      <span className="text-sm font-bold text-[var(--t)]">{cat.label}</span>
+                      <span className="text-[11px] text-[var(--t5)] ml-auto">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
                     </button>
+                    {isExpanded && (
+                      <div className="space-y-1.5 px-3 pb-3">
+                        {items.map(item => renderItemCard(item))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
       </SectionLockedOverlay>
 

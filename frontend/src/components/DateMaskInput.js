@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import { Input } from './ui/input';
 
 /**
  * DateMaskInput — Custom masked date input component.
  * Replaces <input type="date"> to avoid Safari/iOS native rendering issues (clipping, inconsistent styling).
  * Accepts and emits dates in YYYY-MM-DD format internally, displays as MM/DD/YYYY.
+ * Uses onInput as the primary handler for mobile compatibility (fires before onChange on all platforms).
  */
 const DateMaskInput = ({ value, onChange, className, onFocus, ...props }) => {
   const toDisplay = (v) => {
@@ -15,13 +16,14 @@ const DateMaskInput = ({ value, onChange, className, onFocus, ...props }) => {
   };
 
   const [display, setDisplay] = React.useState(toDisplay(value));
+  const inputRef = useRef(null);
 
   React.useEffect(() => {
     setDisplay(toDisplay(value));
   }, [value]);
 
-  const handleChange = (e) => {
-    let raw = e.target.value.replace(/[^\d]/g, '');
+  const formatAndEmit = useCallback((rawInput) => {
+    let raw = rawInput.replace(/[^\d]/g, '');
     if (raw.length > 8) raw = raw.slice(0, 8);
     let formatted = '';
     if (raw.length > 0) formatted = raw.slice(0, 2);
@@ -37,14 +39,25 @@ const DateMaskInput = ({ value, onChange, className, onFocus, ...props }) => {
     } else {
       onChange({ target: { value: '' } });
     }
+  }, [onChange]);
+
+  const handleInput = (e) => {
+    formatAndEmit(e.target.value);
   };
+
+  // onChange is kept as a no-op controlled input sync — onInput does the real work
+  const handleChange = () => {};
 
   return (
     <Input
+      ref={inputRef}
       type="text"
       inputMode="numeric"
+      pattern="[0-9]*"
+      autoComplete="off"
       placeholder="MM/DD/YYYY"
       value={display}
+      onInput={handleInput}
       onChange={handleChange}
       onFocus={onFocus}
       className={className}

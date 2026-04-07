@@ -1143,6 +1143,49 @@ async def update_profile(body: dict, current_user: dict = Depends(get_current_us
             {"$set": {"state": update["address_state"]}},
         )
 
+    # Notify benefactors when a beneficiary updates key contact fields
+    notify_fields = {
+        "first_name",
+        "last_name",
+        "phone",
+        "address_street",
+        "address_city",
+        "address_state",
+        "address_zip",
+    }
+    changed_contact_fields = notify_fields & set(update.keys())
+    if changed_contact_fields:
+        try:
+            from services.notifications import send_notification
+
+            beneficiary_name = current_user.get("name", "A beneficiary")
+            # Find all estates where this user is linked as a beneficiary
+            linked_bens = await db.beneficiaries.find(
+                {"user_id": current_user["id"]},
+                {"_id": 0, "estate_id": 1},
+            ).to_list(100)
+            estate_ids = [b["estate_id"] for b in linked_bens if b.get("estate_id")]
+            if estate_ids:
+                estates = await db.estates.find(
+                    {"id": {"$in": estate_ids}},
+                    {"_id": 0, "owner_id": 1},
+                ).to_list(100)
+                notified = set()
+                for est in estates:
+                    owner_id = est.get("owner_id")
+                    if owner_id and owner_id != current_user["id"] and owner_id not in notified:
+                        await send_notification(
+                            owner_id,
+                            "Contact Info Updated",
+                            f"{beneficiary_name} updated their contact information. Review their profile to keep your records current.",
+                            url="/beneficiaries",
+                            notification_type="beneficiary_profile_update",
+                            priority="normal",
+                        )
+                        notified.add(owner_id)
+        except Exception as e:
+            logger.warning(f"Failed to send beneficiary update notification: {e}")
+
     user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
     return user
 

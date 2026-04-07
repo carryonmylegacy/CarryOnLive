@@ -77,8 +77,11 @@ const EmergencyAccessPanel = ({ estates }) => {
       <CardHeader className="pb-3">
         <CardTitle className="text-[var(--t)] text-base flex items-center gap-2">
           <Shield className="w-5 h-5 text-[#ef4444]" />
-          Emergency Access Protocol
+          Report a Loved One's Passing
         </CardTitle>
+        <p className="text-xs text-[var(--t4)] mt-1 leading-relaxed">
+          We're here to help your family through this transition. This process verifies your identity and begins unlocking the estate plan your loved one prepared for you.
+        </p>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Active access grants */}
@@ -145,7 +148,7 @@ const EmergencyAccessPanel = ({ estates }) => {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs text-[#94a3b8]">Your Relationship <span className="text-red-400">*</span></Label>
+              <Label className="text-xs text-[#94a3b8]">Your relationship to the estate holder <span className="text-red-400">*</span></Label>
               <Input
                 value={form.relationship_to_benefactor}
                 onChange={e => setForm(f => ({ ...f, relationship_to_benefactor: e.target.value }))}
@@ -156,11 +159,11 @@ const EmergencyAccessPanel = ({ estates }) => {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs text-[#94a3b8]">Reason for Request <span className="text-red-400">*</span></Label>
+              <Label className="text-xs text-[#94a3b8]">Please describe the circumstances <span className="text-red-400">*</span></Label>
               <textarea
                 value={form.reason}
                 onChange={e => setForm(f => ({ ...f, reason: e.target.value }))}
-                placeholder="Please explain why you need emergency access..."
+                placeholder="Share what has happened so we can assist your family..."
                 rows={3}
                 className="w-full bg-[var(--s)] border border-[var(--b)] rounded-lg px-3 py-2 text-sm text-[var(--t)] placeholder-[#64748b] resize-none"
                 data-testid="emergency-reason-input"
@@ -183,6 +186,10 @@ const EmergencyAccessPanel = ({ estates }) => {
                 className="bg-[var(--s)] border-[var(--b)] text-[var(--t)] text-sm"
               />
             </div>
+
+            <p className="text-[11px] text-[var(--t4)] leading-relaxed bg-[var(--bg2)] p-3 rounded-lg border border-[var(--b)]">
+              <strong className="text-[var(--t3)]">What happens next:</strong> CarryOn will verify your identity, notify the estate administrator, and begin the transition process. You'll receive updates at each step.
+            </p>
 
             <div className="flex gap-2 pt-2">
               <Button onClick={handleSubmit} disabled={submitting} className="flex-1 bg-[#ef4444] hover:bg-[#dc2626] text-[var(--t)] text-sm" data-testid="emergency-submit-btn">
@@ -208,8 +215,8 @@ const EmergencyAccessPanel = ({ estates }) => {
         )}
 
         <p className="text-[11px] text-[#64748b] leading-relaxed">
-          Emergency access is for situations where the benefactor is incapacitated and cannot provide access. 
-          All requests are logged and verified. Misuse may result in account termination.
+          This feature is for situations where a loved one has passed or is unable to manage their estate.
+          All requests are handled with care and verified by our team. Your privacy is protected throughout this process.
         </p>
       </CardContent>
     </Card>

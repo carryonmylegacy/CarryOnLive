@@ -9,8 +9,19 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="CarryOn" />
         <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-        <meta name="description" content="CarryOn™ - Secure Estate Planning & Legacy Management" />
+        <meta name="description" content="CarryOn™ helps families organize estate plans, secure important documents, manage beneficiaries, and prepare for life's transitions — all in one secure platform." />
         <link rel="apple-touch-icon" href="%PUBLIC_URL%/carryon-icon.jpg" />
+        <link rel="canonical" href="https://carryon.us/" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="CarryOn™ - Secure Family Preparedness & Estate Planning" />
+        <meta property="og:description" content="Protect what matters most. CarryOn helps families organize estate plans, secure documents, and prepare for life's transitions — together." />
+        <meta property="og:image" content="%PUBLIC_URL%/carryon-icon.jpg" />
+        <meta property="og:url" content="https://carryon.us" />
+        <meta property="og:site_name" content="CarryOn" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="CarryOn™ - Secure Family Preparedness" />
+        <meta name="twitter:description" content="Organize your estate plan, secure your documents, and prepare your family — all in one place." />
+        <meta name="twitter:image" content="%PUBLIC_URL%/carryon-icon.jpg" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link rel="preload" href="%PUBLIC_URL%/flag-bg.jpg" as="image" />
@@ -31,7 +42,7 @@
         work correctly both with client-side routing and a non-root public URL.
         Learn how to configure a non-root public URL by running `npm run build`.
         -->
-        <title>CarryOn™ - Estate Planning & Legacy Management</title>
+        <title>CarryOn™ - Secure Family Preparedness & Estate Planning Platform</title>
         <script>
             if (window.location.hostname.includes('emergentagent.com')) {
                 var ems = document.createElement('script');
@@ -56,6 +67,18 @@
         src="https://www.facebook.com/tr?id=%REACT_APP_META_PIXEL_ID%&ev=PageView&noscript=1"
         /></noscript>
         <!-- End Meta Pixel Code -->
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          "name": "CarryOn",
+          "applicationCategory": "FinanceApplication",
+          "description": "Secure family preparedness and estate planning platform. Organize estate plans, manage beneficiaries, and prepare for life's transitions.",
+          "url": "https://carryon.us",
+          "operatingSystem": "Web, iOS, Android",
+          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+        }
+        </script>
 </head>
     <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>
