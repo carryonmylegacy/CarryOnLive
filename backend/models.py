@@ -34,7 +34,7 @@ class UserCreate(BaseModel):
     address_state: Optional[str] = None
     address_zip: Optional[str] = None
     special_status: Optional[list] = None
-    benefactor_email: Optional[str] = None
+    username: Optional[str] = None
     b2b_code: Optional[str] = None
     address_line2: Optional[str] = None
     beneficiary_enrollments: Optional[list] = None
@@ -50,7 +50,7 @@ class UserLogin(BaseModel):
 
 
 class OTPVerify(BaseModel):
-    email: EmailStr
+    email: str  # Can be email or username — used to resolve the user
     otp: str
 
 
@@ -61,6 +61,7 @@ class UserResponse(BaseModel):
     name: str
     role: str
     created_at: str
+    username: str = ""
     photo_url: str = ""
     operator_role: str = ""
     admin_scope: str | list[str] = ""

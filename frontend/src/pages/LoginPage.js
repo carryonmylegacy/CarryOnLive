@@ -377,14 +377,14 @@ const LoginPage = () => {
               <h2 className="text-lg font-bold text-white mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Reset Password</h2>
               {forgotStep === 1 ? (
                 <>
-                  <p className="text-xs text-[#94A3B8] mb-4">Enter your email and we'll send you a reset code.</p>
-                  <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
-                    placeholder="Email address" className="w-full px-4 py-3 rounded-xl text-base mb-3 bg-[#0a1128] border border-[#1e293b] text-white" data-testid="forgot-email-native" />
+                  <p className="text-xs text-[#94A3B8] mb-4">Enter your username and we'll send a reset code to the email on file.</p>
+                  <input type="text" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
+                    placeholder="Username" className="w-full px-4 py-3 rounded-xl text-base mb-3 bg-[#0a1128] border border-[#1e293b] text-white" data-testid="forgot-username-native" />
                   {forgotMsg && <p className={`text-xs mb-3 ${forgotError ? 'text-red-400' : 'text-[#22C993]'}`}>{forgotMsg}</p>}
                   <button disabled={!forgotEmail || forgotLoading} onClick={async () => {
                     setForgotLoading(true);
                     try {
-                      const res = await axios.post(`${API_URL}/auth/forgot-password`, { email: forgotEmail });
+                      const res = await axios.post(`${API_URL}/auth/forgot-password`, { username: forgotEmail });
                       setForgotMsg(res.data.message);
                       setForgotError(false);
                       setForgotStep(2);
@@ -393,10 +393,19 @@ const LoginPage = () => {
                   }} className="w-full py-3 rounded-xl text-sm font-bold mb-3" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', opacity: !forgotEmail || forgotLoading ? 0.5 : 1 }}>
                     {forgotLoading ? 'Sending...' : 'Send Reset Code'}
                   </button>
+                  <button onClick={() => {
+                    setForgotMode(false); setForgotStep(1); setForgotMsg(''); setForgotError(false);
+                    const usernameEmail = prompt('Enter the email associated with your account:');
+                    if (usernameEmail) {
+                      axios.post(`${API_URL}/auth/forgot-username`, { email: usernameEmail })
+                        .then(() => toast.success('If that email exists, your username(s) have been sent.'))
+                        .catch(() => toast.error('Something went wrong.'));
+                    }
+                  }} className="w-full text-center text-xs text-[#d4af37] hover:text-[#fcd34d] mb-2">Forgot Username?</button>
                 </>
               ) : (
                 <>
-                  <p className="text-xs text-[#94A3B8] mb-4">Enter the code sent to {forgotEmail} and your new password.</p>
+                  <p className="text-xs text-[#94A3B8] mb-4">Enter the code sent to your email and your new password.</p>
                   <input type="text" value={forgotOtp} onChange={e => setForgotOtp(e.target.value)}
                     placeholder="6-digit code" maxLength={6} className="w-full px-4 py-3 rounded-xl text-base mb-3 bg-[#0a1128] border border-[#1e293b] text-white text-center tracking-[0.3em]" data-testid="forgot-otp-native" />
                   <input type="password" value={forgotNewPw} onChange={e => setForgotNewPw(e.target.value)}
@@ -410,7 +419,7 @@ const LoginPage = () => {
                   <button disabled={!forgotOtp || !forgotNewPw || forgotNewPw !== forgotConfirmPw || forgotLoading} onClick={async () => {
                     setForgotLoading(true);
                     try {
-                      const res = await axios.post(`${API_URL}/auth/reset-password`, { email: forgotEmail, otp: forgotOtp, new_password: forgotNewPw });
+                      const res = await axios.post(`${API_URL}/auth/reset-password`, { username: forgotEmail, otp: forgotOtp, new_password: forgotNewPw });
                       setForgotMsg(res.data.message);
                       setForgotError(false);
                       setTimeout(() => { setForgotMode(false); setForgotStep(1); setForgotOtp(''); setForgotNewPw(''); setForgotConfirmPw(''); setForgotMsg(''); setForgotError(false); }, 2000);
@@ -609,14 +618,14 @@ const LoginPage = () => {
               <h2 className="text-lg font-bold text-white mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Reset Password</h2>
               {forgotStep === 1 ? (
                 <>
-                  <p className="text-xs text-[#94A3B8] mb-4">Enter your email and we&apos;ll send you a reset code.</p>
-                  <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
-                    placeholder="Email address" className="w-full px-4 py-3 rounded-xl text-base mb-3 bg-[#0a1128] border border-[#1e293b] text-white" data-testid="forgot-email-pwa" />
+                  <p className="text-xs text-[#94A3B8] mb-4">Enter your username and we&apos;ll send a reset code to the email on file.</p>
+                  <input type="text" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
+                    placeholder="Username" className="w-full px-4 py-3 rounded-xl text-base mb-3 bg-[#0a1128] border border-[#1e293b] text-white" data-testid="forgot-username-pwa" />
                   {forgotMsg && <p className={`text-xs mb-3 ${forgotError ? 'text-red-400' : 'text-[#22C993]'}`}>{forgotMsg}</p>}
                   <button disabled={!forgotEmail || forgotLoading} onClick={async () => {
                     setForgotLoading(true);
                     try {
-                      const res = await axios.post(`${API_URL}/auth/forgot-password`, { email: forgotEmail });
+                      const res = await axios.post(`${API_URL}/auth/forgot-password`, { username: forgotEmail });
                       setForgotMsg(res.data.message);
                       setForgotError(false);
                       setForgotStep(2);
@@ -625,10 +634,19 @@ const LoginPage = () => {
                   }} className="w-full py-3 rounded-xl text-sm font-bold mb-3" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', opacity: !forgotEmail || forgotLoading ? 0.5 : 1 }}>
                     {forgotLoading ? 'Sending...' : 'Send Reset Code'}
                   </button>
+                  <button onClick={() => {
+                    setForgotMode(false); setForgotStep(1); setForgotMsg(''); setForgotError(false);
+                    const usernameEmail = prompt('Enter the email associated with your account:');
+                    if (usernameEmail) {
+                      axios.post(`${API_URL}/auth/forgot-username`, { email: usernameEmail })
+                        .then(() => toast.success('If that email exists, your username(s) have been sent.'))
+                        .catch(() => toast.error('Something went wrong.'));
+                    }
+                  }} className="w-full text-center text-xs text-[#d4af37] hover:text-[#fcd34d] mb-2">Forgot Username?</button>
                 </>
               ) : (
                 <>
-                  <p className="text-xs text-[#94A3B8] mb-4">Enter the code sent to {forgotEmail} and your new password.</p>
+                  <p className="text-xs text-[#94A3B8] mb-4">Enter the code sent to your email and your new password.</p>
                   <input type="text" value={forgotOtp} onChange={e => setForgotOtp(e.target.value)}
                     placeholder="6-digit code" maxLength={6} className="w-full px-4 py-3 rounded-xl text-base mb-3 bg-[#0a1128] border border-[#1e293b] text-white text-center tracking-[0.3em]" />
                   <input type="password" value={forgotNewPw} onChange={e => setForgotNewPw(e.target.value)}
@@ -642,7 +660,7 @@ const LoginPage = () => {
                   <button disabled={!forgotOtp || !forgotNewPw || forgotNewPw !== forgotConfirmPw || forgotLoading} onClick={async () => {
                     setForgotLoading(true);
                     try {
-                      const res = await axios.post(`${API_URL}/auth/reset-password`, { email: forgotEmail, otp: forgotOtp, new_password: forgotNewPw });
+                      const res = await axios.post(`${API_URL}/auth/reset-password`, { username: forgotEmail, otp: forgotOtp, new_password: forgotNewPw });
                       setForgotMsg(res.data.message);
                       setForgotError(false);
                       setTimeout(() => { setForgotMode(false); setForgotStep(1); setForgotOtp(''); setForgotNewPw(''); setForgotConfirmPw(''); setForgotMsg(''); setForgotError(false); }, 2000);
@@ -1046,14 +1064,14 @@ const LoginPage = () => {
             <h2 className="text-lg font-bold text-white mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Reset Password</h2>
             {forgotStep === 1 ? (
               <>
-                <p className="text-xs text-[#94A3B8] mb-4">Enter your email and we'll send you a reset code.</p>
-                <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
-                  placeholder="Email address" className="w-full px-4 py-3 rounded-xl text-base mb-3 bg-[#0a1128] border border-[#1e293b] text-white" />
+                <p className="text-xs text-[#94A3B8] mb-4">Enter your username and we'll send a reset code to the email on file.</p>
+                <input type="text" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
+                  placeholder="Username" className="w-full px-4 py-3 rounded-xl text-base mb-3 bg-[#0a1128] border border-[#1e293b] text-white" data-testid="forgot-username-web" />
                 {forgotMsg && <p className={`text-xs mb-3 ${forgotError ? 'text-red-400' : 'text-[#22C993]'}`}>{forgotMsg}</p>}
                 <button disabled={!forgotEmail || forgotLoading} onClick={async () => {
                   setForgotLoading(true);
                   try {
-                    const res = await axios.post(`${API_URL}/auth/forgot-password`, { email: forgotEmail });
+                    const res = await axios.post(`${API_URL}/auth/forgot-password`, { username: forgotEmail });
                     setForgotMsg(res.data.message);
                     setForgotError(false);
                     setForgotStep(2);
@@ -1062,10 +1080,19 @@ const LoginPage = () => {
                 }} className="w-full py-3 rounded-xl text-sm font-bold mb-3" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', opacity: !forgotEmail || forgotLoading ? 0.5 : 1 }}>
                   {forgotLoading ? 'Sending...' : 'Send Reset Code'}
                 </button>
+                <button onClick={() => {
+                  setForgotMode(false); setForgotStep(1); setForgotMsg(''); setForgotError(false);
+                  const usernameEmail = prompt('Enter the email associated with your account:');
+                  if (usernameEmail) {
+                    axios.post(`${API_URL}/auth/forgot-username`, { email: usernameEmail })
+                      .then(() => toast.success('If that email exists, your username(s) have been sent.'))
+                      .catch(() => toast.error('Something went wrong.'));
+                  }
+                }} className="w-full text-center text-xs text-[#d4af37] hover:text-[#fcd34d] mb-2">Forgot Username?</button>
               </>
             ) : (
               <>
-                <p className="text-xs text-[#94A3B8] mb-4">Enter the code sent to {forgotEmail} and your new password.</p>
+                <p className="text-xs text-[#94A3B8] mb-4">Enter the code sent to your email and your new password.</p>
                 <input type="text" value={forgotOtp} onChange={e => setForgotOtp(e.target.value)}
                   placeholder="6-digit code" maxLength={6} className="w-full px-4 py-3 rounded-xl text-base mb-3 bg-[#0a1128] border border-[#1e293b] text-white text-center tracking-[0.3em]" />
                 <input type="password" value={forgotNewPw} onChange={e => setForgotNewPw(e.target.value)}
@@ -1079,7 +1106,7 @@ const LoginPage = () => {
                 <button disabled={!forgotOtp || !forgotNewPw || forgotNewPw !== forgotConfirmPw || forgotLoading} onClick={async () => {
                   setForgotLoading(true);
                   try {
-                    const res = await axios.post(`${API_URL}/auth/reset-password`, { email: forgotEmail, otp: forgotOtp, new_password: forgotNewPw });
+                    const res = await axios.post(`${API_URL}/auth/reset-password`, { username: forgotEmail, otp: forgotOtp, new_password: forgotNewPw });
                     setForgotMsg(res.data.message);
                     setForgotError(false);
                     setTimeout(() => { setForgotMode(false); setForgotStep(1); setForgotOtp(''); setForgotNewPw(''); setForgotConfirmPw(''); setForgotMsg(''); setForgotError(false); }, 2000);

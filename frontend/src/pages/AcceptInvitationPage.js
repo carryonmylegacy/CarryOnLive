@@ -28,6 +28,9 @@ const AcceptInvitationPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const [step, setStep] = useState(1);
+  const [username, setUsername] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+  const [usernameChecking, setUsernameChecking] = useState(false);
 
   useEffect(() => {
     fetchInvitationDetails();
@@ -37,6 +40,12 @@ const AcceptInvitationPage = () => {
     try {
       const response = await axios.get(`${API_URL}/invitations/${token}`);
       setInvitationData(response.data);
+      // Auto-suggest username from beneficiary name
+      const b = response.data?.beneficiary;
+      if (b) {
+        const suggested = ((b.first_name || '').replace(/[^a-zA-Z0-9]/g, '') + (b.last_name || '').replace(/[^a-zA-Z0-9]/g, '')).toLowerCase();
+        if (suggested.length >= 3) setUsername(suggested);
+      }
     } catch (err) {
       setError(err.response?.data?.detail || 'Invalid or expired invitation link');
     } finally {
@@ -53,10 +62,12 @@ const AcceptInvitationPage = () => {
 
   const handleAccept = async () => {
     if (!validatePassword()) return;
+    if (usernameError) { toast.error(usernameError); return; }
     setSubmitting(true);
     try {
       const response = await axios.post(`${API_URL}/invitations/accept`, {
-        token, password, phone: phone ? `+1${phone.replace(/\D/g, '')}` : null
+        token, password, phone: phone ? `+1${phone.replace(/\D/g, '')}` : null,
+        username: username || null
       });
       setAccepted(true);
       // Clear any existing session (e.g., benefactor logged in another tab)
@@ -256,6 +267,42 @@ const AcceptInvitationPage = () => {
                 <p className="text-sm text-[#64748b] mb-6">Your credentials are never stored in plain text</p>
 
                 <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-[#94a3b8] text-sm">Username <span className="text-red-400">*</span></Label>
+                    <div className="relative">
+                      <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
+                      <Input type="text" value={username}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+                          setUsername(val);
+                          setUsernameError('');
+                        }}
+                        onBlur={async () => {
+                          if (!username.trim()) return;
+                          if (username.length < 3) { setUsernameError('Username must be at least 3 characters'); return; }
+                          setUsernameChecking(true);
+                          try {
+                            const res = await axios.post(`${API_URL}/auth/check-username`, { username });
+                            if (!res.data.available) setUsernameError(res.data.message || 'Username is already taken');
+                            else setUsernameError('');
+                          } catch { setUsernameError(''); }
+                          setUsernameChecking(false);
+                        }}
+                        placeholder="Choose your username"
+                        className={`h-12 bg-[#0b1322] border-[#1a2a42] text-white placeholder:text-[#2d3d55] focus:border-[#d4af37] rounded-xl pl-10 ${usernameError ? 'border-red-500' : ''}`}
+                        data-testid="invitation-username-input" />
+                      {usernameChecking && <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63] animate-spin" />}
+                      {!usernameChecking && username.trim() && !usernameError && (
+                        <CheckCircle className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                      )}
+                    </div>
+                    {usernameError ? (
+                      <p className="text-xs text-red-400 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {usernameError}</p>
+                    ) : (
+                      <p className="text-[11px] text-[#525c72]">This is how you'll sign in. Letters, numbers, and underscores only.</p>
+                    )}
+                  </div>
+
                   <div className="space-y-1.5">
                     <Label className="text-[#94a3b8] text-sm">Password <span className="text-red-400">*</span></Label>
                     <div className="relative">

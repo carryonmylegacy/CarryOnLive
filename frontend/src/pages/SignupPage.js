@@ -69,7 +69,6 @@ const SignupPage = () => {
   const [direction, setDirection] = useState('right');
   const [slidePhase, setSlidePhase] = useState('idle'); // 'idle' | 'exit' | 'enter'
   const [emailErrors, setEmailErrors] = useState({});
-  const [benefactorEmailError, setBenefactorEmailError] = useState('');
   const [entered, setEntered] = useState(false);
   const scrollRef = useRef(null);
 
@@ -87,19 +86,21 @@ const SignupPage = () => {
   const [addressCity, setAddressCity] = useState('');
   const [addressState, setAddressState] = useState('');
   const [addressZip, setAddressZip] = useState('');
-  const [role, setRole] = useState('');
+  const [role, setRole] = useState('benefactor'); // Always benefactor — beneficiaries join via invitation
   const [specialStatus, setSpecialStatus] = useState([]);
-  const [benefactorEmail, setBenefactorEmail] = useState('');
   const [b2bCodeSignup, setB2bCodeSignup] = useState('');
   const [addressLine2, setAddressLine2] = useState('');
   const [beneficiaries, setBeneficiaries] = useState([]); // [{first_name, last_name, email, dob, same_address, address_street, address_city, address_state, address_zip}]
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+  const [usernameChecking, setUsernameChecking] = useState(false);
 
   // Compute age from DOB
   const userAge = dateOfBirth ? Math.floor((Date.now() - new Date(dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null;
   const isMinor = userAge !== null && userAge < 18;
 
-  const isNewAdult = userAge !== null && userAge >= 18 && userAge <= 25 && role === 'benefactor';
+  const isNewAdult = userAge !== null && userAge >= 18 && userAge <= 25;
 
   // Generate beneficiary slots based on marital status + dependents (or parents for new adults)
   useEffect(() => {
@@ -140,23 +141,17 @@ const SignupPage = () => {
     });
   }, [maritalStatus, dependentsOver18, dependentsUnder18, isNewAdult]);
 
-  // Dynamic steps
+  // Dynamic steps — beneficiaries join via invitation only, no role selection needed
   const computeSteps = () => {
     const steps = [
       { id: 'name', label: 'About You', icon: User },
     ];
     if (isMinor) {
-      // Under 18: Name+Gender+DOB+BenefactorEmail → Credentials
-      steps.push({ id: 'credentials', label: 'Login', icon: Lock });
+      // Under 18: show blocked message, no further steps
+      steps.push({ id: 'minor_blocked', label: 'Invitation Required', icon: Users });
       return steps;
     }
-    steps.push({ id: 'role', label: 'Role', icon: Users });
-    if (role === 'beneficiary') {
-      steps.push({ id: 'benefactor_email', label: 'Your Benefactor', icon: Mail });
-      steps.push({ id: 'credentials', label: 'Login', icon: Lock });
-      return steps;
-    }
-    // Benefactor (including new adults)
+    // Benefactor flow (all direct signups are benefactors)
     steps.push({ id: 'eligibility', label: 'Eligibility', icon: Shield });
     steps.push({ id: 'credentials', label: 'Login', icon: Lock });
     return steps;
@@ -196,23 +191,16 @@ const SignupPage = () => {
     const sid = currentStep?.id;
     if (sid === 'name') {
       if (!firstName.trim() || !lastName.trim()) return false;
-      if (isMinor && !benefactorEmail.trim()) return false;
       return true;
     }
-    if (sid === 'role') {
-      if (!role) return false;
-      return true;
-    }
-    if (sid === 'benefactor_email') {
-      if (!benefactorEmail.trim()) return false;
-      if (benefactorEmailError) return false;
-      return true;
+    if (sid === 'minor_blocked') {
+      return false; // Cannot proceed — must be invited
     }
     if (sid === 'eligibility') {
       if (specialStatus.includes('enterprise') && !b2bCodeSignup.trim()) return false;
       return true;
     }
-    if (sid === 'credentials') return email.trim() && password.length >= 8 && password === confirmPassword && smsConsent;
+    if (sid === 'credentials') return email.trim() && username.trim() && !usernameError && password.length >= 8 && password === confirmPassword && smsConsent;
     return false;
   };
 
@@ -221,18 +209,15 @@ const SignupPage = () => {
       const sid = currentStep?.id;
       if (sid === 'name') {
         if (!firstName.trim() || !lastName.trim()) toast.error('Please enter your first and last name');
-        else if (isMinor && !benefactorEmail.trim()) toast.error('Please enter your benefactor\'s email');
       }
-      if (sid === 'role') {
-        if (!role) toast.error('Please select your role');
-      }
-      if (sid === 'benefactor_email') {
-        if (!benefactorEmail.trim()) toast.error('Please enter your benefactor\'s email address');
-        else if (benefactorEmailError) toast.error(benefactorEmailError);
+      if (sid === 'minor_blocked') {
+        toast.error('Under 18? Ask your family member to invite you from their CarryOn account.');
       }
       if (sid === 'eligibility' && specialStatus.includes('enterprise') && !b2bCodeSignup.trim()) toast.error('Please enter your partner access code');
       if (sid === 'credentials') {
         if (!email.trim()) toast.error('Please enter your email');
+        else if (!username.trim()) toast.error('Please choose a username');
+        else if (usernameError) toast.error(usernameError);
         else if (password.length < 8) toast.error('Password must be at least 8 characters');
         else if (password !== confirmPassword) toast.error('Passwords do not match');
         else if (!smsConsent) toast.error('Please agree to the terms to continue');
@@ -274,15 +259,14 @@ const SignupPage = () => {
           address_state: b.same_address ? null : b.address_state,
           address_zip: b.same_address ? null : b.address_zip,
         })),
-        email, password, role,
+        email, password, username,
+        role: 'benefactor',
         special_status: specialStatus.length > 0 ? specialStatus : null,
-        benefactor_email: role === 'beneficiary' ? benefactorEmail : null,
         b2b_code: specialStatus.includes('enterprise') ? b2bCodeSignup : null,
       });
       setRegisteredEmail(email);
       setOtpHint(response.data.otp_hint);
       setShowOtpModal(true);
-      // toast removed
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to create account');
     } finally {
@@ -354,24 +338,6 @@ const SignupPage = () => {
     }
 
     setEmailErrors(prev => { const n = { ...prev }; delete n[benIndex]; return n; });
-  };
-
-  // Validate benefactor email exists with an active estate
-  const validateBenefactorEmail = async (emailVal) => {
-    if (!emailVal || !emailVal.trim()) {
-      setBenefactorEmailError('');
-      return;
-    }
-    try {
-      const res = await axios.post(`${API_URL}/auth/check-benefactor-email`, { email: emailVal.trim() });
-      if (!res.data.valid) {
-        setBenefactorEmailError(res.data.message);
-      } else {
-        setBenefactorEmailError('');
-      }
-    } catch (err) {
-      // Silently fail
-    }
   };
 
   // Two-phase slide: exit (current slides out) → enter (new slides in)
@@ -583,121 +549,31 @@ const SignupPage = () => {
                               className={inputClass} data-testid="signup-dob-input" />
                           </div>
                         </div>
-                        {isMinor && (
-                          <div className="space-y-1.5 pt-2">
-                            <Label className="text-[#7b879e] text-sm font-medium">Your Benefactor's Email <span className="text-red-400">*</span></Label>
-                            <div className="relative">
-                              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
-                              <Input type="email" value={benefactorEmail} onChange={(e) => setBenefactorEmail(e.target.value)}
-                                placeholder="The email your benefactor uses on CarryOn"
-                                className={`${inputClass} pl-11`} data-testid="signup-minor-benefactor-email" />
-                            </div>
-                            <p className="text-[#525c72] text-[11px]">Since you're under 18, you'll be linked to your benefactor's estate.</p>
-                          </div>
-                        )}
                       </div>
                     )}
 
-                    {/* STEP: Role */}
-                    {currentStep?.id === 'role' && (
-                      <div className="space-y-2.5">
+                    {/* STEP: Minor Blocked — invitation required */}
+                    {currentStep?.id === 'minor_blocked' && (
+                      <div className="space-y-4">
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>How will you use CarryOn?</h2>
-                          <p className="text-[#6b7a90] text-sm">Select your primary role. You only need one account — it works for both.</p>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Invitation Required</h2>
+                          <p className="text-[#6b7a90] text-sm">Accounts for family members under 18 are created through an invitation from a benefactor.</p>
                         </div>
-
-                        {/* One account clarification */}
-                        <div className="rounded-xl p-3" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
-                          <p className="text-xs text-[var(--gold)] leading-relaxed">
-                            One email, one account. If someone has already added you as a beneficiary, choose Beneficiary below and enter their email. You can always start your own family preparedness plan later from within your account.
+                        <div className="rounded-xl p-4" style={{ background: 'rgba(96,165,250,0.06)', border: '1px solid rgba(96,165,250,0.15)' }}>
+                          <p className="text-[#60A5FA] text-sm leading-relaxed flex items-start gap-2">
+                            <Users className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                            Ask your parent or guardian to add you as a beneficiary from their CarryOn dashboard. They'll send you an invitation link to create your account.
                           </p>
                         </div>
-
-                        <div className="space-y-2">
-                          {[
-                            { value: 'benefactor', title: 'Benefactor', subtitle: 'Estate Owner', desc: 'I want to organize and protect my estate for my family.', color: '#d4af37' },
-                            { value: 'beneficiary', title: 'Beneficiary', subtitle: 'Family Member', desc: 'A loved one has set up a family preparedness plan and added me.', color: '#60A5FA' },
-                          ].map(r => (
-                            <button key={r.value} type="button" onClick={() => { setRole(r.value); if (r.value === 'benefactor') setBenefactorEmail(''); }}
-                              className="w-full text-left p-3 rounded-xl transition-all duration-300"
-                              style={{
-                                background: role === r.value ? `linear-gradient(135deg, ${r.color}12, ${r.color}05)` : 'rgba(255,255,255,0.02)',
-                                border: role === r.value ? `2px solid ${r.color}50` : '1px solid rgba(255,255,255,0.06)',
-                              }}
-                              data-testid={`signup-role-${r.value}`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                                  style={{ background: `${r.color}15`, border: `1px solid ${r.color}25` }}>
-                                  {r.value === 'benefactor'
-                                    ? <Shield className="w-5 h-5" style={{ color: r.color }} />
-                                    : <Users className="w-5 h-5" style={{ color: r.color }} />}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h3 className="text-white font-bold text-base">{r.title} <span className="text-sm font-semibold" style={{ color: r.color }}>· {r.subtitle}</span></h3>
-                                  <p className="text-[#94a3b8] text-xs">{r.desc}</p>
-                                </div>
-                                {role === r.value && (
-                                  <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-                                    style={{ background: r.color }}>
-                                    <Check className="w-3.5 h-3.5 text-[#080e1a]" />
-                                  </div>
-                                )}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-
-                        {/* New Adult info banner */}
-                        {role === 'benefactor' && isNewAdult && (
-                          <div className="p-3 rounded-xl" style={{ background: 'rgba(183,148,246,0.06)', border: '1px solid rgba(183,148,246,0.15)' }}>
-                            <p className="text-[#B794F6] text-xs leading-relaxed flex items-start gap-2">
-                              <Award className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                              As a New Adult (18-25), you qualify for our New Adult tier — no additional verification required. You can add your parents as beneficiaries after sign up.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* STEP: Benefactor Email (beneficiary flow) */}
-                    {currentStep?.id === 'benefactor_email' && (
-                      <div className="space-y-3 sm:space-y-4">
-                        <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Your Benefactor</h2>
-                          <p className="text-[#6b7a90] text-sm">Enter the email address of the benefactor whose estate you're joining.</p>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-[#7b879e] text-sm font-medium">Benefactor's Email <span className="text-red-400">*</span></Label>
-                          <div className="relative">
-                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
-                            <Input
-                              type="email"
-                              value={benefactorEmail}
-                              onChange={(e) => { setBenefactorEmail(e.target.value); if (benefactorEmailError) setBenefactorEmailError(''); }}
-                              onBlur={() => validateBenefactorEmail(benefactorEmail)}
-                              placeholder="Your benefactor's email address"
-                              className={`${inputClass} pl-11 ${benefactorEmailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : ''}`}
-                              data-testid="signup-benefactor-email"
-                              autoFocus
-                            />
-                          </div>
-                          {benefactorEmailError ? (
-                            <p className="text-red-400 text-xs">{benefactorEmailError}</p>
-                          ) : (
-                            <p className="text-[#525c72] text-[11px]">This links your account to their family preparedness plan.</p>
-                          )}
-                        </div>
-                        <div className="p-3 rounded-xl" style={{ background: 'rgba(96,165,250,0.06)', border: '1px solid rgba(96,165,250,0.15)' }}>
-                          <p className="text-[#60A5FA] text-xs leading-relaxed flex items-start gap-2">
-                            <Users className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                            Your benefactor will receive a notification that you've joined their estate. If you don't know their email, ask them to invite you from their dashboard.
-                          </p>
+                        <div className="pt-2">
+                          <Link to="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
+                            Already have an invitation? Sign in here <ChevronRight className="w-3.5 h-3.5" />
+                          </Link>
                         </div>
                       </div>
                     )}
 
-                    {/* STEP 4: Special Eligibility (benefactors only) */}
+                    {/* STEP: Special Eligibility (benefactors only) */}
                     {currentStep?.id === 'eligibility' && (
                       <div className="space-y-3">
                         <div>
@@ -765,12 +641,47 @@ const SignupPage = () => {
                       </div>
                     )}
 
-                    {/* STEP 5: Credentials */}
+                    {/* STEP: Credentials */}
                     {currentStep?.id === 'credentials' && (
                       <div className="space-y-4 sm:space-y-5">
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Secure your account</h2>
-                          <p className="text-[#6b7a90] text-sm">Choose a strong password to protect your family&apos;s data.</p>
+                          <p className="text-[#6b7a90] text-sm">Choose a unique username and strong password to protect your family&apos;s data.</p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[#7b879e] text-sm font-medium">Username <span className="text-red-400">*</span></Label>
+                          <div className="relative">
+                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
+                            <Input type="text" value={username}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+                                setUsername(val);
+                                setUsernameError('');
+                              }}
+                              onBlur={async () => {
+                                if (!username.trim()) return;
+                                if (username.length < 3) { setUsernameError('Username must be at least 3 characters'); return; }
+                                setUsernameChecking(true);
+                                try {
+                                  const res = await axios.post(`${API_URL}/auth/check-username`, { username });
+                                  if (!res.data.available) setUsernameError(res.data.message || 'Username is already taken');
+                                  else setUsernameError('');
+                                } catch { setUsernameError(''); }
+                                setUsernameChecking(false);
+                              }}
+                              placeholder={`${firstName.toLowerCase().replace(/[^a-z0-9]/g, '')}${lastName.toLowerCase().replace(/[^a-z0-9]/g, '')}` || 'Choose a username'}
+                              className={`${inputClass} pl-12 ${usernameError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : ''}`}
+                              data-testid="signup-username-input" autoFocus />
+                            {usernameChecking && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63] animate-spin" />}
+                            {!usernameChecking && username.trim() && !usernameError && (
+                              <Check className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                            )}
+                          </div>
+                          {usernameError ? (
+                            <p className="text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {usernameError}</p>
+                          ) : (
+                            <p className="text-[#525c72] text-[11px]">This is how you&apos;ll sign in. Letters, numbers, and underscores only.</p>
+                          )}
                         </div>
                         <div className="space-y-2">
                           <Label className="text-[#7b879e] text-sm font-medium">Email <span className="text-red-400">*</span></Label>
@@ -778,8 +689,9 @@ const SignupPage = () => {
                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
                             <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                               placeholder="john@example.com" className={`${inputClass} pl-12`}
-                              data-testid="signup-email-input" autoFocus />
+                              data-testid="signup-email-input" />
                           </div>
+                          <p className="text-[#525c72] text-[11px]">For verification codes and notifications. Can be shared with family members.</p>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">

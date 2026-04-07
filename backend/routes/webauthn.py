@@ -153,10 +153,14 @@ async def webauthn_register_complete(
 @router.post("/auth/webauthn/login-options")
 async def webauthn_login_options(data: LoginOptionsRequest):
     """Generate WebAuthn authentication options — no auth required."""
-    # Find credentials for this user (by email if provided, or allow discoverable)
+    # Find credentials for this user (by email or username if provided, or allow discoverable)
     allow_credentials = []
     if data.email:
-        user = await db.users.find_one({"email": data.email}, {"_id": 0, "id": 1})
+        identifier = data.email.strip().lower()
+        # Try username first, then email
+        user = await db.users.find_one({"username_lower": identifier}, {"_id": 0, "id": 1})
+        if not user:
+            user = await db.users.find_one({"email": identifier}, {"_id": 0, "id": 1})
         if user:
             creds = await db.webauthn_credentials.find(
                 {"user_id": user["id"]}, {"_id": 0, "id": 1, "credential_id": 1}

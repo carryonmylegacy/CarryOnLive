@@ -274,8 +274,11 @@ async def add_family_member(plan_id: str, data: FamilyPlanInvite, current_user: 
     if not fp:
         raise HTTPException(status_code=403, detail="Only the Family Plan Owner can add members")
 
-    # Find the user
-    member_user = await db.users.find_one({"email": data.email}, {"_id": 0, "password_hash": 0})
+    # Find the user — try username first, then email
+    identifier = data.email.strip().lower()
+    member_user = await db.users.find_one({"username_lower": identifier}, {"_id": 0, "password_hash": 0})
+    if not member_user:
+        member_user = await db.users.find_one({"email": identifier}, {"_id": 0, "password_hash": 0})
     if not member_user:
         raise HTTPException(
             status_code=404,

@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from config import RESEND_API_KEY, SENDER_EMAIL, db, logger
 from guards import is_benefactor_or_admin, require_benefactor_role
 from models import Beneficiary, BeneficiaryCreate
+from routes.auth import generate_unique_username, validate_username
 from utils import (
     create_token,
     get_current_user,
@@ -935,6 +936,7 @@ class AcceptInvitationRequest(BaseModel):
     token: str
     password: str
     phone: Optional[str] = None
+    username: Optional[str] = None
 
 
 @router.post("/invitations/accept")
@@ -1015,11 +1017,25 @@ async def accept_invitation(data: AcceptInvitationRequest):
         )
     )
 
+    # Generate or validate username
+    if data.username:
+        error = validate_username(data.username)
+        if error:
+            raise HTTPException(status_code=400, detail=error)
+        username = data.username.strip()
+        username_lower = username.lower()
+        existing_username = await db.users.find_one({"username_lower": username_lower}, {"_id": 0, "id": 1})
+        if existing_username:
+            raise HTTPException(status_code=400, detail="That username is already taken. Please choose another.")
+    else:
+        username = await generate_unique_username(beneficiary["first_name"], beneficiary["last_name"])
+        username_lower = username.lower()
+
     new_user = {
         "id": user_id,
         "email": beneficiary["email"].lower().strip(),
-        "username": beneficiary["email"].lower().strip(),
-        "username_lower": beneficiary["email"].lower().strip(),
+        "username": username,
+        "username_lower": username_lower,
         "password": hash_password(data.password),
         "name": full_name,
         "first_name": beneficiary["first_name"],
@@ -1080,6 +1096,7 @@ async def accept_invitation(data: AcceptInvitationRequest):
         "message": "Account created successfully",
         "access_token": token,
         "token_type": "bearer",
+        "username": username,
         "user": {
             "id": user_id,
             "email": beneficiary["email"],

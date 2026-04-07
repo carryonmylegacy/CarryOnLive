@@ -3,6 +3,7 @@
 import asyncio
 import os
 import random
+import re
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -36,6 +37,7 @@ def _user_response(user: dict, owns_estate: bool = False) -> UserResponse:
         name=user["name"],
         role=user["role"],
         created_at=user["created_at"],
+        username=user.get("username", ""),
         photo_url=resolve_photo_url(user.get("photo_url", "")),
         operator_role=user.get("operator_role", ""),
         admin_scope=scope_val,
@@ -44,6 +46,60 @@ def _user_response(user: dict, owns_estate: bool = False) -> UserResponse:
         is_beta_tester=user.get("is_beta_tester", False),
         beta_accepted=bool(user.get("beta_accepted_at")),
     )
+
+
+async def generate_unique_username(first_name: str, last_name: str) -> str:
+    """Generate a unique username from first_name + last_name (no dot, lowercase).
+    If collision, appends 2, 3, etc. Handles non-ASCII and edge cases."""
+    # Strip to alphanumeric only, lowercase
+    clean_first = re.sub(r"[^a-zA-Z0-9]", "", first_name or "").lower()
+    clean_last = re.sub(r"[^a-zA-Z0-9]", "", last_name or "").lower()
+    base = clean_first + clean_last
+    if len(base) < 3:
+        # Fallback: use "user" + random digits
+        base = "user" + str(random.randint(1000, 9999))
+
+    # Check uniqueness
+    candidate = base
+    suffix = 2
+    while True:
+        existing = await db.users.find_one({"username_lower": candidate}, {"_id": 0, "id": 1})
+        if not existing:
+            return candidate
+        candidate = f"{base}{suffix}"
+        suffix += 1
+        if suffix > 999:
+            # Extreme edge case — add random digits
+            candidate = f"{base}{random.randint(10000, 99999)}"
+
+
+def validate_username(username: str) -> str | None:
+    """Validate username format. Returns error message or None if valid."""
+    if not username or len(username.strip()) < 3:
+        return "Username must be at least 3 characters"
+    if len(username.strip()) > 30:
+        return "Username must be 30 characters or less"
+    if "@" in username:
+        return "Username cannot be an email address. Choose a unique name instead."
+    if not re.match(r"^[a-zA-Z0-9_]+$", username.strip()):
+        return "Username can only contain letters, numbers, and underscores"
+    return None
+
+
+async def resolve_user_by_identifier(identifier: str) -> dict | None:
+    """Resolve a login identifier (username or email) to a user.
+    Tries username_lower first, then email. If email matches multiple users, returns None."""
+    identifier_lower = identifier.strip().lower()
+    # Try username first (always unique)
+    user = await db.users.find_one({"username_lower": identifier_lower}, {"_id": 0})
+    if user:
+        return user
+    # Try email — but only if exactly one user has this email
+    users_with_email = await db.users.find({"email": identifier_lower}, {"_id": 0}).to_list(2)
+    if len(users_with_email) == 1:
+        return users_with_email[0]
+    # Multiple users share this email, or no match
+    return None
 
 
 router = APIRouter()
@@ -87,45 +143,27 @@ def get_client_ip(request: Request) -> str:
 # ===================== AUTH ROUTES =====================
 
 
-class EmailCheckRequest(BaseModel):
-    email: str
+class UsernameCheckRequest(BaseModel):
+    username: str
+
+
+@router.post("/auth/check-username")
+async def check_username_available(data: UsernameCheckRequest):
+    """Check if a username is available. Used during signup for real-time validation."""
+    username = data.username.strip()
+    error = validate_username(username)
+    if error:
+        return {"available": False, "message": error}
+    existing = await db.users.find_one({"username_lower": username.lower()}, {"_id": 0, "id": 1})
+    return {"available": existing is None}
 
 
 @router.post("/auth/check-email")
-async def check_email_exists(data: EmailCheckRequest):
-    """Check if an email is already registered. Used during signup to prevent duplicates."""
-    user = await db.users.find_one({"email": data.email.lower().strip()}, {"_id": 0, "id": 1})
+async def check_email_exists(data: dict):
+    """Check if an email is already registered. Kept for backward compatibility."""
+    email = (data.get("email") or "").lower().strip()
+    user = await db.users.find_one({"email": email}, {"_id": 0, "id": 1})
     return {"exists": user is not None}
-
-
-@router.post("/auth/check-benefactor-email")
-async def check_benefactor_email(data: EmailCheckRequest):
-    """Check if an email belongs to a user who owns an active estate."""
-    email = data.email.lower().strip()
-    user = await db.users.find_one({"email": email}, {"_id": 0, "id": 1, "role": 1, "is_also_benefactor": 1})
-    if not user:
-        return {
-            "valid": False,
-            "message": "No benefactor estates are associated with that email address.",
-        }
-    # User must either be a benefactor or have is_also_benefactor flag
-    is_benefactor = user.get("role") == "benefactor" or user.get("is_also_benefactor", False)
-    if not is_benefactor:
-        # Also check if they own any estate directly
-        estate = await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1})
-        if not estate:
-            return {
-                "valid": False,
-                "message": "No benefactor estates are associated with that email address.",
-            }
-        return {"valid": True}
-    estate = await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1})
-    if not estate:
-        return {
-            "valid": False,
-            "message": "No benefactor estates are associated with that email address.",
-        }
-    return {"valid": True}
 
 
 @router.post("/auth/login")
@@ -175,13 +213,21 @@ async def login(data: UserLogin, request: Request):
                 headers={"Retry-After": str(retry_after)},
             )
 
-    # Support login via username OR email
+    # Support login via username OR email — username takes priority
     login_input = data.email.strip()
     login_lower = login_input.lower()
-    user = await db.users.find_one({"email": login_lower}, {"_id": 0})
+    # Try username first (always unique)
+    user = await db.users.find_one({"username_lower": login_lower}, {"_id": 0})
     if not user:
-        # Try username lookup (case-insensitive)
-        user = await db.users.find_one({"username_lower": login_lower}, {"_id": 0})
+        # Try email — but handle shared emails
+        users_with_email = await db.users.find({"email": login_lower}, {"_id": 0}).to_list(2)
+        if len(users_with_email) == 1:
+            user = users_with_email[0]
+        elif len(users_with_email) > 1:
+            raise HTTPException(
+                status_code=400,
+                detail="Multiple accounts use this email. Please log in with your username instead.",
+            )
     if not user or not verify_password(data.password, user["password"]):
         # Check if this email has a pending beneficiary invitation
         if not user:
@@ -382,11 +428,12 @@ async def login(data: UserLogin, request: Request):
     # Send OTP for verification
     otp_code = generate_otp()
     # For operators, use their contact_email for OTP delivery
-    otp_target_email = user.get("contact_email", data.email) if user.get("role") == "operator" else data.email
+    otp_target_email = user.get("contact_email", user["email"]) if user.get("role") == "operator" else user["email"]
     await db.otps.update_one(
-        {"email": data.email},
+        {"user_id": user["id"]},
         {
             "$set": {
+                "user_id": user["id"],
                 "otp": otp_code,
                 "created_at": datetime.now(timezone.utc).isoformat(),
             }
@@ -429,22 +476,28 @@ async def login(data: UserLogin, request: Request):
         "otp_method": otp_method,
         "has_sms": bool(user.get("sms_otp_enabled")),
         "masked_phone": masked_phone,
+        "user_id": user["id"],
     }
 
 
 @router.post("/auth/register")
 async def register(data: UserCreate):
-    """Register a new user account"""
-    # Check if email already exists
-    existing = await db.users.find_one({"email": data.email}, {"_id": 0})
-    if existing:
-        existing_role = existing.get("role", "")
-        if existing_role == "beneficiary" and data.role == "benefactor":
-            raise HTTPException(
-                status_code=400,
-                detail="This email is already registered as a beneficiary. Please log in with your existing account — you can start your own estate plan from the beneficiary dashboard.",
-            )
-        raise HTTPException(status_code=400, detail="Email already registered. Please log in instead.")
+    """Register a new user account. Signup always creates benefactors.
+    Beneficiaries join via invitation only."""
+    # Username validation — if provided, check format and uniqueness
+    if data.username:
+        error = validate_username(data.username)
+        if error:
+            raise HTTPException(status_code=400, detail=error)
+        username = data.username.strip()
+        username_lower = username.lower()
+        existing_username = await db.users.find_one({"username_lower": username_lower}, {"_id": 0, "id": 1})
+        if existing_username:
+            raise HTTPException(status_code=400, detail="That username is already taken. Please choose another.")
+    else:
+        # Auto-generate username from first + last name (no dot)
+        username = await generate_unique_username(data.first_name, data.last_name)
+        username_lower = username.lower()
 
     # Validate password — minimum security for sensitive estate data
     if len(data.password) < 8:
@@ -496,8 +549,8 @@ async def register(data: UserCreate):
     user = {
         "id": user_id,
         "email": data.email,
-        "username": data.email,
-        "username_lower": data.email.lower(),
+        "username": username,
+        "username_lower": username_lower,
         "password": hash_password(data.password),
         "name": full_name,
         "first_name": data.first_name,
@@ -515,7 +568,7 @@ async def register(data: UserCreate):
         "address_zip": data.address_zip,
         "special_status": special_statuses,
         "eligible_tier": eligible_tier,
-        "role": data.role if data.role in ["benefactor", "beneficiary"] else "benefactor",
+        "role": "benefactor",
         "trial_ends_at": trial_ends_at,
         "subscription_status": "trialing",
         "created_at": now.isoformat(),
@@ -712,85 +765,7 @@ async def register(data: UserCreate):
         ]
         await db.checklists.insert_many(default_checklist)
 
-    # --- Link beneficiary to benefactor's estate ---
-    if user["role"] == "beneficiary" and data.benefactor_email:
-        benefactor = await db.users.find_one(
-            {"email": data.benefactor_email, "role": "benefactor"}, {"_id": 0, "id": 1}
-        )
-        if benefactor:
-            estate = await db.estates.find_one({"owner_id": benefactor["id"]}, {"_id": 0, "id": 1})
-            if estate:
-                # Add to estate's beneficiaries list
-                await db.estates.update_one(
-                    {"id": estate["id"]},
-                    {"$addToSet": {"beneficiaries": user_id}},
-                )
-                # Link to existing beneficiary record or create one
-                # Try exact email match first, then fall back to name match
-                existing_ben = await db.beneficiaries.find_one(
-                    {"estate_id": estate["id"], "email": data.email}, {"_id": 0}
-                )
-                if not existing_ben:
-                    # Email mismatch — benefactor may have entered wrong email.
-                    # Try matching by first + last name on the same estate.
-                    existing_ben = await db.beneficiaries.find_one(
-                        {
-                            "estate_id": estate["id"],
-                            "first_name": {"$regex": f"^{data.first_name}$", "$options": "i"},
-                            "last_name": {"$regex": f"^{data.last_name}$", "$options": "i"},
-                            "user_id": None,
-                        },
-                        {"_id": 0},
-                    )
-                if existing_ben:
-                    await db.beneficiaries.update_one(
-                        {"id": existing_ben["id"]},
-                        {
-                            "$set": {
-                                "user_id": user_id,
-                                "email": data.email,
-                                "invitation_status": "accepted",
-                                "name": full_name,
-                                "first_name": data.first_name,
-                                "last_name": data.last_name,
-                                "is_stub": False,
-                            }
-                        },
-                    )
-                    # Copy fields from beneficiary record to user if not already set
-                    ben_fields_to_copy = {}
-                    if existing_ben.get("date_of_birth") and not data.date_of_birth:
-                        ben_fields_to_copy["date_of_birth"] = existing_ben["date_of_birth"]
-                    if existing_ben.get("address_street"):
-                        ben_fields_to_copy["address_street"] = existing_ben["address_street"]
-                        ben_fields_to_copy["address_city"] = existing_ben.get("address_city", "")
-                        ben_fields_to_copy["address_state"] = existing_ben.get("address_state", "")
-                        ben_fields_to_copy["address_zip"] = existing_ben.get("address_zip", "")
-                    if ben_fields_to_copy:
-                        await db.users.update_one({"id": user_id}, {"$set": ben_fields_to_copy})
-                else:
-                    await db.beneficiaries.insert_one(
-                        {
-                            "id": str(uuid.uuid4()),
-                            "estate_id": estate["id"],
-                            "user_id": user_id,
-                            "first_name": data.first_name,
-                            "last_name": data.last_name,
-                            "name": full_name,
-                            "email": data.email,
-                            "relation": "",
-                            "initials": (data.first_name[0] + data.last_name[0]).upper(),
-                            "avatar_color": "#60A5FA",
-                            "invitation_status": "accepted",
-                            "is_stub": False,
-                            "created_at": now.isoformat(),
-                        }
-                    )
-                # Store the link on the user for quick lookup
-                await db.users.update_one(
-                    {"id": user_id},
-                    {"$set": {"benefactor_email": data.benefactor_email}},
-                )
+    # Beneficiary signup via invitation only — no self-signup linking needed
 
     # --- Validate B2B code at signup if provided ---
     if data.b2b_code and "enterprise" in special_statuses:
@@ -835,14 +810,14 @@ async def register(data: UserCreate):
     # Generate OTP for verification
     otp = generate_otp()
     await db.otps.update_one(
-        {"email": data.email},
-        {"$set": {"otp": otp, "created_at": datetime.now(timezone.utc).isoformat()}},
+        {"user_id": user_id},
+        {"$set": {"user_id": user_id, "otp": otp, "created_at": datetime.now(timezone.utc).isoformat()}},
         upsert=True,
     )
 
     # Send OTP via email
     await send_otp_email(data.email, otp, data.first_name)
-    logger.info(f"Registration OTP sent for {data.email}")
+    logger.info(f"Registration OTP sent for {data.email} (username: {username})")
 
     # NOTIFICATION: New user signup → founder
     from services.notifications import notify
@@ -850,7 +825,7 @@ async def register(data: UserCreate):
     asyncio.create_task(
         notify.founder(
             "New User Signup",
-            f"{full_name} ({data.email}) registered as {user['role']}",
+            f"{full_name} ({data.email}, @{username}) registered as {user['role']}",
             url="/admin",
             priority="normal",
         )
@@ -859,43 +834,44 @@ async def register(data: UserCreate):
     return {
         "message": "Account created. Please verify with OTP.",
         "email": data.email,
+        "username": username,
+        "user_id": user_id,
     }
 
 
 class VerifyPasswordRequest(BaseModel):
-    email: str
+    email: str  # Can be email or username
     password: str
 
 
 @router.post("/auth/verify-password")
 async def verify_password_endpoint(data: VerifyPasswordRequest):
     """Verify account password without logging in. Used for sensitive settings changes."""
-    user = await db.users.find_one({"email": data.email}, {"_id": 0, "id": 1, "password": 1})
+    user = await resolve_user_by_identifier(data.email)
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid password")
     return {"verified": True}
 
 
 class ResendOTPRequest(BaseModel):
-    email: str
+    email: str  # Can be email or username
     method: str = "email"  # "email" or "sms"
 
 
 @router.post("/auth/resend-otp")
 async def resend_otp(data: ResendOTPRequest):
     """Resend OTP code to the user's email or phone. Rate-limited to prevent abuse."""
-    user = await db.users.find_one(
-        {"email": data.email}, {"_id": 0, "id": 1, "name": 1, "sms_otp_enabled": 1, "sms_phone_number": 1}
-    )
+    user = await resolve_user_by_identifier(data.email)
     if not user:
-        # Don't reveal whether the email exists
+        # Don't reveal whether the account exists
         return {"message": "If an account exists, a new code has been sent."}
 
     otp_code = generate_otp()
     await db.otps.update_one(
-        {"email": data.email},
+        {"user_id": user["id"]},
         {
             "$set": {
+                "user_id": user["id"],
                 "otp": otp_code,
                 "created_at": datetime.now(timezone.utc).isoformat(),
             }
@@ -909,16 +885,16 @@ async def resend_otp(data: ResendOTPRequest):
         try:
             sent = await send_otp_sms(user["sms_phone_number"], otp_code)
         except Exception:
-            logger.warning(f"Resend OTP SMS failed for {data.email}")
+            logger.warning(f"Resend OTP SMS failed for {user['email']}")
         if not sent:
             method_used = "email"
 
     if method_used == "email" or not sent:
         try:
-            sent = await send_otp_email(data.email, otp_code, user["name"].split()[0])
+            sent = await send_otp_email(user["email"], otp_code, user["name"].split()[0])
             method_used = "email"
         except Exception:
-            logger.warning(f"Resend OTP email failed for {data.email}")
+            logger.warning(f"Resend OTP email failed for {user['email']}")
 
     return {
         "message": f"A new verification code has been sent via {'SMS' if method_used == 'sms' else 'email'}."
@@ -931,7 +907,7 @@ async def resend_otp(data: ResendOTPRequest):
 
 
 class OTPVerifyWithTrust(BaseModel):
-    email: str
+    email: str  # Can be email or username — resolves to user
     otp: str
     trust_today: bool = False
 
@@ -939,13 +915,18 @@ class OTPVerifyWithTrust(BaseModel):
 @router.post("/auth/verify-otp", response_model=TokenResponse)
 async def verify_otp(data: OTPVerifyWithTrust, request: Request):
     """Verify OTP and return access token. Optionally trust this device for the rest of the day."""
+    # Resolve the identifier to a user first
+    user = await resolve_user_by_identifier(data.email)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
     # Apple App Review demo bypass — configurable via env var
     demo_email = os.environ.get("DEMO_REVIEW_EMAIL", "")
     demo_otp = os.environ.get("DEMO_REVIEW_OTP", "")
     is_demo_bypass = demo_email and demo_otp and data.email == demo_email and data.otp == demo_otp
 
     if not is_demo_bypass:
-        stored_otp = await db.otps.find_one({"email": data.email}, {"_id": 0})
+        stored_otp = await db.otps.find_one({"user_id": user["id"]}, {"_id": 0})
         import hmac
 
         if not stored_otp or not hmac.compare_digest(stored_otp["otp"], data.otp):
@@ -957,7 +938,7 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
             try:
                 created_time = datetime.fromisoformat(otp_created.replace("Z", "+00:00"))
                 if datetime.now(timezone.utc) - created_time > timedelta(minutes=10):
-                    await db.otps.delete_one({"email": data.email})
+                    await db.otps.delete_one({"user_id": user["id"]})
                     raise HTTPException(
                         status_code=401,
                         detail="OTP expired. Please request a new one.",
@@ -966,11 +947,9 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
                 pass
 
         # Delete used OTP
-        await db.otps.delete_one({"email": data.email})
+        await db.otps.delete_one({"user_id": user["id"]})
 
-    user = await db.users.find_one({"email": data.email}, {"_id": 0})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    # User already resolved above — no need for email lookup
 
     # If user opts to trust this device for today, store trust entry
     if data.trust_today:
@@ -1428,28 +1407,28 @@ async def sms_otp_status(current_user: dict = Depends(get_current_user)):
 
 
 class ForgotPasswordRequest(BaseModel):
-    email: str
+    username: str
 
 
 class ResetPasswordRequest(BaseModel):
-    email: str
+    username: str
     otp: str
     new_password: str
 
 
 @router.post("/auth/forgot-password")
 async def forgot_password(data: ForgotPasswordRequest):
-    """Send a password reset OTP to the user's email."""
-    email = data.email.lower().strip()
-    user = await db.users.find_one({"email": email}, {"_id": 0, "id": 1, "name": 1})
-    # Always return success to prevent email enumeration
+    """Send a password reset OTP. User enters their username."""
+    username_lower = data.username.strip().lower()
+    user = await db.users.find_one({"username_lower": username_lower}, {"_id": 0, "id": 1, "name": 1, "email": 1})
+    # Always return success to prevent username enumeration
     if not user:
-        return {"message": "If that email exists, a reset code has been sent."}
+        return {"message": "If that username exists, a reset code has been sent."}
 
     otp = f"{random.randint(0, 999999):06d}"
     await db.otp_codes.insert_one(
         {
-            "email": email,
+            "user_id": user["id"],
             "code": otp,
             "purpose": "password_reset",
             "created_at": datetime.now(timezone.utc).isoformat(),
@@ -1458,21 +1437,26 @@ async def forgot_password(data: ForgotPasswordRequest):
     )
 
     first_name = (user.get("name") or "").split()[0] or "there"
-    await send_otp_email(email, otp, first_name)
-    return {"message": "If that email exists, a reset code has been sent."}
+    await send_otp_email(user["email"], otp, first_name)
+    return {"message": "If that username exists, a reset code has been sent."}
 
 
 @router.post("/auth/reset-password")
 async def reset_password(data: ResetPasswordRequest):
-    """Verify OTP and set new password."""
-    email = data.email.lower().strip()
+    """Verify OTP and set new password. User identifies by username."""
+    username_lower = data.username.strip().lower()
 
     if len(data.new_password) < 8:
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
 
-    # Find valid OTP
+    # Find the user by username
+    user = await db.users.find_one({"username_lower": username_lower}, {"_id": 0, "id": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    # Find valid OTP by user_id
     otp_doc = await db.otp_codes.find_one(
-        {"email": email, "code": data.otp, "purpose": "password_reset"},
+        {"user_id": user["id"], "code": data.otp, "purpose": "password_reset"},
         {"_id": 0},
         sort=[("created_at", -1)],
     )
@@ -1493,17 +1477,45 @@ async def reset_password(data: ResetPasswordRequest):
         raise HTTPException(status_code=400, detail="Invalid reset code")
 
     # Update password
-    user = await db.users.find_one({"email": email}, {"_id": 0, "id": 1})
-    if not user:
-        raise HTTPException(status_code=404, detail="Account not found")
-
     new_hash = hash_password(data.new_password)
     await db.users.update_one({"id": user["id"]}, {"$set": {"password": new_hash}})
 
     # Clean up OTP
-    await db.otp_codes.delete_many({"email": email, "purpose": "password_reset"})
+    await db.otp_codes.delete_many({"user_id": user["id"], "purpose": "password_reset"})
 
     return {"message": "Password reset successfully. You can now log in with your new password."}
+
+
+@router.post("/auth/forgot-username")
+async def forgot_username(data: dict):
+    """Send the user their username(s) associated with an email address."""
+    email = (data.get("email") or "").lower().strip()
+    if not email:
+        return {"message": "If that email exists, your username(s) have been sent."}
+
+    users = await db.users.find({"email": email}, {"_id": 0, "username": 1, "name": 1}).to_list(10)
+
+    if users:
+        usernames = [u.get("username", "unknown") for u in users]
+        names = [u.get("name", "") for u in users]
+        # Send email with list of usernames
+        username_list = "\n".join(f"  - {n}: {u}" for n, u in zip(names, usernames))
+        from services.email import send_email
+
+        await send_email(
+            to=email,
+            subject="Your CarryOn Username(s)",
+            html=f"""
+            <p>Hi,</p>
+            <p>You requested your CarryOn username(s). Here they are:</p>
+            <pre>{username_list}</pre>
+            <p>Use your username to log in at carryon.us</p>
+            <p>— The CarryOn Team</p>
+            """,
+        )
+
+    # Always return generic message to prevent email enumeration
+    return {"message": "If that email exists, your username(s) have been sent."}
 
 
 class DevSwitchRequest(BaseModel):
@@ -1514,7 +1526,7 @@ class DevSwitchRequest(BaseModel):
 async def dev_login(data: UserLogin, request: Request):
     """Admin impersonation: allows admin to login as any user via DevSwitcher.
     Requires either: (1) target is an admin account, or (2) a valid admin Bearer token."""
-    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    user = await resolve_user_by_identifier(data.email)
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
@@ -1622,8 +1634,9 @@ async def get_username(current_user: dict = Depends(get_current_user)):
 async def set_username(data: UsernameUpdate, current_user: dict = Depends(get_current_user)):
     """Set or update the current user's username. Must be unique."""
     username = data.username.strip()
-    if not username:
-        raise HTTPException(status_code=400, detail="Username cannot be empty")
+    error = validate_username(username)
+    if error:
+        raise HTTPException(status_code=400, detail=error)
 
     username_lower = username.lower()
 
@@ -1637,7 +1650,7 @@ async def set_username(data: UsernameUpdate, current_user: dict = Depends(get_cu
 
     await db.users.update_one(
         {"id": current_user["id"]},
-        {"$set": {"username": username, "username_lower": username_lower}},
+        {"$set": {"username": username, "username_lower": username_lower, "needs_username_review": False}},
     )
     return {"username": username}
 
