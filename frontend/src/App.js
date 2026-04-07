@@ -82,6 +82,8 @@ const FounderAboutPage = lazy(() => import('./pages/FounderAboutPage'));
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 
+import UsernameReviewModal from './components/UsernameReviewModal';
+
 // Loading fallback
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
@@ -412,6 +414,7 @@ function App() {
           <NetworkStatusBanner />
           <NotificationContainer />
           <AmberAlertProvider />
+          <UsernameReviewModal />
           <AppRoutes />
           <ShareHandler />
         </BrowserRouter>

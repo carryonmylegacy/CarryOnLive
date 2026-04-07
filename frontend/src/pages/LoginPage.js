@@ -190,7 +190,12 @@ const LoginPage = () => {
         const secs = match ? parseInt(match[1], 10) : 180;
         setLockoutSeconds(secs);
       } else {
-        toast.error(error.response?.data?.detail || 'Invalid credentials');
+        const detail = error.response?.data?.detail || 'Invalid credentials';
+        if (detail.includes('Multiple accounts')) {
+          toast.error("Multiple accounts share this email. Use your username to sign in. Don't know it? Click 'Forgot Username?' below.", { duration: 8000 });
+        } else {
+          toast.error(detail);
+        }
       }
     } finally {
       setLoading(false);
@@ -350,9 +355,21 @@ const LoginPage = () => {
           )}
           <div className="mt-5 flex items-center justify-between">
             <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-bold">Create Account</button>
-            <span className="text-[#94A3B8] text-sm font-bold cursor-pointer hover:text-[#d4af37] transition-colors"
-              data-testid="forgot-password-link"
-              onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}>Forgot Password?</span>
+            <div className="flex flex-col items-end gap-1">
+              <span className="text-[#94A3B8] text-sm font-bold cursor-pointer hover:text-[#d4af37] transition-colors"
+                data-testid="forgot-password-link"
+                onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}>Forgot Password?</span>
+              <span className="text-[#6b7a90] text-xs cursor-pointer hover:text-[#d4af37] transition-colors"
+                data-testid="forgot-username-link"
+                onClick={() => {
+                  const usernameEmail = prompt('Enter the email associated with your account:');
+                  if (usernameEmail) {
+                    axios.post(`${API_URL}/auth/forgot-username`, { email: usernameEmail })
+                      .then(() => toast.success('If that email exists, your username(s) have been sent.'))
+                      .catch(() => toast.error('Something went wrong.'));
+                  }
+                }}>Forgot Username?</span>
+            </div>
           </div>
           <div className="mt-5 pt-4 border-t flex flex-col items-center gap-2" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
             <div className="flex items-center gap-2">
@@ -539,9 +556,21 @@ const LoginPage = () => {
           )}
           <div className="mt-3.5 flex items-center justify-between">
             <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-bold hover:text-[#fcd34d] transition-colors" data-testid="create-account-pwa">Create Account</button>
-            <span className="text-[#94A3B8] text-sm font-bold cursor-pointer hover:text-[#d4af37] transition-colors"
-              data-testid="forgot-password-pwa"
-              onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}>Forgot Password?</span>
+            <div className="flex flex-col items-end gap-1">
+              <span className="text-[#94A3B8] text-sm font-bold cursor-pointer hover:text-[#d4af37] transition-colors"
+                data-testid="forgot-password-pwa"
+                onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}>Forgot Password?</span>
+              <span className="text-[#6b7a90] text-xs cursor-pointer hover:text-[#d4af37] transition-colors"
+                data-testid="forgot-username-pwa"
+                onClick={() => {
+                  const usernameEmail = prompt('Enter the email associated with your account:');
+                  if (usernameEmail) {
+                    axios.post(`${API_URL}/auth/forgot-username`, { email: usernameEmail })
+                      .then(() => toast.success('If that email exists, your username(s) have been sent.'))
+                      .catch(() => toast.error('Something went wrong.'));
+                  }
+                }}>Forgot Username?</span>
+            </div>
           </div>
           <div className="mt-3.5 pt-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
             <div className="flex items-center justify-center gap-2">
@@ -833,9 +862,21 @@ const LoginPage = () => {
                   )}
                   <div className="mt-5 flex items-center justify-between">
                     <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-bold hover:text-[#fcd34d] transition-colors">Create Account</button>
-                    <span className="text-[#94A3B8] text-sm font-bold cursor-pointer hover:text-[#d4af37] transition-colors"
-                      data-testid="forgot-password-link-web"
-                      onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}>Forgot Password?</span>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-[#94A3B8] text-sm font-bold cursor-pointer hover:text-[#d4af37] transition-colors"
+                        data-testid="forgot-password-link-web"
+                        onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}>Forgot Password?</span>
+                      <span className="text-[#6b7a90] text-xs cursor-pointer hover:text-[#d4af37] transition-colors"
+                        data-testid="forgot-username-link-web"
+                        onClick={() => {
+                          const usernameEmail = prompt('Enter the email associated with your account:');
+                          if (usernameEmail) {
+                            axios.post(`${API_URL}/auth/forgot-username`, { email: usernameEmail })
+                              .then(() => toast.success('If that email exists, your username(s) have been sent.'))
+                              .catch(() => toast.error('Something went wrong.'));
+                          }
+                        }}>Forgot Username?</span>
+                    </div>
                   </div>
                   <div className="mt-6 pt-5 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                     <div className="flex items-center justify-center gap-2">

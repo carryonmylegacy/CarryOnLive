@@ -1077,6 +1077,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "address_zip": user_doc.get("address_zip", "") or ben_fallback.get("address_zip", ""),
         "address_line2": user_doc.get("address_line2", ""),
         "username": user_doc.get("username", ""),
+        "needs_username_review": user_doc.get("needs_username_review", False),
         "is_beta_tester": user_doc.get("is_beta_tester", False),
         "beta_accepted": bool(user_doc.get("beta_accepted_at")),
         "hide_benefactor_reminder": user_doc.get("hide_benefactor_reminder", False),
@@ -1671,3 +1672,42 @@ async def update_display_name(data: DisplayNameUpdate, current_user: dict = Depe
         {"$set": {"name": name}},
     )
     return {"name": name}
+
+
+@router.post("/auth/notify-username-migration")
+async def notify_username_migration(current_user: dict = Depends(get_current_user)):
+    """Admin-only: Send an email to all migrated users notifying them of their new username.
+    Only sends to users with needs_username_review=True."""
+    if current_user.get("role") not in ("admin",) and current_user.get("operator_role") != "founder":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    from services.email import send_email
+
+    users = await db.users.find(
+        {"needs_username_review": True},
+        {"_id": 0, "id": 1, "email": 1, "name": 1, "username": 1},
+    ).to_list(10000)
+
+    sent_count = 0
+    for u in users:
+        try:
+            first_name = (u.get("name") or "there").split()[0]
+            await send_email(
+                to=u["email"],
+                subject="CarryOn Update: Your New Username",
+                html=f"""
+                <p>Hi {first_name},</p>
+                <p>CarryOn now uses <strong>usernames</strong> for signing in instead of email addresses.
+                This means family members can share an email while each having their own secure account.</p>
+                <p>Your username is: <strong>{u.get("username", "unknown")}</strong></p>
+                <p>Next time you sign in, use your username instead of your email.
+                You can change your username anytime after logging in.</p>
+                <p>If you have any questions, reach out to us anytime.</p>
+                <p>— The CarryOn Team</p>
+                """,
+            )
+            sent_count += 1
+        except Exception as e:
+            logger.warning(f"Failed to send username notification to {u['email']}: {e}")
+
+    return {"message": f"Sent username notification to {sent_count} users", "total": len(users), "sent": sent_count}
