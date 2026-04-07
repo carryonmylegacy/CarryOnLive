@@ -1,6 +1,6 @@
 """
 Test suite for username-based authentication migration - Additional Features (iteration 44)
-Tests: 
+Tests:
 1. Forgot Username link visibility on login page
 2. Shared-email login error message
 3. POST /api/auth/forgot-username endpoint
@@ -31,10 +31,7 @@ ADMIN_USERNAME = "admin_62bc79"
 def get_admin_token():
     """Helper to get admin token for authenticated requests"""
     # First try login
-    response = requests.post(
-        f"{BASE_URL}/api/auth/login",
-        json={"email": ADMIN_USERNAME, "password": ADMIN_PASSWORD}
-    )
+    response = requests.post(f"{BASE_URL}/api/auth/login", json={"email": ADMIN_USERNAME, "password": ADMIN_PASSWORD})
     if response.status_code == 200:
         data = response.json()
         if "access_token" in data:
@@ -42,8 +39,7 @@ def get_admin_token():
         elif data.get("otp_required"):
             # Try with demo OTP bypass
             otp_response = requests.post(
-                f"{BASE_URL}/api/auth/verify-otp",
-                json={"email": ADMIN_USERNAME, "otp": "000000", "trust_today": True}
+                f"{BASE_URL}/api/auth/verify-otp", json={"email": ADMIN_USERNAME, "otp": "000000", "trust_today": True}
             )
             if otp_response.status_code == 200:
                 return otp_response.json().get("access_token")
@@ -55,10 +51,7 @@ class TestForgotUsernameEndpoint:
 
     def test_forgot_username_with_valid_email(self):
         """Forgot username with valid email returns success message"""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/forgot-username",
-            json={"email": ADMIN_EMAIL}
-        )
+        response = requests.post(f"{BASE_URL}/api/auth/forgot-username", json={"email": ADMIN_EMAIL})
         assert response.status_code == 200
         data = response.json()
         assert "message" in data
@@ -68,8 +61,7 @@ class TestForgotUsernameEndpoint:
     def test_forgot_username_with_nonexistent_email(self):
         """Non-existent email still returns success (prevent enumeration)"""
         response = requests.post(
-            f"{BASE_URL}/api/auth/forgot-username",
-            json={"email": f"nonexistent_{uuid.uuid4().hex[:8]}@test.com"}
+            f"{BASE_URL}/api/auth/forgot-username", json={"email": f"nonexistent_{uuid.uuid4().hex[:8]}@test.com"}
         )
         assert response.status_code == 200
         data = response.json()
@@ -83,10 +75,7 @@ class TestCheckUsernameEndpoint:
     def test_check_username_available(self):
         """Available username returns {available: true}"""
         unique_username = f"testuser_{uuid.uuid4().hex[:8]}"
-        response = requests.post(
-            f"{BASE_URL}/api/auth/check-username",
-            json={"username": unique_username}
-        )
+        response = requests.post(f"{BASE_URL}/api/auth/check-username", json={"username": unique_username})
         assert response.status_code == 200
         data = response.json()
         assert data["available"] is True
@@ -94,10 +83,7 @@ class TestCheckUsernameEndpoint:
 
     def test_check_username_taken(self):
         """Taken username returns {available: false}"""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/check-username",
-            json={"username": ADMIN_USERNAME}
-        )
+        response = requests.post(f"{BASE_URL}/api/auth/check-username", json={"username": ADMIN_USERNAME})
         assert response.status_code == 200
         data = response.json()
         assert data["available"] is False
@@ -112,12 +98,9 @@ class TestSharedEmailLogin:
         # First, we need to create two users with the same email
         # This is a complex test - we'll just verify the error message format
         # by checking the login endpoint behavior
-        
+
         # For now, test that login with unique email works
-        response = requests.post(
-            f"{BASE_URL}/api/auth/login",
-            json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
-        )
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
         # Admin email is unique, so should work
         assert response.status_code == 200
         print("PASS: Login with unique email works")
@@ -131,14 +114,11 @@ class TestAuthMeEndpoint:
         token = get_admin_token()
         if not token:
             pytest.skip("Could not get admin token")
-        
-        response = requests.get(
-            f"{BASE_URL}/api/auth/me",
-            headers={"Authorization": f"Bearer {token}"}
-        )
+
+        response = requests.get(f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
         data = response.json()
-        
+
         # Verify needs_username_review field exists
         assert "needs_username_review" in data
         assert isinstance(data["needs_username_review"], bool)
@@ -149,14 +129,11 @@ class TestAuthMeEndpoint:
         token = get_admin_token()
         if not token:
             pytest.skip("Could not get admin token")
-        
-        response = requests.get(
-            f"{BASE_URL}/api/auth/me",
-            headers={"Authorization": f"Bearer {token}"}
-        )
+
+        response = requests.get(f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
         data = response.json()
-        
+
         # Verify username field exists
         assert "username" in data
         assert data["username"] == ADMIN_USERNAME
@@ -177,10 +154,9 @@ class TestNotifyUsernameMigration:
         token = get_admin_token()
         if not token:
             pytest.skip("Could not get admin token")
-        
+
         response = requests.post(
-            f"{BASE_URL}/api/auth/notify-username-migration",
-            headers={"Authorization": f"Bearer {token}"}
+            f"{BASE_URL}/api/auth/notify-username-migration", headers={"Authorization": f"Bearer {token}"}
         )
         # Admin should be allowed (founder role)
         # Response should be 200 with sent count
@@ -196,10 +172,7 @@ class TestUpdateUsername:
 
     def test_update_username_requires_auth(self):
         """Endpoint requires authentication"""
-        response = requests.put(
-            f"{BASE_URL}/api/auth/username",
-            json={"username": "newusername"}
-        )
+        response = requests.put(f"{BASE_URL}/api/auth/username", json={"username": "newusername"})
         assert response.status_code in [401, 403, 422]
         print(f"PASS: PUT /auth/username requires auth (status={response.status_code})")
 
@@ -208,31 +181,25 @@ class TestUpdateUsername:
         token = get_admin_token()
         if not token:
             pytest.skip("Could not get admin token")
-        
+
         # First check current state
-        me_response = requests.get(
-            f"{BASE_URL}/api/auth/me",
-            headers={"Authorization": f"Bearer {token}"}
-        )
+        me_response = requests.get(f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {token}"})
         assert me_response.status_code == 200
         current_username = me_response.json().get("username")
-        
+
         # Update username (keep same to avoid breaking things)
         response = requests.put(
             f"{BASE_URL}/api/auth/username",
             json={"username": current_username},
-            headers={"Authorization": f"Bearer {token}"}
+            headers={"Authorization": f"Bearer {token}"},
         )
         assert response.status_code == 200
         data = response.json()
         assert "username" in data
         print(f"PASS: PUT /auth/username works, returns username={data['username']}")
-        
+
         # Verify needs_username_review is now False
-        me_response2 = requests.get(
-            f"{BASE_URL}/api/auth/me",
-            headers={"Authorization": f"Bearer {token}"}
-        )
+        me_response2 = requests.get(f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {token}"})
         assert me_response2.status_code == 200
         assert me_response2.json().get("needs_username_review") is False
         print("PASS: needs_username_review is False after PUT /auth/username")
@@ -243,25 +210,21 @@ class TestAdminLogin:
 
     def test_admin_login_with_email(self):
         """Admin can login with email"""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/login",
-            json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
-        )
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
         assert response.status_code == 200
         data = response.json()
         assert "access_token" in data or "otp_required" in data
-        print(f"PASS: Admin login with email works")
+        print("PASS: Admin login with email works")
 
     def test_admin_login_with_username(self):
         """Admin can login with username"""
         response = requests.post(
-            f"{BASE_URL}/api/auth/login",
-            json={"email": ADMIN_USERNAME, "password": ADMIN_PASSWORD}
+            f"{BASE_URL}/api/auth/login", json={"email": ADMIN_USERNAME, "password": ADMIN_PASSWORD}
         )
         assert response.status_code == 200
         data = response.json()
         assert "access_token" in data or "otp_required" in data
-        print(f"PASS: Admin login with username works")
+        print("PASS: Admin login with username works")
 
 
 class TestSignupEndpoint:
