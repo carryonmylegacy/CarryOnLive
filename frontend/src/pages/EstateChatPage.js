@@ -18,6 +18,7 @@ import {
   Check,
   CheckCheck,
   ChevronDown,
+  ChevronRight,
   Pin,
   Paperclip,
   FileText,
@@ -260,6 +261,7 @@ export default function EstateChatPage() {
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
   const [showSecurityIntro, setShowSecurityIntro] = useState(() => !localStorage.getItem('ect_security_seen'));
+  const [introStep, setIntroStep] = useState(1);
   const [showSecurityInfo, setShowSecurityInfo] = useState(false);
   const [msgLoading, setMsgLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -1782,42 +1784,102 @@ export default function EstateChatPage() {
     {showSecurityIntro && (
       <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', padding: '16px', paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
         <div className="w-full max-w-md rounded-2xl p-6" data-testid="ect-security-intro" style={{ background: 'rgba(15,22,41,0.95)', border: '1px solid rgba(212,175,55,0.3)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
-          <div className="text-center mb-5">
-            <Shield className="w-12 h-12 mx-auto mb-3" style={{ color: '#d4af37' }} />
-            <h2 className="text-xl font-bold" style={{ color: '#F1F3F8' }}>The Most Private Chat You'll Ever Use</h2>
-            <p className="text-sm mt-2" style={{ color: '#A0AABF' }}>Estate Comms isn't like other messaging apps. Here's why.</p>
-          </div>
-          <div className="space-y-3 mb-6">
-            {[
-              { icon: Lock, title: 'Closed Network', desc: 'No strangers can ever find you. Only people explicitly connected to your estate can message you.' },
-              { icon: Shield, title: 'No Phone Number Needed', desc: 'Your phone number is never exposed. No contact list scanning. No profile discovery by outsiders.' },
-              { icon: Users, title: 'Owner-Controlled Access', desc: 'The estate benefactor controls who is in and who is out. No one can add themselves.' },
-              { icon: X, title: 'Zero Data Mining', desc: 'No ads. No tracking. No metadata sold to third parties. Your conversations exist for your family.' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <item.icon className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#d4af37' }} />
-                <div>
-                  <div className="text-sm font-bold" style={{ color: '#F1F3F8' }}>{item.title}</div>
-                  <div className="text-xs mt-0.5" style={{ color: '#7B879E' }}>{item.desc}</div>
-                </div>
-              </div>
+
+          {/* Progress dots */}
+          <div className="flex items-center justify-center gap-3 mb-5">
+            {[1, 2].map(s => (
+              <div key={s} className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                introStep === s ? 'bg-[#d4af37] scale-125' : introStep > s ? 'bg-[#22C993]' : 'bg-white/10'
+              }`} />
             ))}
           </div>
-          <p className="text-xs text-center mb-4" style={{ color: '#525C72' }}>
-            The most private messaging system isn't the one with the strongest lock — it's the one where strangers can never find the door.
-          </p>
+
+          {/* Step 1: Why ECT is different */}
+          {introStep === 1 && (
+            <div data-testid="ect-intro-step-1">
+              <div className="text-center mb-5">
+                <Shield className="w-12 h-12 mx-auto mb-3" style={{ color: '#d4af37' }} />
+                <h2 className="text-xl font-bold" style={{ color: '#F1F3F8' }}>The Most Private Chat You'll Ever Use</h2>
+                <p className="text-sm mt-2" style={{ color: '#A0AABF' }}>Estate Comms isn't like other messaging apps. Here's why.</p>
+              </div>
+              <div className="space-y-3 mb-6">
+                {[
+                  { icon: Lock, title: 'Closed Network', desc: 'No strangers can ever find you. Only people explicitly connected to your estate can message you.' },
+                  { icon: Shield, title: 'No Phone Number Needed', desc: 'Your phone number is never exposed. No contact list scanning. No profile discovery by outsiders.' },
+                  { icon: Users, title: 'Owner-Controlled Access', desc: 'The estate benefactor controls who is in and who is out. No one can add themselves.' },
+                  { icon: X, title: 'Zero Data Mining', desc: 'No ads. No tracking. No metadata sold to third parties. Your conversations exist for your family.' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <item.icon className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#d4af37' }} />
+                    <div>
+                      <div className="text-sm font-bold" style={{ color: '#F1F3F8' }}>{item.title}</div>
+                      <div className="text-xs mt-0.5" style={{ color: '#7B879E' }}>{item.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-center mb-4" style={{ color: '#525C72' }}>
+                The most private messaging system isn't the one with the strongest lock — it's the one where strangers can never find the door.
+              </p>
+              <button
+                onClick={() => setIntroStep(2)}
+                className="w-full py-3 rounded-xl text-base font-bold transition-all active:scale-[0.97]"
+                data-testid="ect-intro-next-1"
+                style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}
+              >Next — How to Use It <ChevronRight className="w-5 h-5 inline ml-1" /></button>
+            </div>
+          )}
+
+          {/* Step 2: How to use ECT */}
+          {introStep === 2 && (
+            <div data-testid="ect-intro-step-2">
+              <div className="text-center mb-5">
+                <MessageCircle className="w-12 h-12 mx-auto mb-3" style={{ color: '#d4af37' }} />
+                <h2 className="text-xl font-bold" style={{ color: '#F1F3F8' }}>How to Use Estate Comms</h2>
+                <p className="text-sm mt-2" style={{ color: '#A0AABF' }}>It's simple — here's everything you need to know.</p>
+              </div>
+              <div className="space-y-3 mb-6">
+                {[
+                  { num: '1', title: 'Start a Conversation', desc: 'Tap the gold + button in the top right corner to start a new chat.' },
+                  { num: '2', title: 'Pick Who to Chat With', desc: 'Choose one family member for a private chat, or select several for a group conversation.' },
+                  { num: '3', title: 'Type and Send', desc: 'Type your message in the box at the bottom and tap the send arrow. That\'s it!' },
+                  { num: '4', title: 'Send Photos & Voice', desc: 'Tap the paperclip icon to attach photos or documents. Tap the microphone to record a voice message.' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
+                      {item.num}
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold" style={{ color: '#F1F3F8' }}>{item.title}</div>
+                      <div className="text-xs mt-0.5" style={{ color: '#7B879E' }}>{item.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setIntroStep(1)}
+                  className="px-5 py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.97]"
+                  data-testid="ect-intro-back-2"
+                  style={{ background: 'rgba(255,255,255,0.06)', color: '#A0AABF' }}>
+                  <ArrowLeft className="w-4 h-4 inline mr-1" /> Back
+                </button>
+                <button
+                  onClick={() => { setShowSecurityIntro(false); localStorage.setItem('ect_security_seen', '1'); setIntroStep(1); }}
+                  className="flex-1 py-3 rounded-xl text-base font-bold transition-all active:scale-[0.97]"
+                  data-testid="ect-security-dismiss"
+                  style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}
+                ><Check className="w-5 h-5 inline mr-1" /> Got It — Start Chatting</button>
+              </div>
+            </div>
+          )}
+
+          {/* Skip link */}
           <button
-            onClick={() => { setShowSecurityIntro(false); localStorage.setItem('ect_security_seen', '1'); }}
-            className="w-full py-3 rounded-xl text-base font-bold transition-all active:scale-[0.97]"
-            data-testid="ect-security-dismiss"
-            style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}
-          >I Understand — Start Chatting</button>
-          <button
-            onClick={() => { setShowSecurityIntro(false); navigate(-1); }}
-            className="w-full py-2 mt-2 text-sm font-medium transition-all active:scale-[0.97]"
+            onClick={() => { setShowSecurityIntro(false); localStorage.setItem('ect_security_seen', '1'); setIntroStep(1); navigate(-1); }}
+            className="w-full py-2 mt-3 text-xs font-medium transition-all active:scale-[0.97]"
             data-testid="ect-security-back"
-            style={{ color: '#7B879E', background: 'transparent' }}
-          >&lt; Previous Page</button>
+            style={{ color: '#525C72', background: 'transparent' }}
+          >Skip — Go Back</button>
         </div>
       </div>
     )}

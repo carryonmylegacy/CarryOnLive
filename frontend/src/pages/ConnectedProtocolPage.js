@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
 import AddressAutocomplete from '../components/AddressAutocomplete';
@@ -17,6 +17,7 @@ import {
   ChevronDown,
   Loader2,
   ArrowLeft,
+  ArrowRight,
   Play,
   Square,
   Clock,
@@ -78,6 +79,9 @@ export default function ConnectedProtocolPage() {
   const [linkedResources, setLinkedResources] = useState({ documents: [], ffn_contacts: [], dav_entries: [] });
   const [availableResources, setAvailableResources] = useState({ documents: [], ffn_contacts: [], dav_entries: [] });
   const [estateMembers, setEstateMembers] = useState([]);
+  // First-visit welcome intro
+  const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('carryon_ccp_intro_seen'));
+  const [welcomeStep, setWelcomeStep] = useState(1);
 
   const isBenefactor = user?.role === 'benefactor' || user?.is_also_benefactor;
 
@@ -862,6 +866,7 @@ export default function ConnectedProtocolPage() {
 
   // ===================== HOME VIEW — Big Bubble Buttons =====================
   return (
+    <>
     <div data-testid="ccp-home" className="max-w-lg mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-4">
       <div className="text-center mb-4">
         <Shield className="w-10 h-10 mx-auto mb-2" style={{ color: '#d4af37' }} />
@@ -903,6 +908,155 @@ export default function ConnectedProtocolPage() {
         <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: '#7B879E' }} />
       </button>
     </div>
+
+    {/* ===== CCP First-Visit Welcome Walkthrough ===== */}
+    {showWelcome && (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto" data-testid="ccp-welcome-overlay"
+        style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)', padding: '16px', paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
+        <div className="w-full max-w-md rounded-2xl p-6" style={{ background: 'rgba(15,22,41,0.95)', border: '1px solid rgba(212,175,55,0.3)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
+
+          {/* Progress dots */}
+          <div className="flex items-center justify-center gap-3 mb-5">
+            {[1, 2, 3].map(s => (
+              <div key={s} className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                welcomeStep === s ? 'bg-[#d4af37] scale-125' : welcomeStep > s ? 'bg-[#22C993]' : 'bg-white/10'
+              }`} />
+            ))}
+          </div>
+
+          {/* Step 1: What is CCP? */}
+          {welcomeStep === 1 && (
+            <div className="text-center" data-testid="ccp-welcome-step-1">
+              <Shield className="w-14 h-14 mx-auto mb-4" style={{ color: '#d4af37' }} />
+              <h2 className="text-xl font-bold mb-3" style={{ color: '#F1F3F8', fontFamily: 'Outfit, sans-serif' }}>
+                Welcome to Contingency Protocols
+              </h2>
+              <p className="text-sm mb-5 leading-relaxed" style={{ color: '#A0AABF' }}>
+                This is where your family creates emergency plans — for hurricanes, medical emergencies, power outages, or any situation where everyone needs to know what to do.
+              </p>
+              <div className="space-y-2.5 mb-6 text-left">
+                {[
+                  { icon: FileText, title: 'Create Emergency Plans', desc: 'Set up rendezvous points, communication steps, and supply locations.' },
+                  { icon: UserCheck, title: 'Check In During Emergencies', desc: 'Everyone marks themselves safe so the family knows who needs help.' },
+                  { icon: Play, title: 'Practice with Drills', desc: 'Run practice drills so everyone knows what to do before a real emergency.' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <item.icon className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#d4af37' }} />
+                    <div>
+                      <div className="text-sm font-bold" style={{ color: '#F1F3F8' }}>{item.title}</div>
+                      <div className="text-xs mt-0.5" style={{ color: '#7B879E' }}>{item.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => setWelcomeStep(2)}
+                className="w-full py-3.5 rounded-xl text-base font-bold transition-all active:scale-[0.97]"
+                data-testid="ccp-welcome-next-1"
+                style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}>
+                Next — How to Create a Plan <ArrowRight className="w-5 h-5 inline ml-1" />
+              </button>
+            </div>
+          )}
+
+          {/* Step 2: How to create a plan */}
+          {welcomeStep === 2 && (
+            <div className="text-center" data-testid="ccp-welcome-step-2">
+              <FileText className="w-14 h-14 mx-auto mb-4" style={{ color: '#d4af37' }} />
+              <h2 className="text-xl font-bold mb-3" style={{ color: '#F1F3F8', fontFamily: 'Outfit, sans-serif' }}>
+                Creating Your First Plan
+              </h2>
+              <p className="text-sm mb-5 leading-relaxed" style={{ color: '#A0AABF' }}>
+                It only takes a few minutes. Here's what you'll do:
+              </p>
+              <div className="space-y-3 mb-6 text-left">
+                {[
+                  { num: '1', title: 'Give it a name', desc: 'Something like "Hurricane Plan" or "Fire Evacuation"' },
+                  { num: '2', title: 'Add meeting points', desc: 'Where should the family meet? (e.g., Grandma\'s house, the park)' },
+                  { num: '3', title: 'Write a communication plan', desc: 'How will everyone stay in touch? (e.g., text first, then call)' },
+                  { num: '4', title: 'Add instructions', desc: 'Any special steps like grabbing the go-bag or turning off the gas' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
+                      {item.num}
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold" style={{ color: '#F1F3F8' }}>{item.title}</div>
+                      <div className="text-xs mt-0.5" style={{ color: '#7B879E' }}>{item.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setWelcomeStep(1)}
+                  className="px-5 py-3.5 rounded-xl text-sm font-bold transition-all active:scale-[0.97]"
+                  data-testid="ccp-welcome-back-2"
+                  style={{ background: 'rgba(255,255,255,0.06)', color: '#A0AABF' }}>
+                  <ArrowLeft className="w-4 h-4 inline mr-1" /> Back
+                </button>
+                <button onClick={() => setWelcomeStep(3)}
+                  className="flex-1 py-3.5 rounded-xl text-base font-bold transition-all active:scale-[0.97]"
+                  data-testid="ccp-welcome-next-2"
+                  style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}>
+                  Next — During Emergencies <ArrowRight className="w-5 h-5 inline ml-1" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: During an emergency */}
+          {welcomeStep === 3 && (
+            <div className="text-center" data-testid="ccp-welcome-step-3">
+              <AlertTriangle className="w-14 h-14 mx-auto mb-4" style={{ color: '#F05252' }} />
+              <h2 className="text-xl font-bold mb-3" style={{ color: '#F1F3F8', fontFamily: 'Outfit, sans-serif' }}>
+                When an Emergency Happens
+              </h2>
+              <p className="text-sm mb-5 leading-relaxed" style={{ color: '#A0AABF' }}>
+                When something happens, the estate owner activates the plan. Then everyone in the family does this:
+              </p>
+              <div className="space-y-3 mb-6 text-left">
+                {[
+                  { icon: Zap, color: '#F05252', title: 'Plan Gets Activated', desc: 'Everyone gets notified immediately with the plan details.' },
+                  { icon: UserCheck, color: '#22C993', title: 'Check In as Safe', desc: 'Tap the big green CHECK IN button and pick your status.' },
+                  { icon: MapPin, color: '#3B7BF7', title: 'Share Your Location', desc: 'Optionally share where you are so family can find you.' },
+                  { icon: Clock, color: '#A0AABF', title: 'Stand Down', desc: 'When it\'s over, the owner deactivates the plan and a report is saved.' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <item.icon className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: item.color }} />
+                    <div>
+                      <div className="text-sm font-bold" style={{ color: '#F1F3F8' }}>{item.title}</div>
+                      <div className="text-xs mt-0.5" style={{ color: '#7B879E' }}>{item.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setWelcomeStep(2)}
+                  className="px-5 py-3.5 rounded-xl text-sm font-bold transition-all active:scale-[0.97]"
+                  data-testid="ccp-welcome-back-3"
+                  style={{ background: 'rgba(255,255,255,0.06)', color: '#A0AABF' }}>
+                  <ArrowLeft className="w-4 h-4 inline mr-1" /> Back
+                </button>
+                <button onClick={() => { setShowWelcome(false); localStorage.setItem('carryon_ccp_intro_seen', '1'); }}
+                  className="flex-1 py-3.5 rounded-xl text-base font-bold transition-all active:scale-[0.97]"
+                  data-testid="ccp-welcome-dismiss"
+                  style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}>
+                  <Check className="w-5 h-5 inline mr-1" /> Got It — Let's Start
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Skip link */}
+          <button onClick={() => { setShowWelcome(false); localStorage.setItem('carryon_ccp_intro_seen', '1'); }}
+            className="w-full py-2 mt-3 text-xs font-medium transition-all active:scale-[0.97]"
+            data-testid="ccp-welcome-skip"
+            style={{ color: '#525C72', background: 'transparent' }}>
+            Skip — I'll figure it out on my own
+          </button>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
