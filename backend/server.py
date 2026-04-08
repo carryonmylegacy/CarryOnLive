@@ -257,11 +257,6 @@ async def lifespan(app):
     billing_task.cancel()
     retention_task.cancel()
     sla_task.cancel()
-    # Cancel xAI keepalive if running
-    from routes.guardian import _xai_keepalive_task as ka_task
-
-    if ka_task:
-        ka_task.cancel()
     client.close()
     logger.info("CarryOn™ API shutting down")
 

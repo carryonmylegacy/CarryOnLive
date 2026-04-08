@@ -18,6 +18,7 @@ from utils import (
     create_token,
     get_current_user,
     hash_password,
+    verify_password,
     log_activity,
     send_push_notification,
     update_estate_readiness,
@@ -1122,21 +1123,15 @@ class LinkExistingAccountRequest(BaseModel):
 @router.post("/invitations/accept-existing")
 async def accept_invitation_existing(data: LinkExistingAccountRequest):
     """Accept an invitation by linking to an existing CarryOn account via login."""
-    beneficiary = await db.beneficiaries.find_one(
-        {"invitation_token": data.token}, {"_id": 0}
-    )
+    beneficiary = await db.beneficiaries.find_one({"invitation_token": data.token}, {"_id": 0})
     if not beneficiary:
         raise HTTPException(status_code=404, detail="Invalid or expired invitation")
 
     if beneficiary.get("invitation_status") == "accepted":
-        raise HTTPException(
-            status_code=400, detail="This invitation has already been accepted"
-        )
+        raise HTTPException(status_code=400, detail="This invitation has already been accepted")
 
     # Authenticate with existing credentials
-    user = await db.users.find_one(
-        {"username_lower": data.username.lower().strip()}, {"_id": 0}
-    )
+    user = await db.users.find_one({"username_lower": data.username.lower().strip()}, {"_id": 0})
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(
             status_code=401,
@@ -1176,9 +1171,7 @@ async def accept_invitation_existing(data: LinkExistingAccountRequest):
 
     # Mark benefactor users as also being beneficiaries
     if user.get("role") == "benefactor":
-        await db.users.update_one(
-            {"id": user["id"]}, {"$set": {"is_also_beneficiary": True}}
-        )
+        await db.users.update_one({"id": user["id"]}, {"$set": {"is_also_beneficiary": True}})
 
     # Notify the benefactor
     full_name = user.get("name", "A family member")
