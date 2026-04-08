@@ -28,18 +28,15 @@ async def _get_user_estate(current_user: dict, projection: dict | None = None):
     return await db.estates.find({"owner_id": current_user["id"]}, proj).to_list(1)
 
 
-# ── xAI Connection Keep-Alive ──────────────────────────────────
-# The httpx connection pool drops idle TCP connections after a few
-# minutes.  A one-time warmup at startup is not enough — we need a
-# periodic ping to keep the pool warm so the first user request after
-# an idle gap doesn't hit a dead socket.
-
-_xai_keepalive_task = None
-_XAI_KEEPALIVE_INTERVAL = 300  # seconds (5 minutes)
+# ── xAI Connection Warmup (On-Demand) ──────────────────────────
+# Instead of pinging xAI every 5 minutes 24/7 (~288 calls/day),
+# we warm up the connection when a user actually visits the
+# Guardian page. By the time they type and send, the connection
+# is already hot.
 
 
 async def _xai_ping():
-    """Send a minimal request to xAI to keep the connection pool alive."""
+    """Send a minimal request to xAI to warm the connection pool."""
     try:
         await asyncio.to_thread(
             xai_client.chat.completions.create,
@@ -49,34 +46,26 @@ async def _xai_ping():
         )
         return True
     except Exception as e:
-        logger.warning(f"xAI keepalive ping failed: {e}")
+        logger.warning(f"xAI warmup ping failed: {e}")
         return False
 
 
-async def _xai_keepalive_loop():
-    """Background loop that pings xAI every N seconds to keep connections warm."""
-    while True:
-        try:
-            await asyncio.sleep(_XAI_KEEPALIVE_INTERVAL)
-            ok = await _xai_ping()
-            if ok:
-                logger.info("xAI keepalive ping OK")
-        except asyncio.CancelledError:
-            break
-        except Exception as e:
-            logger.warning(f"xAI keepalive loop error: {e}")
-
-
 async def warmup_xai():
-    """Initial warmup + start the periodic keepalive loop."""
-    global _xai_keepalive_task
+    """One-time warmup at server startup (no background loop)."""
     if not xai_client:
         return
     ok = await _xai_ping()
     if ok:
-        logger.info("xAI connection warmed up successfully")
-    # Start the keepalive background loop
-    _xai_keepalive_task = asyncio.create_task(_xai_keepalive_loop())
+        logger.info("xAI connection warmed up successfully at startup")
+
+
+@router.post("/warmup")
+async def warmup_endpoint(current_user: dict = Depends(get_current_user)):
+    """Warm up the xAI connection when a user opens the Guardian page."""
+    if not xai_client:
+        return {"status": "no_client"}
+    ok = await _xai_ping()
+    return {"status": "warm" if ok else "failed"}
 
 
 # ===================== AI CHAT ROUTES =====================
