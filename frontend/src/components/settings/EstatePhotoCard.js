@@ -27,7 +27,7 @@ const EstatePhotoCard = () => {
       if (estates.length > 0) {
         setEstateId(estates[0].id);
         setEstateName(estates[0].name || `${user.name || 'My'}'s Estate`);
-        setEstatePhoto(estates[0].photo || null);
+        setEstatePhoto(estates[0].estate_photo_url || null);
       }
     }).catch(() => {});
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -58,7 +58,9 @@ const EstatePhotoCard = () => {
                   reader.onerror = reject;
                   reader.readAsDataURL(file);
                 });
-                await axios.put(`${API_URL}/estates/${estateId}/photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
+                const res = await axios.put(`${API_URL}/estates/${estateId}/photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
+                if (res.data?.estate_photo_url) setEstatePhoto(res.data.estate_photo_url);
+                toast.success('Estate photo saved');
               } catch (err) {
                 setEstatePhoto(null);
                 toast.error(err?.response?.data?.detail || 'Failed to save estate photo');

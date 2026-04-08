@@ -4,6 +4,7 @@ import { Save, ExternalLink, Play, Loader2, MapPin, Monitor, Smartphone } from '
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
+import { formatPhoneUS } from '../../utils/phoneFormat';
 
 export const SiteContentTab = ({ getAuthHeaders }) => {
   const [videoId, setVideoId] = useState('');
@@ -234,7 +235,7 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
             </div>
             <div>
               <label className="text-xs font-bold text-[var(--t4)] block mb-1">Phone Number</label>
-              <input type="text" value={footerPhone} onChange={e => setFooterPhone(e.target.value)}
+              <input type="text" value={formatPhoneUS(footerPhone)} onChange={e => setFooterPhone(formatPhoneUS(e.target.value))}
                 placeholder="e.g. (703) 884-1527"
                 className="w-full px-3 py-2.5 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-base focus:outline-none focus:border-[var(--gold)]"
                 data-testid="footer-phone-input" />

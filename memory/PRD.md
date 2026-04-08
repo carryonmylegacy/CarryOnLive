@@ -52,13 +52,23 @@ Build and maintain a comprehensive family preparedness platform that helps users
   - Fixed missing `verify_password` import (would have caused runtime crash)
   - Fixed stale `_xai_keepalive_task` import in `server.py` shutdown handler
   - Tested: 10/10 backend tests passed, all frontend flows verified
-- **Family Tree Connector Line Fix**: Adjusted SVG path and CSS in `FamilyTree.js` so vertical lines stop at the top edge of beneficiary circles.
+- **Family Tree Connector Line Fix**: Adjusted SVG path and CSS in `FamilyTree.js` so vertical lines stop at the top edge of beneficiary circles. Added flash animation at centered node endpoint.
 - **Dual Homepage Video (Landscape + Vertical)**: Added responsive video embed on homepage.
-  - Desktop browsers see landscape (16:9) YouTube embed
-  - Mobile PWA users see vertical (9:16) YouTube embed when a vertical video ID is configured
+  - Viewport < 768px shows vertical (9:16) YouTube embed; ≥ 768px shows landscape (16:9)
+  - Both `HomePage.js` and `LoginPage.js` support the swap (LoginPage is primary landing)
   - Added `homepage_video_id_vertical` to backend platform settings
-  - SiteContentTab in Founder Portal now has two inputs: Landscape (Desktop) and Vertical (Mobile PWA) with live previews
+  - SiteContentTab in Founder Portal now has two inputs: Landscape (Desktop) and Vertical (Mobile) with live previews
   - Falls back to landscape video if no vertical video is set
+- **Profile/Estate Photo Save Bug Fix**: Fixed field name mismatches preventing photos from persisting:
+  - `ProfileCard.js`: Changed `res.data.profile_photo` → `res.data.photo_url` (matching backend response)
+  - `EstatePhotoCard.js`: Changed `estates[0].photo` → `estates[0].estate_photo_url`
+  - Added toast confirmations ("Profile photo saved" / "Estate photo saved") so users get feedback
+- **Google Places Autocomplete on Settings**: Replaced plain text street address input in `PersonalInfoCard.js` with the `AddressAutocomplete` component (auto-fills city, state, zip)
+- **US Phone Auto-Formatting (Platform-Wide)**: Created shared `formatPhoneUS()` utility. Applied `(XXX) XXX-XXXX` auto-formatting to ALL phone inputs across:
+  - Settings Personal Info, Beneficiaries, Edit Beneficiary, Onboarding, Accept Invitation
+  - FFN (Family & Friends), Checklist, Trustee Page, Emergency Access Panel
+  - Founder Portal: Operators Tab (add + edit), P1 Contact Settings, Site Content footer phone
+- **File Upload Accept Attributes**: Ensured all image uploads use `accept="image/*"` for macOS Photos sidebar. Fixed TransitionPage and VaultPage.
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement

@@ -12,6 +12,8 @@ import { Label } from '../components/ui/label';
 import { toast } from '../utils/toast';
 import { API_URL } from '../config';
 
+import { formatPhoneUS } from '../utils/phoneFormat';
+
 const AcceptInvitationPage = () => {
   const { token } = useParams();
   const navigate = useNavigate();
@@ -431,14 +433,7 @@ const AcceptInvitationPage = () => {
                       <div className="space-y-1.5">
                         <Label className="text-[#94a3b8] text-sm">Phone (Optional)</Label>
                         <Input type="tel" value={phone}
-                          onChange={(e) => {
-                            const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
-                            let formatted = digits;
-                            if (digits.length > 6) formatted = `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
-                            else if (digits.length > 3) formatted = `(${digits.slice(0,3)}) ${digits.slice(3)}`;
-                            else if (digits.length > 0) formatted = `(${digits}`;
-                            setPhone(formatted);
-                          }}
+                          onChange={(e) => setPhone(formatPhoneUS(e.target.value))}
                           placeholder="(123) 456-7890"
                           className="h-12 bg-[#0b1322] border-[#1a2a42] text-white placeholder:text-[#2d3d55] focus:border-[#d4af37] rounded-xl" />
                       </div>

@@ -11,6 +11,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
+import { formatPhoneUS } from '../../utils/phoneFormat';
 
 const STATUS_CONFIG = {
   pending: { color: '#f59e0b', bg: '#f59e0b20', icon: Clock, label: 'Under Review' },
@@ -174,14 +175,7 @@ const EmergencyAccessPanel = ({ estates }) => {
               <Label className="text-xs text-[#94a3b8]">Contact Phone</Label>
               <Input
                 value={form.contact_phone}
-                onChange={e => {
-                  const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
-                  let f = digits;
-                  if (digits.length > 6) f = `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
-                  else if (digits.length > 3) f = `(${digits.slice(0,3)}) ${digits.slice(3)}`;
-                  else if (digits.length > 0) f = `(${digits}`;
-                  setForm(prev => ({ ...prev, contact_phone: f }));
-                }}
+                onChange={e => setForm(prev => ({ ...prev, contact_phone: formatPhoneUS(e.target.value) }))}
                 placeholder="(123) 456-7890"
                 className="bg-[var(--s)] border-[var(--b)] text-[var(--t)] text-sm"
               />

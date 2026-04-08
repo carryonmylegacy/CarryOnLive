@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
+import { formatPhoneUS } from '../../utils/phoneFormat';
 
 const RoleBadge = ({ role }) => {
   const isManager = role === 'manager';
@@ -244,7 +245,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
             </div>
             <Input placeholder="Email (for OTP verification)" type="email" value={form.email} onChange={f('email')}
               className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" />
-            <Input placeholder="Phone number" type="tel" value={form.phone} onChange={f('phone')}
+            <Input placeholder="Phone number" type="tel" value={formatPhoneUS(form.phone)} onChange={e => f('phone')({ target: { value: formatPhoneUS(e.target.value) } })}
               className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" />
             <div className="pt-1 pb-1">
               <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Role Details</p>
@@ -298,7 +299,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
             </div>
             <Input placeholder="Email (for OTP verification)" type="email" value={editForm.email || ''} onChange={ef('email')}
               className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" data-testid="edit-email" />
-            <Input placeholder="Phone" type="tel" value={editForm.phone || ''} onChange={ef('phone')}
+            <Input placeholder="Phone" type="tel" value={formatPhoneUS(editForm.phone || '')} onChange={e => ef('phone')({ target: { value: formatPhoneUS(e.target.value) } })}
               className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" data-testid="edit-phone" />
 
             {/* Role Details Section */}

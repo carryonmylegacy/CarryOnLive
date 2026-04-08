@@ -30,6 +30,8 @@ const usStates = [
   'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC'
 ];
 
+import { formatPhoneUS } from '../utils/phoneFormat';
+
 const OnboardingPage = () => {
   const navigate = useNavigate();
   const { user, getAuthHeaders } = useAuth();
@@ -366,14 +368,7 @@ const OnboardingPage = () => {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[#94a3b8] text-sm">Phone</Label>
-                    <Input type="tel" value={phone} onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
-                      let f = digits;
-                      if (digits.length > 6) f = `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
-                      else if (digits.length > 3) f = `(${digits.slice(0,3)}) ${digits.slice(3)}`;
-                      else if (digits.length > 0) f = `(${digits}`;
-                      setPhone(f);
-                    }} placeholder="(123) 456-7890" className="input-field" />
+                    <Input type="tel" value={phone} onChange={(e) => setPhone(formatPhoneUS(e.target.value))} placeholder="(123) 456-7890" className="input-field" />
                   </div>
                 </div>
 

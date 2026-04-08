@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
+import { formatPhoneUS } from '../utils/phoneFormat';
 import { ReturnPopup } from '../components/GuidedActivation';
 import {
   DndContext,
@@ -1041,14 +1042,7 @@ const BeneficiariesPage = () => {
                 <Input
                   type="tel"
                   value={phone}
-                  onChange={(e) => {
-                    const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
-                    let formatted = digits;
-                    if (digits.length > 6) formatted = `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
-                    else if (digits.length > 3) formatted = `(${digits.slice(0,3)}) ${digits.slice(3)}`;
-                    else if (digits.length > 0) formatted = `(${digits}`;
-                    setPhone(formatted);
-                  }}
+                  onChange={(e) => setPhone(formatPhoneUS(e.target.value))}
                   placeholder="(123) 456-7890"
                   className="input-field"
                 />

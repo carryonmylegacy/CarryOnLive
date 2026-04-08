@@ -35,7 +35,7 @@ const ProfileCard = () => {
     if (!user) return;
     setDisplayName(user.name || '');
     axios.get(`${API_URL}/auth/me`, getAuthHeaders()).then(res => {
-      setProfilePhoto(res.data.profile_photo || null);
+      setProfilePhoto(res.data.photo_url || null);
       setDisplayName(res.data.name || user.name || '');
       setUsername(res.data.username || '');
     }).catch(() => {});
@@ -59,10 +59,15 @@ const ProfileCard = () => {
                 const reader = new FileReader();
                 reader.onload = async () => {
                   const base64 = reader.result.split(',')[1];
-                  await axios.put(`${API_URL}/auth/profile-photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
+                  const res = await axios.put(`${API_URL}/auth/profile-photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
+                  if (res.data?.photo_url) setProfilePhoto(res.data.photo_url);
+                  toast.success('Profile photo saved');
                 };
                 reader.readAsDataURL(file);
-              } catch { /* silent */ }
+              } catch {
+                toast.error('Failed to save profile photo');
+                setProfilePhoto(null);
+              }
             }}
             onRemove={async () => {
               setProfilePhoto(null);

@@ -12,6 +12,7 @@ import { Label } from '../components/ui/label';
 import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { API_URL } from '../config';
+import { formatPhoneUS } from '../utils/phoneFormat';
 
 const EMPTY_FORM = { name: '', phone: '', email: '', address: '', relationship: '', notes: '' };
 
@@ -237,7 +238,7 @@ export default function FFNPage() {
                 <Label className="text-[var(--t4)]">Phone</Label>
                 <div className="relative mt-1">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--t5)]" />
-                  <Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+                  <Input value={formatPhoneUS(form.phone)} onChange={e => setForm(p => ({ ...p, phone: formatPhoneUS(e.target.value) }))}
                     placeholder="(555) 123-4567" type="tel" className="input-field pl-10" style={{ fontSize: 16 }} data-testid="ffn-input-phone" />
                 </div>
               </div>

@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
+import AddressAutocomplete from '../AddressAutocomplete';
+import { formatPhoneUS } from '../../utils/phoneFormat';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
@@ -112,10 +114,10 @@ const PersonalInfoCard = ({ initialEditAddress = false }) => {
           <div>
             <label className="text-[var(--t5)] text-xs mb-1 block">Phone Number</label>
             {profileEditing ? (
-              <Input type="tel" value={profileData.phone || ''} onChange={e => setProfileData(p => ({...p, phone: e.target.value}))}
+              <Input type="tel" value={formatPhoneUS(profileData.phone || '')} onChange={e => setProfileData(p => ({...p, phone: formatPhoneUS(e.target.value)}))}
                 placeholder="(555) 123-4567" className="bg-[var(--card)] border-[var(--b)] text-[var(--t)] text-sm" data-testid="profile-phone" />
             ) : (
-              <p className="text-[var(--t)] text-sm font-medium">{profileData.phone || '—'}</p>
+              <p className="text-[var(--t)] text-sm font-medium">{formatPhoneUS(profileData.phone) || '—'}</p>
             )}
           </div>
           <div>
@@ -180,8 +182,23 @@ const PersonalInfoCard = ({ initialEditAddress = false }) => {
                   Please enter your address below
                 </p>
               )}
-              <Input value={profileData.address_street || ''} onChange={e => setProfileData(p => ({...p, address_street: e.target.value}))}
-                placeholder="Street address" className="bg-[var(--card)] border-[var(--b)] text-[var(--t)] text-sm" data-testid="profile-street" />
+              <AddressAutocomplete
+                value={profileData.address_street || ''}
+                onChange={e => setProfileData(p => ({...p, address_street: e.target.value}))}
+                onSelect={({ street, city, state, zip }) => {
+                  setProfileData(p => ({
+                    ...p,
+                    address_street: street,
+                    address_city: city,
+                    address_state: state,
+                    address_zip: zip,
+                  }));
+                }}
+                placeholder="Street address"
+                className="w-full h-9 px-3 rounded-md bg-[var(--card)] border border-[var(--b)] text-[var(--t)] text-sm focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+                style={{ fontSize: '16px' }}
+                data-testid="profile-street"
+              />
               <Input value={profileData.address_line2 || ''} onChange={e => setProfileData(p => ({...p, address_line2: e.target.value}))}
                 placeholder="Apt, suite, unit (optional)" className="bg-[var(--card)] border-[var(--b)] text-[var(--t)] text-sm" data-testid="profile-line2" />
               <div className="grid grid-cols-4 gap-2">

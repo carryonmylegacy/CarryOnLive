@@ -49,6 +49,7 @@ import {
 } from '../components/ui/alert-dialog';
 import { resolvePhotoUrl } from '../utils/photoUrl';
 import { API_URL } from '../config';
+import { formatPhoneUS } from '../utils/phoneFormat';
 
 // Initialize Stripe with test key
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
@@ -911,7 +912,7 @@ const TrusteePage = () => {
                 </div>
                 <div className="space-y-4">
                   <div><Label className="text-[var(--t4)]">Their Full Name</Label><Input className="input-field mt-1" value={newTask.notifyName} onChange={e => setNewTask(p => ({ ...p, notifyName: e.target.value }))} placeholder="e.g., Sarah Johnson" style={{ fontSize: 16 }} /></div>
-                  <div><Label className="text-[var(--t4)]">Phone Number</Label><Input className="input-field mt-1" type="tel" value={newTask.notifyPhone} onChange={e => setNewTask(p => ({ ...p, notifyPhone: e.target.value }))} placeholder="e.g., (555) 123-4567" style={{ fontSize: 16 }} /></div>
+                  <div><Label className="text-[var(--t4)]">Phone Number</Label><Input className="input-field mt-1" type="tel" value={formatPhoneUS(newTask.notifyPhone)} onChange={e => setNewTask(p => ({ ...p, notifyPhone: formatPhoneUS(e.target.value) }))} placeholder="e.g., (555) 123-4567" style={{ fontSize: 16 }} /></div>
                   <div><Label className="text-[var(--t4)]">Email Address</Label><Input className="input-field mt-1" type="email" value={newTask.notifyEmail} onChange={e => setNewTask(p => ({ ...p, notifyEmail: e.target.value }))} placeholder="e.g., sarah@example.com" style={{ fontSize: 16 }} /></div>
                   <div><Label className="text-[var(--t4)]">Mailing Address</Label><Input className="input-field mt-1" value={newTask.notifyAddress} onChange={e => setNewTask(p => ({ ...p, notifyAddress: e.target.value }))} placeholder="e.g., 123 Main St, Anytown, USA" style={{ fontSize: 16 }} /></div>
                   <div><Label className="text-[var(--t4)]">Additional Notes</Label>

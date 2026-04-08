@@ -7,6 +7,7 @@ import { Input } from '../ui/input';
 import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
+import { formatPhoneUS } from '../../utils/phoneFormat';
 
 export const P1ContactSettingsTab = ({ getAuthHeaders }) => {
   const [settings, setSettings] = useState({ email: '', phone: '', chat_enabled: true });
@@ -67,8 +68,8 @@ export const P1ContactSettingsTab = ({ getAuthHeaders }) => {
               <Phone className="w-3 h-3" /> Phone Number
             </label>
             <Input
-              value={settings.phone}
-              onChange={e => setSettings({ ...settings, phone: e.target.value })}
+              value={formatPhoneUS(settings.phone)}
+              onChange={e => setSettings({ ...settings, phone: formatPhoneUS(e.target.value) })}
               placeholder="(808) 585-1156"
               className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]"
               data-testid="p1-phone-input"
