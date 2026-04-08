@@ -70,7 +70,10 @@ const BeneficiarySettingsPage = () => {
                 const reader = new FileReader();
                 reader.onload = async () => {
                   const base64 = reader.result.split(',')[1];
-                  try { await axios.put(`${API_URL}/auth/profile-photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders()); } catch {}
+                  try {
+                    const res = await axios.put(`${API_URL}/auth/profile-photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
+                    if (res.data?.photo_url) setProfilePhoto(res.data.photo_url);
+                  } catch {}
                 };
                 reader.readAsDataURL(file);
               }}

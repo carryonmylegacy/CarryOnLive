@@ -66,8 +66,9 @@ const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className
 
   const handleInputChange = (e) => {
     if (onChange) onChange(e);
+    const val = e.target.value; // capture before React recycles the event
     clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchSuggestions(e.target.value), 300);
+    debounceRef.current = setTimeout(() => fetchSuggestions(val), 300);
   };
 
   const handleSelectSuggestion = async (prediction) => {

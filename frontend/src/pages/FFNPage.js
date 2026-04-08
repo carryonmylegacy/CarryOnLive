@@ -80,7 +80,7 @@ export default function FFNPage() {
   const openEdit = (contact) => {
     setForm({
       name: contact.name || '',
-      phone: contact.phone || '',
+      phone: formatPhoneUS(contact.phone || ''),
       email: contact.email || '',
       address: contact.address || '',
       relationship: contact.relationship || '',
@@ -173,7 +173,7 @@ export default function FFNPage() {
                     <div className="space-y-1">
                       {c.phone && (
                         <div className="flex items-center gap-2 text-sm text-[var(--t4)]">
-                          <Phone className="w-3.5 h-3.5 flex-shrink-0" /> {c.phone}
+                          <Phone className="w-3.5 h-3.5 flex-shrink-0" /> {formatPhoneUS(c.phone)}
                         </div>
                       )}
                       {c.email && (

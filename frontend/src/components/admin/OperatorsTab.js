@@ -125,7 +125,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
       first_name: op.first_name || '',
       last_name: op.last_name || '',
       email: op.contact_email || '',
-      phone: op.phone || '',
+      phone: formatPhoneUS(op.phone || ''),
       title: op.title || '',
       notes: op.notes || '',
       password: '',
@@ -411,7 +411,7 @@ const OperatorCard = ({ op, expandedId, setExpandedId, onEdit, onDelete, canDele
               )}
               {op.phone && (
                 <div className="flex items-center gap-1.5 text-[var(--t4)]">
-                  <Phone className="w-3 h-3 text-[var(--t5)]" /> {op.phone}
+                  <Phone className="w-3 h-3 text-[var(--t5)]" /> {formatPhoneUS(op.phone)}
                 </div>
               )}
               {op.title && (

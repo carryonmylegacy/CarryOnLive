@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
+import { formatPhoneUS } from '../utils/phoneFormat';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import {
   Shield,

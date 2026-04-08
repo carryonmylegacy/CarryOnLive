@@ -9,6 +9,7 @@ import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
 import AddressAutocomplete from '../AddressAutocomplete';
 import { formatPhoneUS } from '../../utils/phoneFormat';
+import DateMaskInput from '../DateMaskInput';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
@@ -123,10 +124,10 @@ const PersonalInfoCard = ({ initialEditAddress = false }) => {
           <div>
             <label className="text-[var(--t5)] text-xs mb-1 block">Date of Birth</label>
             {profileEditing ? (
-              <Input type="text" value={profileData.date_of_birth || ''} onChange={e => setProfileData(p => ({...p, date_of_birth: e.target.value}))}
-                placeholder="MM/DD/YYYY" className="bg-[var(--card)] border-[var(--b)] text-[var(--t)] text-sm" data-testid="profile-dob" />
+              <DateMaskInput value={profileData.date_of_birth || ''} onChange={e => setProfileData(p => ({...p, date_of_birth: e.target.value}))}
+                className="flex h-9 w-full rounded-md px-3 py-1 text-sm bg-[var(--card)] border border-[var(--b)] text-[var(--t)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]" data-testid="profile-dob" />
             ) : (
-              <p className="text-[var(--t)] text-sm font-medium">{profileData.date_of_birth || '—'}</p>
+              <p className="text-[var(--t)] text-sm font-medium">{profileData.date_of_birth ? profileData.date_of_birth.replace(/(\d{4})-(\d{2})-(\d{2})/, (_, y, m, d) => `${m}/${d}/${y}`) : '—'}</p>
             )}
           </div>
         </div>

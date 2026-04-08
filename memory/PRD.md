@@ -63,11 +63,14 @@ Build and maintain a comprehensive family preparedness platform that helps users
   - `ProfileCard.js`: Changed `res.data.profile_photo` → `res.data.photo_url` (matching backend response)
   - `EstatePhotoCard.js`: Changed `estates[0].photo` → `estates[0].estate_photo_url`
   - Added toast confirmations ("Profile photo saved" / "Estate photo saved") so users get feedback
-- **Google Places Autocomplete on Settings**: Replaced plain text street address input in `PersonalInfoCard.js` with the `AddressAutocomplete` component (auto-fills city, state, zip)
-- **US Phone Auto-Formatting (Platform-Wide)**: Created shared `formatPhoneUS()` utility. Applied `(XXX) XXX-XXXX` auto-formatting to ALL phone inputs across:
+  - Also fixed BeneficiarySettingsPage photo upload with proper response handling
+- **Google Places Autocomplete Fix (Platform-Wide)**: Fixed React synthetic event bug in `AddressAutocomplete.js` where `e.target.value` was accessed inside a `setTimeout` after React recycled the event. This bug prevented autocomplete from working EVERYWHERE in the app. Also added AddressAutocomplete to PersonalInfoCard in Settings.
+- **US Phone Auto-Formatting (Platform-Wide)**: Created shared `formatPhoneUS()` utility that strips the `+1` country code prefix. Applied `(XXX) XXX-XXXX` auto-formatting to ALL phone inputs AND display values across 13 files:
   - Settings Personal Info, Beneficiaries, Edit Beneficiary, Onboarding, Accept Invitation
   - FFN (Family & Friends), Checklist, Trustee Page, Emergency Access Panel
   - Founder Portal: Operators Tab (add + edit), P1 Contact Settings, Site Content footer phone
+  - Display-only: SealedAccountScreen, ConnectedProtocolPage
+- **Date of Birth Format Fix**: Replaced plain text input in PersonalInfoCard with `DateMaskInput` component (MM/DD/YYYY auto-formatting with `/` separators). Display mode converts YYYY-MM-DD from API to MM/DD/YYYY.
 - **File Upload Accept Attributes**: Ensured all image uploads use `accept="image/*"` for macOS Photos sidebar. Fixed TransitionPage and VaultPage.
 
 ## Blocked Items

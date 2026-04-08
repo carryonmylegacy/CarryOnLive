@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Shield, Phone, Mail, MessageSquare, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
 import { API_URL } from '../config';
+import { formatPhoneUS } from '../utils/phoneFormat';
 
 /**
  * Sealed Account Screen — shown when a transitioned benefactor tries to log in.
@@ -152,7 +153,7 @@ const SealedAccountScreen = ({ transitionedAt, onBack }) => {
                 </div>
                 <div>
                   <div className="text-sm font-bold text-white">Call</div>
-                  <div className="text-[11px] text-[#94A3B8]">{p1Contact.phone}</div>
+                  <div className="text-[11px] text-[#94A3B8]">{formatPhoneUS(p1Contact.phone)}</div>
                 </div>
               </a>
             </div>

@@ -92,7 +92,7 @@ const mapBeneficiaryToForm = (beneficiary) => ({
   lastName: beneficiary.last_name || beneficiary.name?.split(' ').slice(-1)[0] || '',
   suffix: beneficiary.suffix || '',
   email: beneficiary.email || '',
-  phone: beneficiary.phone || '',
+  phone: formatPhoneUS(beneficiary.phone || ''),
   relation: beneficiary.relation || '',
   dateOfBirth: beneficiary.date_of_birth || '',
   gender: beneficiary.gender || '',
