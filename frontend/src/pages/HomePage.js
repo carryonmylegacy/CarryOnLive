@@ -5,7 +5,7 @@ import { ChevronRight, ChevronDown } from 'lucide-react';
 import { API_URL } from '../config';
 import { RevealSection } from '../components/landing/RevealSection';
 import LandingContent from '../components/landing/LandingContent';
-import { isPWA, isIOS, isAndroid } from '../utils/pwaDetect';
+import { isIOS, isAndroid } from '../utils/pwaDetect';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ const HomePage = () => {
   const [landscapeVideoId, setLandscapeVideoId] = useState('EhU-jojs1jk');
   const [verticalVideoId, setVerticalVideoId] = useState('');
 
-  const isMobilePWA = isPWA() && (isIOS() || isAndroid());
+  const isMobile = isIOS() || isAndroid();
 
   useEffect(() => {
     axios.get(`${API_URL}/public/site-content`).then(r => {
@@ -40,7 +40,7 @@ const HomePage = () => {
   }, []);
 
   // Decide which video to show
-  const showVertical = isMobilePWA && verticalVideoId;
+  const showVertical = isMobile && verticalVideoId;
   const activeVideoId = showVertical ? verticalVideoId : landscapeVideoId;
 
   return (
