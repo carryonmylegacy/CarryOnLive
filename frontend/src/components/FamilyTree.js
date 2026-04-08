@@ -331,8 +331,13 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const dir = isCentered ? 0 : (isLeft ? 1 : -1);
                   const rowCenterY = topTrail + (rIdx + 0.3) * rowH;
                   if (isCentered) {
-                    // Extend to row center — the circle node (z-index 1) covers the overlap
-                    centeredPath = `M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${rowCenterY.toFixed(1)}`;
+                    // Compute circle-top in VB coords using actual pixel layout
+                    // (accounts for CSS grid rowGap: 12px between rows)
+                    const fullRows = Math.floor(idx / 2);
+                    const containerH = trailPx + numBenRows * estRowH + Math.max(0, numBenRows - 1) * 12;
+                    const circleTopPx = trailPx + fullRows * (estRowH + 12);
+                    const circleTopVB = Math.max(3, (circleTopPx / containerH) * vbH - 1);
+                    centeredPath = `M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${circleTopVB.toFixed(1)}`;
                     allPaths.push(centeredPath);
                   } else {
                     const ex = nodeX + dir * circleR;
