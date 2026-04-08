@@ -259,7 +259,7 @@ const TransitionPage = () => {
                 type="file"
                 id="certificate-upload"
                 className="hidden"
-                accept=".pdf,.jpg,.jpeg,.png"
+                accept="image/*,.pdf"
                 onChange={(e) => setSelectedFile(e.target.files[0])}
                 data-testid="certificate-file-input"
               />

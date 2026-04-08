@@ -1205,7 +1205,7 @@ const VaultPage = () => {
                   type="file"
                   id="file-upload"
                   className="hidden"
-                  accept="application/pdf,application/x-pdf,.pdf,image/jpeg,image/png,image/heic,image/heif,image/webp,image/tiff"
+                  accept="image/*,.pdf"
                   onChange={(e) => {
                     const file = e.target.files[0];
                     if (file) {
