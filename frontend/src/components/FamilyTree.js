@@ -331,8 +331,8 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const dir = isCentered ? 0 : (isLeft ? 1 : -1);
                   const rowCenterY = topTrail + (rIdx + 0.3) * rowH;
                   if (isCentered) {
-                    const circleTopY = rowCenterY - (25 / totalEstH) * vbH;
-                    centeredPath = `M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${circleTopY.toFixed(1)}`;
+                    // Extend to row center — the circle node (z-index 1) covers the overlap
+                    centeredPath = `M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${rowCenterY.toFixed(1)}`;
                     allPaths.push(centeredPath);
                   } else {
                     const ex = nodeX + dir * circleR;
@@ -355,9 +355,6 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                 allPaths.forEach(d => {
                   svg += `<path d="${d}" fill="none" stroke="url(#ftGoldGrad)" stroke-width="${sw}" filter="url(#ftGoldGlow)" />`;
                 });
-                if (centeredPath) {
-                  svg += `<path d="${centeredPath}" fill="none" stroke="${isLight ? '#b8860b' : '#d4af37'}" stroke-width="${sw * 1.5}" opacity="0.25" filter="url(#ftGoldGlow)" />`;
-                }
                 svg += `<circle class="flash-gold-origin" cx="${cx}" cy="2" r="4" fill="${lightColor}" opacity="0" />`;
                 allPaths.forEach(d => {
                   svg += `<path class="fill-path-gold" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" />`;
@@ -375,32 +372,6 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                 return svg;
               })() }}
             />
-
-            {/* Vertical connector for centered (odd) bottom node — from V-point to circle top */}
-            {n % 2 !== 0 && (() => {
-              const goldColor = isLight ? 'rgba(184,134,11,0.2)' : 'rgba(212,175,55,0.18)';
-              const glowColor = isLight ? 'rgba(184,134,11,0.12)' : 'rgba(212,175,55,0.10)';
-              const animColor = isLight ? 'rgba(200,170,50,0.3)' : 'rgba(255,230,140,0.25)';
-              const numFullRows = Math.floor(n / 2);
-              // Start where trunk is (top of container, near SVG y=2)
-              const lineTop = 0;
-              // End at top edge of centered node circle (subtract circle radius 25px)
-              const lineBottom = trailPx + numFullRows * estRowH + (numFullRows - 1) * 12 + 12 - 25;
-              return (
-                <div className="absolute pointer-events-none" style={{
-                  left: '50%', top: lineTop, height: Math.max(0, lineBottom - lineTop),
-                  width: 0, transform: 'translateX(-50%)', zIndex: 0,
-                  borderLeft: `1.5px solid ${goldColor}`,
-                  boxShadow: `0 0 6px ${glowColor}, 0 0 12px ${glowColor}`,
-                }}>
-                  <div className="fill-line-gold" style={{
-                    position: 'absolute', left: -1, top: 0, width: 2, height: '100%',
-                    background: animColor, opacity: 0,
-                    boxShadow: `0 0 8px ${animColor}`,
-                  }} />
-                </div>
-              );
-            })()}
 
             {/* Beneficiary grid — two columns with wide center gap */}
             <div className="grid px-1" style={{ gridTemplateColumns: 'repeat(2, 1fr)', columnGap: '20%', rowGap: 12, justifyItems: 'center', paddingTop: trailPx, position: 'relative', zIndex: 1 }}>
