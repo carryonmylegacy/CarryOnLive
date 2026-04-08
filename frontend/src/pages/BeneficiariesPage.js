@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -41,6 +41,7 @@ import {
   UserCheck,
   XCircle,
   GripVertical,
+  ArrowLeft,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -159,6 +160,7 @@ const BeneficiariesPage = () => {
   const [deleteTarget, setDeleteTarget] = useState(null); // { id, name } for admin delete dialog
   const [expandedTiles, setExpandedTiles] = useState(new Set());
   const isAdmin = user?.role === 'admin';
+  const autoOpenedRef = useRef(false);
 
   const SECTION_LABELS = {
     messages: 'Milestone Messages (MM)',
@@ -173,6 +175,14 @@ const BeneficiariesPage = () => {
   useEffect(() => {
     fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-open add form when arriving from Getting Started with no beneficiaries
+  useEffect(() => {
+    if (!loading && fromGettingStarted && !autoOpenedRef.current && beneficiaries.length === 0 && estate) {
+      autoOpenedRef.current = true;
+      setShowAddModal(true);
+    }
+  }, [loading, fromGettingStarted, beneficiaries.length, estate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
     try {
@@ -536,6 +546,27 @@ const BeneficiariesPage = () => {
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="beneficiaries-page"
       style={{ background: 'radial-gradient(ellipse at top left, rgba(34,197,94,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(22,163,74,0.06), transparent 55%)' }}>
+
+      {/* Getting Started context banner */}
+      {fromGettingStarted && (
+        <div className="flex items-center gap-3 rounded-2xl p-4" data-testid="getting-started-banner"
+          style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.15)' }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.25)' }}>
+            <Users className="w-5 h-5 text-[#22c55e]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-[var(--t)]">Getting Started — Add a Beneficiary</p>
+            <p className="text-xs text-[var(--t4)]">Add someone you want to protect. Just a first name and relationship is enough to start.</p>
+          </div>
+          <button onClick={() => navigate('/dashboard')}
+            className="flex-shrink-0 text-xs font-bold text-[var(--t4)] px-3 py-2 rounded-xl transition-colors hover:bg-[var(--s)]"
+            data-testid="back-to-dashboard-btn">
+            <ArrowLeft className="w-4 h-4 inline mr-1" />Back
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">

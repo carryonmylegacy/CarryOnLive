@@ -8,7 +8,7 @@ import {
   CheckSquare, Plus, Trash2, Edit2, Phone, Mail, MapPin, FileText,
   Briefcase, Users, Heart, Shield, Building, Stethoscope,
   Sparkles, Save, X,
-  Check, XCircle, Loader2, HelpCircle, ChevronDown, ChevronRight
+  Check, XCircle, Loader2, HelpCircle, ChevronDown, ChevronRight, ArrowLeft
 } from 'lucide-react';
 import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
@@ -465,6 +465,26 @@ const ChecklistPage = () => {
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="action-checklist"
       style={{ background: 'radial-gradient(ellipse at top left, rgba(245,158,11,0.15), transparent 55%), radial-gradient(ellipse at bottom right, rgba(217,119,6,0.08), transparent 55%)' }}>
+
+      {/* Getting Started context banner */}
+      {fromGettingStarted && (
+        <div className="flex items-center gap-3 rounded-2xl p-4" data-testid="getting-started-banner"
+          style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.15)' }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.25)' }}>
+            <CheckSquare className="w-5 h-5 text-[#f59e0b]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-[var(--t)]">Getting Started — Review Your Checklist</p>
+            <p className="text-xs text-[var(--t4)]">Look over the step-by-step checklist your loved ones will follow. You can customize it anytime.</p>
+          </div>
+          <button onClick={() => navigate('/dashboard')}
+            className="flex-shrink-0 text-xs font-bold text-[var(--t4)] px-3 py-2 rounded-xl transition-colors hover:bg-[var(--s)]"
+            data-testid="back-to-dashboard-btn">
+            <ArrowLeft className="w-4 h-4 inline mr-1" />Back
+          </button>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between">

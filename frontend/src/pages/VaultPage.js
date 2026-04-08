@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
@@ -33,7 +33,8 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
-  Check
+  Check,
+  ArrowLeft,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -70,6 +71,8 @@ const categories = [
 const VaultPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromGettingStarted = location.state?.fromGettingStarted;
   const [documents, setDocuments] = useState([]);
   const [estate, setEstate] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -127,6 +130,7 @@ const VaultPage = () => {
   const dragCounterRef = useRef(0);
   const uploadNameRef = useRef(null);
   const pendingDropFocusRef = useRef(false);
+  const autoOpenedRef = useRef(false);
 
   // Allowed file types — PDFs and images (multiple MIME variants for cross-browser/OS compat)
   const allowedExts = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp', 'tiff', 'tif'];
@@ -201,6 +205,14 @@ const VaultPage = () => {
   useEffect(() => {
     fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-open upload panel when arriving from Getting Started with no documents
+  useEffect(() => {
+    if (!loading && fromGettingStarted && !autoOpenedRef.current && documents.length === 0 && estate) {
+      autoOpenedRef.current = true;
+      setShowUploadModal(true);
+    }
+  }, [loading, fromGettingStarted, documents.length, estate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
     try {
@@ -744,6 +756,25 @@ const VaultPage = () => {
       )}
 
       {/* Header - matching prototype */}
+      {fromGettingStarted && (
+        <div className="flex items-center gap-3 rounded-2xl p-4" data-testid="getting-started-banner"
+          style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.15)' }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(37,99,235,0.15)', border: '1px solid rgba(37,99,235,0.25)' }}>
+            <FolderLock className="w-5 h-5 text-[#3b82f6]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-[var(--t)]">Getting Started — Upload a Document</p>
+            <p className="text-xs text-[var(--t4)]">Upload any important document (will, insurance, deed). Just pick a file and give it a name.</p>
+          </div>
+          <button onClick={() => navigate('/dashboard')}
+            className="flex-shrink-0 text-xs font-bold text-[var(--t4)] px-3 py-2 rounded-xl transition-colors hover:bg-[var(--s)]"
+            data-testid="back-to-dashboard-btn">
+            <ArrowLeft className="w-4 h-4 inline mr-1" />Back
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(37,99,235,0.2), rgba(59,130,246,0.15))' }}>

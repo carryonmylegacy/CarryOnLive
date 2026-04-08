@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
@@ -27,7 +27,10 @@ import {
   Pencil,
   CalendarDays,
   SwitchCamera,
-  Download
+  Download,
+  ArrowLeft,
+  ArrowRight,
+  Check
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -124,6 +127,8 @@ const eventTypes = [
 const MessagesPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromGettingStarted = location.state?.fromGettingStarted;
   const [messages, setMessages] = useState([]);
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [estate, setEstate] = useState(null);
@@ -132,6 +137,10 @@ const MessagesPage = () => {
   const [creating, setCreating] = useState(false);
   const [editingMessage, setEditingMessage] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
+  // Guided mode — simplified wizard for onboarding
+  const [guidedMode, setGuidedMode] = useState(false);
+  const [guidedStep, setGuidedStep] = useState(1);
+  const autoOpenedRef = useRef(false);
   
   // Form state
   const [title, setTitle] = useState('');
@@ -207,6 +216,21 @@ const MessagesPage = () => {
   useEffect(() => {
     fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-open guided creation when arriving from Getting Started
+  useEffect(() => {
+    if (!loading && fromGettingStarted && !autoOpenedRef.current && messages.length === 0 && estate) {
+      autoOpenedRef.current = true;
+      setGuidedMode(true);
+      setGuidedStep(1);
+      setMessageType('text');
+      // Auto-select all beneficiaries
+      if (beneficiaries.length > 0) {
+        setSelectedRecipients(beneficiaries.map(b => b.user_id || b.id));
+      }
+      setShowCreateModal(true);
+    }
+  }, [loading, fromGettingStarted, messages.length, estate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
     try {
@@ -585,6 +609,8 @@ const MessagesPage = () => {
     setVoiceRemoved(false);
     setEditingMessage(null);
     setCountdown(null);
+    setGuidedMode(false);
+    setGuidedStep(1);
     releaseCamera();
   };
 
@@ -657,6 +683,27 @@ const MessagesPage = () => {
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="milestone-messages"
       style={{ background: 'radial-gradient(ellipse at top left, rgba(139,92,246,0.15), transparent 55%), radial-gradient(ellipse at bottom right, rgba(124,58,237,0.08), transparent 55%)' }}>
+
+      {/* Getting Started context banner */}
+      {fromGettingStarted && (
+        <div className="flex items-center gap-3 rounded-2xl p-4" data-testid="getting-started-banner"
+          style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)' }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.25)' }}>
+            <MessageSquare className="w-5 h-5 text-[#8b5cf6]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-[var(--t)]">Getting Started — Leave a Message</p>
+            <p className="text-xs text-[var(--t4)]">Write a short message for your loved ones. You can always edit it later.</p>
+          </div>
+          <button onClick={() => navigate('/dashboard')}
+            className="flex-shrink-0 text-xs font-bold text-[var(--t4)] px-3 py-2 rounded-xl transition-colors hover:bg-[var(--s)]"
+            data-testid="back-to-dashboard-btn">
+            <ArrowLeft className="w-4 h-4 inline mr-1" />Back
+          </button>
+        </div>
+      )}
+
       {/* Header - matching prototype */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -862,9 +909,193 @@ const MessagesPage = () => {
       <SlidePanel
         open={showCreateModal}
         onClose={() => { setShowCreateModal(false); setEditingMessage(null); resetForm(); }}
-        title={editingMessage ? 'Edit Message' : 'Create Milestone Message'}
-        subtitle={editingMessage ? 'Update your message content and delivery settings' : 'Leave a heartfelt message for your loved ones'}
+        title={guidedMode ? `Step ${guidedStep} of 3` : (editingMessage ? 'Edit Message' : 'Create Milestone Message')}
+        subtitle={guidedMode ? 'Getting Started — Leave a Milestone Message' : (editingMessage ? 'Update your message content and delivery settings' : 'Leave a heartfelt message for your loved ones')}
       >
+        {/* ===== GUIDED MODE: Simplified step-by-step wizard ===== */}
+        {guidedMode && !editingMessage ? (
+          <div className="space-y-6" data-testid="guided-message-wizard">
+            {/* Progress dots */}
+            <div className="flex items-center justify-center gap-3 pb-2">
+              {[1, 2, 3].map(s => (
+                <div key={s} className="flex items-center gap-2">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+                    guidedStep > s ? 'bg-[#10b981] text-white' :
+                    guidedStep === s ? 'bg-[var(--gold)] text-[#080e1a] ring-4 ring-[var(--gold)]/20' :
+                    'bg-[var(--s)] text-[var(--t5)]'
+                  }`}>
+                    {guidedStep > s ? <Check className="w-4 h-4" /> : s}
+                  </div>
+                  {s < 3 && <div className={`w-8 h-0.5 rounded-full transition-colors ${guidedStep > s ? 'bg-[#10b981]' : 'bg-[var(--b)]'}`} />}
+                </div>
+              ))}
+            </div>
+
+            {/* Step 1: Title */}
+            {guidedStep === 1 && (
+              <div className="space-y-4 animate-in fade-in duration-300" data-testid="guided-step-1">
+                <div className="rounded-2xl p-5" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }}>
+                  <h3 className="text-lg font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                    Give your message a name
+                  </h3>
+                  <p className="text-sm text-[var(--t4)] leading-relaxed">
+                    This is just a label so you can find it later. Something simple like "To my family" or "Happy Birthday" works great.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[var(--t3)] text-base font-bold">Message Title</Label>
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder='e.g., "To my family" or "Happy 30th Birthday"'
+                    className="input-field text-base h-14"
+                    data-testid="message-title-input"
+                    autoFocus
+                  />
+                </div>
+                <Button
+                  onClick={() => setGuidedStep(2)}
+                  disabled={!title.trim()}
+                  className="w-full h-14 text-base gold-button"
+                  data-testid="guided-next-1"
+                >
+                  Next — Write Your Message <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+            )}
+
+            {/* Step 2: Content */}
+            {guidedStep === 2 && (
+              <div className="space-y-4 animate-in fade-in duration-300" data-testid="guided-step-2">
+                <div className="rounded-2xl p-5" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }}>
+                  <h3 className="text-lg font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                    Write your message
+                  </h3>
+                  <p className="text-sm text-[var(--t4)] leading-relaxed">
+                    Write whatever is in your heart. You can always come back and change it later — nothing is permanent.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[var(--t3)] text-base font-bold">Your Message</Label>
+                    <span className="text-xs text-[var(--t5)] px-2 py-1 rounded-lg bg-[var(--s)]">
+                      "{title}"
+                    </span>
+                  </div>
+                  <Textarea
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Write your heartfelt message here..."
+                    className="input-field min-h-[180px] text-base leading-relaxed"
+                    data-testid="message-content-input"
+                    autoFocus
+                  />
+                  <button type="button" onClick={toggleSpeechToText}
+                    className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-xl transition-colors ${isSpeechListening ? 'bg-red-500/20 text-red-400' : 'text-[var(--t5)] hover:text-[var(--t3)] hover:bg-[var(--s)]'}`}
+                    data-testid="message-mic-button">
+                    {isSpeechListening ? <><MicOff className="w-4 h-4" /> Stop Dictation</> : <><Mic className="w-4 h-4" /> Speak Instead of Typing</>}
+                  </button>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setGuidedStep(1)}
+                    className="border-[var(--b)] text-[var(--t3)] h-14 px-6"
+                    data-testid="guided-back-2"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-1" /> Back
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      // Ensure all beneficiaries are selected
+                      if (beneficiaries.length > 0 && selectedRecipients.length === 0) {
+                        setSelectedRecipients(beneficiaries.map(b => b.user_id || b.id));
+                      }
+                      setGuidedStep(3);
+                    }}
+                    disabled={!content.trim()}
+                    className="flex-1 h-14 text-base gold-button"
+                    data-testid="guided-next-2"
+                  >
+                    Next — Review & Save <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Review & Save */}
+            {guidedStep === 3 && (
+              <div className="space-y-4 animate-in fade-in duration-300" data-testid="guided-step-3">
+                <div className="rounded-2xl p-5" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.12)' }}>
+                  <h3 className="text-lg font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                    Almost done — review your message
+                  </h3>
+                  <p className="text-sm text-[var(--t4)] leading-relaxed">
+                    Everything looks good? Just tap "Save Message" below. You can always edit it later.
+                  </p>
+                </div>
+
+                {/* Preview card */}
+                <div className="rounded-2xl p-5 space-y-4" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+                  <div>
+                    <p className="text-xs font-bold text-[var(--t5)] uppercase tracking-wider mb-1">Title</p>
+                    <p className="text-base font-bold text-[var(--t)]">{title}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-[var(--t5)] uppercase tracking-wider mb-1">Message</p>
+                    <p className="text-sm text-[var(--t3)] whitespace-pre-wrap leading-relaxed">{content.length > 200 ? content.slice(0, 200) + '...' : content}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-[var(--t5)] uppercase tracking-wider mb-1">Sending To</p>
+                    <div className="flex flex-wrap gap-2">
+                      {beneficiaries.filter(b => selectedRecipients.includes(b.user_id || b.id)).map(b => (
+                        <span key={b.id} className="px-3 py-1.5 rounded-full text-xs font-bold" style={{ background: 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>
+                          {b.name}
+                        </span>
+                      ))}
+                      {selectedRecipients.length === 0 && (
+                        <span className="text-xs text-[var(--t5)]">All your beneficiaries</span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-[var(--t5)] uppercase tracking-wider mb-1">Delivery</p>
+                    <p className="text-sm text-[var(--t3)]">When your estate transitions to your beneficiaries</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setGuidedStep(2)}
+                    className="border-[var(--b)] text-[var(--t3)] h-14 px-6"
+                    data-testid="guided-back-3"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-1" /> Back
+                  </Button>
+                  <Button
+                    onClick={handleCreate}
+                    disabled={creating}
+                    className="flex-1 h-14 text-base gold-button"
+                    data-testid="create-message-submit"
+                  >
+                    {creating ? (
+                      <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Saving...</>
+                    ) : (
+                      <><Check className="w-5 h-5 mr-2" /> Save Message</>
+                    )}
+                  </Button>
+                </div>
+
+                <p className="text-center text-xs text-[var(--t5)] leading-relaxed">
+                  You can edit this message anytime, add a video or voice recording, and change the delivery settings later.
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* ===== NORMAL MODE: Full-featured form ===== */
+          <>
           <div className="space-y-5">
             {/* Message Type Toggle */}
             <div className="flex gap-2">
@@ -1309,6 +1540,8 @@ const MessagesPage = () => {
               )}
             </Button>
           </div>
+          </>
+        )}
       </SlidePanel>
 
       {/* Video Playback Modal */}

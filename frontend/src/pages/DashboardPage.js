@@ -344,13 +344,13 @@ const DashboardPage = () => {
       add_credential: '#ec4899',
     };
     const STEP_LABELS = {
-      add_beneficiary: { title: 'Add Your First Beneficiary', desc: 'Start by adding the people who matter most to your estate plan. You can always add more later.', step: 1 },
-      create_message: { title: 'Leave a Message for Your Loved Ones', desc: 'Record a video, voice, or written message for your beneficiaries. You can edit or re-record anytime.', step: 2 },
-      upload_document: { title: 'Upload Your First Estate Document', desc: 'Securely store a will, trust, insurance policy, or other important document in your encrypted vault.', step: 3 },
-      review_readiness: { title: 'Consult the Estate Guardian', desc: 'Get an AI analysis of your estate plan and your personalized readiness score. You\'ll need to set your address in Settings first.', step: 4 },
-      customize_checklist: { title: 'Review Your Action Checklist', desc: 'Customize the steps your loved ones will follow when they need it most.', step: 5 },
-      designate_primary: { title: 'Set Your Succession Order', desc: 'Arrange the order in which your beneficiaries inherit responsibilities. This step is optional — you can set it up anytime.', step: 6, optional: true },
-      add_credential: { title: 'Store a Digital Account Credential', desc: 'Add one account login and password to your Digital Access Vault so your beneficiaries can manage your accounts. This step is optional.', step: 7, optional: true },
+      add_beneficiary: { title: 'Add Someone You Love', desc: "Let's start by adding a family member or loved one. You just need their first name and your relationship — that's it! You can add details later.", step: 1 },
+      create_message: { title: 'Write a Short Message', desc: "You'll give your message a simple title like \"To My Family,\" then write a few words from the heart. That's all — just two easy steps.", step: 2 },
+      upload_document: { title: 'Upload an Important Document', desc: "Pick a document from your device — like a will, insurance policy, or any important paper. Just select the file and give it a name.", step: 3 },
+      review_readiness: { title: 'Check Your Readiness Score', desc: "Let our AI assistant look over your progress and give you a simple readiness score. Tip: Set your address in Settings first for the best results.", step: 4 },
+      customize_checklist: { title: 'Review Your Action Checklist', desc: 'Take a look at the step-by-step checklist your loved ones will follow. You can customize it to fit your family.', step: 5 },
+      designate_primary: { title: 'Set Your Succession Order', desc: 'Arrange the order your beneficiaries inherit responsibilities. This is optional — you can always do it later.', step: 6, optional: true },
+      add_credential: { title: 'Save a Digital Account Login', desc: 'Store one account login (like email or banking) so your beneficiaries can access it when needed. This is optional.', step: 7, optional: true },
     };
     const OPTIONAL_SKIP_INFO = {
       designate_primary: {
@@ -548,7 +548,7 @@ const DashboardPage = () => {
             className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
             style={{ background: `linear-gradient(135deg, ${stepColor}, ${stepColor}cc)`, color: '#080e1a', boxShadow: `0 8px 32px ${stepColor}30` }}
             data-testid="guided-cta-btn">
-            Let's Go <ChevronRight className="w-5 h-5" />
+            Show Me How <ChevronRight className="w-5 h-5" />
           </button>
 
           {/* Skip link — different behavior for optional steps */}
@@ -556,7 +556,7 @@ const DashboardPage = () => {
             className="mt-8 px-5 py-2 rounded-full text-xs transition-colors"
             style={{ color: 'var(--guided-skip, #64748b)', background: 'var(--guided-skip-bg, rgba(255,255,255,0.04))', border: '1px solid var(--guided-skip-border, rgba(255,255,255,0.06))' }}
             data-testid="guided-skip-btn">
-            {isOptional ? 'Skip — I\'ll do this later' : 'Skip this step for now'}
+            {isOptional ? 'Skip — I\'ll do this later' : 'I\'ll do this on my own later'}
           </button>
           </>
           )}

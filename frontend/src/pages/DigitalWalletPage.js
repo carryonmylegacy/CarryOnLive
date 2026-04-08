@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { KeyRound, Plus, Trash2, Edit2, Eye, EyeOff, Shield, Loader2, User, Wallet, Globe, Mail, Cloud, CreditCard, Save } from 'lucide-react';
+import { KeyRound, Plus, Trash2, Edit2, Eye, EyeOff, Shield, Loader2, User, Wallet, Globe, Mail, Cloud, CreditCard, Save, ArrowLeft } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -28,6 +28,8 @@ const CATEGORIES = [
 const DigitalWalletPage = () => {
   const { getAuthHeaders } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromGettingStarted = location.state?.fromGettingStarted;
   const [entries, setEntries] = useState([]);
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,8 +37,17 @@ const DigitalWalletPage = () => {
   const [editEntry, setEditEntry] = useState(null);
   const [visiblePasswords, setVisiblePasswords] = useState({});
   const [showReturnPopup, setShowReturnPopup] = useState(false);
+  const autoOpenedRef = useRef(false);
 
   useEffect(() => { fetchData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-open add form when arriving from Getting Started with no entries
+  useEffect(() => {
+    if (!loading && fromGettingStarted && !autoOpenedRef.current && entries.length === 0) {
+      autoOpenedRef.current = true;
+      setShowAdd(true);
+    }
+  }, [loading, fromGettingStarted, entries.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
     try {
@@ -101,6 +112,26 @@ const DigitalWalletPage = () => {
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="digital-wallet-page">
       <SectionLockBanner sectionId="vault" />
+
+      {/* Getting Started context banner */}
+      {fromGettingStarted && (
+        <div className="flex items-center gap-3 rounded-2xl p-4" data-testid="getting-started-banner"
+          style={{ background: 'rgba(236,72,153,0.08)', border: '1px solid rgba(236,72,153,0.15)' }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(236,72,153,0.15)', border: '1px solid rgba(236,72,153,0.25)' }}>
+            <KeyRound className="w-5 h-5 text-[#ec4899]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-[var(--t)]">Getting Started — Save a Digital Login</p>
+            <p className="text-xs text-[var(--t4)]">Store one account login (like email or banking) so your loved ones can access it when needed.</p>
+          </div>
+          <button onClick={() => navigate('/dashboard')}
+            className="flex-shrink-0 text-xs font-bold text-[var(--t4)] px-3 py-2 rounded-xl transition-colors hover:bg-[var(--s)]"
+            data-testid="back-to-dashboard-btn">
+            <ArrowLeft className="w-4 h-4 inline mr-1" />Back
+          </button>
+        </div>
+      )}
 
       <SectionLockedOverlay sectionId="vault">
       <div className="flex items-center justify-between">
