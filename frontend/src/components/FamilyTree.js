@@ -336,7 +336,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                     const fullRows = Math.floor(idx / 2);
                     const containerH = trailPx + numBenRows * estRowH + Math.max(0, numBenRows - 1) * 12;
                     const circleTopPx = trailPx + fullRows * (estRowH + 12);
-                    const circleTopVB = Math.max(3, (circleTopPx / containerH) * vbH - 1);
+                    const circleTopVB = (circleTopPx / containerH) * vbH;
                     centeredPath = `M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${circleTopVB.toFixed(1)}`;
                     allPaths.push(centeredPath);
                   } else {
@@ -368,10 +368,19 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const fiR = Math.floor(fi / 2);
                   const fiLeft = fi % 2 === 0;
                   const fiCen = (n % 2 !== 0 && fi === n - 1);
-                  const fiY = topTrail + (fiR + 0.3) * rowH;
                   const fiNx = fiCen ? cx : (fiLeft ? leftCol : rightCol);
                   const fiDir = fiCen ? 0 : (fiLeft ? 1 : -1);
                   const fiX = fiNx + fiDir * circleR;
+                  let fiY;
+                  if (fiCen) {
+                    // Match the accurate centered path endpoint
+                    const fullRows = Math.floor(fi / 2);
+                    const containerH = trailPx + numBenRows * estRowH + Math.max(0, numBenRows - 1) * 12;
+                    const circleTopPx = trailPx + fullRows * (estRowH + 12);
+                    fiY = (circleTopPx / containerH) * vbH;
+                  } else {
+                    fiY = topTrail + (fiR + 0.3) * rowH;
+                  }
                   svg += `<circle class="flash-gold-end" cx="${fiX.toFixed(1)}" cy="${fiY.toFixed(1)}" r="3" fill="${lightColor}" opacity="0" />`;
                 }
                 return svg;
