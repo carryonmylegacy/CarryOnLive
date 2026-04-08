@@ -1113,6 +1113,118 @@ class ReorderRequest(BaseModel):
     ordered_ids: list[str]
 
 
+class LinkExistingAccountRequest(BaseModel):
+    token: str
+    username: str
+    password: str
+
+
+@router.post("/invitations/accept-existing")
+async def accept_invitation_existing(data: LinkExistingAccountRequest):
+    """Accept an invitation by linking to an existing CarryOn account via login."""
+    beneficiary = await db.beneficiaries.find_one(
+        {"invitation_token": data.token}, {"_id": 0}
+    )
+    if not beneficiary:
+        raise HTTPException(status_code=404, detail="Invalid or expired invitation")
+
+    if beneficiary.get("invitation_status") == "accepted":
+        raise HTTPException(
+            status_code=400, detail="This invitation has already been accepted"
+        )
+
+    # Authenticate with existing credentials
+    user = await db.users.find_one(
+        {"username_lower": data.username.lower().strip()}, {"_id": 0}
+    )
+    if not user or not verify_password(data.password, user["password"]):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password. Please check your credentials.",
+        )
+
+    # Link the existing account to this beneficiary record
+    await db.beneficiaries.update_one(
+        {"id": beneficiary["id"]},
+        {"$set": {"user_id": user["id"], "invitation_status": "accepted"}},
+    )
+
+    # Add to estate's beneficiary list
+    await db.estates.update_one(
+        {"id": beneficiary["estate_id"]},
+        {"$addToSet": {"beneficiaries": user["id"]}},
+    )
+
+    # Copy DOB and address from beneficiary record to user if not already set
+    copy_fields = {}
+    if beneficiary.get("date_of_birth") and not user.get("date_of_birth"):
+        copy_fields["date_of_birth"] = beneficiary["date_of_birth"]
+    if beneficiary.get("address_street") and not user.get("address_street"):
+        copy_fields["address_street"] = beneficiary.get("address_street", "")
+        copy_fields["address_city"] = beneficiary.get("address_city", "")
+        copy_fields["address_state"] = beneficiary.get("address_state", "")
+        copy_fields["address_zip"] = beneficiary.get("address_zip", "")
+    if copy_fields:
+        await db.users.update_one({"id": user["id"]}, {"$set": copy_fields})
+
+    # Sync beneficiary photo to user profile if user has no photo
+    if beneficiary.get("photo_url") and not user.get("photo_url"):
+        await db.users.update_one(
+            {"id": user["id"]},
+            {"$set": {"photo_url": beneficiary["photo_url"]}},
+        )
+
+    # Mark benefactor users as also being beneficiaries
+    if user.get("role") == "benefactor":
+        await db.users.update_one(
+            {"id": user["id"]}, {"$set": {"is_also_beneficiary": True}}
+        )
+
+    # Notify the benefactor
+    full_name = user.get("name", "A family member")
+    estate = await db.estates.find_one(
+        {"id": beneficiary["estate_id"]},
+        {"_id": 0, "id": 1, "user_id": 1, "owner_id": 1},
+    )
+    benefactor_id = (estate or {}).get("owner_id") or (estate or {}).get("user_id")
+    if benefactor_id:
+        asyncio.create_task(
+            send_push_notification(
+                benefactor_id,
+                "Invitation Accepted",
+                f"{full_name} has accepted your invitation and joined your family plan",
+                "/beneficiaries",
+                "invitation-accepted",
+                "beneficiary",
+            )
+        )
+        from services.notifications import notify
+
+        asyncio.create_task(
+            notify.benefactor(
+                benefactor_id,
+                "Beneficiary Joined Your Plan",
+                f"{full_name} has accepted your invitation and is now part of your family plan.",
+                url="/beneficiaries",
+            )
+        )
+
+    # Generate token for auto-login
+    auth_token = create_token(user["id"], user["email"], user["role"])
+    return {
+        "message": "Account linked successfully",
+        "access_token": auth_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user["id"],
+            "email": user["email"],
+            "name": user["name"],
+            "role": user["role"],
+            "created_at": user.get("created_at", ""),
+        },
+    }
+
+
 @router.put("/beneficiaries/reorder/{estate_id}")
 async def reorder_beneficiaries(
     estate_id: str,
