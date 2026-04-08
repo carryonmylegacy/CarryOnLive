@@ -331,7 +331,8 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const dir = isCentered ? 0 : (isLeft ? 1 : -1);
                   const rowCenterY = topTrail + (rIdx + 0.3) * rowH;
                   if (isCentered) {
-                    centeredPath = `M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${rowCenterY.toFixed(1)}`;
+                    const circleTopY = rowCenterY - (25 / totalEstH) * vbH;
+                    centeredPath = `M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${circleTopY.toFixed(1)}`;
                     allPaths.push(centeredPath);
                   } else {
                     const ex = nodeX + dir * circleR;
@@ -383,8 +384,8 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               const numFullRows = Math.floor(n / 2);
               // Start where trunk is (top of container, near SVG y=2)
               const lineTop = 0;
-              // End at top edge of centered node circle (don't go through it)
-              const lineBottom = trailPx + numFullRows * estRowH + (numFullRows - 1) * 12 + 12;
+              // End at top edge of centered node circle (subtract circle radius 25px)
+              const lineBottom = trailPx + numFullRows * estRowH + (numFullRows - 1) * 12 + 12 - 25;
               return (
                 <div className="absolute pointer-events-none" style={{
                   left: '50%', top: lineTop, height: Math.max(0, lineBottom - lineTop),
