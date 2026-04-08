@@ -147,6 +147,7 @@ const BeneficiariesPage = () => {
   const [avatarColor, setAvatarColor] = useState(avatarColors[0]);
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [photoRemoved, setPhotoRemoved] = useState(false);
   const [, setUploadingPhoto] = useState(null);
   const [accessRequests, setAccessRequests] = useState([]);
   const [handlingRequest, setHandlingRequest] = useState(null);
@@ -273,6 +274,9 @@ const BeneficiariesPage = () => {
 
       if (editingBeneficiary) {
         const res = await axios.put(`${API_URL}/beneficiaries/${editingBeneficiary.id}`, payload, getAuthHeaders());
+        if (photoRemoved && !photoFile) {
+          await axios.delete(`${API_URL}/beneficiaries/${editingBeneficiary.id}/photo`, getAuthHeaders());
+        }
         if (photoFile) await uploadPhoto(editingBeneficiary.id);
         // If email changed, prompt user to resend invite
         if (res.data?.email_changed) {
@@ -446,6 +450,7 @@ const BeneficiariesPage = () => {
     setAvatarColor(avatarColors[0]);
     setPhotoFile(null);
     setPhotoPreview(null);
+    setPhotoRemoved(false);
   };
 
   const getInvitationStatusBadge = (ben) => {
@@ -884,7 +889,7 @@ const BeneficiariesPage = () => {
                   setPhotoFile(file);
                   setPhotoPreview(previewUrl);
                 }}
-                onRemove={() => { setPhotoFile(null); setPhotoPreview(null); }}
+                onRemove={() => { setPhotoFile(null); setPhotoPreview(null); setPhotoRemoved(true); }}
               />
             </div>
             <p className="text-center text-xs text-[#64748b]">Tap to take or choose a photo</p>
