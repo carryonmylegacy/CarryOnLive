@@ -40,24 +40,26 @@ async def send_invitation_email(beneficiary: dict, benefactor: dict):
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
                 <div style="text-align: center; margin-bottom: 30px;">
                     <h1 style="color: #d4af37; margin: 0;">CarryOn™</h1>
-                    <p style="color: #666;">Secure Estate Planning</p>
+                    <p style="color: #666;">Family Preparedness Platform</p>
                 </div>
 
-                <h2 style="color: #333;">You've Been Added to {benefactor_name}'s Estate</h2>
+                <h2 style="color: #333;">Someone Special Is Thinking of You</h2>
 
                 <p style="color: #555; line-height: 1.6;">
                     Dear {beneficiary_first},
                 </p>
 
                 <p style="color: #555; line-height: 1.6;">
-                    {benefactor_name} has added you as a beneficiary on CarryOn™, a secure estate planning platform.
-                    This means they've chosen you to be part of their legacy planning.
+                    {benefactor_name} has included you in their family preparedness plan on CarryOn™.
+                    This means they've taken the time to make sure your family is ready for whatever life brings —
+                    and they want you to be part of that plan.
                 </p>
 
                 <p style="color: #555; line-height: 1.6;">
                     <strong>What is CarryOn™?</strong><br>
-                    CarryOn™ helps families prepare for life's transitions by securely storing important documents,
-                    messages, and instructions that can be shared with loved ones at the appropriate time.
+                    CarryOn™ is a digital family preparedness platform that brings together important documents,
+                    personal messages, action checklists, contingency protocols, and secure communication
+                    channels — so families can stay organized, connected, and ready for life's transitions.
                 </p>
 
                 <p style="color: #555; line-height: 1.6;">
@@ -66,9 +68,9 @@ async def send_invitation_email(beneficiary: dict, benefactor: dict):
                 </p>
 
                 <ul style="color: #555; line-height: 1.8;">
-                    <li>View your connection to {benefactor_first}'s estate</li>
+                    <li>View your connection to {benefactor_first}'s family plan</li>
                     <li>Receive important updates and notifications</li>
-                    <li>Access documents and messages when the time is right</li>
+                    <li>Access documents, messages, and protocols when the time is right</li>
                 </ul>
 
                 <div style="text-align: center; margin: 30px 0;">
@@ -85,8 +87,8 @@ async def send_invitation_email(beneficiary: dict, benefactor: dict):
                 </div>
 
                 <p style="color: #888; font-size: 12px; line-height: 1.6;">
-                    <strong>Note:</strong> At this time, you will not have access to any specific details about the estate.
-                    This invitation simply connects you to {benefactor_first}'s CarryOn™ account for future reference.
+                    <strong>Note:</strong> There's nothing you need to do right now except create your account.
+                    When the time comes, everything {benefactor_first} has prepared will be ready for you.
                 </p>
 
                 <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
@@ -101,7 +103,7 @@ async def send_invitation_email(beneficiary: dict, benefactor: dict):
                 {
                     "from": SENDER_EMAIL,
                     "to": email,
-                    "subject": f"{benefactor_name} has added you to their CarryOn™ Estate",
+                    "subject": f"{benefactor_name} has included you in their family plan on CarryOn™",
                     "html": email_html,
                 }
             )

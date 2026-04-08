@@ -117,7 +117,7 @@ const AcceptInvitationPage = () => {
           <h2 className="text-2xl font-bold text-white mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
             Welcome to CarryOn, {invitationData?.beneficiary?.first_name}
           </h2>
-          <p className="text-[#94a3b8] mb-2">Your account has been created. You're now connected to {invitationData?.benefactor_name}'s estate plan.</p>
+          <p className="text-[#94a3b8] mb-2">Your account has been created. You're now connected to {invitationData?.benefactor_name}'s family plan.</p>
           <p className="text-xs text-[#525c72] mb-6">This is a private, secure connection. Take your time getting familiar.</p>
           <Loader2 className="w-6 h-6 text-[#d4af37] animate-spin mx-auto" />
           <p className="text-xs text-[#525c72] mt-2">Taking you to your dashboard...</p>
@@ -155,16 +155,16 @@ const AcceptInvitationPage = () => {
                 Someone special is<br />thinking of <span className="text-[#d4af37]">you</span>
               </h1>
               <p className="text-lg text-[#94a3b8] leading-relaxed mb-8">
-                <span className="text-[#d4af37] font-semibold">{invitationData?.benefactor_name}</span> has included you in their estate plan on CarryOn™
+                <span className="text-[#d4af37] font-semibold">{invitationData?.benefactor_name}</span> has included you in their family preparedness plan on CarryOn™
               </p>
 
               {/* Feature pills — desktop only */}
               <div className="hidden lg:grid grid-cols-2 gap-3">
                 {[
-                  { icon: FileText, label: 'Secure Documents', desc: 'Encrypted & accessible', color: '#3b82f6' },
-                  { icon: Heart, label: 'Personal Messages', desc: 'Written just for you', color: '#ec4899' },
-                  { icon: Users, label: 'Action Checklist', desc: 'Nothing falls through', color: '#f59e0b' },
-                  { icon: Shield, label: 'Bank-Grade Security', desc: 'AES-256 zero-knowledge', color: '#10b981' },
+                  { icon: FileText, label: 'Secure Document Vault', desc: 'Encrypted & organized', color: '#3b82f6' },
+                  { icon: Heart, label: 'Milestone Messages', desc: 'Written just for you', color: '#ec4899' },
+                  { icon: Users, label: 'Action Checklists & Protocols', desc: 'Your family stays coordinated', color: '#f59e0b' },
+                  { icon: Shield, label: 'Encrypted Communications', desc: 'Private family channels', color: '#10b981' },
                 ].map((f, i) => (
                   <div key={i} className="p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
                     <f.icon className="w-5 h-5 mb-2" style={{ color: f.color }} />
@@ -182,13 +182,14 @@ const AcceptInvitationPage = () => {
                 <div className="rounded-xl p-5" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
                   <p className="text-sm text-white font-bold mb-3">What does this mean?</p>
                   <p className="text-sm text-[#94a3b8] leading-relaxed mb-3">
-                    Estate planning is one of the most thoughtful things someone can do for the people they love. 
-                    By including you, {benefactorFirst} is making sure that if anything ever happens, 
-                    you'll have access to important documents, messages, and guidance — all in one secure place.
+                    Family preparedness is one of the most thoughtful things someone can do for the people they love. 
+                    By including you, {benefactorFirst} is making sure that no matter what life brings, 
+                    your family has a plan — with important documents, personal messages, action checklists, 
+                    and secure communication channels all in one place.
                   </p>
                   <p className="text-sm text-[#94a3b8] leading-relaxed">
                     <span className="text-white font-medium">There's nothing you need to do right now</span> except create your account. 
-                    Everything is handled quietly in the background.
+                    When the time comes, everything will be ready for you.
                   </p>
                 </div>
 
@@ -198,8 +199,8 @@ const AcceptInvitationPage = () => {
                   {[
                     { icon: FileText, label: 'Important documents — securely stored and encrypted', color: '#3b82f6' },
                     { icon: Heart, label: 'Personal messages — written just for you', color: '#ec4899' },
-                    { icon: Users, label: 'A clear action checklist — so nothing falls through the cracks', color: '#f59e0b' },
-                    { icon: Shield, label: 'Bank-grade security — AES-256 encrypted, zero-knowledge', color: '#10b981' },
+                    { icon: Users, label: 'Action checklists and family protocols — so everyone stays coordinated', color: '#f59e0b' },
+                    { icon: Shield, label: 'Encrypted communication channels — private and secure', color: '#10b981' },
                   ].map((item, i) => (
                     <div key={i} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
                       <item.icon className="w-4 h-4 flex-shrink-0" style={{ color: item.color }} />
