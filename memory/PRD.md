@@ -40,26 +40,18 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - SEO (robots.txt, sitemap.xml, meta tags)
 - State-sync audit (photo, video, voice deletion desyncs fixed)
 - Narrative copy updated to "family preparedness"
+- Getting Started UX Overhaul (foolproof for elderly/non-tech users)
+- CCP First-Visit Welcome Walkthrough
+- ECT Enhanced Security Intro
+- xAI keepalive optimization (on-demand warmup)
 
 ### Completed (Current Session — Apr 8, 2026)
-- **Getting Started UX Overhaul**: Made onboarding flow fool-proof for elderly/non-tech users
-  - Updated guided overlay copy to warmer language ("Add Someone You Love", "Write a Short Message")
-  - Changed CTA from "Let's Go" to "Show Me How", skip text to "I'll do this on my own later"
-  - Added simplified 3-step guided wizard for first-time message creation (Title → Content → Review & Save)
-  - Added "Getting Started" context banners on all 5 feature pages with "Back" escape hatch
-  - Auto-open action panels when arriving from Getting Started with empty data
-  - Updated OnboardingWizard step labels
-
-- **CCP First-Visit Welcome Walkthrough**: 3-step guided intro on first visit to Contingency Protocols
-  - Step 1: What CCP is (emergency plans, check-ins, drills)
-  - Step 2: How to create a plan (name, meeting points, communication, instructions)
-  - Step 3: What happens during emergencies (activation, check-in, location, stand-down)
-  - Persisted via localStorage, skip link available on all steps
-
-- **ECT Enhanced Security Intro**: Upgraded existing 1-step security intro to 2-step walkthrough
-  - Step 1: Why ECT is different (closed network, no phone needed, zero data mining)
-  - Step 2: How to use it (start conversation, pick contacts, type/send, attachments)
-  - Back/forward navigation, skip link
+- **Invitation Existing Account Linking (P0)**: Fixed critical bug where existing users couldn't accept an invitation without hitting a "username taken" error.
+  - Added `POST /api/invitations/accept-existing` endpoint in `beneficiaries.py`
+  - Added "I Have an Account" toggle in `AcceptInvitationPage.js`
+  - Fixed missing `verify_password` import (would have caused runtime crash)
+  - Fixed stale `_xai_keepalive_task` import in `server.py` shutdown handler
+  - Tested: 10/10 backend tests passed, all frontend flows verified
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
