@@ -1265,7 +1265,7 @@ export default function EstateChatPage() {
                         const isYou = m.id === user?.id;
                         return (
                           <div key={m.id} className="flex items-center gap-2.5 px-3 py-2" data-testid={`list-member-${ch.id}-${m.id}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-[10px] font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-[11px] font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
                               {m.photo_url
                                 ? <img src={m.photo_url} alt="" className="w-7 h-7 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = initials; }} />
                                 : initials}
@@ -1275,7 +1275,7 @@ export default function EstateChatPage() {
                                 {m.name}{isYou ? ' (You)' : ''}
                               </div>
                               {(m.relation || m.role_in_estate) && (
-                                <div className="text-[10px] truncate" style={{ color: '#7B879E' }}>{m.relation || m.role_in_estate}</div>
+                                <div className="text-[11px] truncate" style={{ color: '#7B879E' }}>{m.relation || m.role_in_estate}</div>
                               )}
                             </div>
                           </div>
@@ -1352,7 +1352,7 @@ export default function EstateChatPage() {
                         {m.name}{isYou ? ' (You)' : ''}
                       </div>
                       {(m.relation || m.role_in_estate) && (
-                        <div className="text-[10px] truncate" style={{ color: '#7B879E' }}>{m.relation || m.role_in_estate}</div>
+                        <div className="text-[11px] truncate" style={{ color: '#7B879E' }}>{m.relation || m.role_in_estate}</div>
                       )}
                     </div>
                   </div>

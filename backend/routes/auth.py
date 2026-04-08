@@ -1162,13 +1162,13 @@ async def update_profile(body: dict, current_user: dict = Depends(get_current_us
             # Find all estates where this user is linked as a beneficiary
             linked_bens = await db.beneficiaries.find(
                 {"user_id": current_user["id"]},
-                {"_id": 0, "estate_id": 1},
+                {"_id": 0, "estate_id": 1, "id": 1},
             ).to_list(100)
             estate_ids = [b["estate_id"] for b in linked_bens if b.get("estate_id")]
             if estate_ids:
                 estates = await db.estates.find(
                     {"id": {"$in": estate_ids}},
-                    {"_id": 0, "owner_id": 1},
+                    {"_id": 0, "owner_id": 1, "id": 1},
                 ).to_list(100)
                 notified = set()
                 for est in estates:
@@ -1537,7 +1537,7 @@ async def forgot_username(data: dict):
     if not email:
         return {"message": "If that email exists, your username(s) have been sent."}
 
-    users = await db.users.find({"email": email}, {"_id": 0, "username": 1, "name": 1}).to_list(10)
+    users = await db.users.find({"email": email}, {"_id": 0, "username": 1, "name": 1, "id": 1}).to_list(10)
 
     if users:
         usernames = [u.get("username", "unknown") for u in users]
