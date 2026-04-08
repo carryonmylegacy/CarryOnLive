@@ -7,6 +7,18 @@ import { RevealSection } from '../components/landing/RevealSection';
 import LandingContent from '../components/landing/LandingContent';
 import { isIOS, isAndroid } from '../utils/pwaDetect';
 
+const useIsMobileViewport = (breakpoint = 768) => {
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < breakpoint);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const handler = (e) => setIsMobile(e.matches);
+    setIsMobile(mq.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [breakpoint]);
+  return isMobile;
+};
+
 const HomePage = () => {
   const navigate = useNavigate();
   const [flagOpacity, setFlagOpacity] = useState(1);
@@ -15,7 +27,7 @@ const HomePage = () => {
   const [landscapeVideoId, setLandscapeVideoId] = useState('EhU-jojs1jk');
   const [verticalVideoId, setVerticalVideoId] = useState('');
 
-  const isMobile = isIOS() || isAndroid();
+  const isMobileView = useIsMobileViewport();
 
   useEffect(() => {
     axios.get(`${API_URL}/public/site-content`).then(r => {
@@ -40,7 +52,7 @@ const HomePage = () => {
   }, []);
 
   // Decide which video to show
-  const showVertical = isMobile && verticalVideoId;
+  const showVertical = isMobileView && verticalVideoId;
   const activeVideoId = showVertical ? verticalVideoId : landscapeVideoId;
 
   return (
