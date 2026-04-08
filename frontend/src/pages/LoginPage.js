@@ -15,6 +15,18 @@ import { API_URL } from '../config';
 import { RevealSection } from '../components/landing/RevealSection';
 import LandingContent from '../components/landing/LandingContent';
 
+const useIsMobileViewport = (breakpoint = 768) => {
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < breakpoint);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const handler = (e) => setIsMobile(e.matches);
+    setIsMobile(mq.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [breakpoint]);
+  return isMobile;
+};
+
 const LoginPage = () => {
   const navigate = useNavigate();
   const { login, verifyOtp, resendOtp } = useAuth();
@@ -118,11 +130,17 @@ const LoginPage = () => {
 
   /* fetch homepage video ID */
   const [homepageVideoId, setHomepageVideoId] = useState('EhU-jojs1jk');
+  const [verticalVideoId, setVerticalVideoId] = useState('');
+  const isMobileView = useIsMobileViewport();
   useEffect(() => {
     axios.get(`${API_URL}/public/site-content`).then(r => {
       if (r.data?.homepage_video_id) setHomepageVideoId(r.data.homepage_video_id);
+      if (r.data?.homepage_video_id_vertical) setVerticalVideoId(r.data.homepage_video_id_vertical);
     }).catch(() => {});
   }, []);
+
+  const showVertical = isMobileView && verticalVideoId;
+  const activeVideoId = showVertical ? verticalVideoId : homepageVideoId;
 
   const completeLogin = async (result) => {
     // Biometric prompt only on native Capacitor app
@@ -952,10 +970,24 @@ const LoginPage = () => {
                 <p className="text-white/60 text-sm lg:text-base mb-8">
                   Learn how CarryOn&#8482; keeps your family ready for anything.
                 </p>
+                {showVertical ? (
+                  <div className="relative rounded-2xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.05)', maxWidth: '360px' }}>
+                    <div style={{ position: 'relative', paddingBottom: '177.78%', height: 0 }}>
+                      <iframe
+                        src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
+                        title="CarryOn — Family Preparedness"
+                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        data-testid="homepage-video"
+                      />
+                    </div>
+                  </div>
+                ) : (
                 <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.05)' }}>
                   <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
                     <iframe
-                      src={`https://www.youtube.com/embed/${homepageVideoId}?rel=0&modestbranding=1&color=white`}
+                      src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
                       title="CarryOn — Estate Planning Made Simple"
                       style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -964,6 +996,7 @@ const LoginPage = () => {
                     />
                   </div>
                 </div>
+                )}
               </RevealSection>
             </div>
           </section>
