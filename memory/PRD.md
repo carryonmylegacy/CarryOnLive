@@ -13,6 +13,8 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - Guided onboarding / Getting Started flow
 - Multi-role support (Benefactor, Beneficiary, Admin/Founder)
 - iOS/PWA hybrid with Capacitor
+- CarryOn Contingency Protocols (CCP) — family emergency plans
+- Estate Communication Tool (ECT) — secure family chat
 
 ## Architecture
 - Frontend: React (CRA + Craco) + Capacitor
@@ -39,15 +41,25 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - State-sync audit (photo, video, voice deletion desyncs fixed)
 - Narrative copy updated to "family preparedness"
 
-### Completed (Current Session - Apr 8, 2026)
+### Completed (Current Session — Apr 8, 2026)
 - **Getting Started UX Overhaul**: Made onboarding flow fool-proof for elderly/non-tech users
-  - Updated guided overlay copy to be warmer and more actionable ("Add Someone You Love" instead of "Add Your First Beneficiary")
-  - Changed CTA button from "Let's Go" to "Show Me How" 
-  - Changed skip text from "Skip this step for now" to "I'll do this on my own later"
+  - Updated guided overlay copy to warmer language ("Add Someone You Love", "Write a Short Message")
+  - Changed CTA from "Let's Go" to "Show Me How", skip text to "I'll do this on my own later"
   - Added simplified 3-step guided wizard for first-time message creation (Title → Content → Review & Save)
-  - Added "Getting Started" context banners on all feature pages (Beneficiaries, Messages, Vault, Checklist, Digital Wallet) with "Back to Dashboard" escape hatch
-  - Auto-open action panels when arriving from Getting Started with empty data (Beneficiaries add form, Messages create panel, Vault upload panel, Digital Wallet add form)
-  - Updated OnboardingWizard step labels to match warmer tone
+  - Added "Getting Started" context banners on all 5 feature pages with "Back" escape hatch
+  - Auto-open action panels when arriving from Getting Started with empty data
+  - Updated OnboardingWizard step labels
+
+- **CCP First-Visit Welcome Walkthrough**: 3-step guided intro on first visit to Contingency Protocols
+  - Step 1: What CCP is (emergency plans, check-ins, drills)
+  - Step 2: How to create a plan (name, meeting points, communication, instructions)
+  - Step 3: What happens during emergencies (activation, check-in, location, stand-down)
+  - Persisted via localStorage, skip link available on all steps
+
+- **ECT Enhanced Security Intro**: Upgraded existing 1-step security intro to 2-step walkthrough
+  - Step 1: Why ECT is different (closed network, no phone needed, zero data mining)
+  - Step 2: How to use it (start conversation, pick contacts, type/send, attachments)
+  - Back/forward navigation, skip link
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
@@ -67,3 +79,4 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - State sync: Frontend media removals must explicitly call backend DELETE endpoints
 - Narrative: Use "family preparedness" not "estate planning"
 - MongoDB: Always exclude `_id` from responses
+- First-visit intros use localStorage: `carryon_ccp_intro_seen`, `ect_security_seen`
