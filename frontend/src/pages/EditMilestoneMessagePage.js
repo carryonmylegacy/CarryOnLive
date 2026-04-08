@@ -75,6 +75,8 @@ export default function EditMilestoneMessagePage() {
   const [isSpeechListening, setIsSpeechListening] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [audioUrl, setAudioUrl] = useState(null);
+  const [videoRemoved, setVideoRemoved] = useState(false);
+  const [voiceRemoved, setVoiceRemoved] = useState(false);
 
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -400,6 +402,7 @@ export default function EditMilestoneMessagePage() {
     setVideoBlob(null);
     setVideoUrl(null);
     setVideoPosterUrl(null);
+    setVideoRemoved(true);
   };
 
   const handleSave = async () => {
@@ -435,6 +438,10 @@ export default function EditMilestoneMessagePage() {
           reader.readAsDataURL(audioBlob);
         });
       }
+
+      // Include explicit removal flags
+      if (videoRemoved && !videoBlob) payload.remove_video = true;
+      if (voiceRemoved && !audioBlob) payload.remove_voice = true;
 
       await axios.put(`${API_URL}/messages/${messageId}`, payload, getAuthHeaders());
 
@@ -695,7 +702,7 @@ export default function EditMilestoneMessagePage() {
                     {audioUrl ? (
                       <div className="space-y-3">
                         <audio src={audioUrl} controls className="w-full" data-testid="edit-message-voice-playback" />
-                        <Button variant="outline" onClick={() => { setAudioBlob(null); setAudioUrl(null); }} className="w-full border-[var(--b)] text-white" data-testid="edit-message-remove-voice-button">
+                        <Button variant="outline" onClick={() => { setAudioBlob(null); setAudioUrl(null); setVoiceRemoved(true); }} className="w-full border-[var(--b)] text-white" data-testid="edit-message-remove-voice-button">
                           <X className="mr-2 h-4 w-4" />
                           Remove Recording
                         </Button>

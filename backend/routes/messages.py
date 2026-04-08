@@ -560,6 +560,14 @@ async def update_message(message_id: str, data: MessageUpdate, current_user: dic
         update_fields["video_url"] = video_id
         if data.video_thumbnail:
             update_fields["video_thumbnail"] = data.video_thumbnail
+    elif data.remove_video and existing.get("video_url"):
+        video_key = f"videos/{existing['video_url']}"
+        try:
+            await storage.delete(video_key)
+        except Exception:
+            pass
+        update_fields["video_url"] = None
+        update_fields["video_thumbnail"] = None
 
     # Handle voice update
     if data.voice_data:
@@ -573,6 +581,13 @@ async def update_message(message_id: str, data: MessageUpdate, current_user: dic
             "audio/webm",
         )
         update_fields["voice_url"] = voice_id
+    elif data.remove_voice and existing.get("voice_url"):
+        voice_key = f"voices/{existing['voice_url']}"
+        try:
+            await storage.delete(voice_key)
+        except Exception:
+            pass
+        update_fields["voice_url"] = None
 
     if update_fields:
         update_fields["updated_at"] = datetime.now(timezone.utc).isoformat()

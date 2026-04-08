@@ -153,6 +153,8 @@ const MessagesPage = () => {
   const [videoBlob, setVideoBlob] = useState(null);
   const [videoUrl, setVideoUrl] = useState(null);
   const [videoPosterUrl, setVideoPosterUrl] = useState(null);
+  const [videoRemoved, setVideoRemoved] = useState(false);
+  const [voiceRemoved, setVoiceRemoved] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [countdown, setCountdown] = useState(null);
   const [facingMode, setFacingMode] = useState('user');
@@ -447,6 +449,12 @@ const MessagesPage = () => {
         payload.voice_data = voiceData;
       }
 
+      // When editing, include explicit removal flags
+      if (editingMessage) {
+        if (videoRemoved && !videoBlob) payload.remove_video = true;
+        if (voiceRemoved && !audioBlob) payload.remove_voice = true;
+      }
+
       let messageId = null;
 
       if (editingMessage) {
@@ -571,8 +579,10 @@ const MessagesPage = () => {
     setVideoBlob(null);
     setVideoUrl(null);
     setVideoPosterUrl(null);
+    setVideoRemoved(false);
     setAudioBlob(null);
     setAudioUrl(null);
+    setVoiceRemoved(false);
     setEditingMessage(null);
     setCountdown(null);
     releaseCamera();
@@ -932,10 +942,10 @@ const MessagesPage = () => {
                         </div>
                       )}
                       <div className="flex gap-2">
-                        <Button variant="outline" className="border-[var(--b)] text-white flex-1" onClick={() => { if (videoUrl && videoBlob === 'existing') URL.revokeObjectURL(videoUrl); setVideoBlob(null); setVideoUrl(null); setVideoPosterUrl(null); }}>
+                        <Button variant="outline" className="border-[var(--b)] text-white flex-1" onClick={() => { if (videoUrl && videoBlob === 'existing') URL.revokeObjectURL(videoUrl); setVideoBlob(null); setVideoUrl(null); setVideoPosterUrl(null); setVideoRemoved(true); }}>
                           <X className="w-4 h-4 mr-2" /> Remove
                         </Button>
-                        <Button variant="outline" className="border-[var(--b)] text-[#8b5cf6]" onClick={() => { if (videoUrl && videoBlob === 'existing') URL.revokeObjectURL(videoUrl); setVideoBlob(null); setVideoUrl(null); setVideoPosterUrl(null); }}>
+                        <Button variant="outline" className="border-[var(--b)] text-[#8b5cf6]" onClick={() => { if (videoUrl && videoBlob === 'existing') URL.revokeObjectURL(videoUrl); setVideoBlob(null); setVideoUrl(null); setVideoPosterUrl(null); setVideoRemoved(true); }}>
                           <Camera className="w-4 h-4 mr-2" /> Re-record
                         </Button>
                       </div>
@@ -1044,7 +1054,7 @@ const MessagesPage = () => {
                       <audio src={audioUrl} controls className="w-full" data-testid="voice-playback" />
                       <Button
                         variant="outline"
-                        onClick={() => { setAudioBlob(null); setAudioUrl(null); }}
+                        onClick={() => { setAudioBlob(null); setAudioUrl(null); setVoiceRemoved(true); }}
                         className="border-[var(--b)] text-white w-full"
                         data-testid="remove-voice-btn"
                       >
