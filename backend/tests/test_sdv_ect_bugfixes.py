@@ -13,7 +13,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://carryon-ux-fixes.preview.emergentagent.com")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://prep-platform-11.preview.emergentagent.com")
 
 # Test credentials
 TEST_EMAIL = "info@carryon.us"

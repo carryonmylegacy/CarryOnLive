@@ -52,6 +52,13 @@ Build and maintain a comprehensive family preparedness platform that helps users
   - Fixed missing `verify_password` import (would have caused runtime crash)
   - Fixed stale `_xai_keepalive_task` import in `server.py` shutdown handler
   - Tested: 10/10 backend tests passed, all frontend flows verified
+- **Family Tree Connector Line Fix**: Adjusted SVG path and CSS in `FamilyTree.js` so vertical lines stop at the top edge of beneficiary circles.
+- **Dual Homepage Video (Landscape + Vertical)**: Added responsive video embed on homepage.
+  - Desktop browsers see landscape (16:9) YouTube embed
+  - Mobile PWA users see vertical (9:16) YouTube embed when a vertical video ID is configured
+  - Added `homepage_video_id_vertical` to backend platform settings
+  - SiteContentTab in Founder Portal now has two inputs: Landscape (Desktop) and Vertical (Mobile PWA) with live previews
+  - Falls back to landscape video if no vertical video is set
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement

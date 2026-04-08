@@ -5,17 +5,23 @@ import { ChevronRight, ChevronDown } from 'lucide-react';
 import { API_URL } from '../config';
 import { RevealSection } from '../components/landing/RevealSection';
 import LandingContent from '../components/landing/LandingContent';
+import { isPWA, isIOS, isAndroid } from '../utils/pwaDetect';
 
 const HomePage = () => {
   const navigate = useNavigate();
   const [flagOpacity, setFlagOpacity] = useState(1);
   const [exiting, setExiting] = useState(false);
   const [footerInfo, setFooterInfo] = useState({ line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209 U.S.A.', phone: '(703) 884-1527' });
-  const homepageVideoId = 'EhU-jojs1jk';
+  const [landscapeVideoId, setLandscapeVideoId] = useState('EhU-jojs1jk');
+  const [verticalVideoId, setVerticalVideoId] = useState('');
+
+  const isMobilePWA = isPWA() && (isIOS() || isAndroid());
 
   useEffect(() => {
     axios.get(`${API_URL}/public/site-content`).then(r => {
       setFooterInfo({ line1: r.data.footer_address_line1, line2: r.data.footer_address_line2, phone: r.data.footer_phone });
+      if (r.data.homepage_video_id) setLandscapeVideoId(r.data.homepage_video_id);
+      if (r.data.homepage_video_id_vertical) setVerticalVideoId(r.data.homepage_video_id_vertical);
     }).catch(() => {});
   }, []);
 
@@ -32,6 +38,10 @@ const HomePage = () => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Decide which video to show
+  const showVertical = isMobilePWA && verticalVideoId;
+  const activeVideoId = showVertical ? verticalVideoId : landscapeVideoId;
 
   return (
     <div className="min-h-screen" style={{
@@ -130,18 +140,35 @@ const HomePage = () => {
                 <p className="text-white/60 text-sm lg:text-base mb-8">
                   Learn how CarryOn&#8482; keeps your family ready for anything.
                 </p>
-                <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.05)' }}>
-                  <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
-                    <iframe
-                      src={`https://www.youtube.com/embed/${homepageVideoId}?rel=0&modestbranding=1&color=white`}
-                      title="CarryOn — Estate Planning Made Simple"
-                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      data-testid="homepage-video-home"
-                    />
+                {showVertical ? (
+                  /* Vertical (portrait) video for mobile PWA */
+                  <div className="relative rounded-2xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.05)', maxWidth: '360px' }}>
+                    <div style={{ position: 'relative', paddingBottom: '177.78%', height: 0 }}>
+                      <iframe
+                        src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
+                        title="CarryOn — Family Preparedness"
+                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        data-testid="homepage-video-home"
+                      />
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  /* Landscape (16:9) video for desktop */
+                  <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.05)' }}>
+                    <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+                      <iframe
+                        src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
+                        title="CarryOn — Estate Planning Made Simple"
+                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        data-testid="homepage-video-home"
+                      />
+                    </div>
+                  </div>
+                )}
               </RevealSection>
             </div>
           </section>
