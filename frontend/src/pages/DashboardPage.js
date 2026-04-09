@@ -387,6 +387,11 @@ const DashboardPage = () => {
     }
 
     const dismissOverlay = () => {
+      // If on welcome step, mark it as shown so it doesn't reappear
+      if (showWelcomeStep) {
+        localStorage.setItem('carryon_welcome_guided_shown', 'true');
+        setShowWelcomeStep(false);
+      }
       guidedDismissedRef.current = true;
       setShowGuidedFlow(false);
     };
@@ -484,6 +489,17 @@ const DashboardPage = () => {
               data-testid="welcome-step-continue">
               Let's Get Started <ChevronRight className="w-5 h-5" />
             </button>
+            <button onClick={() => { localStorage.setItem('carryon_welcome_guided_shown', 'true'); guidedDismissedRef.current = true; setShowWelcomeStep(false); setShowGuidedFlow(false); }}
+              className="mt-4 text-sm font-medium transition-colors"
+              style={{ color: 'rgba(255,255,255,0.4)' }}
+              onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.7)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+              data-testid="welcome-step-silence">
+              Don't show this again
+            </button>
+            <p className="mt-5 text-xs max-w-xs mx-auto leading-relaxed" style={{ color: 'rgba(255,255,255,0.25)' }}>
+              (You can bring this back anytime from Settings under the Getting Started Guide toggle.)
+            </p>
           </div>
         ) : (
         /* Center bubble — regular step */

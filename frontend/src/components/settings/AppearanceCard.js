@@ -51,9 +51,11 @@ const AppearanceCard = ({ isStaff }) => {
                 setOnboardingVisible(checked);
                 if (checked) {
                   localStorage.removeItem('carryon_onboarding_dismissed');
+                  localStorage.removeItem('carryon_welcome_guided_shown');
                   try { await axios.post(`${API_URL}/onboarding/reset`, {}, getAuthHeaders()); } catch (e) { /* ignore */ }
                 } else {
                   localStorage.setItem('carryon_onboarding_dismissed', 'true');
+                  localStorage.setItem('carryon_welcome_guided_shown', 'true');
                   try { await axios.post(`${API_URL}/onboarding/dismiss`, {}, getAuthHeaders()); } catch (e) { /* ignore */ }
                 }
               }}
