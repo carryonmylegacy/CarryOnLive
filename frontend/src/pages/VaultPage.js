@@ -845,7 +845,7 @@ const VaultPage = () => {
                 <h3 className="text-xl font-semibold text-white mb-2">Your Vault Awaits</h3>
                 <p className="text-[#94a3b8] mb-2">Securely store your wills, trusts, insurance policies, and other critical documents.</p>
                 <p className="text-xs text-[#64748b] mb-6">AES-256 encrypted. Only PDFs and images accepted — no editable formats.</p>
-                <Button className="gold-button text-base px-8 py-3" onClick={() => setShowUploadModal(true)}>
+                <Button className="text-base px-8 py-3 font-bold" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }} onClick={() => setShowUploadModal(true)}>
                   <Plus className="w-5 h-5 mr-2" />
                   Upload Your First Estate Document
                 </Button>
