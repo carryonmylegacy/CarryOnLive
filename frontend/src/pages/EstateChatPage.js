@@ -210,6 +210,37 @@ function AuthImage({ fileId, fileName, msgId }) {
   );
 }
 
+/* ── Authenticated Video ── */
+function AuthVideo({ fileId, fileName }) {
+  const [src, setSrc] = useState(null);
+  useEffect(() => {
+    const token = localStorage.getItem('carryon_token');
+    fetch(`${API_URL}/estate-chat/files/${fileId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.blob())
+      .then(blob => setSrc(URL.createObjectURL(blob)))
+      .catch(() => {});
+    return () => { if (src) URL.revokeObjectURL(src); };
+  }, [fileId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!src) return <div className="w-full h-[160px] rounded-xl bg-white/5 flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /></div>;
+
+  return (
+    <div>
+      <video
+        src={src}
+        controls
+        playsInline
+        className="rounded-xl max-w-full max-h-[240px] mb-1"
+        style={{ background: '#000' }}
+      />
+      <span className="text-xs" style={{ color: '#A0AABF' }}>{fileName}</span>
+    </div>
+  );
+}
+
+
 /* ── Authenticated File Link ── */
 function AuthFileLink({ fileId, fileName, fileSize, msgId }) {
   const handleDownload = async (e) => {
@@ -291,7 +322,7 @@ export default function EstateChatPage() {
 
   const voiceRecorder = useVoiceRecorder();
   const [voicePreview, setVoicePreview] = useState(null); // {blob, url}
-  const [pendingFile, setPendingFile] = useState(null); // {file, previewUrl}
+  const [pendingFiles, setPendingFiles] = useState([]); // [{file, previewUrl}]
   const [inputFocused, setInputFocused] = useState(false);
   const [swipedChannel, setSwipedChannel] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -581,10 +612,39 @@ export default function EstateChatPage() {
         await fetchMessages(activeChannel.id);
         await fetchChannels();
       } else {
-        toast.error('Failed to send attachment');
+        const errData = await res.json().catch(() => null);
+        toast.error(errData?.detail || 'Failed to send attachment');
       }
     } catch {
       toast.error('Failed to send attachment');
+    } finally { setUploading(false); }
+  };
+
+  const uploadMultipleFiles = async (fileList) => {
+    if (!activeChannel || !fileList.length) return;
+    setUploading(true);
+    try {
+      const endpoint = fileList.length === 1 ? 'upload' : 'upload-multi';
+      const fd = new FormData();
+      if (fileList.length === 1) {
+        fd.append('file', fileList[0].file);
+      } else {
+        fileList.forEach(({ file }) => fd.append('files', file));
+      }
+      const res = await fetch(`${API_URL}/estate-chat/channels/${activeChannel.id}/${endpoint}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+      if (res.ok) {
+        await fetchMessages(activeChannel.id);
+        await fetchChannels();
+      } else {
+        const errData = await res.json().catch(() => null);
+        toast.error(errData?.detail || 'Failed to send attachments');
+      }
+    } catch {
+      toast.error('Failed to send attachments');
     } finally { setUploading(false); }
   };
 
@@ -1468,9 +1528,23 @@ export default function EstateChatPage() {
                   }}
                 >
                   {msg.pinned && <Pin className="w-3 h-3 inline mr-1" style={{ color: '#d4af37' }} />}
-                  {msg.attachment ? (
+                  {msg.attachments && msg.attachments.length > 1 ? (
+                    <div className="grid gap-1" style={{ gridTemplateColumns: msg.attachments.length === 2 ? '1fr 1fr' : 'repeat(auto-fill, minmax(120px, 1fr))' }}>
+                      {msg.attachments.map((att) => {
+                        if (att.file_type?.startsWith('image/')) {
+                          return <AuthImage key={att.file_id} fileId={att.file_id} fileName={att.file_name} msgId={msg.id} />;
+                        }
+                        if (att.file_type?.startsWith('video/')) {
+                          return <AuthVideo key={att.file_id} fileId={att.file_id} fileName={att.file_name} />;
+                        }
+                        return <AuthFileLink key={att.file_id} fileId={att.file_id} fileName={att.file_name} fileSize={att.file_size} msgId={msg.id} />;
+                      })}
+                    </div>
+                  ) : msg.attachment ? (
                     msg.message_type === 'voice' ? (
                       <VoiceMessagePlayer fileId={msg.attachment.file_id} />
+                    ) : msg.attachment.file_type?.startsWith('video/') ? (
+                      <AuthVideo fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} />
                     ) : msg.message_type === 'image' ? (
                       <AuthImage fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} msgId={msg.id} />
                     ) : (
@@ -1578,47 +1652,86 @@ export default function EstateChatPage() {
           </div>
         )}
         {/* Pending file attachment preview */}
-        {pendingFile && (
-          <div className="flex items-center gap-3 px-3 py-2 mx-3 mb-1 rounded-xl" style={{ background: '#1A2236', border: '1px solid rgba(212,175,55,0.3)' }}>
-            {pendingFile.previewUrl ? (
-              <img src={pendingFile.previewUrl} alt="Preview" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
-            ) : (
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.1)' }}>
-                <FileText className="w-5 h-5 text-[var(--gold)]" />
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-[var(--t3)] truncate">{pendingFile.file.name}</div>
-              <div className="text-[11px] text-[var(--t5)]">{(pendingFile.file.size / 1024).toFixed(0)} KB</div>
+        {pendingFiles.length > 0 && (
+          <div className="flex items-center gap-2 px-3 py-2 mx-3 mb-1 rounded-xl" style={{ background: '#1A2236', border: '1px solid rgba(212,175,55,0.3)' }}>
+            <div className="flex gap-2 flex-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+              {pendingFiles.map((pf, idx) => (
+                <div key={idx} className="relative flex-shrink-0">
+                  {pf.previewUrl && pf.file.type.startsWith('video/') ? (
+                    <div className="w-14 h-14 rounded-lg overflow-hidden relative" style={{ background: '#000' }}>
+                      <video src={pf.previewUrl} className="w-full h-full object-cover" muted playsInline />
+                      <div className="absolute inset-0 flex items-center justify-center"><Play className="w-5 h-5 text-white/80" /></div>
+                    </div>
+                  ) : pf.previewUrl ? (
+                    <img src={pf.previewUrl} alt="Preview" className="w-14 h-14 rounded-lg object-cover" />
+                  ) : (
+                    <div className="w-14 h-14 rounded-lg flex flex-col items-center justify-center" style={{ background: 'rgba(212,175,55,0.1)' }}>
+                      <FileText className="w-4 h-4 text-[var(--gold)]" />
+                      <span className="text-[11px] text-[var(--t5)] mt-0.5 truncate max-w-[50px]">{pf.file.name.split('.').pop()}</span>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => {
+                      if (pf.previewUrl) URL.revokeObjectURL(pf.previewUrl);
+                      setPendingFiles(prev => prev.filter((_, i) => i !== idx));
+                    }}
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{ background: '#ef4444' }}
+                  >
+                    <X className="w-3 h-3 text-white" />
+                  </button>
+                </div>
+              ))}
             </div>
-            <button
-              onClick={() => { if (pendingFile.previewUrl) URL.revokeObjectURL(pendingFile.previewUrl); setPendingFile(null); }}
-              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: 'rgba(239,68,68,0.15)' }}
-              data-testid="ect-attach-cancel"
-            >
-              <X className="w-4 h-4 text-red-400" />
-            </button>
-            <button
-              onClick={() => { uploadFile(pendingFile.file); if (pendingFile.previewUrl) URL.revokeObjectURL(pendingFile.previewUrl); setPendingFile(null); }}
-              disabled={uploading}
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: '#d4af37' }}
-              data-testid="ect-attach-send"
-            >
-              {uploading ? <Loader2 className="w-5 h-5 animate-spin text-[#0F1629]" /> : <Send className="w-5 h-5 text-[#0F1629]" />}
-            </button>
+            <div className="flex flex-col items-center gap-1 flex-shrink-0 ml-1">
+              <button
+                onClick={() => { pendingFiles.forEach(pf => { if (pf.previewUrl) URL.revokeObjectURL(pf.previewUrl); }); setPendingFiles([]); }}
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(239,68,68,0.15)' }}
+                data-testid="ect-attach-cancel"
+              >
+                <X className="w-4 h-4 text-red-400" />
+              </button>
+              <button
+                onClick={() => { uploadMultipleFiles(pendingFiles); pendingFiles.forEach(pf => { if (pf.previewUrl) URL.revokeObjectURL(pf.previewUrl); }); setPendingFiles([]); }}
+                disabled={uploading}
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: '#d4af37' }}
+                data-testid="ect-attach-send"
+              >
+                {uploading ? <Loader2 className="w-5 h-5 animate-spin text-[#0F1629]" /> : <Send className="w-5 h-5 text-[#0F1629]" />}
+              </button>
+            </div>
           </div>
         )}
         <div className="flex items-center gap-2 px-3 py-1">
-          <input type="file" ref={fileInputRef} className="hidden"
-            accept="image/*,.pdf,.doc,.docx,.txt"
+          <input type="file" ref={fileInputRef} className="hidden" multiple
+            accept="image/*,video/*,.pdf,.doc,.docx,.txt"
             onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
-                setPendingFile({ file, previewUrl });
+              const selected = Array.from(e.target.files || []);
+              if (!selected.length) return;
+              const maxTotal = 5;
+              const currentCount = pendingFiles.length;
+              const allowed = selected.slice(0, maxTotal - currentCount);
+              if (selected.length > allowed.length) {
+                toast.error(`Maximum ${maxTotal} files. ${selected.length - allowed.length} file(s) skipped.`);
               }
+              const videoSizeLimit = 25 * 1024 * 1024;
+              const fileSizeLimit = 10 * 1024 * 1024;
+              const validated = [];
+              for (const file of allowed) {
+                const isVideo = file.type.startsWith('video/');
+                const limit = isVideo ? videoSizeLimit : fileSizeLimit;
+                if (file.size > limit) {
+                  const mb = Math.round(limit / (1024 * 1024));
+                  toast.error(`${file.name} exceeds ${mb}MB limit`);
+                  continue;
+                }
+                const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) :
+                                   file.type.startsWith('video/') ? URL.createObjectURL(file) : null;
+                validated.push({ file, previewUrl });
+              }
+              if (validated.length) setPendingFiles(prev => [...prev, ...validated]);
               e.target.value = '';
             }}
           />

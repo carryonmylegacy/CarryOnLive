@@ -704,6 +704,8 @@ ALLOWED_FILE_TYPES = {
     "image/png",
     "image/gif",
     "image/webp",
+    "image/heic",
+    "image/heif",
     "application/pdf",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -720,8 +722,12 @@ ALLOWED_FILE_TYPES = {
     "audio/webm;codecs=opus",
     "video/webm",
     "video/mp4",
+    "video/quicktime",
+    "video/mov",
 }
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB for non-video
+MAX_VIDEO_SIZE = 25 * 1024 * 1024  # 25 MB for video
+MAX_BATCH_FILES = 5
 
 
 @router.post("/estate-chat/channels/{channel_id}/upload")
@@ -742,8 +748,11 @@ async def upload_attachment(
         if base_type not in ALLOWED_FILE_TYPES:
             raise HTTPException(status_code=400, detail=f"File type not allowed: {file.content_type}")
     data = await file.read()
-    if len(data) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=400, detail="File too large (max 10 MB)")
+    is_video = file.content_type and file.content_type.startswith("video/")
+    size_limit = MAX_VIDEO_SIZE if is_video else MAX_FILE_SIZE
+    if len(data) > size_limit:
+        limit_mb = size_limit // (1024 * 1024)
+        raise HTTPException(status_code=400, detail=f"File too large (max {limit_mb} MB)")
     file_id = str(uuid4())
     storage_key = f"chat/{channel.get('estate_id', 'unknown')}/{file_id}"
     try:
@@ -785,6 +794,87 @@ async def upload_attachment(
     )  # cleanup ephemeral typing indicator
     # Un-dismiss channel for all members so they see new activity
     await db.estate_channel_dismissals.delete_many({"channel_id": channel_id})  # cleanup: un-dismiss on new message
+    return message
+
+
+@router.post("/estate-chat/channels/{channel_id}/upload-multi")
+async def upload_multi_attachment(
+    channel_id: str,
+    files: list[UploadFile] = File(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """Upload multiple files and send as a single grouped message."""
+    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0})
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+    if current_user["id"] not in channel.get("members", []):
+        raise HTTPException(status_code=403, detail="Not a member of this channel")
+    if len(files) > MAX_BATCH_FILES:
+        raise HTTPException(status_code=400, detail=f"Maximum {MAX_BATCH_FILES} files at once")
+
+    from services.storage import storage
+
+    attachments = []
+    for f in files:
+        base_type = (f.content_type or "").split(";")[0].strip()
+        if f.content_type not in ALLOWED_FILE_TYPES and base_type not in ALLOWED_FILE_TYPES:
+            raise HTTPException(status_code=400, detail=f"File type not allowed: {f.content_type}")
+        data = await f.read()
+        is_video = f.content_type and f.content_type.startswith("video/")
+        size_limit = MAX_VIDEO_SIZE if is_video else MAX_FILE_SIZE
+        if len(data) > size_limit:
+            limit_mb = size_limit // (1024 * 1024)
+            raise HTTPException(
+                status_code=400,
+                detail=f"{f.filename} too large (max {limit_mb} MB for {'video' if is_video else 'files'})",
+            )
+        fid = str(uuid4())
+        storage_key = f"chat/{channel.get('estate_id', 'unknown')}/{fid}"
+        try:
+            await storage.upload_raw(data, storage_key, f.content_type or "application/octet-stream")
+        except Exception:
+            raise HTTPException(status_code=500, detail=f"Failed to store {f.filename}")
+        attachments.append(
+            {
+                "file_id": fid,
+                "file_name": f.filename or "file",
+                "file_type": f.content_type or "",
+                "file_size": len(data),
+                "storage_key": storage_key,
+            }
+        )
+
+    now = datetime.now(timezone.utc).isoformat()
+    # Determine message type from the first attachment
+    first_type = attachments[0]["file_type"] if attachments else ""
+    is_image = first_type.startswith("image/")
+    is_video = first_type.startswith("video/")
+    msg_type = "image" if is_image else ("video" if is_video else "file")
+    if len(attachments) > 1:
+        msg_type = "media_group"
+
+    file_names = [a["file_name"] for a in attachments]
+    message = {
+        "id": str(uuid4()),
+        "channel_id": channel_id,
+        "estate_id": channel.get("estate_id", ""),
+        "sender_id": current_user["id"],
+        "sender_name": current_user.get("name", "Unknown"),
+        "content": ", ".join(file_names),
+        "message_type": msg_type,
+        "attachment": attachments[0],  # backward compat
+        "attachments": attachments,
+        "reactions": [],
+        "created_at": now,
+    }
+    await db.estate_messages.insert_one({k: v for k, v in message.items()})
+    await db.estate_channel_reads.update_one(
+        {"channel_id": channel_id, "user_id": current_user["id"]},
+        {"$set": {"last_read_at": now}},
+        upsert=True,
+    )
+    await db.estate_typing.delete_one({"channel_id": channel_id, "user_id": current_user["id"]})
+    await db.estate_channel_dismissals.delete_many({"channel_id": channel_id})
     return message
 
 
