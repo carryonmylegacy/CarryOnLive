@@ -411,11 +411,13 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
           {needsLink && (
             <button
               onClick={() => setShowLink(!showLink)}
-              className="ml-1 p-1 rounded hover:bg-[var(--s)] transition-colors"
+              className="ml-1 flex items-center gap-1 px-2 py-1 rounded-lg transition-colors"
+              style={{ background: 'rgba(224,173,43,0.15)', border: '1px solid rgba(224,173,43,0.3)' }}
               title="Force-link to user account"
               data-testid={`force-link-btn-${ben.id}`}
             >
-              <Link2 className="w-3.5 h-3.5 text-[var(--gold)]" />
+              <Link2 className="w-3 h-3 text-[var(--gold)]" />
+              <span className="text-[11px] font-bold text-[var(--gold)]">Link</span>
             </button>
           )}
         </div>
