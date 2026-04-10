@@ -304,11 +304,15 @@ export default function EstateChatPage() {
   const longPressTimerRef = useRef(null);
   const longPressTriggeredRef = useRef(false);
 
-  // ── Hide bottom nav when in ECT ──
+  // ── Hide bottom nav only when inside a conversation, show it on the channel list ──
   useEffect(() => {
-    document.body.classList.add('ect-active');
+    if (activeChannel) {
+      document.body.classList.add('ect-active');
+    } else {
+      document.body.classList.remove('ect-active');
+    }
     return () => document.body.classList.remove('ect-active');
-  }, []);
+  }, [activeChannel]);
 
   // ── Close member dropdowns on outside tap ──
   useEffect(() => {
