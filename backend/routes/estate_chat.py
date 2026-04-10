@@ -954,15 +954,32 @@ async def serve_chat_file(
     from fastapi.responses import Response
     from services.storage import storage
 
+    # Search both single 'attachment' and multi 'attachments' array
     msg = await db.estate_messages.find_one(
-        {"attachment.file_id": file_id}, {"_id": 0, "id": 1, "channel_id": 1, "attachment": 1}
+        {
+            "$or": [
+                {"attachment.file_id": file_id},
+                {"attachments.file_id": file_id},
+            ]
+        },
+        {"_id": 0, "id": 1, "channel_id": 1, "attachment": 1, "attachments": 1},
     )
     if not msg:
         raise HTTPException(status_code=404, detail="File not found")
     channel = await db.estate_channels.find_one({"id": msg["channel_id"]}, {"_id": 0, "id": 1, "members": 1})
     if not channel or current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Access denied")
-    att = msg.get("attachment", {})
+    # Find the matching attachment
+    att = None
+    if msg.get("attachment", {}).get("file_id") == file_id:
+        att = msg["attachment"]
+    else:
+        for a in msg.get("attachments", []):
+            if a.get("file_id") == file_id:
+                att = a
+                break
+    if not att:
+        raise HTTPException(status_code=404, detail="File not found")
     try:
         data = await storage.download_raw(att["storage_key"])
     except Exception:
