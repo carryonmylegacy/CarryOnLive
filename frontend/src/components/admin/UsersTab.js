@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Search, Users, Trash2, Loader2, ChevronDown, ChevronRight, KeyRound, Unlock, GitBranch, User, AlertTriangle, Zap, ArrowUpDown, ShieldOff } from 'lucide-react';
+import { Search, Users, Trash2, Loader2, ChevronDown, ChevronRight, KeyRound, Unlock, GitBranch, User, AlertTriangle, Zap, ArrowUpDown, ShieldOff, Link2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
@@ -365,19 +365,81 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   // Beneficiary row in tree view (linked but not yet a user)
   const BeneficiaryLeaf = ({ ben }) => {
     const sc = statusColors[ben.invitation_status] || statusColors.draft;
+    const [showLink, setShowLink] = useState(false);
+    const [linkInput, setLinkInput] = useState('');
+    const [linking, setLinking] = useState(false);
+    const needsLink = ben.invitation_status !== 'accepted';
+
+    const handleForceLink = async () => {
+      if (!linkInput.trim()) return;
+      setLinking(true);
+      try {
+        const headers = { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` };
+        const res = await axios.post(`${API_URL}/api/beneficiaries/force-link`, {
+          beneficiary_id: ben.id,
+          username_or_email: linkInput.trim(),
+        }, { headers });
+        toast.success(res.data.message);
+        setShowLink(false);
+        setLinkInput('');
+        // Refresh user list to reflect the status change
+        try {
+          const usersRes = await axios.get(`${API_URL}/api/admin/users`, { headers });
+          setUsers(usersRes.data);
+        } catch { /* ignore refresh error */ }
+      } catch (err) {
+        toast.error(err.response?.data?.detail || 'Failed to link');
+      } finally {
+        setLinking(false);
+      }
+    };
+
     return (
-      <div className="py-2 px-3 flex items-center gap-3" data-testid={`tree-ben-${ben.id}`}>
-        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
-          style={{ background: 'rgba(139,92,246,0.1)', color: '#B794F6' }}>
-          {ben.name ? ben.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
+      <div className="py-2 px-3" data-testid={`tree-ben-${ben.id}`}>
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
+            style={{ background: 'rgba(139,92,246,0.1)', color: '#B794F6' }}>
+            {ben.name ? ben.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-[var(--t3)] text-xs truncate">{ben.name || 'Unnamed'}</div>
+            <div className="text-[11px] text-[var(--t5)] truncate">{ben.email || 'No email'} · {ben.relation || 'beneficiary'}</div>
+          </div>
+          <span className="text-[11px] px-2 py-0.5 rounded-full font-bold capitalize" style={{ background: sc.bg, color: sc.color }}>
+            {ben.invitation_status || 'draft'}
+          </span>
+          {needsLink && (
+            <button
+              onClick={() => setShowLink(!showLink)}
+              className="ml-1 p-1 rounded hover:bg-[var(--s)] transition-colors"
+              title="Force-link to user account"
+              data-testid={`force-link-btn-${ben.id}`}
+            >
+              <Link2 className="w-3.5 h-3.5 text-[var(--gold)]" />
+            </button>
+          )}
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="font-semibold text-[var(--t3)] text-xs truncate">{ben.name || 'Unnamed'}</div>
-          <div className="text-[11px] text-[var(--t5)] truncate">{ben.email || 'No email'} · {ben.relation || 'beneficiary'}</div>
-        </div>
-        <span className="text-[11px] px-2 py-0.5 rounded-full font-bold capitalize" style={{ background: sc.bg, color: sc.color }}>
-          {ben.invitation_status || 'draft'}
-        </span>
+        {showLink && (
+          <div className="mt-2 ml-10 flex items-center gap-2">
+            <Input
+              value={linkInput}
+              onChange={e => setLinkInput(e.target.value)}
+              placeholder="Username or email"
+              className="h-7 text-xs flex-1"
+              data-testid={`force-link-input-${ben.id}`}
+              onKeyDown={e => e.key === 'Enter' && handleForceLink()}
+            />
+            <Button
+              size="sm"
+              onClick={handleForceLink}
+              disabled={linking || !linkInput.trim()}
+              className="h-7 text-xs px-3"
+              data-testid={`force-link-submit-${ben.id}`}
+            >
+              {linking ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Link'}
+            </Button>
+          </div>
+        )}
       </div>
     );
   };

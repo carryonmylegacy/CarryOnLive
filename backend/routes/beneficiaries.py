@@ -1372,3 +1372,69 @@ async def get_succession_order(estate_id: str, current_user: dict = Depends(get_
     )
     without_order = [b for b in beneficiaries if b.get("succession_order") is None]
     return with_order + without_order
+
+
+# ── Admin: Force-link a beneficiary to a user account ──────────────────────
+
+
+class ForceLinkRequest(BaseModel):
+    beneficiary_id: str
+    username_or_email: str
+
+
+@router.post("/beneficiaries/force-link")
+async def force_link_beneficiary(data: ForceLinkRequest, current_user: dict = Depends(get_current_user)):
+    """Admin-only: manually link a beneficiary record to a user account by username or email."""
+    if current_user["role"] not in ("admin", "operator"):
+        raise HTTPException(status_code=403, detail="Only admins can force-link beneficiaries.")
+
+    # Find the beneficiary record
+    ben = await db.beneficiaries.find_one({"id": data.beneficiary_id}, {"_id": 0})
+    if not ben:
+        raise HTTPException(status_code=404, detail="Beneficiary record not found.")
+
+    # Find the user by username or email (case-insensitive)
+    identifier = data.username_or_email.strip().lower()
+    target_user = await db.users.find_one({"username_lower": identifier}, {"_id": 0})
+    if not target_user:
+        target_user = await db.users.find_one(
+            {"email": {"$regex": f"^{identifier}$", "$options": "i"}},
+            {"_id": 0},
+        )
+    if not target_user:
+        raise HTTPException(status_code=404, detail=f"No user found with username or email '{data.username_or_email}'.")
+
+    target_id = target_user["id"]
+
+    # Link the beneficiary record
+    await db.beneficiaries.update_one(
+        {"id": data.beneficiary_id},
+        {"$set": {"user_id": target_id, "invitation_status": "accepted"}},
+    )
+
+    # Add user to estate's beneficiaries array
+    if ben.get("estate_id"):
+        await db.estates.update_one(
+            {"id": ben["estate_id"]},
+            {"$addToSet": {"beneficiaries": target_id}},
+        )
+
+    # Set is_also_beneficiary if user is a benefactor
+    if target_user.get("role") == "benefactor":
+        await db.users.update_one(
+            {"id": target_id},
+            {"$set": {"is_also_beneficiary": True}},
+        )
+
+    logger.info(
+        f"Admin {current_user['id']} force-linked beneficiary {data.beneficiary_id} "
+        f"to user {target_id} ({target_user.get('username', target_user.get('email'))})"
+    )
+
+    return {
+        "message": f"Successfully linked {ben.get('name', 'beneficiary')} to user {target_user.get('name', target_user.get('username'))}.",
+        "beneficiary_id": data.beneficiary_id,
+        "user_id": target_id,
+        "user_name": target_user.get("name"),
+        "user_email": target_user.get("email"),
+    }
