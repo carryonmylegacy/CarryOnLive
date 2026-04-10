@@ -75,6 +75,8 @@ Build and maintain a comprehensive family preparedness platform that helps users
 
 ### Completed (Current Session — Apr 10, 2026)
 - **Beneficiary Auto-Link on Login (P0)**: Fixed critical bug where a beneficiary who signed up directly (not via invitation link) would not get linked to their benefactor's estate tree. Added `_reconcile_beneficiary_by_email()` helper in `auth.py` that runs on every login path. It matches the user's email against unlinked beneficiary records, sets `user_id`, `invitation_status=accepted`, adds them to the estate's beneficiaries array, and sets `is_also_beneficiary` on the user. Replaced 4 scattered inline reconciliation blocks with the DRY helper. Tested: 4/4 assertions pass (user_id linked, status accepted, is_also_beneficiary set, added to estate array).
+- **Beneficiary Pre-Transition Dock Defaults**: Changed default bottom dock for beneficiary portal from [Vault, Guardian, Dashboard, Messages, Checklist] to [Vault, Dashboard, CCP, Chat]. These are the only features available pre-transition.
+- **Dock Customizer Grey-Out**: In Beneficiary Settings > Customize Dock, post-transition-only items (Guardian, Checklist, Messages, Milestone) are now greyed out with a lock icon and "Post-transition" badge. Tapping them shows a toast: "This feature becomes available after the estate is transitioned." The estate's transition status is detected via the section-permissions API.
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement

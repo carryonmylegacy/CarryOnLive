@@ -3,9 +3,17 @@ import { DOCK_REGISTRY } from './layout/MobileNav';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { toast } from '../utils/toast';
-import { GripVertical, Check, RotateCcw, ChevronUp, ChevronDown } from 'lucide-react';
+import { GripVertical, Check, RotateCcw, ChevronUp, ChevronDown, Lock } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+
+// Routes that require estate to be transitioned (post-transition only)
+const POST_TRANSITION_ONLY = new Set([
+  '/beneficiary/guardian',
+  '/beneficiary/checklist',
+  '/beneficiary/messages',
+  '/beneficiary/milestone',
+]);
 
 const DockCustomizer = () => {
   const { user } = useAuth();
@@ -13,6 +21,7 @@ const DockCustomizer = () => {
   const [selected, setSelected] = useState([]);
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [isPreTransition, setIsPreTransition] = useState(false);
 
   // Determine role key for registry lookup
   const roleKey = (() => {
@@ -31,10 +40,23 @@ const DockCustomizer = () => {
   // Defaults per role (matching the hardcoded bottom navs)
   const DEFAULTS = {
     benefactor: ['/beneficiaries', '/messages', '/dashboard', '/guardian', '/vault'],
-    beneficiary: ['/beneficiary/vault', '/beneficiary/guardian', '/beneficiary', '/beneficiary/messages', '/beneficiary/checklist'],
+    beneficiary: ['/beneficiary/vault', '/beneficiary', '/beneficiary/connected-protocol', '/beneficiary/estate-chat'],
     admin: ['/admin/transition', '/admin/support', '/admin', '/admin/dts', '/admin/verifications'],
     operator: ['/ops/transition', '/ops/support', '/ops', '/ops/dts', '/ops/verifications'],
   };
+
+  // Check estate transition status for beneficiary role
+  useEffect(() => {
+    if (roleKey !== 'beneficiary') return;
+    const estateId = localStorage.getItem('beneficiary_estate_id');
+    if (!estateId) { setIsPreTransition(true); return; }
+    const tk = localStorage.getItem('carryon_token');
+    if (!tk) return;
+    fetch(`${API_URL}/api/estate/${estateId}/section-permissions`, { headers: { Authorization: `Bearer ${tk}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { setIsPreTransition(!(d?.is_transitioned)); })
+      .catch(() => setIsPreTransition(true));
+  }, [roleKey]);
 
   // Load saved preferences
   useEffect(() => {
@@ -62,6 +84,11 @@ const DockCustomizer = () => {
   const isSelected = useCallback((route) => selected.includes(route), [selected]);
 
   const toggleItem = (route) => {
+    // Block adding post-transition-only items when estate is pre-transition
+    if (isPreTransition && POST_TRANSITION_ONLY.has(route) && !isSelected(route)) {
+      toast.info('This feature becomes available after the estate is transitioned.');
+      return;
+    }
     if (isSelected(route)) {
       setSelected(prev => prev.filter(r => r !== route));
     } else {
@@ -200,23 +227,37 @@ const DockCustomizer = () => {
         <div className="flex flex-col gap-1">
           {available.filter(a => !isSelected(a.to)).map((item) => {
             const Icon = item.icon;
+            const isLocked = isPreTransition && POST_TRANSITION_ONLY.has(item.to);
             return (
               <button
                 key={item.to}
                 onClick={() => toggleItem(item.to)}
                 data-testid={`dock-available-${item.to.replace(/\//g, '-')}`}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-left w-full transition-all"
-                style={{ background: cardBg, border: `1px solid ${cardBorder}` }}
+                style={{
+                  background: cardBg,
+                  border: `1px solid ${cardBorder}`,
+                  opacity: isLocked ? 0.4 : 1,
+                  cursor: isLocked ? 'not-allowed' : 'pointer',
+                }}
               >
-                <Icon className="w-4 h-4 flex-shrink-0" style={{ color: isDark ? '#64748B' : '#94A3B8' }} />
-                <span className="flex-1 text-sm font-medium" style={{ color: isDark ? '#CBD5E1' : '#334155' }}>
+                {isLocked ? (
+                  <Lock className="w-4 h-4 flex-shrink-0" style={{ color: '#64748B' }} />
+                ) : (
+                  <Icon className="w-4 h-4 flex-shrink-0" style={{ color: isDark ? '#64748B' : '#94A3B8' }} />
+                )}
+                <span className="flex-1 text-sm font-medium" style={{ color: isLocked ? '#475569' : (isDark ? '#CBD5E1' : '#334155') }}>
                   {item.label}
                 </span>
-                {selected.length < 5 && (
+                {isLocked ? (
+                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: '#64748B', background: 'rgba(100,116,139,0.15)' }}>
+                    Post-transition
+                  </span>
+                ) : selected.length < 5 ? (
                   <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: accent, background: `${accent}15` }}>
                     + Add
                   </span>
-                )}
+                ) : null}
               </button>
             );
           })}

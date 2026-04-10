@@ -583,10 +583,9 @@ const MobileNav = () => {
 
   const beneficiaryBottomNav = filterByFeatureAccess([
     { to: '/beneficiary/vault', icon: FolderLock, label: 'Vault' },
-    { to: '/beneficiary/guardian', icon: Sparkles, label: 'Guardian' },
     { to: '/beneficiary', icon: Home, label: 'Dashboard', isCenter: true },
-    { to: '/beneficiary/messages', icon: MessageSquare, label: 'Messages' },
-    { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Checklist' },
+    { to: '/beneficiary/connected-protocol', icon: Shield, label: 'CCP' },
+    { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Chat' },
   ]);
 
   const adminBottomNav = [
