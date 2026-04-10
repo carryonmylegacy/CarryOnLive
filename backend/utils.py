@@ -306,10 +306,13 @@ async def send_push_notification(
             )
             success_count += 1
         except WebPushException as e:
+            logger.warning(f"Push failed for user {user_id}: {e}")
             if e.response and e.response.status_code == 410:
                 await db.push_subscriptions.update_one({"endpoint": sub["endpoint"]}, {"$set": {"active": False}})
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Push error for user {user_id}: {e}")
+    if subscriptions:
+        logger.info(f"Push sent to {success_count}/{len(subscriptions)} devices for user {user_id}")
     return success_count > 0
 
 

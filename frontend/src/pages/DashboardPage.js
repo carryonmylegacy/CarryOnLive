@@ -24,6 +24,8 @@ import BillingStatusBanner from '../components/BillingStatusBanner';
 import OnboardingWizard from '../components/OnboardingWizard';
 import { API_URL } from '../config';
 
+import PushPrompt from '../components/PushPrompt';
+
 const DashboardPage = () => {
   const { user, getAuthHeaders, enabledFeatures, refreshEnabledFeatures } = useAuth();
   const navigate = useNavigate();
@@ -903,6 +905,7 @@ const DashboardPage = () => {
         </div>
       )}
       {renderGuidedOverlay()}
+      <PushPrompt getAuthHeaders={getAuthHeaders} />
     </div>
   );
 };

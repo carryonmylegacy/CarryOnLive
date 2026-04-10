@@ -7,6 +7,8 @@ import { Skeleton } from '../../components/ui/skeleton';
 import { Switch } from '../../components/ui/switch';
 import { API_URL } from '../../config';
 
+import PushPrompt from '../../components/PushPrompt';
+
 const BeneficiaryDashboardPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
@@ -368,6 +370,7 @@ const BeneficiaryDashboardPage = () => {
           Start Your Own Estate Plan
         </button>
       </div>
+      <PushPrompt getAuthHeaders={getAuthHeaders} />
     </div>
   );
 };
