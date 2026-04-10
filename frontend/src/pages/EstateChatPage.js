@@ -1531,26 +1531,27 @@ export default function EstateChatPage() {
                   {msg.attachments && msg.attachments.length > 1 ? (
                     <div className="grid gap-1" style={{ gridTemplateColumns: msg.attachments.length === 2 ? '1fr 1fr' : 'repeat(auto-fill, minmax(120px, 1fr))' }}>
                       {msg.attachments.map((att) => {
-                        if (att.file_type?.startsWith('image/')) {
+                        const ext = (att.file_name || '').split('.').pop().toLowerCase();
+                        const isImage = att.file_type?.startsWith('image/') || ['jpg','jpeg','png','gif','webp','heic','heif'].includes(ext);
+                        const isVideo = att.file_type?.startsWith('video/') || ['mp4','mov','webm','m4v'].includes(ext);
+                        if (isImage) {
                           return <AuthImage key={att.file_id} fileId={att.file_id} fileName={att.file_name} msgId={msg.id} />;
                         }
-                        if (att.file_type?.startsWith('video/')) {
+                        if (isVideo) {
                           return <AuthVideo key={att.file_id} fileId={att.file_id} fileName={att.file_name} />;
                         }
                         return <AuthFileLink key={att.file_id} fileId={att.file_id} fileName={att.file_name} fileSize={att.file_size} msgId={msg.id} />;
                       })}
                     </div>
-                  ) : msg.attachment ? (
-                    msg.message_type === 'voice' ? (
-                      <VoiceMessagePlayer fileId={msg.attachment.file_id} />
-                    ) : msg.attachment.file_type?.startsWith('video/') ? (
-                      <AuthVideo fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} />
-                    ) : msg.message_type === 'image' ? (
-                      <AuthImage fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} msgId={msg.id} />
-                    ) : (
-                      <AuthFileLink fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} fileSize={msg.attachment.file_size} msgId={msg.id} />
-                    )
-                  ) : msg.content}
+                  ) : msg.attachment ? (() => {
+                    const ext = (msg.attachment.file_name || '').split('.').pop().toLowerCase();
+                    const isImage = msg.attachment.file_type?.startsWith('image/') || ['jpg','jpeg','png','gif','webp','heic','heif'].includes(ext) || msg.message_type === 'image';
+                    const isVideo = msg.attachment.file_type?.startsWith('video/') || ['mp4','mov','webm','m4v'].includes(ext);
+                    if (msg.message_type === 'voice') return <VoiceMessagePlayer fileId={msg.attachment.file_id} />;
+                    if (isVideo) return <AuthVideo fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} />;
+                    if (isImage) return <AuthImage fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} msgId={msg.id} />;
+                    return <AuthFileLink fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} fileSize={msg.attachment.file_size} msgId={msg.id} />;
+                  })() : msg.content}
                 </div>
                 {/* Reaction picker */}
                 {reactingMsgId === msg.id && (
