@@ -115,7 +115,7 @@ async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depen
         suffix=data.suffix,
         name=full_name,
         relation=data.relation,
-        email=data.email,
+        email=data.email.lower().strip() if data.email else "",
         phone=data.phone,
         date_of_birth=data.date_of_birth,
         gender=data.gender,
@@ -132,15 +132,25 @@ async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depen
     )
     await db.beneficiaries.insert_one(beneficiary.model_dump())
 
-    # If a user with this email already exists, pre-link user_id
-    # but do NOT auto-accept the invitation — let the benefactor manage it normally
+    # If a user with this email already exists, pre-link user_id and mark accepted
     existing_user = await db.users.find_one({"email": data.email.lower().strip()}, {"_id": 0})
     if existing_user:
         await db.beneficiaries.update_one(
             {"id": beneficiary.id},
-            {"$set": {"user_id": existing_user["id"]}},
+            {"$set": {"user_id": existing_user["id"], "invitation_status": "accepted"}},
         )
         beneficiary.user_id = existing_user["id"]
+        # Add to estate's beneficiaries array
+        await db.estates.update_one(
+            {"id": data.estate_id},
+            {"$addToSet": {"beneficiaries": existing_user["id"]}},
+        )
+        # Mark benefactor users as also being beneficiaries
+        if existing_user.get("role") == "benefactor":
+            await db.users.update_one(
+                {"id": existing_user["id"]},
+                {"$set": {"is_also_beneficiary": True}},
+            )
 
     # Log activity
     await log_activity(
