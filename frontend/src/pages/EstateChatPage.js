@@ -304,14 +304,21 @@ export default function EstateChatPage() {
   const longPressTimerRef = useRef(null);
   const longPressTriggeredRef = useRef(false);
 
-  // ── Hide bottom nav only when inside a conversation, show it on the channel list ──
+  // ── Always hide the platform header in ECT; hide dock only inside a conversation ──
+  useEffect(() => {
+    document.body.classList.add('ect-active');
+    return () => {
+      document.body.classList.remove('ect-active');
+      document.body.classList.remove('ect-chat-active');
+    };
+  }, []);
+
   useEffect(() => {
     if (activeChannel) {
-      document.body.classList.add('ect-active');
+      document.body.classList.add('ect-chat-active');
     } else {
-      document.body.classList.remove('ect-active');
+      document.body.classList.remove('ect-chat-active');
     }
-    return () => document.body.classList.remove('ect-active');
   }, [activeChannel]);
 
   // ── Close member dropdowns on outside tap ──

@@ -1242,13 +1242,16 @@
 
 
 /* ── ECT (Estate Communication Tool) Full-screen mode ────── */
-/* When ECT is active, hide the mobile bottom nav and header so chat
-   takes the full viewport.  The ECT page has its own back arrow. */
-body.ect-active .mobile-bottom-nav,
+/* When ECT is active, hide the mobile header so chat
+   has its own back arrow. */
 body.ect-active .mobile-header {
   display: none !important;
 }
-body.ect-active .dashboard-content-area {
+/* When inside an actual ECT conversation, also hide the bottom dock */
+body.ect-chat-active .mobile-bottom-nav {
+  display: none !important;
+}
+body.ect-chat-active .dashboard-content-area {
   padding-bottom: 0 !important;
   margin-bottom: 0 !important;
 }
