@@ -291,6 +291,7 @@ export default function EstateChatPage() {
 
   const voiceRecorder = useVoiceRecorder();
   const [voicePreview, setVoicePreview] = useState(null); // {blob, url}
+  const [pendingFile, setPendingFile] = useState(null); // {file, previewUrl}
   const [inputFocused, setInputFocused] = useState(false);
   const [swipedChannel, setSwipedChannel] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -579,8 +580,12 @@ export default function EstateChatPage() {
       if (res.ok) {
         await fetchMessages(activeChannel.id);
         await fetchChannels();
+      } else {
+        toast.error('Failed to send attachment');
       }
-    } catch {} finally { setUploading(false); } // eslint-disable-line no-empty
+    } catch {
+      toast.error('Failed to send attachment');
+    } finally { setUploading(false); }
   };
 
   const handleSearch = (value) => {
@@ -1572,10 +1577,50 @@ export default function EstateChatPage() {
             </span>
           </div>
         )}
+        {/* Pending file attachment preview */}
+        {pendingFile && (
+          <div className="flex items-center gap-3 px-3 py-2 mx-3 mb-1 rounded-xl" style={{ background: '#1A2236', border: '1px solid rgba(212,175,55,0.3)' }}>
+            {pendingFile.previewUrl ? (
+              <img src={pendingFile.previewUrl} alt="Preview" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+            ) : (
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.1)' }}>
+                <FileText className="w-5 h-5 text-[var(--gold)]" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-[var(--t3)] truncate">{pendingFile.file.name}</div>
+              <div className="text-[11px] text-[var(--t5)]">{(pendingFile.file.size / 1024).toFixed(0)} KB</div>
+            </div>
+            <button
+              onClick={() => { if (pendingFile.previewUrl) URL.revokeObjectURL(pendingFile.previewUrl); setPendingFile(null); }}
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(239,68,68,0.15)' }}
+              data-testid="ect-attach-cancel"
+            >
+              <X className="w-4 h-4 text-red-400" />
+            </button>
+            <button
+              onClick={() => { uploadFile(pendingFile.file); if (pendingFile.previewUrl) URL.revokeObjectURL(pendingFile.previewUrl); setPendingFile(null); }}
+              disabled={uploading}
+              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: '#d4af37' }}
+              data-testid="ect-attach-send"
+            >
+              {uploading ? <Loader2 className="w-5 h-5 animate-spin text-[#0F1629]" /> : <Send className="w-5 h-5 text-[#0F1629]" />}
+            </button>
+          </div>
+        )}
         <div className="flex items-center gap-2 px-3 py-1">
           <input type="file" ref={fileInputRef} className="hidden"
             accept="image/*,.pdf,.doc,.docx,.txt"
-            onChange={(e) => { if (e.target.files?.[0]) uploadFile(e.target.files[0]); e.target.value = ''; }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
+                setPendingFile({ file, previewUrl });
+              }
+              e.target.value = '';
+            }}
           />
           <button
             onClick={() => fileInputRef.current?.click()}
