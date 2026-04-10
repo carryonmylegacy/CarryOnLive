@@ -712,8 +712,10 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                           const relation = benEntry?.relation || '';
                           const invStatus = benEntry?.invitation_status || '';
                           const sc = statusColors[invStatus] || statusColors.accepted;
+                          const needsStatusFix = benEntry && invStatus !== 'accepted';
                           return (
-                            <div key={bu.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }} data-testid={`tree-child-${bu.id}`}>
+                            <div key={bu.id} className="px-3 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }} data-testid={`tree-child-${bu.id}`}>
+                              <div className="flex items-center gap-2.5">
                               <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
                                 style={{ background: roleColors.beneficiary.bg, color: roleColors.beneficiary.color }}>
                                 {bu.name ? bu.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
@@ -727,11 +729,36 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                               <span className="text-[11px] px-1.5 py-0.5 rounded-full font-bold capitalize" style={{ background: sc.bg, color: sc.color }}>
                                 {invStatus || 'active'}
                               </span>
+                              {needsStatusFix && (
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const headers = { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` };
+                                      await axios.post(`${API_URL}/api/beneficiaries/force-link`, {
+                                        beneficiary_id: benEntry.id,
+                                        username_or_email: bu.email || bu.username,
+                                      }, { headers });
+                                      toast.success(`Linked ${bu.name} successfully`);
+                                      const usersRes = await axios.get(`${API_URL}/api/admin/users`, { headers });
+                                      setUsers(usersRes.data);
+                                    } catch (err) {
+                                      toast.error(err.response?.data?.detail || 'Failed to link');
+                                    }
+                                  }}
+                                  className="flex items-center gap-1 px-2 py-1 rounded-lg transition-colors"
+                                  style={{ background: 'rgba(224,173,43,0.15)', border: '1px solid rgba(224,173,43,0.3)' }}
+                                  data-testid={`force-link-user-${bu.id}`}
+                                >
+                                  <Link2 className="w-3 h-3 text-[var(--gold)]" />
+                                  <span className="text-[11px] font-bold text-[var(--gold)]">Link</span>
+                                </button>
+                              )}
                               {bu.id !== currentUserId && !operatorMode && (
                                 <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)] h-6 w-6 p-0" onClick={() => { setDeleteTarget({ id: bu.id, name: bu.name, role: bu.role }); setDeletePassword(''); setShowDeletePw(false); }}>
                                   <Trash2 className="w-3 h-3" />
                                 </Button>
                               )}
+                              </div>
                             </div>
                           );
                         })}
