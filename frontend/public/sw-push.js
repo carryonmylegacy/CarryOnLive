@@ -29,6 +29,15 @@ self.addEventListener('push', function(event) {
 
   event.waitUntil(
     self.registration.showNotification(data.title || 'CarryOn™', options)
+      .then(function() {
+        // Update badge count on the PWA icon
+        if (navigator.setAppBadge) {
+          // Increment badge by counting visible notifications
+          return self.registration.getNotifications().then(function(notifications) {
+            navigator.setAppBadge(notifications.length);
+          });
+        }
+      })
   );
 });
 
@@ -40,20 +49,25 @@ self.addEventListener('notificationclick', function(event) {
   const urlToOpen = event.notification.data?.url || '/';
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
-      // Check if there's already a window open
-      for (let i = 0; i < clientList.length; i++) {
-        const client = clientList[i];
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          client.navigate(urlToOpen);
-          return client.focus();
+    // Clear badge when user taps a notification
+    Promise.resolve(navigator.clearAppBadge && navigator.clearAppBadge())
+      .then(function() {
+        return clients.matchAll({ type: 'window', includeUncontrolled: true });
+      })
+      .then(function(clientList) {
+        // Check if there's already a window open
+        for (let i = 0; i < clientList.length; i++) {
+          const client = clientList[i];
+          if (client.url.includes(self.location.origin) && 'focus' in client) {
+            client.navigate(urlToOpen);
+            return client.focus();
+          }
         }
-      }
-      // If no window is open, open a new one
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
-    })
+        // If no window is open, open a new one
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen);
+        }
+      })
   );
 });
 

@@ -16,7 +16,7 @@ from typing import Optional
 
 from config import db
 from services.photo_urls import resolve_photo_url
-from utils import get_current_user
+from utils import get_current_user, send_push_notification
 
 router = APIRouter()
 
@@ -596,6 +596,27 @@ async def send_message(
     )  # cleanup ephemeral typing indicator
     # Un-dismiss channel for all members so they see new activity
     await db.estate_channel_dismissals.delete_many({"channel_id": channel_id})  # cleanup: un-dismiss on new message
+
+    # Push notifications to all channel members except sender
+    other_members = [m for m in channel.get("members", []) if m != current_user["id"] and not m.startswith("ffn_")]
+    if other_members:
+        import asyncio
+
+        sender_name = current_user.get("name", "Unknown")
+        channel_name = channel.get("name", "Chat")
+        preview = content[:100] + ("..." if len(content) > 100 else "")
+        for member_id in other_members:
+            asyncio.create_task(
+                send_push_notification(
+                    user_id=member_id,
+                    title=f"{sender_name} in {channel_name}",
+                    body=preview,
+                    url="/estate-chat",
+                    tag=f"ect-{channel_id}",
+                    notification_type="ect_message",
+                )
+            )
+
     # Deliver to FFN contacts via email/SMS
     ffn_members = [m for m in channel.get("members", []) if m.startswith("ffn_")]
     if ffn_members:
@@ -794,6 +815,27 @@ async def upload_attachment(
     )  # cleanup ephemeral typing indicator
     # Un-dismiss channel for all members so they see new activity
     await db.estate_channel_dismissals.delete_many({"channel_id": channel_id})  # cleanup: un-dismiss on new message
+
+    # Push notifications to all channel members except sender
+    other_members = [m for m in channel.get("members", []) if m != current_user["id"] and not m.startswith("ffn_")]
+    if other_members:
+        import asyncio
+
+        sender_name = current_user.get("name", "Unknown")
+        channel_name = channel.get("name", "Chat")
+        body = f"Sent a {msg_type}" if msg_type in ("image", "video") else "Sent a file"
+        for member_id in other_members:
+            asyncio.create_task(
+                send_push_notification(
+                    user_id=member_id,
+                    title=f"{sender_name} in {channel_name}",
+                    body=body,
+                    url="/estate-chat",
+                    tag=f"ect-{channel_id}",
+                    notification_type="ect_message",
+                )
+            )
+
     return message
 
 
@@ -875,6 +917,28 @@ async def upload_multi_attachment(
     )
     await db.estate_typing.delete_one({"channel_id": channel_id, "user_id": current_user["id"]})
     await db.estate_channel_dismissals.delete_many({"channel_id": channel_id})
+
+    # Push notifications to all channel members except sender
+    other_members = [m for m in channel.get("members", []) if m != current_user["id"] and not m.startswith("ffn_")]
+    if other_members:
+        import asyncio
+
+        sender_name = current_user.get("name", "Unknown")
+        channel_name = channel.get("name", "Chat")
+        file_count = len(attachments)
+        body = f"Sent {file_count} file{'s' if file_count > 1 else ''}"
+        for member_id in other_members:
+            asyncio.create_task(
+                send_push_notification(
+                    user_id=member_id,
+                    title=f"{sender_name} in {channel_name}",
+                    body=body,
+                    url="/estate-chat",
+                    tag=f"ect-{channel_id}",
+                    notification_type="ect_message",
+                )
+            )
+
     return message
 
 
