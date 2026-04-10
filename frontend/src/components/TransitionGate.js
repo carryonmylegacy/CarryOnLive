@@ -28,7 +28,28 @@ const TransitionGate = ({ section, allowPreTransition, children }) => {
   const estateId = localStorage.getItem('beneficiary_estate_id');
 
   useEffect(() => {
-    if (!estateId || !token) { setStatus({ allowed: false }); return; }
+    if (!token) { setStatus({ allowed: false }); return; }
+
+    // If no estate ID selected, try to auto-resolve for the beneficiary
+    if (!estateId) {
+      if (allowPreTransition) {
+        // Auto-resolve: fetch estates and pick the single estate (or redirect to hub)
+        axios.get(`${API_URL}/estates`, { headers: { Authorization: `Bearer ${token}` } })
+          .then(res => {
+            const beneficiaryEstates = (res.data || []).filter(e => e.user_role_in_estate !== 'owner');
+            if (beneficiaryEstates.length === 1) {
+              localStorage.setItem('beneficiary_estate_id', beneficiaryEstates[0].id);
+              setStatus({ allowed: true });
+            } else {
+              setStatus({ allowed: false, redirect: '/beneficiary' });
+            }
+          })
+          .catch(() => setStatus({ allowed: false, redirect: '/beneficiary' }));
+      } else {
+        setStatus({ allowed: false });
+      }
+      return;
+    }
 
     // If this route is allowed pre-transition (e.g. POA/Living Will vault view), skip the gate
     if (allowPreTransition) {
