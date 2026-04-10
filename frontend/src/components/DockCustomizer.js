@@ -40,7 +40,7 @@ const DockCustomizer = () => {
   // Defaults per role (matching the hardcoded bottom navs)
   const DEFAULTS = {
     benefactor: ['/beneficiaries', '/messages', '/dashboard', '/guardian', '/vault'],
-    beneficiary: ['/beneficiary/vault', '/beneficiary', '/beneficiary/connected-protocol', '/beneficiary/estate-chat'],
+    beneficiary: ['/beneficiary', '/beneficiary/vault', '/beneficiary/connected-protocol', '/beneficiary/estate-chat'],
     admin: ['/admin/transition', '/admin/support', '/admin', '/admin/dts', '/admin/verifications'],
     operator: ['/ops/transition', '/ops/support', '/ops', '/ops/dts', '/ops/verifications'],
   };

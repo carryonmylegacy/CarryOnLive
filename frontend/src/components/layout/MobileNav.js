@@ -582,8 +582,8 @@ const MobileNav = () => {
   ], enabledFeatures);
 
   const beneficiaryBottomNav = filterByFeatureAccess([
-    { to: '/beneficiary/vault', icon: FolderLock, label: 'Vault' },
     { to: '/beneficiary', icon: Home, label: 'Dashboard', isCenter: true },
+    { to: '/beneficiary/vault', icon: FolderLock, label: 'Vault' },
     { to: '/beneficiary/connected-protocol', icon: Shield, label: 'CCP' },
     { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Chat' },
   ]);
@@ -615,6 +615,14 @@ const MobileNav = () => {
     return 'benefactor';
   };
 
+  // Dashboard routes per role — used to position Dashboard first on even-count docks
+  const DASHBOARD_ROUTES = {
+    benefactor: '/dashboard',
+    beneficiary: '/beneficiary',
+    admin: '/admin',
+    operator: '/ops',
+  };
+
   const getBottomNav = () => {
     const roleKey = getDockRoleKey();
     const defaultNavs = {
@@ -624,6 +632,8 @@ const MobileNav = () => {
       operator: operatorBottomNav,
     };
 
+    let items;
+
     // If user has custom dock items, resolve them from the registry
     if (customDockItems && customDockItems.length > 0) {
       const registry = DOCK_REGISTRY[roleKey] || [];
@@ -632,10 +642,22 @@ const MobileNav = () => {
         .filter(Boolean)
         .slice(0, 5);
       // Only use custom items if we resolved at least 3 valid entries
-      if (resolved.length >= 3) return resolved;
+      items = resolved.length >= 3 ? resolved : (defaultNavs[roleKey] || benefactorBottomNav);
+    } else {
+      items = defaultNavs[roleKey] || benefactorBottomNav;
     }
 
-    return defaultNavs[roleKey] || benefactorBottomNav;
+    // Even-count rule: move Dashboard to the first (leftmost) position
+    if (items.length % 2 === 0) {
+      const dashRoute = DASHBOARD_ROUTES[roleKey];
+      const dashIdx = items.findIndex(i => i.to === dashRoute);
+      if (dashIdx > 0) {
+        const dashItem = items[dashIdx];
+        items = [dashItem, ...items.slice(0, dashIdx), ...items.slice(dashIdx + 1)];
+      }
+    }
+
+    return items;
   };
 
   return (
