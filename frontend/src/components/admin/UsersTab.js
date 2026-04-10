@@ -375,7 +375,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
       setLinking(true);
       try {
         const headers = { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` };
-        const res = await axios.post(`${API_URL}/api/beneficiaries/force-link`, {
+        const res = await axios.post(`${API_URL}/beneficiaries/force-link`, {
           beneficiary_id: ben.id,
           username_or_email: linkInput.trim(),
         }, { headers });
@@ -384,7 +384,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
         setLinkInput('');
         // Refresh user list to reflect the status change
         try {
-          const usersRes = await axios.get(`${API_URL}/api/admin/users`, { headers });
+          const usersRes = await axios.get(`${API_URL}/admin/users`, { headers });
           setUsers(usersRes.data);
         } catch { /* ignore refresh error */ }
       } catch (err) {
@@ -734,12 +734,12 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                                   onClick={async () => {
                                     try {
                                       const headers = { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` };
-                                      await axios.post(`${API_URL}/api/beneficiaries/force-link`, {
+                                      await axios.post(`${API_URL}/beneficiaries/force-link`, {
                                         beneficiary_id: benEntry.id,
                                         username_or_email: bu.email || bu.username,
                                       }, { headers });
                                       toast.success(`Linked ${bu.name} successfully`);
-                                      const usersRes = await axios.get(`${API_URL}/api/admin/users`, { headers });
+                                      const usersRes = await axios.get(`${API_URL}/admin/users`, { headers });
                                       setUsers(usersRes.data);
                                     } catch (err) {
                                       toast.error(err.response?.data?.detail || 'Failed to link');
