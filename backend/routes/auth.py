@@ -102,6 +102,70 @@ async def resolve_user_by_identifier(identifier: str) -> dict | None:
     return None
 
 
+async def _reconcile_beneficiary_by_email(user: dict):
+    """Auto-link any unlinked beneficiary records that match this user's email.
+
+    When a beneficiary signs up directly (not through the invitation link),
+    their user account exists but the beneficiaries collection still has
+    no user_id for them. This helper bridges that gap on every login.
+    """
+    email = (user.get("email") or "").lower().strip()
+    if not email:
+        return
+    user_id = user["id"]
+
+    # Find beneficiary records with this email that have no user_id set
+    unlinked = await db.beneficiaries.find(
+        {
+            "email": email,
+            "$or": [{"user_id": {"$exists": False}}, {"user_id": ""}, {"user_id": None}],
+        },
+        {"_id": 0, "id": 1, "estate_id": 1},
+    ).to_list(50)
+
+    if not unlinked:
+        # Also reconcile already-linked records (status sync)
+        if user.get("role") == "beneficiary" or user.get("is_also_beneficiary"):
+            await db.beneficiaries.update_many(
+                {"user_id": user_id, "invitation_status": {"$ne": "accepted"}},
+                {"$set": {"invitation_status": "accepted"}},
+            )
+        return
+
+    # Link each unlinked record to this user
+    estate_ids = []
+    for ben in unlinked:
+        await db.beneficiaries.update_one(
+            {"id": ben["id"]},
+            {"$set": {"user_id": user_id, "invitation_status": "accepted"}},
+        )
+        if ben.get("estate_id"):
+            estate_ids.append(ben["estate_id"])
+
+    # Add user to each estate's beneficiaries array
+    for eid in estate_ids:
+        await db.estates.update_one(
+            {"id": eid},
+            {"$addToSet": {"beneficiaries": user_id}},
+        )
+
+    # Mark the user as also being a beneficiary (if they're a benefactor)
+    if user.get("role") == "benefactor":
+        await db.users.update_one(
+            {"id": user_id},
+            {"$set": {"is_also_beneficiary": True}},
+        )
+        user["is_also_beneficiary"] = True
+
+    # Also ensure any previously-linked records have accepted status
+    await db.beneficiaries.update_many(
+        {"user_id": user_id, "invitation_status": {"$ne": "accepted"}},
+        {"$set": {"invitation_status": "accepted"}},
+    )
+
+    logger.info(f"Auto-linked {len(unlinked)} beneficiary record(s) for user {user_id} ({email})")
+
+
 router = APIRouter()
 
 TRIAL_DURATION_DAYS = 30
@@ -362,16 +426,7 @@ async def login(data: UserLogin, request: Request):
             if datetime.now(timezone.utc) < expires:
                 # Trusted — skip OTP, return token directly
                 token = await create_session_token(user["id"], user["email"], user["role"])
-                # Reconcile beneficiary invitation status and email
-                if user.get("role") == "beneficiary" or user.get("is_also_beneficiary"):
-                    await db.beneficiaries.update_many(
-                        {"user_id": user["id"], "invitation_status": {"$ne": "accepted"}},
-                        {"$set": {"invitation_status": "accepted"}},
-                    )
-                    await db.beneficiaries.update_many(
-                        {"user_id": user["id"], "email": {"$ne": user["email"]}},
-                        {"$set": {"email": user["email"]}},
-                    )
+                await _reconcile_beneficiary_by_email(user)
                 return TokenResponse(
                     access_token=token,
                     user=_user_response(user, owns_estate=owns_estate),
@@ -389,16 +444,7 @@ async def login(data: UserLogin, request: Request):
             {"id": user["id"]},
             {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}},
         )
-        # Reconcile beneficiary invitation status and email
-        if user.get("role") == "beneficiary" or user.get("is_also_beneficiary"):
-            await db.beneficiaries.update_many(
-                {"user_id": user["id"], "invitation_status": {"$ne": "accepted"}},
-                {"$set": {"invitation_status": "accepted"}},
-            )
-            await db.beneficiaries.update_many(
-                {"user_id": user["id"], "email": {"$ne": user["email"]}},
-                {"$set": {"email": user["email"]}},
-            )
+        await _reconcile_beneficiary_by_email(user)
         return TokenResponse(
             access_token=token,
             user=_user_response(user, owns_estate=owns_estate),
@@ -411,15 +457,7 @@ async def login(data: UserLogin, request: Request):
             {"id": user["id"]},
             {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}},
         )
-        if user.get("role") == "beneficiary" or user.get("is_also_beneficiary"):
-            await db.beneficiaries.update_many(
-                {"user_id": user["id"], "invitation_status": {"$ne": "accepted"}},
-                {"$set": {"invitation_status": "accepted"}},
-            )
-            await db.beneficiaries.update_many(
-                {"user_id": user["id"], "email": {"$ne": user["email"]}},
-                {"$set": {"email": user["email"]}},
-            )
+        await _reconcile_beneficiary_by_email(user)
         return TokenResponse(
             access_token=token,
             user=_user_response(user, owns_estate=owns_estate),
@@ -981,17 +1019,8 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
         {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}},
     )
 
-    # Reconcile beneficiary invitation status and email on login
-    if user.get("role") == "beneficiary" or user.get("is_also_beneficiary"):
-        await db.beneficiaries.update_many(
-            {"user_id": user["id"], "invitation_status": {"$ne": "accepted"}},
-            {"$set": {"invitation_status": "accepted"}},
-        )
-        # Sync email: overwrite beneficiary record email with user's actual email
-        await db.beneficiaries.update_many(
-            {"user_id": user["id"], "email": {"$ne": user["email"]}},
-            {"$set": {"email": user["email"]}},
-        )
+    # Reconcile beneficiary invitation status on login
+    await _reconcile_beneficiary_by_email(user)
 
     # Audit log for operator/founder logins
     if user["role"] in ("admin", "operator"):

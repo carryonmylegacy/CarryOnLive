@@ -73,6 +73,9 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - **Date of Birth Format Fix**: Replaced plain text input in PersonalInfoCard with `DateMaskInput` component (MM/DD/YYYY auto-formatting with `/` separators). Display mode converts YYYY-MM-DD from API to MM/DD/YYYY.
 - **File Upload Accept Attributes**: Ensured all image uploads use `accept="image/*"` for macOS Photos sidebar. Fixed TransitionPage and VaultPage.
 
+### Completed (Current Session — Apr 10, 2026)
+- **Beneficiary Auto-Link on Login (P0)**: Fixed critical bug where a beneficiary who signed up directly (not via invitation link) would not get linked to their benefactor's estate tree. Added `_reconcile_beneficiary_by_email()` helper in `auth.py` that runs on every login path. It matches the user's email against unlinked beneficiary records, sets `user_id`, `invitation_status=accepted`, adds them to the estate's beneficiaries array, and sets `is_also_beneficiary` on the user. Replaced 4 scattered inline reconciliation blocks with the DRY helper. Tested: 4/4 assertions pass (user_id linked, status accepted, is_also_beneficiary set, added to estate array).
+
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
 - Twilio SMS: Waiting on A2P 10DLC campaign approval
