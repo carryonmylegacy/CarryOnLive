@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -222,6 +222,7 @@ const MobileNav = () => {
   const { user, logout, refreshUser, enabledFeatures, setUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   const longPressTimerRef = React.useRef(null);
@@ -262,7 +263,7 @@ const MobileNav = () => {
 
   // Compute role key for dock preferences
   const dockRole = React.useMemo(() => {
-    const path = window.location.pathname;
+    const path = location.pathname;
     if (user?.role === 'admin' && path.startsWith('/ops')) return 'operator';
     if (user?.role === 'admin') return 'admin';
     if (user?.role === 'operator') return 'operator';
@@ -270,10 +271,11 @@ const MobileNav = () => {
     if (user?.role === 'beneficiary') return 'beneficiary';
     if (user?.role === 'benefactor' && path.startsWith('/beneficiary')) return 'beneficiary';
     return 'benefactor';
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, location.pathname]);
 
   // Fetch custom dock preferences
   React.useEffect(() => {
+    setCustomDockItems(null); // Reset immediately on role change to avoid stale items
     const tk = localStorage.getItem('carryon_token');
     if (!tk) return;
     fetch(`${BASE_URL}/api/user-preferences/dock?role=${dockRole}`, { headers: { Authorization: `Bearer ${tk}` } })
@@ -578,7 +580,7 @@ const MobileNav = () => {
     { to: '/messages', icon: MessageSquare, label: 'Milestone' },
     { to: '/dashboard', icon: Home, label: 'Dashboard', isCenter: true },
     { to: '/guardian', icon: Sparkles, label: 'Guardian' },
-    { to: '/vault', icon: FolderLock, label: 'Vault' },
+    { to: '/estate-chat', icon: MessageCircle, label: 'Chat' },
   ], enabledFeatures);
 
   const beneficiaryBottomNav = filterByFeatureAccess([
@@ -605,7 +607,7 @@ const MobileNav = () => {
   ];
 
   const getDockRoleKey = () => {
-    const path = window.location.pathname;
+    const path = location.pathname;
     if (user?.role === 'admin' && path.startsWith('/ops')) return 'operator';
     if (user?.role === 'admin') return 'admin';
     if (user?.role === 'operator') return 'operator';
