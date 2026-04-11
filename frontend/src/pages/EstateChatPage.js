@@ -227,21 +227,29 @@ function AuthImage({ fileId, fileName, msgId, onPreview }) {
   }, [fileId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDownload = async () => {
-    if (!src) return;
+    if (!fileId) return;
     try {
-      if (navigator.share && navigator.canShare) {
-        const resp = await fetch(src);
-        const blob = await resp.blob();
-        const file = new File([blob], fileName || 'photo.jpg', { type: blob.type || 'image/jpeg' });
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file] });
-          return;
-        }
+      // Fetch directly from server to get proper MIME type for iOS
+      const token = localStorage.getItem('carryon_token');
+      const resp = await fetch(`${API_URL}/estate-chat/files/${fileId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const blob = await resp.blob();
+      const ext = (fileName || '').split('.').pop()?.toLowerCase() || 'jpg';
+      const mimeMap = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif' };
+      const mimeType = mimeMap[ext] || blob.type || 'image/jpeg';
+      const file = new File([blob], fileName || 'photo.jpg', { type: mimeType });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+        return;
       }
+      // Fallback
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = src;
-      a.download = fileName || 'image.jpg';
+      a.href = url;
+      a.download = fileName || 'photo.jpg';
       a.click();
+      URL.revokeObjectURL(url);
     } catch (err) {
       if (err.name !== 'AbortError') toast.error('Could not save photo');
     }
@@ -259,7 +267,7 @@ function AuthImage({ fileId, fileName, msgId, onPreview }) {
         onClick={(e) => {
           e.stopPropagation();
           if (imgLongPressTriggered.current) return;
-          if (onPreview) onPreview(src, fileName);
+          if (onPreview) onPreview(src, fileName, fileId);
         }}
         onTouchStart={() => {
           imgLongPressTriggered.current = false;
@@ -399,7 +407,7 @@ export default function EstateChatPage() {
   const [msgActionId, setMsgActionId] = useState(null); // message ID for long-press action menu
   const [editingMsg, setEditingMsg] = useState(null); // {id, content} when editing
   const [poppingMsgId, setPoppingMsgId] = useState(null); // message ID being deleted (pop animation)
-  const [previewImage, setPreviewImage] = useState(null); // {src, name} for fullscreen photo preview
+  const [previewImage, setPreviewImage] = useState(null); // {src, name, fileId} for fullscreen photo preview
   const msgLongPressTimer = useRef(null);
   const msgLongPressTriggered = useRef(false);
   const touchStartRef = useRef({ x: 0, y: 0 });
@@ -1801,7 +1809,7 @@ export default function EstateChatPage() {
                         const isImage = att.file_type?.startsWith('image/') || ['jpg','jpeg','png','gif','webp','heic','heif'].includes(ext);
                         const isVideo = att.file_type?.startsWith('video/') || ['mp4','mov','webm','m4v'].includes(ext);
                         if (isImage) {
-                          return <AuthImage key={att.file_id} fileId={att.file_id} fileName={att.file_name} msgId={msg.id} onPreview={(s, n) => setPreviewImage({ src: s, name: n })} />;
+                          return <AuthImage key={att.file_id} fileId={att.file_id} fileName={att.file_name} msgId={msg.id} onPreview={(s, n, fid) => setPreviewImage({ src: s, name: n, fileId: fid })} />;
                         }
                         if (isVideo) {
                           return <AuthVideo key={att.file_id} fileId={att.file_id} fileName={att.file_name} />;
