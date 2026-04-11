@@ -728,15 +728,15 @@ const DashboardPage = () => {
       {/* Getting Started Tile — shown when overlay is dismissed for the session but not permanently */}
       {!showGuidedFlow && !showDismissConfirm && !showDismissInfo && onboardingProgress && !onboardingProgress.all_complete && !onboardingProgress.manually_dismissed && !onboardingProgress.already_graduated && (
         <div className="glass-card p-4 mb-4 relative" data-testid="getting-started-tile"
-          style={{ border: '1px solid rgba(245,158,11,0.15)', cursor: 'pointer' }}
-          onClick={() => { guidedDismissedRef.current = false; setShowGuidedFlow(true); }}>
+          style={{ border: '1px solid rgba(245,158,11,0.15)' }}>
           <button onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowDismissConfirm(true); }}
             className="absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center transition-all"
-            style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}
+            style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)', zIndex: 2 }}
             data-testid="getting-started-tile-close">
             <X className="w-4 h-4" />
           </button>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" style={{ cursor: 'pointer' }}
+            onClick={() => { guidedDismissedRef.current = false; setShowGuidedFlow(true); }}>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.2)' }}>
               <Sparkles className="w-5 h-5" style={{ color: '#F59E0B' }} />

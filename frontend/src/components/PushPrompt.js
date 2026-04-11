@@ -68,6 +68,7 @@ const PushPrompt = ({ getAuthHeaders }) => {
       await navigator.serviceWorker.ready;
 
       const vapidRes = await axios.get(`${API_URL}/push/vapid-public-key`);
+      if (!vapidRes.data?.public_key) throw new Error('VAPID key missing');
       const vapidPublicKey = vapidRes.data.public_key;
 
       // Convert VAPID key
@@ -91,7 +92,11 @@ const PushPrompt = ({ getAuthHeaders }) => {
       toast.success('Notifications enabled!');
     } catch (err) {
       console.error('Push subscription error:', err);
-      toast.error('Failed to enable notifications');
+      if (err?.response?.status === 503) {
+        toast.error('Push notifications are not yet configured on this server.');
+      } else {
+        toast.error('Failed to enable notifications. Please try again later.');
+      }
     } finally {
       setSubscribing(false);
       dismiss();
