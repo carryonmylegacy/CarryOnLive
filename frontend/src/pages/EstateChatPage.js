@@ -452,13 +452,36 @@ export default function EstateChatPage() {
     let kbOpen = false;
     let rafId = 0;
 
+    // Pre-set an explicit pixel height so CSS transitions have a numeric start value
+    // (CSS cannot transition from 'auto' or '100%' to a px value — it jumps)
+    const initHeight = () => {
+      root.style.height = `${window.innerHeight}px`;
+      root.style.bottom = 'auto';
+    };
+    initHeight();
+
+    const lockBodyScroll = () => {
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      window.scrollTo(0, 0);
+    };
+
+    const unlockBodyScroll = () => {
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+
     const resetStyles = () => {
       kbOpen = false;
       cancelAnimationFrame(rafId);
-      root.style.transition = 'height 0.25s ease-out, top 0.25s ease-out';
-      root.style.height = '';
+      unlockBodyScroll();
+      root.style.transition = 'height 0.25s ease-out';
+      root.style.height = `${window.innerHeight}px`;
       root.style.top = '0';
-      root.style.bottom = '0';
       root.style.transform = '';
       window.scrollTo(0, 0);
     };
@@ -480,17 +503,18 @@ export default function EstateChatPage() {
 
       if (open && !kbOpen) {
         kbOpen = true;
-        // CSS transition smooths the 30fps vv events to 60fps on the compositor
-        root.style.transition = 'height 0.12s linear, top 0.12s linear';
-        root.style.bottom = 'auto';
+        lockBodyScroll();
+        root.style.transition = 'height 0.28s ease-out';
         root.style.height = `${vv.height}px`;
-        root.style.top = `${vv.offsetTop}px`;
       } else if (!open && kbOpen) {
         resetStyles();
       } else if (kbOpen) {
-        // Track viewport — CSS transition interpolates between event updates
+        // Continue tracking — CSS transition smooths each update
         root.style.height = `${vv.height}px`;
-        root.style.top = `${vv.offsetTop}px`;
+        // Counteract any residual iOS scroll
+        if (vv.offsetTop > 0) {
+          root.style.top = `${vv.offsetTop}px`;
+        }
       }
     };
 
@@ -505,14 +529,25 @@ export default function EstateChatPage() {
       }, 400);
     };
 
+    // Also handle window resize (orientation change, etc.)
+    const onResize = () => {
+      if (!kbOpen) {
+        root.style.transition = '';
+        root.style.height = `${window.innerHeight}px`;
+      }
+    };
+
     vv.addEventListener('resize', sync);
     vv.addEventListener('scroll', sync);
+    window.addEventListener('resize', onResize);
     root.addEventListener('focusout', handleFocusOut);
     return () => {
       cancelAnimationFrame(rafId);
       vv.removeEventListener('resize', sync);
       vv.removeEventListener('scroll', sync);
+      window.removeEventListener('resize', onResize);
       root.removeEventListener('focusout', handleFocusOut);
+      unlockBodyScroll();
       root.style.transition = '';
       root.style.height = '';
       root.style.top = '0';
