@@ -147,6 +147,10 @@ class SendMessageRequest(BaseModel):
     content: str
 
 
+class EditMessageRequest(BaseModel):
+    content: str
+
+
 class ReactRequest(BaseModel):
     emoji: str  # thumbs_up, heart, laugh, sad, fire, check
 
@@ -632,6 +636,72 @@ async def send_message(
             )
         )
     return message
+
+
+@router.put("/estate-chat/messages/{message_id}")
+async def edit_message(
+    message_id: str,
+    data: EditMessageRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Edit a message's text content. Only the sender can edit."""
+    content = data.content.strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+    if len(content) > 2000:
+        raise HTTPException(status_code=400, detail="Message too long (max 2000 chars)")
+    msg = await db.estate_messages.find_one({"id": message_id}, {"_id": 0})
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    if msg["sender_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="You can only edit your own messages")
+    now = datetime.now(timezone.utc).isoformat()
+    await db.estate_messages.update_one(
+        {"id": message_id},
+        {"$set": {"content": content, "edited_at": now}},
+    )
+    return {"status": "ok", "content": content, "edited_at": now}
+
+
+@router.delete("/estate-chat/messages/{message_id}")
+async def delete_message(
+    message_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Delete a message. Only the sender can delete."""
+    msg = await db.estate_messages.find_one({"id": message_id}, {"_id": 0})
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    if msg["sender_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="You can only delete your own messages")
+    await db.estate_messages.delete_one({"id": message_id})
+    # Also clean up any associated files from GridFS if present
+    if msg.get("attachment") and msg["attachment"].get("file_id"):
+        try:
+            from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+
+            fs = AsyncIOMotorGridFSBucket(db.client[db.name])
+            from bson import ObjectId
+
+            await fs.delete(ObjectId(msg["attachment"]["file_id"]))
+        except Exception:
+            pass  # best-effort file cleanup
+    if msg.get("attachments"):
+        try:
+            from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+
+            fs = AsyncIOMotorGridFSBucket(db.client[db.name])
+            from bson import ObjectId
+
+            for att in msg["attachments"]:
+                if att.get("file_id"):
+                    try:
+                        await fs.delete(ObjectId(att["file_id"]))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+    return {"status": "ok"}
 
 
 @router.post("/estate-chat/messages/{message_id}/react")

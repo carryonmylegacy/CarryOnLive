@@ -33,6 +33,7 @@ import {
   Pause,
   CheckSquare2,
   UserPlus,
+  Pencil,
 } from 'lucide-react';
 import { platformDownload } from '../utils/downloadFile';
 
@@ -353,6 +354,10 @@ export default function EstateChatPage() {
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [showHeaderMembers, setShowHeaderMembers] = useState(false);
   const [showListMembersId, setShowListMembersId] = useState(null);
+  const [msgActionId, setMsgActionId] = useState(null); // message ID for long-press action menu
+  const [editingMsg, setEditingMsg] = useState(null); // {id, content} when editing
+  const msgLongPressTimer = useRef(null);
+  const msgLongPressTriggered = useRef(false);
   const touchStartRef = useRef({ x: 0, y: 0 });
   const longPressTimerRef = useRef(null);
   const longPressTriggeredRef = useRef(false);
@@ -734,6 +739,63 @@ export default function EstateChatPage() {
       }
     } catch {} finally { setSending(false); } // eslint-disable-line no-empty
     inputRef.current?.focus();
+  };
+
+  const handleEditMessage = async () => {
+    if (!editingMsg) return;
+    const content = editingMsg.content.trim();
+    if (!content) return;
+    try {
+      const res = await fetch(`${API_URL}/estate-chat/messages/${editingMsg.id}`, {
+        method: 'PUT', headers, body: JSON.stringify({ content }),
+      });
+      if (res.ok) {
+        setEditingMsg(null);
+        await fetchMessages(activeChannel.id);
+      } else {
+        const errData = await res.json().catch(() => null);
+        toast.error(errData?.detail || 'Failed to edit message');
+      }
+    } catch { toast.error('Failed to edit message'); } // eslint-disable-line no-empty
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    try {
+      const res = await fetch(`${API_URL}/estate-chat/messages/${messageId}`, {
+        method: 'DELETE', headers,
+      });
+      if (res.ok) {
+        setMsgActionId(null);
+        await fetchMessages(activeChannel.id);
+        await fetchChannels();
+      } else {
+        const errData = await res.json().catch(() => null);
+        toast.error(errData?.detail || 'Failed to delete message');
+      }
+    } catch { toast.error('Failed to delete message'); } // eslint-disable-line no-empty
+  };
+
+  const onMsgTouchStart = (e, msgId, isMe) => {
+    if (!isMe) return;
+    msgLongPressTriggered.current = false;
+    msgLongPressTimer.current = setTimeout(() => {
+      msgLongPressTriggered.current = true;
+      setMsgActionId(msgId);
+      setReactingMsgId(null);
+      if (navigator.vibrate) navigator.vibrate(30);
+    }, 500);
+  };
+
+  const onMsgTouchMove = (e) => {
+    if (msgLongPressTimer.current) {
+      clearTimeout(msgLongPressTimer.current);
+      msgLongPressTimer.current = null;
+    }
+  };
+
+  const onMsgTouchEnd = () => {
+    clearTimeout(msgLongPressTimer.current);
+    msgLongPressTimer.current = null;
   };
 
   const sendVoiceMessage = async (previewBlob) => {
@@ -1643,9 +1705,31 @@ export default function EstateChatPage() {
                 {!isMe && (
                   <div className="text-[11px] font-semibold mb-1 ml-1" style={{ color: '#d4af37' }}>{msg.sender_name}</div>
                 )}
+                {/* Inline edit mode */}
+                {editingMsg && editingMsg.id === msg.id ? (
+                  <div className="flex flex-col gap-1.5 rounded-2xl px-3 py-2" style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)' }}>
+                    <input
+                      autoFocus
+                      value={editingMsg.content}
+                      onChange={(e) => setEditingMsg({ ...editingMsg, content: e.target.value })}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleEditMessage(); } if (e.key === 'Escape') setEditingMsg(null); }}
+                      className="w-full rounded-lg px-3 py-2 text-sm"
+                      data-testid="edit-message-input"
+                      style={{ background: '#1E2840', border: '1px solid #4A5575', color: '#F1F3F8', fontSize: '16px', outline: 'none' }}
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={() => setEditingMsg(null)} className="text-xs px-3 py-1 rounded-lg" style={{ color: '#A0AABF', background: 'rgba(255,255,255,0.06)' }} data-testid="edit-cancel-btn">Cancel</button>
+                      <button onClick={handleEditMessage} className="text-xs px-3 py-1 rounded-lg font-semibold" style={{ color: '#080e1a', background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }} data-testid="edit-save-btn">Save</button>
+                    </div>
+                  </div>
+                ) : (
                 <div
                   className="px-4 py-2.5 rounded-2xl text-sm cursor-pointer relative"
-                  onClick={() => setReactingMsgId(reactingMsgId === msg.id ? null : msg.id)}
+                  onClick={() => { if (msgLongPressTriggered.current) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); setMsgActionId(null); }}
+                  onTouchStart={(e) => onMsgTouchStart(e, msg.id, isMe)}
+                  onTouchMove={onMsgTouchMove}
+                  onTouchEnd={onMsgTouchEnd}
+                  onContextMenu={(e) => { if (isMe) { e.preventDefault(); setMsgActionId(msg.id); setReactingMsgId(null); } }}
                   style={{
                     background: isMe ? 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1))' : 'rgba(255,255,255,0.05)',
                     border: `1px solid ${isMe ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
@@ -1679,7 +1763,39 @@ export default function EstateChatPage() {
                     if (isImage) return <AuthImage fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} msgId={msg.id} />;
                     return <AuthFileLink fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} fileSize={msg.attachment.file_size} msgId={msg.id} />;
                   })() : msg.content}
+                  {msg.edited_at && <span className="text-[10px] italic ml-1" style={{ color: '#7B879E' }}>(edited)</span>}
                 </div>
+                )}
+                {/* Message action menu (long-press) */}
+                {msgActionId === msg.id && isMe && (
+                  <div className={`flex gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`} data-testid={`msg-action-menu-${msg.id}`}>
+                    {!msg.attachment && !(msg.attachments && msg.attachments.length) && msg.message_type !== 'voice' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setEditingMsg({ id: msg.id, content: msg.content || '' }); setMsgActionId(null); }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                        data-testid={`edit-msg-btn-${msg.id}`}
+                        style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#d4af37' }}
+                      >
+                        <Pencil className="w-3.5 h-3.5" /> Edit
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); if (window.confirm('Delete this message?')) handleDeleteMessage(msg.id); }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                      data-testid={`delete-msg-btn-${msg.id}`}
+                      style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Delete
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setMsgActionId(null); }}
+                      className="flex items-center px-2 py-1.5 rounded-lg text-xs transition-all"
+                      style={{ background: 'rgba(255,255,255,0.06)', color: '#7B879E' }}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
                 {/* Reaction picker */}
                 {reactingMsgId === msg.id && (
                   <div className={`flex gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`} data-testid={`reaction-picker-${msg.id}`}>
