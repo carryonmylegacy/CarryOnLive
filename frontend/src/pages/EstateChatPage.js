@@ -450,22 +450,17 @@ export default function EstateChatPage() {
     const vv = window.visualViewport;
     if (!vv) return;
     let kbOpen = false;
-    let lastBottom = 0;
 
     const resetStyles = () => {
       kbOpen = false;
-      root.style.transition = 'bottom 0.2s ease-out';
+      root.style.transition = '';
       root.style.bottom = '0';
       root.style.transform = '';
-      lastBottom = 0;
       window.scrollTo(0, 0);
     };
 
-    // Prevent iOS from scrolling the page behind the keyboard
-    const pinScroll = () => {
-      if (kbOpen && window.scrollY !== 0) window.scrollTo(0, 0);
-    };
-
+    let lastBottom = 0;
+    let lastTransform = 0;
     let rafId = 0;
 
     const sync = () => {
@@ -483,27 +478,33 @@ export default function EstateChatPage() {
       const inputActive = focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.isContentEditable);
       const open = inputActive && vv.height < window.innerHeight * 0.75;
 
-      if (open && !kbOpen) {
-        // Keyboard just opened
-        kbOpen = true;
-        const kbHeight = window.innerHeight - vv.height;
-        root.style.transition = 'bottom 0.2s ease-out';
-        root.style.bottom = `${kbHeight}px`;
-        lastBottom = kbHeight;
-        window.scrollTo(0, 0);
-      } else if (!open && kbOpen) {
-        // Keyboard just closed
-        resetStyles();
+      if (open !== kbOpen) {
+        kbOpen = open;
+        if (kbOpen) {
+          const kbHeight = window.innerHeight - vv.height;
+          root.style.transition = 'bottom 0.25s ease-out, transform 0.25s ease-out';
+          root.style.bottom = `${kbHeight}px`;
+          lastBottom = kbHeight;
+        } else {
+          resetStyles();
+          lastBottom = 0;
+          lastTransform = 0;
+        }
       } else if (kbOpen) {
-        // Keyboard still open — only adjust if height changed substantially
         const kbHeight = window.innerHeight - vv.height;
-        if (Math.abs(kbHeight - lastBottom) > 20) {
-          root.style.transition = 'none';
+        if (Math.abs(kbHeight - lastBottom) > 10) {
           root.style.bottom = `${kbHeight}px`;
           lastBottom = kbHeight;
         }
-        // Keep page pinned at top
-        if (window.scrollY > 0) window.scrollTo(0, 0);
+      }
+      if (kbOpen && window.scrollY > 0) {
+        if (Math.abs(window.scrollY - lastTransform) > 3) {
+          root.style.transform = `translateY(${window.scrollY}px)`;
+          lastTransform = window.scrollY;
+        }
+      } else if (kbOpen && lastTransform !== 0) {
+        root.style.transform = '';
+        lastTransform = 0;
       }
     };
 
@@ -518,15 +519,24 @@ export default function EstateChatPage() {
       }, 400);
     };
 
+    const handleWindowScroll = () => {
+      if (kbOpen && activeChannelRef.current && window.scrollY > 0) {
+        if (Math.abs(window.scrollY - lastTransform) > 3) {
+          root.style.transform = `translateY(${window.scrollY}px)`;
+          lastTransform = window.scrollY;
+        }
+      }
+    };
+
     vv.addEventListener('resize', sync);
     vv.addEventListener('scroll', sync);
-    window.addEventListener('scroll', pinScroll, { passive: false });
+    window.addEventListener('scroll', handleWindowScroll, { passive: true });
     root.addEventListener('focusout', handleFocusOut);
     return () => {
       cancelAnimationFrame(rafId);
       vv.removeEventListener('resize', sync);
       vv.removeEventListener('scroll', sync);
-      window.removeEventListener('scroll', pinScroll);
+      window.removeEventListener('scroll', handleWindowScroll);
       root.removeEventListener('focusout', handleFocusOut);
       root.style.bottom = '0';
       root.style.transform = '';
