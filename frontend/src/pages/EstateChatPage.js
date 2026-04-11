@@ -358,6 +358,7 @@ export default function EstateChatPage() {
   const [showListMembersId, setShowListMembersId] = useState(null);
   const [msgActionId, setMsgActionId] = useState(null); // message ID for long-press action menu
   const [editingMsg, setEditingMsg] = useState(null); // {id, content} when editing
+  const [poppingMsgId, setPoppingMsgId] = useState(null); // message ID being deleted (pop animation)
   const msgLongPressTimer = useRef(null);
   const msgLongPressTriggered = useRef(false);
   const touchStartRef = useRef({ x: 0, y: 0 });
@@ -763,24 +764,36 @@ export default function EstateChatPage() {
 
   const handleDeleteMessage = async (messageId) => {
     try {
+      // Trigger pop animation
+      setPoppingMsgId(messageId);
+      setMsgActionId(null);
+      // Wait for animation to play
+      await new Promise(r => setTimeout(r, 350));
       const res = await fetch(`${API_URL}/estate-chat/messages/${messageId}`, {
         method: 'DELETE', headers,
       });
       if (res.ok) {
-        setMsgActionId(null);
-        await fetchMessages(activeChannel.id);
-        await fetchChannels();
+        // Optimistically remove from local state
+        setMessages(prev => prev.filter(m => m.id !== messageId));
+        setPoppingMsgId(null);
+        fetchChannels(); // refresh channel previews in background
       } else {
+        setPoppingMsgId(null);
         const errData = await res.json().catch(() => null);
         toast.error(errData?.detail || 'Failed to delete message');
       }
-    } catch { toast.error('Failed to delete message'); } // eslint-disable-line no-empty
+    } catch {
+      setPoppingMsgId(null);
+      toast.error('Failed to delete message');
+    } // eslint-disable-line no-empty
   };
 
   const onMsgTouchStart = (e, msgId) => {
     msgLongPressTriggered.current = false;
     msgLongPressTimer.current = setTimeout(() => {
       msgLongPressTriggered.current = true;
+      // Clear any native text selection that iOS may have started
+      window.getSelection()?.removeAllRanges();
       setMsgActionId(msgId);
       setReactingMsgId(null);
       if (navigator.vibrate) navigator.vibrate(30);
@@ -1701,7 +1714,11 @@ export default function EstateChatPage() {
           }
 
           return (
-            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+              style={poppingMsgId === msg.id ? {
+                animation: 'msgPop 0.35s ease-out forwards',
+              } : undefined}
+            >
               <div className="max-w-[80%]">
                 {!isMe && (
                   <div className="text-[11px] font-semibold mb-1 ml-1" style={{ color: '#d4af37' }}>{msg.sender_name}</div>
@@ -1737,6 +1754,8 @@ export default function EstateChatPage() {
                     color: '#F1F3F8',
                     borderTopRightRadius: isMe ? '6px' : '18px',
                     borderTopLeftRadius: isMe ? '18px' : '6px',
+                    WebkitUserSelect: 'none',
+                    userSelect: 'none',
                   }}
                 >
                   {msg.pinned && <Pin className="w-3 h-3 inline mr-1" style={{ color: '#d4af37' }} />}
@@ -1783,7 +1802,12 @@ export default function EstateChatPage() {
                         e.stopPropagation();
                         setMsgActionId(null);
                         const bubble = e.target.closest('[data-testid^="msg-action-menu"]')?.previousElementSibling;
-                        if (bubble) { const sel = window.getSelection(); const range = document.createRange(); range.selectNodeContents(bubble); sel.removeAllRanges(); sel.addRange(range); }
+                        if (bubble) {
+                          // Temporarily re-enable text selection for the select-all operation
+                          bubble.style.webkitUserSelect = 'text';
+                          bubble.style.userSelect = 'text';
+                          const sel = window.getSelection(); const range = document.createRange(); range.selectNodeContents(bubble); sel.removeAllRanges(); sel.addRange(range);
+                        }
                       }}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                       data-testid={`select-all-msg-btn-${msg.id}`}
