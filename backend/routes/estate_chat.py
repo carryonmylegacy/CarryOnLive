@@ -218,12 +218,12 @@ async def _enrich_channel(channel: dict, current_user_id: str) -> dict:
     ch_id = channel["id"]
     last_read = await db.estate_channel_reads.find_one({"channel_id": ch_id, "user_id": current_user_id}, {"_id": 0})
     last_read_at = last_read.get("last_read_at", "") if last_read else ""
-    unread_query = {"channel_id": ch_id}
+    unread_query = {"channel_id": ch_id, "deleted_at": {"$exists": False}}
     if last_read_at:
         unread_query["created_at"] = {"$gt": last_read_at}
     unread = await db.estate_messages.count_documents(unread_query)
     last_msg = await db.estate_messages.find_one(
-        {"channel_id": ch_id},
+        {"channel_id": ch_id, "deleted_at": {"$exists": False}},
         {"_id": 0, "id": 1, "content": 1, "sender_name": 1, "created_at": 1},
         sort=[("created_at", -1)],
     )
@@ -681,33 +681,12 @@ async def delete_message(
         is_estate_owner = estate is not None
     if not is_sender and not is_estate_owner:
         raise HTTPException(status_code=403, detail="You can only delete your own messages")
-    await db.estate_messages.delete_one({"id": message_id})
-    # Also clean up any associated files from GridFS if present
-    if msg.get("attachment") and msg["attachment"].get("file_id"):
-        try:
-            from motor.motor_asyncio import AsyncIOMotorGridFSBucket
-
-            fs = AsyncIOMotorGridFSBucket(db.client[db.name])
-            from bson import ObjectId
-
-            await fs.delete(ObjectId(msg["attachment"]["file_id"]))
-        except Exception:
-            pass  # best-effort file cleanup
-    if msg.get("attachments"):
-        try:
-            from motor.motor_asyncio import AsyncIOMotorGridFSBucket
-
-            fs = AsyncIOMotorGridFSBucket(db.client[db.name])
-            from bson import ObjectId
-
-            for att in msg["attachments"]:
-                if att.get("file_id"):
-                    try:
-                        await fs.delete(ObjectId(att["file_id"]))
-                    except Exception:
-                        pass
-        except Exception:
-            pass
+    # Soft-delete: retain the record for SOC 2 audit compliance
+    now = datetime.now(timezone.utc).isoformat()
+    await db.estate_messages.update_one(
+        {"id": message_id},
+        {"$set": {"deleted_at": now, "deleted_by": current_user["id"]}},
+    )
     return {"status": "ok"}
 
 
@@ -790,7 +769,9 @@ async def get_pinned(
     if not channel or current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Not a member of this channel")
     pinned = (
-        await db.estate_messages.find({"channel_id": channel_id, "pinned": True}, {"_id": 0})
+        await db.estate_messages.find(
+            {"channel_id": channel_id, "pinned": True, "deleted_at": {"$exists": False}}, {"_id": 0}
+        )
         .sort("pinned_at", -1)
         .to_list(20)
     )
@@ -1193,7 +1174,7 @@ async def get_unread_total(current_user: dict = Depends(get_current_user)):
             {"_id": 0, "id": 1, "last_read_at": 1},
         )
         last_read_at = last_read.get("last_read_at", "") if last_read else ""
-        q = {"channel_id": ch["id"]}
+        q = {"channel_id": ch["id"], "deleted_at": {"$exists": False}}
         if last_read_at:
             q["created_at"] = {"$gt": last_read_at}
         total += await db.estate_messages.count_documents(q)
@@ -1219,7 +1200,11 @@ async def search_messages(
     channel_map = {c["id"]: c for c in channels}
     results = (
         await db.estate_messages.find(
-            {"channel_id": {"$in": channel_ids}, "content": {"$regex": q, "$options": "i"}},
+            {
+                "channel_id": {"$in": channel_ids},
+                "content": {"$regex": q, "$options": "i"},
+                "deleted_at": {"$exists": False},
+            },
             {"_id": 0},
         )
         .sort("created_at", -1)

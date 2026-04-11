@@ -1764,7 +1764,7 @@ export default function EstateChatPage() {
                     if (isImage) return <AuthImage fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} msgId={msg.id} />;
                     return <AuthFileLink fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} fileSize={msg.attachment.file_size} msgId={msg.id} />;
                   })() : msg.content}
-                  {msg.edited_at && <span className="text-[10px] italic ml-1" style={{ color: '#7B879E' }}>(edited)</span>}
+                  {msg.edited_at && <span className="text-[11px] italic ml-1" style={{ color: '#7B879E' }}>(edited)</span>}
                 </div>
                 )}
                 {/* Message action menu (long-press) */}
