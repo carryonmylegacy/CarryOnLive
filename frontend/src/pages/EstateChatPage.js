@@ -1879,6 +1879,30 @@ export default function EstateChatPage() {
               ref={inputRef}
               value={draft}
               onChange={handleDraftChange}
+              onPaste={(e) => {
+                const items = e.clipboardData?.items;
+                if (!items) return;
+                const imageFiles = [];
+                for (let i = 0; i < items.length; i++) {
+                  if (items[i].type.startsWith('image/')) {
+                    const blob = items[i].getAsFile();
+                    if (blob) imageFiles.push(blob);
+                  }
+                }
+                if (!imageFiles.length) return;
+                e.preventDefault();
+                const maxTotal = 5;
+                const currentCount = pendingFiles.length;
+                const allowed = imageFiles.slice(0, maxTotal - currentCount);
+                if (imageFiles.length > allowed.length) {
+                  toast.error(`Maximum ${maxTotal} files. ${imageFiles.length - allowed.length} file(s) skipped.`);
+                }
+                const validated = allowed.map(file => ({
+                  file,
+                  previewUrl: URL.createObjectURL(file),
+                }));
+                if (validated.length) setPendingFiles(prev => [...prev, ...validated]);
+              }}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               onFocus={() => {
                 setInputFocused(true);
