@@ -220,11 +220,20 @@ function AuthImage({ fileId, fileName, msgId, onPreview }) {
   const [src, setSrc] = useState(null);
   const imgLongPress = useRef(null);
   const imgLongPressTriggered = useRef(false);
+  const retryCount = useRef(0);
 
   useEffect(() => {
+    retryCount.current = 0;
     cachedFetch(fileId).then(setSrc).catch(() => {});
-    return () => { if (src) URL.revokeObjectURL(src); };
+    return () => { /* blob URLs cleaned up via onError retry cycle */ };
   }, [fileId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const reloadImage = () => {
+    // iOS can revoke blob: URLs when the app backgrounds (Share Sheet, etc.)
+    if (retryCount.current >= 2) return;
+    retryCount.current += 1;
+    cachedFetch(fileId).then(newSrc => setSrc(newSrc)).catch(() => {});
+  };
 
   const handleDownload = async () => {
     if (!fileId) return;
@@ -262,6 +271,7 @@ function AuthImage({ fileId, fileName, msgId, onPreview }) {
       <img
         src={src}
         alt={fileName}
+        onError={reloadImage}
         className="rounded-xl max-w-full max-h-[240px] object-cover mb-1"
         style={{ cursor: 'pointer', WebkitUserSelect: 'none', userSelect: 'none' }}
         onClick={(e) => {
