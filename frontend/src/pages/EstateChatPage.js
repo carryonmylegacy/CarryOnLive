@@ -1823,7 +1823,7 @@ export default function EstateChatPage() {
                     const isVideo = msg.attachment.file_type?.startsWith('video/') || ['mp4','mov','webm','m4v'].includes(ext);
                     if (msg.message_type === 'voice') return <VoiceMessagePlayer fileId={msg.attachment.file_id} />;
                     if (isVideo) return <AuthVideo fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} />;
-                    if (isImage) return <AuthImage fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} msgId={msg.id} onPreview={(s, n) => setPreviewImage({ src: s, name: n })} />;
+                    if (isImage) return <AuthImage fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} msgId={msg.id} onPreview={(s, n, fid) => setPreviewImage({ src: s, name: n, fileId: fid })} />;
                     return <AuthFileLink fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} fileSize={msg.attachment.file_size} msgId={msg.id} />;
                   })() : msg.content}
                   {msg.edited_at && <span className="text-[11px] italic ml-1" style={{ color: '#7B879E' }}>(edited)</span>}
@@ -2452,21 +2452,33 @@ export default function EstateChatPage() {
             onClick={async (e) => {
               e.stopPropagation();
               try {
-                // Use Web Share API for native iOS "Save to Photos" / "Save to Files" sheet
-                if (navigator.share && navigator.canShare) {
+                // Fetch directly from server with auth to get proper MIME type for iOS
+                let blob;
+                if (previewImage.fileId) {
+                  const token = localStorage.getItem('carryon_token');
+                  const resp = await fetch(`${API_URL}/estate-chat/files/${previewImage.fileId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  blob = await resp.blob();
+                } else {
                   const resp = await fetch(previewImage.src);
-                  const blob = await resp.blob();
-                  const file = new File([blob], previewImage.name || 'photo.jpg', { type: blob.type || 'image/jpeg' });
-                  if (navigator.canShare({ files: [file] })) {
-                    await navigator.share({ files: [file] });
-                    return;
-                  }
+                  blob = await resp.blob();
+                }
+                const ext = (previewImage.name || '').split('.').pop()?.toLowerCase() || 'jpg';
+                const mimeMap = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif' };
+                const mimeType = mimeMap[ext] || blob.type || 'image/jpeg';
+                const file = new File([blob], previewImage.name || 'photo.jpg', { type: mimeType });
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                  await navigator.share({ files: [file] });
+                  return;
                 }
                 // Fallback for non-share-capable browsers
+                const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = previewImage.src;
+                a.href = url;
                 a.download = previewImage.name || 'photo.jpg';
                 a.click();
+                URL.revokeObjectURL(url);
               } catch (err) {
                 if (err.name !== 'AbortError') toast.error('Could not save photo');
               }
