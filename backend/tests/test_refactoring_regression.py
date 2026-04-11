@@ -7,7 +7,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://prep-platform-11.preview.emergentagent.com")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://estate-chat-menu.preview.emergentagent.com")
 
 
 class TestHealthAndBasicAPIs:

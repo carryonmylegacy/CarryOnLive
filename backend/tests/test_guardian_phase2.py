@@ -11,7 +11,7 @@ import requests
 import os
 import time
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://prep-platform-11.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://estate-chat-menu.preview.emergentagent.com").rstrip("/")
 
 
 class TestGuardianPhase2:
