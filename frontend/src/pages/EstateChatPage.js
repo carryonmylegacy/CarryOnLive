@@ -216,12 +216,23 @@ async function cachedFetch(fileId) {
   return URL.createObjectURL(blob);
 }
 
-function AuthImage({ fileId, fileName, msgId }) {
+function AuthImage({ fileId, fileName, msgId, onPreview }) {
   const [src, setSrc] = useState(null);
+  const imgLongPress = useRef(null);
+  const imgLongPressTriggered = useRef(false);
+
   useEffect(() => {
     cachedFetch(fileId).then(setSrc).catch(() => {});
     return () => { if (src) URL.revokeObjectURL(src); };
   }, [fileId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleDownload = () => {
+    if (!src) return;
+    const a = document.createElement('a');
+    a.href = src;
+    a.download = fileName || 'image.jpg';
+    a.click();
+  };
 
   if (!src) return <div className="w-full h-[160px] rounded-xl bg-white/5 flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /></div>;
 
@@ -231,8 +242,24 @@ function AuthImage({ fileId, fileName, msgId }) {
         src={src}
         alt={fileName}
         className="rounded-xl max-w-full max-h-[240px] object-cover mb-1"
-        style={{ cursor: 'pointer' }}
-        onClick={(e) => { e.stopPropagation(); window.open(src, '_blank'); }}
+        style={{ cursor: 'pointer', WebkitUserSelect: 'none', userSelect: 'none' }}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (imgLongPressTriggered.current) return;
+          if (onPreview) onPreview(src, fileName);
+        }}
+        onTouchStart={() => {
+          imgLongPressTriggered.current = false;
+          imgLongPress.current = setTimeout(() => {
+            imgLongPressTriggered.current = true;
+            if (navigator.vibrate) navigator.vibrate(30);
+            handleDownload();
+            toast.success('Downloading photo...');
+          }, 600);
+        }}
+        onTouchMove={() => clearTimeout(imgLongPress.current)}
+        onTouchEnd={() => clearTimeout(imgLongPress.current)}
+        onContextMenu={(e) => { e.preventDefault(); handleDownload(); toast.success('Downloading photo...'); }}
         data-testid={`chat-image-${msgId}`}
       />
       <span className="text-xs" style={{ color: '#A0AABF' }}>{fileName}</span>
@@ -359,6 +386,7 @@ export default function EstateChatPage() {
   const [msgActionId, setMsgActionId] = useState(null); // message ID for long-press action menu
   const [editingMsg, setEditingMsg] = useState(null); // {id, content} when editing
   const [poppingMsgId, setPoppingMsgId] = useState(null); // message ID being deleted (pop animation)
+  const [previewImage, setPreviewImage] = useState(null); // {src, name} for fullscreen photo preview
   const msgLongPressTimer = useRef(null);
   const msgLongPressTriggered = useRef(false);
   const touchStartRef = useRef({ x: 0, y: 0 });
@@ -451,14 +479,7 @@ export default function EstateChatPage() {
     if (!vv) return;
     let kbOpen = false;
     let rafId = 0;
-
-    // Pre-set an explicit pixel height so CSS transitions have a numeric start value
-    // (CSS cannot transition from 'auto' or '100%' to a px value — it jumps)
-    const initHeight = () => {
-      root.style.height = `${window.innerHeight}px`;
-      root.style.bottom = 'auto';
-    };
-    initHeight();
+    let settleTimer = null;
 
     const lockBodyScroll = () => {
       document.body.style.position = 'fixed';
@@ -478,10 +499,13 @@ export default function EstateChatPage() {
     const resetStyles = () => {
       kbOpen = false;
       cancelAnimationFrame(rafId);
+      clearTimeout(settleTimer);
       unlockBodyScroll();
-      root.style.transition = 'height 0.25s ease-out';
-      root.style.height = `${window.innerHeight}px`;
+      // Restore natural sizing — clear explicit height so bottom:0 takes over
+      root.style.transition = '';
+      root.style.height = '';
       root.style.top = '0';
+      root.style.bottom = '0';
       root.style.transform = '';
       window.scrollTo(0, 0);
     };
@@ -504,17 +528,26 @@ export default function EstateChatPage() {
       if (open && !kbOpen) {
         kbOpen = true;
         lockBodyScroll();
+        // Capture actual rendered height to avoid auto→px snap
+        const currentH = root.offsetHeight;
+        root.style.transition = 'none';
+        root.style.height = `${currentH}px`;
+        root.style.bottom = 'auto';
+        void root.offsetHeight; // force reflow to register starting value
+        // Now animate to target
         root.style.transition = 'height 0.28s ease-out';
         root.style.height = `${vv.height}px`;
+        // After initial animation, switch to direct tracking
+        clearTimeout(settleTimer);
+        settleTimer = setTimeout(() => {
+          if (kbOpen) root.style.transition = 'none';
+        }, 300);
       } else if (!open && kbOpen) {
         resetStyles();
       } else if (kbOpen) {
-        // Continue tracking — CSS transition smooths each update
+        // Direct height tracking (transition already removed by settleTimer)
         root.style.height = `${vv.height}px`;
-        // Counteract any residual iOS scroll
-        if (vv.offsetTop > 0) {
-          root.style.top = `${vv.offsetTop}px`;
-        }
+        if (vv.offsetTop > 0) root.style.top = `${vv.offsetTop}px`;
       }
     };
 
@@ -529,23 +562,14 @@ export default function EstateChatPage() {
       }, 400);
     };
 
-    // Also handle window resize (orientation change, etc.)
-    const onResize = () => {
-      if (!kbOpen) {
-        root.style.transition = '';
-        root.style.height = `${window.innerHeight}px`;
-      }
-    };
-
     vv.addEventListener('resize', sync);
     vv.addEventListener('scroll', sync);
-    window.addEventListener('resize', onResize);
     root.addEventListener('focusout', handleFocusOut);
     return () => {
       cancelAnimationFrame(rafId);
+      clearTimeout(settleTimer);
       vv.removeEventListener('resize', sync);
       vv.removeEventListener('scroll', sync);
-      window.removeEventListener('resize', onResize);
       root.removeEventListener('focusout', handleFocusOut);
       unlockBodyScroll();
       root.style.transition = '';
@@ -1784,7 +1808,7 @@ export default function EstateChatPage() {
                         const isImage = att.file_type?.startsWith('image/') || ['jpg','jpeg','png','gif','webp','heic','heif'].includes(ext);
                         const isVideo = att.file_type?.startsWith('video/') || ['mp4','mov','webm','m4v'].includes(ext);
                         if (isImage) {
-                          return <AuthImage key={att.file_id} fileId={att.file_id} fileName={att.file_name} msgId={msg.id} />;
+                          return <AuthImage key={att.file_id} fileId={att.file_id} fileName={att.file_name} msgId={msg.id} onPreview={(s, n) => setPreviewImage({ src: s, name: n })} />;
                         }
                         if (isVideo) {
                           return <AuthVideo key={att.file_id} fileId={att.file_id} fileName={att.file_name} />;
@@ -1798,7 +1822,7 @@ export default function EstateChatPage() {
                     const isVideo = msg.attachment.file_type?.startsWith('video/') || ['mp4','mov','webm','m4v'].includes(ext);
                     if (msg.message_type === 'voice') return <VoiceMessagePlayer fileId={msg.attachment.file_id} />;
                     if (isVideo) return <AuthVideo fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} />;
-                    if (isImage) return <AuthImage fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} msgId={msg.id} />;
+                    if (isImage) return <AuthImage fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} msgId={msg.id} onPreview={(s, n) => setPreviewImage({ src: s, name: n })} />;
                     return <AuthFileLink fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} fileSize={msg.attachment.file_size} msgId={msg.id} />;
                   })() : msg.content}
                   {msg.edited_at && <span className="text-[11px] italic ml-1" style={{ color: '#7B879E' }}>(edited)</span>}
@@ -2383,6 +2407,63 @@ export default function EstateChatPage() {
             data-testid="ect-security-back"
             style={{ color: '#525C72', background: 'transparent' }}
           >Skip — Go Back</button>
+        </div>
+      </div>
+    )}
+    {/* Fullscreen photo preview modal */}
+    {previewImage && (
+      <div
+        data-testid="photo-preview-overlay"
+        onClick={() => setPreviewImage(null)}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(0,0,0,0.92)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          flexDirection: 'column',
+        }}
+      >
+        <button
+          data-testid="photo-preview-close"
+          onClick={() => setPreviewImage(null)}
+          style={{
+            position: 'absolute', top: 'env(safe-area-inset-top, 12px)', right: 12,
+            marginTop: 12, width: 40, height: 40, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.15)', border: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', zIndex: 10000,
+          }}
+        >
+          <X className="w-5 h-5" style={{ color: '#fff' }} />
+        </button>
+        <img
+          src={previewImage.src}
+          alt={previewImage.name}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            maxWidth: '95vw', maxHeight: '85vh',
+            objectFit: 'contain', borderRadius: 8,
+          }}
+        />
+        <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
+          <span className="text-sm" style={{ color: '#A0AABF' }}>{previewImage.name}</span>
+          <button
+            data-testid="photo-preview-download"
+            onClick={(e) => {
+              e.stopPropagation();
+              const a = document.createElement('a');
+              a.href = previewImage.src;
+              a.download = previewImage.name || 'photo.jpg';
+              a.click();
+              toast.success('Downloading photo...');
+            }}
+            style={{
+              padding: '6px 14px', borderRadius: 8,
+              background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)',
+              color: '#d4af37', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            <Download className="w-4 h-4 inline mr-1" /> Save
+          </button>
         </div>
       </div>
     )}
