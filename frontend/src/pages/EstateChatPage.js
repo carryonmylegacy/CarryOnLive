@@ -2451,12 +2451,16 @@ export default function EstateChatPage() {
             data-testid="photo-preview-download"
             onClick={async (e) => {
               e.stopPropagation();
+              const btn = e.currentTarget;
+              const origText = btn.innerHTML;
+              btn.innerHTML = '<span style="opacity:0.6">Saving...</span>';
+              btn.disabled = true;
               try {
-                // Fetch directly from server with auth to get proper MIME type for iOS
+                const token = localStorage.getItem('carryon_token');
+                const fileId = previewImage.fileId;
                 let blob;
-                if (previewImage.fileId) {
-                  const token = localStorage.getItem('carryon_token');
-                  const resp = await fetch(`${API_URL}/estate-chat/files/${previewImage.fileId}`, {
+                if (fileId) {
+                  const resp = await fetch(`${API_URL}/estate-chat/files/${fileId}`, {
                     headers: { Authorization: `Bearer ${token}` },
                   });
                   blob = await resp.blob();
@@ -2472,7 +2476,6 @@ export default function EstateChatPage() {
                   await navigator.share({ files: [file] });
                   return;
                 }
-                // Fallback for non-share-capable browsers
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -2481,6 +2484,9 @@ export default function EstateChatPage() {
                 URL.revokeObjectURL(url);
               } catch (err) {
                 if (err.name !== 'AbortError') toast.error('Could not save photo');
+              } finally {
+                btn.innerHTML = origText;
+                btn.disabled = false;
               }
             }}
             style={{

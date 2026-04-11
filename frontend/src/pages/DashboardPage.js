@@ -674,83 +674,87 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Getting Started Tile — shown when overlay is dismissed for the session but not permanently */}
-      {!showGuidedFlow && onboardingProgress && !onboardingProgress.all_complete && !onboardingProgress.manually_dismissed && !onboardingProgress.already_graduated && (
-        showDismissConfirm ? (
-          <div className="glass-card p-5 mb-4 text-center" data-testid="dismiss-confirm-prompt"
-            style={{ border: '1px solid rgba(245,158,11,0.2)' }}>
-            <AlertTriangle className="w-8 h-8 mx-auto mb-3" style={{ color: '#F59E0B' }} />
-            <h4 className="text-base font-bold mb-2" style={{ color: 'var(--t)' }}>Close Getting Started?</h4>
-            <p className="text-sm mb-4" style={{ color: 'var(--t4)' }}>
-              This will hide the Getting Started guide. You won't see it again unless you re-enable it in Settings.
-            </p>
-            <div className="flex gap-3 justify-center">
-              <button onClick={() => setShowDismissConfirm(false)}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold"
-                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--t3)' }}
-                data-testid="dismiss-cancel-btn">
-                Cancel
-              </button>
-              <button onClick={async () => {
-                try { await axios.post(`${API_URL}/onboarding/dismiss`, {}, getAuthHeaders()); } catch {}
-                setShowDismissConfirm(false);
-                setShowDismissInfo(true);
-              }}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold"
-                style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
-                data-testid="dismiss-confirm-btn">
-                Yes, Close It
-              </button>
-            </div>
-          </div>
-        ) : showDismissInfo ? (
-          <div className="glass-card p-5 mb-4 text-center" data-testid="dismiss-info-tile"
-            style={{ border: '1px solid rgba(212,175,55,0.2)' }}>
-            <Settings className="w-8 h-8 mx-auto mb-3" style={{ color: '#d4af37' }} />
-            <h4 className="text-base font-bold mb-2" style={{ color: 'var(--t)' }}>Guide Hidden</h4>
-            <p className="text-sm mb-4" style={{ color: 'var(--t4)' }}>
-              To see the Getting Started guide again, go to <strong style={{ color: '#d4af37' }}>Settings</strong> and toggle it back on.
-            </p>
-            <button onClick={() => {
-              setShowDismissInfo(false);
-              setOnboardingProgress(prev => prev ? { ...prev, manually_dismissed: true } : prev);
+      {/* Getting Started Dismiss Confirm Prompt — independent of tile/progress conditions */}
+      {showDismissConfirm && (
+        <div className="glass-card p-5 mb-4 text-center" data-testid="dismiss-confirm-prompt"
+          style={{ border: '1px solid rgba(245,158,11,0.2)' }}>
+          <AlertTriangle className="w-8 h-8 mx-auto mb-3" style={{ color: '#F59E0B' }} />
+          <h4 className="text-base font-bold mb-2" style={{ color: 'var(--t)' }}>Close Getting Started?</h4>
+          <p className="text-sm mb-4" style={{ color: 'var(--t4)' }}>
+            This will hide the Getting Started guide. You won't see it again unless you re-enable it in Settings.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <button onClick={() => setShowDismissConfirm(false)}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--t3)' }}
+              data-testid="dismiss-cancel-btn">
+              Cancel
+            </button>
+            <button onClick={async () => {
+              try { await axios.post(`${API_URL}/onboarding/dismiss`, {}, getAuthHeaders()); } catch {}
+              setShowDismissConfirm(false);
+              setShowDismissInfo(true);
             }}
-              className="w-full max-w-xs mx-auto py-3 rounded-2xl text-sm font-bold transition-transform active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 4px 16px rgba(212,175,55,0.25)' }}
-              data-testid="dismiss-proceed-btn">
-              Proceed
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold"
+              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
+              data-testid="dismiss-confirm-btn">
+              Yes, Close It
             </button>
           </div>
-        ) : (
-          <div className="glass-card p-4 mb-4 relative" data-testid="getting-started-tile"
-            style={{ border: '1px solid rgba(245,158,11,0.15)', cursor: 'pointer' }}
-            onClick={() => { guidedDismissedRef.current = false; setShowGuidedFlow(true); }}>
-            <button onClick={(e) => { e.stopPropagation(); setShowDismissConfirm(true); }}
-              className="absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center transition-all"
-              style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}
-              data-testid="getting-started-tile-close">
-              <X className="w-4 h-4" />
-            </button>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                <Sparkles className="w-5 h-5" style={{ color: '#F59E0B' }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-bold" style={{ color: 'var(--t)' }}>Getting Started</h4>
-                <p className="text-xs" style={{ color: 'var(--t4)' }}>
-                  {onboardingProgress.completed_count} of {onboardingProgress.total_steps} steps complete
-                </p>
-              </div>
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold"
-                  style={{ background: 'rgba(245,158,11,0.1)', border: '2px solid rgba(245,158,11,0.3)', color: '#F59E0B' }}>
-                  {onboardingProgress.progress_pct}%
-                </div>
+        </div>
+      )}
+
+      {/* Getting Started Dismiss Info Tile — independent render */}
+      {showDismissInfo && (
+        <div className="glass-card p-5 mb-4 text-center" data-testid="dismiss-info-tile"
+          style={{ border: '1px solid rgba(212,175,55,0.2)' }}>
+          <Settings className="w-8 h-8 mx-auto mb-3" style={{ color: '#d4af37' }} />
+          <h4 className="text-base font-bold mb-2" style={{ color: 'var(--t)' }}>Guide Hidden</h4>
+          <p className="text-sm mb-4" style={{ color: 'var(--t4)' }}>
+            To see the Getting Started guide again, go to <strong style={{ color: '#d4af37' }}>Settings</strong> and toggle it back on.
+          </p>
+          <button onClick={() => {
+            setShowDismissInfo(false);
+            setOnboardingProgress(prev => prev ? { ...prev, manually_dismissed: true } : prev);
+          }}
+            className="w-full max-w-xs mx-auto py-3 rounded-2xl text-sm font-bold transition-transform active:scale-[0.97]"
+            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 4px 16px rgba(212,175,55,0.25)' }}
+            data-testid="dismiss-proceed-btn">
+            Proceed
+          </button>
+        </div>
+      )}
+
+      {/* Getting Started Tile — shown when overlay is dismissed for the session but not permanently */}
+      {!showGuidedFlow && !showDismissConfirm && !showDismissInfo && onboardingProgress && !onboardingProgress.all_complete && !onboardingProgress.manually_dismissed && !onboardingProgress.already_graduated && (
+        <div className="glass-card p-4 mb-4 relative" data-testid="getting-started-tile"
+          style={{ border: '1px solid rgba(245,158,11,0.15)', cursor: 'pointer' }}
+          onClick={() => { guidedDismissedRef.current = false; setShowGuidedFlow(true); }}>
+          <button onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowDismissConfirm(true); }}
+            className="absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center transition-all"
+            style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}
+            data-testid="getting-started-tile-close">
+            <X className="w-4 h-4" />
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.2)' }}>
+              <Sparkles className="w-5 h-5" style={{ color: '#F59E0B' }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-sm font-bold" style={{ color: 'var(--t)' }}>Getting Started</h4>
+              <p className="text-xs" style={{ color: 'var(--t4)' }}>
+                {onboardingProgress.completed_count} of {onboardingProgress.total_steps} steps complete
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold"
+                style={{ background: 'rgba(245,158,11,0.1)', border: '2px solid rgba(245,158,11,0.3)', color: '#F59E0B' }}>
+                {onboardingProgress.progress_pct}%
               </div>
             </div>
           </div>
-        )
+        </div>
       )}
 
       {/* Stat Cards */}

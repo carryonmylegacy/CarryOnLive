@@ -14,12 +14,46 @@ const PushPrompt = ({ getAuthHeaders }) => {
     // Only show if: browser supports push, not already asked, not already subscribed
     if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
     if (localStorage.getItem('carryon_push_prompted')) return;
-    if (Notification.permission === 'granted') return;
+    if (Notification.permission === 'granted') {
+      // Already granted — check if there's an active subscription, register if needed
+      (async () => {
+        try {
+          const reg = await navigator.serviceWorker.getRegistration('/sw-push.js');
+          if (reg) {
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) { localStorage.setItem('carryon_push_prompted', 'true'); return; }
+          }
+        } catch {}
+        // Permission granted but no subscription — silently re-subscribe
+        try {
+          const registration = await navigator.serviceWorker.register('/sw-push.js');
+          await navigator.serviceWorker.ready;
+          const vapidRes = await axios.get(`${API_URL}/push/vapid-public-key`);
+          const vapidPublicKey = vapidRes.data.public_key;
+          const padding = '='.repeat((4 - (vapidPublicKey.length % 4)) % 4);
+          const base64 = (vapidPublicKey + padding).replace(/-/g, '+').replace(/_/g, '/');
+          const rawData = window.atob(base64);
+          const outputArray = new Uint8Array(rawData.length);
+          for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+          const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: outputArray,
+          });
+          const subJson = subscription.toJSON();
+          await axios.post(`${API_URL}/push/subscribe`, {
+            endpoint: subJson.endpoint,
+            keys: subJson.keys,
+          }, getAuthHeaders());
+        } catch {}
+        localStorage.setItem('carryon_push_prompted', 'true');
+      })();
+      return;
+    }
     if (Notification.permission === 'denied') return;
     // Delay the prompt slightly so it doesn't compete with other modals
     const timer = setTimeout(() => setVisible(true), 3000);
     return () => clearTimeout(timer);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleEnable = async () => {
     setSubscribing(true);
