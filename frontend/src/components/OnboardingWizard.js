@@ -4,7 +4,8 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Users, FileUp, MessageSquare, CheckSquare,
-  ChevronRight, X, Sparkles, Check, KeyRound, ArrowLeftRight
+  ChevronRight, X, Sparkles, Check, KeyRound, ArrowLeftRight,
+  AlertTriangle, Settings
 } from 'lucide-react';
 import { Progress } from '../components/ui/progress';
 import { API_URL } from '../config';
@@ -33,6 +34,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
   });
   const [showAll, setShowAll] = useState(false);
   const [popping, setPopping] = useState({});
+  const [dismissPhase, setDismissPhase] = useState('idle'); // 'idle' | 'confirm' | 'info'
   const prevCompleted = useRef({});
   const initialLoadDone = useRef(false);
 
@@ -91,6 +93,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
   const handleDismiss = async () => {
     setManuallyDismissed(true);
     setShowAll(false);
+    setDismissPhase('idle');
     localStorage.setItem('carryon_onboarding_dismissed', 'true');
     try { await axios.post(`${API_URL}/onboarding/dismiss`, {}, getAuthHeaders()); }
     catch (err) { console.error(err); }
@@ -141,6 +144,63 @@ const OnboardingWizard = ({ onAllComplete }) => {
 
   if (stepsToShow.length === 0 && !allComplete) return null;
 
+  // Dismiss confirm prompt
+  if (dismissPhase === 'confirm') {
+    return (
+      <div className="mb-6" data-testid="onboarding-dismiss-confirm">
+        <div className="glass-card p-5 text-center" style={{ border: '1px solid rgba(245,158,11,0.2)' }}>
+          <AlertTriangle className="w-8 h-8 mx-auto mb-3" style={{ color: '#F59E0B' }} />
+          <h4 className="text-base font-bold mb-2" style={{ color: 'var(--t)' }}>Close Getting Started?</h4>
+          <p className="text-sm mb-4" style={{ color: 'var(--t4)' }}>
+            This will hide the Getting Started guide. You won&apos;t see it again unless you re-enable it in Settings.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <button onClick={() => setDismissPhase('idle')}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--t3)' }}
+              data-testid="onboarding-dismiss-cancel">
+              Cancel
+            </button>
+            <button onClick={async () => {
+              await handleDismiss();
+              setManuallyDismissed(false);
+              setDismissPhase('info');
+            }}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold"
+              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
+              data-testid="onboarding-dismiss-confirm-btn">
+              Yes, Close It
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Dismiss info tile
+  if (dismissPhase === 'info') {
+    return (
+      <div className="mb-6" data-testid="onboarding-dismiss-info">
+        <div className="glass-card p-5 text-center" style={{ border: '1px solid rgba(212,175,55,0.2)' }}>
+          <Settings className="w-8 h-8 mx-auto mb-3" style={{ color: '#d4af37' }} />
+          <h4 className="text-base font-bold mb-2" style={{ color: 'var(--t)' }}>Guide Hidden</h4>
+          <p className="text-sm mb-4" style={{ color: 'var(--t4)' }}>
+            To see the Getting Started guide again, go to <strong style={{ color: '#d4af37' }}>Settings</strong> and toggle it back on.
+          </p>
+          <button onClick={() => {
+            setDismissPhase('idle');
+            setManuallyDismissed(true);
+          }}
+            className="w-full max-w-xs mx-auto py-3 rounded-2xl text-sm font-bold transition-transform active:scale-[0.97]"
+            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 4px 16px rgba(212,175,55,0.25)' }}
+            data-testid="onboarding-dismiss-proceed">
+            Proceed
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mb-6 overflow-hidden" data-testid="onboarding-wizard">
       <div style={{
@@ -180,7 +240,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
             <p className="text-[var(--t5)] text-base">{progress.completed_count} of {progress.total_steps} complete</p>
           </div>
         </div>
-        <button onClick={handleDismiss} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform" data-testid="onboarding-dismiss">
+        <button onClick={() => setDismissPhase('confirm')} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform" data-testid="onboarding-dismiss">
           <X className="w-4 h-4" />
         </button>
       </div>
