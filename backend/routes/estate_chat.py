@@ -464,7 +464,7 @@ async def get_messages(
         raise HTTPException(status_code=404, detail="Channel not found")
     if current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Not a member of this channel")
-    query = {"channel_id": channel_id}
+    query = {"channel_id": channel_id, "deleted_at": {"$exists": False}}
     if before:
         query["created_at"] = {"$lt": before}
     messages = await db.estate_messages.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
