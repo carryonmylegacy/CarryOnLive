@@ -17,7 +17,9 @@ import {
   Sparkles,
   KeyRound,
   ArrowLeftRight,
-  Loader2
+  Loader2,
+  AlertTriangle,
+  Settings
 } from 'lucide-react';
 import TrialBanner from '../components/TrialBanner';
 import BillingStatusBanner from '../components/BillingStatusBanner';
@@ -42,6 +44,8 @@ const DashboardPage = () => {
   const [guidedStep, setGuidedStep] = useState(null);
   const [showWelcomeStep, setShowWelcomeStep] = useState(false);
   const [showOptionalSkipInfo, setShowOptionalSkipInfo] = useState(false);
+  const [showDismissConfirm, setShowDismissConfirm] = useState(false);
+  const [showDismissInfo, setShowDismissInfo] = useState(false);
   const [dashboardReady, setDashboardReady] = useState(false);
   const [egaRunning, setEgaRunning] = useState(false);
   const guidedDismissedRef = useRef(false);
@@ -389,11 +393,26 @@ const DashboardPage = () => {
     }
 
     const dismissOverlay = () => {
-      // If on welcome step, mark it as shown so it doesn't reappear
+      // Show confirmation prompt before permanent dismiss
+      setShowDismissConfirm(true);
+    };
+
+    const confirmDismiss = async () => {
+      // If on welcome step, mark it as shown
       if (showWelcomeStep) {
         localStorage.setItem('carryon_welcome_guided_shown', 'true');
         setShowWelcomeStep(false);
       }
+      // Persist the dismissal on the backend
+      try {
+        await axios.post(`${API_URL}/onboarding/dismiss`, {}, getAuthHeaders());
+      } catch {}
+      setShowDismissConfirm(false);
+      setShowDismissInfo(true);
+    };
+
+    const proceedAfterDismiss = () => {
+      setShowDismissInfo(false);
       guidedDismissedRef.current = true;
       setShowGuidedFlow(false);
     };
@@ -465,8 +484,58 @@ const DashboardPage = () => {
           <X className="w-5 h-5" />
         </button>
 
-        {/* Welcome step for multi-role users — shown before Step 1 */}
-        {showWelcomeStep ? (
+        {/* Dismiss confirmation prompt */}
+        {showDismissConfirm ? (
+          <div className="relative max-w-md w-full mx-6 text-center"
+            data-testid="dismiss-confirm-prompt"
+            style={{ animation: 'bubbleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' }}>
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+              style={{ background: 'rgba(245,158,11,0.12)', border: '2px solid rgba(245,158,11,0.3)' }}>
+              <AlertTriangle className="w-10 h-10" style={{ color: '#F59E0B' }} />
+            </div>
+            <h2 className="text-xl font-bold mb-3" style={{ fontFamily: 'Outfit, sans-serif', color: '#ffffff' }}>
+              Close Getting Started?
+            </h2>
+            <p className="text-sm mb-8 max-w-sm mx-auto leading-relaxed" style={{ color: '#94a3b8' }}>
+              This will hide the Getting Started guide. You won't see it again unless you re-enable it in Settings.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setShowDismissConfirm(false)}
+                className="px-6 py-3 rounded-xl text-sm font-semibold transition-all"
+                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#cbd5e1' }}
+                data-testid="dismiss-cancel-btn">
+                Cancel
+              </button>
+              <button onClick={confirmDismiss}
+                className="px-6 py-3 rounded-xl text-sm font-semibold transition-all"
+                style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
+                data-testid="dismiss-confirm-btn">
+                Yes, Close It
+              </button>
+            </div>
+          </div>
+        ) : showDismissInfo ? (
+          <div className="relative max-w-md w-full mx-6 text-center"
+            data-testid="dismiss-info-tile"
+            style={{ animation: 'bubbleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' }}>
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+              style={{ background: 'rgba(212,175,55,0.12)', border: '2px solid rgba(212,175,55,0.3)' }}>
+              <Settings className="w-10 h-10" style={{ color: '#d4af37' }} />
+            </div>
+            <h2 className="text-xl font-bold mb-3" style={{ fontFamily: 'Outfit, sans-serif', color: '#ffffff' }}>
+              Guide Hidden
+            </h2>
+            <p className="text-sm mb-8 max-w-sm mx-auto leading-relaxed" style={{ color: '#94a3b8' }}>
+              To see the Getting Started guide again, go to <strong style={{ color: '#d4af37' }}>Settings</strong> and toggle it back on.
+            </p>
+            <button onClick={proceedAfterDismiss}
+              className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
+              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
+              data-testid="dismiss-proceed-btn">
+              Proceed
+            </button>
+          </div>
+        ) : showWelcomeStep ? (
           <div className="relative max-w-md w-full mx-6 text-center"
             data-testid="welcome-step"
             style={{ animation: 'bubbleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}>

@@ -134,11 +134,12 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
         )
     elif progress.get("dismissed") and not all_complete and not already_graduated:
         # Steps went back to incomplete — un-dismiss so the guide reappears
-        # ONLY if user hasn't already graduated (celebration_shown=True)
-        await db.onboarding_progress.update_one(
-            {"user_id": current_user["id"]},
-            {"$set": {"dismissed": False}},
-        )
+        # ONLY if user hasn't already graduated AND hasn't manually dismissed
+        if not progress.get("manually_dismissed"):
+            await db.onboarding_progress.update_one(
+                {"user_id": current_user["id"]},
+                {"$set": {"dismissed": False}},
+            )
 
     # Get beneficiary names for personalization
     ben_names = []
@@ -151,15 +152,18 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
             b.get("first_name") or b.get("name", "").split(" ")[0] for b in bens if b.get("first_name") or b.get("name")
         ]
 
+    manually_dismissed = progress.get("manually_dismissed", False)
+
     return {
         "steps": steps_with_status,
         "completed_count": done,
         "total_steps": total,
         "progress_pct": int((done / total) * 100) if total else 0,
         "all_complete": all_complete,
-        "dismissed": all_complete or already_graduated,
+        "dismissed": all_complete or already_graduated or manually_dismissed,
         "celebration_shown": already_graduated,
         "already_graduated": already_graduated,
+        "manually_dismissed": manually_dismissed,
         "beneficiary_names": ben_names[:3],
     }
 
@@ -187,10 +191,10 @@ async def complete_onboarding_step(step_key: str, current_user: dict = Depends(g
 
 @router.post("/onboarding/dismiss")
 async def dismiss_onboarding(current_user: dict = Depends(get_current_user)):
-    """Dismiss the onboarding wizard."""
+    """Permanently dismiss the onboarding wizard until user re-enables in Settings."""
     await db.onboarding_progress.update_one(
         {"user_id": current_user["id"]},
-        {"$set": {"dismissed": True, "user_id": current_user["id"]}},
+        {"$set": {"dismissed": True, "manually_dismissed": True, "user_id": current_user["id"]}},
         upsert=True,
     )
     return {"success": True}
@@ -212,7 +216,7 @@ async def reset_onboarding(current_user: dict = Depends(get_current_user)):
     """Re-enable the onboarding wizard (undo dismiss)."""
     await db.onboarding_progress.update_one(
         {"user_id": current_user["id"]},
-        {"$set": {"dismissed": False}},
+        {"$set": {"dismissed": False, "manually_dismissed": False}},
     )
     return {"success": True}
 

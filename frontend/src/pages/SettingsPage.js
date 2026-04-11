@@ -23,6 +23,7 @@ const SettingsPage = () => {
   const { user, token, logout, getAuthHeaders } = useAuth();
   const [searchParams] = useSearchParams();
   const [settingsReady, setSettingsReady] = useState(false);
+  const [guideHidden, setGuideHidden] = useState(true);
 
   const isStaff = user?.role === 'admin' || user?.role === 'operator';
   const fromOnboarding = searchParams.get('from') === 'onboarding';
@@ -38,6 +39,12 @@ const SettingsPage = () => {
       axios.get(`${API_URL}/estates`, getAuthHeaders())
         .then(() => setSettingsReady(true))
         .catch(() => setSettingsReady(true)); // Still show the page even if estate fetch fails
+    }
+    // Fetch onboarding dismiss state
+    if (!isStaff) {
+      axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders())
+        .then(r => setGuideHidden(!!r.data?.manually_dismissed))
+        .catch(() => {});
     }
   }, [token, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -127,6 +134,34 @@ const SettingsPage = () => {
       )}
 
       <AppearanceCard isStaff={isStaff} />
+
+      {/* Getting Started Guide Toggle */}
+      {!isStaff && (
+        <Card className="glass-card" data-testid="settings-guide-card">
+          <CardContent className="pt-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-[var(--t)] font-medium">Getting Started Guide</h4>
+                <p className="text-[var(--t5)] text-sm">Show the onboarding tutorial on the Dashboard</p>
+              </div>
+              <Switch
+                checked={!guideHidden}
+                onCheckedChange={async (checked) => {
+                  try {
+                    if (checked) {
+                      await axios.post(`${API_URL}/onboarding/reset`, {}, { headers: { Authorization: `Bearer ${token}` } });
+                    } else {
+                      await axios.post(`${API_URL}/onboarding/dismiss`, {}, { headers: { Authorization: `Bearer ${token}` } });
+                    }
+                    setGuideHidden(!checked);
+                  } catch {}
+                }}
+                data-testid="settings-guide-toggle"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Dock Customizer */}
       <Card className="glass-card" data-testid="settings-dock-card">
