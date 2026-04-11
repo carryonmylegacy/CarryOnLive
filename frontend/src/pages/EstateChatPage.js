@@ -436,13 +436,13 @@ export default function EstateChatPage() {
     // When leaving a chat (going back to channel list), force-reset all inline styles
     if (!activeChannel) {
       const r = document.getElementById('ect-root');
-      if (r) { r.style.transform = ''; r.style.bottom = '0'; }
+      if (r) { r.style.transform = ''; r.style.bottom = '0'; r.style.height = ''; r.style.top = '0'; }
       window.scrollTo(0, 0);
       setInputFocused(false);
     }
   }, [activeChannel]);
 
-  // ── iOS PWA: compensate for keyboard by adjusting bottom ──
+  // ── iOS PWA: compensate for keyboard by tracking visual viewport ──
   useEffect(() => {
     if (loading) return;
     const root = document.getElementById('ect-root');
@@ -450,18 +450,16 @@ export default function EstateChatPage() {
     const vv = window.visualViewport;
     if (!vv) return;
     let kbOpen = false;
+    let rafId = 0;
 
     const resetStyles = () => {
       kbOpen = false;
-      root.style.transition = '';
+      root.style.height = '';
+      root.style.top = '0';
       root.style.bottom = '0';
       root.style.transform = '';
       window.scrollTo(0, 0);
     };
-
-    let lastBottom = 0;
-    let lastTransform = 0;
-    let rafId = 0;
 
     const sync = () => {
       cancelAnimationFrame(rafId);
@@ -478,33 +476,14 @@ export default function EstateChatPage() {
       const inputActive = focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.isContentEditable);
       const open = inputActive && vv.height < window.innerHeight * 0.75;
 
-      if (open !== kbOpen) {
-        kbOpen = open;
-        if (kbOpen) {
-          const kbHeight = window.innerHeight - vv.height;
-          root.style.transition = 'bottom 0.25s ease-out, transform 0.25s ease-out';
-          root.style.bottom = `${kbHeight}px`;
-          lastBottom = kbHeight;
-        } else {
-          resetStyles();
-          lastBottom = 0;
-          lastTransform = 0;
-        }
+      if (open) {
+        kbOpen = true;
+        // Match root to visual viewport exactly — no transform, no bottom, no fighting
+        root.style.height = `${vv.height}px`;
+        root.style.top = `${vv.offsetTop}px`;
+        root.style.bottom = 'auto';
       } else if (kbOpen) {
-        const kbHeight = window.innerHeight - vv.height;
-        if (Math.abs(kbHeight - lastBottom) > 10) {
-          root.style.bottom = `${kbHeight}px`;
-          lastBottom = kbHeight;
-        }
-      }
-      if (kbOpen && window.scrollY > 0) {
-        if (Math.abs(window.scrollY - lastTransform) > 3) {
-          root.style.transform = `translateY(${window.scrollY}px)`;
-          lastTransform = window.scrollY;
-        }
-      } else if (kbOpen && lastTransform !== 0) {
-        root.style.transform = '';
-        lastTransform = 0;
+        resetStyles();
       }
     };
 
@@ -519,27 +498,15 @@ export default function EstateChatPage() {
       }, 400);
     };
 
-    const handleWindowScroll = () => {
-      if (kbOpen && activeChannelRef.current && window.scrollY > 0) {
-        if (Math.abs(window.scrollY - lastTransform) > 3) {
-          root.style.transform = `translateY(${window.scrollY}px)`;
-          lastTransform = window.scrollY;
-        }
-      }
-    };
-
     vv.addEventListener('resize', sync);
     vv.addEventListener('scroll', sync);
-    window.addEventListener('scroll', handleWindowScroll, { passive: true });
     root.addEventListener('focusout', handleFocusOut);
     return () => {
       cancelAnimationFrame(rafId);
       vv.removeEventListener('resize', sync);
       vv.removeEventListener('scroll', sync);
-      window.removeEventListener('scroll', handleWindowScroll);
       root.removeEventListener('focusout', handleFocusOut);
-      root.style.bottom = '0';
-      root.style.transform = '';
+      resetStyles();
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -618,7 +585,7 @@ export default function EstateChatPage() {
     setShowListMembersId(null);
     setShowHeaderMembers(false);
     const r = document.getElementById('ect-root');
-    if (r) { r.style.transform = ''; r.style.bottom = '0'; }
+    if (r) { r.style.transform = ''; r.style.bottom = '0'; r.style.height = ''; r.style.top = '0'; }
     window.scrollTo(0, 0);
     fetchMessages(ch.id).then(() => setMsgLoading(false));
   };
