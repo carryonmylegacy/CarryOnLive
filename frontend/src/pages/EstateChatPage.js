@@ -523,29 +523,19 @@ export default function EstateChatPage() {
 
       const focused = document.activeElement;
       const inputActive = focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.isContentEditable);
-      const open = inputActive && vv.height < window.innerHeight * 0.85;
+      const open = inputActive && vv.height < window.innerHeight * 0.95;
 
       if (open && !kbOpen) {
         kbOpen = true;
         lockBodyScroll();
-        // Capture actual rendered height to avoid auto→px snap
-        const currentH = root.offsetHeight;
+        // No CSS transition — track viewport directly for perfect sync with iOS keyboard
         root.style.transition = 'none';
-        root.style.height = `${currentH}px`;
         root.style.bottom = 'auto';
-        void root.offsetHeight; // force reflow to register starting value
-        // Now animate to target
-        root.style.transition = 'height 0.28s ease-out';
         root.style.height = `${vv.height}px`;
-        // After initial animation, switch to direct tracking
-        clearTimeout(settleTimer);
-        settleTimer = setTimeout(() => {
-          if (kbOpen) root.style.transition = 'none';
-        }, 300);
       } else if (!open && kbOpen) {
         resetStyles();
       } else if (kbOpen) {
-        // Direct height tracking (transition already removed by settleTimer)
+        // Continue tracking viewport
         root.style.height = `${vv.height}px`;
         if (vv.offsetTop > 0) root.style.top = `${vv.offsetTop}px`;
       }
