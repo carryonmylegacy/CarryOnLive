@@ -451,15 +451,11 @@ export default function EstateChatPage() {
     if (!vv) return;
     let kbOpen = false;
     let rafId = 0;
-    // Lerp state — current rendered values
-    let curH = window.innerHeight;
-    let curT = 0;
 
     const resetStyles = () => {
       kbOpen = false;
       cancelAnimationFrame(rafId);
-      curH = window.innerHeight;
-      curT = 0;
+      root.style.transition = 'height 0.25s ease-out, top 0.25s ease-out';
       root.style.height = '';
       root.style.top = '0';
       root.style.bottom = '0';
@@ -467,43 +463,34 @@ export default function EstateChatPage() {
       window.scrollTo(0, 0);
     };
 
-    // Continuous 60fps loop while keyboard is open — polls vv and lerps
-    const DAMP = 0.18; // 0.15-0.25 range; higher = snappier, lower = smoother
-    const SETTLE = 0.5; // px threshold to consider "settled"
-
-    const pollLoop = () => {
-      if (!kbOpen) return;
-      const tH = vv.height;
-      const tT = vv.offsetTop;
-      curH += (tH - curH) * DAMP;
-      curT += (tT - curT) * DAMP;
-      // Snap when close enough
-      if (Math.abs(curH - tH) < SETTLE) curH = tH;
-      if (Math.abs(curT - tT) < SETTLE) curT = tT;
-      root.style.height = `${curH}px`;
-      root.style.top = `${curT}px`;
-      rafId = requestAnimationFrame(pollLoop);
+    const sync = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(syncImpl);
     };
 
-    const onViewportChange = () => {
+    const syncImpl = () => {
       if (!activeChannelRef.current) {
         if (kbOpen) resetStyles();
         return;
       }
+
       const focused = document.activeElement;
       const inputActive = focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.isContentEditable);
-      const open = inputActive && vv.height < window.innerHeight * 0.75;
+      const open = inputActive && vv.height < window.innerHeight * 0.85;
 
       if (open && !kbOpen) {
         kbOpen = true;
+        // CSS transition smooths the 30fps vv events to 60fps on the compositor
+        root.style.transition = 'height 0.12s linear, top 0.12s linear';
         root.style.bottom = 'auto';
-        // Seed current values for smooth lerp start
-        curH = window.innerHeight;
-        curT = 0;
-        cancelAnimationFrame(rafId);
-        rafId = requestAnimationFrame(pollLoop);
+        root.style.height = `${vv.height}px`;
+        root.style.top = `${vv.offsetTop}px`;
       } else if (!open && kbOpen) {
         resetStyles();
+      } else if (kbOpen) {
+        // Track viewport — CSS transition interpolates between event updates
+        root.style.height = `${vv.height}px`;
+        root.style.top = `${vv.offsetTop}px`;
       }
     };
 
@@ -518,15 +505,19 @@ export default function EstateChatPage() {
       }, 400);
     };
 
-    vv.addEventListener('resize', onViewportChange);
-    vv.addEventListener('scroll', onViewportChange);
+    vv.addEventListener('resize', sync);
+    vv.addEventListener('scroll', sync);
     root.addEventListener('focusout', handleFocusOut);
     return () => {
       cancelAnimationFrame(rafId);
-      vv.removeEventListener('resize', onViewportChange);
-      vv.removeEventListener('scroll', onViewportChange);
+      vv.removeEventListener('resize', sync);
+      vv.removeEventListener('scroll', sync);
       root.removeEventListener('focusout', handleFocusOut);
-      resetStyles();
+      root.style.transition = '';
+      root.style.height = '';
+      root.style.top = '0';
+      root.style.bottom = '0';
+      root.style.transform = '';
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
