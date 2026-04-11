@@ -1801,7 +1801,7 @@ export default function EstateChatPage() {
                         <Pencil className="w-3.5 h-3.5" /> Edit
                       </button>
                     )}
-                    {isMe && (
+                    {(isMe || isBenefactor) && (
                     <button
                       onClick={(e) => { e.stopPropagation(); if (window.confirm('Delete this message?')) handleDeleteMessage(msg.id); }}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"

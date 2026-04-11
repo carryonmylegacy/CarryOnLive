@@ -668,11 +668,18 @@ async def delete_message(
     message_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    """Delete a message. Only the sender can delete."""
+    """Delete a message. Sender can delete own; estate owner can delete any."""
     msg = await db.estate_messages.find_one({"id": message_id}, {"_id": 0})
     if not msg:
         raise HTTPException(status_code=404, detail="Message not found")
-    if msg["sender_id"] != current_user["id"]:
+    is_sender = msg["sender_id"] == current_user["id"]
+    is_estate_owner = False
+    if not is_sender and msg.get("estate_id"):
+        estate = await db.estates.find_one(
+            {"id": msg["estate_id"], "owner_id": current_user["id"]}, {"_id": 0, "id": 1}
+        )
+        is_estate_owner = estate is not None
+    if not is_sender and not is_estate_owner:
         raise HTTPException(status_code=403, detail="You can only delete your own messages")
     await db.estate_messages.delete_one({"id": message_id})
     # Also clean up any associated files from GridFS if present
