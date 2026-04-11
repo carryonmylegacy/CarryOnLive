@@ -226,12 +226,25 @@ function AuthImage({ fileId, fileName, msgId, onPreview }) {
     return () => { if (src) URL.revokeObjectURL(src); };
   }, [fileId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!src) return;
-    const a = document.createElement('a');
-    a.href = src;
-    a.download = fileName || 'image.jpg';
-    a.click();
+    try {
+      if (navigator.share && navigator.canShare) {
+        const resp = await fetch(src);
+        const blob = await resp.blob();
+        const file = new File([blob], fileName || 'photo.jpg', { type: blob.type || 'image/jpeg' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file] });
+          return;
+        }
+      }
+      const a = document.createElement('a');
+      a.href = src;
+      a.download = fileName || 'image.jpg';
+      a.click();
+    } catch (err) {
+      if (err.name !== 'AbortError') toast.error('Could not save photo');
+    }
   };
 
   if (!src) return <div className="w-full h-[160px] rounded-xl bg-white/5 flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /></div>;
@@ -464,7 +477,7 @@ export default function EstateChatPage() {
     // When leaving a chat (going back to channel list), force-reset all inline styles
     if (!activeChannel) {
       const r = document.getElementById('ect-root');
-      if (r) { r.style.transform = ''; r.style.bottom = '0'; r.style.height = ''; r.style.top = '0'; }
+      if (r) { r.style.transform = ''; r.style.paddingBottom = '0'; r.style.top = '0'; }
       window.scrollTo(0, 0);
       setInputFocused(false);
     }
@@ -479,7 +492,6 @@ export default function EstateChatPage() {
     if (!vv) return;
     let kbOpen = false;
     let rafId = 0;
-    let settleTimer = null;
 
     const lockBodyScroll = () => {
       document.body.style.position = 'fixed';
@@ -499,13 +511,9 @@ export default function EstateChatPage() {
     const resetStyles = () => {
       kbOpen = false;
       cancelAnimationFrame(rafId);
-      clearTimeout(settleTimer);
       unlockBodyScroll();
-      // Restore natural sizing — clear explicit height so bottom:0 takes over
-      root.style.transition = '';
-      root.style.height = '';
+      root.style.paddingBottom = '0';
       root.style.top = '0';
-      root.style.bottom = '0';
       root.style.transform = '';
       window.scrollTo(0, 0);
     };
@@ -528,16 +536,14 @@ export default function EstateChatPage() {
       if (open && !kbOpen) {
         kbOpen = true;
         lockBodyScroll();
-        // No CSS transition — track viewport directly for perfect sync with iOS keyboard
-        root.style.transition = 'none';
-        root.style.bottom = 'auto';
-        root.style.height = `${vv.height}px`;
+      }
+
+      if (kbOpen && open) {
+        const kbHeight = window.innerHeight - vv.height;
+        root.style.paddingBottom = `${kbHeight}px`;
+        if (vv.offsetTop > 0) root.style.top = `${vv.offsetTop}px`;
       } else if (!open && kbOpen) {
         resetStyles();
-      } else if (kbOpen) {
-        // Continue tracking viewport
-        root.style.height = `${vv.height}px`;
-        if (vv.offsetTop > 0) root.style.top = `${vv.offsetTop}px`;
       }
     };
 
@@ -557,15 +563,12 @@ export default function EstateChatPage() {
     root.addEventListener('focusout', handleFocusOut);
     return () => {
       cancelAnimationFrame(rafId);
-      clearTimeout(settleTimer);
       vv.removeEventListener('resize', sync);
       vv.removeEventListener('scroll', sync);
       root.removeEventListener('focusout', handleFocusOut);
       unlockBodyScroll();
-      root.style.transition = '';
-      root.style.height = '';
+      root.style.paddingBottom = '0';
       root.style.top = '0';
-      root.style.bottom = '0';
       root.style.transform = '';
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -650,7 +653,7 @@ export default function EstateChatPage() {
     setShowListMembersId(null);
     setShowHeaderMembers(false);
     const r = document.getElementById('ect-root');
-    if (r) { r.style.transform = ''; r.style.bottom = '0'; r.style.height = ''; r.style.top = '0'; }
+    if (r) { r.style.transform = ''; r.style.paddingBottom = '0'; r.style.top = '0'; }
     window.scrollTo(0, 0);
     fetchMessages(ch.id).then(() => setMsgLoading(false));
   };
@@ -2438,13 +2441,27 @@ export default function EstateChatPage() {
           <span className="text-sm" style={{ color: '#A0AABF' }}>{previewImage.name}</span>
           <button
             data-testid="photo-preview-download"
-            onClick={(e) => {
+            onClick={async (e) => {
               e.stopPropagation();
-              const a = document.createElement('a');
-              a.href = previewImage.src;
-              a.download = previewImage.name || 'photo.jpg';
-              a.click();
-              toast.success('Downloading photo...');
+              try {
+                // Use Web Share API for native iOS "Save to Photos" / "Save to Files" sheet
+                if (navigator.share && navigator.canShare) {
+                  const resp = await fetch(previewImage.src);
+                  const blob = await resp.blob();
+                  const file = new File([blob], previewImage.name || 'photo.jpg', { type: blob.type || 'image/jpeg' });
+                  if (navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file] });
+                    return;
+                  }
+                }
+                // Fallback for non-share-capable browsers
+                const a = document.createElement('a');
+                a.href = previewImage.src;
+                a.download = previewImage.name || 'photo.jpg';
+                a.click();
+              } catch (err) {
+                if (err.name !== 'AbortError') toast.error('Could not save photo');
+              }
             }}
             style={{
               padding: '6px 14px', borderRadius: 8,
