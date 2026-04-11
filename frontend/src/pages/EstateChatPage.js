@@ -584,8 +584,13 @@ export default function EstateChatPage() {
       ]);
       if (msgRes.ok) {
         const data = await msgRes.json();
+        const el = messagesEndRef.current?.parentElement;
+        // Only auto-scroll if user is already near the bottom (within 150px) or first load
+        const isNearBottom = !el || (el.scrollHeight - el.scrollTop - el.clientHeight < 150);
         setMessages(data);
-        setTimeout(() => { const el = messagesEndRef.current?.parentElement; if (el) el.scrollTop = el.scrollHeight; }, 100);
+        if (isNearBottom) {
+          setTimeout(() => { if (el) el.scrollTop = el.scrollHeight; }, 100);
+        }
       }
       if (readRes.ok) setReadStatus(await readRes.json());
       if (pinRes.ok) setPinnedMsgs(await pinRes.json());
