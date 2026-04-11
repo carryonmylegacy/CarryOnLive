@@ -32,7 +32,6 @@ self.addEventListener('push', function(event) {
       .then(function() {
         // Update badge count on the PWA icon
         if (navigator.setAppBadge) {
-          // Increment badge by counting visible notifications
           return self.registration.getNotifications().then(function(notifications) {
             navigator.setAppBadge(notifications.length);
           });
@@ -49,8 +48,17 @@ self.addEventListener('notificationclick', function(event) {
   const urlToOpen = event.notification.data?.url || '/';
 
   event.waitUntil(
-    // Clear badge when user taps a notification
-    Promise.resolve(navigator.clearAppBadge && navigator.clearAppBadge())
+    // Update badge count (decrement since we closed one)
+    self.registration.getNotifications()
+      .then(function(notifications) {
+        if (navigator.setAppBadge) {
+          if (notifications.length > 0) {
+            navigator.setAppBadge(notifications.length);
+          } else {
+            navigator.clearAppBadge();
+          }
+        }
+      })
       .then(function() {
         return clients.matchAll({ type: 'window', includeUncontrolled: true });
       })
@@ -69,6 +77,38 @@ self.addEventListener('notificationclick', function(event) {
         }
       })
   );
+});
+
+// Handle notification dismissal (user swipes away)
+self.addEventListener('notificationclose', function(event) {
+  console.log('[Service Worker] Notification dismissed.');
+  event.waitUntil(
+    self.registration.getNotifications().then(function(notifications) {
+      if (navigator.setAppBadge) {
+        if (notifications.length > 0) {
+          navigator.setAppBadge(notifications.length);
+        } else {
+          navigator.clearAppBadge();
+        }
+      }
+    })
+  );
+});
+
+// Listen for messages from the client to manage badge
+self.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'CLEAR_BADGE') {
+    if (navigator.clearAppBadge) {
+      navigator.clearAppBadge();
+    }
+  } else if (event.data && event.data.type === 'SET_BADGE') {
+    var count = event.data.count || 0;
+    if (count > 0 && navigator.setAppBadge) {
+      navigator.setAppBadge(count);
+    } else if (navigator.clearAppBadge) {
+      navigator.clearAppBadge();
+    }
+  }
 });
 
 self.addEventListener('install', function(event) {

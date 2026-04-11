@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Bell, CheckCheck, X } from 'lucide-react';
 import { API_URL } from '../config';
+import { syncBadge } from '../utils/pwaBadge';
 
 const NotificationBell = ({ collapsed }) => {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -15,18 +16,25 @@ const NotificationBell = ({ collapsed }) => {
   const token = localStorage.getItem('carryon_token');
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-  // Poll unread count every 30s
+  // Poll unread count every 30s + sync PWA badge
   useEffect(() => {
     if (!token) return;
     const fetchCount = async () => {
       try {
         const res = await axios.get(`${API_URL}/notifications/unread-count`, { headers });
-        setUnreadCount(res.data.unread_count);
+        const count = res.data.unread_count;
+        setUnreadCount(count);
+        syncBadge(count);
       } catch {}
     };
     fetchCount();
     const interval = setInterval(fetchCount, 30000);
-    return () => clearInterval(interval);
+
+    // Also sync badge when user returns to the app (visibility change)
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchCount(); };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => { clearInterval(interval); document.removeEventListener('visibilitychange', onVisible); };
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchNotifications = async () => {
@@ -34,7 +42,9 @@ const NotificationBell = ({ collapsed }) => {
     try {
       const res = await axios.get(`${API_URL}/notifications?limit=20`, { headers });
       setNotifications(res.data.notifications);
-      setUnreadCount(res.data.unread_count);
+      const count = res.data.unread_count;
+      setUnreadCount(count);
+      syncBadge(count);
     } catch {}
     finally { setLoading(false); }
   };
@@ -55,7 +65,11 @@ const NotificationBell = ({ collapsed }) => {
     try {
       await axios.post(`${API_URL}/notifications/${id}/read`, {}, { headers });
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      setUnreadCount(prev => {
+        const next = Math.max(0, prev - 1);
+        syncBadge(next);
+        return next;
+      });
     } catch {}
   };
 
@@ -64,6 +78,7 @@ const NotificationBell = ({ collapsed }) => {
       await axios.post(`${API_URL}/notifications/read-all`, {}, { headers });
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
+      syncBadge(0);
     } catch {}
   };
 
