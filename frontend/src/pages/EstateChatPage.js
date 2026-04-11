@@ -32,6 +32,7 @@ import {
   Play,
   Pause,
   CheckSquare2,
+  UserPlus,
 } from 'lucide-react';
 import { platformDownload } from '../utils/downloadFile';
 
@@ -392,6 +393,34 @@ export default function EstateChatPage() {
       document.removeEventListener('touchstart', handleOutsideClick);
     };
   }, [showHeaderMembers, showListMembersId]);
+
+  // ── Add member to channel ──
+  const addMemberToChannel = async (channelId, memberId, estateId) => {
+    try {
+      const channel = channels.find(c => c.id === channelId);
+      if (!channel) return;
+      const newMembers = [...new Set([...(channel.members || []), memberId])];
+      await fetch(`${API_URL}/estate-chat/channels/${channelId}/members`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ member_ids: newMembers }),
+      });
+      await fetchChannels();
+      if (activeChannel?.id === channelId) {
+        setActiveChannel(prev => prev ? { ...prev, members: newMembers } : prev);
+      }
+      toast.success('Member added');
+    } catch {
+      toast.error('Failed to add member');
+    }
+  };
+
+  // Get estate members not in the channel
+  const getNonChannelMembers = (channelMembers, estateId) => {
+    const estate = contacts.find(c => c.estate_id === estateId);
+    if (!estate) return [];
+    return (estate.members || []).filter(m => !(channelMembers || []).includes(m.id));
+  };
 
   // ── Keep ref in sync with activeChannel state ──
   useEffect(() => {
@@ -1352,10 +1381,13 @@ export default function EstateChatPage() {
                         boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                         minWidth: '220px',
                         maxWidth: '280px',
-                        maxHeight: '200px',
+                        maxHeight: '300px',
                         overflowY: 'auto',
                       }}
                     >
+                      <div className="px-3 py-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                        <span className="text-[11px] font-semibold" style={{ color: '#7B879E' }}>Members</span>
+                      </div>
                       {resolveChannelMembers(ch.members || [], ch.estate_id).map(m => {
                         const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
                         const isYou = m.id === user?.id;
@@ -1377,6 +1409,42 @@ export default function EstateChatPage() {
                           </div>
                         );
                       })}
+                      {ch.type === 'group' && (() => {
+                        const available = getNonChannelMembers(ch.members, ch.estate_id);
+                        if (!available.length) return null;
+                        return (
+                          <>
+                            <div className="px-3 py-1.5" style={{ borderTop: '1px solid rgba(212,175,55,0.15)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                              <span className="text-[11px] font-semibold" style={{ color: '#d4af37' }}>Add to Chat</span>
+                            </div>
+                            {available.map(m => {
+                              const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
+                              return (
+                                <button
+                                  key={m.id}
+                                  onClick={(e) => { e.stopPropagation(); addMemberToChannel(ch.id, m.id, ch.estate_id); }}
+                                  className="flex items-center gap-2.5 px-3 py-2 w-full text-left hover:bg-white/5 transition-colors"
+                                  data-testid={`list-add-member-${ch.id}-${m.id}`}
+                                  style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                                >
+                                  <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-[11px] font-bold" style={{ background: 'rgba(76,175,80,0.15)', color: '#4CAF50' }}>
+                                    {m.photo_url
+                                      ? <img src={m.photo_url} alt="" className="w-7 h-7 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = initials; }} />
+                                      : initials}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-[11px] font-semibold truncate" style={{ color: '#F1F3F8' }}>{m.name}</div>
+                                    {(m.relation || m.role_in_estate) && (
+                                      <div className="text-[11px] truncate" style={{ color: '#7B879E' }}>{m.relation || m.role_in_estate}</div>
+                                    )}
+                                  </div>
+                                  <UserPlus className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#4CAF50' }} />
+                                </button>
+                              );
+                            })}
+                          </>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
@@ -1429,10 +1497,13 @@ export default function EstateChatPage() {
                 boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                 minWidth: '220px',
                 maxWidth: '280px',
-                maxHeight: '240px',
+                maxHeight: '300px',
                 overflowY: 'auto',
               }}
             >
+              <div className="px-3 py-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span className="text-[11px] font-semibold" style={{ color: '#7B879E' }}>Members</span>
+              </div>
               {resolveChannelMembers(activeChannel.members || [], activeChannel.estate_id).map(m => {
                 const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
                 const isYou = m.id === user?.id;
@@ -1454,6 +1525,42 @@ export default function EstateChatPage() {
                   </div>
                 );
               })}
+              {activeChannel.type === 'group' && (() => {
+                const available = getNonChannelMembers(activeChannel.members, activeChannel.estate_id);
+                if (!available.length) return null;
+                return (
+                  <>
+                    <div className="px-3 py-1.5" style={{ borderTop: '1px solid rgba(212,175,55,0.15)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                      <span className="text-[11px] font-semibold" style={{ color: '#d4af37' }}>Add to Chat</span>
+                    </div>
+                    {available.map(m => {
+                      const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
+                      return (
+                        <button
+                          key={m.id}
+                          onClick={(e) => { e.stopPropagation(); addMemberToChannel(activeChannel.id, m.id, activeChannel.estate_id); }}
+                          className="flex items-center gap-2.5 px-3 py-2 w-full text-left hover:bg-white/5 transition-colors"
+                          data-testid={`header-add-member-${m.id}`}
+                          style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                        >
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-xs font-bold" style={{ background: 'rgba(76,175,80,0.15)', color: '#4CAF50' }}>
+                            {m.photo_url
+                              ? <img src={m.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = initials; }} />
+                              : initials}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-semibold truncate" style={{ color: '#F1F3F8' }}>{m.name}</div>
+                            {(m.relation || m.role_in_estate) && (
+                              <div className="text-[11px] truncate" style={{ color: '#7B879E' }}>{m.relation || m.role_in_estate}</div>
+                            )}
+                          </div>
+                          <UserPlus className="w-4 h-4 flex-shrink-0" style={{ color: '#4CAF50' }} />
+                        </button>
+                      );
+                    })}
+                  </>
+                );
+              })()}
             </div>
           )}
         </div>
