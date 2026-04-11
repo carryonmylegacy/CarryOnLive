@@ -180,16 +180,42 @@ function VoiceMessagePlayer({ fileId }) {
 }
 
 /* ── Authenticated Image ── */
+// ── Cache-aware authenticated file fetch ──
+const ECT_CACHE_NAME = 'carryon-ect-media-v1';
+async function cachedFetch(fileId) {
+  const cacheKey = `${API_URL}/estate-chat/files/${fileId}`;
+  // 1. Try the Cache API first
+  if ('caches' in window) {
+    try {
+      const cache = await caches.open(ECT_CACHE_NAME);
+      const cached = await cache.match(cacheKey);
+      if (cached) {
+        const blob = await cached.blob();
+        return URL.createObjectURL(blob);
+      }
+    } catch { /* cache miss, fall through */ }
+  }
+  // 2. Fetch from server
+  const token = localStorage.getItem('carryon_token');
+  const res = await fetch(cacheKey, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('fetch failed');
+  const blob = await res.blob();
+  // 3. Store in cache for next time
+  if ('caches' in window) {
+    try {
+      const cache = await caches.open(ECT_CACHE_NAME);
+      await cache.put(cacheKey, new Response(blob.slice(0)));
+    } catch { /* cache write failed, non-critical */ }
+  }
+  return URL.createObjectURL(blob);
+}
+
 function AuthImage({ fileId, fileName, msgId }) {
   const [src, setSrc] = useState(null);
   useEffect(() => {
-    const token = localStorage.getItem('carryon_token');
-    fetch(`${API_URL}/estate-chat/files/${fileId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.blob())
-      .then(blob => setSrc(URL.createObjectURL(blob)))
-      .catch(() => {});
+    cachedFetch(fileId).then(setSrc).catch(() => {});
     return () => { if (src) URL.revokeObjectURL(src); };
   }, [fileId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -214,13 +240,7 @@ function AuthImage({ fileId, fileName, msgId }) {
 function AuthVideo({ fileId, fileName }) {
   const [src, setSrc] = useState(null);
   useEffect(() => {
-    const token = localStorage.getItem('carryon_token');
-    fetch(`${API_URL}/estate-chat/files/${fileId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.blob())
-      .then(blob => setSrc(URL.createObjectURL(blob)))
-      .catch(() => {});
+    cachedFetch(fileId).then(setSrc).catch(() => {});
     return () => { if (src) URL.revokeObjectURL(src); };
   }, [fileId]); // eslint-disable-line react-hooks/exhaustive-deps
 
