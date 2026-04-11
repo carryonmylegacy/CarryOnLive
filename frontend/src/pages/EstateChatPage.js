@@ -34,6 +34,8 @@ import {
   CheckSquare2,
   UserPlus,
   Pencil,
+  Copy,
+  TextSelect,
 } from 'lucide-react';
 import { platformDownload } from '../utils/downloadFile';
 
@@ -775,8 +777,7 @@ export default function EstateChatPage() {
     } catch { toast.error('Failed to delete message'); } // eslint-disable-line no-empty
   };
 
-  const onMsgTouchStart = (e, msgId, isMe) => {
-    if (!isMe) return;
+  const onMsgTouchStart = (e, msgId) => {
     msgLongPressTriggered.current = false;
     msgLongPressTimer.current = setTimeout(() => {
       msgLongPressTriggered.current = true;
@@ -1726,10 +1727,10 @@ export default function EstateChatPage() {
                 <div
                   className="px-4 py-2.5 rounded-2xl text-sm cursor-pointer relative"
                   onClick={() => { if (msgLongPressTriggered.current) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); setMsgActionId(null); }}
-                  onTouchStart={(e) => onMsgTouchStart(e, msg.id, isMe)}
+                  onTouchStart={(e) => onMsgTouchStart(e, msg.id)}
                   onTouchMove={onMsgTouchMove}
                   onTouchEnd={onMsgTouchEnd}
-                  onContextMenu={(e) => { if (isMe) { e.preventDefault(); setMsgActionId(msg.id); setReactingMsgId(null); } }}
+                  onContextMenu={(e) => { e.preventDefault(); setMsgActionId(msg.id); setReactingMsgId(null); }}
                   style={{
                     background: isMe ? 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1))' : 'rgba(255,255,255,0.05)',
                     border: `1px solid ${isMe ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
@@ -1767,9 +1768,30 @@ export default function EstateChatPage() {
                 </div>
                 )}
                 {/* Message action menu (long-press) */}
-                {msgActionId === msg.id && isMe && (
-                  <div className={`flex gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`} data-testid={`msg-action-menu-${msg.id}`}>
-                    {!msg.attachment && !(msg.attachments && msg.attachments.length) && msg.message_type !== 'voice' && (
+                {msgActionId === msg.id && (
+                  <div className={`flex flex-wrap gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`} data-testid={`msg-action-menu-${msg.id}`}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(msg.content || '').then(() => toast.success('Copied')).catch(() => {}); setMsgActionId(null); }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                      data-testid={`copy-msg-btn-${msg.id}`}
+                      style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#D8DEE9' }}
+                    >
+                      <Copy className="w-3.5 h-3.5" /> Copy
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMsgActionId(null);
+                        const bubble = e.target.closest('[data-testid^="msg-action-menu"]')?.previousElementSibling;
+                        if (bubble) { const sel = window.getSelection(); const range = document.createRange(); range.selectNodeContents(bubble); sel.removeAllRanges(); sel.addRange(range); }
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                      data-testid={`select-all-msg-btn-${msg.id}`}
+                      style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#D8DEE9' }}
+                    >
+                      <TextSelect className="w-3.5 h-3.5" /> Select All
+                    </button>
+                    {isMe && !msg.attachment && !(msg.attachments && msg.attachments.length) && msg.message_type !== 'voice' && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setEditingMsg({ id: msg.id, content: msg.content || '' }); setMsgActionId(null); }}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
@@ -1779,6 +1801,7 @@ export default function EstateChatPage() {
                         <Pencil className="w-3.5 h-3.5" /> Edit
                       </button>
                     )}
+                    {isMe && (
                     <button
                       onClick={(e) => { e.stopPropagation(); if (window.confirm('Delete this message?')) handleDeleteMessage(msg.id); }}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
@@ -1787,6 +1810,7 @@ export default function EstateChatPage() {
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Delete
                     </button>
+                    )}
                     <button
                       onClick={(e) => { e.stopPropagation(); setMsgActionId(null); }}
                       className="flex items-center px-2 py-1.5 rounded-lg text-xs transition-all"
