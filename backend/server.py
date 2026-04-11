@@ -230,6 +230,27 @@ async def lifespan(app):
         # Download token indexes
         await db.download_tokens.create_index("token", unique=True)
         await db.download_tokens.create_index("created_at")
+        # Push subscription indexes (queried on every push send)
+        await db.push_subscriptions.create_index([("user_id", 1), ("active", 1)])
+        await db.push_subscriptions.create_index("endpoint", unique=True)
+        # Support messages indexes
+        await db.support_messages.create_index("conversation_id")
+        await db.support_messages.create_index([("sender_role", 1), ("read", 1)])
+        # Milestone delivery indexes
+        await db.milestone_deliveries.create_index("status")
+        await db.milestone_deliveries.create_index("estate_id")
+        # Subscription overrides index (queried on every checkout/plan check)
+        await db.subscription_overrides.create_index("user_id")
+        # Onboarding progress index
+        await db.onboarding_progress.create_index("user_id")
+        # FFN contacts index
+        await db.ffn_contacts.create_index([("estate_id", 1), ("deleted_at", 1)])
+        # Funnel session indexes
+        await db.funnel_sessions.create_index("session_id", unique=True)
+        # Beneficiary grace periods index
+        await db.beneficiary_grace_periods.create_index("beneficiary_id")
+        # Subscription settings index
+        await db.subscription_settings.create_index("key", unique=True)
         logger.info("Database indexes created/verified")
     except Exception as e:
         logger.warning(f"Index creation warning (may already exist): {e}")
