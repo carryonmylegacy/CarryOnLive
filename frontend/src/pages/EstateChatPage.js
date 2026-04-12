@@ -1610,12 +1610,10 @@ export default function EstateChatPage() {
       </div>
 
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
-      {/* DEBUG: visible indicator to verify keyboard detection is running */}
-      {kbHeight > 0 && (
-        <div style={{ background: '#d4af37', color: '#000', padding: '2px 8px', fontSize: '10px', textAlign: 'center', flexShrink: 0 }}>
-          KB: {kbHeight}px | VV: {window.visualViewport?.height?.toFixed(0)} | IH: {window.innerHeight}
-        </div>
-      )}
+      {/* DEBUG: ALWAYS visible to confirm code is deployed */}
+      <div style={{ background: '#d4af37', color: '#000', padding: '4px 8px', fontSize: '11px', textAlign: 'center', flexShrink: 0, fontWeight: 'bold' }}>
+        BUILD V7 | KB: {kbHeight}px | VV: {typeof window !== 'undefined' && window.visualViewport ? Math.round(window.visualViewport.height) : 'N/A'} | IH: {typeof window !== 'undefined' ? window.innerHeight : 'N/A'}
+      </div>
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
         paddingBottom: kbHeight > 0 ? `${kbHeight}px` : '8px',
