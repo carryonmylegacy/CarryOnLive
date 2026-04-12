@@ -100,11 +100,19 @@ Build and maintain a comprehensive family preparedness platform that helps users
   - Backend: emergency_card download action via /api/downloads/prepare → /api/downloads/{token}
   - Uses qrcode[pil] library for QR code generation
   - Frontend: "Emergency Card (wallet PDF + QR)" button on plan cards
+- **iOS Keyboard Ratcheting FIX (RESOLVED after 10+ iterations)**: Removed ALL JavaScript keyboard/viewport manipulation from ECT chat. The root element uses pure CSS `position: fixed; inset: 0; overflow: hidden` — iOS naturally shrinks the viewport when the keyboard opens, and the flex layout adapts. See CRITICAL section at bottom of this file for full post-mortem.
+- **Theme & Responsive Audit**: Replaced all `rgba(255,255,255,X)` with theme-aware CSS variables across CCPWizard, CCPDebriefView, CCPPlanEditor, CCPActiveView, ConnectedProtocolPage (48 instances total). All CCP components now work correctly in both light and dark modes.
+- **SDV Action Buttons Fix**: Fixed missing Lock/Edit/Delete buttons for admin users with benefactor privileges. Changed `user?.role === 'benefactor'` to `(user?.role === 'benefactor' || user?.is_also_benefactor)` in VaultPage and MessagesPage.
+- **SDV Touch Device Fix**: Removed `sm:opacity-0 sm:group-hover:opacity-100` from document action buttons — hover-to-reveal doesn't work on touch devices (iPad, iPhone).
+- **Beneficiaries Tile Responsive Fix**: Added `lg:col-span-full` to Dashboard Beneficiaries StatCard so it spans full width when wrapping to second row at iPad/tablet widths.
+- **CCP Walkthrough Recall**: Added "How CCP Works" button on CCP home to re-open the instructional walkthrough.
+- **CCP Walkthrough Button Uniformity**: Fixed walkthrough action buttons wrapping to two lines on PWA — `text-sm` + `whitespace-nowrap`.
+- **Frontend Caching Fix**: Added `no-cache` headers for `index.html` in nginx.conf. Added `--extra-index-url` for emergentintegrations in requirements.txt.
+- **Refactoring**: Removed unused imports, added MongoDB indexes (share_token sparse, compound activation index), all ruff/eslint clean, housekeeping 63/65 PASS.
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
 - Twilio SMS: Waiting on A2P 10DLC campaign approval
-- iOS Keyboard Ratchet in Chat: Pending user device verification
 
 ## Upcoming Tasks
 - (P0) Google Play Store Launch
@@ -130,3 +138,85 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - Attachment messages: file encrypted with AES-256-GCM, stored in S3 via same encryption pipeline as video/voice
 - CCP Wizard uses xAI (Grok) with JSON response format for structured plan generation
 - Wizard concern-to-plan-type mapping in `_CONCERN_TO_PLAN_TYPE` dict in connected_protocol.py
+
+## ==========================================
+## CRITICAL: iOS PWA Keyboard Fix — PERMANENT RECORD
+## ==========================================
+## Cost: ~$2,000+ in tokens across 10+ iterations over 2 weeks.
+## This section exists so NO future agent EVER breaks this fix.
+##
+## THE SOLUTION (V10 — the ONLY version that works):
+##
+##   The ECT chat root element (`#ect-root`) uses:
+##     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+##     overflow: hidden;
+##
+##   With ZERO JavaScript viewport/keyboard manipulation.
+##   No visualViewport listeners. No paddingBottom. No height overrides.
+##   No window.scrollTo. No body position locking. No transform.
+##   NOTHING. Just pure CSS position:fixed with inset:0.
+##
+##   iOS Safari/PWA naturally shrinks the viewport when the keyboard opens.
+##   The fixed root shrinks with it. The flex layout adapts automatically:
+##   header stays at top, messages scroll in middle, input at bottom above keyboard.
+##
+## WHY EVERY OTHER APPROACH FAILED:
+##
+##   1. paddingBottom approach: visualViewport.resize fires multiple times during
+##      keyboard animation → paddingBottom changes rapidly → visible ratcheting/jitter.
+##
+##   2. body.position='fixed' on keyboard open: immediate visual jump as body
+##      layout changes. Combined with paddingBottom = double jitter.
+##
+##   3. window.scrollTo(0,0) on input focus: fights with iOS's own scroll
+##      behavior → bouncing/fighting animation.
+##
+##   4. root.style.height = vv.height: iOS Safari changes BOTH window.innerHeight
+##      AND visualViewport.height together when keyboard opens (both shrink from
+##      746→399). So innerHeight - vv.height = 0 ALWAYS. Keyboard height
+##      calculation fails completely.
+##
+##   5. Capturing initial height via useRef then using it: root extends behind
+##      keyboard at 746px while viewport is 399px → iOS scrolls the page to
+##      bring input into view → content jumps to top of screen then slowly
+##      drifts back down as scrollTo(0,0) fights iOS scroll.
+##
+##   6. root.style.top = vv.offsetTop: in iOS Safari, fixed elements are relative
+##      to the layout viewport. Setting top to offsetTop shifts the element DOWN,
+##      but combined with height=vv.height the layout becomes wrong.
+##
+## DEPLOYMENT GOTCHA (cost hours of debugging):
+##
+##   The frontend deploys to VERCEL (not Railway). Railway only builds the backend.
+##   The nginx.conf in /app/frontend/ is NOT used by Vercel — it's for the Docker
+##   deployment path only. Vercel uses vercel.json.
+##
+##   When testing iOS keyboard changes, the index.html must NOT be cached.
+##   If changes appear to not deploy, the issue is browser/PWA cache, not code.
+##   The vercel.json ignoreCommand is correct and works.
+##
+##   To verify code is deployed: add a VISIBLE, UNCONDITIONAL debug element
+##   (like a colored banner with version number) that renders WITHOUT any
+##   conditional logic. If the banner doesn't appear, the code isn't deployed.
+##
+## SAFE-AREA BOTTOM SPACER:
+##   The safe-area-inset-bottom div MUST render unconditionally (not gated by
+##   inputFocused state). Previously it was {!inputFocused && <div>} which
+##   caused a transparent gap when keyboard was open. Now it always renders
+##   with background: var(--bg2).
+##
+## INPUT BAR DEFINITION:
+##   The input bar wrapper uses borderTop: '1px solid var(--b)' for crisp
+##   visual separation from the message area. Without this, the transition
+##   from messages to input bar looks "faded" or undefined.
+##
+## DO NOT:
+##   - Add ANY JavaScript that modifies #ect-root styles (height, top, bottom,
+##     transform, paddingBottom) in response to keyboard/viewport events
+##   - Add visualViewport event listeners for keyboard compensation
+##   - Add window.scrollTo calls on input focus
+##   - Lock body scroll (position:fixed on body) when keyboard opens
+##   - Make the safe-area-inset-bottom spacer conditional on inputFocused
+##   - Use window.innerHeight to calculate keyboard height (it equals vv.height on iOS)
+##
+## THE FIX IS: DO NOTHING. Let iOS handle it. Pure CSS. Zero JS.
