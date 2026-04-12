@@ -87,6 +87,10 @@ Build and maintain a comprehensive family preparedness platform that helps users
   - Backend: GET /api/ccp/debrief-stats/{estate_id} — aggregated trend data (entries, total_drills, average_rating)
   - Frontend: CCPDebriefView.js — debrief component with interactive star rating, two notes fields, success animation
   - Frontend: Enhanced history view with debrief info on drill cards, "Add Debrief" button for past drills without one, and trend summary card with mini bar chart
+- **Family Readiness Report PDF**: Comprehensive downloadable PDF combining estate readiness score (with pillar breakdown), emergency plan coverage (all plans with details + drill schedules), and drill performance history (with debrief ratings and notes). Designed to be printed and kept in a family's go-bag.
+  - Backend: family_readiness_report download action via /api/downloads/prepare → /api/downloads/{token}
+  - Frontend: "Family Readiness Report" button on CCP home page (visible when user has plans)
+- **Enhanced CCP Plan PDF**: Individual plan PDFs now include a "Drill Schedule" section showing frequency, schedule label, and next drill date when drill reminders are enabled.
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
