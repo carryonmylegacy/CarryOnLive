@@ -175,7 +175,7 @@ function VoiceMessagePlayer({ fileId }) {
         <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
           <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: '#d4af37' }} />
         </div>
-        <div className="text-[11px] mt-0.5" style={{ color: '#7B879E' }}>
+        <div className="text-[11px] mt-0.5" style={{ color: 'var(--t4)' }}>
           {formatTime(audioRef.current?.currentTime || 0)} / {formatTime(audioDuration)}
         </div>
       </div>
@@ -353,10 +353,10 @@ function AuthFileLink({ fileId, fileName, fileSize, msgId }) {
     <div className="flex items-center gap-2 py-1 cursor-pointer" onClick={handleDownload} data-testid={`chat-file-${msgId}`}>
       <FileText className="w-5 h-5 flex-shrink-0" style={{ color: '#3B7BF7' }} />
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-semibold truncate" style={{ color: '#F1F3F8' }}>{fileName}</div>
-        <div className="text-[11px]" style={{ color: '#7B879E' }}>{(fileSize / 1024).toFixed(0)} KB</div>
+        <div className="text-sm font-semibold truncate" style={{ color: 'var(--t)' }}>{fileName}</div>
+        <div className="text-[11px]" style={{ color: 'var(--t4)' }}>{(fileSize / 1024).toFixed(0)} KB</div>
       </div>
-      <Download className="w-4 h-4 flex-shrink-0" style={{ color: '#7B879E' }} />
+      <Download className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--t4)' }} />
     </div>
   );
 }
@@ -1114,9 +1114,9 @@ export default function EstateChatPage() {
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.7)', padding: '16px', paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
       <div className="w-full max-w-md rounded-2xl flex flex-col" style={{ background: '#0F1629', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '80vh' }}>
         <div className="flex items-center justify-between p-6 pb-4 flex-shrink-0">
-          <h3 className="text-lg font-bold" style={{ color: '#F1F3F8' }}>New Conversation</h3>
+          <h3 className="text-lg font-bold" style={{ color: 'var(--t)' }}>New Conversation</h3>
           <button onClick={() => { setShowNewChat(false); setSelectedMembers([]); setGroupName(''); }} data-testid="ect-new-chat-close">
-            <X className="w-5 h-5" style={{ color: '#7B879E' }} />
+            <X className="w-5 h-5" style={{ color: 'var(--t4)' }} />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-6 min-h-0">
@@ -1152,7 +1152,7 @@ export default function EstateChatPage() {
               onChange={(e) => { setNewChatEstate(e.target.value); setSelectedMembers([]); }}
               className="w-full rounded-xl px-3 py-2.5 text-base"
               data-testid="ect-estate-select"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#F1F3F8', fontSize: '16px' }}
+              style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }}
             >
               <option value="">Select estate...</option>
               {contacts.map(c => <option key={c.estate_id} value={c.estate_id}>{c.estate_name}</option>)}
@@ -1168,7 +1168,7 @@ export default function EstateChatPage() {
               placeholder="e.g., Financial Planning"
               className="w-full rounded-xl px-3 py-2.5 text-base"
               data-testid="ect-group-name"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#F1F3F8', fontSize: '16px' }}
+              style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }}
             />
           </div>
         )}
@@ -1204,12 +1204,12 @@ export default function EstateChatPage() {
                   </div>
                   <div className="flex-1 text-left min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-semibold truncate" style={{ color: '#F1F3F8' }}>{m.name}</span>
+                      <span className="text-sm font-semibold truncate" style={{ color: 'var(--t)' }}>{m.name}</span>
                       {m.is_ffn && (
                         <span className="text-[11px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623' }}>EXTERNAL</span>
                       )}
                     </div>
-                    <div className="text-xs truncate" style={{ color: '#7B879E' }}>{m.relation || m.role_in_estate}</div>
+                    <div className="text-xs truncate" style={{ color: 'var(--t4)' }}>{m.relation || m.role_in_estate}</div>
                   </div>
                   {isSelected && <Check className="w-5 h-5 flex-shrink-0" style={{ color: '#d4af37' }} />}
                 </button>
@@ -1239,10 +1239,10 @@ export default function EstateChatPage() {
   const channelPanel = (
     <div
       className={`${showChannelList || !activeChannel ? 'flex' : 'hidden'} lg:flex flex-col h-full`}
-      style={{ width: '100%', maxWidth: '100%', borderRight: '1px solid rgba(255,255,255,0.06)' }}
+      style={{ width: '100%', maxWidth: '100%', borderRight: '1px solid var(--b)' }}
     >
       {/* ECT-own header */}
-      <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--b)' }}>
         <div className="flex items-center gap-3">
           {selectMode ? (
             <button
@@ -1263,7 +1263,7 @@ export default function EstateChatPage() {
               <ArrowLeft className="w-4 h-4" style={{ color: '#A0AABF' }} />
             </button>
           )}
-          <h2 className="text-lg font-bold" style={{ color: '#F1F3F8' }}>
+          <h2 className="text-lg font-bold" style={{ color: 'var(--t)' }}>
             {selectMode ? `${selectedChannels.size} Selected` : 'Estate Comms'}
           </h2>
         </div>
@@ -1306,7 +1306,7 @@ export default function EstateChatPage() {
                   data-testid="ect-select-mode-btn"
                   style={{ background: 'rgba(255,255,255,0.06)' }}
                 >
-                  <CheckSquare2 className="w-5 h-5" style={{ color: '#7B879E' }} />
+                  <CheckSquare2 className="w-5 h-5" style={{ color: 'var(--t4)' }} />
                 </button>
               )}
               <button
@@ -1338,7 +1338,7 @@ export default function EstateChatPage() {
             autoFocus
             className="w-full rounded-xl px-3 py-2.5 text-base"
             data-testid="ect-search-input"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#F1F3F8', fontSize: '16px', outline: 'none' }}
+            style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px', outline: 'none' }}
           />
         </div>
       )}
@@ -1362,7 +1362,7 @@ export default function EstateChatPage() {
             ].map(([t, d], i) => (
               <div key={i} className="flex items-start gap-2">
                 <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#22C993' }} />
-                <div><span className="text-xs font-bold" style={{ color: '#F1F3F8' }}>{t}</span><span className="text-xs" style={{ color: '#7B879E' }}> — {d}</span></div>
+                <div><span className="text-xs font-bold" style={{ color: 'var(--t)' }}>{t}</span><span className="text-xs" style={{ color: 'var(--t4)' }}> — {d}</span></div>
               </div>
             ))}
             <button
@@ -1378,8 +1378,8 @@ export default function EstateChatPage() {
             {searching && <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /></div>}
             {!searching && searchResults.length === 0 && searchQuery.trim() && (
               <div className="text-center py-8">
-                <Search className="w-8 h-8 mx-auto mb-2" style={{ color: '#525C72' }} />
-                <p className="text-sm" style={{ color: '#7B879E' }}>No messages found</p>
+                <Search className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--t5)' }} />
+                <p className="text-sm" style={{ color: 'var(--t4)' }}>No messages found</p>
               </div>
             )}
             {searchResults.map(sr => (
@@ -1390,12 +1390,12 @@ export default function EstateChatPage() {
                 <div className="flex items-center gap-1.5 mb-1">
                   {getChannelIcon(sr.channel_type)}
                   <span className="text-[11px] font-semibold" style={{ color: '#d4af37' }}>{sr.channel_name || 'Chat'}</span>
-                  <span className="text-[11px] ml-auto" style={{ color: '#525C72' }}>
+                  <span className="text-[11px] ml-auto" style={{ color: 'var(--t5)' }}>
                     {new Date(sr.created_at).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="text-xs font-semibold mb-0.5" style={{ color: '#A0AABF' }}>{sr.sender_name}</div>
-                <p className="text-sm truncate" style={{ color: '#F1F3F8' }}>{sr.content}</p>
+                <p className="text-sm truncate" style={{ color: 'var(--t)' }}>{sr.content}</p>
               </button>
             ))}
           </div>
@@ -1403,9 +1403,9 @@ export default function EstateChatPage() {
           <>
             {channels.length === 0 && (
               <div className="text-center py-12 px-4">
-                <MessageCircle className="w-12 h-12 mx-auto mb-3" style={{ color: '#525C72' }} />
-                <p className="text-sm" style={{ color: '#7B879E' }}>No conversations yet</p>
-                <p className="text-xs mt-1" style={{ color: '#525C72' }}>Tap + to start chatting</p>
+                <MessageCircle className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--t5)' }} />
+                <p className="text-sm" style={{ color: 'var(--t4)' }}>No conversations yet</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--t5)' }}>Tap + to start chatting</p>
               </div>
             )}
             {channels.map(ch => (
@@ -1482,7 +1482,7 @@ export default function EstateChatPage() {
                 </div>
                 <div className="flex-1 min-w-0 relative">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold truncate" style={{ color: '#F1F3F8' }}>{ch.name}</span>
+                    <span className="text-sm font-semibold truncate" style={{ color: 'var(--t)' }}>{ch.name}</span>
                     {ch.unread_count > 0 && (
                       <span className="ml-2 min-w-[20px] h-5 rounded-full flex items-center justify-center text-[11px] font-bold px-1.5" style={{ background: '#d4af37', color: '#080e1a' }}>
                         {ch.unread_count}
@@ -1497,7 +1497,7 @@ export default function EstateChatPage() {
                       style={{ background: 'rgba(212,175,55,0.08)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.15)' }}
                     >{ch.estate_name}</span>
                     {ch.last_message && (
-                      <span className="text-xs truncate" style={{ color: '#525C72' }}>{ch.last_message.content}</span>
+                      <span className="text-xs truncate" style={{ color: 'var(--t5)' }}>{ch.last_message.content}</span>
                     )}
                   </div>
                   {showListMembersId === ch.id && (
@@ -1515,7 +1515,7 @@ export default function EstateChatPage() {
                       }}
                     >
                       <div className="px-3 py-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                        <span className="text-[11px] font-semibold" style={{ color: '#7B879E' }}>Members</span>
+                        <span className="text-[11px] font-semibold" style={{ color: 'var(--t4)' }}>Members</span>
                       </div>
                       {resolveChannelMembers(ch.members || [], ch.estate_id).map(m => {
                         const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
@@ -1528,11 +1528,11 @@ export default function EstateChatPage() {
                                 : initials}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="text-[11px] font-semibold truncate" style={{ color: '#F1F3F8' }}>
+                              <div className="text-[11px] font-semibold truncate" style={{ color: 'var(--t)' }}>
                                 {m.name}{isYou ? ' (You)' : ''}
                               </div>
                               {(m.relation || m.role_in_estate) && (
-                                <div className="text-[11px] truncate" style={{ color: '#7B879E' }}>{m.relation || m.role_in_estate}</div>
+                                <div className="text-[11px] truncate" style={{ color: 'var(--t4)' }}>{m.relation || m.role_in_estate}</div>
                               )}
                             </div>
                           </div>
@@ -1562,9 +1562,9 @@ export default function EstateChatPage() {
                                       : initials}
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <div className="text-[11px] font-semibold truncate" style={{ color: '#F1F3F8' }}>{m.name}</div>
+                                    <div className="text-[11px] font-semibold truncate" style={{ color: 'var(--t)' }}>{m.name}</div>
                                     {(m.relation || m.role_in_estate) && (
-                                      <div className="text-[11px] truncate" style={{ color: '#7B879E' }}>{m.relation || m.role_in_estate}</div>
+                                      <div className="text-[11px] truncate" style={{ color: 'var(--t4)' }}>{m.relation || m.role_in_estate}</div>
                                     )}
                                   </div>
                                   <UserPlus className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#4CAF50' }} />
@@ -1607,7 +1607,7 @@ export default function EstateChatPage() {
               : getChannelIcon(activeChannel.type)}
         </div>
         <div className="flex-1 min-w-0 relative">
-          <div className="text-sm font-bold truncate" style={{ color: '#F1F3F8' }}>{activeChannel.name}</div>
+          <div className="text-sm font-bold truncate" style={{ color: 'var(--t)' }}>{activeChannel.name}</div>
           <button
             onClick={(e) => { e.stopPropagation(); setShowHeaderMembers(!showHeaderMembers); }}
             className="text-[11px] cursor-pointer"
@@ -1631,7 +1631,7 @@ export default function EstateChatPage() {
               }}
             >
               <div className="px-3 py-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <span className="text-[11px] font-semibold" style={{ color: '#7B879E' }}>Members</span>
+                <span className="text-[11px] font-semibold" style={{ color: 'var(--t4)' }}>Members</span>
               </div>
               {resolveChannelMembers(activeChannel.members || [], activeChannel.estate_id).map(m => {
                 const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
@@ -1644,11 +1644,11 @@ export default function EstateChatPage() {
                         : initials}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-semibold truncate" style={{ color: '#F1F3F8' }}>
+                      <div className="text-xs font-semibold truncate" style={{ color: 'var(--t)' }}>
                         {m.name}{isYou ? ' (You)' : ''}
                       </div>
                       {(m.relation || m.role_in_estate) && (
-                        <div className="text-[11px] truncate" style={{ color: '#7B879E' }}>{m.relation || m.role_in_estate}</div>
+                        <div className="text-[11px] truncate" style={{ color: 'var(--t4)' }}>{m.relation || m.role_in_estate}</div>
                       )}
                     </div>
                   </div>
@@ -1678,9 +1678,9 @@ export default function EstateChatPage() {
                               : initials}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-xs font-semibold truncate" style={{ color: '#F1F3F8' }}>{m.name}</div>
+                            <div className="text-xs font-semibold truncate" style={{ color: 'var(--t)' }}>{m.name}</div>
                             {(m.relation || m.role_in_estate) && (
-                              <div className="text-[11px] truncate" style={{ color: '#7B879E' }}>{m.relation || m.role_in_estate}</div>
+                              <div className="text-[11px] truncate" style={{ color: 'var(--t4)' }}>{m.relation || m.role_in_estate}</div>
                             )}
                           </div>
                           <UserPlus className="w-4 h-4 flex-shrink-0" style={{ color: '#4CAF50' }} />
@@ -1737,8 +1737,8 @@ export default function EstateChatPage() {
         {msgLoading && <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" style={{ color: '#d4af37' }} /></div>}
         {!msgLoading && messages.length === 0 && (
           <div className="text-center py-12">
-            <MessageCircle className="w-10 h-10 mx-auto mb-2" style={{ color: '#525C72' }} />
-            <p className="text-sm" style={{ color: '#7B879E' }}>No messages yet. Say hello!</p>
+            <MessageCircle className="w-10 h-10 mx-auto mb-2" style={{ color: 'var(--t5)' }} />
+            <p className="text-sm" style={{ color: 'var(--t4)' }}>No messages yet. Say hello!</p>
           </div>
         )}
         {messages.map((msg, msgIdx) => {
@@ -1786,7 +1786,7 @@ export default function EstateChatPage() {
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleEditMessage(); } if (e.key === 'Escape') setEditingMsg(null); }}
                       className="w-full rounded-lg px-3 py-2 text-sm"
                       data-testid="edit-message-input"
-                      style={{ background: '#1E2840', border: '1px solid #4A5575', color: '#F1F3F8', fontSize: '16px', outline: 'none' }}
+                      style={{ background: '#1E2840', border: '1px solid #4A5575', color: 'var(--t)', fontSize: '16px', outline: 'none' }}
                     />
                     <div className="flex gap-2 justify-end">
                       <button onClick={() => setEditingMsg(null)} className="text-xs px-3 py-1 rounded-lg" style={{ color: '#A0AABF', background: 'rgba(255,255,255,0.06)' }} data-testid="edit-cancel-btn">Cancel</button>
@@ -1804,7 +1804,7 @@ export default function EstateChatPage() {
                   style={{
                     background: isMe ? 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1))' : 'rgba(255,255,255,0.05)',
                     border: `1px solid ${isMe ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
-                    color: '#F1F3F8',
+                    color: 'var(--t)',
                     borderTopRightRadius: isMe ? '6px' : '18px',
                     borderTopLeftRadius: isMe ? '18px' : '6px',
                     WebkitUserSelect: 'none',
@@ -1836,7 +1836,7 @@ export default function EstateChatPage() {
                     if (isImage) return <AuthImage fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} msgId={msg.id} onPreview={(s, n, fid) => setPreviewImage({ src: s, name: n, fileId: fid })} />;
                     return <AuthFileLink fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} fileSize={msg.attachment.file_size} msgId={msg.id} />;
                   })() : msg.content}
-                  {msg.edited_at && <span className="text-[11px] italic ml-1" style={{ color: '#7B879E' }}>(edited)</span>}
+                  {msg.edited_at && <span className="text-[11px] italic ml-1" style={{ color: 'var(--t4)' }}>(edited)</span>}
                 </div>
                 )}
                 {/* Message action menu (long-press) */}
@@ -1891,7 +1891,7 @@ export default function EstateChatPage() {
                     <button
                       onClick={(e) => { e.stopPropagation(); setMsgActionId(null); }}
                       className="flex items-center px-2 py-1.5 rounded-lg text-xs transition-all"
-                      style={{ background: 'rgba(255,255,255,0.06)', color: '#7B879E' }}
+                      style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -1946,7 +1946,7 @@ export default function EstateChatPage() {
                   </div>
                 )}
                 {/* Timestamp + Receipt indicators */}
-                <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 ${isMe ? 'justify-end mr-1' : 'ml-1'}`} style={{ color: '#525C72' }}>
+                <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 ${isMe ? 'justify-end mr-1' : 'ml-1'}`} style={{ color: 'var(--t5)' }}>
                   <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   {isMe && (receiptStatus === 'read_all' || receiptStatus === 'read_partial') && (
                     <span className="flex items-center gap-0.5" data-testid="receipt-read">
@@ -1961,14 +1961,14 @@ export default function EstateChatPage() {
                   )}
                   {isMe && (receiptStatus === 'delivered_all' || receiptStatus === 'delivered_partial') && (
                     <span className="flex items-center gap-0.5" data-testid="receipt-delivered">
-                      <CheckCheck className="w-3.5 h-3.5" style={{ color: '#7B879E' }} />
+                      <CheckCheck className="w-3.5 h-3.5" style={{ color: 'var(--t4)' }} />
                       {!isDM && receiptStatus === 'delivered_partial' && (
-                        <span className="text-[11px]" style={{ color: '#7B879E' }}>{msg._deliveredToCount}</span>
+                        <span className="text-[11px]" style={{ color: 'var(--t4)' }}>{msg._deliveredToCount}</span>
                       )}
                     </span>
                   )}
                   {isMe && receiptStatus === 'sent' && (
-                    <span data-testid="receipt-sent" style={{ color: '#525C72' }}><Check className="w-3 h-3" /></span>
+                    <span data-testid="receipt-sent" style={{ color: 'var(--t5)' }}><Check className="w-3 h-3" /></span>
                   )}
                 </div>
               </div>
@@ -1980,7 +1980,7 @@ export default function EstateChatPage() {
 
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
       <div className="flex-shrink-0" style={{
-        background: '#151D30',
+        background: 'var(--bg2)',
         paddingBottom: '8px',
       }}>
         {/* Typing indicator */}
@@ -1998,7 +1998,7 @@ export default function EstateChatPage() {
         )}
         {/* Pending file attachment preview */}
         {pendingFiles.length > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2 mx-3 mb-1 rounded-xl" style={{ background: '#1A2236', border: '1px solid rgba(212,175,55,0.3)' }}>
+          <div className="flex items-center gap-2 px-3 py-2 mx-3 mb-1 rounded-xl" style={{ background: 'var(--s)', border: '1px solid rgba(212,175,55,0.3)' }}>
             <div className="flex gap-2 flex-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
               {pendingFiles.map((pf, idx) => (
                 <div key={idx} className="relative flex-shrink-0">
@@ -2135,9 +2135,9 @@ export default function EstateChatPage() {
               className="w-full rounded-2xl px-4 py-2.5 text-base"
               data-testid="ect-message-input"
               style={{
-                background: '#1E2840',
-                border: '2px solid #4A5575',
-                color: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#FFFFFF',
+                background: 'var(--s)',
+                border: '2px solid var(--b)',
+                color: (voiceRecorder.recording || voicePreview) ? 'transparent' : 'var(--t)',
                 fontSize: '16px',
                 outline: 'none',
                 caretColor: (voiceRecorder.recording || voicePreview) ? 'transparent' : undefined,
@@ -2149,12 +2149,12 @@ export default function EstateChatPage() {
                 border: '1px solid #5C2A2A',
               }}>
                 <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: '#ef4444' }} />
-                <span className="text-sm font-semibold" style={{ color: '#F1F3F8' }}>
+                <span className="text-sm font-semibold" style={{ color: 'var(--t)' }}>
                   {Math.floor(voiceRecorder.duration / 60)}:{(voiceRecorder.duration % 60).toString().padStart(2, '0')}
                 </span>
                 <span className="text-xs" style={{ color: '#A0AABF' }}>Recording...</span>
                 <button onMouseDown={(e) => e.preventDefault()} onClick={stopAndPreview} className="ml-auto p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-stop">
-                  <Square className="w-4 h-4" style={{ color: '#F1F3F8', fill: '#F1F3F8' }} />
+                  <Square className="w-4 h-4" style={{ color: 'var(--t)', fill: '#F1F3F8' }} />
                 </button>
                 <button onMouseDown={(e) => e.preventDefault()} onClick={() => { voiceRecorder.cancel(); inputRef.current?.focus(); }} className="p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-cancel">
                   <X className="w-4 h-4" style={{ color: '#ef4444' }} />
@@ -2224,7 +2224,7 @@ export default function EstateChatPage() {
         </div>
       </div>
       {/* Safe-area bottom fill — solid background when keyboard is closed */}
-      {!inputFocused && <div style={{ background: '#151D30', height: 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />}
+      {!inputFocused && <div style={{ background: 'var(--bg2)', height: 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />}
     </div>
   );
 
@@ -2249,9 +2249,9 @@ export default function EstateChatPage() {
         <div className="flex-1 flex flex-col">{activeChannel ? messageArea : (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <MessageCircle className="w-16 h-16 mx-auto mb-4" style={{ color: '#525C72' }} />
-              <p className="text-base font-semibold" style={{ color: '#7B879E' }}>Select a conversation</p>
-              <p className="text-sm mt-1" style={{ color: '#525C72' }}>or start a new one</p>
+              <MessageCircle className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--t5)' }} />
+              <p className="text-base font-semibold" style={{ color: 'var(--t4)' }}>Select a conversation</p>
+              <p className="text-sm mt-1" style={{ color: 'var(--t5)' }}>or start a new one</p>
             </div>
           </div>
         )}</div>
@@ -2267,9 +2267,9 @@ export default function EstateChatPage() {
       <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }}>
         <div className="w-full max-w-xs rounded-2xl p-6 text-center" style={{ background: '#0F1629', border: '1px solid rgba(255,255,255,0.1)' }}>
           <Trash2 className="w-10 h-10 mx-auto mb-3" style={{ color: '#dc2626' }} />
-          <h3 className="text-base font-bold mb-1" style={{ color: '#F1F3F8' }}>Delete Conversation</h3>
-          <p className="text-sm mb-5" style={{ color: '#7B879E' }}>
-            Delete <strong style={{ color: '#F1F3F8' }}>{deleteConfirm.name}</strong>? This removes all messages and cannot be undone.
+          <h3 className="text-base font-bold mb-1" style={{ color: 'var(--t)' }}>Delete Conversation</h3>
+          <p className="text-sm mb-5" style={{ color: 'var(--t4)' }}>
+            Delete <strong style={{ color: 'var(--t)' }}>{deleteConfirm.name}</strong>? This removes all messages and cannot be undone.
           </p>
           <div className="flex gap-3">
             <button
@@ -2293,8 +2293,8 @@ export default function EstateChatPage() {
       <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }}>
         <div className="w-full max-w-xs rounded-2xl p-6 text-center" style={{ background: '#0F1629', border: '1px solid rgba(255,255,255,0.1)' }}>
           <Trash2 className="w-10 h-10 mx-auto mb-3" style={{ color: '#dc2626' }} />
-          <h3 className="text-base font-bold mb-1" style={{ color: '#F1F3F8' }}>Delete {selectedChannels.size} Conversation{selectedChannels.size !== 1 ? 's' : ''}</h3>
-          <p className="text-sm mb-5" style={{ color: '#7B879E' }}>
+          <h3 className="text-base font-bold mb-1" style={{ color: 'var(--t)' }}>Delete {selectedChannels.size} Conversation{selectedChannels.size !== 1 ? 's' : ''}</h3>
+          <p className="text-sm mb-5" style={{ color: 'var(--t4)' }}>
             This will permanently delete {selectedChannels.size} conversation{selectedChannels.size !== 1 ? 's' : ''} and all their messages. This cannot be undone.
           </p>
           <div className="flex gap-3">
@@ -2337,7 +2337,7 @@ export default function EstateChatPage() {
             <div data-testid="ect-intro-step-1">
               <div className="text-center mb-5">
                 <Shield className="w-12 h-12 mx-auto mb-3" style={{ color: '#d4af37' }} />
-                <h2 className="text-xl font-bold" style={{ color: '#F1F3F8' }}>The Most Private Chat You'll Ever Use</h2>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--t)' }}>The Most Private Chat You'll Ever Use</h2>
                 <p className="text-sm mt-2" style={{ color: '#A0AABF' }}>Estate Comms isn't like other messaging apps. Here's why.</p>
               </div>
               <div className="space-y-3 mb-6">
@@ -2350,13 +2350,13 @@ export default function EstateChatPage() {
                   <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                     <item.icon className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#d4af37' }} />
                     <div>
-                      <div className="text-sm font-bold" style={{ color: '#F1F3F8' }}>{item.title}</div>
-                      <div className="text-xs mt-0.5" style={{ color: '#7B879E' }}>{item.desc}</div>
+                      <div className="text-sm font-bold" style={{ color: 'var(--t)' }}>{item.title}</div>
+                      <div className="text-xs mt-0.5" style={{ color: 'var(--t4)' }}>{item.desc}</div>
                     </div>
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-center mb-4" style={{ color: '#525C72' }}>
+              <p className="text-xs text-center mb-4" style={{ color: 'var(--t5)' }}>
                 The most private messaging system isn't the one with the strongest lock — it's the one where strangers can never find the door.
               </p>
               <button
@@ -2373,7 +2373,7 @@ export default function EstateChatPage() {
             <div data-testid="ect-intro-step-2">
               <div className="text-center mb-5">
                 <MessageCircle className="w-12 h-12 mx-auto mb-3" style={{ color: '#d4af37' }} />
-                <h2 className="text-xl font-bold" style={{ color: '#F1F3F8' }}>How to Use Estate Comms</h2>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--t)' }}>How to Use Estate Comms</h2>
                 <p className="text-sm mt-2" style={{ color: '#A0AABF' }}>It's simple — here's everything you need to know.</p>
               </div>
               <div className="space-y-3 mb-6">
@@ -2388,8 +2388,8 @@ export default function EstateChatPage() {
                       {item.num}
                     </div>
                     <div>
-                      <div className="text-sm font-bold" style={{ color: '#F1F3F8' }}>{item.title}</div>
-                      <div className="text-xs mt-0.5" style={{ color: '#7B879E' }}>{item.desc}</div>
+                      <div className="text-sm font-bold" style={{ color: 'var(--t)' }}>{item.title}</div>
+                      <div className="text-xs mt-0.5" style={{ color: 'var(--t4)' }}>{item.desc}</div>
                     </div>
                   </div>
                 ))}
@@ -2416,7 +2416,7 @@ export default function EstateChatPage() {
             onClick={() => { setShowSecurityIntro(false); localStorage.setItem('ect_security_seen', '1'); setIntroStep(1); navigate(-1); }}
             className="w-full py-2 mt-3 text-xs font-medium transition-all active:scale-[0.97]"
             data-testid="ect-security-back"
-            style={{ color: '#525C72', background: 'transparent' }}
+            style={{ color: 'var(--t5)', background: 'transparent' }}
           >Skip — Go Back</button>
         </div>
       </div>

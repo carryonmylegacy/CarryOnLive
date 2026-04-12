@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Loader2, Plus, Link2 } from 'lucide-react';
+import React, { useState, useRef, useCallback } from 'react';
+import { Loader2, Plus, Link2, Sparkles } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
@@ -37,6 +37,25 @@ const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries
     status: account?.status || 'active',
   });
   const update = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
+  const [smartLoading, setSmartLoading] = useState(false);
+  const smartTimerRef = useRef(null);
+
+  const smartCategorize = useCallback(async (name) => {
+    if (!name || name.length < 3 || isEdit) return;
+    clearTimeout(smartTimerRef.current);
+    smartTimerRef.current = setTimeout(async () => {
+      setSmartLoading(true);
+      try {
+        const res = await axios.post(`${API_URL}/financial/smart-categorize`, { bill_name: name, module: 'accounts' }, getAuthHeaders());
+        const s = res.data;
+        if (s.category && s.category !== 'other') update('category', s.category);
+        if (s.biller_phone && !form.institution_phone) update('institution_phone', s.biller_phone);
+        if (s.biller_website && !form.institution_website) update('institution_website', s.biller_website);
+        toast.success('AI auto-filled details');
+      } catch { /* silent */ }
+      setSmartLoading(false);
+    }, 800);
+  }, [isEdit, getAuthHeaders]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async () => {
     if (!form.name.trim()) { toast.error('Account name is required'); return; }
@@ -65,7 +84,18 @@ const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries
     <div className="space-y-4 py-4">
       <div className="space-y-2">
         <Label className="text-[#94a3b8]">Account Name <span className="text-red-400">*</span></Label>
-        <Input value={form.name} onChange={e => update('name', e.target.value)} placeholder="e.g., Primary Checking - Chase" className="input-field" data-testid="account-name-input" />
+        <div className="relative">
+          <Input value={form.name} onChange={e => update('name', e.target.value)}
+            onBlur={e => smartCategorize(e.target.value)}
+            placeholder="e.g., Primary Checking - Chase" className="input-field pr-10" data-testid="account-name-input" />
+          {smartLoading && <div className="absolute right-3 top-1/2 -translate-y-1/2"><Sparkles className="w-4 h-4 text-[var(--gold)] animate-pulse" /></div>}
+          {!smartLoading && !isEdit && form.name.length >= 3 && (
+            <button type="button" onClick={() => smartCategorize(form.name)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-lg hover:bg-[var(--s)]" title="AI auto-fill">
+              <Sparkles className="w-4 h-4 text-[var(--t5)]" />
+            </button>
+          )}
+        </div>
+        {!isEdit && <p className="text-[10px] text-[var(--t5)] mt-0.5"><Sparkles className="w-3 h-3 inline mr-0.5 text-[var(--gold)]" />AI will auto-fill category and institution details</p>}
       </div>
       <div className="space-y-2">
         <Label className="text-[#94a3b8]">Category</Label>

@@ -752,3 +752,90 @@ async def get_financial_health_score(estate_id: str, current_user: dict = Depend
             "notes": notes_score,
         },
     }
+
+
+# ===================== SMART BILL CATEGORIZATION =====================
+
+
+class SmartCategorizeRequest(BaseModel):
+    bill_name: str
+    module: str = "bills"  # bills, debts, accounts
+
+
+@router.post("/financial/smart-categorize")
+async def smart_categorize(data: SmartCategorizeRequest, current_user: dict = Depends(get_current_user)):
+    """Use AI to auto-categorize a bill/debt/account and suggest biller details."""
+    from config import xai_client, XAI_MODEL_LIGHT, logger
+
+    if not xai_client:
+        raise HTTPException(status_code=503, detail="AI service not available")
+
+    bill_categories = (
+        "mortgage_rent, utilities, insurance, subscriptions, credit_card, "
+        "auto_vehicle, medical_health, taxes, hoa_condo, education_student, "
+        "phone_internet, childcare, other"
+    )
+    debt_categories = (
+        "mortgage, auto_loan, student_loan, credit_card, personal_loan, medical_debt, business_loan, heloc, other"
+    )
+    account_categories = (
+        "checking, savings, money_market, cd, investment, retirement, "
+        "pension, hsa_fsa, trust_account, life_insurance_cv, annuity, "
+        "real_estate, business, crypto, other"
+    )
+
+    cat_list = bill_categories
+    if data.module == "debts":
+        cat_list = debt_categories
+    elif data.module == "accounts":
+        cat_list = account_categories
+
+    prompt = f"""Given the {data.module.rstrip("s")} name "{data.bill_name}", respond with ONLY a JSON object (no markdown, no explanation) with these fields:
+- "category": one of [{cat_list}]
+- "biller_phone": the customer service phone number if you know it (or null)
+- "biller_website": the bill pay or login portal URL if you know it (or null)
+- "payment_method": likely payment method, one of [auto_pay, manual_online, check, phone, in_person] (or null)
+- "is_auto_pay": boolean, true if this type of bill is commonly auto-paid
+- "frequency": one of [monthly, quarterly, semi_annual, annual, one_time] (best guess)
+
+Example: {{"category":"utilities","biller_phone":"(800) 777-9898","biller_website":"https://www.duke-energy.com/my-account","payment_method":"auto_pay","is_auto_pay":true,"frequency":"monthly"}}"""
+
+    try:
+        import asyncio
+
+        response = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: xai_client.chat.completions.create(
+                model=XAI_MODEL_LIGHT,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=300,
+                temperature=0.1,
+            ),
+        )
+        text = response.choices[0].message.content.strip()
+        # Parse JSON from response
+        import json
+
+        # Handle markdown code blocks
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+            text = text.strip()
+
+        result = json.loads(text)
+        # Validate category is in the allowed list
+        allowed = [c.strip() for c in cat_list.split(",")]
+        if result.get("category") not in allowed:
+            result["category"] = "other"
+        return result
+    except Exception as e:
+        logger.warning(f"Smart categorize failed: {e}")
+        return {
+            "category": "other",
+            "biller_phone": None,
+            "biller_website": None,
+            "payment_method": None,
+            "is_auto_pay": False,
+            "frequency": "monthly",
+        }
