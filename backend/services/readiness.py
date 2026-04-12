@@ -608,22 +608,32 @@ async def calculate_financial_score(estate_id: str) -> dict:
     return {"score": score, "details": f"{total_items} financial items documented"}
 
 
-async def calculate_estate_readiness(estate_id: str) -> dict:
-    """Calculate comprehensive estate readiness score (now includes financials)"""
+async def calculate_estate_readiness(estate_id: str, enabled_features: list | None = None) -> dict:
+    """Calculate comprehensive estate readiness score (now includes financials).
+    If enabled_features is provided, only include components whose feature key is enabled.
+    """
     doc_result = await calculate_document_score(estate_id)
     msg_result = await calculate_messages_score(estate_id)
     checklist_result = await calculate_checklist_score(estate_id)
-    financial_result = await calculate_financial_score(estate_id)
-    overall_score = int(
-        (doc_result["score"] + msg_result["score"] + checklist_result["score"] + financial_result["score"]) / 4
-    )
-    return {
-        "overall_score": overall_score,
+
+    components = [doc_result["score"], msg_result["score"], checklist_result["score"]]
+    result = {
         "documents": doc_result,
         "messages": msg_result,
         "checklist": checklist_result,
-        "financials": financial_result,
     }
+
+    # Only include financials if CFP is enabled (or no feature list provided = all enabled)
+    if enabled_features is None or "cfp" in enabled_features:
+        financial_result = await calculate_financial_score(estate_id)
+        components.append(financial_result["score"])
+        result["financials"] = financial_result
+    else:
+        result["financials"] = {"score": 0, "details": "Feature disabled"}
+
+    overall_score = int(sum(components) / len(components)) if components else 0
+    result["overall_score"] = overall_score
+    return result
 
 
 GETTING_STARTED_CHECKLIST = [

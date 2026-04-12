@@ -949,20 +949,38 @@ async def get_estate_readiness(estate_id: str, current_user: dict = Depends(get_
     # Ensure default checklist exists
     await ensure_default_checklist(estate_id)
 
-    # Calculate fresh readiness
-    result = await calculate_estate_readiness(estate_id)
+    # Get user's enabled features to gate readiness components
+    from routes.feature_gates import get_enabled_features_for_tier, get_feature_gates
+
+    enabled_features = None  # default: all enabled
+    if current_user.get("role") not in ("admin", "operator"):
+        effective_tier = None
+        sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
+        if sub and sub.get("status") in ("active", "past_due"):
+            effective_tier = sub.get("plan_id")
+        if not effective_tier:
+            effective_tier = estate.get("verified_tier") or current_user.get("verified_tier")
+        if effective_tier:
+            gates = await get_feature_gates()
+            enabled_features = get_enabled_features_for_tier(gates, effective_tier)
+
+    # Calculate fresh readiness with feature gating
+    result = await calculate_estate_readiness(estate_id, enabled_features)
 
     # Persist updated score
+    breakdown = {
+        "documents": result["documents"],
+        "messages": result["messages"],
+        "checklist": result["checklist"],
+    }
+    if "financials" in result:
+        breakdown["financials"] = result["financials"]
     await db.estates.update_one(
         {"id": estate_id},
         {
             "$set": {
                 "readiness_score": result["overall_score"],
-                "readiness_breakdown": {
-                    "documents": result["documents"],
-                    "messages": result["messages"],
-                    "checklist": result["checklist"],
-                },
+                "readiness_breakdown": breakdown,
             }
         },
     )

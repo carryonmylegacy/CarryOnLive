@@ -44,6 +44,13 @@ PLATFORM_FEATURES = [
         "core": False,
         "default_off": True,
     },
+    {
+        "key": "cfp",
+        "label": "Financial Picture (CFP)",
+        "route": "/financial",
+        "core": False,
+        "default_off": True,
+    },
 ]
 
 FEATURE_KEYS = [f["key"] for f in PLATFORM_FEATURES]

@@ -632,8 +632,8 @@ const DashboardPage = () => {
         // Celebration is handled by fetchEstateData via backend flag — no-op here
       }} />
 
-      {/* CarryOn Financial Picture — Guide Tile (above gauge) */}
-      {financialSummary && (financialSummary.bills_count === 0 && financialSummary.debts_count === 0 && financialSummary.accounts_count === 0 && (financialSummary.property_count || 0) === 0) && (
+      {/* CarryOn Financial Picture — Guide Tile (above gauge, only when empty & feature enabled) */}
+      {isFeatureKeyEnabled('cfp', enabledFeatures) && financialSummary && (financialSummary.bills_count === 0 && financialSummary.debts_count === 0 && financialSummary.accounts_count === 0 && (financialSummary.property_count || 0) === 0) && (
       <div
         className="glass-card p-4 lg:p-6 mb-4 border-l-4 border-l-[#10b981] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(16,185,129,0.2)]"
         data-testid="cfp-guide-tile"
@@ -682,10 +682,12 @@ const DashboardPage = () => {
             <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{docsPercent}% Docs</span>
           </div>
           )}
+          {isFeatureKeyEnabled('cfp', enabledFeatures) && (
           <div className="flex items-center gap-1.5 lg:gap-2">
             <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#10b981]" />
             <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{financialsPercent}% Financials</span>
           </div>
+          )}
         </div>
       </div>
 
@@ -721,6 +723,7 @@ const DashboardPage = () => {
           sectionKey="vault"
         />
         )}
+        {isFeatureKeyEnabled('cfp', enabledFeatures) && (
         <StatCard 
           icon={DollarSign}
           value={(financialSummary?.bills_count || 0) + (financialSummary?.debts_count || 0) + (financialSummary?.accounts_count || 0) + (financialSummary?.property_count || 0)}
@@ -729,6 +732,7 @@ const DashboardPage = () => {
           onClick={() => navigate('/financial')}
           sectionKey="financial_portal"
         />
+        )}
         {egaRunning && isFeatureKeyEnabled('ega', enabledFeatures) && (
           <div className="col-span-3 lg:col-span-4 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold"
             style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)', color: '#d4af37' }}
@@ -900,6 +904,7 @@ const DashboardPage = () => {
         )}
 
         {/* Financial Picture Preview - Green */}
+        {isFeatureKeyEnabled('cfp', enabledFeatures) && (
         <div 
           className="glass-card p-4 lg:p-6 border-l-4 border-l-[#10b981] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.02] lg:hover:shadow-[0_12px_36px_-6px_rgba(16,185,129,0.3)]"
           data-testid="preview-financial"
@@ -954,6 +959,7 @@ const DashboardPage = () => {
             View Financial Picture <ChevronRight className="w-5 h-5" />
           </button>
         </div>
+        )}
       </div>
       {showCelebration && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center overflow-y-auto" data-testid="celebration-overlay"
