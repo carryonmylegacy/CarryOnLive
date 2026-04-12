@@ -207,12 +207,15 @@ export default function EstateChatPage() {
       rafId = requestAnimationFrame(() => {
         const kbOpen = vv.height < window.innerHeight * 0.85;
         if (kbOpen) {
-          // Keyboard is open — shrink root to visual viewport height
-          // Subtract a small buffer so the input clears the iOS keyboard toolbar
+          // Keyboard is open:
+          // - Move root to where the visual viewport starts (so header stays visible)
+          // - Shrink root to visual viewport height (so input sits above keyboard)
+          root.style.top = `${vv.offsetTop}px`;
           root.style.height = `${vv.height}px`;
           root.style.bottom = 'auto';
         } else {
-          // Keyboard closed — restore default layout
+          // Keyboard closed — restore default full-screen layout
+          root.style.top = '0';
           root.style.height = '';
           root.style.bottom = '0';
         }
@@ -225,6 +228,7 @@ export default function EstateChatPage() {
       cancelAnimationFrame(rafId);
       vv.removeEventListener('resize', update);
       vv.removeEventListener('scroll', update);
+      root.style.top = '0';
       root.style.height = '';
       root.style.bottom = '0';
     };
@@ -317,7 +321,7 @@ export default function EstateChatPage() {
     setShowListMembersId(null);
     setShowHeaderMembers(false);
     const r = document.getElementById('ect-root');
-    if (r) { r.style.height = ''; r.style.bottom = '0'; }
+    if (r) { r.style.height = ''; r.style.bottom = '0'; r.style.top = '0'; }
     fetchMessages(ch.id).then(() => setMsgLoading(false));
   };
 
