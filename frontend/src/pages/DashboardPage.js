@@ -778,7 +778,7 @@ const DashboardPage = () => {
           label="Beneficiaries"
           cardClass="stat-card-beneficiaries"
           onClick={() => navigate('/beneficiaries')}
-          className="hidden lg:block"
+          className="hidden lg:block lg:col-span-full"
           sectionKey="beneficiaries"
         />
         )}
