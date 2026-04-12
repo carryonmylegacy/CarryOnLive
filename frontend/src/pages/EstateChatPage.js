@@ -188,100 +188,41 @@ export default function EstateChatPage() {
     activeChannelRef.current = activeChannel;
     // When leaving a chat (going back to channel list), force-reset all inline styles
     if (!activeChannel) {
-      const r = document.getElementById('ect-root');
-      if (r) { r.style.transform = ''; r.style.paddingBottom = '0'; r.style.top = '0'; }
-      window.scrollTo(0, 0);
       setInputFocused(false);
     }
   }, [activeChannel]);
 
-  // ── iOS PWA: compensate for keyboard by tracking visual viewport ──
+  // ── iOS PWA: resize root to visual viewport so keyboard never overlaps ──
   useEffect(() => {
     if (loading) return;
     const root = document.getElementById('ect-root');
     if (!root) return;
     const vv = window.visualViewport;
     if (!vv) return;
-    let kbOpen = false;
+
     let rafId = 0;
 
-    const lockBodyScroll = () => {
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-      window.scrollTo(0, 0);
-    };
-
-    const unlockBodyScroll = () => {
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-    };
-
-    const resetStyles = () => {
-      kbOpen = false;
+    const update = () => {
       cancelAnimationFrame(rafId);
-      unlockBodyScroll();
-      root.style.paddingBottom = '0';
-      root.style.top = '0';
-      root.style.transform = '';
-      window.scrollTo(0, 0);
+      rafId = requestAnimationFrame(() => {
+        // Set root height to exactly the visual viewport (shrinks when keyboard opens)
+        root.style.height = `${vv.height}px`;
+        // Compensate if iOS scrolled the page behind the fixed element
+        root.style.top = `${vv.offsetTop}px`;
+      });
     };
 
-    const sync = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(syncImpl);
-    };
+    // Set initial height
+    update();
 
-    const syncImpl = () => {
-      if (!activeChannelRef.current) {
-        if (kbOpen) resetStyles();
-        return;
-      }
-
-      const focused = document.activeElement;
-      const inputActive = focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.isContentEditable);
-      const open = inputActive && vv.height < window.innerHeight * 0.95;
-
-      if (open && !kbOpen) {
-        kbOpen = true;
-        lockBodyScroll();
-      }
-
-      if (kbOpen && open) {
-        const kbHeight = window.innerHeight - vv.height;
-        root.style.paddingBottom = `${kbHeight}px`;
-        if (vv.offsetTop > 0) root.style.top = `${vv.offsetTop}px`;
-      } else if (!open && kbOpen) {
-        resetStyles();
-      }
-    };
-
-    const handleFocusOut = () => {
-      setTimeout(() => {
-        if (!activeChannelRef.current) return;
-        const el = document.activeElement;
-        const isInput = el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
-        if (!isInput && kbOpen) {
-          resetStyles();
-        }
-      }, 400);
-    };
-
-    vv.addEventListener('resize', sync);
-    vv.addEventListener('scroll', sync);
-    root.addEventListener('focusout', handleFocusOut);
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
     return () => {
       cancelAnimationFrame(rafId);
-      vv.removeEventListener('resize', sync);
-      vv.removeEventListener('scroll', sync);
-      root.removeEventListener('focusout', handleFocusOut);
-      unlockBodyScroll();
-      root.style.paddingBottom = '0';
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+      root.style.height = '';
       root.style.top = '0';
-      root.style.transform = '';
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -372,8 +313,7 @@ export default function EstateChatPage() {
     setShowListMembersId(null);
     setShowHeaderMembers(false);
     const r = document.getElementById('ect-root');
-    if (r) { r.style.transform = ''; r.style.paddingBottom = '0'; r.style.top = '0'; }
-    window.scrollTo(0, 0);
+    if (r) { r.style.height = ''; r.style.top = '0'; }
     fetchMessages(ch.id).then(() => setMsgLoading(false));
   };
 
@@ -1824,12 +1764,6 @@ export default function EstateChatPage() {
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               onFocus={() => {
                 setInputFocused(true);
-                // iOS PWA scrolls the page when keyboard opens.
-                // Reset scroll immediately AND after the keyboard animation
-                // settles, so the fixed root stays aligned.
-                window.scrollTo(0, 0);
-                setTimeout(() => window.scrollTo(0, 0), 150);
-                setTimeout(() => window.scrollTo(0, 0), 350);
               }}
               onBlur={() => setInputFocused(false)}
               placeholder="Type a message..."
@@ -1937,9 +1871,10 @@ export default function EstateChatPage() {
       top: 0,
       left: 0,
       right: 0,
-      bottom: 0,
+      height: '100%',
       zIndex: 45,
       overflow: 'hidden',
+      willChange: 'height',
     }}>
       {/* Pad for status bar on native */}
       <div style={{ height: 'env(safe-area-inset-top, 0px)', flexShrink: 0 }} />
