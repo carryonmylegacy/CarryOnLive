@@ -976,10 +976,10 @@ export default function ConnectedProtocolPage() {
                 ))}
               </div>
               <button onClick={() => setWelcomeStep(2)}
-                className="w-full py-3.5 rounded-xl text-base font-bold transition-all active:scale-[0.97]"
+                className="w-full py-3.5 rounded-xl text-sm font-bold transition-all active:scale-[0.97] whitespace-nowrap"
                 data-testid="ccp-welcome-next-1"
                 style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}>
-                Next — How to Create a Plan <ArrowRight className="w-5 h-5 inline ml-1" />
+                Next — How to Create a Plan <ArrowRight className="w-4 h-4 inline ml-1" />
               </button>
             </div>
           )}
@@ -1020,10 +1020,10 @@ export default function ConnectedProtocolPage() {
                   <ArrowLeft className="w-4 h-4 inline mr-1" /> Back
                 </button>
                 <button onClick={() => setWelcomeStep(3)}
-                  className="flex-1 py-3.5 rounded-xl text-base font-bold transition-all active:scale-[0.97]"
+                  className="flex-1 py-3.5 rounded-xl text-sm font-bold transition-all active:scale-[0.97] whitespace-nowrap"
                   data-testid="ccp-welcome-next-2"
                   style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}>
-                  Next — During Emergencies <ArrowRight className="w-5 h-5 inline ml-1" />
+                  Next — During Emergencies <ArrowRight className="w-4 h-4 inline ml-1" />
                 </button>
               </div>
             </div>
@@ -1063,10 +1063,10 @@ export default function ConnectedProtocolPage() {
                   <ArrowLeft className="w-4 h-4 inline mr-1" /> Back
                 </button>
                 <button onClick={() => { setShowWelcome(false); localStorage.setItem('carryon_ccp_intro_seen', '1'); }}
-                  className="flex-1 py-3.5 rounded-xl text-base font-bold transition-all active:scale-[0.97]"
+                  className="flex-1 py-3.5 rounded-xl text-sm font-bold transition-all active:scale-[0.97] whitespace-nowrap"
                   data-testid="ccp-welcome-dismiss"
                   style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}>
-                  <Check className="w-5 h-5 inline mr-1" /> Got It — Let's Start
+                  <Check className="w-4 h-4 inline mr-1" /> Got It — Let's Start
                 </button>
               </div>
             </div>
