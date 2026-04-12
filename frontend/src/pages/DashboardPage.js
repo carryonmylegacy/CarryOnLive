@@ -653,41 +653,71 @@ const DashboardPage = () => {
 
       {/* Estate Readiness Score — Single Gauge */}
       <div className="glass-card p-5 lg:p-8 mb-4" data-testid="readiness-card">
-        <h2 className="text-base lg:text-2xl font-bold text-[var(--t)] uppercase tracking-wider mb-4 lg:mb-6 text-center" style={{ fontFamily: 'Outfit, sans-serif' }}>
-          Estate Readiness
-        </h2>
-        {/* Percentage key — upper corners */}
-        <div className="flex justify-between mb-3 lg:mb-5 px-2 lg:px-8">
-          <div className="flex flex-col gap-1 lg:gap-2">
+        {/* Desktop: title left + key box right. Mobile: title centered above split key */}
+        <div className="lg:flex lg:items-start lg:justify-between mb-4 lg:mb-6">
+          <h2 className="text-base lg:text-2xl font-bold text-[var(--t)] uppercase tracking-wider text-center lg:text-left" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            Estate Readiness
+          </h2>
+          {/* Desktop key — vertical stack, upper right */}
+          <div className="hidden lg:flex flex-col gap-1.5 rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
             {isFeatureKeyEnabled('mm', enabledFeatures) && (
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 lg:w-2.5 lg:h-2.5 rounded-full bg-[#8b5cf6] flex-shrink-0" />
-              <span className="text-[var(--t4)] text-[11px] lg:text-sm font-medium">{msgsPercent}% Messages</span>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6] flex-shrink-0" />
+              <span className="text-[var(--t4)] text-sm font-medium">{msgsPercent}% Messages</span>
             </div>
             )}
             {isFeatureKeyEnabled('iac', enabledFeatures) && (
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 lg:w-2.5 lg:h-2.5 rounded-full bg-[#f97316] flex-shrink-0" />
-              <span className="text-[var(--t4)] text-[11px] lg:text-sm font-medium">{checklistPercent}% Checklist</span>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#f97316] flex-shrink-0" />
+              <span className="text-[var(--t4)] text-sm font-medium">{checklistPercent}% Checklist</span>
             </div>
             )}
-          </div>
-          <div className="flex flex-col gap-1 lg:gap-2 items-end">
             {isFeatureKeyEnabled('sdv', enabledFeatures) && (
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 lg:w-2.5 lg:h-2.5 rounded-full bg-[#2563eb] flex-shrink-0" />
-              <span className="text-[var(--t4)] text-[11px] lg:text-sm font-medium">{docsPercent}% Docs</span>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb] flex-shrink-0" />
+              <span className="text-[var(--t4)] text-sm font-medium">{docsPercent}% Docs</span>
             </div>
             )}
             {isFeatureKeyEnabled('cfp', enabledFeatures) && (
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 lg:w-2.5 lg:h-2.5 rounded-full bg-[#10b981] flex-shrink-0" />
-              <span className="text-[var(--t4)] text-[11px] lg:text-sm font-medium">{financialsPercent}% Financials</span>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] flex-shrink-0" />
+              <span className="text-[var(--t4)] text-sm font-medium">{financialsPercent}% Financials</span>
             </div>
             )}
           </div>
         </div>
-        {/* Gauge — centered, self-contained with score inside SVG */}
+        {/* Mobile/PWA key — split two-and-two in corners */}
+        <div className="flex justify-between mb-3 px-2 lg:hidden">
+          <div className="flex flex-col gap-1">
+            {isFeatureKeyEnabled('mm', enabledFeatures) && (
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#8b5cf6] flex-shrink-0" />
+              <span className="text-[var(--t4)] text-[11px] font-medium">{msgsPercent}% Messages</span>
+            </div>
+            )}
+            {isFeatureKeyEnabled('iac', enabledFeatures) && (
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#f97316] flex-shrink-0" />
+              <span className="text-[var(--t4)] text-[11px] font-medium">{checklistPercent}% Checklist</span>
+            </div>
+            )}
+          </div>
+          <div className="flex flex-col gap-1 items-end">
+            {isFeatureKeyEnabled('sdv', enabledFeatures) && (
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#2563eb] flex-shrink-0" />
+              <span className="text-[var(--t4)] text-[11px] font-medium">{docsPercent}% Docs</span>
+            </div>
+            )}
+            {isFeatureKeyEnabled('cfp', enabledFeatures) && (
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#10b981] flex-shrink-0" />
+              <span className="text-[var(--t4)] text-[11px] font-medium">{financialsPercent}% Financials</span>
+            </div>
+            )}
+          </div>
+        </div>
+        {/* Gauge */}
         <SpeedometerGauge score={readinessScore} id="readiness" labelText={scoreInfo.label} labelColor={scoreInfo.color} />
       </div>
 
