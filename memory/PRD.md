@@ -68,6 +68,10 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - **Testing**: All backend and frontend tests pass, housekeeping 65/65 ALL PASS, zero WARNs
 - **DB Compound Indexes Added**: 7 new compound indexes for frequently-queried multi-field patterns (user_subscriptions, section_permissions, beneficiaries, family_plans, lifecycle_events, emergency_plans, messages). Total: 97 → 104.
 - **Test Suite Cleanup**: Removed 3 superseded test files (test_username_auth.py, test_refactoring_rbac.py, test_refactoring_regression.py). Fixed 2 test files that crashed at collection time (test_2fa_and_sort.py, test_estate_rename.py). 110 → 107 files, 1543 tests collect cleanly.
+- **Property & Assets Feature**: Expanded Financial Portal with 4th "Property" tab for real estate, vehicles, jewelry, artwork, businesses (LLCs, corporations), and other tangible assets. Full CRUD backend + frontend form with category-specific fields.
+- **Financial Coverage Reframe**: Renamed "Financial Health" gauge to "Financial Coverage" — measures documentation completeness, not financial judgment. Labels: Not Started → Getting Started → Building → Thorough → Comprehensive.
+- **Total Assets Expansion**: Summary now shows Total Assets = account balances + property values. Dashboard shows combined "Assets" count.
+- **Testing**: All tests pass (iterations 54-56), housekeeping 65/65 ALL PASS
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
