@@ -91,6 +91,11 @@ Build and maintain a comprehensive family preparedness platform that helps users
   - Backend: family_readiness_report download action via /api/downloads/prepare → /api/downloads/{token}
   - Frontend: "Family Readiness Report" button on CCP home page (visible when user has plans)
 - **Enhanced CCP Plan PDF**: Individual plan PDFs now include a "Drill Schedule" section showing frequency, schedule label, and next drill date when drill reminders are enabled.
+- **Share Plan (Public Link)**: Family members can share emergency plans via a simple link — recipients view the full plan on a clean, mobile-friendly page without needing a CarryOn account. Features include token generation, copy-to-clipboard, native share (Web Share API), and link revocation.
+  - Backend: POST /api/ccp/plans/{plan_id}/share — generate share token; DELETE to revoke
+  - Backend: GET /api/public/ccp/{share_token} — public endpoint (no auth) serves plan data
+  - Frontend: SharedPlanPage.js at /shared/plan/:token — dark-themed public page with all plan sections
+  - Frontend: Share button on plan cards + share modal with copy link, native share, and revoke
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
