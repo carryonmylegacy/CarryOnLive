@@ -984,20 +984,20 @@ export default function ConnectedProtocolPage() {
               <p className="text-sm mb-5 leading-relaxed" style={{ color: 'var(--t4)' }}>
                 It only takes a few minutes. Here's what you'll do:
               </p>
-              <div className="space-y-3 mb-6 text-left">
+              <div className="space-y-2 mb-5 text-left">
                 {[
                   { num: '1', title: 'Give it a name', desc: 'Something like "Hurricane Plan" or "Fire Evacuation"' },
                   { num: '2', title: 'Add meeting points', desc: 'Where should the family meet? (e.g., Grandma\'s house, the park)' },
                   { num: '3', title: 'Write a communication plan', desc: 'How will everyone stay in touch? (e.g., text first, then call)' },
                   { num: '4', title: 'Add instructions', desc: 'Any special steps like grabbing the go-bag or turning off the gas' },
                 ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
+                  <div key={i} className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
                       {item.num}
                     </div>
                     <div>
-                      <div className="text-sm font-bold" style={{ color: 'var(--t)' }}>{item.title}</div>
-                      <div className="text-xs mt-0.5" style={{ color: 'var(--t4)' }}>{item.desc}</div>
+                      <div className="text-sm font-bold leading-snug" style={{ color: 'var(--t)' }}>{item.title}</div>
+                      <div className="text-xs leading-snug" style={{ color: 'var(--t4)' }}>{item.desc}</div>
                     </div>
                   </div>
                 ))}
@@ -1029,18 +1029,18 @@ export default function ConnectedProtocolPage() {
               <p className="text-sm mb-5 leading-relaxed" style={{ color: 'var(--t4)' }}>
                 When something happens, the estate owner activates the plan. Then everyone in the family does this:
               </p>
-              <div className="space-y-3 mb-6 text-left">
+              <div className="space-y-2 mb-5 text-left">
                 {[
                   { icon: Zap, color: '#F05252', title: 'Plan Gets Activated', desc: 'Everyone gets notified immediately with the plan details.' },
                   { icon: UserCheck, color: '#22C993', title: 'Check In as Safe', desc: 'Tap the big green CHECK IN button and pick your status.' },
                   { icon: MapPin, color: '#3B7BF7', title: 'Share Your Location', desc: 'Optionally share where you are so family can find you.' },
                   { icon: Clock, color: 'var(--t4)', title: 'Stand Down', desc: 'When it\'s over, the owner deactivates the plan and a report is saved.' },
                 ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+                  <div key={i} className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
                     <item.icon className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: item.color }} />
                     <div>
-                      <div className="text-sm font-bold" style={{ color: 'var(--t)' }}>{item.title}</div>
-                      <div className="text-xs mt-0.5" style={{ color: 'var(--t4)' }}>{item.desc}</div>
+                      <div className="text-sm font-bold leading-snug" style={{ color: 'var(--t)' }}>{item.title}</div>
+                      <div className="text-xs leading-snug" style={{ color: 'var(--t4)' }}>{item.desc}</div>
                     </div>
                   </div>
                 ))}
