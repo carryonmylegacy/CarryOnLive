@@ -927,7 +927,7 @@ const VaultPage = () => {
                             <Download className="w-4 h-4" />
                           )}
                         </Button>
-                        {user?.role === 'benefactor' && (
+                        {(user?.role === 'benefactor' || user?.is_also_benefactor) && (
                           <>
                             <Button
                               variant="ghost"
@@ -974,7 +974,7 @@ const VaultPage = () => {
                       </div>
                       </div>
                       {/* Beneficiary Access */}
-                      {user?.role === 'benefactor' && beneficiaries.length > 0 && (
+                      {(user?.role === 'benefactor' || user?.is_also_benefactor) && beneficiaries.length > 0 && (
                         <div className="mt-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                           <button
                             className="flex items-center gap-2 w-full px-3 py-2 rounded-full transition-all"

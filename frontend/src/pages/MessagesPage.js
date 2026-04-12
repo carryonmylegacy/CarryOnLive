@@ -890,7 +890,7 @@ const MessagesPage = () => {
                           {msg.recipients?.length || 0} recipients
                         </div>
                         
-                        {user?.role === 'benefactor' && !msg.is_delivered && (
+                        {(user?.role === 'benefactor' || user?.is_also_benefactor) && !msg.is_delivered && (
                           <div className="flex gap-1">
                             <Button
                               variant="ghost"
