@@ -184,6 +184,14 @@ async def ensure_indexes(db, logger):
         await db.financial_accounts.create_index([("estate_id", 1), ("deleted_at", 1)])
         await db.bill_categories.create_index([("estate_id", 1), ("module", 1)])
         await db.bill_payments.create_index([("bill_id", 1), ("deleted_at", 1)])
+        # Compound indexes for frequently-used multi-field queries
+        await db.user_subscriptions.create_index([("user_id", 1), ("status", 1)])
+        await db.section_permissions.create_index([("beneficiary_id", 1), ("estate_id", 1)])
+        await db.beneficiaries.create_index([("estate_id", 1), ("user_id", 1)])
+        await db.family_plans.create_index([("fpo_user_id", 1), ("status", 1)])
+        await db.lifecycle_events.create_index([("user_id", 1), ("event", 1)])
+        await db.emergency_plans.create_index([("estate_id", 1), ("deleted_at", 1)])
+        await db.messages.create_index([("estate_id", 1), ("deleted_at", 1)])
         logger.info("Database indexes created/verified")
     except Exception as e:
         logger.warning(f"Index creation warning (may already exist): {e}")

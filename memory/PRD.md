@@ -66,6 +66,8 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - **Frontend: ConnectedProtocolPage.js Refactoring**: Extracted Plan Editor + Active Emergency View + PlanDetails + ResourceLinker into `components/ccp/CCPPlanEditor.js` and `components/ccp/CCPActiveView.js` (ConnectedProtocolPage.js: 1157 → 695 lines, -40%)
 - **Housekeeping Script Updated**: Checks #28 and #32 now scan `db_indexes.py` in addition to `server.py`
 - **Testing**: All backend and frontend tests pass, housekeeping 65/65 ALL PASS, zero WARNs
+- **DB Compound Indexes Added**: 7 new compound indexes for frequently-queried multi-field patterns (user_subscriptions, section_permissions, beneficiaries, family_plans, lifecycle_events, emergency_plans, messages). Total: 97 → 104.
+- **Test Suite Cleanup**: Removed 3 superseded test files (test_username_auth.py, test_refactoring_rbac.py, test_refactoring_regression.py). Fixed 2 test files that crashed at collection time (test_2fa_and_sort.py, test_estate_rename.py). 110 → 107 files, 1543 tests collect cleanly.
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
