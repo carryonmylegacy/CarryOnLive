@@ -1128,7 +1128,7 @@ export default function EstateChatPage() {
             style={{
               background: newChatType === 'direct' ? 'rgba(34,201,147,0.15)' : 'rgba(255,255,255,0.04)',
               border: `1px solid ${newChatType === 'direct' ? 'rgba(34,201,147,0.4)' : 'rgba(255,255,255,0.07)'}`,
-              color: newChatType === 'direct' ? '#22C993' : '#7B879E',
+              color: newChatType === 'direct' ? '#22C993' : 'var(--t4)',
             }}
           >Direct Message</button>
           {isBenefactor && (
@@ -1139,7 +1139,7 @@ export default function EstateChatPage() {
               style={{
                 background: newChatType === 'group' ? 'rgba(59,123,247,0.15)' : 'rgba(255,255,255,0.04)',
                 border: `1px solid ${newChatType === 'group' ? 'rgba(59,123,247,0.4)' : 'rgba(255,255,255,0.07)'}`,
-                color: newChatType === 'group' ? '#3B7BF7' : '#7B879E',
+                color: newChatType === 'group' ? '#3B7BF7' : 'var(--t4)',
               }}
             >Group Chat</button>
           )}
@@ -1226,7 +1226,7 @@ export default function EstateChatPage() {
           data-testid="ect-create-channel-btn"
           style={{
             background: selectedMembers.length ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.06)',
-            color: selectedMembers.length ? '#080e1a' : '#525C72',
+            color: selectedMembers.length ? '#080e1a' : 'var(--t5)',
             cursor: selectedMembers.length ? 'pointer' : 'not-allowed',
           }}
         >Start Conversation</button>
@@ -1279,7 +1279,7 @@ export default function EstateChatPage() {
                   border: `1px solid ${selectedChannels.size === channels.length ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.08)'}`,
                 }}
               >
-                <span className="text-xs font-semibold" style={{ color: selectedChannels.size === channels.length ? '#d4af37' : '#7B879E' }}>
+                <span className="text-xs font-semibold" style={{ color: selectedChannels.size === channels.length ? '#d4af37' : 'var(--t4)' }}>
                   {selectedChannels.size === channels.length ? 'Deselect All' : 'Select All'}
                 </span>
               </button>
@@ -1315,7 +1315,7 @@ export default function EstateChatPage() {
                 data-testid="ect-search-btn"
                 style={{ background: showSearch ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.06)' }}
               >
-                <Search className="w-5 h-5" style={{ color: showSearch ? '#d4af37' : '#7B879E' }} />
+                <Search className="w-5 h-5" style={{ color: showSearch ? '#d4af37' : 'var(--t4)' }} />
               </button>
               <button
                 onClick={() => setShowNewChat(true)}
@@ -1786,7 +1786,7 @@ export default function EstateChatPage() {
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleEditMessage(); } if (e.key === 'Escape') setEditingMsg(null); }}
                       className="w-full rounded-lg px-3 py-2 text-sm"
                       data-testid="edit-message-input"
-                      style={{ background: '#1E2840', border: '1px solid #4A5575', color: 'var(--t)', fontSize: '16px', outline: 'none' }}
+                      style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px', outline: 'none' }}
                     />
                     <div className="flex gap-2 justify-end">
                       <button onClick={() => setEditingMsg(null)} className="text-xs px-3 py-1 rounded-lg" style={{ color: '#A0AABF', background: 'rgba(255,255,255,0.06)' }} data-testid="edit-cancel-btn">Cancel</button>
@@ -1917,7 +1917,7 @@ export default function EstateChatPage() {
                         data-testid={`pin-btn-${msg.id}`}
                         style={{ background: msg.pinned ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)', border: msg.pinned ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent' }}
                         title={msg.pinned ? 'Unpin' : 'Pin'}>
-                        <Pin className="w-4 h-4" style={{ color: msg.pinned ? '#d4af37' : '#7B879E' }} />
+                        <Pin className="w-4 h-4" style={{ color: msg.pinned ? '#d4af37' : 'var(--t4)' }} />
                       </button>
                     )}
                   </div>
@@ -1939,7 +1939,7 @@ export default function EstateChatPage() {
                             border: `1px solid ${myReaction ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.08)'}`,
                           }}>
                           <span>{cfg?.display || emoji}</span>
-                          <span className="text-[11px] font-semibold" style={{ color: myReaction ? '#d4af37' : '#7B879E' }}>{reactors.length}</span>
+                          <span className="text-[11px] font-semibold" style={{ color: myReaction ? '#d4af37' : 'var(--t4)' }}>{reactors.length}</span>
                         </button>
                       );
                     })}

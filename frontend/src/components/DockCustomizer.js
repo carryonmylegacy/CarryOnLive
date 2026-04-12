@@ -272,7 +272,7 @@ const DockCustomizer = () => {
         className="w-full py-3 rounded-xl font-semibold text-sm transition-all"
         style={{
           background: selected.length >= 3 ? accent : isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-          color: selected.length >= 3 ? '#080e1a' : isDark ? '#525C72' : '#94A3B8',
+          color: selected.length >= 3 ? '#080e1a' : isDark ? 'var(--t5)' : '#94A3B8',
           opacity: saving ? 0.6 : 1,
         }}
       >

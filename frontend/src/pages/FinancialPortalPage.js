@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
 import {
-  DollarSign, Plus, Loader2, ArrowLeft, Search,
+  DollarSign, Plus, Loader2, ArrowLeft, Search, Sparkles,
   ChevronRight, ChevronLeft, Receipt, Landmark, PiggyBank, TrendingUp
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
@@ -23,6 +23,7 @@ import DebtTile from '../components/financial/DebtTile';
 import AccountTile from '../components/financial/AccountTile';
 import BillCalendar from '../components/financial/BillCalendar';
 import FinancialSummary from '../components/financial/FinancialSummary';
+import QuickAdd from '../components/financial/QuickAdd';
 
 const DEFAULT_BILL_CATEGORIES = [
   'mortgage_rent', 'utilities', 'insurance', 'subscriptions', 'credit_card',
@@ -82,6 +83,7 @@ const FinancialPortalPage = () => {
   const [showDebtForm, setShowDebtForm] = useState(false);
   const [showAccountForm, setShowAccountForm] = useState(false);
   const [editItem, setEditItem] = useState(null);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [selectedCalendarDay, setSelectedCalendarDay] = useState(null);
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const searchTimerRef = useRef(null);
@@ -305,10 +307,16 @@ const FinancialPortalPage = () => {
             </p>
           </div>
         </div>
-        <Button className="gold-button w-full sm:w-auto" onClick={handleAddClick} data-testid="add-item-button">
-          <Plus className="w-5 h-5 mr-2" />
-          {addButtonLabel}
-        </Button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button className="gold-button flex-1 sm:flex-initial" onClick={handleAddClick} data-testid="add-item-button">
+            <Plus className="w-5 h-5 mr-2" />
+            {addButtonLabel}
+          </Button>
+          <Button variant="outline" className="flex-shrink-0 border-[var(--b)] text-[var(--t3)] hover:bg-[var(--s)]"
+            onClick={() => setShowQuickAdd(true)} data-testid="quick-add-button">
+            <Sparkles className="w-4 h-4 mr-1.5 text-[var(--gold)]" /> Quick Add
+          </Button>
+        </div>
       </div>
 
       {/* Financial Summary Cards */}
@@ -518,6 +526,17 @@ const FinancialPortalPage = () => {
           bills={bills}
           onSaved={handleSaved}
           onAddCategory={(name) => handleAddCategory('accounts', name)}
+          getAuthHeaders={getAuthHeaders}
+        />
+      </SlidePanel>
+
+      <SlidePanel open={showQuickAdd} onClose={() => setShowQuickAdd(false)}
+        title={`Quick Add ${activeTab === 'debts' ? 'Debts' : activeTab === 'accounts' ? 'Accounts' : 'Bills'}`}
+        subtitle="Type multiple names, AI categorizes them all">
+        <QuickAdd
+          estateId={estate?.id}
+          module={activeTab}
+          onDone={() => { setShowQuickAdd(false); fetchAll(); }}
           getAuthHeaders={getAuthHeaders}
         />
       </SlidePanel>

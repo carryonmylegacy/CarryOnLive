@@ -992,8 +992,8 @@ const VaultPage = () => {
                                 : `${doc.designated_beneficiaries.length} of ${beneficiaries.length} Beneficiaries`}
                             </span>
                             {expandedDesignation === doc.id
-                              ? <ChevronUp className="w-4 h-4 ml-auto" style={{ color: '#7B879E' }} />
-                              : <ChevronDown className="w-4 h-4 ml-auto" style={{ color: '#7B879E' }} />}
+                              ? <ChevronUp className="w-4 h-4 ml-auto" style={{ color: 'var(--t4)' }} />
+                              : <ChevronDown className="w-4 h-4 ml-auto" style={{ color: 'var(--t4)' }} />}
                           </button>
                           {expandedDesignation === doc.id && (
                             <div className="mt-3 space-y-1.5" onClick={(e) => e.stopPropagation()}>
@@ -1019,7 +1019,7 @@ const VaultPage = () => {
                                           : initials}
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <div className="text-sm font-semibold truncate" style={{ color: '#F1F3F8' }}>{ben.first_name} {ben.last_name}</div>
+                                        <div className="text-sm font-semibold truncate" style={{ color: 'var(--t)' }}>{ben.first_name} {ben.last_name}</div>
                                       </div>
                                       {/* Toggle switch */}
                                       <button
@@ -1045,7 +1045,7 @@ const VaultPage = () => {
                                           style={{
                                             background: timing.pre ? 'rgba(34,201,147,0.15)' : 'rgba(255,255,255,0.04)',
                                             border: `1px solid ${timing.pre ? 'rgba(34,201,147,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                                            color: timing.pre ? '#22C993' : '#525C72',
+                                            color: timing.pre ? '#22C993' : 'var(--t5)',
                                           }}
                                         >
                                           {timing.pre ? '\u2713 ' : ''}Pre-Transition
@@ -1057,7 +1057,7 @@ const VaultPage = () => {
                                           style={{
                                             background: timing.post ? 'rgba(59,123,247,0.15)' : 'rgba(255,255,255,0.04)',
                                             border: `1px solid ${timing.post ? 'rgba(59,123,247,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                                            color: timing.post ? '#3B7BF7' : '#525C72',
+                                            color: timing.post ? '#3B7BF7' : 'var(--t5)',
                                           }}
                                         >
                                           {timing.post ? '\u2713 ' : ''}Post-Transition
