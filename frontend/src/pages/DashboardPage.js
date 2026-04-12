@@ -221,47 +221,45 @@ const DashboardPage = () => {
     const gId = `gauge-${id}`;
     
     return (
-      <div className="flex flex-col items-center">
-        <div className="w-48 h-28 lg:w-72 lg:h-44">
-          <svg viewBox="0 0 200 110" className="w-full h-full overflow-visible">
-            <defs>
-              <linearGradient id={`${gId}-arc`} x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#ef4444" />
-                <stop offset="25%" stopColor="#f97316" />
-                <stop offset="50%" stopColor="#eab308" />
-                <stop offset="75%" stopColor="#84cc16" />
-                <stop offset="100%" stopColor="#22c55e" />
-              </linearGradient>
-              <linearGradient id={`${gId}-needle`} x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#94a3b8" />
-                <stop offset="30%" stopColor="#f1f5f9" />
-                <stop offset="50%" stopColor="#ffffff" />
-                <stop offset="70%" stopColor="#f1f5f9" />
-                <stop offset="100%" stopColor="#94a3b8" />
-              </linearGradient>
-              <radialGradient id={`${gId}-hub`} cx="35%" cy="25%" r="70%">
-                <stop offset="0%" stopColor="#ffffff" />
-                <stop offset="20%" stopColor="#e2e8f0" />
-                <stop offset="45%" stopColor="#94a3b8" />
-                <stop offset="70%" stopColor="#64748b" />
-                <stop offset="100%" stopColor="#334155" />
-              </radialGradient>
-            </defs>
-            
-            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke={`url(#${gId}-arc)`} strokeWidth="28" strokeLinecap="round" />
-            
-            <g transform={`rotate(${angle}, 100, 100)`} style={{ transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-              <polygon points="100,18 96,88 92,125 100,130 108,125 104,88" fill={`url(#${gId}-needle)`} stroke="#64748b" strokeWidth="0.5" />
-              <polygon points="100,18 97,42 100,46 103,42" fill="#dc2626" />
-              <circle cx="100" cy="100" r="11" fill={`url(#${gId}-hub)`} stroke="#475569" strokeWidth="1.5" />
-            </g>
-          </svg>
-        </div>
-        <div className="text-center -mt-2 lg:-mt-4">
-          <div className="text-3xl lg:text-5xl font-bold text-[var(--t)]">
+      <div className="flex flex-col items-center w-full max-w-[240px] lg:max-w-[380px] mx-auto">
+        <svg viewBox="0 0 200 105" className="w-full h-auto">
+          <defs>
+            <linearGradient id={`${gId}-arc`} x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#ef4444" />
+              <stop offset="25%" stopColor="#f97316" />
+              <stop offset="50%" stopColor="#eab308" />
+              <stop offset="75%" stopColor="#84cc16" />
+              <stop offset="100%" stopColor="#22c55e" />
+            </linearGradient>
+            <linearGradient id={`${gId}-needle`} x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#94a3b8" />
+              <stop offset="30%" stopColor="#f1f5f9" />
+              <stop offset="50%" stopColor="#ffffff" />
+              <stop offset="70%" stopColor="#f1f5f9" />
+              <stop offset="100%" stopColor="#94a3b8" />
+            </linearGradient>
+            <radialGradient id={`${gId}-hub`} cx="35%" cy="25%" r="70%">
+              <stop offset="0%" stopColor="#ffffff" />
+              <stop offset="20%" stopColor="#e2e8f0" />
+              <stop offset="45%" stopColor="#94a3b8" />
+              <stop offset="70%" stopColor="#64748b" />
+              <stop offset="100%" stopColor="#334155" />
+            </radialGradient>
+          </defs>
+          
+          <path d="M 20 95 A 80 80 0 0 1 180 95" fill="none" stroke={`url(#${gId}-arc)`} strokeWidth="26" strokeLinecap="round" />
+          
+          <g transform={`rotate(${angle}, 100, 95)`} style={{ transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+            <polygon points="100,20 97,78 94,110 100,114 106,110 103,78" fill={`url(#${gId}-needle)`} stroke="#64748b" strokeWidth="0.5" />
+            <polygon points="100,20 98,40 100,43 102,40" fill="#dc2626" />
+            <circle cx="100" cy="95" r="9" fill={`url(#${gId}-hub)`} stroke="#475569" strokeWidth="1.5" />
+          </g>
+        </svg>
+        <div className="text-center mt-2 lg:mt-3">
+          <div className="text-3xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {score}%
           </div>
-          <div className="text-xs lg:text-lg font-bold whitespace-nowrap" style={{ color: labelColor }}>
+          <div className="text-sm lg:text-lg font-semibold mt-0.5" style={{ color: labelColor, fontFamily: 'Outfit, sans-serif' }}>
             {labelText}
           </div>
         </div>
@@ -654,42 +652,42 @@ const DashboardPage = () => {
       )}
 
       {/* Estate Readiness Score — Single Gauge */}
-      <div className="glass-card p-4 lg:p-6 mb-4" data-testid="readiness-card">
-        <h2 className="text-xs lg:text-base font-bold text-[var(--t4)] uppercase tracking-wider mb-3 lg:mb-4 text-center" style={{ fontFamily: 'Outfit, sans-serif' }}>
+      <div className="glass-card p-5 lg:p-8 mb-4" data-testid="readiness-card">
+        <h2 className="text-base lg:text-2xl font-bold text-[var(--t)] uppercase tracking-wider mb-4 lg:mb-6 text-center" style={{ fontFamily: 'Outfit, sans-serif' }}>
           Estate Readiness
         </h2>
-        {/* Percentage labels — upper corners */}
-        <div className="flex justify-between mb-4 lg:mb-6 px-1">
-          <div className="flex flex-col gap-1.5 lg:gap-2">
+        {/* Percentage key — upper corners */}
+        <div className="flex justify-between mb-3 lg:mb-5 px-2 lg:px-8">
+          <div className="flex flex-col gap-1 lg:gap-2">
             {isFeatureKeyEnabled('mm', enabledFeatures) && (
-            <div className="flex items-center gap-1.5 lg:gap-2">
-              <span className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-[#8b5cf6]" />
-              <span className="text-[var(--t3)] text-[11px] lg:text-sm font-semibold whitespace-nowrap">{msgsPercent}% Messages</span>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 lg:w-2.5 lg:h-2.5 rounded-full bg-[#8b5cf6] flex-shrink-0" />
+              <span className="text-[var(--t4)] text-[11px] lg:text-sm font-medium">{msgsPercent}% Messages</span>
             </div>
             )}
             {isFeatureKeyEnabled('iac', enabledFeatures) && (
-            <div className="flex items-center gap-1.5 lg:gap-2">
-              <span className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-[#f97316]" />
-              <span className="text-[var(--t3)] text-[11px] lg:text-sm font-semibold whitespace-nowrap">{checklistPercent}% Checklist</span>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 lg:w-2.5 lg:h-2.5 rounded-full bg-[#f97316] flex-shrink-0" />
+              <span className="text-[var(--t4)] text-[11px] lg:text-sm font-medium">{checklistPercent}% Checklist</span>
             </div>
             )}
           </div>
-          <div className="flex flex-col gap-1.5 lg:gap-2 items-end">
+          <div className="flex flex-col gap-1 lg:gap-2 items-end">
             {isFeatureKeyEnabled('sdv', enabledFeatures) && (
-            <div className="flex items-center gap-1.5 lg:gap-2">
-              <span className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-[#2563eb]" />
-              <span className="text-[var(--t3)] text-[11px] lg:text-sm font-semibold whitespace-nowrap">{docsPercent}% Docs</span>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 lg:w-2.5 lg:h-2.5 rounded-full bg-[#2563eb] flex-shrink-0" />
+              <span className="text-[var(--t4)] text-[11px] lg:text-sm font-medium">{docsPercent}% Docs</span>
             </div>
             )}
             {isFeatureKeyEnabled('cfp', enabledFeatures) && (
-            <div className="flex items-center gap-1.5 lg:gap-2">
-              <span className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-[#10b981]" />
-              <span className="text-[var(--t3)] text-[11px] lg:text-sm font-semibold whitespace-nowrap">{financialsPercent}% Financials</span>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 lg:w-2.5 lg:h-2.5 rounded-full bg-[#10b981] flex-shrink-0" />
+              <span className="text-[var(--t4)] text-[11px] lg:text-sm font-medium">{financialsPercent}% Financials</span>
             </div>
             )}
           </div>
         </div>
-        {/* Gauge — centered below percentages */}
+        {/* Gauge — centered, self-contained with score inside SVG */}
         <SpeedometerGauge score={readinessScore} id="readiness" labelText={scoreInfo.label} labelColor={scoreInfo.color} />
       </div>
 
