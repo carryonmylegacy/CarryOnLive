@@ -84,6 +84,8 @@ const FounderAboutPage = lazy(() => import('./pages/FounderAboutPage'));
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 
+const SharedPlanPage = lazy(() => import('./pages/SharedPlanPage'));
+
 import UsernameReviewModal from './components/UsernameReviewModal';
 
 // Loading fallback
@@ -266,6 +268,9 @@ function AppRoutes() {
 
       {/* Invitation Accept Route - Public */}
       <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />
+
+      {/* Shared Plan - Public (no auth required) */}
+      <Route path="/shared/plan/:token" element={<SharedPlanPage />} />
 
       {/* Create Estate Wizard - accessible by both beneficiaries and benefactors */}
       <Route path="/create-estate" element={

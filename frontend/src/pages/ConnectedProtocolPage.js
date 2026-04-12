@@ -38,6 +38,9 @@ import {
   Star,
   TrendingUp,
   MessageCircle,
+  Share2,
+  Copy,
+  Link,
 } from 'lucide-react';
 import { platformDownload } from '../utils/downloadFile';
 
@@ -84,6 +87,8 @@ export default function ConnectedProtocolPage() {
   const [debriefActivationId, setDebriefActivationId] = useState(null);
   const [debriefPlanName, setDebriefPlanName] = useState('');
   const [debriefStats, setDebriefStats] = useState(null);
+  const [shareModal, setShareModal] = useState(null); // { planId, planName, token }
+  const [shareCopied, setShareCopied] = useState(false);
   // First-visit welcome intro
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('carryon_ccp_intro_seen'));
   const [welcomeStep, setWelcomeStep] = useState(1);
@@ -298,6 +303,41 @@ export default function ConnectedProtocolPage() {
     } catch {}
   };
 
+  const sharePlan = async (plan) => {
+    try {
+      const res = await fetch(`${API_URL}/ccp/plans/${plan.id}/share`, { method: 'POST', headers });
+      if (!res.ok) { alert('Failed to generate share link'); return; }
+      const data = await res.json();
+      const shareUrl = `${window.location.origin}/shared/plan/${data.share_token}`;
+      setShareModal({ planId: plan.id, planName: plan.name, token: data.share_token, url: shareUrl });
+      setShareCopied(false);
+    } catch { alert('Failed to share plan'); }
+  };
+
+  const revokeShare = async (planId) => {
+    try {
+      await fetch(`${API_URL}/ccp/plans/${planId}/share`, { method: 'DELETE', headers });
+      setShareModal(null);
+      await fetchPlans();
+    } catch {}
+  };
+
+  const copyShareLink = () => {
+    if (!shareModal?.url) return;
+    navigator.clipboard.writeText(shareModal.url).then(() => {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    });
+  };
+
+  const nativeShare = async () => {
+    if (!shareModal?.url || !navigator.share) return;
+    try {
+      await navigator.share({ title: `Emergency Plan: ${shareModal.planName}`, text: `View our family emergency plan: ${shareModal.planName}`, url: shareModal.url });
+    } catch {}
+  };
+
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -506,6 +546,9 @@ export default function ConnectedProtocolPage() {
               </div>
               {isBenefactor && (
                 <div className="flex gap-1.5">
+                  <button onClick={() => sharePlan(p)} className="w-8 h-8 rounded-lg flex items-center justify-center" data-testid={`ccp-share-${p.id}`}
+                    title="Share"
+                    style={{ background: 'rgba(59,123,247,0.1)' }}><Share2 className="w-4 h-4" style={{ color: '#3B7BF7' }} /></button>
                   <button onClick={() => downloadPlan(p)} className="w-8 h-8 rounded-lg flex items-center justify-center" data-testid={`ccp-print-${p.id}`}
                     title="Download / Print"
                     style={{ background: 'rgba(34,201,147,0.1)' }}><Printer className="w-4 h-4" style={{ color: '#22C993' }} /></button>
@@ -796,6 +839,59 @@ export default function ConnectedProtocolPage() {
         </button>
       )}
     </div>
+
+    {/* ===== Share Plan Modal ===== */}
+    {shareModal && (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center" data-testid="ccp-share-modal"
+        style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)', padding: '16px' }}>
+        <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: 'var(--bg2)', border: '1px solid rgba(59,123,247,0.3)', boxShadow: '0 24px 64px rgba(0,0,0,0.3)' }}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>Share Plan</h3>
+            <button onClick={() => setShareModal(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <X className="w-4 h-4" style={{ color: 'var(--t4)' }} />
+            </button>
+          </div>
+          <p className="text-sm mb-4" style={{ color: 'var(--t4)' }}>
+            Anyone with this link can view <strong style={{ color: 'var(--t)' }}>{shareModal.planName}</strong> — no login required.
+          </p>
+
+          {/* Link display */}
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex-1 rounded-xl px-3 py-2.5 text-xs truncate" style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t4)' }}>
+              {shareModal.url}
+            </div>
+            <button onClick={copyShareLink}
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all active:scale-[0.95]"
+              data-testid="ccp-share-copy"
+              style={{ background: shareCopied ? 'rgba(34,201,147,0.15)' : 'rgba(59,123,247,0.15)' }}>
+              {shareCopied ? <Check className="w-4 h-4" style={{ color: '#22C993' }} /> : <Copy className="w-4 h-4" style={{ color: '#3B7BF7' }} />}
+            </button>
+          </div>
+
+          {shareCopied && (
+            <p className="text-xs text-center mb-3" style={{ color: '#22C993' }}>Link copied!</p>
+          )}
+
+          {/* Action buttons */}
+          <div className="space-y-2">
+            {navigator.share && (
+              <button onClick={nativeShare}
+                className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.97]"
+                data-testid="ccp-share-native"
+                style={{ background: 'rgba(59,123,247,0.12)', border: '1px solid rgba(59,123,247,0.3)', color: '#3B7BF7' }}>
+                <Share2 className="w-4 h-4" />Share via...
+              </button>
+            )}
+            <button onClick={() => revokeShare(shareModal.planId)}
+              className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-[0.97]"
+              data-testid="ccp-share-revoke"
+              style={{ background: 'rgba(240,82,82,0.08)', color: '#F05252' }}>
+              Revoke Link
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
 
     {/* ===== CCP First-Visit Welcome Walkthrough ===== */}
     {showWelcome && (

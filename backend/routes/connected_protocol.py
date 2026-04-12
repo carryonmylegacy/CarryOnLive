@@ -710,6 +710,63 @@ async def check_in(data: CheckInRequest, current_user: dict = Depends(get_curren
 
 
 
+# ===================== SHARE PLAN (PUBLIC LINK) =====================
+
+
+@router.post("/ccp/plans/{plan_id}/share")
+async def create_share_link(plan_id: str, current_user: dict = Depends(get_current_user)):
+    """Generate a public share token for a plan. Benefactor only."""
+    plan = await db.emergency_plans.find_one({"id": plan_id, "deleted_at": None}, {"_id": 0})
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    if not await _is_estate_owner(current_user["id"], plan["estate_id"]):
+        raise HTTPException(status_code=403, detail="Only the benefactor can share plans")
+    # Reuse existing token if present
+    existing = plan.get("share_token")
+    if existing:
+        return {"share_token": existing}
+    token = str(uuid4())[:12]
+    await db.emergency_plans.update_one(
+        {"id": plan_id},
+        {"$set": {"share_token": token, "shared_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    return {"share_token": token}
+
+
+@router.delete("/ccp/plans/{plan_id}/share")
+async def revoke_share_link(plan_id: str, current_user: dict = Depends(get_current_user)):
+    """Revoke the public share link for a plan."""
+    plan = await db.emergency_plans.find_one({"id": plan_id, "deleted_at": None}, {"_id": 0})
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    if not await _is_estate_owner(current_user["id"], plan["estate_id"]):
+        raise HTTPException(status_code=403, detail="Only the benefactor can modify plans")
+    await db.emergency_plans.update_one(
+        {"id": plan_id},
+        {"$unset": {"share_token": "", "shared_at": ""}},
+    )
+    return {"success": True}
+
+
+@router.get("/public/ccp/{share_token}")
+async def get_shared_plan(share_token: str):
+    """Public endpoint — view a shared emergency plan. No auth required."""
+    plan = await db.emergency_plans.find_one(
+        {"share_token": share_token, "deleted_at": None},
+        {"_id": 0, "id": 1, "name": 1, "plan_type": 1, "rendezvous_points": 1,
+         "communication_plan": 1, "resource_locations": 1, "instructions": 1,
+         "drill_schedule": 1, "created_at": 1, "estate_id": 1},
+    )
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found or link expired")
+    # Get estate name (no sensitive data)
+    estate = await db.estates.find_one({"id": plan["estate_id"]}, {"_id": 0, "name": 1})
+    plan["estate_name"] = estate.get("name", "") if estate else ""
+    plan.pop("estate_id", None)
+    return plan
+
+
+
 # ===================== POST-DRILL DEBRIEF =====================
 
 
