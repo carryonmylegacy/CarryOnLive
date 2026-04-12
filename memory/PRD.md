@@ -82,6 +82,11 @@ Build and maintain a comprehensive family preparedness platform that helps users
   - Frontend: Drill schedule section in wizard review with toggle
   - Frontend: Drill schedule info + toggle on plan cards in plans list
   - 17 concern-to-schedule mappings with smart next-drill-date computation
+- **Post-Drill Debrief**: After deactivating a drill, prompts the family to rate the experience (1-5 stars) and leave notes on what went well and what to improve. History view shows debrief data on past drill cards with star ratings. Includes a "Drill Performance" trend summary card with average rating and mini bar chart showing improvement over time.
+  - Backend: POST /api/ccp/debrief/{activation_id} — submit debrief (rating 1-5, went_well, to_improve)
+  - Backend: GET /api/ccp/debrief-stats/{estate_id} — aggregated trend data (entries, total_drills, average_rating)
+  - Frontend: CCPDebriefView.js — debrief component with interactive star rating, two notes fields, success animation
+  - Frontend: Enhanced history view with debrief info on drill cards, "Add Debrief" button for past drills without one, and trend summary card with mini bar chart
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
