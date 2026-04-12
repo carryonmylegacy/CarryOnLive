@@ -17,7 +17,7 @@ import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 if not BASE_URL:
-    BASE_URL = "https://financial-portal-11.preview.emergentagent.com"
+    BASE_URL = "https://family-prep-2.preview.emergentagent.com"
 
 # Test credentials
 ADMIN_EMAIL = "info@carryon.us"
