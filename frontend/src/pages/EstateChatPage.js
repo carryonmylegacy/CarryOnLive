@@ -192,11 +192,10 @@ export default function EstateChatPage() {
     }
   }, [activeChannel]);
 
-  // ── iOS PWA: resize root to visual viewport so keyboard never overlaps ──
+  // ── iOS PWA: track keyboard height to push input bar above it ──
+  const [kbHeight, setKbHeight] = useState(0);
   useEffect(() => {
     if (loading) return;
-    const root = document.getElementById('ect-root');
-    if (!root) return;
     const vv = window.visualViewport;
     if (!vv) return;
 
@@ -205,20 +204,8 @@ export default function EstateChatPage() {
     const update = () => {
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
-        const kbOpen = vv.height < window.innerHeight * 0.85;
-        if (kbOpen) {
-          // Keyboard is open:
-          // - Move root to where the visual viewport starts (so header stays visible)
-          // - Shrink root to visual viewport height (so input sits above keyboard)
-          root.style.top = `${vv.offsetTop}px`;
-          root.style.height = `${vv.height}px`;
-          root.style.bottom = 'auto';
-        } else {
-          // Keyboard closed — restore default full-screen layout
-          root.style.top = '0';
-          root.style.height = '';
-          root.style.bottom = '0';
-        }
+        const kb = Math.max(0, window.innerHeight - vv.height);
+        setKbHeight(kb);
       });
     };
 
@@ -228,9 +215,6 @@ export default function EstateChatPage() {
       cancelAnimationFrame(rafId);
       vv.removeEventListener('resize', update);
       vv.removeEventListener('scroll', update);
-      root.style.top = '0';
-      root.style.height = '';
-      root.style.bottom = '0';
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -320,8 +304,6 @@ export default function EstateChatPage() {
     setSwipedChannel(null);
     setShowListMembersId(null);
     setShowHeaderMembers(false);
-    const r = document.getElementById('ect-root');
-    if (r) { r.style.height = ''; r.style.bottom = '0'; r.style.top = '0'; }
     fetchMessages(ch.id).then(() => setMsgLoading(false));
   };
 
@@ -1630,7 +1612,7 @@ export default function EstateChatPage() {
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
-        paddingBottom: '8px',
+        paddingBottom: kbHeight > 0 ? `${kbHeight}px` : '8px',
       }}>
         {/* Typing indicator */}
         {typers.length > 0 && (
