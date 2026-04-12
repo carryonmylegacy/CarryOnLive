@@ -405,7 +405,7 @@ fi
 
 # ── CC6.1 — Sensitive Data Access Logging ────────────────────────────
 echo -n "28. [CC6.1] Sensitive access log .. "
-if grep -q "sensitive_access_log\|security_audit_log" /app/backend/server.py 2>/dev/null; then
+if grep -q "sensitive_access_log\|security_audit_log" /app/backend/server.py /app/backend/db_indexes.py 2>/dev/null; then
   echo -e "$PASS (sensitive access logging indexed)"
 else
   echo -e "$WARN (sensitive access log indexes not verified)"
@@ -446,7 +446,7 @@ fi
 # ── CC7.2 — Database Indexes ────────────────────────────────────────
 echo -n "32. [CC7.2] DB indexes verified ... "
 cd /app/backend
-INDEX_COUNT=$(grep -c "create_index" server.py 2>/dev/null)
+INDEX_COUNT=$(grep -c "create_index" server.py db_indexes.py 2>/dev/null | awk -F: '{s+=$NF}END{print s}')
 if [ "$INDEX_COUNT" -ge 10 ]; then
   echo -e "$PASS ($INDEX_COUNT indexes defined)"
 else

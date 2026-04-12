@@ -695,27 +695,27 @@ const DashboardPage = () => {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
               <div className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)' }}>
                 <div className="text-sm lg:text-lg font-bold text-[var(--t)]">${(financialSummary.monthly_total || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
-                <div className="text-[10px] text-[var(--t5)]">Monthly Bills</div>
+                <div className="text-[11px] text-[var(--t5)]">Monthly Bills</div>
               </div>
               <div className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
                 <div className="text-sm lg:text-lg font-bold text-[var(--t)]">{financialSummary.debts_count}</div>
-                <div className="text-[10px] text-[var(--t5)]">Active Debts</div>
+                <div className="text-[11px] text-[var(--t5)]">Active Debts</div>
               </div>
               <div className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.15)' }}>
                 <div className="text-sm lg:text-lg font-bold text-[var(--t)]">{financialSummary.accounts_count}</div>
-                <div className="text-[10px] text-[var(--t5)]">Accounts</div>
+                <div className="text-[11px] text-[var(--t5)]">Accounts</div>
               </div>
               <div className="rounded-xl p-2.5 text-center" style={{ background: financialSummary.net_position >= 0 ? 'rgba(34,201,147,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${financialSummary.net_position >= 0 ? 'rgba(34,201,147,0.15)' : 'rgba(239,68,68,0.15)'}` }}>
                 <div className="text-sm lg:text-lg font-bold text-[var(--t)]">
                   <TrendingUp className="w-4 h-4 inline mr-1" style={{ color: financialSummary.net_position >= 0 ? '#22C993' : '#ef4444' }} />
                   Net
                 </div>
-                <div className="text-[10px] text-[var(--t5)]">${Math.abs(financialSummary.net_position || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
+                <div className="text-[11px] text-[var(--t5)]">${Math.abs(financialSummary.net_position || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
               </div>
             </div>
             {financialSummary.upcoming_bills?.length > 0 && (
               <div className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--b)' }}>
-                <div className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-1.5">Upcoming This Week</div>
+                <div className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider mb-1.5">Upcoming This Week</div>
                 {financialSummary.upcoming_bills.slice(0, 3).map(bill => (
                   <div key={bill.id} className="flex items-center justify-between py-1 text-xs">
                     <div className="flex items-center gap-2 min-w-0">

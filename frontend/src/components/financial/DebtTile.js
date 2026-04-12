@@ -44,7 +44,7 @@ const DebtTile = ({ debt, categoryLabels, beneficiaries, onEdit, onDelete, onDes
             {debt.outstanding_balance != null && (
               <div className="text-lg font-bold text-[var(--t)]">${debt.outstanding_balance.toLocaleString()}</div>
             )}
-            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{
+            <span className="text-[11px] px-2 py-0.5 rounded-full font-bold" style={{
               background: `${statusColors[debt.status] || '#64748b'}20`,
               color: statusColors[debt.status] || '#64748b',
             }}>{debt.status?.replace(/_/g, ' ')}</span>
@@ -66,7 +66,7 @@ const DebtTile = ({ debt, categoryLabels, beneficiaries, onEdit, onDelete, onDes
           )}
         </div>
 
-        {debt.collateral && <p className="text-[10px] text-[var(--t5)] mb-2">Secured by: {debt.collateral}</p>}
+        {debt.collateral && <p className="text-[11px] text-[var(--t5)] mb-2">Secured by: {debt.collateral}</p>}
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
@@ -100,7 +100,7 @@ const DebtTile = ({ debt, categoryLabels, beneficiaries, onEdit, onDelete, onDes
                   border: `1px solid ${isOn ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
                 }}>
                   <div className="flex items-center gap-3 px-3 py-2">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0" style={{
                       background: isOn ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.08)',
                       color: isOn ? '#080e1a' : '#7B879E',
                     }}>{initials}</div>
@@ -112,10 +112,10 @@ const DebtTile = ({ debt, categoryLabels, beneficiaries, onEdit, onDelete, onDes
                   </div>
                   {isOn && (
                     <div className="flex gap-2 px-3 pb-2">
-                      <button onClick={() => toggleTiming(ben.id, 'pre')} className="flex-1 py-1 rounded-lg text-[10px] font-bold text-center"
+                      <button onClick={() => toggleTiming(ben.id, 'pre')} className="flex-1 py-1 rounded-lg text-[11px] font-bold text-center"
                         style={{ background: timing.pre ? 'rgba(34,201,147,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${timing.pre ? 'rgba(34,201,147,0.4)' : 'rgba(255,255,255,0.08)'}`, color: timing.pre ? '#22C993' : '#525C72' }}>
                         {timing.pre ? '\u2713 ' : ''}Pre-Transition</button>
-                      <button onClick={() => toggleTiming(ben.id, 'post')} className="flex-1 py-1 rounded-lg text-[10px] font-bold text-center"
+                      <button onClick={() => toggleTiming(ben.id, 'post')} className="flex-1 py-1 rounded-lg text-[11px] font-bold text-center"
                         style={{ background: timing.post ? 'rgba(59,123,247,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${timing.post ? 'rgba(59,123,247,0.4)' : 'rgba(255,255,255,0.08)'}`, color: timing.post ? '#3B7BF7' : '#525C72' }}>
                         {timing.post ? '\u2713 ' : ''}Post-Transition</button>
                     </div>

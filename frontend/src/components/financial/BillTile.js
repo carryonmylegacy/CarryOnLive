@@ -88,12 +88,12 @@ const BillTile = ({ bill, categoryLabels, beneficiaries, onEdit, onDelete, onDes
 
         <div className="flex items-center gap-2 mb-2">
           {bill.is_auto_pay && (
-            <span className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-bold" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
+            <span className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-full font-bold" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
               <CheckCircle2 className="w-3 h-3" /> Auto-Pay
             </span>
           )}
           {bill.payment_account && (
-            <span className="text-[10px] text-[var(--t5)] truncate">{bill.payment_account}</span>
+            <span className="text-[11px] text-[var(--t5)] truncate">{bill.payment_account}</span>
           )}
         </div>
 
@@ -135,7 +135,7 @@ const BillTile = ({ bill, categoryLabels, beneficiaries, onEdit, onDelete, onDes
                   border: `1px solid ${isOn ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
                 }}>
                   <div className="flex items-center gap-3 px-3 py-2">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0" style={{
                       background: isOn ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.08)',
                       color: isOn ? '#080e1a' : '#7B879E',
                     }}>{initials}</div>
@@ -150,13 +150,13 @@ const BillTile = ({ bill, categoryLabels, beneficiaries, onEdit, onDelete, onDes
                   </div>
                   {isOn && (
                     <div className="flex gap-2 px-3 pb-2">
-                      <button onClick={() => toggleTiming(ben.id, 'pre')} className="flex-1 py-1 rounded-lg text-[10px] font-bold text-center transition-all"
+                      <button onClick={() => toggleTiming(ben.id, 'pre')} className="flex-1 py-1 rounded-lg text-[11px] font-bold text-center transition-all"
                         style={{
                           background: timing.pre ? 'rgba(34,201,147,0.15)' : 'rgba(255,255,255,0.04)',
                           border: `1px solid ${timing.pre ? 'rgba(34,201,147,0.4)' : 'rgba(255,255,255,0.08)'}`,
                           color: timing.pre ? '#22C993' : '#525C72',
                         }}>{timing.pre ? '\u2713 ' : ''}Pre-Transition</button>
-                      <button onClick={() => toggleTiming(ben.id, 'post')} className="flex-1 py-1 rounded-lg text-[10px] font-bold text-center transition-all"
+                      <button onClick={() => toggleTiming(ben.id, 'post')} className="flex-1 py-1 rounded-lg text-[11px] font-bold text-center transition-all"
                         style={{
                           background: timing.post ? 'rgba(59,123,247,0.15)' : 'rgba(255,255,255,0.04)',
                           border: `1px solid ${timing.post ? 'rgba(59,123,247,0.4)' : 'rgba(255,255,255,0.08)'}`,

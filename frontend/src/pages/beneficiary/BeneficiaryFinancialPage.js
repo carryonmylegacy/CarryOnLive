@@ -261,12 +261,12 @@ const BeneficiaryFinancialPage = () => {
                           <div className="flex items-center gap-3 text-xs mt-2 py-2" style={{ borderTop: '1px solid var(--b)' }}>
                             <span style={{ color: paid ? '#10b981' : due.color }} className="font-bold">{paid ? 'Paid this cycle' : due.text}</span>
                             {bill.is_auto_pay && (
-                              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
+                              <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
                                 <CheckCircle2 className="w-3 h-3" /> Auto-Pay
                               </span>
                             )}
                           </div>
-                          {bill.payment_account && <p className="text-[10px] text-[var(--t5)] mt-1">From: {bill.payment_account}</p>}
+                          {bill.payment_account && <p className="text-[11px] text-[var(--t5)] mt-1">From: {bill.payment_account}</p>}
                           {bill.notes && <p className="text-xs text-[var(--t4)] mt-2 p-2 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)' }}>{bill.notes}</p>}
                           {bill.biller_website && (
                             <a href={bill.biller_website} target="_blank" rel="noopener noreferrer"
@@ -327,7 +327,7 @@ const BeneficiaryFinancialPage = () => {
                         </div>
                         <div className="text-right flex-shrink-0">
                           {debt.outstanding_balance != null && <div className="text-lg font-bold text-[var(--t)]">${debt.outstanding_balance.toLocaleString()}</div>}
-                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: `${statusColors[debt.status] || '#64748b'}20`, color: statusColors[debt.status] || '#64748b' }}>
+                          <span className="text-[11px] px-2 py-0.5 rounded-full font-bold" style={{ background: `${statusColors[debt.status] || '#64748b'}20`, color: statusColors[debt.status] || '#64748b' }}>
                             {debt.status?.replace(/_/g, ' ')}
                           </span>
                         </div>
@@ -427,7 +427,7 @@ const BeneficiaryFinancialPage = () => {
                     { step: 5, text: 'If on auto-pay, verify the auto-pay has been stopped to prevent future charges' },
                   ].map(item => (
                     <div key={item.step} className="flex items-start gap-3 py-2 px-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold"
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[11px] font-bold"
                         style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.3)' }}>
                         {item.step}
                       </div>
@@ -440,7 +440,7 @@ const BeneficiaryFinancialPage = () => {
               {/* Benefactor's instructions */}
               {cancelAdvisor.notes && (
                 <div className="rounded-xl p-3" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
-                  <div className="text-[10px] font-bold text-[var(--gold)] uppercase tracking-wider mb-1.5">Instructions from Benefactor</div>
+                  <div className="text-[11px] font-bold text-[var(--gold)] uppercase tracking-wider mb-1.5">Instructions from Benefactor</div>
                   <p className="text-xs text-[var(--t3)] leading-relaxed">{cancelAdvisor.notes}</p>
                 </div>
               )}

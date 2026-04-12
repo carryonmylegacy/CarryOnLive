@@ -168,20 +168,20 @@ const QuickAdd = ({ estateId, module, onDone, getAuthHeaders }) => {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-[var(--t)] truncate">{item.name}</div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                    <span className="text-[11px] px-2 py-0.5 rounded-full font-bold"
                       style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
                       {labels[item.ai?.category] || item.ai?.category || 'Other'}
                     </span>
                     {item.ai?.biller_phone && (
-                      <span className="text-[10px] text-[var(--t5)] truncate">{item.ai.biller_phone}</span>
+                      <span className="text-[11px] text-[var(--t5)] truncate">{item.ai.biller_phone}</span>
                     )}
                     {item.ai?.is_auto_pay && (
-                      <span className="text-[10px] text-[#10b981] font-bold">AP</span>
+                      <span className="text-[11px] text-[#10b981] font-bold">AP</span>
                     )}
                   </div>
                 </div>
-                {item.status === 'saved' && <span className="text-[10px] font-bold text-[#10b981]">Added</span>}
-                {item.status === 'error' && <span className="text-[10px] font-bold text-[#ef4444]">Failed</span>}
+                {item.status === 'saved' && <span className="text-[11px] font-bold text-[#10b981]">Added</span>}
+                {item.status === 'error' && <span className="text-[11px] font-bold text-[#ef4444]">Failed</span>}
               </div>
             ))}
           </div>

@@ -77,7 +77,7 @@ const BillCalendar = ({ bills, month, onMonthChange, selectedDay, onDaySelect, c
       <div className="px-3 py-2">
         <div className="grid grid-cols-7 gap-0.5 mb-1">
           {dayNames.map(d => (
-            <div key={d} className="text-center text-[10px] font-bold text-[var(--t5)] py-1">{d}</div>
+            <div key={d} className="text-center text-[11px] font-bold text-[var(--t5)] py-1">{d}</div>
           ))}
         </div>
         <div className="grid grid-cols-7 gap-0.5">
@@ -132,7 +132,7 @@ const BillCalendar = ({ bills, month, onMonthChange, selectedDay, onDaySelect, c
               <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: getCatColor(b.category) }} />
               <span className="text-xs text-[var(--t)] font-medium truncate flex-1">{b.name}</span>
               {b.amount && <span className="text-xs font-bold text-[var(--t)]">${b.amount.toLocaleString()}</span>}
-              {b.is_auto_pay && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[rgba(16,185,129,0.15)] text-[#10b981] font-bold">AP</span>}
+              {b.is_auto_pay && <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[rgba(16,185,129,0.15)] text-[#10b981] font-bold">AP</span>}
             </div>
           ))}
         </div>

@@ -95,7 +95,7 @@ const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries
             </button>
           )}
         </div>
-        {!isEdit && <p className="text-[10px] text-[var(--t5)] mt-0.5"><Sparkles className="w-3 h-3 inline mr-0.5 text-[var(--gold)]" />AI will auto-fill category and institution details</p>}
+        {!isEdit && <p className="text-[11px] text-[var(--t5)] mt-0.5"><Sparkles className="w-3 h-3 inline mr-0.5 text-[var(--gold)]" />AI will auto-fill category and institution details</p>}
       </div>
       <div className="space-y-2">
         <Label className="text-[#94a3b8]">Category</Label>

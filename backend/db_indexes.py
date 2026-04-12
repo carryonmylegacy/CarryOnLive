@@ -1,0 +1,189 @@
+"""CarryOn™ — Database Indexes & Migrations
+
+Extracted from server.py for maintainability.
+All MongoDB index definitions and one-time data migrations live here.
+"""
+
+import random
+
+
+async def run_migrations(db, logger):
+    """Run one-time data migrations (idempotent — tracked in db.migrations)."""
+    try:
+        migration_done = await db.migrations.find_one({"_id": "username_migration_v1"})
+        if not migration_done:
+            import re as _re
+
+            users_to_migrate = await db.users.find(
+                {"$or": [{"username": {"$regex": "@"}}, {"username": {"$exists": False}}, {"username": None}]},
+                {"_id": 0, "id": 1, "first_name": 1, "last_name": 1, "email": 1, "username": 1},
+            ).to_list(10000)
+            migrated_count = 0
+            for u in users_to_migrate:
+                first = u.get("first_name", "")
+                last = u.get("last_name", "")
+                clean_first = _re.sub(r"[^a-zA-Z0-9]", "", first).lower()
+                clean_last = _re.sub(r"[^a-zA-Z0-9]", "", last).lower()
+                base = clean_first + clean_last
+                if len(base) < 3:
+                    base = "user" + str(random.randint(1000, 9999))
+                candidate = base
+                suffix = 2
+                while True:
+                    exists = await db.users.find_one(
+                        {"username_lower": candidate, "id": {"$ne": u["id"]}},
+                        {"_id": 0, "id": 1},
+                    )
+                    if not exists:
+                        break
+                    candidate = f"{base}{suffix}"
+                    suffix += 1
+                await db.users.update_one(
+                    {"id": u["id"]},
+                    {"$set": {"username": candidate, "username_lower": candidate, "needs_username_review": True}},
+                )
+                migrated_count += 1
+            await db.migrations.insert_one({"_id": "username_migration_v1", "migrated": migrated_count})
+            logger.info(f"Username migration complete: {migrated_count} users migrated")
+    except Exception as e:
+        logger.warning(f"Username migration warning: {e}")
+
+
+async def ensure_indexes(db, logger):
+    """Create all security-critical and performance database indexes."""
+    try:
+        # Email is no longer unique — multiple users can share an email
+        # Drop the old unique email index if it exists, replace with non-unique
+        try:
+            await db.users.drop_index("email_1")
+        except Exception:
+            pass
+        await db.users.create_index("email")
+        await db.users.create_index("id", unique=True)
+        # Username is the unique login identifier
+        await db.users.create_index("username_lower", unique=True, sparse=True)
+        await db.estates.create_index("owner_id")
+        await db.documents.create_index("estate_id")
+        await db.messages.create_index("estate_id")
+        await db.beneficiaries.create_index("estate_id")
+        await db.beneficiaries.create_index("user_id")
+        await db.beneficiary_display_overrides.create_index([("user_id", 1), ("estate_id", 1)])
+        await db.estates.create_index("beneficiaries")
+        await db.checklists.create_index("estate_id")
+        await db.chat_history.create_index([("user_id", 1), ("session_id", 1)])
+        await db.token_blacklist.create_index("expires_at", expireAfterSeconds=0)
+        await db.token_blacklist.create_index("jti")
+        await db.otps.create_index("user_id")
+        await db.failed_logins.create_index("email")
+        # Drop conflicting old indexes if they exist, then recreate with unique=True
+        try:
+            await db.otp_trust.drop_index("user_id_1_ip_address_1")
+        except Exception:
+            pass
+        try:
+            await db.otp_trust.drop_index("otp_trust_user_ip_unique")
+        except Exception:
+            pass
+        await db.otp_trust.create_index([("user_id", 1), ("ip_address", 1)], unique=True)
+        await db.security_audit_log.create_index("user_id")
+        await db.security_audit_log.create_index("created_at")
+        await db.sensitive_access_log.create_index("user_id")
+        await db.sensitive_access_log.create_index("timestamp")
+        await db.consent_audit_log.create_index("user_id")
+        await db.deletion_requests.create_index("user_id")
+        await db.security_incidents.create_index("created_at")
+        await db.user_consent.create_index("user_id", unique=True)
+        await db.section_unlock_sessions.create_index("expires_at", expireAfterSeconds=0)
+        await db.section_unlock_sessions.create_index([("user_id", 1), ("section_id", 1)])
+        await db.apple_transactions.create_index("transaction_id", unique=True)
+        await db.apple_webhook_log.create_index("received_at")
+        await db.client_errors.create_index("created_at")
+        await db.audit_trail.create_index([("timestamp", -1)])
+        await db.audit_trail.create_index("actor_id")
+        await db.audit_trail.create_index("category")
+        # Performance indexes for frequently-queried collections
+        await db.user_subscriptions.create_index("user_id")
+        await db.user_subscriptions.create_index("status")
+        await db.user_subscriptions.create_index([("status", 1), ("grace_period_end", 1)])
+        await db.dts_tasks.create_index("estate_id")
+        await db.dts_tasks.create_index("assigned_to")
+        await db.death_certificates.create_index("estate_id")
+        await db.death_certificates.create_index("beneficiary_id")
+        await db.death_certificates.create_index("status")
+        await db.tier_verifications.create_index("user_id")
+        await db.family_plans.create_index("owner_id")
+        await db.emergency_access.create_index("estate_id")
+        await db.emergency_access.create_index("beneficiary_id")
+        await db.section_security.create_index("estate_id")
+        await db.digital_wallet.create_index("estate_id")
+        await db.activity_log.create_index("user_id")
+        await db.notifications.create_index("user_id")
+        await db.notifications.create_index([("user_id", 1), ("read", 1)])
+        # SOC 2: TTL index for 1-year audit log retention
+        await db.audit_trail.create_index("stored_at", expireAfterSeconds=365 * 24 * 3600)
+        await db.audit_trail.create_index("timestamp")
+        await db.audit_trail.create_index("actor_id")
+        await db.audit_trail.create_index("category")
+        # Team chat indexes
+        await db.team_messages.create_index([("channel_id", 1), ("created_at", -1)])
+        await db.team_messages.create_index("sender_id")
+        await db.team_channels.create_index("members")
+        await db.team_channel_reads.create_index([("channel_id", 1), ("user_id", 1)], unique=True)
+        # Shift scheduling indexes
+        await db.shift_schedules.create_index([("operator_id", 1), ("date", 1)])
+        await db.shift_schedules.create_index("date")
+        await db.shift_swap_requests.create_index("status")
+        await db.shift_swap_requests.create_index("requester_id")
+        await db.shift_swap_requests.create_index("target_operator_id")
+        # Training tracker indexes
+        await db.training_completions.create_index([("user_id", 1), ("module_id", 1)], unique=True)
+        await db.training_modules.create_index("order")
+        # Estate Chat (ECT) indexes
+        await db.estate_channels.create_index("estate_id")
+        await db.estate_channels.create_index("members")
+        await db.estate_messages.create_index([("channel_id", 1), ("created_at", -1)])
+        await db.estate_channel_reads.create_index([("channel_id", 1), ("user_id", 1)], unique=True)
+        await db.estate_typing.create_index([("channel_id", 1), ("user_id", 1)], unique=True)
+        await db.estate_reactions.create_index("message_id")
+        await db.estate_channel_dismissals.create_index([("user_id", 1), ("channel_id", 1)], unique=True)
+        # CCP (Connected Protocol) indexes
+        await db.emergency_plans.create_index("estate_id")
+        await db.emergency_activations.create_index([("estate_id", 1), ("status", 1)])
+        await db.member_checkins.create_index([("activation_id", 1), ("user_id", 1)])
+        # Notification preferences indexes
+        await db.notification_preferences.create_index("user_id", unique=True)
+        await db.notification_categories.create_index("order")
+        # Download token indexes
+        await db.download_tokens.create_index("token", unique=True)
+        await db.download_tokens.create_index("created_at")
+        # Push subscription indexes (queried on every push send)
+        await db.push_subscriptions.create_index([("user_id", 1), ("active", 1)])
+        await db.push_subscriptions.create_index("endpoint", unique=True)
+        # Support messages indexes
+        await db.support_messages.create_index("conversation_id")
+        await db.support_messages.create_index([("sender_role", 1), ("read", 1)])
+        # Milestone delivery indexes
+        await db.milestone_deliveries.create_index("status")
+        await db.milestone_deliveries.create_index("estate_id")
+        # Subscription overrides index (queried on every checkout/plan check)
+        await db.subscription_overrides.create_index("user_id")
+        # Onboarding progress index
+        await db.onboarding_progress.create_index("user_id")
+        # FFN contacts index
+        await db.ffn_contacts.create_index([("estate_id", 1), ("deleted_at", 1)])
+        # Funnel session indexes
+        await db.funnel_sessions.create_index("session_id", unique=True)
+        # Beneficiary grace periods index
+        await db.beneficiary_grace_periods.create_index("beneficiary_id")
+        # Subscription settings index
+        await db.subscription_settings.create_index("key", unique=True)
+        # Financial Portal (CFP) indexes
+        await db.bills.create_index([("estate_id", 1), ("deleted_at", 1)])
+        await db.bills.create_index("status")
+        await db.debts.create_index([("estate_id", 1), ("deleted_at", 1)])
+        await db.financial_accounts.create_index([("estate_id", 1), ("deleted_at", 1)])
+        await db.bill_categories.create_index([("estate_id", 1), ("module", 1)])
+        await db.bill_payments.create_index([("bill_id", 1), ("deleted_at", 1)])
+        logger.info("Database indexes created/verified")
+    except Exception as e:
+        logger.warning(f"Index creation warning (may already exist): {e}")
