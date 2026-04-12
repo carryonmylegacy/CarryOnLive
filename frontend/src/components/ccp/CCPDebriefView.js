@@ -88,7 +88,7 @@ export default function CCPDebriefView({ activationId, planName, token, onComple
               <Star
                 className="w-10 h-10 transition-all"
                 style={{
-                  color: s <= displayRating ? '#d4af37' : 'rgba(255,255,255,0.1)',
+                  color: s <= displayRating ? '#d4af37' : 'var(--b)',
                   fill: s <= displayRating ? '#d4af37' : 'none',
                   filter: s <= displayRating ? 'drop-shadow(0 0 4px rgba(212,175,55,0.3))' : 'none',
                 }}
@@ -144,7 +144,7 @@ export default function CCPDebriefView({ activationId, planName, token, onComple
         className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97]"
         data-testid="ccp-debrief-submit"
         style={{
-          background: rating > 0 ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.06)',
+          background: rating > 0 ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'var(--s)',
           color: rating > 0 ? '#080e1a' : 'var(--t5)',
         }}
       >

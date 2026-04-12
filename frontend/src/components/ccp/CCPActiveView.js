@@ -26,14 +26,14 @@ function PlanDetails({ snap }) {
   const hasContent = snap.rendezvous_points?.length || snap.communication_plan || snap.resource_locations?.length || snap.instructions;
   if (!hasContent) return null;
   return (
-    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--b)' }}>
       <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between p-4 text-left" data-testid="ccp-plan-details-toggle"
-        style={{ background: 'rgba(255,255,255,0.03)' }}>
+        style={{ background: 'var(--s)' }}>
         <span className="text-sm font-bold" style={{ color: 'var(--t4)' }}>Plan Details</span>
         <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: 'var(--t4)' }} />
       </button>
       {open && (
-        <div className="p-4 space-y-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="p-4 space-y-4" style={{ borderTop: '1px solid var(--b)' }}>
           {snap.rendezvous_points?.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-2"><MapPin className="w-4 h-4" style={{ color: '#3B7BF7' }} /><span className="text-xs font-bold" style={{ color: '#3B7BF7' }}>RENDEZVOUS POINTS</span></div>
@@ -179,7 +179,7 @@ export default function CCPActiveView({
                   <a key={doc.id} href={`/vault`} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-3 p-3 rounded-xl transition-all active:scale-[0.97]"
                     data-testid={`ccp-doc-${doc.id}`}
-                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--b)' }}>
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
                     <FileText className="w-5 h-5 flex-shrink-0" style={{ color: '#3B7BF7' }} />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold truncate" style={{ color: 'var(--t)' }}>{doc.name}</div>
@@ -202,7 +202,7 @@ export default function CCPActiveView({
                 {linkedResources.ffn_contacts.map(fc => (
                   <div key={fc.id} className="flex items-center gap-3 p-3 rounded-xl"
                     data-testid={`ccp-ffn-${fc.id}`}
-                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--b)' }}>
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'rgba(34,201,147,0.15)', color: '#22C993' }}>
                       {fc.name?.charAt(0) || '?'}
                     </div>
@@ -241,7 +241,7 @@ export default function CCPActiveView({
                   <a key={dav.id} href={`/digital-wallet`} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-3 p-3 rounded-xl transition-all active:scale-[0.97]"
                     data-testid={`ccp-dav-${dav.id}`}
-                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--b)' }}>
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
                     <KeyRound className="w-5 h-5 flex-shrink-0" style={{ color: '#B794F6' }} />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold truncate" style={{ color: 'var(--t)' }}>{dav.account_name}</div>

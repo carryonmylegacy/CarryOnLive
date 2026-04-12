@@ -241,7 +241,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
 
       {/* Progress Bar */}
       <div className="mb-6">
-        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--b)' }}>
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{ width: `${progressPercent}%`, background: 'linear-gradient(90deg, #d4af37, #F0C95C)' }}
@@ -323,8 +323,8 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                   className="flex flex-col items-center justify-center py-6 px-4 rounded-2xl transition-all active:scale-[0.95]"
                   data-testid={`ccp-wizard-household-${opt.id}`}
                   style={{
-                    background: selected ? `${opt.color}15` : 'rgba(255,255,255,0.03)',
-                    border: `2px solid ${selected ? `${opt.color}50` : 'rgba(255,255,255,0.06)'}`,
+                    background: selected ? `${opt.color}15` : 'var(--s)',
+                    border: `2px solid ${selected ? `${opt.color}50` : 'var(--b)'}`,
                     minHeight: 110,
                   }}
                 >
@@ -367,8 +367,8 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                   className="flex flex-col items-center justify-center py-4 px-2 rounded-xl transition-all active:scale-[0.95]"
                   data-testid={`ccp-wizard-concern-${opt.id}`}
                   style={{
-                    background: selected ? `${opt.color}15` : 'rgba(255,255,255,0.03)',
-                    border: `2px solid ${selected ? `${opt.color}50` : 'rgba(255,255,255,0.06)'}`,
+                    background: selected ? `${opt.color}15` : 'var(--s)',
+                    border: `2px solid ${selected ? `${opt.color}50` : 'var(--b)'}`,
                   }}
                 >
                   <Icon className="w-6 h-6 mb-1.5" style={{ color: selected ? opt.color : 'var(--t5)' }} />
@@ -401,8 +401,8 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
               className="w-full flex items-center gap-4 p-5 rounded-2xl transition-all active:scale-[0.97]"
               data-testid="ccp-wizard-pref-evacuate"
               style={{
-                background: preference === 'evacuate' ? 'rgba(59,123,247,0.12)' : 'rgba(255,255,255,0.03)',
-                border: `2px solid ${preference === 'evacuate' ? 'rgba(59,123,247,0.4)' : 'rgba(255,255,255,0.06)'}`,
+                background: preference === 'evacuate' ? 'rgba(59,123,247,0.12)' : 'var(--s)',
+                border: `2px solid ${preference === 'evacuate' ? 'rgba(59,123,247,0.4)' : 'var(--b)'}`,
               }}
             >
               <Navigation className="w-10 h-10 flex-shrink-0" style={{ color: preference === 'evacuate' ? '#3B7BF7' : 'var(--t5)' }} />
@@ -421,8 +421,8 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
               className="w-full flex items-center gap-4 p-5 rounded-2xl transition-all active:scale-[0.97]"
               data-testid="ccp-wizard-pref-shelter"
               style={{
-                background: preference === 'shelter' ? 'rgba(183,148,246,0.12)' : 'rgba(255,255,255,0.03)',
-                border: `2px solid ${preference === 'shelter' ? 'rgba(183,148,246,0.4)' : 'rgba(255,255,255,0.06)'}`,
+                background: preference === 'shelter' ? 'rgba(183,148,246,0.12)' : 'var(--s)',
+                border: `2px solid ${preference === 'shelter' ? 'rgba(183,148,246,0.4)' : 'var(--b)'}`,
               }}
             >
               <Home className="w-10 h-10 flex-shrink-0" style={{ color: preference === 'shelter' ? '#B794F6' : 'var(--t5)' }} />
@@ -667,7 +667,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                       className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
                       data-testid="ccp-wizard-drill-toggle"
                       style={{
-                        background: drillSchedule.enabled ? 'rgba(34,201,147,0.15)' : 'rgba(255,255,255,0.06)',
+                        background: drillSchedule.enabled ? 'rgba(34,201,147,0.15)' : 'var(--s)',
                         color: drillSchedule.enabled ? '#22C993' : 'var(--t5)',
                       }}
                     >
@@ -726,7 +726,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
           style={{
             background: canProceed()
               ? 'linear-gradient(135deg, #d4af37, #F0C95C)'
-              : 'rgba(255,255,255,0.06)',
+              : 'var(--s)',
             color: canProceed() ? '#080e1a' : 'var(--t5)',
           }}
         >
@@ -752,7 +752,7 @@ function ReviewSection({ title, editing, onToggle, children }) {
   return (
     <div
       className="rounded-xl overflow-hidden"
-      style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${editing ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.07)'}` }}
+      style={{ background: 'var(--s)', border: `1px solid ${editing ? 'rgba(212,175,55,0.3)' : 'var(--b)'}` }}
     >
       <div className="flex items-center justify-between px-4 py-3">
         <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--t4)' }}>
@@ -763,7 +763,7 @@ function ReviewSection({ title, editing, onToggle, children }) {
           className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
           data-testid={`ccp-wizard-toggle-${title.toLowerCase().replace(/\s+/g, '-')}`}
           style={{
-            background: editing ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.06)',
+            background: editing ? 'rgba(212,175,55,0.15)' : 'var(--s)',
             color: editing ? '#d4af37' : 'var(--t4)',
           }}
         >

@@ -420,8 +420,8 @@ export default function ConnectedProtocolPage() {
                 className="flex flex-col items-center justify-center py-5 px-3 rounded-2xl transition-all active:scale-[0.95]"
                 data-testid={`ccp-status-btn-${key}`}
                 style={{
-                  background: selected ? cfg.bg : 'rgba(255,255,255,0.03)',
-                  border: `2px solid ${selected ? cfg.border : 'rgba(255,255,255,0.06)'}`,
+                  background: selected ? cfg.bg : 'var(--s)',
+                  border: `2px solid ${selected ? cfg.border : 'var(--b)'}`,
                   minHeight: 100,
                 }}
               >
@@ -530,7 +530,7 @@ export default function ConnectedProtocolPage() {
             <button onClick={() => { setEditPlan({ name: '', plan_type: 'custom', rendezvous_points: [], communication_plan: '', resource_locations: [], instructions: '', linked_document_ids: [], linked_ffn_contact_ids: [], linked_dav_entry_ids: [], assigned_beneficiary_ids: null }); fetchAvailableResources(); setView('plan-edit'); }}
               className="w-10 h-10 rounded-full flex items-center justify-center" data-testid="ccp-new-plan-btn"
               title="Create manually"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
               <Plus className="w-5 h-5" style={{ color: 'var(--t4)' }} />
             </button>
           )}
@@ -562,7 +562,7 @@ export default function ConnectedProtocolPage() {
           </div>
         )}
         {plans.map(p => (
-          <div key={p.id} className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div key={p.id} className="rounded-xl p-4" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h3 className="text-base font-bold" style={{ color: 'var(--t)' }}>{p.name}</h3>
@@ -577,7 +577,7 @@ export default function ConnectedProtocolPage() {
                     title="Download / Print"
                     style={{ background: 'rgba(34,201,147,0.1)' }}><Printer className="w-4 h-4" style={{ color: '#22C993' }} /></button>
                   <button onClick={() => { setEditPlan(p); fetchAvailableResources(); setView('plan-edit'); }} className="w-8 h-8 rounded-lg flex items-center justify-center" data-testid={`ccp-edit-${p.id}`}
-                    style={{ background: 'rgba(255,255,255,0.05)' }}><Edit className="w-4 h-4" style={{ color: 'var(--t4)' }} /></button>
+                    style={{ background: 'var(--s)' }}><Edit className="w-4 h-4" style={{ color: 'var(--t4)' }} /></button>
                   <button onClick={() => deletePlan(p.id)} className="w-8 h-8 rounded-lg flex items-center justify-center" data-testid={`ccp-delete-${p.id}`}
                     style={{ background: 'rgba(240,82,82,0.1)' }}><Trash2 className="w-4 h-4" style={{ color: '#F05252' }} /></button>
                 </div>
@@ -613,7 +613,7 @@ export default function ConnectedProtocolPage() {
                     className="text-[11px] font-bold px-2 py-1 rounded-md"
                     data-testid={`ccp-drill-toggle-${p.id}`}
                     style={{
-                      background: p.drill_schedule.enabled ? 'rgba(34,201,147,0.1)' : 'rgba(255,255,255,0.05)',
+                      background: p.drill_schedule.enabled ? 'rgba(34,201,147,0.1)' : 'var(--s)',
                       color: p.drill_schedule.enabled ? '#22C993' : 'var(--t5)',
                     }}
                   >
@@ -677,7 +677,7 @@ export default function ConnectedProtocolPage() {
                       key={s}
                       className="w-4 h-4"
                       style={{
-                        color: s <= Math.round(debriefStats.average_rating) ? '#d4af37' : 'rgba(255,255,255,0.1)',
+                        color: s <= Math.round(debriefStats.average_rating) ? '#d4af37' : 'var(--t5)',
                         fill: s <= Math.round(debriefStats.average_rating) ? '#d4af37' : 'none',
                       }}
                     />
@@ -720,7 +720,7 @@ export default function ConnectedProtocolPage() {
           </div>
         )}
         {history.map(h => (
-          <div key={h.id} className="rounded-xl p-4" data-testid={`ccp-history-${h.id}`} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div key={h.id} className="rounded-xl p-4" data-testid={`ccp-history-${h.id}`} style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
             <div className="flex items-center gap-2 mb-1">
               {h.is_drill && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(59,123,247,0.15)', color: '#3B7BF7' }}>DRILL</span>}
               <span className="text-sm font-bold" style={{ color: 'var(--t)' }}>{h.plan_name}</span>
@@ -730,7 +730,7 @@ export default function ConnectedProtocolPage() {
             </p>
             {/* Debrief info */}
             {h.debrief && (
-              <div className="mt-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--b)' }}>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-0.5">
                     {[1, 2, 3, 4, 5].map(s => (
@@ -738,7 +738,7 @@ export default function ConnectedProtocolPage() {
                         key={s}
                         className="w-3 h-3"
                         style={{
-                          color: s <= h.debrief.rating ? '#d4af37' : 'rgba(255,255,255,0.1)',
+                          color: s <= h.debrief.rating ? '#d4af37' : 'var(--t5)',
                           fill: s <= h.debrief.rating ? '#d4af37' : 'none',
                         }}
                       />
@@ -829,7 +829,7 @@ export default function ConnectedProtocolPage() {
       <button onClick={() => { fetchHistory(); setView('history'); }}
         className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center gap-3 px-5"
         data-testid="ccp-history-btn"
-        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--b)', color: 'var(--t4)' }}>
+        style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t4)' }}>
         <Clock className="w-6 h-6 flex-shrink-0" />
         <span className="flex-1 text-left" style={{ fontFamily: 'Outfit, sans-serif' }}>Past Activations</span>
         <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />
@@ -879,7 +879,7 @@ export default function ConnectedProtocolPage() {
         <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: 'var(--bg2)', border: '1px solid rgba(59,123,247,0.3)', boxShadow: '0 24px 64px rgba(0,0,0,0.3)' }}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>Share Plan</h3>
-            <button onClick={() => setShareModal(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.06)' }}>
+            <button onClick={() => setShareModal(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--s)' }}>
               <X className="w-4 h-4" style={{ color: 'var(--t4)' }} />
             </button>
           </div>
@@ -956,7 +956,7 @@ export default function ConnectedProtocolPage() {
                   { icon: UserCheck, title: 'Check In During Emergencies', desc: 'Everyone marks themselves safe so the family knows who needs help.' },
                   { icon: Play, title: 'Practice with Drills', desc: 'Run practice drills so everyone knows what to do before a real emergency.' },
                 ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--b)' }}>
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
                     <item.icon className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#d4af37' }} />
                     <div>
                       <div className="text-sm font-bold" style={{ color: 'var(--t)' }}>{item.title}</div>
@@ -991,7 +991,7 @@ export default function ConnectedProtocolPage() {
                   { num: '3', title: 'Write a communication plan', desc: 'How will everyone stay in touch? (e.g., text first, then call)' },
                   { num: '4', title: 'Add instructions', desc: 'Any special steps like grabbing the go-bag or turning off the gas' },
                 ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--b)' }}>
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
                     <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
                       {item.num}
                     </div>
@@ -1006,7 +1006,7 @@ export default function ConnectedProtocolPage() {
                 <button onClick={() => setWelcomeStep(1)}
                   className="px-5 py-3.5 rounded-xl text-sm font-bold transition-all active:scale-[0.97]"
                   data-testid="ccp-welcome-back-2"
-                  style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}>
+                  style={{ background: 'var(--s)', color: 'var(--t4)' }}>
                   <ArrowLeft className="w-4 h-4 inline mr-1" /> Back
                 </button>
                 <button onClick={() => setWelcomeStep(3)}
@@ -1036,7 +1036,7 @@ export default function ConnectedProtocolPage() {
                   { icon: MapPin, color: '#3B7BF7', title: 'Share Your Location', desc: 'Optionally share where you are so family can find you.' },
                   { icon: Clock, color: 'var(--t4)', title: 'Stand Down', desc: 'When it\'s over, the owner deactivates the plan and a report is saved.' },
                 ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--b)' }}>
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
                     <item.icon className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: item.color }} />
                     <div>
                       <div className="text-sm font-bold" style={{ color: 'var(--t)' }}>{item.title}</div>
@@ -1049,7 +1049,7 @@ export default function ConnectedProtocolPage() {
                 <button onClick={() => setWelcomeStep(2)}
                   className="px-5 py-3.5 rounded-xl text-sm font-bold transition-all active:scale-[0.97]"
                   data-testid="ccp-welcome-back-3"
-                  style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}>
+                  style={{ background: 'var(--s)', color: 'var(--t4)' }}>
                   <ArrowLeft className="w-4 h-4 inline mr-1" /> Back
                 </button>
                 <button onClick={() => { setShowWelcome(false); localStorage.setItem('carryon_ccp_intro_seen', '1'); }}
