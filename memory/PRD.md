@@ -75,6 +75,13 @@ Build and maintain a comprehensive family preparedness platform that helps users
   - Auto-detect location via browser geolocation + Google Geocoding
   - "Build My Plan" button prominently placed on CCP home and plans list pages
   - Manual plan creation (+ button) still accessible as secondary option
+- **AI-Suggested Drill Schedules with Email Reminders**: Each wizard-generated plan includes a recommended drill frequency based on the scenario type (e.g., hurricane → biannual May/Nov, house fire → quarterly). Users can enable/disable reminders per plan.
+  - Backend: PATCH /api/ccp/plans/{plan_id}/drill-schedule — toggle drill reminders on/off
+  - Backend: drill_reminder_scheduler — daily background task sends CarryOn-branded emails on the 1st of recommended months
+  - Email: Warm, guiding tone with step-by-step drill instructions, branded in CarryOn dark theme (#0F1629 bg, #d4af37 gold)
+  - Frontend: Drill schedule section in wizard review with toggle
+  - Frontend: Drill schedule info + toggle on plan cards in plans list
+  - 17 concern-to-schedule mappings with smart next-drill-date computation
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
