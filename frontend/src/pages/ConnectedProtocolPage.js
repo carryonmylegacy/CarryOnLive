@@ -487,6 +487,40 @@ export default function ConnectedProtocolPage() {
                   style={{ background: 'rgba(34,201,147,0.1)' }}><Printer className="w-4 h-4" style={{ color: '#22C993' }} /></button>
               )}
             </div>
+            {/* Drill Schedule Info */}
+            {p.drill_schedule && (
+              <div className="flex items-center justify-between mt-2 px-1">
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" style={{ color: p.drill_schedule.enabled ? '#3B7BF7' : 'var(--t5)' }} />
+                  <span className="text-xs" style={{ color: p.drill_schedule.enabled ? 'var(--t4)' : 'var(--t5)' }}>
+                    {p.drill_schedule.enabled
+                      ? `Next drill: ${p.drill_schedule.next_drill_date ? new Date(p.drill_schedule.next_drill_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : p.drill_schedule.label}`
+                      : 'Drill reminders off'}
+                  </span>
+                </div>
+                {isBenefactor && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`${API_URL}/ccp/plans/${p.id}/drill-schedule`, {
+                          method: 'PATCH', headers,
+                          body: JSON.stringify({ enabled: !p.drill_schedule.enabled }),
+                        });
+                        if (res.ok) fetchPlans();
+                      } catch {}
+                    }}
+                    className="text-[11px] font-bold px-2 py-1 rounded-md"
+                    data-testid={`ccp-drill-toggle-${p.id}`}
+                    style={{
+                      background: p.drill_schedule.enabled ? 'rgba(34,201,147,0.1)' : 'rgba(255,255,255,0.05)',
+                      color: p.drill_schedule.enabled ? '#22C993' : 'var(--t5)',
+                    }}
+                  >
+                    {p.drill_schedule.enabled ? 'ON' : 'OFF'}
+                  </button>
+                )}
+              </div>
+            )}
             {/* Action buttons */}
             {isBenefactor && (
               <div className="flex gap-2 mt-3">

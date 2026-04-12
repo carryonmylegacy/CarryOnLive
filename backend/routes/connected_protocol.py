@@ -49,6 +49,7 @@ class PlanCreate(BaseModel):
     linked_ffn_contact_ids: list[str] = []
     linked_dav_entry_ids: list[str] = []
     assigned_beneficiary_ids: Optional[list[str]] = None  # None = all beneficiaries
+    drill_schedule: Optional[dict] = None  # {frequency, recommended_months, next_drill_date, enabled}
 
 
 class PlanUpdate(BaseModel):
@@ -62,6 +63,7 @@ class PlanUpdate(BaseModel):
     linked_ffn_contact_ids: Optional[list[str]] = None
     linked_dav_entry_ids: Optional[list[str]] = None
     assigned_beneficiary_ids: Optional[list[str]] = None
+    drill_schedule: Optional[dict] = None
 
 
 class ActivatePlanRequest(BaseModel):
@@ -111,6 +113,44 @@ _CONCERN_TO_PLAN_TYPE = {
     "house_fire": "custom",
     "home_invasion": "custom",
 }
+
+# Drill schedule recommendations per concern type
+_DRILL_SCHEDULES = {
+    "hurricane":     {"frequency": "biannual", "months": [5, 11], "label": "Before & after hurricane season (May, Nov)"},
+    "tornado":       {"frequency": "biannual", "months": [3, 9],  "label": "Spring & fall (Mar, Sep)"},
+    "earthquake":    {"frequency": "biannual", "months": [4, 10], "label": "Twice yearly (Apr, Oct)"},
+    "flood":         {"frequency": "biannual", "months": [3, 9],  "label": "Before rainy seasons (Mar, Sep)"},
+    "wildfire":      {"frequency": "biannual", "months": [5, 11], "label": "Before & after fire season (May, Nov)"},
+    "house_fire":    {"frequency": "quarterly", "months": [1, 4, 7, 10], "label": "Every 3 months"},
+    "nuclear":       {"frequency": "annual",   "months": [1],     "label": "Once a year (Jan)"},
+    "winter_storm":  {"frequency": "annual",   "months": [9],     "label": "Before winter (Sep)"},
+    "power_outage":  {"frequency": "annual",   "months": [6],     "label": "Once a year (Jun)"},
+    "terrorism":     {"frequency": "annual",   "months": [9],     "label": "Once a year (Sep)"},
+    "pandemic":      {"frequency": "annual",   "months": [1],     "label": "Once a year (Jan)"},
+    "civil_unrest":  {"frequency": "annual",   "months": [6],     "label": "Once a year (Jun)"},
+    "water_failure": {"frequency": "annual",   "months": [6],     "label": "Once a year (Jun)"},
+    "chemical_spill":{"frequency": "annual",   "months": [3],     "label": "Once a year (Mar)"},
+    "home_invasion": {"frequency": "quarterly", "months": [1, 4, 7, 10], "label": "Every 3 months"},
+    "tsunami":       {"frequency": "biannual", "months": [3, 9],  "label": "Twice yearly (Mar, Sep)"},
+    "cyber_attack":  {"frequency": "annual",   "months": [1],     "label": "Once a year (Jan)"},
+}
+
+_MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"]
+
+
+def _compute_next_drill_date(months: list[int]) -> str:
+    """Return the next upcoming drill date as ISO string (1st of the next applicable month)."""
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc)
+    current_month = now.month
+    current_year = now.year
+
+    for m in sorted(months):
+        if m > current_month:
+            return datetime(current_year, m, 1, tzinfo=timezone.utc).isoformat()
+    # Wrap to next year
+    return datetime(current_year + 1, sorted(months)[0], 1, tzinfo=timezone.utc).isoformat()
 
 
 
@@ -251,6 +291,10 @@ Generate a complete, actionable emergency plan. Return ONLY valid JSON."""
     primary_concern = data.concerns[0] if data.concerns else "custom"
     plan_type = _CONCERN_TO_PLAN_TYPE.get(primary_concern, "custom")
 
+    # Build drill schedule suggestion
+    drill_sched = _DRILL_SCHEDULES.get(primary_concern, _DRILL_SCHEDULES.get("house_fire"))
+    next_drill = _compute_next_drill_date(drill_sched["months"])
+
     return {
         "plan_name": plan_data.get("plan_name", f"{concerns_desc.title()} Plan"),
         "plan_type": plan_type,
@@ -259,6 +303,13 @@ Generate a complete, actionable emergency plan. Return ONLY valid JSON."""
         "resource_locations": plan_data.get("resource_locations", []),
         "instructions": plan_data.get("instructions", ""),
         "warnings": plan_data.get("warnings", []),
+        "drill_schedule": {
+            "frequency": drill_sched["frequency"],
+            "recommended_months": drill_sched["months"],
+            "label": drill_sched["label"],
+            "next_drill_date": next_drill,
+            "enabled": True,
+        },
     }
 
 
@@ -342,6 +393,7 @@ async def create_plan(data: PlanCreate, current_user: dict = Depends(get_current
         "linked_ffn_contact_ids": data.linked_ffn_contact_ids,
         "linked_dav_entry_ids": data.linked_dav_entry_ids,
         "assigned_beneficiary_ids": data.assigned_beneficiary_ids,
+        "drill_schedule": data.drill_schedule,
         "created_by": current_user["id"],
         "created_at": now,
         "updated_at": now,
@@ -371,6 +423,7 @@ async def update_plan(plan_id: str, data: PlanUpdate, current_user: dict = Depen
         "linked_ffn_contact_ids",
         "linked_dav_entry_ids",
         "assigned_beneficiary_ids",
+        "drill_schedule",
     ]:
         val = getattr(data, field)
         if val is not None:
@@ -648,3 +701,206 @@ async def check_in(data: CheckInRequest, current_user: dict = Depends(get_curren
             )
         )
     return checkin
+
+
+
+# ===================== DRILL SCHEDULE & REMINDERS =====================
+
+
+class DrillScheduleToggle(BaseModel):
+    enabled: bool
+
+
+@router.patch("/ccp/plans/{plan_id}/drill-schedule")
+async def toggle_drill_schedule(plan_id: str, data: DrillScheduleToggle, current_user: dict = Depends(get_current_user)):
+    """Enable or disable drill reminders for a plan."""
+    plan = await db.emergency_plans.find_one({"id": plan_id, "deleted_at": None}, {"_id": 0})
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    if not await _is_estate_owner(current_user["id"], plan["estate_id"]):
+        raise HTTPException(status_code=403, detail="Only the benefactor can modify plans")
+    sched = plan.get("drill_schedule") or {}
+    sched["enabled"] = data.enabled
+    await db.emergency_plans.update_one(
+        {"id": plan_id},
+        {"$set": {"drill_schedule": sched, "updated_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    return {"success": True, "enabled": data.enabled}
+
+
+def build_drill_reminder_email(user_name: str, plan_name: str, plan_type_label: str, app_url: str) -> tuple[str, str]:
+    """Build CarryOn-branded drill reminder email with warm, guiding tone."""
+    subject = f"Time for a Family Drill: {plan_name}"
+
+    html = f"""
+    <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 560px; margin: 0 auto; background: #0F1629; color: #F1F3F8; border-radius: 16px; overflow: hidden;">
+      <div style="padding: 40px 32px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.07);">
+        <img src="{app_url}/carryon-logo.jpg" alt="CarryOn" style="width: 80px; height: auto; margin-bottom: 16px;" />
+        <h1 style="font-size: 22px; margin: 0 0 8px; color: #d4af37;">
+          Time to Practice Your Plan
+        </h1>
+        <p style="color: #A0AABF; font-size: 14px; margin: 0;">
+          Hi {user_name or "there"},
+        </p>
+      </div>
+
+      <div style="padding: 32px;">
+        <p style="color: #A0AABF; font-size: 14px; line-height: 1.7; margin: 0 0 20px;">
+          A little practice goes a long way. It's time to run through your
+          <strong style="color: #F1F3F8;">{plan_name}</strong> with your family.
+        </p>
+
+        <div style="background: rgba(212,175,55,0.06); border: 1px solid rgba(212,175,55,0.15); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+          <p style="color: #d4af37; font-weight: bold; font-size: 14px; margin: 0 0 12px;">Here's how to run a drill:</p>
+          <ol style="color: #A0AABF; font-size: 13px; padding-left: 18px; margin: 0; line-height: 2.0;">
+            <li>Gather your family and open CarryOn</li>
+            <li>Go to <strong style="color: #F1F3F8;">Contingency Protocols</strong></li>
+            <li>Find your <strong style="color: #F1F3F8;">{plan_name}</strong></li>
+            <li>Tap <strong style="color: #3B7BF7;">DRILL</strong> to start a practice run</li>
+            <li>Have everyone check in from their phones</li>
+            <li>Debrief together — talk about what went well</li>
+          </ol>
+        </div>
+
+        <div style="background: rgba(34,201,147,0.06); border: 1px solid rgba(34,201,147,0.15); border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+          <p style="color: #22C993; font-size: 13px; margin: 0; line-height: 1.6;">
+            <strong>Why practice?</strong> Families who run drills respond
+            faster and calmer in real emergencies. Even a 10-minute walkthrough
+            makes a difference.
+          </p>
+        </div>
+
+        <p style="color: #A0AABF; font-size: 13px; margin: 0 0 20px; line-height: 1.6;">
+          You can adjust your drill schedule anytime in your plan settings.
+          We'll send you a gentle reminder when the next one is due.
+        </p>
+
+        <div style="text-align: center;">
+          <a href="{app_url}/connected-protocol" style="display: inline-block; padding: 14px 32px; background: #d4af37; color: #0F1629; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 14px;">
+            Open Your Plans
+          </a>
+        </div>
+      </div>
+
+      <div style="padding: 20px 32px; text-align: center; border-top: 1px solid rgba(255,255,255,0.07);">
+        <p style="color: #525C72; font-size: 11px; margin: 0;">
+          You're receiving this because you enabled drill reminders for this plan.
+        </p>
+        <p style="color: #525C72; font-size: 11px; margin: 4px 0 0;">
+          CarryOn &middot; Every American Family. Ready.
+        </p>
+      </div>
+    </div>
+    """
+    return subject, html
+
+
+PLAN_TYPE_LABELS_MAP = {
+    "natural_disaster": "Natural Disaster",
+    "national_emergency": "National Emergency",
+    "medical_emergency": "Medical Emergency",
+    "infrastructure_failure": "Infrastructure Failure",
+    "custom": "Custom Plan",
+}
+
+
+async def send_drill_reminders():
+    """Check all plans with enabled drill schedules and send reminders when due."""
+    from services.email import send_email
+
+    now = datetime.now(timezone.utc)
+    current_month = now.month
+    current_day = now.day
+    app_url = "https://app.carryon.us"
+    sent_count = 0
+
+    # Find all active plans with drill schedules enabled
+    plans = await db.emergency_plans.find(
+        {
+            "deleted_at": None,
+            "drill_schedule.enabled": True,
+            "drill_schedule.recommended_months": current_month,
+        },
+        {"_id": 0},
+    ).to_list(500)
+
+    for plan in plans:
+        sched = plan.get("drill_schedule", {})
+
+        # Only send on the 1st of the recommended month
+        if current_day != 1:
+            continue
+
+        # Check if we already sent this month
+        last_sent = sched.get("last_reminder_sent", "")
+        if last_sent:
+            try:
+                last_dt = datetime.fromisoformat(last_sent.replace("Z", "+00:00"))
+                if last_dt.month == current_month and last_dt.year == now.year:
+                    continue  # Already sent this month
+            except (ValueError, AttributeError):
+                pass
+
+        # Look up the estate owner to get their email
+        estate = await db.estates.find_one(
+            {"id": plan["estate_id"]},
+            {"_id": 0, "id": 1, "owner_id": 1},
+        )
+        if not estate:
+            continue
+
+        owner = await db.users.find_one(
+            {"id": estate["owner_id"]},
+            {"_id": 0, "id": 1, "name": 1, "email": 1},
+        )
+        if not owner or not owner.get("email"):
+            continue
+
+        plan_type_label = PLAN_TYPE_LABELS_MAP.get(plan.get("plan_type", ""), "Emergency")
+        subject, html = build_drill_reminder_email(
+            owner.get("name", ""),
+            plan.get("name", "Emergency Plan"),
+            plan_type_label,
+            app_url,
+        )
+
+        success = await send_email(owner["email"], subject, html)
+        if success:
+            # Update last_reminder_sent and compute next drill date
+            months = sched.get("recommended_months", [])
+            next_date = _compute_next_drill_date(months)
+            await db.emergency_plans.update_one(
+                {"id": plan["id"]},
+                {"$set": {
+                    "drill_schedule.last_reminder_sent": now.isoformat(),
+                    "drill_schedule.next_drill_date": next_date,
+                }},
+            )
+            sent_count += 1
+            logger.info(f"Drill reminder sent for '{plan['name']}' to {owner['email']}")
+
+    return sent_count
+
+
+async def drill_reminder_scheduler():
+    """Background task: checks for drill reminders daily at 14:00 UTC."""
+    await _asyncio.sleep(600)  # Wait 10 min after startup
+    while True:
+        now = datetime.now(timezone.utc)
+        target_hour = 14
+        if now.hour >= target_hour:
+            wait_hours = 24 - (now.hour - target_hour)
+        else:
+            wait_hours = target_hour - now.hour
+        wait_seconds = wait_hours * 3600 - now.minute * 60 - now.second
+        logger.info(f"Drill reminder scheduler: next check in {wait_seconds / 3600:.1f}h")
+        await _asyncio.sleep(max(60, wait_seconds))
+
+        try:
+            count = await send_drill_reminders()
+            if count > 0:
+                logger.info(f"Drill reminders sent: {count}")
+            else:
+                logger.info("Drill reminder check — no reminders to send")
+        except Exception as e:
+            logger.error(f"Drill reminder scheduler error: {e}")

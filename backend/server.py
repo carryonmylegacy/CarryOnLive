@@ -83,6 +83,7 @@ from schedulers import (
 async def lifespan(app):
     from routes.trial_reminders import trial_reminder_scheduler
     from services.billing_lifecycle import billing_lifecycle_scheduler
+    from routes.connected_protocol import drill_reminder_scheduler
 
     logger.info("CarryOn™ API started - ready for real accounts")
 
@@ -100,6 +101,7 @@ async def lifespan(app):
     asyncio.create_task(milestone_delivery_scheduler())
     asyncio.create_task(grace_period_scheduler())
     asyncio.create_task(bill_reminder_scheduler())
+    asyncio.create_task(drill_reminder_scheduler())
 
     # Warm up xAI connection + start periodic keepalive
     from routes.guardian import warmup_xai

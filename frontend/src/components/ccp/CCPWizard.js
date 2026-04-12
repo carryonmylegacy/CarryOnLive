@@ -71,6 +71,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
   const [preference, setPreference] = useState('');
   const [generating, setGenerating] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState(null);
+  const [drillSchedule, setDrillSchedule] = useState(null);
   const [warnings, setWarnings] = useState([]);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -155,6 +156,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
           resource_locations: data.resource_locations || [],
           instructions: data.instructions || '',
         });
+        setDrillSchedule(data.drill_schedule || null);
         setWarnings(data.warnings || []);
       } catch (e) {
         setError(e.message);
@@ -183,6 +185,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
           linked_ffn_contact_ids: [],
           linked_dav_entry_ids: [],
           assigned_beneficiary_ids: null,
+          drill_schedule: drillSchedule,
         }),
       });
       if (res.ok) {
@@ -202,6 +205,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
     if (step === 5 && generatedPlan) {
       // Go back to step 4
       setGeneratedPlan(null);
+      setDrillSchedule(null);
       setWarnings([]);
       setStep(4);
     } else if (step > 1) {
@@ -646,6 +650,53 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                   </p>
                 )}
               </ReviewSection>
+
+              {/* Drill Schedule */}
+              {drillSchedule && (
+                <div
+                  className="rounded-xl overflow-hidden"
+                  data-testid="ccp-wizard-drill-schedule"
+                  style={{ background: 'rgba(59,123,247,0.05)', border: '1px solid rgba(59,123,247,0.15)' }}
+                >
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#3B7BF7' }}>
+                      Drill Reminders
+                    </span>
+                    <button
+                      onClick={() => setDrillSchedule(prev => ({ ...prev, enabled: !prev.enabled }))}
+                      className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+                      data-testid="ccp-wizard-drill-toggle"
+                      style={{
+                        background: drillSchedule.enabled ? 'rgba(34,201,147,0.15)' : 'rgba(255,255,255,0.06)',
+                        color: drillSchedule.enabled ? '#22C993' : 'var(--t5)',
+                      }}
+                    >
+                      {drillSchedule.enabled ? (
+                        <><Check className="w-3 h-3" /> On</>
+                      ) : (
+                        <><X className="w-3 h-3" /> Off</>
+                      )}
+                    </button>
+                  </div>
+                  <div className="px-4 pb-4">
+                    <p className="text-sm" style={{ color: 'var(--t)' }}>
+                      We recommend practicing this plan <strong>{drillSchedule.label?.toLowerCase()}</strong>.
+                    </p>
+                    {drillSchedule.next_drill_date && (
+                      <p className="text-xs mt-2" style={{ color: 'var(--t4)' }}>
+                        Next suggested drill: <strong style={{ color: '#3B7BF7' }}>
+                          {new Date(drillSchedule.next_drill_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                        </strong>
+                      </p>
+                    )}
+                    {drillSchedule.enabled && (
+                      <p className="text-xs mt-1.5" style={{ color: 'var(--t5)' }}>
+                        We'll send you a friendly email reminder when it's time.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Save Button */}
               <button
