@@ -632,6 +632,26 @@ const DashboardPage = () => {
         // Celebration is handled by fetchEstateData via backend flag — no-op here
       }} />
 
+      {/* CarryOn Financial Portal — Guide Tile (above gauge) */}
+      {financialSummary && (financialSummary.bills_count === 0 && financialSummary.debts_count === 0 && financialSummary.accounts_count === 0 && (financialSummary.property_count || 0) === 0) && (
+      <div
+        className="glass-card p-4 lg:p-6 mb-4 border-l-4 border-l-[#10b981] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(16,185,129,0.2)]"
+        data-testid="cfp-guide-tile"
+        onClick={() => navigate('/financial')}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <DollarSign className="w-5 h-5 text-[#10b981]" />
+            <div>
+              <h3 className="text-base lg:text-lg font-semibold text-[var(--t)]">Build Your Financial Picture</h3>
+              <p className="text-xs text-[var(--t4)]">Bills, debts, accounts, and property — get started now</p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-[var(--t5)]" />
+        </div>
+      </div>
+      )}
+
       {/* Estate Readiness Score — Single Gauge */}
       <div className="glass-card p-4 lg:p-6 mb-4" data-testid="readiness-card">
         <div className="flex justify-center">
@@ -669,72 +689,8 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* CarryOn Financial Portal Tile */}
-      <div
-        className="glass-card p-4 lg:p-6 mb-4 border-l-4 border-l-[#10b981] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(16,185,129,0.2)]"
-        data-testid="cfp-dashboard-tile"
-        onClick={() => navigate('/financial')}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-[#10b981]" />
-            <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">CarryOn Financial Portal</h3>
-          </div>
-          <ChevronRight className="w-5 h-5 text-[var(--t5)]" />
-        </div>
-        {financialSummary && (financialSummary.bills_count > 0 || financialSummary.debts_count > 0 || financialSummary.accounts_count > 0 || financialSummary.property_count > 0) ? (
-          <>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
-              <div className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)' }}>
-                <div className="text-sm lg:text-lg font-bold text-[var(--t)]">${(financialSummary.monthly_total || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
-                <div className="text-[11px] text-[var(--t5)]">Monthly Bills</div>
-              </div>
-              <div className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                <div className="text-sm lg:text-lg font-bold text-[var(--t)]">{financialSummary.debts_count}</div>
-                <div className="text-[11px] text-[var(--t5)]">Active Debts</div>
-              </div>
-              <div className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.15)' }}>
-                <div className="text-sm lg:text-lg font-bold text-[var(--t)]">{(financialSummary.accounts_count || 0) + (financialSummary.property_count || 0)}</div>
-                <div className="text-[11px] text-[var(--t5)]">Assets</div>
-              </div>
-              <div className="rounded-xl p-2.5 text-center" style={{ background: financialSummary.net_position >= 0 ? 'rgba(34,201,147,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${financialSummary.net_position >= 0 ? 'rgba(34,201,147,0.15)' : 'rgba(239,68,68,0.15)'}` }}>
-                <div className="text-sm lg:text-lg font-bold text-[var(--t)]">
-                  <TrendingUp className="w-4 h-4 inline mr-1" style={{ color: financialSummary.net_position >= 0 ? '#22C993' : '#ef4444' }} />
-                  Net
-                </div>
-                <div className="text-[11px] text-[var(--t5)]">${Math.abs(financialSummary.net_position || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
-              </div>
-            </div>
-            {financialSummary.upcoming_bills?.length > 0 && (
-              <div className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--b)' }}>
-                <div className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider mb-1.5">Upcoming This Week</div>
-                {financialSummary.upcoming_bills.slice(0, 3).map(bill => (
-                  <div key={bill.id} className="flex items-center justify-between py-1 text-xs">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Receipt className="w-3 h-3 text-[#10b981] flex-shrink-0" />
-                      <span className="text-[var(--t3)] truncate">{bill.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {bill.amount && <span className="text-[var(--t)] font-medium">${bill.amount.toLocaleString()}</span>}
-                      <span className="text-[var(--t5)]">{bill.days_until === 0 ? 'Today' : `${bill.days_until}d`}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="text-center py-3">
-            <p className="text-[var(--t4)] text-sm mb-1">Your complete financial picture — bills, debts, and accounts</p>
-            <span className="text-[#10b981] text-sm font-medium">Get Started with Bill Tracker</span>
-          </div>
-        )}
-      </div>
-
-
-
       {/* Stat Cards */}
-      <div className="grid grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-4 mb-4">
         {isFeatureKeyEnabled('mm', enabledFeatures) && (
         <StatCard 
           icon={MessageSquare}
@@ -765,6 +721,14 @@ const DashboardPage = () => {
           sectionKey="vault"
         />
         )}
+        <StatCard 
+          icon={DollarSign}
+          value={(financialSummary?.bills_count || 0) + (financialSummary?.debts_count || 0) + (financialSummary?.accounts_count || 0) + (financialSummary?.property_count || 0)}
+          label="Financial Portal (CFP)"
+          cardClass="stat-card-financial"
+          onClick={() => navigate('/financial')}
+          sectionKey="financial_portal"
+        />
         {egaRunning && isFeatureKeyEnabled('ega', enabledFeatures) && (
           <div className="col-span-3 lg:col-span-4 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold"
             style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)', color: '#d4af37' }}
@@ -803,8 +767,8 @@ const DashboardPage = () => {
       </div>
       )}
 
-      {/* Bottom Section - Messages, Checklist & Vault Previews */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* Bottom Section - Messages, Checklist, Vault & Financial Previews */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Milestone Messages Preview - Purple */}
         {isFeatureKeyEnabled('mm', enabledFeatures) && (
         <div 
@@ -934,6 +898,62 @@ const DashboardPage = () => {
           </button>
         </div>
         )}
+
+        {/* Financial Portal Preview - Green */}
+        <div 
+          className="glass-card p-4 lg:p-6 border-l-4 border-l-[#10b981] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.02] lg:hover:shadow-[0_12px_36px_-6px_rgba(16,185,129,0.3)]"
+          data-testid="preview-financial"
+          onClick={() => navigate('/financial')}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-[#10b981]" />
+              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">Financial Portal (CFP)</h3>
+            </div>
+            <span className="text-[var(--t4)] text-sm">
+              {financialSummary ? `${(financialSummary.bills_count || 0) + (financialSummary.debts_count || 0) + (financialSummary.accounts_count || 0) + (financialSummary.property_count || 0)} items` : '0 items'}
+            </span>
+          </div>
+          {financialSummary && (financialSummary.bills_count > 0 || financialSummary.debts_count > 0 || financialSummary.accounts_count > 0 || (financialSummary.property_count || 0) > 0) ? (
+            <>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <div className="rounded-lg p-2 text-center" style={{ background: 'rgba(16,185,129,0.1)' }}>
+                  <div className="text-sm font-bold text-[var(--t)]">${(financialSummary.monthly_total || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}/mo</div>
+                  <div className="text-[11px] text-[var(--t5)]">{financialSummary.bills_count} Bills</div>
+                </div>
+                <div className="rounded-lg p-2 text-center" style={{ background: 'rgba(59,130,246,0.1)' }}>
+                  <div className="text-sm font-bold text-[var(--t)]">${(financialSummary.total_assets || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
+                  <div className="text-[11px] text-[var(--t5)]">Total Assets</div>
+                </div>
+              </div>
+              {financialSummary.upcoming_bills?.length > 0 && (
+                <div className="space-y-1">
+                  {financialSummary.upcoming_bills.slice(0, 2).map(bill => (
+                    <div key={bill.id} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Receipt className="w-3 h-3 text-[#10b981] flex-shrink-0" />
+                        <span className="text-[var(--t3)] truncate">{bill.name}</span>
+                      </div>
+                      <span className="text-[var(--t5)] flex-shrink-0">{bill.days_until === 0 ? 'Today' : `${bill.days_until}d`}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center gap-3 p-3 bg-[var(--s)] rounded-lg">
+              <Clock className="w-5 h-5 text-[var(--t5)]" />
+              <span className="text-[var(--t4)] text-sm">No financial data yet</span>
+            </div>
+          )}
+          <button 
+            onClick={() => navigate('/financial')}
+            className="mt-2 text-[#10b981] hover:text-[#34d399] text-base font-medium flex items-center gap-1"
+            data-testid="preview-financial-link"
+          >
+            View Financial Portal <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
       </div>
       {showCelebration && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center overflow-y-auto" data-testid="celebration-overlay"
