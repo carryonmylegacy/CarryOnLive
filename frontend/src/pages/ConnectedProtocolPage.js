@@ -42,6 +42,7 @@ import {
   Copy,
   Link,
   CreditCard,
+  Info,
 } from 'lucide-react';
 import { platformDownload } from '../utils/downloadFile';
 
@@ -870,9 +871,18 @@ export default function ConnectedProtocolPage() {
           <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />
         </button>
       )}
-    </div>
 
-    {/* ===== Share Plan Modal ===== */}
+      {/* Recall walkthrough */}
+      <button
+        onClick={() => { setWelcomeStep(1); setShowWelcome(true); }}
+        className="w-full py-3 rounded-2xl text-sm font-semibold transition-all active:scale-[0.97] flex items-center justify-center gap-2"
+        data-testid="ccp-recall-walkthrough"
+        style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t4)' }}
+      >
+        <Info className="w-4 h-4" />
+        How CCP Works
+      </button>
+    </div>
     {shareModal && (
       <div className="fixed inset-0 z-[60] flex items-center justify-center" data-testid="ccp-share-modal"
         style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)', padding: '16px' }}>
