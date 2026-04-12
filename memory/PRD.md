@@ -63,8 +63,9 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - **Backend: server.py Refactoring**: Extracted DB migrations and 97 index definitions into `db_indexes.py` (server.py: 434 → 262 lines, -40%)
 - **Backend: guardian.py Refactoring**: Extracted 6 PDF export routes and `sanitize_for_pdf` helper into `routes/guardian_exports.py` (guardian.py: 1998 → 880 lines, -56%)
 - **Backend: staff_tools.py Refactoring**: Extracted 13 ops/admin routes (activity, search, escalations, shift notes, knowledge base) into `routes/staff_ops.py` (staff_tools.py: 1850 → 1354 lines, -27%)
+- **Frontend: ConnectedProtocolPage.js Refactoring**: Extracted Plan Editor + Active Emergency View + PlanDetails + ResourceLinker into `components/ccp/CCPPlanEditor.js` and `components/ccp/CCPActiveView.js` (ConnectedProtocolPage.js: 1157 → 695 lines, -40%)
 - **Housekeeping Script Updated**: Checks #28 and #32 now scan `db_indexes.py` in addition to `server.py`
-- **Testing**: 27/27 backend tests pass, frontend verified, housekeeping 65/65 ALL PASS
+- **Testing**: All backend and frontend tests pass, housekeeping 65/65 ALL PASS, zero WARNs
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
@@ -90,6 +91,9 @@ Build and maintain a comprehensive family preparedness platform that helps users
   - `server.py` → `db_indexes.py` (migrations + 97 indexes)
   - `guardian.py` → `guardian_exports.py` (6 PDF export routes + sanitize_for_pdf)
   - `staff_tools.py` → `staff_ops.py` (13 ops/admin routes)
+- **ConnectedProtocolPage.js refactored** (Apr 13, 2026): 1157 → 695 lines (-40%)
+  - `components/ccp/CCPPlanEditor.js` — plan editor form + ResourceLinker (257 lines)
+  - `components/ccp/CCPActiveView.js` — active emergency dashboard + PlanDetails (278 lines)
 
 ## Code Architecture
 ```
@@ -110,6 +114,7 @@ Build and maintain a comprehensive family preparedness platform that helps users
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
+│   │   │   ├── ccp/ (CCPPlanEditor, CCPActiveView — NEW)
 │   │   │   ├── financial/ (BillTile, BillForm, BillCalendar, QuickAdd, etc.)
 │   │   │   ├── estate-chat/ (AuthMedia, ECTSecurityIntro, ImagePreviewModal, etc.)
 │   │   ├── pages/
