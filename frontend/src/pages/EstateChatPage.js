@@ -1588,13 +1588,11 @@ export default function EstateChatPage() {
       </div>
 
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
-      {/* DEBUG: deployment verification — remove after keyboard fix confirmed */}
-      <div style={{ background: '#d4af37', color: '#000', padding: '2px 8px', fontSize: '10px', textAlign: 'center', flexShrink: 0, fontWeight: 'bold' }}>
-        V10
-      </div>
+      {/* DEBUG removed — keyboard fix confirmed */}
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
         paddingBottom: '8px',
+        borderTop: '1px solid var(--b)',
       }}>
         {/* Typing indicator */}
         {typers.length > 0 && (
@@ -1830,8 +1828,8 @@ export default function EstateChatPage() {
           )}
         </div>
       </div>
-      {/* Safe-area bottom fill — solid background when keyboard is closed */}
-      {!inputFocused && <div style={{ background: 'var(--bg2)', height: 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />}
+      {/* Safe-area bottom fill — always solid background */}
+      <div style={{ background: 'var(--bg2)', height: 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />
     </div>
   );
 
