@@ -41,6 +41,7 @@ import {
   Share2,
   Copy,
   Link,
+  CreditCard,
 } from 'lucide-react';
 import { platformDownload } from '../utils/downloadFile';
 
@@ -337,6 +338,29 @@ export default function ConnectedProtocolPage() {
     } catch {}
   };
 
+  const downloadEmergencyCard = async (plan) => {
+    try {
+      const safeName = (plan.name || 'plan').replace(/[^a-zA-Z0-9 _-]/g, '').trim() || 'plan';
+      await platformDownload({
+        action: 'emergency_card',
+        params: { plan_id: plan.id },
+        filename: `EmergencyCard_${safeName}.pdf`,
+        onFallback: async () => {
+          const t = localStorage.getItem('carryon_token');
+          const res = await fetch(`${API_URL}/downloads/prepare`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${t}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'emergency_card', params: { plan_id: plan.id }, filename: `EmergencyCard_${safeName}.pdf` }),
+          });
+          if (!res.ok) throw new Error('Failed');
+          const d = await res.json();
+          window.location.href = `${API_URL}/downloads/${d.token}`;
+        },
+      });
+    } catch { alert('Failed to generate emergency card'); }
+  };
+
+
 
   if (loading) {
     return (
@@ -600,6 +624,7 @@ export default function ConnectedProtocolPage() {
             )}
             {/* Action buttons */}
             {isBenefactor && (
+              <>
               <div className="flex gap-2 mt-3">
                 <button onClick={() => activatePlan(p.id, false)} disabled={submitting}
                   className="flex-1 py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.97]"
@@ -614,6 +639,13 @@ export default function ConnectedProtocolPage() {
                   <Play className="w-4 h-4 inline mr-1" />DRILL
                 </button>
               </div>
+              <button onClick={() => downloadEmergencyCard(p)}
+                className="w-full py-2.5 rounded-xl text-xs font-bold transition-all active:scale-[0.97] flex items-center justify-center gap-1.5 mt-2"
+                data-testid={`ccp-emergency-card-${p.id}`}
+                style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)', color: '#d4af37' }}>
+                <CreditCard className="w-3.5 h-3.5" />Emergency Card (wallet PDF + QR)
+              </button>
+              </>
             )}
           </div>
         ))}

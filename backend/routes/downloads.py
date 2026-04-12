@@ -44,6 +44,7 @@ async def prepare_download(data: PrepareRequest, current_user: dict = Depends(ge
         "ect_file",
         "ccp_plan",
         "family_readiness_report",
+        "emergency_card",
     }
     if data.action not in valid_actions:
         raise HTTPException(status_code=400, detail=f"Invalid download action: {data.action}")
@@ -137,6 +138,8 @@ async def execute_download(token: str):
             return await _handle_ccp_plan(user, params, filename)
         elif action == "family_readiness_report":
             return await _handle_family_readiness_report(user, params, filename)
+        elif action == "emergency_card":
+            return await _handle_emergency_card(user, params, filename)
         else:
             raise HTTPException(status_code=400, detail="Unknown action")
     except HTTPException:
@@ -688,6 +691,191 @@ async def _handle_family_readiness_report(user: dict, params: dict, filename: st
         content=pdf_bytes,
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="CarryOn_Readiness_{estate_name}.pdf"'},
+    )
+
+
+
+async def _handle_emergency_card(user: dict, params: dict, filename: str) -> Response:
+    """Generate a wallet-sized Emergency Contact Card PDF with QR code."""
+    import io
+    import tempfile
+
+    import qrcode
+    from fpdf import FPDF
+
+    plan_id = params.get("plan_id")
+    if not plan_id:
+        raise HTTPException(status_code=400, detail="plan_id required")
+
+    plan = await db.emergency_plans.find_one({"id": plan_id, "deleted_at": None}, {"_id": 0})
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+
+    estate = await db.estates.find_one({"id": plan["estate_id"]}, {"_id": 0})
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
+    is_owner = estate["owner_id"] == user["id"]
+    is_ben = user["id"] in estate.get("beneficiaries", [])
+    is_admin = user.get("role") in ("admin", "operator")
+    if not (is_owner or is_ben or is_admin):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    def safe(text):
+        if not text:
+            return ""
+        return text.encode("latin-1", errors="replace").decode("latin-1")
+
+    # Build the share URL for the QR code
+    share_token = plan.get("share_token")
+    app_url = "https://app.carryon.us"
+    if share_token:
+        qr_url = f"{app_url}/shared/plan/{share_token}"
+    else:
+        # Auto-generate share token if none exists
+        from uuid import uuid4 as _uuid4
+
+        share_token = str(_uuid4())[:12]
+        from datetime import datetime as _dt, timezone as _tz
+
+        await db.emergency_plans.update_one(
+            {"id": plan_id},
+            {"$set": {"share_token": share_token, "shared_at": _dt.now(_tz.utc).isoformat()}},
+        )
+        qr_url = f"{app_url}/shared/plan/{share_token}"
+
+    # Generate QR code image
+    qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_M, box_size=8, border=1)
+    qr.add_data(qr_url)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="black", back_color="white")
+    qr_path = tempfile.mktemp(suffix=".png")
+    qr_img.save(qr_path)
+
+    # Extract key info
+    plan_name = plan.get("name", "Emergency Plan")
+    rps = plan.get("rendezvous_points", [])
+    primary_rp = rps[0] if rps else None
+    comm = (plan.get("communication_plan", "") or "").strip()
+    estate_name = estate.get("name", "")
+
+    # Build card PDF — 2 cards per page (3.5" x 2" each = 89mm x 51mm)
+    # Using landscape A4 and placing two cards with cut lines
+    CARD_W = 89  # mm
+    CARD_H = 51  # mm
+
+    pdf = FPDF(orientation="P", unit="mm", format="A4")
+    pdf.set_auto_page_break(auto=False)
+    pdf.add_page()
+
+    # Draw 4 cards on a page (2 columns x 2 rows)
+    positions = [
+        (15, 20),
+        (15 + CARD_W + 10, 20),
+        (15, 20 + CARD_H + 10),
+        (15 + CARD_W + 10, 20 + CARD_H + 10),
+    ]
+
+    for ox, oy in positions:
+        # Card border with rounded appearance (dashed cut line)
+        pdf.set_draw_color(180, 180, 180)
+        pdf.set_line_width(0.3)
+        pdf.rect(ox, oy, CARD_W, CARD_H)
+
+        # Dark background
+        pdf.set_fill_color(15, 22, 41)
+        pdf.rect(ox + 0.5, oy + 0.5, CARD_W - 1, CARD_H - 1, "F")
+
+        # Left side — text content
+        text_x = ox + 3
+        text_w = CARD_W - 28  # leave room for QR on right
+
+        # Title
+        pdf.set_font("Helvetica", "B", 7)
+        pdf.set_text_color(212, 175, 55)
+        pdf.set_xy(text_x, oy + 2.5)
+        pdf.cell(text_w, 3.5, "EMERGENCY PLAN", new_x="LMARGIN", new_y="NEXT")
+
+        # Plan name
+        pdf.set_font("Helvetica", "B", 8)
+        pdf.set_text_color(241, 243, 248)
+        pdf.set_xy(text_x, oy + 6)
+        name_display = safe(plan_name)[:28]
+        pdf.cell(text_w, 4, name_display, new_x="LMARGIN", new_y="NEXT")
+
+        # Meeting point
+        if primary_rp:
+            pdf.set_font("Helvetica", "B", 5.5)
+            pdf.set_text_color(59, 123, 247)
+            pdf.set_xy(text_x, oy + 12)
+            pdf.cell(text_w, 3, "MEETING POINT", new_x="LMARGIN", new_y="NEXT")
+            pdf.set_font("Helvetica", "", 6)
+            pdf.set_text_color(208, 222, 233)
+            pdf.set_xy(text_x, oy + 15)
+            rp_name = safe(primary_rp.get("name", ""))[:30]
+            pdf.cell(text_w, 3, rp_name, new_x="LMARGIN", new_y="NEXT")
+            if primary_rp.get("address"):
+                pdf.set_xy(text_x, oy + 18)
+                rp_addr = safe(primary_rp["address"])[:35]
+                pdf.cell(text_w, 3, rp_addr, new_x="LMARGIN", new_y="NEXT")
+
+        # Communication
+        if comm:
+            comm_y = oy + 24 if primary_rp else oy + 14
+            pdf.set_font("Helvetica", "B", 5.5)
+            pdf.set_text_color(34, 201, 147)
+            pdf.set_xy(text_x, comm_y)
+            pdf.cell(text_w, 3, "COMMUNICATION", new_x="LMARGIN", new_y="NEXT")
+            pdf.set_font("Helvetica", "", 5.5)
+            pdf.set_text_color(208, 222, 233)
+            pdf.set_xy(text_x, comm_y + 3)
+            # First line of comm plan
+            comm_line = safe(comm.split("\n")[0])[:45]
+            pdf.cell(text_w, 2.5, comm_line, new_x="LMARGIN", new_y="NEXT")
+
+        # Estate name at bottom
+        pdf.set_font("Helvetica", "I", 5)
+        pdf.set_text_color(82, 92, 114)
+        pdf.set_xy(text_x, oy + CARD_H - 7)
+        pdf.cell(text_w, 2.5, safe(estate_name), new_x="LMARGIN", new_y="NEXT")
+
+        # CarryOn branding
+        pdf.set_font("Helvetica", "B", 5)
+        pdf.set_text_color(212, 175, 55)
+        pdf.set_xy(text_x, oy + CARD_H - 4)
+        pdf.cell(text_w, 2.5, "CarryOn", new_x="LMARGIN", new_y="NEXT")
+
+        # Right side — QR code
+        qr_size = 22
+        qr_x = ox + CARD_W - qr_size - 3
+        qr_y = oy + 3
+        pdf.image(qr_path, qr_x, qr_y, qr_size, qr_size)
+
+        # "Scan for full plan" under QR
+        pdf.set_font("Helvetica", "", 4.5)
+        pdf.set_text_color(160, 170, 191)
+        pdf.set_xy(qr_x - 2, qr_y + qr_size + 1)
+        pdf.cell(qr_size + 4, 2.5, "Scan for full plan", align="C", new_x="LMARGIN", new_y="NEXT")
+
+    # Cut line instructions
+    pdf.set_font("Helvetica", "I", 8)
+    pdf.set_text_color(150, 150, 150)
+    pdf.set_xy(15, 20 + (CARD_H + 10) * 2 + 5)
+    pdf.cell(0, 5, "Cut along the grey lines. Keep in wallets, backpacks, or tape to the fridge.")
+
+    # Cleanup
+    import os
+    try:
+        os.unlink(qr_path)
+    except OSError:
+        pass
+
+    pdf_bytes = bytes(pdf.output())
+    safe_name = "".join(c for c in plan_name if c.isalnum() or c in " _-")[:30].strip() or "plan"
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="EmergencyCard_{safe_name}.pdf"'},
     )
 
 
