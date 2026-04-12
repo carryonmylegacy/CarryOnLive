@@ -511,7 +511,6 @@ async def upload_message_video(
     return {"success": True, "video_id": video_id}
 
 
-
 @router.post("/messages/{message_id}/upload-attachment")
 async def upload_message_attachment(
     message_id: str,
@@ -533,7 +532,9 @@ async def upload_message_attachment(
     file_bytes = await file.read()
     file_name = file.filename or "attachment"
     content_type = file.content_type or "application/octet-stream"
-    logger.info(f"Attachment upload for message {message_id}: {len(file_bytes)} bytes, name={file_name}, type={content_type}")
+    logger.info(
+        f"Attachment upload for message {message_id}: {len(file_bytes)} bytes, name={file_name}, type={content_type}"
+    )
 
     # Encrypt and store
     encrypted = encrypt_aes256(file_bytes, estate_salt)

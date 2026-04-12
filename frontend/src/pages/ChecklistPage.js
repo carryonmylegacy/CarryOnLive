@@ -51,21 +51,6 @@ const DUE_TIMEFRAMES = [
   { value: 'no_rush', label: 'No Rush' },
 ];
 
-const QUICK_TEMPLATES = [
-  { cat: 'insurance', title: 'File life insurance claim', action: 'call', desc: 'Call the life insurance company to initiate the death benefit claim', priority: 'critical', timeframe: 'immediate' },
-  { cat: 'legal', title: 'Contact estate attorney', action: 'call', desc: 'Call the estate planning attorney to begin probate process', priority: 'critical', timeframe: 'immediate' },
-  { cat: 'financial', title: 'Notify bank and financial institutions', action: 'call', desc: 'Contact banks to freeze accounts and begin estate transfer process', priority: 'high', timeframe: 'first_week' },
-  { cat: 'government', title: 'Obtain death certificates', action: 'file_paperwork', desc: 'Order multiple certified copies of the death certificate (you will need 10-15 copies)', priority: 'critical', timeframe: 'immediate' },
-  { cat: 'insurance', title: 'Notify health insurance provider', action: 'call', desc: 'Cancel or transfer health insurance coverage', priority: 'high', timeframe: 'first_week' },
-  { cat: 'financial', title: 'Contact Social Security Administration', action: 'call', desc: 'Report the death and inquire about survivor benefits', priority: 'high', timeframe: 'first_week' },
-  { cat: 'property', title: 'Secure all properties', action: 'visit', desc: 'Change locks, check on property, collect mail', priority: 'high', timeframe: 'first_week' },
-  { cat: 'personal', title: 'Cancel subscriptions and memberships', action: 'custom', desc: 'Cancel recurring payments, streaming services, gym memberships, etc.', priority: 'low', timeframe: 'first_month' },
-  { cat: 'legal', title: 'File the will with probate court', action: 'file_paperwork', desc: 'Submit the original will to the local probate court', priority: 'high', timeframe: 'first_week' },
-  { cat: 'financial', title: 'Contact employer / pension administrator', action: 'call', desc: 'Notify employer, claim final paycheck, inquire about pension or 401k', priority: 'high', timeframe: 'first_week' },
-  { cat: 'government', title: 'Notify the IRS', action: 'file_paperwork', desc: 'File final tax return and estate tax return if applicable', priority: 'medium', timeframe: 'two_weeks' },
-  { cat: 'personal', title: 'Notify utility companies', action: 'call', desc: 'Transfer or cancel utilities (electric, gas, water, internet)', priority: 'medium', timeframe: 'two_weeks' },
-];
-
 const EMPTY_FORM = {
   title: '', description: '', category: 'general', priority: 'medium',
   action_type: 'custom', contact_name: '', contact_phone: '', contact_email: '',
@@ -204,20 +189,6 @@ const ChecklistPage = () => {
     setShowForm(false);
     setEditingItem(null);
     setForm({ ...EMPTY_FORM });
-  };
-
-  const applyTemplate = (tmpl) => {
-    setForm({
-      ...EMPTY_FORM,
-      title: tmpl.title,
-      description: tmpl.desc,
-      category: tmpl.cat,
-      priority: tmpl.priority,
-      action_type: tmpl.action,
-      due_timeframe: tmpl.timeframe,
-    });
-    setShowTemplates(false);
-    setShowForm(true);
   };
 
   const handleAISuggest = async () => {
