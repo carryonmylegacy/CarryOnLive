@@ -59,15 +59,19 @@ Build and maintain a comprehensive family preparedness platform that helps users
   - **Per-Beneficiary Designation**: Each bill/debt/account supports per-beneficiary visibility with Pre/Post transition timing toggles (same SDV pattern)
   - **Custom Categories**: Benefactors can create custom categories via +Add New Category in any form dropdown; custom categories instantly appear as filter bubbles
   - **Mark as Paid**: Bill payment tracking with history
-  - **Dashboard Tile**: CFP tile on benefactor dashboard showing summary stats (monthly bills, debts, accounts, net position) and upcoming bills this week
+  - **Dashboard Tile**: CFP tile on benefactor dashboard showing summary stats and upcoming bills
   - **Sidebar Navigation**: CFP nav item added to benefactor sidebar
   - **Feature Access Toggle**: `cfp_access` toggle added to beneficiary feature access settings
   - **Section Permissions**: `financial_portal` added to ALL_SECTIONS for section-level gating
-  - Backend: `/app/backend/routes/financial_portal.py` (20 routes, 667 lines)
-  - Frontend: `/app/frontend/src/pages/FinancialPortalPage.js` + 7 components in `/app/frontend/src/components/financial/`
+  - **Beneficiary Financial Page**: Read-only view at `/beneficiary/financial` with Mark as Paid button (post-transition only), calendar view, summary cards, and 3 sub-tabs
+  - **Bill Reminder Scheduler**: `bill_reminder_scheduler` runs daily at 9 AM EST, sends push + in-app notifications to beneficiaries of transitioned estates at 10, 7, 5, 3, 1, and 0 days before each bill's due date
+  - **Financial Health Score**: New gauge on dashboard showing a 0-100 score based on: coverage (bills/debts/accounts), auto-pay %, beneficiary designations, DAV links, and notes/instructions
+  - **Dual Dashboard Gauges**: Estate Readiness Score (left) + Financial Health Score (right) displayed side-by-side like speedometer and tachometer
+  - Backend: `/app/backend/routes/financial_portal.py` (21 routes, 741 lines)
+  - Frontend: `/app/frontend/src/pages/FinancialPortalPage.js` + 7 components in `/app/frontend/src/components/financial/` + `/app/frontend/src/pages/beneficiary/BeneficiaryFinancialPage.js`
   - MongoDB collections: `bills`, `debts`, `financial_accounts`, `bill_categories`, `bill_payments`
   - DB indexes: 6 new indexes for financial collections
-  - Testing: 27/27 backend tests pass, all frontend UI verified
+  - Testing: 40/40 tests pass (27 initial + 13 extension), all frontend UI verified
   - Housekeeping: 64/65 PASS, 0 FAIL
 
 ## Blocked Items
@@ -75,8 +79,6 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - Twilio SMS: Waiting on A2P 10DLC campaign approval
 
 ## Upcoming Tasks
-- (P1) CFP Beneficiary View Page — read-only view with Mark as Paid for post-transition beneficiaries
-- (P1) CFP Notification Scheduler — `bill_reminder_scheduler` for post-transition push/in-app reminders
 - (P1) CFP Dock Item — Add CFP to mobile bottom dock defaults
 - (P0) Google Play Store Launch
 - (P1) Share Extension Setup (iOS)
