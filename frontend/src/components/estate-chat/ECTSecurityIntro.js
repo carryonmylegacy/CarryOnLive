@@ -28,18 +28,18 @@ export default function ECTSecurityIntro({ introStep, setIntroStep, onDismiss, o
               <h2 className="text-xl font-bold" style={{ color: 'var(--t)' }}>The Most Private Chat You'll Ever Use</h2>
               <p className="text-sm mt-2" style={{ color: 'var(--t4)' }}>Estate Comms isn't like other messaging apps. Here's why.</p>
             </div>
-            <div className="space-y-3 mb-6">
+            <div className="space-y-2 mb-5">
               {[
                 { icon: Lock, title: 'Closed Network', desc: 'No strangers can ever find you. Only people explicitly connected to your estate can message you.' },
                 { icon: Shield, title: 'No Phone Number Needed', desc: 'Your phone number is never exposed. No contact list scanning. No profile discovery by outsiders.' },
                 { icon: Users, title: 'Owner-Controlled Access', desc: 'The estate benefactor controls who is in and who is out. No one can add themselves.' },
                 { icon: X, title: 'Zero Data Mining', desc: 'No ads. No tracking. No metadata sold to third parties. Your conversations exist for your family.' },
               ].map((item, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div key={i} className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                   <item.icon className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#d4af37' }} />
                   <div>
-                    <div className="text-sm font-bold" style={{ color: 'var(--t)' }}>{item.title}</div>
-                    <div className="text-xs mt-0.5" style={{ color: 'var(--t4)' }}>{item.desc}</div>
+                    <div className="text-sm font-bold leading-snug" style={{ color: 'var(--t)' }}>{item.title}</div>
+                    <div className="text-xs leading-snug" style={{ color: 'var(--t4)' }}>{item.desc}</div>
                   </div>
                 </div>
               ))}
@@ -64,20 +64,20 @@ export default function ECTSecurityIntro({ introStep, setIntroStep, onDismiss, o
               <h2 className="text-xl font-bold" style={{ color: 'var(--t)' }}>How to Use Estate Comms</h2>
               <p className="text-sm mt-2" style={{ color: 'var(--t4)' }}>It's simple — here's everything you need to know.</p>
             </div>
-            <div className="space-y-3 mb-6">
+            <div className="space-y-2 mb-5">
               {[
                 { num: '1', title: 'Start a Conversation', desc: 'Tap the gold + button in the top right corner to start a new chat.' },
                 { num: '2', title: 'Pick Who to Chat With', desc: 'Choose one family member for a private chat, or select several for a group conversation.' },
                 { num: '3', title: 'Type and Send', desc: 'Type your message in the box at the bottom and tap the send arrow. That\'s it!' },
                 { num: '4', title: 'Send Photos & Voice', desc: 'Tap the paperclip icon to attach photos or documents. Tap the microphone to record a voice message.' },
               ].map((item, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
+                <div key={i} className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
                     {item.num}
                   </div>
                   <div>
-                    <div className="text-sm font-bold" style={{ color: 'var(--t)' }}>{item.title}</div>
-                    <div className="text-xs mt-0.5" style={{ color: 'var(--t4)' }}>{item.desc}</div>
+                    <div className="text-sm font-bold leading-snug" style={{ color: 'var(--t)' }}>{item.title}</div>
+                    <div className="text-xs leading-snug" style={{ color: 'var(--t4)' }}>{item.desc}</div>
                   </div>
                 </div>
               ))}

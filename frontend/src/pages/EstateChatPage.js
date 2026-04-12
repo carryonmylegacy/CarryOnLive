@@ -1591,7 +1591,7 @@ export default function EstateChatPage() {
       {/* DEBUG removed — keyboard fix confirmed */}
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
-        paddingBottom: '8px',
+        paddingBottom: inputFocused ? '4px' : '8px',
         borderTop: '1px solid var(--b)',
       }}>
         {/* Typing indicator */}
@@ -1828,8 +1828,8 @@ export default function EstateChatPage() {
           )}
         </div>
       </div>
-      {/* Safe-area bottom fill — always solid background */}
-      <div style={{ background: 'var(--bg2)', height: 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />
+      {/* Safe-area bottom fill — hide when keyboard is open to avoid gap */}
+      {!inputFocused && <div style={{ background: 'var(--bg2)', height: 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />}
     </div>
   );
 
