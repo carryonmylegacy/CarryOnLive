@@ -1610,6 +1610,12 @@ export default function EstateChatPage() {
       </div>
 
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
+      {/* DEBUG: visible indicator to verify keyboard detection is running */}
+      {kbHeight > 0 && (
+        <div style={{ background: '#d4af37', color: '#000', padding: '2px 8px', fontSize: '10px', textAlign: 'center', flexShrink: 0 }}>
+          KB: {kbHeight}px | VV: {window.visualViewport?.height?.toFixed(0)} | IH: {window.innerHeight}
+        </div>
+      )}
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
         paddingBottom: kbHeight > 0 ? `${kbHeight}px` : '8px',
