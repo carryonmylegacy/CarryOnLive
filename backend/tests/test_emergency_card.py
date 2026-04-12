@@ -125,7 +125,7 @@ class TestEmergencyCardFeature:
         # Create new session without auth
         no_auth_session = requests.Session()
         no_auth_session.headers.update({"Content-Type": "application/json"})
-        
+
         resp = no_auth_session.post(
             f"{BASE_URL}/api/downloads/prepare",
             json={"action": "emergency_card", "params": {}, "filename": "test.pdf"},
@@ -149,9 +149,9 @@ class TestEmergencyCardFeature:
         token = prep_resp.json()["token"]
 
         # First download attempt (will fail with 404 but consumes token)
-        first_resp = self.session.get(f"{BASE_URL}/api/downloads/{token}")
+        self.session.get(f"{BASE_URL}/api/downloads/{token}")
         # Token is consumed regardless of success/failure
-        
+
         # Second download attempt should fail with 401 (token consumed)
         second_resp = self.session.get(f"{BASE_URL}/api/downloads/{token}")
         assert second_resp.status_code == 401, f"Expected 401, got {second_resp.status_code}"
@@ -172,9 +172,10 @@ class TestEmergencyCardCodeVerification:
         downloads_path = "/app/backend/routes/downloads.py"
         with open(downloads_path, "r") as f:
             content = f.read()
-        
-        assert '"emergency_card"' in content or "'emergency_card'" in content, \
+
+        assert '"emergency_card"' in content or "'emergency_card'" in content, (
             "emergency_card should be in valid_actions set"
+        )
         print("✓ emergency_card is in valid_actions set")
 
     def test_handle_emergency_card_function_exists(self):
@@ -182,9 +183,8 @@ class TestEmergencyCardCodeVerification:
         downloads_path = "/app/backend/routes/downloads.py"
         with open(downloads_path, "r") as f:
             content = f.read()
-        
-        assert "async def _handle_emergency_card" in content, \
-            "_handle_emergency_card function should exist"
+
+        assert "async def _handle_emergency_card" in content, "_handle_emergency_card function should exist"
         print("✓ _handle_emergency_card function exists")
 
     def test_emergency_card_routing_in_execute_download(self):
@@ -192,9 +192,10 @@ class TestEmergencyCardCodeVerification:
         downloads_path = "/app/backend/routes/downloads.py"
         with open(downloads_path, "r") as f:
             content = f.read()
-        
-        assert 'action == "emergency_card"' in content or "action == 'emergency_card'" in content, \
+
+        assert 'action == "emergency_card"' in content or "action == 'emergency_card'" in content, (
             "emergency_card should be routed in execute_download"
+        )
         print("✓ emergency_card is routed in execute_download")
 
     def test_qrcode_import_in_handler(self):
@@ -202,9 +203,8 @@ class TestEmergencyCardCodeVerification:
         downloads_path = "/app/backend/routes/downloads.py"
         with open(downloads_path, "r") as f:
             content = f.read()
-        
-        assert "import qrcode" in content, \
-            "qrcode should be imported in _handle_emergency_card"
+
+        assert "import qrcode" in content, "qrcode should be imported in _handle_emergency_card"
         print("✓ qrcode library is imported")
 
     def test_share_token_auto_generation_logic(self):
@@ -212,7 +212,7 @@ class TestEmergencyCardCodeVerification:
         downloads_path = "/app/backend/routes/downloads.py"
         with open(downloads_path, "r") as f:
             content = f.read()
-        
+
         # Check for share_token auto-generation logic
         assert "share_token" in content, "share_token handling should exist"
         assert "uuid4" in content or "uuid" in content, "UUID generation should be used for share_token"
@@ -227,9 +227,10 @@ class TestFrontendEmergencyCardIntegration:
         page_path = "/app/frontend/src/pages/ConnectedProtocolPage.js"
         with open(page_path, "r") as f:
             content = f.read()
-        
-        assert "ccp-emergency-card-" in content, \
+
+        assert "ccp-emergency-card-" in content, (
             "data-testid='ccp-emergency-card-{id}' should exist on Emergency Card button"
+        )
         print("✓ Emergency Card button has data-testid")
 
     def test_creditcard_icon_imported(self):
@@ -237,7 +238,7 @@ class TestFrontendEmergencyCardIntegration:
         page_path = "/app/frontend/src/pages/ConnectedProtocolPage.js"
         with open(page_path, "r") as f:
             content = f.read()
-        
+
         assert "CreditCard" in content, "CreditCard icon should be imported"
         print("✓ CreditCard icon is imported")
 
@@ -246,9 +247,8 @@ class TestFrontendEmergencyCardIntegration:
         page_path = "/app/frontend/src/pages/ConnectedProtocolPage.js"
         with open(page_path, "r") as f:
             content = f.read()
-        
-        assert "downloadEmergencyCard" in content, \
-            "downloadEmergencyCard function should exist"
+
+        assert "downloadEmergencyCard" in content, "downloadEmergencyCard function should exist"
         print("✓ downloadEmergencyCard function exists")
 
     def test_emergency_card_uses_platform_download(self):
@@ -256,12 +256,13 @@ class TestFrontendEmergencyCardIntegration:
         page_path = "/app/frontend/src/pages/ConnectedProtocolPage.js"
         with open(page_path, "r") as f:
             content = f.read()
-        
+
         # Find the downloadEmergencyCard function and check it uses platformDownload
         assert "platformDownload" in content, "platformDownload should be used"
         # Check that emergency_card action is used
-        assert "'emergency_card'" in content or '"emergency_card"' in content, \
+        assert "'emergency_card'" in content or '"emergency_card"' in content, (
             "emergency_card action should be used in downloadEmergencyCard"
+        )
         print("✓ downloadEmergencyCard uses platformDownload with emergency_card action")
 
     def test_share_button_testid_still_exists(self):
@@ -269,9 +270,8 @@ class TestFrontendEmergencyCardIntegration:
         page_path = "/app/frontend/src/pages/ConnectedProtocolPage.js"
         with open(page_path, "r") as f:
             content = f.read()
-        
-        assert "ccp-share-" in content, \
-            "data-testid='ccp-share-{id}' should still exist on share buttons"
+
+        assert "ccp-share-" in content, "data-testid='ccp-share-{id}' should still exist on share buttons"
         print("✓ Share button data-testid still exists")
 
     def test_print_button_testid_still_exists(self):
@@ -279,9 +279,8 @@ class TestFrontendEmergencyCardIntegration:
         page_path = "/app/frontend/src/pages/ConnectedProtocolPage.js"
         with open(page_path, "r") as f:
             content = f.read()
-        
-        assert "ccp-print-" in content, \
-            "data-testid='ccp-print-{id}' should still exist on print buttons"
+
+        assert "ccp-print-" in content, "data-testid='ccp-print-{id}' should still exist on print buttons"
         print("✓ Print button data-testid still exists")
 
 

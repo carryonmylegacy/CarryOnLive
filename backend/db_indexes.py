@@ -148,7 +148,9 @@ async def ensure_indexes(db, logger):
         await db.estate_channel_dismissals.create_index([("user_id", 1), ("channel_id", 1)], unique=True)
         # CCP (Connected Protocol) indexes
         await db.emergency_plans.create_index("estate_id")
+        await db.emergency_plans.create_index("share_token", sparse=True)
         await db.emergency_activations.create_index([("estate_id", 1), ("status", 1)])
+        await db.emergency_activations.create_index([("estate_id", 1), ("is_drill", 1), ("status", 1)])
         await db.member_checkins.create_index([("activation_id", 1), ("user_id", 1)])
         # Notification preferences indexes
         await db.notification_preferences.create_index("user_id", unique=True)

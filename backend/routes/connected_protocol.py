@@ -122,32 +122,46 @@ _CONCERN_TO_PLAN_TYPE = {
 
 # Drill schedule recommendations per concern type
 _DRILL_SCHEDULES = {
-    "hurricane":     {"frequency": "biannual", "months": [5, 11], "label": "Before & after hurricane season (May, Nov)"},
-    "tornado":       {"frequency": "biannual", "months": [3, 9],  "label": "Spring & fall (Mar, Sep)"},
-    "earthquake":    {"frequency": "biannual", "months": [4, 10], "label": "Twice yearly (Apr, Oct)"},
-    "flood":         {"frequency": "biannual", "months": [3, 9],  "label": "Before rainy seasons (Mar, Sep)"},
-    "wildfire":      {"frequency": "biannual", "months": [5, 11], "label": "Before & after fire season (May, Nov)"},
-    "house_fire":    {"frequency": "quarterly", "months": [1, 4, 7, 10], "label": "Every 3 months"},
-    "nuclear":       {"frequency": "annual",   "months": [1],     "label": "Once a year (Jan)"},
-    "winter_storm":  {"frequency": "annual",   "months": [9],     "label": "Before winter (Sep)"},
-    "power_outage":  {"frequency": "annual",   "months": [6],     "label": "Once a year (Jun)"},
-    "terrorism":     {"frequency": "annual",   "months": [9],     "label": "Once a year (Sep)"},
-    "pandemic":      {"frequency": "annual",   "months": [1],     "label": "Once a year (Jan)"},
-    "civil_unrest":  {"frequency": "annual",   "months": [6],     "label": "Once a year (Jun)"},
-    "water_failure": {"frequency": "annual",   "months": [6],     "label": "Once a year (Jun)"},
-    "chemical_spill":{"frequency": "annual",   "months": [3],     "label": "Once a year (Mar)"},
+    "hurricane": {"frequency": "biannual", "months": [5, 11], "label": "Before & after hurricane season (May, Nov)"},
+    "tornado": {"frequency": "biannual", "months": [3, 9], "label": "Spring & fall (Mar, Sep)"},
+    "earthquake": {"frequency": "biannual", "months": [4, 10], "label": "Twice yearly (Apr, Oct)"},
+    "flood": {"frequency": "biannual", "months": [3, 9], "label": "Before rainy seasons (Mar, Sep)"},
+    "wildfire": {"frequency": "biannual", "months": [5, 11], "label": "Before & after fire season (May, Nov)"},
+    "house_fire": {"frequency": "quarterly", "months": [1, 4, 7, 10], "label": "Every 3 months"},
+    "nuclear": {"frequency": "annual", "months": [1], "label": "Once a year (Jan)"},
+    "winter_storm": {"frequency": "annual", "months": [9], "label": "Before winter (Sep)"},
+    "power_outage": {"frequency": "annual", "months": [6], "label": "Once a year (Jun)"},
+    "terrorism": {"frequency": "annual", "months": [9], "label": "Once a year (Sep)"},
+    "pandemic": {"frequency": "annual", "months": [1], "label": "Once a year (Jan)"},
+    "civil_unrest": {"frequency": "annual", "months": [6], "label": "Once a year (Jun)"},
+    "water_failure": {"frequency": "annual", "months": [6], "label": "Once a year (Jun)"},
+    "chemical_spill": {"frequency": "annual", "months": [3], "label": "Once a year (Mar)"},
     "home_invasion": {"frequency": "quarterly", "months": [1, 4, 7, 10], "label": "Every 3 months"},
-    "tsunami":       {"frequency": "biannual", "months": [3, 9],  "label": "Twice yearly (Mar, Sep)"},
-    "cyber_attack":  {"frequency": "annual",   "months": [1],     "label": "Once a year (Jan)"},
+    "tsunami": {"frequency": "biannual", "months": [3, 9], "label": "Twice yearly (Mar, Sep)"},
+    "cyber_attack": {"frequency": "annual", "months": [1], "label": "Once a year (Jan)"},
 }
 
-_MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June",
-                "July", "August", "September", "October", "November", "December"]
+_MONTH_NAMES = [
+    "",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+]
 
 
 def _compute_next_drill_date(months: list[int]) -> str:
     """Return the next upcoming drill date as ISO string (1st of the next applicable month)."""
     from datetime import datetime, timezone
+
     now = datetime.now(timezone.utc)
     current_month = now.month
     current_year = now.year
@@ -157,7 +171,6 @@ def _compute_next_drill_date(months: list[int]) -> str:
             return datetime(current_year, m, 1, tzinfo=timezone.utc).isoformat()
     # Wrap to next year
     return datetime(current_year + 1, sorted(months)[0], 1, tzinfo=timezone.utc).isoformat()
-
 
 
 async def _is_estate_owner(user_id: str, estate_id: str) -> bool:
@@ -212,7 +225,6 @@ async def get_estate_members_endpoint(estate_id: str, current_user: dict = Depen
     if not await _is_estate_member(current_user["id"], estate_id):
         raise HTTPException(status_code=403, detail="Not a member of this estate")
     return await _get_estate_members(estate_id)
-
 
 
 # ===================== WIZARD — AI-POWERED PLAN GENERATION =====================
@@ -709,7 +721,6 @@ async def check_in(data: CheckInRequest, current_user: dict = Depends(get_curren
     return checkin
 
 
-
 # ===================== SHARE PLAN (PUBLIC LINK) =====================
 
 
@@ -753,9 +764,19 @@ async def get_shared_plan(share_token: str):
     """Public endpoint — view a shared emergency plan. No auth required."""
     plan = await db.emergency_plans.find_one(
         {"share_token": share_token, "deleted_at": None},
-        {"_id": 0, "id": 1, "name": 1, "plan_type": 1, "rendezvous_points": 1,
-         "communication_plan": 1, "resource_locations": 1, "instructions": 1,
-         "drill_schedule": 1, "created_at": 1, "estate_id": 1},
+        {
+            "_id": 0,
+            "id": 1,
+            "name": 1,
+            "plan_type": 1,
+            "rendezvous_points": 1,
+            "communication_plan": 1,
+            "resource_locations": 1,
+            "instructions": 1,
+            "drill_schedule": 1,
+            "created_at": 1,
+            "estate_id": 1,
+        },
     )
     if not plan:
         raise HTTPException(status_code=404, detail="Plan not found or link expired")
@@ -766,7 +787,6 @@ async def get_shared_plan(share_token: str):
     return plan
 
 
-
 # ===================== POST-DRILL DEBRIEF =====================
 
 
@@ -775,9 +795,7 @@ async def submit_debrief(activation_id: str, data: DebriefRequest, current_user:
     """Submit a post-drill debrief with rating and notes."""
     if not 1 <= data.rating <= 5:
         raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
-    activation = await db.emergency_activations.find_one(
-        {"id": activation_id, "status": "resolved"}, {"_id": 0}
-    )
+    activation = await db.emergency_activations.find_one({"id": activation_id, "status": "resolved"}, {"_id": 0})
     if not activation:
         raise HTTPException(status_code=404, detail="Resolved activation not found")
     if not await _is_estate_member(current_user["id"], activation["estate_id"]):
@@ -814,21 +832,22 @@ async def get_debrief_stats(estate_id: str, current_user: dict = Depends(get_cur
     entries = []
     for a in activations:
         d = a.get("debrief", {})
-        entries.append({
-            "activation_id": a["id"],
-            "plan_name": a.get("plan_name", ""),
-            "date": a.get("deactivated_at", a.get("activated_at", "")),
-            "rating": d.get("rating", 0),
-            "went_well": d.get("went_well", ""),
-            "to_improve": d.get("to_improve", ""),
-        })
+        entries.append(
+            {
+                "activation_id": a["id"],
+                "plan_name": a.get("plan_name", ""),
+                "date": a.get("deactivated_at", a.get("activated_at", "")),
+                "rating": d.get("rating", 0),
+                "went_well": d.get("went_well", ""),
+                "to_improve": d.get("to_improve", ""),
+            }
+        )
     avg_rating = round(sum(e["rating"] for e in entries) / len(entries), 1) if entries else 0
     return {
         "entries": entries,
         "total_drills": len(entries),
         "average_rating": avg_rating,
     }
-
 
 
 # ===================== DRILL SCHEDULE & REMINDERS =====================
@@ -839,7 +858,9 @@ class DrillScheduleToggle(BaseModel):
 
 
 @router.patch("/ccp/plans/{plan_id}/drill-schedule")
-async def toggle_drill_schedule(plan_id: str, data: DrillScheduleToggle, current_user: dict = Depends(get_current_user)):
+async def toggle_drill_schedule(
+    plan_id: str, data: DrillScheduleToggle, current_user: dict = Depends(get_current_user)
+):
     """Enable or disable drill reminders for a plan."""
     plan = await db.emergency_plans.find_one({"id": plan_id, "deleted_at": None}, {"_id": 0})
     if not plan:
@@ -998,10 +1019,12 @@ async def send_drill_reminders():
             next_date = _compute_next_drill_date(months)
             await db.emergency_plans.update_one(
                 {"id": plan["id"]},
-                {"$set": {
-                    "drill_schedule.last_reminder_sent": now.isoformat(),
-                    "drill_schedule.next_drill_date": next_date,
-                }},
+                {
+                    "$set": {
+                        "drill_schedule.last_reminder_sent": now.isoformat(),
+                        "drill_schedule.next_drill_date": next_date,
+                    }
+                },
             )
             sent_count += 1
             logger.info(f"Drill reminder sent for '{plan['name']}' to {owner['email']}")

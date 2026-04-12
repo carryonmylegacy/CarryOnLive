@@ -29,8 +29,6 @@ import {
   Navigation,
   TriangleAlert,
   Edit3,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
 
 const HOUSEHOLD_OPTIONS = [
