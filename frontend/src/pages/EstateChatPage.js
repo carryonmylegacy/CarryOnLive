@@ -192,46 +192,9 @@ export default function EstateChatPage() {
     }
   }, [activeChannel]);
 
-  // ── iOS PWA: track keyboard height to push input bar above it ──
-  const [kbHeight, setKbHeight] = useState(0);
-  const fullHeightRef = useRef(window.innerHeight);
-  useEffect(() => {
-    if (loading) return;
-    const vv = window.visualViewport;
-    if (!vv) return;
-
-    // Capture the full viewport height when keyboard is NOT open
-    if (window.innerHeight > fullHeightRef.current * 0.9) {
-      fullHeightRef.current = window.innerHeight;
-    }
-
-    let rafId = 0;
-
-    const update = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        // Update fullHeight when keyboard is clearly closed
-        if (vv.height > fullHeightRef.current * 0.9) {
-          fullHeightRef.current = vv.height;
-        }
-        const kb = Math.max(0, fullHeightRef.current - vv.height);
-        setKbHeight(kb);
-        // Prevent iOS from scrolling the page to reveal the input
-        // (the fixed root extends behind keyboard; iOS tries to scroll it into view)
-        if (kb > 0) {
-          window.scrollTo(0, 0);
-        }
-      });
-    };
-
-    vv.addEventListener('resize', update);
-    vv.addEventListener('scroll', update);
-    return () => {
-      cancelAnimationFrame(rafId);
-      vv.removeEventListener('resize', update);
-      vv.removeEventListener('scroll', update);
-    };
-  }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
+  // ── iOS keyboard: no manipulation needed ──
+  // Root uses position:fixed + inset:0, which shrinks naturally with the viewport.
+  // iOS handles keyboard by shrinking the viewport — the flex layout adapts automatically.
 
   const fetchChannels = useCallback(async () => {
     try {
@@ -1625,13 +1588,13 @@ export default function EstateChatPage() {
       </div>
 
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
-      {/* DEBUG: ALWAYS visible to confirm code is deployed */}
-      <div style={{ background: '#d4af37', color: '#000', padding: '4px 8px', fontSize: '11px', textAlign: 'center', flexShrink: 0, fontWeight: 'bold' }}>
-        V9 | KB: {kbHeight} | VV: {typeof window !== 'undefined' && window.visualViewport ? Math.round(window.visualViewport.height) : '?'} | FH: {fullHeightRef.current}
+      {/* DEBUG: deployment verification — remove after keyboard fix confirmed */}
+      <div style={{ background: '#d4af37', color: '#000', padding: '2px 8px', fontSize: '10px', textAlign: 'center', flexShrink: 0, fontWeight: 'bold' }}>
+        V10
       </div>
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
-        paddingBottom: kbHeight > 0 ? `${kbHeight}px` : '8px',
+        paddingBottom: '8px',
       }}>
         {/* Typing indicator */}
         {typers.length > 0 && (
@@ -1880,10 +1843,9 @@ export default function EstateChatPage() {
       top: 0,
       left: 0,
       right: 0,
-      height: `${fullHeightRef.current}px`,
+      bottom: 0,
       zIndex: 45,
       overflow: 'hidden',
-      overscrollBehavior: 'none',
     }}>
       {/* Pad for status bar on native */}
       <div style={{ height: 'env(safe-area-inset-top, 0px)', flexShrink: 0 }} />
