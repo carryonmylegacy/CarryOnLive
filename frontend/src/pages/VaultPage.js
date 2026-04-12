@@ -900,7 +900,7 @@ const VaultPage = () => {
                           {formatFileSize(doc.file_size)} · {doc.category}
                         </p>
                         
-                        <div className="flex items-center gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-2">
                         <Button 
                           variant="ghost" 
                           size="sm" 
