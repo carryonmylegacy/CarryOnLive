@@ -4,7 +4,8 @@ import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   DollarSign, Receipt, Landmark, PiggyBank, Search, CheckCircle2,
-  ChevronLeft, ChevronRight, Loader2, TrendingUp, TrendingDown
+  ChevronLeft, ChevronRight, Loader2, TrendingUp, TrendingDown,
+  XCircle, Phone, ExternalLink, ClipboardList, X
 } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -75,6 +76,7 @@ const BeneficiaryFinancialPage = () => {
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [selectedCalendarDay, setSelectedCalendarDay] = useState(null);
   const [isTransitioned, setIsTransitioned] = useState(false);
+  const [cancelAdvisor, setCancelAdvisor] = useState(null); // bill being cancelled
 
   useEffect(() => { fetchAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -279,6 +281,16 @@ const BeneficiaryFinancialPage = () => {
                               Mark as Paid
                             </Button>
                           )}
+                          {/* Cancel This — for optional/subscription bills post-transition */}
+                          {isTransitioned && (bill.priority === 'optional' || bill.category === 'subscriptions') && bill.status === 'active' && (
+                            <button
+                              onClick={() => setCancelAdvisor(bill)}
+                              className="mt-2 w-full py-2 rounded-xl text-xs font-bold text-center transition-all"
+                              style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}
+                              data-testid={`cancel-advisor-${bill.id}`}>
+                              <XCircle className="w-3.5 h-3.5 inline mr-1" /> Cancel This Bill
+                            </button>
+                          )}
                         </CardContent>
                       </Card>
                     );
@@ -372,6 +384,113 @@ const BeneficiaryFinancialPage = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* ============ BILL CANCELLATION ADVISOR ============ */}
+      {cancelAdvisor && (
+        <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center" data-testid="cancel-advisor-overlay">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setCancelAdvisor(null)} />
+          <div className="relative w-full max-w-lg mx-4 mb-4 sm:mb-0 rounded-2xl overflow-hidden animate-fade-in"
+            style={{ background: 'var(--bg2)', border: '1px solid rgba(239,68,68,0.2)' }}>
+            {/* Header */}
+            <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--b)', background: 'rgba(239,68,68,0.06)' }}>
+              <div className="flex items-center gap-2">
+                <XCircle className="w-5 h-5 text-[#ef4444]" />
+                <h3 className="text-base font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Cancellation Guide</h3>
+              </div>
+              <button onClick={() => setCancelAdvisor(null)} className="p-1.5 rounded-lg hover:bg-[var(--s)]" data-testid="cancel-advisor-close">
+                <X className="w-4 h-4 text-[var(--t4)]" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
+              {/* Bill info */}
+              <div className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--b)' }}>
+                <div className="text-sm font-bold text-[var(--t)] mb-1">{cancelAdvisor.name}</div>
+                <div className="text-xs text-[var(--t5)]">
+                  {BILL_LABELS[cancelAdvisor.category] || cancelAdvisor.category}
+                  {cancelAdvisor.amount && ` — $${cancelAdvisor.amount.toLocaleString()}/mo`}
+                </div>
+              </div>
+
+              {/* Cancellation Checklist */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <ClipboardList className="w-4 h-4 text-[var(--gold)]" />
+                  <span className="text-sm font-bold text-[var(--t)]">Cancellation Checklist</span>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { step: 1, text: 'Verify if this bill has any early termination fee or contract obligation' },
+                    { step: 2, text: 'Confirm final payment date and any outstanding balance' },
+                    { step: 3, text: cancelAdvisor.biller_phone ? `Call the biller at ${cancelAdvisor.biller_phone} to request cancellation` : 'Contact the biller to request cancellation' },
+                    { step: 4, text: 'Request a cancellation confirmation number or email for your records' },
+                    { step: 5, text: 'If on auto-pay, verify the auto-pay has been stopped to prevent future charges' },
+                  ].map(item => (
+                    <div key={item.step} className="flex items-start gap-3 py-2 px-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold"
+                        style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.3)' }}>
+                        {item.step}
+                      </div>
+                      <span className="text-xs text-[var(--t3)] leading-relaxed">{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Benefactor's instructions */}
+              {cancelAdvisor.notes && (
+                <div className="rounded-xl p-3" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
+                  <div className="text-[10px] font-bold text-[var(--gold)] uppercase tracking-wider mb-1.5">Instructions from Benefactor</div>
+                  <p className="text-xs text-[var(--t3)] leading-relaxed">{cancelAdvisor.notes}</p>
+                </div>
+              )}
+
+              {/* Quick actions */}
+              <div className="space-y-2">
+                {cancelAdvisor.biller_phone && (
+                  <a href={`tel:${cancelAdvisor.biller_phone.replace(/\D/g, '')}`}
+                    className="flex items-center gap-3 w-full py-3 px-4 rounded-xl text-sm font-medium transition-all"
+                    style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', color: '#3b82f6' }}
+                    data-testid="cancel-call-biller">
+                    <Phone className="w-4 h-4" />
+                    Call {cancelAdvisor.biller_phone}
+                  </a>
+                )}
+                {cancelAdvisor.biller_website && (
+                  <a href={cancelAdvisor.biller_website} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-3 w-full py-3 px-4 rounded-xl text-sm font-medium transition-all"
+                    style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', color: '#8b5cf6' }}
+                    data-testid="cancel-visit-portal">
+                    <ExternalLink className="w-4 h-4" />
+                    Visit Biller Portal
+                  </a>
+                )}
+              </div>
+
+              {/* Payment account warning */}
+              {cancelAdvisor.is_auto_pay && cancelAdvisor.payment_account && (
+                <div className="rounded-xl p-3" style={{ background: 'rgba(245,166,35,0.08)', border: '1px solid rgba(245,166,35,0.2)' }}>
+                  <div className="text-xs font-bold text-[#f5a623] mb-1">Auto-Pay Warning</div>
+                  <p className="text-xs text-[var(--t4)]">
+                    This bill auto-pays from <strong className="text-[var(--t)]">{cancelAdvisor.payment_account}</strong>. 
+                    After cancelling, verify the auto-pay has been removed to prevent future charges.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4" style={{ borderTop: '1px solid var(--b)' }}>
+              <button onClick={() => setCancelAdvisor(null)}
+                className="w-full py-3 rounded-xl text-sm font-bold transition-all"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--b)', color: 'var(--t3)' }}
+                data-testid="cancel-advisor-done">
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

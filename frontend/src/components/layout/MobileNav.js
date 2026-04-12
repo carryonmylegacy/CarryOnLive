@@ -36,6 +36,7 @@ import {
   Star,
   Check,
   MessageCircle,
+  DollarSign,
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import NotificationBell from '../NotificationBell';
@@ -61,6 +62,7 @@ export const DOCK_REGISTRY = {
     { to: '/timeline', icon: Clock, label: 'Timeline' },
     { to: '/estate-chat', icon: MessageCircle, label: 'Chat' },
     { to: '/connected-protocol', icon: Shield, label: 'CCP' },
+    { to: '/financial', icon: DollarSign, label: 'Financial' },
   ],
   beneficiary: [
     { to: '/beneficiary', icon: Home, label: 'Dashboard' },
@@ -71,6 +73,7 @@ export const DOCK_REGISTRY = {
     { to: '/beneficiary/milestone', icon: Gift, label: 'Milestone' },
     { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Chat' },
     { to: '/beneficiary/connected-protocol', icon: Shield, label: 'CCP' },
+    { to: '/beneficiary/financial', icon: DollarSign, label: 'Financial' },
   ],
   admin: [
     { to: '/admin', icon: Home, label: 'Dashboard' },
@@ -580,14 +583,15 @@ const MobileNav = () => {
     { to: '/messages', icon: MessageSquare, label: 'Milestone' },
     { to: '/dashboard', icon: Home, label: 'Dashboard', isCenter: true },
     { to: '/guardian', icon: Sparkles, label: 'Guardian' },
-    { to: '/estate-chat', icon: MessageCircle, label: 'Chat' },
+    { to: '/financial', icon: DollarSign, label: 'Financial' },
   ], enabledFeatures);
 
   const beneficiaryBottomNav = filterByFeatureAccess([
-    { to: '/beneficiary', icon: Home, label: 'Dashboard', isCenter: true },
     { to: '/beneficiary/vault', icon: FolderLock, label: 'Vault' },
+    { to: '/beneficiary', icon: Home, label: 'Dashboard', isCenter: true },
     { to: '/beneficiary/connected-protocol', icon: Shield, label: 'CCP' },
     { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Chat' },
+    { to: '/beneficiary/financial', icon: DollarSign, label: 'Financial' },
   ]);
 
   const adminBottomNav = [
