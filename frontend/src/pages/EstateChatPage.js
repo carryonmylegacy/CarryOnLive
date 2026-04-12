@@ -194,17 +194,27 @@ export default function EstateChatPage() {
 
   // ── iOS PWA: track keyboard height to push input bar above it ──
   const [kbHeight, setKbHeight] = useState(0);
+  const fullHeightRef = useRef(window.innerHeight);
   useEffect(() => {
     if (loading) return;
     const vv = window.visualViewport;
     if (!vv) return;
+
+    // Capture the full viewport height when keyboard is NOT open
+    if (window.innerHeight > fullHeightRef.current * 0.9) {
+      fullHeightRef.current = window.innerHeight;
+    }
 
     let rafId = 0;
 
     const update = () => {
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
-        const kb = Math.max(0, window.innerHeight - vv.height);
+        // Update fullHeight when keyboard is clearly closed
+        if (vv.height > fullHeightRef.current * 0.9) {
+          fullHeightRef.current = vv.height;
+        }
+        const kb = Math.max(0, fullHeightRef.current - vv.height);
         setKbHeight(kb);
       });
     };
@@ -1612,7 +1622,7 @@ export default function EstateChatPage() {
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
       {/* DEBUG: ALWAYS visible to confirm code is deployed */}
       <div style={{ background: '#d4af37', color: '#000', padding: '4px 8px', fontSize: '11px', textAlign: 'center', flexShrink: 0, fontWeight: 'bold' }}>
-        BUILD V7 | KB: {kbHeight}px | VV: {typeof window !== 'undefined' && window.visualViewport ? Math.round(window.visualViewport.height) : 'N/A'} | IH: {typeof window !== 'undefined' ? window.innerHeight : 'N/A'}
+        V8 | KB: {kbHeight} | VV: {typeof window !== 'undefined' && window.visualViewport ? Math.round(window.visualViewport.height) : '?'} | FH: {fullHeightRef.current}
       </div>
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
@@ -1865,7 +1875,7 @@ export default function EstateChatPage() {
       top: 0,
       left: 0,
       right: 0,
-      bottom: 0,
+      height: `${fullHeightRef.current}px`,
       zIndex: 45,
       overflow: 'hidden',
     }}>
