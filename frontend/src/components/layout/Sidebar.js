@@ -333,6 +333,7 @@ const Sidebar = () => {
     '/beneficiary/guardian': 'ega_access',
     '/beneficiary/checklist': 'iac_access',
     '/beneficiary/messages': 'mm_access',
+    '/beneficiary/financial': 'cfp_access',
   };
 
   const filterByFeatureAccess = (items) =>

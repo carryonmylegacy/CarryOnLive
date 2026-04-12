@@ -111,6 +111,7 @@ const mapBeneficiaryToForm = (beneficiary) => ({
   ffnAccess: beneficiary.ffn_access !== false,
   davAccess: beneficiary.dav_access !== false,
   dtsAccess: beneficiary.dts_access !== false,
+  cfpAccess: beneficiary.cfp_access !== false,
 });
 
 export default function EditBeneficiaryPage() {
@@ -235,6 +236,7 @@ export default function EditBeneficiaryPage() {
         ffn_access: form.ffnAccess,
         dav_access: form.davAccess,
         dts_access: form.dtsAccess,
+        cfp_access: form.cfpAccess,
       }, getAuthHeaders());
 
       await uploadPhoto();
@@ -515,6 +517,7 @@ export default function EditBeneficiaryPage() {
                   { key: 'ffnAccess', label: 'Family & Friends Notification (FFN)' },
                   { key: 'davAccess', label: 'Digital Access Vault (DAV)' },
                   { key: 'dtsAccess', label: 'Designated Trustee Services (DTS)' },
+                  { key: 'cfpAccess', label: 'Financial Portal (CFP)' },
                 ].map(({ key, label }) => (
                   <div key={key} className="flex items-center justify-between py-1">
                     <span className="text-sm text-[var(--t3)]">{label}</span>

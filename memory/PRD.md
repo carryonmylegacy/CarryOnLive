@@ -15,6 +15,7 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - iOS/PWA hybrid with Capacitor
 - CarryOn Contingency Protocols (CCP) — family emergency plans
 - Estate Communication Tool (ECT) — secure family chat
+- CarryOn Financial Portal (CFP) — bills, debts, accounts management
 
 ## Architecture
 - Frontend: React (CRA + Craco) + Capacitor
@@ -25,7 +26,7 @@ Build and maintain a comprehensive family preparedness platform that helps users
 
 ## What's Been Implemented
 
-### Completed (All Sessions)
+### Completed (All Previous Sessions)
 - Full authentication system (JWT, OTP, passkeys, session enforcement)
 - Beneficiary management with drag-to-reorder succession
 - Milestone Messages (written, voice, video with S3 storage)
@@ -36,63 +37,56 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - Admin/Founder multi-portal system
 - Stripe payments + Apple IAP integration
 - Family Plan support
-- Notification system (in-app + email)
+- Notification system (in-app + email + push)
 - SEO (robots.txt, sitemap.xml, meta tags)
-- State-sync audit (photo, video, voice deletion desyncs fixed)
-- Narrative copy updated to "family preparedness"
 - Getting Started UX Overhaul (foolproof for elderly/non-tech users)
 - CCP First-Visit Welcome Walkthrough
 - ECT Enhanced Security Intro
-- xAI keepalive optimization (on-demand warmup)
+- PWA Badge Sync Fix
+- Photo Save Fix on iOS
+- Blob Image Memory Reclamation
+- Push Notification Prompt Resilience
+- Getting Started Multi-Step Dismiss Logic with frosted glass overlays
+- All prior platform-wide fixes (Google Places, phone formatting, date formatting, etc.)
 
-### Completed (Current Session — Apr 8, 2026)
-- **Invitation Existing Account Linking (P0)**: Fixed critical bug where existing users couldn't accept an invitation without hitting a "username taken" error.
-  - Added `POST /api/invitations/accept-existing` endpoint in `beneficiaries.py`
-  - Added "I Have an Account" toggle in `AcceptInvitationPage.js`
-  - Fixed missing `verify_password` import (would have caused runtime crash)
-  - Fixed stale `_xai_keepalive_task` import in `server.py` shutdown handler
-  - Tested: 10/10 backend tests passed, all frontend flows verified
-- **Family Tree Connector Line Fix**: Adjusted SVG path and CSS in `FamilyTree.js` so vertical lines stop at the top edge of beneficiary circles. Added flash animation at centered node endpoint.
-- **Dual Homepage Video (Landscape + Vertical)**: Added responsive video embed on homepage.
-  - Viewport < 768px shows vertical (9:16) YouTube embed; ≥ 768px shows landscape (16:9)
-  - Both `HomePage.js` and `LoginPage.js` support the swap (LoginPage is primary landing)
-  - Added `homepage_video_id_vertical` to backend platform settings
-  - SiteContentTab in Founder Portal now has two inputs: Landscape (Desktop) and Vertical (Mobile) with live previews
-  - Falls back to landscape video if no vertical video is set
-- **Profile/Estate Photo Save Bug Fix**: Fixed field name mismatches preventing photos from persisting:
-  - `ProfileCard.js`: Changed `res.data.profile_photo` → `res.data.photo_url` (matching backend response)
-  - `EstatePhotoCard.js`: Changed `estates[0].photo` → `estates[0].estate_photo_url`
-  - Added toast confirmations ("Profile photo saved" / "Estate photo saved") so users get feedback
-  - Also fixed BeneficiarySettingsPage photo upload with proper response handling
-- **Google Places Autocomplete Fix (Platform-Wide)**: Fixed React synthetic event bug in `AddressAutocomplete.js` where `e.target.value` was accessed inside a `setTimeout` after React recycled the event. This bug prevented autocomplete from working EVERYWHERE in the app. Also added AddressAutocomplete to PersonalInfoCard in Settings.
-- **US Phone Auto-Formatting (Platform-Wide)**: Created shared `formatPhoneUS()` utility that strips the `+1` country code prefix. Applied `(XXX) XXX-XXXX` auto-formatting to ALL phone inputs AND display values across 13 files:
-  - Settings Personal Info, Beneficiaries, Edit Beneficiary, Onboarding, Accept Invitation
-  - FFN (Family & Friends), Checklist, Trustee Page, Emergency Access Panel
-  - Founder Portal: Operators Tab (add + edit), P1 Contact Settings, Site Content footer phone
-  - Display-only: SealedAccountScreen, ConnectedProtocolPage
-- **Date of Birth Format Fix**: Replaced plain text input in PersonalInfoCard with `DateMaskInput` component (MM/DD/YYYY auto-formatting with `/` separators). Display mode converts YYYY-MM-DD from API to MM/DD/YYYY.
-- **File Upload Accept Attributes**: Ensured all image uploads use `accept="image/*"` for macOS Photos sidebar. Fixed TransitionPage and VaultPage.
-
-### Completed (Current Session — Feb 2026)
-- **PWA Badge Sync Fix**: Fixed persistent app icon badge count that wouldn't clear after viewing messages. Root cause: service worker only cleared badge on notification tap, not on app open. Added `visibilitychange` listener + `syncBadge()` utility to sync badge with real backend unread count. Updated `sw-push.js` with `notificationclose` handler and `message` listener for client-controlled badge management.
-
-### Completed (Current Session — Apr 10, 2026)
-- **Beneficiary Auto-Link on Login (P0)**: Fixed critical bug where a beneficiary who signed up directly (not via invitation link) would not get linked to their benefactor's estate tree. Added `_reconcile_beneficiary_by_email()` helper in `auth.py` that runs on every login path. It matches the user's email against unlinked beneficiary records, sets `user_id`, `invitation_status=accepted`, adds them to the estate's beneficiaries array, and sets `is_also_beneficiary` on the user. Replaced 4 scattered inline reconciliation blocks with the DRY helper. Tested: 4/4 assertions pass (user_id linked, status accepted, is_also_beneficiary set, added to estate array).
-- **Beneficiary Pre-Transition Dock Defaults**: Changed default bottom dock for beneficiary portal from [Vault, Guardian, Dashboard, Messages, Checklist] to [Vault, Dashboard, CCP, Chat]. These are the only features available pre-transition.
-- **Dock Customizer Grey-Out**: In Beneficiary Settings > Customize Dock, post-transition-only items (Guardian, Checklist, Messages, Milestone) are now greyed out with a lock icon and "Post-transition" badge. Tapping them shows a toast: "This feature becomes available after the estate is transitioned." The estate's transition status is detected via the section-permissions API.
+### Completed (Current Session — Apr 12, 2026)
+- **CarryOn Financial Portal (CFP)**: Complete new feature with 3 sub-modules
+  - **Bill Tracker (CBT)**: Full CRUD for bills with 13 default categories + custom user categories, due day tracking, auto-pay indicator, payment method/account, biller contact info, reminder schedule (customizable per-bill), priority levels, DAV deep-linking, notes for beneficiaries
+  - **Debt Tracker (CDT)**: Full CRUD for debts with categories (mortgage, auto loan, student loan, etc.), outstanding balance, interest rate, monthly payment, loan term, collateral, co-signer, life insurance linkage, DAV deep-linking
+  - **Accounts Registry (CAR)**: Full CRUD for financial accounts with categories (checking, savings, investment, retirement, etc.), balance tracking, institution info, ownership type (individual, joint, trust, POD/TOD), named beneficiary at institution, DAV deep-linking
+  - **Financial Summary Dashboard**: Real-time aggregation cards showing Monthly Bills total, Total Debt, Total Assets, Net Position
+  - **Bill Calendar**: Interactive monthly calendar with colored dots per bill category, day selection shows bill details, monthly total footer
+  - **Per-Beneficiary Designation**: Each bill/debt/account supports per-beneficiary visibility with Pre/Post transition timing toggles (same SDV pattern)
+  - **Custom Categories**: Benefactors can create custom categories via +Add New Category in any form dropdown; custom categories instantly appear as filter bubbles
+  - **Mark as Paid**: Bill payment tracking with history
+  - **Dashboard Tile**: CFP tile on benefactor dashboard showing summary stats (monthly bills, debts, accounts, net position) and upcoming bills this week
+  - **Sidebar Navigation**: CFP nav item added to benefactor sidebar
+  - **Feature Access Toggle**: `cfp_access` toggle added to beneficiary feature access settings
+  - **Section Permissions**: `financial_portal` added to ALL_SECTIONS for section-level gating
+  - Backend: `/app/backend/routes/financial_portal.py` (20 routes, 667 lines)
+  - Frontend: `/app/frontend/src/pages/FinancialPortalPage.js` + 7 components in `/app/frontend/src/components/financial/`
+  - MongoDB collections: `bills`, `debts`, `financial_accounts`, `bill_categories`, `bill_payments`
+  - DB indexes: 6 new indexes for financial collections
+  - Testing: 27/27 backend tests pass, all frontend UI verified
+  - Housekeeping: 64/65 PASS, 0 FAIL
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
 - Twilio SMS: Waiting on A2P 10DLC campaign approval
 
 ## Upcoming Tasks
+- (P1) CFP Beneficiary View Page — read-only view with Mark as Paid for post-transition beneficiaries
+- (P1) CFP Notification Scheduler — `bill_reminder_scheduler` for post-transition push/in-app reminders
+- (P1) CFP Dock Item — Add CFP to mobile bottom dock defaults
 - (P0) Google Play Store Launch
 - (P1) Share Extension Setup (iOS)
 - (P1) iOS Live Updates (Capgo)
 
 ## Future/Backlog
+- (P2) CFP Getting Started Integration — Add CFP step to onboarding wizard
 - (P2) Readiness Scoring Policy Page
 - (P3) ECT Security Comparison Landing Page
+- (P2) EstateChatPage.js refactoring (2400+ lines)
 
 ## Key Technical Notes
 - Housekeeping: `bash /app/housekeeping.sh` must pass 65/65 before every push
@@ -100,3 +94,5 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - Narrative: Use "family preparedness" not "estate planning"
 - MongoDB: Always exclude `_id` from responses
 - First-visit intros use localStorage: `carryon_ccp_intro_seen`, `ect_security_seen`
+- Financial Portal uses soft-delete (`deleted_at` field) on all records
+- Custom categories stored in `bill_categories` collection, module-scoped (bills/debts/accounts)
