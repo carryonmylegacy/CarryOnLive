@@ -759,6 +759,42 @@ export default function ConnectedProtocolPage() {
         <span className="flex-1 text-left" style={{ fontFamily: 'Outfit, sans-serif' }}>Past Activations</span>
         <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />
       </button>
+
+      {/* Family Readiness Report */}
+      {isBenefactor && plans.length > 0 && (
+        <button
+          onClick={async () => {
+            try {
+              await platformDownload({
+                action: 'family_readiness_report',
+                params: { estate_id: estateId },
+                filename: 'CarryOn_Readiness_Report.pdf',
+                onFallback: async () => {
+                  const t = localStorage.getItem('carryon_token');
+                  const res = await fetch(`${API_URL}/downloads/prepare`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${t}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'family_readiness_report', params: { estate_id: estateId }, filename: 'CarryOn_Readiness_Report.pdf' }),
+                  });
+                  if (!res.ok) throw new Error('Failed');
+                  const d = await res.json();
+                  window.location.href = `${API_URL}/downloads/${d.token}`;
+                },
+              });
+            } catch { alert('Failed to generate report'); }
+          }}
+          className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center gap-3 px-5"
+          data-testid="ccp-readiness-report-btn"
+          style={{ background: 'rgba(34,201,147,0.06)', border: '1px solid rgba(34,201,147,0.15)', color: '#22C993' }}
+        >
+          <Download className="w-6 h-6 flex-shrink-0" />
+          <div className="text-left flex-1">
+            <div style={{ fontFamily: 'Outfit, sans-serif' }}>Family Readiness Report</div>
+            <div className="text-xs font-normal" style={{ color: 'var(--t4)' }}>Download PDF for your go-bag</div>
+          </div>
+          <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />
+        </button>
+      )}
     </div>
 
     {/* ===== CCP First-Visit Welcome Walkthrough ===== */}

@@ -43,6 +43,7 @@ async def prepare_download(data: PrepareRequest, current_user: dict = Depends(ge
         "beneficiary_iac",
         "ect_file",
         "ccp_plan",
+        "family_readiness_report",
     }
     if data.action not in valid_actions:
         raise HTTPException(status_code=400, detail=f"Invalid download action: {data.action}")
@@ -134,6 +135,8 @@ async def execute_download(token: str):
             return await _handle_ect_file(user, params, filename)
         elif action == "ccp_plan":
             return await _handle_ccp_plan(user, params, filename)
+        elif action == "family_readiness_report":
+            return await _handle_family_readiness_report(user, params, filename)
         else:
             raise HTTPException(status_code=400, detail="Unknown action")
     except HTTPException:
@@ -405,6 +408,26 @@ async def _handle_ccp_plan(user: dict, params: dict, filename: str) -> Response:
         pdf.multi_cell(0, 6, safe(instr))
         pdf.ln(4)
 
+    # Drill Schedule
+    ds = plan.get("drill_schedule")
+    if ds and ds.get("enabled"):
+        pdf.set_font("Helvetica", "B", 13)
+        pdf.set_text_color(59, 123, 247)
+        pdf.cell(0, 10, "DRILL SCHEDULE", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 11)
+        pdf.set_text_color(40, 40, 40)
+        freq = ds.get("frequency", "").replace("_", " ").title()
+        label = ds.get("label", "")
+        pdf.cell(0, 7, f"  Frequency: {freq} - {safe(label)}", new_x="LMARGIN", new_y="NEXT")
+        if ds.get("next_drill_date"):
+            try:
+                from datetime import datetime as dt_cls2
+                nd = dt_cls2.fromisoformat(ds["next_drill_date"].replace("Z", "+00:00"))
+                pdf.cell(0, 7, f"  Next drill: {nd.strftime('%B %Y')}", new_x="LMARGIN", new_y="NEXT")
+            except (ValueError, AttributeError):
+                pass
+        pdf.ln(4)
+
     # Footer disclaimer
     pdf.ln(8)
     pdf.set_draw_color(200, 200, 200)
@@ -428,6 +451,245 @@ async def _handle_ccp_plan(user: dict, params: dict, filename: str) -> Response:
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="CCP_{safe_plan_name}.pdf"'},
     )
+
+
+async def _handle_family_readiness_report(user: dict, params: dict, filename: str) -> Response:
+    """Generate a comprehensive Family Readiness Report PDF."""
+    from fpdf import FPDF
+    from datetime import datetime as dt_cls
+    from services.readiness import calculate_estate_readiness
+
+    estate_id = params.get("estate_id")
+    if not estate_id:
+        raise HTTPException(status_code=400, detail="estate_id required")
+
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
+    is_owner = estate["owner_id"] == user["id"]
+    is_admin = user.get("role") in ("admin", "operator")
+    if not (is_owner or is_admin):
+        raise HTTPException(status_code=403, detail="Only the estate owner can generate this report")
+
+    owner = await db.users.find_one({"id": estate["owner_id"]}, {"_id": 0, "id": 1, "name": 1, "email": 1})
+
+    def safe(text):
+        if not text:
+            return ""
+        return text.encode("latin-1", errors="replace").decode("latin-1")
+
+    # Gather data
+    plans = await db.emergency_plans.find(
+        {"estate_id": estate_id, "deleted_at": None}, {"_id": 0}
+    ).to_list(50)
+    activations = (
+        await db.emergency_activations.find(
+            {"estate_id": estate_id, "is_drill": True, "status": "resolved"},
+            {"_id": 0},
+        )
+        .sort("activated_at", -1)
+        .to_list(50)
+    )
+    readiness_data = await calculate_estate_readiness(estate_id)
+    readiness_score = readiness_data.get("overall", 0) if isinstance(readiness_data, dict) else readiness_data
+
+    PLAN_TYPE_LABELS = {
+        "natural_disaster": "Natural Disaster",
+        "national_emergency": "National Emergency",
+        "medical_emergency": "Medical Emergency",
+        "infrastructure_failure": "Infrastructure Failure",
+        "custom": "Custom Plan",
+    }
+
+    # Debrief stats
+    debriefed = [a for a in activations if a.get("debrief")]
+    avg_rating = round(sum(a["debrief"]["rating"] for a in debriefed) / len(debriefed), 1) if debriefed else 0
+
+    now_str = dt_cls.now().strftime("%B %d, %Y")
+
+    # Build PDF
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=20)
+    pdf.add_page()
+
+    # ── HEADER ──
+    pdf.set_font("Helvetica", "B", 24)
+    pdf.set_text_color(212, 175, 55)
+    pdf.cell(0, 14, "CarryOn Family Readiness Report", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 6, safe(f"Estate: {estate.get('name', 'My Estate')}  |  Owner: {owner.get('name', '') if owner else ''}"), new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.cell(0, 6, f"Generated: {now_str}", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.ln(6)
+
+    pdf.set_draw_color(212, 175, 55)
+    pdf.set_line_width(0.5)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(6)
+
+    # ── ESTATE READINESS SCORE ──
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.set_text_color(15, 23, 42)
+    pdf.cell(0, 10, "ESTATE READINESS", new_x="LMARGIN", new_y="NEXT")
+
+    score_val = readiness_score if isinstance(readiness_score, (int, float)) else 0
+    if score_val >= 75:
+        r, g, b = 34, 201, 147
+    elif score_val >= 50:
+        r, g, b = 212, 175, 55
+    else:
+        r, g, b = 240, 82, 82
+
+    pdf.set_font("Helvetica", "B", 36)
+    pdf.set_text_color(r, g, b)
+    pdf.cell(40, 20, f"{int(score_val)}%")
+    pdf.set_font("Helvetica", "", 11)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 20, "overall readiness score", new_x="LMARGIN", new_y="NEXT")
+
+    if isinstance(readiness_data, dict):
+        pillars = []
+        for key, label in [("documents", "Documents"), ("messages", "Messages"), ("checklists", "Checklists"), ("financials", "Financials")]:
+            val = readiness_data.get(key, 0)
+            if isinstance(val, dict):
+                val = val.get("score", 0)
+            pillars.append((label, int(val)))
+        pdf.set_font("Helvetica", "", 10)
+        pdf.set_text_color(60, 60, 60)
+        for lbl, pct in pillars:
+            pdf.cell(47, 7, f"  {lbl}: {pct}%")
+        pdf.ln(10)
+    pdf.ln(4)
+
+    # ── EMERGENCY PLAN COVERAGE ──
+    pdf.set_draw_color(212, 175, 55)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(4)
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.set_text_color(15, 23, 42)
+    pdf.cell(0, 10, "EMERGENCY PLAN COVERAGE", new_x="LMARGIN", new_y="NEXT")
+
+    if not plans:
+        pdf.set_font("Helvetica", "I", 11)
+        pdf.set_text_color(150, 150, 150)
+        pdf.cell(0, 8, "No emergency plans created yet.", new_x="LMARGIN", new_y="NEXT")
+    else:
+        pdf.set_font("Helvetica", "", 11)
+        pdf.set_text_color(60, 60, 60)
+        pdf.cell(0, 8, f"{len(plans)} plan(s) created", new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(2)
+
+        for p in plans:
+            ptype = PLAN_TYPE_LABELS.get(p.get("plan_type", ""), p.get("plan_type", ""))
+            pdf.set_font("Helvetica", "B", 11)
+            pdf.set_text_color(15, 23, 42)
+            pdf.cell(0, 7, safe(f"  {p.get('name', 'Unnamed Plan')}"), new_x="LMARGIN", new_y="NEXT")
+            pdf.set_font("Helvetica", "", 10)
+            pdf.set_text_color(80, 80, 80)
+            pdf.cell(0, 6, f"    Type: {ptype}", new_x="LMARGIN", new_y="NEXT")
+
+            rps = p.get("rendezvous_points", [])
+            rls = p.get("resource_locations", [])
+            has_comm = bool(p.get("communication_plan", "").strip())
+            has_instr = bool(p.get("instructions", "").strip())
+            summary_parts = []
+            if rps:
+                summary_parts.append(f"{len(rps)} meeting point(s)")
+            if has_comm:
+                summary_parts.append("comm plan")
+            if rls:
+                summary_parts.append(f"{len(rls)} resource loc(s)")
+            if has_instr:
+                summary_parts.append("instructions")
+            if summary_parts:
+                pdf.cell(0, 6, f"    Includes: {', '.join(summary_parts)}", new_x="LMARGIN", new_y="NEXT")
+
+            ds = p.get("drill_schedule")
+            if ds:
+                status = "Active" if ds.get("enabled") else "Disabled"
+                pdf.set_font("Helvetica", "I", 10)
+                pdf.set_text_color(59, 123, 247)
+                pdf.cell(0, 6, f"    Drill reminders: {status} ({safe(ds.get('label', ''))})", new_x="LMARGIN", new_y="NEXT")
+            pdf.ln(2)
+
+    pdf.ln(4)
+
+    # ── DRILL PERFORMANCE HISTORY ──
+    pdf.set_draw_color(212, 175, 55)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(4)
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.set_text_color(15, 23, 42)
+    pdf.cell(0, 10, "DRILL PERFORMANCE", new_x="LMARGIN", new_y="NEXT")
+
+    if not activations:
+        pdf.set_font("Helvetica", "I", 11)
+        pdf.set_text_color(150, 150, 150)
+        pdf.cell(0, 8, "No drills have been conducted yet.", new_x="LMARGIN", new_y="NEXT")
+    else:
+        pdf.set_font("Helvetica", "", 11)
+        pdf.set_text_color(60, 60, 60)
+        pdf.cell(0, 8, f"{len(activations)} drill(s) completed  |  {len(debriefed)} reviewed", new_x="LMARGIN", new_y="NEXT")
+        if debriefed:
+            stars = "*" * int(round(avg_rating))
+            pdf.set_font("Helvetica", "B", 12)
+            pdf.set_text_color(212, 175, 55)
+            pdf.cell(0, 8, f"Average Rating: {avg_rating}/5  {stars}", new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(2)
+
+        # List recent drills
+        for a in activations[:10]:
+            debrief = a.get("debrief")
+            date_str = ""
+            try:
+                dt = dt_cls.fromisoformat(a.get("activated_at", "").replace("Z", "+00:00"))
+                date_str = dt.strftime("%b %d, %Y")
+            except (ValueError, AttributeError):
+                date_str = "Unknown date"
+
+            pdf.set_font("Helvetica", "B", 10)
+            pdf.set_text_color(15, 23, 42)
+            rating_str = f" ({debrief['rating']}/5)" if debrief else ""
+            pdf.cell(0, 7, safe(f"  {date_str} - {a.get('plan_name', 'Drill')}{rating_str}"), new_x="LMARGIN", new_y="NEXT")
+
+            if debrief:
+                if debrief.get("went_well"):
+                    pdf.set_font("Helvetica", "", 9)
+                    pdf.set_text_color(34, 201, 147)
+                    pdf.cell(0, 5, safe(f"    + {debrief['went_well'][:80]}"), new_x="LMARGIN", new_y="NEXT")
+                if debrief.get("to_improve"):
+                    pdf.set_font("Helvetica", "", 9)
+                    pdf.set_text_color(245, 166, 35)
+                    pdf.cell(0, 5, safe(f"    > {debrief['to_improve'][:80]}"), new_x="LMARGIN", new_y="NEXT")
+            pdf.ln(1)
+
+    # ── FOOTER ──
+    pdf.ln(8)
+    pdf.set_draw_color(200, 200, 200)
+    pdf.set_line_width(0.3)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(4)
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_text_color(212, 175, 55)
+    pdf.cell(0, 6, "Keep this report in your go-bag.", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.set_font("Helvetica", "I", 9)
+    pdf.set_text_color(150, 150, 150)
+    pdf.multi_cell(
+        0, 5,
+        "Generated by CarryOn. Review plans regularly and run practice drills to keep your family prepared. "
+        "Every American Family. Ready.",
+        align="C",
+    )
+
+    pdf_bytes = bytes(pdf.output())
+    estate_name = "".join(c for c in estate.get("name", "Family") if c.isalnum() or c in " _-")[:30].strip() or "Family"
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="CarryOn_Readiness_{estate_name}.pdf"'},
+    )
+
 
 
 # ─── Utilities ────────────────────────────────────────────
