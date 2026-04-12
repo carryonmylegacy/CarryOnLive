@@ -113,6 +113,9 @@ const DashboardPage = () => {
         // If user already graduated (celebration shown before), skip all guided flow
         if (progressRes.data?.already_graduated) {
           guidedDismissedRef.current = true;
+        } else if (progressRes.data?.manually_dismissed) {
+          // User permanently dismissed Getting Started — don't show guided overlay
+          guidedDismissedRef.current = true;
         } else {
           const steps = progressRes.data?.steps || [];
           const triggerStepKey = searchParams.get('triggerStep');
