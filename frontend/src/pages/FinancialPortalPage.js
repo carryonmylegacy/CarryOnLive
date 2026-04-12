@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
 import {
   DollarSign, Plus, Loader2, ArrowLeft, Search, Sparkles,
-  ChevronRight, ChevronLeft, Receipt, Landmark, PiggyBank, TrendingUp
+  ChevronRight, ChevronLeft, Receipt, Landmark, PiggyBank, TrendingUp, Building2
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -18,6 +18,8 @@ import { API_URL } from '../config';
 import BillForm from '../components/financial/BillForm';
 import DebtForm from '../components/financial/DebtForm';
 import AccountForm from '../components/financial/AccountForm';
+import PropertyAssetForm from '../components/financial/PropertyAssetForm';
+import PropertyAssetTile from '../components/financial/PropertyAssetTile';
 import BillTile from '../components/financial/BillTile';
 import DebtTile from '../components/financial/DebtTile';
 import AccountTile from '../components/financial/AccountTile';
@@ -69,6 +71,7 @@ const FinancialPortalPage = () => {
   const [bills, setBills] = useState([]);
   const [debts, setDebts] = useState([]);
   const [accounts, setAccounts] = useState([]);
+  const [propertyAssets, setPropertyAssets] = useState([]);
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [davEntries, setDavEntries] = useState([]);
   const [customCategories, setCustomCategories] = useState({ bills: [], debts: [], accounts: [] });
@@ -82,6 +85,7 @@ const FinancialPortalPage = () => {
   const [showBillForm, setShowBillForm] = useState(false);
   const [showDebtForm, setShowDebtForm] = useState(false);
   const [showAccountForm, setShowAccountForm] = useState(false);
+  const [showPropertyForm, setShowPropertyForm] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [selectedCalendarDay, setSelectedCalendarDay] = useState(null);
@@ -102,10 +106,11 @@ const FinancialPortalPage = () => {
       const est = (savedId && estates.find(e => e.id === savedId)) || estates[0];
       setEstate(est);
       const eid = est.id;
-      const [billsRes, debtsRes, acctsRes, summaryRes, bensRes, catBills, catDebts, catAccts, davRes] = await Promise.all([
+      const [billsRes, debtsRes, acctsRes, propsRes, summaryRes, bensRes, catBills, catDebts, catAccts, davRes] = await Promise.all([
         axios.get(`${API_URL}/financial/bills/${eid}`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/financial/debts/${eid}`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/financial/accounts/${eid}`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/financial/property/${eid}`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/financial/summary/${eid}`, { headers }).catch(() => ({ data: null })),
         axios.get(`${API_URL}/beneficiaries/${eid}`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/financial/categories/${eid}?module=bills`, { headers }).catch(() => ({ data: [] })),
@@ -116,6 +121,7 @@ const FinancialPortalPage = () => {
       setBills(Array.isArray(billsRes.data) ? billsRes.data : []);
       setDebts(Array.isArray(debtsRes.data) ? debtsRes.data : []);
       setAccounts(Array.isArray(acctsRes.data) ? acctsRes.data : []);
+      setPropertyAssets(Array.isArray(propsRes.data) ? propsRes.data : []);
       setSummary(summaryRes.data);
       setBeneficiaries(Array.isArray(bensRes.data) ? bensRes.data : []);
       setDavEntries(Array.isArray(davRes.data) ? davRes.data : []);
@@ -132,6 +138,7 @@ const FinancialPortalPage = () => {
     setShowBillForm(false);
     setShowDebtForm(false);
     setShowAccountForm(false);
+    setShowPropertyForm(false);
     setEditItem(null);
     fetchAll();
   };
@@ -245,10 +252,11 @@ const FinancialPortalPage = () => {
     setEditItem(null);
     if (activeTab === 'bills') setShowBillForm(true);
     else if (activeTab === 'debts') setShowDebtForm(true);
-    else setShowAccountForm(true);
+    else if (activeTab === 'accounts') setShowAccountForm(true);
+    else setShowPropertyForm(true);
   };
 
-  const addButtonLabel = activeTab === 'bills' ? 'Add Bill' : activeTab === 'debts' ? 'Add Debt' : 'Add Account';
+  const addButtonLabel = activeTab === 'bills' ? 'Add Bill' : activeTab === 'debts' ? 'Add Debt' : activeTab === 'accounts' ? 'Add Account' : 'Add Asset';
 
   // Category filter bubble renderer
   const renderCategoryBubbles = (categories, activeFilter, setFilter, labels) => (
@@ -303,7 +311,7 @@ const FinancialPortalPage = () => {
               CarryOn Financial Portal
             </h1>
             <p className="text-xs text-[var(--t5)]">
-              Bills, debts, and accounts — your complete financial picture
+              Bills, debts, accounts, and property — your complete financial picture
             </p>
           </div>
         </div>
@@ -324,21 +332,26 @@ const FinancialPortalPage = () => {
 
       {/* Sub-Tab Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-[var(--s)] p-1 w-full grid grid-cols-3 h-auto" data-testid="portal-tabs">
+        <TabsList className="bg-[var(--s)] p-1 w-full grid grid-cols-4 h-auto" data-testid="portal-tabs">
           <TabsTrigger value="bills" className="data-[state=active]:bg-[#10b981] data-[state=active]:text-white text-sm py-2.5 gap-2" data-testid="tab-bills">
             <Receipt className="w-4 h-4" />
-            <span className="hidden sm:inline">Bill Tracker</span>
+            <span className="hidden sm:inline">Bills</span>
             <span className="sm:hidden">Bills</span>
           </TabsTrigger>
           <TabsTrigger value="debts" className="data-[state=active]:bg-[#ef4444] data-[state=active]:text-white text-sm py-2.5 gap-2" data-testid="tab-debts">
             <Landmark className="w-4 h-4" />
-            <span className="hidden sm:inline">Debt Tracker</span>
+            <span className="hidden sm:inline">Debts</span>
             <span className="sm:hidden">Debts</span>
           </TabsTrigger>
           <TabsTrigger value="accounts" className="data-[state=active]:bg-[#3b82f6] data-[state=active]:text-white text-sm py-2.5 gap-2" data-testid="tab-accounts">
             <PiggyBank className="w-4 h-4" />
             <span className="hidden sm:inline">Accounts</span>
             <span className="sm:hidden">Accounts</span>
+          </TabsTrigger>
+          <TabsTrigger value="property" className="data-[state=active]:bg-[#8b5cf6] data-[state=active]:text-white text-sm py-2.5 gap-2" data-testid="tab-property">
+            <Building2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Property</span>
+            <span className="sm:hidden">Property</span>
           </TabsTrigger>
         </TabsList>
 
@@ -481,6 +494,37 @@ const FinancialPortalPage = () => {
             )}
           </div>
         </TabsContent>
+
+        {/* ============ PROPERTY TAB ============ */}
+        <TabsContent value="property" className="mt-4">
+          <div>
+            {propertyAssets.length === 0 ? (
+              <Card className="glass-card">
+                <CardContent className="p-12 text-center">
+                  <Building2 className="w-16 h-16 mx-auto text-[#8b5cf6] mb-4 opacity-50" />
+                  <h3 className="text-xl font-semibold text-[var(--t)] mb-2">No Property or Assets Yet</h3>
+                  <p className="text-[var(--t4)] mb-6 text-sm">Add real estate, vehicles, businesses, jewelry, artwork, or other valuables.</p>
+                  <Button className="gold-button" onClick={() => { setEditItem(null); setShowPropertyForm(true); }} data-testid="add-first-property">
+                    <Plus className="w-5 h-5 mr-2" /> Add Your First Asset
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {propertyAssets.map(asset => (
+                  <PropertyAssetTile
+                    key={asset.id}
+                    asset={asset}
+                    beneficiaries={beneficiaries}
+                    onEdit={(a) => { setEditItem(a); setShowPropertyForm(true); }}
+                    onDelete={(id) => handleDelete('property', id)}
+                    onDesignationUpdate={(id, bens, timing) => handleDesignationUpdate('property', id, bens, timing)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
 
       {/* ============ SLIDE PANELS ============ */}
@@ -526,6 +570,17 @@ const FinancialPortalPage = () => {
           bills={bills}
           onSaved={handleSaved}
           onAddCategory={(name) => handleAddCategory('accounts', name)}
+          getAuthHeaders={getAuthHeaders}
+        />
+      </SlidePanel>
+
+      <SlidePanel open={showPropertyForm} onClose={() => { setShowPropertyForm(false); setEditItem(null); }}
+        title={editItem ? 'Edit Asset' : 'Add Property / Asset'} subtitle="Real estate, businesses, vehicles, jewelry, artwork, and more">
+        <PropertyAssetForm
+          estateId={estate?.id}
+          asset={editItem}
+          davEntries={davEntries}
+          onSaved={handleSaved}
           getAuthHeaders={getAuthHeaders}
         />
       </SlidePanel>

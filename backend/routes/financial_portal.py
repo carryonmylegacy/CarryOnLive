@@ -191,9 +191,60 @@ class AccountUpdate(BaseModel):
     visibility_timing: Optional[dict] = None
 
 
+class PropertyAssetCreate(BaseModel):
+    estate_id: str
+    name: str
+    category: str = "other"  # real_estate, vehicle, jewelry, artwork, collectible, business_entity, other
+    estimated_value: Optional[float] = None
+    value_last_updated: Optional[str] = None
+    location_address: Optional[str] = None
+    acquisition_date: Optional[str] = None
+    ownership_type: str = "individual"  # individual, joint, trust, community_property, llc_owned, corporate
+    joint_owner: Optional[str] = None
+    entity_type: Optional[str] = None  # llc, corporation, s_corp, partnership, sole_prop, trust
+    entity_state: Optional[str] = None  # state of incorporation/formation
+    entity_ein: Optional[str] = None  # last 4 digits only
+    appraised_by: Optional[str] = None
+    appraisal_date: Optional[str] = None
+    insurance_policy: Optional[str] = None
+    serial_or_vin: Optional[str] = None  # vehicle VIN, serial number, etc.
+    description: Optional[str] = None
+    dav_entry_id: Optional[str] = None
+    priority: str = "important"  # critical, important, low
+    notes: Optional[str] = None
+    status: str = "active"  # active, sold, transferred, pending
+    designated_beneficiaries: List[str] = ["all"]
+    visibility_timing: dict = {}
+
+
+class PropertyAssetUpdate(BaseModel):
+    name: Optional[str] = None
+    category: Optional[str] = None
+    estimated_value: Optional[float] = None
+    value_last_updated: Optional[str] = None
+    location_address: Optional[str] = None
+    acquisition_date: Optional[str] = None
+    ownership_type: Optional[str] = None
+    joint_owner: Optional[str] = None
+    entity_type: Optional[str] = None
+    entity_state: Optional[str] = None
+    entity_ein: Optional[str] = None
+    appraised_by: Optional[str] = None
+    appraisal_date: Optional[str] = None
+    insurance_policy: Optional[str] = None
+    serial_or_vin: Optional[str] = None
+    description: Optional[str] = None
+    dav_entry_id: Optional[str] = None
+    priority: Optional[str] = None
+    notes: Optional[str] = None
+    status: Optional[str] = None
+    designated_beneficiaries: Optional[List[str]] = None
+    visibility_timing: Optional[dict] = None
+
+
 class CustomCategoryCreate(BaseModel):
     estate_id: str
-    module: str  # "bills", "debts", "accounts"
+    module: str  # "bills", "debts", "accounts", "property"
     name: str
     color: Optional[str] = None
     icon: Optional[str] = None
@@ -482,6 +533,65 @@ async def delete_account(account_id: str, current_user: dict = Depends(get_curre
     return {"success": True}
 
 
+# ===================== PROPERTY & ASSETS =====================
+
+
+@router.get("/financial/property/{estate_id}")
+async def get_property_assets(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """Get all property assets for an estate."""
+    estate, is_owner = await _verify_estate_access(estate_id, current_user)
+    items = await db.property_assets.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
+    if not is_owner:
+        is_transitioned = estate.get("status") == "transitioned"
+        items = _filter_for_beneficiary(items, current_user["id"], is_transitioned)
+    return items
+
+
+@router.post("/financial/property")
+async def create_property_asset(data: PropertyAssetCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new property asset."""
+    await _verify_estate_access(data.estate_id, current_user, require_owner=True)
+    now = datetime.now(timezone.utc).isoformat()
+    doc = {
+        "id": str(uuid.uuid4()),
+        **data.model_dump(),
+        "deleted_at": None,
+        "created_at": now,
+        "updated_at": now,
+    }
+    await db.property_assets.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@router.put("/financial/property/{property_id}")
+async def update_property_asset(
+    property_id: str, data: PropertyAssetUpdate, current_user: dict = Depends(get_current_user)
+):
+    """Update a property asset."""
+    prop = await db.property_assets.find_one({"id": property_id, "deleted_at": None}, {"_id": 0})
+    if not prop:
+        raise HTTPException(status_code=404, detail="Property asset not found")
+    await _verify_estate_access(prop["estate_id"], current_user, require_owner=True)
+    updates = {k: v for k, v in data.model_dump().items() if v is not None}
+    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.property_assets.update_one({"id": property_id}, {"$set": updates})
+    return {"success": True}
+
+
+@router.delete("/financial/property/{property_id}")
+async def delete_property_asset(property_id: str, current_user: dict = Depends(get_current_user)):
+    """Soft-delete a property asset."""
+    prop = await db.property_assets.find_one({"id": property_id, "deleted_at": None}, {"_id": 0})
+    if not prop:
+        raise HTTPException(status_code=404, detail="Property asset not found")
+    await _verify_estate_access(prop["estate_id"], current_user, require_owner=True)
+    await db.property_assets.update_one(
+        {"id": property_id}, {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"success": True}
+
+
 # ===================== BILL PAYMENTS (Mark as Paid) =====================
 
 
@@ -551,8 +661,13 @@ async def update_designation(
     data: DesignationUpdate,
     current_user: dict = Depends(get_current_user),
 ):
-    """Update beneficiary designation for a bill/debt/account."""
-    collection_map = {"bills": db.bills, "debts": db.debts, "accounts": db.financial_accounts}
+    """Update beneficiary designation for a bill/debt/account/property."""
+    collection_map = {
+        "bills": db.bills,
+        "debts": db.debts,
+        "accounts": db.financial_accounts,
+        "property": db.property_assets,
+    }
     coll = collection_map.get(module)
     if coll is None:
         raise HTTPException(status_code=400, detail="Invalid module")
@@ -590,6 +705,9 @@ async def get_financial_summary(estate_id: str, current_user: dict = Depends(get
     accounts = await db.financial_accounts.find(
         {"estate_id": estate_id, "deleted_at": None, "status": "active"}, {"_id": 0}
     ).to_list(500)
+    property_assets = await db.property_assets.find(
+        {"estate_id": estate_id, "deleted_at": None, "status": "active"}, {"_id": 0}
+    ).to_list(500)
 
     # Filter for beneficiary visibility if not owner
     if not is_owner:
@@ -597,6 +715,7 @@ async def get_financial_summary(estate_id: str, current_user: dict = Depends(get
         bills = _filter_for_beneficiary(bills, current_user["id"], is_transitioned)
         debts = _filter_for_beneficiary(debts, current_user["id"], is_transitioned)
         accounts = _filter_for_beneficiary(accounts, current_user["id"], is_transitioned)
+        property_assets = _filter_for_beneficiary(property_assets, current_user["id"], is_transitioned)
 
     # Calculate monthly bills total
     monthly_total = 0.0
@@ -618,7 +737,9 @@ async def get_financial_summary(estate_id: str, current_user: dict = Depends(get
     manual_count = len(bills) - auto_pay_count
 
     total_debt = sum(d.get("outstanding_balance") or 0 for d in debts)
-    total_assets = sum(a.get("approximate_balance") or 0 for a in accounts)
+    account_assets = sum(a.get("approximate_balance") or 0 for a in accounts)
+    property_value = sum(p.get("estimated_value") or 0 for p in property_assets)
+    total_assets = account_assets + property_value
 
     # Upcoming bills (next 7 days)
     today = datetime.now(timezone.utc)
@@ -661,18 +782,24 @@ async def get_financial_summary(estate_id: str, current_user: dict = Depends(get
         "debts_count": len(debts),
         "total_debt": round(total_debt, 2),
         "accounts_count": len(accounts),
+        "property_count": len(property_assets),
+        "account_assets": round(account_assets, 2),
+        "property_value": round(property_value, 2),
         "total_assets": round(total_assets, 2),
         "net_position": round(total_assets - total_debt, 2),
         "upcoming_bills": upcoming[:5],
     }
 
 
-# ===================== FINANCIAL HEALTH SCORE =====================
+# ===================== FINANCIAL COVERAGE SCORE =====================
 
 
 @router.get("/financial/health-score/{estate_id}")
-async def get_financial_health_score(estate_id: str, current_user: dict = Depends(get_current_user)):
-    """Calculate a financial readiness health score (0-100) for the dashboard gauge."""
+async def get_financial_coverage_score(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """Calculate a Financial Coverage score (0-100) measuring how thoroughly
+    the benefactor has documented their financial position for beneficiaries.
+    This is NOT a judgment of financial health — it measures completeness
+    of documentation on the platform."""
     await _verify_estate_access(estate_id, current_user)
 
     bills = await db.bills.find({"estate_id": estate_id, "deleted_at": None, "status": "active"}, {"_id": 0}).to_list(
@@ -680,60 +807,102 @@ async def get_financial_health_score(estate_id: str, current_user: dict = Depend
     )
     debts = await db.debts.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
     accounts = await db.financial_accounts.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
+    property_assets = await db.property_assets.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(
+        500
+    )
 
-    total_items = len(bills) + len(debts) + len(accounts)
+    all_items = bills + debts + accounts + property_assets
+    total_items = len(all_items)
+
     if total_items == 0:
         return {
             "score": 0,
             "label": "Not Started",
             "breakdown": {
                 "coverage": 0,
-                "auto_pay": 0,
+                "detail": 0,
                 "designations": 0,
                 "dav_links": 0,
                 "notes": 0,
             },
         }
 
-    # 1. Coverage (25 pts): Have at least 1 bill, 1 debt, 1 account
+    # 1. Coverage (30 pts): Has the benefactor documented each financial area?
     coverage_score = 0
     if len(bills) > 0:
-        coverage_score += 10
-    if len(debts) > 0:
         coverage_score += 8
+    if len(debts) > 0:
+        coverage_score += 7
     if len(accounts) > 0:
+        coverage_score += 8
+    if len(property_assets) > 0:
         coverage_score += 7
 
-    # 2. Auto-Pay Coverage (20 pts): % of bills with auto-pay enabled
-    auto_pay_score = 0
-    if len(bills) > 0:
-        auto_pay_pct = sum(1 for b in bills if b.get("is_auto_pay")) / len(bills)
-        auto_pay_score = round(auto_pay_pct * 20)
+    # 2. Detail Completeness (20 pts): How thoroughly are items filled out?
+    detail_total = 0
+    detail_filled = 0
+    for b in bills:
+        detail_total += 4
+        if b.get("amount"):
+            detail_filled += 1
+        if b.get("due_day"):
+            detail_filled += 1
+        if b.get("provider_phone") or b.get("provider_website"):
+            detail_filled += 1
+        if b.get("account_number_masked"):
+            detail_filled += 1
+    for d in debts:
+        detail_total += 3
+        if d.get("outstanding_balance"):
+            detail_filled += 1
+        if d.get("interest_rate"):
+            detail_filled += 1
+        if d.get("institution_name"):
+            detail_filled += 1
+    for a in accounts:
+        detail_total += 3
+        if a.get("approximate_balance"):
+            detail_filled += 1
+        if a.get("institution_name"):
+            detail_filled += 1
+        if a.get("account_number_masked"):
+            detail_filled += 1
+    for p in property_assets:
+        detail_total += 3
+        if p.get("estimated_value"):
+            detail_filled += 1
+        if p.get("location_address") or p.get("description"):
+            detail_filled += 1
+        if p.get("ownership_type") and p.get("ownership_type") != "individual":
+            detail_filled += 1
+        elif p.get("entity_type"):
+            detail_filled += 1
+    detail_score = round((detail_filled / detail_total) * 20) if detail_total > 0 else 0
 
     # 3. Beneficiary Designations (25 pts): % of items with customized designations
     designation_count = 0
-    for item in bills + debts + accounts:
+    for item in all_items:
         designated = item.get("designated_beneficiaries", ["all"])
         timing = item.get("visibility_timing", {})
         if designated != ["all"] or len(timing) > 0:
             designation_count += 1
     designation_score = round((designation_count / total_items) * 25) if total_items > 0 else 0
 
-    # 4. DAV Links (15 pts): % of items linked to Digital Access Vault
-    dav_count = sum(1 for item in bills + debts + accounts if item.get("dav_entry_id"))
-    dav_score = round((dav_count / total_items) * 15) if total_items > 0 else 0
+    # 4. DAV Links (10 pts): % of items linked to Digital Access Vault
+    dav_count = sum(1 for item in all_items if item.get("dav_entry_id"))
+    dav_score = round((dav_count / total_items) * 10) if total_items > 0 else 0
 
-    # 5. Instructions/Notes (15 pts): % of items with beneficiary notes
-    notes_count = sum(1 for item in bills + debts + accounts if item.get("notes"))
+    # 5. Beneficiary Notes (15 pts): % of items with notes/instructions
+    notes_count = sum(1 for item in all_items if item.get("notes"))
     notes_score = round((notes_count / total_items) * 15) if total_items > 0 else 0
 
-    total_score = min(100, coverage_score + auto_pay_score + designation_score + dav_score + notes_score)
+    total_score = min(100, coverage_score + detail_score + designation_score + dav_score + notes_score)
 
-    # Label
-    if total_score >= 80:
-        label = "Protected"
-    elif total_score >= 60:
-        label = "Strong"
+    # Labels reflect documentation completeness, not financial judgment
+    if total_score >= 85:
+        label = "Comprehensive"
+    elif total_score >= 65:
+        label = "Thorough"
     elif total_score >= 40:
         label = "Building"
     elif total_score > 0:
@@ -746,7 +915,7 @@ async def get_financial_health_score(estate_id: str, current_user: dict = Depend
         "label": label,
         "breakdown": {
             "coverage": coverage_score,
-            "auto_pay": auto_pay_score,
+            "detail": detail_score,
             "designations": designation_score,
             "dav_links": dav_score,
             "notes": notes_score,

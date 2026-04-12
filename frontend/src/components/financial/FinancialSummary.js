@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, TrendingUp, TrendingDown, Receipt, Landmark, PiggyBank } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Receipt, Landmark, PiggyBank, Building2 } from 'lucide-react';
 
 const fmt = (n) => {
   if (n == null) return '$0';
@@ -11,6 +11,7 @@ const fmt = (n) => {
 
 const FinancialSummary = ({ summary, onNavigate }) => {
   if (!summary) return null;
+  const totalAssetItems = (summary.accounts_count || 0) + (summary.property_count || 0);
   const cards = [
     {
       label: 'Monthly Bills',
@@ -35,7 +36,7 @@ const FinancialSummary = ({ summary, onNavigate }) => {
     {
       label: 'Total Assets',
       value: fmt(summary.total_assets),
-      sub: `${summary.accounts_count} account${summary.accounts_count !== 1 ? 's' : ''}`,
+      sub: `${totalAssetItems} item${totalAssetItems !== 1 ? 's' : ''} (accounts + property)`,
       icon: PiggyBank,
       color: '#3b82f6',
       bg: 'rgba(59,130,246,0.1)',

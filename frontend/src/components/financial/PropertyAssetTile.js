@@ -1,0 +1,179 @@
+import React, { useState } from 'react';
+import { Edit2, Trash2, Users, ChevronDown, ChevronUp, Home, Car, Gem, Palette, Building2, Package } from 'lucide-react';
+import { Card, CardContent } from '../ui/card';
+
+const CATEGORY_ICONS = {
+  real_estate: Home,
+  vehicle: Car,
+  jewelry: Gem,
+  artwork: Palette,
+  business_entity: Building2,
+  collectible: Package,
+  other: Package,
+};
+
+const CATEGORY_LABELS = {
+  real_estate: 'Real Estate',
+  vehicle: 'Vehicle',
+  jewelry: 'Jewelry',
+  artwork: 'Artwork',
+  collectible: 'Collectible',
+  business_entity: 'Business Entity',
+  other: 'Other',
+};
+
+const ENTITY_LABELS = {
+  llc: 'LLC',
+  corporation: 'Corporation',
+  s_corp: 'S-Corp',
+  partnership: 'Partnership',
+  sole_prop: 'Sole Proprietorship',
+  trust: 'Trust',
+};
+
+const PropertyAssetTile = ({ asset, beneficiaries, onEdit, onDelete, onDesignationUpdate }) => {
+  const [expanded, setExpanded] = useState(false);
+  const CatIcon = CATEGORY_ICONS[asset.category] || Package;
+  const catLabel = CATEGORY_LABELS[asset.category] || asset.category;
+  const designated = asset.designated_beneficiaries || ['all'];
+  const benCount = designated.includes('all') ? beneficiaries.length : designated.length;
+  const statusColors = { active: '#10b981', sold: '#64748b', transferred: '#f59e0b', pending: '#3b82f6' };
+
+  const toggleBeneficiary = (benId) => {
+    let newDesignated = [...(asset.designated_beneficiaries || ['all'])];
+    let newTiming = { ...(asset.visibility_timing || {}) };
+    if (newDesignated.includes('all')) {
+      newDesignated = beneficiaries.map(b => b.id).filter(id => id !== benId);
+      beneficiaries.forEach(b => { if (!newTiming[b.id]) newTiming[b.id] = { pre: false, post: true }; });
+    } else if (newDesignated.includes(benId)) {
+      newDesignated = newDesignated.filter(id => id !== benId);
+    } else {
+      newDesignated.push(benId);
+    }
+    if (newDesignated.length === beneficiaries.length) newDesignated = ['all'];
+    if (newDesignated.length === 0) newDesignated = ['all'];
+    onDesignationUpdate(asset.id, newDesignated, newTiming);
+  };
+
+  const toggleTiming = (benId, phase) => {
+    const timing = { ...(asset.visibility_timing || {}) };
+    const current = timing[benId] || { pre: false, post: true };
+    timing[benId] = { ...current, [phase]: !current[phase] };
+    onDesignationUpdate(asset.id, asset.designated_beneficiaries || ['all'], timing);
+  };
+
+  return (
+    <Card className="glass-card relative overflow-hidden group" data-testid={`property-tile-${asset.id}`}>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex items-start gap-2.5 flex-1 min-w-0">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}>
+              <CatIcon className="w-4.5 h-4.5" style={{ color: '#10b981' }} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm font-bold text-[var(--t)] truncate mb-0.5">{asset.name}</h3>
+              <p className="text-xs text-[var(--t5)]">{catLabel}</p>
+            </div>
+          </div>
+          <div className="text-right flex-shrink-0">
+            {asset.estimated_value != null && (
+              <div className="text-lg font-bold text-[var(--t)]">${asset.estimated_value.toLocaleString()}</div>
+            )}
+            <span className="text-[11px] px-2 py-0.5 rounded-full font-bold" style={{
+              background: `${statusColors[asset.status] || '#64748b'}20`,
+              color: statusColors[asset.status] || '#64748b',
+            }}>{asset.status}</span>
+          </div>
+        </div>
+
+        <div className="text-xs space-y-1 mb-3 py-2" style={{ borderTop: '1px solid var(--b)', borderBottom: '1px solid var(--b)' }}>
+          {asset.location_address && (
+            <div><span className="text-[var(--t5)]">Location: </span><span className="text-[var(--t)]">{asset.location_address}</span></div>
+          )}
+          {asset.entity_type && (
+            <div><span className="text-[var(--t5)]">Entity: </span><span className="text-[var(--t)]">{ENTITY_LABELS[asset.entity_type] || asset.entity_type}</span></div>
+          )}
+          {asset.entity_state && (
+            <div><span className="text-[var(--t5)]">State: </span><span className="text-[var(--t)]">{asset.entity_state}</span></div>
+          )}
+          {asset.ownership_type && asset.ownership_type !== 'individual' && (
+            <div><span className="text-[var(--t5)]">Ownership: </span><span className="text-[var(--t)]">{asset.ownership_type.replace(/_/g, ' ')}</span></div>
+          )}
+          {asset.joint_owner && (
+            <div><span className="text-[var(--t5)]">Joint w/: </span><span className="text-[var(--t)]">{asset.joint_owner}</span></div>
+          )}
+          {asset.serial_or_vin && (
+            <div><span className="text-[var(--t5)]">ID/VIN: </span><span className="text-[var(--t)]">{asset.serial_or_vin}</span></div>
+          )}
+          {asset.description && (
+            <div><span className="text-[var(--t5)]">Description: </span><span className="text-[var(--t)]">{asset.description}</span></div>
+          )}
+          {asset.notes && (
+            <div className="pt-1"><span className="text-[var(--t5)]">Notes: </span><span className="text-[var(--t)] italic">{asset.notes}</span></div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => onEdit(asset)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[var(--gold)]" data-testid={`edit-property-${asset.id}`}>
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => onDelete(asset.id)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[#ef4444]" data-testid={`delete-property-${asset.id}`}>
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          {beneficiaries.length > 0 && (
+            <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <Users className="w-3 h-3 text-[var(--t4)]" />
+              <span className="text-[var(--t3)]">{benCount} of {beneficiaries.length}</span>
+              {expanded ? <ChevronUp className="w-3 h-3 text-[var(--t5)]" /> : <ChevronDown className="w-3 h-3 text-[var(--t5)]" />}
+            </button>
+          )}
+        </div>
+
+        {expanded && beneficiaries.length > 0 && (
+          <div className="mt-3 space-y-1.5">
+            {beneficiaries.map(ben => {
+              const isAll = designated.includes('all');
+              const isOn = isAll || designated.includes(ben.id);
+              const timing = asset.visibility_timing?.[ben.id] || { pre: false, post: true };
+              const initials = `${ben.first_name?.charAt(0) || ''}${ben.last_name?.charAt(0) || ''}`;
+              return (
+                <div key={ben.id} className="rounded-xl overflow-hidden" style={{
+                  background: isOn ? 'rgba(212,175,55,0.06)' : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${isOn ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                }}>
+                  <div className="flex items-center gap-3 px-3 py-2">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0" style={{
+                      background: isOn ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.08)',
+                      color: isOn ? '#080e1a' : '#7B879E',
+                    }}>{initials}</div>
+                    <div className="flex-1 min-w-0"><div className="text-xs font-semibold truncate text-[var(--t)]">{ben.first_name} {ben.last_name}</div></div>
+                    <button onClick={() => toggleBeneficiary(ben.id)} className="w-9 h-5 rounded-full flex-shrink-0 relative transition-all"
+                      style={{ background: isOn ? '#d4af37' : 'rgba(255,255,255,0.12)' }}>
+                      <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" style={{ left: isOn ? '18px' : '2px' }} />
+                    </button>
+                  </div>
+                  {isOn && (
+                    <div className="flex gap-2 px-3 pb-2">
+                      <button onClick={() => toggleTiming(ben.id, 'pre')} className="flex-1 py-1 rounded-lg text-[11px] font-bold text-center"
+                        style={{ background: timing.pre ? 'rgba(34,201,147,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${timing.pre ? 'rgba(34,201,147,0.4)' : 'rgba(255,255,255,0.08)'}`, color: timing.pre ? '#22C993' : '#525C72' }}>
+                        {timing.pre ? '\u2713 ' : ''}Pre-Transition</button>
+                      <button onClick={() => toggleTiming(ben.id, 'post')} className="flex-1 py-1 rounded-lg text-[11px] font-bold text-center"
+                        style={{ background: timing.post ? 'rgba(59,123,247,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${timing.post ? 'rgba(59,123,247,0.4)' : 'rgba(255,255,255,0.08)'}`, color: timing.post ? '#3B7BF7' : '#525C72' }}>
+                        {timing.post ? '\u2713 ' : ''}Post-Transition</button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+export default PropertyAssetTile;

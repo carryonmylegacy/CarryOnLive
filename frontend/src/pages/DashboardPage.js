@@ -646,10 +646,10 @@ const DashboardPage = () => {
             </h2>
             <SpeedometerGauge score={readinessScore} id="readiness" labelText={scoreInfo.label} labelColor={scoreInfo.color} />
           </div>
-          {/* Right gauge — Financial Health */}
+          {/* Right gauge — Financial Coverage */}
           <div className="text-center">
             <h2 className="text-xs lg:text-base font-bold text-[var(--t4)] uppercase tracking-wider mb-2 lg:mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Financial Health
+              Financial Coverage
             </h2>
             <SpeedometerGauge score={financialScore} id="financial" labelText={financialScoreInfo.label} labelColor={financialScoreInfo.color} />
           </div>
@@ -690,7 +690,7 @@ const DashboardPage = () => {
           </div>
           <ChevronRight className="w-5 h-5 text-[var(--t5)]" />
         </div>
-        {financialSummary && (financialSummary.bills_count > 0 || financialSummary.debts_count > 0 || financialSummary.accounts_count > 0) ? (
+        {financialSummary && (financialSummary.bills_count > 0 || financialSummary.debts_count > 0 || financialSummary.accounts_count > 0 || financialSummary.property_count > 0) ? (
           <>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
               <div className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)' }}>
@@ -702,8 +702,8 @@ const DashboardPage = () => {
                 <div className="text-[11px] text-[var(--t5)]">Active Debts</div>
               </div>
               <div className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.15)' }}>
-                <div className="text-sm lg:text-lg font-bold text-[var(--t)]">{financialSummary.accounts_count}</div>
-                <div className="text-[11px] text-[var(--t5)]">Accounts</div>
+                <div className="text-sm lg:text-lg font-bold text-[var(--t)]">{(financialSummary.accounts_count || 0) + (financialSummary.property_count || 0)}</div>
+                <div className="text-[11px] text-[var(--t5)]">Assets</div>
               </div>
               <div className="rounded-xl p-2.5 text-center" style={{ background: financialSummary.net_position >= 0 ? 'rgba(34,201,147,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${financialSummary.net_position >= 0 ? 'rgba(34,201,147,0.15)' : 'rgba(239,68,68,0.15)'}` }}>
                 <div className="text-sm lg:text-lg font-bold text-[var(--t)]">

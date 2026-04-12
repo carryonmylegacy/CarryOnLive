@@ -184,6 +184,9 @@ async def ensure_indexes(db, logger):
         await db.financial_accounts.create_index([("estate_id", 1), ("deleted_at", 1)])
         await db.bill_categories.create_index([("estate_id", 1), ("module", 1)])
         await db.bill_payments.create_index([("bill_id", 1), ("deleted_at", 1)])
+        # Property Assets indexes
+        await db.property_assets.create_index([("estate_id", 1), ("deleted_at", 1)])
+        await db.property_assets.create_index("status")
         # Compound indexes for frequently-used multi-field queries
         await db.user_subscriptions.create_index([("user_id", 1), ("status", 1)])
         await db.section_permissions.create_index([("beneficiary_id", 1), ("estate_id", 1)])
