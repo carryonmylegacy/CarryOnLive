@@ -7,34 +7,63 @@ import { API_URL } from '../../config';
 // ── Cache-aware authenticated file fetch ──
 const ECT_CACHE_NAME = 'carryon-ect-media-v1';
 
+// In-flight fetch deduplication
+const inflight = new Map();
+
 export async function cachedFetch(fileId) {
-  const cacheKey = `${API_URL}/estate-chat/files/${fileId}`;
-  // 1. Try the Cache API first
-  if ('caches' in window) {
-    try {
-      const cache = await caches.open(ECT_CACHE_NAME);
-      const cached = await cache.match(cacheKey);
-      if (cached) {
-        const blob = await cached.blob();
-        return URL.createObjectURL(blob);
-      }
-    } catch { /* cache miss, fall through */ }
-  }
-  // 2. Fetch from server
-  const token = localStorage.getItem('carryon_token');
-  const res = await fetch(cacheKey, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error('fetch failed');
-  const blob = await res.blob();
-  // 3. Store in cache for next time
-  if ('caches' in window) {
-    try {
-      const cache = await caches.open(ECT_CACHE_NAME);
-      await cache.put(cacheKey, new Response(blob.slice(0)));
-    } catch { /* cache write failed, non-critical */ }
-  }
-  return URL.createObjectURL(blob);
+  // Deduplicate: if already fetching this fileId, return same promise
+  if (inflight.has(fileId)) return inflight.get(fileId);
+
+  const promise = (async () => {
+    const cacheKey = `${API_URL}/estate-chat/files/${fileId}`;
+    // 1. Try the Cache API first
+    if ('caches' in window) {
+      try {
+        const cache = await caches.open(ECT_CACHE_NAME);
+        const cached = await cache.match(cacheKey);
+        if (cached) {
+          const blob = await cached.blob();
+          return URL.createObjectURL(blob);
+        }
+      } catch { /* cache miss, fall through */ }
+    }
+    // 2. Fetch from server
+    const token = localStorage.getItem('carryon_token');
+    const res = await fetch(cacheKey, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('fetch failed');
+    const blob = await res.blob();
+    // 3. Store in cache for next time
+    if ('caches' in window) {
+      try {
+        const cache = await caches.open(ECT_CACHE_NAME);
+        await cache.put(cacheKey, new Response(blob.slice(0)));
+      } catch { /* cache write failed, non-critical */ }
+    }
+    return URL.createObjectURL(blob);
+  })();
+
+  inflight.set(fileId, promise);
+  promise.finally(() => inflight.delete(fileId));
+  return promise;
+}
+
+/**
+ * Prefetch a batch of file IDs into the cache in parallel (up to 3 concurrent).
+ * Call this when a conversation is opened to warm the cache for visible media.
+ */
+export function prefetchMedia(fileIds) {
+  if (!fileIds?.length) return;
+  // Limit concurrency to 3 to avoid saturating the connection
+  let i = 0;
+  const next = () => {
+    if (i >= fileIds.length) return;
+    const id = fileIds[i++];
+    cachedFetch(id).catch(() => {}).then(next);
+  };
+  // Start up to 3 concurrent fetches
+  for (let c = 0; c < Math.min(3, fileIds.length); c++) next();
 }
 
 // ── Authenticated Image ──

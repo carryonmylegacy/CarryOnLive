@@ -64,7 +64,17 @@ const NotificationSettings = ({ getAuthHeaders }) => {
   const registerServiceWorker = async () => {
     try {
       const registration = await navigator.serviceWorker.register('/sw-push.js');
-      await navigator.serviceWorker.ready;
+      // Wait for the SW to reach active state
+      const sw = registration.installing || registration.waiting || registration.active;
+      if (sw && sw.state !== 'activated' && sw.state !== 'activating') {
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('SW activation timeout')), 10000);
+          sw.addEventListener('statechange', () => {
+            if (sw.state === 'activated') { clearTimeout(timeout); resolve(); }
+          });
+          if (sw.state === 'activated') { clearTimeout(timeout); resolve(); }
+        });
+      }
       return registration;
     } catch (err) {
       console.error('Service worker registration failed:', err);

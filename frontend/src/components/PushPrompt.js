@@ -27,7 +27,15 @@ const PushPrompt = ({ getAuthHeaders }) => {
         // Permission granted but no subscription — silently re-subscribe
         try {
           const registration = await navigator.serviceWorker.register('/sw-push.js');
-          await navigator.serviceWorker.ready;
+          // Wait for active state
+          const sw = registration.installing || registration.waiting || registration.active;
+          if (sw && sw.state !== 'activated') {
+            await new Promise((resolve) => {
+              const t = setTimeout(resolve, 8000);
+              sw.addEventListener('statechange', () => { if (sw.state === 'activated') { clearTimeout(t); resolve(); } });
+              if (sw.state === 'activated') { clearTimeout(t); resolve(); }
+            });
+          }
           const vapidRes = await axios.get(`${API_URL}/push/vapid-public-key`);
           const vapidPublicKey = vapidRes.data.public_key;
           const padding = '='.repeat((4 - (vapidPublicKey.length % 4)) % 4);
@@ -64,8 +72,19 @@ const PushPrompt = ({ getAuthHeaders }) => {
         dismiss();
         return;
       }
+      // Register and wait for the specific SW to be active
       const registration = await navigator.serviceWorker.register('/sw-push.js');
-      await navigator.serviceWorker.ready;
+      // Wait for the SW to reach active state
+      const sw = registration.installing || registration.waiting || registration.active;
+      if (sw && sw.state !== 'activated' && sw.state !== 'activating') {
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('SW activation timeout')), 10000);
+          sw.addEventListener('statechange', () => {
+            if (sw.state === 'activated') { clearTimeout(timeout); resolve(); }
+          });
+          if (sw.state === 'activated') { clearTimeout(timeout); resolve(); }
+        });
+      }
 
       const vapidRes = await axios.get(`${API_URL}/push/vapid-public-key`);
       if (!vapidRes.data?.public_key) throw new Error('VAPID key missing');
@@ -92,8 +111,14 @@ const PushPrompt = ({ getAuthHeaders }) => {
       toast.success('Notifications enabled!');
     } catch (err) {
       console.error('Push subscription error:', err);
-      if (err?.response?.status === 503) {
+      if (err?.message?.includes('timeout')) {
+        toast.error('Service worker took too long to activate. Try closing and reopening the app.');
+      } else if (err?.response?.status === 503) {
         toast.error('Push notifications are not yet configured on this server.');
+      } else if (err?.name === 'NotAllowedError') {
+        toast.error('Notification permission was not granted. Check your device settings.');
+      } else if (err?.name === 'AbortError') {
+        toast.error('Push subscription was interrupted. Please try again.');
       } else {
         toast.error('Failed to enable notifications. Please try again later.');
       }

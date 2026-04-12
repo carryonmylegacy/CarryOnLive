@@ -40,7 +40,7 @@ import {
 import { platformDownload } from '../utils/downloadFile';
 import useVoiceRecorder from '../components/estate-chat/useVoiceRecorder';
 import VoiceMessagePlayer from '../components/estate-chat/VoiceMessagePlayer';
-import { AuthImage, AuthVideo, AuthFileLink } from '../components/estate-chat/AuthMedia';
+import { AuthImage, AuthVideo, AuthFileLink, prefetchMedia } from '../components/estate-chat/AuthMedia';
 import ECTSecurityIntro from '../components/estate-chat/ECTSecurityIntro';
 import ImagePreviewModal from '../components/estate-chat/ImagePreviewModal';
 
@@ -320,6 +320,13 @@ export default function EstateChatPage() {
         if (isNearBottom) {
           setTimeout(() => { if (el) el.scrollTop = el.scrollHeight; }, 100);
         }
+        // Prefetch media attachments for faster image loading
+        const fileIds = [];
+        data.forEach(m => {
+          if (m.attachment?.file_id) fileIds.push(m.attachment.file_id);
+          if (m.attachments) m.attachments.forEach(a => { if (a.file_id) fileIds.push(a.file_id); });
+        });
+        if (fileIds.length) prefetchMedia(fileIds);
       }
       if (readRes.ok) setReadStatus(await readRes.json());
       if (pinRes.ok) setPinnedMsgs(await pinRes.json());

@@ -221,7 +221,7 @@ const DashboardPage = () => {
     const gId = `gauge-${id}`;
     
     return (
-      <div className="relative w-36 h-24 lg:w-56 lg:h-40 mx-auto">
+      <div className="relative w-44 h-28 lg:w-64 lg:h-44 mx-auto">
         <svg viewBox="0 0 200 110" className="w-full h-full overflow-visible">
           <defs>
             <linearGradient id={`${gId}-arc`} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -610,7 +610,7 @@ const DashboardPage = () => {
       <BillingStatusBanner onUpdatePayment={() => navigate('/settings')} />
 
       {/* Header + Estate Selector */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
         <div>
           <h1 className="text-2xl lg:text-4xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {justCompletedActivation
@@ -654,40 +654,44 @@ const DashboardPage = () => {
 
       {/* Estate Readiness Score — Single Gauge */}
       <div className="glass-card p-4 lg:p-6 mb-4" data-testid="readiness-card">
-        <div className="flex justify-center">
-          <div className="text-center">
-            <h2 className="text-xs lg:text-base font-bold text-[var(--t4)] uppercase tracking-wider mb-2 lg:mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Estate Readiness
-            </h2>
+        <h2 className="text-xs lg:text-base font-bold text-[var(--t4)] uppercase tracking-wider mb-2 lg:mb-4 text-center" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          Estate Readiness
+        </h2>
+        <div className="flex items-end justify-center gap-2 lg:gap-6">
+          {/* Left stack */}
+          <div className="flex flex-col gap-2 lg:gap-3 items-end pt-2">
+            {isFeatureKeyEnabled('mm', enabledFeatures) && (
+            <div className="flex items-center gap-1.5 lg:gap-2">
+              <span className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-[#8b5cf6]" />
+              <span className="text-[var(--t3)] text-[11px] lg:text-sm font-semibold whitespace-nowrap">{msgsPercent}% Messages</span>
+            </div>
+            )}
+            {isFeatureKeyEnabled('iac', enabledFeatures) && (
+            <div className="flex items-center gap-1.5 lg:gap-2">
+              <span className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-[#f97316]" />
+              <span className="text-[var(--t3)] text-[11px] lg:text-sm font-semibold whitespace-nowrap">{checklistPercent}% Checklist</span>
+            </div>
+            )}
+          </div>
+          {/* Center gauge — larger */}
+          <div className="text-center flex-shrink-0">
             <SpeedometerGauge score={readinessScore} id="readiness" labelText={scoreInfo.label} labelColor={scoreInfo.color} />
           </div>
-        </div>
-        
-        <div className="flex justify-center flex-wrap gap-3 lg:gap-6 mt-12 lg:mt-24">
-          {isFeatureKeyEnabled('mm', enabledFeatures) && (
-          <div className="flex items-center gap-1.5 lg:gap-2">
-            <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#8b5cf6]" />
-            <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{msgsPercent}% Messages</span>
+          {/* Right stack */}
+          <div className="flex flex-col gap-2 lg:gap-3 items-start pt-2">
+            {isFeatureKeyEnabled('sdv', enabledFeatures) && (
+            <div className="flex items-center gap-1.5 lg:gap-2">
+              <span className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-[#2563eb]" />
+              <span className="text-[var(--t3)] text-[11px] lg:text-sm font-semibold whitespace-nowrap">{docsPercent}% Docs</span>
+            </div>
+            )}
+            {isFeatureKeyEnabled('cfp', enabledFeatures) && (
+            <div className="flex items-center gap-1.5 lg:gap-2">
+              <span className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-[#10b981]" />
+              <span className="text-[var(--t3)] text-[11px] lg:text-sm font-semibold whitespace-nowrap">{financialsPercent}% Financials</span>
+            </div>
+            )}
           </div>
-          )}
-          {isFeatureKeyEnabled('iac', enabledFeatures) && (
-          <div className="flex items-center gap-1.5 lg:gap-2">
-            <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#f97316]" />
-            <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{checklistPercent}% Checklist</span>
-          </div>
-          )}
-          {isFeatureKeyEnabled('sdv', enabledFeatures) && (
-          <div className="flex items-center gap-1.5 lg:gap-2">
-            <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#2563eb]" />
-            <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{docsPercent}% Docs</span>
-          </div>
-          )}
-          {isFeatureKeyEnabled('cfp', enabledFeatures) && (
-          <div className="flex items-center gap-1.5 lg:gap-2">
-            <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#10b981]" />
-            <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{financialsPercent}% Financials</span>
-          </div>
-          )}
         </div>
       </div>
 
