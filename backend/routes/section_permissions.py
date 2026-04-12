@@ -22,6 +22,7 @@ ALL_SECTIONS = [
     "guardian",
     "digital_wallet",
     "timeline",
+    "financial_portal",
 ]
 
 
@@ -90,6 +91,7 @@ async def get_my_section_permissions(estate_id: str, current_user: dict = Depend
         "ffn_access": ben.get("ffn_access", True),
         "dav_access": ben.get("dav_access", True),
         "dts_access": ben.get("dts_access", True),
+        "cfp_access": ben.get("cfp_access", True),
     }
 
     return {

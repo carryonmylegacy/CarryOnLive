@@ -1,0 +1,528 @@
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { cachedGet } from '../utils/apiCache';
+import {
+  DollarSign, Plus, Loader2, ArrowLeft, Search,
+  ChevronRight, ChevronLeft, Receipt, Landmark, PiggyBank, TrendingUp
+} from 'lucide-react';
+import { Card, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { toast } from '../utils/toast';
+import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
+import { Skeleton } from '../components/ui/skeleton';
+import SlidePanel from '../components/SlidePanel';
+import { API_URL } from '../config';
+import BillForm from '../components/financial/BillForm';
+import DebtForm from '../components/financial/DebtForm';
+import AccountForm from '../components/financial/AccountForm';
+import BillTile from '../components/financial/BillTile';
+import DebtTile from '../components/financial/DebtTile';
+import AccountTile from '../components/financial/AccountTile';
+import BillCalendar from '../components/financial/BillCalendar';
+import FinancialSummary from '../components/financial/FinancialSummary';
+
+const DEFAULT_BILL_CATEGORIES = [
+  'mortgage_rent', 'utilities', 'insurance', 'subscriptions', 'credit_card',
+  'auto_vehicle', 'medical_health', 'taxes', 'hoa_condo', 'education_student',
+  'phone_internet', 'childcare', 'other',
+];
+const BILL_CATEGORY_LABELS = {
+  mortgage_rent: 'Mortgage/Rent', utilities: 'Utilities', insurance: 'Insurance',
+  subscriptions: 'Subscriptions', credit_card: 'Credit Card', auto_vehicle: 'Auto/Vehicle',
+  medical_health: 'Medical/Health', taxes: 'Taxes', hoa_condo: 'HOA/Condo',
+  education_student: 'Education', phone_internet: 'Phone/Internet',
+  childcare: 'Childcare', other: 'Other',
+};
+
+const DEFAULT_DEBT_CATEGORIES = [
+  'mortgage', 'auto_loan', 'student_loan', 'credit_card', 'personal_loan',
+  'medical_debt', 'business_loan', 'heloc', 'other',
+];
+const DEBT_CATEGORY_LABELS = {
+  mortgage: 'Mortgage', auto_loan: 'Auto Loan', student_loan: 'Student Loan',
+  credit_card: 'Credit Card', personal_loan: 'Personal Loan', medical_debt: 'Medical Debt',
+  business_loan: 'Business Loan', heloc: 'HELOC', other: 'Other',
+};
+
+const DEFAULT_ACCOUNT_CATEGORIES = [
+  'checking', 'savings', 'money_market', 'cd', 'investment', 'retirement',
+  'pension', 'hsa_fsa', 'trust_account', 'life_insurance_cv', 'annuity',
+  'real_estate', 'business', 'crypto', 'other',
+];
+const ACCOUNT_CATEGORY_LABELS = {
+  checking: 'Checking', savings: 'Savings', money_market: 'Money Market', cd: 'CD',
+  investment: 'Investment', retirement: 'Retirement (401k/IRA)', pension: 'Pension',
+  hsa_fsa: 'HSA/FSA', trust_account: 'Trust', life_insurance_cv: 'Life Ins. (CV)',
+  annuity: 'Annuity', real_estate: 'Real Estate', business: 'Business',
+  crypto: 'Crypto', other: 'Other',
+};
+
+const FinancialPortalPage = () => {
+  const { user, getAuthHeaders } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState('bills');
+  const [bills, setBills] = useState([]);
+  const [debts, setDebts] = useState([]);
+  const [accounts, setAccounts] = useState([]);
+  const [beneficiaries, setBeneficiaries] = useState([]);
+  const [davEntries, setDavEntries] = useState([]);
+  const [customCategories, setCustomCategories] = useState({ bills: [], debts: [], accounts: [] });
+  const [summary, setSummary] = useState(null);
+  const [estate, setEstate] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [billFilter, setBillFilter] = useState('all');
+  const [debtFilter, setDebtFilter] = useState('all');
+  const [accountFilter, setAccountFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showBillForm, setShowBillForm] = useState(false);
+  const [showDebtForm, setShowDebtForm] = useState(false);
+  const [showAccountForm, setShowAccountForm] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState(null);
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const searchTimerRef = useRef(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => { fetchAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fetchAll = async () => {
+    try {
+      const headers = getAuthHeaders()?.headers;
+      if (!headers) { setLoading(false); return; }
+      const estatesRes = await cachedGet(axios, `${API_URL}/estates`, { headers });
+      const estates = Array.isArray(estatesRes.data) ? estatesRes.data : [];
+      if (estates.length === 0) { setLoading(false); return; }
+      const savedId = localStorage.getItem('selected_estate_id');
+      const est = (savedId && estates.find(e => e.id === savedId)) || estates[0];
+      setEstate(est);
+      const eid = est.id;
+      const [billsRes, debtsRes, acctsRes, summaryRes, bensRes, catBills, catDebts, catAccts, davRes] = await Promise.all([
+        axios.get(`${API_URL}/financial/bills/${eid}`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/financial/debts/${eid}`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/financial/accounts/${eid}`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/financial/summary/${eid}`, { headers }).catch(() => ({ data: null })),
+        axios.get(`${API_URL}/beneficiaries/${eid}`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/financial/categories/${eid}?module=bills`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/financial/categories/${eid}?module=debts`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/financial/categories/${eid}?module=accounts`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/digital-wallet/${eid}`, { headers }).catch(() => ({ data: [] })),
+      ]);
+      setBills(Array.isArray(billsRes.data) ? billsRes.data : []);
+      setDebts(Array.isArray(debtsRes.data) ? debtsRes.data : []);
+      setAccounts(Array.isArray(acctsRes.data) ? acctsRes.data : []);
+      setSummary(summaryRes.data);
+      setBeneficiaries(Array.isArray(bensRes.data) ? bensRes.data : []);
+      setDavEntries(Array.isArray(davRes.data) ? davRes.data : []);
+      setCustomCategories({
+        bills: Array.isArray(catBills.data) ? catBills.data : [],
+        debts: Array.isArray(catDebts.data) ? catDebts.data : [],
+        accounts: Array.isArray(catAccts.data) ? catAccts.data : [],
+      });
+    } catch (err) { console.error('Financial portal fetch error:', err); }
+    setLoading(false);
+  };
+
+  const handleSaved = () => {
+    setShowBillForm(false);
+    setShowDebtForm(false);
+    setShowAccountForm(false);
+    setEditItem(null);
+    fetchAll();
+  };
+
+  const handleDelete = async (type, id) => {
+    if (!window.confirm('Delete this entry? This cannot be undone.')) return;
+    try {
+      await axios.delete(`${API_URL}/financial/${type}/${id}`, getAuthHeaders());
+      fetchAll();
+    } catch { toast.error('Failed to delete'); }
+  };
+
+  const handleDesignationUpdate = async (type, itemId, designatedBeneficiaries, visibilityTiming) => {
+    try {
+      await axios.put(`${API_URL}/financial/${type}/${itemId}/designation`, {
+        designated_beneficiaries: designatedBeneficiaries,
+        visibility_timing: visibilityTiming,
+      }, getAuthHeaders());
+      fetchAll();
+    } catch { toast.error('Failed to update designation'); }
+  };
+
+  const handleAddCategory = async (module, name) => {
+    if (!estate) return;
+    try {
+      await axios.post(`${API_URL}/financial/categories`, {
+        estate_id: estate.id, module, name,
+      }, getAuthHeaders());
+      fetchAll();
+      return true;
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to create category');
+      return false;
+    }
+  };
+
+  // Build category list with custom categories
+  const getBillCategories = () => {
+    const cats = [...DEFAULT_BILL_CATEGORIES];
+    const labels = { ...BILL_CATEGORY_LABELS };
+    (customCategories.bills || []).forEach(c => {
+      const key = c.name.toLowerCase().replace(/\s+/g, '_');
+      if (!cats.includes(key) && !cats.includes(c.name)) {
+        cats.push(c.name);
+        labels[c.name] = c.name;
+      }
+    });
+    return { cats, labels };
+  };
+  const getDebtCategories = () => {
+    const cats = [...DEFAULT_DEBT_CATEGORIES];
+    const labels = { ...DEBT_CATEGORY_LABELS };
+    (customCategories.debts || []).forEach(c => {
+      if (!cats.includes(c.name)) { cats.push(c.name); labels[c.name] = c.name; }
+    });
+    return { cats, labels };
+  };
+  const getAccountCategories = () => {
+    const cats = [...DEFAULT_ACCOUNT_CATEGORIES];
+    const labels = { ...ACCOUNT_CATEGORY_LABELS };
+    (customCategories.accounts || []).forEach(c => {
+      if (!cats.includes(c.name)) { cats.push(c.name); labels[c.name] = c.name; }
+    });
+    return { cats, labels };
+  };
+
+  const { cats: billCats, labels: billLabels } = getBillCategories();
+  const { cats: debtCats, labels: debtLabels } = getDebtCategories();
+  const { cats: acctCats, labels: acctLabels } = getAccountCategories();
+
+  // Filter items
+  const filteredBills = useMemo(() => {
+    let items = bills.filter(b => b.status !== 'cancelled');
+    if (billFilter !== 'all') items = items.filter(b => b.category === billFilter);
+    if (debouncedSearch) items = items.filter(b => b.name.toLowerCase().includes(debouncedSearch.toLowerCase()));
+    return items;
+  }, [bills, billFilter, debouncedSearch]);
+
+  const filteredDebts = useMemo(() => {
+    let items = debts;
+    if (debtFilter !== 'all') items = items.filter(d => d.category === debtFilter);
+    if (debouncedSearch) items = items.filter(d => d.name.toLowerCase().includes(debouncedSearch.toLowerCase()));
+    return items;
+  }, [debts, debtFilter, debouncedSearch]);
+
+  const filteredAccounts = useMemo(() => {
+    let items = accounts;
+    if (accountFilter !== 'all') items = items.filter(a => a.category === accountFilter);
+    if (debouncedSearch) items = items.filter(a => a.name.toLowerCase().includes(debouncedSearch.toLowerCase()));
+    return items;
+  }, [accounts, accountFilter, debouncedSearch]);
+
+  // Get active categories (ones that have items)
+  const activeBillCats = useMemo(() => {
+    const used = new Set(bills.map(b => b.category));
+    return ['all', ...billCats.filter(c => used.has(c))];
+  }, [bills, billCats]);
+
+  const activeDebtCats = useMemo(() => {
+    const used = new Set(debts.map(d => d.category));
+    return ['all', ...debtCats.filter(c => used.has(c))];
+  }, [debts, debtCats]);
+
+  const activeAcctCats = useMemo(() => {
+    const used = new Set(accounts.map(a => a.category));
+    return ['all', ...acctCats.filter(c => used.has(c))];
+  }, [accounts, acctCats]);
+
+  // Determine current add button action
+  const handleAddClick = () => {
+    setEditItem(null);
+    if (activeTab === 'bills') setShowBillForm(true);
+    else if (activeTab === 'debts') setShowDebtForm(true);
+    else setShowAccountForm(true);
+  };
+
+  const addButtonLabel = activeTab === 'bills' ? 'Add Bill' : activeTab === 'debts' ? 'Add Debt' : 'Add Account';
+
+  // Category filter bubble renderer
+  const renderCategoryBubbles = (categories, activeFilter, setFilter, labels) => (
+    <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 scrollbar-hide" data-testid="category-bubbles">
+      {categories.map(cat => (
+        <button
+          key={cat}
+          onClick={() => setFilter(cat)}
+          className="flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap"
+          style={{
+            background: activeFilter === cat ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(255,255,255,0.05)',
+            color: activeFilter === cat ? '#080e1a' : 'var(--t3)',
+            border: `1px solid ${activeFilter === cat ? 'transparent' : 'rgba(255,255,255,0.08)'}`,
+          }}
+          data-testid={`filter-${cat}`}
+        >
+          {cat === 'all' ? 'All' : (labels[cat] || cat)}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6">
+        <Skeleton className="h-12 w-64 bg-[var(--s)]" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 bg-[var(--s)] rounded-2xl" />)}
+        </div>
+        <Skeleton className="h-10 w-full bg-[var(--s)]" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {[1,2,3,4].map(i => <Skeleton key={i} className="h-36 bg-[var(--s)] rounded-2xl" />)}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in max-w-7xl mx-auto" data-testid="financial-portal-page"
+      style={{ background: 'radial-gradient(ellipse at top left, rgba(16,185,129,0.1), transparent 55%), radial-gradient(ellipse at bottom right, rgba(34,201,147,0.06), transparent 55%)' }}>
+
+      <SectionLockBanner sectionId="financial_portal" />
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.2), rgba(34,201,147,0.15))' }}>
+            <DollarSign className="w-5 h-5 text-[#22C993]" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              CarryOn Financial Portal
+            </h1>
+            <p className="text-xs text-[var(--t5)]">
+              Bills, debts, and accounts — your complete financial picture
+            </p>
+          </div>
+        </div>
+        <Button className="gold-button w-full sm:w-auto" onClick={handleAddClick} data-testid="add-item-button">
+          <Plus className="w-5 h-5 mr-2" />
+          {addButtonLabel}
+        </Button>
+      </div>
+
+      {/* Financial Summary Cards */}
+      <FinancialSummary summary={summary} onNavigate={(tab) => setActiveTab(tab)} />
+
+      {/* Sub-Tab Navigation */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="bg-[var(--s)] p-1 w-full grid grid-cols-3 h-auto" data-testid="portal-tabs">
+          <TabsTrigger value="bills" className="data-[state=active]:bg-[#10b981] data-[state=active]:text-white text-sm py-2.5 gap-2" data-testid="tab-bills">
+            <Receipt className="w-4 h-4" />
+            <span className="hidden sm:inline">Bill Tracker</span>
+            <span className="sm:hidden">Bills</span>
+          </TabsTrigger>
+          <TabsTrigger value="debts" className="data-[state=active]:bg-[#ef4444] data-[state=active]:text-white text-sm py-2.5 gap-2" data-testid="tab-debts">
+            <Landmark className="w-4 h-4" />
+            <span className="hidden sm:inline">Debt Tracker</span>
+            <span className="sm:hidden">Debts</span>
+          </TabsTrigger>
+          <TabsTrigger value="accounts" className="data-[state=active]:bg-[#3b82f6] data-[state=active]:text-white text-sm py-2.5 gap-2" data-testid="tab-accounts">
+            <PiggyBank className="w-4 h-4" />
+            <span className="hidden sm:inline">Accounts</span>
+            <span className="sm:hidden">Accounts</span>
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Search Bar */}
+        <div className="flex items-center gap-2 mt-4 pb-2" style={{ borderBottom: '1px solid var(--b)' }}>
+          <Search className="w-4 h-4 text-[var(--t5)]" />
+          <input
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              clearTimeout(searchTimerRef.current);
+              searchTimerRef.current = setTimeout(() => setDebouncedSearch(e.target.value), 250);
+            }}
+            placeholder={`Search ${activeTab}...`}
+            className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]"
+            data-testid="financial-search"
+          />
+        </div>
+
+        {/* ============ BILLS TAB ============ */}
+        <TabsContent value="bills" className="mt-4">
+          {renderCategoryBubbles(activeBillCats, billFilter, setBillFilter, billLabels)}
+          <div className="mt-4 flex flex-col lg:flex-row gap-6">
+            {/* Mobile: Calendar on top */}
+            <div className="lg:hidden">
+              <BillCalendar
+                bills={bills}
+                month={calendarMonth}
+                onMonthChange={setCalendarMonth}
+                selectedDay={selectedCalendarDay}
+                onDaySelect={setSelectedCalendarDay}
+                categoryLabels={billLabels}
+              />
+            </div>
+            {/* Bill tiles */}
+            <div className="flex-1 min-w-0">
+              {filteredBills.length === 0 ? (
+                <Card className="glass-card">
+                  <CardContent className="p-12 text-center">
+                    <Receipt className="w-16 h-16 mx-auto text-[#10b981] mb-4 opacity-50" />
+                    <h3 className="text-xl font-semibold text-[var(--t)] mb-2">No Bills Yet</h3>
+                    <p className="text-[var(--t4)] mb-6 text-sm">Add your first bill to start tracking payments and due dates.</p>
+                    <Button className="gold-button" onClick={() => { setEditItem(null); setShowBillForm(true); }} data-testid="add-first-bill">
+                      <Plus className="w-5 h-5 mr-2" /> Add Your First Bill
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {filteredBills.map(bill => (
+                    <BillTile
+                      key={bill.id}
+                      bill={bill}
+                      categoryLabels={billLabels}
+                      beneficiaries={beneficiaries}
+                      onEdit={(b) => { setEditItem(b); setShowBillForm(true); }}
+                      onDelete={(id) => handleDelete('bills', id)}
+                      onDesignationUpdate={(id, bens, timing) => handleDesignationUpdate('bills', id, bens, timing)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Desktop: Calendar on right */}
+            <div className="hidden lg:block lg:w-[340px] lg:flex-shrink-0 lg:sticky lg:top-4 lg:self-start">
+              <BillCalendar
+                bills={bills}
+                month={calendarMonth}
+                onMonthChange={setCalendarMonth}
+                selectedDay={selectedCalendarDay}
+                onDaySelect={setSelectedCalendarDay}
+                categoryLabels={billLabels}
+              />
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* ============ DEBTS TAB ============ */}
+        <TabsContent value="debts" className="mt-4">
+          {renderCategoryBubbles(activeDebtCats, debtFilter, setDebtFilter, debtLabels)}
+          <div className="mt-4">
+            {filteredDebts.length === 0 ? (
+              <Card className="glass-card">
+                <CardContent className="p-12 text-center">
+                  <Landmark className="w-16 h-16 mx-auto text-[#ef4444] mb-4 opacity-50" />
+                  <h3 className="text-xl font-semibold text-[var(--t)] mb-2">No Debts Tracked</h3>
+                  <p className="text-[var(--t4)] mb-6 text-sm">Add mortgages, loans, and credit cards so your family knows the full picture.</p>
+                  <Button className="gold-button" onClick={() => { setEditItem(null); setShowDebtForm(true); }} data-testid="add-first-debt">
+                    <Plus className="w-5 h-5 mr-2" /> Add Your First Debt
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredDebts.map(debt => (
+                  <DebtTile
+                    key={debt.id}
+                    debt={debt}
+                    categoryLabels={debtLabels}
+                    beneficiaries={beneficiaries}
+                    onEdit={(d) => { setEditItem(d); setShowDebtForm(true); }}
+                    onDelete={(id) => handleDelete('debts', id)}
+                    onDesignationUpdate={(id, bens, timing) => handleDesignationUpdate('debts', id, bens, timing)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* ============ ACCOUNTS TAB ============ */}
+        <TabsContent value="accounts" className="mt-4">
+          {renderCategoryBubbles(activeAcctCats, accountFilter, setAccountFilter, acctLabels)}
+          <div className="mt-4">
+            {filteredAccounts.length === 0 ? (
+              <Card className="glass-card">
+                <CardContent className="p-12 text-center">
+                  <PiggyBank className="w-16 h-16 mx-auto text-[#3b82f6] mb-4 opacity-50" />
+                  <h3 className="text-xl font-semibold text-[var(--t)] mb-2">No Accounts Registered</h3>
+                  <p className="text-[var(--t4)] mb-6 text-sm">List checking, savings, investments, and other accounts for a complete financial picture.</p>
+                  <Button className="gold-button" onClick={() => { setEditItem(null); setShowAccountForm(true); }} data-testid="add-first-account">
+                    <Plus className="w-5 h-5 mr-2" /> Add Your First Account
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredAccounts.map(acct => (
+                  <AccountTile
+                    key={acct.id}
+                    account={acct}
+                    categoryLabels={acctLabels}
+                    beneficiaries={beneficiaries}
+                    onEdit={(a) => { setEditItem(a); setShowAccountForm(true); }}
+                    onDelete={(id) => handleDelete('accounts', id)}
+                    onDesignationUpdate={(id, bens, timing) => handleDesignationUpdate('accounts', id, bens, timing)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* ============ SLIDE PANELS ============ */}
+      <SlidePanel open={showBillForm} onClose={() => { setShowBillForm(false); setEditItem(null); }}
+        title={editItem ? 'Edit Bill' : 'Add Bill'} subtitle="Track a recurring or one-time bill">
+        <BillForm
+          estateId={estate?.id}
+          bill={editItem}
+          categories={billCats}
+          categoryLabels={billLabels}
+          davEntries={davEntries}
+          beneficiaries={beneficiaries}
+          onSaved={handleSaved}
+          onAddCategory={(name) => handleAddCategory('bills', name)}
+          getAuthHeaders={getAuthHeaders}
+        />
+      </SlidePanel>
+
+      <SlidePanel open={showDebtForm} onClose={() => { setShowDebtForm(false); setEditItem(null); }}
+        title={editItem ? 'Edit Debt' : 'Add Debt'} subtitle="Track a liability or loan">
+        <DebtForm
+          estateId={estate?.id}
+          debt={editItem}
+          categories={debtCats}
+          categoryLabels={debtLabels}
+          davEntries={davEntries}
+          beneficiaries={beneficiaries}
+          onSaved={handleSaved}
+          onAddCategory={(name) => handleAddCategory('debts', name)}
+          getAuthHeaders={getAuthHeaders}
+        />
+      </SlidePanel>
+
+      <SlidePanel open={showAccountForm} onClose={() => { setShowAccountForm(false); setEditItem(null); }}
+        title={editItem ? 'Edit Account' : 'Add Account'} subtitle="Register a financial account">
+        <AccountForm
+          estateId={estate?.id}
+          account={editItem}
+          categories={acctCats}
+          categoryLabels={acctLabels}
+          davEntries={davEntries}
+          beneficiaries={beneficiaries}
+          bills={bills}
+          onSaved={handleSaved}
+          onAddCategory={(name) => handleAddCategory('accounts', name)}
+          getAuthHeaders={getAuthHeaders}
+        />
+      </SlidePanel>
+    </div>
+  );
+};
+
+export default FinancialPortalPage;

@@ -1,0 +1,177 @@
+import React, { useState } from 'react';
+import { Edit2, Trash2, Users, ChevronDown, ChevronUp, Zap, CheckCircle2 } from 'lucide-react';
+import { Card, CardContent } from '../ui/card';
+
+const CATEGORY_COLORS = {
+  mortgage_rent: '#ef4444', utilities: '#f59e0b', insurance: '#8b5cf6',
+  subscriptions: '#ec4899', credit_card: '#f97316', auto_vehicle: '#06b6d4',
+  medical_health: '#10b981', taxes: '#6366f1', hoa_condo: '#14b8a6',
+  education_student: '#a855f7', phone_internet: '#3b82f6', childcare: '#f43f5e',
+  other: '#64748b',
+};
+
+const getCatColor = (cat) => CATEGORY_COLORS[cat] || '#d4af37';
+
+const getDueInfo = (bill) => {
+  if (!bill.due_day) return { text: 'No due date', color: '#64748b', urgent: false };
+  const today = new Date();
+  const day = today.getDate();
+  const dueDay = bill.due_day;
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const effectiveDue = Math.min(dueDay, daysInMonth);
+  let daysUntil = effectiveDue - day;
+  if (daysUntil < 0) daysUntil += daysInMonth;
+  if (daysUntil === 0) return { text: 'Due TODAY', color: '#ef4444', urgent: true };
+  if (daysUntil === 1) return { text: 'Due TOMORROW', color: '#f59e0b', urgent: true };
+  if (daysUntil <= 3) return { text: `Due in ${daysUntil} days`, color: '#f59e0b', urgent: true };
+  if (daysUntil <= 7) return { text: `Due in ${daysUntil} days`, color: '#3b82f6', urgent: false };
+  return { text: `Due in ${daysUntil} days`, color: '#64748b', urgent: false };
+};
+
+const BillTile = ({ bill, categoryLabels, beneficiaries, onEdit, onDelete, onDesignationUpdate }) => {
+  const [expanded, setExpanded] = useState(false);
+  const catColor = getCatColor(bill.category);
+  const due = getDueInfo(bill);
+  const catLabel = categoryLabels[bill.category] || bill.category;
+  const designated = bill.designated_beneficiaries || ['all'];
+  const benCount = designated.includes('all') ? beneficiaries.length : designated.length;
+
+  const toggleBeneficiary = (benId) => {
+    let newDesignated = [...(bill.designated_beneficiaries || ['all'])];
+    let newTiming = { ...(bill.visibility_timing || {}) };
+    if (newDesignated.includes('all')) {
+      newDesignated = beneficiaries.map(b => b.id).filter(id => id !== benId);
+      beneficiaries.forEach(b => { if (!newTiming[b.id]) newTiming[b.id] = { pre: false, post: true }; });
+    } else if (newDesignated.includes(benId)) {
+      newDesignated = newDesignated.filter(id => id !== benId);
+    } else {
+      newDesignated.push(benId);
+    }
+    if (newDesignated.length === beneficiaries.length) newDesignated = ['all'];
+    if (newDesignated.length === 0) newDesignated = ['all'];
+    onDesignationUpdate(bill.id, newDesignated, newTiming);
+  };
+
+  const toggleTiming = (benId, phase) => {
+    const timing = { ...(bill.visibility_timing || {}) };
+    const current = timing[benId] || { pre: false, post: true };
+    timing[benId] = { ...current, [phase]: !current[phase] };
+    onDesignationUpdate(bill.id, bill.designated_beneficiaries || ['all'], timing);
+  };
+
+  return (
+    <Card className="glass-card relative overflow-hidden group" data-testid={`bill-tile-${bill.id}`}>
+      {due.urgent && (
+        <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: due.color }} />
+      )}
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: catColor }} />
+              <h3 className="text-sm font-bold text-[var(--t)] truncate">{bill.name}</h3>
+            </div>
+            <p className="text-xs text-[var(--t5)] mb-2">{catLabel}</p>
+          </div>
+          {bill.amount && (
+            <div className="text-right flex-shrink-0">
+              <div className="text-lg font-bold text-[var(--t)]">${bill.amount.toLocaleString()}</div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3 text-xs mb-3" style={{ borderTop: '1px solid var(--b)', paddingTop: '8px' }}>
+          <span style={{ color: due.color }} className="font-bold">{due.text}</span>
+          <span className="text-[var(--t5)]">|</span>
+          <span className="text-[var(--t4)]">{bill.due_day ? `${bill.due_day}th monthly` : 'No schedule'}</span>
+        </div>
+
+        <div className="flex items-center gap-2 mb-2">
+          {bill.is_auto_pay && (
+            <span className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-bold" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
+              <CheckCircle2 className="w-3 h-3" /> Auto-Pay
+            </span>
+          )}
+          {bill.payment_account && (
+            <span className="text-[10px] text-[var(--t5)] truncate">{bill.payment_account}</span>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-between" style={{ borderTop: '1px solid var(--b)', paddingTop: '8px' }}>
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => onEdit(bill)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[var(--gold)]" data-testid={`edit-bill-${bill.id}`}>
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => onDelete(bill.id)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[#ef4444]" data-testid={`delete-bill-${bill.id}`}>
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          {beneficiaries.length > 0 && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition-all"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+              data-testid={`ben-toggle-${bill.id}`}
+            >
+              <Users className="w-3 h-3 text-[var(--t4)]" />
+              <span className="text-[var(--t3)]">{benCount} of {beneficiaries.length}</span>
+              {expanded ? <ChevronUp className="w-3 h-3 text-[var(--t5)]" /> : <ChevronDown className="w-3 h-3 text-[var(--t5)]" />}
+            </button>
+          )}
+        </div>
+
+        {/* Beneficiary designation */}
+        {expanded && beneficiaries.length > 0 && (
+          <div className="mt-3 space-y-1.5" data-testid={`ben-list-${bill.id}`}>
+            {beneficiaries.map(ben => {
+              const isAll = designated.includes('all');
+              const isOn = isAll || designated.includes(ben.id);
+              const timing = bill.visibility_timing?.[ben.id] || { pre: false, post: true };
+              const initials = `${ben.first_name?.charAt(0) || ''}${ben.last_name?.charAt(0) || ''}`;
+              return (
+                <div key={ben.id} className="rounded-xl overflow-hidden" style={{
+                  background: isOn ? 'rgba(212,175,55,0.06)' : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${isOn ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                }}>
+                  <div className="flex items-center gap-3 px-3 py-2">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{
+                      background: isOn ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.08)',
+                      color: isOn ? '#080e1a' : '#7B879E',
+                    }}>{initials}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold truncate text-[var(--t)]">{ben.first_name} {ben.last_name}</div>
+                    </div>
+                    <button onClick={() => toggleBeneficiary(ben.id)} className="w-9 h-5 rounded-full flex-shrink-0 relative transition-all"
+                      style={{ background: isOn ? '#d4af37' : 'rgba(255,255,255,0.12)' }}
+                      data-testid={`ben-switch-${ben.id}-${bill.id}`}>
+                      <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" style={{ left: isOn ? '18px' : '2px' }} />
+                    </button>
+                  </div>
+                  {isOn && (
+                    <div className="flex gap-2 px-3 pb-2">
+                      <button onClick={() => toggleTiming(ben.id, 'pre')} className="flex-1 py-1 rounded-lg text-[10px] font-bold text-center transition-all"
+                        style={{
+                          background: timing.pre ? 'rgba(34,201,147,0.15)' : 'rgba(255,255,255,0.04)',
+                          border: `1px solid ${timing.pre ? 'rgba(34,201,147,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                          color: timing.pre ? '#22C993' : '#525C72',
+                        }}>{timing.pre ? '\u2713 ' : ''}Pre-Transition</button>
+                      <button onClick={() => toggleTiming(ben.id, 'post')} className="flex-1 py-1 rounded-lg text-[10px] font-bold text-center transition-all"
+                        style={{
+                          background: timing.post ? 'rgba(59,123,247,0.15)' : 'rgba(255,255,255,0.04)',
+                          border: `1px solid ${timing.post ? 'rgba(59,123,247,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                          color: timing.post ? '#3B7BF7' : '#525C72',
+                        }}>{timing.post ? '\u2713 ' : ''}Post-Transition</button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+export default BillTile;

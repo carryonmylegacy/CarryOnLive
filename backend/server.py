@@ -64,6 +64,7 @@ from routes.notification_prefs import router as notification_prefs_router
 from routes.training_tracker import router as training_tracker_router
 from routes.ws_notifications import router as ws_router, sla_checker_loop
 from routes.user_preferences import router as user_preferences_router
+from routes.financial_portal import router as financial_portal_router
 from schedulers import (
     daily_dob_check_scheduler,
     data_retention_scheduler,
@@ -251,6 +252,13 @@ async def lifespan(app):
         await db.beneficiary_grace_periods.create_index("beneficiary_id")
         # Subscription settings index
         await db.subscription_settings.create_index("key", unique=True)
+        # Financial Portal (CFP) indexes
+        await db.bills.create_index([("estate_id", 1), ("deleted_at", 1)])
+        await db.bills.create_index("status")
+        await db.debts.create_index([("estate_id", 1), ("deleted_at", 1)])
+        await db.financial_accounts.create_index([("estate_id", 1), ("deleted_at", 1)])
+        await db.bill_categories.create_index([("estate_id", 1), ("module", 1)])
+        await db.bill_payments.create_index([("bill_id", 1), ("deleted_at", 1)])
         logger.info("Database indexes created/verified")
     except Exception as e:
         logger.warning(f"Index creation warning (may already exist): {e}")
@@ -336,6 +344,7 @@ api_router.include_router(notification_prefs_router)
 api_router.include_router(training_tracker_router)
 api_router.include_router(ws_router)
 api_router.include_router(user_preferences_router)
+api_router.include_router(financial_portal_router)
 
 
 BUILD_HASH = "2026-03-10T17:05:00Z-fix-welcome-redirect"

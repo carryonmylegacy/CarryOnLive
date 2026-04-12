@@ -17,7 +17,10 @@ import {
   Sparkles,
   KeyRound,
   ArrowLeftRight,
-  Loader2
+  Loader2,
+  DollarSign,
+  Receipt,
+  TrendingUp
 } from 'lucide-react';
 import TrialBanner from '../components/TrialBanner';
 import BillingStatusBanner from '../components/BillingStatusBanner';
@@ -35,6 +38,7 @@ const DashboardPage = () => {
   const [checklists, setChecklists] = useState([]);
   const [stats, setStats] = useState({ documents: 0, messages: 0, beneficiaries: 0 });
   const [readiness, setReadiness] = useState({ documents: { score: 0 }, messages: { score: 0 }, checklist: { score: 0 } });
+  const [financialSummary, setFinancialSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCelebration, setShowCelebration] = useState(false);
   const [justCompletedActivation, setJustCompletedActivation] = useState(false);
@@ -107,6 +111,9 @@ const DashboardPage = () => {
         setReadiness(readinessRes.data);
         setEstate(prev => prev ? { ...prev, readiness_score: readinessRes.data.overall_score } : prev);
       }
+      // Fetch financial summary (non-blocking)
+      axios.get(`${API_URL}/financial/summary/${estateId}`, getAuthHeaders())
+        .then(res => setFinancialSummary(res.data)).catch(() => {});
 
       // Show guided flow overlay if there are incomplete steps and user hasn't dismissed this visit
       if (!guidedDismissedRef.current && progressRes?.data) {
@@ -651,6 +658,68 @@ const DashboardPage = () => {
           </div>
           )}
         </div>
+      </div>
+
+      {/* CarryOn Financial Portal Tile */}
+      <div
+        className="glass-card p-4 lg:p-6 mb-4 border-l-4 border-l-[#10b981] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(16,185,129,0.2)]"
+        data-testid="cfp-dashboard-tile"
+        onClick={() => navigate('/financial')}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-[#10b981]" />
+            <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">CarryOn Financial Portal</h3>
+          </div>
+          <ChevronRight className="w-5 h-5 text-[var(--t5)]" />
+        </div>
+        {financialSummary && (financialSummary.bills_count > 0 || financialSummary.debts_count > 0 || financialSummary.accounts_count > 0) ? (
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
+              <div className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)' }}>
+                <div className="text-sm lg:text-lg font-bold text-[var(--t)]">${(financialSummary.monthly_total || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
+                <div className="text-[10px] text-[var(--t5)]">Monthly Bills</div>
+              </div>
+              <div className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                <div className="text-sm lg:text-lg font-bold text-[var(--t)]">{financialSummary.debts_count}</div>
+                <div className="text-[10px] text-[var(--t5)]">Active Debts</div>
+              </div>
+              <div className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.15)' }}>
+                <div className="text-sm lg:text-lg font-bold text-[var(--t)]">{financialSummary.accounts_count}</div>
+                <div className="text-[10px] text-[var(--t5)]">Accounts</div>
+              </div>
+              <div className="rounded-xl p-2.5 text-center" style={{ background: financialSummary.net_position >= 0 ? 'rgba(34,201,147,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${financialSummary.net_position >= 0 ? 'rgba(34,201,147,0.15)' : 'rgba(239,68,68,0.15)'}` }}>
+                <div className="text-sm lg:text-lg font-bold text-[var(--t)]">
+                  <TrendingUp className="w-4 h-4 inline mr-1" style={{ color: financialSummary.net_position >= 0 ? '#22C993' : '#ef4444' }} />
+                  Net
+                </div>
+                <div className="text-[10px] text-[var(--t5)]">${Math.abs(financialSummary.net_position || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
+              </div>
+            </div>
+            {financialSummary.upcoming_bills?.length > 0 && (
+              <div className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--b)' }}>
+                <div className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-1.5">Upcoming This Week</div>
+                {financialSummary.upcoming_bills.slice(0, 3).map(bill => (
+                  <div key={bill.id} className="flex items-center justify-between py-1 text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Receipt className="w-3 h-3 text-[#10b981] flex-shrink-0" />
+                      <span className="text-[var(--t3)] truncate">{bill.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {bill.amount && <span className="text-[var(--t)] font-medium">${bill.amount.toLocaleString()}</span>}
+                      <span className="text-[var(--t5)]">{bill.days_until === 0 ? 'Today' : `${bill.days_until}d`}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="text-center py-3">
+            <p className="text-[var(--t4)] text-sm mb-1">Your complete financial picture — bills, debts, and accounts</p>
+            <span className="text-[#10b981] text-sm font-medium">Get Started with Bill Tracker</span>
+          </div>
+        )}
       </div>
 
 

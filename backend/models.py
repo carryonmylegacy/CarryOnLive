@@ -134,6 +134,7 @@ class Beneficiary(BaseModel):
     ffn_access: bool = True  # Family & Friends Notification
     dav_access: bool = True  # Digital Access Vault
     dts_access: bool = True  # Designated Trustee Services
+    cfp_access: bool = True  # CarryOn Financial Portal
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
@@ -163,6 +164,7 @@ class BeneficiaryCreate(BaseModel):
     ffn_access: bool = True
     dav_access: bool = True
     dts_access: bool = True
+    cfp_access: bool = True
 
 
 class Document(BaseModel):
