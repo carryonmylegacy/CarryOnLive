@@ -93,7 +93,15 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - (P2) CFP Getting Started Integration — Add CFP step to onboarding wizard
 - (P2) Readiness Scoring Policy Page
 - (P3) ECT Security Comparison Landing Page
-- (P2) EstateChatPage.js refactoring (2400+ lines)
+
+
+## Refactoring Completed
+- **EstateChatPage.js refactored** (Apr 12, 2026): Reduced from 2516 → 2029 lines (~487 lines extracted)
+  - `/app/frontend/src/components/estate-chat/useVoiceRecorder.js` — Voice recorder hook
+  - `/app/frontend/src/components/estate-chat/VoiceMessagePlayer.js` — Inline audio player component
+  - `/app/frontend/src/components/estate-chat/AuthMedia.js` — AuthImage, AuthVideo, AuthFileLink + cachedFetch utility
+  - `/app/frontend/src/components/estate-chat/ECTSecurityIntro.js` — Two-step security walkthrough overlay
+  - `/app/frontend/src/components/estate-chat/ImagePreviewModal.js` — Fullscreen photo preview with Save/Share
 
 ## Key Technical Notes
 - Housekeeping: `bash /app/housekeeping.sh` must pass 65/65 before every push
