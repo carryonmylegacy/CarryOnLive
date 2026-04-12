@@ -39,6 +39,7 @@ const DashboardPage = () => {
   const [stats, setStats] = useState({ documents: 0, messages: 0, beneficiaries: 0 });
   const [readiness, setReadiness] = useState({ documents: { score: 0 }, messages: { score: 0 }, checklist: { score: 0 } });
   const [financialSummary, setFinancialSummary] = useState(null);
+  const [financialHealth, setFinancialHealth] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCelebration, setShowCelebration] = useState(false);
   const [justCompletedActivation, setJustCompletedActivation] = useState(false);
@@ -114,6 +115,8 @@ const DashboardPage = () => {
       // Fetch financial summary (non-blocking)
       axios.get(`${API_URL}/financial/summary/${estateId}`, getAuthHeaders())
         .then(res => setFinancialSummary(res.data)).catch(() => {});
+      axios.get(`${API_URL}/financial/health-score/${estateId}`, getAuthHeaders())
+        .then(res => setFinancialHealth(res.data)).catch(() => {});
 
       // Show guided flow overlay if there are incomplete steps and user hasn't dismissed this visit
       if (!guidedDismissedRef.current && progressRes?.data) {
@@ -207,6 +210,8 @@ const DashboardPage = () => {
   };
 
   const scoreInfo = getScoreLabel(readinessScore);
+  const financialScore = financialHealth?.score ?? 0;
+  const financialScoreInfo = getScoreLabel(financialScore);
 
   const getUserFirstName = () => {
     if (user?.first_name) return user.first_name;
@@ -215,28 +220,29 @@ const DashboardPage = () => {
   };
 
   // Speedometer gauge component
-  const SpeedometerGauge = ({ score }) => {
+  const SpeedometerGauge = ({ score, id = 'main', accentColor, labelText, labelColor }) => {
     const angle = (score / 100) * 180 - 90;
+    const gId = `gauge-${id}`;
     
     return (
-      <div className="relative w-48 h-32 lg:w-72 lg:h-48 mx-auto">
+      <div className="relative w-36 h-24 lg:w-56 lg:h-40 mx-auto">
         <svg viewBox="0 0 200 110" className="w-full h-full overflow-visible">
           <defs>
-            <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <linearGradient id={`${gId}-arc`} x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#ef4444" />
               <stop offset="25%" stopColor="#f97316" />
               <stop offset="50%" stopColor="#eab308" />
               <stop offset="75%" stopColor="#84cc16" />
               <stop offset="100%" stopColor="#22c55e" />
             </linearGradient>
-            <linearGradient id="needleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <linearGradient id={`${gId}-needle`} x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#94a3b8" />
               <stop offset="30%" stopColor="#f1f5f9" />
               <stop offset="50%" stopColor="#ffffff" />
               <stop offset="70%" stopColor="#f1f5f9" />
               <stop offset="100%" stopColor="#94a3b8" />
             </linearGradient>
-            <radialGradient id="hubGradient" cx="35%" cy="25%" r="70%">
+            <radialGradient id={`${gId}-hub`} cx="35%" cy="25%" r="70%">
               <stop offset="0%" stopColor="#ffffff" />
               <stop offset="20%" stopColor="#e2e8f0" />
               <stop offset="45%" stopColor="#94a3b8" />
@@ -245,21 +251,21 @@ const DashboardPage = () => {
             </radialGradient>
           </defs>
           
-          <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGradient)" strokeWidth="28" strokeLinecap="round" />
+          <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke={`url(#${gId}-arc)`} strokeWidth="28" strokeLinecap="round" />
           
           <g transform={`rotate(${angle}, 100, 100)`} style={{ transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-            <polygon points="100,18 96,88 92,125 100,130 108,125 104,88" fill="url(#needleGradient)" stroke="#64748b" strokeWidth="0.5" />
+            <polygon points="100,18 96,88 92,125 100,130 108,125 104,88" fill={`url(#${gId}-needle)`} stroke="#64748b" strokeWidth="0.5" />
             <polygon points="100,18 97,42 100,46 103,42" fill="#dc2626" />
-            <circle cx="100" cy="100" r="11" fill="url(#hubGradient)" stroke="#475569" strokeWidth="1.5" />
+            <circle cx="100" cy="100" r="11" fill={`url(#${gId}-hub)`} stroke="#475569" strokeWidth="1.5" />
           </g>
         </svg>
         
-        <div className="absolute -bottom-16 lg:-bottom-24 left-1/2 transform -translate-x-1/2 text-center">
-          <div className="text-3xl lg:text-5xl font-bold text-[var(--t)]">
+        <div className="absolute -bottom-12 lg:-bottom-20 left-1/2 transform -translate-x-1/2 text-center">
+          <div className="text-2xl lg:text-4xl font-bold text-[var(--t)]">
             {score}%
           </div>
-          <div className="text-base lg:text-2xl font-bold whitespace-nowrap" style={{ color: scoreInfo.color }}>
-            {scoreInfo.label}
+          <div className="text-xs lg:text-lg font-bold whitespace-nowrap" style={{ color: labelColor }}>
+            {labelText}
           </div>
         </div>
       </div>
@@ -630,15 +636,26 @@ const DashboardPage = () => {
         // Celebration is handled by fetchEstateData via backend flag — no-op here
       }} />
 
-      {/* Estate Readiness Score Card */}
+      {/* Estate Readiness Score + Financial Health — Dual Gauge */}
       <div className="glass-card p-4 lg:p-6 mb-4" data-testid="readiness-card">
-        <h2 className="text-center text-base lg:text-2xl font-bold text-[var(--t4)] uppercase tracking-wider mb-2 lg:mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
-          Estate Readiness Score
-        </h2>
+        <div className="grid grid-cols-2 gap-4 lg:gap-8">
+          {/* Left gauge — Estate Readiness */}
+          <div className="text-center">
+            <h2 className="text-xs lg:text-base font-bold text-[var(--t4)] uppercase tracking-wider mb-2 lg:mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              Estate Readiness
+            </h2>
+            <SpeedometerGauge score={readinessScore} id="readiness" labelText={scoreInfo.label} labelColor={scoreInfo.color} />
+          </div>
+          {/* Right gauge — Financial Health */}
+          <div className="text-center">
+            <h2 className="text-xs lg:text-base font-bold text-[var(--t4)] uppercase tracking-wider mb-2 lg:mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              Financial Health
+            </h2>
+            <SpeedometerGauge score={financialScore} id="financial" labelText={financialScoreInfo.label} labelColor={financialScoreInfo.color} />
+          </div>
+        </div>
         
-        <SpeedometerGauge score={readinessScore} />
-        
-        <div className="flex justify-center gap-3 lg:gap-8 mt-16 lg:mt-28">
+        <div className="flex justify-center gap-3 lg:gap-8 mt-12 lg:mt-24">
           {isFeatureKeyEnabled('mm', enabledFeatures) && (
           <div className="flex items-center gap-1.5 lg:gap-2">
             <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#8b5cf6]" />

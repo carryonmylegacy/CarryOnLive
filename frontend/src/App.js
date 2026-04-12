@@ -73,6 +73,7 @@ const MilestoneReportPage = lazy(() => import('./pages/beneficiary/MilestoneRepo
 const UploadCertificatePage = lazy(() => import('./pages/beneficiary/UploadCertificatePage'));
 const CondolencePage = lazy(() => import('./pages/beneficiary/CondolencePage'));
 const BeneficiarySettingsPage = lazy(() => import('./pages/beneficiary/BeneficiarySettingsPage'));
+const BeneficiaryFinancialPage = lazy(() => import('./pages/beneficiary/BeneficiaryFinancialPage'));
 
 const CreateEstatePage = lazy(() => import('./pages/CreateEstatePage'));
 
@@ -318,6 +319,7 @@ function AppRoutes() {
         <Route path="/beneficiary/condolence" element={<CondolencePage />} />
         <Route path="/beneficiary/estate-chat" element={<EstateChatPage />} />
         <Route path="/beneficiary/connected-protocol" element={<BeneficiaryCCPPage />} />
+        <Route path="/beneficiary/financial" element={<BeneficiaryFinancialPage />} />
       </Route>
 
       {/* Admin Routes */}

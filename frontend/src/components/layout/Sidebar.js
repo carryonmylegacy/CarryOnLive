@@ -354,6 +354,7 @@ const Sidebar = () => {
         { to: '/beneficiary/milestone', icon: Home, label: 'Report Milestone' },
         { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Comms (ECT)', badge: ectUnread },
         { to: '/beneficiary/connected-protocol', icon: Shield, label: 'Contingency Protocols (CCP)' },
+        { to: '/beneficiary/financial', icon: DollarSign, label: 'Financial Portal (CFP)' },
       ]), enabledFeatures)
     },
     {

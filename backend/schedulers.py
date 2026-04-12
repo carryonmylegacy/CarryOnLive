@@ -200,3 +200,136 @@ async def grace_period_scheduler():
 
         except Exception as e:
             logger.error(f"Grace period scheduler failed: {e}")
+
+
+async def bill_reminder_scheduler():
+    """Daily check: send bill due-date reminders to beneficiaries of transitioned estates."""
+    import calendar as cal_mod
+    from datetime import datetime, timezone
+
+    from config import db
+    from services.notifications import notify
+
+    await asyncio.sleep(900)  # Wait 15 min after startup
+    while True:
+        # Target 14:00 UTC (9 AM EST)
+        now = datetime.now(timezone.utc)
+        target_hour = 14
+        if now.hour >= target_hour:
+            wait_hours = 24 - (now.hour - target_hour)
+        else:
+            wait_hours = target_hour - now.hour
+        wait_seconds = wait_hours * 3600 - now.minute * 60 - now.second
+        logger.info(f"Bill reminder scheduler: next check in {wait_seconds / 3600:.1f}h")
+        await asyncio.sleep(max(60, wait_seconds))
+
+        try:
+            today = datetime.now(timezone.utc)
+            day_of_month = today.day
+            _, days_in_month = cal_mod.monthrange(today.year, today.month)
+
+            # Find all transitioned estates
+            transitioned = await db.estates.find(
+                {"status": "transitioned"},
+                {"_id": 0, "id": 1, "name": 1, "beneficiaries": 1},
+            ).to_list(1000)
+
+            total_sent = 0
+            for estate in transitioned:
+                estate_id = estate["id"]
+                bills = await db.bills.find(
+                    {"estate_id": estate_id, "deleted_at": None, "status": "active"},
+                    {"_id": 0},
+                ).to_list(500)
+
+                for bill in bills:
+                    due_day = bill.get("due_day")
+                    if not due_day:
+                        continue
+                    effective_due = min(due_day, days_in_month)
+                    days_until = effective_due - day_of_month
+                    if days_until < 0:
+                        # Next month
+                        next_mo = today.month + 1 if today.month < 12 else 1
+                        next_yr = today.year if today.month < 12 else today.year + 1
+                        _, next_days = cal_mod.monthrange(next_yr, next_mo)
+                        days_until = min(due_day, next_days) + days_in_month - day_of_month
+
+                    reminder_days = bill.get("reminder_days", [10, 7, 5, 1])
+                    if days_until not in reminder_days and days_until != 0:
+                        continue
+
+                    # Build notification
+                    bill_name = bill.get("name", "Bill")
+                    amount = bill.get("amount")
+                    is_auto = bill.get("is_auto_pay", False)
+                    amt_str = f" (${amount:,.2f})" if amount else ""
+
+                    if days_until == 0:
+                        title = f"TODAY: {bill_name} is due"
+                        body = f"{bill_name}{amt_str} is due today."
+                        priority = "critical"
+                    elif days_until == 1:
+                        title = f"TOMORROW: {bill_name}{amt_str}"
+                        body = f"{bill_name} is due tomorrow."
+                        priority = "critical"
+                    elif days_until <= 3:
+                        title = f"Due in {days_until} days: {bill_name}"
+                        body = f"{bill_name}{amt_str} is due in {days_until} days."
+                        priority = "high"
+                    else:
+                        title = f"Reminder: {bill_name} due in {days_until} days"
+                        body = f"{bill_name}{amt_str} is due in {days_until} days."
+                        priority = "normal"
+
+                    if is_auto:
+                        payment_acct = bill.get("payment_account", "linked account")
+                        body += f" Auto-Pay active — verify funds in {payment_acct}."
+                    else:
+                        portal = bill.get("biller_website")
+                        if portal:
+                            body += f" Pay at: {portal}"
+
+                    notes = bill.get("notes")
+                    if notes:
+                        body += f" Note: {notes[:80]}"
+
+                    # Find designated beneficiaries
+                    designated = bill.get("designated_beneficiaries", ["all"])
+                    ben_user_ids = []
+                    if "all" in designated:
+                        # All beneficiaries of this estate
+                        all_bens = await db.beneficiaries.find(
+                            {"estate_id": estate_id, "user_id": {"$ne": None}},
+                            {"_id": 0, "user_id": 1, "id": 1},
+                        ).to_list(100)
+                        ben_user_ids = [b["user_id"] for b in all_bens if b.get("user_id")]
+                    else:
+                        specific_bens = await db.beneficiaries.find(
+                            {"estate_id": estate_id, "id": {"$in": designated}, "user_id": {"$ne": None}},
+                            {"_id": 0, "user_id": 1, "id": 1},
+                        ).to_list(100)
+                        for b in specific_bens:
+                            # Check post-transition timing
+                            timing = bill.get("visibility_timing", {}).get(b["id"], {"pre": False, "post": True})
+                            if timing.get("post", True):
+                                ben_user_ids.append(b["user_id"])
+
+                    for uid in ben_user_ids:
+                        try:
+                            await notify.beneficiary(
+                                uid,
+                                title,
+                                body,
+                                url="/beneficiary/financial",
+                                priority=priority,
+                                metadata={"bill_id": bill["id"], "estate_id": estate_id},
+                            )
+                            total_sent += 1
+                        except Exception:
+                            pass
+
+            if total_sent > 0:
+                logger.info(f"Bill reminder scheduler: sent {total_sent} notification(s)")
+        except Exception as e:
+            logger.error(f"Bill reminder scheduler failed: {e}")

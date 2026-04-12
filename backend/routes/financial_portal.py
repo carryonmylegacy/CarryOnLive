@@ -665,3 +665,90 @@ async def get_financial_summary(estate_id: str, current_user: dict = Depends(get
         "net_position": round(total_assets - total_debt, 2),
         "upcoming_bills": upcoming[:5],
     }
+
+
+# ===================== FINANCIAL HEALTH SCORE =====================
+
+
+@router.get("/financial/health-score/{estate_id}")
+async def get_financial_health_score(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """Calculate a financial readiness health score (0-100) for the dashboard gauge."""
+    await _verify_estate_access(estate_id, current_user)
+
+    bills = await db.bills.find({"estate_id": estate_id, "deleted_at": None, "status": "active"}, {"_id": 0}).to_list(
+        500
+    )
+    debts = await db.debts.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
+    accounts = await db.financial_accounts.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
+
+    total_items = len(bills) + len(debts) + len(accounts)
+    if total_items == 0:
+        return {
+            "score": 0,
+            "label": "Not Started",
+            "breakdown": {
+                "coverage": 0,
+                "auto_pay": 0,
+                "designations": 0,
+                "dav_links": 0,
+                "notes": 0,
+            },
+        }
+
+    # 1. Coverage (25 pts): Have at least 1 bill, 1 debt, 1 account
+    coverage_score = 0
+    if len(bills) > 0:
+        coverage_score += 10
+    if len(debts) > 0:
+        coverage_score += 8
+    if len(accounts) > 0:
+        coverage_score += 7
+
+    # 2. Auto-Pay Coverage (20 pts): % of bills with auto-pay enabled
+    auto_pay_score = 0
+    if len(bills) > 0:
+        auto_pay_pct = sum(1 for b in bills if b.get("is_auto_pay")) / len(bills)
+        auto_pay_score = round(auto_pay_pct * 20)
+
+    # 3. Beneficiary Designations (25 pts): % of items with customized designations
+    designation_count = 0
+    for item in bills + debts + accounts:
+        designated = item.get("designated_beneficiaries", ["all"])
+        timing = item.get("visibility_timing", {})
+        if designated != ["all"] or len(timing) > 0:
+            designation_count += 1
+    designation_score = round((designation_count / total_items) * 25) if total_items > 0 else 0
+
+    # 4. DAV Links (15 pts): % of items linked to Digital Access Vault
+    dav_count = sum(1 for item in bills + debts + accounts if item.get("dav_entry_id"))
+    dav_score = round((dav_count / total_items) * 15) if total_items > 0 else 0
+
+    # 5. Instructions/Notes (15 pts): % of items with beneficiary notes
+    notes_count = sum(1 for item in bills + debts + accounts if item.get("notes"))
+    notes_score = round((notes_count / total_items) * 15) if total_items > 0 else 0
+
+    total_score = min(100, coverage_score + auto_pay_score + designation_score + dav_score + notes_score)
+
+    # Label
+    if total_score >= 80:
+        label = "Protected"
+    elif total_score >= 60:
+        label = "Strong"
+    elif total_score >= 40:
+        label = "Building"
+    elif total_score > 0:
+        label = "Getting Started"
+    else:
+        label = "Not Started"
+
+    return {
+        "score": total_score,
+        "label": label,
+        "breakdown": {
+            "coverage": coverage_score,
+            "auto_pay": auto_pay_score,
+            "designations": designation_score,
+            "dav_links": dav_score,
+            "notes": notes_score,
+        },
+    }

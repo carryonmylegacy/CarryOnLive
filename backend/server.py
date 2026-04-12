@@ -71,6 +71,7 @@ from schedulers import (
     weekly_digest_scheduler,
     milestone_delivery_scheduler,
     grace_period_scheduler,
+    bill_reminder_scheduler,
 )
 
 
@@ -270,6 +271,7 @@ async def lifespan(app):
     retention_task = asyncio.create_task(data_retention_scheduler())
     asyncio.create_task(milestone_delivery_scheduler())
     asyncio.create_task(grace_period_scheduler())
+    asyncio.create_task(bill_reminder_scheduler())
 
     # Warm up xAI connection + start periodic keepalive
     from routes.guardian import warmup_xai
