@@ -69,6 +69,8 @@ Build and maintain a comprehensive family preparedness platform that helps users
   - **Dual Dashboard Gauges**: Estate Readiness Score (left) + Financial Health Score (right) displayed side-by-side like speedometer and tachometer
   - **Bill Cancellation Advisor**: Post-transition overlay for optional/subscription bills with 5-step cancellation checklist, benefactor's pre-written instructions, click-to-call biller phone, portal URL link, and auto-pay warning
   - **CFP Dock Items**: Financial Portal added to mobile bottom dock defaults for both benefactor (`/financial`) and beneficiary (`/beneficiary/financial`) with DollarSign icon
+  - **Smart Bill Categorization**: AI-powered auto-fill using xAI (grok-3-mini) — when user types a bill/debt/account name and tabs out, AI auto-detects category, biller phone, website, payment method, auto-pay status, and frequency. Sparkles icon indicator during loading. Works across all three form types (Bills, Debts, Accounts).
+  - **ECT Light Mode Fix**: Replaced all hardcoded dark theme colors (#F1F3F8, #525C72, #7B879E, #151D30, #1E2840) with CSS variables (var(--t), var(--t5), var(--t4), var(--bg2), var(--s), var(--b)) throughout EstateChatPage.js — title, borders, inputs, modals, search overlay all now adapt to light/dark theme
   - Backend: `/app/backend/routes/financial_portal.py` (21 routes, 741 lines)
   - Frontend: `/app/frontend/src/pages/FinancialPortalPage.js` + 7 components in `/app/frontend/src/components/financial/` + `/app/frontend/src/pages/beneficiary/BeneficiaryFinancialPage.js`
   - MongoDB collections: `bills`, `debts`, `financial_accounts`, `bill_categories`, `bill_payments`
