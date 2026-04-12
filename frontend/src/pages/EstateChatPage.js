@@ -205,15 +205,20 @@ export default function EstateChatPage() {
     const update = () => {
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
-        // Set root height to exactly the visual viewport (shrinks when keyboard opens)
-        root.style.height = `${vv.height}px`;
-        // Compensate if iOS scrolled the page behind the fixed element
-        root.style.top = `${vv.offsetTop}px`;
+        const kbOpen = vv.height < window.innerHeight * 0.85;
+        if (kbOpen) {
+          // Keyboard is open — shrink root to visual viewport
+          root.style.height = `${vv.height}px`;
+          root.style.bottom = 'auto';
+          root.style.top = `${vv.offsetTop}px`;
+        } else {
+          // Keyboard closed — restore default layout
+          root.style.height = '';
+          root.style.bottom = '0';
+          root.style.top = '0';
+        }
       });
     };
-
-    // Set initial height
-    update();
 
     vv.addEventListener('resize', update);
     vv.addEventListener('scroll', update);
@@ -222,6 +227,7 @@ export default function EstateChatPage() {
       vv.removeEventListener('resize', update);
       vv.removeEventListener('scroll', update);
       root.style.height = '';
+      root.style.bottom = '0';
       root.style.top = '0';
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1871,10 +1877,9 @@ export default function EstateChatPage() {
       top: 0,
       left: 0,
       right: 0,
-      height: '100%',
+      bottom: 0,
       zIndex: 45,
       overflow: 'hidden',
-      willChange: 'height',
     }}>
       {/* Pad for status bar on native */}
       <div style={{ height: 'env(safe-area-inset-top, 0px)', flexShrink: 0 }} />
