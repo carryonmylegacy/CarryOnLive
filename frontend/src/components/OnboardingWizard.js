@@ -144,25 +144,55 @@ const OnboardingWizard = ({ onAllComplete }) => {
 
   if (stepsToShow.length === 0 && !allComplete) return null;
 
-  // Dismiss confirm prompt
+  // Dismiss confirm — full-screen frosted glass overlay matching guided flow
   if (dismissPhase === 'confirm') {
     return (
-      <div className="mb-6" data-testid="onboarding-dismiss-confirm">
-        <div className="rounded-2xl p-6 text-center" style={{
-          background: 'var(--guided-overlay-bg, rgba(8,14,26,0.75))',
+      <div className="fixed inset-0 z-[150] flex items-center justify-center overflow-y-auto"
+        data-testid="onboarding-dismiss-confirm"
+        style={{ animation: 'guidedOverlayIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
+        <style>{`
+          @keyframes guidedOverlayIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes bubbleIn {
+            0% { opacity: 0; transform: scale(0.85) translateY(40px); }
+            60% { transform: scale(1.02) translateY(-4px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+          }
+          @keyframes pulseRing {
+            0% { box-shadow: 0 0 0 0 rgba(245,158,11,0.25); }
+            70% { box-shadow: 0 0 0 20px rgba(245,158,11,0); }
+            100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); }
+          }
+        `}</style>
+        <div className="absolute inset-0" style={{
           backdropFilter: 'blur(20px) saturate(130%)',
           WebkitBackdropFilter: 'blur(20px) saturate(130%)',
-          border: '1px solid rgba(245,158,11,0.2)',
-        }}>
-          <AlertTriangle className="w-8 h-8 mx-auto mb-3" style={{ color: '#F59E0B' }} />
-          <h4 className="text-base font-bold mb-2" style={{ color: 'var(--t)' }}>Close Getting Started?</h4>
-          <p className="text-sm mb-4" style={{ color: 'var(--t4)' }}>
+          background: 'var(--guided-overlay-bg, rgba(8,14,26,0.75))',
+        }} />
+        <div className="relative max-w-md w-full mx-6 text-center"
+          style={{ animation: 'bubbleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}>
+          <div className="w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{
+              background: 'radial-gradient(circle, rgba(245,158,11,0.2) 0%, rgba(245,158,11,0.08) 70%)',
+              border: '2px solid rgba(245,158,11,0.35)',
+              animation: 'pulseRing 2.5s ease-in-out infinite',
+            }}>
+            <AlertTriangle className="w-14 h-14" style={{ color: '#F59E0B' }} />
+          </div>
+          <h1 className="text-2xl lg:text-3xl font-bold mb-3"
+            style={{ fontFamily: 'Outfit, sans-serif', color: 'var(--guided-title, #ffffff)' }}>
+            Close Getting Started?
+          </h1>
+          <p className="text-sm lg:text-base mb-8 max-w-sm mx-auto leading-relaxed"
+            style={{ color: 'var(--guided-desc, #94a3b8)' }}>
             This will hide the Getting Started guide. You won&apos;t see it again unless you re-enable it in Settings.
           </p>
           <div className="flex gap-3 justify-center">
             <button onClick={() => setDismissPhase('idle')}
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold"
-              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--t3)' }}
+              className="px-8 py-4 rounded-2xl text-base font-bold transition-transform active:scale-[0.97]"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--guided-desc, #94a3b8)' }}
               data-testid="onboarding-dismiss-cancel">
               Cancel
             </button>
@@ -171,8 +201,8 @@ const OnboardingWizard = ({ onAllComplete }) => {
               setManuallyDismissed(false);
               setDismissPhase('info');
             }}
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold"
-              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
+              className="px-8 py-4 rounded-2xl text-base font-bold transition-transform active:scale-[0.97]"
+              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
               data-testid="onboarding-dismiss-confirm-btn">
               Yes, Close It
             </button>
@@ -182,27 +212,57 @@ const OnboardingWizard = ({ onAllComplete }) => {
     );
   }
 
-  // Dismiss info tile
+  // Dismiss info — full-screen frosted glass overlay matching guided flow
   if (dismissPhase === 'info') {
     return (
-      <div className="mb-6" data-testid="onboarding-dismiss-info">
-        <div className="rounded-2xl p-6 text-center" style={{
-          background: 'var(--guided-overlay-bg, rgba(8,14,26,0.75))',
+      <div className="fixed inset-0 z-[150] flex items-center justify-center overflow-y-auto"
+        data-testid="onboarding-dismiss-info"
+        style={{ animation: 'guidedOverlayIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
+        <style>{`
+          @keyframes guidedOverlayIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes bubbleIn {
+            0% { opacity: 0; transform: scale(0.85) translateY(40px); }
+            60% { transform: scale(1.02) translateY(-4px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+          }
+          @keyframes pulseRing {
+            0% { box-shadow: 0 0 0 0 rgba(212,175,55,0.25); }
+            70% { box-shadow: 0 0 0 20px rgba(212,175,55,0); }
+            100% { box-shadow: 0 0 0 0 rgba(212,175,55,0); }
+          }
+        `}</style>
+        <div className="absolute inset-0" style={{
           backdropFilter: 'blur(20px) saturate(130%)',
           WebkitBackdropFilter: 'blur(20px) saturate(130%)',
-          border: '1px solid rgba(212,175,55,0.2)',
-        }}>
-          <Settings className="w-8 h-8 mx-auto mb-3" style={{ color: '#d4af37' }} />
-          <h4 className="text-base font-bold mb-2" style={{ color: 'var(--t)' }}>Guide Hidden</h4>
-          <p className="text-sm mb-4" style={{ color: 'var(--t4)' }}>
+          background: 'var(--guided-overlay-bg, rgba(8,14,26,0.75))',
+        }} />
+        <div className="relative max-w-md w-full mx-6 text-center"
+          style={{ animation: 'bubbleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}>
+          <div className="w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{
+              background: 'radial-gradient(circle, rgba(212,175,55,0.2) 0%, rgba(212,175,55,0.08) 70%)',
+              border: '2px solid rgba(212,175,55,0.35)',
+              animation: 'pulseRing 2.5s ease-in-out infinite',
+            }}>
+            <Settings className="w-14 h-14" style={{ color: '#d4af37' }} />
+          </div>
+          <h1 className="text-2xl lg:text-3xl font-bold mb-3"
+            style={{ fontFamily: 'Outfit, sans-serif', color: 'var(--guided-title, #ffffff)' }}>
+            Guide Hidden
+          </h1>
+          <p className="text-sm lg:text-base mb-8 max-w-sm mx-auto leading-relaxed"
+            style={{ color: 'var(--guided-desc, #94a3b8)' }}>
             To see the Getting Started guide again, go to <strong style={{ color: '#d4af37' }}>Settings</strong> and toggle it back on.
           </p>
           <button onClick={() => {
             setDismissPhase('idle');
             setManuallyDismissed(true);
           }}
-            className="w-full max-w-xs mx-auto py-3 rounded-2xl text-sm font-bold transition-transform active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 4px 16px rgba(212,175,55,0.25)' }}
+            className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
+            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
             data-testid="onboarding-dismiss-proceed">
             Proceed
           </button>
