@@ -6,8 +6,11 @@ Family disaster planning tool. Features:
   - Member Check-In: Status reporting (Safe, Evacuating, Need Help, etc.)
   - Drill Mode: Practice runs without real emergency alerts
   - Links to SDV documents, FFN contacts, and DAV entries
+  - Tap-to-Create Wizard: AI-powered plan generation from 4 simple questions
 """
 
+import asyncio as _asyncio
+import json as _json
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -15,7 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
-from config import db
+from config import db, xai_client, XAI_MODEL, logger
 from utils import get_current_user
 from services.photo_urls import resolve_photo_url
 
@@ -79,6 +82,38 @@ class DeactivateRequest(BaseModel):
     notes: Optional[str] = None
 
 
+class WizardRequest(BaseModel):
+    estate_id: str
+    location: str  # "123 Main St, Houston, TX"
+    household: list[str] = []  # ["children", "elderly", "pets", "disabled"]
+    concerns: list[str] = []  # ["hurricane", "fire", "earthquake", ...]
+    preference: str = "evacuate"  # "evacuate" or "shelter"
+
+
+# Mapping wizard concern strings to plan_types
+_CONCERN_TO_PLAN_TYPE = {
+    "hurricane": "natural_disaster",
+    "tornado": "natural_disaster",
+    "earthquake": "natural_disaster",
+    "flood": "natural_disaster",
+    "wildfire": "natural_disaster",
+    "winter_storm": "natural_disaster",
+    "tsunami": "natural_disaster",
+    "nuclear": "national_emergency",
+    "terrorism": "national_emergency",
+    "civil_unrest": "national_emergency",
+    "chemical_spill": "national_emergency",
+    "pandemic": "medical_emergency",
+    "medical": "medical_emergency",
+    "power_outage": "infrastructure_failure",
+    "water_failure": "infrastructure_failure",
+    "cyber_attack": "infrastructure_failure",
+    "house_fire": "custom",
+    "home_invasion": "custom",
+}
+
+
+
 async def _is_estate_owner(user_id: str, estate_id: str) -> bool:
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
     return estate is not None and estate["owner_id"] == user_id
@@ -131,6 +166,100 @@ async def get_estate_members_endpoint(estate_id: str, current_user: dict = Depen
     if not await _is_estate_member(current_user["id"], estate_id):
         raise HTTPException(status_code=403, detail="Not a member of this estate")
     return await _get_estate_members(estate_id)
+
+
+
+# ===================== WIZARD — AI-POWERED PLAN GENERATION =====================
+
+
+_WIZARD_SYSTEM_PROMPT = """You are an emergency preparedness expert. Generate a complete family emergency plan based on the user's inputs. Be direct, actionable, and specific. No explanations — just clear actions.
+
+You MUST return valid JSON with exactly these fields:
+{
+  "plan_name": "Short descriptive name (e.g., Hurricane Evacuation Plan)",
+  "rendezvous_points": [
+    {"name": "Primary Meeting Point", "address": "Specific suggestion near their location", "notes": "Why this location works"},
+    {"name": "Backup Meeting Point", "address": "Further away option", "notes": "Use if primary is compromised"}
+  ],
+  "communication_plan": "Step-by-step communication protocol. Be specific: 1) Text the family group chat. 2) If no response in 10 min, call each person. 3) If cell towers are down, use this backup method.",
+  "resource_locations": [
+    {"name": "Go-Bag / Emergency Kit", "location": "Suggested location in their home", "notes": "What to include"},
+    {"name": "Important Documents", "location": "Fireproof safe or grab-and-go folder", "notes": "What to grab"}
+  ],
+  "instructions": "Numbered step-by-step instructions. Be direct and specific. Include timing (e.g., 'Leave 48h before landfall'). Tailor to their household (kids, elderly, pets). Match their preference (evacuate vs shelter).",
+  "warnings": ["Potential risk or mistake to watch for", "Another warning specific to their scenario"]
+}
+
+Rules:
+- Rendezvous points: Suggest real-world locations (parking lots, schools, parks) near their area. Include a primary (close) and backup (farther).
+- Communication plan: Include backup methods (landline, radio, neighbor relay).
+- Instructions: Number each step. Start with the FIRST action. Include pet/child/elderly-specific steps if applicable.
+- Warnings: Flag real risks (flood zones, too-close locations, missing backup plans).
+- Keep all text concise. No filler. Actions only.
+- If the concern is "nuclear", prioritize sheltering regardless of preference.
+- If the concern is "house_fire", always prioritize evacuation."""
+
+
+@router.post("/ccp/wizard/generate")
+async def wizard_generate_plan(data: WizardRequest, current_user: dict = Depends(get_current_user)):
+    """AI-powered plan generation from 4 simple wizard questions."""
+    if not await _is_estate_owner(current_user["id"], data.estate_id):
+        raise HTTPException(status_code=403, detail="Only the benefactor can create plans")
+    if not xai_client:
+        raise HTTPException(status_code=503, detail="AI service is not available")
+    if not data.location.strip():
+        raise HTTPException(status_code=400, detail="Location is required")
+    if not data.concerns:
+        raise HTTPException(status_code=400, detail="At least one concern is required")
+
+    # Build the user prompt
+    household_desc = ", ".join(data.household) if data.household else "adults only"
+    concerns_desc = ", ".join(c.replace("_", " ") for c in data.concerns)
+    pref_desc = "evacuate (leave the area)" if data.preference == "evacuate" else "shelter in place (stay home)"
+
+    user_prompt = f"""Create an emergency plan for this family:
+
+Location: {data.location.strip()}
+Household: {household_desc}
+Primary concerns: {concerns_desc}
+Preference: {pref_desc}
+
+Generate a complete, actionable emergency plan. Return ONLY valid JSON."""
+
+    try:
+        response = await _asyncio.to_thread(
+            xai_client.chat.completions.create,
+            model=XAI_MODEL,
+            messages=[
+                {"role": "system", "content": _WIZARD_SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt},
+            ],
+            max_tokens=2000,
+            temperature=0.7,
+            response_format={"type": "json_object"},
+        )
+        raw = response.choices[0].message.content.strip()
+        plan_data = _json.loads(raw)
+    except _json.JSONDecodeError:
+        logger.error(f"Wizard AI returned invalid JSON: {raw[:500]}")
+        raise HTTPException(status_code=502, detail="AI generated an invalid response. Please try again.")
+    except Exception as e:
+        logger.error(f"Wizard AI call failed: {e}")
+        raise HTTPException(status_code=502, detail="AI service temporarily unavailable. Please try again.")
+
+    # Determine plan_type from the primary concern
+    primary_concern = data.concerns[0] if data.concerns else "custom"
+    plan_type = _CONCERN_TO_PLAN_TYPE.get(primary_concern, "custom")
+
+    return {
+        "plan_name": plan_data.get("plan_name", f"{concerns_desc.title()} Plan"),
+        "plan_type": plan_type,
+        "rendezvous_points": plan_data.get("rendezvous_points", []),
+        "communication_plan": plan_data.get("communication_plan", ""),
+        "resource_locations": plan_data.get("resource_locations", []),
+        "instructions": plan_data.get("instructions", ""),
+        "warnings": plan_data.get("warnings", []),
+    }
 
 
 # ===================== PLANS CRUD =====================

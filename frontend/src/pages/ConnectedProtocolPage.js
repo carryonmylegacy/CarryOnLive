@@ -4,6 +4,7 @@ import { API_URL } from '../config';
 import { formatPhoneUS } from '../utils/phoneFormat';
 import CCPPlanEditor from '../components/ccp/CCPPlanEditor';
 import CCPActiveView from '../components/ccp/CCPActiveView';
+import CCPWizard from '../components/ccp/CCPWizard';
 import {
   Shield,
   AlertTriangle,
@@ -32,6 +33,7 @@ import {
   Trash2,
   Download,
   Printer,
+  Sparkles,
 } from 'lucide-react';
 import { platformDownload } from '../utils/downloadFile';
 
@@ -389,6 +391,18 @@ export default function ConnectedProtocolPage() {
     );
   }
 
+  // ===================== WIZARD VIEW =====================
+  if (view === 'wizard') {
+    return (
+      <CCPWizard
+        estateId={estateId}
+        token={token}
+        onComplete={() => { setView('plans'); fetchPlans(); }}
+        onCancel={() => setView(plans.length > 0 ? 'plans' : 'home')}
+      />
+    );
+  }
+
   // ===================== PLAN EDITOR VIEW =====================
   if (view === 'plan-edit' && editPlan) {
     return (
@@ -417,11 +431,29 @@ export default function ConnectedProtocolPage() {
           {isBenefactor && (
             <button onClick={() => { setEditPlan({ name: '', plan_type: 'custom', rendezvous_points: [], communication_plan: '', resource_locations: [], instructions: '', linked_document_ids: [], linked_ffn_contact_ids: [], linked_dav_entry_ids: [], assigned_beneficiary_ids: null }); fetchAvailableResources(); setView('plan-edit'); }}
               className="w-10 h-10 rounded-full flex items-center justify-center" data-testid="ccp-new-plan-btn"
-              style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}>
-              <Plus className="w-5 h-5" style={{ color: '#080e1a' }} />
+              title="Create manually"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <Plus className="w-5 h-5" style={{ color: 'var(--t4)' }} />
             </button>
           )}
         </div>
+
+        {/* Wizard CTA — primary action for creating plans */}
+        {isBenefactor && (
+          <button
+            onClick={() => setView('wizard')}
+            className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center gap-3 px-5"
+            data-testid="ccp-wizard-btn"
+            style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(240,201,92,0.08))', border: '1px solid rgba(212,175,55,0.3)', color: '#d4af37' }}
+          >
+            <Sparkles className="w-6 h-6 flex-shrink-0" />
+            <div className="text-left flex-1">
+              <div style={{ fontFamily: 'Outfit, sans-serif' }}>Build My Plan</div>
+              <div className="text-xs font-normal" style={{ color: 'var(--t4)' }}>Answer 4 questions — AI builds the rest</div>
+            </div>
+            <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />
+          </button>
+        )}
         {isBenefactor && plans.length > 0 && (
           <p className="text-xs" style={{ color: 'var(--t5)' }} data-testid="ccp-beneficiary-note">Your beneficiaries can view these plans on their portal.</p>
         )}
@@ -530,6 +562,20 @@ export default function ConnectedProtocolPage() {
       )}
 
       {/* Big Navigation Buttons */}
+      {isBenefactor && (
+        <button onClick={() => setView('wizard')}
+          className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center gap-3 px-5"
+          data-testid="ccp-wizard-home-btn"
+          style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(240,201,92,0.08))', border: '1px solid rgba(212,175,55,0.3)', color: '#d4af37' }}>
+          <Sparkles className="w-6 h-6 flex-shrink-0" />
+          <div className="text-left flex-1">
+            <div style={{ fontFamily: 'Outfit, sans-serif' }}>Build My Plan</div>
+            <div className="text-xs font-normal" style={{ color: 'var(--t4)' }}>Answer 4 questions — AI builds the rest</div>
+          </div>
+          <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />
+        </button>
+      )}
+
       <button onClick={() => setView('plans')}
         className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center gap-3 px-5"
         data-testid="ccp-plans-btn"

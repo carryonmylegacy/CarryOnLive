@@ -1,0 +1,731 @@
+import React, { useState, useEffect } from 'react';
+import { API_URL } from '../../config';
+import AddressAutocomplete from '../AddressAutocomplete';
+import {
+  MapPin,
+  Users,
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  X,
+  Loader2,
+  Sparkles,
+  Baby,
+  Heart,
+  Dog,
+  Accessibility,
+  CloudRain,
+  Flame,
+  Zap,
+  Waves,
+  Wind,
+  Mountain,
+  ShieldAlert,
+  Siren,
+  Droplets,
+  Snowflake,
+  Home,
+  Navigation,
+  TriangleAlert,
+  Edit3,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
+
+const HOUSEHOLD_OPTIONS = [
+  { id: 'children', label: 'Children', icon: Baby, color: '#3B7BF7' },
+  { id: 'elderly', label: 'Elderly', icon: Heart, color: '#B794F6' },
+  { id: 'pets', label: 'Pets', icon: Dog, color: '#22C993' },
+  { id: 'disabled', label: 'Special Needs', icon: Accessibility, color: '#F5A623' },
+];
+
+const CONCERN_OPTIONS = [
+  { id: 'hurricane', label: 'Hurricane', icon: CloudRain, color: '#3B7BF7' },
+  { id: 'tornado', label: 'Tornado', icon: Wind, color: '#6B7BF7' },
+  { id: 'earthquake', label: 'Earthquake', icon: Mountain, color: '#F5A623' },
+  { id: 'flood', label: 'Flood', icon: Waves, color: '#3B9BF7' },
+  { id: 'wildfire', label: 'Wildfire', icon: Flame, color: '#F05252' },
+  { id: 'house_fire', label: 'House Fire', icon: Flame, color: '#FF6B35' },
+  { id: 'nuclear', label: 'Nuclear Event', icon: ShieldAlert, color: '#F05252' },
+  { id: 'winter_storm', label: 'Winter Storm', icon: Snowflake, color: '#88C8F7' },
+  { id: 'power_outage', label: 'Power Outage', icon: Zap, color: '#F5A623' },
+  { id: 'terrorism', label: 'Terrorism', icon: Siren, color: '#F05252' },
+  { id: 'pandemic', label: 'Pandemic', icon: ShieldAlert, color: '#B794F6' },
+  { id: 'civil_unrest', label: 'Civil Unrest', icon: AlertTriangle, color: '#F5A623' },
+  { id: 'water_failure', label: 'Water Failure', icon: Droplets, color: '#3B9BF7' },
+  { id: 'chemical_spill', label: 'Chemical Spill', icon: TriangleAlert, color: '#FF6B35' },
+  { id: 'home_invasion', label: 'Home Invasion', icon: ShieldAlert, color: '#F05252' },
+  { id: 'tsunami', label: 'Tsunami', icon: Waves, color: '#1E6BF7' },
+  { id: 'cyber_attack', label: 'Cyber Attack', icon: Zap, color: '#B794F6' },
+];
+
+const TOTAL_STEPS = 5; // 4 questions + review
+
+export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  const [step, setStep] = useState(1);
+  const [location, setLocation] = useState('');
+  const [household, setHousehold] = useState([]);
+  const [concerns, setConcerns] = useState([]);
+  const [preference, setPreference] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [generatedPlan, setGeneratedPlan] = useState(null);
+  const [warnings, setWarnings] = useState([]);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [editingSections, setEditingSections] = useState({});
+  const [detectingLocation, setDetectingLocation] = useState(false);
+
+  // Auto-detect location on mount
+  useEffect(() => {
+    if (!location && navigator.geolocation) {
+      setDetectingLocation(true);
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const { latitude, longitude } = pos.coords;
+            const res = await fetch(
+              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.REACT_APP_GOOGLE_PLACES_API_KEY}`
+            );
+            if (res.ok) {
+              const data = await res.json();
+              if (data.results?.length > 0) {
+                setLocation(data.results[0].formatted_address);
+              }
+            }
+          } catch {} finally {
+            setDetectingLocation(false);
+          }
+        },
+        () => setDetectingLocation(false),
+        { timeout: 8000 }
+      );
+    }
+  }, []);
+
+  const toggleHousehold = (id) => {
+    setHousehold(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const toggleConcern = (id) => {
+    setConcerns(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const canProceed = () => {
+    if (step === 1) return location.trim().length > 3;
+    if (step === 2) return true; // household is optional
+    if (step === 3) return concerns.length > 0;
+    if (step === 4) return !!preference;
+    return true;
+  };
+
+  const handleNext = async () => {
+    if (step < 4) {
+      setStep(step + 1);
+      return;
+    }
+    if (step === 4) {
+      // Generate the plan
+      setStep(5);
+      setGenerating(true);
+      setError('');
+      try {
+        const res = await fetch(`${API_URL}/ccp/wizard/generate`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            estate_id: estateId,
+            location,
+            household,
+            concerns,
+            preference,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || 'Failed to generate plan');
+        }
+        const data = await res.json();
+        setGeneratedPlan({
+          name: data.plan_name,
+          plan_type: data.plan_type,
+          rendezvous_points: data.rendezvous_points || [],
+          communication_plan: data.communication_plan || '',
+          resource_locations: data.resource_locations || [],
+          instructions: data.instructions || '',
+        });
+        setWarnings(data.warnings || []);
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setGenerating(false);
+      }
+    }
+  };
+
+  const handleSave = async () => {
+    if (!generatedPlan) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/ccp/plans`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          estate_id: estateId,
+          name: generatedPlan.name,
+          plan_type: generatedPlan.plan_type,
+          rendezvous_points: generatedPlan.rendezvous_points,
+          communication_plan: generatedPlan.communication_plan,
+          resource_locations: generatedPlan.resource_locations,
+          instructions: generatedPlan.instructions,
+          linked_document_ids: [],
+          linked_ffn_contact_ids: [],
+          linked_dav_entry_ids: [],
+          assigned_beneficiary_ids: null,
+        }),
+      });
+      if (res.ok) {
+        onComplete();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setError(err.detail || 'Failed to save plan');
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleBack = () => {
+    if (step === 5 && generatedPlan) {
+      // Go back to step 4
+      setGeneratedPlan(null);
+      setWarnings([]);
+      setStep(4);
+    } else if (step > 1) {
+      setStep(step - 1);
+    } else {
+      onCancel();
+    }
+  };
+
+  const toggleEditSection = (key) => {
+    setEditingSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const updatePlanField = (field, value) => {
+    setGeneratedPlan(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Progress indicator
+  const progressPercent = step === 5 ? 100 : ((step) / TOTAL_STEPS) * 100;
+
+  return (
+    <div data-testid="ccp-wizard" className="max-w-lg mx-auto px-4 py-6 pb-28 sm:pb-6">
+      {/* Header */}
+      <button
+        onClick={handleBack}
+        className="flex items-center gap-2 text-sm font-semibold mb-4"
+        data-testid="ccp-wizard-back"
+        style={{ color: 'var(--t4)' }}
+      >
+        <ArrowLeft className="w-4 h-4" />
+        {step === 1 ? 'Cancel' : 'Back'}
+      </button>
+
+      {/* Progress Bar */}
+      <div className="mb-6">
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${progressPercent}%`, background: 'linear-gradient(90deg, #d4af37, #F0C95C)' }}
+          />
+        </div>
+        {step <= 4 && (
+          <p className="text-xs mt-2 text-right" style={{ color: 'var(--t5)' }}>
+            {step} of 4
+          </p>
+        )}
+      </div>
+
+      {/* ── STEP 1: Location ── */}
+      {step === 1 && (
+        <div className="space-y-5" data-testid="ccp-wizard-step-1">
+          <div className="text-center mb-6">
+            <MapPin className="w-10 h-10 mx-auto mb-3" style={{ color: '#d4af37' }} />
+            <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+              Where do you live?
+            </h2>
+            <p className="text-sm mt-2" style={{ color: 'var(--t4)' }}>
+              We'll use this to suggest nearby meeting points and routes
+            </p>
+          </div>
+
+          <div className="relative">
+            <AddressAutocomplete
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              onSelect={({ street, city, state, zip }) => {
+                const full = [street, city, [state, zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+                setLocation(full);
+              }}
+              placeholder={detectingLocation ? 'Detecting your location...' : 'Enter your address'}
+              className="w-full rounded-2xl px-4 py-4 text-base"
+              data-testid="ccp-wizard-location"
+              style={{
+                background: 'var(--s)',
+                border: '2px solid rgba(212,175,55,0.3)',
+                color: 'var(--t)',
+                fontSize: '16px',
+              }}
+            />
+            {detectingLocation && (
+              <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin" style={{ color: '#d4af37' }} />
+            )}
+          </div>
+
+          {location && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(34,201,147,0.08)', border: '1px solid rgba(34,201,147,0.2)' }}>
+              <Check className="w-4 h-4 flex-shrink-0" style={{ color: '#22C993' }} />
+              <span className="text-sm" style={{ color: '#22C993' }}>Location set</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── STEP 2: Household ── */}
+      {step === 2 && (
+        <div className="space-y-5" data-testid="ccp-wizard-step-2">
+          <div className="text-center mb-6">
+            <Users className="w-10 h-10 mx-auto mb-3" style={{ color: '#d4af37' }} />
+            <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+              Who is with you?
+            </h2>
+            <p className="text-sm mt-2" style={{ color: 'var(--t4)' }}>
+              Select anyone who needs special consideration
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {HOUSEHOLD_OPTIONS.map(opt => {
+              const Icon = opt.icon;
+              const selected = household.includes(opt.id);
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => toggleHousehold(opt.id)}
+                  className="flex flex-col items-center justify-center py-6 px-4 rounded-2xl transition-all active:scale-[0.95]"
+                  data-testid={`ccp-wizard-household-${opt.id}`}
+                  style={{
+                    background: selected ? `${opt.color}15` : 'rgba(255,255,255,0.03)',
+                    border: `2px solid ${selected ? `${opt.color}50` : 'rgba(255,255,255,0.06)'}`,
+                    minHeight: 110,
+                  }}
+                >
+                  <Icon className="w-8 h-8 mb-2" style={{ color: selected ? opt.color : 'var(--t5)' }} />
+                  <span className="text-sm font-bold" style={{ color: selected ? opt.color : 'var(--t4)' }}>
+                    {opt.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <p className="text-xs text-center" style={{ color: 'var(--t5)' }}>
+            Skip if none apply — just tap Next
+          </p>
+        </div>
+      )}
+
+      {/* ── STEP 3: Concerns ── */}
+      {step === 3 && (
+        <div className="space-y-5" data-testid="ccp-wizard-step-3">
+          <div className="text-center mb-6">
+            <AlertTriangle className="w-10 h-10 mx-auto mb-3" style={{ color: '#d4af37' }} />
+            <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+              What worries you most?
+            </h2>
+            <p className="text-sm mt-2" style={{ color: 'var(--t4)' }}>
+              Select one or more scenarios
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2.5">
+            {CONCERN_OPTIONS.map(opt => {
+              const Icon = opt.icon;
+              const selected = concerns.includes(opt.id);
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => toggleConcern(opt.id)}
+                  className="flex flex-col items-center justify-center py-4 px-2 rounded-xl transition-all active:scale-[0.95]"
+                  data-testid={`ccp-wizard-concern-${opt.id}`}
+                  style={{
+                    background: selected ? `${opt.color}15` : 'rgba(255,255,255,0.03)',
+                    border: `2px solid ${selected ? `${opt.color}50` : 'rgba(255,255,255,0.06)'}`,
+                  }}
+                >
+                  <Icon className="w-6 h-6 mb-1.5" style={{ color: selected ? opt.color : 'var(--t5)' }} />
+                  <span className="text-[11px] font-bold leading-tight text-center" style={{ color: selected ? opt.color : 'var(--t4)' }}>
+                    {opt.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 4: Stay or Leave ── */}
+      {step === 4 && (
+        <div className="space-y-5" data-testid="ccp-wizard-step-4">
+          <div className="text-center mb-6">
+            <Navigation className="w-10 h-10 mx-auto mb-3" style={{ color: '#d4af37' }} />
+            <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+              Stay or Leave?
+            </h2>
+            <p className="text-sm mt-2" style={{ color: 'var(--t4)' }}>
+              In an emergency, what's your instinct?
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => setPreference('evacuate')}
+              className="w-full flex items-center gap-4 p-5 rounded-2xl transition-all active:scale-[0.97]"
+              data-testid="ccp-wizard-pref-evacuate"
+              style={{
+                background: preference === 'evacuate' ? 'rgba(59,123,247,0.12)' : 'rgba(255,255,255,0.03)',
+                border: `2px solid ${preference === 'evacuate' ? 'rgba(59,123,247,0.4)' : 'rgba(255,255,255,0.06)'}`,
+              }}
+            >
+              <Navigation className="w-10 h-10 flex-shrink-0" style={{ color: preference === 'evacuate' ? '#3B7BF7' : 'var(--t5)' }} />
+              <div className="text-left">
+                <div className="text-base font-bold" style={{ color: preference === 'evacuate' ? '#3B7BF7' : 'var(--t)' }}>
+                  Leave — Evacuate
+                </div>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--t4)' }}>
+                  Get out and go to a safe meeting point
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setPreference('shelter')}
+              className="w-full flex items-center gap-4 p-5 rounded-2xl transition-all active:scale-[0.97]"
+              data-testid="ccp-wizard-pref-shelter"
+              style={{
+                background: preference === 'shelter' ? 'rgba(183,148,246,0.12)' : 'rgba(255,255,255,0.03)',
+                border: `2px solid ${preference === 'shelter' ? 'rgba(183,148,246,0.4)' : 'rgba(255,255,255,0.06)'}`,
+              }}
+            >
+              <Home className="w-10 h-10 flex-shrink-0" style={{ color: preference === 'shelter' ? '#B794F6' : 'var(--t5)' }} />
+              <div className="text-left">
+                <div className="text-base font-bold" style={{ color: preference === 'shelter' ? '#B794F6' : 'var(--t)' }}>
+                  Stay — Shelter in Place
+                </div>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--t4)' }}>
+                  Hunker down and ride it out at home
+                </div>
+              </div>
+            </button>
+          </div>
+
+          <p className="text-xs text-center" style={{ color: 'var(--t5)' }}>
+            The AI will tailor your plan to this preference
+          </p>
+        </div>
+      )}
+
+      {/* ── STEP 5: Generating / Review ── */}
+      {step === 5 && (
+        <div data-testid="ccp-wizard-step-5">
+          {generating && (
+            <div className="flex flex-col items-center justify-center py-16 space-y-4" data-testid="ccp-wizard-generating">
+              <div className="relative">
+                <Sparkles className="w-12 h-12 animate-pulse" style={{ color: '#d4af37' }} />
+              </div>
+              <h2 className="text-xl font-bold text-center" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+                Building your plan...
+              </h2>
+              <p className="text-sm text-center max-w-xs" style={{ color: 'var(--t4)' }}>
+                Our AI is creating a personalized emergency plan based on your answers
+              </p>
+              <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#d4af37' }} />
+            </div>
+          )}
+
+          {error && !generating && (
+            <div className="text-center py-12 space-y-4" data-testid="ccp-wizard-error">
+              <AlertTriangle className="w-12 h-12 mx-auto" style={{ color: '#F05252' }} />
+              <p className="text-sm font-semibold" style={{ color: '#F05252' }}>{error}</p>
+              <button
+                onClick={() => { setError(''); handleNext(); }}
+                className="px-6 py-3 rounded-xl text-sm font-bold"
+                data-testid="ccp-wizard-retry"
+                style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.3)' }}
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+
+          {generatedPlan && !generating && (
+            <div className="space-y-4" data-testid="ccp-wizard-review">
+              <div className="text-center mb-4">
+                <Sparkles className="w-8 h-8 mx-auto mb-2" style={{ color: '#22C993' }} />
+                <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+                  Your Plan is Ready
+                </h2>
+                <p className="text-sm mt-1" style={{ color: 'var(--t4)' }}>
+                  Review and adjust, then save
+                </p>
+              </div>
+
+              {/* Warnings */}
+              {warnings.length > 0 && (
+                <div className="rounded-xl p-3 space-y-2" data-testid="ccp-wizard-warnings" style={{ background: 'rgba(240,82,82,0.08)', border: '1px solid rgba(240,82,82,0.2)' }}>
+                  {warnings.map((w, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#F05252' }} />
+                      <span className="text-xs" style={{ color: '#F05252' }}>{w}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Plan Name */}
+              <ReviewSection
+                title="Plan Name"
+                editing={editingSections.name}
+                onToggle={() => toggleEditSection('name')}
+              >
+                {editingSections.name ? (
+                  <input
+                    value={generatedPlan.name}
+                    onChange={(e) => updatePlanField('name', e.target.value)}
+                    className="w-full rounded-xl px-3 py-3 text-base"
+                    data-testid="ccp-wizard-edit-name"
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }}
+                  />
+                ) : (
+                  <p className="text-base font-bold" style={{ color: 'var(--t)' }}>{generatedPlan.name}</p>
+                )}
+              </ReviewSection>
+
+              {/* Rendezvous Points */}
+              <ReviewSection
+                title="Meeting Points"
+                editing={editingSections.rendezvous}
+                onToggle={() => toggleEditSection('rendezvous')}
+              >
+                {generatedPlan.rendezvous_points.map((rp, i) => (
+                  <div key={i} className="mb-3 last:mb-0">
+                    {editingSections.rendezvous ? (
+                      <div className="space-y-2">
+                        <input
+                          value={rp.name}
+                          onChange={(e) => {
+                            const arr = [...generatedPlan.rendezvous_points];
+                            arr[i] = { ...arr[i], name: e.target.value };
+                            updatePlanField('rendezvous_points', arr);
+                          }}
+                          placeholder="Name"
+                          className="w-full rounded-xl px-3 py-2.5 text-sm"
+                          style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }}
+                        />
+                        <input
+                          value={rp.address}
+                          onChange={(e) => {
+                            const arr = [...generatedPlan.rendezvous_points];
+                            arr[i] = { ...arr[i], address: e.target.value };
+                            updatePlanField('rendezvous_points', arr);
+                          }}
+                          placeholder="Address"
+                          className="w-full rounded-xl px-3 py-2.5 text-sm"
+                          style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }}
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-sm font-bold" style={{ color: 'var(--t)' }}>{rp.name}</p>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--t4)' }}>{rp.address}</p>
+                        {rp.notes && <p className="text-xs mt-0.5 italic" style={{ color: 'var(--t5)' }}>{rp.notes}</p>}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </ReviewSection>
+
+              {/* Communication Plan */}
+              <ReviewSection
+                title="Communication Plan"
+                editing={editingSections.comm}
+                onToggle={() => toggleEditSection('comm')}
+              >
+                {editingSections.comm ? (
+                  <textarea
+                    value={generatedPlan.communication_plan}
+                    onChange={(e) => updatePlanField('communication_plan', e.target.value)}
+                    rows={4}
+                    className="w-full rounded-xl px-3 py-3 text-sm resize-none"
+                    data-testid="ccp-wizard-edit-comm"
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }}
+                  />
+                ) : (
+                  <p className="text-sm whitespace-pre-line" style={{ color: 'var(--t)' }}>
+                    {generatedPlan.communication_plan}
+                  </p>
+                )}
+              </ReviewSection>
+
+              {/* Resource Locations */}
+              <ReviewSection
+                title="Supply & Resource Locations"
+                editing={editingSections.resources}
+                onToggle={() => toggleEditSection('resources')}
+              >
+                {generatedPlan.resource_locations.map((rl, i) => (
+                  <div key={i} className="mb-3 last:mb-0">
+                    {editingSections.resources ? (
+                      <div className="space-y-2">
+                        <input
+                          value={rl.name}
+                          onChange={(e) => {
+                            const arr = [...generatedPlan.resource_locations];
+                            arr[i] = { ...arr[i], name: e.target.value };
+                            updatePlanField('resource_locations', arr);
+                          }}
+                          placeholder="Name"
+                          className="w-full rounded-xl px-3 py-2.5 text-sm"
+                          style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }}
+                        />
+                        <input
+                          value={rl.location}
+                          onChange={(e) => {
+                            const arr = [...generatedPlan.resource_locations];
+                            arr[i] = { ...arr[i], location: e.target.value };
+                            updatePlanField('resource_locations', arr);
+                          }}
+                          placeholder="Location"
+                          className="w-full rounded-xl px-3 py-2.5 text-sm"
+                          style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }}
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-sm font-bold" style={{ color: 'var(--t)' }}>{rl.name}</p>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--t4)' }}>{rl.location}</p>
+                        {rl.notes && <p className="text-xs mt-0.5 italic" style={{ color: 'var(--t5)' }}>{rl.notes}</p>}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </ReviewSection>
+
+              {/* Instructions */}
+              <ReviewSection
+                title="Step-by-Step Instructions"
+                editing={editingSections.instructions}
+                onToggle={() => toggleEditSection('instructions')}
+              >
+                {editingSections.instructions ? (
+                  <textarea
+                    value={generatedPlan.instructions}
+                    onChange={(e) => updatePlanField('instructions', e.target.value)}
+                    rows={6}
+                    className="w-full rounded-xl px-3 py-3 text-sm resize-none"
+                    data-testid="ccp-wizard-edit-instructions"
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }}
+                  />
+                ) : (
+                  <p className="text-sm whitespace-pre-line" style={{ color: 'var(--t)' }}>
+                    {generatedPlan.instructions}
+                  </p>
+                )}
+              </ReviewSection>
+
+              {/* Save Button */}
+              <button
+                onClick={handleSave}
+                disabled={saving || !generatedPlan.name?.trim()}
+                className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] mt-4"
+                data-testid="ccp-wizard-save"
+                style={{
+                  background: 'linear-gradient(135deg, #d4af37, #F0C95C)',
+                  color: '#080e1a',
+                }}
+              >
+                {saving ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Save Plan'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Next Button (Steps 1-4) ── */}
+      {step <= 4 && (
+        <button
+          onClick={handleNext}
+          disabled={!canProceed()}
+          className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] mt-8 flex items-center justify-center gap-2"
+          data-testid="ccp-wizard-next"
+          style={{
+            background: canProceed()
+              ? 'linear-gradient(135deg, #d4af37, #F0C95C)'
+              : 'rgba(255,255,255,0.06)',
+            color: canProceed() ? '#080e1a' : 'var(--t5)',
+          }}
+        >
+          {step === 4 ? (
+            <>
+              <Sparkles className="w-5 h-5" />
+              Generate My Plan
+            </>
+          ) : (
+            <>
+              Next
+              <ArrowRight className="w-5 h-5" />
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Collapsible review section with Accept/Change toggle */
+function ReviewSection({ title, editing, onToggle, children }) {
+  return (
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${editing ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.07)'}` }}
+    >
+      <div className="flex items-center justify-between px-4 py-3">
+        <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--t4)' }}>
+          {title}
+        </span>
+        <button
+          onClick={onToggle}
+          className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+          data-testid={`ccp-wizard-toggle-${title.toLowerCase().replace(/\s+/g, '-')}`}
+          style={{
+            background: editing ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.06)',
+            color: editing ? '#d4af37' : 'var(--t4)',
+          }}
+        >
+          {editing ? (
+            <><Check className="w-3 h-3" /> Done</>
+          ) : (
+            <><Edit3 className="w-3 h-3" /> Change</>
+          )}
+        </button>
+      </div>
+      <div className="px-4 pb-4">
+        {children}
+      </div>
+    </div>
+  );
+}
