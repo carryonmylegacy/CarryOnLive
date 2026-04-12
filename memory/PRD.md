@@ -49,36 +49,22 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - Getting Started Multi-Step Dismiss Logic with frosted glass overlays
 - All prior platform-wide fixes (Google Places, phone formatting, date formatting, etc.)
 
-### Completed (Current Session — Apr 12, 2026)
-- **CarryOn Financial Portal (CFP)**: Complete new feature with 3 sub-modules
-  - **Bill Tracker (CBT)**: Full CRUD for bills with 13 default categories + custom user categories, due day tracking, auto-pay indicator, payment method/account, biller contact info, reminder schedule (customizable per-bill), priority levels, DAV deep-linking, notes for beneficiaries
-  - **Debt Tracker (CDT)**: Full CRUD for debts with categories (mortgage, auto loan, student loan, etc.), outstanding balance, interest rate, monthly payment, loan term, collateral, co-signer, life insurance linkage, DAV deep-linking
-  - **Accounts Registry (CAR)**: Full CRUD for financial accounts with categories (checking, savings, investment, retirement, etc.), balance tracking, institution info, ownership type (individual, joint, trust, POD/TOD), named beneficiary at institution, DAV deep-linking
-  - **Financial Summary Dashboard**: Real-time aggregation cards showing Monthly Bills total, Total Debt, Total Assets, Net Position
-  - **Bill Calendar**: Interactive monthly calendar with colored dots per bill category, day selection shows bill details, monthly total footer
-  - **Per-Beneficiary Designation**: Each bill/debt/account supports per-beneficiary visibility with Pre/Post transition timing toggles (same SDV pattern)
-  - **Custom Categories**: Benefactors can create custom categories via +Add New Category in any form dropdown; custom categories instantly appear as filter bubbles
-  - **Mark as Paid**: Bill payment tracking with history
-  - **Dashboard Tile**: CFP tile on benefactor dashboard showing summary stats and upcoming bills
-  - **Sidebar Navigation**: CFP nav item added to benefactor sidebar
-  - **Feature Access Toggle**: `cfp_access` toggle added to beneficiary feature access settings
-  - **Section Permissions**: `financial_portal` added to ALL_SECTIONS for section-level gating
-  - **Beneficiary Financial Page**: Read-only view at `/beneficiary/financial` with Mark as Paid button (post-transition only), calendar view, summary cards, and 3 sub-tabs
-  - **Bill Reminder Scheduler**: `bill_reminder_scheduler` runs daily at 9 AM EST, sends push + in-app notifications to beneficiaries of transitioned estates at 10, 7, 5, 3, 1, and 0 days before each bill's due date
-  - **Financial Health Score**: New gauge on dashboard showing a 0-100 score based on: coverage (bills/debts/accounts), auto-pay %, beneficiary designations, DAV links, and notes/instructions
-  - **Dual Dashboard Gauges**: Estate Readiness Score (left) + Financial Health Score (right) displayed side-by-side like speedometer and tachometer
-  - **Bill Cancellation Advisor**: Post-transition overlay for optional/subscription bills with 5-step cancellation checklist, benefactor's pre-written instructions, click-to-call biller phone, portal URL link, and auto-pay warning
-  - **CFP Dock Items**: Financial Portal added to mobile bottom dock defaults for both benefactor (`/financial`) and beneficiary (`/beneficiary/financial`) with DollarSign icon
-  - **Smart Bill Categorization**: AI-powered auto-fill using xAI (grok-3-mini) — when user types a bill/debt/account name and tabs out, AI auto-detects category, biller phone, website, payment method, auto-pay status, and frequency. Sparkles icon indicator during loading. Works across all three form types (Bills, Debts, Accounts).
-  - **ECT Light Mode Fix**: Replaced all hardcoded dark theme colors (#F1F3F8, #525C72, #7B879E, #151D30, #1E2840) with CSS variables (var(--t), var(--t5), var(--t4), var(--bg2), var(--s), var(--b)) throughout EstateChatPage.js — title, borders, inputs, modals, search overlay all now adapt to light/dark theme
-  - **Platform-Wide Light Mode Audit**: Extended color variable fixes to ConnectedProtocolPage.js (32+ fixes), VaultPage.js (6 fixes), PrivacyPolicyPage.js, TermsPage.js, DockCustomizer.js — zero hardcoded #F1F3F8/#525C72/#7B879E/#A0AABF remaining in the codebase
-  - **Quick Add (Bulk Bill Import)**: AI-powered batch creation — type multiple names (one per line), click "Categorize with AI", review results with category badges + phone + auto-pay info, deselect unwanted, batch-save. Works across Bills, Debts, and Accounts.
-  - Backend: `/app/backend/routes/financial_portal.py` (21 routes, 741 lines)
-  - Frontend: `/app/frontend/src/pages/FinancialPortalPage.js` + 7 components in `/app/frontend/src/components/financial/` + `/app/frontend/src/pages/beneficiary/BeneficiaryFinancialPage.js`
-  - MongoDB collections: `bills`, `debts`, `financial_accounts`, `bill_categories`, `bill_payments`
-  - DB indexes: 6 new indexes for financial collections
-  - Testing: 40/40 tests pass (27 initial + 13 extension), all frontend UI verified
-  - Housekeeping: 64/65 PASS, 0 FAIL
+### Completed (Apr 12, 2026)
+- **CarryOn Financial Portal (CFP)**: Complete new feature with 3 sub-modules (Bills, Debts, Accounts)
+- **Dual Dashboard Gauges** (Estate Readiness + Financial Health)
+- **Smart Bill Categorization** using xAI & Quick Add Bulk Import
+- **Beneficiary Financial Page** with Bill Cancellation Advisor
+- **Bill Reminder Scheduler** for post-transition push/in-app notifications
+- **Platform-Wide Light Mode Audit & Fixes** (ECT, CCP, Vault, Privacy, Terms)
+- **EstateChatPage.js Refactoring** (2516 → 2029 lines, 5 components extracted)
+
+### Completed (Current Session — Apr 13, 2026)
+- **iOS Font Compliance Fix**: Fixed 34 instances of sub-11px fonts (text-[10px]/text-[8px] → text-[11px]) across 11 financial component files. Housekeeping check #50 now PASS.
+- **Backend: server.py Refactoring**: Extracted DB migrations and 97 index definitions into `db_indexes.py` (server.py: 434 → 262 lines, -40%)
+- **Backend: guardian.py Refactoring**: Extracted 6 PDF export routes and `sanitize_for_pdf` helper into `routes/guardian_exports.py` (guardian.py: 1998 → 880 lines, -56%)
+- **Backend: staff_tools.py Refactoring**: Extracted 13 ops/admin routes (activity, search, escalations, shift notes, knowledge base) into `routes/staff_ops.py` (staff_tools.py: 1850 → 1354 lines, -27%)
+- **Housekeeping Script Updated**: Checks #28 and #32 now scan `db_indexes.py` in addition to `server.py`
+- **Testing**: 27/27 backend tests pass, frontend verified, housekeeping 65/65 ALL PASS
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
@@ -93,15 +79,47 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - (P2) CFP Getting Started Integration — Add CFP step to onboarding wizard
 - (P2) Readiness Scoring Policy Page
 - (P3) ECT Security Comparison Landing Page
-
+- (P3) Further EstateChatPage.js refactoring (input bar, message list extraction)
+- (P3) Further ConnectedProtocolPage.js refactoring
+- (P3) VaultPage.js refactoring (1746 lines)
 
 ## Refactoring Completed
-- **EstateChatPage.js refactored** (Apr 12, 2026): Reduced from 2516 → 2029 lines (~487 lines extracted)
-  - `/app/frontend/src/components/estate-chat/useVoiceRecorder.js` — Voice recorder hook
-  - `/app/frontend/src/components/estate-chat/VoiceMessagePlayer.js` — Inline audio player component
-  - `/app/frontend/src/components/estate-chat/AuthMedia.js` — AuthImage, AuthVideo, AuthFileLink + cachedFetch utility
-  - `/app/frontend/src/components/estate-chat/ECTSecurityIntro.js` — Two-step security walkthrough overlay
-  - `/app/frontend/src/components/estate-chat/ImagePreviewModal.js` — Fullscreen photo preview with Save/Share
+- **EstateChatPage.js refactored** (Apr 12, 2026): 2516 → 2029 lines (~487 lines extracted)
+  - `useVoiceRecorder.js`, `VoiceMessagePlayer.js`, `AuthMedia.js`, `ECTSecurityIntro.js`, `ImagePreviewModal.js`
+- **Backend refactored** (Apr 13, 2026): 3 major files split
+  - `server.py` → `db_indexes.py` (migrations + 97 indexes)
+  - `guardian.py` → `guardian_exports.py` (6 PDF export routes + sanitize_for_pdf)
+  - `staff_tools.py` → `staff_ops.py` (13 ops/admin routes)
+
+## Code Architecture
+```
+/app
+├── backend/
+│   ├── db_indexes.py (NEW — migrations + 97 DB indexes)
+│   ├── server.py (slimmed — app setup, lifespan, health, middleware)
+│   ├── routes/
+│   │   ├── guardian.py (core AI chat, session mgmt — 880 lines)
+│   │   ├── guardian_exports.py (NEW — 6 PDF export routes — 1141 lines)
+│   │   ├── staff_tools.py (admin integrations, announcements, xAI credits — 1354 lines)
+│   │   ├── staff_ops.py (NEW — ops activity, search, escalations, shift notes, KB — 514 lines)
+│   │   ├── financial_portal.py (CFP CRUD — 841 lines)
+│   │   ├── auth.py (login, register, OTP, profile — 1783 lines)
+│   │   └── ... (46 other route files)
+│   ├── services/
+│   └── tests/
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── financial/ (BillTile, BillForm, BillCalendar, QuickAdd, etc.)
+│   │   │   ├── estate-chat/ (AuthMedia, ECTSecurityIntro, ImagePreviewModal, etc.)
+│   │   ├── pages/
+│   │   │   ├── EstateChatPage.js (2029 lines)
+│   │   │   ├── DashboardPage.js
+│   │   │   ├── FinancialPortalPage.js
+│   │   │   └── ...
+│   │   ├── pages/beneficiary/
+└── memory/
+```
 
 ## Key Technical Notes
 - Housekeeping: `bash /app/housekeeping.sh` must pass 65/65 before every push
@@ -111,3 +129,4 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - First-visit intros use localStorage: `carryon_ccp_intro_seen`, `ect_security_seen`
 - Financial Portal uses soft-delete (`deleted_at` field) on all records
 - Custom categories stored in `bill_categories` collection, module-scoped (bills/debts/accounts)
+- **NEVER use hardcoded hex colors** for structural/text elements — use CSS variables
