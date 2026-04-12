@@ -66,14 +66,22 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - **IAC Quick Templates Removed**: Removed Quick Start Templates button, dropdown, QUICK_TEMPLATES array, and applyTemplate function from ChecklistPage. Cleaned up unused imports.
 - **CCP Beneficiary Visibility Note**: Added "Your beneficiaries can view these plans on their portal." note on Emergency Plans page for benefactors with plans.
 
+### Completed (Apr 14, 2026 — Session 3)
+- **CCP Tap-to-Create Wizard**: AI-powered emergency plan generator. Users answer 4 tap-based questions (Location, Household, Concerns, Preference) and xAI generates a complete plan with meeting points, communication plan, resource locations, step-by-step instructions, and risk warnings. Users can Accept or Change each section before saving.
+  - Backend: POST /api/ccp/wizard/generate — validates inputs, calls xAI with structured prompt, returns complete plan JSON
+  - Frontend: CCPWizard.js component with 5-step flow (4 questions + review)
+  - 17 emergency scenarios supported (hurricane, tornado, earthquake, flood, wildfire, nuclear, etc.)
+  - 4 household considerations (children, elderly, pets, special needs)
+  - Auto-detect location via browser geolocation + Google Geocoding
+  - "Build My Plan" button prominently placed on CCP home and plans list pages
+  - Manual plan creation (+ button) still accessible as secondary option
+
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
 - Twilio SMS: Waiting on A2P 10DLC campaign approval
 - iOS Keyboard Ratchet in Chat: Pending user device verification
 
 ## Upcoming Tasks
-- (P0) Fix additional user-reported bugs (awaiting reports)
-- (P0) Build CCP Tap-to-Create Wizard
 - (P0) Google Play Store Launch
 - (P1) Share Extension Setup (iOS)
 - (P1) iOS Live Updates (Capgo)
@@ -95,3 +103,5 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - During trial period, all features default to enabled
 - Message types: text, voice, video, attachment
 - Attachment messages: file encrypted with AES-256-GCM, stored in S3 via same encryption pipeline as video/voice
+- CCP Wizard uses xAI (Grok) with JSON response format for structured plan generation
+- Wizard concern-to-plan-type mapping in `_CONCERN_TO_PLAN_TYPE` dict in connected_protocol.py
