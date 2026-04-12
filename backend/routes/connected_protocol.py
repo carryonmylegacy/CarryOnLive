@@ -84,6 +84,12 @@ class DeactivateRequest(BaseModel):
     notes: Optional[str] = None
 
 
+class DebriefRequest(BaseModel):
+    rating: int  # 1-5 stars
+    went_well: str = ""
+    to_improve: str = ""
+
+
 class WizardRequest(BaseModel):
     estate_id: str
     location: str  # "123 Main St, Houston, TX"
@@ -701,6 +707,70 @@ async def check_in(data: CheckInRequest, current_user: dict = Depends(get_curren
             )
         )
     return checkin
+
+
+
+# ===================== POST-DRILL DEBRIEF =====================
+
+
+@router.post("/ccp/debrief/{activation_id}")
+async def submit_debrief(activation_id: str, data: DebriefRequest, current_user: dict = Depends(get_current_user)):
+    """Submit a post-drill debrief with rating and notes."""
+    if not 1 <= data.rating <= 5:
+        raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
+    activation = await db.emergency_activations.find_one(
+        {"id": activation_id, "status": "resolved"}, {"_id": 0}
+    )
+    if not activation:
+        raise HTTPException(status_code=404, detail="Resolved activation not found")
+    if not await _is_estate_member(current_user["id"], activation["estate_id"]):
+        raise HTTPException(status_code=403, detail="Not a member of this estate")
+    now = datetime.now(timezone.utc).isoformat()
+    debrief = {
+        "rating": data.rating,
+        "went_well": data.went_well.strip(),
+        "to_improve": data.to_improve.strip(),
+        "submitted_by": current_user["id"],
+        "submitted_by_name": current_user.get("name", "Unknown"),
+        "submitted_at": now,
+    }
+    await db.emergency_activations.update_one(
+        {"id": activation_id},
+        {"$set": {"debrief": debrief}},
+    )
+    return {"success": True, "debrief": debrief}
+
+
+@router.get("/ccp/debrief-stats/{estate_id}")
+async def get_debrief_stats(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """Get drill debrief trend data for an estate — average rating over time."""
+    if not await _is_estate_member(current_user["id"], estate_id):
+        raise HTTPException(status_code=403, detail="Not a member of this estate")
+    activations = (
+        await db.emergency_activations.find(
+            {"estate_id": estate_id, "is_drill": True, "status": "resolved", "debrief": {"$exists": True}},
+            {"_id": 0, "id": 1, "plan_name": 1, "activated_at": 1, "deactivated_at": 1, "debrief": 1},
+        )
+        .sort("activated_at", 1)
+        .to_list(100)
+    )
+    entries = []
+    for a in activations:
+        d = a.get("debrief", {})
+        entries.append({
+            "activation_id": a["id"],
+            "plan_name": a.get("plan_name", ""),
+            "date": a.get("deactivated_at", a.get("activated_at", "")),
+            "rating": d.get("rating", 0),
+            "went_well": d.get("went_well", ""),
+            "to_improve": d.get("to_improve", ""),
+        })
+    avg_rating = round(sum(e["rating"] for e in entries) / len(entries), 1) if entries else 0
+    return {
+        "entries": entries,
+        "total_drills": len(entries),
+        "average_rating": avg_rating,
+    }
 
 
 

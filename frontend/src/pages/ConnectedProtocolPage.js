@@ -5,6 +5,7 @@ import { formatPhoneUS } from '../utils/phoneFormat';
 import CCPPlanEditor from '../components/ccp/CCPPlanEditor';
 import CCPActiveView from '../components/ccp/CCPActiveView';
 import CCPWizard from '../components/ccp/CCPWizard';
+import CCPDebriefView from '../components/ccp/CCPDebriefView';
 import {
   Shield,
   AlertTriangle,
@@ -34,6 +35,9 @@ import {
   Download,
   Printer,
   Sparkles,
+  Star,
+  TrendingUp,
+  MessageCircle,
 } from 'lucide-react';
 import { platformDownload } from '../utils/downloadFile';
 
@@ -63,7 +67,7 @@ export default function ConnectedProtocolPage() {
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   const estateId = localStorage.getItem('selected_estate_id');
 
-  const [view, setView] = useState('home'); // home, plans, plan-edit, active, checkin, history
+  const [view, setView] = useState('home'); // home, plans, plan-edit, active, checkin, history, wizard, debrief
   const [plans, setPlans] = useState([]);
   const [activeEmergency, setActiveEmergency] = useState(null);
   const [statusBoard, setStatusBoard] = useState([]);
@@ -77,6 +81,9 @@ export default function ConnectedProtocolPage() {
   const [linkedResources, setLinkedResources] = useState({ documents: [], ffn_contacts: [], dav_entries: [] });
   const [availableResources, setAvailableResources] = useState({ documents: [], ffn_contacts: [], dav_entries: [] });
   const [estateMembers, setEstateMembers] = useState([]);
+  const [debriefActivationId, setDebriefActivationId] = useState(null);
+  const [debriefPlanName, setDebriefPlanName] = useState('');
+  const [debriefStats, setDebriefStats] = useState(null);
   // First-visit welcome intro
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('carryon_ccp_intro_seen'));
   const [welcomeStep, setWelcomeStep] = useState(1);
@@ -181,6 +188,9 @@ export default function ConnectedProtocolPage() {
     if (!activeEmergency) return;
     if (!window.confirm('Deactivate this emergency? A summary report will be generated.')) return;
     setSubmitting(true);
+    const wasDrill = activeEmergency.is_drill;
+    const emergencyId = activeEmergency.id;
+    const planName = activeEmergency.plan_name || 'Drill';
     try {
       const res = await fetch(`${API_URL}/ccp/deactivate/${activeEmergency.id}`, {
         method: 'POST', headers, body: JSON.stringify({ notes: '' }),
@@ -188,8 +198,15 @@ export default function ConnectedProtocolPage() {
       if (res.ok) {
         setActiveEmergency(null);
         setStatusBoard([]);
-        setView('home');
         await fetchPlans();
+        // After drill deactivation, show debrief prompt
+        if (wasDrill) {
+          setDebriefActivationId(emergencyId);
+          setDebriefPlanName(planName);
+          setView('debrief');
+        } else {
+          setView('home');
+        }
       }
     } catch {} finally { setSubmitting(false); }
   };
@@ -272,8 +289,12 @@ export default function ConnectedProtocolPage() {
   const fetchHistory = async () => {
     if (!estateId) return;
     try {
-      const res = await fetch(`${API_URL}/ccp/history/${estateId}`, { headers });
-      if (res.ok) setHistory(await res.json());
+      const [histRes, statsRes] = await Promise.all([
+        fetch(`${API_URL}/ccp/history/${estateId}`, { headers }),
+        fetch(`${API_URL}/ccp/debrief-stats/${estateId}`, { headers }),
+      ]);
+      if (histRes.ok) setHistory(await histRes.json());
+      if (statsRes.ok) setDebriefStats(await statsRes.json());
     } catch {}
   };
 
@@ -399,6 +420,19 @@ export default function ConnectedProtocolPage() {
         token={token}
         onComplete={() => { setView('plans'); fetchPlans(); }}
         onCancel={() => setView(plans.length > 0 ? 'plans' : 'home')}
+      />
+    );
+  }
+
+  // ===================== DEBRIEF VIEW =====================
+  if (view === 'debrief' && debriefActivationId) {
+    return (
+      <CCPDebriefView
+        activationId={debriefActivationId}
+        planName={debriefPlanName}
+        token={token}
+        onComplete={() => { setDebriefActivationId(null); setView('home'); }}
+        onSkip={() => { setDebriefActivationId(null); setView('home'); }}
       />
     );
   }
@@ -552,6 +586,58 @@ export default function ConnectedProtocolPage() {
           <ArrowLeft className="w-4 h-4" />Back
         </button>
         <h2 className="text-lg font-bold" style={{ color: 'var(--t)' }}>Past Activations</h2>
+
+        {/* Drill Trend Summary */}
+        {debriefStats && debriefStats.total_drills > 0 && (
+          <div className="rounded-xl p-4" data-testid="ccp-debrief-trend" style={{ background: 'rgba(59,123,247,0.06)', border: '1px solid rgba(59,123,247,0.15)' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="w-4 h-4" style={{ color: '#3B7BF7' }} />
+              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#3B7BF7' }}>Drill Performance</span>
+            </div>
+            <div className="flex items-center gap-6">
+              <div>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map(s => (
+                    <Star
+                      key={s}
+                      className="w-4 h-4"
+                      style={{
+                        color: s <= Math.round(debriefStats.average_rating) ? '#d4af37' : 'rgba(255,255,255,0.1)',
+                        fill: s <= Math.round(debriefStats.average_rating) ? '#d4af37' : 'none',
+                      }}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs mt-1" style={{ color: 'var(--t4)' }}>
+                  {debriefStats.average_rating}/5 average
+                </p>
+              </div>
+              <div>
+                <p className="text-lg font-bold" style={{ color: 'var(--t)' }}>{debriefStats.total_drills}</p>
+                <p className="text-xs" style={{ color: 'var(--t4)' }}>drill{debriefStats.total_drills !== 1 ? 's' : ''} reviewed</p>
+              </div>
+            </div>
+            {/* Mini trend dots */}
+            {debriefStats.entries.length > 1 && (
+              <div className="flex items-end gap-1 mt-3 h-8">
+                {debriefStats.entries.slice(-10).map((e, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 rounded-sm transition-all"
+                    title={`${e.plan_name}: ${e.rating}/5`}
+                    style={{
+                      height: `${(e.rating / 5) * 100}%`,
+                      background: e.rating >= 4 ? '#22C993' : e.rating >= 3 ? '#d4af37' : '#F05252',
+                      minWidth: 6,
+                      maxWidth: 24,
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {history.length === 0 && (
           <div className="text-center py-12">
             <Clock className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--t5)' }} />
@@ -559,7 +645,7 @@ export default function ConnectedProtocolPage() {
           </div>
         )}
         {history.map(h => (
-          <div key={h.id} className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div key={h.id} className="rounded-xl p-4" data-testid={`ccp-history-${h.id}`} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
             <div className="flex items-center gap-2 mb-1">
               {h.is_drill && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(59,123,247,0.15)', color: '#3B7BF7' }}>DRILL</span>}
               <span className="text-sm font-bold" style={{ color: 'var(--t)' }}>{h.plan_name}</span>
@@ -567,6 +653,49 @@ export default function ConnectedProtocolPage() {
             <p className="text-xs" style={{ color: 'var(--t4)' }}>
               {new Date(h.activated_at).toLocaleDateString()} — {h.status === 'resolved' ? 'Resolved' : h.status}
             </p>
+            {/* Debrief info */}
+            {h.debrief && (
+              <div className="mt-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map(s => (
+                      <Star
+                        key={s}
+                        className="w-3 h-3"
+                        style={{
+                          color: s <= h.debrief.rating ? '#d4af37' : 'rgba(255,255,255,0.1)',
+                          fill: s <= h.debrief.rating ? '#d4af37' : 'none',
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-xs" style={{ color: 'var(--t5)' }}>
+                    by {h.debrief.submitted_by_name}
+                  </span>
+                </div>
+                {h.debrief.went_well && (
+                  <p className="text-xs mt-1.5" style={{ color: 'var(--t4)' }}>
+                    <span style={{ color: '#22C993' }}>Went well:</span> {h.debrief.went_well}
+                  </p>
+                )}
+                {h.debrief.to_improve && (
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--t4)' }}>
+                    <span style={{ color: '#F5A623' }}>Improve:</span> {h.debrief.to_improve}
+                  </p>
+                )}
+              </div>
+            )}
+            {/* Submit debrief for drills without one */}
+            {h.is_drill && !h.debrief && isBenefactor && (
+              <button
+                onClick={() => { setDebriefActivationId(h.id); setDebriefPlanName(h.plan_name); setView('debrief'); }}
+                className="text-xs font-bold mt-2 flex items-center gap-1 py-1.5 px-3 rounded-lg"
+                data-testid={`ccp-add-debrief-${h.id}`}
+                style={{ background: 'rgba(59,123,247,0.1)', color: '#3B7BF7' }}
+              >
+                <MessageCircle className="w-3 h-3" />Add Debrief
+              </button>
+            )}
           </div>
         ))}
       </div>
