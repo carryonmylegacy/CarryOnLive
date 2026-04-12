@@ -216,6 +216,11 @@ export default function EstateChatPage() {
         }
         const kb = Math.max(0, fullHeightRef.current - vv.height);
         setKbHeight(kb);
+        // Prevent iOS from scrolling the page to reveal the input
+        // (the fixed root extends behind keyboard; iOS tries to scroll it into view)
+        if (kb > 0) {
+          window.scrollTo(0, 0);
+        }
       });
     };
 
@@ -1622,7 +1627,7 @@ export default function EstateChatPage() {
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
       {/* DEBUG: ALWAYS visible to confirm code is deployed */}
       <div style={{ background: '#d4af37', color: '#000', padding: '4px 8px', fontSize: '11px', textAlign: 'center', flexShrink: 0, fontWeight: 'bold' }}>
-        V8 | KB: {kbHeight} | VV: {typeof window !== 'undefined' && window.visualViewport ? Math.round(window.visualViewport.height) : '?'} | FH: {fullHeightRef.current}
+        V9 | KB: {kbHeight} | VV: {typeof window !== 'undefined' && window.visualViewport ? Math.round(window.visualViewport.height) : '?'} | FH: {fullHeightRef.current}
       </div>
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
@@ -1878,6 +1883,7 @@ export default function EstateChatPage() {
       height: `${fullHeightRef.current}px`,
       zIndex: 45,
       overflow: 'hidden',
+      overscrollBehavior: 'none',
     }}>
       {/* Pad for status bar on native */}
       <div style={{ height: 'env(safe-area-inset-top, 0px)', flexShrink: 0 }} />
