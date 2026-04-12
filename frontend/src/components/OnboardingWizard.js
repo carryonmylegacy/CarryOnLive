@@ -51,7 +51,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
       const steps = res.data.steps || [];
       const hasIncomplete = steps.some(s => !s.completed);
 
-      if (hasIncomplete && !res.data.all_complete) {
+      if (hasIncomplete && !res.data.all_complete && !res.data.manually_dismissed) {
         localStorage.removeItem('carryon_onboarding_dismissed');
         setManuallyDismissed(false);
       }
@@ -148,7 +148,12 @@ const OnboardingWizard = ({ onAllComplete }) => {
   if (dismissPhase === 'confirm') {
     return (
       <div className="mb-6" data-testid="onboarding-dismiss-confirm">
-        <div className="glass-card p-5 text-center" style={{ border: '1px solid rgba(245,158,11,0.2)' }}>
+        <div className="rounded-2xl p-6 text-center" style={{
+          background: 'var(--guided-overlay-bg, rgba(8,14,26,0.75))',
+          backdropFilter: 'blur(20px) saturate(130%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(130%)',
+          border: '1px solid rgba(245,158,11,0.2)',
+        }}>
           <AlertTriangle className="w-8 h-8 mx-auto mb-3" style={{ color: '#F59E0B' }} />
           <h4 className="text-base font-bold mb-2" style={{ color: 'var(--t)' }}>Close Getting Started?</h4>
           <p className="text-sm mb-4" style={{ color: 'var(--t4)' }}>
@@ -181,7 +186,12 @@ const OnboardingWizard = ({ onAllComplete }) => {
   if (dismissPhase === 'info') {
     return (
       <div className="mb-6" data-testid="onboarding-dismiss-info">
-        <div className="glass-card p-5 text-center" style={{ border: '1px solid rgba(212,175,55,0.2)' }}>
+        <div className="rounded-2xl p-6 text-center" style={{
+          background: 'var(--guided-overlay-bg, rgba(8,14,26,0.75))',
+          backdropFilter: 'blur(20px) saturate(130%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(130%)',
+          border: '1px solid rgba(212,175,55,0.2)',
+        }}>
           <Settings className="w-8 h-8 mx-auto mb-3" style={{ color: '#d4af37' }} />
           <h4 className="text-base font-bold mb-2" style={{ color: 'var(--t)' }}>Guide Hidden</h4>
           <p className="text-sm mb-4" style={{ color: 'var(--t4)' }}>
