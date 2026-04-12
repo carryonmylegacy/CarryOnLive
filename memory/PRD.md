@@ -67,6 +67,8 @@ Build and maintain a comprehensive family preparedness platform that helps users
   - **Bill Reminder Scheduler**: `bill_reminder_scheduler` runs daily at 9 AM EST, sends push + in-app notifications to beneficiaries of transitioned estates at 10, 7, 5, 3, 1, and 0 days before each bill's due date
   - **Financial Health Score**: New gauge on dashboard showing a 0-100 score based on: coverage (bills/debts/accounts), auto-pay %, beneficiary designations, DAV links, and notes/instructions
   - **Dual Dashboard Gauges**: Estate Readiness Score (left) + Financial Health Score (right) displayed side-by-side like speedometer and tachometer
+  - **Bill Cancellation Advisor**: Post-transition overlay for optional/subscription bills with 5-step cancellation checklist, benefactor's pre-written instructions, click-to-call biller phone, portal URL link, and auto-pay warning
+  - **CFP Dock Items**: Financial Portal added to mobile bottom dock defaults for both benefactor (`/financial`) and beneficiary (`/beneficiary/financial`) with DollarSign icon
   - Backend: `/app/backend/routes/financial_portal.py` (21 routes, 741 lines)
   - Frontend: `/app/frontend/src/pages/FinancialPortalPage.js` + 7 components in `/app/frontend/src/components/financial/` + `/app/frontend/src/pages/beneficiary/BeneficiaryFinancialPage.js`
   - MongoDB collections: `bills`, `debts`, `financial_accounts`, `bill_categories`, `bill_payments`
@@ -79,7 +81,6 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - Twilio SMS: Waiting on A2P 10DLC campaign approval
 
 ## Upcoming Tasks
-- (P1) CFP Dock Item — Add CFP to mobile bottom dock defaults
 - (P0) Google Play Store Launch
 - (P1) Share Extension Setup (iOS)
 - (P1) iOS Live Updates (Capgo)
