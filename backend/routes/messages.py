@@ -511,6 +511,70 @@ async def upload_message_video(
     return {"success": True, "video_id": video_id}
 
 
+
+@router.post("/messages/{message_id}/upload-attachment")
+async def upload_message_attachment(
+    message_id: str,
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """Upload a document/image attachment for a milestone message."""
+    message = await db.messages.find_one({"id": message_id}, {"_id": 0})
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    estate = await db.estates.find_one({"id": message["estate_id"]}, {"_id": 0})
+    if not estate or (estate.get("owner_id") != current_user["id"] and current_user.get("role") != "admin"):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    estate_salt = await get_estate_salt(message["estate_id"])
+    attachment_id = f"attachment_{message_id}"
+
+    file_bytes = await file.read()
+    file_name = file.filename or "attachment"
+    content_type = file.content_type or "application/octet-stream"
+    logger.info(f"Attachment upload for message {message_id}: {len(file_bytes)} bytes, name={file_name}, type={content_type}")
+
+    # Encrypt and store
+    encrypted = encrypt_aes256(file_bytes, estate_salt)
+    await storage.upload(encrypted.encode("ascii"), message["estate_id"], attachment_id, content_type)
+
+    await db.messages.update_one(
+        {"id": message_id},
+        {"$set": {"attachment_url": attachment_id, "attachment_name": file_name, "attachment_type": content_type}},
+    )
+
+    return {"success": True, "attachment_id": attachment_id, "file_name": file_name}
+
+
+@router.get("/messages/{message_id}/attachment")
+async def get_message_attachment(message_id: str, current_user: dict = Depends(get_current_user)):
+    """Download a message attachment (decrypted)."""
+    message = await db.messages.find_one({"id": message_id}, {"_id": 0})
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    attachment_url = message.get("attachment_url")
+    if not attachment_url:
+        raise HTTPException(status_code=404, detail="No attachment on this message")
+
+    estate_salt = await get_estate_salt(message["estate_id"])
+
+    # Construct the storage key (same format as upload)
+    storage_key = f"estates/{message['estate_id']}/{attachment_url}"
+    encrypted = await storage.download(storage_key)
+    decrypted = decrypt_aes256(encrypted.decode("ascii"), estate_salt)
+
+    file_name = message.get("attachment_name", "attachment")
+    content_type = message.get("attachment_type", "application/octet-stream")
+
+    return Response(
+        content=decrypted,
+        media_type=content_type,
+        headers={"Content-Disposition": f'attachment; filename="{file_name}"'},
+    )
+
+
 @router.put("/messages/{message_id}")
 async def update_message(message_id: str, data: MessageUpdate, current_user: dict = Depends(get_current_user)):
     """Edit an existing message (benefactor only, before transition)"""
@@ -588,6 +652,16 @@ async def update_message(message_id: str, data: MessageUpdate, current_user: dic
         except Exception:
             pass
         update_fields["voice_url"] = None
+
+    # Handle attachment removal
+    if data.remove_attachment and existing.get("attachment_url"):
+        try:
+            await storage.delete(f"attachments/{existing['attachment_url']}")
+        except Exception:
+            pass
+        update_fields["attachment_url"] = None
+        update_fields["attachment_name"] = None
+        update_fields["attachment_type"] = None
 
     if update_fields:
         update_fields["updated_at"] = datetime.now(timezone.utc).isoformat()

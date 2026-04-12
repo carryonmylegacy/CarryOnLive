@@ -422,6 +422,9 @@ export default function ConnectedProtocolPage() {
             </button>
           )}
         </div>
+        {isBenefactor && plans.length > 0 && (
+          <p className="text-xs" style={{ color: 'var(--t5)' }} data-testid="ccp-beneficiary-note">Your beneficiaries can view these plans on their portal.</p>
+        )}
         {plans.length === 0 && (
           <div className="text-center py-12">
             <Shield className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--t5)' }} />

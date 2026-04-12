@@ -30,7 +30,9 @@ import {
   Download,
   ArrowLeft,
   ArrowRight,
-  Check
+  Check,
+  Paperclip,
+  FileText
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -164,6 +166,9 @@ const MessagesPage = () => {
   const [videoPosterUrl, setVideoPosterUrl] = useState(null);
   const [videoRemoved, setVideoRemoved] = useState(false);
   const [voiceRemoved, setVoiceRemoved] = useState(false);
+  const [attachmentFile, setAttachmentFile] = useState(null);
+  const [attachmentRemoved, setAttachmentRemoved] = useState(false);
+  const attachmentInputRef = useRef(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [countdown, setCountdown] = useState(null);
   const [facingMode, setFacingMode] = useState('user');
@@ -499,6 +504,16 @@ const MessagesPage = () => {
         });
       }
 
+      // Upload attachment separately if present
+      if (attachmentFile && messageId) {
+        const formData = new FormData();
+        formData.append('file', attachmentFile, attachmentFile.name);
+        await axios.post(`${API_URL}/messages/${messageId}/upload-attachment`, formData, {
+          headers: { ...getAuthHeaders().headers, 'Content-Type': 'multipart/form-data' },
+          timeout: 120000,
+        });
+      }
+
       setShowCreateModal(false);
       const wasFirstMessage = !editingMessage && messages.length === 0;
       setEditingMessage(null);
@@ -607,6 +622,8 @@ const MessagesPage = () => {
     setAudioBlob(null);
     setAudioUrl(null);
     setVoiceRemoved(false);
+    setAttachmentFile(null);
+    setAttachmentRemoved(false);
     setEditingMessage(null);
     setCountdown(null);
     setGuidedMode(false);
@@ -635,6 +652,21 @@ const MessagesPage = () => {
         : [...prev, beneficiaryId]
     );
   };
+
+  const downloadAttachment = async (msg) => {
+    try {
+      const res = await axios.get(`${API_URL}/messages/${msg.id}/attachment`, {
+        ...getAuthHeaders(), responseType: 'blob',
+      });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = msg.attachment_name || 'attachment';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { toast.error('Failed to download attachment'); }
+  };
+
 
   const playVideo = async (msg) => {
     if (!msg.video_url) return;
@@ -786,12 +818,14 @@ const MessagesPage = () => {
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                            msg.message_type === 'video' ? 'bg-[#8b5cf6]/20' : msg.message_type === 'voice' ? 'bg-[#22c993]/20' : 'bg-[#d4af37]/20'
+                            msg.message_type === 'video' ? 'bg-[#8b5cf6]/20' : msg.message_type === 'voice' ? 'bg-[#22c993]/20' : msg.message_type === 'attachment' ? 'bg-[#3b82f6]/20' : 'bg-[#d4af37]/20'
                           }`}>
                             {msg.message_type === 'video' ? (
                               <Video className="w-5 h-5 text-[#8b5cf6]" />
                             ) : msg.message_type === 'voice' ? (
                               <Mic className="w-5 h-5 text-[#22c993]" />
+                            ) : msg.message_type === 'attachment' ? (
+                              <Paperclip className="w-5 h-5 text-[#3b82f6]" />
                             ) : (
                               <MessageSquare className="w-5 h-5 text-[var(--gold)]" />
                             )}
@@ -838,6 +872,18 @@ const MessagesPage = () => {
                         </button>
                       )}
                       
+                      {msg.message_type === 'attachment' && msg.attachment_name && (
+                        <div className="mb-4 flex items-center gap-3 p-3 rounded-xl"
+                          style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.15)' }}>
+                          <Paperclip className="w-5 h-5 text-[#3b82f6] flex-shrink-0" />
+                          <span className="text-sm text-[var(--t3)] truncate flex-1">{msg.attachment_name}</span>
+                          <button onClick={(e) => { e.stopPropagation(); downloadAttachment(msg); }}
+                            className="text-[#3b82f6] hover:text-[#60a5fa]" data-testid={`download-attachment-${msg.id}`}>
+                            <Download className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1 text-[#64748b] text-xs">
                           <Users className="w-3 h-3" />
@@ -1126,6 +1172,15 @@ const MessagesPage = () => {
                 <Video className="w-4 h-4 mr-2" />
                 Video
               </Button>
+              <Button
+                variant={messageType === 'attachment' ? 'default' : 'outline'}
+                onClick={() => setMessageType('attachment')}
+                className={messageType === 'attachment' ? 'gold-button' : 'border-[var(--b)] text-white'}
+                data-testid="msg-type-attachment"
+              >
+                <Paperclip className="w-4 h-4 mr-2" />
+                Attachment
+              </Button>
             </div>
             
             {/* Title */}
@@ -1189,6 +1244,51 @@ const MessagesPage = () => {
                         <Camera className="w-5 h-5 mr-2" />
                         Open Camera
                       </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Attachment Upload */}
+            {messageType === 'attachment' && (
+              <div className="space-y-3">
+                <Label className="text-[#94a3b8]">Upload Document or Photo</Label>
+                <div className="border border-[var(--b)] rounded-xl p-4 bg-black/20">
+                  {attachmentFile ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.15)' }}>
+                        <FileText className="w-5 h-5 text-[var(--gold)]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-white truncate">{attachmentFile.name}</p>
+                        <p className="text-xs text-[var(--t5)]">{(attachmentFile.size / 1024).toFixed(0)} KB</p>
+                      </div>
+                      <Button variant="outline" size="sm" className="border-[var(--b)] text-white" onClick={() => setAttachmentFile(null)}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-4 py-6">
+                      <Paperclip className="w-12 h-12 text-[var(--t5)]" />
+                      <p className="text-sm text-[var(--t4)] text-center">Upload a handwritten note, document, or photo</p>
+                      <Button onClick={() => attachmentInputRef.current?.click()} className="gold-button" data-testid="attachment-upload-btn">
+                        <Paperclip className="w-5 h-5 mr-2" />
+                        Choose File
+                      </Button>
+                      <input
+                        ref={attachmentInputRef}
+                        type="file"
+                        accept="image/*,.pdf,.doc,.docx,.txt"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) {
+                            if (f.size > 25 * 1024 * 1024) { toast.error('File must be under 25 MB'); return; }
+                            setAttachmentFile(f);
+                          }
+                        }}
+                      />
                     </div>
                   )}
                 </div>

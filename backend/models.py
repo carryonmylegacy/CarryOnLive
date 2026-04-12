@@ -238,6 +238,7 @@ class MessageUpdate(BaseModel):
     voice_data: Optional[str] = None
     remove_video: Optional[bool] = None
     remove_voice: Optional[bool] = None
+    remove_attachment: Optional[bool] = None
     recipients: Optional[List[str]] = None
     trigger_type: Optional[str] = None
     trigger_value: Optional[str] = None

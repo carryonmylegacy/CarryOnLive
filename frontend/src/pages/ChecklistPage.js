@@ -13,7 +13,6 @@ import {
 import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
-import QuickStartTemplates from '../components/QuickStartTemplates';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import { API_URL } from '../config';
 
@@ -90,7 +89,6 @@ const ChecklistPage = () => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [showTemplates, setShowTemplates] = useState(false);
   const [suggestingAI, setSuggestingAI] = useState(false);
   const [aiElapsed, setAiElapsed] = useState(0);
   const [feedbackItem, setFeedbackItem] = useState(null);
@@ -534,12 +532,6 @@ const ChecklistPage = () => {
           <Plus className="w-4 h-4" /> Add Item
         </button>
         <button
-          onClick={() => setShowTemplates(!showTemplates)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold glass-card hover:border-[var(--gold)] text-[var(--t)]"
-        >
-          <FileText className="w-4 h-4 text-[var(--gold)]" /> Quick Templates
-        </button>
-        <button
           onClick={handleAISuggest}
           disabled={suggestingAI}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold glass-card hover:border-[var(--gold)] text-[var(--t)] disabled:opacity-50"
@@ -553,39 +545,6 @@ const ChecklistPage = () => {
           ) : 'AI Suggest from Vault'}
         </button>
       </div>
-
-      {/* Quick Templates Dropdown */}
-      {showTemplates && (
-        <div className="space-y-4">
-          {/* Scenario-Based Templates (from backend) */}
-          <QuickStartTemplates estateId={estate?.id} onApplied={fetchData} />
-
-          {/* Individual Quick Templates */}
-          <div className="glass-card p-3 space-y-1 max-h-72 overflow-y-auto">
-            <p className="text-xs font-bold text-[var(--t4)] mb-2">Or click an individual template to start with it pre-filled:</p>
-          {QUICK_TEMPLATES.map((tmpl, i) => {
-            const catInfo = getCatInfo(tmpl.cat);
-            const CatIcon = catInfo.icon;
-            return (
-              <div
-                key={i}
-                className="flex items-center gap-3 p-2.5 rounded-lg cursor-pointer hover:bg-[var(--s)] transition-colors"
-                onClick={() => applyTemplate(tmpl)}
-              >
-                <CatIcon className="w-4 h-4 flex-shrink-0" style={{ color: catInfo.color }} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-[var(--t)] truncate">{tmpl.title}</p>
-                  <p className="text-xs text-[var(--t5)] truncate">{tmpl.desc}</p>
-                </div>
-                <span className="text-xs px-2 py-0.5 rounded font-bold" style={{ background: priColors[tmpl.priority] + '15', color: priColors[tmpl.priority] }}>
-                  {tmpl.priority}
-                </span>
-              </div>
-            );
-          })}
-          </div>
-        </div>
-      )}
 
       {/* Add/Edit Form */}
       {showForm && (
