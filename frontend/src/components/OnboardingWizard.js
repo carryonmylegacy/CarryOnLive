@@ -148,19 +148,14 @@ const OnboardingWizard = ({ onAllComplete }) => {
   if (dismissPhase === 'confirm') {
     return (
       <div className="fixed inset-0 z-[150] flex items-center justify-center overflow-y-auto"
-        data-testid="onboarding-dismiss-confirm"
-        style={{ animation: 'guidedOverlayIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
+        data-testid="onboarding-dismiss-confirm">
         <style>{`
-          @keyframes guidedOverlayIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-          @keyframes bubbleIn {
+          @keyframes dismissBubbleIn {
             0% { opacity: 0; transform: scale(0.85) translateY(40px); }
             60% { transform: scale(1.02) translateY(-4px); }
             100% { opacity: 1; transform: scale(1) translateY(0); }
           }
-          @keyframes pulseRing {
+          @keyframes dismissPulseConfirm {
             0% { box-shadow: 0 0 0 0 rgba(245,158,11,0.25); }
             70% { box-shadow: 0 0 0 20px rgba(245,158,11,0); }
             100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); }
@@ -172,12 +167,12 @@ const OnboardingWizard = ({ onAllComplete }) => {
           background: 'var(--guided-overlay-bg, rgba(8,14,26,0.75))',
         }} />
         <div className="relative max-w-md w-full mx-6 text-center"
-          style={{ animation: 'bubbleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}>
+          style={{ animation: 'dismissBubbleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both' }}>
           <div className="w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-6"
             style={{
               background: 'radial-gradient(circle, rgba(245,158,11,0.2) 0%, rgba(245,158,11,0.08) 70%)',
               border: '2px solid rgba(245,158,11,0.35)',
-              animation: 'pulseRing 2.5s ease-in-out infinite',
+              animation: 'dismissPulseConfirm 2.5s ease-in-out infinite',
             }}>
             <AlertTriangle className="w-14 h-14" style={{ color: '#F59E0B' }} />
           </div>
@@ -216,19 +211,14 @@ const OnboardingWizard = ({ onAllComplete }) => {
   if (dismissPhase === 'info') {
     return (
       <div className="fixed inset-0 z-[150] flex items-center justify-center overflow-y-auto"
-        data-testid="onboarding-dismiss-info"
-        style={{ animation: 'guidedOverlayIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
+        data-testid="onboarding-dismiss-info">
         <style>{`
-          @keyframes guidedOverlayIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-          @keyframes bubbleIn {
+          @keyframes dismissBubbleIn {
             0% { opacity: 0; transform: scale(0.85) translateY(40px); }
             60% { transform: scale(1.02) translateY(-4px); }
             100% { opacity: 1; transform: scale(1) translateY(0); }
           }
-          @keyframes pulseRing {
+          @keyframes dismissPulseInfo {
             0% { box-shadow: 0 0 0 0 rgba(212,175,55,0.25); }
             70% { box-shadow: 0 0 0 20px rgba(212,175,55,0); }
             100% { box-shadow: 0 0 0 0 rgba(212,175,55,0); }
@@ -240,12 +230,12 @@ const OnboardingWizard = ({ onAllComplete }) => {
           background: 'var(--guided-overlay-bg, rgba(8,14,26,0.75))',
         }} />
         <div className="relative max-w-md w-full mx-6 text-center"
-          style={{ animation: 'bubbleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}>
+          style={{ animation: 'dismissBubbleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both' }}>
           <div className="w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-6"
             style={{
               background: 'radial-gradient(circle, rgba(212,175,55,0.2) 0%, rgba(212,175,55,0.08) 70%)',
               border: '2px solid rgba(212,175,55,0.35)',
-              animation: 'pulseRing 2.5s ease-in-out infinite',
+              animation: 'dismissPulseInfo 2.5s ease-in-out infinite',
             }}>
             <Settings className="w-14 h-14" style={{ color: '#d4af37' }} />
           </div>
