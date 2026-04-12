@@ -521,7 +521,7 @@ export default function ConnectedProtocolPage() {
                 }}
               >
                 <Icon className="w-8 h-8 mb-2" style={{ color: cfg.color }} />
-                <span className="text-sm font-bold" style={{ color: selected ? cfg.color : '#7B879E' }}>{cfg.label}</span>
+                <span className="text-sm font-bold" style={{ color: selected ? cfg.color : 'var(--t4)' }}>{cfg.label}</span>
               </button>
             );
           })}
@@ -711,7 +711,7 @@ export default function ConnectedProtocolPage() {
                       border: `1px solid ${isSelected ? 'rgba(59,123,247,0.25)' : 'rgba(255,255,255,0.06)'}`,
                     }}
                   >
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold" style={{ background: isSelected ? 'rgba(59,123,247,0.15)' : 'rgba(255,255,255,0.06)', color: isSelected ? '#3B7BF7' : '#525C72' }}>
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold" style={{ background: isSelected ? 'rgba(59,123,247,0.15)' : 'rgba(255,255,255,0.06)', color: isSelected ? '#3B7BF7' : 'var(--t5)' }}>
                       {member.photo_url ? (
                         <img src={member.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
                       ) : (
@@ -719,7 +719,7 @@ export default function ConnectedProtocolPage() {
                       )}
                     </div>
                     <div className="flex-1 text-left">
-                      <div className="text-sm font-semibold" style={{ color: isSelected ? '#F1F3F8' : '#7B879E' }}>{member.name || 'Unknown'}</div>
+                      <div className="text-sm font-semibold" style={{ color: isSelected ? 'var(--t)' : 'var(--t4)' }}>{member.name || 'Unknown'}</div>
                       {member.relation && <div className="text-xs" style={{ color: 'var(--t5)' }}>{member.relation}</div>}
                     </div>
                     <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{
@@ -759,7 +759,7 @@ export default function ConnectedProtocolPage() {
         <button onClick={savePlan} disabled={submitting || !editPlan.name?.trim()}
           className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97]"
           data-testid="ccp-save-plan"
-          style={{ background: editPlan.name?.trim() ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.06)', color: editPlan.name?.trim() ? '#080e1a' : '#525C72' }}>
+          style={{ background: editPlan.name?.trim() ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.06)', color: editPlan.name?.trim() ? '#080e1a' : 'var(--t5)' }}>
           {submitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Save Plan'}
         </button>
       </div>

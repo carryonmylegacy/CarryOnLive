@@ -293,7 +293,7 @@ function AuthImage({ fileId, fileName, msgId, onPreview }) {
         onContextMenu={(e) => { e.preventDefault(); handleDownload(); toast.success('Downloading photo...'); }}
         data-testid={`chat-image-${msgId}`}
       />
-      <span className="text-xs" style={{ color: '#A0AABF' }}>{fileName}</span>
+      <span className="text-xs" style={{ color: 'var(--t4)' }}>{fileName}</span>
     </div>
   );
 }
@@ -317,7 +317,7 @@ function AuthVideo({ fileId, fileName }) {
         className="rounded-xl max-w-full max-h-[240px] mb-1"
         style={{ background: '#000' }}
       />
-      <span className="text-xs" style={{ color: '#A0AABF' }}>{fileName}</span>
+      <span className="text-xs" style={{ color: 'var(--t4)' }}>{fileName}</span>
     </div>
   );
 }
@@ -1146,7 +1146,7 @@ export default function EstateChatPage() {
         </div>
         {contacts.length > 1 && (
           <div className="mb-4">
-            <label className="text-xs font-bold mb-1.5 block" style={{ color: '#A0AABF' }}>Estate</label>
+            <label className="text-xs font-bold mb-1.5 block" style={{ color: 'var(--t4)' }}>Estate</label>
             <select
               value={newChatEstate}
               onChange={(e) => { setNewChatEstate(e.target.value); setSelectedMembers([]); }}
@@ -1161,7 +1161,7 @@ export default function EstateChatPage() {
         )}
         {newChatType === 'group' && (
           <div className="mb-4">
-            <label className="text-xs font-bold mb-1.5 block" style={{ color: '#A0AABF' }}>Group Name</label>
+            <label className="text-xs font-bold mb-1.5 block" style={{ color: 'var(--t4)' }}>Group Name</label>
             <input
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
@@ -1174,7 +1174,7 @@ export default function EstateChatPage() {
         )}
         {(newChatEstate || contacts.length === 1) && (
           <div className="mb-4">
-            <label className="text-xs font-bold mb-2 block" style={{ color: '#A0AABF' }}>
+            <label className="text-xs font-bold mb-2 block" style={{ color: 'var(--t4)' }}>
               {newChatType === 'direct' ? 'Select a person' : 'Select members'}
             </label>
             {(contacts.find(c => c.estate_id === (newChatEstate || contacts[0]?.estate_id))?.members || []).map(m => {
@@ -1196,7 +1196,7 @@ export default function EstateChatPage() {
                 >
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden" style={{
                     background: isSelected ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.08)',
-                    color: isSelected ? '#080e1a' : '#A0AABF',
+                    color: isSelected ? '#080e1a' : 'var(--t4)',
                   }}>
                     {m.photo_url
                       ? <img src={m.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = initials; }} />
@@ -1251,7 +1251,7 @@ export default function EstateChatPage() {
               data-testid="ect-select-cancel"
               style={{ background: 'rgba(255,255,255,0.06)' }}
             >
-              <X className="w-4 h-4" style={{ color: '#A0AABF' }} />
+              <X className="w-4 h-4" style={{ color: 'var(--t4)' }} />
             </button>
           ) : (
             <button
@@ -1260,7 +1260,7 @@ export default function EstateChatPage() {
               data-testid="ect-back-nav"
               style={{ background: 'rgba(255,255,255,0.06)' }}
             >
-              <ArrowLeft className="w-4 h-4" style={{ color: '#A0AABF' }} />
+              <ArrowLeft className="w-4 h-4" style={{ color: 'var(--t4)' }} />
             </button>
           )}
           <h2 className="text-lg font-bold" style={{ color: 'var(--t)' }}>
@@ -1294,7 +1294,7 @@ export default function EstateChatPage() {
                   cursor: selectedChannels.size > 0 ? 'pointer' : 'not-allowed',
                 }}
               >
-                <Trash2 className="w-5 h-5" style={{ color: selectedChannels.size > 0 ? '#dc2626' : '#525C72' }} />
+                <Trash2 className="w-5 h-5" style={{ color: selectedChannels.size > 0 ? '#dc2626' : 'var(--t5)' }} />
               </button>
             </>
           ) : (
@@ -1394,7 +1394,7 @@ export default function EstateChatPage() {
                     {new Date(sr.created_at).toLocaleDateString()}
                   </span>
                 </div>
-                <div className="text-xs font-semibold mb-0.5" style={{ color: '#A0AABF' }}>{sr.sender_name}</div>
+                <div className="text-xs font-semibold mb-0.5" style={{ color: 'var(--t4)' }}>{sr.sender_name}</div>
                 <p className="text-sm truncate" style={{ color: 'var(--t)' }}>{sr.content}</p>
               </button>
             ))}
@@ -1473,7 +1473,7 @@ export default function EstateChatPage() {
                     {selectedChannels.has(ch.id) && <Check className="w-3.5 h-3.5" style={{ color: '#fff' }} />}
                   </div>
                 )}
-                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold" style={{ background: 'rgba(255,255,255,0.06)', color: '#A0AABF' }}>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}>
                   {ch.type === 'direct' && ch.photo_url
                     ? <img src={ch.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = ch.name?.charAt(0)?.toUpperCase() || '?'; }} />
                     : ch.type === 'direct'
@@ -1597,9 +1597,9 @@ export default function EstateChatPage() {
           data-testid="ect-back-btn"
           style={{ background: 'rgba(255,255,255,0.06)' }}
         >
-          <ArrowLeft className="w-4 h-4" style={{ color: '#A0AABF' }} />
+          <ArrowLeft className="w-4 h-4" style={{ color: 'var(--t4)' }} />
         </button>
-        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold" style={{ background: 'rgba(255,255,255,0.06)', color: '#A0AABF' }}>
+        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}>
           {activeChannel.type === 'direct' && activeChannel.photo_url
             ? <img src={activeChannel.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = activeChannel.name?.charAt(0)?.toUpperCase() || '?'; }} />
             : activeChannel.type === 'direct'
@@ -1789,7 +1789,7 @@ export default function EstateChatPage() {
                       style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px', outline: 'none' }}
                     />
                     <div className="flex gap-2 justify-end">
-                      <button onClick={() => setEditingMsg(null)} className="text-xs px-3 py-1 rounded-lg" style={{ color: '#A0AABF', background: 'rgba(255,255,255,0.06)' }} data-testid="edit-cancel-btn">Cancel</button>
+                      <button onClick={() => setEditingMsg(null)} className="text-xs px-3 py-1 rounded-lg" style={{ color: 'var(--t4)', background: 'rgba(255,255,255,0.06)' }} data-testid="edit-cancel-btn">Cancel</button>
                       <button onClick={handleEditMessage} className="text-xs px-3 py-1 rounded-lg font-semibold" style={{ color: '#080e1a', background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }} data-testid="edit-save-btn">Save</button>
                     </div>
                   </div>
@@ -1991,7 +1991,7 @@ export default function EstateChatPage() {
               <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#d4af37', animationDelay: '150ms' }} />
               <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#d4af37', animationDelay: '300ms' }} />
             </div>
-            <span className="text-xs" style={{ color: '#A0AABF' }}>
+            <span className="text-xs" style={{ color: 'var(--t4)' }}>
               {typers.length === 1 ? `${typers[0].user_name} is typing...` : `${typers.map(t => t.user_name).join(', ')} are typing...`}
             </span>
           </div>
@@ -2152,9 +2152,9 @@ export default function EstateChatPage() {
                 <span className="text-sm font-semibold" style={{ color: 'var(--t)' }}>
                   {Math.floor(voiceRecorder.duration / 60)}:{(voiceRecorder.duration % 60).toString().padStart(2, '0')}
                 </span>
-                <span className="text-xs" style={{ color: '#A0AABF' }}>Recording...</span>
+                <span className="text-xs" style={{ color: 'var(--t4)' }}>Recording...</span>
                 <button onMouseDown={(e) => e.preventDefault()} onClick={stopAndPreview} className="ml-auto p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-stop">
-                  <Square className="w-4 h-4" style={{ color: 'var(--t)', fill: '#F1F3F8' }} />
+                  <Square className="w-4 h-4" style={{ color: 'var(--t)' }} />
                 </button>
                 <button onMouseDown={(e) => e.preventDefault()} onClick={() => { voiceRecorder.cancel(); inputRef.current?.focus(); }} className="p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-cancel">
                   <X className="w-4 h-4" style={{ color: '#ef4444' }} />
@@ -2276,7 +2276,7 @@ export default function EstateChatPage() {
               onClick={() => { setDeleteConfirm(null); setSwipedChannel(null); }}
               className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
               data-testid="ect-delete-cancel"
-              style={{ background: 'rgba(255,255,255,0.06)', color: '#A0AABF' }}
+              style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}
             >Cancel</button>
             <button
               onClick={() => deleteChannel(deleteConfirm.id)}
@@ -2302,7 +2302,7 @@ export default function EstateChatPage() {
               onClick={() => setBulkDeleteConfirm(false)}
               className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
               data-testid="ect-bulk-delete-cancel"
-              style={{ background: 'rgba(255,255,255,0.06)', color: '#A0AABF' }}
+              style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}
             >Cancel</button>
             <button
               onClick={bulkDeleteChannels}
@@ -2338,7 +2338,7 @@ export default function EstateChatPage() {
               <div className="text-center mb-5">
                 <Shield className="w-12 h-12 mx-auto mb-3" style={{ color: '#d4af37' }} />
                 <h2 className="text-xl font-bold" style={{ color: 'var(--t)' }}>The Most Private Chat You'll Ever Use</h2>
-                <p className="text-sm mt-2" style={{ color: '#A0AABF' }}>Estate Comms isn't like other messaging apps. Here's why.</p>
+                <p className="text-sm mt-2" style={{ color: 'var(--t4)' }}>Estate Comms isn't like other messaging apps. Here's why.</p>
               </div>
               <div className="space-y-3 mb-6">
                 {[
@@ -2374,7 +2374,7 @@ export default function EstateChatPage() {
               <div className="text-center mb-5">
                 <MessageCircle className="w-12 h-12 mx-auto mb-3" style={{ color: '#d4af37' }} />
                 <h2 className="text-xl font-bold" style={{ color: 'var(--t)' }}>How to Use Estate Comms</h2>
-                <p className="text-sm mt-2" style={{ color: '#A0AABF' }}>It's simple — here's everything you need to know.</p>
+                <p className="text-sm mt-2" style={{ color: 'var(--t4)' }}>It's simple — here's everything you need to know.</p>
               </div>
               <div className="space-y-3 mb-6">
                 {[
@@ -2398,7 +2398,7 @@ export default function EstateChatPage() {
                 <button onClick={() => setIntroStep(1)}
                   className="px-5 py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.97]"
                   data-testid="ect-intro-back-2"
-                  style={{ background: 'rgba(255,255,255,0.06)', color: '#A0AABF' }}>
+                  style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}>
                   <ArrowLeft className="w-4 h-4 inline mr-1" /> Back
                 </button>
                 <button
@@ -2456,7 +2456,7 @@ export default function EstateChatPage() {
           }}
         />
         <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
-          <span className="text-sm" style={{ color: '#A0AABF' }}>{previewImage.name}</span>
+          <span className="text-sm" style={{ color: 'var(--t4)' }}>{previewImage.name}</span>
           <button
             data-testid="photo-preview-download"
             onClick={async (e) => {

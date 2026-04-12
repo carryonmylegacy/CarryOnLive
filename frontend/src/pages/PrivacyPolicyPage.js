@@ -17,7 +17,7 @@ const PrivacyPolicyPage = () => {
         <div className="glass-card p-8 md:p-12">
           <div className="flex items-center gap-3 mb-6">
             <Shield className="w-7 h-7 text-[#d4af37]" />
-            <h1 className="text-3xl font-bold text-[#F1F3F8]" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="privacy-page-title">
+            <h1 className="text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="privacy-page-title">
               Privacy Policy
             </h1>
           </div>
@@ -25,14 +25,14 @@ const PrivacyPolicyPage = () => {
 
           <div className="space-y-8 text-[#C0C8D8] text-sm leading-relaxed">
             <section>
-              <h2 className="text-lg font-semibold text-[#F1F3F8] mb-3">1. Introduction</h2>
+              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">1. Introduction</h2>
               <p>
                 CarryOn&trade; (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our estate planning platform, including our website and related services (collectively, the &quot;Service&quot;).
               </p>
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-[#F1F3F8] mb-3">2. Information We Collect</h2>
+              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">2. Information We Collect</h2>
               <p className="mb-3">We collect information you provide directly to us, including:</p>
               <ul className="list-disc list-inside space-y-1 ml-2">
                 <li>Personal identification information (name, email address, phone number)</li>
@@ -45,7 +45,7 @@ const PrivacyPolicyPage = () => {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-[#F1F3F8] mb-3">3. How We Use Your Information</h2>
+              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">3. How We Use Your Information</h2>
               <ul className="list-disc list-inside space-y-1 ml-2">
                 <li>Provide, maintain, and improve the Service</li>
                 <li>Process transactions and send related information</li>
@@ -57,7 +57,7 @@ const PrivacyPolicyPage = () => {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-[#F1F3F8] mb-3">4. SMS/Text Messaging</h2>
+              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">4. SMS/Text Messaging</h2>
               <p className="mb-3">
                 When you opt in to receive SMS messages from CarryOn&trade;, you consent to receive text messages related to account verification and security (e.g., one-time passcodes for two-factor authentication). Message frequency varies based on your account activity. Message and data rates may apply.
               </p>
@@ -70,14 +70,14 @@ const PrivacyPolicyPage = () => {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-[#F1F3F8] mb-3">5. Data Security</h2>
+              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">5. Data Security</h2>
               <p>
                 We implement industry-standard security measures, including AES-256 encryption, zero-knowledge architecture, and two-factor authentication. Your sensitive documents are encrypted at rest and in transit. Voice biometric data is stored as mathematical representations (voiceprints) and cannot be reverse-engineered into audio.
               </p>
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-[#F1F3F8] mb-3">6. Data Sharing and Disclosure</h2>
+              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">6. Data Sharing and Disclosure</h2>
               <p className="mb-3">We may share your information only in the following circumstances:</p>
               <ul className="list-disc list-inside space-y-1 ml-2">
                 <li>With your designated beneficiaries, as configured by you</li>
@@ -88,14 +88,14 @@ const PrivacyPolicyPage = () => {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-[#F1F3F8] mb-3">7. Data Retention</h2>
+              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">7. Data Retention</h2>
               <p>
                 We retain your personal information for as long as your account is active or as needed to provide you with our services. You may request deletion of your account and associated data by contacting us.
               </p>
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-[#F1F3F8] mb-3">8. Your Rights</h2>
+              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">8. Your Rights</h2>
               <p className="mb-3">Depending on your jurisdiction, you may have the right to:</p>
               <ul className="list-disc list-inside space-y-1 ml-2">
                 <li>Access, correct, or delete your personal data</li>
@@ -106,14 +106,14 @@ const PrivacyPolicyPage = () => {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-[#F1F3F8] mb-3">9. Changes to This Policy</h2>
+              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">9. Changes to This Policy</h2>
               <p>
                 We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the &quot;Last updated&quot; date.
               </p>
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-[#F1F3F8] mb-3">10. Contact Us</h2>
+              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">10. Contact Us</h2>
               <p>
                 If you have questions about this Privacy Policy or our data practices, please contact us at: <a href="mailto:support@carryon.com" className="text-[#7AABFD] hover:text-[#A5C6FE] transition-colors">support@carryon.com</a>
               </p>

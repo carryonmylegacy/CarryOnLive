@@ -7,7 +7,6 @@ and POST /api/financial/bills for batch creation.
 import pytest
 import requests
 import os
-import time
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL")
 
@@ -30,13 +29,10 @@ class TestQuickAddFeature:
         )
         if login_response.status_code == 200:
             self.token = login_response.json().get("access_token")
-            
+
         # Get estate ID
         if self.token:
-            estates_response = requests.get(
-                f"{BASE_URL}/api/estates",
-                headers=self.get_headers()
-            )
+            estates_response = requests.get(f"{BASE_URL}/api/estates", headers=self.get_headers())
             if estates_response.status_code == 200:
                 estates = estates_response.json()
                 if estates:
@@ -47,11 +43,8 @@ class TestQuickAddFeature:
         if self.token and self.created_bill_ids:
             for bill_id in self.created_bill_ids:
                 try:
-                    requests.delete(
-                        f"{BASE_URL}/api/financial/bills/{bill_id}",
-                        headers=self.get_headers()
-                    )
-                except:
+                    requests.delete(f"{BASE_URL}/api/financial/bills/{bill_id}", headers=self.get_headers())
+                except Exception:
                     pass
 
     def get_headers(self):
@@ -62,12 +55,8 @@ class TestQuickAddFeature:
         if not self.token:
             pytest.skip("Authentication failed")
 
-        bill_names = [
-            "TEST_Duke Energy Electric",
-            "TEST_Netflix Subscription",
-            "TEST_State Farm Auto Insurance"
-        ]
-        
+        bill_names = ["TEST_Duke Energy Electric", "TEST_Netflix Subscription", "TEST_State Farm Auto Insurance"]
+
         results = []
         for name in bill_names:
             response = requests.post(
@@ -77,27 +66,33 @@ class TestQuickAddFeature:
             )
             assert response.status_code == 200, f"Categorization failed for {name}: {response.text}"
             data = response.json()
-            results.append({
-                "name": name,
-                "category": data.get("category"),
-                "phone": data.get("biller_phone"),
-                "website": data.get("biller_website"),
-                "is_auto_pay": data.get("is_auto_pay", False)
-            })
-            
+            results.append(
+                {
+                    "name": name,
+                    "category": data.get("category"),
+                    "phone": data.get("biller_phone"),
+                    "website": data.get("biller_website"),
+                    "is_auto_pay": data.get("is_auto_pay", False),
+                }
+            )
+
         # Verify all items were categorized
         assert len(results) == 3, f"Expected 3 results, got {len(results)}"
-        
+
         # Verify categories are reasonable
-        categories = [r["category"] for r in results]
+        [r["category"] for r in results]
         print(f"Categorized bills: {results}")
-        
+
         # Duke Energy should be utilities
         assert results[0]["category"] == "utilities", f"Duke Energy should be utilities, got {results[0]['category']}"
         # Netflix should be subscriptions
-        assert results[1]["category"] == "subscriptions", f"Netflix should be subscriptions, got {results[1]['category']}"
+        assert results[1]["category"] == "subscriptions", (
+            f"Netflix should be subscriptions, got {results[1]['category']}"
+        )
         # State Farm should be insurance
-        assert results[2]["category"] in ["insurance", "auto_vehicle"], f"State Farm should be insurance, got {results[2]['category']}"
+        assert results[2]["category"] in ["insurance", "auto_vehicle"], (
+            f"State Farm should be insurance, got {results[2]['category']}"
+        )
 
     def test_quick_add_step2_batch_create_bills(self):
         """Test Step 2: Batch create bills via POST /api/financial/bills"""
@@ -107,7 +102,7 @@ class TestQuickAddFeature:
         # First categorize
         categorized = []
         bill_names = ["TEST_Spectrum Internet", "TEST_T-Mobile Wireless"]
-        
+
         for name in bill_names:
             cat_response = requests.post(
                 f"{BASE_URL}/api/financial/smart-categorize",
@@ -116,15 +111,17 @@ class TestQuickAddFeature:
             )
             if cat_response.status_code == 200:
                 data = cat_response.json()
-                categorized.append({
-                    "name": name,
-                    "category": data.get("category", "other"),
-                    "biller_phone": data.get("biller_phone"),
-                    "biller_website": data.get("biller_website"),
-                    "is_auto_pay": data.get("is_auto_pay", False),
-                    "frequency": data.get("frequency", "monthly"),
-                    "payment_method": data.get("payment_method", "manual_online")
-                })
+                categorized.append(
+                    {
+                        "name": name,
+                        "category": data.get("category", "other"),
+                        "biller_phone": data.get("biller_phone"),
+                        "biller_website": data.get("biller_website"),
+                        "is_auto_pay": data.get("is_auto_pay", False),
+                        "frequency": data.get("frequency", "monthly"),
+                        "payment_method": data.get("payment_method", "manual_online"),
+                    }
+                )
 
         # Now batch create
         created_count = 0
@@ -137,15 +134,11 @@ class TestQuickAddFeature:
                 "biller_website": item["biller_website"],
                 "is_auto_pay": item["is_auto_pay"],
                 "frequency": item["frequency"],
-                "payment_method": item["payment_method"]
+                "payment_method": item["payment_method"],
             }
-            
-            create_response = requests.post(
-                f"{BASE_URL}/api/financial/bills",
-                json=payload,
-                headers=self.get_headers()
-            )
-            
+
+            create_response = requests.post(f"{BASE_URL}/api/financial/bills", json=payload, headers=self.get_headers())
+
             if create_response.status_code in [200, 201]:
                 created_count += 1
                 bill_data = create_response.json()
@@ -168,12 +161,12 @@ class TestQuickAddFeature:
             json={"bill_name": "TEST_GEICO Car Insurance", "module": "bills"},
             headers=self.get_headers(),
         )
-        
+
         if cat_response.status_code != 200:
             pytest.skip("Categorization failed")
-            
+
         cat_data = cat_response.json()
-        
+
         # Create the bill
         create_response = requests.post(
             f"{BASE_URL}/api/financial/bills",
@@ -185,31 +178,28 @@ class TestQuickAddFeature:
                 "biller_website": cat_data.get("biller_website"),
                 "is_auto_pay": cat_data.get("is_auto_pay", False),
                 "frequency": cat_data.get("frequency", "monthly"),
-                "payment_method": cat_data.get("payment_method", "manual_online")
+                "payment_method": cat_data.get("payment_method", "manual_online"),
             },
-            headers=self.get_headers()
+            headers=self.get_headers(),
         )
-        
+
         assert create_response.status_code in [200, 201], f"Bill creation failed: {create_response.text}"
         bill_data = create_response.json()
         bill_id = bill_data.get("id")
-        
+
         if bill_id:
             self.created_bill_ids.append(bill_id)
-        
+
         # Verify by fetching all bills
-        get_response = requests.get(
-            f"{BASE_URL}/api/financial/bills/{self.estate_id}",
-            headers=self.get_headers()
-        )
-        
+        get_response = requests.get(f"{BASE_URL}/api/financial/bills/{self.estate_id}", headers=self.get_headers())
+
         assert get_response.status_code == 200, f"Failed to fetch bills: {get_response.text}"
         bills = get_response.json()
-        
+
         # Find our test bill
         test_bill = next((b for b in bills if b.get("name") == "TEST_GEICO Car Insurance"), None)
         assert test_bill is not None, "Created bill not found in bills list"
-        
+
         # Verify data was persisted correctly
         assert test_bill.get("category") == cat_data.get("category", "insurance"), "Category not persisted correctly"
         print(f"Bill persisted successfully: {test_bill}")
@@ -225,12 +215,14 @@ class TestQuickAddFeature:
             json={"bill_name": "TEST_Chase Credit Card", "module": "debts"},
             headers=self.get_headers(),
         )
-        
+
         assert cat_response.status_code == 200, f"Categorization failed: {cat_response.text}"
         cat_data = cat_response.json()
-        
+
         # Verify it's categorized as credit_card
-        assert cat_data.get("category") in ["credit_card", "other"], f"Expected credit_card, got {cat_data.get('category')}"
+        assert cat_data.get("category") in ["credit_card", "other"], (
+            f"Expected credit_card, got {cat_data.get('category')}"
+        )
         print(f"Chase Credit Card categorized as: {cat_data.get('category')}")
 
     def test_quick_add_accounts_module(self):
@@ -244,10 +236,12 @@ class TestQuickAddFeature:
             json={"bill_name": "TEST_Fidelity 401k", "module": "accounts"},
             headers=self.get_headers(),
         )
-        
+
         assert cat_response.status_code == 200, f"Categorization failed: {cat_response.text}"
         cat_data = cat_response.json()
-        
+
         # Verify it's categorized as retirement
-        assert cat_data.get("category") in ["retirement", "investment", "other"], f"Expected retirement/investment, got {cat_data.get('category')}"
+        assert cat_data.get("category") in ["retirement", "investment", "other"], (
+            f"Expected retirement/investment, got {cat_data.get('category')}"
+        )
         print(f"Fidelity 401k categorized as: {cat_data.get('category')}")

@@ -985,7 +985,7 @@ const VaultPage = () => {
                             onClick={(e) => { e.stopPropagation(); setExpandedDesignation(expandedDesignation === doc.id ? null : doc.id); }}
                             data-testid={`designation-toggle-${doc.id}`}
                           >
-                            <Users className="w-4 h-4" style={{ color: '#A0AABF' }} />
+                            <Users className="w-4 h-4" style={{ color: 'var(--t4)' }} />
                             <span className="text-sm font-semibold" style={{ color: '#D8DEE9' }}>
                               {(!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
                                 ? `All ${beneficiaries.length} Beneficiaries`
@@ -1012,7 +1012,7 @@ const VaultPage = () => {
                                     <div className="flex items-center gap-3 px-3 py-2">
                                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden" style={{
                                         background: isOn ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.08)',
-                                        color: isOn ? '#080e1a' : '#7B879E',
+                                        color: isOn ? '#080e1a' : 'var(--t4)',
                                       }}>
                                         {ben.photo_url
                                           ? <img src={ben.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
