@@ -96,6 +96,10 @@ Build and maintain a comprehensive family preparedness platform that helps users
   - Backend: GET /api/public/ccp/{share_token} — public endpoint (no auth) serves plan data
   - Frontend: SharedPlanPage.js at /shared/plan/:token — dark-themed public page with all plan sections
   - Frontend: Share button on plan cards + share modal with copy link, native share, and revoke
+- **Emergency Contact Card**: Wallet-sized printable PDF (business card format, 4 per A4 page) with QR code linking to the shared plan, plan name, primary meeting point, communication plan summary, and CarryOn branding. Auto-generates share token if plan doesn't have one. Cut lines included for easy printing.
+  - Backend: emergency_card download action via /api/downloads/prepare → /api/downloads/{token}
+  - Uses qrcode[pil] library for QR code generation
+  - Frontend: "Emergency Card (wallet PDF + QR)" button on plan cards
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
