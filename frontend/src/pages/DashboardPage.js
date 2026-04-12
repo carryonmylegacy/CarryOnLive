@@ -632,7 +632,7 @@ const DashboardPage = () => {
         // Celebration is handled by fetchEstateData via backend flag — no-op here
       }} />
 
-      {/* CarryOn Financial Portal — Guide Tile (above gauge) */}
+      {/* CarryOn Financial Picture — Guide Tile (above gauge) */}
       {financialSummary && (financialSummary.bills_count === 0 && financialSummary.debts_count === 0 && financialSummary.accounts_count === 0 && (financialSummary.property_count || 0) === 0) && (
       <div
         className="glass-card p-4 lg:p-6 mb-4 border-l-4 border-l-[#10b981] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(16,185,129,0.2)]"
@@ -724,7 +724,7 @@ const DashboardPage = () => {
         <StatCard 
           icon={DollarSign}
           value={(financialSummary?.bills_count || 0) + (financialSummary?.debts_count || 0) + (financialSummary?.accounts_count || 0) + (financialSummary?.property_count || 0)}
-          label="Financial Portal (CFP)"
+          label="Financial Picture"
           cardClass="stat-card-financial"
           onClick={() => navigate('/financial')}
           sectionKey="financial_portal"
@@ -899,7 +899,7 @@ const DashboardPage = () => {
         </div>
         )}
 
-        {/* Financial Portal Preview - Green */}
+        {/* Financial Picture Preview - Green */}
         <div 
           className="glass-card p-4 lg:p-6 border-l-4 border-l-[#10b981] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.02] lg:hover:shadow-[0_12px_36px_-6px_rgba(16,185,129,0.3)]"
           data-testid="preview-financial"
@@ -908,7 +908,7 @@ const DashboardPage = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-[#10b981]" />
-              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">Financial Portal (CFP)</h3>
+              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">Financial Picture</h3>
             </div>
             <span className="text-[var(--t4)] text-sm">
               {financialSummary ? `${(financialSummary.bills_count || 0) + (financialSummary.debts_count || 0) + (financialSummary.accounts_count || 0) + (financialSummary.property_count || 0)} items` : '0 items'}
@@ -951,7 +951,7 @@ const DashboardPage = () => {
             className="mt-2 text-[#10b981] hover:text-[#34d399] text-base font-medium flex items-center gap-1"
             data-testid="preview-financial-link"
           >
-            View Financial Portal <ChevronRight className="w-5 h-5" />
+            View Financial Picture <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </div>

@@ -303,7 +303,7 @@ const Sidebar = () => {
         { to: '/guardian', icon: Sparkles, label: 'Estate Guardian AI (EGA)' },
         { to: '/ffn', icon: Heart, label: 'Family & Friends Notification (FFN)' },
         { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
-        { to: '/financial', icon: DollarSign, label: 'Financial Portal (CFP)' },
+        { to: '/financial', icon: DollarSign, label: 'Financial Picture' },
         { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
         { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
         { to: '/estate-chat', icon: MessageCircle, label: 'Estate Comms (ECT)', badge: ectUnread },

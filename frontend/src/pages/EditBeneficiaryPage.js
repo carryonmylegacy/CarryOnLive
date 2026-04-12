@@ -517,7 +517,7 @@ export default function EditBeneficiaryPage() {
                   { key: 'ffnAccess', label: 'Family & Friends Notification (FFN)' },
                   { key: 'davAccess', label: 'Digital Access Vault (DAV)' },
                   { key: 'dtsAccess', label: 'Designated Trustee Services (DTS)' },
-                  { key: 'cfpAccess', label: 'Financial Portal (CFP)' },
+                  { key: 'cfpAccess', label: 'Financial Picture' },
                 ].map(({ key, label }) => (
                   <div key={key} className="flex items-center justify-between py-1">
                     <span className="text-sm text-[var(--t3)]">{label}</span>
