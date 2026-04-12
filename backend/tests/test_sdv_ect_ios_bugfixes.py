@@ -17,7 +17,7 @@ import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 if not BASE_URL:
-    BASE_URL = "https://estate-chat-menu.preview.emergentagent.com"
+    BASE_URL = "https://chat-smooth.preview.emergentagent.com"
 
 # Test credentials
 ADMIN_EMAIL = "info@carryon.us"

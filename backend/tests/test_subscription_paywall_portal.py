@@ -10,7 +10,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://estate-chat-menu.preview.emergentagent.com")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://chat-smooth.preview.emergentagent.com")
 
 
 class TestSubscriptionPlansEndpoint:
@@ -127,7 +127,7 @@ class TestSubscriptionCheckout:
             json={
                 "plan_id": "premium",
                 "billing_cycle": "annual",
-                "origin_url": "https://estate-chat-menu.preview.emergentagent.com",
+                "origin_url": "https://chat-smooth.preview.emergentagent.com",
             },
             headers=headers,
         )
