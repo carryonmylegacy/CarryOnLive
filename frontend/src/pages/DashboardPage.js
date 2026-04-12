@@ -39,7 +39,6 @@ const DashboardPage = () => {
   const [stats, setStats] = useState({ documents: 0, messages: 0, beneficiaries: 0 });
   const [readiness, setReadiness] = useState({ documents: { score: 0 }, messages: { score: 0 }, checklist: { score: 0 } });
   const [financialSummary, setFinancialSummary] = useState(null);
-  const [financialHealth, setFinancialHealth] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCelebration, setShowCelebration] = useState(false);
   const [justCompletedActivation, setJustCompletedActivation] = useState(false);
@@ -115,8 +114,6 @@ const DashboardPage = () => {
       // Fetch financial summary (non-blocking)
       axios.get(`${API_URL}/financial/summary/${estateId}`, getAuthHeaders())
         .then(res => setFinancialSummary(res.data)).catch(() => {});
-      axios.get(`${API_URL}/financial/health-score/${estateId}`, getAuthHeaders())
-        .then(res => setFinancialHealth(res.data)).catch(() => {});
 
       // Show guided flow overlay if there are incomplete steps and user hasn't dismissed this visit
       if (!guidedDismissedRef.current && progressRes?.data) {
@@ -200,6 +197,7 @@ const DashboardPage = () => {
   const docsPercent = readiness?.documents?.score ?? 0;
   const msgsPercent = readiness?.messages?.score ?? 0;
   const checklistPercent = readiness?.checklist?.score ?? 0;
+  const financialsPercent = readiness?.financials?.score ?? 0;
 
   // Get score label and color
   const getScoreLabel = (score) => {
@@ -210,8 +208,6 @@ const DashboardPage = () => {
   };
 
   const scoreInfo = getScoreLabel(readinessScore);
-  const financialScore = financialHealth?.score ?? 0;
-  const financialScoreInfo = getScoreLabel(financialScore);
 
   const getUserFirstName = () => {
     if (user?.first_name) return user.first_name;
@@ -636,26 +632,18 @@ const DashboardPage = () => {
         // Celebration is handled by fetchEstateData via backend flag — no-op here
       }} />
 
-      {/* Estate Readiness Score + Financial Health — Dual Gauge */}
+      {/* Estate Readiness Score — Single Gauge */}
       <div className="glass-card p-4 lg:p-6 mb-4" data-testid="readiness-card">
-        <div className="grid grid-cols-2 gap-4 lg:gap-8">
-          {/* Left gauge — Estate Readiness */}
+        <div className="flex justify-center">
           <div className="text-center">
             <h2 className="text-xs lg:text-base font-bold text-[var(--t4)] uppercase tracking-wider mb-2 lg:mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Estate Readiness
             </h2>
             <SpeedometerGauge score={readinessScore} id="readiness" labelText={scoreInfo.label} labelColor={scoreInfo.color} />
           </div>
-          {/* Right gauge — Financial Coverage */}
-          <div className="text-center">
-            <h2 className="text-xs lg:text-base font-bold text-[var(--t4)] uppercase tracking-wider mb-2 lg:mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Financial Coverage
-            </h2>
-            <SpeedometerGauge score={financialScore} id="financial" labelText={financialScoreInfo.label} labelColor={financialScoreInfo.color} />
-          </div>
         </div>
         
-        <div className="flex justify-center gap-3 lg:gap-8 mt-12 lg:mt-24">
+        <div className="flex justify-center flex-wrap gap-3 lg:gap-6 mt-12 lg:mt-24">
           {isFeatureKeyEnabled('mm', enabledFeatures) && (
           <div className="flex items-center gap-1.5 lg:gap-2">
             <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#8b5cf6]" />
@@ -674,6 +662,10 @@ const DashboardPage = () => {
             <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{docsPercent}% Docs</span>
           </div>
           )}
+          <div className="flex items-center gap-1.5 lg:gap-2">
+            <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#10b981]" />
+            <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{financialsPercent}% Financials</span>
+          </div>
         </div>
       </div>
 

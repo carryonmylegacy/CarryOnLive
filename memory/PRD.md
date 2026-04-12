@@ -72,6 +72,7 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - **Financial Coverage Reframe**: Renamed "Financial Health" gauge to "Financial Coverage" — measures documentation completeness, not financial judgment. Labels: Not Started → Getting Started → Building → Thorough → Comprehensive.
 - **Total Assets Expansion**: Summary now shows Total Assets = account balances + property values. Dashboard shows combined "Assets" count.
 - **Testing**: All tests pass (iterations 54-56), housekeeping 65/65 ALL PASS
+- **Dashboard Single Gauge**: Removed Financial Coverage gauge. Single Estate Readiness gauge now incorporates financials as a 4th scoring component (Messages + Checklist + Docs + Financials ÷ 4). Added green "X% Financials" bubble alongside existing category bubbles.
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement

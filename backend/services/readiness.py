@@ -532,17 +532,97 @@ async def calculate_checklist_score(estate_id: str) -> dict:
     }
 
 
+async def calculate_financial_score(estate_id: str) -> dict:
+    """Calculate financial documentation completeness score (0-100).
+    Measures how thoroughly the benefactor has documented their financial picture."""
+    bills = await db.bills.find({"estate_id": estate_id, "deleted_at": None, "status": "active"}, {"_id": 0}).to_list(
+        500
+    )
+    debts = await db.debts.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
+    accounts = await db.financial_accounts.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
+    property_assets = await db.property_assets.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(
+        500
+    )
+
+    all_items = bills + debts + accounts + property_assets
+    total_items = len(all_items)
+
+    if total_items == 0:
+        return {"score": 0, "details": "No financial data entered"}
+
+    # Coverage (30 pts): Has the benefactor documented each area?
+    coverage = 0
+    if len(bills) > 0:
+        coverage += 8
+    if len(debts) > 0:
+        coverage += 7
+    if len(accounts) > 0:
+        coverage += 8
+    if len(property_assets) > 0:
+        coverage += 7
+
+    # Detail (25 pts): How thoroughly are items filled out?
+    detail_total = 0
+    detail_filled = 0
+    for b in bills:
+        detail_total += 3
+        if b.get("amount"):
+            detail_filled += 1
+        if b.get("due_day"):
+            detail_filled += 1
+        if b.get("provider_phone") or b.get("provider_website"):
+            detail_filled += 1
+    for d in debts:
+        detail_total += 2
+        if d.get("outstanding_balance"):
+            detail_filled += 1
+        if d.get("institution_name"):
+            detail_filled += 1
+    for a in accounts:
+        detail_total += 2
+        if a.get("approximate_balance"):
+            detail_filled += 1
+        if a.get("institution_name"):
+            detail_filled += 1
+    for p in property_assets:
+        detail_total += 2
+        if p.get("estimated_value"):
+            detail_filled += 1
+        if p.get("location_address") or p.get("description"):
+            detail_filled += 1
+    detail = round((detail_filled / detail_total) * 25) if detail_total > 0 else 0
+
+    # Designations (25 pts): % of items with beneficiary designations
+    designated_count = sum(
+        1
+        for item in all_items
+        if item.get("designated_beneficiaries", ["all"]) != ["all"] or len(item.get("visibility_timing", {})) > 0
+    )
+    designations = round((designated_count / total_items) * 25)
+
+    # Notes (20 pts): % of items with beneficiary notes
+    notes_count = sum(1 for item in all_items if item.get("notes"))
+    notes = round((notes_count / total_items) * 20)
+
+    score = min(100, coverage + detail + designations + notes)
+    return {"score": score, "details": f"{total_items} financial items documented"}
+
+
 async def calculate_estate_readiness(estate_id: str) -> dict:
-    """Calculate comprehensive estate readiness score"""
+    """Calculate comprehensive estate readiness score (now includes financials)"""
     doc_result = await calculate_document_score(estate_id)
     msg_result = await calculate_messages_score(estate_id)
     checklist_result = await calculate_checklist_score(estate_id)
-    overall_score = int((doc_result["score"] + msg_result["score"] + checklist_result["score"]) / 3)
+    financial_result = await calculate_financial_score(estate_id)
+    overall_score = int(
+        (doc_result["score"] + msg_result["score"] + checklist_result["score"] + financial_result["score"]) / 4
+    )
     return {
         "overall_score": overall_score,
         "documents": doc_result,
         "messages": msg_result,
         "checklist": checklist_result,
+        "financials": financial_result,
     }
 
 
