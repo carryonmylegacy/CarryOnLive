@@ -15,7 +15,7 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - iOS/PWA hybrid with Capacitor
 - CarryOn Contingency Protocols (CCP) — family emergency plans
 - Estate Communication Tool (ECT) — secure family chat
-- CarryOn Financial Portal (CFP) — bills, debts, accounts management
+- CarryOn Financial Picture (CFP) — bills, debts, accounts, property management
 
 ## Architecture
 - Frontend: React (CRA + Craco) + Capacitor
@@ -50,36 +50,42 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - All prior platform-wide fixes (Google Places, phone formatting, date formatting, etc.)
 
 ### Completed (Apr 12, 2026)
-- **CarryOn Financial Portal (CFP)**: Complete new feature with 3 sub-modules (Bills, Debts, Accounts)
-- **Dual Dashboard Gauges** (Estate Readiness + Financial Health)
+- **CarryOn Financial Picture (CFP)**: Complete feature with 4 sub-modules (Bills, Debts, Accounts, Property)
+- **Dashboard Single Gauge** with Estate Readiness score incorporating Financials
 - **Smart Bill Categorization** using xAI & Quick Add Bulk Import
 - **Beneficiary Financial Page** with Bill Cancellation Advisor
 - **Bill Reminder Scheduler** for post-transition push/in-app notifications
-- **Platform-Wide Light Mode Audit & Fixes** (ECT, CCP, Vault, Privacy, Terms)
-- **EstateChatPage.js Refactoring** (2516 → 2029 lines, 5 components extracted)
+- **Platform-Wide Light Mode Audit & Fixes**
+- **EstateChatPage.js Refactoring** (2516 to 2029 lines)
 
-### Completed (Current Session — Apr 13, 2026)
-- **iOS Font Compliance Fix**: Fixed 34 instances of sub-11px fonts (text-[10px]/text-[8px] → text-[11px]) across 11 financial component files. Housekeeping check #50 now PASS.
-- **Backend: server.py Refactoring**: Extracted DB migrations and 97 index definitions into `db_indexes.py` (server.py: 434 → 262 lines, -40%)
-- **Backend: guardian.py Refactoring**: Extracted 6 PDF export routes and `sanitize_for_pdf` helper into `routes/guardian_exports.py` (guardian.py: 1998 → 880 lines, -56%)
-- **Backend: staff_tools.py Refactoring**: Extracted 13 ops/admin routes (activity, search, escalations, shift notes, knowledge base) into `routes/staff_ops.py` (staff_tools.py: 1850 → 1354 lines, -27%)
-- **Frontend: ConnectedProtocolPage.js Refactoring**: Extracted Plan Editor + Active Emergency View + PlanDetails + ResourceLinker into `components/ccp/CCPPlanEditor.js` and `components/ccp/CCPActiveView.js` (ConnectedProtocolPage.js: 1157 → 695 lines, -40%)
-- **Housekeeping Script Updated**: Checks #28 and #32 now scan `db_indexes.py` in addition to `server.py`
-- **Testing**: All backend and frontend tests pass, housekeeping 65/65 ALL PASS, zero WARNs
-- **DB Compound Indexes Added**: 7 new compound indexes for frequently-queried multi-field patterns (user_subscriptions, section_permissions, beneficiaries, family_plans, lifecycle_events, emergency_plans, messages). Total: 97 → 104.
-- **Test Suite Cleanup**: Removed 3 superseded test files (test_username_auth.py, test_refactoring_rbac.py, test_refactoring_regression.py). Fixed 2 test files that crashed at collection time (test_2fa_and_sort.py, test_estate_rename.py). 110 → 107 files, 1543 tests collect cleanly.
-- **Property & Assets Feature**: Expanded Financial Portal with 4th "Property" tab for real estate, vehicles, jewelry, artwork, businesses (LLCs, corporations), and other tangible assets. Full CRUD backend + frontend form with category-specific fields.
-- **Financial Coverage Reframe**: Renamed "Financial Health" gauge to "Financial Coverage" — measures documentation completeness, not financial judgment. Labels: Not Started → Getting Started → Building → Thorough → Comprehensive.
-- **Total Assets Expansion**: Summary now shows Total Assets = account balances + property values. Dashboard shows combined "Assets" count.
-- **Testing**: All tests pass (iterations 54-56), housekeeping 65/65 ALL PASS
-- **Dashboard Single Gauge**: Removed Financial Coverage gauge. Single Estate Readiness gauge now incorporates financials as a 4th scoring component (Messages + Checklist + Docs + Financials / 4). Added green "X% Financials" bubble alongside existing category bubbles.
-- **Dashboard Layout Restructured**: Moved CFP guide tile above gauge (shows only when no financial data exists). Added Financial Portal StatCard (green) in the 4-card grid alongside Messages, IAC, SDV. Added Financial Portal summary preview tile at the bottom alongside Messages, Checklist, and Vault previews — shows monthly bills, total assets, and upcoming bills.
+### Completed (Apr 13, 2026)
+- iOS Font Compliance Fix (34 sub-11px fonts fixed)
+- Backend Refactoring: Extracted db_indexes.py, guardian_exports.py, staff_ops.py
+- Frontend Refactoring: Extracted CCPPlanEditor.js, CCPActiveView.js
+- Property Assets CRUD (Real Estate, Vehicles, LLCs)
+- Financial Coverage Reframe
+- Dashboard Layout Restructured with single gauge + stat cards
+- Renamed "Financial Portal" to "Financial Picture" everywhere user-facing
+- Added CFP to admin feature gating registry
+- DB Compound Indexes Added (7 new, total 104+)
+- Test Suite Cleanup
+
+### Completed (Apr 14, 2026)
+- **Dashboard Gauge Layout Fix**: Moved 4 percentage labels to two flanking stacks (left: Messages + Checklist, right: Docs + Financials), gauge enlarged from w-36 to w-44 on mobile
+- **Dashboard Gap Reduction**: Reduced header-to-content gap from mb-6 to mb-3
+- **ECT Security Intro Centering**: Increased paddingBottom to 72px for better vertical centering in PWA standalone mode
+- **Push Notification Resilience**: Fixed service worker registration to use direct registration instead of navigator.serviceWorker.ready (which could resolve to wrong SW). Added activation timeout handling and specific error messages for iOS edge cases
+- **ECT Photo Loading Optimization**: Added inflight fetch deduplication to avoid redundant requests, added prefetchMedia() batch function with 3-concurrent fetching. Integrated into EstateChatPage to prefetch all media when conversation loads
+- Housekeeping: 65/65 ALL PASS
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
 - Twilio SMS: Waiting on A2P 10DLC campaign approval
+- iOS Keyboard Ratchet in Chat: Pending user device verification
 
 ## Upcoming Tasks
+- (P0) Fix user-identified bugs (awaiting user reports)
+- (P0) Build CCP Tap-to-Create Wizard
 - (P0) Google Play Store Launch
 - (P1) Share Extension Setup (iOS)
 - (P1) iOS Live Updates (Capgo)
@@ -89,48 +95,43 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - (P2) Readiness Scoring Policy Page
 - (P3) ECT Security Comparison Landing Page
 - (P3) Further EstateChatPage.js refactoring (input bar, message list extraction)
-- (P3) Further ConnectedProtocolPage.js refactoring
 - (P3) VaultPage.js refactoring (1746 lines)
-
-## Refactoring Completed
-- **EstateChatPage.js refactored** (Apr 12, 2026): 2516 → 2029 lines (~487 lines extracted)
-  - `useVoiceRecorder.js`, `VoiceMessagePlayer.js`, `AuthMedia.js`, `ECTSecurityIntro.js`, `ImagePreviewModal.js`
-- **Backend refactored** (Apr 13, 2026): 3 major files split
-  - `server.py` → `db_indexes.py` (migrations + 97 indexes)
-  - `guardian.py` → `guardian_exports.py` (6 PDF export routes + sanitize_for_pdf)
-  - `staff_tools.py` → `staff_ops.py` (13 ops/admin routes)
-- **ConnectedProtocolPage.js refactored** (Apr 13, 2026): 1157 → 695 lines (-40%)
-  - `components/ccp/CCPPlanEditor.js` — plan editor form + ResourceLinker (257 lines)
-  - `components/ccp/CCPActiveView.js` — active emergency dashboard + PlanDetails (278 lines)
+- (P3) MessagesPage.js refactoring (~1500 lines)
 
 ## Code Architecture
 ```
 /app
 ├── backend/
-│   ├── db_indexes.py (NEW — migrations + 97 DB indexes)
-│   ├── server.py (slimmed — app setup, lifespan, health, middleware)
+│   ├── db_indexes.py (migrations + 104+ DB indexes)
+│   ├── server.py (app setup, lifespan, health, middleware)
 │   ├── routes/
-│   │   ├── guardian.py (core AI chat, session mgmt — 880 lines)
-│   │   ├── guardian_exports.py (NEW — 6 PDF export routes — 1141 lines)
-│   │   ├── staff_tools.py (admin integrations, announcements, xAI credits — 1354 lines)
-│   │   ├── staff_ops.py (NEW — ops activity, search, escalations, shift notes, KB — 514 lines)
-│   │   ├── financial_portal.py (CFP CRUD — 841 lines)
-│   │   ├── auth.py (login, register, OTP, profile — 1783 lines)
+│   │   ├── guardian.py (core AI chat, session mgmt)
+│   │   ├── guardian_exports.py (6 PDF export routes)
+│   │   ├── staff_tools.py (admin integrations, announcements)
+│   │   ├── staff_ops.py (ops activity, search, escalations)
+│   │   ├── financial_portal.py (CFP CRUD)
+│   │   ├── auth.py (login, register, OTP, profile)
+│   │   ├── push.py (push notification subscription)
 │   │   └── ... (46 other route files)
 │   ├── services/
+│   │   └── readiness.py (unified Estate Readiness algorithm)
 │   └── tests/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── ccp/ (CCPPlanEditor, CCPActiveView — NEW)
-│   │   │   ├── financial/ (BillTile, BillForm, BillCalendar, QuickAdd, etc.)
+│   │   │   ├── ccp/ (CCPPlanEditor, CCPActiveView)
+│   │   │   ├── financial/ (BillTile, BillForm, PropertyAssetForm, etc.)
 │   │   │   ├── estate-chat/ (AuthMedia, ECTSecurityIntro, ImagePreviewModal, etc.)
+│   │   │   ├── PushPrompt.js (push notification prompt)
+│   │   │   ├── NotificationSettings.js (push toggle in settings)
 │   │   ├── pages/
-│   │   │   ├── EstateChatPage.js (2029 lines)
-│   │   │   ├── DashboardPage.js
+│   │   │   ├── DashboardPage.js (gauge with flanking percentages)
+│   │   │   ├── EstateChatPage.js (2030 lines)
 │   │   │   ├── FinancialPortalPage.js
 │   │   │   └── ...
 │   │   ├── pages/beneficiary/
+│   └── public/
+│       └── sw-push.js (push notification service worker)
 └── memory/
 ```
 
@@ -140,6 +141,9 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - Narrative: Use "family preparedness" not "estate planning"
 - MongoDB: Always exclude `_id` from responses
 - First-visit intros use localStorage: `carryon_ccp_intro_seen`, `ect_security_seen`
-- Financial Portal uses soft-delete (`deleted_at` field) on all records
-- Custom categories stored in `bill_categories` collection, module-scoped (bills/debts/accounts)
+- Financial Picture uses soft-delete (`deleted_at` field) on all records
+- Custom categories stored in `bill_categories` collection, module-scoped
 - **NEVER use hardcoded hex colors** for structural/text elements — use CSS variables
+- Financial module is internally `financial_portal` / `cfp`, but user-facing name is "Financial Picture"
+- Feature gating uses `isFeatureKeyEnabled(key, enabledFeatures)` on frontend
+- During trial period, all features default to enabled
