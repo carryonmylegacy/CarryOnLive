@@ -207,15 +207,14 @@ export default function EstateChatPage() {
       rafId = requestAnimationFrame(() => {
         const kbOpen = vv.height < window.innerHeight * 0.85;
         if (kbOpen) {
-          // Keyboard is open — shrink root to visual viewport
+          // Keyboard is open — shrink root to visual viewport height
+          // Subtract a small buffer so the input clears the iOS keyboard toolbar
           root.style.height = `${vv.height}px`;
           root.style.bottom = 'auto';
-          root.style.top = `${vv.offsetTop}px`;
         } else {
           // Keyboard closed — restore default layout
           root.style.height = '';
           root.style.bottom = '0';
-          root.style.top = '0';
         }
       });
     };
@@ -228,7 +227,6 @@ export default function EstateChatPage() {
       vv.removeEventListener('scroll', update);
       root.style.height = '';
       root.style.bottom = '0';
-      root.style.top = '0';
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -319,7 +317,7 @@ export default function EstateChatPage() {
     setShowListMembersId(null);
     setShowHeaderMembers(false);
     const r = document.getElementById('ect-root');
-    if (r) { r.style.height = ''; r.style.top = '0'; }
+    if (r) { r.style.height = ''; r.style.bottom = '0'; }
     fetchMessages(ch.id).then(() => setMsgLoading(false));
   };
 
