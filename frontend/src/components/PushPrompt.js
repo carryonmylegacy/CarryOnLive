@@ -6,13 +6,29 @@ import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
+// Detect if running as installed PWA (Home Screen)
+const isInstalledPWA = () => {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+};
+
+// Detect if running inside Capacitor native shell
+const isCapacitorNative = () => {
+  try { return window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform(); }
+  catch { return false; }
+};
+
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent);
+
 const PushPrompt = ({ getAuthHeaders }) => {
   const [visible, setVisible] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
 
   useEffect(() => {
-    // Only show if: browser supports push, not already asked, not already subscribed
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+    // Skip web push entirely in Capacitor native — native push handles this
+    if (isCapacitorNative()) return;
+    // Require Notification, serviceWorker, AND PushManager
+    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
     if (localStorage.getItem('carryon_push_prompted')) return;
     if (Notification.permission === 'granted') {
       // Already granted — check if there's an active subscription, register if needed
@@ -66,9 +82,27 @@ const PushPrompt = ({ getAuthHeaders }) => {
   const handleEnable = async () => {
     setSubscribing(true);
     try {
+      // Platform checks before requesting permission
+      if (isCapacitorNative()) {
+        toast.error('Push notifications for the native app are managed in your device settings.');
+        dismiss();
+        return;
+      }
+      if (!('PushManager' in window)) {
+        if (isIOS() && !isInstalledPWA()) {
+          toast.error('Push notifications require adding CarryOn to your Home Screen. Tap the Share button, then "Add to Home Screen".');
+        } else if (isIOS()) {
+          toast.error('Push notifications require iOS 16.4 or later. Please update your device.');
+        } else {
+          toast.error('Push notifications are not supported in this browser.');
+        }
+        dismiss();
+        return;
+      }
+
       const permResult = await Notification.requestPermission();
       if (permResult !== 'granted') {
-        toast.error('Notification permission denied');
+        toast.error('Notification permission denied. You can change this in your device Settings.');
         dismiss();
         return;
       }
@@ -110,17 +144,22 @@ const PushPrompt = ({ getAuthHeaders }) => {
 
       toast.success('Notifications enabled!');
     } catch (err) {
-      console.error('Push subscription error:', err);
+      console.error('Push subscription error:', err?.name, err?.message, err);
       if (err?.message?.includes('timeout')) {
         toast.error('Service worker took too long to activate. Try closing and reopening the app.');
       } else if (err?.response?.status === 503) {
         toast.error('Push notifications are not yet configured on this server.');
       } else if (err?.name === 'NotAllowedError') {
-        toast.error('Notification permission was not granted. Check your device settings.');
+        toast.error('Notification permission was not granted. Check your device Settings > Notifications.');
       } else if (err?.name === 'AbortError') {
         toast.error('Push subscription was interrupted. Please try again.');
+      } else if (err?.name === 'InvalidStateError') {
+        toast.error('Push subscription failed. Try removing the app from Home Screen and re-adding it.');
+      } else if (err?.message?.includes('VAPID')) {
+        toast.error('Push notification server configuration error. Contact support.');
       } else {
-        toast.error('Failed to enable notifications. Please try again later.');
+        const detail = err?.message || err?.name || 'Unknown error';
+        toast.error(`Failed to enable notifications: ${detail}`);
       }
     } finally {
       setSubscribing(false);

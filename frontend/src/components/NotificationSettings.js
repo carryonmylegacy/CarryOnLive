@@ -35,8 +35,9 @@ const NotificationSettings = ({ getAuthHeaders }) => {
   }, []);
 
   const checkPushSupport = async () => {
-    // Check if push is supported
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    // Skip web push in Capacitor native shell — uses native push instead
+    const isNative = window.Capacitor?.isNativePlatform?.() || false;
+    if (isNative || !('serviceWorker' in navigator) || !('PushManager' in window)) {
       setIsSupported(false);
       setLoading(false);
       return;
@@ -118,8 +119,17 @@ const NotificationSettings = ({ getAuthHeaders }) => {
       setIsSubscribed(true);
       // toast removed
     } catch (err) {
-      console.error('Subscription error:', err);
-      toast.error('Failed to enable notifications');
+      console.error('Subscription error:', err?.name, err?.message, err);
+      const detail = err?.message || err?.name || '';
+      if (detail.includes('timeout')) {
+        toast.error('Service worker took too long. Try closing and reopening the app.');
+      } else if (err?.response?.status === 503) {
+        toast.error('Push notifications are not yet configured on this server.');
+      } else if (err?.name === 'NotAllowedError') {
+        toast.error('Permission denied. Check Settings > Notifications.');
+      } else {
+        toast.error(`Failed to enable notifications: ${detail || 'Unknown error'}`);
+      }
     } finally {
       setSubscribing(false);
     }
@@ -175,6 +185,17 @@ const NotificationSettings = ({ getAuthHeaders }) => {
   }
 
   if (!isSupported) {
+    const isiOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const isPWAMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const isNative = window.Capacitor?.isNativePlatform?.() || false;
+    let reason = 'Not supported in this browser';
+    if (isNative) {
+      reason = 'Managed by your device notification settings';
+    } else if (isiOS && !isPWAMode) {
+      reason = 'Add CarryOn to your Home Screen first (Share > Add to Home Screen)';
+    } else if (isiOS) {
+      reason = 'Requires iOS 16.4 or later';
+    }
     return (
       <Card className="glass-card">
         <CardContent className="p-5">
@@ -184,7 +205,7 @@ const NotificationSettings = ({ getAuthHeaders }) => {
             </div>
             <div>
               <h3 className="font-bold text-[var(--t)]">Push Notifications</h3>
-              <p className="text-sm text-[var(--t5)]">Not supported in this browser</p>
+              <p className="text-sm text-[var(--t5)]">{reason}</p>
             </div>
           </div>
         </CardContent>
