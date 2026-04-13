@@ -1735,8 +1735,8 @@ export default function EstateChatPage() {
           )}
         </div>
       </div>
-      {/* Safe-area bottom spacer — collapses for keyboard, but adds space for iOS accessory bar */}
-      <div style={{ background: 'var(--bg2)', height: inputFocused ? '44px' : 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />
+      {/* Safe-area bottom spacer — collapses when keyboard is open */}
+      <div style={{ background: 'var(--bg2)', height: inputFocused ? '0px' : 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />
     </div>
   );
 
