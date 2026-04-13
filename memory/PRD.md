@@ -179,11 +179,17 @@ Extracted sub-components from three monolithic page files:
 ##   - Wrapper <div> with box-shadow: inset around <input> → cursor outside
 ##   - transform: translateZ(0) on input bar container → no effect on cursor
 ##   - JS blur/refocus hack → untested, overly complex
+##   - Removing borderTop from input bar container → cursor outside
+##   - Changing safe-area height when focused (44px) → cursor outside
+##   - ANY layout dimension change on inputFocused → cursor outside
 ##
 ## WHAT WORKS:
-##   - box-shadow (non-inset, on the input itself) → cursor stays inside
-##   - background color on input → fine
-##   - No border, no outline → cursor stays inside
+##   - <textarea rows={1}> instead of <input> → cursor stays inside
+##   - background color on textarea → fine (currently #345B80)
+##   - No border, no outline on textarea → cursor stays inside
+##   - borderTop on the INPUT BAR CONTAINER (not the textarea) → REQUIRED, removal breaks cursor
+##   - Safe-area height: inputFocused ? '0px' : 'env(...)' → cursor stays inside
+##   - enterKeyHint="send" → changes keyboard return key
 ##
 
 ## Blocked Items

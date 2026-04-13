@@ -1494,6 +1494,7 @@ export default function EstateChatPage() {
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
+        borderTop: '1px solid var(--b)',
         position: 'relative',
         zIndex: 10,
       }}>
