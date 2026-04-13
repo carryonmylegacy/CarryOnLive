@@ -129,6 +129,62 @@ Extracted sub-components from three monolithic page files:
 - **iOS Chat Input Cursor Fix**: Moved visible border from `<input>` to wrapper `<div>`, making input fully naked (`border: none; outline: none; background: transparent`). Eliminates iOS WebKit caret miscalculation inside `position: fixed` containers.
 - **Safe-area bottom div**: Made unconditional (was gated by `inputFocused`). PRD mandates always-render.
 - **Housekeeping 65/65**: Fixed route editor audit (#35 — updated check to include extracted `MessageCard.js`), Mongo projection safety (#38 — added `"id": 1` to `connected_protocol.py:784`), modal scroll safety (#55 — added `max-h-[90vh] overflow-y-auto` to ChecklistPage + VaultPage modals, `overflow-hidden` to VideoPlaybackModal). Updated check #55 to accept `overflow-hidden` for full-screen overlays.
+- **Draft clearing fix**: Removed `inputRef.current?.focus()` after send (caused iOS keyboard buffer to restore text). Added `inputRef.current.value = ''` for direct DOM clear.
+- **Scroll-to-bottom fix**: Double-pass scroll in fetchMessages (80ms + 300ms). Explicit scroll after send (250ms).
+- **Input styling simplified**: No wrapper div, no border, no outline. Just `background: rgba(255,255,255,0.12)` + `box-shadow: 0 0 0 1.5px rgba(255,255,255,0.3)` on the input itself. This is the ONLY approach that keeps the cursor inside the box on iOS.
+
+## ==========================================
+## STABLE BASELINE — April 13, 2026 (Commit ~7cae4113)
+## ==========================================
+## USER CONFIRMED: Cursor in box, draft clears, messages scroll correctly.
+## Input still appears slightly dim but functional. This is the safe return point.
+##
+## ECT CHAT INPUT — KNOWN WORKING CONFIGURATION:
+##
+##   <input> element (NO wrapper div):
+##     background: rgba(255,255,255,0.12)
+##     border: none
+##     outline: none
+##     boxShadow: 0 0 0 1.5px rgba(255,255,255,0.3)
+##     color: #ffffff
+##     fontSize: 16px
+##     caretColor: #ffffff
+##     className: w-full rounded-2xl px-4 py-2.5 text-base
+##
+##   Input bar container:
+##     background: var(--bg2)
+##     paddingBottom: 4px
+##     borderTop: 1px solid var(--b)
+##     position: relative
+##     zIndex: 10
+##     (NO transform, NO will-change)
+##
+##   Safe-area bottom div: UNCONDITIONAL render
+##     background: var(--bg2)
+##     height: env(safe-area-inset-bottom, 0px)
+##
+##   sendMessage(): NO inputRef.current.focus() after send.
+##     Clear with setDraft('') + inputRef.current.value = ''
+##
+##   fetchMessages scroll: double-pass 80ms + 300ms
+##   sendMessage scroll: explicit 250ms after fetch
+##
+##   onFocus: just setInputFocused(true), nothing else
+##   onBlur: just setInputFocused(false), nothing else
+##
+## WHAT BREAKS THE CURSOR (DO NOT USE):
+##   - border on <input> → cursor outside
+##   - outline + outlineOffset on <input> → cursor outside
+##   - Wrapper <div> with border around <input> → cursor outside
+##   - Wrapper <div> with box-shadow: inset around <input> → cursor outside
+##   - transform: translateZ(0) on input bar container → no effect on cursor
+##   - JS blur/refocus hack → untested, overly complex
+##
+## WHAT WORKS:
+##   - box-shadow (non-inset, on the input itself) → cursor stays inside
+##   - background color on input → fine
+##   - No border, no outline → cursor stays inside
+##
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
@@ -238,5 +294,10 @@ Extracted sub-components from three monolithic page files:
 ##   - Lock body scroll (position:fixed on body) when keyboard opens
 ##   - Make the safe-area-inset-bottom spacer conditional on inputFocused
 ##   - Use window.innerHeight to calculate keyboard height (it equals vv.height on iOS)
+##   - Use border or outline on the chat <input> element (causes cursor to render outside)
+##   - Wrap the <input> in a div with border (same cursor bug)
+##   - Use outline-offset on the <input> (same cursor bug)
+##   - Add transform: translateZ(0) or will-change: transform to fix cursor (no effect)
 ##
 ## THE FIX IS: DO NOTHING. Let iOS handle it. Pure CSS. Zero JS.
+## For the input: use box-shadow (not border/outline) for visual border effect.
