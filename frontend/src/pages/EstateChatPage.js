@@ -192,16 +192,10 @@ export default function EstateChatPage() {
     }
   }, [activeChannel]);
 
-  // ── iOS keyboard: no root manipulation needed ──
+  // ── iOS keyboard: ZERO JavaScript manipulation ──
   // Root uses position:fixed + inset:0, which shrinks naturally with the viewport.
-  // iOS handles keyboard by shrinking the viewport — the flex layout adapts automatically.
-  // Only scroll fix: prevent iOS from scrolling the page when input is focused.
-  useEffect(() => {
-    if (loading) return;
-    const handleScroll = () => { window.scrollTo(0, 0); };
-    window.addEventListener('scroll', handleScroll, { passive: false });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [loading]);
+  // iOS handles keyboard by shrinking the viewport — the flex layout adapts.
+  // DO NOT add scroll listeners, viewport handlers, or any JS that fights iOS.
 
   const fetchChannels = useCallback(async () => {
     try {
