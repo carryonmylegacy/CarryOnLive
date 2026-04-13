@@ -1591,7 +1591,7 @@ export default function EstateChatPage() {
       {/* DEBUG removed — keyboard fix confirmed */}
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
-        paddingBottom: inputFocused ? '16px' : '8px',
+        paddingBottom: inputFocused ? '44px' : '8px',
         borderTop: '1px solid var(--b)',
       }}>
         {/* Typing indicator */}
