@@ -1487,7 +1487,7 @@ export default function EstateChatPage() {
       {/* DEBUG removed — keyboard fix confirmed */}
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
-        paddingBottom: '30px',
+        paddingBottom: inputFocused ? '4px' : '30px',
         borderTop: '1px solid var(--b)',
         position: 'relative',
         zIndex: 10,
@@ -1639,10 +1639,12 @@ export default function EstateChatPage() {
               data-testid="ect-message-input"
               style={{
                 background: 'var(--s)',
-                border: '2px solid rgba(255,255,255,0.7)',
+                border: 'none',
+                outline: '2px solid rgba(255,255,255,0.7)',
+                outlineOffset: '-2px',
+                borderRadius: '1rem',
                 color: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#ffffff',
                 fontSize: '16px',
-                outline: 'none',
                 caretColor: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#ffffff',
               }}
             />
