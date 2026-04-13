@@ -1316,7 +1316,9 @@ export default function EstateChatPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ display: 'flex', flexDirection: 'column' }}>
+        {/* Spacer pushes messages to bottom when few messages exist */}
+        <div style={{ flex: 1 }} />
         {pinnedMsgs.length > 0 && (
           <div className="mb-2">
             <button onClick={() => setShowPinned(!showPinned)}
@@ -1592,7 +1594,7 @@ export default function EstateChatPage() {
       {/* DEBUG removed — keyboard fix confirmed */}
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
-        paddingBottom: '8px',
+        paddingBottom: '30px',
         borderTop: '1px solid var(--b)',
         position: 'relative',
         zIndex: 10,
