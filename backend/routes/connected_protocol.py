@@ -781,7 +781,7 @@ async def get_shared_plan(share_token: str):
     if not plan:
         raise HTTPException(status_code=404, detail="Plan not found or link expired")
     # Get estate name (no sensitive data)
-    estate = await db.estates.find_one({"id": plan["estate_id"]}, {"_id": 0, "name": 1})
+    estate = await db.estates.find_one({"id": plan["estate_id"]}, {"_id": 0, "id": 1, "name": 1})
     plan["estate_name"] = estate.get("name", "") if estate else ""
     plan.pop("estate_id", None)
     return plan

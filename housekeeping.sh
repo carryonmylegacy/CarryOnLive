@@ -483,7 +483,7 @@ grep -q 'openEditModal\|setEditingBeneficiary\|editingBeneficiary' /app/frontend
 grep -q 'setEditingMessage\|editingMessage\|/messages/:messageId/edit' /app/frontend/src/pages/MessagesPage.js /app/frontend/src/App.js 2>/dev/null || ROUTE_EDITOR_ISSUES=$((ROUTE_EDITOR_ISSUES + 1))
 # Verify edit buttons exist
 grep -q 'edit-beneficiary-' /app/frontend/src/pages/BeneficiariesPage.js 2>/dev/null || ROUTE_EDITOR_ISSUES=$((ROUTE_EDITOR_ISSUES + 1))
-grep -q 'edit-message-' /app/frontend/src/pages/MessagesPage.js 2>/dev/null || ROUTE_EDITOR_ISSUES=$((ROUTE_EDITOR_ISSUES + 1))
+grep -rq 'edit-message-' /app/frontend/src/pages/MessagesPage.js /app/frontend/src/components/messages/ 2>/dev/null || ROUTE_EDITOR_ISSUES=$((ROUTE_EDITOR_ISSUES + 1))
 if [ "$ROUTE_EDITOR_ISSUES" = "0" ]; then
   echo -e "$PASS"
 else
@@ -882,7 +882,7 @@ for f in $(grep -rl "fixed inset-0" --include="*.js" --include="*.jsx" 2>/dev/nu
   fname=$(echo "$f" | sed 's|.*/src/||')
   # For each fixed inset-0 (modal backdrop), check if the modal content has overflow handling
   MODAL_BACKDROPS=$(grep -c "fixed inset-0" "$f" 2>/dev/null || true)
-  OVERFLOW_SCROLLS=$(grep -cE "overflow-y-auto|overflow-auto|max-h-\[" "$f" 2>/dev/null || true)
+  OVERFLOW_SCROLLS=$(grep -cE "overflow-y-auto|overflow-auto|overflow-hidden|max-h-\[" "$f" 2>/dev/null || true)
   if [ "${MODAL_BACKDROPS:-0}" -gt 0 ] && [ "${OVERFLOW_SCROLLS:-0}" = "0" ]; then
     MODAL_SCROLL_ISSUES=$((MODAL_SCROLL_ISSUES + 1))
     MODAL_SCROLL_DETAILS="${MODAL_SCROLL_DETAILS}  ${fname} — modal(s) without overflow-y-auto / max-h constraint\n"

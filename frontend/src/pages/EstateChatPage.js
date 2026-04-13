@@ -1734,8 +1734,8 @@ export default function EstateChatPage() {
           )}
         </div>
       </div>
-      {/* Safe-area bottom fill — hide when keyboard is open to avoid gap */}
-      {!inputFocused && <div style={{ background: 'var(--bg2)', height: 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />}
+      {/* Safe-area bottom fill — always render (PRD mandates unconditional) */}
+      <div style={{ background: 'var(--bg2)', height: 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />
     </div>
   );
 

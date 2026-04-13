@@ -999,7 +999,7 @@ const VaultPage = () => {
       {showInvitePrompt && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowInvitePrompt(false)} />
-          <div className="relative rounded-2xl p-6 max-w-sm w-full text-center" style={{ background: 'var(--bg2)', border: '1px solid var(--b)', boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}>
+          <div className="relative rounded-2xl p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto text-center" style={{ background: 'var(--bg2)', border: '1px solid var(--b)', boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}>
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
               <Heart className="w-8 h-8 text-[var(--gold)]" />
             </div>

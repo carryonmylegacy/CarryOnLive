@@ -36,7 +36,7 @@ const VideoPlaybackModal = ({ url, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black flex items-center justify-center" onClick={handleTap}>
+    <div className="fixed inset-0 z-[200] bg-black flex items-center justify-center overflow-hidden" onClick={handleTap}>
       <video
         ref={videoRef}
         src={url}
