@@ -1315,7 +1315,8 @@ export default function EstateChatPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1 }} />
         {pinnedMsgs.length > 0 && (
           <div className="mb-2">
             <button onClick={() => setShowPinned(!showPinned)}
