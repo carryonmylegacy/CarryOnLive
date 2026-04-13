@@ -22,6 +22,16 @@ This produces chronological order (oldest first, newest last) for the frontend.
 - Estate Communication Tool (ECT) — secure family chat
 - CarryOn Financial Picture (CFP) — bills, debts, accounts, property management
 
+## Refactoring History
+
+### April 13, 2026 — Frontend Component Extraction
+Extracted sub-components from three monolithic page files:
+- **VaultPage.js**: 1747 → 1021 lines (-42%). Extracted: VaultDocumentCard, VaultUploadPanel, VaultUnlockModal, VaultEditPanel, VaultLockModals (SetLock, RemoveLock, BackupCode)
+- **MessagesPage.js**: 1665 → 1413 lines (-15%). Extracted: VideoPlaybackModal, MessageCard, VideoRecordingOverlay
+- **EstateChatPage.js**: 1944 → 1838 lines (-5%). Extracted: NewChatModal
+- New component dirs: `/components/vault/`, `/components/messages/`, `/components/chat/`
+- Zero logic/CSS changes. All extractions are pure prop-passthrough.
+
 ## Architecture
 - Frontend: React (CRA + Craco) + Capacitor
 - Backend: FastAPI + MongoDB
