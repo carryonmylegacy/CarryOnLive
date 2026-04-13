@@ -1484,10 +1484,9 @@ export default function EstateChatPage() {
       </div>
 
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
-      {/* DEBUG removed — keyboard fix confirmed */}
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
-        paddingBottom: inputFocused ? '4px' : '30px',
+        paddingBottom: '4px',
         borderTop: '1px solid var(--b)',
         position: 'relative',
         zIndex: 10,
@@ -1600,7 +1599,13 @@ export default function EstateChatPage() {
           </button>
 
           {/* Input area with recording/preview overlay */}
-          <div className="flex-1 relative" style={{ minWidth: 0 }}>
+          {/* Wrapper div carries the visible border — input stays naked to avoid iOS caret bugs */}
+          <div className="flex-1 relative" style={{
+            minWidth: 0,
+            background: 'var(--s)',
+            borderRadius: '1rem',
+            border: '2px solid rgba(255,255,255,0.25)',
+          }}>
             <input
               ref={inputRef}
               value={draft}
@@ -1635,17 +1640,18 @@ export default function EstateChatPage() {
               }}
               onBlur={() => setInputFocused(false)}
               placeholder="Type a message..."
-              className="w-full rounded-2xl px-4 py-2.5 text-base"
+              className="w-full px-4 py-2.5 text-base"
               data-testid="ect-message-input"
               style={{
-                background: 'var(--s)',
+                background: 'transparent',
                 border: 'none',
-                outline: '2px solid rgba(255,255,255,0.7)',
-                outlineOffset: '-2px',
-                borderRadius: '1rem',
+                outline: 'none',
+                borderRadius: '0.875rem',
                 color: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#ffffff',
                 fontSize: '16px',
                 caretColor: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#ffffff',
+                WebkitAppearance: 'none',
+                appearance: 'none',
               }}
             />
             {voiceRecorder.recording && (
