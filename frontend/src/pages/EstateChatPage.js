@@ -1643,9 +1643,10 @@ export default function EstateChatPage() {
               className="w-full rounded-2xl px-4 py-2.5 text-base"
               data-testid="ect-message-input"
               style={{
-                background: 'rgba(255,255,255,0.1)',
+                background: 'rgba(255,255,255,0.12)',
                 border: 'none',
                 outline: 'none',
+                boxShadow: '0 0 0 1.5px rgba(255,255,255,0.3)',
                 color: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#ffffff',
                 fontSize: '16px',
                 caretColor: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#ffffff',
