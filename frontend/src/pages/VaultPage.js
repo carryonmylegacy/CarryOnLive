@@ -6,52 +6,33 @@ import { cachedGet } from '../utils/apiCache';
 import {
   FileText,
   Upload,
-  Lock,
-  Unlock,
-  Trash2,
-  Download,
   FolderOpen,
   Plus,
-  X,
   Loader2,
   Shield,
   File,
   FileImage,
   FileArchive,
-  Key,
-  Copy,
-  CheckCircle2,
-  Eye,
-  EyeOff,
-  Mic,
-  MicOff,
-  Volume2,
   Search,
   FolderLock,
-  Edit2,
   Heart,
-  Users,
-  ChevronDown,
-  ChevronUp,
-  Check,
   ArrowLeft,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Textarea } from '../components/ui/textarea';
 import { toast } from '../utils/toast';
 import { platformDownload, downloadFile as legacyDownloadFile } from '../utils/downloadFile';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import DocThumbnail from '../components/DocThumbnail';
 import { ReturnPopup } from '../components/GuidedActivation';
-import SlidePanel from '../components/SlidePanel';
 import { API_URL } from '../config';
+import VaultDocumentCard from '../components/vault/VaultDocumentCard';
+import VaultUploadPanel from '../components/vault/VaultUploadPanel';
+import VaultUnlockModal from '../components/vault/VaultUnlockModal';
+import VaultEditPanel from '../components/vault/VaultEditPanel';
+import { VaultSetLockModal, VaultRemoveLockModal, VaultBackupCodeModal } from '../components/vault/VaultLockModals';
 const PDFViewerModal = lazy(() => import('../components/PDFViewerModal'));
 
 const categories = [
@@ -858,221 +839,27 @@ const VaultPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredDocs.map((doc) => {
                 return (
-                  <Card
+                  <VaultDocumentCard
                     key={doc.id}
-                    className="glass-card relative overflow-hidden group cursor-pointer"
-                    onClick={() => doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handlePreview(doc)}
-                    data-testid={`document-${doc.id}`}
-                  >
-                    {/* Lock Overlay */}
-                    {doc.is_locked && (
-                      <div className="lock-overlay">
-                        <div className="text-center">
-                          <Lock className="w-8 h-8 text-[var(--gold)] mx-auto mb-2" />
-                          <p className="text-white font-medium">Protected Document</p>
-                          <p className="text-[#94a3b8] text-sm">
-                            {doc.lock_type === 'password' ? 'Password Required' :
-                             doc.lock_type === 'voice' ? 'Voice Verification' : 'Backup Key Required'}
-                          </p>
-                          <Button
-                            variant="outline"
-                            className="mt-4 border-[#d4af37] text-[var(--gold)]"
-                            onClick={() => {
-                              setSelectedDoc(doc);
-                              setShowLockModal(true);
-                            }}
-                          >
-                            Unlock
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <CardContent className="p-0">
-                      {/* Thumbnail area */}
-                      <div className="h-28 w-full rounded-t-xl overflow-hidden relative">
-                        <DocThumbnail doc={doc} getAuthHeaders={getAuthHeaders} />
-                      </div>
-                      
-                      <div className="p-4 pt-3">
-                        <h3 className="text-white font-medium mb-1 truncate text-sm">{doc.name}</h3>
-                        <p className="text-[#64748b] text-xs mb-3">
-                          {formatFileSize(doc.file_size)} · {doc.category}
-                        </p>
-                        
-                        <div className="flex items-center gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-[#3b82f6] hover:text-[#60a5fa]"
-                          onClick={(e) => { e.stopPropagation(); if (doc.is_locked) { setSelectedDoc(doc); setShowLockModal(true); } else { handlePreview(doc); } }}
-                          title="View"
-                          aria-label="View document"
-                          data-testid={`view-document-${doc.id}`}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-[#94a3b8] hover:text-white"
-                          onClick={(e) => { e.stopPropagation(); if (doc.is_locked) { setSelectedDoc(doc); setShowLockModal(true); } else { handleDownload(doc); } }}
-                          disabled={downloading === doc.id}
-                          title="Download"
-                          aria-label="Download document"
-                        >
-                          {downloading === doc.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Download className="w-4 h-4" />
-                          )}
-                        </Button>
-                        {(user?.role === 'benefactor' || user?.is_also_benefactor) && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className={doc.is_locked ? 'text-[#ef4444]' : 'text-[#10b981]'}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedDoc(doc);
-                                if (doc.is_locked) {
-                                  setShowRemoveLockConfirm(true);
-                                } else {
-                                  setShowSetLockModal(true);
-                                }
-                              }}
-                              title={doc.is_locked ? 'Locked — tap to remove lock' : 'Unlocked — tap to set password'}
-                              aria-label={doc.is_locked ? 'Remove lock' : 'Set lock'}
-                              data-testid={`lock-toggle-${doc.id}`}
-                            >
-                              {doc.is_locked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-[var(--gold)] hover:text-[#f5d050]"
-                              onClick={(e) => { e.stopPropagation(); openEditModal(doc); }}
-                              title="Edit"
-                              aria-label="Edit document"
-                              data-testid={`edit-document-${doc.id}`}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-[#ef4444] hover:text-[#ef4444]"
-                              onClick={(e) => { e.stopPropagation(); handleDelete(doc.id); }}
-                              title="Delete"
-                              aria-label="Delete document"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                      </div>
-                      {/* Beneficiary Access */}
-                      {(user?.role === 'benefactor' || user?.is_also_benefactor) && beneficiaries.length > 0 && (
-                        <div className="mt-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                          <button
-                            className="flex items-center gap-2 w-full px-3 py-2 rounded-full transition-all"
-                            style={{
-                              background: 'rgba(255,255,255,0.05)',
-                              border: '1px solid rgba(255,255,255,0.15)',
-                            }}
-                            onClick={(e) => { e.stopPropagation(); setExpandedDesignation(expandedDesignation === doc.id ? null : doc.id); }}
-                            data-testid={`designation-toggle-${doc.id}`}
-                          >
-                            <Users className="w-4 h-4" style={{ color: 'var(--t4)' }} />
-                            <span className="text-sm font-semibold" style={{ color: '#D8DEE9' }}>
-                              {(!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
-                                ? `All ${beneficiaries.length} Beneficiaries`
-                                : `${doc.designated_beneficiaries.length} of ${beneficiaries.length} Beneficiaries`}
-                            </span>
-                            {expandedDesignation === doc.id
-                              ? <ChevronUp className="w-4 h-4 ml-auto" style={{ color: 'var(--t4)' }} />
-                              : <ChevronDown className="w-4 h-4 ml-auto" style={{ color: 'var(--t4)' }} />}
-                          </button>
-                          {expandedDesignation === doc.id && (
-                            <div className="mt-3 space-y-1.5" onClick={(e) => e.stopPropagation()}>
-                              {beneficiaries.map(ben => {
-                                const designation = doc.designated_beneficiaries || ['all'];
-                                const isAll = designation.includes('all');
-                                const isOn = isAll || designation.includes(ben.id);
-                                const timing = doc.visibility_timing?.[ben.id] || { pre: false, post: true };
-                                const initials = `${ben.first_name?.charAt(0) || ''}${ben.last_name?.charAt(0) || ''}`;
-                                return (
-                                  <div key={ben.id} className="rounded-xl overflow-hidden" style={{
-                                    background: isOn ? 'rgba(212,175,55,0.06)' : 'rgba(255,255,255,0.02)',
-                                    border: `1px solid ${isOn ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
-                                  }}>
-                                    {/* Row: avatar + name + on/off switch */}
-                                    <div className="flex items-center gap-3 px-3 py-2">
-                                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden" style={{
-                                        background: isOn ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.08)',
-                                        color: isOn ? '#080e1a' : 'var(--t4)',
-                                      }}>
-                                        {ben.photo_url
-                                          ? <img src={ben.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                                          : initials}
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="text-sm font-semibold truncate" style={{ color: 'var(--t)' }}>{ben.first_name} {ben.last_name}</div>
-                                      </div>
-                                      {/* Toggle switch */}
-                                      <button
-                                        onClick={() => toggleBeneficiaryForDoc(doc.id, ben.id, doc.designated_beneficiaries, doc)}
-                                        className="w-11 h-6 rounded-full flex-shrink-0 relative transition-all"
-                                        data-testid={`designation-ben-${ben.id}-${doc.id}`}
-                                        style={{
-                                          background: isOn ? '#d4af37' : 'rgba(255,255,255,0.12)',
-                                        }}
-                                      >
-                                        <div className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all" style={{
-                                          left: isOn ? '22px' : '2px',
-                                        }} />
-                                      </button>
-                                    </div>
-                                    {/* Pre / Post row — always visible when ON */}
-                                    {isOn && (
-                                      <div className="flex gap-2 px-3 pb-2.5">
-                                        <button
-                                          className="flex-1 py-1.5 rounded-lg text-xs font-bold text-center transition-all"
-                                          onClick={() => toggleVisibilityTiming(doc.id, ben.id, 'pre', doc)}
-                                          data-testid={`timing-pre-${ben.id}-${doc.id}`}
-                                          style={{
-                                            background: timing.pre ? 'rgba(34,201,147,0.15)' : 'rgba(255,255,255,0.04)',
-                                            border: `1px solid ${timing.pre ? 'rgba(34,201,147,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                                            color: timing.pre ? '#22C993' : 'var(--t5)',
-                                          }}
-                                        >
-                                          {timing.pre ? '\u2713 ' : ''}Pre-Transition
-                                        </button>
-                                        <button
-                                          className="flex-1 py-1.5 rounded-lg text-xs font-bold text-center transition-all"
-                                          onClick={() => toggleVisibilityTiming(doc.id, ben.id, 'post', doc)}
-                                          data-testid={`timing-post-${ben.id}-${doc.id}`}
-                                          style={{
-                                            background: timing.post ? 'rgba(59,123,247,0.15)' : 'rgba(255,255,255,0.04)',
-                                            border: `1px solid ${timing.post ? 'rgba(59,123,247,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                                            color: timing.post ? '#3B7BF7' : 'var(--t5)',
-                                          }}
-                                        >
-                                          {timing.post ? '\u2713 ' : ''}Post-Transition
-                                        </button>
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                    doc={doc}
+                    user={user}
+                    downloading={downloading}
+                    expandedDesignation={expandedDesignation}
+                    beneficiaries={beneficiaries}
+                    getAuthHeaders={getAuthHeaders}
+                    formatFileSize={formatFileSize}
+                    handlePreview={handlePreview}
+                    handleDownload={handleDownload}
+                    handleDelete={handleDelete}
+                    openEditModal={openEditModal}
+                    setSelectedDoc={setSelectedDoc}
+                    setShowLockModal={setShowLockModal}
+                    setShowRemoveLockConfirm={setShowRemoveLockConfirm}
+                    setShowSetLockModal={setShowSetLockModal}
+                    setExpandedDesignation={setExpandedDesignation}
+                    toggleBeneficiaryForDoc={toggleBeneficiaryForDoc}
+                    toggleVisibilityTiming={toggleVisibilityTiming}
+                  />
                 );
               })}
             </div>
@@ -1082,437 +869,68 @@ const VaultPage = () => {
       </Tabs>
 
       {/* Upload Document Panel */}
-      <SlidePanel
+      <VaultUploadPanel
         open={showUploadModal}
         onClose={() => { setShowUploadModal(false); resetUploadForm(); }}
-        title="Upload Document"
-        subtitle="Add a new document to your secure vault"
-      >
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Document Name <span className="text-red-400">*</span></Label>
-              <Input
-                ref={uploadNameRef}
-                value={uploadName}
-                onChange={(e) => setUploadName(e.target.value)}
-                placeholder="e.g., Last Will & Testament"
-                className="input-field"
-                data-testid="upload-name-input"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Category <span className="text-red-400">*</span></Label>
-              <Select value={uploadCategory} onValueChange={setUploadCategory}>
-                <SelectTrigger className="input-field" data-testid="upload-category-select">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
-                  <SelectItem value="will">Will</SelectItem>
-                  <SelectItem value="trust">Trust</SelectItem>
-                  <SelectItem value="living_will">Living Will / Healthcare Directive</SelectItem>
-                  <SelectItem value="life_insurance">Life Insurance</SelectItem>
-                  <SelectItem value="deed">Deed / Title</SelectItem>
-                  <SelectItem value="poa">Power of Attorney</SelectItem>
-                  <SelectItem value="financial">Financial</SelectItem>
-                  <SelectItem value="medical">Medical / Healthcare Directive</SelectItem>
-                  <SelectItem value="legal">Legal (Other)</SelectItem>
-                  <SelectItem value="personal">Personal</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Security Lock (Optional)</Label>
-              <Select value={uploadLockType} onValueChange={setUploadLockType}>
-                <SelectTrigger className="input-field" data-testid="upload-lock-select">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
-                  <SelectItem value="none">No Lock</SelectItem>
-                  <SelectItem value="password">Password Protected</SelectItem>
-                  <SelectItem value="voice">Voice Verification</SelectItem>
-                  <SelectItem value="backup">Backup Key Required</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {uploadLockType === 'password' && (
-              <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Set Document Password <span className="text-red-400">*</span></Label>
-                <div className="relative">
-                  <Input
-                    type={showPwEye ? 'text' : 'password'}
-                    value={uploadLockPassword}
-                    onChange={(e) => setUploadLockPassword(e.target.value)}
-                    placeholder="Enter a secure password"
-                    className="input-field pr-10"
-                    style={{ fontSize: '16px' }}
-                    data-testid="upload-password-input"
-                  />
-                  <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPwEye(!showPwEye)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)] hover:text-[var(--t)] transition-colors"
-                    data-testid="upload-password-toggle">
-                    {showPwEye ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                <p className="text-[#64748b] text-xs">
-                  This password will be required to access the document. A backup code will also be generated.
-                </p>
-              </div>
-            )}
-            
-            {uploadLockType === 'voice' && (
-              <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Set Voice Passphrase <span className="text-red-400">*</span></Label>
-                <Input
-                  type="text"
-                  value={uploadVoicePassphrase}
-                  onChange={(e) => setUploadVoicePassphrase(e.target.value)}
-                  placeholder="e.g., 'Open sesame' or 'Family first'"
-                  className="input-field"
-                  data-testid="upload-voice-passphrase-input"
-                />
-                <p className="text-[#64748b] text-xs">
-                  You'll need to speak this phrase to unlock the document. A backup code will also be generated.
-                </p>
-              </div>
-            )}
-            
-            <div className="space-y-2">
-              <Label className="text-[#94a3b8]">File <span className="text-red-400">*</span></Label>
-              <div
-                onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = '#d4af37'; }}
-                onDragLeave={(e) => { e.currentTarget.style.borderColor = ''; }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.currentTarget.style.borderColor = '';
-                  const file = e.dataTransfer.files[0];
-                  if (file) {
-                    if (!isFileAllowed(file)) {
-                      toast.error('Only PDFs and images accepted. No editable document formats (.doc, .docx, .pages, etc.).');
-                      return;
-                    }
-                    setUploadFile(file);
-                    if (!uploadName) {
-                      const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
-                      setUploadName(nameWithoutExt);
-                    }
-                    toast.success(`"${file.name}" selected — fill in details and tap Upload`);
-                  }
-                }}
-                className="border-2 border-dashed border-[var(--b)] rounded-xl p-6 text-center transition-colors">
-                <input
-                  type="file"
-                  id="file-upload"
-                  className="hidden"
-                  accept="image/*,.pdf"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      setUploadFile(file);
-                      if (!uploadName) {
-                        const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
-                        setUploadName(nameWithoutExt);
-                      }
-                    }
-                  }}
-                  data-testid="upload-file-input"
-                />
-                <label htmlFor="file-upload" className="cursor-pointer">
-                  {uploadFile ? (
-                    <div className="flex items-center justify-center gap-2 max-w-full">
-                      <FileText className="w-5 h-5 text-[var(--gold)] flex-shrink-0" />
-                      <span className="text-white text-sm truncate max-w-[200px]">{uploadFile.name}</span>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setUploadFile(null);
-                        }}
-                        className="text-[#ef4444]"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <Upload className="w-8 h-8 mx-auto text-[#64748b] mb-2" />
-                      <p className="text-white">Click to upload or drag & drop</p>
-                      <p className="text-[#64748b] text-sm mt-1">PDF and images only (no editable formats) · Up to 25MB</p>
-                    </>
-                  )}
-                </label>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowUploadModal(false);
-                resetUploadForm();
-              }}
-              className="border-[var(--b)] text-white"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleUpload}
-              disabled={uploading || !uploadFile || !uploadName || (uploadLockType === 'password' && !uploadLockPassword) || (uploadLockType === 'voice' && !uploadVoicePassphrase)}
-              className="gold-button"
-              data-testid="upload-submit-button"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Encrypting...
-                </>
-              ) : (
-                <>
-                  <Upload className="w-5 h-5 mr-2" />
-                  Upload
-                </>
-              )}
-            </Button>
-          </div>
-      </SlidePanel>
+        uploadName={uploadName}
+        setUploadName={setUploadName}
+        uploadCategory={uploadCategory}
+        setUploadCategory={setUploadCategory}
+        uploadLockType={uploadLockType}
+        setUploadLockType={setUploadLockType}
+        uploadLockPassword={uploadLockPassword}
+        setUploadLockPassword={setUploadLockPassword}
+        uploadVoicePassphrase={uploadVoicePassphrase}
+        setUploadVoicePassphrase={setUploadVoicePassphrase}
+        uploadFile={uploadFile}
+        setUploadFile={setUploadFile}
+        showPwEye={showPwEye}
+        setShowPwEye={setShowPwEye}
+        uploading={uploading}
+        handleUpload={handleUpload}
+        uploadNameRef={uploadNameRef}
+        isFileAllowed={isFileAllowed}
+      />
 
       {/* Lock Modal */}
-      <Dialog open={showLockModal} onOpenChange={(open) => {
-        setShowLockModal(open);
-        if (!open) {
-          setUnlockPassword('');
-          setUnlockBackupCode('');
-          setSpokenText('');
-          setIsListening(false);
-          if (recognitionRef.current) {
-            recognitionRef.current.stop();
+      <VaultUnlockModal
+        open={showLockModal}
+        onOpenChange={(open) => {
+          setShowLockModal(open);
+          if (!open) {
+            setUnlockPassword('');
+            setUnlockBackupCode('');
+            setSpokenText('');
+            setIsListening(false);
+            if (recognitionRef.current) {
+              recognitionRef.current.stop();
+            }
           }
-        }
-      }}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0 max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Unlock Document
-            </DialogTitle>
-            <DialogDescription className="text-[#94a3b8]">
-              {selectedDoc?.lock_type === 'password' && 'Enter the password to access this document'}
-              {selectedDoc?.lock_type === 'voice' && 'Speak your passphrase or use backup code'}
-              {selectedDoc?.lock_type === 'backup' && 'Enter your backup code'}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4 space-y-4">
-            <div className="text-center">
-              <Shield className="w-12 h-12 mx-auto text-[var(--gold)] mb-2" />
-              <p className="text-white font-medium">{selectedDoc?.name}</p>
-              <p className="text-[#64748b] text-sm">
-                Protected with {selectedDoc?.lock_type} security
-              </p>
-            </div>
-            
-            {selectedDoc?.lock_type === 'password' && (
-              <div className="space-y-2">
-                <Label className="text-[#94a3b8]">Password <span className="text-red-400">*</span></Label>
-                <div className="relative">
-                  <Input
-                    type={showUnlockPwEye ? 'text' : 'password'}
-                    value={unlockPassword}
-                    onChange={(e) => setUnlockPassword(e.target.value)}
-                    placeholder="Enter document password"
-                    className="input-field pr-10"
-                    data-testid="unlock-password-input"
-                  />
-                  <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowUnlockPwEye(!showUnlockPwEye)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
-                    {showUnlockPwEye ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-            )}
-            
-            {selectedDoc?.lock_type === 'voice' && (
-              <div className="space-y-4">
-                <div className="p-4 bg-[var(--s)] rounded-xl text-center">
-                  <div className="flex justify-center mb-3">
-                    <button
-                      onClick={isListening ? stopVoiceRecognition : startVoiceRecognition}
-                      className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${
-                        isListening 
-                          ? 'bg-[#ef4444] animate-pulse' 
-                          : 'bg-[#d4af37]/20 hover:bg-[#d4af37]/30'
-                      }`}
-                    >
-                      {isListening ? (
-                        <MicOff className="w-8 h-8 text-white" />
-                      ) : (
-                        <Mic className="w-8 h-8 text-[var(--gold)]" />
-                      )}
-                    </button>
-                  </div>
-                  
-                  <p className="text-white text-sm">
-                    {isListening ? 'Listening... Speak now' : 'Click to start voice recognition'}
-                  </p>
-                  
-                  {voiceHint && (
-                    <p className="text-[#64748b] text-xs mt-2">
-                      Hint: "{voiceHint}"
-                    </p>
-                  )}
-                  
-                  {spokenText && (
-                    <div className="mt-3 p-2 bg-[#0F1629] rounded-lg">
-                      <p className="text-[#94a3b8] text-xs">Heard:</p>
-                      <p className="text-white">{spokenText}</p>
-                    </div>
-                  )}
-                </div>
-                
-                {spokenText && (
-                  <Button 
-                    onClick={verifyVoice}
-                    disabled={unlocking}
-                    className="gold-button w-full"
-                  >
-                    {unlocking ? (
-                      <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Verifying...
-                      </>
-                    ) : (
-                      <>
-                        <Volume2 className="w-5 h-5 mr-2" />
-                        Verify Voice
-                      </>
-                    )}
-                  </Button>
-                )}
-                
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-[var(--b)]"></div>
-                  </div>
-                  <div className="relative flex justify-center text-xs">
-                    <span className="bg-[var(--bg2)] px-2 text-[var(--t5)]">Or use backup code</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <div className="space-y-2">
-              <Label className="text-[#94a3b8]">
-                {selectedDoc?.lock_type === 'password' ? 'Or use Backup Code' : 
-                 selectedDoc?.lock_type === 'voice' ? 'Backup Code' : 'Backup Code'}
-              </Label>
-              <Input
-                type="text"
-                value={unlockBackupCode}
-                onChange={(e) => setUnlockBackupCode(e.target.value)}
-                placeholder="e.g., 1234-5678-9012"
-                className="input-field"
-                data-testid="unlock-backup-input"
-              />
-            </div>
-          </div>
-          
-          <div className="flex justify-end gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setShowLockModal(false)}
-              className="border-[var(--b)] text-white"
-            >
-              Cancel
-            </Button>
-            {selectedDoc?.lock_type !== 'voice' && (
-              <Button 
-                onClick={handleUnlock}
-                disabled={unlocking || (!unlockPassword && !unlockBackupCode)}
-                className="gold-button"
-                data-testid="unlock-submit-button"
-              >
-                {unlocking ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Unlocking...
-                  </>
-                ) : (
-                  <>
-                    <Unlock className="w-5 h-5 mr-2" />
-                    Unlock & Download
-                  </>
-                )}
-              </Button>
-            )}
-            {selectedDoc?.lock_type === 'voice' && unlockBackupCode && (
-              <Button 
-                onClick={handleUnlock}
-                disabled={unlocking}
-                className="gold-button"
-                data-testid="unlock-submit-button"
-              >
-                {unlocking ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Unlocking...
-                  </>
-                ) : (
-                  <>
-                    <Unlock className="w-5 h-5 mr-2" />
-                    Unlock with Backup
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+        }}
+        selectedDoc={selectedDoc}
+        unlockPassword={unlockPassword}
+        setUnlockPassword={setUnlockPassword}
+        unlockBackupCode={unlockBackupCode}
+        setUnlockBackupCode={setUnlockBackupCode}
+        showUnlockPwEye={showUnlockPwEye}
+        setShowUnlockPwEye={setShowUnlockPwEye}
+        isListening={isListening}
+        spokenText={spokenText}
+        voiceHint={voiceHint}
+        startVoiceRecognition={startVoiceRecognition}
+        stopVoiceRecognition={stopVoiceRecognition}
+        verifyVoice={verifyVoice}
+        handleUnlock={handleUnlock}
+        unlocking={unlocking}
+      />
 
       {/* Backup Code Modal */}
-      <Dialog open={showBackupCodeModal} onOpenChange={setShowBackupCodeModal}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0">
-          <DialogHeader>
-            <DialogTitle className="text-white text-xl flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              <Key className="w-5 h-5 text-[var(--gold)]" />
-              Save Your Backup Code
-            </DialogTitle>
-            <DialogDescription className="text-[#94a3b8]">
-              This code can be used to unlock your document if you forget the password.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4">
-            <div className="bg-[#0F1629]/50 rounded-xl p-4 text-center mb-4">
-              <p className="text-2xl font-mono text-[var(--gold)] tracking-wider">{backupCode}</p>
-            </div>
-            
-            <Button
-              onClick={copyBackupCode}
-              variant="outline"
-              className="w-full border-[var(--b)] text-white mb-4"
-            >
-              <Copy className="w-4 h-4 mr-2" />
-              Copy to Clipboard
-            </Button>
-            
-            <div className="p-3 bg-[#f59e0b]/10 rounded-xl">
-              <p className="text-[#f59e0b] text-sm">
-                ⚠️ Store this code securely. It cannot be recovered if lost.
-              </p>
-            </div>
-          </div>
-          
-          <Button
-            onClick={() => setShowBackupCodeModal(false)}
-            className="gold-button w-full"
-          >
-            <CheckCircle2 className="w-5 h-5 mr-2" />
-            I've Saved My Code
-          </Button>
-        </DialogContent>
-      </Dialog>
+      <VaultBackupCodeModal
+        open={showBackupCodeModal}
+        onOpenChange={setShowBackupCodeModal}
+        backupCode={backupCode}
+        copyBackupCode={copyBackupCode}
+      />
 
       {/* PDF/Image Viewer Floating Tile */}
       {showPreviewModal && (
@@ -1532,186 +950,43 @@ const VaultPage = () => {
       )}
 
       {/* Edit Document Panel */}
-      <SlidePanel
+      <VaultEditPanel
         open={showEditModal}
         onClose={() => { setShowEditModal(false); setEditingDoc(null); setEditName(''); setEditCategory('legal'); setEditNotes(''); }}
-        title="Edit Document"
-        subtitle="Update the document metadata"
-      >
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Document Name <span className="text-red-400">*</span></Label>
-              <Input
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                placeholder="e.g., Last Will & Testament"
-                className="input-field"
-                data-testid="edit-document-name-input"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Category <span className="text-red-400">*</span></Label>
-              <Select value={editCategory} onValueChange={setEditCategory}>
-                <SelectTrigger className="input-field" data-testid="edit-document-category-select">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
-                  <SelectItem value="will">Will</SelectItem>
-                  <SelectItem value="trust">Trust</SelectItem>
-                  <SelectItem value="living_will">Living Will / Healthcare Directive</SelectItem>
-                  <SelectItem value="life_insurance">Life Insurance</SelectItem>
-                  <SelectItem value="deed">Deed / Title</SelectItem>
-                  <SelectItem value="poa">Power of Attorney</SelectItem>
-                  <SelectItem value="financial">Financial</SelectItem>
-                  <SelectItem value="medical">Medical / Healthcare Directive</SelectItem>
-                  <SelectItem value="legal">Legal (Other)</SelectItem>
-                  <SelectItem value="personal">Personal</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Notes (Optional)</Label>
-              <Textarea
-                value={editNotes}
-                onChange={(e) => setEditNotes(e.target.value)}
-                placeholder="Add any notes about this document..."
-                className="input-field min-h-[80px]"
-                rows={3}
-                data-testid="edit-document-notes-input"
-              />
-            </div>
-            
-            {editingDoc && (
-              <div className="p-3 bg-[var(--s)] rounded-xl">
-                <p className="text-xs text-[#64748b]">File info</p>
-                <p className="text-sm text-white">{editingDoc.file_type} · {editingDoc.file_size ? `${(editingDoc.file_size / 1024).toFixed(1)} KB` : 'Unknown size'}</p>
-              </div>
-            )}
-          </div>
-          
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowEditModal(false)}
-              className="border-[var(--b)] text-white"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleEditDocument}
-              disabled={saving || !editName}
-              className="gold-button"
-              data-testid="edit-document-submit-button"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Edit2 className="w-5 h-5 mr-2" />
-                  Save Changes
-                </>
-              )}
-            </Button>
-          </div>
-      </SlidePanel>
+        editName={editName}
+        setEditName={setEditName}
+        editCategory={editCategory}
+        setEditCategory={setEditCategory}
+        editNotes={editNotes}
+        setEditNotes={setEditNotes}
+        editingDoc={editingDoc}
+        saving={saving}
+        handleEditDocument={handleEditDocument}
+      />
 
       {/* Set Lock Modal */}
-      <Dialog open={showSetLockModal} onOpenChange={(open) => { setShowSetLockModal(open); if (!open) { setNewLockPassword(''); setConfirmLockPassword(''); setShowPwEye(false); } }}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-sm !top-[10vh] !translate-y-0">
-          <DialogHeader>
-            <DialogTitle className="text-white text-lg flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              <Lock className="w-5 h-5 text-[#ef4444]" />
-              Lock Document
-            </DialogTitle>
-            <DialogDescription className="text-[#94a3b8]">
-              Set a password for "{selectedDoc?.name}".
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="space-y-1.5">
-              <Label className="text-[#94a3b8] text-sm">Password (min 4 characters) <span className="text-red-400">*</span></Label>
-              <div className="relative">
-                <Input
-                  type={showPwEye ? 'text' : 'password'}
-                  value={newLockPassword}
-                  onChange={(e) => setNewLockPassword(e.target.value)}
-                  placeholder="Enter a password"
-                  className="input-field pr-10"
-                  data-testid="set-lock-password"
-                />
-                <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPwEye(!showPwEye)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
-                  {showPwEye ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[#94a3b8] text-sm">Confirm Password <span className="text-red-400">*</span></Label>
-              <div className="relative">
-                <Input
-                  type={showPwEye ? 'text' : 'password'}
-                  value={confirmLockPassword}
-                  onChange={(e) => setConfirmLockPassword(e.target.value)}
-                  placeholder="Re-enter password"
-                  className="input-field pr-10"
-                  data-testid="confirm-lock-password"
-                />
-                <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPwEye(!showPwEye)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
-                  {showPwEye ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-            {newLockPassword && confirmLockPassword && newLockPassword !== confirmLockPassword && (
-              <p className="text-xs text-[#ef4444]">Passwords do not match</p>
-            )}
-            <Button
-              onClick={handleSetLock}
-              disabled={lockingDoc || newLockPassword.length < 4 || newLockPassword !== confirmLockPassword}
-              className="w-full"
-              style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white' }}
-              data-testid="confirm-set-lock"
-            >
-              {lockingDoc ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Lock className="w-4 h-4 mr-2" />}
-              Lock Document
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <VaultSetLockModal
+        open={showSetLockModal}
+        onOpenChange={setShowSetLockModal}
+        selectedDoc={selectedDoc}
+        newLockPassword={newLockPassword}
+        setNewLockPassword={setNewLockPassword}
+        confirmLockPassword={confirmLockPassword}
+        setConfirmLockPassword={setConfirmLockPassword}
+        showPwEye={showPwEye}
+        setShowPwEye={setShowPwEye}
+        lockingDoc={lockingDoc}
+        handleSetLock={handleSetLock}
+      />
 
       {/* Remove Lock Confirmation */}
-      <Dialog open={showRemoveLockConfirm} onOpenChange={setShowRemoveLockConfirm}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-white text-lg flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              <Unlock className="w-5 h-5 text-[#10b981]" />
-              Remove Lock
-            </DialogTitle>
-            <DialogDescription className="text-[#94a3b8]">
-              Remove password protection from "{selectedDoc?.name}"? Anyone with vault access will be able to view it.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1 border-[var(--b)] text-[var(--t3)]" onClick={() => setShowRemoveLockConfirm(false)}>Cancel</Button>
-            <Button
-              onClick={handleRemoveLock}
-              disabled={lockingDoc}
-              className="flex-1"
-              style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white' }}
-              data-testid="confirm-remove-lock"
-            >
-              {lockingDoc ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Unlock className="w-4 h-4 mr-2" />}
-              Remove Lock
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <VaultRemoveLockModal
+        open={showRemoveLockConfirm}
+        onOpenChange={setShowRemoveLockConfirm}
+        selectedDoc={selectedDoc}
+        lockingDoc={lockingDoc}
+        handleRemoveLock={handleRemoveLock}
+      />
 
       </SectionLockedOverlay>
 

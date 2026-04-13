@@ -8,11 +8,6 @@ import {
   MessageSquare,
   Plus,
   Video,
-  Trash2,
-  Play,
-  Pause,
-  Users,
-  Calendar,
   Send,
   X,
   Mic,
@@ -26,7 +21,7 @@ import {
   Star,
   Pencil,
   CalendarDays,
-  SwitchCamera,
+  Calendar,
   Download,
   ArrowLeft,
   ArrowRight,
@@ -49,68 +44,9 @@ import { Checkbox } from '../components/ui/checkbox';
 import SlidePanel from '../components/SlidePanel';
 import { resolvePhotoUrl } from '../utils/photoUrl';
 import { API_URL } from '../config';
-
-const VideoPlaybackModal = ({ url, onClose }) => {
-  const videoRef = React.useRef(null);
-  const [showControls, setShowControls] = React.useState(true);
-  const timerRef = React.useRef(null);
-
-  const hideAfterDelay = () => {
-    clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setShowControls(false), 2000);
-  };
-
-  React.useEffect(() => {
-    hideAfterDelay();
-    return () => clearTimeout(timerRef.current);
-  }, []);
-
-  const handleTap = (e) => {
-    e.stopPropagation();
-    if (showControls) {
-      setShowControls(false);
-      clearTimeout(timerRef.current);
-    } else {
-      setShowControls(true);
-      hideAfterDelay();
-    }
-  };
-
-  const togglePlay = (e) => {
-    e.stopPropagation();
-    const v = videoRef.current;
-    if (!v) return;
-    v.paused ? v.play() : v.pause();
-    setShowControls(true);
-    hideAfterDelay();
-  };
-
-  return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 overflow-y-auto" onClick={onClose}>
-      <div className="relative max-w-2xl w-full" onClick={handleTap} style={{ borderRadius: '16px', overflow: 'hidden' }}>
-        <video ref={videoRef} src={url} autoPlay playsInline className="w-full rounded-2xl" style={{ maxHeight: '80vh', display: 'block' }} />
-        {/* Auto-fading controls overlay */}
-        <div style={{
-          position: 'absolute', inset: 0, borderRadius: '16px',
-          pointerEvents: showControls ? 'auto' : 'none',
-          opacity: showControls ? 1 : 0, transition: 'opacity 0.3s ease',
-          background: showControls ? 'linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.5) 100%)' : 'transparent',
-        }}>
-          {/* Close button - inside the video window */}
-          <button onClick={(e) => { e.stopPropagation(); onClose(); }}
-            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white active:scale-90 transition-transform">
-            <X className="w-4 h-4" />
-          </button>
-          {/* Play/Pause center button */}
-          <button onClick={togglePlay}
-            className="absolute inset-0 m-auto w-14 h-14 rounded-full bg-black/50 flex items-center justify-center text-white active:scale-90 transition-transform">
-            {videoRef.current?.paused !== false ? <Play className="w-7 h-7 ml-0.5" /> : <Pause className="w-7 h-7" />}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+import VideoPlaybackModal from '../components/messages/VideoPlaybackModal';
+import MessageCard from '../components/messages/MessageCard';
+import VideoRecordingOverlay from '../components/messages/VideoRecordingOverlay';
 
 const triggerIcons = {
   immediate: Send,
@@ -810,142 +746,21 @@ const MessagesPage = () => {
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredMessages.map((msg) => {
-                const TriggerIcon = triggerIcons[msg.trigger_type] || Send;
-                return (
-                  <Card key={msg.id} className="glass-card" data-testid={`message-${msg.id}`}>
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                            msg.message_type === 'video' ? 'bg-[#8b5cf6]/20' : msg.message_type === 'voice' ? 'bg-[#22c993]/20' : msg.message_type === 'attachment' ? 'bg-[#3b82f6]/20' : 'bg-[#d4af37]/20'
-                          }`}>
-                            {msg.message_type === 'video' ? (
-                              <Video className="w-5 h-5 text-[#8b5cf6]" />
-                            ) : msg.message_type === 'voice' ? (
-                              <Mic className="w-5 h-5 text-[#22c993]" />
-                            ) : msg.message_type === 'attachment' ? (
-                              <Paperclip className="w-5 h-5 text-[#3b82f6]" />
-                            ) : (
-                              <MessageSquare className="w-5 h-5 text-[var(--gold)]" />
-                            )}
-                          </div>
-                          <div>
-                            <h3 className="text-white font-medium">{msg.title}</h3>
-                            <p className="text-[#64748b] text-sm flex items-center gap-1">
-                              <TriggerIcon className="w-3 h-3" />
-                              {msg.trigger_type === 'immediate' && 'Deliver on transition'}
-                              {msg.trigger_type === 'age_milestone' && `At age ${msg.trigger_age}`}
-                              {msg.trigger_type === 'event' && `On ${msg.trigger_value === 'custom' && msg.custom_event_label ? msg.custom_event_label : msg.trigger_value}`}
-                              {msg.trigger_type === 'specific_date' && `On ${msg.trigger_date || 'specific date'}`}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {msg.is_delivered && (
-                          <span className="px-2 py-1 bg-[#10b981]/20 text-[#10b981] text-xs rounded-full">
-                            Delivered
-                          </span>
-                        )}
-                      </div>
-                      
-                      <p className="text-[#94a3b8] text-sm line-clamp-3 mb-4">{msg.content}</p>
-                      
-                      {msg.message_type === 'video' && msg.video_thumbnail && (
-                        <div className="mb-4 rounded-xl overflow-hidden relative cursor-pointer active:scale-[0.98] transition-transform" style={{ aspectRatio: '16/9' }}
-                          onClick={(e) => { e.stopPropagation(); playVideo(msg); }}>
-                          <img src={`data:image/jpeg;base64,${msg.video_thumbnail}`} alt="Video thumbnail"
-                            className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.65)' }}>
-                              {loadingPlayback ? <Loader2 className="w-6 h-6 text-white animate-spin" /> : <Play className="w-6 h-6 text-white ml-0.5" />}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      {msg.message_type === 'video' && !msg.video_thumbnail && msg.video_url && (
-                        <button onClick={(e) => { e.stopPropagation(); playVideo(msg); }}
-                          className="mb-4 w-full p-4 rounded-xl flex items-center justify-center gap-2 text-sm text-[#8b5cf6] font-bold active:scale-[0.98] transition-transform"
-                          style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)' }}>
-                          {loadingPlayback ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-                          Play Video
-                        </button>
-                      )}
-                      
-                      {msg.message_type === 'attachment' && msg.attachment_name && (
-                        <div className="mb-4 flex items-center gap-3 p-3 rounded-xl"
-                          style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.15)' }}>
-                          <Paperclip className="w-5 h-5 text-[#3b82f6] flex-shrink-0" />
-                          <span className="text-sm text-[var(--t3)] truncate flex-1">{msg.attachment_name}</span>
-                          <button onClick={(e) => { e.stopPropagation(); downloadAttachment(msg); }}
-                            className="text-[#3b82f6] hover:text-[#60a5fa]" data-testid={`download-attachment-${msg.id}`}>
-                            <Download className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-[#64748b] text-xs">
-                          <Users className="w-3 h-3" />
-                          {msg.recipients?.length || 0} recipients
-                        </div>
-                        
-                        {(user?.role === 'benefactor' || user?.is_also_benefactor) && !msg.is_delivered && (
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-[#60A5FA]"
-                              onClick={() => openEdit(msg)}
-                              data-testid={`edit-message-${msg.id}`}
-                              aria-label="Edit message"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-[#22C993]"
-                              disabled={downloadingId === msg.id}
-                              onClick={(e) => { e.currentTarget.blur(); handleDownload(msg); }}
-                              data-testid={`download-message-${msg.id}`}
-                              aria-label="Download message"
-                            >
-                              {downloadingId === msg.id
-                                ? <Loader2 className="w-4 h-4 animate-spin" />
-                                : <Download className="w-4 h-4" />}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-[#ef4444]"
-                              onClick={() => handleDelete(msg.id)}
-                              aria-label="Delete message"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        )}
-                        {user?.role !== 'benefactor' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-[#22C993]"
-                            disabled={downloadingId === msg.id}
-                            onClick={(e) => { e.currentTarget.blur(); handleDownload(msg); }}
-                            data-testid={`download-message-${msg.id}`}
-                            aria-label="Download message"
-                          >
-                            {downloadingId === msg.id
-                              ? <Loader2 className="w-4 h-4 animate-spin" />
-                              : <Download className="w-4 h-4" />}
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+              {filteredMessages.map((msg) => (
+                <MessageCard
+                  key={msg.id}
+                  msg={msg}
+                  user={user}
+                  triggerIcons={triggerIcons}
+                  loadingPlayback={loadingPlayback}
+                  downloadingId={downloadingId}
+                  openEdit={openEdit}
+                  handleDelete={handleDelete}
+                  handleDownload={handleDownload}
+                  playVideo={playVideo}
+                  downloadAttachment={downloadAttachment}
+                />
+              ))}
             </div>
           )}
         </TabsContent>
@@ -1296,84 +1111,17 @@ const MessagesPage = () => {
             )}
 
             {/* Fullscreen Video Recording Overlay */}
-            {showRecordingOverlay && (
-              <div className="fixed inset-0 z-[200] bg-black flex flex-col overflow-y-auto" data-testid="video-recording-overlay">
-                {/* Camera feed */}
-                <div className="flex-1 relative">
-                  <video
-                    ref={videoRef}
-                    className="w-full h-full object-cover"
-                    muted
-                    playsInline
-                    style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
-                  />
-
-                  {/* Countdown overlay */}
-                  {countdown !== null && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                      <span className="text-8xl font-bold text-white animate-pulse" style={{ fontFamily: 'Outfit, sans-serif' }}>{countdown}</span>
-                    </div>
-                  )}
-
-                  {/* Recording indicator */}
-                  {isRecording && (
-                    <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: 'rgba(0,0,0,0.75)' }}>
-                      <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
-                      <span className="text-white text-sm font-bold">Recording</span>
-                    </div>
-                  )}
-
-                  {/* Top controls — close & flip */}
-                  <div className="absolute top-4 left-4 right-4 flex items-center justify-between" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-                    <button
-                      onClick={() => { if (isRecording) stopRecording(); releaseCamera(); }}
-                      className="w-10 h-10 rounded-full flex items-center justify-center"
-                      style={{ background: 'rgba(0,0,0,0.7)' }}
-                      data-testid="recording-close-btn"
-                    >
-                      <X className="w-5 h-5 text-white" />
-                    </button>
-                    {!isRecording && (
-                      <button
-                        onClick={flipCamera}
-                        className="w-14 h-14 rounded-full flex items-center justify-center"
-                        style={{ background: 'rgba(0,0,0,0.7)' }}
-                        data-testid="camera-flip-btn"
-                      >
-                        <SwitchCamera className="w-7 h-7 text-white" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Bottom controls */}
-                <div className="flex-shrink-0 flex items-center justify-center py-8 px-6" style={{ background: 'rgba(0,0,0,0.8)', paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}>
-                  {!isRecording && countdown === null ? (
-                    <button
-                      onClick={startRecording}
-                      className="w-20 h-20 rounded-full flex items-center justify-center transition-transform active:scale-90"
-                      style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', boxShadow: '0 4px 24px rgba(212,175,55,0.4)' }}
-                      data-testid="start-recording-btn"
-                    >
-                      <Camera className="w-8 h-8 text-[#080e1a]" />
-                    </button>
-                  ) : isRecording ? (
-                    <button
-                      onClick={stopRecording}
-                      className="w-20 h-20 rounded-full flex items-center justify-center transition-transform active:scale-90"
-                      style={{ background: '#ef4444', boxShadow: '0 4px 24px rgba(239,68,68,0.4)' }}
-                      data-testid="stop-recording-btn"
-                    >
-                      <StopCircle className="w-8 h-8 text-white" />
-                    </button>
-                  ) : (
-                    <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.1)' }}>
-                      <span className="text-3xl font-bold text-white">{countdown}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            <VideoRecordingOverlay
+              videoRef={videoRef}
+              isRecording={isRecording}
+              countdown={countdown}
+              facingMode={facingMode}
+              showRecordingOverlay={showRecordingOverlay}
+              startRecording={startRecording}
+              stopRecording={stopRecording}
+              releaseCamera={releaseCamera}
+              flipCamera={flipCamera}
+            />
             
             {/* Voice Recording */}
             {messageType === 'voice' && (
