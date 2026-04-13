@@ -113,6 +113,7 @@ export default function EstateChatPage() {
   const [editingMsg, setEditingMsg] = useState(null); // {id, content} when editing
   const [poppingMsgId, setPoppingMsgId] = useState(null); // message ID being deleted (pop animation)
   const [previewImage, setPreviewImage] = useState(null); // {src, name, fileId} for fullscreen photo preview
+  const caretFixRef = useRef(false); // prevents infinite focus loop for iOS caret fix
   const msgLongPressTimer = useRef(null);
   const msgLongPressTriggered = useRef(false);
   const touchStartRef = useRef({ x: 0, y: 0 });
@@ -1613,7 +1614,7 @@ export default function EstateChatPage() {
             minWidth: 0,
             background: 'var(--s)',
             borderRadius: '1rem',
-            border: '2px solid rgba(255,255,255,0.25)',
+            boxShadow: 'inset 0 0 0 2px rgba(255,255,255,0.25)',
           }}>
             <input
               ref={inputRef}
@@ -1646,6 +1647,25 @@ export default function EstateChatPage() {
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               onFocus={() => {
                 setInputFocused(true);
+                // iOS caret fix: after keyboard animation completes, briefly toggle
+                // transform on the input to force WebKit to recomposite and recalculate
+                // the caret position at the input's new location.
+                if (!caretFixRef.current) {
+                  caretFixRef.current = true;
+                  setTimeout(() => {
+                    if (inputRef.current) {
+                      inputRef.current.style.transform = 'translate3d(0,0,1px)';
+                      requestAnimationFrame(() => {
+                        if (inputRef.current) {
+                          inputRef.current.style.transform = '';
+                        }
+                        caretFixRef.current = false;
+                      });
+                    } else {
+                      caretFixRef.current = false;
+                    }
+                  }, 350);
+                }
               }}
               onBlur={() => setInputFocused(false)}
               placeholder="Type a message..."
@@ -1661,6 +1681,7 @@ export default function EstateChatPage() {
                 caretColor: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#ffffff',
                 WebkitAppearance: 'none',
                 appearance: 'none',
+                willChange: 'transform',
               }}
             />
             {voiceRecorder.recording && (
