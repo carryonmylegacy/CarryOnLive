@@ -1644,7 +1644,7 @@ export default function EstateChatPage() {
               className="w-full rounded-2xl px-4 py-2.5 text-base"
               data-testid="ect-message-input"
               style={{
-                background: '#1E2D47',
+                background: '#243B5C',
                 border: 'none',
                 outline: 'none',
                 resize: 'none',
@@ -1735,8 +1735,8 @@ export default function EstateChatPage() {
           )}
         </div>
       </div>
-      {/* Safe-area bottom fill — always render (PRD mandates unconditional) */}
-      <div style={{ background: 'var(--bg2)', height: 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />
+      {/* Safe-area bottom fill — element always renders; height collapses when keyboard is open */}
+      <div style={{ background: 'var(--bg2)', height: inputFocused ? '0px' : 'env(safe-area-inset-bottom, 0px)', flexShrink: 0, transition: 'height 0.1s' }} />
     </div>
   );
 
