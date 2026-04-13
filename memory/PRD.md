@@ -3,6 +3,11 @@
 ## Original Problem Statement
 Build and maintain a comprehensive family preparedness platform that helps users organize their estate plans, secure important documents, and leave messages for beneficiaries.
 
+## CRITICAL: Estate Chat Message Ordering — PERMANENT RECORD (April 2026)
+**DO NOT** add `[::-1]` or any extra reversal to the return statement in `get_messages()`.
+The backend flow is: `sort("created_at", -1).limit(50)` → `.reverse()` → return as-is.
+This produces chronological order (oldest first, newest last) for the frontend.
+
 ## Core Requirements
 - Secure document vault with AES-256 encryption
 - Milestone messaging (written, voice, video, attachment)

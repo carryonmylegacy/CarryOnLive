@@ -496,7 +496,7 @@ async def get_messages(
         {"$set": {"last_read_at": now}},
         upsert=True,
     )
-    return messages[::-1]
+    return messages
 
 
 @router.get("/estate-chat/channels/{channel_id}/read-status")
