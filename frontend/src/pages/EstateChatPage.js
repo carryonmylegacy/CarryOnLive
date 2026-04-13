@@ -1494,7 +1494,6 @@ export default function EstateChatPage() {
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
-        paddingBottom: '4px',
         borderTop: '1px solid var(--b)',
         position: 'relative',
         zIndex: 10,
@@ -1608,7 +1607,7 @@ export default function EstateChatPage() {
 
           {/* Input area with recording/preview overlay */}
           <div className="flex-1 relative" style={{ minWidth: 0 }}>
-            <input
+            <textarea
               ref={inputRef}
               value={draft}
               onChange={handleDraftChange}
@@ -1639,17 +1638,21 @@ export default function EstateChatPage() {
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               onFocus={() => setInputFocused(true)}
               onBlur={() => setInputFocused(false)}
+              enterKeyHint="send"
+              rows={1}
               placeholder="Type a message..."
               className="w-full rounded-2xl px-4 py-2.5 text-base"
               data-testid="ect-message-input"
               style={{
-                background: 'rgba(255,255,255,0.12)',
+                background: '#1E2D47',
                 border: 'none',
                 outline: 'none',
-                boxShadow: '0 0 0 1.5px rgba(255,255,255,0.3)',
+                resize: 'none',
+                overflow: 'hidden',
                 color: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#ffffff',
                 fontSize: '16px',
                 caretColor: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#ffffff',
+                lineHeight: '1.4',
               }}
             />
             {voiceRecorder.recording && (

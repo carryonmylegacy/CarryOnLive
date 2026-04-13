@@ -1292,6 +1292,6 @@ body.ect-chat-active .dashboard-content-area {
 
 /* Estate Chat white input placeholder styling */
 [data-testid="ect-message-input"]::placeholder {
-  color: rgba(255,255,255,0.5) !important;
+  color: rgba(255,255,255,0.45) !important;
   opacity: 1;
 }
