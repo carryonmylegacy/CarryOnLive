@@ -1640,3 +1640,12 @@ frontend/ios/signing_key.pem
 
 # Founder story (contains embedded content)
 frontend/public/founder-story.html
+-e 
+# Environment and credential files
+.env
+.env.*
+*.env
+credentials.json
+*.pem
+*.key
+.credentials
