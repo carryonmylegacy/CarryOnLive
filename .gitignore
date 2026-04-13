@@ -42,7 +42,6 @@ dump.rdb
 # System files
 .DS_Store
 *.pem
-!frontend/ios/signing_key.pem
 
 # Python
 __pycache__/
@@ -1620,3 +1619,24 @@ credentials.json
 *.pem
 *.key
 .credentials
+
+# iOS build output
+frontend/ios/App/App/public/static/
+
+# Deployment docs with credential placeholders
+DEPLOYMENT.md
+DEPLOY_GUIDE.md
+
+# Test files with test credentials
+backend/tests/test_*.py
+backend/tests/conftest.py
+
+# Test reports with credentials
+test_reports/iteration_*.json
+
+# iOS build output and signing
+frontend/ios/App/App/public/static/
+frontend/ios/signing_key.pem
+
+# Founder story (contains embedded content)
+frontend/public/founder-story.html

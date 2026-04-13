@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkfrontend=self.webpackChunkfrontend||[]).push([[808],{808(e,n,p){p.d(n,{App:()=>t});const t=(0,p(9344).F3)("App",{web:()=>p.e(6970).then(p.bind(p,6970)).then(e=>new e.AppWeb)})}}]);
