@@ -226,11 +226,11 @@ export default function EstateChatPage() {
       if (msgRes.ok) {
         const data = await msgRes.json();
         const el = messagesEndRef.current?.parentElement;
-        // Only auto-scroll if user is already near the bottom (within 150px) or first load
-        const isNearBottom = !el || (el.scrollHeight - el.scrollTop - el.clientHeight < 150);
-        setMessages(data.reverse());
+        // column-reverse: scrollTop=0 is the bottom (newest messages)
+        const isNearBottom = !el || el.scrollTop > -150;
+        setMessages(data);
         if (isNearBottom) {
-          setTimeout(() => { if (el) el.scrollTop = el.scrollHeight; }, 100);
+          setTimeout(() => { if (el) el.scrollTop = 0; }, 100);
         }
         // Prefetch media attachments for faster image loading
         const fileIds = [];
@@ -1316,9 +1316,7 @@ export default function EstateChatPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ display: 'flex', flexDirection: 'column' }}>
-        {/* Spacer pushes messages to bottom when few messages exist */}
-        <div style={{ flex: 1 }} />
+      <div className="flex-1 overflow-y-auto p-4" style={{ display: 'flex', flexDirection: 'column-reverse', gap: '12px' }}>
         {pinnedMsgs.length > 0 && (
           <div className="mb-2">
             <button onClick={() => setShowPinned(!showPinned)}
