@@ -1564,7 +1564,7 @@ export default function EstateChatPage() {
             </div>
           </div>
         )}
-        <div className="flex items-center gap-2 px-3 py-1">
+        <div className="flex items-center gap-2 px-3 pt-1.5 pb-0.5">
           <input type="file" ref={fileInputRef} className="hidden" multiple
             accept="image/*,video/*,.pdf,.doc,.docx,.txt"
             onChange={(e) => {
@@ -1644,7 +1644,7 @@ export default function EstateChatPage() {
               className="w-full rounded-2xl px-4 py-2.5 text-base"
               data-testid="ect-message-input"
               style={{
-                background: '#243B5C',
+                background: '#2C4A6B',
                 border: 'none',
                 outline: 'none',
                 resize: 'none',
