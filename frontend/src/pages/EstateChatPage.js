@@ -227,7 +227,7 @@ export default function EstateChatPage() {
         const data = await msgRes.json();
         const el = messagesEndRef.current?.parentElement?.parentElement;
         const isNearBottom = !el || (el.scrollHeight - el.scrollTop - el.clientHeight < 150);
-        setMessages(data.slice().reverse());
+        setMessages(data);
         if (isNearBottom) {
           setTimeout(() => { if (el) el.scrollTop = el.scrollHeight; }, 100);
         }

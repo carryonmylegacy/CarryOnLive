@@ -467,7 +467,7 @@ async def get_messages(
     query = {"channel_id": channel_id, "deleted_at": {"$exists": False}}
     if before:
         query["created_at"] = {"$lt": before}
-    messages = await db.estate_messages.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    messages = await db.estate_messages.find(query, {"_id": 0}).sort("created_at", 1).limit(limit).to_list(limit)
     # Enrich messages with reactions
     msg_ids = [m["id"] for m in messages]
     if msg_ids:
