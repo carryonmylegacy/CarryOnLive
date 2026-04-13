@@ -228,7 +228,7 @@ export default function EstateChatPage() {
         const el = messagesEndRef.current?.parentElement;
         // Only auto-scroll if user is already near the bottom (within 150px) or first load
         const isNearBottom = !el || (el.scrollHeight - el.scrollTop - el.clientHeight < 150);
-        setMessages(data);
+        setMessages(data.reverse());
         if (isNearBottom) {
           setTimeout(() => { if (el) el.scrollTop = el.scrollHeight; }, 100);
         }
