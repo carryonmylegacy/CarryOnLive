@@ -3,8 +3,7 @@ import { Bell, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from '../utils/toast';
 import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_BACKEND_URL;
+import { API_URL } from '../config';
 
 // Detect if running as installed PWA (Home Screen)
 const isInstalledPWA = () => {

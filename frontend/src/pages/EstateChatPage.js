@@ -1558,7 +1558,7 @@ export default function EstateChatPage() {
             </div>
           </div>
         )}
-        <div className="flex items-center gap-2 px-3 pb-0.5 pt-1">
+        <div className="flex items-center gap-2 px-3 py-1">
           <input type="file" ref={fileInputRef} className="hidden" multiple
             accept="image/*,video/*,.pdf,.doc,.docx,.txt"
             onChange={(e) => {
@@ -1638,12 +1638,12 @@ export default function EstateChatPage() {
               className="w-full rounded-2xl px-4 py-2.5 text-base"
               data-testid="ect-message-input"
               style={{
-                background: '#ffffff',
-                border: '2px solid rgba(255,255,255,0.3)',
-                color: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#000000',
+                background: 'var(--s)',
+                border: '2px solid rgba(255,255,255,0.7)',
+                color: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#ffffff',
                 fontSize: '16px',
                 outline: 'none',
-                caretColor: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#000000',
+                caretColor: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#ffffff',
               }}
             />
             {voiceRecorder.recording && (
