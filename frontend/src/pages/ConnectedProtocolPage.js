@@ -937,9 +937,9 @@ export default function ConnectedProtocolPage() {
 
     {/* ===== CCP First-Visit Welcome Walkthrough ===== */}
     {showWelcome && (
-      <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto" data-testid="ccp-welcome-overlay"
-        style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)', padding: '16px', paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
-        <div className="w-full max-w-md rounded-2xl p-6" style={{ background: 'var(--bg2)', border: '1px solid rgba(212,175,55,0.3)', boxShadow: '0 24px 64px rgba(0,0,0,0.3)' }}>
+      <div className="fixed inset-0 z-[60] flex flex-col items-center" data-testid="ccp-welcome-overlay"
+        style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)', padding: '12px', paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
+        <div className="w-full max-w-md rounded-2xl p-5 flex-1 flex flex-col min-h-0" style={{ background: 'var(--bg2)', border: '1px solid rgba(212,175,55,0.3)', boxShadow: '0 24px 64px rgba(0,0,0,0.3)' }}>
 
           {/* Progress dots */}
           <div className="flex items-center justify-center gap-3 mb-5">
@@ -952,15 +952,15 @@ export default function ConnectedProtocolPage() {
 
           {/* Step 1: What is CCP? */}
           {welcomeStep === 1 && (
-            <div className="text-center" data-testid="ccp-welcome-step-1">
-              <Shield className="w-14 h-14 mx-auto mb-4" style={{ color: '#d4af37' }} />
-              <h2 className="text-xl font-bold mb-3" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+            <div className="text-center flex-1 flex flex-col min-h-0" data-testid="ccp-welcome-step-1">
+              <Shield className="w-12 h-12 mx-auto mb-3" style={{ color: '#d4af37' }} />
+              <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
                 Welcome to Contingency Protocols
               </h2>
-              <p className="text-sm mb-5 leading-relaxed" style={{ color: 'var(--t4)' }}>
+              <p className="text-sm mb-4 leading-relaxed" style={{ color: 'var(--t4)' }}>
                 This is where your family creates emergency plans — for hurricanes, medical emergencies, power outages, or any situation where everyone needs to know what to do.
               </p>
-              <div className="space-y-2.5 mb-6 text-left">
+              <div className="space-y-2.5 text-left flex-1 overflow-y-auto min-h-0">
                 {[
                   { icon: FileText, title: 'Create Emergency Plans', desc: 'Set up rendezvous points, communication steps, and supply locations.' },
                   { icon: UserCheck, title: 'Check In During Emergencies', desc: 'Everyone marks themselves safe so the family knows who needs help.' },
@@ -976,7 +976,7 @@ export default function ConnectedProtocolPage() {
                 ))}
               </div>
               <button onClick={() => setWelcomeStep(2)}
-                className="w-full py-3.5 rounded-xl text-sm font-bold transition-all active:scale-[0.97] whitespace-nowrap"
+                className="w-full py-3.5 rounded-xl text-sm font-bold transition-all active:scale-[0.97] whitespace-nowrap mt-4 flex-shrink-0"
                 data-testid="ccp-welcome-next-1"
                 style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}>
                 Next — How to Create a Plan <ArrowRight className="w-4 h-4 inline ml-1" />
@@ -986,15 +986,15 @@ export default function ConnectedProtocolPage() {
 
           {/* Step 2: How to create a plan */}
           {welcomeStep === 2 && (
-            <div className="text-center" data-testid="ccp-welcome-step-2">
-              <FileText className="w-14 h-14 mx-auto mb-4" style={{ color: '#d4af37' }} />
-              <h2 className="text-xl font-bold mb-3" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+            <div className="text-center flex-1 flex flex-col min-h-0" data-testid="ccp-welcome-step-2">
+              <FileText className="w-12 h-12 mx-auto mb-3" style={{ color: '#d4af37' }} />
+              <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
                 Creating Your First Plan
               </h2>
-              <p className="text-sm mb-5 leading-relaxed" style={{ color: 'var(--t4)' }}>
+              <p className="text-sm mb-4 leading-relaxed" style={{ color: 'var(--t4)' }}>
                 It only takes a few minutes. Here's what you'll do:
               </p>
-              <div className="space-y-2 mb-5 text-left">
+              <div className="space-y-2 text-left flex-1 overflow-y-auto min-h-0">
                 {[
                   { num: '1', title: 'Give it a name', desc: 'Something like "Hurricane Plan" or "Fire Evacuation"' },
                   { num: '2', title: 'Add meeting points', desc: 'Where should the family meet? (e.g., Grandma\'s house, the park)' },
@@ -1012,7 +1012,7 @@ export default function ConnectedProtocolPage() {
                   </div>
                 ))}
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3 mt-4 flex-shrink-0">
                 <button onClick={() => setWelcomeStep(1)}
                   className="px-5 py-3.5 rounded-xl text-sm font-bold transition-all active:scale-[0.97]"
                   data-testid="ccp-welcome-back-2"
@@ -1031,15 +1031,15 @@ export default function ConnectedProtocolPage() {
 
           {/* Step 3: During an emergency */}
           {welcomeStep === 3 && (
-            <div className="text-center" data-testid="ccp-welcome-step-3">
-              <AlertTriangle className="w-14 h-14 mx-auto mb-4" style={{ color: '#F05252' }} />
-              <h2 className="text-xl font-bold mb-3" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+            <div className="text-center flex-1 flex flex-col min-h-0" data-testid="ccp-welcome-step-3">
+              <AlertTriangle className="w-12 h-12 mx-auto mb-3" style={{ color: '#F05252' }} />
+              <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
                 When an Emergency Happens
               </h2>
-              <p className="text-sm mb-5 leading-relaxed" style={{ color: 'var(--t4)' }}>
+              <p className="text-sm mb-4 leading-relaxed" style={{ color: 'var(--t4)' }}>
                 When something happens, the estate owner activates the plan. Then everyone in the family does this:
               </p>
-              <div className="space-y-2 mb-5 text-left">
+              <div className="space-y-2 text-left flex-1 overflow-y-auto min-h-0">
                 {[
                   { icon: Zap, color: '#F05252', title: 'Plan Gets Activated', desc: 'Everyone gets notified immediately with the plan details.' },
                   { icon: UserCheck, color: '#22C993', title: 'Check In as Safe', desc: 'Tap the big green CHECK IN button and pick your status.' },
@@ -1055,7 +1055,7 @@ export default function ConnectedProtocolPage() {
                   </div>
                 ))}
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3 mt-4 flex-shrink-0">
                 <button onClick={() => setWelcomeStep(2)}
                   className="px-5 py-3.5 rounded-xl text-sm font-bold transition-all active:scale-[0.97]"
                   data-testid="ccp-welcome-back-3"
@@ -1074,7 +1074,7 @@ export default function ConnectedProtocolPage() {
 
           {/* Skip link */}
           <button onClick={() => { setShowWelcome(false); localStorage.setItem('carryon_ccp_intro_seen', '1'); }}
-            className="w-full py-2 mt-3 text-xs font-medium transition-all active:scale-[0.97]"
+            className="w-full py-2 mt-3 text-xs font-medium transition-all active:scale-[0.97] flex-shrink-0"
             data-testid="ccp-welcome-skip"
             style={{ color: 'var(--t5)', background: 'transparent' }}>
             Skip — I'll figure it out on my own
