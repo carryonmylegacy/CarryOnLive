@@ -1641,10 +1641,10 @@ export default function EstateChatPage() {
               enterKeyHint="send"
               rows={1}
               placeholder="Type a message..."
-              className="w-full rounded-2xl px-4 pt-2.5 pb-5 text-base"
+              className="w-full rounded-2xl px-4 py-2.5 text-base"
               data-testid="ect-message-input"
               style={{
-                background: '#345B80',
+                background: '#2C4A6B',
                 border: 'none',
                 outline: 'none',
                 resize: 'none',
