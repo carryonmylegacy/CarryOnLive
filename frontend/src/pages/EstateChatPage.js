@@ -230,7 +230,9 @@ export default function EstateChatPage() {
         const isNearBottom = !el || (el.scrollHeight - el.scrollTop - el.clientHeight < 150);
         setMessages(data);
         if (isNearBottom) {
-          setTimeout(() => { if (el) el.scrollTop = el.scrollHeight; }, 100);
+          // Double-pass scroll for iOS — first pass catches most re-renders, second ensures final layout
+          setTimeout(() => { if (el) el.scrollTop = el.scrollHeight; }, 80);
+          setTimeout(() => { if (el) el.scrollTop = el.scrollHeight; }, 300);
         }
         // Prefetch media attachments for faster image loading
         const fileIds = [];
@@ -400,11 +402,17 @@ export default function EstateChatPage() {
       });
       if (res.ok) {
         setDraft('');
+        // Force-clear the DOM input value to prevent iOS keyboard buffer from restoring it
+        if (inputRef.current) inputRef.current.value = '';
         await fetchMessages(activeChannel.id);
         await fetchChannels();
+        // Scroll to bottom after send — use longer delay for iOS re-render
+        setTimeout(() => {
+          const el = messagesEndRef.current?.parentElement;
+          if (el) el.scrollTop = el.scrollHeight;
+        }, 250);
       }
     } catch {} finally { setSending(false); } // eslint-disable-line no-empty
-    inputRef.current?.focus();
   };
 
   const handleEditMessage = async () => {
@@ -1490,6 +1498,7 @@ export default function EstateChatPage() {
         borderTop: '1px solid var(--b)',
         position: 'relative',
         zIndex: 10,
+        transform: 'translateZ(0)',
       }}>
         {/* Typing indicator */}
         {typers.length > 0 && (
