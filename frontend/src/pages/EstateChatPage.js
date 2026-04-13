@@ -225,7 +225,7 @@ export default function EstateChatPage() {
       ]);
       if (msgRes.ok) {
         const data = await msgRes.json();
-        const el = messagesEndRef.current?.parentElement?.parentElement;
+        const el = messagesEndRef.current?.parentElement;
         const isNearBottom = !el || (el.scrollHeight - el.scrollTop - el.clientHeight < 150);
         setMessages(data);
         if (isNearBottom) {
@@ -1315,8 +1315,7 @@ export default function EstateChatPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: '12px' }}>
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {pinnedMsgs.length > 0 && (
           <div className="mb-2">
             <button onClick={() => setShowPinned(!showPinned)}
@@ -1586,7 +1585,6 @@ export default function EstateChatPage() {
           );
         })}
         <div ref={messagesEndRef} />
-        </div>
       </div>
 
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
