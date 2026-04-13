@@ -192,9 +192,16 @@ export default function EstateChatPage() {
     }
   }, [activeChannel]);
 
-  // ── iOS keyboard: no manipulation needed ──
+  // ── iOS keyboard: no root manipulation needed ──
   // Root uses position:fixed + inset:0, which shrinks naturally with the viewport.
   // iOS handles keyboard by shrinking the viewport — the flex layout adapts automatically.
+  // Only scroll fix: prevent iOS from scrolling the page when input is focused.
+  useEffect(() => {
+    if (loading) return;
+    const handleScroll = () => { window.scrollTo(0, 0); };
+    window.addEventListener('scroll', handleScroll, { passive: false });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loading]);
 
   const fetchChannels = useCallback(async () => {
     try {
@@ -1591,8 +1598,10 @@ export default function EstateChatPage() {
       {/* DEBUG removed — keyboard fix confirmed */}
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
-        paddingBottom: inputFocused ? '10px' : '8px',
+        paddingBottom: '8px',
         borderTop: '1px solid var(--b)',
+        position: 'relative',
+        zIndex: 10,
       }}>
         {/* Typing indicator */}
         {typers.length > 0 && (
