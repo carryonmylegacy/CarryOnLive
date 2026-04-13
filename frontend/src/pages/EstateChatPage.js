@@ -1494,7 +1494,6 @@ export default function EstateChatPage() {
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
-        borderTop: '1px solid var(--b)',
         position: 'relative',
         zIndex: 10,
       }}>
@@ -1644,7 +1643,7 @@ export default function EstateChatPage() {
               className="w-full rounded-2xl px-4 py-2.5 text-base"
               data-testid="ect-message-input"
               style={{
-                background: '#2C4A6B',
+                background: '#345B80',
                 border: 'none',
                 outline: 'none',
                 resize: 'none',
