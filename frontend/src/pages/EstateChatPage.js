@@ -117,38 +117,15 @@ export default function EstateChatPage() {
   const openMsgAction = (msgId) => {
     setReactingMsgId(null);
     const container = scrollContainerRef.current;
-    if (container) scrollPosBeforeMenu.current = container.scrollTop;
+    if (container) {
+      scrollPosBeforeMenu.current = container.scrollTop;
+      // Add padding and scroll the BUBBLE to center INSTANTLY — before React re-renders
+      container.style.paddingBottom = '400px';
+      const bubbleEl = document.querySelector(`[data-testid="msg-bubble-${msgId}"]`);
+      if (bubbleEl) bubbleEl.scrollIntoView({ behavior: 'instant', block: 'center' });
+    }
     setMsgActionId(msgId);
-    // scrollIntoView handled by useEffect below after React renders the menu
   };
-
-  // After menu renders, scroll up just enough to show it
-  useEffect(() => {
-    if (!msgActionId) return;
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    // Add temporary bottom padding so the last message's menu has room
-    container.style.paddingBottom = '400px';
-
-    // Try scrolling at multiple timings to catch DOM render
-    const tryScroll = () => {
-      const menuEl = document.querySelector(`[data-testid="msg-action-menu-${msgActionId}"]`);
-      if (!menuEl) return false;
-      const menuRect = menuEl.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-      const overflow = menuRect.bottom - containerRect.bottom;
-      if (overflow > 0) container.scrollTop += overflow + 20;
-      return true;
-    };
-
-    // Immediate attempts at increasing intervals
-    const t1 = setTimeout(tryScroll, 16);
-    const t2 = setTimeout(tryScroll, 50);
-    const t3 = setTimeout(tryScroll, 120);
-
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); if (container) container.style.paddingBottom = ''; };
-  }, [msgActionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Dismiss menu on tap outside
   useEffect(() => {
