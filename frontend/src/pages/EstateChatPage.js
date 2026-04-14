@@ -111,6 +111,7 @@ export default function EstateChatPage() {
   const [showHeaderMembers, setShowHeaderMembers] = useState(false);
   const [showListMembersId, setShowListMembersId] = useState(null);
   const [msgActionId, setMsgActionId] = useState(null); // message ID for long-press action menu
+  const [msgActionAbove, setMsgActionAbove] = useState(false); // whether menu should render above
   const [reactionDetailId, setReactionDetailId] = useState(null); // message ID for reaction detail dropdown
   const [replyTo, setReplyTo] = useState(null); // { id, content, sender_name } for reply-to
   const [editingMsg, setEditingMsg] = useState(null); // {id, content} when editing
@@ -506,8 +507,13 @@ export default function EstateChatPage() {
       msgLongPressTriggered.current = true;
       // Clear any native text selection that iOS may have started
       window.getSelection()?.removeAllRanges();
-      setMsgActionId(msgId);
       setReactingMsgId(null);
+      // Calculate menu position before rendering
+      const bubbleEl = document.querySelector(`[data-testid="msg-bubble-${msgId}"]`);
+      const bubbleRect = bubbleEl?.getBoundingClientRect();
+      const viewH = window.visualViewport?.height || window.innerHeight;
+      setMsgActionAbove(bubbleRect ? bubbleRect.bottom > viewH * 0.55 : false);
+      setMsgActionId(msgId);
       if (navigator.vibrate) navigator.vibrate(30);
     }, 500);
   };
@@ -1406,7 +1412,7 @@ export default function EstateChatPage() {
                       onTouchStart={(e) => onMsgTouchStart(e, msg.id)}
                       onTouchMove={onMsgTouchMove}
                       onTouchEnd={onMsgTouchEnd}
-                      onContextMenu={(e) => { e.preventDefault(); setMsgActionId(msg.id); setReactingMsgId(null); }}
+                      onContextMenu={(e) => { e.preventDefault(); const r = e.currentTarget.getBoundingClientRect(); const vh = window.visualViewport?.height || window.innerHeight; setMsgActionAbove(r.bottom > vh * 0.55); setMsgActionId(msg.id); setReactingMsgId(null); }}
                       style={{
                         background: isMe ? 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1))' : 'rgba(255,255,255,0.05)',
                         border: `1px solid ${isMe ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
@@ -1477,17 +1483,11 @@ export default function EstateChatPage() {
                     </div>
                   )}
                   {/* Message action menu (long-press) — iMessage style */}
-                  {msgActionId === msg.id && (() => {
-                    // Check if message is in bottom half — if so, menu goes upward
-                    const bubbleEl = document.querySelector(`[data-testid="msg-bubble-${msg.id}"]`);
-                    const bubbleRect = bubbleEl?.getBoundingClientRect();
-                    const viewH = window.visualViewport?.height || window.innerHeight;
-                    const menuAbove = bubbleRect && bubbleRect.bottom > viewH * 0.55;
-                    return (
+                  {msgActionId === msg.id && (
                     <>
                       <div className="fixed inset-0 z-[60]" style={{ background: 'rgba(0,0,0,0.4)', WebkitBackdropFilter: 'blur(4px)', backdropFilter: 'blur(4px)' }}
                         onClick={(e) => { e.stopPropagation(); setMsgActionId(null); }} />
-                      <div className={`${menuAbove ? 'absolute bottom-full mb-2' : 'relative mt-2'} z-[61] ${isMe ? 'flex flex-col items-end' : 'flex flex-col items-start'}`} data-testid={`msg-action-menu-${msg.id}`}>
+                      <div className={`${msgActionAbove ? 'absolute bottom-full mb-2' : 'relative mt-2'} z-[61] ${isMe ? 'flex flex-col items-end' : 'flex flex-col items-start'}`} data-testid={`msg-action-menu-${msg.id}`}>
                         <div className="flex gap-1.5 mb-2 px-1">
                           {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
                             const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
@@ -1567,8 +1567,7 @@ export default function EstateChatPage() {
                         </div>
                       </div>
                     </>
-                    );
-                  })()}
+                  )}
                   {/* Reaction picker (tap on bubble) */}
                   {reactingMsgId === msg.id && (
                     <div className={`flex gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`} data-testid={`reaction-picker-${msg.id}`}>
