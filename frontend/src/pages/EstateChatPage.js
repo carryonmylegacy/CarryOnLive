@@ -110,6 +110,7 @@ export default function EstateChatPage() {
   const [showHeaderMembers, setShowHeaderMembers] = useState(false);
   const [showListMembersId, setShowListMembersId] = useState(null);
   const [msgActionId, setMsgActionId] = useState(null); // message ID for long-press action menu
+  const [reactionDetailId, setReactionDetailId] = useState(null); // message ID for reaction detail dropdown
   const [editingMsg, setEditingMsg] = useState(null); // {id, content} when editing
   const [poppingMsgId, setPoppingMsgId] = useState(null); // message ID being deleted (pop animation)
   const [previewImage, setPreviewImage] = useState(null); // {src, name, fileId} for fullscreen photo preview
@@ -1324,246 +1325,248 @@ export default function EstateChatPage() {
             } else if (deliveredToCount > 0) {
               receiptStatus = deliveredToCount >= totalOthers ? 'delivered_all' : 'delivered_partial';
             }
-            // Store counts for label
             msg._readByCount = readByCount;
             msg._deliveredToCount = deliveredToCount;
           }
 
+          // Date separator — show when day changes between messages
+          const msgDate = new Date(msg.created_at);
+          const prevMsg = msgIdx > 0 ? messages[msgIdx - 1] : null;
+          const prevDate = prevMsg ? new Date(prevMsg.created_at) : null;
+          const showDateSep = !prevDate || msgDate.toLocaleDateString() !== prevDate.toLocaleDateString();
+          const isToday = msgDate.toLocaleDateString() === new Date().toLocaleDateString();
+          const isYesterday = msgDate.toLocaleDateString() === new Date(Date.now() - 86400000).toLocaleDateString();
+          const dateLabel = isToday ? 'Today' : isYesterday ? 'Yesterday' : msgDate.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+
+          // Reaction groups
+          const reactionGroups = (msg.reactions || []).reduce((acc, r) => { acc[r.emoji] = (acc[r.emoji] || []); acc[r.emoji].push(r); return acc; }, {});
+          const hasReactions = Object.keys(reactionGroups).length > 0;
+
           return (
-            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
-              style={poppingMsgId === msg.id ? {
-                animation: 'msgPop 0.35s ease-out forwards',
-              } : undefined}
-            >
-              <div className="max-w-[80%]">
-                {!isMe && (
-                  <div className="text-[11px] font-semibold mb-1 ml-1" style={{ color: '#d4af37' }}>{msg.sender_name}</div>
-                )}
-                {/* Inline edit mode */}
-                {editingMsg && editingMsg.id === msg.id ? (
-                  <div className="flex flex-col gap-1.5 rounded-2xl px-3 py-2" style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)' }}>
-                    <input
-                      autoFocus
-                      value={editingMsg.content}
-                      onChange={(e) => setEditingMsg({ ...editingMsg, content: e.target.value })}
-                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleEditMessage(); } if (e.key === 'Escape') setEditingMsg(null); }}
-                      className="w-full rounded-lg px-3 py-2 text-sm"
-                      data-testid="edit-message-input"
-                      style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px', outline: 'none' }}
-                    />
-                    <div className="flex gap-2 justify-end">
-                      <button onClick={() => setEditingMsg(null)} className="text-xs px-3 py-1 rounded-lg" style={{ color: 'var(--t4)', background: 'rgba(255,255,255,0.06)' }} data-testid="edit-cancel-btn">Cancel</button>
-                      <button onClick={handleEditMessage} className="text-xs px-3 py-1 rounded-lg font-semibold" style={{ color: '#080e1a', background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }} data-testid="edit-save-btn">Save</button>
-                    </div>
-                  </div>
-                ) : (
-                <div
-                  className="px-4 py-2.5 rounded-2xl text-sm cursor-pointer relative"
-                  onClick={() => { if (msgLongPressTriggered.current) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); setMsgActionId(null); }}
-                  onTouchStart={(e) => onMsgTouchStart(e, msg.id)}
-                  onTouchMove={onMsgTouchMove}
-                  onTouchEnd={onMsgTouchEnd}
-                  onContextMenu={(e) => { e.preventDefault(); setMsgActionId(msg.id); setReactingMsgId(null); }}
-                  style={{
-                    background: isMe ? 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1))' : 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${isMe ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
-                    color: 'var(--t)',
-                    borderTopRightRadius: isMe ? '6px' : '18px',
-                    borderTopLeftRadius: isMe ? '18px' : '6px',
-                    WebkitUserSelect: 'none',
-                    userSelect: 'none',
-                  }}
-                >
-                  {msg.pinned && <Pin className="w-3 h-3 inline mr-1" style={{ color: '#d4af37' }} />}
-                  {msg.attachments && msg.attachments.length > 1 ? (
-                    <div className="grid gap-1" style={{ gridTemplateColumns: msg.attachments.length === 2 ? '1fr 1fr' : 'repeat(auto-fill, minmax(120px, 1fr))' }}>
-                      {msg.attachments.map((att) => {
-                        const ext = (att.file_name || '').split('.').pop().toLowerCase();
-                        const isImage = att.file_type?.startsWith('image/') || ['jpg','jpeg','png','gif','webp','heic','heif'].includes(ext);
-                        const isVideo = att.file_type?.startsWith('video/') || ['mp4','mov','webm','m4v'].includes(ext);
-                        if (isImage) {
-                          return <AuthImage key={att.file_id} fileId={att.file_id} fileName={att.file_name} msgId={msg.id} onPreview={(s, n, fid) => setPreviewImage({ src: s, name: n, fileId: fid })} />;
-                        }
-                        if (isVideo) {
-                          return <AuthVideo key={att.file_id} fileId={att.file_id} fileName={att.file_name} />;
-                        }
-                        return <AuthFileLink key={att.file_id} fileId={att.file_id} fileName={att.file_name} fileSize={att.file_size} msgId={msg.id} />;
-                      })}
-                    </div>
-                  ) : msg.attachment ? (() => {
-                    const ext = (msg.attachment.file_name || '').split('.').pop().toLowerCase();
-                    const isImage = msg.attachment.file_type?.startsWith('image/') || ['jpg','jpeg','png','gif','webp','heic','heif'].includes(ext) || msg.message_type === 'image';
-                    const isVideo = msg.attachment.file_type?.startsWith('video/') || ['mp4','mov','webm','m4v'].includes(ext);
-                    if (msg.message_type === 'voice') return <VoiceMessagePlayer fileId={msg.attachment.file_id} />;
-                    if (isVideo) return <AuthVideo fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} />;
-                    if (isImage) return <AuthImage fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} msgId={msg.id} onPreview={(s, n, fid) => setPreviewImage({ src: s, name: n, fileId: fid })} />;
-                    return <AuthFileLink fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} fileSize={msg.attachment.file_size} msgId={msg.id} />;
-                  })() : msg.content}
-                  {msg.edited_at && <span className="text-[11px] italic ml-1" style={{ color: 'var(--t4)' }}>(edited)</span>}
+            <React.Fragment key={msg.id}>
+              {/* Date separator */}
+              {showDateSep && (
+                <div className="flex items-center justify-center py-2">
+                  <span className="text-[11px] font-semibold px-3 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}>{dateLabel}</span>
                 </div>
-                )}
-                {/* Message action menu (long-press) — iMessage style */}
-                {msgActionId === msg.id && (
-                  <>
-                    {/* Backdrop */}
-                    <div className="fixed inset-0 z-[60]" style={{ background: 'rgba(0,0,0,0.4)', WebkitBackdropFilter: 'blur(4px)', backdropFilter: 'blur(4px)' }}
-                      onClick={(e) => { e.stopPropagation(); setMsgActionId(null); }} />
-                    {/* Menu container */}
-                    <div className={`relative z-[61] mt-2 ${isMe ? 'flex flex-col items-end' : 'flex flex-col items-start'}`} data-testid={`msg-action-menu-${msg.id}`}>
-                      {/* Emoji reaction bar */}
-                      <div className="flex gap-1.5 mb-2 px-1">
-                        {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
-                          const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
+              )}
+              <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+                style={poppingMsgId === msg.id ? { animation: 'msgPop 0.35s ease-out forwards' } : undefined}
+              >
+                <div className="max-w-[80%]">
+                  {!isMe && (
+                    <div className="text-[11px] font-semibold mb-1 ml-1" style={{ color: '#d4af37' }}>{msg.sender_name}</div>
+                  )}
+                  {/* Inline edit mode */}
+                  {editingMsg && editingMsg.id === msg.id ? (
+                    <div className="flex flex-col gap-1.5 rounded-2xl px-3 py-2" style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)' }}>
+                      <input
+                        autoFocus
+                        value={editingMsg.content}
+                        onChange={(e) => setEditingMsg({ ...editingMsg, content: e.target.value })}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleEditMessage(); } if (e.key === 'Escape') setEditingMsg(null); }}
+                        className="w-full rounded-lg px-3 py-2 text-sm"
+                        data-testid="edit-message-input"
+                        style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px', outline: 'none' }}
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <button onClick={() => setEditingMsg(null)} className="text-xs px-3 py-1 rounded-lg" style={{ color: 'var(--t4)', background: 'rgba(255,255,255,0.06)' }} data-testid="edit-cancel-btn">Cancel</button>
+                        <button onClick={handleEditMessage} className="text-xs px-3 py-1 rounded-lg font-semibold" style={{ color: '#080e1a', background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }} data-testid="edit-save-btn">Save</button>
+                      </div>
+                    </div>
+                  ) : (
+                  <div className="relative">
+                    {/* Emoji reactions — stacked upper-left (or upper-right for own messages) */}
+                    {hasReactions && reactingMsgId !== msg.id && (
+                      <button
+                        className="absolute z-10 flex items-center"
+                        style={{ top: '-10px', [isMe ? 'left' : 'left']: '-4px' }}
+                        onClick={(e) => { e.stopPropagation(); setReactionDetailId(reactionDetailId === msg.id ? null : msg.id); }}
+                        data-testid={`reaction-stack-${msg.id}`}
+                      >
+                        {Object.entries(reactionGroups).map(([emoji, reactors], i) => {
+                          const cfg = REACTION_EMOJIS[emoji];
                           return (
-                            <button key={key} onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, key); setMsgActionId(null); }}
-                              className="w-10 h-10 rounded-full flex items-center justify-center text-xl active:scale-90 transition-transform"
-                              style={{ background: myReaction ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.1)' }}
-                            >{val.display}</button>
+                            <span key={emoji} className="text-base" style={{ marginLeft: i > 0 ? '-6px' : '0', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>
+                              {cfg?.display || emoji}
+                            </span>
                           );
                         })}
-                      </div>
-                      {/* Action card */}
-                      <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(30,40,60,0.95)', border: '1px solid rgba(255,255,255,0.1)', minWidth: '180px', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)' }}>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(msg.content || '').then(() => toast.success('Copied')).catch(() => {}); setMsgActionId(null); }}
-                          className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors"
-                          data-testid={`copy-msg-btn-${msg.id}`}
-                          style={{ color: '#E8ECF0' }}
-                        >
-                          <Copy className="w-4 h-4" style={{ color: '#8E9AAF' }} /> Copy
-                        </button>
-                        <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation(); setMsgActionId(null);
-                            const bubble = document.querySelector(`[data-testid="msg-bubble-${msg.id}"]`);
-                            if (bubble) { bubble.style.webkitUserSelect = 'text'; bubble.style.userSelect = 'text'; const sel = window.getSelection(); const range = document.createRange(); range.selectNodeContents(bubble); sel.removeAllRanges(); sel.addRange(range); }
-                          }}
-                          className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors"
-                          data-testid={`select-all-msg-btn-${msg.id}`}
-                          style={{ color: '#E8ECF0' }}
-                        >
-                          <TextSelect className="w-4 h-4" style={{ color: '#8E9AAF' }} /> Select
-                        </button>
-                        {isMe && !msg.attachment && !(msg.attachments && msg.attachments.length) && msg.message_type !== 'voice' && (
-                          <>
-                            <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setEditingMsg({ id: msg.id, content: msg.content || '' }); setMsgActionId(null); }}
-                              className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors"
-                              data-testid={`edit-msg-btn-${msg.id}`}
-                              style={{ color: '#d4af37' }}
-                            >
-                              <Pencil className="w-4 h-4" style={{ color: '#d4af37' }} /> Edit
-                            </button>
-                          </>
-                        )}
-                        {isBenefactor && (
-                          <>
-                            <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
-                            <button
-                              onClick={(e) => { e.stopPropagation(); togglePin(msg.id); setMsgActionId(null); }}
-                              className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors"
-                              data-testid={`pin-msg-btn-${msg.id}`}
-                              style={{ color: '#d4af37' }}
-                            >
-                              <Pin className="w-4 h-4" style={{ color: '#d4af37' }} /> {msg.pinned ? 'Unpin' : 'Pin'}
-                            </button>
-                          </>
-                        )}
-                        {(isMe || isBenefactor) && (
-                          <>
-                            <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
-                            <button
-                              onClick={(e) => { e.stopPropagation(); if (window.confirm('Delete this message?')) handleDeleteMessage(msg.id); setMsgActionId(null); }}
-                              className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors"
-                              data-testid={`delete-msg-btn-${msg.id}`}
-                              style={{ color: '#ef4444' }}
-                            >
-                              <Trash2 className="w-4 h-4" style={{ color: '#ef4444' }} /> Delete
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
-                {/* Reaction picker */}
-                {reactingMsgId === msg.id && (
-                  <div className={`flex gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`} data-testid={`reaction-picker-${msg.id}`}>
-                    {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
-                      const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
-                      return (
-                        <button key={key} onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, key); }}
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-base transition-all hover:scale-110 active:scale-95"
-                          style={{ background: myReaction ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)', border: myReaction ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent' }}
-                          title={val.label}>
-                          {val.display}
-                        </button>
-                      );
-                    })}
-                    {isBenefactor && (
-                      <button onClick={(e) => { e.stopPropagation(); togglePin(msg.id); }}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                        data-testid={`pin-btn-${msg.id}`}
-                        style={{ background: msg.pinned ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)', border: msg.pinned ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent' }}
-                        title={msg.pinned ? 'Unpin' : 'Pin'}>
-                        <Pin className="w-4 h-4" style={{ color: msg.pinned ? '#d4af37' : 'var(--t4)' }} />
                       </button>
                     )}
+                    {/* Pin icon — upper-right corner */}
+                    {msg.pinned && (
+                      <div className="absolute z-10" style={{ top: '-8px', right: '-6px' }}>
+                        <Pin className="w-3.5 h-3.5" style={{ color: '#d4af37', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />
+                      </div>
+                    )}
+                    {/* Message bubble */}
+                    <div
+                      className="px-4 py-2.5 rounded-2xl text-sm cursor-pointer"
+                      data-testid={`msg-bubble-${msg.id}`}
+                      onClick={() => { if (msgLongPressTriggered.current) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); setMsgActionId(null); }}
+                      onTouchStart={(e) => onMsgTouchStart(e, msg.id)}
+                      onTouchMove={onMsgTouchMove}
+                      onTouchEnd={onMsgTouchEnd}
+                      onContextMenu={(e) => { e.preventDefault(); setMsgActionId(msg.id); setReactingMsgId(null); }}
+                      style={{
+                        background: isMe ? 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1))' : 'rgba(255,255,255,0.05)',
+                        border: `1px solid ${isMe ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                        color: 'var(--t)',
+                        borderTopRightRadius: isMe ? '6px' : '18px',
+                        borderTopLeftRadius: isMe ? '18px' : '6px',
+                        WebkitUserSelect: 'none',
+                        userSelect: 'none',
+                        marginTop: hasReactions ? '10px' : '0',
+                      }}
+                    >
+                      {msg.attachments && msg.attachments.length > 1 ? (
+                        <div className="grid gap-1" style={{ gridTemplateColumns: msg.attachments.length === 2 ? '1fr 1fr' : 'repeat(auto-fill, minmax(120px, 1fr))' }}>
+                          {msg.attachments.map((att) => {
+                            const ext = (att.file_name || '').split('.').pop().toLowerCase();
+                            const isImage = att.file_type?.startsWith('image/') || ['jpg','jpeg','png','gif','webp','heic','heif'].includes(ext);
+                            const isVideo = att.file_type?.startsWith('video/') || ['mp4','mov','webm','m4v'].includes(ext);
+                            if (isImage) return <AuthImage key={att.file_id} fileId={att.file_id} fileName={att.file_name} msgId={msg.id} onPreview={(s, n, fid) => setPreviewImage({ src: s, name: n, fileId: fid })} />;
+                            if (isVideo) return <AuthVideo key={att.file_id} fileId={att.file_id} fileName={att.file_name} />;
+                            return <AuthFileLink key={att.file_id} fileId={att.file_id} fileName={att.file_name} fileSize={att.file_size} msgId={msg.id} />;
+                          })}
+                        </div>
+                      ) : msg.attachment ? (() => {
+                        const ext = (msg.attachment.file_name || '').split('.').pop().toLowerCase();
+                        const isImage = msg.attachment.file_type?.startsWith('image/') || ['jpg','jpeg','png','gif','webp','heic','heif'].includes(ext) || msg.message_type === 'image';
+                        const isVideo = msg.attachment.file_type?.startsWith('video/') || ['mp4','mov','webm','m4v'].includes(ext);
+                        if (msg.message_type === 'voice') return <VoiceMessagePlayer fileId={msg.attachment.file_id} />;
+                        if (isVideo) return <AuthVideo fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} />;
+                        if (isImage) return <AuthImage fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} msgId={msg.id} onPreview={(s, n, fid) => setPreviewImage({ src: s, name: n, fileId: fid })} />;
+                        return <AuthFileLink fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} fileSize={msg.attachment.file_size} msgId={msg.id} />;
+                      })() : msg.content}
+                    </div>
                   </div>
-                )}
-                {/* Reaction pills */}
-                {(msg.reactions || []).length > 0 && reactingMsgId !== msg.id && (
-                  <div className={`flex flex-wrap gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                    {Object.entries(
-                      (msg.reactions || []).reduce((acc, r) => { acc[r.emoji] = (acc[r.emoji] || []); acc[r.emoji].push(r); return acc; }, {})
-                    ).map(([emoji, reactors]) => {
-                      const myReaction = reactors.some(r => r.user_id === user?.id);
-                      const cfg = REACTION_EMOJIS[emoji];
-                      return (
-                        <button key={emoji} onClick={() => toggleReaction(msg.id, emoji)}
-                          className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[12px] transition-all"
-                          data-testid={`reaction-pill-${emoji}`}
-                          style={{
-                            background: myReaction ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.05)',
-                            border: `1px solid ${myReaction ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.08)'}`,
-                          }}>
-                          <span>{cfg?.display || emoji}</span>
-                          <span className="text-[11px] font-semibold" style={{ color: myReaction ? '#d4af37' : 'var(--t4)' }}>{reactors.length}</span>
+                  )}
+                  {/* Reaction detail dropdown */}
+                  {reactionDetailId === msg.id && hasReactions && (
+                    <div className={`mt-1.5 rounded-xl overflow-hidden ${isMe ? 'ml-auto' : ''}`} style={{ background: 'rgba(30,40,60,0.95)', border: '1px solid rgba(255,255,255,0.1)', maxWidth: '220px', WebkitBackdropFilter: 'blur(16px)', backdropFilter: 'blur(16px)' }}>
+                      {(msg.reactions || []).map((r, ri) => {
+                        const cfg = REACTION_EMOJIS[r.emoji];
+                        return (
+                          <div key={ri} className="flex items-center gap-2.5 px-3 py-2" style={{ borderBottom: ri < (msg.reactions || []).length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-[11px] font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
+                              {r.user_name?.charAt(0)?.toUpperCase() || '?'}
+                            </div>
+                            <span className="text-xs flex-1 truncate" style={{ color: 'var(--t)' }}>{r.user_name || 'Unknown'}</span>
+                            <span className="text-base">{cfg?.display || r.emoji}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {/* Message action menu (long-press) — iMessage style */}
+                  {msgActionId === msg.id && (
+                    <>
+                      <div className="fixed inset-0 z-[60]" style={{ background: 'rgba(0,0,0,0.4)', WebkitBackdropFilter: 'blur(4px)', backdropFilter: 'blur(4px)' }}
+                        onClick={(e) => { e.stopPropagation(); setMsgActionId(null); }} />
+                      <div className={`relative z-[61] mt-2 ${isMe ? 'flex flex-col items-end' : 'flex flex-col items-start'}`} data-testid={`msg-action-menu-${msg.id}`}>
+                        <div className="flex gap-1.5 mb-2 px-1">
+                          {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
+                            const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
+                            return (
+                              <button key={key} onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, key); setMsgActionId(null); }}
+                                className="w-10 h-10 rounded-full flex items-center justify-center text-xl active:scale-90 transition-transform"
+                                style={{ background: myReaction ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.1)' }}
+                              >{val.display}</button>
+                            );
+                          })}
+                        </div>
+                        <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(30,40,60,0.95)', border: '1px solid rgba(255,255,255,0.1)', minWidth: '180px', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)' }}>
+                          <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(msg.content || '').then(() => toast.success('Copied')).catch(() => {}); setMsgActionId(null); }}
+                            className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors" data-testid={`copy-msg-btn-${msg.id}`} style={{ color: '#E8ECF0' }}>
+                            <Copy className="w-4 h-4" style={{ color: '#8E9AAF' }} /> Copy
+                          </button>
+                          <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                          <button onClick={(e) => { e.stopPropagation(); setMsgActionId(null); const bubble = document.querySelector(`[data-testid="msg-bubble-${msg.id}"]`); if (bubble) { bubble.style.webkitUserSelect = 'text'; bubble.style.userSelect = 'text'; const sel = window.getSelection(); const range = document.createRange(); range.selectNodeContents(bubble); sel.removeAllRanges(); sel.addRange(range); } }}
+                            className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors" data-testid={`select-all-msg-btn-${msg.id}`} style={{ color: '#E8ECF0' }}>
+                            <TextSelect className="w-4 h-4" style={{ color: '#8E9AAF' }} /> Select
+                          </button>
+                          {isMe && !msg.attachment && !(msg.attachments && msg.attachments.length) && msg.message_type !== 'voice' && (
+                            <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                            <button onClick={(e) => { e.stopPropagation(); setEditingMsg({ id: msg.id, content: msg.content || '' }); setMsgActionId(null); }}
+                              className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors" data-testid={`edit-msg-btn-${msg.id}`} style={{ color: '#d4af37' }}>
+                              <Pencil className="w-4 h-4" style={{ color: '#d4af37' }} /> Edit
+                            </button></>
+                          )}
+                          {isBenefactor && (
+                            <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                            <button onClick={(e) => { e.stopPropagation(); togglePin(msg.id); setMsgActionId(null); }}
+                              className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors" data-testid={`pin-msg-btn-${msg.id}`} style={{ color: '#d4af37' }}>
+                              <Pin className="w-4 h-4" style={{ color: '#d4af37' }} /> {msg.pinned ? 'Unpin' : 'Pin'}
+                            </button></>
+                          )}
+                          {(isMe || isBenefactor) && (
+                            <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                            <button onClick={(e) => { e.stopPropagation(); if (window.confirm('Delete this message?')) handleDeleteMessage(msg.id); setMsgActionId(null); }}
+                              className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors" data-testid={`delete-msg-btn-${msg.id}`} style={{ color: '#ef4444' }}>
+                              <Trash2 className="w-4 h-4" style={{ color: '#ef4444' }} /> Delete
+                            </button></>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {/* Reaction picker (tap on bubble) */}
+                  {reactingMsgId === msg.id && (
+                    <div className={`flex gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`} data-testid={`reaction-picker-${msg.id}`}>
+                      {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
+                        const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
+                        return (
+                          <button key={key} onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, key); }}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-base transition-all hover:scale-110 active:scale-95"
+                            style={{ background: myReaction ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)', border: myReaction ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent' }}
+                            title={val.label}>
+                            {val.display}
+                          </button>
+                        );
+                      })}
+                      {isBenefactor && (
+                        <button onClick={(e) => { e.stopPropagation(); togglePin(msg.id); }}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                          data-testid={`pin-btn-${msg.id}`}
+                          style={{ background: msg.pinned ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)', border: msg.pinned ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent' }}
+                          title={msg.pinned ? 'Unpin' : 'Pin'}>
+                          <Pin className="w-4 h-4" style={{ color: msg.pinned ? '#d4af37' : 'var(--t4)' }} />
                         </button>
-                      );
-                    })}
+                      )}
+                    </div>
+                  )}
+                  {/* Bottom: time + edited + read status */}
+                  <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 ${isMe ? 'justify-end mr-1' : 'ml-1'}`} style={{ color: 'var(--t5)' }}>
+                    {msg.edited_at && <span className="italic" style={{ color: 'var(--t4)' }}>Edited</span>}
+                    <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    {isMe && (receiptStatus === 'read_all' || receiptStatus === 'read_partial') && (
+                      <span className="flex items-center gap-0.5" data-testid="receipt-read">
+                        <CheckCheck className="w-3.5 h-3.5" style={{ color: '#3B7BF7' }} />
+                        {!isDM && receiptStatus === 'read_partial' && (
+                          <span className="text-[11px]" style={{ color: '#3B7BF7' }}>{msg._readByCount}</span>
+                        )}
+                        {!isDM && receiptStatus === 'read_all' && totalOthers > 1 && (
+                          <span className="text-[11px] font-semibold" style={{ color: '#3B7BF7' }}>All</span>
+                        )}
+                      </span>
+                    )}
+                    {isMe && (receiptStatus === 'delivered_all' || receiptStatus === 'delivered_partial') && (
+                      <span className="flex items-center gap-0.5" data-testid="receipt-delivered">
+                        <CheckCheck className="w-3.5 h-3.5" style={{ color: 'var(--t4)' }} />
+                        {!isDM && receiptStatus === 'delivered_partial' && (
+                          <span className="text-[11px]" style={{ color: 'var(--t4)' }}>{msg._deliveredToCount}</span>
+                        )}
+                      </span>
+                    )}
+                    {isMe && receiptStatus === 'sent' && (
+                      <span data-testid="receipt-sent" style={{ color: 'var(--t5)' }}><Check className="w-3 h-3" /></span>
+                    )}
                   </div>
-                )}
-                {/* Timestamp + Receipt indicators */}
-                <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 ${isMe ? 'justify-end mr-1' : 'ml-1'}`} style={{ color: 'var(--t5)' }}>
-                  <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                  {isMe && (receiptStatus === 'read_all' || receiptStatus === 'read_partial') && (
-                    <span className="flex items-center gap-0.5" data-testid="receipt-read">
-                      <CheckCheck className="w-3.5 h-3.5" style={{ color: '#3B7BF7' }} />
-                      {!isDM && receiptStatus === 'read_partial' && (
-                        <span className="text-[11px]" style={{ color: '#3B7BF7' }}>{msg._readByCount}</span>
-                      )}
-                      {!isDM && receiptStatus === 'read_all' && totalOthers > 1 && (
-                        <span className="text-[11px] font-semibold" style={{ color: '#3B7BF7' }}>All</span>
-                      )}
-                    </span>
-                  )}
-                  {isMe && (receiptStatus === 'delivered_all' || receiptStatus === 'delivered_partial') && (
-                    <span className="flex items-center gap-0.5" data-testid="receipt-delivered">
-                      <CheckCheck className="w-3.5 h-3.5" style={{ color: 'var(--t4)' }} />
-                      {!isDM && receiptStatus === 'delivered_partial' && (
-                        <span className="text-[11px]" style={{ color: 'var(--t4)' }}>{msg._deliveredToCount}</span>
-                      )}
-                    </span>
-                  )}
-                  {isMe && receiptStatus === 'sent' && (
-                    <span data-testid="receipt-sent" style={{ color: 'var(--t5)' }}><Check className="w-3 h-3" /></span>
-                  )}
                 </div>
               </div>
-            </div>
+            </React.Fragment>
           );
         })}
         <div ref={messagesEndRef} />
