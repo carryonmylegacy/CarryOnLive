@@ -1686,7 +1686,16 @@ export default function EstateChatPage() {
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               onFocus={() => {
                 setInputFocused(true);
-                // Force visualViewport update for first keyboard open
+                // Scroll to bottom when keyboard opens
+                setTimeout(() => {
+                  const el = messagesEndRef.current?.parentElement;
+                  if (el) el.scrollTop = el.scrollHeight;
+                }, 350);
+                setTimeout(() => {
+                  const el = messagesEndRef.current?.parentElement;
+                  if (el) el.scrollTop = el.scrollHeight;
+                }, 600);
+                // Force visualViewport update for keyboard open
                 const vv = window.visualViewport;
                 if (vv) {
                   setTimeout(() => {
@@ -1793,14 +1802,9 @@ export default function EstateChatPage() {
             </button>
           )}
         </div>
-        {/* Quick actions strip — emojis when idle, swipe hint when keyboard open */}
-        <div className="flex items-center gap-1 px-3 pt-1 pb-2" style={{ background: 'var(--bg2)', touchAction: 'none' }}>
-          {inputFocused ? (
-            <div className="flex items-center justify-center w-full py-2">
-              <div style={{ width: '48px', height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.45)' }} />
-            </div>
-          ) : (
-            <>
+        {/* Quick actions strip — emojis when idle, hidden when keyboard open */}
+        {!inputFocused && (
+          <div className="flex items-center gap-1 px-3 pt-1 pb-1" style={{ background: 'var(--bg2)', touchAction: 'none', paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom, 0.25rem))' }}>
               {['👍', '❤️', '😂', '🙏', '🔥', '👏'].map(emoji => (
                 <button
                   key={emoji}
@@ -1829,12 +1833,10 @@ export default function EstateChatPage() {
               >
                 <Image className="w-4 h-4" style={{ color: '#d4af37' }} />
               </button>
-            </>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-      {/* Safe-area bottom spacer — hidden when keyboard is open */}
-      <div style={{ background: 'var(--bg2)', height: inputFocused ? '0px' : 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />
+      {/* Safe-area handled by emoji strip paddingBottom when keyboard closed */}
     </div>
   );
 
