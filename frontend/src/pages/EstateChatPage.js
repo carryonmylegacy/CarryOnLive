@@ -1495,7 +1495,6 @@ export default function EstateChatPage() {
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
         borderTop: '1px solid var(--b)',
-        paddingBottom: '46px',
         position: 'relative',
         zIndex: 10,
       }}>
@@ -1734,6 +1733,28 @@ export default function EstateChatPage() {
               <Mic className="w-5 h-5" style={{ color: '#C8D0E0' }} />
             </button>
           )}
+        </div>
+        {/* Quick actions strip — fills the space above iOS accessory bar */}
+        <div className="flex items-center gap-1 px-3 py-1.5" style={{ background: 'var(--bg2)' }}>
+          {['👍', '❤️', '😂', '🙏', '🔥', '👏'].map(emoji => (
+            <button
+              key={emoji}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setDraft(prev => prev + emoji)}
+              className="w-9 h-9 rounded-full flex items-center justify-center text-lg active:scale-90 transition-transform"
+              style={{ background: 'rgba(255,255,255,0.06)' }}
+              data-testid={`quick-emoji-${emoji}`}
+            >{emoji}</button>
+          ))}
+          <button
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => fileInputRef.current?.click()}
+            className="w-9 h-9 rounded-full flex items-center justify-center ml-auto active:scale-90 transition-transform"
+            style={{ background: 'rgba(255,255,255,0.06)' }}
+            data-testid="quick-photo-btn"
+          >
+            <Image className="w-4 h-4" style={{ color: '#d4af37' }} />
+          </button>
         </div>
       </div>
       {/* Safe-area bottom spacer — collapses when keyboard is open */}
