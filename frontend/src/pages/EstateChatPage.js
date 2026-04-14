@@ -127,8 +127,8 @@ export default function EstateChatPage() {
     if (msgActionId) {
       // Use setTimeout to ensure DOM is committed
       const scrollTimer = setTimeout(() => {
-        const menuEl = document.querySelector(`[data-testid="msg-action-menu-${msgActionId}"]`);
-        if (menuEl) menuEl.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+        const bubbleEl = document.querySelector(`[data-testid="msg-bubble-${msgActionId}"]`);
+        if (bubbleEl) bubbleEl.scrollIntoView({ behavior: 'instant', block: 'start' });
       }, 80);
       // Use click (not touchstart) for dismiss — touchstart fires on scroll and kills the menu
       const handleDismiss = (e) => {
