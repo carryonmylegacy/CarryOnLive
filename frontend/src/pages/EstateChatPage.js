@@ -95,6 +95,7 @@ export default function EstateChatPage() {
   const [recentEmojis, setRecentEmojis] = useState(() => getRecentEmojis());
   const [showActionEmojiPicker, setShowActionEmojiPicker] = useState(false); // picker inside long-press menu
   const [showInlineEmojiPicker, setShowInlineEmojiPicker] = useState(null); // msgId for inline tap picker
+  const [showDraftEmojiPicker, setShowDraftEmojiPicker] = useState(false); // picker for bottom draft strip
   const searchTimerRef = useRef(null);
   const lastTypingSentRef = useRef(0);
 
@@ -1928,25 +1929,29 @@ export default function EstateChatPage() {
                   data-testid={`quick-emoji-${emoji}`}
                 >{emoji}</button>
               ))}
+              <EmojiPickerButton onClick={() => setShowDraftEmojiPicker(v => !v)} />
               <button
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => setDraft(prev => prev.length > 0 ? [...prev].slice(0, -1).join('') : '')}
-                className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+                className="w-9 h-9 rounded-full flex items-center justify-center ml-auto active:scale-90 transition-transform"
                 style={{ background: 'rgba(255,255,255,0.06)' }}
                 data-testid="quick-backspace-btn"
               >
                 <X className="w-4 h-4" style={{ color: 'var(--t4)' }} />
               </button>
-              <button
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => fileInputRef.current?.click()}
-                className="w-9 h-9 rounded-full flex items-center justify-center ml-auto active:scale-90 transition-transform"
-                style={{ background: 'rgba(255,255,255,0.06)' }}
-                data-testid="quick-photo-btn"
-              >
-                <Image className="w-4 h-4" style={{ color: '#d4af37' }} />
-              </button>
           </div>
+        )}
+        {/* Emoji catalog for draft input — floats above the input bar */}
+        {!inputFocused && showDraftEmojiPicker && (
+          <>
+            <div className="fixed inset-0 z-[15]" onClick={() => setShowDraftEmojiPicker(false)} onTouchEnd={(e) => { e.preventDefault(); setShowDraftEmojiPicker(false); }} />
+            <div className="fixed z-[16] left-3 right-3" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 86px)' }}>
+              <EmojiPickerGrid
+                onSelect={(emoji) => { setDraft(prev => prev + emoji); setRecentEmojis(addRecentEmoji(emoji)); }}
+                onClose={() => setShowDraftEmojiPicker(false)}
+              />
+            </div>
+          </>
         )}
       </div>
       {/* Safe-area handled by emoji strip paddingBottom when keyboard closed */}

@@ -141,10 +141,11 @@ Extracted sub-components from three monolithic page files:
 ### Completed (Apr 14, 2026 — Session 7: Emoji Library)
 - **Full Emoji Library**: ~700 emojis across 8 categories (Smileys, Gestures, Animals & Nature, Food & Drink, Activities, Travel & Places, Objects, Hearts & Symbols). Component: `/components/estate-chat/EmojiLibrary.js`.
 - **Emoji Picker Grid**: 6-column scrollable dropdown with sticky category headers and search-by-character. Opens from a SmilePlus icon button.
-- **Recent Emojis Tracking**: Last 5 used emojis stored in localStorage (`ect_recent_emojis`). Defaults: 👍❤️😂😢🔥.
+- **Recent Emojis Tracking**: Last 7 used emojis stored in localStorage (`ect_recent_emojis`). Defaults: 👍❤️😂😢🔥✅🙏.
 - **Long-Press Menu Integration**: Emoji row shows 5 recent emojis + picker icon. When picker is open, action buttons (Reply/Copy/Edit/etc.) are hidden to save space.
-- **Quick-Tap Strip Integration**: Tap-on-bubble reaction strip uses recent emojis + picker icon + pin button.
-- **Input Bar Integration**: Bottom quick-action emoji row uses recent emojis (dynamic, not hardcoded).
+- **Quick-Tap Strip Integration**: Tap-on-bubble reaction strip uses 5 recent emojis + picker icon + pin button.
+- **Input Bar Integration**: Bottom quick-action strip shows all 7 recent emojis + SmilePlus picker (opens full catalog for draft input) + backspace button at far right. Removed redundant photo icon (duplicated paperclip).
+- **Input Area Spacing Optimization**: Reduced vertical padding on input row and emoji strip. Removed 8px gap in visualViewport height calculations.
 - **Backend: Open Emoji Reactions**: Removed `VALID_REACTIONS` whitelist. Backend now accepts any unicode emoji string ≤20 chars. Legacy keys (thumbs_up, heart, etc.) still work. 13 pytest tests verify the API.
 
 ## ==========================================
