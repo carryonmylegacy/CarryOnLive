@@ -1769,9 +1769,15 @@ export default function EstateChatPage() {
             </button>
           )}
         </div>
-        {/* Quick actions strip — only when keyboard is closed; gap remains when open */}
+        {/* Quick actions strip — emojis when idle, swipe hint when keyboard open */}
         <div className="flex items-center gap-1 px-3 pt-1.5 pb-4" style={{ background: 'var(--bg2)', touchAction: 'none' }}>
-          {!inputFocused && (
+          {inputFocused ? (
+            <div className="flex items-center justify-center w-full gap-2 py-1" style={{ opacity: 0.5 }}>
+              <ChevronDown className="w-4 h-4" style={{ color: 'var(--t5)' }} />
+              <span className="text-xs" style={{ color: 'var(--t5)' }}>swipe to dismiss</span>
+              <ChevronDown className="w-4 h-4" style={{ color: 'var(--t5)' }} />
+            </div>
+          ) : (
             <>
               {['👍', '❤️', '😂', '🙏', '🔥', '👏'].map(emoji => (
                 <button
