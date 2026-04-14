@@ -1569,12 +1569,9 @@ export default function EstateChatPage() {
           <>
             <div className="fixed inset-0 z-[60]" style={{ background: 'rgba(0,0,0,0.4)', WebkitBackdropFilter: 'blur(4px)', backdropFilter: 'blur(4px)' }}
               onClick={() => setMsgActionId(null)} />
-            <div className="fixed z-[61] flex flex-col" style={{
-              ...(pos.above ? { bottom: pos.bottom + 'px' } : { top: pos.top + 'px' }),
-              ...(pos.isMe ? { right: Math.max(8, pos.right) + 'px' } : { left: Math.max(8, pos.left) + 'px' }),
-              maxWidth: 'calc(100vw - 16px)',
-            }} data-testid={`msg-action-menu-${msg.id}`}>
-              <div className="flex gap-1.5 mb-2 px-1">
+            <div className="fixed z-[61] flex flex-col items-center justify-center inset-0 px-4 pointer-events-none">
+              <div className="pointer-events-auto max-h-[85vh] overflow-y-auto" style={{ maxWidth: '280px', width: '100%' }} data-testid={`msg-action-menu-${msg.id}`}>
+              <div className="flex gap-1.5 mb-2 justify-center">
                 {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
                   const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
                   return (
@@ -1642,6 +1639,7 @@ export default function EstateChatPage() {
                   className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10" data-testid="send-location-btn" style={{ color: '#4CAF50' }}>
                   <MapPin className="w-4 h-4" style={{ color: '#4CAF50' }} /> Send My Location
                 </button>
+              </div>
               </div>
             </div>
           </>
