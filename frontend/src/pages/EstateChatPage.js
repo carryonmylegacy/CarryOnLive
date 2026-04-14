@@ -556,6 +556,8 @@ export default function EstateChatPage() {
   };
 
   const onMsgTouchStart = (e, msgId) => {
+    // Don't intercept taps on links — let them navigate normally
+    if (e.target.closest('a')) return;
     msgLongPressTriggered.current = false;
     touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     msgLongPressTimer.current = setTimeout(() => {
@@ -577,6 +579,8 @@ export default function EstateChatPage() {
   };
 
   const onMsgTouchEnd = (e, msgId) => {
+    // Don't intercept taps on links — let them navigate normally
+    if (e.target.closest('a')) return;
     clearTimeout(msgLongPressTimer.current);
     msgLongPressTimer.current = null;
     if (msgLongPressTriggered.current) {
