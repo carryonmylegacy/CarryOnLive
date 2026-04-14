@@ -1734,36 +1734,40 @@ export default function EstateChatPage() {
             </button>
           )}
         </div>
-        {/* Quick actions strip — emojis + backspace + photo shortcut */}
+        {/* Quick actions strip — only when keyboard is closed; gap remains when open */}
         <div className="flex items-center gap-1 px-3 pt-1.5 pb-4" style={{ background: 'var(--bg2)' }}>
-          {['👍', '❤️', '😂', '🙏', '🔥', '👏'].map(emoji => (
-            <button
-              key={emoji}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => setDraft(prev => prev + emoji)}
-              className="w-9 h-9 rounded-full flex items-center justify-center text-lg active:scale-90 transition-transform"
-              style={{ background: 'rgba(255,255,255,0.06)' }}
-              data-testid={`quick-emoji-${emoji}`}
-            >{emoji}</button>
-          ))}
-          <button
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => setDraft(prev => prev.length > 0 ? [...prev].slice(0, -1).join('') : '')}
-            className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform"
-            style={{ background: 'rgba(255,255,255,0.06)' }}
-            data-testid="quick-backspace-btn"
-          >
-            <X className="w-4 h-4" style={{ color: 'var(--t4)' }} />
-          </button>
-          <button
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => fileInputRef.current?.click()}
-            className="w-9 h-9 rounded-full flex items-center justify-center ml-auto active:scale-90 transition-transform"
-            style={{ background: 'rgba(255,255,255,0.06)' }}
-            data-testid="quick-photo-btn"
-          >
-            <Image className="w-4 h-4" style={{ color: '#d4af37' }} />
-          </button>
+          {!inputFocused && (
+            <>
+              {['👍', '❤️', '😂', '🙏', '🔥', '👏'].map(emoji => (
+                <button
+                  key={emoji}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => setDraft(prev => prev + emoji)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-lg active:scale-90 transition-transform"
+                  style={{ background: 'rgba(255,255,255,0.06)' }}
+                  data-testid={`quick-emoji-${emoji}`}
+                >{emoji}</button>
+              ))}
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setDraft(prev => prev.length > 0 ? [...prev].slice(0, -1).join('') : '')}
+                className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+                style={{ background: 'rgba(255,255,255,0.06)' }}
+                data-testid="quick-backspace-btn"
+              >
+                <X className="w-4 h-4" style={{ color: 'var(--t4)' }} />
+              </button>
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => fileInputRef.current?.click()}
+                className="w-9 h-9 rounded-full flex items-center justify-center ml-auto active:scale-90 transition-transform"
+                style={{ background: 'rgba(255,255,255,0.06)' }}
+                data-testid="quick-photo-btn"
+              >
+                <Image className="w-4 h-4" style={{ color: '#d4af37' }} />
+              </button>
+            </>
+          )}
         </div>
       </div>
       {/* Safe-area bottom spacer — collapses when keyboard is open */}
