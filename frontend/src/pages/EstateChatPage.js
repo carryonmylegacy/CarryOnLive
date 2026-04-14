@@ -1525,7 +1525,13 @@ export default function EstateChatPage() {
         borderTop: '1px solid var(--b)',
         position: 'relative',
         zIndex: 10,
-      }}>
+      }}
+        onTouchStart={(e) => { e.currentTarget._touchY = e.touches[0].clientY; }}
+        onTouchMove={(e) => {
+          const dy = e.touches[0].clientY - (e.currentTarget._touchY || 0);
+          if (dy > 30) { inputRef.current?.blur(); }
+        }}
+      >
         {/* Typing indicator */}
         {typers.length > 0 && (
           <div className="px-4 pt-2 pb-1 flex items-center gap-1.5" data-testid="typing-indicator">
@@ -1764,7 +1770,7 @@ export default function EstateChatPage() {
           )}
         </div>
         {/* Quick actions strip — only when keyboard is closed; gap remains when open */}
-        <div className="flex items-center gap-1 px-3 pt-1.5 pb-4" style={{ background: 'var(--bg2)' }}>
+        <div className="flex items-center gap-1 px-3 pt-1.5 pb-4" style={{ background: 'var(--bg2)', touchAction: 'none' }}>
           {!inputFocused && (
             <>
               {['👍', '❤️', '😂', '🙏', '🔥', '👏'].map(emoji => (
