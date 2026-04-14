@@ -663,6 +663,14 @@ const MobileNav = () => {
       }
     }
 
+    // Inject badges for dock items
+    items = items.map(item => {
+      if (item.to === '/estate-chat' || item.to === '/beneficiary/estate-chat') {
+        return { ...item, badge: ectUnread };
+      }
+      return item;
+    });
+
     return items;
   };
 
@@ -1273,7 +1281,15 @@ const MobileNav = () => {
                   {({ isActive: routeActive }) => {
                     return (
                       <>
-                        <item.icon className="w-5 h-5" />
+                        <div className="relative">
+                          <item.icon className="w-5 h-5" />
+                          {item.badge > 0 && (
+                            <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 rounded-full flex items-center justify-center text-[11px] font-bold px-1"
+                              style={{ background: '#d4af37', color: '#080e1a' }}
+                              data-testid={`dock-badge-${item.label.toLowerCase()}`}
+                            >{item.badge > 99 ? '99+' : item.badge}</span>
+                          )}
+                        </div>
                         <span className="text-xs font-semibold">{item.label}</span>
                       </>
                   );}}

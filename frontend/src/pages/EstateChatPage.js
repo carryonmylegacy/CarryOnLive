@@ -128,6 +128,9 @@ export default function EstateChatPage() {
     const container = scrollContainerRef.current;
     if (!container) return;
 
+    // Add temporary bottom padding so the last message's menu has room to scroll into
+    container.style.paddingBottom = '400px';
+
     // Use MutationObserver to detect when menu DOM appears
     const observer = new MutationObserver(() => {
       const menuEl = document.querySelector(`[data-testid="msg-action-menu-${msgActionId}"]`);
@@ -142,7 +145,7 @@ export default function EstateChatPage() {
     });
     observer.observe(container, { childList: true, subtree: true });
 
-    return () => observer.disconnect();
+    return () => { observer.disconnect(); if (container) container.style.paddingBottom = ''; };
   }, [msgActionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Dismiss menu on tap outside
@@ -158,10 +161,13 @@ export default function EstateChatPage() {
 
   const closeMsgAction = () => {
     setMsgActionId(null);
-    // Restore scroll position
+    // Restore scroll position and remove temporary padding
     const container = scrollContainerRef.current;
-    if (container && scrollPosBeforeMenu.current !== null) {
-      setTimeout(() => { container.scrollTop = scrollPosBeforeMenu.current; scrollPosBeforeMenu.current = null; }, 50);
+    if (container) {
+      container.style.paddingBottom = '';
+      if (scrollPosBeforeMenu.current !== null) {
+        setTimeout(() => { container.scrollTop = scrollPosBeforeMenu.current; scrollPosBeforeMenu.current = null; }, 50);
+      }
     }
   };
   const [reactionDetailId, setReactionDetailId] = useState(null); // message ID for reaction detail dropdown
