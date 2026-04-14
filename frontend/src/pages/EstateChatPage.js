@@ -1734,52 +1734,27 @@ export default function EstateChatPage() {
             </button>
           )}
         </div>
-        {/* Quick actions / mini-dock strip — static height, content swaps on keyboard */}
+        {/* Quick actions strip — emojis + photo shortcut */}
         <div className="flex items-center gap-1 px-3 py-1.5" style={{ background: 'var(--bg2)' }}>
-          {inputFocused ? (
-            <>
-              {['👍', '❤️', '😂', '🙏', '🔥', '👏'].map(emoji => (
-                <button
-                  key={emoji}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => setDraft(prev => prev + emoji)}
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-lg active:scale-90 transition-transform"
-                  style={{ background: 'rgba(255,255,255,0.06)' }}
-                  data-testid={`quick-emoji-${emoji}`}
-                >{emoji}</button>
-              ))}
-              <button
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => fileInputRef.current?.click()}
-                className="w-9 h-9 rounded-full flex items-center justify-center ml-auto active:scale-90 transition-transform"
-                style={{ background: 'rgba(255,255,255,0.06)' }}
-                data-testid="quick-photo-btn"
-              >
-                <Image className="w-4 h-4" style={{ color: '#d4af37' }} />
-              </button>
-            </>
-          ) : (
-            <div className="flex items-center justify-around w-full">
-              {[
-                { icon: <Users className="w-5 h-5" />, label: 'Benefic.', path: '/beneficiaries' },
-                { icon: <MessageCircle className="w-5 h-5" style={{ color: '#d4af37' }} />, label: 'Chat', path: null },
-                { icon: <span className="w-5 h-5 flex items-center justify-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg></span>, label: 'Dashboard', path: '/admin' },
-                { icon: <MessageCircle className="w-5 h-5" />, label: 'Milestone', path: '/messages' },
-                { icon: <span className="w-5 h-5 flex items-center justify-center text-sm font-bold" style={{ color: 'var(--t4)' }}>$</span>, label: 'Financial', path: '/financial' },
-              ].map(item => (
-                <button
-                  key={item.label}
-                  onClick={() => { if (item.path) { handleBackOut(); navigate(item.path); } }}
-                  className="flex flex-col items-center gap-0.5 py-0.5 px-2"
-                  data-testid={`mini-dock-${item.label.toLowerCase()}`}
-                  style={{ color: item.path === null ? '#d4af37' : 'var(--t4)' }}
-                >
-                  {item.icon}
-                  <span className="text-[11px]" style={{ color: item.path === null ? '#d4af37' : 'var(--t5)' }}>{item.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
+          {['👍', '❤️', '😂', '🙏', '🔥', '👏'].map(emoji => (
+            <button
+              key={emoji}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setDraft(prev => prev + emoji)}
+              className="w-9 h-9 rounded-full flex items-center justify-center text-lg active:scale-90 transition-transform"
+              style={{ background: 'rgba(255,255,255,0.06)' }}
+              data-testid={`quick-emoji-${emoji}`}
+            >{emoji}</button>
+          ))}
+          <button
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => fileInputRef.current?.click()}
+            className="w-9 h-9 rounded-full flex items-center justify-center ml-auto active:scale-90 transition-transform"
+            style={{ background: 'rgba(255,255,255,0.06)' }}
+            data-testid="quick-photo-btn"
+          >
+            <Image className="w-4 h-4" style={{ color: '#d4af37' }} />
+          </button>
         </div>
       </div>
       {/* Safe-area bottom spacer — collapses when keyboard is open */}
