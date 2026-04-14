@@ -1394,63 +1394,91 @@ export default function EstateChatPage() {
                   {msg.edited_at && <span className="text-[11px] italic ml-1" style={{ color: 'var(--t4)' }}>(edited)</span>}
                 </div>
                 )}
-                {/* Message action menu (long-press) */}
+                {/* Message action menu (long-press) — iMessage style */}
                 {msgActionId === msg.id && (
-                  <div className={`flex flex-wrap gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`} data-testid={`msg-action-menu-${msg.id}`}>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(msg.content || '').then(() => toast.success('Copied')).catch(() => {}); setMsgActionId(null); }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                      data-testid={`copy-msg-btn-${msg.id}`}
-                      style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#D8DEE9' }}
-                    >
-                      <Copy className="w-3.5 h-3.5" /> Copy
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMsgActionId(null);
-                        const bubble = e.target.closest('[data-testid^="msg-action-menu"]')?.previousElementSibling;
-                        if (bubble) {
-                          // Temporarily re-enable text selection for the select-all operation
-                          bubble.style.webkitUserSelect = 'text';
-                          bubble.style.userSelect = 'text';
-                          const sel = window.getSelection(); const range = document.createRange(); range.selectNodeContents(bubble); sel.removeAllRanges(); sel.addRange(range);
-                        }
-                      }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                      data-testid={`select-all-msg-btn-${msg.id}`}
-                      style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#D8DEE9' }}
-                    >
-                      <TextSelect className="w-3.5 h-3.5" /> Select All
-                    </button>
-                    {isMe && !msg.attachment && !(msg.attachments && msg.attachments.length) && msg.message_type !== 'voice' && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setEditingMsg({ id: msg.id, content: msg.content || '' }); setMsgActionId(null); }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                        data-testid={`edit-msg-btn-${msg.id}`}
-                        style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#d4af37' }}
-                      >
-                        <Pencil className="w-3.5 h-3.5" /> Edit
-                      </button>
-                    )}
-                    {(isMe || isBenefactor) && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); if (window.confirm('Delete this message?')) handleDeleteMessage(msg.id); }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                      data-testid={`delete-msg-btn-${msg.id}`}
-                      style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" /> Delete
-                    </button>
-                    )}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setMsgActionId(null); }}
-                      className="flex items-center px-2 py-1.5 rounded-lg text-xs transition-all"
-                      style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  <>
+                    {/* Backdrop */}
+                    <div className="fixed inset-0 z-[60]" style={{ background: 'rgba(0,0,0,0.4)', WebkitBackdropFilter: 'blur(4px)', backdropFilter: 'blur(4px)' }}
+                      onClick={(e) => { e.stopPropagation(); setMsgActionId(null); }} />
+                    {/* Menu container */}
+                    <div className={`relative z-[61] mt-2 ${isMe ? 'flex flex-col items-end' : 'flex flex-col items-start'}`} data-testid={`msg-action-menu-${msg.id}`}>
+                      {/* Emoji reaction bar */}
+                      <div className="flex gap-1.5 mb-2 px-1">
+                        {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
+                          const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
+                          return (
+                            <button key={key} onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, key); setMsgActionId(null); }}
+                              className="w-10 h-10 rounded-full flex items-center justify-center text-xl active:scale-90 transition-transform"
+                              style={{ background: myReaction ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.1)' }}
+                            >{val.display}</button>
+                          );
+                        })}
+                      </div>
+                      {/* Action card */}
+                      <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(30,40,60,0.95)', border: '1px solid rgba(255,255,255,0.1)', minWidth: '180px', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)' }}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(msg.content || '').then(() => toast.success('Copied')).catch(() => {}); setMsgActionId(null); }}
+                          className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors"
+                          data-testid={`copy-msg-btn-${msg.id}`}
+                          style={{ color: '#E8ECF0' }}
+                        >
+                          <Copy className="w-4 h-4" style={{ color: '#8E9AAF' }} /> Copy
+                        </button>
+                        <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation(); setMsgActionId(null);
+                            const bubble = document.querySelector(`[data-testid="msg-bubble-${msg.id}"]`);
+                            if (bubble) { bubble.style.webkitUserSelect = 'text'; bubble.style.userSelect = 'text'; const sel = window.getSelection(); const range = document.createRange(); range.selectNodeContents(bubble); sel.removeAllRanges(); sel.addRange(range); }
+                          }}
+                          className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors"
+                          data-testid={`select-all-msg-btn-${msg.id}`}
+                          style={{ color: '#E8ECF0' }}
+                        >
+                          <TextSelect className="w-4 h-4" style={{ color: '#8E9AAF' }} /> Select
+                        </button>
+                        {isMe && !msg.attachment && !(msg.attachments && msg.attachments.length) && msg.message_type !== 'voice' && (
+                          <>
+                            <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setEditingMsg({ id: msg.id, content: msg.content || '' }); setMsgActionId(null); }}
+                              className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors"
+                              data-testid={`edit-msg-btn-${msg.id}`}
+                              style={{ color: '#d4af37' }}
+                            >
+                              <Pencil className="w-4 h-4" style={{ color: '#d4af37' }} /> Edit
+                            </button>
+                          </>
+                        )}
+                        {isBenefactor && (
+                          <>
+                            <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                            <button
+                              onClick={(e) => { e.stopPropagation(); togglePin(msg.id); setMsgActionId(null); }}
+                              className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors"
+                              data-testid={`pin-msg-btn-${msg.id}`}
+                              style={{ color: '#d4af37' }}
+                            >
+                              <Pin className="w-4 h-4" style={{ color: '#d4af37' }} /> {msg.pinned ? 'Unpin' : 'Pin'}
+                            </button>
+                          </>
+                        )}
+                        {(isMe || isBenefactor) && (
+                          <>
+                            <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                            <button
+                              onClick={(e) => { e.stopPropagation(); if (window.confirm('Delete this message?')) handleDeleteMessage(msg.id); setMsgActionId(null); }}
+                              className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors"
+                              data-testid={`delete-msg-btn-${msg.id}`}
+                              style={{ color: '#ef4444' }}
+                            >
+                              <Trash2 className="w-4 h-4" style={{ color: '#ef4444' }} /> Delete
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </>
                 )}
                 {/* Reaction picker */}
                 {reactingMsgId === msg.id && (
