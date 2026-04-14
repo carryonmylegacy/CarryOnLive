@@ -122,30 +122,38 @@ export default function EstateChatPage() {
     // scrollIntoView handled by useEffect below after React renders the menu
   };
 
-  // After menu renders, scroll it into view and add dismiss listener
+  // After menu renders, scroll up just enough to show it
   useEffect(() => {
-    if (msgActionId) {
-      // Use setTimeout to ensure DOM is committed
-      const scrollTimer = setTimeout(() => {
-        const menuEl = document.querySelector(`[data-testid="msg-action-menu-${msgActionId}"]`);
-        if (!menuEl) return;
-        const container = scrollContainerRef.current;
-        if (!container) return;
-        const menuRect = menuEl.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        const overflow = menuRect.bottom - containerRect.bottom;
-        if (overflow > 0) {
-          container.scrollTop += overflow + 16;
-        }
-      }, 80);
-      // Use click (not touchstart) for dismiss — touchstart fires on scroll and kills the menu
-      const handleDismiss = (e) => {
-        const menu = document.querySelector(`[data-testid="msg-action-menu-${msgActionId}"]`);
-        if (menu && !menu.contains(e.target)) closeMsgAction();
-      };
-      const listenerTimer = setTimeout(() => document.addEventListener('click', handleDismiss), 200);
-      return () => { clearTimeout(scrollTimer); clearTimeout(listenerTimer); document.removeEventListener('click', handleDismiss); };
-    }
+    if (!msgActionId) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    // Use MutationObserver to detect when menu DOM appears
+    const observer = new MutationObserver(() => {
+      const menuEl = document.querySelector(`[data-testid="msg-action-menu-${msgActionId}"]`);
+      if (!menuEl) return;
+      observer.disconnect();
+      const menuRect = menuEl.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const overflow = menuRect.bottom - containerRect.bottom;
+      if (overflow > 0) {
+        container.scrollTop += overflow + 20;
+      }
+    });
+    observer.observe(container, { childList: true, subtree: true });
+
+    return () => observer.disconnect();
+  }, [msgActionId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Dismiss menu on tap outside
+  useEffect(() => {
+    if (!msgActionId) return;
+    const handleDismiss = (e) => {
+      const menu = document.querySelector(`[data-testid="msg-action-menu-${msgActionId}"]`);
+      if (menu && !menu.contains(e.target)) closeMsgAction();
+    };
+    const timer = setTimeout(() => document.addEventListener('click', handleDismiss), 200);
+    return () => { clearTimeout(timer); document.removeEventListener('click', handleDismiss); };
   }, [msgActionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const closeMsgAction = () => {
@@ -1580,21 +1588,21 @@ export default function EstateChatPage() {
                             const apiUrl = API_URL;
                             closeMsgAction();
                             if (!navigator.geolocation) { toast.error('Geolocation not supported on this device'); return; }
-                            toast.info('Requesting location...');
+                            toast.info('Sending location...');
                             navigator.geolocation.getCurrentPosition(
                               (p) => {
                                 const lat = p.coords.latitude.toFixed(6);
                                 const lng = p.coords.longitude.toFixed(6);
                                 const msg = 'My location: https://maps.google.com/?q=' + lat + ',' + lng;
-                                toast.info('Sending location...');
                                 fetch(apiUrl + '/estate-chat/channels/' + chId + '/messages', {
                                   method: 'POST',
                                   headers: authHeaders,
                                   body: JSON.stringify({ content: msg }),
                                 }).then(res => {
                                   if (res.ok) {
-                                    fetchMessages(chId);
-                                    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }), 300);
+                                    fetchMessages(chId).then(() => {
+                                      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }), 200);
+                                    });
                                   } else {
                                     res.text().then(t => toast.error('Send failed: ' + t));
                                   }
