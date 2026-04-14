@@ -116,15 +116,14 @@ export default function EstateChatPage() {
 
   const openMsgAction = (msgId) => {
     setReactingMsgId(null);
-    // Save scroll position before opening menu
     const container = scrollContainerRef.current;
     if (container) scrollPosBeforeMenu.current = container.scrollTop;
     setMsgActionId(msgId);
-    // After render, scroll so the menu is fully visible
-    setTimeout(() => {
+    // Instantly scroll menu into view — no delay, no smooth animation
+    requestAnimationFrame(() => {
       const menuEl = document.querySelector(`[data-testid="msg-action-menu-${msgId}"]`);
-      if (menuEl) menuEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 50);
+      if (menuEl) menuEl.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+    });
   };
 
   const closeMsgAction = () => {
@@ -1550,7 +1549,35 @@ export default function EstateChatPage() {
                             </button></>
                           )}
                           <div style={{ height: '1px', background: 'var(--b)' }} />
-                          <button onClick={async (e) => { e.stopPropagation(); const chId = activeChannel.id; closeMsgAction(); if (!navigator.geolocation) { toast.error('Geolocation not supported'); return; } toast('Getting your location...'); navigator.geolocation.getCurrentPosition(async (p) => { const url = `https://maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`; try { const res = await fetch(`${API_URL}/estate-chat/channels/${chId}/messages`, { method: 'POST', headers, body: JSON.stringify({ content: url }) }); if (res.ok) { await fetchMessages(chId); toast.success('Location sent'); setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }), 300); } } catch { toast.error('Failed'); } }, () => toast.error('Location denied'), { enableHighAccuracy: true, timeout: 10000 }); }}
+                          <button onClick={async (e) => {
+                            e.stopPropagation();
+                            const chId = activeChannel.id;
+                            closeMsgAction();
+                            if (!navigator.geolocation) { toast.error('Geolocation not supported'); return; }
+                            toast('Getting your location...');
+                            navigator.geolocation.getCurrentPosition(
+                              async (p) => {
+                                const lat = p.coords.latitude.toFixed(6);
+                                const lng = p.coords.longitude.toFixed(6);
+                                const url = `https://maps.google.com/?q=${lat},${lng}`;
+                                const content = `📍 My current location:\n${url}`;
+                                try {
+                                  const res = await fetch(`${API_URL}/estate-chat/channels/${chId}/messages`, {
+                                    method: 'POST', headers, body: JSON.stringify({ content }),
+                                  });
+                                  if (res.ok) {
+                                    await fetchMessages(chId);
+                                    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }), 200);
+                                    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }), 500);
+                                  } else {
+                                    toast.error('Failed to send location');
+                                  }
+                                } catch { toast.error('Failed to send location'); }
+                              },
+                              () => toast.error('Location access denied'),
+                              { enableHighAccuracy: true, timeout: 10000 }
+                            );
+                          }}
                             className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left active:bg-white/5" style={{ color: '#4CAF50' }}>
                             <MapPin className="w-4 h-4" style={{ color: '#4CAF50' }} /> Send My Location
                           </button>
