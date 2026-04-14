@@ -1477,11 +1477,17 @@ export default function EstateChatPage() {
                     </div>
                   )}
                   {/* Message action menu (long-press) — iMessage style */}
-                  {msgActionId === msg.id && (
+                  {msgActionId === msg.id && (() => {
+                    // Check if message is in bottom half — if so, menu goes upward
+                    const bubbleEl = document.querySelector(`[data-testid="msg-bubble-${msg.id}"]`);
+                    const bubbleRect = bubbleEl?.getBoundingClientRect();
+                    const viewH = window.visualViewport?.height || window.innerHeight;
+                    const menuAbove = bubbleRect && bubbleRect.bottom > viewH * 0.55;
+                    return (
                     <>
                       <div className="fixed inset-0 z-[60]" style={{ background: 'rgba(0,0,0,0.4)', WebkitBackdropFilter: 'blur(4px)', backdropFilter: 'blur(4px)' }}
                         onClick={(e) => { e.stopPropagation(); setMsgActionId(null); }} />
-                      <div className={`relative z-[61] mt-2 ${isMe ? 'flex flex-col items-end' : 'flex flex-col items-start'}`} data-testid={`msg-action-menu-${msg.id}`}>
+                      <div className={`${menuAbove ? 'absolute bottom-full mb-2' : 'relative mt-2'} z-[61] ${isMe ? 'flex flex-col items-end' : 'flex flex-col items-start'}`} data-testid={`msg-action-menu-${msg.id}`}>
                         <div className="flex gap-1.5 mb-2 px-1">
                           {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
                             const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
@@ -1561,7 +1567,8 @@ export default function EstateChatPage() {
                         </div>
                       </div>
                     </>
-                  )}
+                    );
+                  })()}
                   {/* Reaction picker (tap on bubble) */}
                   {reactingMsgId === msg.id && (
                     <div className={`flex gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`} data-testid={`reaction-picker-${msg.id}`}>
