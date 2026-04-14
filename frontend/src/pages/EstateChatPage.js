@@ -111,7 +111,7 @@ export default function EstateChatPage() {
   const [showHeaderMembers, setShowHeaderMembers] = useState(false);
   const [showListMembersId, setShowListMembersId] = useState(null);
   const [msgActionId, setMsgActionId] = useState(null); // message ID for long-press action menu
-  const [msgActionAbove, setMsgActionAbove] = useState(false); // whether menu should render above
+  const [msgActionPos, setMsgActionPos] = useState(null); // { top, right, left, above } for fixed positioning
   const [reactionDetailId, setReactionDetailId] = useState(null); // message ID for reaction detail dropdown
   const [replyTo, setReplyTo] = useState(null); // { id, content, sender_name } for reply-to
   const [editingMsg, setEditingMsg] = useState(null); // {id, content} when editing
@@ -508,11 +508,21 @@ export default function EstateChatPage() {
       // Clear any native text selection that iOS may have started
       window.getSelection()?.removeAllRanges();
       setReactingMsgId(null);
-      // Calculate menu position before rendering
+      // Measure bubble position for fixed menu overlay
       const bubbleEl = document.querySelector(`[data-testid="msg-bubble-${msgId}"]`);
-      const bubbleRect = bubbleEl?.getBoundingClientRect();
-      const viewH = window.visualViewport?.height || window.innerHeight;
-      setMsgActionAbove(bubbleRect ? bubbleRect.bottom > viewH * 0.55 : false);
+      if (bubbleEl) {
+        const r = bubbleEl.getBoundingClientRect();
+        const viewH = window.visualViewport?.height || window.innerHeight;
+        const above = r.bottom > viewH * 0.5;
+        setMsgActionPos({
+          above,
+          top: above ? null : r.bottom + 4,
+          bottom: above ? (viewH - r.top + 4) : null,
+          right: window.innerWidth - r.right,
+          left: r.left,
+          isMe: r.right > window.innerWidth / 2,
+        });
+      }
       setMsgActionId(msgId);
       if (navigator.vibrate) navigator.vibrate(30);
     }, 500);
@@ -1412,7 +1422,14 @@ export default function EstateChatPage() {
                       onTouchStart={(e) => onMsgTouchStart(e, msg.id)}
                       onTouchMove={onMsgTouchMove}
                       onTouchEnd={onMsgTouchEnd}
-                      onContextMenu={(e) => { e.preventDefault(); const r = e.currentTarget.getBoundingClientRect(); const vh = window.visualViewport?.height || window.innerHeight; setMsgActionAbove(r.bottom > vh * 0.55); setMsgActionId(msg.id); setReactingMsgId(null); }}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        const r = e.currentTarget.getBoundingClientRect();
+                        const viewH = window.visualViewport?.height || window.innerHeight;
+                        const above = r.bottom > viewH * 0.5;
+                        setMsgActionPos({ above, top: above ? null : r.bottom + 4, bottom: above ? (viewH - r.top + 4) : null, right: window.innerWidth - r.right, left: r.left, isMe });
+                        setMsgActionId(msg.id); setReactingMsgId(null);
+                      }}
                       style={{
                         background: isMe ? 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1))' : 'rgba(255,255,255,0.05)',
                         border: `1px solid ${isMe ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
@@ -1482,92 +1499,6 @@ export default function EstateChatPage() {
                       })}
                     </div>
                   )}
-                  {/* Message action menu (long-press) — iMessage style */}
-                  {msgActionId === msg.id && (
-                    <>
-                      <div className="fixed inset-0 z-[60]" style={{ background: 'rgba(0,0,0,0.4)', WebkitBackdropFilter: 'blur(4px)', backdropFilter: 'blur(4px)' }}
-                        onClick={(e) => { e.stopPropagation(); setMsgActionId(null); }} />
-                      <div className={`${msgActionAbove ? 'absolute bottom-full mb-2' : 'relative mt-2'} z-[61] ${isMe ? 'flex flex-col items-end' : 'flex flex-col items-start'}`} data-testid={`msg-action-menu-${msg.id}`}>
-                        <div className="flex gap-1.5 mb-2 px-1">
-                          {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
-                            const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
-                            return (
-                              <button key={key} onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, key); setMsgActionId(null); }}
-                                className="w-10 h-10 rounded-full flex items-center justify-center text-xl active:scale-90 transition-transform"
-                                style={{ background: myReaction ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.1)' }}
-                              >{val.display}</button>
-                            );
-                          })}
-                        </div>
-                        <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(30,40,60,0.95)', border: '1px solid rgba(255,255,255,0.1)', minWidth: '180px', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)' }}>
-                          <button onClick={(e) => { e.stopPropagation(); setReplyTo({ id: msg.id, content: (msg.content || '').slice(0, 100), sender_name: msg.sender_name }); setMsgActionId(null); inputRef.current?.focus(); }}
-                            className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors" data-testid={`reply-msg-btn-${msg.id}`} style={{ color: '#E8ECF0' }}>
-                            <ArrowLeft className="w-4 h-4" style={{ color: '#8E9AAF', transform: 'scaleX(-1)' }} /> Reply
-                          </button>
-                          <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
-                          <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(msg.content || '').then(() => toast.success('Copied')).catch(() => {}); setMsgActionId(null); }}
-                            className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors" data-testid={`copy-msg-btn-${msg.id}`} style={{ color: '#E8ECF0' }}>
-                            <Copy className="w-4 h-4" style={{ color: '#8E9AAF' }} /> Copy
-                          </button>
-                          <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
-                          <button onClick={(e) => { e.stopPropagation(); setMsgActionId(null); const bubble = document.querySelector(`[data-testid="msg-bubble-${msg.id}"]`); if (bubble) { bubble.style.webkitUserSelect = 'text'; bubble.style.userSelect = 'text'; const sel = window.getSelection(); const range = document.createRange(); range.selectNodeContents(bubble); sel.removeAllRanges(); sel.addRange(range); } }}
-                            className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors" data-testid={`select-all-msg-btn-${msg.id}`} style={{ color: '#E8ECF0' }}>
-                            <TextSelect className="w-4 h-4" style={{ color: '#8E9AAF' }} /> Select
-                          </button>
-                          {isMe && !msg.attachment && !(msg.attachments && msg.attachments.length) && msg.message_type !== 'voice' && (
-                            <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
-                            <button onClick={(e) => { e.stopPropagation(); setEditingMsg({ id: msg.id, content: msg.content || '' }); setMsgActionId(null); }}
-                              className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors" data-testid={`edit-msg-btn-${msg.id}`} style={{ color: '#d4af37' }}>
-                              <Pencil className="w-4 h-4" style={{ color: '#d4af37' }} /> Edit
-                            </button></>
-                          )}
-                          {isBenefactor && (
-                            <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
-                            <button onClick={(e) => { e.stopPropagation(); togglePin(msg.id); setMsgActionId(null); }}
-                              className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors" data-testid={`pin-msg-btn-${msg.id}`} style={{ color: '#d4af37' }}>
-                              <Pin className="w-4 h-4" style={{ color: '#d4af37' }} /> {msg.pinned ? 'Unpin' : 'Pin'}
-                            </button></>
-                          )}
-                          {(isMe || isBenefactor) && (
-                            <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
-                            <button onClick={(e) => { e.stopPropagation(); if (window.confirm('Delete this message?')) handleDeleteMessage(msg.id); setMsgActionId(null); }}
-                              className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors" data-testid={`delete-msg-btn-${msg.id}`} style={{ color: '#ef4444' }}>
-                              <Trash2 className="w-4 h-4" style={{ color: '#ef4444' }} /> Delete
-                            </button></>
-                          )}
-                          <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
-                          <button onClick={async (e) => {
-                            e.stopPropagation();
-                            const channelId = activeChannel.id;
-                            setMsgActionId(null);
-                            if (!navigator.geolocation) { toast.error('Geolocation not supported'); return; }
-                            toast('Getting your location...');
-                            navigator.geolocation.getCurrentPosition(
-                              async (pos) => {
-                                const { latitude, longitude } = pos.coords;
-                                const mapUrl = `https://maps.google.com/?q=${latitude},${longitude}`;
-                                try {
-                                  const res = await fetch(`${API_URL}/estate-chat/channels/${channelId}/messages`, {
-                                    method: 'POST', headers, body: JSON.stringify({ content: mapUrl }),
-                                  });
-                                  if (res.ok) {
-                                    await fetchMessages(channelId);
-                                    toast.success('Location sent');
-                                    setTimeout(() => { const el = messagesEndRef.current?.parentElement; if (el) el.scrollTop = el.scrollHeight; }, 300);
-                                  }
-                                } catch { toast.error('Failed to send location'); }
-                              },
-                              (err) => toast.error('Location access denied'),
-                              { enableHighAccuracy: true, timeout: 10000 }
-                            );
-                          }}
-                            className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors" data-testid="send-location-btn" style={{ color: '#4CAF50' }}>
-                            <MapPin className="w-4 h-4" style={{ color: '#4CAF50' }} /> Send My Location
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
                   {/* Reaction picker (tap on bubble) */}
                   {reactingMsgId === msg.id && (
                     <div className={`flex gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`} data-testid={`reaction-picker-${msg.id}`}>
@@ -1627,6 +1558,95 @@ export default function EstateChatPage() {
         })}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* ── Fixed Action Menu Overlay — outside scroll flow ── */}
+      {msgActionId && msgActionPos && (() => {
+        const msg = messages.find(m => m.id === msgActionId);
+        if (!msg) return null;
+        const isMe = msg.sender_id === user?.id;
+        const pos = msgActionPos;
+        return (
+          <>
+            <div className="fixed inset-0 z-[60]" style={{ background: 'rgba(0,0,0,0.4)', WebkitBackdropFilter: 'blur(4px)', backdropFilter: 'blur(4px)' }}
+              onClick={() => setMsgActionId(null)} />
+            <div className="fixed z-[61] flex flex-col" style={{
+              ...(pos.above ? { bottom: pos.bottom + 'px' } : { top: pos.top + 'px' }),
+              ...(pos.isMe ? { right: Math.max(8, pos.right) + 'px' } : { left: Math.max(8, pos.left) + 'px' }),
+              maxWidth: 'calc(100vw - 16px)',
+            }} data-testid={`msg-action-menu-${msg.id}`}>
+              <div className="flex gap-1.5 mb-2 px-1">
+                {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
+                  const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
+                  return (
+                    <button key={key} onClick={() => { toggleReaction(msg.id, key); setMsgActionId(null); }}
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-xl active:scale-90 transition-transform"
+                      style={{ background: myReaction ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.1)' }}
+                    >{val.display}</button>
+                  );
+                })}
+              </div>
+              <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(30,40,60,0.95)', border: '1px solid rgba(255,255,255,0.1)', minWidth: '180px', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)' }}>
+                <button onClick={() => { setReplyTo({ id: msg.id, content: (msg.content || '').slice(0, 100), sender_name: msg.sender_name }); setMsgActionId(null); inputRef.current?.focus(); }}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10" data-testid={`reply-msg-btn-${msg.id}`} style={{ color: '#E8ECF0' }}>
+                  <ArrowLeft className="w-4 h-4" style={{ color: '#8E9AAF', transform: 'scaleX(-1)' }} /> Reply
+                </button>
+                <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                <button onClick={() => { navigator.clipboard.writeText(msg.content || '').then(() => toast.success('Copied')).catch(() => {}); setMsgActionId(null); }}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10" data-testid={`copy-msg-btn-${msg.id}`} style={{ color: '#E8ECF0' }}>
+                  <Copy className="w-4 h-4" style={{ color: '#8E9AAF' }} /> Copy
+                </button>
+                <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                <button onClick={() => { setMsgActionId(null); const bubble = document.querySelector(`[data-testid="msg-bubble-${msg.id}"]`); if (bubble) { bubble.style.webkitUserSelect = 'text'; bubble.style.userSelect = 'text'; const sel = window.getSelection(); const range = document.createRange(); range.selectNodeContents(bubble); sel.removeAllRanges(); sel.addRange(range); } }}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10" data-testid={`select-all-msg-btn-${msg.id}`} style={{ color: '#E8ECF0' }}>
+                  <TextSelect className="w-4 h-4" style={{ color: '#8E9AAF' }} /> Select
+                </button>
+                {isMe && !msg.attachment && !(msg.attachments && msg.attachments.length) && msg.message_type !== 'voice' && (
+                  <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                  <button onClick={() => { setEditingMsg({ id: msg.id, content: msg.content || '' }); setMsgActionId(null); }}
+                    className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10" data-testid={`edit-msg-btn-${msg.id}`} style={{ color: '#d4af37' }}>
+                    <Pencil className="w-4 h-4" style={{ color: '#d4af37' }} /> Edit
+                  </button></>
+                )}
+                {isBenefactor && (
+                  <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                  <button onClick={() => { togglePin(msg.id); setMsgActionId(null); }}
+                    className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10" data-testid={`pin-msg-btn-${msg.id}`} style={{ color: '#d4af37' }}>
+                    <Pin className="w-4 h-4" style={{ color: '#d4af37' }} /> {msg.pinned ? 'Unpin' : 'Pin'}
+                  </button></>
+                )}
+                {(isMe || isBenefactor) && (
+                  <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                  <button onClick={() => { if (window.confirm('Delete this message?')) handleDeleteMessage(msg.id); setMsgActionId(null); }}
+                    className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10" data-testid={`delete-msg-btn-${msg.id}`} style={{ color: '#ef4444' }}>
+                    <Trash2 className="w-4 h-4" style={{ color: '#ef4444' }} /> Delete
+                  </button></>
+                )}
+                <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                <button onClick={async () => {
+                  const channelId = activeChannel.id;
+                  setMsgActionId(null);
+                  if (!navigator.geolocation) { toast.error('Geolocation not supported'); return; }
+                  toast('Getting your location...');
+                  navigator.geolocation.getCurrentPosition(
+                    async (p) => {
+                      const mapUrl = `https://maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`;
+                      try {
+                        const res = await fetch(`${API_URL}/estate-chat/channels/${channelId}/messages`, { method: 'POST', headers, body: JSON.stringify({ content: mapUrl }) });
+                        if (res.ok) { await fetchMessages(channelId); toast.success('Location sent'); setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }), 300); }
+                      } catch { toast.error('Failed to send location'); }
+                    },
+                    () => toast.error('Location access denied'),
+                    { enableHighAccuracy: true, timeout: 10000 }
+                  );
+                }}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10" data-testid="send-location-btn" style={{ color: '#4CAF50' }}>
+                  <MapPin className="w-4 h-4" style={{ color: '#4CAF50' }} /> Send My Location
+                </button>
+              </div>
+            </div>
+          </>
+        );
+      })()}
 
       {/* ── Input Bar — transparent, floating over messages ── */}
       <div className="flex-shrink-0" style={{
