@@ -207,7 +207,7 @@ export default function EstateChatPage() {
     const update = () => {
       const root = document.getElementById('ect-root');
       if (root) {
-        root.style.height = (vv.height - 8) + 'px';
+        root.style.height = vv.height + 'px';
         root.style.top = vv.offsetTop + 'px';
       }
     };
@@ -1572,7 +1572,7 @@ export default function EstateChatPage() {
                       <div className="fixed inset-0 z-[50]" onTouchEnd={(e) => { e.preventDefault(); setReactingMsgId(null); setShowInlineEmojiPicker(null); }} onClick={() => { setReactingMsgId(null); setShowInlineEmojiPicker(null); }} />
                       <div style={{ position: 'relative', height: showInlineEmojiPicker === msg.id ? 'auto' : '36px' }}>
                       <div className={`absolute z-[51] flex gap-1`} style={{ top: '4px', whiteSpace: 'nowrap', ...(isMe ? { right: 0 } : { left: 0 }) }} data-testid={`reaction-picker-${msg.id}`}>
-                        {recentEmojis.map((emoji) => {
+                        {recentEmojis.slice(0, 5).map((emoji) => {
                           const myReaction = (msg.reactions || []).some(r => (r.emoji === emoji || displayEmoji(r.emoji) === emoji) && r.user_id === user?.id);
                           return (
                             <button key={emoji} onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, emoji); }}
@@ -1730,7 +1730,7 @@ export default function EstateChatPage() {
             </div>
           </div>
         )}
-        <div className="flex items-center gap-2 px-3 py-1">
+        <div className="flex items-center gap-2 px-3 py-0.5">
           <input type="file" ref={fileInputRef} className="hidden" multiple
             accept="image/*,video/*,.pdf,.doc,.docx,.txt"
             onChange={(e) => {
@@ -1813,7 +1813,7 @@ export default function EstateChatPage() {
                 if (vv) {
                   setTimeout(() => {
                     const root = document.getElementById('ect-root');
-                    if (root) { root.style.height = (vv.height - 8) + 'px'; root.style.top = vv.offsetTop + 'px'; }
+                    if (root) { root.style.height = vv.height + 'px'; root.style.top = vv.offsetTop + 'px'; }
                   }, 350);
                 }
               }}
@@ -1917,7 +1917,7 @@ export default function EstateChatPage() {
         </div>
         {/* Quick actions strip — emojis when idle, hidden when keyboard open */}
         {!inputFocused && (
-          <div className="flex items-center gap-1 px-3 pt-1 pb-1" style={{ background: 'var(--bg2)', touchAction: 'none', paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom, 0.25rem))' }}>
+          <div className="flex items-center gap-1 px-3 pt-0.5 pb-0.5" style={{ background: 'var(--bg2)', touchAction: 'none', paddingBottom: 'max(2px, env(safe-area-inset-bottom, 2px))' }}>
               {recentEmojis.map(emoji => (
                 <button
                   key={emoji}
@@ -2017,7 +2017,7 @@ export default function EstateChatPage() {
           />
           <div style={menuStyle} data-testid={`msg-action-menu-${msgActionId}`}>
             <div className={`flex gap-1.5 mb-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
-              {recentEmojis.map((emoji) => {
+              {recentEmojis.slice(0, 5).map((emoji) => {
                 const myReaction = (actionMsg.reactions || []).some(r => (r.emoji === emoji || displayEmoji(r.emoji) === emoji) && r.user_id === user?.id);
                 return (
                   <button key={emoji} onClick={(e) => { e.stopPropagation(); toggleReaction(actionMsg.id, emoji); closeMsgAction(); }}

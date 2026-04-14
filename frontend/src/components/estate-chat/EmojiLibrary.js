@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { SmilePlus, Clock, Search } from 'lucide-react';
 
 const RECENT_KEY = 'ect_recent_emojis';
-const MAX_RECENT = 5;
-const DEFAULT_RECENT = ['👍', '❤️', '😂', '😢', '🔥', '✅'];
+const MAX_RECENT = 7;
+const DEFAULT_RECENT = ['👍', '❤️', '😂', '😢', '🔥', '✅', '🙏'];
 
 export function getRecentEmojis() {
   try {
