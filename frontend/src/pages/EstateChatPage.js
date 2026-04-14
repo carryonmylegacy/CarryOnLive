@@ -164,7 +164,7 @@ export default function EstateChatPage() {
     const update = () => {
       const root = document.getElementById('ect-root');
       if (root) {
-        root.style.height = vv.height + 'px';
+        root.style.height = (vv.height - 2) + 'px';
         root.style.top = vv.offsetTop + 'px';
       }
     };
