@@ -1878,3 +1878,12 @@ credentials.json
 # Flagged by secrets scanner
 backend/routes/staff_tools.py
 codemagic.yaml
+-e 
+# Environment and credential files
+.env
+.env.*
+*.env
+credentials.json
+*.pem
+*.key
+.credentials
