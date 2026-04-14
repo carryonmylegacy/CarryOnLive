@@ -128,24 +128,26 @@ export default function EstateChatPage() {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // Add temporary bottom padding so the last message's menu has room to scroll into
+    // Add temporary bottom padding so the last message's menu has room
     container.style.paddingBottom = '400px';
 
-    // Use MutationObserver to detect when menu DOM appears
-    const observer = new MutationObserver(() => {
+    // Try scrolling at multiple timings to catch DOM render
+    const tryScroll = () => {
       const menuEl = document.querySelector(`[data-testid="msg-action-menu-${msgActionId}"]`);
-      if (!menuEl) return;
-      observer.disconnect();
+      if (!menuEl) return false;
       const menuRect = menuEl.getBoundingClientRect();
       const containerRect = container.getBoundingClientRect();
       const overflow = menuRect.bottom - containerRect.bottom;
-      if (overflow > 0) {
-        container.scrollTop += overflow + 20;
-      }
-    });
-    observer.observe(container, { childList: true, subtree: true });
+      if (overflow > 0) container.scrollTop += overflow + 20;
+      return true;
+    };
 
-    return () => { observer.disconnect(); if (container) container.style.paddingBottom = ''; };
+    // Immediate attempts at increasing intervals
+    const t1 = setTimeout(tryScroll, 16);
+    const t2 = setTimeout(tryScroll, 50);
+    const t3 = setTimeout(tryScroll, 120);
+
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); if (container) container.style.paddingBottom = ''; };
   }, [msgActionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Dismiss menu on tap outside
@@ -249,6 +251,15 @@ export default function EstateChatPage() {
   }, [draft, inputFocused]);
 
   // Scroll lock removed — using controlled scroll with position restore instead
+
+  // When emoji strip opens, scroll the message up to keep it visible
+  useEffect(() => {
+    if (!reactingMsgId) return;
+    setTimeout(() => {
+      const picker = document.querySelector(`[data-testid="reaction-picker-${reactingMsgId}"]`);
+      if (picker) picker.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+    }, 50);
+  }, [reactingMsgId]);
 
   // ── Add member to channel ──
   const addMemberToChannel = async (channelId, memberId, estateId) => {
@@ -562,10 +573,11 @@ export default function EstateChatPage() {
   };
 
   const onMsgTouchStart = (e, msgId) => {
+    // Prevent iOS text selection during long press
+    e.preventDefault();
     msgLongPressTriggered.current = false;
     msgLongPressTimer.current = setTimeout(() => {
       msgLongPressTriggered.current = true;
-      // Clear any native text selection that iOS may have started
       window.getSelection()?.removeAllRanges();
       setReactingMsgId(null);
       openMsgAction(msgId);
@@ -1594,9 +1606,9 @@ export default function EstateChatPage() {
                             const apiUrl = API_URL;
                             closeMsgAction();
                             if (!navigator.geolocation) { toast.error('Geolocation not supported on this device'); return; }
-                            toast.info('Sending location...');
                             navigator.geolocation.getCurrentPosition(
                               (p) => {
+                                toast.info('Sending location...');
                                 const lat = p.coords.latitude.toFixed(6);
                                 const lng = p.coords.longitude.toFixed(6);
                                 const msg = 'My location: https://maps.google.com/?q=' + lat + ',' + lng;
