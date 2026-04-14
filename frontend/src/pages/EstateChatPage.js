@@ -1533,10 +1533,8 @@ export default function EstateChatPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ── Input Bar ── */}
+      {/* ── Input Bar — transparent, floating over messages ── */}
       <div className="flex-shrink-0" style={{
-        background: 'var(--bg2)',
-        borderTop: '1px solid var(--b)',
         position: 'relative',
         zIndex: 10,
       }}
@@ -1612,7 +1610,7 @@ export default function EstateChatPage() {
             </div>
           </div>
         )}
-        <div className="flex items-center gap-2 px-3 pt-1.5 pb-0.5">
+        <div className="flex items-center gap-2 px-3 py-1">
           <input type="file" ref={fileInputRef} className="hidden" multiple
             accept="image/*,video/*,.pdf,.doc,.docx,.txt"
             onChange={(e) => {
