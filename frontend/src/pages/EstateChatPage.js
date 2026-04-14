@@ -1735,7 +1735,7 @@ export default function EstateChatPage() {
           )}
         </div>
         {/* Quick actions strip — emojis + backspace + photo shortcut */}
-        <div className="flex items-center gap-1 px-3 py-1.5" style={{ background: 'var(--bg2)' }}>
+        <div className="flex items-center gap-1 px-3 pt-1.5 pb-4" style={{ background: 'var(--bg2)' }}>
           {['👍', '❤️', '😂', '🙏', '🔥', '👏'].map(emoji => (
             <button
               key={emoji}
