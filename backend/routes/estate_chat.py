@@ -153,7 +153,7 @@ class EditMessageRequest(BaseModel):
 
 
 class ReactRequest(BaseModel):
-    emoji: str  # thumbs_up, heart, laugh, sad, fire, check
+    emoji: str  # any unicode emoji or legacy key (thumbs_up, heart, etc.)
 
 
 VALID_REACTIONS = ["thumbs_up", "heart", "laugh", "sad", "fire", "check"]
@@ -710,8 +710,8 @@ async def toggle_reaction(
     current_user: dict = Depends(get_current_user),
 ):
     """Toggle a reaction on a message. If already reacted with same emoji, removes it."""
-    if data.emoji not in VALID_REACTIONS:
-        raise HTTPException(status_code=400, detail=f"Invalid emoji. Must be one of: {VALID_REACTIONS}")
+    if not data.emoji or len(data.emoji) > 20:
+        raise HTTPException(status_code=400, detail="Invalid emoji")
     msg = await db.estate_messages.find_one({"id": message_id}, {"_id": 0, "id": 1, "channel_id": 1})
     if not msg:
         raise HTTPException(status_code=404, detail="Message not found")

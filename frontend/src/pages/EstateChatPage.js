@@ -45,9 +45,11 @@ import VoiceMessagePlayer from '../components/estate-chat/VoiceMessagePlayer';
 import { AuthImage, AuthVideo, AuthFileLink, prefetchMedia } from '../components/estate-chat/AuthMedia';
 import ECTSecurityIntro from '../components/estate-chat/ECTSecurityIntro';
 import ImagePreviewModal from '../components/estate-chat/ImagePreviewModal';
+import { getRecentEmojis, addRecentEmoji, displayEmoji, LEGACY_EMOJI_MAP, EmojiPickerGrid, EmojiPickerButton, EmojiPickerButtonSmall } from '../components/estate-chat/EmojiLibrary';
 
 const ECT_POLL_INTERVAL = 8000;
 
+// Legacy key→display map — kept for backward-compatible rendering of old reactions
 const REACTION_EMOJIS = {
   thumbs_up: { display: '\uD83D\uDC4D', label: 'Thumbs Up' },
   heart: { display: '\u2764\uFE0F', label: 'Heart' },
@@ -90,6 +92,9 @@ export default function EstateChatPage() {
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [recentEmojis, setRecentEmojis] = useState(() => getRecentEmojis());
+  const [showActionEmojiPicker, setShowActionEmojiPicker] = useState(false); // picker inside long-press menu
+  const [showInlineEmojiPicker, setShowInlineEmojiPicker] = useState(null); // msgId for inline tap picker
   const searchTimerRef = useRef(null);
   const lastTypingSentRef = useRef(0);
 
@@ -144,6 +149,7 @@ export default function EstateChatPage() {
   const closeMsgAction = () => {
     setMsgActionId(null);
     setMenuPosition(null);
+    setShowActionEmojiPicker(false);
   };
   const [reactionDetailId, setReactionDetailId] = useState(null); // message ID for reaction detail dropdown
   const [replyTo, setReplyTo] = useState(null); // { id, content, sender_name } for reply-to
@@ -396,10 +402,17 @@ export default function EstateChatPage() {
 
   const toggleReaction = async (messageId, emoji) => {
     try {
-      await fetch(`${API_URL}/estate-chat/messages/${messageId}/react`, {
+      const res = await fetch(`${API_URL}/estate-chat/messages/${messageId}/react`, {
         method: 'POST', headers, body: JSON.stringify({ emoji }),
       });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.action === 'added') {
+          setRecentEmojis(addRecentEmoji(emoji));
+        }
+      }
       setReactingMsgId(null);
+      setShowInlineEmojiPicker(null);
       if (activeChannel) await fetchMessages(activeChannel.id);
     } catch {} // eslint-disable-line no-empty
   };
@@ -1556,20 +1569,20 @@ export default function EstateChatPage() {
                   {/* Reaction picker (tap on bubble) — absolute so it never widens the message container */}
                   {reactingMsgId === msg.id && (
                     <>
-                      <div className="fixed inset-0 z-[50]" onTouchEnd={(e) => { e.preventDefault(); setReactingMsgId(null); }} onClick={() => setReactingMsgId(null)} />
-                      <div style={{ position: 'relative', height: '36px' }}>
+                      <div className="fixed inset-0 z-[50]" onTouchEnd={(e) => { e.preventDefault(); setReactingMsgId(null); setShowInlineEmojiPicker(null); }} onClick={() => { setReactingMsgId(null); setShowInlineEmojiPicker(null); }} />
+                      <div style={{ position: 'relative', height: showInlineEmojiPicker === msg.id ? 'auto' : '36px' }}>
                       <div className={`absolute z-[51] flex gap-1`} style={{ top: '4px', whiteSpace: 'nowrap', ...(isMe ? { right: 0 } : { left: 0 }) }} data-testid={`reaction-picker-${msg.id}`}>
-                        {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
-                          const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
+                        {recentEmojis.map((emoji) => {
+                          const myReaction = (msg.reactions || []).some(r => (r.emoji === emoji || displayEmoji(r.emoji) === emoji) && r.user_id === user?.id);
                           return (
-                            <button key={key} onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, key); }}
+                            <button key={emoji} onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, emoji); }}
                               className="w-8 h-8 rounded-lg flex items-center justify-center text-base transition-all hover:scale-110 active:scale-95"
-                              style={{ background: myReaction ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)', border: myReaction ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent' }}
-                              title={val.label}>
-                              {val.display}
+                              style={{ background: myReaction ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)', border: myReaction ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent' }}>
+                              {emoji}
                             </button>
                           );
                         })}
+                        <EmojiPickerButtonSmall onClick={() => setShowInlineEmojiPicker(showInlineEmojiPicker === msg.id ? null : msg.id)} />
                         {isBenefactor && (
                           <button onClick={(e) => { e.stopPropagation(); togglePin(msg.id); }}
                             className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95"
@@ -1580,6 +1593,15 @@ export default function EstateChatPage() {
                           </button>
                         )}
                       </div>
+                      {showInlineEmojiPicker === msg.id && (
+                        <div className="relative z-[52] pt-10" style={{ ...(isMe ? { marginLeft: 'auto', width: 'fit-content' } : { width: 'fit-content' }) }}>
+                          <EmojiPickerGrid
+                            onSelect={(emoji) => { toggleReaction(msg.id, emoji); setShowInlineEmojiPicker(null); }}
+                            onClose={() => setShowInlineEmojiPicker(null)}
+                            isOwn={isMe}
+                          />
+                        </div>
+                      )}
                       </div>
                     </>
                   )}
@@ -1896,7 +1918,7 @@ export default function EstateChatPage() {
         {/* Quick actions strip — emojis when idle, hidden when keyboard open */}
         {!inputFocused && (
           <div className="flex items-center gap-1 px-3 pt-1 pb-1" style={{ background: 'var(--bg2)', touchAction: 'none', paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom, 0.25rem))' }}>
-              {['👍', '❤️', '😂', '🙏', '🔥', '👏'].map(emoji => (
+              {recentEmojis.map(emoji => (
                 <button
                   key={emoji}
                   onMouseDown={(e) => e.preventDefault()}
@@ -1995,17 +2017,28 @@ export default function EstateChatPage() {
           />
           <div style={menuStyle} data-testid={`msg-action-menu-${msgActionId}`}>
             <div className={`flex gap-1.5 mb-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
-              {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
-                const myReaction = (actionMsg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
+              {recentEmojis.map((emoji) => {
+                const myReaction = (actionMsg.reactions || []).some(r => (r.emoji === emoji || displayEmoji(r.emoji) === emoji) && r.user_id === user?.id);
                 return (
-                  <button key={key} onClick={(e) => { e.stopPropagation(); toggleReaction(actionMsg.id, key); closeMsgAction(); }}
+                  <button key={emoji} onClick={(e) => { e.stopPropagation(); toggleReaction(actionMsg.id, emoji); closeMsgAction(); }}
                     className="w-9 h-9 rounded-full flex items-center justify-center text-lg active:scale-90 transition-transform"
                     style={{ background: myReaction ? 'rgba(212,175,55,0.3)' : 'rgba(30,40,60,0.9)', border: '1px solid rgba(255,255,255,0.1)' }}
-                    data-testid={`action-reaction-${key}`}
-                  >{val.display}</button>
+                    data-testid={`action-reaction-${emoji}`}
+                  >{emoji}</button>
                 );
               })}
+              <EmojiPickerButton onClick={() => setShowActionEmojiPicker(!showActionEmojiPicker)} />
             </div>
+            {showActionEmojiPicker && (
+              <div className="mb-2">
+                <EmojiPickerGrid
+                  onSelect={(emoji) => { toggleReaction(actionMsg.id, emoji); closeMsgAction(); }}
+                  onClose={() => setShowActionEmojiPicker(false)}
+                  isOwn={isOwn}
+                />
+              </div>
+            )}
+            {!showActionEmojiPicker && (
             <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(20,30,50,0.97)', border: '1px solid rgba(255,255,255,0.12)', minWidth: '170px', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)' }}>
               <button onClick={(e) => { e.stopPropagation(); setReplyTo({ id: actionMsg.id, content: (actionMsg.content || '').slice(0, 100), sender_name: actionMsg.sender_name }); closeMsgAction(); inputRef.current?.focus(); }}
                 className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/5" style={{ color: 'var(--t)' }}
@@ -2077,6 +2110,7 @@ export default function EstateChatPage() {
                 <MapPin className="w-4 h-4" style={{ color: '#4CAF50' }} /> Send My Location
               </button>
             </div>
+            )}
           </div>
         </>
       );
