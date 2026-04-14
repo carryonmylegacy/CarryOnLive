@@ -262,11 +262,9 @@ export default function EstateChatPage() {
         const el = messagesEndRef.current?.parentElement;
         const isNearBottom = !el || (el.scrollHeight - el.scrollTop - el.clientHeight < 150);
         setMessages(data);
-        if (isNearBottom) {
-          // Double-pass scroll for iOS — first pass catches most re-renders, second ensures final layout
-          setTimeout(() => { if (el) el.scrollTop = el.scrollHeight; }, 80);
-          setTimeout(() => { if (el) el.scrollTop = el.scrollHeight; }, 300);
-        }
+        // Always scroll to bottom — on initial load and when near bottom
+        setTimeout(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }); }, 80);
+        setTimeout(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }); }, 400);
         // Prefetch media attachments for faster image loading
         const fileIds = [];
         data.forEach(m => {
@@ -320,9 +318,9 @@ export default function EstateChatPage() {
     setShowHeaderMembers(false);
     fetchMessages(ch.id).then(() => {
       setMsgLoading(false);
-      // Ensure scroll is at bottom after messages load
-      setTimeout(() => { const el = messagesEndRef.current?.parentElement; if (el) el.scrollTop = el.scrollHeight; }, 150);
-      setTimeout(() => { const el = messagesEndRef.current?.parentElement; if (el) el.scrollTop = el.scrollHeight; }, 500);
+      // Scroll to most recent message after load
+      setTimeout(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }); }, 200);
+      setTimeout(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }); }, 600);
     });
   };
 
@@ -452,11 +450,8 @@ export default function EstateChatPage() {
         }
         await fetchMessages(activeChannel.id);
         await fetchChannels();
-        // Scroll to bottom after send — use longer delay for iOS re-render
-        setTimeout(() => {
-          const el = messagesEndRef.current?.parentElement;
-          if (el) el.scrollTop = el.scrollHeight;
-        }, 250);
+        // Scroll to the newly sent message
+        setTimeout(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }); }, 250);
       }
     } catch {} finally { setSending(false); } // eslint-disable-line no-empty
   };
@@ -1791,14 +1786,8 @@ export default function EstateChatPage() {
               onFocus={() => {
                 setInputFocused(true);
                 // Scroll to bottom when keyboard opens
-                setTimeout(() => {
-                  const el = messagesEndRef.current?.parentElement;
-                  if (el) el.scrollTop = el.scrollHeight;
-                }, 350);
-                setTimeout(() => {
-                  const el = messagesEndRef.current?.parentElement;
-                  if (el) el.scrollTop = el.scrollHeight;
-                }, 600);
+                setTimeout(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }); }, 350);
+                setTimeout(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }); }, 600);
                 // Force visualViewport update for keyboard open
                 const vv = window.visualViewport;
                 if (vv) {
