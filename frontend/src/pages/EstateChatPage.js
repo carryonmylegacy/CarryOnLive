@@ -1717,7 +1717,7 @@ export default function EstateChatPage() {
                 }));
                 if (validated.length) setPendingFiles(prev => [...prev, ...validated]);
               }}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && window.innerWidth > 1024) { e.preventDefault(); sendMessage(); } }}
               onFocus={() => {
                 setInputFocused(true);
                 // Scroll to bottom when keyboard opens
@@ -1739,7 +1739,7 @@ export default function EstateChatPage() {
                 }
               }}
               onBlur={() => setInputFocused(false)}
-              enterKeyHint="send"
+              enterKeyHint="return"
               rows={1}
               placeholder="Type a message..."
               className="w-full rounded-2xl px-4 py-2.5 text-base"
