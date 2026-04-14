@@ -127,8 +127,16 @@ export default function EstateChatPage() {
     if (msgActionId) {
       // Use setTimeout to ensure DOM is committed
       const scrollTimer = setTimeout(() => {
-        const bubbleEl = document.querySelector(`[data-testid="msg-bubble-${msgActionId}"]`);
-        if (bubbleEl) bubbleEl.scrollIntoView({ behavior: 'instant', block: 'start' });
+        const menuEl = document.querySelector(`[data-testid="msg-action-menu-${msgActionId}"]`);
+        if (!menuEl) return;
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        const menuRect = menuEl.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const overflow = menuRect.bottom - containerRect.bottom;
+        if (overflow > 0) {
+          container.scrollTop += overflow + 16;
+        }
       }, 80);
       // Use click (not touchstart) for dismiss — touchstart fires on scroll and kills the menu
       const handleDismiss = (e) => {
@@ -1565,34 +1573,34 @@ export default function EstateChatPage() {
                             </button></>
                           )}
                           <div style={{ height: '1px', background: 'var(--b)' }} />
-                          <button onClick={async (e) => {
+                          <button onClick={(e) => {
                             e.stopPropagation();
                             const chId = activeChannel.id;
+                            const authHeaders = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
+                            const apiUrl = API_URL;
                             closeMsgAction();
-                            if (!navigator.geolocation) { toast.error('Geolocation not supported'); return; }
-                            toast('Getting your location...');
+                            if (!navigator.geolocation) { toast.error('Geolocation not supported on this device'); return; }
+                            toast.info('Requesting location...');
                             navigator.geolocation.getCurrentPosition(
-                              async (p) => {
+                              (p) => {
                                 const lat = p.coords.latitude.toFixed(6);
                                 const lng = p.coords.longitude.toFixed(6);
-                                const content = 'My location: https://maps.google.com/?q=' + lat + ',' + lng;
-                                try {
-                                  const res = await fetch(API_URL + '/estate-chat/channels/' + chId + '/messages', {
-                                    method: 'POST',
-                                    headers: headers,
-                                    body: JSON.stringify({ content: content }),
-                                  });
+                                const msg = 'My location: https://maps.google.com/?q=' + lat + ',' + lng;
+                                toast.info('Sending location...');
+                                fetch(apiUrl + '/estate-chat/channels/' + chId + '/messages', {
+                                  method: 'POST',
+                                  headers: authHeaders,
+                                  body: JSON.stringify({ content: msg }),
+                                }).then(res => {
                                   if (res.ok) {
-                                    await fetchMessages(chId);
-                                    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }), 200);
-                                    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }), 600);
+                                    fetchMessages(chId);
+                                    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }), 300);
                                   } else {
-                                    const err = await res.text();
-                                    toast.error('Failed: ' + err);
+                                    res.text().then(t => toast.error('Send failed: ' + t));
                                   }
-                                } catch (ex) { toast.error('Network error'); }
+                                }).catch(() => toast.error('Network error sending location'));
                               },
-                              (err) => toast.error('Location access denied: ' + err.message),
+                              (err) => { toast.error('Location denied: ' + (err.message || 'Unknown error')); },
                               { enableHighAccuracy: true, timeout: 15000 }
                             );
                           }}
