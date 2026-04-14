@@ -125,7 +125,31 @@ Extracted sub-components from three monolithic page files:
 - **Frontend Caching Fix**: Added `no-cache` headers for `index.html` in nginx.conf. Added `--extra-index-url` for emergentintegrations in requirements.txt.
 - **Refactoring**: Removed unused imports, added MongoDB indexes (share_token sparse, compound activation index), all ruff/eslint clean, housekeeping 63/65 PASS.
 
-### Completed (Apr 13, 2026 — Session 4)
+### Completed (Apr 14, 2026 — Session 5: Chat Scroll & Menu Fix)
+- **Action Menu Fixed Overlay**: Converted inline long-press action menu from in-flow rendering (caused content shifting) to a fixed-position overlay that floats over the messages. Menu includes emoji reactions, Reply, Copy, Edit, Pin, Delete, Send My Location. Position auto-adjusts: above bubble when in lower screen half, below when in upper half. Uses semi-transparent backdrop for dismiss. Zero document-flow impact.
+- **Dead Space / Over-Scroll Fix**: Replaced `<div style={{ flex: 1 }} />` spacer with `minHeight: 100%; justify-content: flex-end` inner wrapper inside the scroll container. When few messages: content pins to bottom, no scrollable empty space. When many messages: normal scroll. Added `overscrollBehavior: contain` to prevent iOS rubber-band bounce past content edges.
+- **Initial Scroll Position Fix**: Replaced `scrollIntoView` calls with direct `scrollTop = scrollHeight` on the scroll container. Triple-pass approach (requestAnimationFrame + 100ms + 350ms) ensures reliable scroll-to-bottom on channel open, message fetch, message send, and keyboard focus.
+- **onTouchEnd Handler Fix**: Changed `onTouchEnd={onMsgTouchEnd}` to `onTouchEnd={(e) => onMsgTouchEnd(e, msg.id)}` so quick-tap emoji strip toggle receives the correct message ID.
+- **iOS Text Selection Prevention**: Added `WebkitTouchCallout: 'none'` to message bubble styles alongside existing `WebkitUserSelect: 'none'`.
+- **openMsgAction Scoping Fix**: Changed `document.querySelector` to `scrollContainerRef.current?.querySelector` to avoid finding hidden desktop-layout bubble duplicates that return zero-size rects.
+
+## ==========================================
+## ECT ACTION MENU — PERMANENT RECORD (April 14, 2026)
+## ==========================================
+## The action menu is rendered as a FIXED OVERLAY outside the scroll container.
+## It is NOT inline in the message loop. This prevents ALL content shifting.
+##
+## Implementation:
+##   - openMsgAction: captures bubble rect via scrollContainerRef.querySelector
+##   - Stores { top, bottom, left, right, isOwn, showAbove } in menuPosition state
+##   - Rendered at top level (alongside delete confirmation modals)
+##   - Uses position: fixed with calculated top/bottom/left/right
+##   - Semi-transparent backdrop catches dismiss clicks/touches
+##   - closeMsgAction: resets both msgActionId and menuPosition to null
+##
+## DO NOT move the menu back inline in the message loop.
+## DO NOT add paddingBottom hacks or scrollTop manipulation for menu positioning.
+
 - **iOS Chat Input Cursor Fix**: Moved visible border from `<input>` to wrapper `<div>`, making input fully naked (`border: none; outline: none; background: transparent`). Eliminates iOS WebKit caret miscalculation inside `position: fixed` containers.
 - **Safe-area bottom div**: Made unconditional (was gated by `inputFocused`). PRD mandates always-render.
 - **Housekeeping 65/65**: Fixed route editor audit (#35 — updated check to include extracted `MessageCard.js`), Mongo projection safety (#38 — added `"id": 1` to `connected_protocol.py:784`), modal scroll safety (#55 — added `max-h-[90vh] overflow-y-auto` to ChecklistPage + VaultPage modals, `overflow-hidden` to VideoPlaybackModal). Updated check #55 to accept `overflow-hidden` for full-screen overlays.
