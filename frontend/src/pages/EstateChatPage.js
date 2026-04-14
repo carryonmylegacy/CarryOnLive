@@ -113,7 +113,6 @@ export default function EstateChatPage() {
   const [editingMsg, setEditingMsg] = useState(null); // {id, content} when editing
   const [poppingMsgId, setPoppingMsgId] = useState(null); // message ID being deleted (pop animation)
   const [previewImage, setPreviewImage] = useState(null); // {src, name, fileId} for fullscreen photo preview
-  const caretFixRef = useRef(false); // guards blur/refocus cycle for iOS caret fix
   const msgLongPressTimer = useRef(null);
   const msgLongPressTriggered = useRef(false);
   const touchStartRef = useRef({ x: 0, y: 0 });
@@ -1637,26 +1636,8 @@ export default function EstateChatPage() {
                 if (validated.length) setPendingFiles(prev => [...prev, ...validated]);
               }}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-              onFocus={() => {
-                setInputFocused(true);
-                // iOS caret fix: after keyboard animation, blur+refocus to force
-                // WebKit to recalculate caret at textarea's current position
-                if (!caretFixRef.current) {
-                  caretFixRef.current = true;
-                  setTimeout(() => {
-                    if (inputRef.current) {
-                      inputRef.current.blur();
-                      requestAnimationFrame(() => {
-                        if (inputRef.current) inputRef.current.focus();
-                        setTimeout(() => { caretFixRef.current = false; }, 200);
-                      });
-                    } else {
-                      caretFixRef.current = false;
-                    }
-                  }, 400);
-                }
-              }}
-              onBlur={() => { if (!caretFixRef.current) setInputFocused(false); }}
+              onFocus={() => setInputFocused(true)}
+              onBlur={() => setInputFocused(false)}
               enterKeyHint="send"
               rows={1}
               placeholder="Type a message..."
@@ -1784,8 +1765,6 @@ export default function EstateChatPage() {
             <Image className="w-4 h-4" style={{ color: '#d4af37' }} />
           </button>
         </div>
-        {/* Spacer — sits in iOS keyboard fade zone so emojis stay above it */}
-        <div style={{ background: 'var(--bg2)', height: '36px', flexShrink: 0 }} />
       </div>
       {/* Safe-area bottom spacer — collapses when keyboard is open */}
       <div style={{ background: 'var(--bg2)', height: inputFocused ? '0px' : 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />
