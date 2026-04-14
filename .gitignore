@@ -1874,3 +1874,7 @@ credentials.json
 *.pem
 *.key
 .credentials
+
+# Flagged by secrets scanner
+backend/routes/staff_tools.py
+codemagic.yaml
