@@ -298,6 +298,10 @@ export default function EstateChatPage() {
 
   const handleDraftChange = (e) => {
     setDraft(e.target.value);
+    // Auto-grow textarea up to ~5 lines
+    const el = e.target;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
     sendTypingHeartbeat();
   };
 
@@ -403,7 +407,10 @@ export default function EstateChatPage() {
       if (res.ok) {
         setDraft('');
         // Force-clear the DOM input value to prevent iOS keyboard buffer from restoring it
-        if (inputRef.current) inputRef.current.value = '';
+        if (inputRef.current) {
+          inputRef.current.value = '';
+          inputRef.current.style.height = 'auto';
+        }
         await fetchMessages(activeChannel.id);
         await fetchChannels();
         // Scroll to bottom after send — use longer delay for iOS re-render
@@ -1491,10 +1498,10 @@ export default function EstateChatPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
+      {/* ── Input Bar — light mode for iOS fade-zone legibility ── */}
       <div className="flex-shrink-0" style={{
-        background: 'var(--bg2)',
-        borderTop: '1px solid var(--b)',
+        background: '#F2F2F7',
+        borderTop: '1px solid #C6C6C8',
         position: 'relative',
         zIndex: 10,
       }}>
@@ -1602,7 +1609,7 @@ export default function EstateChatPage() {
             data-testid="ect-attach-btn"
             style={{ background: '#222B42' }}
           >
-            {uploading ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /> : <Paperclip className="w-5 h-5" style={{ color: '#C8D0E0' }} />}
+            {uploading ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /> : <Paperclip className="w-5 h-5" style={{ color: '#8E8E93' }} />}
           </button>
 
           {/* Input area with recording/preview overlay */}
@@ -1644,14 +1651,15 @@ export default function EstateChatPage() {
               className="w-full rounded-2xl px-4 py-2.5 text-base"
               data-testid="ect-message-input"
               style={{
-                background: '#2C4A6B',
+                background: '#E5E5EA',
                 border: 'none',
                 outline: 'none',
                 resize: 'none',
-                overflow: 'hidden',
-                color: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#ffffff',
+                overflowY: 'auto',
+                maxHeight: '120px',
+                color: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#000000',
                 fontSize: '16px',
-                caretColor: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#ffffff',
+                caretColor: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#000000',
                 lineHeight: '1.4',
               }}
             />
@@ -1735,7 +1743,7 @@ export default function EstateChatPage() {
           )}
         </div>
         {/* Quick actions strip — only when keyboard is closed; gap remains when open */}
-        <div className="flex items-center gap-1 px-3 pt-1.5 pb-4" style={{ background: 'var(--bg2)' }}>
+        <div className="flex items-center gap-1 px-3 pt-1.5 pb-4" style={{ background: '#F2F2F7' }}>
           {!inputFocused && (
             <>
               {['👍', '❤️', '😂', '🙏', '🔥', '👏'].map(emoji => (
@@ -1744,7 +1752,7 @@ export default function EstateChatPage() {
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => setDraft(prev => prev + emoji)}
                   className="w-9 h-9 rounded-full flex items-center justify-center text-lg active:scale-90 transition-transform"
-                  style={{ background: 'rgba(255,255,255,0.06)' }}
+                  style={{ background: 'rgba(0,0,0,0.05)' }}
                   data-testid={`quick-emoji-${emoji}`}
                 >{emoji}</button>
               ))}
@@ -1752,16 +1760,16 @@ export default function EstateChatPage() {
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => setDraft(prev => prev.length > 0 ? [...prev].slice(0, -1).join('') : '')}
                 className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform"
-                style={{ background: 'rgba(255,255,255,0.06)' }}
+                style={{ background: 'rgba(0,0,0,0.05)' }}
                 data-testid="quick-backspace-btn"
               >
-                <X className="w-4 h-4" style={{ color: 'var(--t4)' }} />
+                <X className="w-4 h-4" style={{ color: '#8E8E93' }} />
               </button>
               <button
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => fileInputRef.current?.click()}
                 className="w-9 h-9 rounded-full flex items-center justify-center ml-auto active:scale-90 transition-transform"
-                style={{ background: 'rgba(255,255,255,0.06)' }}
+                style={{ background: 'rgba(0,0,0,0.05)' }}
                 data-testid="quick-photo-btn"
               >
                 <Image className="w-4 h-4" style={{ color: '#d4af37' }} />
@@ -1771,7 +1779,7 @@ export default function EstateChatPage() {
         </div>
       </div>
       {/* Safe-area bottom spacer — collapses when keyboard is open */}
-      <div style={{ background: 'var(--bg2)', height: inputFocused ? '0px' : 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />
+      <div style={{ background: '#F2F2F7', height: inputFocused ? '0px' : 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />
     </div>
   );
 
