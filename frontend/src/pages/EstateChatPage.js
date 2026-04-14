@@ -122,18 +122,23 @@ export default function EstateChatPage() {
     // scrollIntoView handled by useEffect below after React renders the menu
   };
 
-  // After menu renders, scroll it into view instantly
+  // After menu renders, scroll it into view and add dismiss listener
   useEffect(() => {
     if (msgActionId) {
-      // Double-RAF to ensure React has committed the DOM
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const menuEl = document.querySelector(`[data-testid="msg-action-menu-${msgActionId}"]`);
-          if (menuEl) menuEl.scrollIntoView({ behavior: 'instant', block: 'nearest' });
-        });
-      });
+      // Use setTimeout to ensure DOM is committed
+      const scrollTimer = setTimeout(() => {
+        const menuEl = document.querySelector(`[data-testid="msg-action-menu-${msgActionId}"]`);
+        if (menuEl) menuEl.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+      }, 80);
+      // Use click (not touchstart) for dismiss — touchstart fires on scroll and kills the menu
+      const handleDismiss = (e) => {
+        const menu = document.querySelector(`[data-testid="msg-action-menu-${msgActionId}"]`);
+        if (menu && !menu.contains(e.target)) closeMsgAction();
+      };
+      const listenerTimer = setTimeout(() => document.addEventListener('click', handleDismiss), 200);
+      return () => { clearTimeout(scrollTimer); clearTimeout(listenerTimer); document.removeEventListener('click', handleDismiss); };
     }
-  }, [msgActionId]);
+  }, [msgActionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const closeMsgAction = () => {
     setMsgActionId(null);
@@ -1516,9 +1521,7 @@ export default function EstateChatPage() {
                   )}
                   {/* Inline action menu (long-press) */}
                   {msgActionId === msg.id && (
-                    <>
-                      <div className="fixed inset-0 z-[55]" onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); closeMsgAction(); }} onClick={(e) => { e.stopPropagation(); closeMsgAction(); }} />
-                      <div className={`relative z-[56] mt-2 ${isMe ? 'flex flex-col items-end' : 'flex flex-col items-start'}`} data-testid={`msg-action-menu-${msg.id}`}>
+                    <div className={`relative z-[56] mt-2 ${isMe ? 'flex flex-col items-end' : 'flex flex-col items-start'}`} data-testid={`msg-action-menu-${msg.id}`}>
                         <div className="flex gap-1.5 mb-2">
                           {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
                             const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
@@ -1572,23 +1575,25 @@ export default function EstateChatPage() {
                               async (p) => {
                                 const lat = p.coords.latitude.toFixed(6);
                                 const lng = p.coords.longitude.toFixed(6);
-                                const url = `https://maps.google.com/?q=${lat},${lng}`;
-                                const content = `📍 My current location:\n${url}`;
+                                const content = 'My location: https://maps.google.com/?q=' + lat + ',' + lng;
                                 try {
-                                  const res = await fetch(`${API_URL}/estate-chat/channels/${chId}/messages`, {
-                                    method: 'POST', headers, body: JSON.stringify({ content }),
+                                  const res = await fetch(API_URL + '/estate-chat/channels/' + chId + '/messages', {
+                                    method: 'POST',
+                                    headers: headers,
+                                    body: JSON.stringify({ content: content }),
                                   });
                                   if (res.ok) {
                                     await fetchMessages(chId);
                                     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }), 200);
-                                    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }), 500);
+                                    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }), 600);
                                   } else {
-                                    toast.error('Failed to send location');
+                                    const err = await res.text();
+                                    toast.error('Failed: ' + err);
                                   }
-                                } catch { toast.error('Failed to send location'); }
+                                } catch (ex) { toast.error('Network error'); }
                               },
-                              () => toast.error('Location access denied'),
-                              { enableHighAccuracy: true, timeout: 10000 }
+                              (err) => toast.error('Location access denied: ' + err.message),
+                              { enableHighAccuracy: true, timeout: 15000 }
                             );
                           }}
                             className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left active:bg-white/5" style={{ color: '#4CAF50' }}>
@@ -1596,7 +1601,6 @@ export default function EstateChatPage() {
                           </button>
                         </div>
                       </div>
-                    </>
                   )}
                   {/* Reaction picker (tap on bubble) */}
                   {reactingMsgId === msg.id && (
