@@ -112,6 +112,7 @@ export default function EstateChatPage() {
   const [showListMembersId, setShowListMembersId] = useState(null);
   const [msgActionId, setMsgActionId] = useState(null); // message ID for long-press action menu
   const [reactionDetailId, setReactionDetailId] = useState(null); // message ID for reaction detail dropdown
+  const [replyTo, setReplyTo] = useState(null); // { id, content, sender_name } for reply-to
   const [editingMsg, setEditingMsg] = useState(null); // {id, content} when editing
   const [poppingMsgId, setPoppingMsgId] = useState(null); // message ID being deleted (pop animation)
   const [previewImage, setPreviewImage] = useState(null); // {src, name, fileId} for fullscreen photo preview
@@ -439,10 +440,11 @@ export default function EstateChatPage() {
     setSending(true);
     try {
       const res = await fetch(`${API_URL}/estate-chat/channels/${activeChannel.id}/messages`, {
-        method: 'POST', headers, body: JSON.stringify({ content: draft.trim() }),
+        method: 'POST', headers, body: JSON.stringify({ content: draft.trim(), reply_to: replyTo?.id || null }),
       });
       if (res.ok) {
         setDraft('');
+        setReplyTo(null);
         // Force-clear the DOM input value to prevent iOS keyboard buffer from restoring it
         if (inputRef.current) {
           inputRef.current.value = '';
@@ -1421,6 +1423,13 @@ export default function EstateChatPage() {
                         marginTop: hasReactions ? '10px' : '0',
                       }}
                     >
+                      {/* Quoted reply */}
+                      {msg.reply_to && (
+                        <div className="mb-1.5 px-2.5 py-1.5 rounded-lg text-xs" style={{ background: 'rgba(255,255,255,0.06)', borderLeft: '2px solid #d4af37' }}>
+                          <div className="font-semibold" style={{ color: '#d4af37' }}>{msg.reply_to.sender_name}</div>
+                          <div className="truncate" style={{ color: 'var(--t4)' }}>{msg.reply_to.content}</div>
+                        </div>
+                      )}
                       {msg.attachments && msg.attachments.length > 1 ? (
                         <div className="grid gap-1" style={{ gridTemplateColumns: msg.attachments.length === 2 ? '1fr 1fr' : 'repeat(auto-fill, minmax(120px, 1fr))' }}>
                           {msg.attachments.map((att) => {
@@ -1490,6 +1499,11 @@ export default function EstateChatPage() {
                           })}
                         </div>
                         <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(30,40,60,0.95)', border: '1px solid rgba(255,255,255,0.1)', minWidth: '180px', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)' }}>
+                          <button onClick={(e) => { e.stopPropagation(); setReplyTo({ id: msg.id, content: (msg.content || '').slice(0, 100), sender_name: msg.sender_name }); setMsgActionId(null); inputRef.current?.focus(); }}
+                            className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors" data-testid={`reply-msg-btn-${msg.id}`} style={{ color: '#E8ECF0' }}>
+                            <ArrowLeft className="w-4 h-4" style={{ color: '#8E9AAF', transform: 'scaleX(-1)' }} /> Reply
+                          </button>
+                          <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
                           <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(msg.content || '').then(() => toast.success('Copied')).catch(() => {}); setMsgActionId(null); }}
                             className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors" data-testid={`copy-msg-btn-${msg.id}`} style={{ color: '#E8ECF0' }}>
                             <Copy className="w-4 h-4" style={{ color: '#8E9AAF' }} /> Copy
@@ -1631,6 +1645,18 @@ export default function EstateChatPage() {
             <span className="text-xs" style={{ color: 'var(--t4)' }}>
               {typers.length === 1 ? `${typers[0].user_name} is typing...` : `${typers.map(t => t.user_name).join(', ')} are typing...`}
             </span>
+          </div>
+        )}
+        {/* Reply-to preview banner */}
+        {replyTo && (
+          <div className="flex items-center gap-2 px-3 py-2 mx-3 mb-1 rounded-xl" style={{ background: 'rgba(212,175,55,0.08)', borderLeft: '3px solid #d4af37' }}>
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] font-semibold" style={{ color: '#d4af37' }}>{replyTo.sender_name}</div>
+              <div className="text-xs truncate" style={{ color: 'var(--t4)' }}>{replyTo.content}</div>
+            </div>
+            <button onClick={() => setReplyTo(null)} className="flex-shrink-0 p-1" data-testid="cancel-reply-btn">
+              <X className="w-4 h-4" style={{ color: 'var(--t4)' }} />
+            </button>
           </div>
         )}
         {/* Pending file attachment preview */}

@@ -145,6 +145,7 @@ class CreateChannelRequest(BaseModel):
 
 class SendMessageRequest(BaseModel):
     content: str
+    reply_to: str | None = None  # message ID being replied to
 
 
 class EditMessageRequest(BaseModel):
@@ -589,6 +590,17 @@ async def send_message(
         "content": content,
         "created_at": now,
     }
+    # Add reply reference if replying to a specific message
+    if data.reply_to:
+        replied = await db.estate_messages.find_one(
+            {"id": data.reply_to, "channel_id": channel_id}, {"_id": 0, "id": 1, "content": 1, "sender_name": 1}
+        )
+        if replied:
+            message["reply_to"] = {
+                "id": replied["id"],
+                "content": (replied.get("content") or "")[:200],
+                "sender_name": replied.get("sender_name", "Unknown"),
+            }
     await db.estate_messages.insert_one({k: v for k, v in message.items()})
     await db.estate_channel_reads.update_one(
         {"channel_id": channel_id, "user_id": current_user["id"]},
