@@ -119,12 +119,21 @@ export default function EstateChatPage() {
     const container = scrollContainerRef.current;
     if (container) scrollPosBeforeMenu.current = container.scrollTop;
     setMsgActionId(msgId);
-    // Instantly scroll menu into view — no delay, no smooth animation
-    requestAnimationFrame(() => {
-      const menuEl = document.querySelector(`[data-testid="msg-action-menu-${msgId}"]`);
-      if (menuEl) menuEl.scrollIntoView({ behavior: 'instant', block: 'nearest' });
-    });
+    // scrollIntoView handled by useEffect below after React renders the menu
   };
+
+  // After menu renders, scroll it into view instantly
+  useEffect(() => {
+    if (msgActionId) {
+      // Double-RAF to ensure React has committed the DOM
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const menuEl = document.querySelector(`[data-testid="msg-action-menu-${msgActionId}"]`);
+          if (menuEl) menuEl.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+        });
+      });
+    }
+  }, [msgActionId]);
 
   const closeMsgAction = () => {
     setMsgActionId(null);
@@ -547,6 +556,10 @@ export default function EstateChatPage() {
   const onMsgTouchEnd = () => {
     clearTimeout(msgLongPressTimer.current);
     msgLongPressTimer.current = null;
+    // Reset long press flag after click event has fired
+    if (msgLongPressTriggered.current) {
+      setTimeout(() => { msgLongPressTriggered.current = false; }, 100);
+    }
   };
 
   const sendVoiceMessage = async (previewBlob) => {
