@@ -515,9 +515,9 @@ export default function EstateChatPage() {
         const viewH = window.visualViewport?.height || window.innerHeight;
         const above = r.bottom > viewH * 0.5;
         setMsgActionPos({
-          above,
-          top: above ? null : r.bottom + 4,
-          bottom: above ? (viewH - r.top + 4) : null,
+          above: r.bottom > viewH * 0.5,
+          bubbleTop: r.top,
+          bubbleBottom: r.bottom,
           right: window.innerWidth - r.right,
           left: r.left,
           isMe: r.right > window.innerWidth / 2,
@@ -1425,9 +1425,7 @@ export default function EstateChatPage() {
                       onContextMenu={(e) => {
                         e.preventDefault();
                         const r = e.currentTarget.getBoundingClientRect();
-                        const viewH = window.visualViewport?.height || window.innerHeight;
-                        const above = r.bottom > viewH * 0.5;
-                        setMsgActionPos({ above, top: above ? null : r.bottom + 4, bottom: above ? (viewH - r.top + 4) : null, right: window.innerWidth - r.right, left: r.left, isMe });
+                        setMsgActionPos({ bubbleTop: r.top, bubbleBottom: r.bottom, right: window.innerWidth - r.right, left: r.left, isMe });
                         setMsgActionId(msg.id); setReactingMsgId(null);
                       }}
                       style={{
@@ -1569,19 +1567,35 @@ export default function EstateChatPage() {
           <>
             <div className="fixed inset-0 z-[60]" style={{ background: 'rgba(0,0,0,0.4)', WebkitBackdropFilter: 'blur(4px)', backdropFilter: 'blur(4px)' }}
               onClick={() => setMsgActionId(null)} />
-            <div className="fixed z-[61] flex flex-col items-center justify-center inset-0 px-4 pointer-events-none">
-              <div className="pointer-events-auto max-h-[85vh] overflow-y-auto" style={{ maxWidth: '280px', width: '100%' }} data-testid={`msg-action-menu-${msg.id}`}>
-              <div className="flex gap-1.5 mb-2 justify-center">
-                {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
-                  const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
-                  return (
-                    <button key={key} onClick={() => { toggleReaction(msg.id, key); setMsgActionId(null); }}
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-xl active:scale-90 transition-transform"
-                      style={{ background: myReaction ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.1)' }}
-                    >{val.display}</button>
-                  );
-                })}
+            <div className="fixed z-[61]" style={{
+              top: 0, left: 0, right: 0, bottom: 0,
+              display: 'flex', flexDirection: 'column', pointerEvents: 'none',
+            }}>
+              {/* Emoji bar — positioned above the bubble */}
+              <div className="pointer-events-auto" style={{
+                position: 'absolute',
+                top: Math.max(50, (pos.bubbleTop || 0) - 52) + 'px',
+                ...(pos.isMe ? { right: '16px' } : { left: '16px' }),
+              }}>
+                <div className="flex gap-1.5">
+                  {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
+                    const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
+                    return (
+                      <button key={key} onClick={() => { toggleReaction(msg.id, key); setMsgActionId(null); }}
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-xl active:scale-90 transition-transform"
+                        style={{ background: myReaction ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.1)' }}
+                      >{val.display}</button>
+                    );
+                  })}
+                </div>
               </div>
+              {/* Action card — positioned below the bubble */}
+              <div className="pointer-events-auto" style={{
+                position: 'absolute',
+                top: Math.min((pos.bubbleBottom || 200) + 4, (window.visualViewport?.height || window.innerHeight) - 320) + 'px',
+                ...(pos.isMe ? { right: '16px' } : { left: '16px' }),
+                maxHeight: '50vh', overflowY: 'auto',
+              }} data-testid={`msg-action-menu-${msg.id}`}>
               <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(30,40,60,0.95)', border: '1px solid rgba(255,255,255,0.1)', minWidth: '180px', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)' }}>
                 <button onClick={() => { setReplyTo({ id: msg.id, content: (msg.content || '').slice(0, 100), sender_name: msg.sender_name }); setMsgActionId(null); inputRef.current?.focus(); }}
                   className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10" data-testid={`reply-msg-btn-${msg.id}`} style={{ color: '#E8ECF0' }}>
