@@ -136,6 +136,16 @@ Extracted sub-components from three monolithic page files:
 ### Completed (Apr 14, 2026 — Session 6: Touch Event Regression Fixes)
 - **Bug Fix: Long-press menu disappearing on finger lift (iOS)**: Root cause: `onMsgTouchEnd` was resetting `msgLongPressTriggered.current = false` before iOS's synthetic `click` event fired, allowing `onClick` to call `closeMsgAction()`. Fix: keep flag alive in `onTouchEnd`, let `onClick` detect and reset it. Added 400ms timing guard on backdrop via `menuOpenedAtRef` to block synthetic clicks on the overlay.
 - **Bug Fix: Reaction picker creating width gap on outgoing messages**: Root cause: the reaction picker used `position: relative` inside the message wrapper, expanding its width beyond the bubble text width. Fix: wrapped picker in `position: relative; height: 36px` container with the picker itself using `position: absolute` + right/left anchoring, preventing any width contribution to the parent.
+- **Bug Fix: Tappable links in messages blocked by touch handlers**: Added `e.target.closest('a')` guard to both `onMsgTouchStart` and `onMsgTouchEnd` so taps on links (location, URLs) pass through to the browser's native handler.
+
+### Completed (Apr 14, 2026 — Session 7: Emoji Library)
+- **Full Emoji Library**: ~700 emojis across 8 categories (Smileys, Gestures, Animals & Nature, Food & Drink, Activities, Travel & Places, Objects, Hearts & Symbols). Component: `/components/estate-chat/EmojiLibrary.js`.
+- **Emoji Picker Grid**: 6-column scrollable dropdown with sticky category headers and search-by-character. Opens from a SmilePlus icon button.
+- **Recent Emojis Tracking**: Last 5 used emojis stored in localStorage (`ect_recent_emojis`). Defaults: 👍❤️😂😢🔥.
+- **Long-Press Menu Integration**: Emoji row shows 5 recent emojis + picker icon. When picker is open, action buttons (Reply/Copy/Edit/etc.) are hidden to save space.
+- **Quick-Tap Strip Integration**: Tap-on-bubble reaction strip uses recent emojis + picker icon + pin button.
+- **Input Bar Integration**: Bottom quick-action emoji row uses recent emojis (dynamic, not hardcoded).
+- **Backend: Open Emoji Reactions**: Removed `VALID_REACTIONS` whitelist. Backend now accepts any unicode emoji string ≤20 chars. Legacy keys (thumbs_up, heart, etc.) still work. 13 pytest tests verify the API.
 
 ## ==========================================
 ## ECT ACTION MENU — PERMANENT RECORD (April 14, 2026)
