@@ -133,6 +133,10 @@ Extracted sub-components from three monolithic page files:
 - **iOS Text Selection Prevention**: Added `WebkitTouchCallout: 'none'` to message bubble styles alongside existing `WebkitUserSelect: 'none'`.
 - **openMsgAction Scoping Fix**: Changed `document.querySelector` to `scrollContainerRef.current?.querySelector` to avoid finding hidden desktop-layout bubble duplicates that return zero-size rects.
 
+### Completed (Apr 14, 2026 — Session 6: Touch Event Regression Fixes)
+- **Bug Fix: Long-press menu disappearing on finger lift (iOS)**: Root cause: `onMsgTouchEnd` was resetting `msgLongPressTriggered.current = false` before iOS's synthetic `click` event fired, allowing `onClick` to call `closeMsgAction()`. Fix: keep flag alive in `onTouchEnd`, let `onClick` detect and reset it. Added 400ms timing guard on backdrop via `menuOpenedAtRef` to block synthetic clicks on the overlay.
+- **Bug Fix: Reaction picker creating width gap on outgoing messages**: Root cause: the reaction picker used `position: relative` inside the message wrapper, expanding its width beyond the bubble text width. Fix: wrapped picker in `position: relative; height: 36px` container with the picker itself using `position: absolute` + right/left anchoring, preventing any width contribution to the parent.
+
 ## ==========================================
 ## ECT ACTION MENU — PERMANENT RECORD (April 14, 2026)
 ## ==========================================
