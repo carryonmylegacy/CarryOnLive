@@ -177,6 +177,15 @@ export default function EstateChatPage() {
     };
   }, []);
 
+  // ── Auto-resize textarea after re-renders (focus change, keyboard dismiss) ──
+  useEffect(() => {
+    if (inputRef.current) {
+      const el = inputRef.current;
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }
+  }, [draft, inputFocused]);
+
   // ── Add member to channel ──
   const addMemberToChannel = async (channelId, memberId, estateId) => {
     try {
