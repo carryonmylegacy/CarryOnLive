@@ -37,6 +37,7 @@ import {
   Pencil,
   Copy,
   TextSelect,
+  MapPin,
 } from 'lucide-react';
 import { platformDownload } from '../utils/downloadFile';
 import useVoiceRecorder from '../components/estate-chat/useVoiceRecorder';
@@ -1439,7 +1440,18 @@ export default function EstateChatPage() {
                         if (isVideo) return <AuthVideo fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} />;
                         if (isImage) return <AuthImage fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} msgId={msg.id} onPreview={(s, n, fid) => setPreviewImage({ src: s, name: n, fileId: fid })} />;
                         return <AuthFileLink fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} fileSize={msg.attachment.file_size} msgId={msg.id} />;
-                      })() : msg.content}
+                      })() : (() => {
+                        // Render message content with tappable links
+                        const content = msg.content || '';
+                        const urlRegex = /(https?:\/\/[^\s]+)/g;
+                        const parts = content.split(urlRegex);
+                        if (parts.length <= 1) return content;
+                        return parts.map((part, pi) => urlRegex.test(part)
+                          ? <a key={pi} href={part} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                              className="underline break-all" style={{ color: '#5BA3F5' }}>{part.includes('maps.google.com') ? <><MapPin className="w-3.5 h-3.5 inline mr-1" />Open in Maps</> : part}</a>
+                          : <React.Fragment key={pi}>{part}</React.Fragment>
+                        );
+                      })()}
                     </div>
                   </div>
                   )}
@@ -1508,6 +1520,31 @@ export default function EstateChatPage() {
                               <Trash2 className="w-4 h-4" style={{ color: '#ef4444' }} /> Delete
                             </button></>
                           )}
+                          <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                          <button onClick={async (e) => {
+                            e.stopPropagation(); setMsgActionId(null);
+                            if (!navigator.geolocation) { toast.error('Geolocation not supported'); return; }
+                            toast('Getting your location...');
+                            navigator.geolocation.getCurrentPosition(
+                              async (pos) => {
+                                const { latitude, longitude } = pos.coords;
+                                const mapUrl = `https://maps.google.com/?q=${latitude},${longitude}`;
+                                const locationMsg = `My location: ${mapUrl}`;
+                                try {
+                                  const res = await fetch(`${API_URL}/estate-chat/channels/${activeChannel.id}/messages`, {
+                                    method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ content: locationMsg }),
+                                  });
+                                  if (res.ok) { await fetchMessages(activeChannel.id); toast.success('Location sent'); }
+                                } catch { toast.error('Failed to send location'); }
+                              },
+                              () => toast.error('Location access denied'),
+                              { enableHighAccuracy: true, timeout: 10000 }
+                            );
+                          }}
+                            className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/10 transition-colors" data-testid="send-location-btn" style={{ color: '#4CAF50' }}>
+                            <MapPin className="w-4 h-4" style={{ color: '#4CAF50' }} /> Send My Location
+                          </button>
                         </div>
                       </div>
                     </>
