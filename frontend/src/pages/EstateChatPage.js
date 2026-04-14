@@ -560,31 +560,41 @@ export default function EstateChatPage() {
   };
 
   const onMsgTouchStart = (e, msgId) => {
-    // Prevent iOS text selection during long press
-    e.preventDefault();
     msgLongPressTriggered.current = false;
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     msgLongPressTimer.current = setTimeout(() => {
       msgLongPressTriggered.current = true;
       window.getSelection()?.removeAllRanges();
       setReactingMsgId(null);
       openMsgAction(msgId);
-      if (navigator.vibrate) navigator.vibrate(30);
     }, 500);
   };
 
   const onMsgTouchMove = (e) => {
-    if (msgLongPressTimer.current) {
+    if (!msgLongPressTimer.current) return;
+    const dx = Math.abs(e.touches[0].clientX - touchStartRef.current.x);
+    const dy = Math.abs(e.touches[0].clientY - touchStartRef.current.y);
+    if (dx > 10 || dy > 10) {
       clearTimeout(msgLongPressTimer.current);
       msgLongPressTimer.current = null;
     }
   };
 
-  const onMsgTouchEnd = () => {
+  const onMsgTouchEnd = (e, msgId) => {
     clearTimeout(msgLongPressTimer.current);
     msgLongPressTimer.current = null;
-    // Reset long press flag after click event has fired
     if (msgLongPressTriggered.current) {
-      setTimeout(() => { msgLongPressTriggered.current = false; }, 100);
+      // Long press was triggered — block the tap
+      e.preventDefault();
+      msgLongPressTriggered.current = false;
+    } else {
+      // Quick tap — toggle emoji strip
+      e.preventDefault();
+      if (msgActionId) {
+        closeMsgAction();
+      } else {
+        setReactingMsgId(reactingMsgId === msgId ? null : msgId);
+      }
     }
   };
 
