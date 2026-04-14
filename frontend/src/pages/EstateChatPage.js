@@ -1517,7 +1517,7 @@ export default function EstateChatPage() {
                   {/* Inline action menu (long-press) */}
                   {msgActionId === msg.id && (
                     <>
-                      <div className="fixed inset-0 z-[55]" onClick={(e) => { e.stopPropagation(); closeMsgAction(); }} />
+                      <div className="fixed inset-0 z-[55]" onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); closeMsgAction(); }} onClick={(e) => { e.stopPropagation(); closeMsgAction(); }} />
                       <div className={`relative z-[56] mt-2 ${isMe ? 'flex flex-col items-end' : 'flex flex-col items-start'}`} data-testid={`msg-action-menu-${msg.id}`}>
                         <div className="flex gap-1.5 mb-2">
                           {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
@@ -1600,28 +1600,31 @@ export default function EstateChatPage() {
                   )}
                   {/* Reaction picker (tap on bubble) */}
                   {reactingMsgId === msg.id && (
-                    <div className={`flex gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`} data-testid={`reaction-picker-${msg.id}`}>
-                      {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
-                        const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
-                        return (
-                          <button key={key} onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, key); }}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center text-base transition-all hover:scale-110 active:scale-95"
-                            style={{ background: myReaction ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)', border: myReaction ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent' }}
-                            title={val.label}>
-                            {val.display}
+                    <>
+                      <div className="fixed inset-0 z-[50]" onTouchEnd={(e) => { e.preventDefault(); setReactingMsgId(null); }} onClick={() => setReactingMsgId(null)} />
+                      <div className={`relative z-[51] flex gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`} data-testid={`reaction-picker-${msg.id}`}>
+                        {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
+                          const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
+                          return (
+                            <button key={key} onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, key); }}
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-base transition-all hover:scale-110 active:scale-95"
+                              style={{ background: myReaction ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)', border: myReaction ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent' }}
+                              title={val.label}>
+                              {val.display}
+                            </button>
+                          );
+                        })}
+                        {isBenefactor && (
+                          <button onClick={(e) => { e.stopPropagation(); togglePin(msg.id); }}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                            data-testid={`pin-btn-${msg.id}`}
+                            style={{ background: msg.pinned ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)', border: msg.pinned ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent' }}
+                            title={msg.pinned ? 'Unpin' : 'Pin'}>
+                            <Pin className="w-4 h-4" style={{ color: msg.pinned ? '#d4af37' : 'var(--t4)' }} />
                           </button>
-                        );
-                      })}
-                      {isBenefactor && (
-                        <button onClick={(e) => { e.stopPropagation(); togglePin(msg.id); }}
-                          className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                          data-testid={`pin-btn-${msg.id}`}
-                          style={{ background: msg.pinned ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)', border: msg.pinned ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent' }}
-                          title={msg.pinned ? 'Unpin' : 'Pin'}>
-                          <Pin className="w-4 h-4" style={{ color: msg.pinned ? '#d4af37' : 'var(--t4)' }} />
-                        </button>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    </>
                   )}
                   {/* Bottom: time + edited + read status */}
                   <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 ${isMe ? 'justify-end mr-1' : 'ml-1'}`} style={{ color: 'var(--t5)' }}>
