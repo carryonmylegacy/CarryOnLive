@@ -113,9 +113,11 @@ export default function EstateChatPage() {
   const [msgActionId, setMsgActionId] = useState(null); // message ID for long-press action menu
   const [menuPosition, setMenuPosition] = useState(null); // fixed overlay position for action menu
   const scrollContainerRef = useRef(null); // ref for scroll container
+  const menuOpenedAtRef = useRef(0); // timestamp when action menu was opened (guards against synthetic clicks)
 
   const openMsgAction = (msgId) => {
     setReactingMsgId(null);
+    menuOpenedAtRef.current = Date.now();
     // Query within the visible scroll container to avoid hidden desktop duplicates
     const container = scrollContainerRef.current;
     const bubbleEl = container
@@ -578,9 +580,11 @@ export default function EstateChatPage() {
     clearTimeout(msgLongPressTimer.current);
     msgLongPressTimer.current = null;
     if (msgLongPressTriggered.current) {
-      // Long press was triggered — block the tap
+      // Long press was triggered — block the tap but keep flag alive
+      // so the subsequent onClick (which iOS fires despite preventDefault)
+      // can see it and bail out instead of closing the menu.
       e.preventDefault();
-      msgLongPressTriggered.current = false;
+      return;
     } else {
       // Quick tap — toggle emoji strip
       e.preventDefault();
@@ -1470,7 +1474,7 @@ export default function EstateChatPage() {
                     <div
                       className="px-4 py-2.5 rounded-2xl text-sm cursor-pointer"
                       data-testid={`msg-bubble-${msg.id}`}
-                      onClick={() => { if (msgLongPressTriggered.current) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); closeMsgAction(); }}
+                      onClick={() => { if (msgLongPressTriggered.current) { msgLongPressTriggered.current = false; return; } setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); closeMsgAction(); }}
                       onTouchStart={(e) => onMsgTouchStart(e, msg.id)}
                       onTouchMove={onMsgTouchMove}
                       onTouchEnd={(e) => onMsgTouchEnd(e, msg.id)}
@@ -1545,11 +1549,12 @@ export default function EstateChatPage() {
                       })}
                     </div>
                   )}
-                  {/* Reaction picker (tap on bubble) */}
+                  {/* Reaction picker (tap on bubble) — absolute so it never widens the message container */}
                   {reactingMsgId === msg.id && (
                     <>
                       <div className="fixed inset-0 z-[50]" onTouchEnd={(e) => { e.preventDefault(); setReactingMsgId(null); }} onClick={() => setReactingMsgId(null)} />
-                      <div className={`relative z-[51] flex gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`} data-testid={`reaction-picker-${msg.id}`}>
+                      <div style={{ position: 'relative', height: '36px' }}>
+                      <div className={`absolute z-[51] flex gap-1`} style={{ top: '4px', whiteSpace: 'nowrap', ...(isMe ? { right: 0 } : { left: 0 }) }} data-testid={`reaction-picker-${msg.id}`}>
                         {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
                           const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
                           return (
@@ -1570,6 +1575,7 @@ export default function EstateChatPage() {
                             <Pin className="w-4 h-4" style={{ color: msg.pinned ? '#d4af37' : 'var(--t4)' }} />
                           </button>
                         )}
+                      </div>
                       </div>
                     </>
                   )}
@@ -1979,8 +1985,8 @@ export default function EstateChatPage() {
       return (
         <>
           <div className="fixed inset-0 z-[109]"
-            onClick={closeMsgAction}
-            onTouchEnd={(e) => { e.preventDefault(); closeMsgAction(); }}
+            onClick={() => { if (Date.now() - menuOpenedAtRef.current > 400) closeMsgAction(); }}
+            onTouchEnd={(e) => { e.preventDefault(); if (Date.now() - menuOpenedAtRef.current > 400) closeMsgAction(); }}
             style={{ background: 'rgba(0,0,0,0.35)' }}
           />
           <div style={menuStyle} data-testid={`msg-action-menu-${msgActionId}`}>
