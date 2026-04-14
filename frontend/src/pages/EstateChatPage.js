@@ -119,10 +119,20 @@ export default function EstateChatPage() {
     const container = scrollContainerRef.current;
     if (container) {
       scrollPosBeforeMenu.current = container.scrollTop;
-      // Add padding and scroll the BUBBLE to center INSTANTLY — before React re-renders
+      // Add padding to create scrollable space, force reflow, then scroll
       container.style.paddingBottom = '400px';
+      void container.offsetHeight; // force reflow so padding takes effect
       const bubbleEl = document.querySelector(`[data-testid="msg-bubble-${msgId}"]`);
-      if (bubbleEl) bubbleEl.scrollIntoView({ behavior: 'instant', block: 'center' });
+      if (bubbleEl) {
+        const bubbleRect = bubbleEl.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        // Scroll message up to 35% from top of container
+        const targetY = containerRect.height * 0.35;
+        const currentY = bubbleRect.top - containerRect.top;
+        if (currentY > targetY) {
+          container.scrollTop += (currentY - targetY);
+        }
+      }
     }
     setMsgActionId(msgId);
   };
