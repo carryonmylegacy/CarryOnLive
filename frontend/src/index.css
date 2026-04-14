@@ -1267,6 +1267,10 @@ body.ect-active .mobile-header {
 body.ect-chat-active .mobile-bottom-nav {
   display: none !important;
 }
+/* Also hide the bottom fade gradient when dock is hidden */
+body.ect-chat-active .nav-fade-zone {
+  display: none !important;
+}
 body.ect-chat-active .dashboard-content-area {
   padding-bottom: 0 !important;
   margin-bottom: 0 !important;

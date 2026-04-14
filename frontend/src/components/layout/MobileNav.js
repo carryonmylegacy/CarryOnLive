@@ -1244,7 +1244,7 @@ const MobileNav = () => {
       )}
 
       {/* Bottom fade zone — frosted gradient behind nav area */}
-      <div className="lg:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none" style={{
+      <div className="nav-fade-zone lg:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none" style={{
         height: 'calc(80px + env(safe-area-inset-bottom, 4px))',
         background: 'linear-gradient(to top, var(--bg) 0%, var(--bg) 20%, transparent 100%)',
       }} />
