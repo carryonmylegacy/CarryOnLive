@@ -164,7 +164,7 @@ export default function EstateChatPage() {
     const update = () => {
       const root = document.getElementById('ect-root');
       if (root) {
-        root.style.height = (vv.height - 2) + 'px';
+        root.style.height = (vv.height - 4) + 'px';
         root.style.top = vv.offsetTop + 'px';
       }
     };
@@ -1770,12 +1770,10 @@ export default function EstateChatPage() {
           )}
         </div>
         {/* Quick actions strip — emojis when idle, swipe hint when keyboard open */}
-        <div className="flex items-center gap-1 px-3 pt-1.5 pb-4" style={{ background: 'var(--bg2)', touchAction: 'none' }}>
+        <div className="flex items-center gap-1 px-3 pt-1 pb-2" style={{ background: 'var(--bg2)', touchAction: 'none' }}>
           {inputFocused ? (
-            <div className="flex items-center justify-center w-full gap-2 py-1" style={{ opacity: 0.5 }}>
-              <ChevronDown className="w-4 h-4" style={{ color: 'var(--t5)' }} />
-              <span className="text-xs" style={{ color: 'var(--t5)' }}>swipe to dismiss</span>
-              <ChevronDown className="w-4 h-4" style={{ color: 'var(--t5)' }} />
+            <div className="flex items-center justify-center w-full py-2">
+              <div style={{ width: '36px', height: '5px', borderRadius: '3px', background: 'rgba(255,255,255,0.3)' }} />
             </div>
           ) : (
             <>
@@ -1811,8 +1809,8 @@ export default function EstateChatPage() {
           )}
         </div>
       </div>
-      {/* Safe-area bottom spacer */}
-      <div style={{ background: 'var(--bg2)', height: 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />
+      {/* Safe-area bottom spacer — hidden when keyboard is open */}
+      <div style={{ background: 'var(--bg2)', height: inputFocused ? '0px' : 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />
     </div>
   );
 
