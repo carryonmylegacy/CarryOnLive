@@ -112,6 +112,29 @@ export default function EstateChatPage() {
   const [showListMembersId, setShowListMembersId] = useState(null);
   const [msgActionId, setMsgActionId] = useState(null); // message ID for long-press action menu
   const scrollContainerRef = useRef(null); // ref for scroll lock
+  const scrollPosBeforeMenu = useRef(null); // saved scroll position to restore on dismiss
+
+  const openMsgAction = (msgId) => {
+    setReactingMsgId(null);
+    // Save scroll position before opening menu
+    const container = scrollContainerRef.current;
+    if (container) scrollPosBeforeMenu.current = container.scrollTop;
+    setMsgActionId(msgId);
+    // After render, scroll so the menu is fully visible
+    setTimeout(() => {
+      const menuEl = document.querySelector(`[data-testid="msg-action-menu-${msgId}"]`);
+      if (menuEl) menuEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+  };
+
+  const closeMsgAction = () => {
+    setMsgActionId(null);
+    // Restore scroll position
+    const container = scrollContainerRef.current;
+    if (container && scrollPosBeforeMenu.current !== null) {
+      setTimeout(() => { container.scrollTop = scrollPosBeforeMenu.current; scrollPosBeforeMenu.current = null; }, 50);
+    }
+  };
   const [reactionDetailId, setReactionDetailId] = useState(null); // message ID for reaction detail dropdown
   const [replyTo, setReplyTo] = useState(null); // { id, content, sender_name } for reply-to
   const [editingMsg, setEditingMsg] = useState(null); // {id, content} when editing
@@ -190,17 +213,7 @@ export default function EstateChatPage() {
     }
   }, [draft, inputFocused]);
 
-  // Lock scroll when action menu is open to prevent jumping
-  useEffect(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-    if (msgActionId) {
-      el.style.overflow = 'hidden';
-    } else {
-      el.style.overflow = '';
-    }
-    return () => { if (el) el.style.overflow = ''; };
-  }, [msgActionId]);
+  // Scroll lock removed — using controlled scroll with position restore instead
 
   // ── Add member to channel ──
   const addMemberToChannel = async (channelId, memberId, estateId) => {
@@ -491,7 +504,7 @@ export default function EstateChatPage() {
     try {
       // Trigger pop animation
       setPoppingMsgId(messageId);
-      setMsgActionId(null);
+      closeMsgAction();
       // Wait for animation to play
       await new Promise(r => setTimeout(r, 350));
       const res = await fetch(`${API_URL}/estate-chat/messages/${messageId}`, {
@@ -520,7 +533,7 @@ export default function EstateChatPage() {
       // Clear any native text selection that iOS may have started
       window.getSelection()?.removeAllRanges();
       setReactingMsgId(null);
-      setMsgActionId(msgId);
+      openMsgAction(msgId);
       if (navigator.vibrate) navigator.vibrate(30);
     }, 500);
   };
@@ -1415,11 +1428,11 @@ export default function EstateChatPage() {
                     <div
                       className="px-4 py-2.5 rounded-2xl text-sm cursor-pointer"
                       data-testid={`msg-bubble-${msg.id}`}
-                      onClick={() => { if (msgLongPressTriggered.current) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); setMsgActionId(null); }}
+                      onClick={() => { if (msgLongPressTriggered.current) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); closeMsgAction(); }}
                       onTouchStart={(e) => onMsgTouchStart(e, msg.id)}
                       onTouchMove={onMsgTouchMove}
                       onTouchEnd={onMsgTouchEnd}
-                      onContextMenu={(e) => { e.preventDefault(); setMsgActionId(msg.id); setReactingMsgId(null); }}
+                      onContextMenu={(e) => { e.preventDefault(); openMsgAction(msg.id); setReactingMsgId(null); }}
                       style={{
                         background: isMe ? 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1))' : 'rgba(255,255,255,0.05)',
                         border: `1px solid ${isMe ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
@@ -1492,13 +1505,13 @@ export default function EstateChatPage() {
                   {/* Inline action menu (long-press) */}
                   {msgActionId === msg.id && (
                     <>
-                      <div className="fixed inset-0 z-[55]" onClick={(e) => { e.stopPropagation(); setMsgActionId(null); }} />
+                      <div className="fixed inset-0 z-[55]" onClick={(e) => { e.stopPropagation(); closeMsgAction(); }} />
                       <div className={`relative z-[56] mt-2 ${isMe ? 'flex flex-col items-end' : 'flex flex-col items-start'}`} data-testid={`msg-action-menu-${msg.id}`}>
                         <div className="flex gap-1.5 mb-2">
                           {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
                             const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
                             return (
-                              <button key={key} onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, key); setMsgActionId(null); }}
+                              <button key={key} onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, key); closeMsgAction(); }}
                                 className="w-9 h-9 rounded-full flex items-center justify-center text-lg active:scale-90 transition-transform"
                                 style={{ background: myReaction ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.08)' }}
                               >{val.display}</button>
@@ -1506,38 +1519,38 @@ export default function EstateChatPage() {
                           })}
                         </div>
                         <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg3)', border: '1px solid var(--b)', minWidth: '170px' }}>
-                          <button onClick={(e) => { e.stopPropagation(); setReplyTo({ id: msg.id, content: (msg.content || '').slice(0, 100), sender_name: msg.sender_name }); setMsgActionId(null); inputRef.current?.focus(); }}
+                          <button onClick={(e) => { e.stopPropagation(); setReplyTo({ id: msg.id, content: (msg.content || '').slice(0, 100), sender_name: msg.sender_name }); closeMsgAction(); inputRef.current?.focus(); }}
                             className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left active:bg-white/5" style={{ color: 'var(--t)' }}>
                             <ArrowLeft className="w-4 h-4" style={{ color: 'var(--t4)', transform: 'scaleX(-1)' }} /> Reply
                           </button>
                           <div style={{ height: '1px', background: 'var(--b)' }} />
-                          <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(msg.content || '').then(() => toast.success('Copied')).catch(() => {}); setMsgActionId(null); }}
+                          <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(msg.content || '').then(() => toast.success('Copied')).catch(() => {}); closeMsgAction(); }}
                             className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left active:bg-white/5" style={{ color: 'var(--t)' }}>
                             <Copy className="w-4 h-4" style={{ color: 'var(--t4)' }} /> Copy
                           </button>
                           {isMe && !msg.attachment && !(msg.attachments && msg.attachments.length) && msg.message_type !== 'voice' && (
                             <><div style={{ height: '1px', background: 'var(--b)' }} />
-                            <button onClick={(e) => { e.stopPropagation(); setEditingMsg({ id: msg.id, content: msg.content || '' }); setMsgActionId(null); }}
+                            <button onClick={(e) => { e.stopPropagation(); setEditingMsg({ id: msg.id, content: msg.content || '' }); closeMsgAction(); }}
                               className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left active:bg-white/5" style={{ color: '#d4af37' }}>
                               <Pencil className="w-4 h-4" style={{ color: '#d4af37' }} /> Edit
                             </button></>
                           )}
                           {isBenefactor && (
                             <><div style={{ height: '1px', background: 'var(--b)' }} />
-                            <button onClick={(e) => { e.stopPropagation(); togglePin(msg.id); setMsgActionId(null); }}
+                            <button onClick={(e) => { e.stopPropagation(); togglePin(msg.id); closeMsgAction(); }}
                               className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left active:bg-white/5" style={{ color: '#d4af37' }}>
                               <Pin className="w-4 h-4" style={{ color: '#d4af37' }} /> {msg.pinned ? 'Unpin' : 'Pin'}
                             </button></>
                           )}
                           {(isMe || isBenefactor) && (
                             <><div style={{ height: '1px', background: 'var(--b)' }} />
-                            <button onClick={(e) => { e.stopPropagation(); if (window.confirm('Delete this message?')) handleDeleteMessage(msg.id); setMsgActionId(null); }}
+                            <button onClick={(e) => { e.stopPropagation(); if (window.confirm('Delete this message?')) handleDeleteMessage(msg.id); closeMsgAction(); }}
                               className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left active:bg-white/5" style={{ color: '#ef4444' }}>
                               <Trash2 className="w-4 h-4" style={{ color: '#ef4444' }} /> Delete
                             </button></>
                           )}
                           <div style={{ height: '1px', background: 'var(--b)' }} />
-                          <button onClick={async (e) => { e.stopPropagation(); const chId = activeChannel.id; setMsgActionId(null); if (!navigator.geolocation) { toast.error('Geolocation not supported'); return; } toast('Getting your location...'); navigator.geolocation.getCurrentPosition(async (p) => { const url = `https://maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`; try { const res = await fetch(`${API_URL}/estate-chat/channels/${chId}/messages`, { method: 'POST', headers, body: JSON.stringify({ content: url }) }); if (res.ok) { await fetchMessages(chId); toast.success('Location sent'); setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }), 300); } } catch { toast.error('Failed'); } }, () => toast.error('Location denied'), { enableHighAccuracy: true, timeout: 10000 }); }}
+                          <button onClick={async (e) => { e.stopPropagation(); const chId = activeChannel.id; closeMsgAction(); if (!navigator.geolocation) { toast.error('Geolocation not supported'); return; } toast('Getting your location...'); navigator.geolocation.getCurrentPosition(async (p) => { const url = `https://maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`; try { const res = await fetch(`${API_URL}/estate-chat/channels/${chId}/messages`, { method: 'POST', headers, body: JSON.stringify({ content: url }) }); if (res.ok) { await fetchMessages(chId); toast.success('Location sent'); setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }), 300); } } catch { toast.error('Failed'); } }, () => toast.error('Location denied'), { enableHighAccuracy: true, timeout: 10000 }); }}
                             className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left active:bg-white/5" style={{ color: '#4CAF50' }}>
                             <MapPin className="w-4 h-4" style={{ color: '#4CAF50' }} /> Send My Location
                           </button>
