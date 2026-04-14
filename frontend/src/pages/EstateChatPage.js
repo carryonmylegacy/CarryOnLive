@@ -1929,26 +1929,27 @@ export default function EstateChatPage() {
                   data-testid={`quick-emoji-${emoji}`}
                 >{emoji}</button>
               ))}
-              <EmojiPickerButton onClick={() => setShowDraftEmojiPicker(v => !v)} />
               <button
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => setDraft(prev => prev.length > 0 ? [...prev].slice(0, -1).join('') : '')}
-                className="w-9 h-9 rounded-full flex items-center justify-center ml-auto active:scale-90 transition-transform"
+                className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform"
                 style={{ background: 'rgba(255,255,255,0.06)' }}
                 data-testid="quick-backspace-btn"
               >
                 <X className="w-4 h-4" style={{ color: 'var(--t4)' }} />
               </button>
+              <EmojiPickerButton onClick={() => setShowDraftEmojiPicker(v => !v)} />
           </div>
         )}
-        {/* Emoji catalog for draft input — floats above the input bar */}
+        {/* Emoji catalog for draft input — anchored to right, extends upward from picker icon */}
         {!inputFocused && showDraftEmojiPicker && (
           <>
             <div className="fixed inset-0 z-[15]" onClick={() => setShowDraftEmojiPicker(false)} onTouchEnd={(e) => { e.preventDefault(); setShowDraftEmojiPicker(false); }} />
-            <div className="fixed z-[16] left-3 right-3" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 86px)' }}>
+            <div className="fixed z-[16]" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 86px)', right: '12px' }}>
               <EmojiPickerGrid
                 onSelect={(emoji) => { setDraft(prev => prev + emoji); setRecentEmojis(addRecentEmoji(emoji)); }}
                 onClose={() => setShowDraftEmojiPicker(false)}
+                searchPosition="bottom"
               />
             </div>
           </>

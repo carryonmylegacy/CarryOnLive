@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { SmilePlus, Clock, Search } from 'lucide-react';
 
 const RECENT_KEY = 'ect_recent_emojis';
-const MAX_RECENT = 7;
-const DEFAULT_RECENT = ['👍', '❤️', '😂', '😢', '🔥', '✅', '🙏'];
+const MAX_RECENT = 8;
+const DEFAULT_RECENT = ['👍', '❤️', '😂', '😢', '🔥', '✅', '🙏', '👏'];
 
 export function getRecentEmojis() {
   try {
@@ -107,7 +107,7 @@ export const EMOJI_CATEGORIES = [
   ]},
 ];
 
-export function EmojiPickerGrid({ onSelect, onClose, isOwn }) {
+export function EmojiPickerGrid({ onSelect, onClose, isOwn, searchPosition = 'top' }) {
   const [search, setSearch] = useState('');
   const scrollRef = useRef(null);
   const searchRef = useRef(null);
@@ -124,6 +124,64 @@ export function EmojiPickerGrid({ onSelect, onClose, isOwn }) {
     ? allEmojis.filter(e => e.includes(search))
     : null;
 
+  const searchBar = (
+    <div className={searchPosition === 'top' ? 'px-3 pt-3 pb-2' : 'px-3 pt-2 pb-3'}>
+      <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5"
+        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <Search className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--t5)' }} />
+        <input
+          ref={searchRef}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search emojis..."
+          className="bg-transparent text-sm outline-none flex-1"
+          style={{ color: 'var(--t)', fontSize: '16px' }}
+          data-testid="emoji-search-input"
+        />
+      </div>
+    </div>
+  );
+
+  const emojiGrid = (
+    <div
+      ref={scrollRef}
+      className="px-2 overflow-y-auto"
+      style={{ maxHeight: '260px', WebkitOverflowScrolling: 'touch', paddingTop: searchPosition === 'bottom' ? '8px' : '0', paddingBottom: searchPosition === 'top' ? '8px' : '0' }}
+      data-testid="emoji-picker-scroll"
+    >
+      {filtered ? (
+        <div className="grid grid-cols-6 gap-0.5">
+          {filtered.map((emoji, i) => (
+            <button
+              key={`${emoji}-${i}`}
+              onClick={(e) => { e.stopPropagation(); onSelect(emoji); }}
+              className="w-10 h-10 rounded-lg flex items-center justify-center text-2xl active:scale-90 transition-transform hover:bg-white/10"
+              data-testid={`emoji-pick-${i}`}
+            >{emoji}</button>
+          ))}
+          {filtered.length === 0 && (
+            <div className="col-span-6 text-center py-6 text-sm" style={{ color: 'var(--t5)' }}>No emojis found</div>
+          )}
+        </div>
+      ) : (
+        EMOJI_CATEGORIES.map((cat) => (
+          <div key={cat.id}>
+            <div className="text-[11px] font-semibold px-1 pt-2 pb-1 sticky top-0" style={{ color: 'var(--t4)', background: 'rgba(20,30,50,0.97)' }}>{cat.name}</div>
+            <div className="grid grid-cols-6 gap-0.5">
+              {cat.emojis.map((emoji, i) => (
+                <button
+                  key={`${cat.id}-${i}`}
+                  onClick={(e) => { e.stopPropagation(); onSelect(emoji); }}
+                  className="w-10 h-10 rounded-lg flex items-center justify-center text-2xl active:scale-90 transition-transform hover:bg-white/10"
+                >{emoji}</button>
+              ))}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+
   return (
     <div
       style={{
@@ -139,60 +197,11 @@ export function EmojiPickerGrid({ onSelect, onClose, isOwn }) {
       onClick={(e) => e.stopPropagation()}
       onTouchEnd={(e) => e.stopPropagation()}
     >
-      {/* Search */}
-      <div className="px-3 pt-3 pb-2">
-        <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5"
-          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <Search className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--t5)' }} />
-          <input
-            ref={searchRef}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search emojis..."
-            className="bg-transparent text-sm outline-none flex-1"
-            style={{ color: 'var(--t)', fontSize: '16px' }}
-            data-testid="emoji-search-input"
-          />
-        </div>
-      </div>
-      {/* Grid */}
-      <div
-        ref={scrollRef}
-        className="px-2 pb-2 overflow-y-auto"
-        style={{ maxHeight: '260px', WebkitOverflowScrolling: 'touch' }}
-        data-testid="emoji-picker-scroll"
-      >
-        {filtered ? (
-          <div className="grid grid-cols-6 gap-0.5">
-            {filtered.map((emoji, i) => (
-              <button
-                key={`${emoji}-${i}`}
-                onClick={(e) => { e.stopPropagation(); onSelect(emoji); }}
-                className="w-10 h-10 rounded-lg flex items-center justify-center text-xl active:scale-90 transition-transform hover:bg-white/10"
-                data-testid={`emoji-pick-${i}`}
-              >{emoji}</button>
-            ))}
-            {filtered.length === 0 && (
-              <div className="col-span-6 text-center py-6 text-sm" style={{ color: 'var(--t5)' }}>No emojis found</div>
-            )}
-          </div>
-        ) : (
-          EMOJI_CATEGORIES.map((cat) => (
-            <div key={cat.id}>
-              <div className="text-[11px] font-semibold px-1 pt-2 pb-1 sticky top-0" style={{ color: 'var(--t4)', background: 'rgba(20,30,50,0.97)' }}>{cat.name}</div>
-              <div className="grid grid-cols-6 gap-0.5">
-                {cat.emojis.map((emoji, i) => (
-                  <button
-                    key={`${cat.id}-${i}`}
-                    onClick={(e) => { e.stopPropagation(); onSelect(emoji); }}
-                    className="w-10 h-10 rounded-lg flex items-center justify-center text-xl active:scale-90 transition-transform hover:bg-white/10"
-                  >{emoji}</button>
-                ))}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+      {searchPosition === 'top' ? (
+        <>{searchBar}{emojiGrid}</>
+      ) : (
+        <>{emojiGrid}{searchBar}</>
+      )}
     </div>
   );
 }
