@@ -1765,8 +1765,6 @@ export default function EstateChatPage() {
             <Image className="w-4 h-4" style={{ color: '#d4af37' }} />
           </button>
         </div>
-        {/* Extra spacer to push content above iOS keyboard fade zone */}
-        <div style={{ background: 'var(--bg2)', height: '36px', flexShrink: 0 }} />
       </div>
       {/* Safe-area bottom spacer — collapses when keyboard is open */}
       <div style={{ background: 'var(--bg2)', height: inputFocused ? '0px' : 'env(safe-area-inset-bottom, 0px)', flexShrink: 0 }} />
