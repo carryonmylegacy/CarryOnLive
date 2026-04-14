@@ -111,53 +111,37 @@ export default function EstateChatPage() {
   const [showHeaderMembers, setShowHeaderMembers] = useState(false);
   const [showListMembersId, setShowListMembersId] = useState(null);
   const [msgActionId, setMsgActionId] = useState(null); // message ID for long-press action menu
-  const scrollContainerRef = useRef(null); // ref for scroll lock
-  const scrollPosBeforeMenu = useRef(null); // saved scroll position to restore on dismiss
+  const [menuPosition, setMenuPosition] = useState(null); // fixed overlay position for action menu
+  const scrollContainerRef = useRef(null); // ref for scroll container
 
   const openMsgAction = (msgId) => {
     setReactingMsgId(null);
+    // Query within the visible scroll container to avoid hidden desktop duplicates
     const container = scrollContainerRef.current;
-    if (container) {
-      scrollPosBeforeMenu.current = container.scrollTop;
-      // Add padding to create scrollable space, force reflow, then scroll
-      container.style.paddingBottom = '400px';
-      void container.offsetHeight; // force reflow so padding takes effect
-      const bubbleEl = document.querySelector(`[data-testid="msg-bubble-${msgId}"]`);
-      if (bubbleEl) {
-        const bubbleRect = bubbleEl.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        // Scroll message up to 35% from top of container
-        const targetY = containerRect.height * 0.35;
-        const currentY = bubbleRect.top - containerRect.top;
-        if (currentY > targetY) {
-          container.scrollTop += (currentY - targetY);
-        }
+    const bubbleEl = container
+      ? container.querySelector(`[data-testid="msg-bubble-${msgId}"]`)
+      : document.querySelector(`[data-testid="msg-bubble-${msgId}"]`);
+    if (bubbleEl) {
+      const rect = bubbleEl.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        const viewH = window.visualViewport?.height || window.innerHeight;
+        const msgObj = messages.find(m => m.id === msgId);
+        const isOwn = msgObj?.sender_id === user?.id;
+        // If bubble is in the lower 45% of visible area, show menu above it
+        const showAbove = rect.top > viewH * 0.45;
+        setMenuPosition({
+          top: rect.top, bottom: rect.bottom,
+          left: rect.left, right: rect.right,
+          isOwn, showAbove,
+        });
       }
     }
     setMsgActionId(msgId);
   };
 
-  // Dismiss menu on tap outside
-  useEffect(() => {
-    if (!msgActionId) return;
-    const handleDismiss = (e) => {
-      const menu = document.querySelector(`[data-testid="msg-action-menu-${msgActionId}"]`);
-      if (menu && !menu.contains(e.target)) closeMsgAction();
-    };
-    const timer = setTimeout(() => document.addEventListener('click', handleDismiss), 200);
-    return () => { clearTimeout(timer); document.removeEventListener('click', handleDismiss); };
-  }, [msgActionId]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const closeMsgAction = () => {
     setMsgActionId(null);
-    // Restore scroll position and remove temporary padding
-    const container = scrollContainerRef.current;
-    if (container) {
-      container.style.paddingBottom = '';
-      if (scrollPosBeforeMenu.current !== null) {
-        setTimeout(() => { container.scrollTop = scrollPosBeforeMenu.current; scrollPosBeforeMenu.current = null; }, 50);
-      }
-    }
+    setMenuPosition(null);
   };
   const [reactionDetailId, setReactionDetailId] = useState(null); // message ID for reaction detail dropdown
   const [replyTo, setReplyTo] = useState(null); // { id, content, sender_name } for reply-to
@@ -318,12 +302,15 @@ export default function EstateChatPage() {
       ]);
       if (msgRes.ok) {
         const data = await msgRes.json();
-        const el = messagesEndRef.current?.parentElement;
-        const isNearBottom = !el || (el.scrollHeight - el.scrollTop - el.clientHeight < 150);
         setMessages(data);
-        // Always scroll to bottom — on initial load and when near bottom
-        setTimeout(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }); }, 80);
-        setTimeout(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }); }, 400);
+        // Robust scroll-to-bottom: use scrollContainer directly
+        const doScroll = () => {
+          const sc = scrollContainerRef.current;
+          if (sc) sc.scrollTop = sc.scrollHeight;
+        };
+        requestAnimationFrame(doScroll);
+        setTimeout(doScroll, 100);
+        setTimeout(doScroll, 350);
         // Prefetch media attachments for faster image loading
         const fileIds = [];
         data.forEach(m => {
@@ -377,9 +364,14 @@ export default function EstateChatPage() {
     setShowHeaderMembers(false);
     fetchMessages(ch.id).then(() => {
       setMsgLoading(false);
-      // Scroll to most recent message after load
-      setTimeout(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }); }, 200);
-      setTimeout(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }); }, 600);
+      // Scroll to most recent message after load — use scrollTop directly
+      const doScroll = () => {
+        const sc = scrollContainerRef.current;
+        if (sc) sc.scrollTop = sc.scrollHeight;
+      };
+      requestAnimationFrame(doScroll);
+      setTimeout(doScroll, 200);
+      setTimeout(doScroll, 500);
     });
   };
 
@@ -510,7 +502,9 @@ export default function EstateChatPage() {
         await fetchMessages(activeChannel.id);
         await fetchChannels();
         // Scroll to the newly sent message
-        setTimeout(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }); }, 250);
+        const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
+        requestAnimationFrame(doScroll);
+        setTimeout(doScroll, 250);
       }
     } catch {} finally { setSending(false); } // eslint-disable-line no-empty
   };
@@ -1344,8 +1338,8 @@ export default function EstateChatPage() {
       </div>
 
       {/* Messages */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3" style={{ display: 'flex', flexDirection: 'column' }}>
-        <div style={{ flex: 1 }} />
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
+        <div className="p-4 space-y-3" style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
         {/* Pinned messages panel — slides down from header */}
         {showPinned && pinnedMsgs.length > 0 && (
           <div className="mb-3 rounded-2xl overflow-hidden" style={{ background: 'rgba(30,40,60,0.95)', border: '1px solid rgba(212,175,55,0.25)', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)' }}>
@@ -1479,7 +1473,7 @@ export default function EstateChatPage() {
                       onClick={() => { if (msgLongPressTriggered.current) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); closeMsgAction(); }}
                       onTouchStart={(e) => onMsgTouchStart(e, msg.id)}
                       onTouchMove={onMsgTouchMove}
-                      onTouchEnd={onMsgTouchEnd}
+                      onTouchEnd={(e) => onMsgTouchEnd(e, msg.id)}
                       onContextMenu={(e) => { e.preventDefault(); openMsgAction(msg.id); setReactingMsgId(null); }}
                       style={{
                         background: isMe ? 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1))' : 'rgba(255,255,255,0.05)',
@@ -1489,6 +1483,7 @@ export default function EstateChatPage() {
                         borderTopLeftRadius: isMe ? '18px' : '6px',
                         WebkitUserSelect: 'none',
                         userSelect: 'none',
+                        WebkitTouchCallout: 'none',
                         marginTop: hasReactions ? '10px' : '0',
                       }}
                     >
@@ -1549,89 +1544,6 @@ export default function EstateChatPage() {
                         );
                       })}
                     </div>
-                  )}
-                  {/* Inline action menu (long-press) */}
-                  {msgActionId === msg.id && (
-                    <div className={`relative z-[56] mt-2 ${isMe ? 'flex flex-col items-end' : 'flex flex-col items-start'}`} data-testid={`msg-action-menu-${msg.id}`}>
-                        <div className="flex gap-1.5 mb-2">
-                          {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
-                            const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
-                            return (
-                              <button key={key} onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, key); closeMsgAction(); }}
-                                className="w-9 h-9 rounded-full flex items-center justify-center text-lg active:scale-90 transition-transform"
-                                style={{ background: myReaction ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.08)' }}
-                              >{val.display}</button>
-                            );
-                          })}
-                        </div>
-                        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg3)', border: '1px solid var(--b)', minWidth: '170px' }}>
-                          <button onClick={(e) => { e.stopPropagation(); setReplyTo({ id: msg.id, content: (msg.content || '').slice(0, 100), sender_name: msg.sender_name }); closeMsgAction(); inputRef.current?.focus(); }}
-                            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left active:bg-white/5" style={{ color: 'var(--t)' }}>
-                            <ArrowLeft className="w-4 h-4" style={{ color: 'var(--t4)', transform: 'scaleX(-1)' }} /> Reply
-                          </button>
-                          <div style={{ height: '1px', background: 'var(--b)' }} />
-                          <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(msg.content || '').then(() => toast.success('Copied')).catch(() => {}); closeMsgAction(); }}
-                            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left active:bg-white/5" style={{ color: 'var(--t)' }}>
-                            <Copy className="w-4 h-4" style={{ color: 'var(--t4)' }} /> Copy
-                          </button>
-                          {isMe && !msg.attachment && !(msg.attachments && msg.attachments.length) && msg.message_type !== 'voice' && (
-                            <><div style={{ height: '1px', background: 'var(--b)' }} />
-                            <button onClick={(e) => { e.stopPropagation(); setEditingMsg({ id: msg.id, content: msg.content || '' }); closeMsgAction(); }}
-                              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left active:bg-white/5" style={{ color: '#d4af37' }}>
-                              <Pencil className="w-4 h-4" style={{ color: '#d4af37' }} /> Edit
-                            </button></>
-                          )}
-                          {isBenefactor && (
-                            <><div style={{ height: '1px', background: 'var(--b)' }} />
-                            <button onClick={(e) => { e.stopPropagation(); togglePin(msg.id); closeMsgAction(); }}
-                              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left active:bg-white/5" style={{ color: '#d4af37' }}>
-                              <Pin className="w-4 h-4" style={{ color: '#d4af37' }} /> {msg.pinned ? 'Unpin' : 'Pin'}
-                            </button></>
-                          )}
-                          {(isMe || isBenefactor) && (
-                            <><div style={{ height: '1px', background: 'var(--b)' }} />
-                            <button onClick={(e) => { e.stopPropagation(); if (window.confirm('Delete this message?')) handleDeleteMessage(msg.id); closeMsgAction(); }}
-                              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left active:bg-white/5" style={{ color: '#ef4444' }}>
-                              <Trash2 className="w-4 h-4" style={{ color: '#ef4444' }} /> Delete
-                            </button></>
-                          )}
-                          <div style={{ height: '1px', background: 'var(--b)' }} />
-                          <button onClick={(e) => {
-                            e.stopPropagation();
-                            const chId = activeChannel.id;
-                            const authHeaders = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
-                            const apiUrl = API_URL;
-                            closeMsgAction();
-                            if (!navigator.geolocation) { toast.error('Geolocation not supported on this device'); return; }
-                            navigator.geolocation.getCurrentPosition(
-                              (p) => {
-                                toast.info('Sending location...');
-                                const lat = p.coords.latitude.toFixed(6);
-                                const lng = p.coords.longitude.toFixed(6);
-                                const msg = 'My location: https://maps.google.com/?q=' + lat + ',' + lng;
-                                fetch(apiUrl + '/estate-chat/channels/' + chId + '/messages', {
-                                  method: 'POST',
-                                  headers: authHeaders,
-                                  body: JSON.stringify({ content: msg }),
-                                }).then(res => {
-                                  if (res.ok) {
-                                    fetchMessages(chId).then(() => {
-                                      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }), 200);
-                                    });
-                                  } else {
-                                    res.text().then(t => toast.error('Send failed: ' + t));
-                                  }
-                                }).catch(() => toast.error('Network error sending location'));
-                              },
-                              (err) => { toast.error('Location denied: ' + (err.message || 'Unknown error')); },
-                              { enableHighAccuracy: true, timeout: 15000 }
-                            );
-                          }}
-                            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left active:bg-white/5" style={{ color: '#4CAF50' }}>
-                            <MapPin className="w-4 h-4" style={{ color: '#4CAF50' }} /> Send My Location
-                          </button>
-                        </div>
-                      </div>
                   )}
                   {/* Reaction picker (tap on bubble) */}
                   {reactingMsgId === msg.id && (
@@ -1694,6 +1606,7 @@ export default function EstateChatPage() {
           );
         })}
         <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* ── Input Bar — transparent, floating over messages ── */}
@@ -1860,8 +1773,9 @@ export default function EstateChatPage() {
               onFocus={() => {
                 setInputFocused(true);
                 // Scroll to bottom when keyboard opens
-                setTimeout(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }); }, 350);
-                setTimeout(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' }); }, 600);
+                const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
+                setTimeout(doScroll, 350);
+                setTimeout(doScroll, 600);
                 // Force visualViewport update for keyboard open
                 const vv = window.visualViewport;
                 if (vv) {
@@ -2041,6 +1955,122 @@ export default function EstateChatPage() {
       </div>
     </div>
     {newChatModal}
+    {/* Fixed overlay action menu (long-press) — outside document flow, no content shifting */}
+    {msgActionId && menuPosition && (() => {
+      const actionMsg = messages.find(m => m.id === msgActionId);
+      if (!actionMsg) return null;
+      const { top, bottom, left, right, isOwn, showAbove } = menuPosition;
+      const viewH = window.visualViewport?.height || window.innerHeight;
+      const viewW = window.innerWidth;
+      const menuStyle = {
+        position: 'fixed',
+        zIndex: 110,
+        maxWidth: Math.min(280, viewW - 24) + 'px',
+        ...(showAbove
+          ? { bottom: `${viewH - top + 8}px` }
+          : { top: `${bottom + 8}px` }
+        ),
+        ...(isOwn
+          ? { right: `${Math.max(12, viewW - right)}px` }
+          : { left: `${Math.max(12, left)}px` }
+        ),
+      };
+      const isOwnMsg = actionMsg.sender_id === user?.id;
+      return (
+        <>
+          <div className="fixed inset-0 z-[109]"
+            onClick={closeMsgAction}
+            onTouchEnd={(e) => { e.preventDefault(); closeMsgAction(); }}
+            style={{ background: 'rgba(0,0,0,0.35)' }}
+          />
+          <div style={menuStyle} data-testid={`msg-action-menu-${msgActionId}`}>
+            <div className={`flex gap-1.5 mb-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+              {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
+                const myReaction = (actionMsg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
+                return (
+                  <button key={key} onClick={(e) => { e.stopPropagation(); toggleReaction(actionMsg.id, key); closeMsgAction(); }}
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-lg active:scale-90 transition-transform"
+                    style={{ background: myReaction ? 'rgba(212,175,55,0.3)' : 'rgba(30,40,60,0.9)', border: '1px solid rgba(255,255,255,0.1)' }}
+                    data-testid={`action-reaction-${key}`}
+                  >{val.display}</button>
+                );
+              })}
+            </div>
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(20,30,50,0.97)', border: '1px solid rgba(255,255,255,0.12)', minWidth: '170px', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)' }}>
+              <button onClick={(e) => { e.stopPropagation(); setReplyTo({ id: actionMsg.id, content: (actionMsg.content || '').slice(0, 100), sender_name: actionMsg.sender_name }); closeMsgAction(); inputRef.current?.focus(); }}
+                className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/5" style={{ color: 'var(--t)' }}
+                data-testid="action-reply-btn">
+                <ArrowLeft className="w-4 h-4" style={{ color: 'var(--t4)', transform: 'scaleX(-1)' }} /> Reply
+              </button>
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+              <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(actionMsg.content || '').then(() => toast.success('Copied')).catch(() => {}); closeMsgAction(); }}
+                className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/5" style={{ color: 'var(--t)' }}
+                data-testid="action-copy-btn">
+                <Copy className="w-4 h-4" style={{ color: 'var(--t4)' }} /> Copy
+              </button>
+              {isOwnMsg && !actionMsg.attachment && !(actionMsg.attachments && actionMsg.attachments.length) && actionMsg.message_type !== 'voice' && (
+                <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                <button onClick={(e) => { e.stopPropagation(); setEditingMsg({ id: actionMsg.id, content: actionMsg.content || '' }); closeMsgAction(); }}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/5" style={{ color: '#d4af37' }}
+                  data-testid="action-edit-btn">
+                  <Pencil className="w-4 h-4" style={{ color: '#d4af37' }} /> Edit
+                </button></>
+              )}
+              {isBenefactor && (
+                <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                <button onClick={(e) => { e.stopPropagation(); togglePin(actionMsg.id); closeMsgAction(); }}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/5" style={{ color: '#d4af37' }}
+                  data-testid="action-pin-btn">
+                  <Pin className="w-4 h-4" style={{ color: '#d4af37' }} /> {actionMsg.pinned ? 'Unpin' : 'Pin'}
+                </button></>
+              )}
+              {(isOwnMsg || isBenefactor) && (
+                <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                <button onClick={(e) => { e.stopPropagation(); if (window.confirm('Delete this message?')) handleDeleteMessage(actionMsg.id); closeMsgAction(); }}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/5" style={{ color: '#ef4444' }}
+                  data-testid="action-delete-btn">
+                  <Trash2 className="w-4 h-4" style={{ color: '#ef4444' }} /> Delete
+                </button></>
+              )}
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+              <button onClick={(e) => {
+                e.stopPropagation();
+                const chId = activeChannel?.id;
+                if (!chId) return;
+                const authHeaders = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
+                const apiUrl = API_URL;
+                closeMsgAction();
+                if (!navigator.geolocation) { toast.error('Geolocation not supported on this device'); return; }
+                navigator.geolocation.getCurrentPosition(
+                  (p) => {
+                    toast.info('Sending location...');
+                    const lat = p.coords.latitude.toFixed(6);
+                    const lng = p.coords.longitude.toFixed(6);
+                    const locMsg = 'My location: https://maps.google.com/?q=' + lat + ',' + lng;
+                    fetch(apiUrl + '/estate-chat/channels/' + chId + '/messages', {
+                      method: 'POST', headers: authHeaders,
+                      body: JSON.stringify({ content: locMsg }),
+                    }).then(res => {
+                      if (res.ok) {
+                        fetchMessages(chId).then(() => {
+                          setTimeout(() => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; }, 200);
+                        });
+                      } else { res.text().then(t => toast.error('Send failed: ' + t)); }
+                    }).catch(() => toast.error('Network error sending location'));
+                  },
+                  (err) => { toast.error('Location denied: ' + (err.message || 'Unknown error')); },
+                  { enableHighAccuracy: true, timeout: 15000 }
+                );
+              }}
+                className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/5" style={{ color: '#4CAF50' }}
+                data-testid="action-location-btn">
+                <MapPin className="w-4 h-4" style={{ color: '#4CAF50' }} /> Send My Location
+              </button>
+            </div>
+          </div>
+        </>
+      );
+    })()}
     {/* Delete Confirmation */}
     {deleteConfirm && (
       <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }}>
