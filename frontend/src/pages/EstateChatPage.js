@@ -164,7 +164,7 @@ export default function EstateChatPage() {
     const update = () => {
       const root = document.getElementById('ect-root');
       if (root) {
-        root.style.height = (vv.height - 4) + 'px';
+        root.style.height = (vv.height - 8) + 'px';
         root.style.top = vv.offsetTop + 'px';
       }
     };
@@ -315,7 +315,12 @@ export default function EstateChatPage() {
     setSwipedChannel(null);
     setShowListMembersId(null);
     setShowHeaderMembers(false);
-    fetchMessages(ch.id).then(() => setMsgLoading(false));
+    fetchMessages(ch.id).then(() => {
+      setMsgLoading(false);
+      // Ensure scroll is at bottom after messages load
+      setTimeout(() => { const el = messagesEndRef.current?.parentElement; if (el) el.scrollTop = el.scrollHeight; }, 150);
+      setTimeout(() => { const el = messagesEndRef.current?.parentElement; if (el) el.scrollTop = el.scrollHeight; }, 500);
+    });
   };
 
   const sendTypingHeartbeat = () => {
@@ -1679,7 +1684,17 @@ export default function EstateChatPage() {
                 if (validated.length) setPendingFiles(prev => [...prev, ...validated]);
               }}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-              onFocus={() => setInputFocused(true)}
+              onFocus={() => {
+                setInputFocused(true);
+                // Force visualViewport update for first keyboard open
+                const vv = window.visualViewport;
+                if (vv) {
+                  setTimeout(() => {
+                    const root = document.getElementById('ect-root');
+                    if (root) { root.style.height = (vv.height - 8) + 'px'; root.style.top = vv.offsetTop + 'px'; }
+                  }, 350);
+                }
+              }}
               onBlur={() => setInputFocused(false)}
               enterKeyHint="send"
               rows={1}
@@ -1782,7 +1797,7 @@ export default function EstateChatPage() {
         <div className="flex items-center gap-1 px-3 pt-1 pb-2" style={{ background: 'var(--bg2)', touchAction: 'none' }}>
           {inputFocused ? (
             <div className="flex items-center justify-center w-full py-2">
-              <div style={{ width: '36px', height: '5px', borderRadius: '3px', background: 'rgba(255,255,255,0.3)' }} />
+              <div style={{ width: '48px', height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.45)' }} />
             </div>
           ) : (
             <>
