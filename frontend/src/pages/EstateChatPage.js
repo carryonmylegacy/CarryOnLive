@@ -1495,6 +1495,7 @@ export default function EstateChatPage() {
       <div className="flex-shrink-0" style={{
         background: 'var(--bg2)',
         borderTop: '1px solid var(--b)',
+        paddingBottom: '46px',
         position: 'relative',
         zIndex: 10,
       }}>
