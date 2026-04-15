@@ -96,11 +96,12 @@ export default function ImagePreviewModal({ previewImage, onClose }) {
           objectFit: 'contain', borderRadius: 8,
         }}
       />
-      <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
+      <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center' }} onTouchEnd={(e) => { e.stopPropagation(); }} onClick={(e) => { e.stopPropagation(); }}>
         <span className="text-sm" style={{ color: 'var(--t4)' }}>{previewImage.name}</span>
         <button
           data-testid="photo-preview-download"
           onClick={handleSave}
+          onTouchEnd={(e) => { e.stopPropagation(); }}
           style={{
             padding: '6px 14px', borderRadius: 8,
             background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)',
