@@ -124,7 +124,14 @@ async def lifespan(app):
 
 # ===================== APP SETUP =====================
 
-app = FastAPI(title="CarryOn™ API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(
+    title="CarryOn™ API",
+    version="1.0.0",
+    lifespan=lifespan,
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
+)
 
 # API router with /api prefix
 api_router = APIRouter(prefix="/api")

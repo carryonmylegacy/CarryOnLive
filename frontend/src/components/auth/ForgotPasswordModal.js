@@ -42,7 +42,7 @@ const ForgotPasswordModal = ({
             <input type="text" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
               placeholder="Username" className="w-full px-4 py-3 rounded-xl text-base mb-3 bg-[#0a1128] border border-[#1e293b] text-white"
               style={{ fontSize: '16px' }}
-              data-testid="forgot-username-input" />
+              data-testid="forgot-username-input" aria-label="Username" />
             {forgotMsg && <p className={`text-xs mb-3 ${forgotError ? 'text-red-400' : 'text-[#22C993]'}`}>{forgotMsg}</p>}
             <button disabled={!forgotEmail || forgotLoading} onClick={async () => {
               setForgotLoading(true);
@@ -73,15 +73,15 @@ const ForgotPasswordModal = ({
             <input type="text" value={forgotOtp} onChange={e => setForgotOtp(e.target.value)}
               placeholder="6-digit code" maxLength={6} className="w-full px-4 py-3 rounded-xl text-base mb-3 bg-[#0a1128] border border-[#1e293b] text-white text-center tracking-[0.3em]"
               style={{ fontSize: '16px' }}
-              data-testid="forgot-otp-input" />
+              data-testid="forgot-otp-input" aria-label="6-digit verification code" />
             <input type="password" value={forgotNewPw} onChange={e => setForgotNewPw(e.target.value)}
               placeholder="New password (8+ characters)" className="w-full px-4 py-3 rounded-xl text-base mb-3 bg-[#0a1128] border border-[#1e293b] text-white"
               style={{ fontSize: '16px' }}
-              data-testid="forgot-new-pw-input" />
+              data-testid="forgot-new-pw-input" aria-label="New password" />
             <input type="password" value={forgotConfirmPw} onChange={e => setForgotConfirmPw(e.target.value)}
               placeholder="Confirm new password" className={`w-full px-4 py-3 rounded-xl text-base mb-1 bg-[#0a1128] border text-white ${forgotConfirmPw && forgotNewPw !== forgotConfirmPw ? 'border-red-500' : 'border-[#1e293b]'}`}
               style={{ fontSize: '16px' }}
-              data-testid="forgot-confirm-pw-input" />
+              data-testid="forgot-confirm-pw-input" aria-label="Confirm new password" />
             {forgotConfirmPw && forgotNewPw !== forgotConfirmPw && (
               <p className="text-red-400 text-xs mb-2">* Passwords do not match</p>
             )}

@@ -1173,6 +1173,7 @@ export default function EstateChatPage() {
           className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
           data-testid="ect-back-btn"
           style={{ background: 'rgba(255,255,255,0.06)' }}
+          aria-label="Back to conversations"
         >
           <ArrowLeft className="w-4 h-4" style={{ color: 'var(--t4)' }} />
         </button>
@@ -1709,6 +1710,7 @@ export default function EstateChatPage() {
             className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
             data-testid="ect-attach-btn"
             style={{ background: '#222B42' }}
+            aria-label="Attach file"
           >
             {uploading ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /> : <Paperclip className="w-5 h-5" style={{ color: '#C8D0E0' }} />}
           </button>
@@ -1770,6 +1772,7 @@ export default function EstateChatPage() {
               placeholder="Type a message..."
               className="w-full rounded-2xl px-4 py-2 text-base"
               data-testid="ect-message-input"
+              aria-label="Type a message"
               style={{
                 background: '#2C4A6B',
                 border: 'none',
@@ -1824,6 +1827,7 @@ export default function EstateChatPage() {
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
               data-testid="ect-send-btn"
               style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}
+              aria-label="Send message"
             >
               {sending ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#080e1a' }} /> : <Send className="w-5 h-5" style={{ color: '#080e1a' }} />}
             </button>
@@ -1858,6 +1862,7 @@ export default function EstateChatPage() {
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
               data-testid="ect-voice-btn"
               style={{ background: '#222B42' }}
+              aria-label="Record voice message"
             >
               <Mic className="w-5 h-5" style={{ color: '#C8D0E0' }} />
             </button>
