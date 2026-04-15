@@ -1674,7 +1674,7 @@ export default function EstateChatPage() {
             </div>
           </div>
         )}
-        <div className="flex items-center gap-2 px-3 py-1">
+        <div className="flex items-end gap-2 px-3 py-1">
           <input type="file" ref={fileInputRef} className="hidden" multiple
             accept="image/*,video/*,.pdf,.doc,.docx,.txt"
             onChange={(e) => {
@@ -1708,7 +1708,7 @@ export default function EstateChatPage() {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading || voiceRecorder.recording}
-            className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-all flex-shrink-0"
             data-testid="ect-attach-btn"
             style={{ background: '#222B42' }}
             aria-label="Attach file"
@@ -1825,7 +1825,7 @@ export default function EstateChatPage() {
               onMouseDown={(e) => e.preventDefault()}
               onClick={sendMessage}
               disabled={sending}
-              className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-all flex-shrink-0"
               data-testid="ect-send-btn"
               style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}
               aria-label="Send message"
@@ -1836,7 +1836,7 @@ export default function EstateChatPage() {
             <button
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => sendVoiceMessage()}
-              className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-all flex-shrink-0"
               data-testid="ect-voice-send" aria-label="Send voice message"
               style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}
             >
@@ -1847,7 +1847,7 @@ export default function EstateChatPage() {
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => sendVoiceMessage(voicePreview.blob)}
               disabled={uploading}
-              className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-all flex-shrink-0"
               data-testid="ect-voice-preview-send" aria-label="Send voice message"
               style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}
             >
@@ -1860,7 +1860,7 @@ export default function EstateChatPage() {
                 setInputFocused(false);
                 voiceRecorder.start();
               }}
-              className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-all flex-shrink-0"
               data-testid="ect-voice-btn"
               style={{ background: '#222B42' }}
               aria-label="Record voice message"
