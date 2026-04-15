@@ -38,6 +38,7 @@ import {
   Copy,
   TextSelect,
   MapPin,
+  Delete,
 } from 'lucide-react';
 import { platformDownload } from '../utils/downloadFile';
 import useVoiceRecorder from '../components/estate-chat/useVoiceRecorder';
@@ -1936,7 +1937,7 @@ export default function EstateChatPage() {
                 style={{ background: 'rgba(255,255,255,0.06)' }}
                 data-testid="quick-backspace-btn"
               >
-                <X className="w-4 h-4" style={{ color: 'var(--t4)' }} />
+                <Delete className="w-5 h-5" style={{ color: 'var(--t4)' }} />
               </button>
               <EmojiPickerButton onClick={() => setShowDraftEmojiPicker(v => !v)} />
           </div>
