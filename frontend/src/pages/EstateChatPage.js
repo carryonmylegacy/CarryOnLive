@@ -348,7 +348,13 @@ export default function EstateChatPage() {
 
   useEffect(() => {
     if (!activeChannel) return;
-    fetchMessages(activeChannel.id);
+    // Scroll to bottom on channel load/return — this is the PRIMARY scroll anchor
+    fetchMessages(activeChannel.id).then(() => {
+      const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
+      requestAnimationFrame(doScroll);
+      setTimeout(doScroll, 200);
+      setTimeout(doScroll, 500);
+    });
     let msgCount = 0;
     const poll = setInterval(() => {
       fetch(`${API_URL}/estate-chat/channels/${activeChannel.id}/typing`, { headers })

@@ -1,12 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Download } from 'lucide-react';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 
 /**
  * Fullscreen photo preview modal for ECT chat images.
+ * Uses a closing state to stay mounted briefly after dismiss,
+ * preventing iOS from sending phantom touch events to elements underneath.
  */
 export default function ImagePreviewModal({ previewImage, onClose }) {
+  const [closing, setClosing] = useState(false);
+
+  const handleClose = useCallback(() => {
+    if (closing) return;
+    setClosing(true);
+    // Stay mounted but invisible for 500ms to absorb phantom iOS touches
+    setTimeout(() => {
+      setClosing(false);
+      onClose();
+    }, 500);
+  }, [closing, onClose]);
+
+  // Reset closing state when a new image is shown
+  useEffect(() => {
+    if (previewImage) setClosing(false);
+  }, [previewImage]);
+
   if (!previewImage) return null;
 
   const handleSave = async (e) => {
@@ -53,18 +72,24 @@ export default function ImagePreviewModal({ previewImage, onClose }) {
   return (
     <div
       data-testid="photo-preview-overlay"
-      onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClose(); }}
-      onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); onClose(); }}
+      onTouchStart={(e) => { e.stopPropagation(); }}
+      onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); handleClose(); }}
+      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleClose(); }}
+      onMouseDown={(e) => { e.stopPropagation(); }}
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'rgba(0,0,0,0.92)', display: 'flex',
+        background: closing ? 'transparent' : 'rgba(0,0,0,0.92)',
+        display: 'flex',
         alignItems: 'center', justifyContent: 'center',
         flexDirection: 'column',
+        touchAction: 'none',
+        pointerEvents: 'auto',
+        opacity: closing ? 0 : 1,
       }}
     >
       <button
         data-testid="photo-preview-close"
-        onClick={(e) => { e.stopPropagation(); onClose(); }}
+        onClick={(e) => { e.stopPropagation(); handleClose(); }}
         onTouchEnd={(e) => { e.stopPropagation(); }}
         style={{
           position: 'absolute', top: 'env(safe-area-inset-top, 12px)', right: 12,
