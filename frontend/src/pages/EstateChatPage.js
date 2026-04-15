@@ -338,9 +338,7 @@ export default function EstateChatPage() {
     // Scroll to bottom on channel load/return — this is the PRIMARY scroll anchor
     fetchMessages(activeChannel.id).then(() => {
       const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
-      requestAnimationFrame(doScroll);
-      setTimeout(doScroll, 200);
-      setTimeout(doScroll, 500);
+      setTimeout(doScroll, 50);
     });
     let msgCount = 0;
     const poll = setInterval(() => {
@@ -374,14 +372,11 @@ export default function EstateChatPage() {
     setShowHeaderMembers(false);
     fetchMessages(ch.id).then(() => {
       setMsgLoading(false);
-      // Scroll to most recent message after load — use scrollTop directly
       const doScroll = () => {
         const sc = scrollContainerRef.current;
         if (sc) sc.scrollTop = sc.scrollHeight;
       };
-      requestAnimationFrame(doScroll);
-      setTimeout(doScroll, 200);
-      setTimeout(doScroll, 500);
+      setTimeout(doScroll, 50);
     });
   };
 
