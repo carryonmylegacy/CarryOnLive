@@ -49,7 +49,7 @@ const SpeakWithUsPage = () => {
         <div className="relative z-10 flex flex-col items-center px-6 pt-12 pb-16 lg:pt-20 lg:pb-24">
 
           {/* Desktop: side-by-side layout */}
-          <div className="w-full max-w-[1400px] mx-auto flex flex-col lg:flex-row lg:items-center lg:gap-10 xl:gap-14">
+          <div className="w-full max-w-[1400px] mx-auto flex flex-col lg:flex-row lg:items-start lg:gap-10 xl:gap-14">
             {/* Left: Logo + Headline + subheadline */}
             <div className="flex-1 mb-10 lg:mb-0">
               <RevealSection delay={0.1}>
@@ -70,18 +70,16 @@ const SpeakWithUsPage = () => {
               </RevealSection>
             </div>
 
-            {/* Right: Calendar embed — no container box, raw iframe */}
+            {/* Right: Calendar embed — top-aligned with logo */}
             <div className="w-full lg:max-w-[480px] flex-shrink-0">
               <RevealSection delay={0.3} direction="right">
-                <div style={{ marginTop: '-120px' }}>
-                  <iframe
-                    src="https://api.leadconnectorhq.com/widget/booking/V67QUruJToWmHt4GaNyn"
-                    style={{ width: '100%', minHeight: '1100px', border: 'none' }}
-                    scrolling="no"
-                    title="Schedule a Consultation"
-                    data-testid="speak-with-us-calendar"
-                  />
-                </div>
+                <iframe
+                  src="https://api.leadconnectorhq.com/widget/booking/V67QUruJToWmHt4GaNyn"
+                  style={{ width: '100%', minHeight: '1600px', border: 'none' }}
+                  scrolling="no"
+                  title="Schedule a Consultation"
+                  data-testid="speak-with-us-calendar"
+                />
               </RevealSection>
             </div>
           </div>
