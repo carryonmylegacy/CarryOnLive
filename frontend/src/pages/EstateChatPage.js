@@ -1581,6 +1581,9 @@ export default function EstateChatPage() {
 
       {/* ── Input Bar — transparent, floating over messages ── */}
       <div className="flex-shrink-0" style={{
+        background: 'var(--bg2)',
+        borderTop: '1px solid var(--b)',
+        paddingBottom: '4px',
         position: 'relative',
         zIndex: 10,
       }}
