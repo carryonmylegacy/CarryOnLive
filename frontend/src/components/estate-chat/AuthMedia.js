@@ -125,14 +125,25 @@ export function AuthImage({ fileId, fileName, msgId, onPreview }) {
           style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none', pointerEvents: 'none' }}
           data-testid={`chat-image-${msgId}`}
         />
-        {/* Transparent overlay — intercepts touch events so iOS never triggers native save on the <img> */}
+        {/* Transparent overlay — blocks iOS native image save; handles tap vs long-press */}
         <div
           className="absolute inset-0 rounded-xl"
           style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
+          onTouchStart={(e) => { e.currentTarget._tapTime = Date.now(); }}
+          onTouchEnd={(e) => {
+            const dt = Date.now() - (e.currentTarget._tapTime || 0);
+            // Only treat as a tap if < 300ms (not a long press) and no action menu visible
+            if (dt < 300 && !document.querySelector('[data-testid^="msg-action-menu-"]')) {
+              e.stopPropagation();
+              e.preventDefault();
+              if (onPreview) onPreview(src, fileName, fileId);
+            }
+            // Long presses fall through — parent bubble handles them
+          }}
           onClick={(e) => {
+            // Block all clicks from reaching the bubble — touch handler above handles taps
             e.stopPropagation();
-            if (document.querySelector('[data-testid^="msg-action-menu-"]')) return;
-            if (onPreview) onPreview(src, fileName, fileId);
+            e.preventDefault();
           }}
           onContextMenu={(e) => e.preventDefault()}
         />

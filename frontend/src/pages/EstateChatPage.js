@@ -120,12 +120,15 @@ export default function EstateChatPage() {
   const [showListMembersId, setShowListMembersId] = useState(null);
   const [msgActionId, setMsgActionId] = useState(null); // message ID for long-press action menu
   const [menuPosition, setMenuPosition] = useState(null); // fixed overlay position for action menu
+  const [menuReady, setMenuReady] = useState(false); // delays menu interactability after opening
   const scrollContainerRef = useRef(null); // ref for scroll container
   const menuOpenedAtRef = useRef(0); // timestamp when action menu was opened (guards against synthetic clicks)
 
   const openMsgAction = (msgId) => {
     setReactingMsgId(null);
     menuOpenedAtRef.current = Date.now();
+    setMenuReady(false);
+    setTimeout(() => setMenuReady(true), 500);
     // Query within the visible scroll container to avoid hidden desktop duplicates
     const container = scrollContainerRef.current;
     const bubbleEl = container
@@ -153,6 +156,7 @@ export default function EstateChatPage() {
     setMsgActionId(null);
     setMenuPosition(null);
     setShowActionEmojiPicker(false);
+    setMenuReady(false);
   };
   const [reactionDetailId, setReactionDetailId] = useState(null); // message ID for reaction detail dropdown
   const [replyTo, setReplyTo] = useState(null); // { id, content, sender_name } for reply-to
@@ -2034,7 +2038,7 @@ export default function EstateChatPage() {
             onTouchEnd={(e) => { e.preventDefault(); if (Date.now() - menuOpenedAtRef.current > 400) closeMsgAction(); }}
             style={{ background: 'rgba(0,0,0,0.35)' }}
           />
-          <div style={menuStyle} data-testid={`msg-action-menu-${msgActionId}`}>
+          <div style={{...menuStyle, pointerEvents: menuReady ? 'auto' : 'none'}} data-testid={`msg-action-menu-${msgActionId}`}>
             <div className={`flex gap-1.5 mb-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
               {recentEmojis.slice(0, 5).map((emoji) => {
                 const myReaction = (actionMsg.reactions || []).some(r => (r.emoji === emoji || displayEmoji(r.emoji) === emoji) && r.user_id === user?.id);
@@ -2072,40 +2076,35 @@ export default function EstateChatPage() {
               </button>
               {(actionMsg.attachment || (actionMsg.attachments && actionMsg.attachments.length > 0)) && (
                 <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
-                <button onClick={(e) => {
+                <button onClick={async (e) => {
                   e.stopPropagation();
                   const att = actionMsg.attachment || (actionMsg.attachments && actionMsg.attachments[0]);
-                  if (att?.file_id) {
-                    const url = `${API_URL}/estate-chat/files/${att.file_id}`;
-                    fetch(url, { headers: { Authorization: 'Bearer ' + token } })
-                      .then(r => r.blob())
-                      .then(async (blob) => {
-                        const fileName = att.file_name || 'download';
-                        // Try native share sheet (iOS) first
-                        if (navigator.share && navigator.canShare) {
-                          try {
-                            const file = new File([blob], fileName, { type: blob.type || 'application/octet-stream' });
-                            if (navigator.canShare({ files: [file] })) {
-                              await navigator.share({ files: [file], title: fileName });
-                              return;
-                            }
-                          } catch (shareErr) {
-                            if (shareErr.name === 'AbortError') return; // user cancelled
-                          }
-                        }
-                        // Fallback: direct download
-                        const a = document.createElement('a');
-                        a.href = URL.createObjectURL(blob);
-                        a.download = fileName;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(a.href);
-                        toast.success('Downloaded');
-                      })
-                      .catch(() => toast.error('Download failed'));
-                  }
+                  if (!att?.file_id) { closeMsgAction(); return; }
                   closeMsgAction();
+                  try {
+                    const url = `${API_URL}/estate-chat/files/${att.file_id}`;
+                    const resp = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+                    const blob = await resp.blob();
+                    const fileName = att.file_name || 'download';
+                    const ext = fileName.split('.').pop()?.toLowerCase() || '';
+                    const mimeMap = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', heic: 'image/heic', pdf: 'application/pdf', mp4: 'video/mp4', mov: 'video/quicktime' };
+                    const mime = mimeMap[ext] || blob.type || 'application/octet-stream';
+                    const file = new File([blob], fileName, { type: mime });
+                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                      await navigator.share({ files: [file], title: fileName });
+                    } else {
+                      const a = document.createElement('a');
+                      a.href = URL.createObjectURL(blob);
+                      a.download = fileName;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(a.href);
+                      toast.success('Downloaded');
+                    }
+                  } catch (err) {
+                    if (err.name !== 'AbortError') toast.error('Download failed');
+                  }
                 }}
                   className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/5" style={{ color: '#4CAF50' }}
                   data-testid="action-download-btn">
