@@ -17,8 +17,8 @@ export default function TrialBanner({ onUpgrade }) {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = res.data;
-        // Only show if on trial and not beta mode and no active subscription
-        if (data.trial?.trial_active && !data.beta_mode && !data.subscription) {
+        // Only show if on trial and not beta mode and not beta tester and no active subscription
+        if (data.trial?.trial_active && !data.beta_mode && !data.is_beta_tester && !data.subscription) {
           setTrial(data.trial);
         }
       } catch (err) { /* silent */ }

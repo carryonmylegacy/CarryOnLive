@@ -39,7 +39,7 @@ const LoginPage = () => {
   const [otp, setOtp] = useState('');
   const [trustToday, setTrustToday] = useState(false);
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
-  const [flagOpacity, setFlagOpacity] = useState(1);
+  const flagRef = React.useRef(null);
   const [exiting, setExiting] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
@@ -119,11 +119,11 @@ const LoginPage = () => {
     return () => clearInterval(interval);
   }, [lockoutSeconds]);
 
-  /* flag fade on scroll */
+  /* flag fade on scroll — uses ref to avoid re-renders */
   useEffect(() => {
     const handleScroll = () => {
       const fade = Math.max(0, 1 - window.scrollY / 600);
-      setFlagOpacity(fade);
+      if (flagRef.current) flagRef.current.style.opacity = fade * 0.85;
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
@@ -634,7 +634,7 @@ const LoginPage = () => {
       {/* ═══════════════════ HERO — FLAG BG + LOGO + LOGIN ═══════════════════ */}
       <section className="min-h-screen flex items-start sm:items-center relative overflow-hidden" style={{ paddingTop: 'calc(5rem + env(safe-area-inset-top, 0px))' }}>
         {/* Flag background that fades on scroll */}
-        <div className="absolute inset-0 z-0" style={{ opacity: flagOpacity * 0.85 }}>
+        <div ref={flagRef} className="absolute inset-0 z-0" style={{ opacity: 0.85 }}>
           <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
         </div>
         {/* Dark gradient overlay */}
