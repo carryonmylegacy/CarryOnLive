@@ -69,7 +69,7 @@ const SECURITY_ITEMS = [
  * @param {string}  [testIdSuffix='']  — appended to data-testid values (e.g. '-home')
  * @param {React.ReactNode} [beforeAbout]  — optional slot rendered before the About section (e.g. video)
  */
-const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', beforeAbout, skipToRealFamilies = false }) => (
+const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', beforeAbout, skipToRealFamilies = false, ctaOverride }) => (
   <>
     {beforeAbout}
 
@@ -388,9 +388,9 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
           <p className="text-[#7b879e] text-base mb-8">
             Join the families who are choosing preparedness over uncertainty. Whatever comes next &mdash; your family will be ready.
           </p>
-          <button onClick={() => navigateWithFade('/signup')} className="inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-base transition-transform duration-150 active:scale-95"
+          <button onClick={ctaOverride?.onClick || (() => navigateWithFade('/signup'))} className="inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-base transition-transform duration-150 active:scale-95"
             style={{ background: '#d4af37', color: '#0B1221', transition: 'all 0.3s' }}>
-            Start Your Free Trial <ChevronRight className="w-4 h-4" />
+            {ctaOverride?.label || 'Start Your Free Trial'} <ChevronRight className="w-4 h-4" />
           </button>
         </RevealSection>
       </div>

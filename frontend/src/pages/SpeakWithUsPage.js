@@ -38,10 +38,15 @@ const SpeakWithUsPage = () => {
 
   const navigateWithFade = (path) => navigate(path);
 
+  const scrollToCalendar = () => {
+    const el = document.getElementById('speak-calendar');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <div className="min-h-screen" style={{ background: '#080e1a' }}>
       {/* ═══════════════════ HERO ═══════════════════ */}
-      <section className="relative overflow-hidden" style={{ minHeight: '100vh' }}>
+      <section id="speak-calendar" className="relative overflow-hidden" style={{ minHeight: '100vh' }}>
         {/* Dark gradient background — no flag */}
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, #0a1628 0%, #0d1a30 40%, #111f34 100%)' }} />
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 20%, rgba(212,175,55,0.04) 0%, transparent 60%)' }} />
@@ -92,6 +97,7 @@ const SpeakWithUsPage = () => {
         footerInfo={footerInfo}
         testIdSuffix="-speak"
         skipToRealFamilies
+        ctaOverride={{ onClick: scrollToCalendar, label: 'Schedule a Consultation' }}
         beforeAbout={
           <section className="relative z-10">
             <div className="py-16 lg:py-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111F34, #0E1829)' }}>
