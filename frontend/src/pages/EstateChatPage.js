@@ -578,7 +578,7 @@ export default function EstateChatPage() {
     // Don't intercept taps on links — let them navigate normally
     if (e.target.closest('a')) return;
     // Ignore taps right after closing image preview (prevents pass-through)
-    if (Date.now() - previewClosedAtRef.current < 400) return;
+    if (Date.now() - previewClosedAtRef.current < 600) return;
     msgLongPressTriggered.current = false;
     touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     msgLongPressTimer.current = setTimeout(() => {
@@ -603,7 +603,7 @@ export default function EstateChatPage() {
     // Don't intercept taps on links — let them navigate normally
     if (e.target.closest('a')) return;
     // Ignore taps right after closing image preview
-    if (Date.now() - previewClosedAtRef.current < 400) return;
+    if (Date.now() - previewClosedAtRef.current < 600) return;
     clearTimeout(msgLongPressTimer.current);
     msgLongPressTimer.current = null;
     if (msgLongPressTriggered.current) {
@@ -1444,7 +1444,7 @@ export default function EstateChatPage() {
                     <div
                       className="px-4 py-2.5 rounded-2xl text-sm cursor-pointer"
                       data-testid={`msg-bubble-${msg.id}`}
-                      onClick={() => { if (msgLongPressTriggered.current) { msgLongPressTriggered.current = false; return; } if (Date.now() - previewClosedAtRef.current < 400) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); closeMsgAction(); }}
+                      onClick={() => { if (msgLongPressTriggered.current) { msgLongPressTriggered.current = false; return; } if (Date.now() - previewClosedAtRef.current < 600) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); closeMsgAction(); }}
                       onTouchStart={(e) => onMsgTouchStart(e, msg.id)}
                       onTouchMove={onMsgTouchMove}
                       onTouchEnd={(e) => onMsgTouchEnd(e, msg.id)}

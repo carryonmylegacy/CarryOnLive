@@ -53,7 +53,8 @@ export default function ImagePreviewModal({ previewImage, onClose }) {
   return (
     <div
       data-testid="photo-preview-overlay"
-      onClick={onClose}
+      onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClose(); }}
+      onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); onClose(); }}
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
         background: 'rgba(0,0,0,0.92)', display: 'flex',
@@ -63,7 +64,8 @@ export default function ImagePreviewModal({ previewImage, onClose }) {
     >
       <button
         data-testid="photo-preview-close"
-        onClick={onClose}
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
+        onTouchEnd={(e) => { e.stopPropagation(); }}
         style={{
           position: 'absolute', top: 'env(safe-area-inset-top, 12px)', right: 12,
           marginTop: 12, width: 40, height: 40, borderRadius: '50%',
