@@ -1585,9 +1585,9 @@ export default function EstateChatPage() {
 
       {/* ── Input Bar — transparent, floating over messages ── */}
       <div className="flex-shrink-0" style={{
-        background: 'var(--bg2)',
-        borderTop: '1px solid var(--b)',
-        paddingBottom: '4px',
+        background: 'transparent',
+        borderTop: '1px solid transparent',
+        paddingBottom: '0px',
         position: 'relative',
         zIndex: 10,
       }}
@@ -1866,7 +1866,7 @@ export default function EstateChatPage() {
         </div>
         {/* Quick actions strip — emojis when idle, hidden when keyboard open */}
         {!inputFocused && (
-          <div className="flex items-center justify-center gap-1 px-2 pt-0.5 pb-0.5" style={{ background: 'var(--bg2)', touchAction: 'none', paddingBottom: 'max(2px, env(safe-area-inset-bottom, 2px))' }}>
+          <div className="flex items-center justify-center gap-1 px-2 pt-0.5 pb-0.5" style={{ background: 'transparent', touchAction: 'none', paddingBottom: 'max(2px, env(safe-area-inset-bottom, 2px))' }}>
               {recentEmojis.map(emoji => (
                 <button
                   key={emoji}
