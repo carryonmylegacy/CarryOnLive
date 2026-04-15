@@ -70,16 +70,18 @@ const SpeakWithUsPage = () => {
               </RevealSection>
             </div>
 
-            {/* Right: Calendar embed — top-aligned with logo */}
-            <div className="w-full lg:max-w-[480px] flex-shrink-0">
+            {/* Right: Calendar embed — widget logo clipped, breathing room above title */}
+            <div className="w-full lg:max-w-[480px] flex-shrink-0" style={{ overflow: 'hidden' }}>
               <RevealSection delay={0.3} direction="right">
-                <iframe
-                  src="https://api.leadconnectorhq.com/widget/booking/V67QUruJToWmHt4GaNyn"
-                  style={{ width: '100%', minHeight: '1600px', border: 'none' }}
-                  scrolling="no"
-                  title="Schedule a Consultation"
-                  data-testid="speak-with-us-calendar"
-                />
+                <div style={{ marginTop: '-108px' }}>
+                  <iframe
+                    src="https://api.leadconnectorhq.com/widget/booking/V67QUruJToWmHt4GaNyn"
+                    style={{ width: '100%', minHeight: '1680px', border: 'none' }}
+                    scrolling="no"
+                    title="Schedule a Consultation"
+                    data-testid="speak-with-us-calendar"
+                  />
+                </div>
               </RevealSection>
             </div>
           </div>
