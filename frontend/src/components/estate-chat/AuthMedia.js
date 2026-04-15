@@ -115,21 +115,28 @@ export function AuthImage({ fileId, fileName, msgId, onPreview }) {
 
   return (
     <div>
-      <img
-        src={src}
-        alt={fileName}
-        onError={reloadImage}
-        className="rounded-xl max-w-full max-h-[240px] object-cover mb-1"
-        style={{ cursor: 'pointer', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
-        onClick={(e) => {
-          e.stopPropagation();
-          // Don't open preview if long-press action menu is active
-          if (document.querySelector('[data-testid^="msg-action-menu-"]')) return;
-          if (onPreview) onPreview(src, fileName, fileId);
-        }}
-        onContextMenu={(e) => e.preventDefault()}
-        data-testid={`chat-image-${msgId}`}
-      />
+      <div className="relative">
+        <img
+          src={src}
+          alt={fileName}
+          onError={reloadImage}
+          draggable="false"
+          className="rounded-xl max-w-full max-h-[240px] object-cover mb-1"
+          style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none', pointerEvents: 'none' }}
+          data-testid={`chat-image-${msgId}`}
+        />
+        {/* Transparent overlay — intercepts touch events so iOS never triggers native save on the <img> */}
+        <div
+          className="absolute inset-0 rounded-xl"
+          style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (document.querySelector('[data-testid^="msg-action-menu-"]')) return;
+            if (onPreview) onPreview(src, fileName, fileId);
+          }}
+          onContextMenu={(e) => e.preventDefault()}
+        />
+      </div>
       <span className="text-xs" style={{ color: 'var(--t4)' }}>{fileName}</span>
     </div>
   );

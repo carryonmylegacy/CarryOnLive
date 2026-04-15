@@ -258,15 +258,20 @@ async def _enrich_channel(channel: dict, current_user_id: str) -> dict:
                     if ben:
                         photo = ben.get("photo_url", "")
                 other_photo_url = resolve_photo_url(photo)
-    # Get estate name for the tag
+    # Get estate name and photo for the tag
     estate_name = ""
-    estate = await db.estates.find_one({"id": channel.get("estate_id", "")}, {"_id": 0, "id": 1, "name": 1})
+    estate_photo_url = ""
+    estate = await db.estates.find_one({"id": channel.get("estate_id", "")}, {"_id": 0, "id": 1, "name": 1, "estate_photo_url": 1})
     if estate:
         estate_name = estate.get("name", "")
+        raw_photo = estate.get("estate_photo_url", "")
+        if raw_photo:
+            estate_photo_url = resolve_photo_url(raw_photo)
     return {
         "id": ch_id,
         "estate_id": channel.get("estate_id", ""),
         "estate_name": estate_name,
+        "estate_photo_url": estate_photo_url,
         "type": channel["type"],
         "name": display_name,
         "photo_url": other_photo_url,
