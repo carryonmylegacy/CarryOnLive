@@ -337,8 +337,16 @@ export default function EstateChatPage() {
     if (!activeChannel) return;
     // Scroll to bottom on channel load/return — this is the PRIMARY scroll anchor
     fetchMessages(activeChannel.id).then(() => {
-      const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
-      setTimeout(doScroll, 50);
+      // Keep scroll pinned to bottom as images/content load (up to 3s)
+      const sc = scrollContainerRef.current;
+      if (sc) sc.scrollTop = sc.scrollHeight;
+      let lastH = sc?.scrollHeight || 0;
+      const check = setInterval(() => {
+        const s = scrollContainerRef.current;
+        if (!s) { clearInterval(check); return; }
+        if (s.scrollHeight !== lastH) { lastH = s.scrollHeight; s.scrollTop = s.scrollHeight; }
+      }, 100);
+      setTimeout(() => clearInterval(check), 3000);
     });
     let msgCount = 0;
     const poll = setInterval(() => {
@@ -372,11 +380,16 @@ export default function EstateChatPage() {
     setShowHeaderMembers(false);
     fetchMessages(ch.id).then(() => {
       setMsgLoading(false);
-      const doScroll = () => {
-        const sc = scrollContainerRef.current;
-        if (sc) sc.scrollTop = sc.scrollHeight;
-      };
-      setTimeout(doScroll, 50);
+      // Keep scroll pinned to bottom as images/content load (up to 3s)
+      const sc = scrollContainerRef.current;
+      if (sc) sc.scrollTop = sc.scrollHeight;
+      let lastH = sc?.scrollHeight || 0;
+      const check = setInterval(() => {
+        const s = scrollContainerRef.current;
+        if (!s) { clearInterval(check); return; }
+        if (s.scrollHeight !== lastH) { lastH = s.scrollHeight; s.scrollTop = s.scrollHeight; }
+      }, 100);
+      setTimeout(() => clearInterval(check), 3000);
     });
   };
 
