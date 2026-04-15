@@ -70,17 +70,19 @@ const SpeakWithUsPage = () => {
               </RevealSection>
             </div>
 
-            {/* Right: Calendar embed — no border box, taller to prevent cutoff */}
+            {/* Right: Calendar embed — logo area clipped via negative margin */}
             <div className="w-full lg:max-w-[480px] flex-shrink-0">
               <RevealSection delay={0.3} direction="right">
-                <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(15,22,41,0.5)', border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 40px rgba(0,0,0,0.4)' }}>
-                  <iframe
-                    src="https://api.leadconnectorhq.com/widget/booking/V67QUruJToWmHt4GaNyn"
-                    style={{ width: '100%', minHeight: '820px', border: 'none' }}
-                    scrolling="no"
-                    title="Schedule a Consultation"
-                    data-testid="speak-with-us-calendar"
-                  />
+                <div className="rounded-2xl" style={{ background: 'rgba(15,22,41,0.5)', border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 40px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
+                  <div style={{ marginTop: '-120px', paddingTop: '0' }}>
+                    <iframe
+                      src="https://api.leadconnectorhq.com/widget/booking/V67QUruJToWmHt4GaNyn"
+                      style={{ width: '100%', minHeight: '940px', border: 'none' }}
+                      scrolling="no"
+                      title="Schedule a Consultation"
+                      data-testid="speak-with-us-calendar"
+                    />
+                  </div>
                 </div>
               </RevealSection>
             </div>
