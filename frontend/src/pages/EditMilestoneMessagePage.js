@@ -668,7 +668,7 @@ export default function EditMilestoneMessagePage() {
                       <X className="h-5 w-5 text-white" />
                     </button>
                     {!isRecording && (
-                      <button onClick={flipCamera} className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: 'rgba(0,0,0,0.7)' }} data-testid="edit-message-camera-flip-button">
+                      <button onClick={flipCamera} className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: 'rgba(0,0,0,0.7)' }} data-testid="edit-message-camera-flip-button" aria-label="Flip camera">
                         <SwitchCamera className="h-7 w-7 text-white" />
                       </button>
                     )}
@@ -676,11 +676,11 @@ export default function EditMilestoneMessagePage() {
                 </div>
                 <div className="flex flex-shrink-0 items-center justify-center px-6 py-8" style={{ background: 'rgba(0,0,0,0.8)', paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}>
                   {!isRecording && countdown === null ? (
-                    <button onClick={startRecording} className="flex h-20 w-20 items-center justify-center rounded-full transition-transform active:scale-90" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', boxShadow: '0 4px 24px rgba(212,175,55,0.4)' }} data-testid="edit-message-start-recording-button">
+                    <button onClick={startRecording} className="flex h-20 w-20 items-center justify-center rounded-full transition-transform active:scale-90" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', boxShadow: '0 4px 24px rgba(212,175,55,0.4)' }} data-testid="edit-message-start-recording-button" aria-label="Start recording">
                       <Camera className="h-8 w-8 text-[#080e1a]" />
                     </button>
                   ) : isRecording ? (
-                    <button onClick={stopRecording} className="flex h-20 w-20 items-center justify-center rounded-full transition-transform active:scale-90" style={{ background: '#ef4444', boxShadow: '0 4px 24px rgba(239,68,68,0.4)' }} data-testid="edit-message-stop-recording-button">
+                    <button onClick={stopRecording} className="flex h-20 w-20 items-center justify-center rounded-full transition-transform active:scale-90" style={{ background: '#ef4444', boxShadow: '0 4px 24px rgba(239,68,68,0.4)' }} data-testid="edit-message-stop-recording-button" aria-label="Stop recording">
                       <StopCircle className="h-8 w-8 text-white" />
                     </button>
                   ) : (

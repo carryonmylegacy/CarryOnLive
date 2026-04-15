@@ -126,7 +126,7 @@ export const IPWhitelistTab = ({ getAuthHeaders }) => {
                       {config.allowed_ips.map((ip, i) => (
                         <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded-lg" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
                           <code className="text-xs text-[var(--t3)] font-mono">{ip}</code>
-                          <button onClick={() => removeIP(config.account_type, ip)} className="text-[var(--t5)] hover:text-red-400 transition-colors">
+                          <button onClick={() => removeIP(config.account_type, ip)} aria-label="Remove IP" className="text-[var(--t5)] hover:text-red-400 transition-colors">
                             <Trash2 className="w-3 h-3" />
                           </button>
                         </div>

@@ -70,10 +70,10 @@ const DebtTile = ({ debt, categoryLabels, beneficiaries, onEdit, onDelete, onDes
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <button onClick={() => onEdit(debt)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[var(--gold)]" data-testid={`edit-debt-${debt.id}`}>
+            <button onClick={() => onEdit(debt)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[var(--gold)]" data-testid={`edit-debt-${debt.id}`} aria-label="Edit debt">
               <Edit2 className="w-3.5 h-3.5" />
             </button>
-            <button onClick={() => onDelete(debt.id)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[#ef4444]" data-testid={`delete-debt-${debt.id}`}>
+            <button onClick={() => onDelete(debt.id)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[#ef4444]" data-testid={`delete-debt-${debt.id}`} aria-label="Delete debt">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>

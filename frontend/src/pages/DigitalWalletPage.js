@@ -214,10 +214,10 @@ const DigitalWalletPage = () => {
                           )}
                         </div>
                         <div className="flex gap-1">
-                          <button onClick={() => setEditEntry(entry)} className="p-1.5 rounded-lg hover:bg-[var(--s)] text-[var(--t4)]" data-testid={`edit-wallet-${entry.id}`}>
+                          <button onClick={() => setEditEntry(entry)} className="p-1.5 rounded-lg hover:bg-[var(--s)] text-[var(--t4)]" data-testid={`edit-wallet-${entry.id}`} aria-label="Edit entry">
                             <Edit2 className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDelete(entry.id)} className="p-1.5 rounded-lg hover:bg-[var(--rdbg)] text-[var(--t4)] hover:text-[var(--rd2)]" data-testid={`delete-wallet-${entry.id}`}>
+                          <button onClick={() => handleDelete(entry.id)} className="p-1.5 rounded-lg hover:bg-[var(--rdbg)] text-[var(--t4)] hover:text-[var(--rd2)]" data-testid={`delete-wallet-${entry.id}`} aria-label="Delete entry">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>

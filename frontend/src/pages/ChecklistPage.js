@@ -374,7 +374,7 @@ const ChecklistPage = () => {
             {item.ai_suggested && item.ai_accepted === null && (
               <>
                 <div className="flex items-center gap-0.5">
-                  <button onClick={() => handleAcceptItem(item.id)} className="p-1.5 rounded-lg text-[#14b8a6] active:scale-90 transition-transform" title="Accept AI suggestion" data-testid={`ai-accept-${item.id}`}>
+                  <button onClick={() => handleAcceptItem(item.id)} className="p-1.5 rounded-lg text-[#14b8a6] active:scale-90 transition-transform" title="Accept AI suggestion" data-testid={`ai-accept-${item.id}`} aria-label="Accept suggestion">
                     <Check className="w-4 h-4" />
                   </button>
                   <div className="group relative">
@@ -384,7 +384,7 @@ const ChecklistPage = () => {
                     </div>
                   </div>
                 </div>
-                <button onClick={() => handleRejectItem(item.id)} className="p-1.5 rounded-lg text-[#ef4444] active:scale-90 transition-transform" title="Reject" data-testid={`ai-reject-${item.id}`}>
+                <button onClick={() => handleRejectItem(item.id)} className="p-1.5 rounded-lg text-[#ef4444] active:scale-90 transition-transform" title="Reject" data-testid={`ai-reject-${item.id}`} aria-label="Reject suggestion">
                   <XCircle className="w-4 h-4" />
                 </button>
               </>
@@ -416,7 +416,7 @@ const ChecklistPage = () => {
             {item.is_default && item.activation_status && (
               <span className="text-[11px] text-[#10b981] font-bold capitalize">{item.activation_status}</span>
             )}
-            <button onClick={(e) => { e.stopPropagation(); openEdit(item); }} className="p-1.5 rounded-lg text-[var(--t5)] active:text-[var(--gold)] transition-colors">
+            <button onClick={(e) => { e.stopPropagation(); openEdit(item); }} aria-label="Edit item" className="p-1.5 rounded-lg text-[var(--t5)] active:text-[var(--gold)] transition-colors">
               <Edit2 className="w-4 h-4" />
             </button>
             <button
@@ -524,7 +524,7 @@ const ChecklistPage = () => {
             <h3 className="text-lg font-bold text-[var(--t)]">
               {editingItem ? 'Edit Checklist Item' : 'New Checklist Item'}
             </h3>
-            <button onClick={closeForm} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform"><X className="w-4 h-4" /></button>
+            <button onClick={closeForm} aria-label="Close form" className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform"><X className="w-4 h-4" /></button>
           </div>
 
           {/* Title */}

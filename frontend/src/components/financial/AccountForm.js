@@ -90,7 +90,7 @@ const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries
             placeholder="e.g., Primary Checking - Chase" className="input-field pr-10" data-testid="account-name-input" />
           {smartLoading && <div className="absolute right-3 top-1/2 -translate-y-1/2"><Sparkles className="w-4 h-4 text-[var(--gold)] animate-pulse" /></div>}
           {!smartLoading && !isEdit && form.name.length >= 3 && (
-            <button type="button" onClick={() => smartCategorize(form.name)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-lg hover:bg-[var(--s)]" title="AI auto-fill">
+            <button type="button" onClick={() => smartCategorize(form.name)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-lg hover:bg-[var(--s)]" title="AI auto-fill" aria-label="AI auto-categorize">
               <Sparkles className="w-4 h-4 text-[var(--t5)]" />
             </button>
           )}

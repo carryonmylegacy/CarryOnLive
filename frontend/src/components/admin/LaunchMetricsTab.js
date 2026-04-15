@@ -53,7 +53,7 @@ export const LaunchMetricsTab = ({ getAuthHeaders }) => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Launch Metrics</h3>
-        <button onClick={fetchMetrics} className="text-[var(--t5)] active:scale-90 transition-transform">
+        <button onClick={fetchMetrics} aria-label="Refresh metrics" className="text-[var(--t5)] active:scale-90 transition-transform">
           <RefreshCw className="w-4 h-4" />
         </button>
       </div>

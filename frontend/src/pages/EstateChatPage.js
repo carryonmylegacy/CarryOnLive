@@ -1658,7 +1658,7 @@ export default function EstateChatPage() {
                 onClick={() => { pendingFiles.forEach(pf => { if (pf.previewUrl) URL.revokeObjectURL(pf.previewUrl); }); setPendingFiles([]); }}
                 className="w-8 h-8 rounded-full flex items-center justify-center"
                 style={{ background: 'rgba(239,68,68,0.15)' }}
-                data-testid="ect-attach-cancel"
+                data-testid="ect-attach-cancel" aria-label="Cancel attachments"
               >
                 <X className="w-4 h-4 text-red-400" />
               </button>
@@ -1667,7 +1667,7 @@ export default function EstateChatPage() {
                 disabled={uploading}
                 className="w-10 h-10 rounded-full flex items-center justify-center"
                 style={{ background: '#d4af37' }}
-                data-testid="ect-attach-send"
+                data-testid="ect-attach-send" aria-label="Send attachments"
               >
                 {uploading ? <Loader2 className="w-5 h-5 animate-spin text-[#0F1629]" /> : <Send className="w-5 h-5 text-[#0F1629]" />}
               </button>
@@ -1798,10 +1798,10 @@ export default function EstateChatPage() {
                   {Math.floor(voiceRecorder.duration / 60)}:{(voiceRecorder.duration % 60).toString().padStart(2, '0')}
                 </span>
                 <span className="text-xs" style={{ color: 'var(--t4)' }}>Recording...</span>
-                <button onMouseDown={(e) => e.preventDefault()} onClick={stopAndPreview} className="ml-auto p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-stop">
+                <button onMouseDown={(e) => e.preventDefault()} onClick={stopAndPreview} className="ml-auto p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-stop" aria-label="Stop recording">
                   <Square className="w-4 h-4" style={{ color: 'var(--t)' }} />
                 </button>
-                <button onMouseDown={(e) => e.preventDefault()} onClick={() => { voiceRecorder.cancel(); inputRef.current?.focus(); }} className="p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-cancel">
+                <button onMouseDown={(e) => e.preventDefault()} onClick={() => { voiceRecorder.cancel(); inputRef.current?.focus(); }} className="p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-cancel" aria-label="Cancel recording">
                   <X className="w-4 h-4" style={{ color: '#ef4444' }} />
                 </button>
               </div>
@@ -1812,7 +1812,7 @@ export default function EstateChatPage() {
                 border: '1px solid #3A4560',
               }}>
                 <audio src={voicePreview.url} controls className="h-8 flex-1" style={{ maxWidth: '100%', filter: 'invert(1) hue-rotate(180deg)', opacity: 0.8 }} />
-                <button onMouseDown={(e) => e.preventDefault()} onClick={() => { discardPreview(); inputRef.current?.focus(); }} className="p-2 rounded-full flex-shrink-0" style={{ background: '#1A1F2E' }} data-testid="ect-voice-discard">
+                <button onMouseDown={(e) => e.preventDefault()} onClick={() => { discardPreview(); inputRef.current?.focus(); }} className="p-2 rounded-full flex-shrink-0" style={{ background: '#1A1F2E' }} data-testid="ect-voice-discard" aria-label="Discard recording">
                   <X className="w-4 h-4" style={{ color: '#ef4444' }} />
                 </button>
               </div>
@@ -1837,7 +1837,7 @@ export default function EstateChatPage() {
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => sendVoiceMessage()}
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
-              data-testid="ect-voice-send"
+              data-testid="ect-voice-send" aria-label="Send voice message"
               style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}
             >
               <Send className="w-5 h-5" style={{ color: '#080e1a' }} />
@@ -1848,7 +1848,7 @@ export default function EstateChatPage() {
               onClick={() => sendVoiceMessage(voicePreview.blob)}
               disabled={uploading}
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
-              data-testid="ect-voice-preview-send"
+              data-testid="ect-voice-preview-send" aria-label="Send voice message"
               style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}
             >
               {uploading ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#080e1a' }} /> : <Send className="w-5 h-5" style={{ color: '#080e1a' }} />}

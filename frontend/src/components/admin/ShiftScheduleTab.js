@@ -165,13 +165,13 @@ export const ShiftScheduleTab = ({ getAuthHeaders }) => {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigateWeek(-1)} className="p-2 rounded-lg hover:bg-[var(--s)]" data-testid="prev-week-btn">
+          <button onClick={() => navigateWeek(-1)} className="p-2 rounded-lg hover:bg-[var(--s)]" data-testid="prev-week-btn" aria-label="Previous week">
             <ChevronLeft className="w-4 h-4 text-[var(--t4)]" />
           </button>
           <span className="text-sm font-bold text-[var(--t)]">
             Week of {formatDate(weekStart || new Date().toISOString().split('T')[0])}
           </span>
-          <button onClick={() => navigateWeek(1)} className="p-2 rounded-lg hover:bg-[var(--s)]" data-testid="next-week-btn">
+          <button onClick={() => navigateWeek(1)} className="p-2 rounded-lg hover:bg-[var(--s)]" data-testid="next-week-btn" aria-label="Next week">
             <ChevronRight className="w-4 h-4 text-[var(--t4)]" />
           </button>
         </div>

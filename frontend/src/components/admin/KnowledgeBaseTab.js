@@ -140,10 +140,10 @@ export const KnowledgeBaseTab = ({ getAuthHeaders, isFounder = false }) => {
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {isFounder && (
                       <>
-                        <button onClick={e => { e.stopPropagation(); handleEdit(article); }} className="p-1.5 rounded hover:bg-[var(--s)] text-[var(--t5)]" data-testid={`edit-kb-${article.id}`}>
+                        <button onClick={e => { e.stopPropagation(); handleEdit(article); }} className="p-1.5 rounded hover:bg-[var(--s)] text-[var(--t5)]" data-testid={`edit-kb-${article.id}`} aria-label="Edit article">
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
-                        <button onClick={e => { e.stopPropagation(); handleDelete(article.id); }} className="p-1.5 rounded hover:bg-[var(--rdbg)] text-[var(--t5)] hover:text-[var(--rd)]" data-testid={`delete-kb-${article.id}`}>
+                        <button onClick={e => { e.stopPropagation(); handleDelete(article.id); }} className="p-1.5 rounded hover:bg-[var(--rdbg)] text-[var(--t5)] hover:text-[var(--rd)]" data-testid={`delete-kb-${article.id}`} aria-label="Delete article">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </>

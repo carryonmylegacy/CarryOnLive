@@ -528,10 +528,10 @@ const TrusteePage = () => {
               <div key={li.id} className="flex items-center gap-3 py-3" style={{ borderBottom: i < t.lineItems.length - 1 ? '1px solid var(--b)' : 'none' }}>
                 {t.status === 'quoted' ? (
                   <div className="flex flex-col gap-1 flex-shrink-0">
-                    <button onClick={() => approveItem(t.id, li.id, true)} className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-all ${li.approved === true ? 'bg-[var(--gnbg)] border border-[var(--gn)]' : 'bg-[var(--s)] border border-[var(--b)]'}`}>
+                    <button onClick={() => approveItem(t.id, li.id, true)} aria-label="Approve" className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-all ${li.approved === true ? 'bg-[var(--gnbg)] border border-[var(--gn)]' : 'bg-[var(--s)] border border-[var(--b)]'}`}>
                       <CheckCircle2 className="w-4 h-4" />
                     </button>
-                    <button onClick={() => approveItem(t.id, li.id, false)} className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-all ${li.approved === false ? 'bg-[var(--rdbg)] border border-[var(--rd)]' : 'bg-[var(--s)] border border-[var(--b)]'}`}>
+                    <button onClick={() => approveItem(t.id, li.id, false)} aria-label="Reject" className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-all ${li.approved === false ? 'bg-[var(--rdbg)] border border-[var(--rd)]' : 'bg-[var(--s)] border border-[var(--b)]'}`}>
                       <XCircle className="w-4 h-4" />
                     </button>
                   </div>

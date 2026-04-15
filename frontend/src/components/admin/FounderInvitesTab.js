@@ -208,7 +208,7 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
                         </button>
                       )}
                       {!invite.revoked && (
-                        <button onClick={() => revokeInvite(invite.token)} className="p-2 rounded-lg transition-colors hover:bg-red-500/10" title="Revoke invite" data-testid={`revoke-invite-${invite.token}`}>
+                        <button onClick={() => revokeInvite(invite.token)} className="p-2 rounded-lg transition-colors hover:bg-red-500/10" title="Revoke invite" data-testid={`revoke-invite-${invite.token}`} aria-label="Revoke invite">
                           <Trash2 className="w-4 h-4 text-[#6b7a90] hover:text-red-400" />
                         </button>
                       )}

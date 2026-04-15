@@ -583,7 +583,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <Switch checked={code.active} onCheckedChange={(v) => toggleB2bCode(code.id, v)} />
-                    <button onClick={() => deleteB2bCode(code.id)} className="text-[var(--t5)] hover:text-[var(--rd)]">
+                    <button onClick={() => deleteB2bCode(code.id)} aria-label="Delete code" className="text-[var(--t5)] hover:text-[var(--rd)]">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>

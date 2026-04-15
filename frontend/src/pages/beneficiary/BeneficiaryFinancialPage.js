@@ -173,7 +173,7 @@ const BeneficiaryFinancialPage = () => {
 
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate('/beneficiary')} className="p-2 rounded-xl hover:bg-[var(--s)] transition-colors" data-testid="back-btn">
+        <button onClick={() => navigate('/beneficiary')} className="p-2 rounded-xl hover:bg-[var(--s)] transition-colors" data-testid="back-btn" aria-label="Go back">
           <ChevronLeft className="w-5 h-5 text-[var(--t4)]" />
         </button>
         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.2), rgba(34,201,147,0.15))' }}>

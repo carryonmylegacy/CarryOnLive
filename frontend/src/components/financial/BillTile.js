@@ -100,10 +100,10 @@ const BillTile = ({ bill, categoryLabels, beneficiaries, onEdit, onDelete, onDes
         {/* Actions */}
         <div className="flex items-center justify-between" style={{ borderTop: '1px solid var(--b)', paddingTop: '8px' }}>
           <div className="flex items-center gap-1.5">
-            <button onClick={() => onEdit(bill)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[var(--gold)]" data-testid={`edit-bill-${bill.id}`}>
+            <button onClick={() => onEdit(bill)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[var(--gold)]" data-testid={`edit-bill-${bill.id}`} aria-label="Edit bill">
               <Edit2 className="w-3.5 h-3.5" />
             </button>
-            <button onClick={() => onDelete(bill.id)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[#ef4444]" data-testid={`delete-bill-${bill.id}`}>
+            <button onClick={() => onDelete(bill.id)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[#ef4444]" data-testid={`delete-bill-${bill.id}`} aria-label="Delete bill">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>

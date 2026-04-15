@@ -116,10 +116,10 @@ const PropertyAssetTile = ({ asset, beneficiaries, onEdit, onDelete, onDesignati
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <button onClick={() => onEdit(asset)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[var(--gold)]" data-testid={`edit-property-${asset.id}`}>
+            <button onClick={() => onEdit(asset)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[var(--gold)]" data-testid={`edit-property-${asset.id}`} aria-label="Edit property">
               <Edit2 className="w-3.5 h-3.5" />
             </button>
-            <button onClick={() => onDelete(asset.id)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[#ef4444]" data-testid={`delete-property-${asset.id}`}>
+            <button onClick={() => onDelete(asset.id)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[#ef4444]" data-testid={`delete-property-${asset.id}`} aria-label="Delete property">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>

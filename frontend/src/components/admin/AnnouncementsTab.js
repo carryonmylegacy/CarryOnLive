@@ -111,7 +111,7 @@ export const AnnouncementsTab = ({ getAuthHeaders }) => {
                     <p className="text-[11px] text-[var(--t5)]">By {item.created_by_name} · {new Date(item.created_at).toLocaleString()}</p>
                   </div>
                   {item.is_active && (
-                    <button onClick={() => handleDelete(item.id)} className="p-2 rounded-lg hover:bg-[var(--rdbg)] text-[var(--t5)] hover:text-[var(--rd)] transition-colors" data-testid={`delete-announcement-${item.id}`}>
+                    <button onClick={() => handleDelete(item.id)} className="p-2 rounded-lg hover:bg-[var(--rdbg)] text-[var(--t5)] hover:text-[var(--rd)] transition-colors" data-testid={`delete-announcement-${item.id}`} aria-label="Delete announcement">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   )}

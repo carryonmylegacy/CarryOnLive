@@ -68,10 +68,10 @@ const AccountTile = ({ account, categoryLabels, beneficiaries, onEdit, onDelete,
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <button onClick={() => onEdit(account)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[var(--gold)]" data-testid={`edit-account-${account.id}`}>
+            <button onClick={() => onEdit(account)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[var(--gold)]" data-testid={`edit-account-${account.id}`} aria-label="Edit account">
               <Edit2 className="w-3.5 h-3.5" />
             </button>
-            <button onClick={() => onDelete(account.id)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[#ef4444]" data-testid={`delete-account-${account.id}`}>
+            <button onClick={() => onDelete(account.id)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[#ef4444]" data-testid={`delete-account-${account.id}`} aria-label="Delete account">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
