@@ -275,6 +275,14 @@ export default function EstateChatPage() {
   // ── iOS keyboard: position:fixed + inset:0 handles viewport naturally ──
   // No visualViewport listeners needed — the flex layout adapts.
 
+  // Helper: only scroll to bottom if user is already near the bottom (within 150px)
+  const scrollToBottomIfNear = () => {
+    const sc = scrollContainerRef.current;
+    if (!sc) return;
+    const distFromBottom = sc.scrollHeight - sc.scrollTop - sc.clientHeight;
+    if (distFromBottom < 150) sc.scrollTop = sc.scrollHeight;
+  };
+
   const fetchChannels = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/estate-chat/channels`, { headers });
@@ -343,9 +351,8 @@ export default function EstateChatPage() {
       msgCount++;
       if (msgCount % 4 === 0) {
         fetchMessages(activeChannel.id).then(() => {
-          const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
-          requestAnimationFrame(doScroll);
-          setTimeout(doScroll, 200);
+          requestAnimationFrame(scrollToBottomIfNear);
+          setTimeout(scrollToBottomIfNear, 200);
         });
         fetchChannels();
       }
