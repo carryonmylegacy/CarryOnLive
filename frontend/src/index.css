@@ -1258,8 +1258,6 @@
 
 
 /* ── ECT (Estate Communication Tool) Full-screen mode ────── */
-/* When ECT is active, hide the mobile header so chat
-   has its own back arrow. */
 /* ECT keeps the platform header visible — only hide dock inside conversations */
 body.ect-chat-active .mobile-bottom-nav {
   display: none !important;
@@ -1271,6 +1269,15 @@ body.ect-chat-active .nav-fade-zone {
 body.ect-chat-active .dashboard-content-area {
   padding-bottom: 0 !important;
   margin-bottom: 0 !important;
+}
+/* Lock the body so iOS cannot scroll the viewport when keyboard opens.
+   This keeps position:fixed elements stable and prevents the entire
+   page from scrolling as one unit. */
+body.ect-chat-active {
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
 }
 
 
