@@ -1297,7 +1297,11 @@ export default function EstateChatPage() {
       </div>
 
       {/* Messages */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto" style={{
+        overscrollBehavior: 'contain',
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'pan-y',
+      }}>
         <div className="p-4 space-y-3" style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
         {/* Pinned messages panel — slides down from header */}
         {showPinned && pinnedMsgs.length > 0 && (
