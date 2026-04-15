@@ -342,7 +342,11 @@ export default function EstateChatPage() {
         .catch(() => {});
       msgCount++;
       if (msgCount % 4 === 0) {
-        fetchMessages(activeChannel.id);
+        fetchMessages(activeChannel.id).then(() => {
+          const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
+          requestAnimationFrame(doScroll);
+          setTimeout(doScroll, 200);
+        });
         fetchChannels();
       }
     }, 2000);
