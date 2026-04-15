@@ -209,16 +209,20 @@ export default function EstateChatPage() {
   }, [showHeaderMembers, showListMembersId]);
 
   // ── Visual Viewport sizing — keeps ECT root exactly within visible area ──
-  // Accounts for header height (50px + safe-area-inset-top) when keyboard is open
+  // The ECT root must ALWAYS stay below the platform header bar.
+  // Header = env(safe-area-inset-top) + 50px (header min-height).
+  // We NEVER set top lower than the initial CSS value.
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
-    const headerH = 50; // matches header min-h-[3rem] + py
     const update = () => {
       const root = document.getElementById('ect-root');
       if (!root) return;
-      const safeTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sat') || '0', 10) || 0;
-      const topOffset = Math.max(vv.offsetTop, safeTop + headerH);
+      // Read the header element's actual bottom position for accuracy
+      const header = document.querySelector('.mobile-header');
+      const headerBottom = header ? header.getBoundingClientRect().bottom : 50;
+      const minTop = Math.max(headerBottom, 50);
+      const topOffset = Math.max(vv.offsetTop, minTop);
       root.style.top = topOffset + 'px';
       root.style.height = (vv.height + vv.offsetTop - topOffset) + 'px';
     };
@@ -1765,8 +1769,10 @@ export default function EstateChatPage() {
                   setTimeout(() => {
                     const root = document.getElementById('ect-root');
                     if (root) {
-                      const headerH = 50;
-                      const topOffset = Math.max(vv.offsetTop, headerH);
+                      const header = document.querySelector('.mobile-header');
+                      const headerBottom = header ? header.getBoundingClientRect().bottom : 50;
+                      const minTop = Math.max(headerBottom, 50);
+                      const topOffset = Math.max(vv.offsetTop, minTop);
                       root.style.top = topOffset + 'px';
                       root.style.height = (vv.height + vv.offsetTop - topOffset) + 'px';
                     }
