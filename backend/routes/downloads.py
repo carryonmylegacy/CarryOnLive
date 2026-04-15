@@ -776,7 +776,6 @@ async def _handle_emergency_card(user: dict, params: dict, filename: str) -> Res
     comm = (plan.get("communication_plan", "") or "").strip()
     steps = plan.get("steps", [])
     household = plan.get("household_considerations", [])
-    resources = plan.get("resource_locations", [])  # noqa: F841
     estate_name = estate.get("name", "")
 
     # Build card PDF — 2 cards per page (3.5" x 2" each = 89mm x 51mm)
