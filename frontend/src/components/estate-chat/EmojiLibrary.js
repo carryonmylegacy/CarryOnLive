@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { SmilePlus, Clock, Search } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { SmilePlus, Search } from 'lucide-react';
 
 const RECENT_KEY = 'ect_recent_emojis';
 const MAX_RECENT = 8;
@@ -107,25 +107,81 @@ export const EMOJI_CATEGORIES = [
   ]},
 ];
 
+// Keyword index — maps search terms to emoji characters
+const EMOJI_KEYWORD_MAP = {
+  'smile':'😀😃😄😁😊🙂',  'happy':'😀😃😄😁😆😊🥳',  'sad':'😢😭😞😔😥😿',
+  'cry':'😢😭😿🥲',  'laugh':'😂🤣😆😅😹',  'love':'🥰😍😘❤️💕💖💗💝💘💞💓💟',
+  'heart':'❤️🩷🧡💛💚💙🩵💜🖤🤍🤎💔❤️‍🔥💕💖💗💘💝💞💓💟❣',
+  'angry':'😡😠🤬😤👿',  'cool':'😎🤙🆒',  'wink':'😉😜😏',  'kiss':'😘😗😚😙💋',
+  'think':'🤔🧐💭',  'sleep':'😴💤😪🛌',  'sick':'🤒🤕🤢🤮🤧😷',  'hot':'🥵🔥😎',
+  'cold':'🥶❄️☃️⛄',  'surprise':'😮😲😳🤯😱',  'fear':'😨😰😱👻',  'devil':'😈👿👹👺',
+  'skull':'💀☠️',  'ghost':'👻',  'alien':'👽👾🛸',  'robot':'🤖🦾',  'clown':'🤡🎪',
+  'poop':'💩',  'money':'🤑💰💵💴💶💷💸💳💎',  'star':'⭐🌟✨💫',
+  'fire':'🔥🧯',  'water':'💧💦🌊🏊🚿',  'sun':'☀️🌞🌅🌄',  'moon':'🌙🌛🌜🌝🌚',
+  'rain':'🌧️☔💧',  'snow':'❄️☃️⛄',  'rainbow':'🌈',  'cloud':'☁️⛅',
+  'wave':'👋🌊',  'thumb':'👍👎',  'ok':'👌✅',  'clap':'👏',  'pray':'🙏',
+  'muscle':'💪🦾',  'point':'👈👉👆👇☝️',  'peace':'✌️☮️',  'rock':'🤘🎸',
+  'hand':'👋🤚🖐️✋🖖👌✌️🤞🤟🤘🤙👈👉👆👇☝️👍👎✊👊🤛🤜👏🙌👐🤲🤝🙏',
+  'dog':'🐶🐕🐩',  'cat':'🐱🐈😺😸😹😻😼😽🙀😿😾',  'bear':'🐻🐼🐨🧸',
+  'bird':'🐦🐤🐣🐥🦆🦅🦉🦜🦢🦩🐓🦃🦚',  'fish':'🐟🐠🐡🐬🐳🐋🦈',
+  'bug':'🐛🐜🐝🦋🐌🐞🕷🦂',  'flower':'🌸🌹🌺🌻🌼🌷💐🥀',
+  'tree':'🌲🌳🌴🎄🌵',  'fruit':'🍏🍎🍐🍊🍋🍌🍉🍇🍓🍈🍒🍑🍍🥝',
+  'food':'🍔🍟🍕🌭🥪🌮🌯🥗🍗🍖🥩🍳🥚🧀🥞🧇🥓',
+  'drink':'☕🍵🧃🥤🍺🍻🥂🍷🥃🍸🍹🍾',  'cake':'🎂🧁🍰🍮🍩🍪',
+  'pizza':'🍕',  'burger':'🍔',  'sushi':'🍣🍱',  'rice':'🍚🍙🍘',
+  'car':'🚗🚕🚙🚓🚑🚒',  'plane':'✈️🛩️',  'rocket':'🚀',  'ship':'🚢⛵',
+  'train':'🚂🚃🚄🚅🚆🚇🚈🚉🚊🚋🚞🚝',  'bike':'🚲🚵🚴',  'bus':'🚌🚎🚍',
+  'house':'🏠🏡🏘️',  'building':'🏢🏣🏤🏥🏦🏨🏩🏪🏫🏬🏭',
+  'ball':'⚽🏀🏈⚾🎾🏐🏉🎱',  'game':'🎮🎲♟🎯🎳🎰🕹',
+  'music':'🎼🎹🎷🎺🎸🎻🥁🎤🎧',  'art':'🎨🖌🖍✏',  'movie':'🎬🎥📽🍿',
+  'trophy':'🏆🥇🥈🥉🏅🎖',  'gift':'🎁🎀🧧',  'party':'🎉🎊🥳🎈',
+  'flag':'🏁🚩🎌🏴🏳🏳️‍🌈🇺🇸🇬🇧🇫🇷🇩🇪🇮🇹🇪🇸🇯🇵🇰🇷🇨🇳🇧🇷🇮🇳🇦🇺🇨🇦🇲🇽',
+  'phone':'📱📲📞☎📟',  'computer':'💻🖥⌨🖱🖨',  'camera':'📷📸📹🎥',
+  'book':'📚📖📕📗📘📙📓📔📒',  'key':'🔑🗝🔐🔒🔓',  'lock':'🔒🔐🔓🗝',
+  'medicine':'💊💉🩹🩺',  'baby':'👶🍼🧒',  'time':'⏰⏱⏲🕰⌛⏳',
+  'check':'✅☑️',  'cross':'❌❎',  'warning':'⚠️🚨🚫⛔',  'question':'❓❔',
+  'yes':'👍✅👌',  'no':'👎❌🚫⛔',  'eye':'👀👁🔍🔎',
+  'crown':'👑🤴👸',  'ring':'💍💎',  'diamond':'💎💠',
+  'usa':'🇺🇸',  'uk':'🇬🇧',  'france':'🇫🇷',  'germany':'🇩🇪',  'italy':'🇮🇹',
+  'spain':'🇪🇸',  'japan':'🇯🇵',  'korea':'🇰🇷',  'china':'🇨🇳',  'brazil':'🇧🇷',
+  'india':'🇮🇳',  'australia':'🇦🇺',  'canada':'🇨🇦',  'mexico':'🇲🇽',
+};
+
+function searchEmojis(query) {
+  const q = query.toLowerCase().trim();
+  if (!q) return null;
+  const allSet = new Set(EMOJI_CATEGORIES.flatMap(c => c.emojis));
+  const matched = new Set();
+  for (const [keyword, emojis] of Object.entries(EMOJI_KEYWORD_MAP)) {
+    if (keyword.startsWith(q) || keyword.includes(q)) {
+      for (const ch of [...emojis]) {
+        if (ch && allSet.has(ch)) matched.add(ch);
+      }
+    }
+  }
+  for (const cat of EMOJI_CATEGORIES) {
+    if (cat.name.toLowerCase().includes(q) || cat.id.includes(q)) {
+      for (const emoji of cat.emojis) matched.add(emoji);
+    }
+  }
+  return [...matched];
+}
+
 export function EmojiPickerGrid({ onSelect, onClose, isOwn, searchPosition = 'top' }) {
   const [search, setSearch] = useState('');
   const scrollRef = useRef(null);
   const searchRef = useRef(null);
 
   useEffect(() => {
-    // Don't auto-focus search on touch devices — avoids keyboard popup
     if (window.matchMedia('(pointer: fine)').matches && searchRef.current) {
       searchRef.current.focus();
     }
   }, []);
 
-  const allEmojis = EMOJI_CATEGORIES.flatMap(c => c.emojis);
-  const filtered = search
-    ? allEmojis.filter(e => e.includes(search))
-    : null;
+  const filtered = useMemo(() => searchEmojis(search), [search]);
 
   const searchBar = (
-    <div className={searchPosition === 'top' ? 'px-3 pt-3 pb-2' : 'px-3 pt-2 pb-3'}>
+    <div className={searchPosition === 'top' ? 'px-3 pt-3 pb-2' : 'px-3 pt-2 pb-3'} style={{ flexShrink: 0 }}>
       <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5"
         style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
         <Search className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--t5)' }} />
@@ -146,11 +202,11 @@ export function EmojiPickerGrid({ onSelect, onClose, isOwn, searchPosition = 'to
     <div
       ref={scrollRef}
       className="px-2 overflow-y-auto"
-      style={{ maxHeight: '260px', WebkitOverflowScrolling: 'touch', paddingTop: searchPosition === 'bottom' ? '8px' : '0', paddingBottom: searchPosition === 'top' ? '8px' : '0' }}
+      style={{ maxHeight: '260px', WebkitOverflowScrolling: 'touch' }}
       data-testid="emoji-picker-scroll"
     >
       {filtered ? (
-        <div className="grid grid-cols-6 gap-0.5">
+        <div className="grid grid-cols-6 gap-0.5 py-1">
           {filtered.map((emoji, i) => (
             <button
               key={`${emoji}-${i}`}
@@ -166,7 +222,7 @@ export function EmojiPickerGrid({ onSelect, onClose, isOwn, searchPosition = 'to
       ) : (
         EMOJI_CATEGORIES.map((cat) => (
           <div key={cat.id}>
-            <div className="text-[11px] font-semibold px-1 pt-2 pb-1 sticky top-0" style={{ color: 'var(--t4)', background: 'rgba(20,30,50,0.97)' }}>{cat.name}</div>
+            <div className="text-[11px] font-semibold px-1 py-1.5 sticky top-0 z-[1]" style={{ color: 'var(--t4)', background: 'rgba(20,30,50,1)' }}>{cat.name}</div>
             <div className="grid grid-cols-6 gap-0.5">
               {cat.emojis.map((emoji, i) => (
                 <button
@@ -191,7 +247,9 @@ export function EmojiPickerGrid({ onSelect, onClose, isOwn, searchPosition = 'to
         WebkitBackdropFilter: 'blur(20px)',
         backdropFilter: 'blur(20px)',
         overflow: 'hidden',
-        width: 'min(280px, calc(100vw - 32px))',
+        width: 'min(280px, calc(100vw - 24px))',
+        display: 'flex',
+        flexDirection: 'column',
       }}
       data-testid="emoji-picker-grid"
       onClick={(e) => e.stopPropagation()}

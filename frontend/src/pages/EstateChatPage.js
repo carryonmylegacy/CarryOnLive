@@ -1732,7 +1732,7 @@ export default function EstateChatPage() {
             </div>
           </div>
         )}
-        <div className="flex items-center gap-2 px-3 py-0.5">
+        <div className="flex items-center gap-2 px-3 py-1">
           <input type="file" ref={fileInputRef} className="hidden" multiple
             accept="image/*,video/*,.pdf,.doc,.docx,.txt"
             onChange={(e) => {
@@ -1823,7 +1823,7 @@ export default function EstateChatPage() {
               enterKeyHint="return"
               rows={1}
               placeholder="Type a message..."
-              className="w-full rounded-2xl px-4 py-2.5 text-base"
+              className="w-full rounded-2xl px-4 py-2 text-base"
               data-testid="ect-message-input"
               style={{
                 background: '#2C4A6B',
@@ -1832,6 +1832,7 @@ export default function EstateChatPage() {
                 resize: 'none',
                 overflowY: 'auto',
                 maxHeight: '120px',
+                minHeight: '40px',
                 color: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#ffffff',
                 fontSize: '16px',
                 caretColor: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#ffffff',
@@ -1919,22 +1920,22 @@ export default function EstateChatPage() {
         </div>
         {/* Quick actions strip — emojis when idle, hidden when keyboard open */}
         {!inputFocused && (
-          <div className="flex items-center gap-1 px-3 pt-0.5 pb-0.5" style={{ background: 'var(--bg2)', touchAction: 'none', paddingBottom: 'max(2px, env(safe-area-inset-bottom, 2px))' }}>
+          <div className="flex items-center justify-center gap-1 px-2 pt-0.5 pb-0.5" style={{ background: 'var(--bg2)', touchAction: 'none', paddingBottom: 'max(2px, env(safe-area-inset-bottom, 2px))' }}>
               {recentEmojis.map(emoji => (
                 <button
                   key={emoji}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => setDraft(prev => prev + emoji)}
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-lg active:scale-90 transition-transform"
-                  style={{ background: 'rgba(255,255,255,0.06)' }}
+                  className="flex-1 h-9 rounded-full flex items-center justify-center text-lg active:scale-90 transition-transform"
+                  style={{ background: 'rgba(255,255,255,0.06)', maxWidth: '40px' }}
                   data-testid={`quick-emoji-${emoji}`}
                 >{emoji}</button>
               ))}
               <button
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => setDraft(prev => prev.length > 0 ? [...prev].slice(0, -1).join('') : '')}
-                className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform"
-                style={{ background: 'rgba(255,255,255,0.06)' }}
+                className="flex-1 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+                style={{ background: 'rgba(255,255,255,0.06)', maxWidth: '40px' }}
                 data-testid="quick-backspace-btn"
               >
                 <Delete className="w-5 h-5" style={{ color: 'var(--t4)' }} />
@@ -1942,11 +1943,11 @@ export default function EstateChatPage() {
               <EmojiPickerButton onClick={() => setShowDraftEmojiPicker(v => !v)} />
           </div>
         )}
-        {/* Emoji catalog for draft input — anchored to right, extends upward from picker icon */}
+        {/* Emoji catalog for draft input — anchored to right, just above text input */}
         {!inputFocused && showDraftEmojiPicker && (
           <>
             <div className="fixed inset-0 z-[15]" onClick={() => setShowDraftEmojiPicker(false)} onTouchEnd={(e) => { e.preventDefault(); setShowDraftEmojiPicker(false); }} />
-            <div className="fixed z-[16]" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 86px)', right: '12px' }}>
+            <div className="fixed z-[16]" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)', right: '12px' }}>
               <EmojiPickerGrid
                 onSelect={(emoji) => { setDraft(prev => prev + emoji); setRecentEmojis(addRecentEmoji(emoji)); }}
                 onClose={() => setShowDraftEmojiPicker(false)}
