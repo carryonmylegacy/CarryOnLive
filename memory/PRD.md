@@ -282,20 +282,28 @@ Extracted sub-components from three monolithic page files:
 ## Cost: ~$2,000+ in tokens across 10+ iterations over 2 weeks.
 ## This section exists so NO future agent EVER breaks this fix.
 ##
-## THE SOLUTION (V10 — the ONLY version that works):
+## THE SOLUTION (V11 — FINAL — the ONLY version that works):
 ##
 ##   The ECT chat root element (`#ect-root`) uses:
 ##     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
 ##     overflow: hidden;
 ##
-##   With a visualViewport listener that sets ONLY height (not top):
-##     root.style.height = vv.height + 'px'
-##   This keeps the root above the keyboard so iOS doesn't scroll the viewport.
-##   Setting top = vv.offsetTop BREAKS the header — do NOT set top.
+##   With ZERO JavaScript viewport/keyboard manipulation.
+##   No visualViewport listeners. No height overrides. No top overrides.
+##   No body position locking. NOTHING.
 ##
-##   iOS Safari/PWA naturally shrinks the viewport when the keyboard opens.
-##   The fixed root shrinks with it. The flex layout adapts automatically:
-##   header stays at top, messages scroll in middle, input at bottom above keyboard.
+##   The flex layout inside ect-root:
+##     - Platform header spacer (flex-shrink: 0)
+##     - Chat header (flex-shrink: 0)
+##     - Messages scroll area (flex: 1; overflow-y: auto)
+##     - Input bar (flex-shrink: 0)
+##
+##   Input bar container MUST have:
+##     background: var(--bg2)
+##     borderTop: 1px solid var(--b)   ← REQUIRED or cursor renders outside input
+##     paddingBottom: 4px
+##     position: relative
+##     zIndex: 10
 ##
 ## WHY EVERY OTHER APPROACH FAILED:
 ##
@@ -321,6 +329,59 @@ Extracted sub-components from three monolithic page files:
 ##   6. root.style.top = vv.offsetTop: in iOS Safari, fixed elements are relative
 ##      to the layout viewport. Setting top to offsetTop shifts the element DOWN,
 ##      but combined with height=vv.height the layout becomes wrong.
+##
+##   7. root.style.height = vv.height (without top): iOS scrolls the viewport
+##      BEFORE our JS fires. The root shrinks to vv.height but stays at top:0
+##      of the layout viewport (which is now scrolled). Result: input bar appears
+##      at the TOP of the visible area with huge empty space below it.
+##
+##   8. body.ect-chat-active { position: fixed; overflow: hidden } to lock
+##      viewport scroll + root.style.height = vv.height: The body lock fires
+##      on page load (not just keyboard open) and breaks the initial layout.
+##      The root height is set to vv.height on mount (before keyboard), which
+##      is correct initially but the body lock prevents iOS from managing the
+##      viewport correctly. Result: input bar and emoji strip detach from
+##      the bottom, floating in the middle of the screen.
+##
+## ==========================================
+## iMessage-STYLE FIXED HEADERS — NOT POSSIBLE IN PWA
+## ==========================================
+## Cost: ~$500+ in tokens across 4 attempts in April 15, 2026 session.
+##
+## DESIRED BEHAVIOR:
+##   When keyboard is open, headers and input bar stay fixed while
+##   the messages area scrolls independently behind them (like iMessage).
+##
+## WHY IT CANNOT BE DONE IN A WEB APP:
+##   Apple's iMessage uses UIKit's `inputAccessoryView`, a native iOS API
+##   that attaches a view directly to the keyboard. The keyboard + input bar
+##   move as one native layer, and the messages are in a UIScrollView with
+##   the header pinned via native constraints. This is NOT available to web apps.
+##
+##   On iOS Safari/PWA, when the keyboard opens:
+##   - The LAYOUT viewport stays full-size (e.g., 800px)
+##   - The VISUAL viewport shrinks (e.g., 400px)
+##   - position:fixed elements are relative to the LAYOUT viewport
+##   - iOS makes the entire viewport scrollable to show the focused input
+##   - ALL position:fixed elements scroll together (headers + messages + input)
+##   - There is NO web API to attach an element to the keyboard
+##   - There is NO way to prevent iOS from scrolling the viewport without
+##     also breaking the keyboard interaction
+##
+## EVERY ATTEMPTED FIX AND WHY IT FAILED:
+##   - visualViewport.height only: iOS scrolls before JS fires → wrong position
+##   - visualViewport.height + top: header spacer misaligns → header disappears
+##   - body position:fixed: breaks initial layout, input detaches from bottom
+##   - body position:fixed + vv.height: same detachment issue
+##   - Preventing touchmove on body: blocks legitimate scroll interactions
+##
+## ACCEPTED BEHAVIOR:
+##   When keyboard is open on iOS PWA, the entire page (headers + messages +
+##   input) scrolls as one unit. The user can scroll down to see headers,
+##   scroll up to see the input. This matches how most web-based chat apps
+##   (WhatsApp Web, Telegram Web, Slack) behave on iOS.
+##
+## DO NOT ATTEMPT TO FIX THIS AGAIN. It is a platform limitation.
 ##
 ## DEPLOYMENT GOTCHA (cost hours of debugging):
 ##
@@ -348,17 +409,21 @@ Extracted sub-components from three monolithic page files:
 ##   from messages to input bar looks "faded" or undefined.
 ##
 ## DO NOT:
-##   - Set root.style.top in response to keyboard/viewport events (breaks header)
+##   - Add ANY visualViewport listener that modifies #ect-root styles
+##   - Set root.style.height in response to keyboard/viewport events
+##   - Set root.style.top in response to keyboard/viewport events
+##   - Add body { position: fixed } for keyboard handling
 ##   - Add paddingBottom hacks for keyboard compensation
 ##   - Add window.scrollTo calls on input focus
-##   - Lock body scroll (position:fixed on body) when keyboard opens
+##   - Lock body scroll when keyboard opens (any method)
 ##   - Make the safe-area-inset-bottom spacer conditional on inputFocused
-##   - Use window.innerHeight to calculate keyboard height (it equals vv.height on iOS)
-##   - Use border or outline on the chat <input> element (causes cursor to render outside)
-##   - Wrap the <input> in a div with border (same cursor bug)
-##   - Use outline-offset on the <input> (same cursor bug)
-##   - Add transform: translateZ(0) or will-change: transform to fix cursor (no effect)
+##   - Use window.innerHeight to calculate keyboard height
+##   - Use border or outline on the chat <textarea> element (cursor renders outside)
+##   - Wrap the <textarea> in a div with border (same cursor bug)
+##   - Use outline-offset on the <textarea> (same cursor bug)
+##   - Add transform: translateZ(0) or will-change: transform (no effect)
+##   - Attempt to make headers/input stay fixed while messages scroll with keyboard open
 ##
-## THE FIX IS: set height = vv.height ONLY. Keep top: 0. Never set top.
+## THE FIX IS: DO NOTHING. Pure CSS position:fixed inset:0 overflow:hidden. Zero JS.
 ## For the input: use box-shadow (not border/outline) for visual border effect.
-## For the input bar container: borderTop is REQUIRED for correct cursor positioning.
+## For the input bar container: borderTop + background + paddingBottom are ALL REQUIRED.
