@@ -127,31 +127,34 @@ export default function EstateChatPage() {
 
   const openMsgAction = (msgId) => {
     if (previewGuardRef.current) return;
+    // Dismiss keyboard so the full action menu is visible
+    if (document.activeElement) document.activeElement.blur();
     setReactingMsgId(null);
     menuOpenedAtRef.current = Date.now();
     setMenuReady(false);
     setTimeout(() => setMenuReady(true), 500);
-    // Query within the visible scroll container to avoid hidden desktop duplicates
-    const container = scrollContainerRef.current;
-    const bubbleEl = container
-      ? container.querySelector(`[data-testid="msg-bubble-${msgId}"]`)
-      : document.querySelector(`[data-testid="msg-bubble-${msgId}"]`);
-    if (bubbleEl) {
-      const rect = bubbleEl.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        const viewH = window.visualViewport?.height || window.innerHeight;
-        const msgObj = messages.find(m => m.id === msgId);
-        const isOwn = msgObj?.sender_id === user?.id;
-        // If bubble is in the lower 45% of visible area, show menu above it
-        const showAbove = rect.top > viewH * 0.45;
-        setMenuPosition({
-          top: rect.top, bottom: rect.bottom,
-          left: rect.left, right: rect.right,
-          isOwn, showAbove,
-        });
+    // Wait a tick for keyboard to start closing before measuring bubble position
+    setTimeout(() => {
+      const container = scrollContainerRef.current;
+      const bubbleEl = container
+        ? container.querySelector(`[data-testid="msg-bubble-${msgId}"]`)
+        : document.querySelector(`[data-testid="msg-bubble-${msgId}"]`);
+      if (bubbleEl) {
+        const rect = bubbleEl.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          const viewH = window.visualViewport?.height || window.innerHeight;
+          const msgObj = messages.find(m => m.id === msgId);
+          const isOwn = msgObj?.sender_id === user?.id;
+          const showAbove = rect.top > viewH * 0.45;
+          setMenuPosition({
+            top: rect.top, bottom: rect.bottom,
+            left: rect.left, right: rect.right,
+            isOwn, showAbove,
+          });
+        }
       }
-    }
-    setMsgActionId(msgId);
+      setMsgActionId(msgId);
+    }, 100);
   };
 
   const closeMsgAction = () => {
@@ -1740,10 +1743,11 @@ export default function EstateChatPage() {
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && window.innerWidth > 1024) { e.preventDefault(); sendMessage(); } }}
               onFocus={() => {
                 setInputFocused(true);
-                // Scroll to bottom AFTER keyboard animation settles
+                // Scroll to bottom — multiple passes to track keyboard animation
                 const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
+                requestAnimationFrame(doScroll);
+                setTimeout(doScroll, 150);
                 setTimeout(doScroll, 400);
-                setTimeout(doScroll, 700);
               }}
               onBlur={() => {
                 setInputFocused(false);

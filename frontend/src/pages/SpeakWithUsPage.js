@@ -97,7 +97,7 @@ const SpeakWithUsPage = () => {
         footerInfo={footerInfo}
         testIdSuffix="-speak"
         skipToRealFamilies
-        ctaOverride={{ onClick: scrollToCalendar, label: 'Schedule a Consultation' }}
+        ctaOverride={{ onClick: scrollToCalendar, label: 'Book a Demo' }}
         beforeAbout={
           <section className="relative z-10">
             <div className="py-16 lg:py-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111F34, #0E1829)' }}>
