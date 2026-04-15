@@ -164,6 +164,7 @@ export default function EstateChatPage() {
   const [editingMsg, setEditingMsg] = useState(null); // {id, content} when editing
   const [poppingMsgId, setPoppingMsgId] = useState(null); // message ID being deleted (pop animation)
   const [previewImage, setPreviewImage] = useState(null); // {src, name, fileId} for fullscreen photo preview
+  const previewClosedAtRef = useRef(0); // timestamp when preview was closed — guards against pass-through taps
   const msgLongPressTimer = useRef(null);
   const msgLongPressTriggered = useRef(false);
   const touchStartRef = useRef({ x: 0, y: 0 });
@@ -572,6 +573,8 @@ export default function EstateChatPage() {
   const onMsgTouchStart = (e, msgId) => {
     // Don't intercept taps on links — let them navigate normally
     if (e.target.closest('a')) return;
+    // Ignore taps right after closing image preview (prevents pass-through)
+    if (Date.now() - previewClosedAtRef.current < 400) return;
     msgLongPressTriggered.current = false;
     touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     msgLongPressTimer.current = setTimeout(() => {
@@ -595,6 +598,8 @@ export default function EstateChatPage() {
   const onMsgTouchEnd = (e, msgId) => {
     // Don't intercept taps on links — let them navigate normally
     if (e.target.closest('a')) return;
+    // Ignore taps right after closing image preview
+    if (Date.now() - previewClosedAtRef.current < 400) return;
     clearTimeout(msgLongPressTimer.current);
     msgLongPressTimer.current = null;
     if (msgLongPressTriggered.current) {
@@ -1435,7 +1440,7 @@ export default function EstateChatPage() {
                     <div
                       className="px-4 py-2.5 rounded-2xl text-sm cursor-pointer"
                       data-testid={`msg-bubble-${msg.id}`}
-                      onClick={() => { if (msgLongPressTriggered.current) { msgLongPressTriggered.current = false; return; } setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); closeMsgAction(); }}
+                      onClick={() => { if (msgLongPressTriggered.current) { msgLongPressTriggered.current = false; return; } if (Date.now() - previewClosedAtRef.current < 400) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); closeMsgAction(); }}
                       onTouchStart={(e) => onMsgTouchStart(e, msg.id)}
                       onTouchMove={onMsgTouchMove}
                       onTouchEnd={(e) => onMsgTouchEnd(e, msg.id)}
@@ -1749,8 +1754,10 @@ export default function EstateChatPage() {
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && window.innerWidth > 1024) { e.preventDefault(); sendMessage(); } }}
               onFocus={() => {
                 setInputFocused(true);
-                // Scroll to bottom when keyboard opens
+                // Scroll to bottom when keyboard opens — multiple passes to catch iOS animation
                 const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
+                requestAnimationFrame(doScroll);
+                setTimeout(doScroll, 150);
                 setTimeout(doScroll, 350);
                 setTimeout(doScroll, 600);
                 // Force visualViewport update for keyboard open
@@ -1767,7 +1774,13 @@ export default function EstateChatPage() {
                   }, 350);
                 }
               }}
-              onBlur={() => setInputFocused(false)}
+              onBlur={() => {
+                setInputFocused(false);
+                // Scroll to bottom after keyboard dismisses to prevent content jump
+                const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
+                setTimeout(doScroll, 100);
+                setTimeout(doScroll, 350);
+              }}
               enterKeyHint="return"
               rows={1}
               placeholder="Type a message..."
@@ -2081,7 +2094,7 @@ export default function EstateChatPage() {
       />
     )}
     {/* Photo Preview */}
-    <ImagePreviewModal previewImage={previewImage} onClose={() => setPreviewImage(null)} />
+    <ImagePreviewModal previewImage={previewImage} onClose={() => { setPreviewImage(null); previewClosedAtRef.current = Date.now(); }} />
     </>
   );
 }
