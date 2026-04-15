@@ -14,17 +14,8 @@ document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: 
 document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
 document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
 
-// Prevent double-tap zoom — but NOT on inputs/textareas (kills mobile keyboard)
-let lastTouchEnd = 0;
-document.addEventListener('touchend', (e) => {
-  const tag = e.target?.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable) return;
-  const now = Date.now();
-  if (now - lastTouchEnd <= 300) {
-    e.preventDefault();
-  }
-  lastTouchEnd = now;
-}, { passive: false });
+// Double-tap zoom is prevented via CSS touch-action: manipulation on body.
+// No JavaScript touchend handler needed — the previous one blocked iOS keyboard dismiss.
 
 // Mark all future scroll/touchstart listeners as passive by default
 // This tells the browser it can start scrolling without waiting for JS
