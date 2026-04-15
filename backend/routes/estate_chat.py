@@ -261,7 +261,9 @@ async def _enrich_channel(channel: dict, current_user_id: str) -> dict:
     # Get estate name and photo for the tag
     estate_name = ""
     estate_photo_url = ""
-    estate = await db.estates.find_one({"id": channel.get("estate_id", "")}, {"_id": 0, "id": 1, "name": 1, "estate_photo_url": 1})
+    estate = await db.estates.find_one(
+        {"id": channel.get("estate_id", "")}, {"_id": 0, "id": 1, "name": 1, "estate_photo_url": 1}
+    )
     if estate:
         estate_name = estate.get("name", "")
         raw_photo = estate.get("estate_photo_url", "")
@@ -1113,7 +1115,16 @@ async def delete_channel(
         if channel.get("type") != "circle":
             await db.estate_channels.delete_one({"id": channel_id})
             await db.estate_messages.delete_many({"channel_id": channel_id})
-            await db.estate_reactions.delete_many({"message_id": {"$in": [m["id"] async for m in db.estate_messages.find({"channel_id": channel_id}, {"id": 1, "_id": 0})]}})
+            await db.estate_reactions.delete_many(
+                {
+                    "message_id": {
+                        "$in": [
+                            m["id"]
+                            async for m in db.estate_messages.find({"channel_id": channel_id}, {"id": 1, "_id": 0})
+                        ]
+                    }
+                }
+            )
         else:
             # Circle: dismiss for all members
             for mid in channel.get("members", []):
