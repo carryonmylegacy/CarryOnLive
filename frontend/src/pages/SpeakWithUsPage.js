@@ -47,35 +47,36 @@ const SpeakWithUsPage = () => {
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 20%, rgba(212,175,55,0.04) 0%, transparent 60%)' }} />
 
         <div className="relative z-10 flex flex-col items-center px-6 pt-12 pb-16 lg:pt-20 lg:pb-24">
-          {/* Logo */}
-          <div className="flex items-center gap-3 mb-10 lg:mb-14">
-            <img src="/carryon-app-icon.jpg" alt="CarryOn" className="w-12 h-12 rounded-xl object-cover" />
-            <span className="text-[#E0AD2B] font-bold text-2xl" style={{ fontFamily: 'Outfit, sans-serif' }}>CarryOn&#8482;</span>
-          </div>
 
           {/* Desktop: side-by-side layout */}
-          <div className="w-full max-w-[1100px] mx-auto flex flex-col lg:flex-row lg:items-start lg:gap-16">
-            {/* Left: Headline + subheadline */}
-            <div className="flex-1 text-center lg:text-left mb-10 lg:mb-0 lg:pt-8">
+          <div className="w-full max-w-[1400px] mx-auto flex flex-col lg:flex-row lg:items-center lg:gap-10 xl:gap-14">
+            {/* Left: Logo + Headline + subheadline */}
+            <div className="flex-1 mb-10 lg:mb-0">
               <RevealSection delay={0.1}>
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-6" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                  Your family is protected<br className="hidden sm:block" /> and connected.
-                  <br />
-                  <span className="text-[#d4af37]">Even when you can&apos;t be there.</span>
-                </h1>
-                <p className="text-[#8a95a9] text-base lg:text-lg leading-relaxed max-w-[600px] mx-auto lg:mx-0">
-                  CarryOn keeps your documents, plans, and wishes organized, and ensures your family is ready for anything that comes its way, giving you the peace of mind to know that the people you love know exactly what to do, no matter what happens.
-                </p>
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 lg:gap-8">
+                  <div className="flex-shrink-0">
+                    <img src="/carryon-logo.png" alt="CarryOn" className="w-[160px] lg:w-[200px] xl:w-[260px] h-auto" />
+                  </div>
+                  <div className="text-center sm:text-left flex-1 sm:pt-2">
+                    <h1 className="text-3xl sm:text-4xl xl:text-5xl font-bold text-white leading-[1.08] mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                      Your family is protected and connected.
+                      <span className="block text-[#d4af37] mt-1">Even when you can&apos;t be there.</span>
+                    </h1>
+                    <p className="text-[#8a95a9] text-sm xl:text-base max-w-lg leading-relaxed">
+                      CarryOn keeps your documents, plans, and wishes organized, and ensures your family is ready for anything that comes its way, giving you the peace of mind to know that the people you love know exactly what to do, no matter what happens.
+                    </p>
+                  </div>
+                </div>
               </RevealSection>
             </div>
 
-            {/* Right: Calendar embed */}
+            {/* Right: Calendar embed — no border box, taller to prevent cutoff */}
             <div className="w-full lg:max-w-[480px] flex-shrink-0">
               <RevealSection delay={0.3} direction="right">
-                <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(15,22,41,0.7)', border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 40px rgba(0,0,0,0.4)' }}>
+                <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(15,22,41,0.5)', border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 40px rgba(0,0,0,0.4)' }}>
                   <iframe
                     src="https://api.leadconnectorhq.com/widget/booking/V67QUruJToWmHt4GaNyn"
-                    style={{ width: '100%', minHeight: '650px', border: 'none', overflow: 'hidden' }}
+                    style={{ width: '100%', minHeight: '820px', border: 'none' }}
                     scrolling="no"
                     title="Schedule a Consultation"
                     data-testid="speak-with-us-calendar"

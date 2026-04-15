@@ -24,7 +24,6 @@ export default function ECTSecurityIntro({ introStep, setIntroStep, onDismiss, o
         {introStep === 1 && (
           <div data-testid="ect-intro-step-1">
             <div className="text-center mb-5">
-              <Shield className="w-12 h-12 mx-auto mb-3" style={{ color: '#d4af37' }} />
               <h2 className="text-xl font-bold" style={{ color: 'var(--t)' }}>The Most Private Chat You'll Ever Use</h2>
               <p className="text-sm mt-2" style={{ color: 'var(--t4)' }}>Estate Comms isn't like other messaging apps. Here's why.</p>
             </div>
@@ -60,7 +59,6 @@ export default function ECTSecurityIntro({ introStep, setIntroStep, onDismiss, o
         {introStep === 2 && (
           <div data-testid="ect-intro-step-2">
             <div className="text-center mb-5">
-              <MessageCircle className="w-12 h-12 mx-auto mb-3" style={{ color: '#d4af37' }} />
               <h2 className="text-xl font-bold" style={{ color: 'var(--t)' }}>How to Use Estate Comms</h2>
               <p className="text-sm mt-2" style={{ color: 'var(--t4)' }}>It's simple — here's everything you need to know.</p>
             </div>
