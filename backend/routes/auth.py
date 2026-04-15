@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 from config import db, logger
 from models import TokenResponse, UserCreate, UserLogin, UserResponse
-from services.audit import log_audit_event
+from services.audit import log_audit_event, get_client_ip
 from utils import (
     create_token,
     decode_token,
@@ -192,14 +192,6 @@ async def create_dev_session_token(user_id, email, role):
 
     session_id = str(_uuid.uuid4())
     return create_token(user_id, email, role, session_id, dev_session=True)
-
-
-def get_client_ip(request: Request) -> str:
-    """Get real client IP, accounting for reverse proxies."""
-    forwarded = request.headers.get("x-forwarded-for", "")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
 
 
 # ===================== AUTH ROUTES =====================

@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from config import db
+from services.estate_auth import is_estate_member as _is_estate_member, is_estate_owner as _is_estate_owner
 from services.photo_urls import resolve_photo_url
 from utils import get_current_user, send_push_notification
 
@@ -171,22 +172,6 @@ async def _get_user_estate_ids(user_id: str) -> list[str]:
     async for e in db.estates.find({"beneficiaries": user_id}, {"_id": 0, "id": 1}):
         estate_ids.add(e["id"])
     return list(estate_ids)
-
-
-async def _is_estate_member(user_id: str, estate_id: str) -> bool:
-    """Check if user is owner or accepted beneficiary of an estate."""
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1, "beneficiaries": 1})
-    if not estate:
-        return False
-    if estate["owner_id"] == user_id:
-        return True
-    return user_id in estate.get("beneficiaries", [])
-
-
-async def _is_estate_owner(user_id: str, estate_id: str) -> bool:
-    """Check if user is the owner (benefactor) of an estate."""
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
-    return estate is not None and estate["owner_id"] == user_id
 
 
 async def _ensure_circle(estate_id: str) -> dict:

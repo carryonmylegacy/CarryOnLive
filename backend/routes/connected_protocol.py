@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from config import db, xai_client, XAI_MODEL, logger
+from services.estate_auth import is_estate_member as _is_estate_member, is_estate_owner as _is_estate_owner
 from utils import get_current_user
 from services.photo_urls import resolve_photo_url
 
@@ -171,18 +172,6 @@ def _compute_next_drill_date(months: list[int]) -> str:
             return datetime(current_year, m, 1, tzinfo=timezone.utc).isoformat()
     # Wrap to next year
     return datetime(current_year + 1, sorted(months)[0], 1, tzinfo=timezone.utc).isoformat()
-
-
-async def _is_estate_owner(user_id: str, estate_id: str) -> bool:
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
-    return estate is not None and estate["owner_id"] == user_id
-
-
-async def _is_estate_member(user_id: str, estate_id: str) -> bool:
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1, "beneficiaries": 1})
-    if not estate:
-        return False
-    return estate["owner_id"] == user_id or user_id in estate.get("beneficiaries", [])
 
 
 async def _get_estate_members(estate_id: str) -> list[dict]:
