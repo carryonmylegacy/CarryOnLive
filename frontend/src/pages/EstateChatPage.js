@@ -202,20 +202,21 @@ export default function EstateChatPage() {
   }, [showHeaderMembers, showListMembersId]);
 
   // ── Visual Viewport sizing — keeps ECT root exactly within visible area ──
-  // This prevents content from sitting behind the iOS keyboard accessory bar
+  // Accounts for header height (50px + safe-area-inset-top) when keyboard is open
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
+    const headerH = 50; // matches header min-h-[3rem] + py
     const update = () => {
       const root = document.getElementById('ect-root');
-      if (root) {
-        root.style.height = vv.height + 'px';
-        root.style.top = vv.offsetTop + 'px';
-      }
+      if (!root) return;
+      const safeTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sat') || '0', 10) || 0;
+      const topOffset = Math.max(vv.offsetTop, safeTop + headerH);
+      root.style.top = topOffset + 'px';
+      root.style.height = (vv.height + vv.offsetTop - topOffset) + 'px';
     };
     vv.addEventListener('resize', update);
     vv.addEventListener('scroll', update);
-    update();
     return () => {
       vv.removeEventListener('resize', update);
       vv.removeEventListener('scroll', update);
@@ -313,14 +314,6 @@ export default function EstateChatPage() {
       if (msgRes.ok) {
         const data = await msgRes.json();
         setMessages(data);
-        // Robust scroll-to-bottom: use scrollContainer directly
-        const doScroll = () => {
-          const sc = scrollContainerRef.current;
-          if (sc) sc.scrollTop = sc.scrollHeight;
-        };
-        requestAnimationFrame(doScroll);
-        setTimeout(doScroll, 100);
-        setTimeout(doScroll, 350);
         // Prefetch media attachments for faster image loading
         const fileIds = [];
         data.forEach(m => {
@@ -1243,12 +1236,23 @@ export default function EstateChatPage() {
         >
           <ArrowLeft className="w-4 h-4" style={{ color: 'var(--t4)' }} />
         </button>
-        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}>
+        <div
+          className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold cursor-pointer"
+          style={{ background: activeChannel.group_photo_url ? 'transparent' : 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}
+          onClick={() => {
+            if (activeChannel.type === 'group' || activeChannel.type === 'circle') {
+              fileInputRef.current?.click();
+            }
+          }}
+          title={activeChannel.type !== 'direct' ? 'Tap to change group photo' : undefined}
+        >
           {activeChannel.type === 'direct' && activeChannel.photo_url
             ? <img src={activeChannel.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = activeChannel.name?.charAt(0)?.toUpperCase() || '?'; }} />
-            : activeChannel.type === 'direct'
-              ? (activeChannel.name?.charAt(0)?.toUpperCase() || '?')
-              : getChannelIcon(activeChannel.type)}
+            : activeChannel.group_photo_url
+              ? <img src={activeChannel.group_photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+              : activeChannel.type === 'direct'
+                ? (activeChannel.name?.charAt(0)?.toUpperCase() || '?')
+                : getChannelIcon(activeChannel.type)}
         </div>
         <div className="flex-1 min-w-0 relative">
           <div className="text-sm font-bold truncate" style={{ color: 'var(--t)' }}>{activeChannel.name}</div>
@@ -1815,7 +1819,12 @@ export default function EstateChatPage() {
                 if (vv) {
                   setTimeout(() => {
                     const root = document.getElementById('ect-root');
-                    if (root) { root.style.height = vv.height + 'px'; root.style.top = vv.offsetTop + 'px'; }
+                    if (root) {
+                      const headerH = 50;
+                      const topOffset = Math.max(vv.offsetTop, headerH);
+                      root.style.top = topOffset + 'px';
+                      root.style.height = (vv.height + vv.offsetTop - topOffset) + 'px';
+                    }
                   }, 350);
                 }
               }}
@@ -1966,15 +1975,13 @@ export default function EstateChatPage() {
     <div id="ect-root" data-testid="estate-chat-page" className="flex flex-col" style={{
       background: 'var(--bg)',
       position: 'fixed',
-      top: 0,
+      top: 'calc(env(safe-area-inset-top, 0px) + 50px)',
       left: 0,
       right: 0,
       bottom: 0,
       zIndex: 45,
       overflow: 'hidden',
     }}>
-      {/* Pad for status bar on native */}
-      <div style={{ height: 'env(safe-area-inset-top, 0px)', flexShrink: 0 }} />
 
       {/* Desktop: side-by-side layout */}
       <div className="hidden lg:flex flex-1 min-h-0">
@@ -2059,6 +2066,34 @@ export default function EstateChatPage() {
                 data-testid="action-copy-btn">
                 <Copy className="w-4 h-4" style={{ color: 'var(--t4)' }} /> Copy
               </button>
+              {(actionMsg.attachment || (actionMsg.attachments && actionMsg.attachments.length > 0)) && (
+                <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                <button onClick={(e) => {
+                  e.stopPropagation();
+                  const att = actionMsg.attachment || (actionMsg.attachments && actionMsg.attachments[0]);
+                  if (att?.file_id) {
+                    const url = `${API_URL}/estate-chat/files/${att.file_id}`;
+                    fetch(url, { headers: { Authorization: 'Bearer ' + token } })
+                      .then(r => r.blob())
+                      .then(blob => {
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = att.file_name || 'download';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(a.href);
+                        toast.success('Downloaded');
+                      })
+                      .catch(() => toast.error('Download failed'));
+                  }
+                  closeMsgAction();
+                }}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/5" style={{ color: '#4CAF50' }}
+                  data-testid="action-download-btn">
+                  <Download className="w-4 h-4" style={{ color: '#4CAF50' }} /> Save to Device
+                </button></>
+              )}
               {isOwnMsg && !actionMsg.attachment && !(actionMsg.attachments && actionMsg.attachments.length) && actionMsg.message_type !== 'voice' && (
                 <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
                 <button onClick={(e) => { e.stopPropagation(); setEditingMsg({ id: actionMsg.id, content: actionMsg.content || '' }); closeMsgAction(); }}

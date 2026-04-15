@@ -122,24 +122,12 @@ export function AuthImage({ fileId, fileName, msgId, onPreview }) {
         alt={fileName}
         onError={reloadImage}
         className="rounded-xl max-w-full max-h-[240px] object-cover mb-1"
-        style={{ cursor: 'pointer', WebkitUserSelect: 'none', userSelect: 'none' }}
+        style={{ cursor: 'pointer', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
         onClick={(e) => {
           e.stopPropagation();
-          if (imgLongPressTriggered.current) return;
           if (onPreview) onPreview(src, fileName, fileId);
         }}
-        onTouchStart={() => {
-          imgLongPressTriggered.current = false;
-          imgLongPress.current = setTimeout(() => {
-            imgLongPressTriggered.current = true;
-            if (navigator.vibrate) navigator.vibrate(30);
-            handleDownload();
-            toast.success('Downloading photo...');
-          }, 600);
-        }}
-        onTouchMove={() => clearTimeout(imgLongPress.current)}
-        onTouchEnd={() => clearTimeout(imgLongPress.current)}
-        onContextMenu={(e) => { e.preventDefault(); handleDownload(); toast.success('Downloading photo...'); }}
+        onContextMenu={(e) => e.preventDefault()}
         data-testid={`chat-image-${msgId}`}
       />
       <span className="text-xs" style={{ color: 'var(--t4)' }}>{fileName}</span>

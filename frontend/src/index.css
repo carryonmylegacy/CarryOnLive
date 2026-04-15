@@ -1260,10 +1260,7 @@
 /* ── ECT (Estate Communication Tool) Full-screen mode ────── */
 /* When ECT is active, hide the mobile header so chat
    has its own back arrow. */
-body.ect-active .mobile-header {
-  display: none !important;
-}
-/* When inside an actual ECT conversation, also hide the bottom dock */
+/* ECT keeps the platform header visible — only hide dock inside conversations */
 body.ect-chat-active .mobile-bottom-nav {
   display: none !important;
 }

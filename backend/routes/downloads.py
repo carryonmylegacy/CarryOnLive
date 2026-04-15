@@ -769,15 +769,20 @@ async def _handle_emergency_card(user: dict, params: dict, filename: str) -> Res
 
     # Extract key info
     plan_name = plan.get("name", "Emergency Plan")
+    scenario = plan.get("scenario", "")
     rps = plan.get("rendezvous_points", [])
     primary_rp = rps[0] if rps else None
+    secondary_rp = rps[1] if len(rps) > 1 else None
     comm = (plan.get("communication_plan", "") or "").strip()
+    steps = plan.get("steps", [])
+    household = plan.get("household_considerations", [])
+    resources = plan.get("resource_locations", [])  # noqa: F841
     estate_name = estate.get("name", "")
 
     # Build card PDF — 2 cards per page (3.5" x 2" each = 89mm x 51mm)
     # Using landscape A4 and placing two cards with cut lines
     CARD_W = 89  # mm
-    CARD_H = 51  # mm
+    CARD_H = 56  # mm (slightly taller for more content)
 
     pdf = FPDF(orientation="P", unit="mm", format="A4")
     pdf.set_auto_page_break(auto=False)
@@ -785,14 +790,14 @@ async def _handle_emergency_card(user: dict, params: dict, filename: str) -> Res
 
     # Draw 4 cards on a page (2 columns x 2 rows)
     positions = [
-        (15, 20),
-        (15 + CARD_W + 10, 20),
-        (15, 20 + CARD_H + 10),
-        (15 + CARD_W + 10, 20 + CARD_H + 10),
+        (15, 15),
+        (15 + CARD_W + 10, 15),
+        (15, 15 + CARD_H + 8),
+        (15 + CARD_W + 10, 15 + CARD_H + 8),
     ]
 
     for ox, oy in positions:
-        # Card border with rounded appearance (dashed cut line)
+        # Card border
         pdf.set_draw_color(180, 180, 180)
         pdf.set_line_width(0.3)
         pdf.rect(ox, oy, CARD_W, CARD_H)
@@ -804,60 +809,96 @@ async def _handle_emergency_card(user: dict, params: dict, filename: str) -> Res
         # Left side — text content
         text_x = ox + 3
         text_w = CARD_W - 28  # leave room for QR on right
+        cur_y = oy + 2.5
 
-        # Title
-        pdf.set_font("Helvetica", "B", 7)
+        # Title + scenario
+        pdf.set_font("Helvetica", "B", 6)
         pdf.set_text_color(212, 175, 55)
-        pdf.set_xy(text_x, oy + 2.5)
-        pdf.cell(text_w, 3.5, "EMERGENCY PLAN", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_xy(text_x, cur_y)
+        title_label = "EMERGENCY PLAN"
+        if scenario:
+            title_label += f" - {safe(scenario).upper()}"
+        pdf.cell(text_w, 3, title_label[:40], new_x="LMARGIN", new_y="NEXT")
+        cur_y += 3.5
 
-        # Plan name
-        pdf.set_font("Helvetica", "B", 8)
+        # Plan name (wrapping)
+        pdf.set_font("Helvetica", "B", 7)
         pdf.set_text_color(241, 243, 248)
-        pdf.set_xy(text_x, oy + 6)
-        name_display = safe(plan_name)[:28]
-        pdf.cell(text_w, 4, name_display, new_x="LMARGIN", new_y="NEXT")
+        pdf.set_xy(text_x, cur_y)
+        pdf.multi_cell(text_w, 3, safe(plan_name)[:60], new_x="LMARGIN", new_y="NEXT")
+        cur_y = pdf.get_y() + 0.5
 
-        # Meeting point
-        if primary_rp:
-            pdf.set_font("Helvetica", "B", 5.5)
+        # Primary meeting point
+        if primary_rp and cur_y < oy + CARD_H - 16:
+            pdf.set_font("Helvetica", "B", 5)
             pdf.set_text_color(59, 123, 247)
-            pdf.set_xy(text_x, oy + 12)
-            pdf.cell(text_w, 3, "MEETING POINT", new_x="LMARGIN", new_y="NEXT")
-            pdf.set_font("Helvetica", "", 6)
-            pdf.set_text_color(208, 222, 233)
-            pdf.set_xy(text_x, oy + 15)
-            rp_name = safe(primary_rp.get("name", ""))[:30]
-            pdf.cell(text_w, 3, rp_name, new_x="LMARGIN", new_y="NEXT")
-            if primary_rp.get("address"):
-                pdf.set_xy(text_x, oy + 18)
-                rp_addr = safe(primary_rp["address"])[:35]
-                pdf.cell(text_w, 3, rp_addr, new_x="LMARGIN", new_y="NEXT")
-
-        # Communication
-        if comm:
-            comm_y = oy + 24 if primary_rp else oy + 14
-            pdf.set_font("Helvetica", "B", 5.5)
-            pdf.set_text_color(34, 201, 147)
-            pdf.set_xy(text_x, comm_y)
-            pdf.cell(text_w, 3, "COMMUNICATION", new_x="LMARGIN", new_y="NEXT")
+            pdf.set_xy(text_x, cur_y)
+            pdf.cell(text_w, 2.5, "PRIMARY MEETING POINT", new_x="LMARGIN", new_y="NEXT")
+            cur_y += 2.5
             pdf.set_font("Helvetica", "", 5.5)
             pdf.set_text_color(208, 222, 233)
-            pdf.set_xy(text_x, comm_y + 3)
-            # First line of comm plan
-            comm_line = safe(comm.split("\n")[0])[:45]
-            pdf.cell(text_w, 2.5, comm_line, new_x="LMARGIN", new_y="NEXT")
+            pdf.set_xy(text_x, cur_y)
+            rp_text = safe(primary_rp.get("name", ""))
+            if primary_rp.get("address"):
+                rp_text += " - " + safe(primary_rp["address"])
+            pdf.multi_cell(text_w, 2.5, rp_text[:80], new_x="LMARGIN", new_y="NEXT")
+            cur_y = pdf.get_y() + 0.5
 
-        # Estate name at bottom
-        pdf.set_font("Helvetica", "I", 5)
+        # Secondary meeting point
+        if secondary_rp and cur_y < oy + CARD_H - 14:
+            pdf.set_font("Helvetica", "B", 5)
+            pdf.set_text_color(59, 123, 247)
+            pdf.set_xy(text_x, cur_y)
+            pdf.cell(text_w, 2.5, "BACKUP MEETING POINT", new_x="LMARGIN", new_y="NEXT")
+            cur_y += 2.5
+            pdf.set_font("Helvetica", "", 5.5)
+            pdf.set_text_color(208, 222, 233)
+            pdf.set_xy(text_x, cur_y)
+            rp2_text = safe(secondary_rp.get("name", ""))
+            if secondary_rp.get("address"):
+                rp2_text += " - " + safe(secondary_rp["address"])
+            pdf.multi_cell(text_w, 2.5, rp2_text[:80], new_x="LMARGIN", new_y="NEXT")
+            cur_y = pdf.get_y() + 0.5
+
+        # Communication plan (wrapped)
+        if comm and cur_y < oy + CARD_H - 12:
+            pdf.set_font("Helvetica", "B", 5)
+            pdf.set_text_color(34, 201, 147)
+            pdf.set_xy(text_x, cur_y)
+            pdf.cell(text_w, 2.5, "COMMUNICATION PLAN", new_x="LMARGIN", new_y="NEXT")
+            cur_y += 2.5
+            pdf.set_font("Helvetica", "", 5)
+            pdf.set_text_color(208, 222, 233)
+            pdf.set_xy(text_x, cur_y)
+            comm_text = safe(" ".join(comm.split("\n")[:3]))[:120]
+            pdf.multi_cell(text_w, 2.3, comm_text, new_x="LMARGIN", new_y="NEXT")
+            cur_y = pdf.get_y() + 0.5
+
+        # First 2 key steps
+        if steps and cur_y < oy + CARD_H - 10:
+            pdf.set_font("Helvetica", "B", 5)
+            pdf.set_text_color(245, 158, 11)
+            pdf.set_xy(text_x, cur_y)
+            pdf.cell(text_w, 2.5, "KEY STEPS", new_x="LMARGIN", new_y="NEXT")
+            cur_y += 2.5
+            pdf.set_font("Helvetica", "", 5)
+            pdf.set_text_color(208, 222, 233)
+            for step in steps[:2]:
+                if cur_y >= oy + CARD_H - 8:
+                    break
+                step_text = safe(step if isinstance(step, str) else step.get("description", step.get("title", "")))
+                pdf.set_xy(text_x, cur_y)
+                pdf.multi_cell(text_w, 2.3, ("- " + step_text)[:70], new_x="LMARGIN", new_y="NEXT")
+                cur_y = pdf.get_y()
+
+        # Estate name + CarryOn branding at bottom
+        pdf.set_font("Helvetica", "I", 4.5)
         pdf.set_text_color(82, 92, 114)
-        pdf.set_xy(text_x, oy + CARD_H - 7)
+        pdf.set_xy(text_x, oy + CARD_H - 6.5)
         pdf.cell(text_w, 2.5, safe(estate_name), new_x="LMARGIN", new_y="NEXT")
-
-        # CarryOn branding
         pdf.set_font("Helvetica", "B", 5)
         pdf.set_text_color(212, 175, 55)
-        pdf.set_xy(text_x, oy + CARD_H - 4)
+        pdf.set_xy(text_x, oy + CARD_H - 3.5)
         pdf.cell(text_w, 2.5, "CarryOn", new_x="LMARGIN", new_y="NEXT")
 
         # Right side — QR code
@@ -872,10 +913,19 @@ async def _handle_emergency_card(user: dict, params: dict, filename: str) -> Res
         pdf.set_xy(qr_x - 2, qr_y + qr_size + 1)
         pdf.cell(qr_size + 4, 2.5, "Scan for full plan", align="C", new_x="LMARGIN", new_y="NEXT")
 
+        # Household icons under QR if space
+        if household and qr_y + qr_size + 6 < oy + CARD_H - 8:
+            pdf.set_font("Helvetica", "", 4)
+            pdf.set_text_color(160, 170, 191)
+            hh_items = [safe(h) if isinstance(h, str) else safe(h.get("type", "")) for h in household[:3]]
+            if hh_items:
+                pdf.set_xy(qr_x - 2, qr_y + qr_size + 5)
+                pdf.cell(qr_size + 4, 2.5, ", ".join(hh_items)[:25], align="C", new_x="LMARGIN", new_y="NEXT")
+
     # Cut line instructions
     pdf.set_font("Helvetica", "I", 8)
     pdf.set_text_color(150, 150, 150)
-    pdf.set_xy(15, 20 + (CARD_H + 10) * 2 + 5)
+    pdf.set_xy(15, 15 + (CARD_H + 8) * 2 + 5)
     pdf.cell(0, 5, "Cut along the grey lines. Keep in wallets, backpacks, or tape to the fridge.")
 
     # Cleanup

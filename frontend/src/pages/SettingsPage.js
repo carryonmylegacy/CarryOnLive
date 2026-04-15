@@ -153,6 +153,29 @@ const SettingsPage = () => {
       {/* Privacy & Data Rights — non-staff only */}
       {!isStaff && <PrivacyCard />}
 
+      {/* Beta Tester Settings */}
+      {user?.is_beta_tester && (
+        <Card className="glass-card" data-testid="settings-beta-card">
+          <CardContent className="p-4">
+            <h4 className="text-[var(--t)] font-bold mb-3">Beta Testing</h4>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-[var(--t)]">Hide Bug Report Icon</p>
+                <p className="text-xs text-[var(--t5)]">Hide the floating bug icon on all pages</p>
+              </div>
+              <Switch
+                checked={localStorage.getItem('hide_beta_bug_icon') === 'true'}
+                onCheckedChange={(checked) => {
+                  localStorage.setItem('hide_beta_bug_icon', checked ? 'true' : 'false');
+                  window.location.reload();
+                }}
+                data-testid="beta-hide-bug-toggle"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Sign Out */}
       <Card className="glass-card border-[#ef4444]/20">
         <CardContent className="p-4">

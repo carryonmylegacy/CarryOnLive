@@ -120,8 +120,8 @@ const DashboardLayout = () => {
         <BetaWelcomeModal onAccepted={() => { setBetaAccepted(true); refreshUser(); }} />
       )}
 
-      {/* Beta Tester: Floating Feedback Button */}
-      {isBetaTester && betaAccepted && <BetaFeedbackButton />}
+      {/* Beta Tester: Floating Feedback Button (can be hidden via settings) */}
+      {isBetaTester && betaAccepted && localStorage.getItem('hide_beta_bug_icon') !== 'true' && <BetaFeedbackButton />}
     </div>
   );
 };
