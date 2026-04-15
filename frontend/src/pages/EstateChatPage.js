@@ -2078,7 +2078,7 @@ export default function EstateChatPage() {
       />
     )}
     {/* Photo Preview */}
-    <ImagePreviewModal previewImage={previewImage} onClose={() => { setPreviewImage(null); setTimeout(() => { previewGuardRef.current = false; }, 600); }} />
+    <ImagePreviewModal previewImage={previewImage} onClose={() => { setPreviewImage(null); setTimeout(() => { previewGuardRef.current = false; }, 300); }} />
     </>
   );
 }
