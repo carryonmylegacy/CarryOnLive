@@ -40,7 +40,7 @@ export default function VoiceMessagePlayer({ fileId }) {
   };
 
   return (
-    <div className="flex items-center gap-3 min-w-[180px]" onClick={(e) => e.stopPropagation()} data-testid="voice-player">
+    <div className="flex items-center gap-3 min-w-[180px]" onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} onTouchEnd={(e) => e.stopPropagation()} data-testid="voice-player">
       <audio
         ref={audioRef}
         src={blobUrl}

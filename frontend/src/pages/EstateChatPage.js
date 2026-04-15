@@ -636,6 +636,10 @@ export default function EstateChatPage() {
       if (res.ok) {
         await fetchMessages(activeChannel.id);
         await fetchChannels();
+        // Scroll to the newly sent voice message
+        const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
+        requestAnimationFrame(doScroll);
+        setTimeout(doScroll, 250);
       } else {
         const errData = await res.json().catch(() => ({}));
         console.error('Voice upload failed:', res.status, errData);
