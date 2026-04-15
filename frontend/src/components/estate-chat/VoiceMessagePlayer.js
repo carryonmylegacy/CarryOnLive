@@ -44,10 +44,21 @@ export default function VoiceMessagePlayer({ fileId }) {
       <audio
         ref={audioRef}
         src={blobUrl}
-        onLoadedMetadata={() => setAudioDuration(audioRef.current?.duration || 0)}
+        preload="auto"
+        onLoadedMetadata={() => {
+          const d = audioRef.current?.duration;
+          if (d && isFinite(d)) setAudioDuration(d);
+        }}
+        onDurationChange={() => {
+          const d = audioRef.current?.duration;
+          if (d && isFinite(d)) setAudioDuration(d);
+        }}
         onTimeUpdate={() => {
           const a = audioRef.current;
-          if (a && a.duration) setProgress((a.currentTime / a.duration) * 100);
+          if (a && a.duration && isFinite(a.duration)) {
+            setProgress((a.currentTime / a.duration) * 100);
+            if (!audioDuration || !isFinite(audioDuration)) setAudioDuration(a.duration);
+          }
         }}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
