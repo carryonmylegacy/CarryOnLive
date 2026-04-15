@@ -220,8 +220,8 @@ export default function EstateChatPage() {
       if (!root) return;
       // Read the header element's actual bottom position for accuracy
       const header = document.querySelector('.mobile-header');
-      const headerBottom = header ? header.getBoundingClientRect().bottom : 50;
-      const minTop = Math.max(headerBottom, 50);
+      const headerBottom = header ? header.getBoundingClientRect().bottom : 56;
+      const minTop = Math.max(headerBottom, 56);
       const topOffset = Math.max(vv.offsetTop, minTop);
       root.style.top = topOffset + 'px';
       root.style.height = (vv.height + vv.offsetTop - topOffset) + 'px';
@@ -1770,8 +1770,8 @@ export default function EstateChatPage() {
                     const root = document.getElementById('ect-root');
                     if (root) {
                       const header = document.querySelector('.mobile-header');
-                      const headerBottom = header ? header.getBoundingClientRect().bottom : 50;
-                      const minTop = Math.max(headerBottom, 50);
+                      const headerBottom = header ? header.getBoundingClientRect().bottom : 56;
+                      const minTop = Math.max(headerBottom, 56);
                       const topOffset = Math.max(vv.offsetTop, minTop);
                       root.style.top = topOffset + 'px';
                       root.style.height = (vv.height + vv.offsetTop - topOffset) + 'px';
@@ -1935,7 +1935,7 @@ export default function EstateChatPage() {
     <div id="ect-root" data-testid="estate-chat-page" className="flex flex-col" style={{
       background: 'var(--bg)',
       position: 'fixed',
-      top: 'calc(env(safe-area-inset-top, 0px) + 50px)',
+      top: 'calc(env(safe-area-inset-top, 0px) + 56px)',
       left: 0,
       right: 0,
       bottom: 0,
