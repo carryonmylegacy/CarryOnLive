@@ -288,10 +288,10 @@ Extracted sub-components from three monolithic page files:
 ##     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
 ##     overflow: hidden;
 ##
-##   With ZERO JavaScript viewport/keyboard manipulation.
-##   No visualViewport listeners. No paddingBottom. No height overrides.
-##   No window.scrollTo. No body position locking. No transform.
-##   NOTHING. Just pure CSS position:fixed with inset:0.
+##   With a visualViewport listener that sets ONLY height (not top):
+##     root.style.height = vv.height + 'px'
+##   This keeps the root above the keyboard so iOS doesn't scroll the viewport.
+##   Setting top = vv.offsetTop BREAKS the header — do NOT set top.
 ##
 ##   iOS Safari/PWA naturally shrinks the viewport when the keyboard opens.
 ##   The fixed root shrinks with it. The flex layout adapts automatically:
@@ -348,9 +348,8 @@ Extracted sub-components from three monolithic page files:
 ##   from messages to input bar looks "faded" or undefined.
 ##
 ## DO NOT:
-##   - Add ANY JavaScript that modifies #ect-root styles (height, top, bottom,
-##     transform, paddingBottom) in response to keyboard/viewport events
-##   - Add visualViewport event listeners for keyboard compensation
+##   - Set root.style.top in response to keyboard/viewport events (breaks header)
+##   - Add paddingBottom hacks for keyboard compensation
 ##   - Add window.scrollTo calls on input focus
 ##   - Lock body scroll (position:fixed on body) when keyboard opens
 ##   - Make the safe-area-inset-bottom spacer conditional on inputFocused
@@ -360,5 +359,6 @@ Extracted sub-components from three monolithic page files:
 ##   - Use outline-offset on the <input> (same cursor bug)
 ##   - Add transform: translateZ(0) or will-change: transform to fix cursor (no effect)
 ##
-## THE FIX IS: DO NOTHING. Let iOS handle it. Pure CSS. Zero JS.
+## THE FIX IS: set height = vv.height ONLY. Keep top: 0. Never set top.
 ## For the input: use box-shadow (not border/outline) for visual border effect.
+## For the input bar container: borderTop is REQUIRED for correct cursor positioning.

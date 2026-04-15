@@ -212,8 +212,26 @@ export default function EstateChatPage() {
     };
   }, [showHeaderMembers, showListMembersId]);
 
-  // iOS keyboard: position:fixed + inset:0 handles viewport resize natively.
-  // DO NOT add visualViewport listeners — they fight iOS and break the layout.
+  // ── Visual Viewport: resize root height to stay above iOS keyboard ──
+  // ONLY set height (not top) — setting top broke header alignment in previous attempts.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const root = document.getElementById('ect-root');
+      if (!root) return;
+      root.style.height = vv.height + 'px';
+    };
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+      const root = document.getElementById('ect-root');
+      if (root) root.style.height = '';
+    };
+  }, []);
 
   // ── Auto-resize textarea after re-renders (focus change, keyboard dismiss) ──
   useEffect(() => {
