@@ -126,6 +126,7 @@ export default function EstateChatPage() {
   const menuOpenedAtRef = useRef(0); // timestamp when action menu was opened (guards against synthetic clicks)
 
   const openMsgAction = (msgId) => {
+    if (previewGuardRef.current) return;
     setReactingMsgId(null);
     menuOpenedAtRef.current = Date.now();
     setMenuReady(false);
@@ -208,23 +209,8 @@ export default function EstateChatPage() {
     };
   }, [showHeaderMembers, showListMembersId]);
 
-  // ── Visual Viewport sizing — keeps ECT within visible area when keyboard opens ──
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const update = () => {
-      const root = document.getElementById('ect-root');
-      if (!root) return;
-      root.style.height = vv.height + 'px';
-      root.style.top = vv.offsetTop + 'px';
-    };
-    vv.addEventListener('resize', update);
-    vv.addEventListener('scroll', update);
-    return () => {
-      vv.removeEventListener('resize', update);
-      vv.removeEventListener('scroll', update);
-    };
-  }, []);
+  // iOS keyboard: position:fixed + inset:0 handles viewport resize natively.
+  // DO NOT add visualViewport listeners — they fight iOS and break the layout.
 
   // ── Auto-resize textarea after re-renders (focus change, keyboard dismiss) ──
   useEffect(() => {
@@ -283,10 +269,8 @@ export default function EstateChatPage() {
     }
   }, [activeChannel]);
 
-  // ── iOS keyboard: ZERO JavaScript manipulation ──
-  // Root uses position:fixed + inset:0, which shrinks naturally with the viewport.
-  // iOS handles keyboard by shrinking the viewport — the flex layout adapts.
-  // DO NOT add scroll listeners, viewport handlers, or any JS that fights iOS.
+  // ── iOS keyboard: position:fixed + inset:0 handles viewport naturally ──
+  // No visualViewport listeners needed — the flex layout adapts.
 
   const fetchChannels = useCallback(async () => {
     try {
@@ -1446,7 +1430,7 @@ export default function EstateChatPage() {
                       onTouchStart={(e) => onMsgTouchStart(e, msg.id)}
                       onTouchMove={onMsgTouchMove}
                       onTouchEnd={(e) => onMsgTouchEnd(e, msg.id)}
-                      onContextMenu={(e) => { e.preventDefault(); openMsgAction(msg.id); setReactingMsgId(null); }}
+                      onContextMenu={(e) => { e.preventDefault(); if (previewGuardRef.current) return; openMsgAction(msg.id); setReactingMsgId(null); }}
                       style={{
                         background: isMe ? 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1))' : 'rgba(255,255,255,0.05)',
                         border: `1px solid ${isMe ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
@@ -1472,7 +1456,7 @@ export default function EstateChatPage() {
                             const ext = (att.file_name || '').split('.').pop().toLowerCase();
                             const isImage = att.file_type?.startsWith('image/') || ['jpg','jpeg','png','gif','webp','heic','heif'].includes(ext);
                             const isVideo = att.file_type?.startsWith('video/') || ['mp4','mov','webm','m4v'].includes(ext);
-                            if (isImage) return <AuthImage key={att.file_id} fileId={att.file_id} fileName={att.file_name} msgId={msg.id} onPreview={(s, n, fid) => { previewGuardRef.current = true; setPreviewImage({ src: s, name: n, fileId: fid }); }} />;
+                            if (isImage) return <AuthImage key={att.file_id} fileId={att.file_id} fileName={att.file_name} msgId={msg.id} onPreview={(s, n, fid) => { if (previewGuardRef.current) return; previewGuardRef.current = true; setPreviewImage({ src: s, name: n, fileId: fid }); }} />;
                             if (isVideo) return <AuthVideo key={att.file_id} fileId={att.file_id} fileName={att.file_name} />;
                             return <AuthFileLink key={att.file_id} fileId={att.file_id} fileName={att.file_name} fileSize={att.file_size} msgId={msg.id} />;
                           })}
@@ -1483,7 +1467,7 @@ export default function EstateChatPage() {
                         const isVideo = msg.attachment.file_type?.startsWith('video/') || ['mp4','mov','webm','m4v'].includes(ext);
                         if (msg.message_type === 'voice') return <VoiceMessagePlayer fileId={msg.attachment.file_id} />;
                         if (isVideo) return <AuthVideo fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} />;
-                        if (isImage) return <AuthImage fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} msgId={msg.id} onPreview={(s, n, fid) => { previewGuardRef.current = true; setPreviewImage({ src: s, name: n, fileId: fid }); }} />;
+                        if (isImage) return <AuthImage fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} msgId={msg.id} onPreview={(s, n, fid) => { if (previewGuardRef.current) return; previewGuardRef.current = true; setPreviewImage({ src: s, name: n, fileId: fid }); }} />;
                         return <AuthFileLink fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} fileSize={msg.attachment.file_size} msgId={msg.id} />;
                       })() : (() => {
                         // Render message content with tappable links
@@ -2083,7 +2067,7 @@ export default function EstateChatPage() {
       />
     )}
     {/* Photo Preview */}
-    <ImagePreviewModal previewImage={previewImage} onClose={() => { setPreviewImage(null); setTimeout(() => { previewGuardRef.current = false; }, 800); }} />
+    <ImagePreviewModal previewImage={previewImage} onClose={() => { setPreviewImage(null); setTimeout(() => { previewGuardRef.current = false; }, 1200); }} />
     </>
   );
 }

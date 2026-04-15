@@ -239,6 +239,14 @@ Extracted sub-components from three monolithic page files:
 ##   - enterKeyHint="send" → changes keyboard return key
 ##
 
+### Completed (Apr 15, 2026 — Session 9: iOS Chat Regression Fix)
+- **Keyboard Layout Fix**: Removed `visualViewport` resize/scroll listener that was setting `root.style.height = vv.height` and `root.style.top = vv.offsetTop`. These CONTRADICT the documented solution (PRD lines 277-286) and were causing the platform header to disappear when the keyboard opened. The `position: fixed; inset: 0` CSS handles everything natively. Code now matches documented V10 solution exactly.
+- **Image Preview → Action Menu Fix**: Three-layer defense against phantom iOS touch events:
+  1. Removed the `ImagePreviewModal` closing animation (500ms transparent overlay phase) — iOS passes touches through `opacity: 0` elements despite `pointer-events: auto`. Modal now unmounts immediately.
+  2. Added `previewGuardRef.current` check to `openMsgAction()`, `onContextMenu`, and both `onPreview` callbacks — blocks ALL entry points to the action menu for 1200ms after preview close.
+  3. Increased guard timeout from 800ms to 1200ms for extra iOS safety margin.
+- **Housekeeping**: 65/65 checks pass.
+
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
 - Twilio SMS: Waiting on A2P 10DLC campaign approval

@@ -1,32 +1,19 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { X, Download } from 'lucide-react';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 
 /**
  * Fullscreen photo preview modal for ECT chat images.
- * Uses a closing state to stay mounted briefly after dismiss,
- * preventing iOS from sending phantom touch events to elements underneath.
+ * Relies on previewGuardRef in EstateChatPage to block phantom iOS
+ * touch events after this modal unmounts — no internal closing animation needed.
  */
 export default function ImagePreviewModal({ previewImage, onClose }) {
-  const [closing, setClosing] = useState(false);
-
-  const handleClose = useCallback(() => {
-    if (closing) return;
-    setClosing(true);
-    // Stay mounted but invisible for 500ms to absorb phantom iOS touches
-    setTimeout(() => {
-      setClosing(false);
-      onClose();
-    }, 500);
-  }, [closing, onClose]);
-
-  // Reset closing state when a new image is shown
-  useEffect(() => {
-    if (previewImage) setClosing(false);
-  }, [previewImage]);
-
   if (!previewImage) return null;
+
+  const handleClose = () => {
+    onClose();
+  };
 
   const handleSave = async (e) => {
     e.stopPropagation();
@@ -78,13 +65,12 @@ export default function ImagePreviewModal({ previewImage, onClose }) {
       onMouseDown={(e) => { e.stopPropagation(); }}
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
-        background: closing ? 'transparent' : 'rgba(0,0,0,0.92)',
+        background: 'rgba(0,0,0,0.92)',
         display: 'flex',
         alignItems: 'center', justifyContent: 'center',
         flexDirection: 'column',
         touchAction: 'none',
         pointerEvents: 'auto',
-        opacity: closing ? 0 : 1,
       }}
     >
       <button
