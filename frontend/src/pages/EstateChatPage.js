@@ -164,7 +164,7 @@ export default function EstateChatPage() {
   const [editingMsg, setEditingMsg] = useState(null); // {id, content} when editing
   const [poppingMsgId, setPoppingMsgId] = useState(null); // message ID being deleted (pop animation)
   const [previewImage, setPreviewImage] = useState(null); // {src, name, fileId} for fullscreen photo preview
-  const previewClosedAtRef = useRef(0); // timestamp when preview was closed — guards against pass-through taps
+  const previewGuardRef = useRef(false); // synchronous flag — blocks message touch handlers while preview is open or just closed
   const msgLongPressTimer = useRef(null);
   const msgLongPressTriggered = useRef(false);
   const touchStartRef = useRef({ x: 0, y: 0 });
@@ -208,22 +208,15 @@ export default function EstateChatPage() {
     };
   }, [showHeaderMembers, showListMembersId]);
 
-  // ── Visual Viewport sizing — only adjust HEIGHT for keyboard ──
-  // NEVER modify 'top' — let CSS position:fixed handle that.
-  // Only shrink height when keyboard is open so content doesn't hide behind it.
+  // ── Visual Viewport sizing — keeps ECT within visible area when keyboard opens ──
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
     const update = () => {
       const root = document.getElementById('ect-root');
       if (!root) return;
-      // Calculate how much of the viewport is above the ECT root (header + safe area)
-      const rootTop = root.getBoundingClientRect().top;
-      // Set height = visual viewport bottom minus the root's top position
-      const availableHeight = vv.height - Math.max(0, rootTop - vv.offsetTop);
-      if (availableHeight > 100) {
-        root.style.height = availableHeight + 'px';
-      }
+      root.style.height = vv.height + 'px';
+      root.style.top = vv.offsetTop + 'px';
     };
     vv.addEventListener('resize', update);
     vv.addEventListener('scroll', update);
@@ -583,7 +576,7 @@ export default function EstateChatPage() {
     // Don't intercept taps on links
     if (e.target.closest('a')) return;
     // Don't start long-press if preview is open or just closed
-    if (previewImage || Date.now() - previewClosedAtRef.current < 600) return;
+    if (previewGuardRef.current) return;
     msgLongPressTriggered.current = false;
     touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     msgLongPressTimer.current = setTimeout(() => {
@@ -608,7 +601,7 @@ export default function EstateChatPage() {
     // Don't intercept taps on links
     if (e.target.closest('a')) return;
     // Don't fire if preview is open or just closed
-    if (previewImage || Date.now() - previewClosedAtRef.current < 600) return;
+    if (previewGuardRef.current) return;
     clearTimeout(msgLongPressTimer.current);
     msgLongPressTimer.current = null;
     if (msgLongPressTriggered.current) {
@@ -1449,7 +1442,7 @@ export default function EstateChatPage() {
                     <div
                       className="px-4 py-2.5 rounded-2xl text-sm cursor-pointer"
                       data-testid={`msg-bubble-${msg.id}`}
-                      onClick={() => { if (msgLongPressTriggered.current) { msgLongPressTriggered.current = false; return; } if (previewImage || Date.now() - previewClosedAtRef.current < 600) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); closeMsgAction(); }}
+                      onClick={() => { if (msgLongPressTriggered.current) { msgLongPressTriggered.current = false; return; } if (previewGuardRef.current) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); closeMsgAction(); }}
                       onTouchStart={(e) => onMsgTouchStart(e, msg.id)}
                       onTouchMove={onMsgTouchMove}
                       onTouchEnd={(e) => onMsgTouchEnd(e, msg.id)}
@@ -1479,7 +1472,7 @@ export default function EstateChatPage() {
                             const ext = (att.file_name || '').split('.').pop().toLowerCase();
                             const isImage = att.file_type?.startsWith('image/') || ['jpg','jpeg','png','gif','webp','heic','heif'].includes(ext);
                             const isVideo = att.file_type?.startsWith('video/') || ['mp4','mov','webm','m4v'].includes(ext);
-                            if (isImage) return <AuthImage key={att.file_id} fileId={att.file_id} fileName={att.file_name} msgId={msg.id} onPreview={(s, n, fid) => setPreviewImage({ src: s, name: n, fileId: fid })} />;
+                            if (isImage) return <AuthImage key={att.file_id} fileId={att.file_id} fileName={att.file_name} msgId={msg.id} onPreview={(s, n, fid) => { previewGuardRef.current = true; setPreviewImage({ src: s, name: n, fileId: fid }); }} />;
                             if (isVideo) return <AuthVideo key={att.file_id} fileId={att.file_id} fileName={att.file_name} />;
                             return <AuthFileLink key={att.file_id} fileId={att.file_id} fileName={att.file_name} fileSize={att.file_size} msgId={msg.id} />;
                           })}
@@ -1490,7 +1483,7 @@ export default function EstateChatPage() {
                         const isVideo = msg.attachment.file_type?.startsWith('video/') || ['mp4','mov','webm','m4v'].includes(ext);
                         if (msg.message_type === 'voice') return <VoiceMessagePlayer fileId={msg.attachment.file_id} />;
                         if (isVideo) return <AuthVideo fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} />;
-                        if (isImage) return <AuthImage fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} msgId={msg.id} onPreview={(s, n, fid) => setPreviewImage({ src: s, name: n, fileId: fid })} />;
+                        if (isImage) return <AuthImage fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} msgId={msg.id} onPreview={(s, n, fid) => { previewGuardRef.current = true; setPreviewImage({ src: s, name: n, fileId: fid }); }} />;
                         return <AuthFileLink fileId={msg.attachment.file_id} fileName={msg.attachment.file_name} fileSize={msg.attachment.file_size} msgId={msg.id} />;
                       })() : (() => {
                         // Render message content with tappable links
@@ -1924,13 +1917,15 @@ export default function EstateChatPage() {
     <div id="ect-root" data-testid="estate-chat-page" className="flex flex-col" style={{
       background: 'var(--bg)',
       position: 'fixed',
-      top: 'calc(env(safe-area-inset-top, 0px) + 56px)',
+      top: 0,
       left: 0,
       right: 0,
       bottom: 0,
       zIndex: 45,
       overflow: 'hidden',
     }}>
+      {/* Spacer for platform header (safe-area + header height) */}
+      <div style={{ height: 'calc(env(safe-area-inset-top, 0px) + 56px)', flexShrink: 0 }} />
 
       {/* Desktop: side-by-side layout */}
       <div className="hidden lg:flex flex-1 min-h-0">
@@ -2088,7 +2083,7 @@ export default function EstateChatPage() {
       />
     )}
     {/* Photo Preview */}
-    <ImagePreviewModal previewImage={previewImage} onClose={() => { setPreviewImage(null); previewClosedAtRef.current = Date.now(); }} />
+    <ImagePreviewModal previewImage={previewImage} onClose={() => { setPreviewImage(null); setTimeout(() => { previewGuardRef.current = false; }, 800); }} />
     </>
   );
 }
