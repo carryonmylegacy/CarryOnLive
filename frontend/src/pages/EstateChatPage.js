@@ -103,6 +103,7 @@ export default function EstateChatPage() {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
+  const avatarInputRef = useRef(null);
   const activeChannelRef = useRef(null);
 
   const voiceRecorder = useVoiceRecorder();
@@ -891,14 +892,12 @@ export default function EstateChatPage() {
               <X className="w-4 h-4" style={{ color: 'var(--t4)' }} />
             </button>
           ) : (
-            <button
-              onClick={() => navigate(-1)}
-              className="w-9 h-9 rounded-full flex items-center justify-center"
-              data-testid="ect-back-nav"
-              style={{ background: 'rgba(255,255,255,0.06)' }}
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: 'rgba(59,123,247,0.12)', boxShadow: '0 0 12px rgba(59,123,247,0.25)' }}
             >
-              <ArrowLeft className="w-4 h-4" style={{ color: 'var(--t4)' }} />
-            </button>
+              <MessageCircle className="w-5 h-5" style={{ color: '#3B7BF7' }} />
+            </div>
           )}
           <h2 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
             {selectMode ? `${selectedChannels.size} Selected` : 'Estate Comms (ECT)'}
@@ -1140,8 +1139,10 @@ export default function EstateChatPage() {
                     )}
                   </div>
                   {showListMembersId === ch.id && (
+                    <>
+                    <div className="fixed inset-0 z-[60]" onClick={(e) => { e.stopPropagation(); setShowListMembersId(null); }} onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setShowListMembersId(null); }} />
                     <div
-                      className="absolute left-0 top-full mt-1 rounded-xl overflow-hidden z-50"
+                      className="fixed rounded-xl overflow-hidden z-[61]"
                       data-testid={`ect-list-members-dropdown-${ch.id}`}
                       style={{
                         background: '#1A2238',
@@ -1151,6 +1152,8 @@ export default function EstateChatPage() {
                         maxWidth: '280px',
                         maxHeight: '300px',
                         overflowY: 'auto',
+                        left: '24px',
+                        top: `${document.querySelector(`[data-testid="ect-list-members-link-${ch.id}"]`)?.getBoundingClientRect()?.bottom + 4 || 200}px`,
                       }}
                     >
                       <div className="px-3 py-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -1214,6 +1217,7 @@ export default function EstateChatPage() {
                         );
                       })()}
                     </div>
+                    </>
                   )}
                 </div>
                 </button>
@@ -1238,12 +1242,40 @@ export default function EstateChatPage() {
         >
           <ArrowLeft className="w-4 h-4" style={{ color: 'var(--t4)' }} />
         </button>
+        <input type="file" ref={avatarInputRef} className="hidden" accept="image/*"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file || !activeChannel) return;
+            e.target.value = '';
+            try {
+              const formData = new FormData();
+              formData.append('file', file);
+              const res = await fetch(`${API_URL}/estate-chat/channels/${activeChannel.id}/upload`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData,
+              });
+              if (res.ok) {
+                const data = await res.json();
+                const photoUrl = data?.attachment?.file_id
+                  ? `${API_URL}/estate-chat/files/${data.attachment.file_id}`
+                  : null;
+                if (photoUrl) {
+                  setActiveChannel(prev => prev ? { ...prev, group_photo_url: photoUrl } : prev);
+                  toast.success('Group photo updated');
+                }
+              } else {
+                toast.error('Failed to upload group photo');
+              }
+            } catch { toast.error('Upload failed'); }
+          }}
+        />
         <div
           className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold cursor-pointer"
           style={{ background: activeChannel.group_photo_url ? 'transparent' : 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}
           onClick={() => {
             if (activeChannel.type === 'group' || activeChannel.type === 'circle') {
-              fileInputRef.current?.click();
+              avatarInputRef.current?.click();
             }
           }}
           title={activeChannel.type !== 'direct' ? 'Tap to change group photo' : undefined}
@@ -2013,14 +2045,27 @@ export default function EstateChatPage() {
       const { top, bottom, left, right, isOwn, showAbove } = menuPosition;
       const viewH = window.visualViewport?.height || window.innerHeight;
       const viewW = window.innerWidth;
+      // Estimate menu height (~280px for full menu with attachment download)
+      const estMenuH = 320;
+      // Always try to show above the touch point first, fall back to below, then clamp
+      let menuTop;
+      if (showAbove && top - estMenuH > 60) {
+        // Show above — enough room above the bubble
+        menuTop = Math.max(60, top - estMenuH);
+      } else if (!showAbove && bottom + estMenuH < viewH - 20) {
+        // Show below — enough room below the bubble
+        menuTop = bottom + 8;
+      } else {
+        // Not enough room either way — center in visible area
+        menuTop = Math.max(60, Math.min(viewH - estMenuH - 20, (viewH - estMenuH) / 2));
+      }
       const menuStyle = {
         position: 'fixed',
         zIndex: 110,
         maxWidth: Math.min(280, viewW - 24) + 'px',
-        ...(showAbove
-          ? { bottom: `${viewH - top + 8}px` }
-          : { top: `${bottom + 8}px` }
-        ),
+        top: `${menuTop}px`,
+        maxHeight: `${viewH - menuTop - 20}px`,
+        overflowY: 'auto',
         ...(isOwn
           ? { right: `${Math.max(12, viewW - right)}px` }
           : { left: `${Math.max(12, left)}px` }
@@ -2079,10 +2124,24 @@ export default function EstateChatPage() {
                     const url = `${API_URL}/estate-chat/files/${att.file_id}`;
                     fetch(url, { headers: { Authorization: 'Bearer ' + token } })
                       .then(r => r.blob())
-                      .then(blob => {
+                      .then(async (blob) => {
+                        const fileName = att.file_name || 'download';
+                        // Try native share sheet (iOS) first
+                        if (navigator.share && navigator.canShare) {
+                          try {
+                            const file = new File([blob], fileName, { type: blob.type || 'application/octet-stream' });
+                            if (navigator.canShare({ files: [file] })) {
+                              await navigator.share({ files: [file], title: fileName });
+                              return;
+                            }
+                          } catch (shareErr) {
+                            if (shareErr.name === 'AbortError') return; // user cancelled
+                          }
+                        }
+                        // Fallback: direct download
                         const a = document.createElement('a');
                         a.href = URL.createObjectURL(blob);
-                        a.download = att.file_name || 'download';
+                        a.download = fileName;
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
