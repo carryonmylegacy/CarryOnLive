@@ -69,8 +69,6 @@ export function prefetchMedia(fileIds) {
 // ── Authenticated Image ──
 export function AuthImage({ fileId, fileName, msgId, onPreview }) {
   const [src, setSrc] = useState(null);
-  const imgLongPress = useRef(null);
-  const imgLongPressTriggered = useRef(false);
   const retryCount = useRef(0);
 
   useEffect(() => {
@@ -125,6 +123,8 @@ export function AuthImage({ fileId, fileName, msgId, onPreview }) {
         style={{ cursor: 'pointer', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
         onClick={(e) => {
           e.stopPropagation();
+          // Don't open preview if long-press action menu is active
+          if (document.querySelector('[data-testid^="msg-action-menu-"]')) return;
           if (onPreview) onPreview(src, fileName, fileId);
         }}
         onContextMenu={(e) => e.preventDefault()}

@@ -1092,11 +1092,10 @@ async def delete_channel(
     channel_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    """Delete a channel. Circle channels are dismissed (hidden) per-user; others are DB-deleted."""
+    """Delete a channel. Benefactors hard-delete for all members; others only dismiss (hide) for themselves."""
     channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0})
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
-    # Allow estate owner, admins, or channel members to delete
     user_id = current_user["id"]
     is_owner = await _is_estate_owner(user_id, channel["estate_id"])
     is_admin = current_user.get("role") == "admin"
@@ -1104,17 +1103,28 @@ async def delete_channel(
     if not (is_owner or is_admin or is_member):
         raise HTTPException(status_code=403, detail="Not authorized to delete this channel")
     now = datetime.now(timezone.utc).isoformat()
-    # Always record dismissal so channel stays hidden for this user
-    await db.estate_channel_dismissals.update_one(
-        {"user_id": user_id, "channel_id": channel_id},
-        {"$set": {"user_id": user_id, "channel_id": channel_id, "dismissed_at": now}},
-        upsert=True,
-    )
-    # For non-circle channels, also hard-delete from DB
-    if channel.get("type") != "circle":
-        await db.estate_channels.delete_one({"id": channel_id})
-        await db.estate_messages.delete_many({"channel_id": channel_id})
-    await db.estate_channel_reads.delete_many({"channel_id": channel_id})
+    if is_owner or is_admin:
+        # Benefactor/admin: hard-delete channel and all messages for everyone
+        if channel.get("type") != "circle":
+            await db.estate_channels.delete_one({"id": channel_id})
+            await db.estate_messages.delete_many({"channel_id": channel_id})
+            await db.estate_reactions.delete_many({"message_id": {"$in": [m["id"] async for m in db.estate_messages.find({"channel_id": channel_id}, {"id": 1, "_id": 0})]}})
+        else:
+            # Circle: dismiss for all members
+            for mid in channel.get("members", []):
+                await db.estate_channel_dismissals.update_one(
+                    {"user_id": mid, "channel_id": channel_id},
+                    {"$set": {"user_id": mid, "channel_id": channel_id, "dismissed_at": now}},
+                    upsert=True,
+                )
+        await db.estate_channel_reads.delete_many({"channel_id": channel_id})
+    else:
+        # Non-benefactor: only hide for themselves
+        await db.estate_channel_dismissals.update_one(
+            {"user_id": user_id, "channel_id": channel_id},
+            {"$set": {"user_id": user_id, "channel_id": channel_id, "dismissed_at": now}},
+            upsert=True,
+        )
     return {"success": True}
 
 

@@ -105,6 +105,7 @@ export default function EstateChatPage() {
   const fileInputRef = useRef(null);
   const avatarInputRef = useRef(null);
   const activeChannelRef = useRef(null);
+  const listMembersPosRef = useRef({ top: 200, left: 24 });
 
   const voiceRecorder = useVoiceRecorder();
   const [voicePreview, setVoicePreview] = useState(null); // {blob, url}
@@ -1119,7 +1120,7 @@ export default function EstateChatPage() {
                 <div className="flex-1 min-w-0 relative" style={{ zIndex: showListMembersId === ch.id ? 50 : 'auto' }}>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold truncate" style={{ color: 'var(--t)' }}>
-                      {ch.type === 'direct' ? ch.name : `${ch.estate_name || ch.name} Estate Members`}
+                      {ch.type === 'direct' ? ch.name : `${ch.estate_name || ch.name} Members`}
                     </span>
                     {ch.unread_count > 0 && (
                       <span className="ml-2 min-w-[20px] h-5 rounded-full flex items-center justify-center text-[11px] font-bold px-1.5" style={{ background: '#d4af37', color: '#080e1a' }}>
@@ -1131,94 +1132,22 @@ export default function EstateChatPage() {
                     <span
                       className="text-[11px] font-medium px-1.5 py-0.5 rounded cursor-pointer flex-shrink-0 whitespace-nowrap"
                       data-testid={`ect-list-members-link-${ch.id}`}
-                      onClick={(e) => { e.stopPropagation(); setShowListMembersId(showListMembersId === ch.id ? null : ch.id); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (showListMembersId === ch.id) {
+                          setShowListMembersId(null);
+                        } else {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          listMembersPosRef.current = { top: rect.bottom + 4, left: rect.left };
+                          setShowListMembersId(ch.id);
+                        }
+                      }}
                       style={{ background: 'rgba(212,175,55,0.08)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.15)' }}
                     >{ch.estate_name}</span>
                     {ch.last_message && (
                       <span className="text-xs truncate flex-1 min-w-0" style={{ color: 'var(--t5)' }}>{ch.last_message.content}</span>
                     )}
                   </div>
-                  {showListMembersId === ch.id && (
-                    <>
-                    <div className="fixed inset-0 z-[60]" onClick={(e) => { e.stopPropagation(); setShowListMembersId(null); }} onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setShowListMembersId(null); }} />
-                    <div
-                      className="fixed rounded-xl overflow-hidden z-[61]"
-                      data-testid={`ect-list-members-dropdown-${ch.id}`}
-                      style={{
-                        background: '#1A2238',
-                        border: '1px solid rgba(212,175,55,0.25)',
-                        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                        minWidth: '220px',
-                        maxWidth: '280px',
-                        maxHeight: '300px',
-                        overflowY: 'auto',
-                        left: '24px',
-                        top: `${document.querySelector(`[data-testid="ect-list-members-link-${ch.id}"]`)?.getBoundingClientRect()?.bottom + 4 || 200}px`,
-                      }}
-                    >
-                      <div className="px-3 py-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                        <span className="text-[11px] font-semibold" style={{ color: 'var(--t4)' }}>Members</span>
-                      </div>
-                      {resolveChannelMembers(ch.members || [], ch.estate_id).map(m => {
-                        const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
-                        const isYou = m.id === user?.id;
-                        return (
-                          <div key={m.id} className="flex items-center gap-2.5 px-3 py-2" data-testid={`list-member-${ch.id}-${m.id}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-[11px] font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
-                              {m.photo_url
-                                ? <img src={m.photo_url} alt="" className="w-7 h-7 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = initials; }} />
-                                : initials}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-[11px] font-semibold truncate" style={{ color: 'var(--t)' }}>
-                                {m.name}{isYou ? ' (You)' : ''}
-                              </div>
-                              {(m.relation || m.role_in_estate) && (
-                                <div className="text-[11px] truncate" style={{ color: 'var(--t4)' }}>{m.relation || m.role_in_estate}</div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {ch.type === 'group' && (() => {
-                        const available = getNonChannelMembers(ch.members, ch.estate_id);
-                        if (!available.length) return null;
-                        return (
-                          <>
-                            <div className="px-3 py-1.5" style={{ borderTop: '1px solid rgba(212,175,55,0.15)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                              <span className="text-[11px] font-semibold" style={{ color: '#d4af37' }}>Add to Chat</span>
-                            </div>
-                            {available.map(m => {
-                              const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
-                              return (
-                                <button
-                                  key={m.id}
-                                  onClick={(e) => { e.stopPropagation(); addMemberToChannel(ch.id, m.id, ch.estate_id); }}
-                                  className="flex items-center gap-2.5 px-3 py-2 w-full text-left hover:bg-white/5 transition-colors"
-                                  data-testid={`list-add-member-${ch.id}-${m.id}`}
-                                  style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-                                >
-                                  <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-[11px] font-bold" style={{ background: 'rgba(76,175,80,0.15)', color: '#4CAF50' }}>
-                                    {m.photo_url
-                                      ? <img src={m.photo_url} alt="" className="w-7 h-7 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = initials; }} />
-                                      : initials}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-[11px] font-semibold truncate" style={{ color: 'var(--t)' }}>{m.name}</div>
-                                    {(m.relation || m.role_in_estate) && (
-                                      <div className="text-[11px] truncate" style={{ color: 'var(--t4)' }}>{m.relation || m.role_in_estate}</div>
-                                    )}
-                                  </div>
-                                  <UserPlus className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#4CAF50' }} />
-                                </button>
-                              );
-                            })}
-                          </>
-                        );
-                      })()}
-                    </div>
-                    </>
-                  )}
                 </div>
                 </button>
               </div>
@@ -1290,7 +1219,7 @@ export default function EstateChatPage() {
         </div>
         <div className="flex-1 min-w-0 relative">
           <div className="text-sm font-bold truncate" style={{ color: 'var(--t)' }}>
-            {activeChannel.type === 'direct' ? activeChannel.name : `${activeChannel.estate_name || activeChannel.name} Estate Members`}
+            {activeChannel.type === 'direct' ? activeChannel.name : `${activeChannel.estate_name || activeChannel.name} Members`}
           </div>
           <button
             onClick={(e) => { e.stopPropagation(); setShowHeaderMembers(!showHeaderMembers); }}
@@ -2038,6 +1967,65 @@ export default function EstateChatPage() {
       </div>
     </div>
     {newChatModal}
+    {/* Channel list members dropdown — rendered outside channel items to avoid transform stacking context */}
+    {showListMembersId && (() => {
+      const ch = channels.find(c => c.id === showListMembersId);
+      if (!ch) return null;
+      const pos = listMembersPosRef.current;
+      return (
+        <>
+          <div className="fixed inset-0" style={{ zIndex: 200 }} onClick={() => setShowListMembersId(null)} onTouchEnd={(e) => { e.preventDefault(); setShowListMembersId(null); }} />
+          <div className="fixed rounded-xl overflow-hidden" style={{ zIndex: 201, background: '#1A2238', border: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 8px 32px rgba(0,0,0,0.6)', minWidth: '220px', maxWidth: '280px', maxHeight: '300px', overflowY: 'auto', left: `${pos.left}px`, top: `${pos.top}px` }}
+            data-testid={`ect-list-members-dropdown-${ch.id}`}>
+            <div className="px-3 py-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <span className="text-[11px] font-semibold" style={{ color: 'var(--t4)' }}>Members</span>
+            </div>
+            {resolveChannelMembers(ch.members || [], ch.estate_id).map(m => {
+              const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
+              const isYou = m.id === user?.id;
+              return (
+                <div key={m.id} className="flex items-center gap-2.5 px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-[11px] font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
+                    {m.photo_url ? <img src={m.photo_url} alt="" className="w-7 h-7 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = initials; }} /> : initials}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[11px] font-semibold truncate" style={{ color: 'var(--t)' }}>{m.name}{isYou ? ' (You)' : ''}</div>
+                    {(m.relation || m.role_in_estate) && <div className="text-[11px] truncate" style={{ color: 'var(--t4)' }}>{m.relation || m.role_in_estate}</div>}
+                  </div>
+                </div>
+              );
+            })}
+            {ch.type === 'group' && (() => {
+              const available = getNonChannelMembers(ch.members, ch.estate_id);
+              if (!available.length) return null;
+              return (
+                <>
+                  <div className="px-3 py-1.5" style={{ borderTop: '1px solid rgba(212,175,55,0.15)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <span className="text-[11px] font-semibold" style={{ color: '#d4af37' }}>Add to Chat</span>
+                  </div>
+                  {available.map(m => {
+                    const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
+                    return (
+                      <button key={m.id} onClick={(e) => { e.stopPropagation(); addMemberToChannel(ch.id, m.id, ch.estate_id); }}
+                        className="flex items-center gap-2.5 px-3 py-2 w-full text-left hover:bg-white/5 transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-[11px] font-bold" style={{ background: 'rgba(76,175,80,0.15)', color: '#4CAF50' }}>
+                          {m.photo_url ? <img src={m.photo_url} alt="" className="w-7 h-7 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = initials; }} /> : initials}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[11px] font-semibold truncate" style={{ color: 'var(--t)' }}>{m.name}</div>
+                          {(m.relation || m.role_in_estate) && <div className="text-[11px] truncate" style={{ color: 'var(--t4)' }}>{m.relation || m.role_in_estate}</div>}
+                        </div>
+                        <UserPlus className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#4CAF50' }} />
+                      </button>
+                    );
+                  })}
+                </>
+              );
+            })()}
+          </div>
+        </>
+      );
+    })()}
     {/* Fixed overlay action menu (long-press) — outside document flow, no content shifting */}
     {msgActionId && menuPosition && (() => {
       const actionMsg = messages.find(m => m.id === msgActionId);
