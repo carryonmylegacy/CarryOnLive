@@ -69,10 +69,12 @@ const SECURITY_ITEMS = [
  * @param {string}  [testIdSuffix='']  — appended to data-testid values (e.g. '-home')
  * @param {React.ReactNode} [beforeAbout]  — optional slot rendered before the About section (e.g. video)
  */
-const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', beforeAbout }) => (
+const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', beforeAbout, skipToRealFamilies = false }) => (
   <>
     {beforeAbout}
 
+    {!skipToRealFamilies && (
+    <>
     {/* ═══════════════════ ABOUT ═══════════════════ */}
     <section id="about" className="relative z-10 -mt-2">
       <div className="rounded-t-[2.5rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#0E1829', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
@@ -228,6 +230,8 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         </div>
       </div>
     </section>
+    </>
+    )}
 
     {/* ═══════════════════ PLATFORM FEATURES ═══════════════════ */}
     <section className="relative z-[35] -mt-1">

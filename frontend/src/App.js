@@ -86,6 +86,8 @@ const HomePage = lazy(() => import('./pages/HomePage'));
 
 const SharedPlanPage = lazy(() => import('./pages/SharedPlanPage'));
 
+const SpeakWithUsPage = lazy(() => import('./pages/SpeakWithUsPage'));
+
 import UsernameReviewModal from './components/UsernameReviewModal';
 
 // Loading fallback
@@ -265,6 +267,7 @@ function AppRoutes() {
       <Route path="/founder-about/:token" element={<FounderAboutPage />} />
       <Route path="/home" element={<HomePage />} />
       <Route path="/get-started" element={<GetStartedPage />} />
+      <Route path="/speak-with-us" element={<SpeakWithUsPage />} />
 
       {/* Invitation Accept Route - Public */}
       <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />

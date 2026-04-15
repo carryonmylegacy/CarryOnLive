@@ -1,0 +1,143 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { RevealSection } from '../components/landing/RevealSection';
+import LandingContent from '../components/landing/LandingContent';
+import { API_URL } from '../config';
+
+const useIsMobileViewport = (breakpoint = 768) => {
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < breakpoint);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const handler = (e) => setIsMobile(e.matches);
+    setIsMobile(mq.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [breakpoint]);
+  return isMobile;
+};
+
+const SpeakWithUsPage = () => {
+  const navigate = useNavigate();
+  const [footerInfo, setFooterInfo] = useState({ line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209 U.S.A.', phone: '(703) 884-1527' });
+
+  const [homepageVideoId, setHomepageVideoId] = useState('EhU-jojs1jk');
+  const [verticalVideoId, setVerticalVideoId] = useState('');
+  const isMobileView = useIsMobileViewport();
+
+  useEffect(() => {
+    axios.get(`${API_URL}/public/site-content`).then(r => {
+      setFooterInfo({ line1: r.data.footer_address_line1, line2: r.data.footer_address_line2, phone: r.data.footer_phone });
+      if (r.data?.homepage_video_id) setHomepageVideoId(r.data.homepage_video_id);
+      if (r.data?.homepage_video_id_vertical) setVerticalVideoId(r.data.homepage_video_id_vertical);
+    }).catch(() => {});
+  }, []);
+
+  const showVertical = isMobileView && verticalVideoId;
+  const activeVideoId = showVertical ? verticalVideoId : homepageVideoId;
+
+  const navigateWithFade = (path) => navigate(path);
+
+  return (
+    <div className="min-h-screen" style={{ background: '#080e1a' }}>
+      {/* ═══════════════════ HERO ═══════════════════ */}
+      <section className="relative overflow-hidden" style={{ minHeight: '100vh' }}>
+        {/* Dark gradient background — no flag */}
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, #0a1628 0%, #0d1a30 40%, #111f34 100%)' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 20%, rgba(212,175,55,0.04) 0%, transparent 60%)' }} />
+
+        <div className="relative z-10 flex flex-col items-center px-6 pt-12 pb-16 lg:pt-20 lg:pb-24">
+          {/* Logo */}
+          <div className="flex items-center gap-3 mb-10 lg:mb-14">
+            <img src="/carryon-app-icon.jpg" alt="CarryOn" className="w-12 h-12 rounded-xl object-cover" />
+            <span className="text-[#E0AD2B] font-bold text-2xl" style={{ fontFamily: 'Outfit, sans-serif' }}>CarryOn&#8482;</span>
+          </div>
+
+          {/* Desktop: side-by-side layout */}
+          <div className="w-full max-w-[1100px] mx-auto flex flex-col lg:flex-row lg:items-start lg:gap-16">
+            {/* Left: Headline + subheadline */}
+            <div className="flex-1 text-center lg:text-left mb-10 lg:mb-0 lg:pt-8">
+              <RevealSection delay={0.1}>
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-6" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                  Your family is protected<br className="hidden sm:block" /> and connected.
+                  <br />
+                  <span className="text-[#d4af37]">Even when you can&apos;t be there.</span>
+                </h1>
+                <p className="text-[#8a95a9] text-base lg:text-lg leading-relaxed max-w-[600px] mx-auto lg:mx-0">
+                  CarryOn keeps your documents, plans, and wishes organized, and ensures your family is ready for anything that comes its way, giving you the peace of mind to know that the people you love know exactly what to do, no matter what happens.
+                </p>
+              </RevealSection>
+            </div>
+
+            {/* Right: Calendar embed */}
+            <div className="w-full lg:max-w-[480px] flex-shrink-0">
+              <RevealSection delay={0.3} direction="right">
+                <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(15,22,41,0.7)', border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 40px rgba(0,0,0,0.4)' }}>
+                  <iframe
+                    src="https://api.leadconnectorhq.com/widget/booking/V67QUruJToWmHt4GaNyn"
+                    style={{ width: '100%', minHeight: '650px', border: 'none', overflow: 'hidden' }}
+                    scrolling="no"
+                    title="Schedule a Consultation"
+                    data-testid="speak-with-us-calendar"
+                  />
+                </div>
+              </RevealSection>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════ LANDING CONTENT — video + Built for Real Families onward ═══════════════════ */}
+      <LandingContent
+        navigateWithFade={navigateWithFade}
+        footerInfo={footerInfo}
+        testIdSuffix="-speak"
+        skipToRealFamilies
+        beforeAbout={
+          <section className="relative z-10">
+            <div className="py-16 lg:py-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111F34, #0E1829)' }}>
+              <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
+              <RevealSection className="max-w-[900px] mx-auto px-6 text-center relative z-10">
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                  See CarryOn in Action
+                </h2>
+                <p className="text-white/60 text-sm lg:text-base mb-8">
+                  Learn how CarryOn&#8482; keeps your family ready for anything.
+                </p>
+                {showVertical ? (
+                  <div className="relative rounded-2xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4)', maxWidth: '360px' }}>
+                    <div style={{ position: 'relative', paddingBottom: '177.78%', height: 0 }}>
+                      <iframe
+                        src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
+                        title="CarryOn - Family Preparedness"
+                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        data-testid="speak-video"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4)' }}>
+                    <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+                      <iframe
+                        src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
+                        title="CarryOn - Estate Planning Made Simple"
+                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        data-testid="speak-video"
+                      />
+                    </div>
+                  </div>
+                )}
+              </RevealSection>
+            </div>
+          </section>
+        }
+      />
+    </div>
+  );
+};
+
+export default SpeakWithUsPage;
