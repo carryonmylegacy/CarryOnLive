@@ -208,23 +208,22 @@ export default function EstateChatPage() {
     };
   }, [showHeaderMembers, showListMembersId]);
 
-  // ── Visual Viewport sizing — keeps ECT root exactly within visible area ──
-  // The ECT root must ALWAYS stay below the platform header bar.
-  // Header = env(safe-area-inset-top) + 50px (header min-height).
-  // We NEVER set top lower than the initial CSS value.
+  // ── Visual Viewport sizing — only adjust HEIGHT for keyboard ──
+  // NEVER modify 'top' — let CSS position:fixed handle that.
+  // Only shrink height when keyboard is open so content doesn't hide behind it.
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
     const update = () => {
       const root = document.getElementById('ect-root');
       if (!root) return;
-      // Read the header element's actual bottom position for accuracy
-      const header = document.querySelector('.mobile-header');
-      const headerBottom = header ? header.getBoundingClientRect().bottom : 56;
-      const minTop = Math.max(headerBottom, 56);
-      const topOffset = Math.max(vv.offsetTop, minTop);
-      root.style.top = topOffset + 'px';
-      root.style.height = (vv.height + vv.offsetTop - topOffset) + 'px';
+      // Calculate how much of the viewport is above the ECT root (header + safe area)
+      const rootTop = root.getBoundingClientRect().top;
+      // Set height = visual viewport bottom minus the root's top position
+      const availableHeight = vv.height - Math.max(0, rootTop - vv.offsetTop);
+      if (availableHeight > 100) {
+        root.style.height = availableHeight + 'px';
+      }
     };
     vv.addEventListener('resize', update);
     vv.addEventListener('scroll', update);
@@ -581,10 +580,10 @@ export default function EstateChatPage() {
   };
 
   const onMsgTouchStart = (e, msgId) => {
-    // Don't intercept taps on links — let them navigate normally
+    // Don't intercept taps on links
     if (e.target.closest('a')) return;
-    // Ignore taps right after closing image preview (prevents pass-through)
-    if (Date.now() - previewClosedAtRef.current < 600) return;
+    // Don't start long-press if preview is open or just closed
+    if (previewImage || Date.now() - previewClosedAtRef.current < 600) return;
     msgLongPressTriggered.current = false;
     touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     msgLongPressTimer.current = setTimeout(() => {
@@ -606,10 +605,10 @@ export default function EstateChatPage() {
   };
 
   const onMsgTouchEnd = (e, msgId) => {
-    // Don't intercept taps on links — let them navigate normally
+    // Don't intercept taps on links
     if (e.target.closest('a')) return;
-    // Ignore taps right after closing image preview
-    if (Date.now() - previewClosedAtRef.current < 600) return;
+    // Don't fire if preview is open or just closed
+    if (previewImage || Date.now() - previewClosedAtRef.current < 600) return;
     clearTimeout(msgLongPressTimer.current);
     msgLongPressTimer.current = null;
     if (msgLongPressTriggered.current) {
@@ -1450,7 +1449,7 @@ export default function EstateChatPage() {
                     <div
                       className="px-4 py-2.5 rounded-2xl text-sm cursor-pointer"
                       data-testid={`msg-bubble-${msg.id}`}
-                      onClick={() => { if (msgLongPressTriggered.current) { msgLongPressTriggered.current = false; return; } if (Date.now() - previewClosedAtRef.current < 600) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); closeMsgAction(); }}
+                      onClick={() => { if (msgLongPressTriggered.current) { msgLongPressTriggered.current = false; return; } if (previewImage || Date.now() - previewClosedAtRef.current < 600) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); closeMsgAction(); }}
                       onTouchStart={(e) => onMsgTouchStart(e, msg.id)}
                       onTouchMove={onMsgTouchMove}
                       onTouchEnd={(e) => onMsgTouchEnd(e, msg.id)}
@@ -1764,26 +1763,10 @@ export default function EstateChatPage() {
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && window.innerWidth > 1024) { e.preventDefault(); sendMessage(); } }}
               onFocus={() => {
                 setInputFocused(true);
-                // Scroll to bottom AFTER keyboard animation completes — not before
-                // Early scroll passes cause a visible flash of the full chat area
+                // Scroll to bottom AFTER keyboard animation settles
                 const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
                 setTimeout(doScroll, 400);
                 setTimeout(doScroll, 700);
-                // Force visualViewport update for keyboard open
-                const vv = window.visualViewport;
-                if (vv) {
-                  setTimeout(() => {
-                    const root = document.getElementById('ect-root');
-                    if (root) {
-                      const header = document.querySelector('.mobile-header');
-                      const headerBottom = header ? header.getBoundingClientRect().bottom : 56;
-                      const minTop = Math.max(headerBottom, 56);
-                      const topOffset = Math.max(vv.offsetTop, minTop);
-                      root.style.top = topOffset + 'px';
-                      root.style.height = (vv.height + vv.offsetTop - topOffset) + 'px';
-                    }
-                  }, 350);
-                }
               }}
               onBlur={() => {
                 setInputFocused(false);
