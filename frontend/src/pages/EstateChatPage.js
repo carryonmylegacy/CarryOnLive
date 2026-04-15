@@ -1754,12 +1754,11 @@ export default function EstateChatPage() {
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && window.innerWidth > 1024) { e.preventDefault(); sendMessage(); } }}
               onFocus={() => {
                 setInputFocused(true);
-                // Scroll to bottom when keyboard opens — multiple passes to catch iOS animation
+                // Scroll to bottom AFTER keyboard animation completes — not before
+                // Early scroll passes cause a visible flash of the full chat area
                 const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
-                requestAnimationFrame(doScroll);
-                setTimeout(doScroll, 150);
-                setTimeout(doScroll, 350);
-                setTimeout(doScroll, 600);
+                setTimeout(doScroll, 400);
+                setTimeout(doScroll, 700);
                 // Force visualViewport update for keyboard open
                 const vv = window.visualViewport;
                 if (vv) {
