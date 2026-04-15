@@ -308,7 +308,7 @@ const FinancialPortalPage = () => {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              CarryOn Financial Picture
+              CarryOn Financial Picture (CFP)
             </h1>
             <p className="text-xs text-[var(--t5)]">
               Bills, debts, accounts, and property — your complete financial picture

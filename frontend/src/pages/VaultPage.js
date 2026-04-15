@@ -763,7 +763,7 @@ const VaultPage = () => {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Secure Document Vault
+              Secure Document Vault (SDV)
             </h1>
             <p className="text-xs text-[var(--t5)]">
               AES-256 encrypted · {documents.length} documents

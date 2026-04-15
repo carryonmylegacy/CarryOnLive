@@ -900,8 +900,8 @@ export default function EstateChatPage() {
               <ArrowLeft className="w-4 h-4" style={{ color: 'var(--t4)' }} />
             </button>
           )}
-          <h2 className="text-lg font-bold" style={{ color: 'var(--t)' }}>
-            {selectMode ? `${selectedChannels.size} Selected` : 'Estate Comms'}
+          <h2 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+            {selectMode ? `${selectedChannels.size} Selected` : 'Estate Comms (ECT)'}
           </h2>
         </div>
         <div className="flex gap-2">
@@ -1117,24 +1117,26 @@ export default function EstateChatPage() {
                       ? (ch.name?.charAt(0)?.toUpperCase() || '?')
                       : getChannelIcon(ch.type)}
                 </div>
-                <div className="flex-1 min-w-0 relative">
+                <div className="flex-1 min-w-0 relative" style={{ zIndex: showListMembersId === ch.id ? 50 : 'auto' }}>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold truncate" style={{ color: 'var(--t)' }}>{ch.name}</span>
+                    <span className="text-sm font-semibold truncate" style={{ color: 'var(--t)' }}>
+                      {ch.type === 'direct' ? ch.name : `${ch.estate_name || ch.name} Estate Members`}
+                    </span>
                     {ch.unread_count > 0 && (
                       <span className="ml-2 min-w-[20px] h-5 rounded-full flex items-center justify-center text-[11px] font-bold px-1.5" style={{ background: '#d4af37', color: '#080e1a' }}>
                         {ch.unread_count}
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1.5 mt-0.5">
+                  <div className="flex items-center gap-1.5 mt-0.5 overflow-hidden">
                     <span
-                      className="text-[11px] font-medium px-1.5 py-0.5 rounded cursor-pointer"
+                      className="text-[11px] font-medium px-1.5 py-0.5 rounded cursor-pointer flex-shrink-0 whitespace-nowrap"
                       data-testid={`ect-list-members-link-${ch.id}`}
                       onClick={(e) => { e.stopPropagation(); setShowListMembersId(showListMembersId === ch.id ? null : ch.id); }}
                       style={{ background: 'rgba(212,175,55,0.08)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.15)' }}
                     >{ch.estate_name}</span>
                     {ch.last_message && (
-                      <span className="text-xs truncate" style={{ color: 'var(--t5)' }}>{ch.last_message.content}</span>
+                      <span className="text-xs truncate flex-1 min-w-0" style={{ color: 'var(--t5)' }}>{ch.last_message.content}</span>
                     )}
                   </div>
                   {showListMembersId === ch.id && (
@@ -1255,7 +1257,9 @@ export default function EstateChatPage() {
                 : getChannelIcon(activeChannel.type)}
         </div>
         <div className="flex-1 min-w-0 relative">
-          <div className="text-sm font-bold truncate" style={{ color: 'var(--t)' }}>{activeChannel.name}</div>
+          <div className="text-sm font-bold truncate" style={{ color: 'var(--t)' }}>
+            {activeChannel.type === 'direct' ? activeChannel.name : `${activeChannel.estate_name || activeChannel.name} Estate Members`}
+          </div>
           <button
             onClick={(e) => { e.stopPropagation(); setShowHeaderMembers(!showHeaderMembers); }}
             className="text-[11px] cursor-pointer"
