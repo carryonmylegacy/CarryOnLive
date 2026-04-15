@@ -46,7 +46,7 @@ const SpeakWithUsPage = () => {
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, #0a1628 0%, #0d1a30 40%, #111f34 100%)' }} />
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 20%, rgba(212,175,55,0.04) 0%, transparent 60%)' }} />
 
-        <div className="relative z-10 flex flex-col items-center px-6 pt-12 pb-16 lg:pt-20 lg:pb-24">
+        <div className="relative z-10 flex flex-col items-center px-6 pt-12 pb-8 lg:pt-20 lg:pb-10">
 
           {/* Desktop: side-by-side layout */}
           <div className="w-full max-w-[1400px] mx-auto flex flex-col lg:flex-row lg:items-start lg:gap-10 xl:gap-14">
@@ -75,8 +75,8 @@ const SpeakWithUsPage = () => {
               <RevealSection delay={0.3} direction="right">
                 <iframe
                   src="https://api.leadconnectorhq.com/widget/booking/V67QUruJToWmHt4GaNyn"
-                  style={{ width: '100%', minHeight: '1600px', border: 'none' }}
-                  scrolling="no"
+                  style={{ width: '100%', minHeight: '750px', border: 'none' }}
+                  scrolling="yes"
                   title="Schedule a Consultation"
                   data-testid="speak-with-us-calendar"
                 />
