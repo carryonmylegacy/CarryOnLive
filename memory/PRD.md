@@ -148,6 +148,14 @@ Extracted sub-components from three monolithic page files:
 - **Input Area Spacing Optimization**: Reduced vertical padding on input row and emoji strip. Removed 8px gap in visualViewport height calculations.
 - **Backend: Open Emoji Reactions**: Removed `VALID_REACTIONS` whitelist. Backend now accepts any unicode emoji string ≤20 chars. Legacy keys (thumbs_up, heart, etc.) still work. 13 pytest tests verify the API.
 
+### Completed (Apr 15, 2026 — Session 8: Chat UX, Header, PDF, Beta)
+- **Auto-Scroll Fix**: Removed scroll-to-bottom from `fetchMessages` — polling no longer hijacks scroll position. Only scrolls on channel open and message send.
+- **Save to Device in Action Menu**: Long-press on messages with attachments shows "Save to Device" download button. Removed conflicting image-level long-press handler; added `WebkitTouchCallout: 'none'` to prevent native iOS save dialog.
+- **Platform Header Persistence**: CarryOn header bar (logo + hamburger) now visible on all pages including ECT chat. Adjusted ECT root offset to sit below header.
+- **Group Chat Avatar Upload**: Tapping group/circle channel avatar opens file picker for uploading a group photo.
+- **Beta Bug Icon Toggle**: Beta testers get a "Hide Bug Report Icon" toggle in Settings. Persists via localStorage.
+- **Emergency Card PDF Overhaul**: Text wrapping with `multi_cell`, scenario type in title, primary + backup meeting points, wrapped communication plan, first 2 key steps, household considerations, slightly larger cards (56mm height).
+
 ## ==========================================
 ## ECT ACTION MENU — PERMANENT RECORD (April 14, 2026)
 ## ==========================================
