@@ -55,6 +55,7 @@ const SupportChatPage = lazy(() => import('./pages/SupportChatPage'));
 const SecuritySettingsPage = lazy(() => import('./pages/SecuritySettingsPage'));
 const LegacyTimelinePage = lazy(() => import('./pages/LegacyTimelinePage'));
 const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
+const FoundersCirclePage = lazy(() => import('./pages/FoundersCirclePage'));
 const OperationsPage = lazy(() => import('./pages/OperationsPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
@@ -356,6 +357,7 @@ function AppRoutes() {
       }>
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/subscription" element={<SubscriptionPage />} />
+        <Route path="/founders-circle" element={<FoundersCirclePage />} />
         <Route path="/security-settings" element={<SecuritySettingsPage />} />
         <Route path="/support" element={<SupportChatPage />} />
       </Route>

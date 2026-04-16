@@ -537,6 +537,16 @@ export const SubscriptionManagement = ({
           </div>
         )}
 
+        {/* Founders Circle beneficiary message */}
+        {isBeneficiary && subscriptionStatus?.free_access && (
+          <div className="mb-5 p-4 rounded-xl flex items-start gap-3" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)' }}>
+            <Crown className="w-5 h-5 text-[var(--gold)] flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-[var(--t3)] leading-relaxed">
+              Your benefactor was gracious and forward-thinking enough to become a <span className="font-bold text-[var(--gold)]">Founders Circle</span> member, securing your lifetime access to CarryOn at no cost to you — ever. This applies to all current and future beneficiaries of their estate.
+            </p>
+          </div>
+        )}
+
         {/* Beneficiary: no tier determined yet */}
         {beneficiaryNoTierYet && !isMinorBeneficiary && (
           <div className="p-6 rounded-2xl text-center" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>

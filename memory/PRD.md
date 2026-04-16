@@ -39,27 +39,34 @@ Comprehensive family preparedness platform with estate planning, secure document
 ### Phase 1: Platform Rules Tab (COMPLETE)
 - Backend: `/api/admin/platform-rules` GET/PUT endpoints
 - Frontend: `PlatformRulesTab` component in Finance section
-- 21 structured rules across categories: Billing Cycle, Family Plan, Trial & Grace, Beneficiary Billing, Beta Policy, Verification, Founders Circle, FC Installment Discounts
-- Editable values: discount percentages, trial duration, grace period, FC campaign toggle, FC installment discounts
+- 21 structured rules across categories
+- Editable by founder, read-only for all other admin roles
 
-### Phase 2: Founders Circle Backend (NEXT)
-- Data model: `founders_circle_subscriptions` collection
-- Fields: user_id, estate_id, tier, payment_schedule (1/3/6/12), lifetime_base_price, discount_percent, amount_per_payment, payments_made, payments_total, stripe_subscription_id, status (active/completed/failed/honored), created_at
-- Stripe integration: one-time checkout for 1-pay, scheduled subscriptions for 3/6/12-pay
-- Lifetime pricing per tier (adjustable in admin Subs tab)
-- Upgrade policy: pay-the-delta with same installment options
+### Phase 2: Founders Circle Backend (COMPLETE)
+- `/api/founders-circle/plans` — public endpoint returning FC pricing + availability
+- `/api/founders-circle/checkout` — Stripe checkout (one-time for 1-pay, recurring for installments)
+- `/api/founders-circle/status` — user's FC subscriptions
+- `/api/founders-circle/checkout-status/{session_id}` — payment confirmation + activation
+- `/api/admin/founders-circle/pricing` — update lifetime prices (founder only)
+- `/api/admin/founders-circle/subscriptions` — view all FC subs (admin)
+- `founders_circle` MongoDB collection with full tracking
+- Auto-grants `free_access` override to estate beneficiaries on FC activation
 
-### Phase 3: Founders Circle Paywall Page
-- Landing page with value proposition bullets
-- "Example: 45yo Premium subscriber paying monthly = ~$11,995 over 40 years. FC pay-in-full = $424."
-- Tier cards with 4 installment options each
-- "Beneficiaries free forever" callout
-- Linked from Subscription page (toggle-controlled)
+### Phase 3: Founders Circle Paywall Page (COMPLETE)
+- `/founders-circle` route with landing page
+- Hero with "FOUNDING MEMBER — LIMITED TIME" badge
+- 4 value proposition bullets
+- Savings example (45yo Premium: $11,995 over 40 years vs $424 FC)
+- Estate selector for multi-estate users
+- Payment schedule selector (1/3/6/12 payments)
+- 6 tier cards with dynamic pricing from admin settings
+- Stripe checkout integration
 
-### Phase 4: Integration Points
-- Subscription page: FC link (toggle-aware), member status display
-- Beneficiary messaging: "Your benefactor [Name] is a Founders Circle member..."
-- Post-transition: estate retains FC tier, trustee can add beneficiaries who also get free access
+### Phase 4: Integration Points (COMPLETE)
+- Subscription page: FC CTA link (toggle-aware, hidden when campaign off or user already has FC)
+- Subscription page: FC member status banner showing tier, payment progress, estate
+- Subscription page: FC checkout redirect handling
+- Beneficiary messaging in SubscriptionManagement: "Your benefactor was gracious and forward-thinking enough to become a Founders Circle member..."
 
 ### Apple IAP Annotation (Future)
 Product IDs needed:
