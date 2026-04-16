@@ -12,10 +12,12 @@ const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className
   const [showDropdown, setShowDropdown] = useState(false);
   const debounceRef = useRef(null);
   const wrapperRef = useRef(null);
+  const selectingRef = useRef(false); // guards against blur closing dropdown during selection
 
   // Close dropdown on outside click/tap
   useEffect(() => {
     const handleOutside = (e) => {
+      if (selectingRef.current) return; // don't close while user is tapping a suggestion
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
         setShowDropdown(false);
       }
@@ -110,6 +112,8 @@ const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className
   };
 
   const { 'data-testid': testId, ...rest } = props;
+  // Unique name per instance to prevent iOS browser autofill cross-contamination
+  const inputName = testId ? `addr-${testId}` : `addr-${Math.random().toString(36).slice(2, 8)}`;
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -121,7 +125,7 @@ const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className
         className={className || "input-field"}
         autoComplete="one-time-code"
         data-form-type="other"
-        name="address-search-input"
+        name={inputName}
         data-testid={testId || 'address-autocomplete'}
         {...rest}
       />
@@ -137,7 +141,12 @@ const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className
             <button
               key={s.placeId || i}
               type="button"
-              onClick={() => handleSelectSuggestion(s)}
+              onMouseDown={(e) => {
+                e.preventDefault(); // prevents input blur → keeps dropdown open on iOS
+                selectingRef.current = true;
+                handleSelectSuggestion(s);
+                setTimeout(() => { selectingRef.current = false; }, 200);
+              }}
               className="w-full text-left px-4 py-3 text-sm hover:bg-[rgba(212,175,55,0.1)] transition-colors"
               style={{ color: 'var(--t)', borderBottom: '1px solid var(--b)' }}
             >
