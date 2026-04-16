@@ -101,11 +101,11 @@ See detailed V11 documentation in previous PRD version. Key points:
 - previewGuardRef (300ms) blocks phantom touches after image preview close
 - Keyboard auto-dismisses via document.activeElement.blur() when long-press menu opens
 
+## Recent Fixes (Apr 16, 2026)
+- **ECTSecurityIntro Centering**: Tightened internal spacing (card padding p-5→px-4 py-3, section margins mb-5→mb-3, tile gaps space-y-2→space-y-1.5, tile padding py-2.5→py-2, icon sizes w-5→w-4, number circles w-7→w-6, button padding py-3→py-2.5, skip button mt-3→mt-2 py-2→py-1.5). Outer container uses `items-center justify-center` instead of `overflow-y-auto` + `my-auto`. Card now fits centered on all iPhone sizes from Air to Pro Max.
+
 ## Upcoming Tasks
-- (P0) Founders Circle Phases 2-4
 - (P0) Google Play Store Launch
 - (P1) iOS Share Extension
 - (P1) iOS Live Updates (Capgo)
-- (P2) CFP Getting Started integration
 - (P2) Readiness Scoring Policy Page
-- (P3) ECT Security Comparison Landing Page
