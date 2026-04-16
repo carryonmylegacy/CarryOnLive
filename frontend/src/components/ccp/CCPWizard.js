@@ -32,6 +32,7 @@ import {
   Edit3,
   Info,
   Plus,
+  LocateFixed,
 } from 'lucide-react';
 
 const HOUSEHOLD_OPTIONS = [
@@ -88,36 +89,44 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
   const [editingSections, setEditingSections] = useState({});
   const [detectingLocation, setDetectingLocation] = useState(false);
 
-  // Auto-detect location when step 3 mounts
-  useEffect(() => {
-    if (step === 3 && !location && navigator.geolocation) {
-      setDetectingLocation(true);
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          try {
-            const { latitude, longitude } = pos.coords;
-            const apiKey = process.env.REACT_APP_GOOGLE_PLACES_API_KEY;
-            if (!apiKey) { setDetectingLocation(false); return; }
-            const res = await fetch(
-              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
-            );
-            if (res.ok) {
-              const data = await res.json();
-              if (data.results?.length > 0) {
-                setLocation(data.results[0].formatted_address);
-              }
-            }
-          } catch {
-            // Silent fallback — user can type manually
-          } finally {
+  // Detect location on user request (button tap)
+  const detectLocation = () => {
+    if (!navigator.geolocation) return;
+    setDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const apiKey = process.env.REACT_APP_GOOGLE_PLACES_API_KEY;
+          if (!apiKey) {
+            // Fallback: use raw coordinates
+            setLocation(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
             setDetectingLocation(false);
+            return;
           }
-        },
-        () => setDetectingLocation(false),
-        { timeout: 8000 }
-      );
-    }
-  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+          const res = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
+          );
+          if (res.ok) {
+            const data = await res.json();
+            if (data.results?.length > 0) {
+              setLocation(data.results[0].formatted_address);
+            } else {
+              setLocation(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+            }
+          } else {
+            setLocation(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+          }
+        } catch {
+          // Silent fallback
+        } finally {
+          setDetectingLocation(false);
+        }
+      },
+      () => setDetectingLocation(false),
+      { timeout: 10000 }
+    );
+  };
 
   const toggleHousehold = (id) => {
     setHousehold(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -414,6 +423,16 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                 <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin" style={{ color: '#d4af37' }} />
               )}
             </div>
+            {!location.trim() && !detectingLocation && (
+              <button
+                onClick={detectLocation}
+                className="flex items-center gap-1.5 mt-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-[0.97]"
+                data-testid="ccp-wizard-use-location"
+                style={{ background: 'rgba(59,123,247,0.1)', color: '#3B7BF7' }}
+              >
+                <LocateFixed className="w-3.5 h-3.5" />Use my current location
+              </button>
+            )}
           </div>
 
           {/* Disaster-specific follow-up questions */}
@@ -423,19 +442,39 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                 {q.label}
                 {!q.required && <span className="font-normal" style={{ color: 'var(--t5)' }}>(optional)</span>}
               </label>
-              <input
-                value={followUpAnswers[q.key] || ''}
-                onChange={(e) => updateFollowUp(q.key, e.target.value)}
-                placeholder={q.placeholder}
-                className="w-full rounded-xl px-4 py-3.5 text-base"
-                data-testid={`ccp-wizard-followup-${q.key}`}
-                style={{
-                  background: 'var(--s)',
-                  border: inputBorder((followUpAnswers[q.key] || '').trim()),
-                  color: 'var(--t)',
-                  fontSize: '16px',
-                }}
-              />
+              {q.type === 'address' ? (
+                <AddressAutocomplete
+                  value={followUpAnswers[q.key] || ''}
+                  onChange={(e) => updateFollowUp(q.key, e.target.value)}
+                  onSelect={({ street, city, state, zip }) => {
+                    const full = [street, city, [state, zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+                    updateFollowUp(q.key, full);
+                  }}
+                  placeholder={q.placeholder}
+                  className="w-full rounded-xl px-4 py-3.5 text-base"
+                  data-testid={`ccp-wizard-followup-${q.key}`}
+                  style={{
+                    background: 'var(--s)',
+                    border: inputBorder((followUpAnswers[q.key] || '').trim()),
+                    color: 'var(--t)',
+                    fontSize: '16px',
+                  }}
+                />
+              ) : (
+                <input
+                  value={followUpAnswers[q.key] || ''}
+                  onChange={(e) => updateFollowUp(q.key, e.target.value)}
+                  placeholder={q.placeholder}
+                  className="w-full rounded-xl px-4 py-3.5 text-base"
+                  data-testid={`ccp-wizard-followup-${q.key}`}
+                  style={{
+                    background: 'var(--s)',
+                    border: inputBorder((followUpAnswers[q.key] || '').trim()),
+                    color: 'var(--t)',
+                    fontSize: '16px',
+                  }}
+                />
+              )}
               {q.hint && (
                 <p className="text-xs mt-1" style={{ color: 'var(--t5)' }}>{q.hint}</p>
               )}

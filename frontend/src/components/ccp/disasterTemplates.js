@@ -2,6 +2,9 @@
  * Disaster-specific question templates for the CCP Wizard.
  * Each disaster type defines its evacuation category, a short intro,
  * and 1-3 follow-up questions that feed richer context to the AI.
+ *
+ * type: 'address' → renders AddressAutocomplete with Google Places
+ * type: 'text' (default) → renders plain input
  */
 
 export const DISASTER_TEMPLATES = {
@@ -10,33 +13,33 @@ export const DISASTER_TEMPLATES = {
     evacuationType: 'distant',
     intro: 'Hurricanes require evacuating well outside the projected storm path. Local meetup points are dangerous — we need to know where your family would go.',
     questions: [
-      { key: 'evacuation_primary', label: 'Primary evacuation destination', placeholder: 'e.g., Aunt Sarah\'s house in Dallas, TX', required: true },
-      { key: 'evacuation_secondary', label: 'Backup destination (different direction)', placeholder: 'e.g., Hotel in Atlanta, GA — in case the storm path shifts', required: true },
-      { key: 'evacuation_tertiary', label: 'Third option (optional)', placeholder: 'e.g., Family cabin in Ozarks, AR', required: false },
+      { key: 'evacuation_primary', label: 'Primary evacuation destination', placeholder: 'e.g., Aunt Sarah\'s house in Dallas, TX', required: true, type: 'address' },
+      { key: 'evacuation_secondary', label: 'Backup destination (different direction)', placeholder: 'e.g., Hotel in Atlanta, GA — in case the storm path shifts', required: true, type: 'address' },
+      { key: 'evacuation_tertiary', label: 'Third option (optional)', placeholder: 'e.g., Family cabin in Ozarks, AR', required: false, type: 'address' },
     ],
   },
   flood: {
     evacuationType: 'distant',
     intro: 'Flooding can cut off roads fast. Your evacuation destination should be on high ground, well outside the flood zone.',
     questions: [
-      { key: 'evacuation_primary', label: 'Primary high-ground destination', placeholder: 'e.g., Friend\'s house on the hill in Westview', required: true },
-      { key: 'evacuation_secondary', label: 'Backup destination (different route)', placeholder: 'e.g., Hotel in Springdale — avoids low-lying roads', required: true },
+      { key: 'evacuation_primary', label: 'Primary high-ground destination', placeholder: 'e.g., Friend\'s house on the hill in Westview', required: true, type: 'address' },
+      { key: 'evacuation_secondary', label: 'Backup destination (different route)', placeholder: 'e.g., Hotel in Springdale — avoids low-lying roads', required: true, type: 'address' },
     ],
   },
   tsunami: {
     evacuationType: 'distant',
     intro: 'Tsunamis require immediate evacuation to high ground, far inland. Every minute counts.',
     questions: [
-      { key: 'evacuation_primary', label: 'Nearest high-ground point (inland/uphill)', placeholder: 'e.g., Hilltop Park on Crest Rd — 200ft elevation', required: true },
-      { key: 'evacuation_secondary', label: 'Backup inland destination', placeholder: 'e.g., Community center on Ridge Ave', required: true },
+      { key: 'evacuation_primary', label: 'Nearest high-ground point (inland/uphill)', placeholder: 'e.g., Hilltop Park on Crest Rd — 200ft elevation', required: true, type: 'address' },
+      { key: 'evacuation_secondary', label: 'Backup inland destination', placeholder: 'e.g., Community center on Ridge Ave', required: true, type: 'address' },
     ],
   },
   wildfire: {
     evacuationType: 'distant',
     intro: 'Wildfires move fast and unpredictably. Your evacuation should be well outside the fire zone, ideally upwind.',
     questions: [
-      { key: 'evacuation_primary', label: 'Primary evacuation destination', placeholder: 'e.g., Town center in Lakeside — 30 miles east', required: true },
-      { key: 'evacuation_secondary', label: 'Backup destination (different direction)', placeholder: 'e.g., Relative\'s home in Riverside', required: true },
+      { key: 'evacuation_primary', label: 'Primary evacuation destination', placeholder: 'e.g., Town center in Lakeside — 30 miles east', required: true, type: 'address' },
+      { key: 'evacuation_secondary', label: 'Backup destination (different direction)', placeholder: 'e.g., Relative\'s home in Riverside', required: true, type: 'address' },
     ],
   },
 
@@ -45,8 +48,8 @@ export const DISASTER_TEMPLATES = {
     evacuationType: 'local',
     intro: 'After an earthquake, meet at an open area away from buildings, power lines, and overpasses.',
     questions: [
-      { key: 'meetup_primary', label: 'Primary outdoor meetup point', placeholder: 'e.g., The park across from our house', required: true },
-      { key: 'meetup_secondary', label: 'Backup meetup (if primary is damaged)', placeholder: 'e.g., School parking lot on Oak St', required: false },
+      { key: 'meetup_primary', label: 'Primary outdoor meetup point', placeholder: 'e.g., The park across from our house', required: true, type: 'address' },
+      { key: 'meetup_secondary', label: 'Backup meetup (if primary is damaged)', placeholder: 'e.g., School parking lot on Oak St', required: false, type: 'address' },
     ],
   },
   tornado: {
@@ -54,7 +57,7 @@ export const DISASTER_TEMPLATES = {
     intro: 'During a tornado, shelter in the most interior, lowest room. After it passes, meet at a nearby point.',
     questions: [
       { key: 'shelter_location', label: 'Safe room in your home', placeholder: 'e.g., Basement under the stairs / interior bathroom', required: true },
-      { key: 'meetup_after', label: 'Meetup point after the tornado passes', placeholder: 'e.g., Neighbor\'s driveway at 142 Elm St', required: true },
+      { key: 'meetup_after', label: 'Meetup point after the tornado passes', placeholder: 'e.g., Neighbor\'s driveway at 142 Elm St', required: true, type: 'address' },
     ],
   },
 
@@ -72,7 +75,7 @@ export const DISASTER_TEMPLATES = {
     intro: 'A home invasion plan focuses on a safe room, silent alerting, and a clear escape route.',
     questions: [
       { key: 'safe_room', label: 'Designated safe room', placeholder: 'e.g., Master bedroom with locking door', required: true },
-      { key: 'escape_destination', label: 'Where to run if you escape', placeholder: 'e.g., Neighbor at 148 Maple — they know to call 911', required: true },
+      { key: 'escape_destination', label: 'Where to run if you escape', placeholder: 'e.g., Neighbor at 148 Maple — they know to call 911', required: true, type: 'address' },
     ],
   },
 
@@ -81,7 +84,7 @@ export const DISASTER_TEMPLATES = {
     evacuationType: 'shelter',
     intro: 'A nuclear event requires sheltering in the most fortified structure available, potentially for days. Seal windows and doors.',
     questions: [
-      { key: 'shelter_building', label: 'Best shelter nearby (thick walls, basement)', placeholder: 'e.g., Our basement / community center on 5th Ave', required: true },
+      { key: 'shelter_building', label: 'Best shelter nearby (thick walls, basement)', placeholder: 'e.g., Our basement / community center on 5th Ave', required: true, type: 'address' },
       { key: 'supply_days', label: 'Days of supplies on hand', placeholder: 'e.g., 7 days of water and food', required: false },
     ],
   },
@@ -90,7 +93,7 @@ export const DISASTER_TEMPLATES = {
     intro: 'Winter storms can knock out power and heat for days. Plan around staying warm and supplied.',
     questions: [
       { key: 'backup_heat', label: 'Backup heating source', placeholder: 'e.g., Wood-burning fireplace / propane heater', required: true },
-      { key: 'backup_shelter', label: 'Alternate shelter if pipes burst', placeholder: 'e.g., Grandma\'s house at 220 Pine St', required: false },
+      { key: 'backup_shelter', label: 'Alternate shelter if pipes burst', placeholder: 'e.g., Grandma\'s house at 220 Pine St', required: false, type: 'address' },
     ],
   },
   power_outage: {
@@ -114,7 +117,7 @@ export const DISASTER_TEMPLATES = {
     intro: 'Pandemics require isolation readiness — supplies, communication, and medical access.',
     questions: [
       { key: 'supply_duration', label: 'How many days of food/supplies can you sustain?', placeholder: 'e.g., 14 days', required: false },
-      { key: 'nearest_medical', label: 'Nearest hospital or urgent care', placeholder: 'e.g., St. Mary\'s Hospital — 3 miles on Route 9', required: false },
+      { key: 'nearest_medical', label: 'Nearest hospital or urgent care', placeholder: 'e.g., St. Mary\'s Hospital — 3 miles on Route 9', required: false, type: 'address' },
     ],
   },
   cyber_attack: {
@@ -131,15 +134,15 @@ export const DISASTER_TEMPLATES = {
     evacuationType: 'variable',
     intro: 'Terrorism response depends on proximity — evacuate if nearby, shelter if distant. Plan for both.',
     questions: [
-      { key: 'workplace_school', label: 'Workplaces or schools to evacuate from', placeholder: 'e.g., Downtown office at 500 Main St / Lincoln High School', required: true },
-      { key: 'safe_meetup', label: 'Safe meetup point away from crowded areas', placeholder: 'e.g., Parking lot behind the library on 3rd Ave', required: true },
+      { key: 'workplace_school', label: 'Workplaces or schools to evacuate from', placeholder: 'e.g., Downtown office at 500 Main St / Lincoln High School', required: true, type: 'address' },
+      { key: 'safe_meetup', label: 'Safe meetup point away from crowded areas', placeholder: 'e.g., Parking lot behind the library on 3rd Ave', required: true, type: 'address' },
     ],
   },
   civil_unrest: {
     evacuationType: 'variable',
     intro: 'Civil unrest can escalate unpredictably. Know your exit routes and a destination outside the area.',
     questions: [
-      { key: 'evacuation_destination', label: 'Safe destination if you need to leave the area', placeholder: 'e.g., Sister\'s house in the suburbs — 25 miles north', required: true },
+      { key: 'evacuation_destination', label: 'Safe destination if you need to leave the area', placeholder: 'e.g., Sister\'s house in the suburbs — 25 miles north', required: true, type: 'address' },
       { key: 'alt_route', label: 'Alternative route out of your neighborhood', placeholder: 'e.g., Back road via Elm St to Highway 7 — avoids downtown', required: false },
     ],
   },
@@ -147,8 +150,8 @@ export const DISASTER_TEMPLATES = {
     evacuationType: 'variable',
     intro: 'Chemical spills require moving upwind or sealing a room. Know the industrial facilities near you.',
     questions: [
-      { key: 'nearest_facility', label: 'Nearest industrial or chemical facility', placeholder: 'e.g., Refinery on Industrial Blvd — 2 miles south', required: false },
-      { key: 'upwind_destination', label: 'Upwind evacuation destination', placeholder: 'e.g., Community center on North Hill — opposite direction', required: true },
+      { key: 'nearest_facility', label: 'Nearest industrial or chemical facility', placeholder: 'e.g., Refinery on Industrial Blvd — 2 miles south', required: false, type: 'address' },
+      { key: 'upwind_destination', label: 'Upwind evacuation destination', placeholder: 'e.g., Community center on North Hill — opposite direction', required: true, type: 'address' },
     ],
   },
 };
