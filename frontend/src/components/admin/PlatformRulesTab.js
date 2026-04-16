@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Shield, ChevronDown, ChevronRight, Pencil, Check, X, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Shield, ChevronDown, ChevronRight, Pencil, Check, X, ToggleLeft, ToggleRight, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 
@@ -15,6 +15,7 @@ export function PlatformRulesTab({ getAuthHeaders }) {
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
   const [collapsed, setCollapsed] = useState({});
+  const [generating, setGenerating] = useState(false);
 
   const fetchRules = useCallback(async () => {
     try {
@@ -43,6 +44,32 @@ export function PlatformRulesTab({ getAuthHeaders }) {
 
   const toggleCategory = (cat) => setCollapsed(prev => ({ ...prev, [cat]: !prev[cat] }));
 
+  const generateNarratives = async () => {
+    setGenerating(true);
+    try {
+      await axios.post(`${API_URL}/admin/platform-rules/generate-narratives`, {}, getAuthHeaders());
+      toast.success('Generating narratives... will refresh automatically in 30 seconds.');
+      // Poll for completion
+      const poll = setInterval(async () => {
+        try {
+          const res = await axios.get(`${API_URL}/admin/platform-rules`, getAuthHeaders());
+          const rules = res.data.rules || [];
+          const hasNarratives = rules.some(r => r.narrative);
+          if (hasNarratives) {
+            clearInterval(poll);
+            setRules(rules);
+            setGenerating(false);
+            toast.success('Narratives generated!');
+          }
+        } catch {}
+      }, 5000);
+      setTimeout(() => { clearInterval(poll); setGenerating(false); }, 60000);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to generate narratives');
+      setGenerating(false);
+    }
+  };
+
   // Group rules by category
   const categories = [];
   const catMap = {};
@@ -64,14 +91,28 @@ export function PlatformRulesTab({ getAuthHeaders }) {
 
   return (
     <div className="space-y-4" data-testid="platform-rules-tab">
-      <div className="flex items-center gap-3 mb-2">
-        <Shield className="w-5 h-5 text-[var(--gold)]" />
-        <div>
-          <h2 className="text-lg font-bold text-[var(--t)]">Platform Rules</h2>
-          <p className="text-xs text-[var(--t4)]">
-            {editable ? 'You can edit values marked with a pencil icon. Changes propagate immediately across all portals.' : 'Read-only reference. Contact the founder to request changes.'}
-          </p>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-3">
+          <Shield className="w-5 h-5 text-[var(--gold)]" />
+          <div>
+            <h2 className="text-lg font-bold text-[var(--t)]">Platform Rules</h2>
+            <p className="text-xs text-[var(--t4)]">
+              {editable ? 'Edit values with the pencil icon. Changes propagate immediately across all portals.' : 'Read-only reference. Contact the founder to request changes.'}
+            </p>
+          </div>
         </div>
+        {editable && (
+          <button
+            onClick={generateNarratives}
+            disabled={generating}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95"
+            style={{ background: 'rgba(212,175,55,0.15)', color: 'var(--gold)', border: '1px solid rgba(212,175,55,0.3)' }}
+            data-testid="generate-narratives-btn"
+          >
+            {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            {generating ? 'Generating...' : 'Generate Narratives'}
+          </button>
+        )}
       </div>
 
       {categories.map(cat => (

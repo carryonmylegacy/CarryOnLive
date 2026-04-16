@@ -7,10 +7,10 @@ Changes propagate immediately platform-wide.
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 
-from config import db
+from config import db, xai_client, XAI_MODEL_LIGHT, logger
 from utils import get_current_user
 
 router = APIRouter()
@@ -24,7 +24,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "Monthly Billing",
         "value": "Full price",
         "description": "No discount applied",
-        "narrative": "When a customer subscribes on a month-to-month basis, they pay the full listed price for their tier. There is no discount for monthly billing — it is the baseline price that all other discounts are calculated from.",
         "editable_value": False,
     },
     {
@@ -33,7 +32,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "Quarterly Billing Discount",
         "value": "10%",
         "description": "Off monthly price",
-        "narrative": "When a customer chooses quarterly billing, they commit to 3 months at a time and receive a 10% discount off what they would pay monthly. For example, if their monthly rate is $24.99, their quarterly rate would be $22.49/mo (billed as $67.47 every 3 months). This saves them roughly $2.50 per month.",
         "editable_value": True,
         "value_type": "percent",
     },
@@ -43,7 +41,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "Annual Billing Discount",
         "value": "20%",
         "description": "Off monthly price",
-        "narrative": "When a customer chooses annual billing, they commit to a full year and receive a 20% discount off the monthly price. For example, if their monthly rate is $24.99, their annual rate would be $19.99/mo (billed as $239.88 per year). This is the best value for recurring subscribers and saves them about $60 per year on the Premium plan.",
         "editable_value": True,
         "value_type": "percent",
     },
@@ -54,7 +51,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "Family Plan — Benefactor Discount",
         "value": "30%",
         "description": "Stacks on billing cycle discount",
-        "narrative": "When a benefactor enables the Family Plan to bundle their household, they receive an additional 30% discount that stacks on top of their billing cycle discount. For example, an annual Premium subscriber already getting 20% off ($19.99/mo) would get an additional 30% off, bringing their effective rate to $13.99/mo. Tell the customer: 'The Family Plan discount is in addition to whatever savings you already get from your billing cycle — they stack together.'",
         "editable_value": True,
         "value_type": "percent",
     },
@@ -64,7 +60,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "Family Plan — Beneficiary Discount",
         "value": "50%",
         "description": "Stacks on billing cycle discount",
-        "narrative": "Beneficiaries on a Family Plan receive an even deeper discount — 50% off, stacking on top of their billing cycle discount. For example, a Premium beneficiary paying $6.99/mo on an annual plan (20% off = $5.59/mo) would get an additional 50% off, bringing them to $2.80/mo. Tell the customer: 'Your family members save even more than you do on the Family Plan — their beneficiary rate is already lower, and the 50% family discount makes it incredibly affordable.'",
         "editable_value": True,
         "value_type": "percent",
     },
@@ -75,7 +70,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "Free Trial Duration",
         "value": "30 days",
         "description": "All new users",
-        "narrative": "Every new user gets a free 30-day trial with full access to all features at their selected tier. No credit card is required to start the trial. Tell the customer: 'You have 30 days to explore everything CarryOn has to offer at no cost. When your trial ends, you can choose any plan that fits your needs, or your access will be paused until you subscribe.'",
         "editable_value": True,
         "value_type": "days",
     },
@@ -85,7 +79,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "Payment Grace Period",
         "value": "30 days",
         "description": "Missed payment before action taken",
-        "narrative": "If a customer misses a payment, they have a 30-day grace period during which their access remains fully active. We will attempt to charge their payment method again during this window. If the payment is not resolved within 30 days, their subscription will be paused. Tell the customer: 'Don't worry — if a payment fails, you still have 30 days of full access while we sort it out. Just make sure your payment method is updated before the grace period ends.'",
         "editable_value": True,
         "value_type": "days",
     },
@@ -96,7 +89,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "Beneficiary Billing Trigger",
         "value": "Benefactor transition",
         "description": "Beneficiaries don't pay until benefactor passes",
-        "narrative": "Beneficiaries are never billed while their benefactor is alive and has an active subscription. Beneficiary billing only begins after the benefactor transitions (passes away) and a 30-day grace period has elapsed. Tell the customer: 'As long as your benefactor maintains their subscription, you will never be charged. Your access is covered by their plan. Billing for beneficiaries only begins after the benefactor has passed, and even then, there is a 30-day grace period before any charges apply.'",
         "editable_value": False,
     },
     # Beta Tester Policy
@@ -106,7 +98,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "Beta Tester Exemption",
         "value": "Trial + payment exempt",
         "description": "While beta flag is active on user account",
-        "narrative": "Users flagged as beta testers have full access to all platform features without any trial countdown or payment requirement. This status is manually granted by the founder and can be revoked at any time. Beta testers will not see trial banners or subscription prompts. Tell the customer: 'You have been selected as a beta tester, which means you have full free access while you help us refine the platform. Thank you for your participation.'",
         "editable_value": False,
     },
     # Verification Requirements
@@ -116,7 +107,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "Verification Required",
         "value": "Military, Veteran, Hospice, New Adult",
         "description": "Tier-specific documentation required before activation",
-        "narrative": "Certain tier-level discounts require documentation to verify eligibility. Military and First Responder tiers require proof of active service or employment. Veteran tier requires proof of veteran status (DD-214 or VA card). Hospice tier requires documentation from a hospice care provider. New Adult tier requires proof of age (18-25). Tell the customer: 'To qualify for this special pricing, we just need a quick document to verify your eligibility. This protects the integrity of these discounted rates for those who truly qualify.'",
         "editable_value": False,
     },
     # Founders Circle Rules
@@ -126,7 +116,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "Campaign Active",
         "value": "true",
         "description": "Controls visibility of Founders Circle paywall and link on Subscriptions page",
-        "narrative": "When this toggle is ON, the Founders Circle lifetime subscription offer is visible to all users on the Subscriptions page, and the dedicated Founders Circle paywall page is accessible. When turned OFF, both the link and the page disappear — but existing Founders Circle members are completely unaffected. Their lifetime access continues permanently regardless of this setting.",
         "editable_value": True,
         "value_type": "toggle",
     },
@@ -136,7 +125,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "Beneficiaries Free",
         "value": "All payment schedules",
         "description": "Current and future beneficiaries get free lifetime access, per estate",
-        "narrative": "This is the signature benefit of Founders Circle. Every beneficiary linked to a Founders Circle estate — both those already added and any added in the future — receives completely free lifetime access at the benefactor's tier level. This applies regardless of which payment schedule the benefactor chose (pay-in-full, 3, 6, or 12 payments). Tell the customer: 'When you join the Founders Circle, your family members never pay a dime. Not now, not ever. Any beneficiary you add to your estate — today or 20 years from now — gets the same free lifetime access.'",
         "editable_value": False,
     },
     {
@@ -145,7 +133,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "Upgrade Policy",
         "value": "Pay the delta",
         "description": "Same installment and discount options apply to the delta amount between tiers",
-        "narrative": "If a Founders Circle member wants to upgrade to a higher tier during the campaign period, they simply pay the difference between what they already paid and the new tier's lifetime price. The same installment options and discounts apply to this difference. For example, if someone has Base ($199) and wants Premium ($499), they pay the $300 delta — with 1-pay at 15% off ($255), or 3 payments of $90, etc. Tell the customer: 'You can upgrade anytime during our first year — just pay the difference. You get the same flexible payment options and discounts on the upgrade amount.'",
         "editable_value": False,
     },
     {
@@ -154,7 +141,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "Post-Campaign Upgrades",
         "value": "Regular pricing only",
         "description": "Lifetime tier becomes permanent floor. Higher tiers require normal subscription.",
-        "narrative": "After the Founders Circle campaign ends (approximately one year), no new lifetime subscriptions can be purchased. Existing members who want a higher tier after the campaign can subscribe to it at regular monthly/quarterly/annual pricing. However, their Founders Circle tier is their permanent floor — if they ever cancel the higher subscription, they automatically fall back to their lifetime tier and never lose access entirely. Tell the customer: 'Your Founders Circle tier is yours forever. If you upgrade to a higher plan later and decide to cancel it, you'll always fall back to your lifetime tier — you'll never be locked out.'",
         "editable_value": False,
     },
     {
@@ -163,7 +149,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "Installment Failure",
         "value": "Grace period then clean cut",
         "description": "30-day grace period. After that, lose lifetime status and revert to regular monthly subscription. No partial credit.",
-        "narrative": "If a Founders Circle member on an installment plan misses a payment, they have the standard 30-day grace period to resolve it. If the payment is not made within that window, their Founders Circle lifetime status is revoked — they lose the lifetime benefit and are moved to a regular monthly subscription at their tier. There is no partial credit for payments already made. Tell the customer: 'We understand things happen, so you have 30 days to update your payment if one fails. But if it's not resolved in that window, the lifetime benefit is forfeited. We strongly recommend keeping your payment method up to date.'",
         "editable_value": False,
     },
     {
@@ -172,7 +157,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "Transition During Installments",
         "value": "Honored in full",
         "description": "If benefactor passes during active installment plan, Founders Circle is honored as a gesture of kindness. Estate retains lifetime access regardless of remaining payments.",
-        "narrative": "If a Founders Circle benefactor passes away while still in the middle of their installment payments, CarryOn will honor the full Founders Circle lifetime subscription as a gesture of kindness. The remaining payments are forgiven, and the estate, the trustee, and all associated beneficiaries retain their lifetime access at the purchased tier level. Tell the customer's family: 'We are deeply sorry for your loss. Your loved one's Founders Circle membership is fully honored. The estate and all beneficiaries will continue to have lifetime access — there are no remaining payments.'",
         "editable_value": False,
     },
     {
@@ -181,7 +165,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "Scope",
         "value": "Per estate",
         "description": "Must purchase Founders Circle separately for each estate. Associated beneficiaries of that estate enjoy the privileges.",
-        "narrative": "Founders Circle is tied to a specific estate, not to the user's account globally. If a benefactor manages multiple estates, they would need to purchase a separate Founders Circle lifetime subscription for each estate they want covered. The beneficiaries of each Founders Circle estate enjoy the free lifetime access benefit, but beneficiaries of their non-Founders Circle estates do not. Tell the customer: 'The Founders Circle benefit applies per estate. If you have multiple estates and want lifetime coverage for all of them, you would select each one separately during checkout.'",
         "editable_value": False,
     },
     {
@@ -190,7 +173,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "1-Payment Discount",
         "value": "15%",
         "description": "Off lifetime base price — pay in full",
-        "narrative": "Customers who pay for their Founders Circle membership in a single upfront payment receive the deepest discount: 15% off the lifetime base price. For example, Premium at $499 becomes $424 when paid in full. Tell the customer: 'Paying in full today gives you the best possible price — 15% off the lifetime rate. It's the most savings for the biggest commitment.'",
         "editable_value": True,
         "value_type": "percent",
     },
@@ -200,7 +182,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "3-Payment Discount",
         "value": "10%",
         "description": "Off lifetime base price — 3 installments",
-        "narrative": "Customers who choose 3 monthly payments receive a 10% discount off the lifetime base price. For example, Premium at $499 becomes $449 total, split into 3 monthly payments of $150. Tell the customer: 'Spreading it over 3 months still saves you 10%, and you get the full Founders Circle benefits from your very first payment.'",
         "editable_value": True,
         "value_type": "percent",
     },
@@ -210,7 +191,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "6-Payment Discount",
         "value": "5%",
         "description": "Off lifetime base price — 6 installments",
-        "narrative": "Customers who choose 6 monthly payments receive a 5% discount off the lifetime base price. For example, Premium at $499 becomes $474 total, split into 6 monthly payments of $79. Tell the customer: 'Six months of payments keeps things very manageable, and you still get a 5% discount. All Founders Circle benefits are active from day one.'",
         "editable_value": True,
         "value_type": "percent",
     },
@@ -220,7 +200,6 @@ DEFAULT_RULES: List[Dict[str, Any]] = [
         "label": "12-Payment Discount",
         "value": "0%",
         "description": "Full lifetime base price — 12 installments (convenience is the benefit)",
-        "narrative": "Customers who choose 12 monthly payments pay the full lifetime base price with no additional discount — the benefit here is the convenience of spreading the cost over a full year. For example, Premium at $499 is split into 12 monthly payments of $42. Tell the customer: 'The 12-month option gives you the lowest monthly payment possible. While there's no additional discount, you're still locking in lifetime access at a fraction of what monthly subscribers will pay over time — and your beneficiaries are covered free forever.'",
         "editable_value": True,
         "value_type": "percent",
     },
@@ -262,13 +241,54 @@ async def get_platform_rules() -> List[Dict[str, Any]]:
     return stored
 
 
+async def generate_narrative(rule: Dict[str, Any], all_rules: List[Dict[str, Any]]) -> str:
+    """Auto-generate a customer-facing narrative for a rule using Grok."""
+    if not xai_client:
+        return ""
+    # Build context from all rules in the same category
+    category_context = "\n".join(
+        f"- {r['label']}: {r['value']} ({r['description']})" for r in all_rules if r["category"] == rule["category"]
+    )
+    prompt = f"""You are writing an internal reference guide for CarryOn customer service agents.
+For the following business rule, write a clear, conversational paragraph that:
+1. Explains what the rule means in plain language
+2. Includes a concrete dollar-amount example where applicable (use Premium tier at $24.99/mo as the example baseline)
+3. Ends with a "Tell the customer:" script the agent can read verbatim
+
+Category: {rule["category"]}
+Rule: {rule["label"]}
+Current Value: {rule["value"]}
+Short Description: {rule["description"]}
+
+Other rules in this category for context:
+{category_context}
+
+Write only the paragraph. No headers, no bullet points. Keep it under 100 words."""
+
+    try:
+        import asyncio
+
+        resp = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: xai_client.chat.completions.create(
+                model=XAI_MODEL_LIGHT,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=300,
+                temperature=0.3,
+            ),
+        )
+        return resp.choices[0].message.content.strip()
+    except Exception as e:
+        logger.error(f"Narrative generation failed for {rule['id']}: {e}")
+        return ""
+
+
 @router.get("/admin/platform-rules")
 async def get_rules(current_user: dict = Depends(get_current_user)):
     """Get all platform rules. Available to all admin roles (read-only for non-founders)."""
     if current_user.get("role") not in ("admin", "operator"):
         raise HTTPException(status_code=403, detail="Admin access required")
     rules = await get_platform_rules()
-    # role=admin IS the founder in CarryOn's system
     is_founder = current_user.get("role") == "admin"
     return {"rules": rules, "editable": is_founder}
 
@@ -285,15 +305,21 @@ async def update_rule(req: RuleUpdateRequest, current_user: dict = Depends(get_c
         raise HTTPException(status_code=403, detail="Only the founder can edit platform rules")
     rules = await get_platform_rules()
     found = False
+    target_rule = None
     for rule in rules:
         if rule["id"] == req.rule_id:
             if not rule.get("editable_value", False):
                 raise HTTPException(status_code=400, detail="This rule is not editable")
             rule["value"] = req.value
+            target_rule = rule
             found = True
             break
     if not found:
         raise HTTPException(status_code=404, detail="Rule not found")
+    # Auto-regenerate narrative for the updated rule
+    narrative = await generate_narrative(target_rule, rules)
+    if narrative:
+        target_rule["narrative"] = narrative
     await db.platform_rules.update_one(
         {"_id": "global"},
         {
@@ -305,3 +331,33 @@ async def update_rule(req: RuleUpdateRequest, current_user: dict = Depends(get_c
         },
     )
     return {"success": True, "rules": rules}
+
+
+@router.post("/admin/platform-rules/generate-narratives")
+async def generate_all_narratives(bg: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+    """Kick off narrative generation as a background task. Founder only."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Only the founder can generate narratives")
+
+    async def _run():
+        import asyncio
+
+        rules = await get_platform_rules()
+        # Generate in batches of 5 to avoid rate limits
+        indices_needing = [i for i, r in enumerate(rules) if not r.get("narrative")]
+        for batch_start in range(0, len(indices_needing), 5):
+            batch = indices_needing[batch_start : batch_start + 5]
+            tasks = [generate_narrative(rules[i], rules) for i in batch]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            for idx, result in zip(batch, results):
+                if isinstance(result, str) and result:
+                    rules[idx]["narrative"] = result
+        await db.platform_rules.update_one(
+            {"_id": "global"},
+            {"$set": {"rules": rules, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        )
+        count = sum(1 for i in indices_needing if rules[i].get("narrative"))
+        logger.info(f"Generated {count} narratives for platform rules")
+
+    bg.add_task(_run)
+    return {"success": True, "message": "Generating narratives in the background. Refresh in about 30 seconds."}
