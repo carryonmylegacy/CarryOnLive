@@ -20,14 +20,17 @@ const PILLARS = [
     bold: 'Response plans your family can build now for the scenarios they might face \u2014 ready to activate at a moment\u2019s notice.',
     desc: 'Build contingency protocols for any situation: medical emergencies, natural disasters, financial disruptions, or the passing of a family member. The Tap-to-Create Wizard walks you through building a protocol in minutes \u2014 connecting your people, your documents, your checklists, and your communication channels into one coordinated plan your family can execute together.' },
   { num: '06', icon: MessageCircle, title: 'Estate Communications Tool', abbr: 'ECT',
-    bold: 'Secure, private family messaging built for the conversations that matter most \u2014 with the features your family already knows how to use.',
-    desc: 'ECT is the communication backbone of your family\u2019s readiness infrastructure. End-to-end encrypted group and direct messaging with voice messages, image sharing, emoji reactions, location sharing, and message pinning. When a contingency protocol activates, ECT is how your family stays in sync. Designed to feel as natural as the messaging apps your family already loves \u2014 but purpose-built for sensitive family coordination.' },
+    bold: 'Secure, private family messaging that doesn\u2019t depend on a phone number \u2014 so your family stays connected no matter what.',
+    desc: 'Unlike every mainstream chat app, ECT doesn\u2019t rely on your phone number or a specific device. Log in from a friend\u2019s phone, a library computer, or a FEMA trailer after a disaster \u2014 and pick up exactly where you left off, in perfect sync with your family. End-to-end encrypted group and direct messaging with voice messages, image sharing, emoji reactions, location sharing, and message pinning. When a contingency protocol activates, ECT is how your family coordinates \u2014 privately, securely, and from anywhere.' },
   { num: '07', icon: Key, title: 'Digital Access Vault', abbr: 'DAV',
     bold: 'Passwords, accounts, crypto keys, and digital credentials \u2014 saved, encrypted, and assigned to the right people.',
     desc: 'The modern family has dozens of digital accounts, subscriptions, financial platforms, and access credentials that need to be passed down and organized. DAV stores them all in your encrypted vault, assigned to specific beneficiaries, so nothing is lost and nothing is forgotten.' },
   { num: '08', icon: Users, title: 'Family & Friends Notification', abbr: 'FFN',
     bold: 'The people who matter most should never hear important news through the grapevine.',
     desc: 'Build a personalized notification list of family, friends, colleagues, and anyone your beneficiaries should contact during a transition or emergency. Names, phone numbers, relationships, and special notes \u2014 all organized and ready so your family can coordinate outreach without scrambling.' },
+  { num: '09', icon: DollarSign, title: 'Connected Financial Portal', abbr: 'CFP',
+    bold: 'Your family\u2019s complete financial picture \u2014 linked, monitored, and ready for the people who\u2019ll need it most.',
+    desc: 'Link your bank accounts, investment portfolios, insurance policies, and financial assets into one secure, encrypted view. Track balances, flag anomalies, and ensure your beneficiaries know exactly where every dollar is and who to contact \u2014 without having to search through file cabinets, email threads, or scattered logins. When the time comes, your family sees the full financial picture instantly.' },
 ];
 
 /* ── data: platform features ── */
@@ -40,7 +43,6 @@ const PLATFORM_FEATURES = [
   { icon: SlidersHorizontal, title: 'Section Permissions', desc: 'Control exactly what each beneficiary can see &mdash; vault, messages, checklists, protocols, and more. Granular, per-person access.' },
   { icon: Smartphone, title: 'Native Mobile App', desc: 'iOS and Android with biometric login, push notifications, and full platform access. Your family\'s readiness goes wherever you go.' },
   { icon: MapPin, title: '50-State Legal Intelligence', desc: 'Estate Guardian calibrates every analysis to your declared state of residence and its specific laws. Personalized, not generic.' },
-  { icon: DollarSign, title: 'Connected Financial Portal', desc: 'Link and monitor your family\u2019s financial accounts in one secure view. Track balances, flag anomalies, and ensure your beneficiaries know exactly where to look when it matters.' },
 ];
 
 /* ── data: five steps ── */
@@ -137,7 +139,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="max-w-[900px] mx-auto px-6 relative z-10">
           <RevealSection>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Eight Pillars of Family Readiness.
+              Nine Pillars of Family Readiness.
             </h2>
             <p className="text-[#a0aec0] text-base text-center max-w-[650px] mx-auto mb-16 leading-relaxed">
               Each pillar builds on the last &mdash; creating a complete family preparedness architecture, one step at a time.
@@ -219,7 +221,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                     Comprehensive Family Preparedness.
                   </h3>
                   <p className="text-[#a0aec0] text-sm lg:text-base leading-relaxed mb-4">
-                    Eight pillars. One family. A living system that grows with you, protects what matters most, and ensures that no matter what life brings &mdash; your family is never left searching, wondering, or scrambling.
+                    Nine pillars. One family. A living system that grows with you, protects what matters most, and ensures that no matter what life brings &mdash; your family is never left searching, wondering, or scrambling.
                   </p>
                   <p className="text-white text-2xl font-semibold italic">
                     They&apos;re ready. Because you prepared.
