@@ -1777,7 +1777,9 @@ export default function EstateChatPage() {
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && window.innerWidth > 1024) { e.preventDefault(); sendMessage(); } }}
               onFocus={() => {
                 setInputFocused(true);
-                // Scroll to bottom — multiple passes to track keyboard animation
+                // Tell iOS to scroll the input into view
+                setTimeout(() => { inputRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }); }, 300);
+                // Scroll messages to bottom — multiple passes to track keyboard animation
                 const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
                 requestAnimationFrame(doScroll);
                 setTimeout(doScroll, 150);

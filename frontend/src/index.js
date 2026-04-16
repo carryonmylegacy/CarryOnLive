@@ -10,9 +10,8 @@ try {
 } catch {}
 
 // Prevent pinch-to-zoom on iOS PWA/bookmark to make it feel native
-document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
-document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
-document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+// Pinch-zoom is prevented via CSS touch-action: manipulation on body.
+// No gesture event handlers needed — they blocked iOS keyboard dismiss intermittently.
 
 // Double-tap zoom is prevented via CSS touch-action: manipulation on body.
 // No JavaScript touchend handler needed — the previous one blocked iOS keyboard dismiss.
