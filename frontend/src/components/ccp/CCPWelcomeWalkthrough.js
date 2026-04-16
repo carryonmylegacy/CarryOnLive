@@ -33,7 +33,7 @@ const CCPWelcomeWalkthrough = ({ welcomeStep, setWelcomeStep, onDismiss }) => {
           <div className="text-center flex-1 flex flex-col min-h-0" data-testid="ccp-welcome-step-1">
             <Shield className="w-12 h-12 mx-auto mb-3" style={{ color: '#d4af37' }} />
             <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
-              Welcome to Contingency Protocols
+              Welcome to CarryOn Contingency Protocols
             </h2>
             <p className="text-sm mb-4 leading-relaxed" style={{ color: 'var(--t4)' }}>
               This is where your family creates emergency plans — for hurricanes, medical emergencies, power outages, or any situation where everyone needs to know what to do.

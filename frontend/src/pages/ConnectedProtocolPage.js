@@ -785,7 +785,7 @@ export default function ConnectedProtocolPage() {
     <div data-testid="ccp-home" className="max-w-lg mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-4">
       <div className="text-center mb-4">
         <Shield className="w-10 h-10 mx-auto mb-2" style={{ color: '#d4af37' }} />
-        <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>Contingency Protocols (CCP)</h1>
+        <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>CarryOn Contingency Protocols (CCP)</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--t4)' }}>Family disaster preparedness</p>
       </div>
 

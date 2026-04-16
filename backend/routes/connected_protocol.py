@@ -891,7 +891,7 @@ def build_drill_reminder_email(user_name: str, plan_name: str, plan_type_label: 
           <p style="color: #d4af37; font-weight: bold; font-size: 14px; margin: 0 0 12px;">Here's how to run a drill:</p>
           <ol style="color: #A0AABF; font-size: 13px; padding-left: 18px; margin: 0; line-height: 2.0;">
             <li>Gather your family and open CarryOn</li>
-            <li>Go to <strong style="color: #F1F3F8;">Contingency Protocols</strong></li>
+            <li>Go to <strong style="color: #F1F3F8;">CarryOn Contingency Protocols</strong></li>
             <li>Find your <strong style="color: #F1F3F8;">{plan_name}</strong></li>
             <li>Tap <strong style="color: #3B7BF7;">DRILL</strong> to start a practice run</li>
             <li>Have everyone check in from their phones</li>

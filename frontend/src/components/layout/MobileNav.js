@@ -489,7 +489,7 @@ const MobileNav = () => {
     { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
     { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
     { to: '/estate-chat', icon: MessageCircle, label: 'Estate Comms (ECT)', badge: ectUnread },
-    { to: '/connected-protocol', icon: Shield, label: 'Contingency Protocols (CCP)' },
+    { to: '/connected-protocol', icon: Shield, label: 'CarryOn Contingency Protocols (CCP)' },
   ], enabledFeatures);
 
   // Get feature access flags from localStorage (set by TransitionGate/Dashboard)
@@ -520,7 +520,7 @@ const MobileNav = () => {
     { to: '/beneficiary/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
     { to: '/beneficiary/milestone', icon: Gift, label: 'Report Milestone' },
     { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Comms (ECT)', badge: ectUnread },
-    { to: '/beneficiary/connected-protocol', icon: Shield, label: 'Contingency Protocols (CCP)' },
+    { to: '/beneficiary/connected-protocol', icon: Shield, label: 'CarryOn Contingency Protocols (CCP)' },
   ]), enabledFeatures);
 
   // Staff portals — tool shortcuts in hamburger menu

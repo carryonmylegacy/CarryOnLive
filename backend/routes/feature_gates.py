@@ -39,7 +39,7 @@ PLATFORM_FEATURES = [
     {"key": "ect", "label": "Estate Comms (ECT)", "route": "/estate-chat", "core": False, "default_off": True},
     {
         "key": "ccp",
-        "label": "Contingency Protocols (CCP)",
+        "label": "CarryOn Contingency Protocols (CCP)",
         "route": "/connected-protocol",
         "core": False,
         "default_off": True,

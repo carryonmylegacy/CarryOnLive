@@ -307,7 +307,7 @@ const Sidebar = () => {
         { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
         { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
         { to: '/estate-chat', icon: MessageCircle, label: 'Estate Comms (ECT)', badge: ectUnread },
-        { to: '/connected-protocol', icon: Shield, label: 'Contingency Protocols (CCP)' },
+        { to: '/connected-protocol', icon: Shield, label: 'CarryOn Contingency Protocols (CCP)' },
       ], enabledFeatures)
     },
     {
@@ -353,7 +353,7 @@ const Sidebar = () => {
         { to: '/beneficiary/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
         { to: '/beneficiary/milestone', icon: Home, label: 'Report Milestone' },
         { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Comms (ECT)', badge: ectUnread },
-        { to: '/beneficiary/connected-protocol', icon: Shield, label: 'Contingency Protocols (CCP)' },
+        { to: '/beneficiary/connected-protocol', icon: Shield, label: 'CarryOn Contingency Protocols (CCP)' },
         { to: '/beneficiary/financial', icon: DollarSign, label: 'Financial Picture' },
       ]), enabledFeatures)
     },
