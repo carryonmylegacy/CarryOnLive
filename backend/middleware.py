@@ -233,6 +233,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             key = f"rl:{tier}:{client_ip}"
             try:
                 from services.rate_limiter import check_and_increment
+
                 allowed = await check_and_increment(key, limit, self.window)
             except Exception:
                 allowed = True  # On limiter failure: fail open (never block legit users)

@@ -83,6 +83,7 @@ from services.scheduler_lock import with_scheduler_lock
 # executes the periodic work at a time in multi-pod deployments. The lock
 # degrades open if Mongo is unreachable, preserving single-pod behavior.
 
+
 async def _locked(name: str, coro_factory, ttl_seconds: int = 900):
     """Run an async scheduler coroutine under a distributed lock.
 
@@ -150,6 +151,7 @@ async def lifespan(app):
 
     # Warm up xAI connection + start periodic keepalive (local per-pod, no lock needed)
     from routes.guardian import warmup_xai
+
     asyncio.create_task(warmup_xai())
 
     # Start real-time SLA breach checker (every 60s) — also distributed-locked.

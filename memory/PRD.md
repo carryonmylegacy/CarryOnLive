@@ -4,13 +4,14 @@
 Comprehensive family preparedness platform with estate planning, secure document vault, milestone messages, estate chat, connected care protocol, financial portal, and subscription management.
 
 ## Current Architecture
-- **Frontend**: React (components, pages, contexts)
-- **Backend**: FastAPI (routes, services, models)
-- **Database**: MongoDB
-- **Payments**: Stripe + Apple IAP (pending)
+- **Frontend**: React 19 (components, pages, contexts) + Capacitor (iOS/Android)
+- **Backend**: FastAPI (routes, services, models) + Motor/MongoDB async driver
+- **Database**: MongoDB (Atlas in prod)
+- **Payments**: Stripe + Apple IAP (pending Apple agreement)
 - **AI**: xAI Grok via Emergent LLM Key
 - **Email**: Resend
-- **Calendar**: LeadConnector iframe embed
+- **Storage**: S3 (prod) + LocalStorage fallback (dev)
+- **Monitoring**: Sentry (env-gated — activates when `SENTRY_DSN` / `REACT_APP_SENTRY_DSN` set)
 
 ## What's Been Implemented
 
@@ -25,98 +26,71 @@ Comprehensive family preparedness platform with estate planning, secure document
 - Multi-tier subscription system (Premium, Standard, Base, New Adult, Military/1R, Hospice, Veteran, Enterprise)
 - Admin portal with founder, operations, finance, compliance, marketing, platform scopes
 - /speak-with-us marketing page with LeadConnector calendar
+- Founders Circle Lifetime Subscriptions (4 phases complete)
 
-### Session Work (Apr 15-16, 2026)
-- **iOS Chat Fixes**: Preview guard (300ms), keyboard dismiss on long-press, scroll-to-bottom on new messages, smart auto-scroll (near-bottom check), voice player touch fix, voice send scroll, ratchet-free scroll (scrollHeight monitor for 3s)
-- **Input Bar**: Transparent banner (background: var(--bg)), overflow:hidden cursor containment, light mode theme variables (--ect-btn-bg, --ect-input-bg, etc.)
-- **Pin Fix**: is_estate_owner() now allows admin role users
-- **Keyboard Dismiss**: Removed global touchend double-tap prevention handler, replaced with CSS touch-action: manipulation
-- **Platform Rules Tab**: New admin Finance tab showing all business rules (21 rules across 8 categories). Editable by founder only, read-only for all other admin roles. Visible in all admin portals.
-- **Other Fixes**: Book a Demo button on /speak-with-us, login jitter fix (flagOpacity ref), beta trial banner hide, dock default sync, BeneficiaryHubPage text line break
+### Launch-Readiness Work (Apr 16, 2026 — this session)
 
-## Founders Circle Lifetime Subscription (In Progress)
+**🔴 Stream A — Infrastructure Hardening**
+- MongoDB-backed distributed scheduler lock (`services/scheduler_lock.py`) wraps all 10 background schedulers so they run on exactly one pod in multi-instance deployments. Degrades open if Mongo unreachable.
+- MongoDB-backed sliding-window rate limiter (`services/rate_limiter.py`) replaces in-memory `defaultdict` — now survives multi-pod with no Redis dependency.
+- VAPID `/tmp/` fallback removed — requires inline `VAPID_PRIVATE_KEY` env for production persistence.
+- `/api/health/live` + `/api/health/ready` endpoints added (K8s/Railway liveness & readiness probes).
+- Graceful shutdown bounded to 10s with `asyncio.wait_for` (prevents hung SIGTERM).
+- Sentry SDK wired on backend (FastAPI + Starlette integrations) — zero-cost when DSN unset.
+- Sentry browser SDK wired on frontend — dynamic import, zero bundle cost when DSN unset.
+- `/app/load_tests/signup_and_dashboard.js` — k6 script for 100-VU signup + dashboard stress test + README.
 
-### Phase 1: Platform Rules Tab (COMPLETE)
-- Backend: `/api/admin/platform-rules` GET/PUT endpoints
-- Frontend: `PlatformRulesTab` component in Finance section
-- 21 structured rules across categories
-- Editable by founder, read-only for all other admin roles
+**🛠 Stream D — Admin UX**
+- `AdminCommandPalette` component: ⌘K/Ctrl+K global shortcut opens fuzzy search over all admin tabs, user directory, and quick actions. Trigger pill added to admin header.
 
-### Phase 2: Founders Circle Backend (COMPLETE)
-- `/api/founders-circle/plans` — public endpoint returning FC pricing + availability
-- `/api/founders-circle/checkout` — Stripe checkout (one-time for 1-pay, recurring for installments)
-- `/api/founders-circle/status` — user's FC subscriptions
-- `/api/founders-circle/checkout-status/{session_id}` — payment confirmation + activation
-- `/api/admin/founders-circle/pricing` — update lifetime prices (founder only)
-- `/api/admin/founders-circle/subscriptions` — view all FC subs (admin)
-- `founders_circle` MongoDB collection with full tracking
-- Auto-grants `free_access` override to estate beneficiaries on FC activation
+**📐 Stream C — Visual Hierarchy / Stability Fixes**
+- Post-login-after-update jitter FIXED (`utils/versionCheck.js` rewritten): no more mid-session `window.location.reload()`. Reloads now scheduled for next safe navigation, with explicit blocklist for /login, /signup, /accept-invitation, /create-estate, /onboarding, /founders-circle, /subscription. Never reloads during form typing or when a modal is open.
+- `PageLoader` now has a 180ms appearance delay — eliminates the sub-100ms spinner flash on cached route hits.
 
-### Phase 3: Founders Circle Paywall Page (COMPLETE)
-- `/founders-circle` route with landing page
-- Hero with "FOUNDING MEMBER — LIMITED TIME" badge
-- 4 value proposition bullets
-- Savings example (45yo Premium: $11,995 over 40 years vs $424 FC)
-- Estate selector for multi-estate users
-- Payment schedule selector (1/3/6/12 payments)
-- 6 tier cards with dynamic pricing from admin settings
-- Stripe checkout integration
+**🎨 Stream B — Varsity Visual Polish**
+- Motion tokens defined: `--motion-micro`, `--motion-standard`, `--motion-page`, `--motion-celebrate`.
+- `glass-card` transitions now use motion tokens (border, shadow, transform separately — not `all`).
+- `.nav-item` transitions moved from `all 0.25s` to targeted properties using motion tokens.
+- HomePage: bouncy gold "Scroll to explore" gradient button → quiet "DISCOVER MORE" chevron.
+- LoginPage: same treatment applied to both desktop + mobile "Scroll to explore" instances.
+- SettingsPage reorganized with section headers (Profile / Security / Appearance & Navigation / Notifications / Privacy & Data / Beta Testing) + gold rail hero accent. Zero functional changes; every existing card and switch remains.
 
-### Phase 4: Integration Points (COMPLETE)
-- Subscription page: FC CTA link (toggle-aware, hidden when campaign off or user already has FC)
-- Subscription page: FC member status banner showing tier, payment progress, estate
-- Subscription page: FC checkout redirect handling
-- Beneficiary messaging in SubscriptionManagement: "Your benefactor was gracious and forward-thinking enough to become a Founders Circle member..."
+**🔎 Audit Documents**
+- `/app/memory/ESTATE_CREATION_PATHS.md` — traces all 7 estate-creation paths, flags: default checklist seed missing on Path 1/2, race condition on concurrent Path 2 posts (suggested partial unique index fix), and drift between 3 ghost-estate detectors.
+- `/app/memory/PAYMENT_FLOW_AUDIT.md` — traces Stripe + Founders Circle + Apple IAP + grace-period flows. Flags: **missing `free_access` override for NEW beneficiaries added AFTER FC activation** (15-min fix), Stripe webhook reconciliation gap (safety-net scheduler suggested), unverified FC installment-failure → revert-to-monthly logic (test recommended), pre-launch Stripe webhook secret verification (curl test provided).
 
-### Apple IAP Annotation (Future)
-Product IDs needed:
-- carryon_fc_premium_lifetime ($424)
-- carryon_fc_standard_lifetime ($339)
-- carryon_fc_base_lifetime ($169)
-- carryon_fc_new_adult_lifetime ($67)
-- carryon_fc_military_lifetime ($152)
-- carryon_fc_veteran_lifetime ($152)
-Apple IAP supports one-time purchase only — installments are Stripe-only.
-In-app note: "More payment options available on carryon.us"
-
-### Key Business Rules
-- FC campaign: toggle on/off, time-limited (~Year 1)
-- Beneficiaries free forever: ALL FC payment schedules, current + future, per estate
-- Upgrade: pay delta during campaign, same installment/discount options
-- Post-campaign: no new FC purchases, existing members keep lifetime tier as floor
-- Installment failure: 30-day grace → clean cut, revert to monthly
-- Transition during installments: honored in full (gesture of kindness)
-- Scope: per estate, not per user
-- 1-pay: 15% off, 3-pay: 10% off, 6-pay: 5% off, 12-pay: 0% off
-
-## Blocked Items
+## Blocked Items (3rd party)
 - Apple IAP: awaiting Apple "Paid Applications Agreement"
 - Twilio SMS: awaiting A2P 10DLC campaign approval
 
 ## iOS Chat Keyboard — CRITICAL DO NOT TOUCH
-See detailed V11 documentation in previous PRD version. Key points:
+See detailed V11 documentation in prior version. Key points:
 - position:fixed inset:0 overflow:hidden — ZERO JS viewport manipulation
-- Input bar container MUST have: background: var(--bg), borderTop: 1px solid var(--bg), paddingBottom: 4px (or cursor breaks)
+- Input bar container MUST have: background: var(--bg), borderTop: 1px solid var(--bg), paddingBottom: 4px
 - overflow: hidden on textarea parent div clips iOS cursor rendering
 - previewGuardRef (300ms) blocks phantom touches after image preview close
 - Keyboard auto-dismisses via document.activeElement.blur() when long-press menu opens
 
-## Recent Fixes (Apr 16, 2026)
-- **ECTSecurityIntro Centering**: Tightened internal spacing, content-sized card with `my-auto` centering + `overflow-y-auto` fallback. Fits all iPhones.
-- **CCPWelcomeWalkthrough Centering**: Removed `flex-1` that stretched card full-height. Content-sized card with `my-auto` centering. Inline title/description tiles. Increased outer padding to clear header (64px) and dock (84px). All 3 steps fit centered on all iPhone sizes.
-- **CCP Wizard Overhaul (DONE)**: Complete rewrite of the plan creation wizard:
-  - Step 1: Household (who needs special consideration)
-  - Step 2: Single-select disaster type (one plan per disaster, 17 options)
-  - Step 3: Location + disaster-specific follow-up questions (tailored per disaster type)
-  - Step 4: AI generates draft plan → Review with "Draft Plan — Generated by CCP AI" banner
-  - Removed generic "Stay or Leave" step — replaced by disaster-specific intelligence
-  - AI now biases toward ECT for communication, SDV for documents
-  - 17 disaster-specific templates with tailored questions (distant evacuation for hurricane/flood/tsunami/wildfire, local rendezvous for earthquake/tornado, immediate escape for house fire/home invasion, shelter-in-place for nuclear/pandemic/winter storm, etc.)
-  - Backend updated with disaster-specific prompt context per disaster type
-  - New files: `/app/frontend/src/components/ccp/disasterTemplates.js`
-
-## Upcoming Tasks
+## Upcoming Tasks (Launch Week — Wed–Fri)
+- [Audit action] Fix FC `free_access` grant for late-added beneficiaries (🔴 15 min)
+- [Audit action] Verify Stripe webhook signature enforcement (curl test, 5 min)
+- [Audit action] Run FC installment-failure test (30 min)
+- [Audit action] Implement Stripe reconciliation scheduler safety net (1 hr)
+- [Optional] Seed default checklist on estate Paths 1 & 2 (20 min)
+- [Optional] Add `(owner_id, status=pre-transition)` partial unique index (5 min)
+- Set `SENTRY_DSN` and `REACT_APP_SENTRY_DSN` in prod env
+- Run `k6 run load_tests/signup_and_dashboard.js` against staging; confirm thresholds
 - (P0) Google Play Store Launch
 - (P1) iOS Share Extension
 - (P1) iOS Live Updates (Capgo)
 - (P2) Readiness Scoring Policy Page
+
+## Known Refactor Targets (Post-Launch, Low Urgency)
+- `routes/auth.py` (1775 lines) → split into `auth/{login,register,otp,passkeys,sessions}.py`
+- `routes/beneficiaries.py` (1440), `routes/estate_chat.py` (1250), `routes/financial_portal.py` (1010) — similar splits
+- `pages/EstateChatPage.js` (2100+ lines) — break out voice, media, reactions
+- `components/layout/MobileNav.js` (1313), `Sidebar.js` (1001)
+- Consolidate 3 deploy configs (railway.toml / render.yaml / docker-compose.yml / Procfile) to single primary
+
+## Recent Session Work Summary
+See `CHANGELOG.md` for full chronological history if this file exceeds 700 lines.
