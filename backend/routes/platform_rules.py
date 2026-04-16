@@ -330,6 +330,31 @@ async def update_narrative(req: NarrativeUpdateRequest, current_user: dict = Dep
     return {"success": True, "rules": rules}
 
 
+class GenerateSingleNarrativeRequest(BaseModel):
+    rule_id: str
+
+
+@router.post("/admin/platform-rules/generate-narrative")
+async def generate_single_narrative(
+    req: GenerateSingleNarrativeRequest, current_user: dict = Depends(get_current_user)
+):
+    """Generate narrative for a single rule. Founder only."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Only the founder can generate narratives")
+    rules = await get_platform_rules()
+    target = next((r for r in rules if r["id"] == req.rule_id), None)
+    if not target:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    narrative = await generate_narrative(target, rules)
+    if narrative:
+        target["narrative"] = narrative
+        await db.platform_rules.update_one(
+            {"_id": "global"},
+            {"$set": {"rules": rules, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        )
+    return {"success": True, "narrative": narrative, "rules": rules}
+
+
 @router.put("/admin/platform-rules")
 async def update_rule(req: RuleUpdateRequest, current_user: dict = Depends(get_current_user)):
     """Update a single platform rule. Founder only."""

@@ -55,6 +55,19 @@ export function PlatformRulesTab({ getAuthHeaders }) {
     }
   };
 
+  const generateSingleNarrative = async (ruleId) => {
+    setGenerating(ruleId);
+    try {
+      const res = await axios.post(`${API_URL}/admin/platform-rules/generate-narrative`, { rule_id: ruleId }, getAuthHeaders());
+      setRules(res.data.rules || []);
+      toast.success('Narrative generated');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to generate narrative');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const toggleCategory = (cat) => setCollapsed(prev => ({ ...prev, [cat]: !prev[cat] }));
 
   const generateNarratives = async () => {
@@ -211,6 +224,17 @@ export function PlatformRulesTab({ getAuthHeaders }) {
                       )}
                     </div>
                   </div>
+                  {editable && !rule.narrative && !editingNarrativeId && (
+                    <button
+                      onClick={() => generateSingleNarrative(rule.id)}
+                      disabled={generating === rule.id}
+                      className="mt-2 flex items-center gap-1 px-2 py-1 rounded text-xs"
+                      style={{ color: 'var(--gold)' }}
+                    >
+                      {generating === rule.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                      {generating === rule.id ? 'Generating...' : 'Generate Narrative'}
+                    </button>
+                  )}
                   {rule.narrative && (
                     editingNarrativeId === rule.id ? (
                       <div className="mt-2">
@@ -236,13 +260,25 @@ export function PlatformRulesTab({ getAuthHeaders }) {
                           {rule.narrative}
                         </p>
                         {editable && (
-                          <button
-                            onClick={() => { setEditingNarrativeId(rule.id); setEditNarrative(rule.narrative); }}
-                            className="absolute top-2 right-2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                            style={{ background: 'var(--bg2)' }}
-                          >
-                            <Pencil className="w-3 h-3 text-[var(--t4)]" />
-                          </button>
+                          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => generateSingleNarrative(rule.id)}
+                              disabled={generating === rule.id}
+                              className="p-1 rounded"
+                              style={{ background: 'var(--bg2)' }}
+                              title="Regenerate narrative"
+                            >
+                              {generating === rule.id ? <Loader2 className="w-3 h-3 animate-spin text-[var(--gold)]" /> : <Sparkles className="w-3 h-3 text-[var(--gold)]" />}
+                            </button>
+                            <button
+                              onClick={() => { setEditingNarrativeId(rule.id); setEditNarrative(rule.narrative); }}
+                              className="p-1 rounded"
+                              style={{ background: 'var(--bg2)' }}
+                              title="Edit narrative"
+                            >
+                              <Pencil className="w-3 h-3 text-[var(--t4)]" />
+                            </button>
+                          </div>
                         )}
                       </div>
                     )
