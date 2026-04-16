@@ -298,6 +298,38 @@ class RuleUpdateRequest(BaseModel):
     value: str
 
 
+class NarrativeUpdateRequest(BaseModel):
+    rule_id: str
+    narrative: str
+
+
+@router.put("/admin/platform-rules/narrative")
+async def update_narrative(req: NarrativeUpdateRequest, current_user: dict = Depends(get_current_user)):
+    """Manually edit a rule's narrative. Founder only."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Only the founder can edit narratives")
+    rules = await get_platform_rules()
+    found = False
+    for rule in rules:
+        if rule["id"] == req.rule_id:
+            rule["narrative"] = req.narrative
+            found = True
+            break
+    if not found:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    await db.platform_rules.update_one(
+        {"_id": "global"},
+        {
+            "$set": {
+                "rules": rules,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "updated_by": current_user["id"],
+            }
+        },
+    )
+    return {"success": True, "rules": rules}
+
+
 @router.put("/admin/platform-rules")
 async def update_rule(req: RuleUpdateRequest, current_user: dict = Depends(get_current_user)):
     """Update a single platform rule. Founder only."""

@@ -14,6 +14,8 @@ export function PlatformRulesTab({ getAuthHeaders }) {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
+  const [editingNarrativeId, setEditingNarrativeId] = useState(null);
+  const [editNarrative, setEditNarrative] = useState('');
   const [collapsed, setCollapsed] = useState({});
   const [generating, setGenerating] = useState(false);
 
@@ -39,6 +41,17 @@ export function PlatformRulesTab({ getAuthHeaders }) {
       setEditingId(null);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to update rule');
+    }
+  };
+
+  const saveNarrative = async (ruleId, narrative) => {
+    try {
+      const res = await axios.put(`${API_URL}/admin/platform-rules/narrative`, { rule_id: ruleId, narrative }, getAuthHeaders());
+      setRules(res.data.rules || []);
+      toast.success('Narrative updated');
+      setEditingNarrativeId(null);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to update narrative');
     }
   };
 
@@ -199,9 +212,40 @@ export function PlatformRulesTab({ getAuthHeaders }) {
                     </div>
                   </div>
                   {rule.narrative && (
-                    <p className="text-xs text-[var(--t4)] leading-relaxed mt-2 py-1.5 px-3 rounded-lg italic" style={{ background: 'var(--s)', borderLeft: '2px solid var(--gold)' }}>
-                      {rule.narrative}
-                    </p>
+                    editingNarrativeId === rule.id ? (
+                      <div className="mt-2">
+                        <textarea
+                          value={editNarrative}
+                          onChange={(e) => setEditNarrative(e.target.value)}
+                          className="w-full text-xs leading-relaxed p-3 rounded-lg"
+                          style={{ background: 'var(--s)', border: '1px solid var(--gold)', color: 'var(--t)', resize: 'vertical', minHeight: '80px', outline: 'none', fontSize: '16px' }}
+                          autoFocus
+                        />
+                        <div className="flex gap-2 mt-1.5">
+                          <button onClick={() => saveNarrative(rule.id, editNarrative)} className="flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold" style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>
+                            <Check className="w-3 h-3" /> Save
+                          </button>
+                          <button onClick={() => setEditingNarrativeId(null)} className="flex items-center gap-1 px-2 py-1 rounded text-xs" style={{ color: 'var(--t4)' }}>
+                            <X className="w-3 h-3" /> Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-2 relative group">
+                        <p className="text-xs text-[var(--t4)] leading-relaxed py-1.5 px-3 rounded-lg italic" style={{ background: 'var(--s)', borderLeft: '2px solid var(--gold)' }}>
+                          {rule.narrative}
+                        </p>
+                        {editable && (
+                          <button
+                            onClick={() => { setEditingNarrativeId(rule.id); setEditNarrative(rule.narrative); }}
+                            className="absolute top-2 right-2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                            style={{ background: 'var(--bg2)' }}
+                          >
+                            <Pencil className="w-3 h-3 text-[var(--t4)]" />
+                          </button>
+                        )}
+                      </div>
+                    )
                   )}
                 </div>
               ))}
