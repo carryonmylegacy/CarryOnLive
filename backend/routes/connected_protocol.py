@@ -95,8 +95,11 @@ class WizardRequest(BaseModel):
     estate_id: str
     location: str  # "123 Main St, Houston, TX"
     household: list[str] = []  # ["children", "elderly", "pets", "disabled"]
-    concerns: list[str] = []  # ["hurricane", "fire", "earthquake", ...]
-    preference: str = "evacuate"  # "evacuate" or "shelter"
+    concern: str = ""  # single concern like "hurricane"
+    follow_up_answers: dict = {}  # disaster-specific answers from frontend templates
+    # Legacy fields (kept for backward compat)
+    concerns: list[str] = []
+    preference: str = "evacuate"
 
 
 # Mapping wizard concern strings to plan_types
@@ -219,59 +222,101 @@ async def get_estate_members_endpoint(estate_id: str, current_user: dict = Depen
 # ===================== WIZARD — AI-POWERED PLAN GENERATION =====================
 
 
-_WIZARD_SYSTEM_PROMPT = """You are an emergency preparedness expert. Generate a complete family emergency plan based on the user's inputs. Be direct, actionable, and specific. No explanations — just clear actions.
+_WIZARD_SYSTEM_PROMPT = """You are an emergency preparedness expert creating a family contingency plan for the CarryOn platform. Generate a complete, actionable plan. Be direct and specific. No filler.
 
 You MUST return valid JSON with exactly these fields:
 {
   "plan_name": "Short descriptive name (e.g., Hurricane Evacuation Plan)",
   "rendezvous_points": [
-    {"name": "Primary Meeting Point", "address": "Specific suggestion near their location", "notes": "Why this location works"},
-    {"name": "Backup Meeting Point", "address": "Further away option", "notes": "Use if primary is compromised"}
+    {"name": "Primary Meeting Point", "address": "Specific address or location", "notes": "Why this location"},
+    {"name": "Backup Meeting Point", "address": "Alternative option", "notes": "When to use this instead"}
   ],
-  "communication_plan": "Step-by-step communication protocol. Be specific: 1) Text the family group chat. 2) If no response in 10 min, call each person. 3) If cell towers are down, use this backup method.",
+  "communication_plan": "Step-by-step communication protocol.",
   "resource_locations": [
-    {"name": "Go-Bag / Emergency Kit", "location": "Suggested location in their home", "notes": "What to include"},
-    {"name": "Important Documents", "location": "Fireproof safe or grab-and-go folder", "notes": "What to grab"}
+    {"name": "Emergency Kit / Go-Bag", "location": "Where it's stored", "notes": "What to include"},
+    {"name": "Critical Documents", "location": "Accessible via CarryOn Secure Document Vault (SDV)", "notes": "Already uploaded and available from any device"}
   ],
-  "instructions": "Numbered step-by-step instructions. Be direct and specific. Include timing (e.g., 'Leave 48h before landfall'). Tailor to their household (kids, elderly, pets). Match their preference (evacuate vs shelter).",
-  "warnings": ["Potential risk or mistake to watch for", "Another warning specific to their scenario"]
+  "instructions": "Numbered step-by-step instructions tailored to this specific disaster type.",
+  "warnings": ["Specific risk or mistake to watch for"]
 }
 
-Rules:
-- Rendezvous points: Suggest real-world locations (parking lots, schools, parks) near their area. Include a primary (close) and backup (farther).
-- Communication plan: Include backup methods (landline, radio, neighbor relay).
-- Instructions: Number each step. Start with the FIRST action. Include pet/child/elderly-specific steps if applicable.
-- Warnings: Flag real risks (flood zones, too-close locations, missing backup plans).
-- Keep all text concise. No filler. Actions only.
-- If the concern is "nuclear", prioritize sheltering regardless of preference.
-- If the concern is "house_fire", always prioritize evacuation."""
+CRITICAL RULES:
+- COMMUNICATION: Always recommend Estate Comms (ECT) as the PRIMARY communication method. ECT is a closed, private messaging system built into CarryOn — any family member can log in from ANY internet-connected device (phone, tablet, computer, library, hotel lobby) without needing their own phone. This makes ECT more reliable than phone calls or text messages during disasters when cell towers may be down or phones lost. Include backup methods (landline, radio) only as secondary options.
+- DOCUMENTS: The family's critical documents (IDs, insurance, medical records, wills) are already stored in the CarryOn Secure Document Vault (SDV). Reference the SDV — do NOT suggest a fireproof safe or grab-and-go folder. Say something like: "Your critical documents are already secured in your SDV and can be accessed from any device with internet."
+- RENDEZVOUS: Tailor meeting points to the disaster type. For hurricanes/floods/tsunamis, use the user's specified evacuation destinations — do NOT suggest local meetup points inside the danger zone. For earthquakes, use local open areas. For house fires, use the specified meetup spot outside.
+- INSTRUCTIONS: Number each step. Include timing. Tailor to household (kids, elderly, pets). Be disaster-specific.
+- WARNINGS: Flag real risks specific to this disaster and location.
+- Keep all text concise. Actions only."""
+
+
+# Disaster-specific prompt context for richer AI generation
+_DISASTER_PROMPT_CONTEXT = {
+    "hurricane": "This is a HURRICANE plan. The family must evacuate WELL BEFORE landfall (48+ hours ideally). Local rendezvous points are useless — use the evacuation destinations the user provided. Include steps for boarding up, vehicle fueling, and route planning. Mention monitoring the storm path and adjusting the evacuation direction if it shifts. The user may have provided primary, secondary, and tertiary destinations for different storm paths.",
+    "flood": "This is a FLOOD plan. The family must evacuate to HIGH GROUND outside the flood zone. Roads can become impassable within hours. Use the evacuation destinations the user provided. Include steps for moving valuables to upper floors if time permits, turning off utilities, and avoiding flooded roads.",
+    "tsunami": "This is a TSUNAMI plan. Time is critical — minutes matter. Move INLAND and to HIGH GROUND immediately. Use the high-ground points the user identified. No time to gather supplies. Include natural warning signs (earthquake, water receding). Post-wave return protocol.",
+    "wildfire": "This is a WILDFIRE plan. Evacuate EARLY — don't wait for mandatory orders. Move upwind and away from the fire zone. Use the evacuation destinations the user provided. Include ember-proofing home steps, vehicle packing, and air quality considerations.",
+    "earthquake": "This is an EARTHQUAKE plan. During the quake: Drop, Cover, Hold On. After: meet at the open-area meetup point the user specified (away from buildings and power lines). Include aftershock protocols, gas leak checks, and structural damage assessment before re-entering.",
+    "tornado": "This is a TORNADO plan. When warning sounds: go immediately to the safe room the user specified (lowest interior room). After the tornado passes: meet at the outdoor meetup point. Include steps for monitoring weather radio, covering windows, and what to do if caught outside.",
+    "house_fire": "This is a HOUSE FIRE plan. Everyone exits IMMEDIATELY — no stopping for belongings. Meet at the designated spot the user specified. Include: 2 exit routes per room, low-crawling under smoke, feel doors before opening, meeting point accountability (count heads), and when to call 911. Never re-enter a burning building.",
+    "home_invasion": "This is a HOME INVASION plan. Priority: get to the safe room the user specified, lock the door, call 911 silently. If escape is possible, go directly to the escape destination. Include silent alert protocols and code words. Children should know to hide and stay quiet.",
+    "nuclear": "This is a NUCLEAR EVENT plan. Shelter in the most fortified structure with thick walls. Use the shelter the user identified. Seal all windows, doors, and vents. Stay inside for at least 24 hours. Include potassium iodide information, decontamination if exposed, and radio monitoring for government instructions.",
+    "winter_storm": "This is a WINTER STORM plan. Shelter in place with backup heat. Use the heating source the user identified. Include: pipe freezing prevention, carbon monoxide warnings for generators/heaters, food/water for 3+ days, and when to evacuate to the backup shelter if home becomes uninhabitable.",
+    "power_outage": "This is a POWER OUTAGE plan. Focus on food preservation, backup power for medical devices, and communication. If the user has medical devices needing power, prioritize those. Include generator safety (never indoors), candle alternatives (battery lanterns), and food safety (fridge stays cold ~4 hours, freezer ~48 hours if full).",
+    "water_failure": "This is a WATER FAILURE plan. Focus on water rationing, alternative sources, and sanitation. Include: 1 gallon per person per day minimum, water purification methods, and hygiene without running water. Reference the user's stated reserves and alternative sources.",
+    "pandemic": "This is a PANDEMIC plan. Focus on isolation readiness, supply runs, and medical access. Include: contactless delivery, masking/PPE, quarantine room setup, monitoring symptoms, and when to seek medical care. Reference the user's supply duration and nearest medical facility.",
+    "cyber_attack": "This is a CYBER ATTACK plan. Focus on offline operations — banking, communication, and information access. Include: emergency cash usage, offline communication methods, paper records of critical information, and monitoring official channels for restoration updates.",
+    "terrorism": "This is a TERRORISM response plan. Depends on proximity: evacuate if nearby, shelter if distant. Use the meetup point the user specified. Include: Run/Hide/Fight protocol, avoiding crowds and landmarks, and reunification procedures from workplaces/schools.",
+    "civil_unrest": "This is a CIVIL UNREST plan. Monitor the situation — evacuate early if protests/unrest move toward your area. Use the evacuation destination and alternative routes the user provided. Include: avoiding gathering areas, travel in daylight, and communication protocols.",
+    "chemical_spill": "This is a CHEMICAL SPILL plan. Move UPWIND immediately, or seal a room if evacuation isn't possible. Use the user's upwind destination. Include: sealing windows/doors with tape and plastic, monitoring wind direction, decontamination procedures, and monitoring official channels for all-clear.",
+}
 
 
 @router.post("/ccp/wizard/generate")
 async def wizard_generate_plan(data: WizardRequest, current_user: dict = Depends(get_current_user)):
-    """AI-powered plan generation from 4 simple wizard questions."""
+    """AI-powered plan generation — one plan per disaster, with disaster-specific follow-up context."""
     if not await _is_estate_owner(current_user["id"], data.estate_id):
         raise HTTPException(status_code=403, detail="Only the benefactor can create plans")
     if not xai_client:
         raise HTTPException(status_code=503, detail="AI service is not available")
     if not data.location.strip():
         raise HTTPException(status_code=400, detail="Location is required")
-    if not data.concerns:
-        raise HTTPException(status_code=400, detail="At least one concern is required")
 
-    # Build the user prompt
+    # Support both new (single concern) and legacy (concerns list) format
+    primary_concern = data.concern.strip() if data.concern else (data.concerns[0] if data.concerns else "")
+    if not primary_concern:
+        raise HTTPException(status_code=400, detail="A disaster type is required")
+
+    # Build the user prompt with disaster-specific context
     household_desc = ", ".join(data.household) if data.household else "adults only"
-    concerns_desc = ", ".join(c.replace("_", " ") for c in data.concerns)
-    pref_desc = "evacuate (leave the area)" if data.preference == "evacuate" else "shelter in place (stay home)"
+    concern_label = primary_concern.replace("_", " ").title()
 
-    user_prompt = f"""Create an emergency plan for this family:
+    # Include disaster-specific follow-up answers
+    follow_up_text = ""
+    if data.follow_up_answers:
+        parts = []
+        for key, value in data.follow_up_answers.items():
+            if value and str(value).strip():
+                label = key.replace("_", " ").title()
+                parts.append(f"  - {label}: {value}")
+        if parts:
+            follow_up_text = "\n\nDisaster-specific details provided by the family:\n" + "\n".join(parts)
 
-Location: {data.location.strip()}
+    # Get disaster-specific AI context
+    disaster_context = _DISASTER_PROMPT_CONTEXT.get(
+        primary_concern, f"Create a thorough emergency plan for {concern_label}."
+    )
+
+    user_prompt = f"""Create a {concern_label} emergency plan for this family:
+
+Home Location: {data.location.strip()}
 Household: {household_desc}
-Primary concerns: {concerns_desc}
-Preference: {pref_desc}
+Disaster Type: {concern_label}
 
-Generate a complete, actionable emergency plan. Return ONLY valid JSON."""
+DISASTER-SPECIFIC GUIDANCE:
+{disaster_context}
+{follow_up_text}
+
+Generate a complete, actionable emergency plan for this specific disaster. Return ONLY valid JSON."""
 
     try:
         response = await _asyncio.to_thread(
@@ -294,8 +339,7 @@ Generate a complete, actionable emergency plan. Return ONLY valid JSON."""
         logger.error(f"Wizard AI call failed: {e}")
         raise HTTPException(status_code=502, detail="AI service temporarily unavailable. Please try again.")
 
-    # Determine plan_type from the primary concern
-    primary_concern = data.concerns[0] if data.concerns else "custom"
+    # Determine plan_type from the concern
     plan_type = _CONCERN_TO_PLAN_TYPE.get(primary_concern, "custom")
 
     # Build drill schedule suggestion
@@ -303,7 +347,7 @@ Generate a complete, actionable emergency plan. Return ONLY valid JSON."""
     next_drill = _compute_next_drill_date(drill_sched["months"])
 
     return {
-        "plan_name": plan_data.get("plan_name", f"{concerns_desc.title()} Plan"),
+        "plan_name": plan_data.get("plan_name", f"{concern_label} Plan"),
         "plan_type": plan_type,
         "rendezvous_points": plan_data.get("rendezvous_points", []),
         "communication_plan": plan_data.get("communication_plan", ""),

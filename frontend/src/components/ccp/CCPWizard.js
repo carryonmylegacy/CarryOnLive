@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_URL } from '../../config';
 import AddressAutocomplete from '../AddressAutocomplete';
+import { getDisasterTemplate } from './disasterTemplates';
 import {
   MapPin,
   Users,
@@ -29,6 +30,7 @@ import {
   Navigation,
   TriangleAlert,
   Edit3,
+  Info,
 } from 'lucide-react';
 
 const HOUSEHOLD_OPTIONS = [
@@ -58,15 +60,15 @@ const CONCERN_OPTIONS = [
   { id: 'cyber_attack', label: 'Cyber Attack', icon: Zap, color: '#B794F6' },
 ];
 
-const TOTAL_STEPS = 5; // 4 questions + review
+const TOTAL_STEPS = 4; // household → disaster → details → review
 
 export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   const [step, setStep] = useState(1);
-  const [location, setLocation] = useState('');
   const [household, setHousehold] = useState([]);
-  const [concerns, setConcerns] = useState([]);
-  const [preference, setPreference] = useState('');
+  const [selectedConcern, setSelectedConcern] = useState('');
+  const [location, setLocation] = useState('');
+  const [followUpAnswers, setFollowUpAnswers] = useState({});
   const [generating, setGenerating] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState(null);
   const [drillSchedule, setDrillSchedule] = useState(null);
@@ -76,16 +78,18 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
   const [editingSections, setEditingSections] = useState({});
   const [detectingLocation, setDetectingLocation] = useState(false);
 
-  // Auto-detect location on mount
+  // Auto-detect location when step 3 mounts
   useEffect(() => {
-    if (!location && navigator.geolocation) {
+    if (step === 3 && !location && navigator.geolocation) {
       setDetectingLocation(true);
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
           try {
             const { latitude, longitude } = pos.coords;
+            const apiKey = process.env.REACT_APP_GOOGLE_PLACES_API_KEY;
+            if (!apiKey) { setDetectingLocation(false); return; }
             const res = await fetch(
-              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.REACT_APP_GOOGLE_PLACES_API_KEY}`
+              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
             );
             if (res.ok) {
               const data = await res.json();
@@ -93,7 +97,9 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                 setLocation(data.results[0].formatted_address);
               }
             }
-          } catch {} finally {
+          } catch {
+            // Silent fallback — user can type manually
+          } finally {
             setDetectingLocation(false);
           }
         },
@@ -101,32 +107,42 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
         { timeout: 8000 }
       );
     }
-  }, []);
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleHousehold = (id) => {
     setHousehold(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  const toggleConcern = (id) => {
-    setConcerns(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const template = selectedConcern ? getDisasterTemplate(selectedConcern) : null;
+
+  const updateFollowUp = (key, value) => {
+    setFollowUpAnswers(prev => ({ ...prev, [key]: value }));
   };
 
   const canProceed = () => {
-    if (step === 1) return location.trim().length > 3;
-    if (step === 2) return true; // household is optional
-    if (step === 3) return concerns.length > 0;
-    if (step === 4) return !!preference;
+    if (step === 1) return true; // household is optional
+    if (step === 2) return !!selectedConcern;
+    if (step === 3) {
+      if (!location.trim() || location.trim().length < 4) return false;
+      // Check required disaster-specific questions
+      if (template?.questions) {
+        for (const q of template.questions) {
+          if (q.required && (!followUpAnswers[q.key] || !followUpAnswers[q.key].trim())) return false;
+        }
+      }
+      return true;
+    }
     return true;
   };
 
   const handleNext = async () => {
-    if (step < 4) {
+    if (step < 3) {
       setStep(step + 1);
       return;
     }
-    if (step === 4) {
+    if (step === 3) {
       // Generate the plan
-      setStep(5);
+      setStep(4);
       setGenerating(true);
       setError('');
       try {
@@ -137,8 +153,8 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
             estate_id: estateId,
             location,
             household,
-            concerns,
-            preference,
+            concern: selectedConcern,
+            follow_up_answers: followUpAnswers,
           }),
         });
         if (!res.ok) {
@@ -200,12 +216,11 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
   };
 
   const handleBack = () => {
-    if (step === 5 && generatedPlan) {
-      // Go back to step 4
+    if (step === 4 && generatedPlan) {
       setGeneratedPlan(null);
       setDrillSchedule(null);
       setWarnings([]);
-      setStep(4);
+      setStep(3);
     } else if (step > 1) {
       setStep(step - 1);
     } else {
@@ -221,8 +236,8 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
     setGeneratedPlan(prev => ({ ...prev, [field]: value }));
   };
 
-  // Progress indicator
-  const progressPercent = step === 5 ? 100 : ((step) / TOTAL_STEPS) * 100;
+  const progressPercent = step === 4 ? 100 : ((step) / TOTAL_STEPS) * 100;
+  const concernLabel = selectedConcern ? CONCERN_OPTIONS.find(c => c.id === selectedConcern)?.label || selectedConcern : '';
 
   return (
     <div data-testid="ccp-wizard" className="max-w-lg mx-auto px-4 py-6 pb-28 sm:pb-6">
@@ -245,65 +260,20 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
             style={{ width: `${progressPercent}%`, background: 'linear-gradient(90deg, #d4af37, #F0C95C)' }}
           />
         </div>
-        {step <= 4 && (
+        {step <= 3 && (
           <p className="text-xs mt-2 text-right" style={{ color: 'var(--t5)' }}>
-            {step} of 4
+            {step} of 3
           </p>
         )}
       </div>
 
-      {/* ── STEP 1: Location ── */}
+      {/* ── STEP 1: Household ── */}
       {step === 1 && (
         <div className="space-y-5" data-testid="ccp-wizard-step-1">
           <div className="text-center mb-6">
-            <MapPin className="w-10 h-10 mx-auto mb-3" style={{ color: '#d4af37' }} />
-            <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
-              Where do you live?
-            </h2>
-            <p className="text-sm mt-2" style={{ color: 'var(--t4)' }}>
-              We'll use this to suggest nearby meeting points and routes
-            </p>
-          </div>
-
-          <div className="relative">
-            <AddressAutocomplete
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              onSelect={({ street, city, state, zip }) => {
-                const full = [street, city, [state, zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
-                setLocation(full);
-              }}
-              placeholder={detectingLocation ? 'Detecting your location...' : 'Enter your address'}
-              className="w-full rounded-2xl px-4 py-4 text-base"
-              data-testid="ccp-wizard-location"
-              style={{
-                background: 'var(--s)',
-                border: '2px solid rgba(212,175,55,0.3)',
-                color: 'var(--t)',
-                fontSize: '16px',
-              }}
-            />
-            {detectingLocation && (
-              <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin" style={{ color: '#d4af37' }} />
-            )}
-          </div>
-
-          {location && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(34,201,147,0.08)', border: '1px solid rgba(34,201,147,0.2)' }}>
-              <Check className="w-4 h-4 flex-shrink-0" style={{ color: '#22C993' }} />
-              <span className="text-sm" style={{ color: '#22C993' }}>Location set</span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── STEP 2: Household ── */}
-      {step === 2 && (
-        <div className="space-y-5" data-testid="ccp-wizard-step-2">
-          <div className="text-center mb-6">
             <Users className="w-10 h-10 mx-auto mb-3" style={{ color: '#d4af37' }} />
             <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
-              Who is with you?
+              Who is in your household?
             </h2>
             <p className="text-sm mt-2" style={{ color: 'var(--t4)' }}>
               Select anyone who needs special consideration
@@ -341,27 +311,27 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
         </div>
       )}
 
-      {/* ── STEP 3: Concerns ── */}
-      {step === 3 && (
-        <div className="space-y-5" data-testid="ccp-wizard-step-3">
+      {/* ── STEP 2: Pick ONE disaster ── */}
+      {step === 2 && (
+        <div className="space-y-5" data-testid="ccp-wizard-step-2">
           <div className="text-center mb-6">
             <AlertTriangle className="w-10 h-10 mx-auto mb-3" style={{ color: '#d4af37' }} />
             <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
-              What worries you most?
+              What plan do you want to create?
             </h2>
             <p className="text-sm mt-2" style={{ color: 'var(--t4)' }}>
-              Select one or more scenarios
+              Pick one — you can create plans for other scenarios after
             </p>
           </div>
 
           <div className="grid grid-cols-3 gap-2.5">
             {CONCERN_OPTIONS.map(opt => {
               const Icon = opt.icon;
-              const selected = concerns.includes(opt.id);
+              const selected = selectedConcern === opt.id;
               return (
                 <button
                   key={opt.id}
-                  onClick={() => toggleConcern(opt.id)}
+                  onClick={() => setSelectedConcern(opt.id)}
                   className="flex flex-col items-center justify-center py-4 px-2 rounded-xl transition-all active:scale-[0.95]"
                   data-testid={`ccp-wizard-concern-${opt.id}`}
                   style={{
@@ -380,80 +350,91 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
         </div>
       )}
 
-      {/* ── STEP 4: Stay or Leave ── */}
-      {step === 4 && (
-        <div className="space-y-5" data-testid="ccp-wizard-step-4">
-          <div className="text-center mb-6">
-            <Navigation className="w-10 h-10 mx-auto mb-3" style={{ color: '#d4af37' }} />
+      {/* ── STEP 3: Location + Disaster-specific questions ── */}
+      {step === 3 && (
+        <div className="space-y-5" data-testid="ccp-wizard-step-3">
+          <div className="text-center mb-4">
+            <MapPin className="w-10 h-10 mx-auto mb-3" style={{ color: '#d4af37' }} />
             <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
-              Stay or Leave?
+              {concernLabel} Plan Details
             </h2>
-            <p className="text-sm mt-2" style={{ color: 'var(--t4)' }}>
-              In an emergency, what's your instinct?
-            </p>
+            {template && (
+              <p className="text-sm mt-2 leading-relaxed" style={{ color: 'var(--t4)' }}>
+                {template.intro}
+              </p>
+            )}
           </div>
 
-          <div className="space-y-3">
-            <button
-              onClick={() => setPreference('evacuate')}
-              className="w-full flex items-center gap-4 p-5 rounded-2xl transition-all active:scale-[0.97]"
-              data-testid="ccp-wizard-pref-evacuate"
-              style={{
-                background: preference === 'evacuate' ? 'rgba(59,123,247,0.12)' : 'var(--s)',
-                border: `2px solid ${preference === 'evacuate' ? 'rgba(59,123,247,0.4)' : 'var(--b)'}`,
-              }}
-            >
-              <Navigation className="w-10 h-10 flex-shrink-0" style={{ color: preference === 'evacuate' ? '#3B7BF7' : 'var(--t5)' }} />
-              <div className="text-left">
-                <div className="text-base font-bold" style={{ color: preference === 'evacuate' ? '#3B7BF7' : 'var(--t)' }}>
-                  Leave — Evacuate
-                </div>
-                <div className="text-xs mt-0.5" style={{ color: 'var(--t4)' }}>
-                  Get out and go to a safe meeting point
-                </div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setPreference('shelter')}
-              className="w-full flex items-center gap-4 p-5 rounded-2xl transition-all active:scale-[0.97]"
-              data-testid="ccp-wizard-pref-shelter"
-              style={{
-                background: preference === 'shelter' ? 'rgba(183,148,246,0.12)' : 'var(--s)',
-                border: `2px solid ${preference === 'shelter' ? 'rgba(183,148,246,0.4)' : 'var(--b)'}`,
-              }}
-            >
-              <Home className="w-10 h-10 flex-shrink-0" style={{ color: preference === 'shelter' ? '#B794F6' : 'var(--t5)' }} />
-              <div className="text-left">
-                <div className="text-base font-bold" style={{ color: preference === 'shelter' ? '#B794F6' : 'var(--t)' }}>
-                  Stay — Shelter in Place
-                </div>
-                <div className="text-xs mt-0.5" style={{ color: 'var(--t4)' }}>
-                  Hunker down and ride it out at home
-                </div>
-              </div>
-            </button>
+          {/* Home address — universal */}
+          <div>
+            <label className="text-xs font-bold mb-1.5 block" style={{ color: 'var(--t4)' }}>
+              Your home address
+            </label>
+            <div className="relative">
+              <AddressAutocomplete
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                onSelect={({ street, city, state, zip }) => {
+                  const full = [street, city, [state, zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+                  setLocation(full);
+                }}
+                placeholder={detectingLocation ? 'Detecting your location...' : 'Enter your address'}
+                className="w-full rounded-xl px-4 py-3.5 text-base"
+                data-testid="ccp-wizard-location"
+                style={{
+                  background: 'var(--s)',
+                  border: location.trim().length > 3 ? '2px solid rgba(34,201,147,0.4)' : '2px solid var(--b)',
+                  color: 'var(--t)',
+                  fontSize: '16px',
+                }}
+              />
+              {detectingLocation && (
+                <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin" style={{ color: '#d4af37' }} />
+              )}
+            </div>
           </div>
 
-          <p className="text-xs text-center" style={{ color: 'var(--t5)' }}>
-            The AI will tailor your plan to this preference
-          </p>
+          {/* Disaster-specific follow-up questions */}
+          {template?.questions?.map(q => (
+            <div key={q.key}>
+              <label className="text-xs font-bold mb-1.5 flex items-center gap-1" style={{ color: 'var(--t4)' }}>
+                {q.label}
+                {!q.required && <span className="font-normal" style={{ color: 'var(--t5)' }}>(optional)</span>}
+              </label>
+              <input
+                value={followUpAnswers[q.key] || ''}
+                onChange={(e) => updateFollowUp(q.key, e.target.value)}
+                placeholder={q.placeholder}
+                className="w-full rounded-xl px-4 py-3.5 text-base"
+                data-testid={`ccp-wizard-followup-${q.key}`}
+                style={{
+                  background: 'var(--s)',
+                  border: `2px solid ${(followUpAnswers[q.key] || '').trim() ? 'rgba(34,201,147,0.4)' : 'var(--b)'}`,
+                  color: 'var(--t)',
+                  fontSize: '16px',
+                }}
+              />
+              {q.hint && (
+                <p className="text-xs mt-1" style={{ color: 'var(--t5)' }}>{q.hint}</p>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
-      {/* ── STEP 5: Generating / Review ── */}
-      {step === 5 && (
-        <div data-testid="ccp-wizard-step-5">
+      {/* ── STEP 4: Generating / Review ── */}
+      {step === 4 && (
+        <div data-testid="ccp-wizard-step-4">
           {generating && (
             <div className="flex flex-col items-center justify-center py-16 space-y-4" data-testid="ccp-wizard-generating">
               <div className="relative">
                 <Sparkles className="w-12 h-12 animate-pulse" style={{ color: '#d4af37' }} />
               </div>
               <h2 className="text-xl font-bold text-center" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
-                Building your plan...
+                Building your {concernLabel} plan...
               </h2>
               <p className="text-sm text-center max-w-xs" style={{ color: 'var(--t4)' }}>
-                Our AI is creating a personalized emergency plan based on your answers
+                CCP AI is creating a personalized plan based on your answers
               </p>
               <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#d4af37' }} />
             </div>
@@ -476,14 +457,16 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
 
           {generatedPlan && !generating && (
             <div className="space-y-4" data-testid="ccp-wizard-review">
-              <div className="text-center mb-4">
-                <Sparkles className="w-8 h-8 mx-auto mb-2" style={{ color: '#22C993' }} />
-                <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
-                  Your Plan is Ready
-                </h2>
-                <p className="text-sm mt-1" style={{ color: 'var(--t4)' }}>
-                  Review and adjust, then save
-                </p>
+              {/* Draft banner */}
+              <div className="rounded-xl px-4 py-3 flex items-start gap-3" data-testid="ccp-wizard-draft-banner"
+                style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)' }}>
+                <Info className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#d4af37' }} />
+                <div>
+                  <p className="text-sm font-bold" style={{ color: '#d4af37' }}>Draft Plan — Generated by CCP AI</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--t4)' }}>
+                    Review each section below. Tap "Change" to edit anything before finalizing.
+                  </p>
+                </div>
               </div>
 
               {/* Warnings */}
@@ -499,56 +482,28 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
               )}
 
               {/* Plan Name */}
-              <ReviewSection
-                title="Plan Name"
-                editing={editingSections.name}
-                onToggle={() => toggleEditSection('name')}
-              >
+              <ReviewSection title="Plan Name" editing={editingSections.name} onToggle={() => toggleEditSection('name')}>
                 {editingSections.name ? (
-                  <input
-                    value={generatedPlan.name}
-                    onChange={(e) => updatePlanField('name', e.target.value)}
-                    className="w-full rounded-xl px-3 py-3 text-base"
-                    data-testid="ccp-wizard-edit-name"
-                    style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }}
-                  />
+                  <input value={generatedPlan.name} onChange={(e) => updatePlanField('name', e.target.value)}
+                    className="w-full rounded-xl px-3 py-3 text-base" data-testid="ccp-wizard-edit-name"
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }} />
                 ) : (
                   <p className="text-base font-bold" style={{ color: 'var(--t)' }}>{generatedPlan.name}</p>
                 )}
               </ReviewSection>
 
               {/* Rendezvous Points */}
-              <ReviewSection
-                title="Meeting Points"
-                editing={editingSections.rendezvous}
-                onToggle={() => toggleEditSection('rendezvous')}
-              >
+              <ReviewSection title="Meeting Points" editing={editingSections.rendezvous} onToggle={() => toggleEditSection('rendezvous')}>
                 {generatedPlan.rendezvous_points.map((rp, i) => (
                   <div key={i} className="mb-3 last:mb-0">
                     {editingSections.rendezvous ? (
                       <div className="space-y-2">
-                        <input
-                          value={rp.name}
-                          onChange={(e) => {
-                            const arr = [...generatedPlan.rendezvous_points];
-                            arr[i] = { ...arr[i], name: e.target.value };
-                            updatePlanField('rendezvous_points', arr);
-                          }}
-                          placeholder="Name"
-                          className="w-full rounded-xl px-3 py-2.5 text-sm"
-                          style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }}
-                        />
-                        <input
-                          value={rp.address}
-                          onChange={(e) => {
-                            const arr = [...generatedPlan.rendezvous_points];
-                            arr[i] = { ...arr[i], address: e.target.value };
-                            updatePlanField('rendezvous_points', arr);
-                          }}
-                          placeholder="Address"
-                          className="w-full rounded-xl px-3 py-2.5 text-sm"
-                          style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }}
-                        />
+                        <input value={rp.name} onChange={(e) => { const arr = [...generatedPlan.rendezvous_points]; arr[i] = { ...arr[i], name: e.target.value }; updatePlanField('rendezvous_points', arr); }}
+                          placeholder="Name" className="w-full rounded-xl px-3 py-2.5 text-sm"
+                          style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }} />
+                        <input value={rp.address} onChange={(e) => { const arr = [...generatedPlan.rendezvous_points]; arr[i] = { ...arr[i], address: e.target.value }; updatePlanField('rendezvous_points', arr); }}
+                          placeholder="Address" className="w-full rounded-xl px-3 py-2.5 text-sm"
+                          style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }} />
                       </div>
                     ) : (
                       <div>
@@ -562,59 +517,28 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
               </ReviewSection>
 
               {/* Communication Plan */}
-              <ReviewSection
-                title="Communication Plan"
-                editing={editingSections.comm}
-                onToggle={() => toggleEditSection('comm')}
-              >
+              <ReviewSection title="Communication Plan" editing={editingSections.comm} onToggle={() => toggleEditSection('comm')}>
                 {editingSections.comm ? (
-                  <textarea
-                    value={generatedPlan.communication_plan}
-                    onChange={(e) => updatePlanField('communication_plan', e.target.value)}
-                    rows={4}
-                    className="w-full rounded-xl px-3 py-3 text-sm resize-none"
-                    data-testid="ccp-wizard-edit-comm"
-                    style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }}
-                  />
+                  <textarea value={generatedPlan.communication_plan} onChange={(e) => updatePlanField('communication_plan', e.target.value)}
+                    rows={4} className="w-full rounded-xl px-3 py-3 text-sm resize-none" data-testid="ccp-wizard-edit-comm"
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }} />
                 ) : (
-                  <p className="text-sm whitespace-pre-line" style={{ color: 'var(--t)' }}>
-                    {generatedPlan.communication_plan}
-                  </p>
+                  <p className="text-sm whitespace-pre-line" style={{ color: 'var(--t)' }}>{generatedPlan.communication_plan}</p>
                 )}
               </ReviewSection>
 
               {/* Resource Locations */}
-              <ReviewSection
-                title="Supply & Resource Locations"
-                editing={editingSections.resources}
-                onToggle={() => toggleEditSection('resources')}
-              >
+              <ReviewSection title="Supply & Resource Locations" editing={editingSections.resources} onToggle={() => toggleEditSection('resources')}>
                 {generatedPlan.resource_locations.map((rl, i) => (
                   <div key={i} className="mb-3 last:mb-0">
                     {editingSections.resources ? (
                       <div className="space-y-2">
-                        <input
-                          value={rl.name}
-                          onChange={(e) => {
-                            const arr = [...generatedPlan.resource_locations];
-                            arr[i] = { ...arr[i], name: e.target.value };
-                            updatePlanField('resource_locations', arr);
-                          }}
-                          placeholder="Name"
-                          className="w-full rounded-xl px-3 py-2.5 text-sm"
-                          style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }}
-                        />
-                        <input
-                          value={rl.location}
-                          onChange={(e) => {
-                            const arr = [...generatedPlan.resource_locations];
-                            arr[i] = { ...arr[i], location: e.target.value };
-                            updatePlanField('resource_locations', arr);
-                          }}
-                          placeholder="Location"
-                          className="w-full rounded-xl px-3 py-2.5 text-sm"
-                          style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }}
-                        />
+                        <input value={rl.name} onChange={(e) => { const arr = [...generatedPlan.resource_locations]; arr[i] = { ...arr[i], name: e.target.value }; updatePlanField('resource_locations', arr); }}
+                          placeholder="Name" className="w-full rounded-xl px-3 py-2.5 text-sm"
+                          style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }} />
+                        <input value={rl.location} onChange={(e) => { const arr = [...generatedPlan.resource_locations]; arr[i] = { ...arr[i], location: e.target.value }; updatePlanField('resource_locations', arr); }}
+                          placeholder="Location" className="w-full rounded-xl px-3 py-2.5 text-sm"
+                          style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }} />
                       </div>
                     ) : (
                       <div>
@@ -628,52 +552,27 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
               </ReviewSection>
 
               {/* Instructions */}
-              <ReviewSection
-                title="Step-by-Step Instructions"
-                editing={editingSections.instructions}
-                onToggle={() => toggleEditSection('instructions')}
-              >
+              <ReviewSection title="Step-by-Step Instructions" editing={editingSections.instructions} onToggle={() => toggleEditSection('instructions')}>
                 {editingSections.instructions ? (
-                  <textarea
-                    value={generatedPlan.instructions}
-                    onChange={(e) => updatePlanField('instructions', e.target.value)}
-                    rows={6}
-                    className="w-full rounded-xl px-3 py-3 text-sm resize-none"
-                    data-testid="ccp-wizard-edit-instructions"
-                    style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }}
-                  />
+                  <textarea value={generatedPlan.instructions} onChange={(e) => updatePlanField('instructions', e.target.value)}
+                    rows={6} className="w-full rounded-xl px-3 py-3 text-sm resize-none" data-testid="ccp-wizard-edit-instructions"
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px' }} />
                 ) : (
-                  <p className="text-sm whitespace-pre-line" style={{ color: 'var(--t)' }}>
-                    {generatedPlan.instructions}
-                  </p>
+                  <p className="text-sm whitespace-pre-line" style={{ color: 'var(--t)' }}>{generatedPlan.instructions}</p>
                 )}
               </ReviewSection>
 
               {/* Drill Schedule */}
               {drillSchedule && (
-                <div
-                  className="rounded-xl overflow-hidden"
-                  data-testid="ccp-wizard-drill-schedule"
-                  style={{ background: 'rgba(59,123,247,0.05)', border: '1px solid rgba(59,123,247,0.15)' }}
-                >
+                <div className="rounded-xl overflow-hidden" data-testid="ccp-wizard-drill-schedule"
+                  style={{ background: 'rgba(59,123,247,0.05)', border: '1px solid rgba(59,123,247,0.15)' }}>
                   <div className="flex items-center justify-between px-4 py-3">
-                    <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#3B7BF7' }}>
-                      Drill Reminders
-                    </span>
-                    <button
-                      onClick={() => setDrillSchedule(prev => ({ ...prev, enabled: !prev.enabled }))}
+                    <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#3B7BF7' }}>Drill Reminders</span>
+                    <button onClick={() => setDrillSchedule(prev => ({ ...prev, enabled: !prev.enabled }))}
                       className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
                       data-testid="ccp-wizard-drill-toggle"
-                      style={{
-                        background: drillSchedule.enabled ? 'rgba(34,201,147,0.15)' : 'var(--s)',
-                        color: drillSchedule.enabled ? '#22C993' : 'var(--t5)',
-                      }}
-                    >
-                      {drillSchedule.enabled ? (
-                        <><Check className="w-3 h-3" /> On</>
-                      ) : (
-                        <><X className="w-3 h-3" /> Off</>
-                      )}
+                      style={{ background: drillSchedule.enabled ? 'rgba(34,201,147,0.15)' : 'var(--s)', color: drillSchedule.enabled ? '#22C993' : 'var(--t5)' }}>
+                      {drillSchedule.enabled ? <><Check className="w-3 h-3" /> On</> : <><X className="w-3 h-3" /> Off</>}
                     </button>
                   </div>
                   <div className="px-4 pb-4">
@@ -697,47 +596,33 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
               )}
 
               {/* Save Button */}
-              <button
-                onClick={handleSave}
-                disabled={saving || !generatedPlan.name?.trim()}
+              <button onClick={handleSave} disabled={saving || !generatedPlan.name?.trim()}
                 className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] mt-4"
                 data-testid="ccp-wizard-save"
-                style={{
-                  background: 'linear-gradient(135deg, #d4af37, #F0C95C)',
-                  color: '#080e1a',
-                }}
-              >
-                {saving ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Save Plan'}
+                style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}>
+                {saving ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Finalize & Save Plan'}
               </button>
             </div>
           )}
         </div>
       )}
 
-      {/* ── Next Button (Steps 1-4) ── */}
-      {step <= 4 && (
+      {/* ── Next Button (Steps 1-3) ── */}
+      {step <= 3 && (
         <button
           onClick={handleNext}
           disabled={!canProceed()}
           className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] mt-8 flex items-center justify-center gap-2"
           data-testid="ccp-wizard-next"
           style={{
-            background: canProceed()
-              ? 'linear-gradient(135deg, #d4af37, #F0C95C)'
-              : 'var(--s)',
+            background: canProceed() ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'var(--s)',
             color: canProceed() ? '#080e1a' : 'var(--t5)',
           }}
         >
-          {step === 4 ? (
-            <>
-              <Sparkles className="w-5 h-5" />
-              Generate My Plan
-            </>
+          {step === 3 ? (
+            <><Sparkles className="w-5 h-5" />Generate My {concernLabel} Plan</>
           ) : (
-            <>
-              Next
-              <ArrowRight className="w-5 h-5" />
-            </>
+            <>Next<ArrowRight className="w-5 h-5" /></>
           )}
         </button>
       )}
@@ -748,33 +633,18 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
 /** Collapsible review section with Accept/Change toggle */
 function ReviewSection({ title, editing, onToggle, children }) {
   return (
-    <div
-      className="rounded-xl overflow-hidden"
-      style={{ background: 'var(--s)', border: `1px solid ${editing ? 'rgba(212,175,55,0.3)' : 'var(--b)'}` }}
-    >
+    <div className="rounded-xl overflow-hidden"
+      style={{ background: 'var(--s)', border: `1px solid ${editing ? 'rgba(212,175,55,0.3)' : 'var(--b)'}` }}>
       <div className="flex items-center justify-between px-4 py-3">
-        <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--t4)' }}>
-          {title}
-        </span>
-        <button
-          onClick={onToggle}
+        <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--t4)' }}>{title}</span>
+        <button onClick={onToggle}
           className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
           data-testid={`ccp-wizard-toggle-${title.toLowerCase().replace(/\s+/g, '-')}`}
-          style={{
-            background: editing ? 'rgba(212,175,55,0.15)' : 'var(--s)',
-            color: editing ? '#d4af37' : 'var(--t4)',
-          }}
-        >
-          {editing ? (
-            <><Check className="w-3 h-3" /> Done</>
-          ) : (
-            <><Edit3 className="w-3 h-3" /> Change</>
-          )}
+          style={{ background: editing ? 'rgba(212,175,55,0.15)' : 'var(--s)', color: editing ? '#d4af37' : 'var(--t4)' }}>
+          {editing ? <><Check className="w-3 h-3" /> Done</> : <><Edit3 className="w-3 h-3" /> Change</>}
         </button>
       </div>
-      <div className="px-4 pb-4">
-        {children}
-      </div>
+      <div className="px-4 pb-4">{children}</div>
     </div>
   );
 }

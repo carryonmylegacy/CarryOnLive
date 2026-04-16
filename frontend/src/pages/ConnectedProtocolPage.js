@@ -549,7 +549,7 @@ export default function ConnectedProtocolPage() {
             <Sparkles className="w-6 h-6 flex-shrink-0" />
             <div className="text-left flex-1">
               <div style={{ fontFamily: 'Outfit, sans-serif' }}>Build My Plan</div>
-              <div className="text-xs font-normal" style={{ color: 'var(--t4)' }}>Answer 4 questions — AI builds the rest</div>
+              <div className="text-xs font-normal" style={{ color: 'var(--t4)' }}>Answer a few questions — AI builds the rest</div>
             </div>
             <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />
           </button>
@@ -810,7 +810,7 @@ export default function ConnectedProtocolPage() {
           <Sparkles className="w-6 h-6 flex-shrink-0" />
           <div className="text-left flex-1">
             <div style={{ fontFamily: 'Outfit, sans-serif' }}>Build My Plan</div>
-            <div className="text-xs font-normal" style={{ color: 'var(--t4)' }}>Answer 4 questions — AI builds the rest</div>
+            <div className="text-xs font-normal" style={{ color: 'var(--t4)' }}>Answer a few questions — AI builds the rest</div>
           </div>
           <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />
         </button>
