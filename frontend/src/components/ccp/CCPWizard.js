@@ -31,6 +31,7 @@ import {
   TriangleAlert,
   Edit3,
   Info,
+  Plus,
 } from 'lucide-react';
 
 const HOUSEHOLD_OPTIONS = [
@@ -83,6 +84,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
   const [warnings, setWarnings] = useState([]);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [editingSections, setEditingSections] = useState({});
   const [detectingLocation, setDetectingLocation] = useState(false);
 
@@ -211,7 +213,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
         }),
       });
       if (res.ok) {
-        onComplete();
+        setSaved(true);
       } else {
         const err = await res.json().catch(() => ({}));
         setError(err.detail || 'Failed to save plan');
@@ -238,6 +240,18 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
 
   const toggleEditSection = (key) => {
     setEditingSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const startNewPlan = () => {
+    setSelectedConcern('');
+    setFollowUpAnswers({});
+    setGeneratedPlan(null);
+    setDrillSchedule(null);
+    setWarnings([]);
+    setError('');
+    setSaved(false);
+    setEditingSections({});
+    setStep(2);
   };
 
   const updatePlanField = (field, value) => {
@@ -603,13 +617,35 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                 </div>
               )}
 
-              {/* Save Button */}
-              <button onClick={handleSave} disabled={saving || !generatedPlan.name?.trim()}
-                className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] mt-4"
-                data-testid="ccp-wizard-save"
-                style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}>
-                {saving ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Finalize & Save Plan'}
-              </button>
+              {/* Save / Post-Save Actions */}
+              {!saved ? (
+                <button onClick={handleSave} disabled={saving || !generatedPlan.name?.trim()}
+                  className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] mt-4"
+                  data-testid="ccp-wizard-save"
+                  style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}>
+                  {saving ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Finalize & Save Plan'}
+                </button>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center justify-center gap-2 py-3 rounded-2xl"
+                    style={{ background: 'rgba(34,201,147,0.12)', border: '1px solid rgba(34,201,147,0.3)' }}>
+                    <Check className="w-5 h-5" style={{ color: '#22C993' }} />
+                    <span className="text-sm font-bold" style={{ color: '#22C993' }}>Plan Saved</span>
+                  </div>
+                  <button onClick={startNewPlan}
+                    className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center justify-center gap-2"
+                    data-testid="ccp-wizard-create-another"
+                    style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}>
+                    <Plus className="w-5 h-5" />Create Another Plan
+                  </button>
+                  <button onClick={onComplete}
+                    className="w-full py-3 rounded-2xl text-sm font-semibold transition-all active:scale-[0.97]"
+                    data-testid="ccp-wizard-done"
+                    style={{ background: 'rgba(120,120,140,0.1)', border: '1px solid rgba(120,120,140,0.2)', color: 'var(--t4)' }}>
+                    Done — Back to Plans
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
