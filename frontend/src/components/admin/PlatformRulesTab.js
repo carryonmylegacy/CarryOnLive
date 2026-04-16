@@ -92,13 +92,13 @@ export function PlatformRulesTab({ getAuthHeaders }) {
             <div className="divide-y divide-[var(--b)]">
               {catMap[cat].map(rule => (
                 <div key={rule.id} className="px-4 py-3" data-testid={`rule-${rule.id}`}>
-                  <div className="flex items-start gap-3">
-                    <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 flex-wrap">
+                    <div className="min-w-0">
                       <span className="text-sm font-semibold text-[var(--t2)]">{rule.label}</span>
                       <p className="text-xs text-[var(--t4)] mt-0.5">{rule.description}</p>
                     </div>
 
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-2 flex-shrink-0 mt-1">
                       {editingId === rule.id ? (
                         <>
                           {rule.value_type === 'toggle' ? (
@@ -140,7 +140,7 @@ export function PlatformRulesTab({ getAuthHeaders }) {
                               <span className="text-xs font-mono text-[var(--t3)]">{rule.value === 'true' ? 'ON' : 'OFF'}</span>
                             </div>
                           ) : (
-                            <span className="text-xs font-mono text-[var(--t)] px-2 py-0.5 rounded whitespace-nowrap" style={{ background: 'var(--s)' }}>
+                            <span className="text-xs font-mono text-[var(--t)] px-2 py-0.5 rounded" style={{ background: 'var(--s)' }}>
                               {rule.value}
                             </span>
                           )}
