@@ -16,7 +16,7 @@ const PILLARS = [
   { num: '04', icon: ClipboardCheck, title: 'Immediate Action Checklist', abbr: 'IAC',
     bold: 'A step-by-step guide your family can follow on the hardest days of their lives.',
     desc: 'Partially auto-created by EGA from your documents and fully customizable by you. When a crisis hits, your family opens the IAC and knows exactly what to do, who to call, where to find every document, and what deadlines matter. No guessing. No searching. No overwhelm.' },
-  { num: '05', icon: Radio, title: 'Contingency Protocols', abbr: 'CCP',
+  { num: '05', icon: Radio, title: 'CarryOn Contingency Protocols', abbr: 'CCP',
     bold: 'Response plans your family can build now for the scenarios they might face \u2014 ready to activate at a moment\u2019s notice.',
     desc: 'Build contingency protocols for any situation: medical emergencies, natural disasters, financial disruptions, or the passing of a family member. The Tap-to-Create Wizard walks you through building a protocol in minutes \u2014 connecting your people, your documents, your checklists, and your communication channels into one coordinated plan your family can execute together.' },
   { num: '06', icon: MessageCircle, title: 'Estate Communications Tool', abbr: 'ECT',
@@ -28,7 +28,7 @@ const PILLARS = [
   { num: '08', icon: Users, title: 'Family & Friends Notification', abbr: 'FFN',
     bold: 'The people who matter most should never hear important news through the grapevine.',
     desc: 'Build a personalized notification list of family, friends, colleagues, and anyone your beneficiaries should contact during a transition or emergency. Names, phone numbers, relationships, and special notes \u2014 all organized and ready so your family can coordinate outreach without scrambling.' },
-  { num: '09', icon: DollarSign, title: 'Connected Financial Portal', abbr: 'CFP',
+  { num: '09', icon: DollarSign, title: 'CarryOn Financial Picture', abbr: 'CFP',
     bold: 'Your family\u2019s complete financial picture \u2014 linked, monitored, and ready for the people who\u2019ll need it most.',
     desc: 'Link your bank accounts, investment portfolios, insurance policies, and financial assets into one secure, encrypted view. Track balances, flag anomalies, and ensure your beneficiaries know exactly where every dollar is and who to contact \u2014 without having to search through file cabinets, email threads, or scattered logins. When the time comes, your family sees the full financial picture instantly.' },
 ];
