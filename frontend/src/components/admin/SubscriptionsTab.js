@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { ToggleLeft, Users, DollarSign, Loader2, Search, Plus, Trash2, Copy, Check, Briefcase, RotateCcw, Percent } from 'lucide-react';
+import { ToggleLeft, Users, DollarSign, Loader2, Search, Plus, Trash2, Copy, Check, Briefcase, RotateCcw, Percent, Crown, Pencil } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -593,6 +593,132 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
           )}
         </CardContent>
       </Card>
+
+      {/* Founders Circle Lifetime Pricing — Founder only */}
+      {!operatorMode && <FCPricingCard headers={headers} />}
     </div>
   );
 };
+
+function FCPricingCard({ headers }) {
+  const [plans, setPlans] = useState([]);
+  const [active, setActive] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [editingTier, setEditingTier] = useState(null);
+  const [editPrice, setEditPrice] = useState('');
+  const [fcSubs, setFcSubs] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [plansRes, subsRes] = await Promise.all([
+          axios.get(`${API_URL}/founders-circle/plans`),
+          axios.get(`${API_URL}/admin/founders-circle/subscriptions`, { headers }),
+        ]);
+        setActive(plansRes.data.active);
+        setPlans(plansRes.data.plans || []);
+        setFcSubs(subsRes.data.subscriptions || []);
+      } catch {} finally { setLoading(false); }
+    };
+    load();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const savePrice = async (tier) => {
+    const price = parseInt(editPrice);
+    if (isNaN(price) || price < 0) { toast.error('Invalid price'); return; }
+    try {
+      await axios.put(`${API_URL}/admin/founders-circle/pricing`, { tier, lifetime_price: price }, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      toast.success('Lifetime price updated');
+      setEditingTier(null);
+      // Refresh plans
+      const res = await axios.get(`${API_URL}/founders-circle/plans`);
+      setPlans(res.data.plans || []);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Update failed');
+    }
+  };
+
+  if (loading) return null;
+
+  const activeSubs = fcSubs.filter(s => s.status === 'active' || s.status === 'completed');
+
+  return (
+    <Card className="glass-card" data-testid="fc-pricing-admin">
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2">
+              <Crown className="w-5 h-5 text-[var(--gold)]" />
+              Founders Circle — Lifetime Pricing
+            </h3>
+            <p className="text-sm text-[var(--t4)] mt-1">
+              {active ? 'Campaign is ACTIVE' : 'Campaign is OFF'} · {activeSubs.length} active member{activeSubs.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <span className={`text-xs font-bold px-2 py-1 rounded-full ${active ? 'text-[#10b981] bg-[rgba(16,185,129,0.1)]' : 'text-[var(--rd)] bg-[rgba(239,68,68,0.1)]'}`}>
+            {active ? 'LIVE' : 'OFF'}
+          </span>
+        </div>
+
+        <div className="space-y-2">
+          {plans.map(plan => (
+            <div key={plan.tier} className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--s)' }}>
+              <div>
+                <span className="text-sm font-semibold text-[var(--t)]">{plan.name}</span>
+                <div className="text-xs text-[var(--t4)] mt-0.5">
+                  1-pay: ${plan.installments['1']?.total} · 3-pay: 3x${plan.installments['3']?.per_payment} · 6-pay: 6x${plan.installments['6']?.per_payment} · 12-pay: 12x${plan.installments['12']?.per_payment}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {editingTier === plan.tier ? (
+                  <>
+                    <span className="text-sm text-[var(--t4)]">$</span>
+                    <input
+                      value={editPrice}
+                      onChange={(e) => setEditPrice(e.target.value)}
+                      className="w-20 px-2 py-1 rounded text-sm text-right"
+                      style={{ background: 'var(--bg3)', border: '1px solid var(--b2)', color: 'var(--t)' }}
+                      autoFocus
+                      onKeyDown={(e) => { if (e.key === 'Enter') savePrice(plan.tier); if (e.key === 'Escape') setEditingTier(null); }}
+                    />
+                    <button onClick={() => savePrice(plan.tier)} className="p-1 rounded hover:bg-[var(--s)]">
+                      <Check className="w-4 h-4 text-[#10b981]" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm font-mono font-bold text-[var(--gold)]">${plan.lifetime_price}</span>
+                    <button onClick={() => { setEditingTier(plan.tier); setEditPrice(String(plan.lifetime_price)); }} className="p-1 rounded hover:bg-[var(--s)]" data-testid={`fc-edit-${plan.tier}`}>
+                      <Pencil className="w-3.5 h-3.5 text-[var(--t4)]" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* FC Subscribers list */}
+        {fcSubs.length > 0 && (
+          <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--b)' }}>
+            <p className="text-xs font-bold text-[var(--t4)] mb-2">Founders Circle Members ({fcSubs.length})</p>
+            <div className="space-y-1 max-h-40 overflow-y-auto">
+              {fcSubs.map(fc => (
+                <div key={fc.id} className="flex items-center justify-between text-xs p-2 rounded" style={{ background: 'var(--s)' }}>
+                  <div>
+                    <span className="text-[var(--t2)]">{fc.estate_name || fc.estate_id}</span>
+                    <span className="text-[var(--t4)] ml-2">{fc.tier_name} · {fc.num_payments === 1 ? 'Paid in full' : `${fc.payments_made}/${fc.num_payments} payments`}</span>
+                  </div>
+                  <span className={`font-bold ${fc.status === 'completed' ? 'text-[#10b981]' : fc.status === 'active' ? 'text-[var(--gold)]' : 'text-[var(--t4)]'}`}>
+                    {fc.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
