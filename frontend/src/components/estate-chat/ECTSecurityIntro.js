@@ -8,8 +8,8 @@ import {
  */
 export default function ECTSecurityIntro({ introStep, setIntroStep, onDismiss, onBack }) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', padding: '16px', paddingTop: 'calc(60px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
-      <div className="w-full max-w-md rounded-2xl p-5" data-testid="ect-security-intro" style={{ background: 'rgba(15,22,41,0.95)', border: '1px solid rgba(212,175,55,0.3)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)', marginBottom: '16px' }}>
+    <div className="fixed inset-0 z-[60] flex flex-col overflow-y-auto" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', padding: '16px', paddingTop: 'calc(60px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
+      <div className="w-full max-w-md rounded-2xl p-5 my-auto mx-auto" data-testid="ect-security-intro" style={{ background: 'rgba(15,22,41,0.95)', border: '1px solid rgba(212,175,55,0.3)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
 
         {/* Progress dots */}
         <div className="flex items-center justify-center gap-3 mb-5">

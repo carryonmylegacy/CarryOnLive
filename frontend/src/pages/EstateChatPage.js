@@ -1329,7 +1329,7 @@ export default function EstateChatPage() {
         WebkitOverflowScrolling: 'touch',
         touchAction: 'pan-y',
       }}>
-        <div className="p-4 space-y-3" style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+        <div className="px-4 pt-4 pb-1 space-y-3" style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
         {/* Pinned messages panel — slides down from header */}
         {showPinned && pinnedMsgs.length > 0 && (
           <div className="mb-3 rounded-2xl overflow-hidden" style={{ background: 'rgba(30,40,60,0.95)', border: '1px solid rgba(212,175,55,0.25)', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)' }}>
