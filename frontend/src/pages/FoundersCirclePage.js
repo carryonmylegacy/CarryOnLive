@@ -180,7 +180,7 @@ export default function FoundersCirclePage() {
             >
               {isPremium && (
                 <div className="absolute top-3 right-3">
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(212,175,55,0.2)', color: 'var(--gold)' }}>MOST POPULAR</span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(212,175,55,0.2)', color: 'var(--gold)' }}>MOST POPULAR</span>
                 </div>
               )}
               <h3 className="text-lg font-bold text-[var(--t)]">{plan.name}</h3>
