@@ -1741,7 +1741,7 @@ export default function EstateChatPage() {
           </button>
 
           {/* Input area with recording/preview overlay */}
-          <div className="flex-1 relative" style={{ minWidth: 0 }}>
+          <div className="flex-1 relative" style={{ minWidth: 0, overflow: 'hidden' }}>
             <textarea
               ref={inputRef}
               value={draft}
