@@ -69,7 +69,7 @@ export function PlatformRulesTab({ getAuthHeaders }) {
         <div>
           <h2 className="text-lg font-bold text-[var(--t)]">Platform Rules</h2>
           <p className="text-xs text-[var(--t4)]">
-            {editable ? 'Founder — you can edit values marked with a pencil icon' : 'Read-only reference — only the founder can edit these rules'}
+            {editable ? 'You can edit values marked with a pencil icon. Changes propagate immediately across all portals.' : 'Read-only reference. Contact the founder to request changes.'}
           </p>
         </div>
       </div>
@@ -91,72 +91,79 @@ export function PlatformRulesTab({ getAuthHeaders }) {
           {!collapsed[cat] && (
             <div className="divide-y divide-[var(--b)]">
               {catMap[cat].map(rule => (
-                <div key={rule.id} className="px-4 py-3 flex items-start gap-3" data-testid={`rule-${rule.id}`}>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-[var(--t2)]">{rule.label}</span>
+                <div key={rule.id} className="px-4 py-3 flex flex-col gap-2" data-testid={`rule-${rule.id}`}>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-[var(--t2)]">{rule.label}</span>
+                      </div>
+                      <p className="text-xs text-[var(--t4)] mt-0.5">{rule.description}</p>
                     </div>
-                    <p className="text-xs text-[var(--t4)] mt-0.5">{rule.description}</p>
-                  </div>
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {editingId === rule.id ? (
-                      <>
-                        {rule.value_type === 'toggle' ? (
-                          <button
-                            onClick={() => saveRule(rule.id, editValue === 'true' ? 'false' : 'true')}
-                            className="flex items-center gap-1"
-                          >
-                            {editValue === 'true'
-                              ? <ToggleRight className="w-6 h-6 text-[#10b981]" />
-                              : <ToggleLeft className="w-6 h-6 text-[var(--t4)]" />
-                            }
-                            <span className="text-xs text-[var(--t3)]">{editValue === 'true' ? 'ON' : 'OFF'}</span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {editingId === rule.id ? (
+                        <>
+                          {rule.value_type === 'toggle' ? (
+                            <button
+                              onClick={() => saveRule(rule.id, editValue === 'true' ? 'false' : 'true')}
+                              className="flex items-center gap-1"
+                            >
+                              {editValue === 'true'
+                                ? <ToggleRight className="w-6 h-6 text-[#10b981]" />
+                                : <ToggleLeft className="w-6 h-6 text-[var(--t4)]" />
+                              }
+                              <span className="text-xs text-[var(--t3)]">{editValue === 'true' ? 'ON' : 'OFF'}</span>
+                            </button>
+                          ) : (
+                            <input
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              className="w-20 px-2 py-1 rounded text-xs text-right"
+                              style={{ background: 'var(--bg3)', border: '1px solid var(--b2)', color: 'var(--t)' }}
+                              autoFocus
+                              onKeyDown={(e) => { if (e.key === 'Enter') saveRule(rule.id, editValue); if (e.key === 'Escape') setEditingId(null); }}
+                            />
+                          )}
+                          <button onClick={() => saveRule(rule.id, editValue)} className="p-1 rounded hover:bg-[var(--s)]">
+                            <Check className="w-4 h-4 text-[#10b981]" />
                           </button>
-                        ) : (
-                          <input
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            className="w-20 px-2 py-1 rounded text-xs text-right"
-                            style={{ background: 'var(--bg3)', border: '1px solid var(--b2)', color: 'var(--t)' }}
-                            autoFocus
-                            onKeyDown={(e) => { if (e.key === 'Enter') saveRule(rule.id, editValue); if (e.key === 'Escape') setEditingId(null); }}
-                          />
-                        )}
-                        <button onClick={() => saveRule(rule.id, editValue)} className="p-1 rounded hover:bg-[var(--s)]">
-                          <Check className="w-4 h-4 text-[#10b981]" />
-                        </button>
-                        <button onClick={() => setEditingId(null)} className="p-1 rounded hover:bg-[var(--s)]">
-                          <X className="w-4 h-4 text-[var(--rd)]" />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        {rule.value_type === 'toggle' ? (
-                          <div className="flex items-center gap-1">
-                            {rule.value === 'true'
-                              ? <ToggleRight className="w-5 h-5 text-[#10b981]" />
-                              : <ToggleLeft className="w-5 h-5 text-[var(--t4)]" />
-                            }
-                            <span className="text-xs font-mono text-[var(--t3)]">{rule.value === 'true' ? 'ON' : 'OFF'}</span>
-                          </div>
-                        ) : (
-                          <span className="text-sm font-mono text-[var(--t)] px-2 py-0.5 rounded" style={{ background: 'var(--s)' }}>
-                            {rule.value}
-                          </span>
-                        )}
-                        {editable && rule.editable_value && (
-                          <button
-                            onClick={() => { setEditingId(rule.id); setEditValue(rule.value); }}
-                            className="p-1 rounded hover:bg-[var(--s)] transition-colors"
-                            data-testid={`edit-rule-${rule.id}`}
-                          >
-                            <Pencil className="w-3.5 h-3.5 text-[var(--t4)]" />
+                          <button onClick={() => setEditingId(null)} className="p-1 rounded hover:bg-[var(--s)]">
+                            <X className="w-4 h-4 text-[var(--rd)]" />
                           </button>
-                        )}
-                      </>
-                    )}
+                        </>
+                      ) : (
+                        <>
+                          {rule.value_type === 'toggle' ? (
+                            <div className="flex items-center gap-1">
+                              {rule.value === 'true'
+                                ? <ToggleRight className="w-5 h-5 text-[#10b981]" />
+                                : <ToggleLeft className="w-5 h-5 text-[var(--t4)]" />
+                              }
+                              <span className="text-xs font-mono text-[var(--t3)]">{rule.value === 'true' ? 'ON' : 'OFF'}</span>
+                            </div>
+                          ) : (
+                            <span className="text-sm font-mono text-[var(--t)] px-2 py-0.5 rounded" style={{ background: 'var(--s)' }}>
+                              {rule.value}
+                            </span>
+                          )}
+                          {editable && rule.editable_value && (
+                            <button
+                              onClick={() => { setEditingId(rule.id); setEditValue(rule.value); }}
+                              className="p-1 rounded hover:bg-[var(--s)] transition-colors"
+                              data-testid={`edit-rule-${rule.id}`}
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-[var(--t4)]" />
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
+                  {rule.narrative && (
+                    <p className="text-xs text-[var(--t4)] leading-relaxed pl-0 py-1.5 px-3 rounded-lg italic" style={{ background: 'var(--s)', borderLeft: '2px solid var(--gold)' }}>
+                      {rule.narrative}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
