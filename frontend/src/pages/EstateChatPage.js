@@ -335,6 +335,8 @@ export default function EstateChatPage() {
 
   useEffect(() => {
     if (!activeChannel) return;
+    // Blur to prevent stray cursor on iOS when entering a chat
+    if (inputRef.current) inputRef.current.blur();
     // Scroll to bottom on channel load/return — this is the PRIMARY scroll anchor
     fetchMessages(activeChannel.id).then(() => {
       // Keep scroll pinned to bottom as images/content load (up to 3s)
@@ -371,6 +373,8 @@ export default function EstateChatPage() {
   }, [contacts, newChatEstate]);
 
   const openChannel = (ch) => {
+    // Blur any focused input to prevent stray cursor on iOS
+    if (document.activeElement) document.activeElement.blur();
     setActiveChannel(ch);
     setShowChannelList(false);
     setMsgLoading(true);

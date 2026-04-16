@@ -269,11 +269,11 @@ export function EmojiPickerButton({ onClick }) {
     <button
       onClick={(e) => { e.stopPropagation(); onClick(); }}
       className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform"
-      style={{ background: 'rgba(30,40,60,0.9)', border: '1px solid rgba(255,255,255,0.1)' }}
+      style={{ background: 'var(--ect-btn-bg)', border: '1px solid var(--b)' }}
       data-testid="emoji-picker-open-btn"
       title="More emojis"
     >
-      <SmilePlus className="w-4.5 h-4.5" style={{ color: 'var(--t4)' }} />
+      <SmilePlus className="w-4.5 h-4.5" style={{ color: 'var(--ect-btn-icon)' }} />
     </button>
   );
 }
