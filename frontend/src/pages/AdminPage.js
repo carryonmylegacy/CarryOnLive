@@ -8,7 +8,7 @@ import {
   Headphones, CreditCard, Activity, Settings,
   CheckSquare, AlertTriangle, Clock, TrendingUp, Trash2,
   Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap, Puzzle, Mail, Film, Hourglass,
-  Globe, UserCog, Power, MessageSquare, BarChart3, Download,
+  Globe, UserCog, Power, MessageSquare, BarChart3, Download, Radio,
   Calendar, GraduationCap, Bell
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
@@ -35,6 +35,7 @@ import { OperatorsTab } from '../components/admin/OperatorsTab';
 import { AuditTrailTab } from '../components/admin/AuditTrailTab';
 import { AnnouncementsTab } from '../components/admin/AnnouncementsTab';
 import { SystemHealthTab } from '../components/admin/SystemHealthTab';
+import { LaunchWarRoomTab } from '../components/admin/LaunchWarRoomTab';
 import { MyActivityTab } from '../components/admin/MyActivityTab';
 import { QuickSearchTab } from '../components/admin/QuickSearchTab';
 import { EscalationsTab } from '../components/admin/EscalationsTab';
@@ -127,6 +128,7 @@ const FOUNDER_SECTIONS = [
     section: 'Platform',
     scopes: ['founder', 'platform_health'],
     tabs: [
+      { key: 'war-room', label: 'War Room', icon: Radio, path: '/admin/war-room' },
       { key: 'system-health', label: 'System Health', icon: HeartPulse, path: '/admin/system-health' },
       { key: 'operators', label: 'Operators', icon: Users, path: '/admin/operators' },
       { key: 'integrations', label: 'Integrations', icon: Puzzle, path: '/admin/integrations' },
@@ -196,6 +198,7 @@ const PATH_TO_TAB = {
   '/admin/audit': 'audit',
   '/admin/announcements': 'announcements',
   '/admin/system-health': 'system-health',
+  '/admin/war-room': 'war-room',
   '/admin/escalations': 'escalations',
   '/admin/knowledge-base': 'knowledge-base',
   '/admin/p1-settings': 'p1-settings',
@@ -542,6 +545,7 @@ const AdminPage = ({ operatorMode = false }) => {
         {effectiveTab === 'dev-switcher' && <DevSwitcherTab users={users} getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'announcements' && <AnnouncementsTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'system-health' && <SystemHealthTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'war-room' && <LaunchWarRoomTab />}
         {effectiveTab === 'escalations' && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={isFounder} isManager={isManager} />}
         {effectiveTab === 'knowledge-base' && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
         {effectiveTab === 'p1-settings' && <P1ContactSettingsTab getAuthHeaders={getAuthHeaders} />}
