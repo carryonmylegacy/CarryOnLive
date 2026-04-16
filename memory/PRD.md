@@ -63,6 +63,21 @@ Comprehensive family preparedness platform with estate planning, secure document
 - Apple IAP: awaiting Apple "Paid Applications Agreement"
 - Twilio SMS: awaiting A2P 10DLC campaign approval
 
+## Launch-Week Follow-up (Apr 16, 2026 — same day, second pass)
+
+**🔴 Founders Circle free_access gap CLOSED** (was flagged in PAYMENT_FLOW_AUDIT.md)
+- New helper `_grant_fc_free_access_if_applicable(estate_id, user_id)` in `routes/beneficiaries.py`
+- Called from all 3 invitation-accept paths: new-user signup, existing-user-by-email, existing-user-by-username/password
+- Idempotent (`upsert`) + try/except so failures never block invitation acceptance
+- Late-joining beneficiaries on FC-funded estates now correctly receive `subscription_overrides.free_access: true`
+- Verified by testing_agent: 100% pass (18/18 backend tests)
+
+**🛰 Launch War Room — real-time platform health dashboard**
+- Backend: `GET /api/admin/launch-war-room` returns traffic (signups 5m/1h/24h, active users 15m), performance (p50/p95/p99 latency, error rate, slowest endpoints, uptime), revenue (checkouts 1h, paid 1h, revenue 24h, FC 24h), infrastructure (DB status, distributed scheduler locks held)
+- Derived alerts: p95 > 1500ms/3000ms (warn/critical), 5xx rate > 1%/5% (warn/critical), DB unreachable (critical)
+- Frontend: `LaunchWarRoomTab` at /admin/war-room polls every 15s with LIVE/PAUSED toggle + Refresh. Admin tab placed under Platform section (scopes: founder, platform_health). New Radio icon in admin header.
+- All metric cards use motion-token transitions and semantic color (gold/teal/blue/green/red by value)
+
 ## iOS Chat Keyboard — CRITICAL DO NOT TOUCH
 See detailed V11 documentation in prior version. Key points:
 - position:fixed inset:0 overflow:hidden — ZERO JS viewport manipulation
