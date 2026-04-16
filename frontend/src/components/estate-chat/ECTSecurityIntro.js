@@ -8,8 +8,8 @@ import {
  */
 export default function ECTSecurityIntro({ introStep, setIntroStep, onDismiss, onBack }) {
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', paddingLeft: '16px', paddingRight: '16px', paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
-      <div className="w-full max-w-md rounded-2xl px-4 py-3" data-testid="ect-security-intro" style={{ background: 'rgba(15,22,41,0.95)', border: '1px solid rgba(212,175,55,0.3)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
+    <div className="fixed inset-0 z-[60] flex flex-col items-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', paddingLeft: '16px', paddingRight: '16px', paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
+      <div className="w-full max-w-md rounded-2xl px-4 py-3 my-auto flex-shrink-0" data-testid="ect-security-intro" style={{ background: 'rgba(15,22,41,0.95)', border: '1px solid rgba(212,175,55,0.3)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
 
         {/* Progress dots */}
         <div className="flex items-center justify-center gap-3 mb-3">
