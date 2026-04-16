@@ -64,6 +64,7 @@ import { ShiftScheduleTab } from '../components/admin/ShiftScheduleTab';
 import { TrainingTrackerTab } from '../components/admin/TrainingTrackerTab';
 import { SectionMembersTab } from '../components/admin/SectionMembersTab';
 import { NotificationCategoriesTab } from '../components/admin/NotificationCategoriesTab';
+import { PlatformRulesTab } from '../components/admin/PlatformRulesTab';
 
 // ── Section-based tab organization ────────────────────────
 // Each section has a label, scopes (which admin scopes can see it), and tabs
@@ -91,6 +92,7 @@ const FOUNDER_SECTIONS = [
     scopes: ['founder', 'finance'],
     tabs: [
       { key: 'subscriptions', label: 'Subs', icon: CreditCard, path: '/admin/subscriptions' },
+      { key: 'platform-rules', label: 'Rules', icon: Shield, path: '/admin/platform-rules' },
       { key: 'analytics', label: 'Revenue', icon: Activity, path: '/admin/analytics' },
       { key: 'launch', label: 'Launch', icon: TrendingUp, path: '/admin/launch' },
       { key: 'grace-periods', label: 'Grace Periods', icon: Hourglass, path: '/admin/grace-periods' },
@@ -176,6 +178,7 @@ const MANAGER_EXTRA_TABS = [
   { key: 'operators', label: 'Team', icon: Users, path: '/ops/operators' },
   { key: 'ops-dashboard', label: 'Dashboard', icon: Activity, path: '/ops/ops-dashboard' },
   { key: 'subscriptions', label: 'Subs', icon: CreditCard, path: '/ops/subscriptions' },
+  { key: 'platform-rules', label: 'Rules', icon: Shield, path: '/ops/platform-rules' },
 ];
 
 const PATH_TO_TAB = {
@@ -219,6 +222,7 @@ const PATH_TO_TAB = {
   '/admin/notification-categories': 'notification-categories',
   '/admin/ops-members': 'ops-members',
   '/admin/finance-members': 'finance-members',
+  '/admin/platform-rules': 'platform-rules',
   '/admin/marketing-members': 'marketing-members',
   '/admin/compliance-members': 'compliance-members',
   '/admin/platform-members': 'platform-members',
@@ -240,6 +244,7 @@ const PATH_TO_TAB = {
   '/ops/trials': 'trials',
   '/ops/estate-health': 'estate-health',
   '/ops/subscriptions': 'subscriptions',
+  '/ops/platform-rules': 'platform-rules',
   '/ops/system-health': 'system-health',
   '/ops/canned-responses': 'canned-responses',
   '/ops/performance': 'performance',
@@ -555,6 +560,7 @@ const AdminPage = ({ operatorMode = false }) => {
         {/* Section Members tabs */}
         {effectiveTab === 'ops-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['ops_manager', 'ops_team']} sectionLabel="Operations" />}
         {effectiveTab === 'finance-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['finance']} sectionLabel="Finance" />}
+        {effectiveTab === 'platform-rules' && <PlatformRulesTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'marketing-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['marketing']} sectionLabel="Marketing" />}
         {effectiveTab === 'compliance-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['compliance']} sectionLabel="Compliance" />}
         {effectiveTab === 'platform-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['platform_health']} sectionLabel="Platform" />}

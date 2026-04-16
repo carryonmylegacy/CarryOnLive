@@ -37,6 +37,7 @@ from routes.pdf_export import router as pdf_export_router
 from routes.push import router as push_router
 from routes.security import router as security_router
 from routes.subscriptions import router as subscriptions_router
+from routes.platform_rules import router as platform_rules_router
 from routes.support import router as support_router
 from routes.timeline import router as timeline_router
 from routes.transition import router as transition_router
@@ -186,6 +187,7 @@ api_router.include_router(user_preferences_router)
 api_router.include_router(financial_portal_router)
 api_router.include_router(guardian_exports_router)
 api_router.include_router(staff_ops_router)
+api_router.include_router(platform_rules_router)
 
 
 BUILD_HASH = "2026-03-10T17:05:00Z-fix-welcome-redirect"
