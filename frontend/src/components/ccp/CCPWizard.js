@@ -62,6 +62,14 @@ const CONCERN_OPTIONS = [
 
 const TOTAL_STEPS = 4; // household → disaster → details → review
 
+// Theme-safe border that's visible in both dark and light mode
+const tileBorder = (selected, color) =>
+  `2px solid ${selected ? `${color}50` : 'rgba(120,120,140,0.25)'}`;
+const inputBorder = (filled) =>
+  `2px solid ${filled ? 'rgba(34,201,147,0.4)' : 'rgba(120,120,140,0.25)'}`;
+const sectionBorder = (editing) =>
+  `1px solid ${editing ? 'rgba(212,175,55,0.35)' : 'rgba(120,120,140,0.2)'}`;
+
 export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   const [step, setStep] = useState(1);
@@ -240,7 +248,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
   const concernLabel = selectedConcern ? CONCERN_OPTIONS.find(c => c.id === selectedConcern)?.label || selectedConcern : '';
 
   return (
-    <div data-testid="ccp-wizard" className="max-w-lg mx-auto px-4 py-6 pb-28 sm:pb-6">
+    <div data-testid="ccp-wizard" className="max-w-lg sm:max-w-xl mx-auto px-4 py-6 pb-28 sm:pb-6">
       {/* Header */}
       <button
         onClick={handleBack}
@@ -292,7 +300,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                   data-testid={`ccp-wizard-household-${opt.id}`}
                   style={{
                     background: selected ? `${opt.color}15` : 'var(--s)',
-                    border: `2px solid ${selected ? `${opt.color}50` : 'var(--b)'}`,
+                    border: tileBorder(selected, opt.color),
                     minHeight: 110,
                   }}
                 >
@@ -336,7 +344,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                   data-testid={`ccp-wizard-concern-${opt.id}`}
                   style={{
                     background: selected ? `${opt.color}15` : 'var(--s)',
-                    border: `2px solid ${selected ? `${opt.color}50` : 'var(--b)'}`,
+                    border: tileBorder(selected, opt.color),
                   }}
                 >
                   <Icon className="w-6 h-6 mb-1.5" style={{ color: selected ? opt.color : 'var(--t5)' }} />
@@ -383,7 +391,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                 data-testid="ccp-wizard-location"
                 style={{
                   background: 'var(--s)',
-                  border: location.trim().length > 3 ? '2px solid rgba(34,201,147,0.4)' : '2px solid var(--b)',
+                  border: inputBorder(location.trim().length > 3),
                   color: 'var(--t)',
                   fontSize: '16px',
                 }}
@@ -409,7 +417,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                 data-testid={`ccp-wizard-followup-${q.key}`}
                 style={{
                   background: 'var(--s)',
-                  border: `2px solid ${(followUpAnswers[q.key] || '').trim() ? 'rgba(34,201,147,0.4)' : 'var(--b)'}`,
+                  border: inputBorder((followUpAnswers[q.key] || '').trim()),
                   color: 'var(--t)',
                   fontSize: '16px',
                 }}
@@ -615,8 +623,9 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
           className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] mt-8 flex items-center justify-center gap-2"
           data-testid="ccp-wizard-next"
           style={{
-            background: canProceed() ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'var(--s)',
-            color: canProceed() ? '#080e1a' : 'var(--t5)',
+            background: canProceed() ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(120,120,140,0.15)',
+            color: canProceed() ? '#080e1a' : 'rgba(120,120,140,0.5)',
+            border: canProceed() ? 'none' : '1px solid rgba(120,120,140,0.2)',
           }}
         >
           {step === 3 ? (
@@ -634,13 +643,13 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
 function ReviewSection({ title, editing, onToggle, children }) {
   return (
     <div className="rounded-xl overflow-hidden"
-      style={{ background: 'var(--s)', border: `1px solid ${editing ? 'rgba(212,175,55,0.3)' : 'var(--b)'}` }}>
+      style={{ background: 'var(--s)', border: sectionBorder(editing) }}>
       <div className="flex items-center justify-between px-4 py-3">
         <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--t4)' }}>{title}</span>
         <button onClick={onToggle}
           className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
           data-testid={`ccp-wizard-toggle-${title.toLowerCase().replace(/\s+/g, '-')}`}
-          style={{ background: editing ? 'rgba(212,175,55,0.15)' : 'var(--s)', color: editing ? '#d4af37' : 'var(--t4)' }}>
+          style={{ background: editing ? 'rgba(212,175,55,0.15)' : 'rgba(120,120,140,0.1)', color: editing ? '#d4af37' : 'var(--t4)' }}>
           {editing ? <><Check className="w-3 h-3" /> Done</> : <><Edit3 className="w-3 h-3" /> Change</>}
         </button>
       </div>
