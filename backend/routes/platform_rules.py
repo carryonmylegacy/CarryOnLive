@@ -238,14 +238,22 @@ async def get_platform_rules() -> List[Dict[str, Any]]:
             upsert=True,
         )
         return rules
-    # Merge any new default rules not yet in stored rules
+    # Merge any new default rules not yet in stored rules, and backfill missing fields
     stored = doc["rules"]
-    stored_ids = {r["id"] for r in stored}
+    stored_map = {r["id"]: r for r in stored}
     changed = False
     for default in DEFAULT_RULES:
-        if default["id"] not in stored_ids:
+        if default["id"] not in stored_map:
+            # New rule — add it
             stored.append(dict(default))
             changed = True
+        else:
+            # Existing rule — backfill missing fields (like narrative)
+            existing = stored_map[default["id"]]
+            for key in ("narrative", "value_type", "editable_value"):
+                if key in default and key not in existing:
+                    existing[key] = default[key]
+                    changed = True
     if changed:
         await db.platform_rules.update_one(
             {"_id": "global"},
