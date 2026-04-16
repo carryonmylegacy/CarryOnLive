@@ -101,6 +101,13 @@
     --guided-skip-bg: rgba(255,255,255,0.04);
     --guided-skip-border: rgba(255,255,255,0.06);
     
+    /* ECT chat input bar */
+    --ect-btn-bg: #222B42;
+    --ect-btn-icon: #C8D0E0;
+    --ect-input-bg: #2C4A6B;
+    --ect-input-text: #ffffff;
+    --ect-input-placeholder: rgba(255,255,255,0.45);
+    
     /* Shadcn Variables — teal primary, warm gold accent */
     --background: 221 38% 12%;
     --foreground: 214 32% 95%;
@@ -169,6 +176,13 @@
     --trial-info-icon: #1B4F72;
     --trial-btn-bg: #1B4F72;
     --trial-btn-text: #D4A537;
+    
+    /* ECT chat input bar — light mode */
+    --ect-btn-bg: #ffffff;
+    --ect-btn-icon: #334155;
+    --ect-input-bg: #ffffff;
+    --ect-input-text: #0F172A;
+    --ect-input-placeholder: rgba(15,23,42,0.4);
     
     /* Card backgrounds — soft pastels with teal undertone */
     --card-vault: linear-gradient(135deg, #BAE6FD 0%, #7DD3FC 100%);
