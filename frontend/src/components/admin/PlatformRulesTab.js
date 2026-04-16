@@ -91,12 +91,10 @@ export function PlatformRulesTab({ getAuthHeaders }) {
           {!collapsed[cat] && (
             <div className="divide-y divide-[var(--b)]">
               {catMap[cat].map(rule => (
-                <div key={rule.id} className="px-4 py-3 flex flex-col gap-2" data-testid={`rule-${rule.id}`}>
+                <div key={rule.id} className="px-4 py-3" data-testid={`rule-${rule.id}`}>
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-[var(--t2)]">{rule.label}</span>
-                      </div>
+                      <span className="text-sm font-semibold text-[var(--t2)]">{rule.label}</span>
                       <p className="text-xs text-[var(--t4)] mt-0.5">{rule.description}</p>
                     </div>
 
@@ -142,7 +140,7 @@ export function PlatformRulesTab({ getAuthHeaders }) {
                               <span className="text-xs font-mono text-[var(--t3)]">{rule.value === 'true' ? 'ON' : 'OFF'}</span>
                             </div>
                           ) : (
-                            <span className="text-sm font-mono text-[var(--t)] px-2 py-0.5 rounded" style={{ background: 'var(--s)' }}>
+                            <span className="text-xs font-mono text-[var(--t)] px-2 py-0.5 rounded whitespace-nowrap" style={{ background: 'var(--s)' }}>
                               {rule.value}
                             </span>
                           )}
@@ -160,7 +158,7 @@ export function PlatformRulesTab({ getAuthHeaders }) {
                     </div>
                   </div>
                   {rule.narrative && (
-                    <p className="text-xs text-[var(--t4)] leading-relaxed pl-0 py-1.5 px-3 rounded-lg italic" style={{ background: 'var(--s)', borderLeft: '2px solid var(--gold)' }}>
+                    <p className="text-xs text-[var(--t4)] leading-relaxed mt-2 py-1.5 px-3 rounded-lg italic" style={{ background: 'var(--s)', borderLeft: '2px solid var(--gold)' }}>
                       {rule.narrative}
                     </p>
                   )}

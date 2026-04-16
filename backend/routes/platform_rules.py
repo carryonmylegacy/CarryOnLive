@@ -260,7 +260,12 @@ async def get_rules(current_user: dict = Depends(get_current_user)):
     if current_user.get("role") not in ("admin", "operator"):
         raise HTTPException(status_code=403, detail="Admin access required")
     rules = await get_platform_rules()
-    is_founder = current_user.get("operator_role") == "founder" or current_user.get("admin_scope") == "founder"
+    scope = current_user.get("admin_scope", "")
+    is_founder = (
+        current_user.get("operator_role") == "founder"
+        or scope == "founder"
+        or (isinstance(scope, list) and "founder" in scope)
+    )
     return {"rules": rules, "editable": is_founder}
 
 
@@ -272,7 +277,12 @@ class RuleUpdateRequest(BaseModel):
 @router.put("/admin/platform-rules")
 async def update_rule(req: RuleUpdateRequest, current_user: dict = Depends(get_current_user)):
     """Update a single platform rule. Founder only."""
-    is_founder = current_user.get("operator_role") == "founder" or current_user.get("admin_scope") == "founder"
+    scope = current_user.get("admin_scope", "")
+    is_founder = (
+        current_user.get("operator_role") == "founder"
+        or scope == "founder"
+        or (isinstance(scope, list) and "founder" in scope)
+    )
     if not is_founder:
         raise HTTPException(status_code=403, detail="Only the founder can edit platform rules")
     rules = await get_platform_rules()
