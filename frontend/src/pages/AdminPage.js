@@ -65,6 +65,7 @@ import { TrainingTrackerTab } from '../components/admin/TrainingTrackerTab';
 import { SectionMembersTab } from '../components/admin/SectionMembersTab';
 import { NotificationCategoriesTab } from '../components/admin/NotificationCategoriesTab';
 import { PlatformRulesTab } from '../components/admin/PlatformRulesTab';
+import AdminCommandPalette from '../components/admin/AdminCommandPalette';
 
 // ── Section-based tab organization ────────────────────────
 // Each section has a label, scopes (which admin scopes can see it), and tabs
@@ -454,6 +455,7 @@ const AdminPage = ({ operatorMode = false }) => {
         </div>
         {!operatorMode && isFounder && (
         <div className="flex items-center gap-2">
+        <AdminCommandPalette tabs={visibleTabs} operatorMode={operatorMode} />
         <QueueAlertsPanel />
         <button
           onClick={handleCleanup}
@@ -468,7 +470,12 @@ const AdminPage = ({ operatorMode = false }) => {
         </button>
         </div>
         )}
-        {operatorMode && <QueueAlertsPanel />}
+        {operatorMode && (
+          <div className="flex items-center gap-2">
+            <AdminCommandPalette tabs={visibleTabs} operatorMode={operatorMode} />
+            <QueueAlertsPanel />
+          </div>
+        )}
       </div>
 
       {/* Revenue Analytics — founder and finance only */}

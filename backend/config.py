@@ -81,7 +81,40 @@ if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
 stripe.api_key = os.environ.get("STRIPE_API_KEY")
 
 # VAPID (Push Notifications)
-VAPID_PRIVATE_KEY_PATH = os.environ.get("VAPID_PRIVATE_KEY_PATH", "/tmp/vapid_private.pem")
+# Prefer inline PEM contents via VAPID_PRIVATE_KEY env (survives container restarts).
+# Legacy path-based config still supported for local dev, but /tmp fallback removed.
 VAPID_PRIVATE_KEY_INLINE = os.environ.get("VAPID_PRIVATE_KEY")
-VAPID_PUBLIC_KEY_PATH = os.environ.get("VAPID_PUBLIC_KEY_PATH", "/tmp/vapid_public.pem")
+VAPID_PRIVATE_KEY_PATH = os.environ.get("VAPID_PRIVATE_KEY_PATH")
+VAPID_PUBLIC_KEY_PATH = os.environ.get("VAPID_PUBLIC_KEY_PATH")
 VAPID_CLAIMS_EMAIL = os.environ.get("VAPID_CLAIMS_EMAIL", "mailto:support@carryon.us")
+if not VAPID_PRIVATE_KEY_INLINE and not VAPID_PRIVATE_KEY_PATH:
+    logger.warning(
+        "VAPID keys not configured (set VAPID_PRIVATE_KEY env with PEM contents). "
+        "Web push notifications will be disabled."
+    )
+
+# ── Sentry (error monitoring) ──
+# Activates only if SENTRY_DSN is set; otherwise no-op.
+SENTRY_DSN = os.environ.get("SENTRY_DSN")
+SENTRY_ENVIRONMENT = os.environ.get("SENTRY_ENVIRONMENT", os.environ.get("RAILWAY_ENVIRONMENT", "production"))
+if SENTRY_DSN:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+        from sentry_sdk.integrations.starlette import StarletteIntegration
+
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            environment=SENTRY_ENVIRONMENT,
+            traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.05")),
+            profiles_sample_rate=float(os.environ.get("SENTRY_PROFILES_SAMPLE_RATE", "0.0")),
+            send_default_pii=False,
+            integrations=[
+                FastApiIntegration(),
+                StarletteIntegration(),
+            ],
+            release=os.environ.get("SENTRY_RELEASE"),
+        )
+        logger.info(f"Sentry enabled (environment={SENTRY_ENVIRONMENT})")
+    except Exception as e:
+        logger.warning(f"Sentry init failed: {e}")

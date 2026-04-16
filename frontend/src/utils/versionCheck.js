@@ -4,16 +4,82 @@
  * How it works:
  * 1. Each build writes a unique hash to /version.json
  * 2. On app mount, we fetch /version.json with a cache-busting query
- * 3. If the hash differs from localStorage, we hard-refresh (once per session)
+ * 3. If the hash differs from localStorage, we flag an update pending.
+ *    The reload happens at a SAFE moment (next navigation or explicit user
+ *    action), NOT mid-session — which prevents the login-flash glitch.
  *
  * Safety:
- * - Only refreshes ONCE per session (sessionStorage guard)
- * - All failures are silent — never breaks the app
- * - 5-second delay after mount to avoid blocking initial render
+ * - Never force-reloads while a user is typing, has an open modal, or is
+ *   on /login, /signup, /accept-invitation (critical form flows)
+ * - Only one reload per session
+ * - All failures are silent
  */
 
 const STORAGE_KEY = 'carryon_build_version';
 const REFRESH_GUARD = 'carryon_version_refreshed';
+const UPDATE_READY_FLAG = 'carryon_update_ready';
+
+// Paths where a mid-session reload is *never* acceptable (form submission in
+// progress would be destroyed). We defer until the user navigates away.
+const SAFE_RELOAD_BLOCKLIST = [
+  '/login',
+  '/signup',
+  '/accept-invitation',
+  '/create-estate',
+  '/onboarding',
+  '/founders-circle',
+  '/subscription',
+];
+
+function isSafeReloadLocation() {
+  try {
+    const path = window.location.pathname || '';
+    if (SAFE_RELOAD_BLOCKLIST.some((p) => path.startsWith(p))) return false;
+    // If user is typing in a form, don't reload
+    const active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+      return false;
+    }
+    // If there's an open dialog/modal, don't reload
+    if (document.querySelector('[role="dialog"][data-state="open"]')) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function scheduleReloadOnNavigation() {
+  sessionStorage.setItem(UPDATE_READY_FLAG, '1');
+  // On next pushState/popState, reload if we're in a safe spot.
+  const tryReload = () => {
+    if (!sessionStorage.getItem(UPDATE_READY_FLAG)) return;
+    if (!isSafeReloadLocation()) return;
+    sessionStorage.removeItem(UPDATE_READY_FLAG);
+    sessionStorage.setItem(REFRESH_GUARD, '1');
+    window.location.reload();
+  };
+  // Listen for SPA navigation
+  window.addEventListener('popstate', tryReload);
+  // Patch pushState/replaceState to trigger tryReload after call
+  try {
+    const origPush = window.history.pushState;
+    const origReplace = window.history.replaceState;
+    window.history.pushState = function (...args) {
+      const r = origPush.apply(this, args);
+      setTimeout(tryReload, 0);
+      return r;
+    };
+    window.history.replaceState = function (...args) {
+      const r = origReplace.apply(this, args);
+      setTimeout(tryReload, 0);
+      return r;
+    };
+  } catch {}
+  // Also check on visibility change (tab regains focus)
+  window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') tryReload();
+  });
+}
 
 export async function checkForUpdates() {
   try {
@@ -40,11 +106,18 @@ export async function checkForUpdates() {
 
     if (localVersion === serverVersion) return; // Up to date
 
-    // Version changed — store new version, mark session, and reload
+    // Version changed — store new version, then schedule a safe reload.
+    // Previously this immediately called window.location.reload() which
+    // caused a visual flash when triggered mid-login. Now we wait for
+    // the next navigation/visibility change in a safe location.
     localStorage.setItem(STORAGE_KEY, serverVersion);
-    sessionStorage.setItem(REFRESH_GUARD, '1');
-    window.location.reload();
+    scheduleReloadOnNavigation();
   } catch {
     // Silent failure — never crash the app for a version check
   }
+}
+
+/** Returns true if a pending update has been detected but not yet applied. */
+export function isUpdatePending() {
+  try { return !!sessionStorage.getItem(UPDATE_READY_FLAG); } catch { return false; }
 }

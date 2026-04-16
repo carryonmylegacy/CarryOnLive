@@ -404,7 +404,7 @@
     font-weight: 700;
     letter-spacing: 0.01em;
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: background var(--motion-micro, 150ms ease), color var(--motion-micro, 150ms ease), transform var(--motion-micro, 150ms ease);
     position: relative;
     margin-bottom: 0;
     background: transparent;
@@ -651,6 +651,7 @@
     border: 1px solid rgba(14,165,233,0.10);
     border-top: 1px solid rgba(255,255,255,0.10);
     border-radius: 16px;
+    transition: border-color var(--motion-standard), box-shadow var(--motion-standard), transform var(--motion-micro);
     box-shadow: 
       0 1px 0 0 rgba(255,255,255,0.05) inset,
       0 10px 36px -4px rgba(0,0,0,0.5),
@@ -908,9 +909,27 @@
 
   
   /* Animations */
+
+  /* ══════════════════════════════════════════════════════════════
+   * MOTION TOKENS — varsity-grade motion system.
+   * All new animations should use these tokens; gradually migrate old
+   * ad-hoc cubic-beziers to one of these four.
+   * ══════════════════════════════════════════════════════════════ */
+  :root {
+    --motion-micro: 150ms cubic-bezier(0.4, 0, 0.2, 1);       /* hover, tap feedback */
+    --motion-standard: 300ms cubic-bezier(0.4, 0, 0.2, 1);    /* state change, toggles */
+    --motion-page: 500ms cubic-bezier(0.16, 1, 0.3, 1);       /* route/page entry */
+    --motion-celebrate: 700ms cubic-bezier(0.34, 1.56, 0.64, 1); /* success overshoot */
+  }
+
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
   
   @keyframes slideUp {
@@ -925,7 +944,12 @@
 
   
   .animate-fade-in {
-    animation: fadeIn 0.5s ease-out;
+    animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Page-entry fade for route-level transitions — smoother than plain fadeIn */
+  .animate-page-in {
+    animation: fadeInUp var(--motion-page) both;
   }
   
 

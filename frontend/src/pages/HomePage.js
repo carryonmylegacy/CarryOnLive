@@ -123,11 +123,13 @@ const HomePage = () => {
             </div>
           </RevealSection>
           <RevealSection delay={0.4}>
-            <a href="#about" className="inline-flex flex-col items-center justify-center gap-1 mt-10 px-5 py-3 rounded-xl cursor-pointer animate-bounce text-center"
+            <a href="#about" className="inline-flex flex-col items-center justify-center gap-1 mt-10 cursor-pointer text-center group"
               data-testid="scroll-explore-home"
-              style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20), 0 0 50px rgba(212,175,55,0.08)', backdropFilter: 'blur(8px)' }}>
-              <span className="text-white text-2xl sm:text-3xl font-bold text-center" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
-              <ChevronDown className="w-10 h-10 text-[#d4af37]" strokeWidth={3} />
+              style={{ opacity: 0.85, transition: 'opacity 200ms cubic-bezier(0.4,0,0.2,1)' }}
+              onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+              onMouseLeave={e => e.currentTarget.style.opacity = '0.85'}>
+              <span className="text-white/85 text-sm font-semibold tracking-[0.1em] uppercase" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>Discover More</span>
+              <ChevronDown className="w-5 h-5 text-[#d4af37]" strokeWidth={2.5} style={{ animation: 'fadeInUp 1.4s ease-in-out infinite alternate' }} />
             </a>
           </RevealSection>
         </div>

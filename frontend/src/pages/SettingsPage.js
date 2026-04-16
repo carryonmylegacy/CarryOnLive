@@ -65,10 +65,14 @@ const SettingsPage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 max-w-2xl mx-auto space-y-4 pb-28 sm:pb-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Settings</h1>
+    <div className="p-4 lg:p-6 max-w-2xl mx-auto space-y-5 pb-28 sm:pb-8 animate-page-in">
+      {/* Header — polished hero */}
+      <div className="mb-1">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-1 h-8 rounded-full" style={{ background: 'linear-gradient(180deg, var(--gold2), var(--gold))' }} />
+          <h1 className="text-2xl lg:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '-0.02em' }}>Settings</h1>
+        </div>
+        <p className="text-[var(--t4)] text-sm pl-4">Manage your profile, security, and preferences.</p>
       </div>
 
       {/* Onboarding Notice */}
@@ -82,9 +86,16 @@ const SettingsPage = () => {
         </div>
       )}
 
+      {/* ── Section: Profile ── */}
+      <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--t5)] pt-1 pl-1">Profile</div>
       <ProfileCard />
+      <PersonalInfoCard initialEditAddress={editAddress || fromOnboarding} />
 
-      {/* Security Settings Link */}
+      {/* Estate Photo — benefactors only */}
+      {!isStaff && <EstatePhotoCard />}
+
+      {/* ── Section: Security ── */}
+      <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--t5)] pt-3 pl-1">Security</div>
       <Card className="glass-card cursor-pointer hover:border-[var(--gold)]/30 transition-colors" onClick={() => navigate('/security-settings')} data-testid="settings-security-link">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
@@ -101,11 +112,6 @@ const SettingsPage = () => {
           </div>
         </CardContent>
       </Card>
-
-      <PersonalInfoCard initialEditAddress={editAddress || fromOnboarding} />
-
-      {/* Estate Photo — benefactors only */}
-      {!isStaff && <EstatePhotoCard />}
 
       {/* Beneficiary Create Estate Reminder */}
       {user?.role === 'beneficiary' && (
@@ -133,6 +139,8 @@ const SettingsPage = () => {
         </Card>
       )}
 
+      {/* ── Section: Appearance & Navigation ── */}
+      <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--t5)] pt-3 pl-1">Appearance & Navigation</div>
       <AppearanceCard isStaff={isStaff} />
 
       {/* Dock Customizer */}
@@ -142,6 +150,8 @@ const SettingsPage = () => {
         </CardContent>
       </Card>
 
+      {/* ── Section: Notifications ── */}
+      <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--t5)] pt-3 pl-1">Notifications</div>
       {/* Notification Settings (push notifications) */}
       <NotificationSettings getAuthHeaders={getAuthHeaders} />
 
@@ -150,46 +160,55 @@ const SettingsPage = () => {
 
       <DigestCard />
 
-      {/* Privacy & Data Rights — non-staff only */}
-      {!isStaff && <PrivacyCard />}
+      {/* ── Section: Privacy — non-staff only ── */}
+      {!isStaff && (
+        <>
+          <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--t5)] pt-3 pl-1">Privacy & Data</div>
+          <PrivacyCard />
+        </>
+      )}
 
       {/* Beta Tester Settings */}
       {user?.is_beta_tester && (
-        <Card className="glass-card" data-testid="settings-beta-card">
-          <CardContent className="p-4">
-            <h4 className="text-[var(--t)] font-bold mb-3">Beta Testing</h4>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[var(--t)]">Hide Bug Report Icon</p>
-                <p className="text-xs text-[var(--t5)]">Hide the floating bug icon on all pages</p>
+        <>
+          <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--t5)] pt-3 pl-1">Beta Testing</div>
+          <Card className="glass-card" data-testid="settings-beta-card">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-[var(--t)]">Hide Bug Report Icon</p>
+                  <p className="text-xs text-[var(--t5)]">Hide the floating bug icon on all pages</p>
+                </div>
+                <Switch
+                  checked={localStorage.getItem('hide_beta_bug_icon') === 'true'}
+                  onCheckedChange={(checked) => {
+                    localStorage.setItem('hide_beta_bug_icon', checked ? 'true' : 'false');
+                    window.location.reload();
+                  }}
+                  data-testid="beta-hide-bug-toggle"
+                />
               </div>
-              <Switch
-                checked={localStorage.getItem('hide_beta_bug_icon') === 'true'}
-                onCheckedChange={(checked) => {
-                  localStorage.setItem('hide_beta_bug_icon', checked ? 'true' : 'false');
-                  window.location.reload();
-                }}
-                data-testid="beta-hide-bug-toggle"
-              />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </>
       )}
 
       {/* Sign Out */}
-      <Card className="glass-card border-[#ef4444]/20">
-        <CardContent className="p-4">
-          <Button
-            variant="outline"
-            className="w-full border-[#ef4444]/50 text-[#ef4444] hover:bg-[#ef4444]/10"
-            onClick={handleLogout}
-            data-testid="settings-logout-button"
-          >
-            <LogOut className="w-5 h-5 mr-2" />
-            Sign Out
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="pt-4">
+        <Card className="glass-card border-[#ef4444]/20">
+          <CardContent className="p-4">
+            <Button
+              variant="outline"
+              className="w-full border-[#ef4444]/50 text-[#ef4444] hover:bg-[#ef4444]/10"
+              onClick={handleLogout}
+              data-testid="settings-logout-button"
+            >
+              <LogOut className="w-5 h-5 mr-2" />
+              Sign Out
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Footer */}
       <div className="text-center py-4">

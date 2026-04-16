@@ -3,6 +3,34 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import App from "./App";
 
+// ── Sentry: activate only when REACT_APP_SENTRY_DSN is present ──
+// Zero runtime cost when unset. Safe to merge before you provide a DSN.
+try {
+  const SENTRY_DSN = process.env.REACT_APP_SENTRY_DSN;
+  if (SENTRY_DSN) {
+    // Dynamic import so bundle stays small when Sentry is disabled.
+    import('@sentry/react').then((Sentry) => {
+      Sentry.init({
+        dsn: SENTRY_DSN,
+        environment: process.env.REACT_APP_SENTRY_ENV || 'production',
+        release: process.env.REACT_APP_SENTRY_RELEASE,
+        tracesSampleRate: parseFloat(process.env.REACT_APP_SENTRY_TRACES_RATE || '0.05'),
+        replaysSessionSampleRate: 0,
+        replaysOnErrorSampleRate: 0,
+        sendDefaultPii: false,
+        beforeSend(event) {
+          // Strip potentially sensitive form data before sending.
+          try {
+            if (event.request?.cookies) delete event.request.cookies;
+          } catch {}
+          return event;
+        },
+      });
+      window.__SENTRY_READY__ = true;
+    }).catch(() => {});
+  }
+} catch {}
+
 // Detect native app immediately (before React renders) to prevent layout flash
 try {
   const isCapacitor = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();

@@ -91,12 +91,21 @@ const SpeakWithUsPage = lazy(() => import('./pages/SpeakWithUsPage'));
 
 import UsernameReviewModal from './components/UsernameReviewModal';
 
-// Loading fallback
-const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
-    <Loader2 className="w-8 h-8 text-[#d4af37] animate-spin" />
-  </div>
-);
+// Loading fallback — only visible after 180ms to avoid flashing on cache hits.
+// This eliminates the sub-100ms "white-out" that feels JV during navigation.
+const PageLoader = () => {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 180);
+    return () => clearTimeout(t);
+  }, []);
+  if (!visible) return null;
+  return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)', animation: 'fadeIn 0.25s ease-out' }}>
+      <Loader2 className="w-8 h-8 text-[#d4af37] animate-spin" />
+    </div>
+  );
+};
 
 // Error boundary for lazy-loaded routes — reports to backend
 class RouteErrorBoundary extends React.Component {

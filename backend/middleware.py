@@ -176,13 +176,17 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """Rate limiting for auth endpoints to prevent brute force attacks."""
+    """Rate limiting for auth + general endpoints to prevent brute force attacks.
+
+    Uses MongoDB-backed sliding window (services/rate_limiter.py) so limits are
+    enforced across all API pods. Falls back to per-pod in-memory buckets if
+    Mongo is unavailable.
+    """
 
     def __init__(self, app, max_requests: int = 20, window_seconds: int = 60):
         super().__init__(app)
         self.max_requests = max_requests
         self.window = window_seconds
-        self.requests = defaultdict(list)
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
@@ -203,6 +207,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             "/api/auth/dev-login",
             "/api/auth/dev-switch",
             "/api/health",
+            "/api/health/live",
+            "/api/health/ready",
         ]
 
         # Determine rate limit tier
@@ -221,15 +227,21 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             client_ip = (
                 forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
             )
-            now = time.time()
-            self.requests[client_ip] = [t for t in self.requests[client_ip] if now - t < self.window]
-            if len(self.requests[client_ip]) >= limit:
+            # Key includes path-tier so one user hitting many endpoints
+            # doesn't count against a stricter endpoint's quota.
+            tier = "strict" if path in strict_paths else "moderate" if path in moderate_paths else "general"
+            key = f"rl:{tier}:{client_ip}"
+            try:
+                from services.rate_limiter import check_and_increment
+                allowed = await check_and_increment(key, limit, self.window)
+            except Exception:
+                allowed = True  # On limiter failure: fail open (never block legit users)
+            if not allowed:
                 return Response(
                     content='{"detail":"Too many requests. Please wait before trying again."}',
                     status_code=429,
                     media_type="application/json",
                 )
-            self.requests[client_ip].append(now)
 
         return await call_next(request)
 

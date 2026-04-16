@@ -75,6 +75,36 @@ from schedulers import (
     grace_period_scheduler,
     bill_reminder_scheduler,
 )
+from services.scheduler_lock import with_scheduler_lock
+
+
+# ===================== SCHEDULER WRAPPERS =====================
+# Each scheduler is wrapped with a distributed MongoDB lock so only ONE pod
+# executes the periodic work at a time in multi-pod deployments. The lock
+# degrades open if Mongo is unreachable, preserving single-pod behavior.
+
+async def _locked(name: str, coro_factory, ttl_seconds: int = 900):
+    """Run an async scheduler coroutine under a distributed lock.
+
+    `coro_factory` is a no-arg callable returning a fresh coroutine. This is
+    necessary because awaiting a scheduler coroutine more than once is illegal
+    in asyncio — we only create it when/if we acquire the lock.
+    """
+    while True:
+        try:
+            async with with_scheduler_lock(name, ttl_seconds=ttl_seconds) as got:
+                if got:
+                    logger.info(f"scheduler[{name}] acquired lock; running")
+                    await coro_factory()
+                    return  # schedulers are infinite loops; return means the loop exited
+                else:
+                    logger.debug(f"scheduler[{name}] lock held by another pod; sleeping")
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            logger.error(f"scheduler[{name}] crashed: {e}; retrying in 60s")
+        # If we didn't acquire, or the loop exited/crashed, sleep before retry.
+        await asyncio.sleep(60)
 
 
 # ===================== LIFECYCLE =====================
@@ -94,33 +124,53 @@ async def lifespan(app):
     await run_migrations(db, logger)
     await ensure_indexes(db, logger)
 
-    digest_task = asyncio.create_task(weekly_digest_scheduler())
-    reminder_task = asyncio.create_task(trial_reminder_scheduler())
-    dob_task = asyncio.create_task(daily_dob_check_scheduler())
-    billing_task = asyncio.create_task(billing_lifecycle_scheduler())
-    retention_task = asyncio.create_task(data_retention_scheduler())
-    asyncio.create_task(milestone_delivery_scheduler())
-    asyncio.create_task(grace_period_scheduler())
-    asyncio.create_task(bill_reminder_scheduler())
-    asyncio.create_task(drill_reminder_scheduler())
+    # Each scheduler is wrapped with a distributed lock. `_locked()` is itself
+    # infinite so we restart the scheduler if it ever returns/crashes.
+    async def _supervise(name, factory, ttl=900):
+        while True:
+            try:
+                await _locked(name, factory, ttl_seconds=ttl)
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                logger.error(f"scheduler supervisor[{name}] error: {e}")
+            await asyncio.sleep(30)
 
-    # Warm up xAI connection + start periodic keepalive
+    scheduler_tasks = [
+        asyncio.create_task(_supervise("weekly_digest", weekly_digest_scheduler)),
+        asyncio.create_task(_supervise("trial_reminders", trial_reminder_scheduler)),
+        asyncio.create_task(_supervise("daily_dob_check", daily_dob_check_scheduler)),
+        asyncio.create_task(_supervise("billing_lifecycle", billing_lifecycle_scheduler)),
+        asyncio.create_task(_supervise("data_retention", data_retention_scheduler)),
+        asyncio.create_task(_supervise("milestone_delivery", milestone_delivery_scheduler)),
+        asyncio.create_task(_supervise("grace_period", grace_period_scheduler)),
+        asyncio.create_task(_supervise("bill_reminder", bill_reminder_scheduler)),
+        asyncio.create_task(_supervise("drill_reminder", drill_reminder_scheduler)),
+    ]
+
+    # Warm up xAI connection + start periodic keepalive (local per-pod, no lock needed)
     from routes.guardian import warmup_xai
-
     asyncio.create_task(warmup_xai())
 
-    # Start real-time SLA breach checker (every 60s)
-    sla_task = asyncio.create_task(sla_checker_loop())
+    # Start real-time SLA breach checker (every 60s) — also distributed-locked.
+    sla_task = asyncio.create_task(_supervise("sla_checker", sla_checker_loop, ttl=120))
+    scheduler_tasks.append(sla_task)
 
     yield
-    digest_task.cancel()
-    reminder_task.cancel()
-    dob_task.cancel()
-    billing_task.cancel()
-    retention_task.cancel()
-    sla_task.cancel()
+
+    # ── Graceful shutdown: bounded wait so SIGTERM doesn't hang pods ──
+    logger.info("CarryOn™ API shutting down — cancelling background schedulers")
+    for t in scheduler_tasks:
+        t.cancel()
+    try:
+        await asyncio.wait_for(
+            asyncio.gather(*scheduler_tasks, return_exceptions=True),
+            timeout=10.0,
+        )
+    except asyncio.TimeoutError:
+        logger.warning("Some schedulers did not cancel within 10s; forcing exit")
     client.close()
-    logger.info("CarryOn™ API shutting down")
+    logger.info("CarryOn™ API shutdown complete")
 
 
 # ===================== APP SETUP =====================
@@ -208,6 +258,36 @@ async def health_check():
         "min_version": "1.0.0",
         "build": BUILD_HASH,
     }
+
+
+@api_router.get("/health/live")
+async def health_live():
+    """Kubernetes/Railway liveness probe — process is alive, do NOT touch DB."""
+    return {"status": "alive"}
+
+
+@api_router.get("/health/ready")
+async def health_ready():
+    """Kubernetes/Railway readiness probe — pod ready to accept traffic.
+
+    Returns 503 if critical dependencies are unreachable so the orchestrator
+    pulls the pod out of rotation.
+    """
+    from fastapi.responses import JSONResponse
+
+    checks = {}
+    ok = True
+    try:
+        await asyncio.wait_for(db.command("ping"), timeout=2.0)
+        checks["mongodb"] = "ok"
+    except Exception as e:
+        checks["mongodb"] = f"error: {e.__class__.__name__}"
+        ok = False
+    status_code = 200 if ok else 503
+    return JSONResponse(
+        status_code=status_code,
+        content={"status": "ready" if ok else "not_ready", "checks": checks, "build": BUILD_HASH},
+    )
 
 
 @api_router.get("/debug/user-state")
