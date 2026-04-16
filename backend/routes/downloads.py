@@ -839,7 +839,7 @@ async def _handle_emergency_card(user: dict, params: dict, filename: str) -> Res
         pdf.set_xy(text_x, cur_y)
         rp_text = safe(rp.get("name", ""))
         if rp.get("address"):
-            rp_text += " — " + safe(rp["address"])
+            rp_text += " - " + safe(rp["address"])
         pdf.multi_cell(text_w, 2.2, rp_text[:100], new_x="LMARGIN", new_y="NEXT")
         cur_y = pdf.get_y() + 0.5
 
