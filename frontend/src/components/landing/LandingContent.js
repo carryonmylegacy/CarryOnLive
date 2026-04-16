@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Users, ChevronRight, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Radio, MessageCircle } from 'lucide-react';
+import { Shield, Users, ChevronRight, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Radio, MessageCircle, DollarSign } from 'lucide-react';
 import { RevealSection } from './RevealSection';
 
 /* ── data: 8 pillars ── */
@@ -18,10 +18,10 @@ const PILLARS = [
     desc: 'Partially auto-created by EGA from your documents and fully customizable by you. When a crisis hits, your family opens the IAC and knows exactly what to do, who to call, where to find every document, and what deadlines matter. No guessing. No searching. No overwhelm.' },
   { num: '05', icon: Radio, title: 'Contingency Protocols', abbr: 'CCP',
     bold: 'Response plans your family can build now for the scenarios they might face \u2014 ready to activate at a moment\u2019s notice.',
-    desc: 'Build contingency protocols for any situation: medical emergencies, natural disasters, financial disruptions, or the passing of a family member. Each protocol connects your people, your documents, your checklists, and your communication channels into one coordinated plan your family can execute together.' },
+    desc: 'Build contingency protocols for any situation: medical emergencies, natural disasters, financial disruptions, or the passing of a family member. The Tap-to-Create Wizard walks you through building a protocol in minutes \u2014 connecting your people, your documents, your checklists, and your communication channels into one coordinated plan your family can execute together.' },
   { num: '06', icon: MessageCircle, title: 'Estate Communications Tool', abbr: 'ECT',
-    bold: 'Secure, private family messaging that powers your protocols and keeps your family connected when it counts.',
-    desc: 'ECT is the communication backbone of your family\'s readiness infrastructure. Encrypted, access-controlled conversations between benefactors and beneficiaries, purpose-built for sensitive family coordination. When a contingency protocol activates, ECT is how your family stays in sync \u2014 privately and securely.' },
+    bold: 'Secure, private family messaging built for the conversations that matter most \u2014 with the features your family already knows how to use.',
+    desc: 'ECT is the communication backbone of your family\u2019s readiness infrastructure. End-to-end encrypted group and direct messaging with voice messages, image sharing, emoji reactions, location sharing, and message pinning. When a contingency protocol activates, ECT is how your family stays in sync. Designed to feel as natural as the messaging apps your family already loves \u2014 but purpose-built for sensitive family coordination.' },
   { num: '07', icon: Key, title: 'Digital Access Vault', abbr: 'DAV',
     bold: 'Passwords, accounts, crypto keys, and digital credentials \u2014 saved, encrypted, and assigned to the right people.',
     desc: 'The modern family has dozens of digital accounts, subscriptions, financial platforms, and access credentials that need to be passed down and organized. DAV stores them all in your encrypted vault, assigned to specific beneficiaries, so nothing is lost and nothing is forgotten.' },
@@ -40,6 +40,7 @@ const PLATFORM_FEATURES = [
   { icon: SlidersHorizontal, title: 'Section Permissions', desc: 'Control exactly what each beneficiary can see &mdash; vault, messages, checklists, protocols, and more. Granular, per-person access.' },
   { icon: Smartphone, title: 'Native Mobile App', desc: 'iOS and Android with biometric login, push notifications, and full platform access. Your family\'s readiness goes wherever you go.' },
   { icon: MapPin, title: '50-State Legal Intelligence', desc: 'Estate Guardian calibrates every analysis to your declared state of residence and its specific laws. Personalized, not generic.' },
+  { icon: DollarSign, title: 'Connected Financial Portal', desc: 'Link and monitor your family\u2019s financial accounts in one secure view. Track balances, flag anomalies, and ensure your beneficiaries know exactly where to look when it matters.' },
 ];
 
 /* ── data: five steps ── */
