@@ -43,7 +43,7 @@ export const NotificationPrefsCard = () => {
 
   if (loading) {
     return (
-      <div className="rounded-2xl p-6" style={{ background: 'var(--card)', border: '1px solid var(--b)' }}>
+      <div className="rounded-2xl p-6" style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}>
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#d4af37' }} />
         </div>
@@ -54,7 +54,7 @@ export const NotificationPrefsCard = () => {
   if (!prefs) return null;
 
   return (
-    <div className="rounded-2xl p-6" data-testid="notification-prefs-card" style={{ background: 'var(--card)', border: '1px solid var(--b)' }}>
+    <div className="rounded-2xl p-6" data-testid="notification-prefs-card" style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}>
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: prefs.master_enabled ? 'rgba(212,175,55,0.12)' : 'rgba(240,82,82,0.1)' }}>

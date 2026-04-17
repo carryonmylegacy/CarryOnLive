@@ -130,7 +130,7 @@ export const QueueAlertsPanel = () => {
       {open && (
         <div
           className="absolute right-0 top-11 w-80 sm:w-96 rounded-xl shadow-2xl z-50 overflow-hidden"
-          style={{ background: 'var(--card)', border: '1px solid var(--b)' }}
+          style={{ background: 'var(--bg2)', border: '1px solid var(--b2)' }}
           data-testid="alerts-dropdown"
         >
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--b)' }}>

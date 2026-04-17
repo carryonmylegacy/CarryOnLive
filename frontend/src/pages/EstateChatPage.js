@@ -1746,6 +1746,25 @@ export default function EstateChatPage() {
 
           {/* Input area with recording/preview overlay */}
           <div className="flex-1 relative" style={{ minWidth: 0, overflow: 'hidden' }}>
+            {/* Mobile-only: dismiss-keyboard chevron. Appears when focused.
+                iOS PWA sometimes fails to dismiss via the built-in Done key
+                or accessory bar checkmark. This is a guaranteed escape. */}
+            {inputFocused && (
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  if (inputRef.current) inputRef.current.blur();
+                  setInputFocused(false);
+                }}
+                className="lg:hidden absolute top-1 right-1 z-10 w-7 h-7 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(212,175,55,0.18)', border: '1px solid rgba(212,175,55,0.35)' }}
+                data-testid="ect-dismiss-keyboard-btn"
+                aria-label="Dismiss keyboard"
+              >
+                <ChevronDown className="w-3.5 h-3.5" style={{ color: '#d4af37' }} strokeWidth={3} />
+              </button>
+            )}
             <textarea
               ref={inputRef}
               value={draft}
@@ -1782,8 +1801,22 @@ export default function EstateChatPage() {
                     sendMessage();
                   } else {
                     // Mobile: the keyboard's blue Done/checkmark dismisses the keyboard
-                    // (previously it inserted a newline, which felt broken to users)
                     e.preventDefault();
+                    if (inputRef.current) inputRef.current.blur();
+                    setInputFocused(false);
+                  }
+                }
+              }}
+              onInput={(e) => {
+                // iOS PWA fallback: when the keyboard's Done/checkmark OR the
+                // accessory-bar checkmark is tapped, some iOS versions don't
+                // fire a keydown event — they insert a raw newline via an
+                // `input` event. Detect that and dismiss the keyboard.
+                if (window.innerWidth <= 1024) {
+                  const v = e.target.value;
+                  if (v.includes('\n')) {
+                    e.target.value = v.replace(/\n+$/g, '');
+                    setDraft(v.replace(/\n+$/g, ''));
                     if (inputRef.current) inputRef.current.blur();
                     setInputFocused(false);
                   }
@@ -1792,12 +1825,33 @@ export default function EstateChatPage() {
               onFocus={() => {
                 setInputFocused(true);
                 // Tell iOS to scroll the input into view
-                setTimeout(() => { inputRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }); }, 300);
+                // Multiple passes handle the case where the keyboard isn't fully
+                // open yet on first focus + re-open after dismiss (iOS PWA quirk
+                // where visualViewport doesn't adjust on 2nd focus).
+                const scrollInput = () => {
+                  try {
+                    inputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                  } catch {}
+                };
+                setTimeout(scrollInput, 100);
+                setTimeout(scrollInput, 300);
+                setTimeout(scrollInput, 600);
                 // Scroll messages to bottom — multiple passes to track keyboard animation
                 const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
                 requestAnimationFrame(doScroll);
                 setTimeout(doScroll, 150);
                 setTimeout(doScroll, 400);
+                setTimeout(doScroll, 700);
+              }}
+              onTouchStart={() => {
+                // Re-focus case: if input is already focused and user taps it
+                // again (expecting keyboard to come up), iOS sometimes shows
+                // keyboard but doesn't re-adjust viewport. Force a re-scroll.
+                if (document.activeElement === inputRef.current) {
+                  setTimeout(() => {
+                    try { inputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {}
+                  }, 300);
+                }
               }}
               onBlur={() => {
                 setInputFocused(false);
