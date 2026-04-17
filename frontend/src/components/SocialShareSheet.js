@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Download, Copy, Check, Share2, MessageCircle, Mail } from 'lucide-react';
+import { X, Download, Copy, Check, Share2, MessageCircle, Mail, Shuffle, Loader2 } from 'lucide-react';
 
 /**
  * SocialShareSheet — dumb-simple, one-tap share links to every major
@@ -136,9 +136,23 @@ export default function SocialShareSheet({
   shareUrl = 'https://carryon.us',
   title = 'Share the news',
   accent = 'gold',
+  // Quote composer (optional — if onQuoteChange is supplied, the editor is shown)
+  editableQuote = false,
+  quote = '',
+  quoteSource = 'random',  // "user" | "random"
+  onQuoteChange,           // (newQuote: string) => void — called on blur/debounced
+  onRandomize,             // () => void — called when user taps "Surprise me"
+  regenerating = false,    // parent sets true while re-fetching the card
 }) {
   const [copied, setCopied] = useState(false);
   const [imageCopied, setImageCopied] = useState(false);
+  const [draftQuote, setDraftQuote] = useState(quote || '');
+
+  // Keep the draft in sync when the parent swaps in a new random quote
+  React.useEffect(() => {
+    setDraftQuote(quote || '');
+  }, [quote]);
+
   if (!open) return null;
 
   const accentColor = accent === 'teal' ? '#34d399' : '#d4af37';
@@ -264,7 +278,7 @@ export default function SocialShareSheet({
         {imageUrl ? (
           <div className="px-5">
             <div
-              className="rounded-2xl overflow-hidden mb-4"
+              className="rounded-2xl overflow-hidden mb-4 relative"
               style={{
                 background: '#0b1221',
                 border: `1px solid ${accentColor}55`,
@@ -274,10 +288,103 @@ export default function SocialShareSheet({
                 src={imageUrl}
                 alt="Your personalized CarryOn share card"
                 className="w-full h-auto block"
-                style={{ aspectRatio: '1 / 1', objectFit: 'cover' }}
+                style={{
+                  aspectRatio: '1 / 1',
+                  objectFit: 'cover',
+                  opacity: regenerating ? 0.55 : 1,
+                  transition: 'opacity 200ms ease',
+                }}
                 data-testid="share-sheet-image"
               />
+              {regenerating ? (
+                <div
+                  className="absolute inset-0 flex items-center justify-center"
+                  style={{ background: 'rgba(8,14,26,0.35)' }}
+                >
+                  <Loader2 className="w-8 h-8 animate-spin" style={{ color: accentColor }} />
+                </div>
+              ) : null}
             </div>
+          </div>
+        ) : null}
+
+        {/* Quote composer (optional) */}
+        {editableQuote ? (
+          <div className="px-5 pb-3">
+            <label
+              htmlFor="share-sheet-quote"
+              className="block text-[11px] uppercase tracking-wider mb-1.5"
+              style={{ color: 'rgba(255,255,255,0.55)' }}
+            >
+              Your quote on the card
+              <span className="normal-case tracking-normal ml-1" style={{ color: accentColor }}>
+                (optional)
+              </span>
+            </label>
+            <div className="flex gap-2 items-stretch">
+              <input
+                id="share-sheet-quote"
+                type="text"
+                value={draftQuote}
+                maxLength={110}
+                placeholder="What does CarryOn mean to you?"
+                onChange={(e) => setDraftQuote(e.target.value)}
+                onBlur={() => {
+                  if ((draftQuote || '').trim() !== (quote || '').trim()) {
+                    onQuoteChange?.(draftQuote);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if ((draftQuote || '').trim() !== (quote || '').trim()) {
+                      onQuoteChange?.(draftQuote);
+                    }
+                    e.currentTarget.blur();
+                  }
+                }}
+                className="flex-1 px-3 py-2.5 rounded-xl text-sm"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${accentColor}55`,
+                  color: '#fff',
+                  outline: 'none',
+                }}
+                data-testid="share-sheet-quote-input"
+              />
+              <button
+                onClick={() => {
+                  setDraftQuote('');
+                  onRandomize?.();
+                }}
+                disabled={regenerating}
+                className="px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 flex-shrink-0"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                  color: '#fff',
+                  opacity: regenerating ? 0.55 : 1,
+                }}
+                title="Replace with a random quote"
+                data-testid="share-sheet-quote-random"
+              >
+                <Shuffle className="w-3.5 h-3.5" />
+                Surprise me
+              </button>
+            </div>
+            <p className="text-[11px] mt-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              {(draftQuote || '').trim() ? (
+                <>
+                  {draftQuote.length}/110 · your words on the card.
+                </>
+              ) : quoteSource === 'user' ? (
+                <>Your words are saved.</>
+              ) : (
+                <>
+                  Leave blank and we&apos;ll use an inspiring quote — yours can still replace it anytime.
+                </>
+              )}
+            </p>
           </div>
         ) : null}
 

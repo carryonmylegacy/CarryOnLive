@@ -156,6 +156,26 @@ Per user mandate, housekeeping WARNs are now fix-before-finish:
 - All wired with full data-testids: `social-share-sheet`, `share-sheet-{x|facebook|linkedin|whatsapp|telegram|reddit|sms|email}`, `share-sheet-{native|copy-image|download|copy-text|close}`, `sub-celebration*`, `fc-celebration*`.
 - Verified end-to-end: backend endpoints respond 200 with PNG (108KB FC, 112KB sub); frontend share sheet renders all 8 platform tiles + image preview correctly.
 
+## Quote Composer + Randomizer (Apr 17, 2026)
+Extension of the sharecard system — adds opt-in personalization + a fallback quote library so every card feels hand-written.
+
+**Backend (`routes/share_cards.py`)**
+- `CardRequest` now accepts optional `quote` (110-char max). `CardResponse` now returns the rendered `quote` + `quote_source` (`"user"` | `"random"`).
+- Two curated pools (`_FC_QUOTES`, `_SUB_QUOTES`) of 12 brand-voice quotes each — different tones (legacy/aspirational for FC, practical/ready for subscriber).
+- Deterministic-per-day-per-user randomizer: `_pick_quote(variant, name)` seeds on `variant|name|date` so a given user sees the same fallback across the day (cache-stable).
+- Layout reflowed to fit a centered italic-serif quote box (wrapped to 2 lines, auto-ellipsized if > 110 chars). Smart curly quotes applied.
+- `_normalize_quote()` trims, collapses whitespace, strips ™ (Cormorant glyph-missing), hard-caps length.
+
+**Frontend**
+- `SocialShareSheet.js` — gained `editableQuote`, `quote`, `quoteSource`, `onQuoteChange`, `onRandomize`, `regenerating` props. When enabled, shows an input field **"YOUR QUOTE ON THE CARD (optional)"** with a **"Surprise me"** randomizer button right below the image preview. Input commits on blur/Enter; parent re-fetches the card, preview dims + spinner appears while regenerating.
+- `FoundersCircleCelebration.js` + `SubscriberCelebration.js` — now own the `quote` state + a shared `fetchCard(quoteValue)` callback that re-POSTs the card endpoint and updates state. Passes everything to `SocialShareSheet`.
+- Caption text sent to share platforms now leads with the quote in smart quotes: `"{quote}"\n\nI just joined the Founders Circle — ...`.
+- Hint copy: *"Leave blank and we'll use an inspiring quote — yours can still replace it anytime."*
+
+**Verified**
+- Backend: user-quote + blank (random fallback) paths both return 200 with correct `quote_source`.
+- Visual: sharecard renders the italic serif quote with smart curly quotes; share sheet shows quote editor with live preview; Surprise-me cycles through pool deterministically per day.
+
 ## Upcoming Tasks (Launch Week — Wed–Fri)
 - [Audit action] Fix FC `free_access` grant for late-added beneficiaries (🔴 15 min)
 - [Audit action] Verify Stripe webhook signature enforcement (curl test, 5 min)

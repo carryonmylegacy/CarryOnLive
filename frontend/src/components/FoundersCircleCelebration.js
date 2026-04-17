@@ -19,8 +19,33 @@ import SocialShareSheet from './SocialShareSheet';
 export default function FoundersCircleCelebration({ firstName, tierName, estateName, onDismiss }) {
   const { token } = useAuth();
   const [showShare, setShowShare] = useState(false);
-  const [card, setCard] = useState(null); // { image_url, share_text }
+  const [card, setCard] = useState(null); // { image_url, share_text, quote, quote_source }
+  const [quote, setQuote] = useState('');
+  const [regenerating, setRegenerating] = useState(false);
   const displayName = (firstName || '').trim() || 'Founding Member';
+
+  const fetchCard = React.useCallback(
+    async (quoteValue) => {
+      if (!token) return;
+      setRegenerating(true);
+      try {
+        const res = await axios.post(
+          `${API_URL}/share-cards/founders-circle`,
+          { first_name: displayName, tier_name: tierName || '', quote: quoteValue || '' },
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (res.data) {
+          setCard(res.data);
+          setQuote(res.data.quote || '');
+        }
+      } catch {
+        /* graceful: share sheet just won't show an image */
+      } finally {
+        setRegenerating(false);
+      }
+    },
+    [token, displayName, tierName],
+  );
 
   // Lock body scroll while the celebration is up
   useEffect(() => {
@@ -42,23 +67,8 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
 
   // Pre-generate the share card so the share sheet opens instantly
   useEffect(() => {
-    if (!token) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await axios.post(
-          `${API_URL}/share-cards/founders-circle`,
-          { first_name: displayName, tier_name: tierName || '' },
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
-        if (!cancelled && res.data) setCard(res.data);
-      } catch {
-        /* graceful: the share sheet just won't show an image */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    fetchCard('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, displayName, tierName]);
 
   const openShare = () => setShowShare(true);
@@ -272,6 +282,12 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
         shareUrl="https://carryon.us"
         title="Share your Founding Member moment"
         accent="gold"
+        editableQuote
+        quote={quote}
+        quoteSource={card?.quote_source || 'random'}
+        onQuoteChange={(q) => fetchCard(q)}
+        onRandomize={() => fetchCard('')}
+        regenerating={regenerating}
       />
     </div>
   );

@@ -24,7 +24,32 @@ export default function SubscriberCelebration({ firstName, tierName, onDismiss }
   const { token } = useAuth();
   const [showShare, setShowShare] = useState(false);
   const [card, setCard] = useState(null);
+  const [quote, setQuote] = useState('');
+  const [regenerating, setRegenerating] = useState(false);
   const displayName = (firstName || '').trim() || 'A CarryOn Member';
+
+  const fetchCard = React.useCallback(
+    async (quoteValue) => {
+      if (!token) return;
+      setRegenerating(true);
+      try {
+        const res = await axios.post(
+          `${API_URL}/share-cards/subscriber`,
+          { first_name: displayName, tier_name: tierName || '', quote: quoteValue || '' },
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (res.data) {
+          setCard(res.data);
+          setQuote(res.data.quote || '');
+        }
+      } catch {
+        /* graceful: share sheet just won't show an image */
+      } finally {
+        setRegenerating(false);
+      }
+    },
+    [token, displayName, tierName],
+  );
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -43,23 +68,8 @@ export default function SubscriberCelebration({ firstName, tierName, onDismiss }
   }, [onDismiss]);
 
   useEffect(() => {
-    if (!token) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await axios.post(
-          `${API_URL}/share-cards/subscriber`,
-          { first_name: displayName, tier_name: tierName || '' },
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
-        if (!cancelled && res.data) setCard(res.data);
-      } catch {
-        /* graceful: the share sheet just won't show an image */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    fetchCard('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, displayName, tierName]);
 
   return (
@@ -226,10 +236,16 @@ export default function SubscriberCelebration({ firstName, tierName, onDismiss }
         open={showShare}
         onClose={() => setShowShare(false)}
         imageUrl={card?.image_url ? `${API_URL}${card.image_url}` : ''}
-        shareText={card?.share_text || `I just signed up for CarryOn™ — the family preparedness platform that organizes everything my loved ones would ever need. https://carryon.us`}
+        shareText={card?.share_text || `I just signed up for CarryOn — the family preparedness platform that organizes everything my loved ones would ever need. https://carryon.us`}
         shareUrl="https://carryon.us"
         title="Tell your people"
         accent="teal"
+        editableQuote
+        quote={quote}
+        quoteSource={card?.quote_source || 'random'}
+        onQuoteChange={(q) => fetchCard(q)}
+        onRandomize={() => fetchCard('')}
+        regenerating={regenerating}
       />
     </div>
   );
