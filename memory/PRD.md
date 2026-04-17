@@ -295,6 +295,32 @@ Final leg of the Voices loop: the moment the founder approves a user-submitted q
 - Seed skip: calling `_notify_member_approved` on `user_id="__seed__"` → silent skip.
 - Housekeeping still **65/65 PASS, 0 WARN, 0 FAIL.** `scripts/check.sh` returns **ALL CLEAR — SAFE TO PUSH**.
 
+## Weekly Voices Digest — Editorial Member Email (Apr 17, 2026)
+Turns Voices into a recurring engagement surface instead of a one-shot moment.
+
+**Backend (`routes/share_cards.py`)**
+- `send_voices_digest(*, max_quotes=5, min_quotes_to_send=3, window_days=7, force=False, dry_run=False)`:
+  - Fetches the last 7 days of `featured+approved+!is_seed` quotes, capped at 5.
+  - Skips the whole cycle if fewer than 3 new quotes landed ("empty weeks stay quiet").
+  - Renders an editorial Cormorant-serif email: gold "CarryOn · Voices" kicker, italic headline "What our members said *this week.*", per-quote card with FC gold / member emerald chip, two CTAs ("Read more voices" → `/voices`, "Add your own" → `/dashboard?share=voice`).
+  - Respects `user_preferences.weekly_digest=false` opt-outs. Rate-limited to 0.6s/send (Resend 2 req/s).
+  - **Idempotent per ISO-week** via `voices_digest_sends` collection (`week_key="2026-W17"`). Re-invocations return `{"skipped": true}`. `force=true` overrides.
+  - **`dry_run=true`** returns `{week_key, quotes_included, would_send_to, html_preview_chars}` without sending or writing the idempotency marker — safe for ops preview.
+- `POST /api/share-cards/admin/voices/digest/send-now?force=&dry_run=` — founder-only manual trigger.
+- Hooked into the existing `weekly_digest_scheduler` in `schedulers.py` (Monday 8 AM EST / 13:00 UTC), which is already wrapped with `with_scheduler_lock` so only one pod fires per week across the fleet.
+
+**Frontend (`components/admin/VoicesTab.js`)**
+- Two new buttons in the top action bar: **Preview Digest** (dry run, toast shows quote count + eligible-recipient count) and **Send Digest** (gold, confirms once, asks about `force` on re-send). Both disabled while in-flight with loader icons.
+- Data-testids: `voices-digest-preview`, `voices-digest-send`.
+
+**Verified end-to-end**
+- Unauthorized POST → HTTP 403.
+- Threshold gate: only 1 recent quote in DB → `{"skipped": true, "reason": "only 1 new quotes this week (need 3)"}`.
+- Dry run with 5 seeded quotes → `{dry_run:true, quotes_included:5, would_send_to:119, html_preview_chars:5389}`.
+- Dry run is non-mutating: consecutive dry runs return identical payloads, no `voices_digest_sends` row written.
+- HTML layout: all 7 brand-element checks pass (`CarryOn · Voices` kicker, italic `this week.` headline, FC/member chips, both CTAs, Settings link).
+- Housekeeping still **65/65 PASS, 0 WARN, 0 FAIL.** `scripts/check.sh` returns **ALL CLEAR — SAFE TO PUSH**.
+
 ## Home Voices Strip — Auto-Hiding Social Proof (Apr 17, 2026)
 New component `components/HomeVoicesStrip.js`, placed on the public landing page between the "Free for Every American in Hospice Care" block and the "Readiness Starts Today" final CTA.
 

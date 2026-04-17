@@ -17,6 +17,8 @@ import {
   X as XIcon,
   Clock,
   Bot,
+  Mail,
+  Send,
 } from 'lucide-react';
 import { API_URL } from '../../config';
 import { toast } from '../../utils/toast';
@@ -47,6 +49,7 @@ export function VoicesTab({ getAuthHeaders }) {
   const [deleting, setDeleting] = useState(null);
   const [togglingFeature, setTogglingFeature] = useState(null);
   const [actioning, setActioning] = useState(null);
+  const [digestBusy, setDigestBusy] = useState(false);
 
   const load = useCallback(
     async (searchTerm = '', variantFilter = '', featuredFilter = false, statusF = '') => {
@@ -104,6 +107,58 @@ export function VoicesTab({ getAuthHeaders }) {
       URL.revokeObjectURL(url);
     } catch {
       toast.error('Export failed');
+    }
+  };
+
+  const previewDigest = async () => {
+    setDigestBusy(true);
+    try {
+      const res = await axios.post(
+        `${API_URL}/share-cards/admin/voices/digest/send-now?dry_run=true`,
+        null,
+        getAuthHeaders(),
+      );
+      const d = res.data || {};
+      if (d.skipped) {
+        toast.info(d.reason || 'Digest skipped.');
+      } else if (d.dry_run) {
+        toast.success(
+          `Dry run: ${d.quotes_included} quote(s) · would email ${d.would_send_to} member(s) for ${d.week_key}.`,
+        );
+      }
+    } catch {
+      toast.error('Preview failed');
+    } finally {
+      setDigestBusy(false);
+    }
+  };
+
+  const sendDigest = async () => {
+    if (
+      !window.confirm(
+        'Send the weekly Voices Digest to every opted-in member now? (Idempotent — blocked if already sent this week unless you confirm force.)',
+      )
+    ) {
+      return;
+    }
+    const force = window.confirm('Force-send even if this week already went out?');
+    setDigestBusy(true);
+    try {
+      const res = await axios.post(
+        `${API_URL}/share-cards/admin/voices/digest/send-now?force=${force ? 'true' : 'false'}`,
+        null,
+        getAuthHeaders(),
+      );
+      const d = res.data || {};
+      if (d.skipped) {
+        toast.info(d.reason || 'Digest skipped.');
+      } else {
+        toast.success(`Digest sent · ${d.sent} delivered, ${d.skipped} skipped · ${d.week_key}.`);
+      }
+    } catch {
+      toast.error('Send failed');
+    } finally {
+      setDigestBusy(false);
     }
   };
 
@@ -342,6 +397,28 @@ export function VoicesTab({ getAuthHeaders }) {
         >
           <Download className="w-4 h-4" />
           Export CSV
+        </Button>
+        <Button
+          onClick={previewDigest}
+          disabled={digestBusy}
+          variant="outline"
+          className="flex items-center gap-2"
+          data-testid="voices-digest-preview"
+          title="Preview the weekly digest without sending anything"
+        >
+          {digestBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+          Preview Digest
+        </Button>
+        <Button
+          onClick={sendDigest}
+          disabled={digestBusy}
+          className="flex items-center gap-2"
+          style={{ background: '#d4af37', color: '#080e1a' }}
+          data-testid="voices-digest-send"
+          title="Send the weekly Voices Digest to all opted-in members"
+        >
+          {digestBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          Send Digest
         </Button>
       </div>
 

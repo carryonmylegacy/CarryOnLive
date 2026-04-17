@@ -44,6 +44,14 @@ async def weekly_digest_scheduler():
         except Exception as e:
             logger.error(f"SOC 2 audit digest failed: {e}")
 
+        try:
+            from routes.share_cards import send_voices_digest
+
+            voices_result = await send_voices_digest()
+            logger.info(f"Voices digest sent: {voices_result}")
+        except Exception as e:
+            logger.error(f"Voices digest failed: {e}")
+
 
 async def daily_dob_check_scheduler():
     """Run DOB-based subscription event checks once daily."""
