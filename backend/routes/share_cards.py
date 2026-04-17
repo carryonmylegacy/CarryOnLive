@@ -17,22 +17,68 @@ from __future__ import annotations
 import csv
 import hashlib
 import io
+import os
 import random
 import textwrap
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
+import jwt
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi.responses import HTMLResponse
 from PIL import Image, ImageDraw, ImageFont
 from pydantic import BaseModel, Field
 
-from config import db
+from config import JWT_SECRET, db
 from guards import check_founder_role
 from services.email import send_email
 from utils import get_current_user
+
+# Signed-token moderation (email one-click approve/reject)
+_VOICE_TOKEN_ALG = "HS256"
+_VOICE_TOKEN_PURPOSE = "voice_moderation_v1"
+_VOICE_TOKEN_TTL_DAYS = 7
+
+
+def _make_voice_action_token(submission_id: str, action: str) -> str:
+    """Sign a short-lived JWT that authorizes a single moderation action
+    against a single submission. No login required to redeem."""
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": submission_id,
+        "act": action,  # "approve_feature" | "approve" | "reject"
+        "purpose": _VOICE_TOKEN_PURPOSE,
+        "iat": now,
+        "exp": now + timedelta(days=_VOICE_TOKEN_TTL_DAYS),
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=_VOICE_TOKEN_ALG)
+
+
+def _decode_voice_action_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[_VOICE_TOKEN_ALG])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=410, detail="This moderation link has expired. Open /admin/voices instead.")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid moderation link.")
+    if payload.get("purpose") != _VOICE_TOKEN_PURPOSE:
+        raise HTTPException(status_code=401, detail="Invalid moderation link.")
+    if payload.get("act") not in {"approve_feature", "approve", "reject"}:
+        raise HTTPException(status_code=401, detail="Invalid moderation link.")
+    sub = payload.get("sub") or ""
+    if not sub or len(sub) > 64:
+        raise HTTPException(status_code=401, detail="Invalid moderation link.")
+    return payload
+
+
+def _moderation_base_url() -> str:
+    """Where email links point. Backend endpoints live under the same ingress
+    as the frontend, so FRONTEND_URL + /api works in every env."""
+    return (os.environ.get("FRONTEND_URL") or "https://app.carryon.us").rstrip("/")
+
 
 router = APIRouter(prefix="/share-cards", tags=["share-cards"])
 
@@ -370,9 +416,14 @@ class CardResponse(BaseModel):
     submission_id: Optional[str] = None  # Present only when we persisted the quote
 
 
-async def _notify_founder_of_pending(first_name: str, quote: str, variant: str) -> None:
+async def _notify_founder_of_pending(submission_id: str, first_name: str, quote: str, variant: str) -> None:
     """Best-effort Resend email to the founder that a new quote awaits review.
-    Never blocks the submission flow — exceptions swallowed."""
+    Never blocks the submission flow — exceptions swallowed.
+
+    Includes three signed one-click action links (approve & feature, approve
+    only, reject) that work without requiring the founder to log in. Tokens
+    are HS256-signed, bound to this submission id, and expire in 7 days.
+    """
     try:
         founder = await db.users.find_one(
             {"role": "admin", "admin_scope": "founder"},
@@ -381,6 +432,14 @@ async def _notify_founder_of_pending(first_name: str, quote: str, variant: str) 
         if not founder or not founder.get("email"):
             return
         label = "Founding Member" if variant == "fc" else "CarryOn member"
+        base = _moderation_base_url()
+        approve_feature_url = (
+            f"{base}/api/share-cards/voices/moderate?token={_make_voice_action_token(submission_id, 'approve_feature')}"
+        )
+        approve_url = (
+            f"{base}/api/share-cards/voices/moderate?token={_make_voice_action_token(submission_id, 'approve')}"
+        )
+        reject_url = f"{base}/api/share-cards/voices/moderate?token={_make_voice_action_token(submission_id, 'reject')}"
         html = f"""
         <div style="font-family: system-ui, -apple-system, sans-serif; max-width:560px; margin:24px auto; padding:24px; border:1px solid #e5e7eb; border-radius:16px; color:#111;">
           <p style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:#8b6b1f; margin:0 0 12px;">New voice awaiting review</p>
@@ -388,14 +447,33 @@ async def _notify_founder_of_pending(first_name: str, quote: str, variant: str) 
             &ldquo;{quote}&rdquo;
           </blockquote>
           <p style="font-size:14px; color:#475569; margin:0 0 20px;">— {first_name}, {label}</p>
+
+          <p style="font-size:13px; color:#475569; margin:0 0 10px; font-weight:600;">
+            One-tap moderation (no login required):
+          </p>
+
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 14px;">
+            <tr>
+              <td style="padding:0 8px 8px 0;">
+                <a href="{approve_feature_url}" style="display:inline-block; padding:11px 18px; background:#d4af37; color:#080e1a; text-decoration:none; border-radius:10px; font-weight:700; font-size:14px;">Approve &amp; Feature</a>
+              </td>
+              <td style="padding:0 8px 8px 0;">
+                <a href="{approve_url}" style="display:inline-block; padding:11px 18px; background:#10b981; color:#ffffff; text-decoration:none; border-radius:10px; font-weight:700; font-size:14px;">Approve only</a>
+              </td>
+              <td style="padding:0 0 8px 0;">
+                <a href="{reject_url}" style="display:inline-block; padding:11px 18px; background:#ef4444; color:#ffffff; text-decoration:none; border-radius:10px; font-weight:700; font-size:14px;">Reject</a>
+              </td>
+            </tr>
+          </table>
+
           <p style="font-size:13px; color:#475569; margin:0 0 6px;">
-            Review, approve, or reject this submission in the Founder portal:
+            Or open the full Voices admin in your portal:
           </p>
           <p style="margin:0;">
-            <a href="https://carryon.us/admin/voices" style="display:inline-block; padding:10px 16px; background:#d4af37; color:#080e1a; text-decoration:none; border-radius:10px; font-weight:700; font-size:14px;">Open Voices Admin</a>
+            <a href="{base}/admin/voices" style="display:inline-block; padding:10px 16px; background:#080e1a; color:#d4af37; text-decoration:none; border-radius:10px; font-weight:700; font-size:13px; border:1px solid #d4af37;">Open Voices Admin</a>
           </p>
           <p style="font-size:11px; color:#94a3b8; margin:18px 0 0;">
-            Nothing appears on /voices until you approve it.
+            Nothing appears on /voices until you approve it. Links expire in 7 days and can only be used against this one submission.
           </p>
         </div>
         """
@@ -444,7 +522,7 @@ async def _persist_submission(
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.share_quote_submissions.insert_one(doc)
-    await _notify_founder_of_pending(first_name, quote, variant)
+    await _notify_founder_of_pending(doc["id"], first_name, quote, variant)
     return doc["id"]
 
 
@@ -744,6 +822,172 @@ async def reject_voice(
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Submission not found")
     return {"id": submission_id, "approval_status": "rejected"}
+
+
+# ── One-click email moderation (public, signed-token auth) ──────────────
+
+
+def _moderation_result_page(
+    *,
+    success: bool,
+    headline: str,
+    sub: str,
+    portal_url: str,
+    accent: str = "#d4af37",
+) -> str:
+    """Branded HTML confirmation page served after a one-click moderation
+    action. Styled to match CarryOn (navy + gold, Cormorant serif)."""
+    icon = "✓" if success else "⚠"
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>CarryOn — Voices moderation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,600&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    body {{ margin:0; min-height:100vh; background:#080e1a; color:#e8ecf4;
+           font-family: 'Inter', system-ui, sans-serif; display:flex;
+           align-items:center; justify-content:center; padding:24px; }}
+    .card {{ max-width:520px; width:100%; background:#0b1221; border:1px solid #1c2740;
+            border-radius:20px; padding:36px 28px; text-align:center;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.35); }}
+    .badge {{ display:inline-flex; align-items:center; justify-content:center;
+             width:56px; height:56px; border-radius:50%; background:{accent};
+             color:#080e1a; font-size:28px; font-weight:800; margin-bottom:18px; }}
+    h1 {{ font-family: 'Cormorant Garamond', Georgia, serif; font-weight:600;
+         font-size:34px; line-height:1.15; margin:0 0 10px;
+         color:{"#f5f1e6" if success else "#fff"}; }}
+    h1 em {{ font-style:italic; color:{accent}; }}
+    p {{ font-size:15px; line-height:1.55; color:#9aa5b9; margin:0 0 22px; }}
+    a.btn {{ display:inline-block; padding:11px 22px; background:{accent};
+            color:#080e1a; text-decoration:none; border-radius:10px;
+            font-weight:700; font-size:14px; letter-spacing:0.02em; }}
+    .hint {{ font-size:11px; letter-spacing:0.16em; text-transform:uppercase;
+            color:#8b6b1f; margin:20px 0 0; }}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">{icon}</div>
+    <h1>{headline}</h1>
+    <p>{sub}</p>
+    <a class="btn" href="{portal_url}/admin/voices">Open Voices Admin</a>
+    <div class="hint">CarryOn Founder Portal</div>
+  </div>
+</body>
+</html>"""
+
+
+@router.get("/voices/moderate", response_class=HTMLResponse)
+async def moderate_voice_via_email(token: str = Query(..., min_length=20, max_length=2048)):
+    """Public endpoint — validates a signed one-click token and applies the
+    moderation action. Returns a branded HTML confirmation page.
+
+    Accepts three actions, encoded in the token:
+      • approve_feature — mark approved + featured (shows on /voices immediately)
+      • approve         — mark approved only (available for Feature toggle later)
+      • reject          — mark rejected (hidden forever, kept for audit)
+    """
+    portal_url = _moderation_base_url()
+    try:
+        payload = _decode_voice_action_token(token)
+    except HTTPException as e:
+        return HTMLResponse(
+            status_code=e.status_code,
+            content=_moderation_result_page(
+                success=False,
+                headline="Link no longer valid",
+                sub=str(e.detail),
+                portal_url=portal_url,
+                accent="#ef4444",
+            ),
+        )
+
+    submission_id = payload["sub"]
+    action = payload["act"]
+
+    doc = await db.share_quote_submissions.find_one(
+        {"id": submission_id},
+        {"_id": 0, "id": 1, "first_name": 1, "approval_status": 1, "variant": 1},
+    )
+    if not doc:
+        return HTMLResponse(
+            status_code=404,
+            content=_moderation_result_page(
+                success=False,
+                headline="Submission not found",
+                sub="This quote may have been redacted.",
+                portal_url=portal_url,
+                accent="#ef4444",
+            ),
+        )
+
+    first_name = doc.get("first_name") or "this member"
+    current_status = doc.get("approval_status") or "pending"
+
+    # Idempotency: if already in the target state, show a soft confirmation
+    # rather than error.
+    if action in ("approve_feature", "approve") and current_status == "approved":
+        return HTMLResponse(
+            _moderation_result_page(
+                success=True,
+                headline=f"Already approved — <em>{first_name}</em>",
+                sub="This quote was approved previously. No change was made.",
+                portal_url=portal_url,
+            )
+        )
+    if action == "reject" and current_status == "rejected":
+        return HTMLResponse(
+            _moderation_result_page(
+                success=True,
+                headline="Already rejected",
+                sub="This quote is already hidden. No change was made.",
+                portal_url=portal_url,
+                accent="#ef4444",
+            )
+        )
+
+    if action == "approve_feature":
+        await db.share_quote_submissions.update_one(
+            {"id": submission_id},
+            {"$set": {"approval_status": "approved", "featured": True}, "$currentDate": {"approved_at": True}},
+        )
+        return HTMLResponse(
+            _moderation_result_page(
+                success=True,
+                headline=f"Approved &amp; featured — <em>{first_name}</em>",
+                sub="This quote is now live on /voices and will appear in the home rotation strip.",
+                portal_url=portal_url,
+            )
+        )
+    if action == "approve":
+        await db.share_quote_submissions.update_one(
+            {"id": submission_id},
+            {"$set": {"approval_status": "approved"}, "$currentDate": {"approved_at": True}},
+        )
+        return HTMLResponse(
+            _moderation_result_page(
+                success=True,
+                headline=f"Approved — <em>{first_name}</em>",
+                sub="This quote is approved. Open the portal to toggle Feature when you're ready.",
+                portal_url=portal_url,
+            )
+        )
+    # reject
+    await db.share_quote_submissions.update_one(
+        {"id": submission_id},
+        {"$set": {"approval_status": "rejected", "featured": False}, "$currentDate": {"rejected_at": True}},
+    )
+    return HTMLResponse(
+        _moderation_result_page(
+            success=True,
+            headline="Rejected",
+            sub=f"{first_name}'s quote has been hidden permanently. The record is kept for audit.",
+            portal_url=portal_url,
+            accent="#ef4444",
+        )
+    )
 
 
 # ── Seed library (AI-written starter quotes, first-launch "tip jar" effect) ──

@@ -251,6 +251,25 @@ Closes the trust gap: founder now holds explicit approve/reject power over every
 - Public `/api/share-cards/voices/public` returns 200 with seed + real quotes.
 - Housekeeping: **65/65 PASS, 0 WARN, 0 FAIL.** `scripts/check.sh` returns **ALL CLEAR — SAFE TO PUSH**.
 
+## Voices — One-Click Email Moderation (Apr 17, 2026)
+Extension of the veto power workflow — founder can now approve/reject directly from the inbox with zero logins, ideal for launch-week submission spikes.
+
+**Backend (`routes/share_cards.py`)**
+- `_make_voice_action_token(submission_id, action)` — HS256-signed JWT with `purpose="voice_moderation_v1"`, bound to a single submission + single action, 7-day expiry. Uses the existing `JWT_SECRET`.
+- `_decode_voice_action_token()` — strict validation: purpose match, action in `{approve_feature, approve, reject}`, submission id sanity-bounded.
+- `GET /api/share-cards/voices/moderate?token=...` — public (no auth) endpoint. Validates token → performs the action → renders a branded Cormorant-serif HTML confirmation page (navy + gold, green for success, red for reject/error).
+- **Idempotent**: replayed tokens against already-approved/rejected records return a soft "Already approved / Already rejected" confirmation, not an error.
+- **Three actions** encoded in the token: `approve_feature` (live immediately on /voices), `approve` (approved, unfeatured), `reject` (hidden forever, kept for audit).
+- `_notify_founder_of_pending()` updated to embed three primary action buttons (gold "Approve & Feature", emerald "Approve only", red "Reject") above the existing "Open Voices Admin" link. Each action URL carries its own signed token. Base URL comes from `FRONTEND_URL` env.
+
+**Verified end-to-end**
+- Approve-and-feature token: HTTP 200, branded "Approved & featured — {name}" page, DB flipped to `approval_status=approved, featured=true`.
+- Idempotent replay of same token: HTTP 200, "Already approved — {name}" confirmation (no state change).
+- Reject token: HTTP 200, "Rejected" page, DB flipped to `approval_status=rejected, featured=false`.
+- Invalid/tampered token: HTTP 401, branded "Link no longer valid" page.
+- Zero impact on existing `/admin/voices/{id}/approve` and `/reject` endpoints (in-portal founder actions still work).
+- Housekeeping still **65/65 PASS, 0 WARN, 0 FAIL.**
+
 ## Home Voices Strip — Auto-Hiding Social Proof (Apr 17, 2026)
 New component `components/HomeVoicesStrip.js`, placed on the public landing page between the "Free for Every American in Hospice Care" block and the "Readiness Starts Today" final CTA.
 
