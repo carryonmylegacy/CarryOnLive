@@ -36,55 +36,74 @@ async def launch_war_room(
 
     # ── Traffic ───────────────────────────────────────────────────────
     # Signups in last 1h and last 5min (for burst detection)
-    signups_1h = await db.users.count_documents({
-        "created_at": {"$gte": one_hour_ago.isoformat()},
-    })
-    signups_5m = await db.users.count_documents({
-        "created_at": {"$gte": five_min_ago.isoformat()},
-    })
-    signups_24h = await db.users.count_documents({
-        "created_at": {"$gte": one_day_ago.isoformat()},
-    })
+    signups_1h = await db.users.count_documents(
+        {
+            "created_at": {"$gte": one_hour_ago.isoformat()},
+        }
+    )
+    signups_5m = await db.users.count_documents(
+        {
+            "created_at": {"$gte": five_min_ago.isoformat()},
+        }
+    )
+    signups_24h = await db.users.count_documents(
+        {
+            "created_at": {"$gte": one_day_ago.isoformat()},
+        }
+    )
 
     # Active sessions heuristic: users active in last 15 min
     active_cutoff = (now - timedelta(minutes=15)).isoformat()
-    active_users = await db.users.count_documents({
-        "last_active_at": {"$gte": active_cutoff},
-    })
+    active_users = await db.users.count_documents(
+        {
+            "last_active_at": {"$gte": active_cutoff},
+        }
+    )
 
     # ── Performance (from in-process APIMetrics) ─────────────────────
     try:
         from middleware import api_metrics
+
         perf = api_metrics.get_summary()
     except Exception:
         perf = {}
 
     # ── Revenue (Stripe + Founders Circle) ──────────────────────────
     # Checkout sessions created in last 1h
-    checkouts_1h = await db.payment_transactions.count_documents({
-        "created_at": {"$gte": one_hour_ago.isoformat()},
-    })
+    checkouts_1h = await db.payment_transactions.count_documents(
+        {
+            "created_at": {"$gte": one_hour_ago.isoformat()},
+        }
+    )
     # Payments completed (paid) in last 1h
-    paid_1h = await db.payment_transactions.count_documents({
-        "payment_status": "paid",
-        "created_at": {"$gte": one_hour_ago.isoformat()},
-    })
-    # Sum of paid revenue in last 24h (cents → dollars)
-    revenue_cursor = db.payment_transactions.aggregate([
-        {"$match": {
+    paid_1h = await db.payment_transactions.count_documents(
+        {
             "payment_status": "paid",
-            "created_at": {"$gte": one_day_ago.isoformat()},
-        }},
-        {"$group": {"_id": None, "total": {"$sum": "$amount_total"}}},
-    ])
+            "created_at": {"$gte": one_hour_ago.isoformat()},
+        }
+    )
+    # Sum of paid revenue in last 24h (cents → dollars)
+    revenue_cursor = db.payment_transactions.aggregate(
+        [
+            {
+                "$match": {
+                    "payment_status": "paid",
+                    "created_at": {"$gte": one_day_ago.isoformat()},
+                }
+            },
+            {"$group": {"_id": None, "total": {"$sum": "$amount_total"}}},
+        ]
+    )
     revenue_24h_cents = 0
     async for row in revenue_cursor:
         revenue_24h_cents = row.get("total", 0) or 0
     # Founders Circle activations in last 24h
-    fc_24h = await db.founders_circle.count_documents({
-        "status": "active",
-        "activated_at": {"$gte": one_day_ago.isoformat()},
-    })
+    fc_24h = await db.founders_circle.count_documents(
+        {
+            "status": "active",
+            "activated_at": {"$gte": one_day_ago.isoformat()},
+        }
+    )
 
     # ── Infrastructure ────────────────────────────────────────────────
     # Scheduler locks — shows which schedulers are currently held and by whom
@@ -95,11 +114,15 @@ async def launch_war_room(
             {"_id": 0, "name": 1, "holder": 1, "acquired_at": 1, "expires_at": 1},
         )
         async for doc in cursor:
-            scheduler_locks.append({
-                "name": doc.get("name"),
-                "holder": doc.get("holder"),
-                "acquired_at": (doc.get("acquired_at") or now).isoformat() if hasattr(doc.get("acquired_at") or now, "isoformat") else str(doc.get("acquired_at")),
-            })
+            scheduler_locks.append(
+                {
+                    "name": doc.get("name"),
+                    "holder": doc.get("holder"),
+                    "acquired_at": (doc.get("acquired_at") or now).isoformat()
+                    if hasattr(doc.get("acquired_at") or now, "isoformat")
+                    else str(doc.get("acquired_at")),
+                }
+            )
     except Exception:
         pass
 
