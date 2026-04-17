@@ -526,6 +526,133 @@ async def _persist_submission(
     return doc["id"]
 
 
+async def _notify_member_approved(submission_id: str, featured: bool = False) -> None:
+    """Best-effort celebratory email to a member whose quote was just approved.
+
+    Idempotent (flips `member_notified_at` on first fire). Skips:
+      • seed quotes
+      • submissions from internal/test users (`__seed__`, `__test__`, empty user_id)
+      • submissions already notified
+      • users whose email we can't look up
+
+    Regenerates the member's personalized share card so they can one-tap share
+    their newly public voice. Never raises — notification is not part of the
+    approval contract.
+    """
+    try:
+        doc = await db.share_quote_submissions.find_one(
+            {"id": submission_id},
+            {
+                "_id": 0,
+                "id": 1,
+                "user_id": 1,
+                "first_name": 1,
+                "variant": 1,
+                "quote": 1,
+                "is_seed": 1,
+                "member_notified_at": 1,
+            },
+        )
+        if not doc:
+            return
+        if doc.get("is_seed"):
+            return
+        user_id = (doc.get("user_id") or "").strip()
+        if not user_id or user_id in {"__seed__", "__test__"}:
+            return
+        if doc.get("member_notified_at"):
+            return
+        user = await db.users.find_one(
+            {"id": user_id},
+            {"_id": 0, "id": 1, "email": 1, "first_name": 1},
+        )
+        if not user or not user.get("email"):
+            return
+
+        variant = doc.get("variant") or "sub"
+        first_name = (doc.get("first_name") or user.get("first_name") or "Friend").strip() or "Friend"
+        quote = doc.get("quote") or ""
+
+        # Render (or reuse) the sharecard using the approved quote.
+        cid = _card_id(variant, first_name, "", quote)
+        path = _CACHE_DIR / f"{cid}.png"
+        if not path.exists():
+            try:
+                if variant == "fc":
+                    img = _render_fc_card(first_name, "", quote)
+                else:
+                    img = _render_subscriber_card(first_name, "", quote)
+                img.save(path, format="PNG", optimize=True)
+            except Exception:
+                pass  # email can still go without the image
+
+        base = _moderation_base_url()
+        card_url = f"{base}/api/share-cards/image/{cid}"
+        voices_url = f"{base}/voices"
+        share_url = f"{base}/dashboard?share=voice"
+        accent = "#d4af37" if variant == "fc" else "#10b981"
+        chip_label = "FOUNDING MEMBER" if variant == "fc" else "CARRYON MEMBER"
+        featured_line = (
+            '<p style="font-size:13px; color:#8b6b1f; margin:0 0 6px; letter-spacing:0.12em; text-transform:uppercase; font-weight:700;">Featured on CarryOn</p>'
+            if featured
+            else ""
+        )
+
+        html = f"""
+        <div style="font-family: system-ui, -apple-system, sans-serif; max-width:560px; margin:24px auto; padding:28px 24px; border:1px solid #e5e7eb; border-radius:18px; color:#111; background:#ffffff;">
+          {featured_line}
+          <p style="font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:#8b6b1f; margin:0 0 14px; font-weight:700;">Your voice is live</p>
+
+          <h1 style="font-family: Georgia, 'Cormorant Garamond', serif; font-weight:600; font-size:30px; line-height:1.2; margin:0 0 12px; color:#0b1221;">
+            Thank you, <em style="color:{accent};">{first_name}</em>.
+          </h1>
+
+          <p style="font-size:15px; line-height:1.55; color:#475569; margin:0 0 18px;">
+            Your quote is now public on CarryOn — alongside other members who chose to share why they prepared.
+          </p>
+
+          <blockquote style="font-family: Georgia, serif; font-size:22px; font-style:italic; line-height:1.4; color:#0b1221; border-left:3px solid {accent}; margin:0 0 22px; padding:6px 0 6px 16px;">
+            &ldquo;{quote}&rdquo;
+          </blockquote>
+
+          <div style="margin:0 0 22px; text-align:center;">
+            <img src="{card_url}" alt="Your CarryOn share card" style="display:inline-block; max-width:100%; width:340px; height:auto; border-radius:14px; border:1px solid #e5e7eb;"/>
+          </div>
+
+          <p style="font-size:14px; line-height:1.5; color:#475569; margin:0 0 14px;">
+            We built you a personalized share card with your quote on it. Tell your people — it takes one tap.
+          </p>
+
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 8px;">
+            <tr>
+              <td style="padding:0 8px 8px 0;">
+                <a href="{share_url}" style="display:inline-block; padding:12px 22px; background:{accent}; color:{"#080e1a" if variant == "fc" else "#ffffff"}; text-decoration:none; border-radius:10px; font-weight:700; font-size:14px;">Share your voice</a>
+              </td>
+              <td style="padding:0 0 8px 0;">
+                <a href="{voices_url}" style="display:inline-block; padding:12px 20px; background:#f3f4f6; color:#0b1221; text-decoration:none; border-radius:10px; font-weight:700; font-size:14px; border:1px solid #e5e7eb;">See it on /voices</a>
+              </td>
+            </tr>
+          </table>
+
+          <p style="font-size:11px; color:#94a3b8; margin:22px 0 0;">
+            <span style="display:inline-block; padding:3px 9px; border-radius:999px; background:{"rgba(212,175,55,0.12)" if variant == "fc" else "rgba(16,185,129,0.12)"}; color:{accent}; font-weight:700; letter-spacing:0.14em; font-size:10px;">{chip_label}</span>
+            &nbsp;&nbsp;We will never share your quote elsewhere without your permission.
+          </p>
+        </div>
+        """
+        await send_email(
+            user["email"],
+            "Your voice is now public on CarryOn",
+            html,
+        )
+        await db.share_quote_submissions.update_one(
+            {"id": submission_id, "member_notified_at": {"$exists": False}},
+            {"$currentDate": {"member_notified_at": True}},
+        )
+    except Exception:
+        pass  # approval must never fail because of notification
+
+
 # ── Endpoints ────────────────────────────────────────────
 
 
@@ -799,6 +926,7 @@ async def approve_voice(
     )
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Submission not found")
+    await _notify_member_approved(submission_id, featured=bool(feature))
     return {"id": submission_id, "approval_status": "approved", "featured": feature}
 
 
@@ -953,6 +1081,7 @@ async def moderate_voice_via_email(token: str = Query(..., min_length=20, max_le
             {"id": submission_id},
             {"$set": {"approval_status": "approved", "featured": True}, "$currentDate": {"approved_at": True}},
         )
+        await _notify_member_approved(submission_id, featured=True)
         return HTMLResponse(
             _moderation_result_page(
                 success=True,
@@ -966,6 +1095,7 @@ async def moderate_voice_via_email(token: str = Query(..., min_length=20, max_le
             {"id": submission_id},
             {"$set": {"approval_status": "approved"}, "$currentDate": {"approved_at": True}},
         )
+        await _notify_member_approved(submission_id, featured=False)
         return HTMLResponse(
             _moderation_result_page(
                 success=True,

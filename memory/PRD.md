@@ -270,6 +270,31 @@ Extension of the veto power workflow — founder can now approve/reject directly
 - Zero impact on existing `/admin/voices/{id}/approve` and `/reject` endpoints (in-portal founder actions still work).
 - Housekeeping still **65/65 PASS, 0 WARN, 0 FAIL.**
 
+## Voices — "Your voice is now public" Member Celebration Email (Apr 17, 2026)
+Final leg of the Voices loop: the moment the founder approves a user-submitted quote (via portal API OR one-click email), the **member themselves** gets a celebratory email with their personalized share card and a one-tap share CTA.
+
+**Backend (`routes/share_cards.py`)**
+- New helper `_notify_member_approved(submission_id, featured=bool)`.
+- Skips silently in all the right cases:
+  - `is_seed=True` quote
+  - Internal/test user_ids (`""`, `"__seed__"`, `"__test__"`)
+  - Missing user or missing email
+  - Already notified (checks `member_notified_at`)
+- Regenerates the member's sharecard with their approved quote (FC or subscriber variant auto-selected) so the email contains the exact PNG they'll share.
+- Branded email body: Cormorant serif headline "Thank you, {name}", the quote in italic, the inline sharecard image, two CTAs: "Share your voice" (deep-links to `/dashboard?share=voice`) and "See it on /voices".
+- FC members get gold accent + "FOUNDING MEMBER" chip; subscribers get emerald accent + "CARRYON MEMBER" chip; featured quotes also show a "Featured on CarryOn" kicker.
+- Flips `member_notified_at` via conditional `$exists: false` update so it's atomically one-shot — re-approval / double-trigger cannot produce a duplicate email.
+- Wired into three approval paths: (1) `PATCH /admin/voices/{id}/approve` in-portal, (2) one-click `approve_feature` email link, (3) one-click `approve` email link. Never wired into `reject`.
+
+**Frontend (`components/ShareYourCarryOn.js`)**
+- Added a `useEffect` that checks `?share=voice` in the URL on mount. When present, auto-opens the share sheet AND strips the query param (so back-navigation doesn't re-trigger). One-tap share flow from the inbox.
+
+**Verified end-to-end**
+- DB: fake pending submission approved via one-click email → flipped to `approved=true, featured=true, approved_at=now, member_notified_at=now`. Resend log: `Email sent: 'Your voice is now public on CarryOn' → qa-test-notifier@example.com`.
+- Idempotency: calling `_notify_member_approved` on an already-notified doc → no re-send (log confirmed silent skip).
+- Seed skip: calling `_notify_member_approved` on `user_id="__seed__"` → silent skip.
+- Housekeeping still **65/65 PASS, 0 WARN, 0 FAIL.** `scripts/check.sh` returns **ALL CLEAR — SAFE TO PUSH**.
+
 ## Home Voices Strip — Auto-Hiding Social Proof (Apr 17, 2026)
 New component `components/HomeVoicesStrip.js`, placed on the public landing page between the "Free for Every American in Hospice Care" block and the "Readiness Starts Today" final CTA.
 

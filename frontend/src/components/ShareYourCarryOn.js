@@ -82,6 +82,24 @@ export default function ShareYourCarryOn({
     if (open && !card) fetchCard('');
   }, [open, card, fetchCard]);
 
+  // Auto-open when the user arrives via the "Your voice is now public" email
+  // (links land on /dashboard?share=voice). One-tap share from the inbox.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('share') === 'voice') {
+        setOpen(true);
+        params.delete('share');
+        const q = params.toString();
+        const cleanUrl = window.location.pathname + (q ? `?${q}` : '') + window.location.hash;
+        window.history.replaceState({}, '', cleanUrl);
+      }
+    } catch {
+      /* no-op */
+    }
+  }, []);
+
   const displayLabel = label || (isFounders ? 'Share the news' : 'Share your CarryOn');
 
   if (variant === 'tile') {
