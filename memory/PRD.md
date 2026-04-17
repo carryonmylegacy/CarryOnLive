@@ -1,5 +1,17 @@
 # CarryOn - Family Preparedness Platform PRD
 
+> ## 🔴 AGENT PROTOCOL — READ FIRST, EVERY FORK
+>
+> **Before doing ANYTHING, read `/app/memory/AGENT_RULES.md`.**
+> It contains persistent rules the user has established across sessions that
+> MUST survive agent forks. The most important one:
+>
+> **Every summary to the user MUST include a full housekeeping + ruff report**
+> run via `bash /app/scripts/check.sh`. No exceptions. Do not make the user
+> ask for this.
+
+---
+
 ## Original Problem Statement
 Comprehensive family preparedness platform with estate planning, secure document vault, milestone messages, estate chat, connected care protocol, financial portal, and subscription management.
 

@@ -1247,6 +1247,15 @@ echo ""
 #                   (scripts/check.sh, pre-commit hook, CI) so housekeeping
 #                   doesn't double-block on its own WARN-level findings.
 # ══════════════════════════════════════════════════════════════
+
+# ── Agent Rule Reminder ──
+# Surface the persistent rule in case an agent runs this without reading
+# /app/memory/AGENT_RULES.md first. Human operators can ignore this line.
+echo ""
+echo -e "${YELLOW}📋 AGENT REMINDER${NC}: Every summary to the user MUST include this"
+echo "   housekeeping output. See /app/memory/AGENT_RULES.md for persistent rules."
+echo ""
+
 if [ "$STRICT_MODE" = "1" ]; then
   echo -e "${YELLOW}STRICT MODE${NC}: WARNs counted as failures."
   STRICT_TOTAL=$((ISSUES + SOC2_ISSUES + IOS_ISSUES + MOBILE_ISSUES + VERCEL_ISSUES))
