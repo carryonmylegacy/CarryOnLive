@@ -958,43 +958,46 @@ const MessagesPage = () => {
           /* ===== NORMAL MODE: Full-featured form ===== */
           <>
           <div className="space-y-5">
-            {/* Message Type Toggle */}
-            <div className="flex gap-2">
+            {/* Message Type Toggle — 4-col grid guarantees fit on every mobile width */}
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
               <Button
                 variant={messageType === 'text' ? 'default' : 'outline'}
                 onClick={() => setMessageType('text')}
-                className={messageType === 'text' ? 'gold-button' : 'border-[var(--b)] text-white'}
+                className={`${messageType === 'text' ? 'gold-button' : 'border-[var(--b)] text-white'} w-full min-w-0 px-1.5 sm:px-3 text-[13px] sm:text-sm`}
                 data-testid="msg-type-text"
               >
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Written
+                <MessageSquare className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                <span className="truncate">Written</span>
               </Button>
               <Button
                 variant={messageType === 'voice' ? 'default' : 'outline'}
                 onClick={() => setMessageType('voice')}
-                className={messageType === 'voice' ? 'gold-button' : 'border-[var(--b)] text-white'}
+                className={`${messageType === 'voice' ? 'gold-button' : 'border-[var(--b)] text-white'} w-full min-w-0 px-1.5 sm:px-3 text-[13px] sm:text-sm`}
                 data-testid="msg-type-voice"
               >
-                <Mic className="w-4 h-4 mr-2" />
-                Voice
+                <Mic className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                <span className="truncate">Voice</span>
               </Button>
               <Button
                 variant={messageType === 'video' ? 'default' : 'outline'}
                 onClick={() => setMessageType('video')}
-                className={messageType === 'video' ? 'gold-button' : 'border-[var(--b)] text-white'}
+                className={`${messageType === 'video' ? 'gold-button' : 'border-[var(--b)] text-white'} w-full min-w-0 px-1.5 sm:px-3 text-[13px] sm:text-sm`}
                 data-testid="msg-type-video"
               >
-                <Video className="w-4 h-4 mr-2" />
-                Video
+                <Video className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                <span className="truncate">Video</span>
               </Button>
               <Button
                 variant={messageType === 'attachment' ? 'default' : 'outline'}
                 onClick={() => setMessageType('attachment')}
-                className={messageType === 'attachment' ? 'gold-button' : 'border-[var(--b)] text-white'}
+                className={`${messageType === 'attachment' ? 'gold-button' : 'border-[var(--b)] text-white'} w-full min-w-0 px-1.5 sm:px-3 text-[13px] sm:text-sm`}
                 data-testid="msg-type-attachment"
               >
-                <Paperclip className="w-4 h-4 mr-2" />
-                Attachment
+                <Paperclip className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                <span className="truncate">
+                  <span className="sm:hidden">Attach</span>
+                  <span className="hidden sm:inline">Attachment</span>
+                </span>
               </Button>
             </div>
             
