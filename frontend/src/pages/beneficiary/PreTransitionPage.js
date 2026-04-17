@@ -72,7 +72,7 @@ const PreTransitionPage = () => {
 
       {/* Estate info */}
       <div className="text-center mb-8">
-        <h1 className="text-2xl lg:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+        <h1 className="text-2xl lg:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>
           {estate?.name || 'Estate'}
         </h1>
         <p className="text-[var(--t4)]">Pre-Transition · Limited Access</p>

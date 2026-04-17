@@ -307,7 +307,7 @@ const FinancialPortalPage = () => {
             <DollarSign className="w-5 h-5 text-[#22C993]" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
               CarryOn Financial Picture (CFP)
             </h1>
             <p className="text-xs text-[var(--t5)]">

@@ -464,7 +464,7 @@ const ChecklistPage = () => {
             <CheckSquare className="w-5 h-5 text-[#F59E0B]" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
               Immediate Action Checklist (IAC)
             </h1>
             <p className="text-xs text-[var(--t5)]">
@@ -806,7 +806,7 @@ const ChecklistPage = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => setFeedbackItem(null)} />
           <div className="relative rounded-2xl p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto" style={{ background: 'var(--bg2)', border: '1px solid var(--b)', boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}>
-            <h3 className="text-lg font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Why not this item?</h3>
+            <h3 className="text-lg font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>Why not this item?</h3>
             <p className="text-xs text-[var(--t4)] mb-4">Optional — helps the AI learn your preferences.</p>
             <textarea
               value={feedbackText}

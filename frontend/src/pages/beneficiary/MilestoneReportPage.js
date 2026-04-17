@@ -74,7 +74,7 @@ const MilestoneReportPage = () => {
       <div className="max-w-xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Report a Milestone</h1>
+          <h1 className="text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Report a Milestone</h1>
           <p className="text-sm text-[var(--t4)]">Report a life milestone to check for a message from {benefactorFirst}.</p>
         </div>
 

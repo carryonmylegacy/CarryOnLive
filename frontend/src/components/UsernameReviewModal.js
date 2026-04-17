@@ -76,7 +76,7 @@ const UsernameReviewModal = () => {
             <User className="w-5 h-5 text-[#d4af37]" />
           </div>
           <div>
-            <h2 className="text-white text-lg font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>Welcome back!</h2>
+            <h2 className="text-white text-lg font-bold" style={{ fontFamily: 'var(--sans)' }}>Welcome back!</h2>
             <p className="text-[#94a3b8] text-xs">CarryOn now uses usernames for sign-in</p>
           </div>
         </div>

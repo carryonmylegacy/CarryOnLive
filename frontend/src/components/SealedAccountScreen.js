@@ -63,7 +63,7 @@ const SealedAccountScreen = ({ transitionedAt, onBack }) => {
             <Shield className="w-8 h-8" style={{ color: '#d4af37' }} />
           </div>
 
-          <h1 className="text-xl font-bold text-white mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <h1 className="text-xl font-bold text-white mb-3" style={{ fontFamily: 'var(--sans)' }}>
             Account Sealed
           </h1>
 

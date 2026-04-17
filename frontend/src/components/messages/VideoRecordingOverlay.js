@@ -29,7 +29,7 @@ const VideoRecordingOverlay = ({
         {/* Countdown overlay */}
         {countdown !== null && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-            <span className="text-8xl font-bold text-white animate-pulse" style={{ fontFamily: 'Outfit, sans-serif' }}>{countdown}</span>
+            <span className="text-8xl font-bold text-white animate-pulse" style={{ fontFamily: 'var(--sans)' }}>{countdown}</span>
           </div>
         )}
 

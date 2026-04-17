@@ -414,7 +414,7 @@ const DashboardPage = () => {
               <ArrowLeftRight className="w-14 h-14 text-[var(--gold)]" />
             </div>
             <h1 className="text-2xl lg:text-3xl font-bold mb-3"
-              style={{ fontFamily: 'Outfit, sans-serif', color: '#ffffff' }}>
+              style={{ fontFamily: 'var(--sans)', color: '#ffffff' }}>
               Welcome to Your Estate
             </h1>
             <p className="text-sm lg:text-base mb-8 max-w-sm mx-auto leading-relaxed" style={{ color: '#94a3b8' }}>
@@ -454,7 +454,7 @@ const DashboardPage = () => {
                 <CheckCircle2 className="w-14 h-14" style={{ color: stepColor }} />
               </div>
               <h1 className="text-2xl lg:text-3xl font-bold mb-3"
-                style={{ fontFamily: 'Outfit, sans-serif', color: 'var(--guided-title, #ffffff)' }}>
+                style={{ fontFamily: 'var(--sans)', color: 'var(--guided-title, #ffffff)' }}>
                 {OPTIONAL_SKIP_INFO[guidedStep.key].title}
               </h1>
               <p className="text-sm lg:text-base mb-8 max-w-sm mx-auto leading-relaxed"
@@ -488,7 +488,7 @@ const DashboardPage = () => {
 
           {/* Title and description */}
           <h1 className="text-2xl lg:text-3xl font-bold mb-3"
-            style={{ fontFamily: 'Outfit, sans-serif', color: 'var(--guided-title, #ffffff)' }}>
+            style={{ fontFamily: 'var(--sans)', color: 'var(--guided-title, #ffffff)' }}>
             {title}
           </h1>
           <p className="text-sm lg:text-base mb-8 max-w-sm mx-auto leading-relaxed"
@@ -535,7 +535,7 @@ const DashboardPage = () => {
       {/* Header + Estate Selector */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
         <div>
-          <h1 className="text-2xl lg:text-4xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <h1 className="text-2xl lg:text-4xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>
             {justCompletedActivation
               ? <>{getUserFirstName()}, let's continue exploring CarryOn</>
               : <>Welcome back, {getUserFirstName()}</>}
@@ -578,7 +578,7 @@ const DashboardPage = () => {
       {/* Estate Readiness Score — Single Gauge */}
       <div className="glass-card p-5 lg:p-8 mb-4" data-testid="readiness-card">
         {/* Title — always centered */}
-        <h2 className="text-base lg:text-3xl font-bold text-[var(--t)] uppercase tracking-wider mb-4 lg:mb-5 text-center" style={{ fontFamily: 'Outfit, sans-serif' }}>
+        <h2 className="text-base lg:text-3xl font-bold text-[var(--t)] uppercase tracking-wider mb-4 lg:mb-5 text-center" style={{ fontFamily: 'var(--sans)' }}>
           Estate Readiness
         </h2>
         {/* Desktop: key box upper right, gauge below */}
@@ -947,7 +947,7 @@ const DashboardPage = () => {
               <Sparkles className="w-10 h-10 text-[var(--gold)]" />
             </div>
             <h1 className="text-3xl lg:text-4xl font-bold mb-4"
-              style={{ fontFamily: 'Outfit, sans-serif', color: 'var(--guided-title, #ffffff)' }}>
+              style={{ fontFamily: 'var(--sans)', color: 'var(--guided-title, #ffffff)' }}>
               Congratulations!
             </h1>
             <p className="text-base lg:text-lg mb-2 max-w-sm mx-auto leading-relaxed"

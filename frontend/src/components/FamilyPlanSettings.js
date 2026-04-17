@@ -140,7 +140,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
                 <div className="flex items-center gap-3">
                   <span className="text-lg line-through text-[var(--t5)]">${currentTierPlan.price?.toFixed(2)}/mo</span>
                   <ArrowRight className="w-4 h-4 text-[var(--gold)]" />
-                  <span className="text-2xl font-bold text-[var(--gold)]" style={{ fontFamily: 'Outfit, sans-serif' }}>${(currentTierPlan.price * (1 - familyDiscounts.benefactor / 100)).toFixed(2)}/mo</span>
+                  <span className="text-2xl font-bold text-[var(--gold)]" style={{ fontFamily: 'var(--sans)' }}>${(currentTierPlan.price * (1 - familyDiscounts.benefactor / 100)).toFixed(2)}/mo</span>
                   {familyDiscounts.benefactor > 0 && (
                     <span className="text-xs font-bold px-2 py-1 rounded-full bg-[#22C993]/15 text-[#22C993]">Save {familyDiscounts.benefactor}%</span>
                   )}
@@ -356,7 +356,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
               {/* Family Plan Price column */}
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#22C993' }}>With Family Plan</p>
-                <p className="text-2xl font-bold underline" style={{ color: '#22C993', fontFamily: 'Outfit, sans-serif' }} data-testid="family-total-price">
+                <p className="text-2xl font-bold underline" style={{ color: '#22C993', fontFamily: 'var(--sans)' }} data-testid="family-total-price">
                   ${totalFamily.toFixed(2)}{billingLabel}
                 </p>
                 {fpBilling !== 'monthly' && (

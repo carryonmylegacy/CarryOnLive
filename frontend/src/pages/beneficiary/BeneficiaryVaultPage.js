@@ -110,7 +110,7 @@ const BeneficiaryVaultPage = () => {
 
       <div className="flex items-center gap-3 mb-5">
         <FolderLock className="w-6 h-6 text-[#60A5FA]" />
-        <h1 className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Secure Document Vault</h1>
+        <h1 className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Secure Document Vault</h1>
       </div>
 
       {/* Search */}

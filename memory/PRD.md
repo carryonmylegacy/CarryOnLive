@@ -98,6 +98,21 @@ See detailed V11 documentation in prior version. Key points:
 - previewGuardRef (300ms) blocks phantom touches after image preview close
 - Keyboard auto-dismisses via document.activeElement.blur() when long-press menu opens
 
+## Varsity Typography Overhaul (Apr 17, 2026)
+- Swapped `Outfit` (headers) + `DM Sans` (body) → single workhorse **Inter** for UI.
+- **Cormorant Garamond** retained for brand/trust headers only (`var(--serif)`).
+- CSS variables now: `--sans: Inter`, `--body: Inter`, `--serif: Cormorant Garamond`.
+- Bulk replaced 210 inline `fontFamily: 'Outfit, sans-serif'` references across 79 files with `fontFamily: 'var(--sans)'` so theme changes propagate from one CSS source of truth.
+- Updated `/public/index.html` font preload/link to `Inter + Cormorant Garamond` combined request.
+
+## Admin UX Prototypes Tab (Apr 17, 2026)
+- New founder-only admin tab at `/admin/prototypes` (`PrototypesTab.js`) catalogs isolated HTML wireframes in `/public/mockups/`:
+  - `dashboard-v2.html` (Varsity-grade home tile redesign)
+  - `onboarding-v2.html` (10-frame first-run signup flow)
+  - `mobile-key-screens.html` (iPhone 13 mini → 17 Pro Max surfaces)
+- Each card offers **inline iframe preview** + **Open in new tab** button with data-testids.
+- Appears in Admin → Prototypes (founder scope only). Zero production footprint — mockups stay isolated HTML until explicitly promoted.
+
 ## Upcoming Tasks (Launch Week — Wed–Fri)
 - [Audit action] Fix FC `free_access` grant for late-added beneficiaries (🔴 15 min)
 - [Audit action] Verify Stripe webhook signature enforcement (curl test, 5 min)

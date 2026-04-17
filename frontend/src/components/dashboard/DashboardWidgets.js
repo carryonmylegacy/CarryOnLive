@@ -44,10 +44,10 @@ export const SpeedometerGauge = ({ score, id = 'main', labelText, labelColor }) 
         </g>
       </svg>
       <div className="text-center mt-2 lg:mt-3">
-        <div className="text-3xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+        <div className="text-3xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
           {score}%
         </div>
-        <div className="text-sm lg:text-lg font-semibold mt-0.5" style={{ color: labelColor, fontFamily: 'Outfit, sans-serif' }}>
+        <div className="text-sm lg:text-lg font-semibold mt-0.5" style={{ color: labelColor, fontFamily: 'var(--sans)' }}>
           {labelText}
         </div>
       </div>

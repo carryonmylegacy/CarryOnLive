@@ -148,7 +148,7 @@ const DevSwitcher = () => {
           display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px',
           background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#000',
           borderRadius: 12, cursor: 'pointer', fontWeight: 800, fontSize: 13,
-          boxShadow: '0 4px 20px rgba(245,158,11,0.4)', fontFamily: 'Outfit, sans-serif',
+          boxShadow: '0 4px 20px rgba(245,158,11,0.4)', fontFamily: 'var(--sans)',
           userSelect: 'none',
         }}
       >

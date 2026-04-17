@@ -531,7 +531,7 @@ const GuardianPage = () => {
             style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
             <Landmark className="w-8 h-8 text-[var(--gold)]" />
           </div>
-          <h2 className="text-xl font-bold mb-3" style={{ fontFamily: 'Outfit, sans-serif', color: 'var(--t, #ffffff)' }}>
+          <h2 className="text-xl font-bold mb-3" style={{ fontFamily: 'var(--sans)', color: 'var(--t, #ffffff)' }}>
             Primary Residence Needed
           </h2>
           <p className="text-sm mb-6 leading-relaxed" style={{ color: 'var(--t4, #94a3b8)' }}>
@@ -572,7 +572,7 @@ const GuardianPage = () => {
                 <Sparkles className="w-5 h-5 text-[var(--gold)]" />
               </div>
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="guardian-hero-title">
+                <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }} data-testid="guardian-hero-title">
                   Estate Guardian AI (EGA)
                 </h1>
                 <ul className="text-xs text-[var(--t5)] mt-1 space-y-0.5">
@@ -711,7 +711,7 @@ const GuardianPage = () => {
             <Sparkles className="w-4 h-4 text-[var(--gold)]" />
           </div>
           <div>
-            <h1 className="text-sm font-bold text-[var(--t)] leading-none" style={{ fontFamily: 'Outfit, sans-serif' }}>Estate Guardian AI (EGA)</h1>
+            <h1 className="text-sm font-bold text-[var(--t)] leading-none" style={{ fontFamily: 'var(--sans)' }}>Estate Guardian AI (EGA)</h1>
             <span className="text-[var(--t5)] text-[11px] flex items-center gap-1">
               <Shield className="w-2 h-2 text-[#22C993]" /> AES-256 encrypted session
             </span>

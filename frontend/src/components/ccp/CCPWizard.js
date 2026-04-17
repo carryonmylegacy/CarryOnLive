@@ -303,7 +303,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
         <div className="space-y-5" data-testid="ccp-wizard-step-1">
           <div className="text-center mb-6">
             <Users className="w-10 h-10 mx-auto mb-3" style={{ color: '#d4af37' }} />
-            <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+            <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>
               Who is in your household?
             </h2>
             <p className="text-sm mt-2" style={{ color: 'var(--t4)' }}>
@@ -347,7 +347,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
         <div className="space-y-5" data-testid="ccp-wizard-step-2">
           <div className="text-center mb-6">
             <AlertTriangle className="w-10 h-10 mx-auto mb-3" style={{ color: '#d4af37' }} />
-            <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+            <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>
               What plan do you want to create?
             </h2>
             <p className="text-sm mt-2" style={{ color: 'var(--t4)' }}>
@@ -386,7 +386,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
         <div className="space-y-5" data-testid="ccp-wizard-step-3">
           <div className="text-center mb-4">
             <MapPin className="w-10 h-10 mx-auto mb-3" style={{ color: '#d4af37' }} />
-            <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+            <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>
               {concernLabel} Plan Details
             </h2>
             {template && (
@@ -491,7 +491,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
               <div className="relative">
                 <Sparkles className="w-12 h-12 animate-pulse" style={{ color: '#d4af37' }} />
               </div>
-              <h2 className="text-xl font-bold text-center" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+              <h2 className="text-xl font-bold text-center" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>
                 Building your {concernLabel} plan...
               </h2>
               <p className="text-sm text-center max-w-xs" style={{ color: 'var(--t4)' }}>

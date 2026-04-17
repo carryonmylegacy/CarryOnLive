@@ -116,7 +116,7 @@ const SupportChatPage = () => {
             <Headphones className="w-6 h-6 text-[var(--gn2)]" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <h1 className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
               CarryOn™ Support
             </h1>
             <p className="text-xs text-[var(--t4)]">

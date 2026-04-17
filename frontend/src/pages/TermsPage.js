@@ -17,7 +17,7 @@ const TermsPage = () => {
         <div className="glass-card p-8 md:p-12">
           <div className="flex items-center gap-3 mb-6">
             <FileText className="w-7 h-7 text-[#d4af37]" />
-            <h1 className="text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="terms-page-title">
+            <h1 className="text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }} data-testid="terms-page-title">
               Terms of Service
             </h1>
           </div>

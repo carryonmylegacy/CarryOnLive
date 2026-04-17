@@ -411,7 +411,7 @@ const SignupPage = () => {
                   <img src="/carryon-logo.png" alt="CarryOn" className="w-[220px] h-auto" />
                 </div>
                 <div className="flex-1 pt-2">
-                  <h1 className="text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                  <h1 className="text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'var(--sans)' }}>
                     Join CarryOn.
                     <span className="block text-[#d4af37] mt-1">Protect Your Estate Plan.</span>
                   </h1>
@@ -445,7 +445,7 @@ const SignupPage = () => {
               opacity: entered ? 1 : 0,
               transition: 'opacity 0.6s ease 0.1s',
             }}>
-              <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight mb-0.5" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight mb-0.5" style={{ fontFamily: 'var(--sans)' }}>
                 Join CarryOn. <span className="text-[#d4af37]">Protect Your Estate Plan.</span>
               </h1>
               <p className="text-[#6b7a90] text-xs">Create your account in seconds</p>
@@ -502,7 +502,7 @@ const SignupPage = () => {
                     {currentStep?.id === 'name' && (
                       <div className="space-y-4 sm:space-y-5">
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>What's your full legal name?</h2>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>What's your full legal name?</h2>
                           <p className="text-[#6b7a90] text-sm">This must match your legal documents exactly.</p>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -556,7 +556,7 @@ const SignupPage = () => {
                     {currentStep?.id === 'minor_blocked' && (
                       <div className="space-y-4">
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Invitation Required</h2>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Invitation Required</h2>
                           <p className="text-[#6b7a90] text-sm">Accounts for family members under 18 are created through an invitation from a benefactor.</p>
                         </div>
                         <div className="rounded-xl p-4" style={{ background: 'rgba(96,165,250,0.06)', border: '1px solid rgba(96,165,250,0.15)' }}>
@@ -577,7 +577,7 @@ const SignupPage = () => {
                     {currentStep?.id === 'eligibility' && (
                       <div className="space-y-3">
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Special Eligibility</h2>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Special Eligibility</h2>
                           <p className="text-[#94a3b8] text-sm">Select if any apply for discounted pricing.</p>
                         </div>
                         <div className="grid grid-cols-2 gap-2.5">
@@ -645,7 +645,7 @@ const SignupPage = () => {
                     {currentStep?.id === 'credentials' && (
                       <div className="space-y-4 sm:space-y-5">
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Secure your account</h2>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Secure your account</h2>
                           <p className="text-[#6b7a90] text-sm">Choose a unique username and strong password to protect your family&apos;s data.</p>
                         </div>
                         <div className="space-y-2">
@@ -799,7 +799,7 @@ const SignupPage = () => {
             boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
           }}>
             <DialogHeader>
-              <DialogTitle className="text-white text-xl font-semibold" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <DialogTitle className="text-white text-xl font-semibold" style={{ fontFamily: 'var(--sans)' }}>
                 Verify Your Email
               </DialogTitle>
               <DialogDescription className="text-[#7b879e] text-base mt-1">

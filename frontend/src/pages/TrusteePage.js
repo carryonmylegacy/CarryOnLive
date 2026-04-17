@@ -419,7 +419,7 @@ const TrusteePage = () => {
             <div className="w-14 h-14 rounded-2xl mx-auto mb-5 flex items-center justify-center" style={{ background: 'var(--seal-bg)' }}>
               <Shield className="w-7 h-7 text-[var(--gold)]" />
             </div>
-            <h2 className="text-xl font-bold text-[var(--t)] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <h2 className="text-xl font-bold text-[var(--t)] mb-3" style={{ fontFamily: 'var(--sans)' }}>
               Designated Trustee Services
             </h2>
             <p className="text-sm text-[var(--t3)] leading-relaxed mb-6">
@@ -1025,7 +1025,7 @@ const TrusteePage = () => {
             <Shield className="w-5 h-5 text-[#B794F6]" />
           </div>
           <div>
-            <h1 className="text-xl lg:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Designated Trustee Services (DTS)</h1>
+            <h1 className="text-xl lg:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Designated Trustee Services (DTS)</h1>
             <p className="text-xs text-[var(--t5)]">Confidential tasks executed by CarryOn™ after transition</p>
           </div>
         </div>

@@ -95,7 +95,7 @@ export const ReturnPopup = ({ step, beneficiaryNames, onReturn, onAlternate, onA
           style={{ background: `${v.color}15`, border: `1px solid ${v.color}25` }}>
           <Icon className="w-7 h-7" style={{ color: v.color }} />
         </div>
-        <h2 className="text-xl font-bold mb-2" style={{ fontFamily: 'Outfit, sans-serif', color: 'var(--t, #ffffff)' }}>{v.title}</h2>
+        <h2 className="text-xl font-bold mb-2" style={{ fontFamily: 'var(--sans)', color: 'var(--t, #ffffff)' }}>{v.title}</h2>
         <p className="text-sm mb-6" style={{ color: 'var(--t4, #94a3b8)' }}>{v.subtitle}</p>
         <button onClick={onReturn}
           className="w-full py-3 rounded-xl text-sm font-bold mb-3"
@@ -143,7 +143,7 @@ export const ActivationCelebration = ({ onDismiss }) => (
         style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))', border: '2px solid rgba(212,175,55,0.3)' }}>
         <Sparkles className="w-10 h-10 text-[#d4af37]" />
       </div>
-      <h2 className="text-2xl font-bold text-white mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
+      <h2 className="text-2xl font-bold text-white mb-3" style={{ fontFamily: 'var(--sans)' }}>
         Congratulations
       </h2>
       <p className="text-base text-[#d4af37] font-semibold mb-2">You've created the beginnings of your estate plan.</p>

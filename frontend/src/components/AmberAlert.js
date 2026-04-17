@@ -215,7 +215,7 @@ const AmberAlert = ({ alert, onAcknowledge }) => {
 
           <h1
             className="text-xl font-bold text-white mb-3"
-            style={{ fontFamily: 'Outfit, sans-serif' }}
+            style={{ fontFamily: 'var(--sans)' }}
           >
             {alert?.title || 'Security Alert'}
           </h1>

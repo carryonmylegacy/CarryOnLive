@@ -177,7 +177,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
             <AlertTriangle className="w-14 h-14" style={{ color: '#F59E0B' }} />
           </div>
           <h1 className="text-2xl lg:text-3xl font-bold mb-3"
-            style={{ fontFamily: 'Outfit, sans-serif', color: 'var(--guided-title, #ffffff)' }}>
+            style={{ fontFamily: 'var(--sans)', color: 'var(--guided-title, #ffffff)' }}>
             Close Getting Started?
           </h1>
           <p className="text-sm lg:text-base mb-8 max-w-sm mx-auto leading-relaxed"
@@ -240,7 +240,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
             <Settings className="w-14 h-14" style={{ color: '#d4af37' }} />
           </div>
           <h1 className="text-2xl lg:text-3xl font-bold mb-3"
-            style={{ fontFamily: 'Outfit, sans-serif', color: 'var(--guided-title, #ffffff)' }}>
+            style={{ fontFamily: 'var(--sans)', color: 'var(--guided-title, #ffffff)' }}>
             Guide Hidden
           </h1>
           <p className="text-sm lg:text-base mb-8 max-w-sm mx-auto leading-relaxed"
@@ -296,7 +296,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
             <Sparkles className="w-6 h-6 text-[#d4af37]" />
           </div>
           <div>
-            <h3 className="text-[var(--t)] font-bold text-xl lg:text-2xl" style={{ fontFamily: 'Outfit, sans-serif' }}>Get Started with CarryOn</h3>
+            <h3 className="text-[var(--t)] font-bold text-xl lg:text-2xl" style={{ fontFamily: 'var(--sans)' }}>Get Started with CarryOn</h3>
             <p className="text-[var(--t5)] text-base">{progress.completed_count} of {progress.total_steps} complete</p>
           </div>
         </div>

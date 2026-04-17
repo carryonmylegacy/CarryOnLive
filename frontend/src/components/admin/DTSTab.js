@@ -131,7 +131,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
               <AlertTriangle className="w-5 h-5 text-red-400" />
             </div>
             <div>
-              <h3 className="text-white font-bold text-base" style={{ fontFamily: 'Outfit, sans-serif' }}>Delete DTS Request</h3>
+              <h3 className="text-white font-bold text-base" style={{ fontFamily: 'var(--sans)' }}>Delete DTS Request</h3>
               <p className="text-[var(--t5)] text-[11px]">This action is irreversible</p>
             </div>
           </div>

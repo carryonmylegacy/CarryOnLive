@@ -41,7 +41,7 @@ const ShareUploadModal = ({ pendingShare, categories, uploading, onUpload, onCan
             <Upload className="w-5 h-5 text-[#d4af37]" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>Upload to Vault</h2>
+            <h2 className="text-lg font-bold text-white" style={{ fontFamily: 'var(--sans)' }}>Upload to Vault</h2>
             <p className="text-xs text-white/50 truncate max-w-[200px]">{pendingShare.name}</p>
           </div>
         </div>

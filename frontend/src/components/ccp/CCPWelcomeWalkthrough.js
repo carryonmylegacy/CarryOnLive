@@ -32,7 +32,7 @@ const CCPWelcomeWalkthrough = ({ welcomeStep, setWelcomeStep, onDismiss }) => {
         {welcomeStep === 1 && (
           <div className="text-center" data-testid="ccp-welcome-step-1">
             <Shield className="w-8 h-8 mx-auto mb-1.5" style={{ color: '#d4af37' }} />
-            <h2 className="text-base font-bold mb-1" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+            <h2 className="text-base font-bold mb-1" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>
               Welcome to CarryOn Contingency Protocols
             </h2>
             <p className="text-xs mb-2 leading-snug" style={{ color: 'var(--t4)' }}>
@@ -66,7 +66,7 @@ const CCPWelcomeWalkthrough = ({ welcomeStep, setWelcomeStep, onDismiss }) => {
         {welcomeStep === 2 && (
           <div className="text-center" data-testid="ccp-welcome-step-2">
             <FileText className="w-8 h-8 mx-auto mb-1.5" style={{ color: '#d4af37' }} />
-            <h2 className="text-base font-bold mb-1" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+            <h2 className="text-base font-bold mb-1" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>
               Creating Your First Plan
             </h2>
             <p className="text-xs mb-2 leading-snug" style={{ color: 'var(--t4)' }}>
@@ -111,7 +111,7 @@ const CCPWelcomeWalkthrough = ({ welcomeStep, setWelcomeStep, onDismiss }) => {
         {welcomeStep === 3 && (
           <div className="text-center" data-testid="ccp-welcome-step-3">
             <AlertTriangle className="w-8 h-8 mx-auto mb-1.5" style={{ color: '#F05252' }} />
-            <h2 className="text-base font-bold mb-1" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+            <h2 className="text-base font-bold mb-1" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>
               When an Emergency Happens
             </h2>
             <p className="text-xs mb-2 leading-snug" style={{ color: 'var(--t4)' }}>

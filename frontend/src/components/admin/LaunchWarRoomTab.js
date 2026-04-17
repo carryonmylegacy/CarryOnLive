@@ -79,7 +79,7 @@ export function LaunchWarRoomTab() {
         <div>
           <div className="flex items-center gap-3">
             <div className="w-1 h-8 rounded-full" style={{ background: hasCritical ? 'linear-gradient(180deg, #fbbf24, #ef4444)' : 'linear-gradient(180deg, var(--gold2), var(--gold))' }} />
-            <h2 className="text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '-0.02em' }}>
+            <h2 className="text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)', letterSpacing: '-0.02em' }}>
               Launch War Room
             </h2>
             <PulseDot status={hasCritical ? 'critical' : alerts.length ? 'warn' : 'healthy'} />
@@ -257,7 +257,7 @@ function MetricCard({ icon: Icon, label, value, accent, pulse, testid }) {
           {pulse && <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: c }} />}
         </div>
         <p className="text-[var(--t5)] text-[10px] uppercase font-bold tracking-wider mb-1">{label}</p>
-        <p className="text-[var(--t)] text-2xl font-bold tabular-nums" style={{ fontFamily: 'Outfit, sans-serif' }}>{value}</p>
+        <p className="text-[var(--t)] text-2xl font-bold tabular-nums" style={{ fontFamily: 'var(--sans)' }}>{value}</p>
       </CardContent>
     </Card>
   );

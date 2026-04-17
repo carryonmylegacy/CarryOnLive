@@ -369,7 +369,7 @@ const CreateEstatePage = () => {
 
             {/* LEFT — Branding */}
             <div className="hidden lg:block">
-              <h1 className="text-4xl font-bold text-white leading-tight mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h1 className="text-4xl font-bold text-white leading-tight mb-3" style={{ fontFamily: 'var(--sans)' }}>
                 Expand Your
                 <span className="block text-[#d4af37] mt-1">Estate Plan Network.</span>
               </h1>
@@ -388,7 +388,7 @@ const CreateEstatePage = () => {
 
             {/* MOBILE header */}
             <div className="lg:hidden text-center mb-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight mb-0.5" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight mb-0.5" style={{ fontFamily: 'var(--sans)' }}>
                 Expand Your <span className="text-[#d4af37]">Estate Plan Network</span>
               </h1>
               <p className="text-[#6b7a90] text-xs">Add a new estate or connect to a family member</p>
@@ -436,7 +436,7 @@ const CreateEstatePage = () => {
                     {currentStep?.id === 'confirm' && (
                       <div className="space-y-4">
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Confirm your information</h2>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Confirm your information</h2>
                           <p className="text-[#6b7a90] text-sm">We've pre-filled your details. Please review and update if needed.</p>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
@@ -494,7 +494,7 @@ const CreateEstatePage = () => {
                     {currentStep?.id === 'role' && (
                       <div className="space-y-3">
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>What would you like to do?</h2>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>What would you like to do?</h2>
                           <p className="text-[#6b7a90] text-sm">Choose how you want to connect to a new estate.</p>
                         </div>
                         <div className="rounded-xl p-3" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
@@ -564,7 +564,7 @@ const CreateEstatePage = () => {
                     {currentStep?.id === 'estate_name' && (
                       <div className="space-y-4">
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Name Your New Estate</h2>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Name Your New Estate</h2>
                           <p className="text-[#6b7a90] text-sm">Give this estate a unique name to distinguish it from your other estate(s).</p>
                         </div>
                         <div className="space-y-1.5">
@@ -587,7 +587,7 @@ const CreateEstatePage = () => {
                     {currentStep?.id === 'family' && (
                       <div className="space-y-3">
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Your Family</h2>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Your Family</h2>
                           <p className="text-[#6b7a90] text-sm">This helps set up your beneficiaries.</p>
                         </div>
                         <div className="space-y-1.5">
@@ -636,7 +636,7 @@ const CreateEstatePage = () => {
                       return (
                         <div className="space-y-3">
                           <div>
-                            <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>{ben.relation}</h2>
+                            <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>{ben.relation}</h2>
                             <p className="text-[#6b7a90] text-sm">Enter their details. If they already have a CarryOn account, they'll be auto-linked.</p>
                           </div>
                           <div className="grid grid-cols-2 gap-3">
@@ -707,7 +707,7 @@ const CreateEstatePage = () => {
                     {currentStep?.id === 'eligibility' && (
                       <div className="space-y-3">
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Special Eligibility</h2>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Special Eligibility</h2>
                           <p className="text-[#94a3b8] text-sm">Select if any apply for discounted pricing.</p>
                         </div>
                         <div className="grid grid-cols-2 gap-2.5">

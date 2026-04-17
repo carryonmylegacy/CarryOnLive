@@ -41,7 +41,7 @@ export default function CCPDebriefView({ activationId, planName, token, onComple
         <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: 'rgba(34,201,147,0.15)' }}>
           <Check className="w-8 h-8" style={{ color: '#22C993' }} />
         </div>
-        <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+        <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>
           Debrief Saved
         </h2>
         <p className="text-sm" style={{ color: 'var(--t4)' }}>
@@ -62,7 +62,7 @@ export default function CCPDebriefView({ activationId, planName, token, onComple
         <div className="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ background: 'rgba(59,123,247,0.12)' }}>
           <ThumbsUp className="w-7 h-7" style={{ color: '#3B7BF7' }} />
         </div>
-        <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+        <h2 className="text-xl font-bold" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>
           Drill Complete!
         </h2>
         <p className="text-sm mt-1" style={{ color: 'var(--t4)' }}>

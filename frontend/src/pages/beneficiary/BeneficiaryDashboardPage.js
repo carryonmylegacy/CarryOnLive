@@ -134,7 +134,7 @@ const BeneficiaryDashboardPage = () => {
       {/* Header with Estate Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <h1 className="text-2xl lg:text-3xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>
             {firstName}, we're here for you
           </h1>
           <p className="text-[var(--t4)] text-sm lg:text-base">
@@ -161,7 +161,7 @@ const BeneficiaryDashboardPage = () => {
           data-testid="stat-checklist"
         >
           <CheckSquare className="w-6 h-6 lg:w-8 lg:h-8 opacity-70 mb-2" />
-          <div className="text-2xl lg:text-4xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <div className="text-2xl lg:text-4xl font-bold" style={{ fontFamily: 'var(--sans)' }}>
             {stats.checklistsDone}/{stats.checklists}
           </div>
           <div className="text-xs lg:text-sm opacity-85 text-center font-bold">Immediate Action<br />Checklist</div>
@@ -175,7 +175,7 @@ const BeneficiaryDashboardPage = () => {
           data-testid="stat-vault"
         >
           <FolderLock className="w-6 h-6 lg:w-8 lg:h-8 opacity-70 mb-2" />
-          <div className="text-2xl lg:text-4xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <div className="text-2xl lg:text-4xl font-bold" style={{ fontFamily: 'var(--sans)' }}>
             {stats.documents}
           </div>
           <div className="text-xs lg:text-sm opacity-85 text-center font-bold">Secure Document<br />Vault</div>
@@ -189,7 +189,7 @@ const BeneficiaryDashboardPage = () => {
           data-testid="stat-messages"
         >
           <MessageSquare className="w-6 h-6 lg:w-8 lg:h-8 opacity-70 mb-2" />
-          <div className="text-2xl lg:text-4xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <div className="text-2xl lg:text-4xl font-bold" style={{ fontFamily: 'var(--sans)' }}>
             {stats.messages}
           </div>
           <div className="text-xs lg:text-sm opacity-85 text-center font-bold">Milestone<br />Messages</div>
@@ -364,7 +364,7 @@ const BeneficiaryDashboardPage = () => {
 
       {/* Beneficiary → Create Estate / Join Another Estate */}
       <div className="glass-card p-5 text-center" style={{ borderColor: 'rgba(212,175,55,0.15)' }}>
-        <h3 className="text-base font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Protect Your Own Family</h3>
+        <h3 className="text-base font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>Protect Your Own Family</h3>
         <p className="text-xs text-[var(--t4)] mb-4">You can start your own estate plan or join another estate — using this same account.</p>
         <button onClick={() => navigate('/create-estate')} className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-transform active:scale-95" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }} data-testid="create-estate-cta">
           Start Your Own Estate Plan

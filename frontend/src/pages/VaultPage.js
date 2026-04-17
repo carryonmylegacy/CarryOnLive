@@ -730,7 +730,7 @@ const VaultPage = () => {
           <div className="relative flex flex-col items-center gap-4 p-10 rounded-3xl border-2 border-dashed border-[#d4af37]"
             style={{ background: 'rgba(15,22,41,0.9)' }}>
             <Upload className="w-16 h-16 text-[var(--gold)]" />
-            <p className="text-xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>Drop to Upload</p>
+            <p className="text-xl font-bold text-white" style={{ fontFamily: 'var(--sans)' }}>Drop to Upload</p>
             <p className="text-sm text-[#94a3b8]">Release to add this document to your Secure Vault</p>
           </div>
         </div>
@@ -762,7 +762,7 @@ const VaultPage = () => {
             <FolderLock className="w-5 h-5 text-[#60A5FA]" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
               Secure Document Vault (SDV)
             </h1>
             <p className="text-xs text-[var(--t5)]">
@@ -1003,7 +1003,7 @@ const VaultPage = () => {
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
               <Heart className="w-8 h-8 text-[var(--gold)]" />
             </div>
-            <h3 className="text-xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Your Estate Plan Has Begun</h3>
+            <h3 className="text-xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>Your Estate Plan Has Begun</h3>
             <p className="text-sm text-[var(--t4)] mb-5">Invite someone you trust so they can access your documents when needed.</p>
             <div className="flex gap-3">
               <button onClick={() => setShowInvitePrompt(false)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold glass-card text-[var(--t4)]">Later</button>

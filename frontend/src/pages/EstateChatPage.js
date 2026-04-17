@@ -925,7 +925,7 @@ export default function EstateChatPage() {
               <MessageCircle className="w-5 h-5" style={{ color: '#3B7BF7' }} />
             </div>
           )}
-          <h2 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>
+          <h2 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>
             {selectMode ? `${selectedChannels.size} Selected` : 'Estate Comms (ECT)'}
           </h2>
         </div>

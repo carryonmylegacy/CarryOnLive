@@ -60,7 +60,7 @@ const PDFViewerModal = ({ open, onClose, doc, blobUrl, loading, onDownload }) =>
           <div className="flex items-center gap-3 min-w-0">
             <Eye className="w-5 h-5 text-[#d4af37] shrink-0" />
             <div className="min-w-0">
-              <h3 className="text-white font-semibold text-sm truncate" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h3 className="text-white font-semibold text-sm truncate" style={{ fontFamily: 'var(--sans)' }}>
                 {doc?.name || 'Document Preview'}
               </h3>
               {isPdf && numPages && (

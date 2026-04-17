@@ -77,7 +77,7 @@ const BeneficiaryBillingToggle = ({ billing, onChange }) => {
 
 const PriceDisplay = ({ plan, billing }) => {
   const basePrice = plan.price || 0;
-  if (basePrice === 0) return <span className="text-3xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>Free</span>;
+  if (basePrice === 0) return <span className="text-3xl font-bold" style={{ fontFamily: 'var(--sans)' }}>Free</span>;
 
   let displayPrice = basePrice;
   if (billing === 'quarterly') displayPrice = plan.quarterly_price || basePrice * 0.9;
@@ -88,7 +88,7 @@ const PriceDisplay = ({ plan, billing }) => {
   return (
     <div>
       <div className="flex items-baseline gap-1">
-        <span className="text-3xl font-bold tracking-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
+        <span className="text-3xl font-bold tracking-tight" style={{ fontFamily: 'var(--sans)' }}>
           ${displayPrice.toFixed(2)}
         </span>
         <span className="text-sm text-[var(--t4)]">/mo</span>
@@ -460,7 +460,7 @@ export const SubscriptionManagement = ({
     <Card className="glass-card overflow-hidden" data-testid="subscription-management">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-[var(--t)] flex items-center gap-2.5" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <CardTitle className="text-[var(--t)] flex items-center gap-2.5" style={{ fontFamily: 'var(--sans)' }}>
             <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))', border: '1px solid rgba(212,175,55,0.2)' }}>
               <CreditCard className="w-4.5 h-4.5 text-[var(--gold)]" />
             </div>
@@ -551,7 +551,7 @@ export const SubscriptionManagement = ({
         {beneficiaryNoTierYet && !isMinorBeneficiary && (
           <div className="p-6 rounded-2xl text-center" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
             <CreditCard className="w-10 h-10 mx-auto text-[var(--gold)] mb-3 opacity-50" />
-            <h4 className="text-sm font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Your Plan Is Determined by Your Benefactor</h4>
+            <h4 className="text-sm font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>Your Plan Is Determined by Your Benefactor</h4>
             <p className="text-xs text-[var(--t4)] leading-relaxed max-w-md mx-auto mb-4">
               Your beneficiary tier is automatically set based on the plan your benefactor held for the majority of their subscription period with CarryOn. You do not need to select a plan — it will appear here once determined.
             </p>
@@ -565,7 +565,7 @@ export const SubscriptionManagement = ({
         {isMinorBeneficiary && (
           <div className="p-6 rounded-2xl text-center" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
             <Users className="w-10 h-10 mx-auto text-[#22C993] mb-3 opacity-50" />
-            <h4 className="text-sm font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>No Subscription Required</h4>
+            <h4 className="text-sm font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>No Subscription Required</h4>
             <p className="text-xs text-[var(--t4)] leading-relaxed max-w-md mx-auto">
               Beneficiaries under 18 have full access at no charge. Your access is managed through your benefactor's estate plan.
             </p>
@@ -651,7 +651,7 @@ export const SubscriptionManagement = ({
                       style={{ background: `${style.accent}12`, border: `1px solid ${style.accent}25` }}>
                       <Icon className="w-4 h-4" style={{ color: style.accent }} />
                     </div>
-                    <h3 className="font-bold text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>{plan.name}</h3>
+                    <h3 className="font-bold text-base text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>{plan.name}</h3>
                   </div>
 
                   {/* Price — animates on billing change */}
@@ -881,7 +881,7 @@ export const SubscriptionManagement = ({
             boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
           }}>
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h2 className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
                 {verificationTier === 'military' ? 'Military / First Responder' : 'Hospice'} Verification
               </h2>
               <button onClick={() => { setShowVerification(false); setVerificationFile(null); setVerificationDocType(''); }}

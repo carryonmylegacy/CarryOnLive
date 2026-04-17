@@ -242,7 +242,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
       <div className="fixed inset-0 z-[9999] bg-[#0a0e1a]/95 flex items-center justify-center p-4" data-testid="verification-modal">
         <div className="w-full max-w-md glass-card p-6 space-y-5 animate-fade-in">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <h2 className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
               {verificationTier === 'military' ? 'Military / First Responder' : 'Hospice'} Verification
             </h2>
             <button onClick={() => setShowVerification(false)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform">
@@ -329,7 +329,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
 
           {trial.trial_expired ? (
             <>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>
                 Your Free Trial Has Ended
               </h1>
               <p className="text-[var(--t4)] text-sm">
@@ -338,7 +338,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
             </>
           ) : trial.trial_active ? (
             <>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>
                 Choose Your Plan
               </h1>
               <div className="flex items-center justify-center gap-2 mb-2">
@@ -353,7 +353,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
             </>
           ) : (
             <>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>
                 Choose Your Plan
               </h1>
               <p className="text-[var(--t4)] text-sm">
@@ -506,12 +506,12 @@ export default function SubscriptionPaywall({ onDismiss }) {
                       style={{ background: `${colors.accent}18`, border: `1px solid ${colors.accent}30` }}>
                       <Icon className="w-5 h-5" style={{ color: colors.accent }} />
                     </div>
-                    <h3 className="font-bold text-lg text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>{plan.name}</h3>
+                    <h3 className="font-bold text-lg text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>{plan.name}</h3>
                   </div>
 
                   {/* Price — hero element */}
                   <div className="mb-1">
-                    <span className="text-4xl font-bold tracking-tight" style={{ color: isPremium ? '#d4af37' : colors.accent, fontFamily: 'Outfit, sans-serif' }}>
+                    <span className="text-4xl font-bold tracking-tight" style={{ color: isPremium ? '#d4af37' : colors.accent, fontFamily: 'var(--sans)' }}>
                       {getPrice(plan)}
                     </span>
                     {plan.price > 0 && (
@@ -619,11 +619,11 @@ export default function SubscriptionPaywall({ onDismiss }) {
                   style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.25)' }}>
                   <Users className="w-5 h-5 text-[#d4af37]" />
                 </div>
-                <h3 className="font-bold text-lg text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Family Plan</h3>
+                <h3 className="font-bold text-lg text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Family Plan</h3>
               </div>
 
               <div className="mb-1">
-                <span className="text-2xl font-bold text-[#d4af37]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                <span className="text-2xl font-bold text-[#d4af37]" style={{ fontFamily: 'var(--sans)' }}>
                   Bundle & Save
                 </span>
               </div>

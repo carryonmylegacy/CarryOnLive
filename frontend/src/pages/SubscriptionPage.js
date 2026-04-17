@@ -116,7 +116,7 @@ const SubscriptionPage = () => {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
             {isInBeneficiaryPortal ? 'Your Plan' : 'Subscription'}
           </h1>
           <p className="text-[var(--t4)] mt-1 text-sm sm:text-base">

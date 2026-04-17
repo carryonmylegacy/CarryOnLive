@@ -165,7 +165,7 @@ const OnboardingPage = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <img src="/carryon-logo.png" alt="CarryOn™" className="w-32 h-auto mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <h1 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'var(--sans)' }}>
             Welcome, {user?.first_name || user?.name?.split(' ')[0]}! 🎉
           </h1>
           <p className="text-[#94a3b8]">

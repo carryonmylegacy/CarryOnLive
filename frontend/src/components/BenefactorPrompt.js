@@ -48,7 +48,7 @@ export default function BenefactorPrompt({ onDismiss }) {
         {/* Heading */}
         <h2
           className="text-xl sm:text-2xl font-bold text-center mb-2"
-          style={{ color: 'var(--t, #fff)', fontFamily: 'Outfit, sans-serif' }}
+          style={{ color: 'var(--t, #fff)', fontFamily: 'var(--sans)' }}
         >
           Protect Your Own Legacy
         </h2>

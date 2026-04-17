@@ -22,7 +22,7 @@ export const VaultSetLockModal = ({
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setNewLockPassword(''); setConfirmLockPassword(''); setShowPwEye(false); } }}>
       <DialogContent className="glass-card border-[var(--b)] sm:max-w-sm !top-[10vh] !translate-y-0">
         <DialogHeader>
-          <DialogTitle className="text-white text-lg flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <DialogTitle className="text-white text-lg flex items-center gap-2" style={{ fontFamily: 'var(--sans)' }}>
             <Lock className="w-5 h-5 text-[#ef4444]" />
             Lock Document
           </DialogTitle>
@@ -95,7 +95,7 @@ export const VaultRemoveLockModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="glass-card border-[var(--b)] sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle className="text-white text-lg flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <DialogTitle className="text-white text-lg flex items-center gap-2" style={{ fontFamily: 'var(--sans)' }}>
             <Unlock className="w-5 h-5 text-[#10b981]" />
             Remove Lock
           </DialogTitle>
@@ -131,7 +131,7 @@ export const VaultBackupCodeModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0">
         <DialogHeader>
-          <DialogTitle className="text-white text-xl flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <DialogTitle className="text-white text-xl flex items-center gap-2" style={{ fontFamily: 'var(--sans)' }}>
             <Key className="w-5 h-5 text-[var(--gold)]" />
             Save Your Backup Code
           </DialogTitle>

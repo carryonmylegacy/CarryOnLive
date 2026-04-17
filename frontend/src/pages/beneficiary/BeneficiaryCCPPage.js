@@ -67,7 +67,7 @@ const BeneficiaryCCPPage = () => {
             style={{ background: 'rgba(16,185,129,0.1)' }}>
             <Shield className="w-7 h-7" style={{ color: '#10B981' }} />
           </div>
-          <h1 className="text-xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <h1 className="text-xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>
             {selectedPlan.name}
           </h1>
           <p className="text-sm text-[var(--t4)]">
@@ -168,7 +168,7 @@ const BeneficiaryCCPPage = () => {
           style={{ background: 'rgba(16,185,129,0.1)' }}>
           <Shield className="w-7 h-7" style={{ color: '#10B981' }} />
         </div>
-        <h1 className="text-2xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+        <h1 className="text-2xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>
           Emergency Plans
         </h1>
         <p className="text-sm text-[var(--t4)]">Connected Contingency Plans assigned to you</p>

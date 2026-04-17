@@ -117,7 +117,7 @@ const TransitionPage = () => {
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in" data-testid="estate-transition">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
+        <h1 className="text-3xl font-bold text-white" style={{ fontFamily: 'var(--sans)' }}>
           Estate Transition
         </h1>
         <p className="text-[#94a3b8] mt-1">
@@ -147,7 +147,7 @@ const TransitionPage = () => {
               )}
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-white capitalize" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h3 className="text-2xl font-bold text-white capitalize" style={{ fontFamily: 'var(--sans)' }}>
                 {estate?.status?.replace('-', ' ') || 'Unknown'}
               </h3>
               <p className="text-[#94a3b8]">
@@ -245,7 +245,7 @@ const TransitionPage = () => {
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
         <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0">
           <DialogHeader>
-            <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <DialogTitle className="text-white text-xl" style={{ fontFamily: 'var(--sans)' }}>
               Upload Death Certificate
             </DialogTitle>
             <DialogDescription className="text-[#94a3b8]">

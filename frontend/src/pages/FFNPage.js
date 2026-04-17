@@ -113,7 +113,7 @@ export default function FFNPage() {
             <Heart className="w-5 h-5 text-[#ec4899]" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Family & Friends Notification</h1>
+            <h1 className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Family & Friends Notification</h1>
             <p className="text-xs text-[var(--t4)]">{contacts.length} contact{contacts.length !== 1 ? 's' : ''} to notify</p>
           </div>
         </div>
@@ -148,7 +148,7 @@ export default function FFNPage() {
         <Card className="glass-card">
           <CardContent className="p-8 text-center">
             <Heart className="w-12 h-12 mx-auto text-[var(--t5)] mb-3 opacity-40" />
-            <h3 className="text-base font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>No contacts added yet</h3>
+            <h3 className="text-base font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>No contacts added yet</h3>
             <p className="text-sm text-[var(--t4)] mb-4">Add people you'd like your beneficiaries to notify on your behalf.</p>
             <Button onClick={openNew} className="gold-button" data-testid="ffn-empty-add">
               <Plus className="w-4 h-4 mr-1.5" /> Add First Contact
@@ -211,7 +211,7 @@ export default function FFNPage() {
         <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4 overflow-y-auto" data-testid="ffn-form-modal">
           <div className="w-full max-w-md rounded-2xl p-6 space-y-4 glass-card" style={{ border: '1px solid var(--b)', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}>
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h2 className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
                 {editingId ? 'Edit Contact' : 'Add Contact'}
               </h2>
               <button onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); }}

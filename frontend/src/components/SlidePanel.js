@@ -129,7 +129,7 @@ export default function SlidePanel({ open, onClose, title, subtitle, children })
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="min-w-0">
-            <h2 className="text-xl font-bold text-[var(--t)] truncate" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <h2 className="text-xl font-bold text-[var(--t)] truncate" style={{ fontFamily: 'var(--sans)' }}>
               {title}
             </h2>
             {subtitle && <p className="text-xs text-[var(--t5)] truncate">{subtitle}</p>}

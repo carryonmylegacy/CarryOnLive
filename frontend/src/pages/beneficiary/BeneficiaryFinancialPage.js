@@ -180,7 +180,7 @@ const BeneficiaryFinancialPage = () => {
           <DollarSign className="w-5 h-5 text-[#22C993]" />
         </div>
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Financial Picture (CFP)</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Financial Picture (CFP)</h1>
           <p className="text-xs text-[var(--t5)]">Bills, debts, and accounts for your reference</p>
         </div>
       </div>
@@ -395,7 +395,7 @@ const BeneficiaryFinancialPage = () => {
             <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--b)', background: 'rgba(239,68,68,0.06)' }}>
               <div className="flex items-center gap-2">
                 <XCircle className="w-5 h-5 text-[#ef4444]" />
-                <h3 className="text-base font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Cancellation Guide</h3>
+                <h3 className="text-base font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Cancellation Guide</h3>
               </div>
               <button onClick={() => setCancelAdvisor(null)} className="p-1.5 rounded-lg hover:bg-[var(--s)]" data-testid="cancel-advisor-close">
                 <X className="w-4 h-4 text-[var(--t4)]" />

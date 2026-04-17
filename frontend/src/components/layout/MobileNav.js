@@ -691,7 +691,7 @@ const MobileNav = () => {
               className="w-10 h-10 rounded-xl object-cover"
               style={{ pointerEvents: 'none' }}
             />
-            <span className="text-[#E0AD2B] font-bold text-lg" style={{ fontFamily: 'Outfit, sans-serif', pointerEvents: 'none' }}>
+            <span className="text-[#E0AD2B] font-bold text-lg" style={{ fontFamily: 'var(--sans)', pointerEvents: 'none' }}>
               CarryOn™
             </span>
           </div>

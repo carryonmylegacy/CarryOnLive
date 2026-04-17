@@ -484,7 +484,7 @@ export default function EditMilestoneMessagePage() {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Messages
             </Button>
-            <h1 className="text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Delivered messages can’t be edited</h1>
+            <h1 className="text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Delivered messages can’t be edited</h1>
             <p className="text-sm text-[var(--t5)]">This route is protected against direct edits after delivery, matching the original platform rules.</p>
           </CardContent>
         </Card>
@@ -511,7 +511,7 @@ export default function EditMilestoneMessagePage() {
               <Pencil className="h-6 w-6 text-[#B794F6]" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="edit-message-title">
+              <h1 className="text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }} data-testid="edit-message-title">
                 Edit Milestone Message
               </h1>
               <p className="text-sm text-[var(--t5)]" data-testid="edit-message-subtitle">
@@ -585,7 +585,7 @@ export default function EditMilestoneMessagePage() {
           <div className="space-y-6">
             <Card className="glass-card animate-bounce-tile" data-testid="edit-message-content-card">
               <CardHeader>
-                <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Message Content</CardTitle>
+                <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Message Content</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -610,7 +610,7 @@ export default function EditMilestoneMessagePage() {
             {messageType === 'video' && (
               <Card className="glass-card animate-bounce-tile" data-testid="edit-message-video-card">
                 <CardHeader>
-                  <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Video Recording</CardTitle>
+                  <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Video Recording</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="rounded-2xl border border-[var(--b)] bg-black/20 p-4">
@@ -654,7 +654,7 @@ export default function EditMilestoneMessagePage() {
                   <video ref={videoRef} className="h-full w-full object-cover" muted playsInline style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }} />
                   {countdown !== null && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                      <span className="text-8xl font-bold text-white animate-pulse" style={{ fontFamily: 'Outfit, sans-serif' }}>{countdown}</span>
+                      <span className="text-8xl font-bold text-white animate-pulse" style={{ fontFamily: 'var(--sans)' }}>{countdown}</span>
                     </div>
                   )}
                   {isRecording && (
@@ -695,7 +695,7 @@ export default function EditMilestoneMessagePage() {
             {messageType === 'voice' && (
               <Card className="glass-card animate-bounce-tile" data-testid="edit-message-voice-card">
                 <CardHeader>
-                  <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Voice Recording</CardTitle>
+                  <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Voice Recording</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="rounded-2xl border border-[var(--b)] bg-black/20 p-4">
@@ -709,7 +709,7 @@ export default function EditMilestoneMessagePage() {
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-4 py-6 text-center">
-                        {countdown !== null && <span className="text-5xl font-bold text-[var(--gold)] animate-pulse" style={{ fontFamily: 'Outfit, sans-serif' }}>{countdown}</span>}
+                        {countdown !== null && <span className="text-5xl font-bold text-[var(--gold)] animate-pulse" style={{ fontFamily: 'var(--sans)' }}>{countdown}</span>}
                         {isRecording && (
                           <div className="flex items-center gap-2">
                             <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse" />
@@ -737,7 +737,7 @@ export default function EditMilestoneMessagePage() {
 
             <Card className="glass-card animate-bounce-tile" data-testid="edit-message-recipients-card">
               <CardHeader>
-                <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Recipients</CardTitle>
+                <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Recipients</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {beneficiaries.length === 0 ? (
@@ -775,7 +775,7 @@ export default function EditMilestoneMessagePage() {
 
             <Card className="glass-card animate-bounce-tile" data-testid="edit-message-trigger-card">
               <CardHeader>
-                <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Delivery Trigger</CardTitle>
+                <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Delivery Trigger</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">

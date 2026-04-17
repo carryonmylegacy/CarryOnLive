@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,300..700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -83,10 +83,13 @@
     --trial-btn-bg: #D4A537;
     --trial-btn-text: #0F1629;
     
-    /* Typography */
+    /* Typography — Varsity Trust brand (Apr 2026)
+       Inter is the single workhorse sans for all UI and body text.
+       Cormorant Garamond remains reserved for trust/brand headers
+       (legacy, hero pillars, certificate-style moments). */
     --serif: 'Cormorant Garamond', Georgia, serif;
-    --sans: 'Outfit', system-ui, sans-serif;
-    --body: 'DM Sans', system-ui, sans-serif;
+    --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
     
     /* Border Radius */
     --r: 14px;

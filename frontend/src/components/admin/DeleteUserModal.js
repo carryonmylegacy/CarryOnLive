@@ -31,7 +31,7 @@ export const DeleteUserModal = ({
             <AlertTriangle className="w-5 h-5 text-red-400" />
           </div>
           <div>
-            <h3 className="text-white font-bold text-base" style={{ fontFamily: 'Outfit, sans-serif' }}>Delete Account</h3>
+            <h3 className="text-white font-bold text-base" style={{ fontFamily: 'var(--sans)' }}>Delete Account</h3>
             <p className="text-[var(--t5)] text-[11px]">This action is irreversible</p>
           </div>
         </div>

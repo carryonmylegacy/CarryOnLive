@@ -313,7 +313,7 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
             style={{ border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}>
             <div className="flex items-center justify-between p-4 border-b border-[var(--b)]">
               <div>
-                <h3 className="font-bold text-[var(--t)] text-sm" style={{ fontFamily: 'Outfit, sans-serif' }}>Death Certificate</h3>
+                <h3 className="font-bold text-[var(--t)] text-sm" style={{ fontFamily: 'var(--sans)' }}>Death Certificate</h3>
                 <p className="text-xs text-[var(--t5)]">{viewingDoc.name}</p>
               </div>
               <button onClick={closeDocViewer} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform">

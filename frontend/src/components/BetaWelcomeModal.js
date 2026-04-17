@@ -48,7 +48,7 @@ export default function BetaWelcomeModal({ onAccepted }) {
 
         <h2
           className="text-xl sm:text-2xl font-bold text-center mb-3"
-          style={{ color: 'var(--t, #fff)', fontFamily: 'Outfit, sans-serif' }}
+          style={{ color: 'var(--t, #fff)', fontFamily: 'var(--sans)' }}
         >
           Welcome to CarryOn Beta
         </h2>

@@ -575,7 +575,7 @@ const BeneficiariesPage = () => {
             <Users className="w-5 h-5 text-[#4EDBA8]" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
               Beneficiaries
             </h1>
             <p className="text-xs text-[var(--t5)]">
@@ -621,7 +621,7 @@ const BeneficiariesPage = () => {
               <div className="w-6 h-6 rounded flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.12)' }}>
                 <Users className="w-3.5 h-3.5 text-[var(--gold)]" />
               </div>
-              <h3 className="text-sm font-bold text-[var(--t)] flex-1" style={{ fontFamily: 'Outfit, sans-serif' }}>{user?.first_name || user?.name?.split(' ')[0] || 'My'}'s Estate Tree</h3>
+              <h3 className="text-sm font-bold text-[var(--t)] flex-1" style={{ fontFamily: 'var(--sans)' }}>{user?.first_name || user?.name?.split(' ')[0] || 'My'}'s Estate Tree</h3>
               <span className="text-[11px] italic leading-tight text-right max-w-[140px]" style={{ color: 'var(--gold)' }}>Tap any estate icon to visit your Beneficiary Portal</span>
             </div>
             <FamilyTree
@@ -1203,7 +1203,7 @@ const BeneficiariesPage = () => {
       {accessRequests.length > 0 && (
         <Card className="glass-card" data-testid="access-requests-section">
           <CardContent className="p-5">
-            <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2 mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2 mb-4" style={{ fontFamily: 'var(--sans)' }}>
               <AlertTriangle className="w-5 h-5 text-[#F59E0B]" />
               Pending Access Requests
             </h3>

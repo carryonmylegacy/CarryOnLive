@@ -527,7 +527,7 @@ export default function ConnectedProtocolPage() {
           <ArrowLeft className="w-4 h-4" />Back
         </button>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>Emergency Plans</h2>
+          <h2 className="text-lg font-bold" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>Emergency Plans</h2>
           {isBenefactor && (
             <button onClick={() => { setEditPlan({ name: '', plan_type: 'custom', rendezvous_points: [], communication_plan: '', resource_locations: [], instructions: '', linked_document_ids: [], linked_ffn_contact_ids: [], linked_dav_entry_ids: [], assigned_beneficiary_ids: null }); fetchAvailableResources(); setView('plan-edit'); }}
               className="w-10 h-10 rounded-full flex items-center justify-center" data-testid="ccp-new-plan-btn"
@@ -548,7 +548,7 @@ export default function ConnectedProtocolPage() {
           >
             <Sparkles className="w-6 h-6 flex-shrink-0" />
             <div className="text-left flex-1">
-              <div style={{ fontFamily: 'Outfit, sans-serif' }}>Build My Plan</div>
+              <div style={{ fontFamily: 'var(--sans)' }}>Build My Plan</div>
               <div className="text-xs font-normal" style={{ color: 'var(--t4)' }}>Answer a few questions — AI builds the rest</div>
             </div>
             <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />
@@ -785,7 +785,7 @@ export default function ConnectedProtocolPage() {
     <div data-testid="ccp-home" className="max-w-lg mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-4">
       <div className="text-center mb-4">
         <Shield className="w-10 h-10 mx-auto mb-2" style={{ color: '#d4af37' }} />
-        <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>CarryOn Contingency Protocols (CCP)</h1>
+        <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>CarryOn Contingency Protocols (CCP)</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--t4)' }}>Family disaster preparedness</p>
       </div>
 
@@ -796,7 +796,7 @@ export default function ConnectedProtocolPage() {
           data-testid="ccp-active-alert"
           style={{ background: activeEmergency.is_drill ? 'rgba(59,123,247,0.12)' : 'rgba(240,82,82,0.12)', border: `1px solid ${activeEmergency.is_drill ? 'rgba(59,123,247,0.3)' : 'rgba(240,82,82,0.3)'}`, color: activeEmergency.is_drill ? '#3B7BF7' : '#F05252' }}>
           <AlertTriangle className="w-6 h-6 flex-shrink-0" />
-          <span className="flex-1 text-left" style={{ fontFamily: 'Outfit, sans-serif' }}>{activeEmergency.is_drill ? 'Drill Active' : 'Emergency Active'} — Tap to View</span>
+          <span className="flex-1 text-left" style={{ fontFamily: 'var(--sans)' }}>{activeEmergency.is_drill ? 'Drill Active' : 'Emergency Active'} — Tap to View</span>
           <ChevronRight className="w-5 h-5 flex-shrink-0" />
         </button>
       )}
@@ -809,7 +809,7 @@ export default function ConnectedProtocolPage() {
           style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(240,201,92,0.08))', border: '1px solid rgba(212,175,55,0.3)', color: '#d4af37' }}>
           <Sparkles className="w-6 h-6 flex-shrink-0" />
           <div className="text-left flex-1">
-            <div style={{ fontFamily: 'Outfit, sans-serif' }}>Build My Plan</div>
+            <div style={{ fontFamily: 'var(--sans)' }}>Build My Plan</div>
             <div className="text-xs font-normal" style={{ color: 'var(--t4)' }}>Answer a few questions — AI builds the rest</div>
           </div>
           <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />
@@ -822,7 +822,7 @@ export default function ConnectedProtocolPage() {
         style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)', color: '#d4af37' }}>
         <FileText className="w-6 h-6 flex-shrink-0" />
         <div className="text-left flex-1">
-          <div style={{ fontFamily: 'Outfit, sans-serif' }}>Emergency Plans</div>
+          <div style={{ fontFamily: 'var(--sans)' }}>Emergency Plans</div>
           <div className="text-xs font-normal" style={{ color: 'var(--t4)' }}>{plans.length} plan{plans.length !== 1 ? 's' : ''} created</div>
         </div>
         <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />
@@ -833,7 +833,7 @@ export default function ConnectedProtocolPage() {
         data-testid="ccp-history-btn"
         style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t4)' }}>
         <Clock className="w-6 h-6 flex-shrink-0" />
-        <span className="flex-1 text-left" style={{ fontFamily: 'Outfit, sans-serif' }}>Past Activations</span>
+        <span className="flex-1 text-left" style={{ fontFamily: 'var(--sans)' }}>Past Activations</span>
         <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />
       </button>
 
@@ -866,7 +866,7 @@ export default function ConnectedProtocolPage() {
         >
           <Download className="w-6 h-6 flex-shrink-0" />
           <div className="text-left flex-1">
-            <div style={{ fontFamily: 'Outfit, sans-serif' }}>Family Readiness Report</div>
+            <div style={{ fontFamily: 'var(--sans)' }}>Family Readiness Report</div>
             <div className="text-xs font-normal" style={{ color: 'var(--t4)' }}>Download PDF for your go-bag</div>
           </div>
           <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />
@@ -889,7 +889,7 @@ export default function ConnectedProtocolPage() {
         style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)', padding: '16px' }}>
         <div className="w-full max-w-sm rounded-2xl p-6 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--bg2)', border: '1px solid rgba(59,123,247,0.3)', boxShadow: '0 24px 64px rgba(0,0,0,0.3)' }}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-bold" style={{ color: 'var(--t)', fontFamily: 'Outfit, sans-serif' }}>Share Plan</h3>
+            <h3 className="text-base font-bold" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>Share Plan</h3>
             <button onClick={() => setShareModal(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--s)' }}>
               <X className="w-4 h-4" style={{ color: 'var(--t4)' }} />
             </button>

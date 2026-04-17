@@ -70,7 +70,7 @@ const SettingsPage = () => {
       <div className="mb-1">
         <div className="flex items-center gap-3 mb-1">
           <div className="w-1 h-8 rounded-full" style={{ background: 'linear-gradient(180deg, var(--gold2), var(--gold))' }} />
-          <h1 className="text-2xl lg:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '-0.02em' }}>Settings</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)', letterSpacing: '-0.02em' }}>Settings</h1>
         </div>
         <p className="text-[var(--t4)] text-sm pl-4">Manage your profile, security, and preferences.</p>
       </div>

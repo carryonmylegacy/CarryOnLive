@@ -679,7 +679,7 @@ const MessagesPage = () => {
             <MessageSquare className="w-5 h-5 text-[#B794F6]" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
               Milestone Messages (MM)
             </h1>
             <p className="text-xs text-[var(--t5)]">
@@ -796,7 +796,7 @@ const MessagesPage = () => {
             {guidedStep === 1 && (
               <div className="space-y-4 animate-in fade-in duration-300" data-testid="guided-step-1">
                 <div className="rounded-2xl p-5" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }}>
-                  <h3 className="text-lg font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                  <h3 className="text-lg font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>
                     Give your message a name
                   </h3>
                   <p className="text-sm text-[var(--t4)] leading-relaxed">
@@ -829,7 +829,7 @@ const MessagesPage = () => {
             {guidedStep === 2 && (
               <div className="space-y-4 animate-in fade-in duration-300" data-testid="guided-step-2">
                 <div className="rounded-2xl p-5" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }}>
-                  <h3 className="text-lg font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                  <h3 className="text-lg font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>
                     Write your message
                   </h3>
                   <p className="text-sm text-[var(--t4)] leading-relaxed">
@@ -888,7 +888,7 @@ const MessagesPage = () => {
             {guidedStep === 3 && (
               <div className="space-y-4 animate-in fade-in duration-300" data-testid="guided-step-3">
                 <div className="rounded-2xl p-5" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.12)' }}>
-                  <h3 className="text-lg font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                  <h3 className="text-lg font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>
                     Almost done — review your message
                   </h3>
                   <p className="text-sm text-[var(--t4)] leading-relaxed">
@@ -1146,7 +1146,7 @@ const MessagesPage = () => {
                       {/* Countdown overlay for voice */}
                       {countdown !== null && (
                         <div className="flex items-center justify-center">
-                          <span className="text-5xl font-bold text-[var(--gold)] animate-pulse" style={{ fontFamily: 'Outfit, sans-serif' }}>{countdown}</span>
+                          <span className="text-5xl font-bold text-[var(--gold)] animate-pulse" style={{ fontFamily: 'var(--sans)' }}>{countdown}</span>
                         </div>
                       )}
                       {isRecording && (

@@ -65,7 +65,7 @@ export const PerformanceTab = ({ getAuthHeaders, operatorId = '' }) => {
                 <s.icon className="w-3.5 h-3.5" style={{ color: s.color }} />
                 <span className="text-[11px] text-[var(--t5)]">{s.label}</span>
               </div>
-              <p className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>{s.value}</p>
+              <p className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>{s.value}</p>
             </CardContent>
           </Card>
         ))}

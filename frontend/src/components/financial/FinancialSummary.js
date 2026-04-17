@@ -66,7 +66,7 @@ const FinancialSummary = ({ summary, onNavigate }) => {
           data-testid={`summary-${card.label.toLowerCase().replace(/\s+/g, '-')}`}
         >
           <card.icon className="w-5 h-5 mb-2" style={{ color: card.color }} />
-          <div className="text-lg lg:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <div className="text-lg lg:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
             {card.value}
           </div>
           <div className="text-xs text-[var(--t4)] font-medium mt-0.5">{card.label}</div>

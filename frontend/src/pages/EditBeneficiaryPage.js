@@ -284,7 +284,7 @@ export default function EditBeneficiaryPage() {
               <UserCircle className="h-6 w-6 text-[#4EDBA8]" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="edit-beneficiary-title">
+              <h1 className="text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }} data-testid="edit-beneficiary-title">
                 Edit Beneficiary
               </h1>
               <p className="text-sm text-[var(--t5)]" data-testid="edit-beneficiary-subtitle">
@@ -359,7 +359,7 @@ export default function EditBeneficiaryPage() {
           <div className="space-y-6">
             <Card className="glass-card animate-bounce-tile" data-testid="edit-beneficiary-personal-card">
               <CardHeader>
-                <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Personal Information</CardTitle>
+                <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Personal Information</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -412,7 +412,7 @@ export default function EditBeneficiaryPage() {
 
             <Card className="glass-card animate-bounce-tile" data-testid="edit-beneficiary-contact-card">
               <CardHeader>
-                <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Contact Information</CardTitle>
+                <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Contact Information</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
@@ -435,7 +435,7 @@ export default function EditBeneficiaryPage() {
 
             <Card className="glass-card animate-bounce-tile" data-testid="edit-beneficiary-address-card">
               <CardHeader>
-                <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Address</CardTitle>
+                <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Address</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -482,7 +482,7 @@ export default function EditBeneficiaryPage() {
 
             <Card className="glass-card animate-bounce-tile" data-testid="edit-beneficiary-extra-card">
               <CardHeader>
-                <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Additional Information</CardTitle>
+                <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Additional Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -506,7 +506,7 @@ export default function EditBeneficiaryPage() {
             {/* Feature Access Toggles */}
             <Card className="glass-card animate-bounce-tile" data-testid="edit-beneficiary-feature-access">
               <CardHeader>
-                <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Feature Access</CardTitle>
+                <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Feature Access</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {[

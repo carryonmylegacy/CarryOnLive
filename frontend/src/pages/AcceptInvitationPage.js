@@ -119,7 +119,7 @@ const AcceptInvitationPage = () => {
       <div className="flex items-center justify-center p-6" style={bgStyle}>
         <div className="rounded-2xl p-8 text-center max-w-md w-full" style={{ background: 'rgba(15,22,41,0.97)', border: '1px solid rgba(255,255,255,0.06)' }}>
           <AlertCircle className="w-16 h-16 text-[#ef4444] mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Invalid Invitation</h2>
+          <h2 className="text-xl font-bold text-white mb-2" style={{ fontFamily: 'var(--sans)' }}>Invalid Invitation</h2>
           <p className="text-[#94a3b8] mb-6">{error}</p>
           <Button onClick={() => navigate('/login')} className="gold-button">Go to Login</Button>
         </div>
@@ -134,7 +134,7 @@ const AcceptInvitationPage = () => {
           <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}>
             <CheckCircle className="w-10 h-10 text-[#10b981]" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <h2 className="text-2xl font-bold text-white mb-3" style={{ fontFamily: 'var(--sans)' }}>
             Welcome to CarryOn, {invitationData?.beneficiary?.first_name}
           </h2>
           <p className="text-[#94a3b8] mb-2">Your account has been created. You're now connected to {invitationData?.benefactor_name}'s family plan.</p>
@@ -154,7 +154,7 @@ const AcceptInvitationPage = () => {
       {/* Nav */}
       <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)', background: 'rgba(8,14,26,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          <h1 className="text-lg font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <h1 className="text-lg font-bold" style={{ fontFamily: 'var(--sans)' }}>
             <span className="text-[#d4af37]">CarryOn</span><span className="text-white text-xs align-top">™</span>
           </h1>
           <button onClick={() => navigate('/login')} className="text-[#6b7a90] text-sm font-medium">Sign In</button>
@@ -171,7 +171,7 @@ const AcceptInvitationPage = () => {
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))', border: '1px solid rgba(212,175,55,0.2)' }}>
                 <Heart className="w-8 h-8 text-[#d4af37]" />
               </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-4" style={{ fontFamily: 'var(--sans)' }}>
                 Someone special is<br />thinking of <span className="text-[#d4af37]">you</span>
               </h1>
               <p className="text-lg text-[#94a3b8] leading-relaxed mb-8">
@@ -260,7 +260,7 @@ const AcceptInvitationPage = () => {
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}>
                 <Shield className="w-7 h-7 text-[#10b981]" />
               </div>
-              <h2 className="text-3xl font-bold text-white mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h2 className="text-3xl font-bold text-white mb-4" style={{ fontFamily: 'var(--sans)' }}>
                 Your security is<br />our foundation
               </h2>
               <p className="text-[#94a3b8] leading-relaxed mb-8">
@@ -304,7 +304,7 @@ const AcceptInvitationPage = () => {
                 {loginMode ? (
                   /* ── Link Existing Account ── */
                   <>
-                    <h1 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Sign In to Connect</h1>
+                    <h1 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'var(--sans)' }}>Sign In to Connect</h1>
                     <p className="text-sm text-[#64748b] mb-6">Use your existing CarryOn credentials to link this estate to your account</p>
 
                     <div className="space-y-4">
@@ -348,7 +348,7 @@ const AcceptInvitationPage = () => {
                 ) : (
                   /* ── Create New Account ── */
                   <>
-                    <h1 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Create Your Secure Account</h1>
+                    <h1 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'var(--sans)' }}>Create Your Secure Account</h1>
                     <p className="text-sm text-[#64748b] mb-6">Your credentials are never stored in plain text</p>
 
                     <div className="space-y-4">

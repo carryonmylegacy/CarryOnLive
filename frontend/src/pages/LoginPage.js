@@ -315,7 +315,7 @@ const LoginPage = () => {
           boxShadow: '0 8px 80px rgba(0,0,0,0.5)',
         }}>
           <div className="absolute top-0 left-7 right-7 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
-          <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Sign In</h2>
+          <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Sign In</h2>
           <p className="text-[#475569] text-sm mb-6">Access your CarryOn account</p>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="relative">
@@ -446,7 +446,7 @@ const LoginPage = () => {
             boxShadow: '0 8px 80px rgba(0,0,0,0.5)',
           }}>
             <div className="absolute top-0 left-6 right-6 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
-            <h2 className="text-white text-lg font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Sign In</h2>
+            <h2 className="text-white text-lg font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Sign In</h2>
             <p className="text-white/70 text-sm font-semibold mb-4">Access your CarryOn account</p>
             <form onSubmit={handleLogin} className="space-y-3">
               <div>
@@ -558,7 +558,7 @@ const LoginPage = () => {
         {showOtpModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
             <div className="w-full max-w-md rounded-2xl p-7" style={{ background: 'linear-gradient(145deg, rgba(20,30,52,0.98), rgba(15,22,41,1))', border: '1px solid rgba(212,175,55,0.15)' }}>
-              <h3 className="text-white text-lg font-semibold mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Two-Factor Authentication</h3>
+              <h3 className="text-white text-lg font-semibold mb-2" style={{ fontFamily: 'var(--sans)' }}>Two-Factor Authentication</h3>
               <p className="text-[#6b7a90] text-sm mb-5">
                 {otpMethod === 'sms' ? `Enter the 6-digit code sent to ${maskedPhone || 'your phone'}` : 'Enter the 6-digit code sent to your email'}
               </p>
@@ -655,7 +655,7 @@ const LoginPage = () => {
                   <img src="/carryon-logo.png" alt="CarryOn" className="w-[200px] xl:w-[260px] h-auto" />
                 </div>
                 <div className="text-center sm:text-left flex-1 sm:pt-2">
-                  <h1 className="text-3xl sm:text-4xl xl:text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'Outfit, sans-serif', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>
+                  <h1 className="text-3xl sm:text-4xl xl:text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'var(--sans)', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>
                     Every American Family.
                     <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>Ready.</span>
                   </h1>
@@ -691,7 +691,7 @@ const LoginPage = () => {
                   boxShadow: '0 8px 80px rgba(0,0,0,0.5), 0 0 50px rgba(212,175,55,0.02)',
                 }}>
                   <div className="absolute top-0 left-8 right-8 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
-                  <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Sign In</h2>
+                  <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Sign In</h2>
                   <p className="text-white/70 text-sm font-semibold mb-6">Access your CarryOn account</p>
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div>
@@ -797,7 +797,7 @@ const LoginPage = () => {
               <RevealSection delay={0.5}>
                 <div className="flex flex-col items-center text-center mt-2">
                   <img src="/carryon-logo.png" alt="CarryOn" className="w-[240px] h-auto mb-5" />
-                  <h2 className="text-3xl sm:text-4xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'Outfit, sans-serif', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>
+                  <h2 className="text-3xl sm:text-4xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'var(--sans)', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>
                     Every American Family.
                     <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>Ready.</span>
                   </h2>
@@ -840,7 +840,7 @@ const LoginPage = () => {
               <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(8,14,26,1) 0%, rgba(8,14,26,0.97) 80px, rgba(11,18,33,0.6) 50%, rgba(11,18,33,0.8) 100%)' }} />
               <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
               <RevealSection className="max-w-[900px] mx-auto px-6 text-center relative z-10">
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight" style={{ fontFamily: 'var(--sans)' }}>
                   See CarryOn in Action
                 </h2>
                 <p className="text-white/60 text-sm lg:text-base mb-8">
@@ -906,7 +906,7 @@ const LoginPage = () => {
       {showOtpModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="w-full max-w-md rounded-2xl p-8" style={{ background: 'linear-gradient(145deg, rgba(20,30,52,0.98), rgba(15,22,41,1))', border: '1px solid rgba(212,175,55,0.15)' }}>
-            <h3 className="text-white text-xl font-semibold mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Two-Factor Authentication</h3>
+            <h3 className="text-white text-xl font-semibold mb-2" style={{ fontFamily: 'var(--sans)' }}>Two-Factor Authentication</h3>
             <p className="text-[#6b7a90] text-sm mb-6">
               {otpMethod === 'sms'
                 ? `Enter the 6-digit code sent to ${maskedPhone || 'your phone'}`
@@ -973,7 +973,7 @@ const LoginPage = () => {
             <div className="w-20 h-20 mx-auto mb-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(14,165,233,0.1)', border: '2px solid rgba(14,165,233,0.2)' }}>
               <Shield className="w-10 h-10 text-[#0EA5E9]" />
             </div>
-            <h3 className="text-white text-xl font-bold mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Enable Face ID?</h3>
+            <h3 className="text-white text-xl font-bold mb-2" style={{ fontFamily: 'var(--sans)' }}>Enable Face ID?</h3>
             <p className="text-[#6b7a90] text-sm mb-6 leading-relaxed">
               Sign in instantly with Face ID next time you open CarryOn. You can change this anytime in Settings.
             </p>

@@ -117,7 +117,7 @@ const PWAInstallGuide = ({ open, onClose }) => {
     return (
       <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center" style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }} data-testid="pwa-install-guide">
         <div className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6" style={{ background: '#0f1a2e', border: '1px solid rgba(212,175,55,0.2)' }}>
-          <h2 className="text-white text-lg font-bold mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Open in Safari</h2>
+          <h2 className="text-white text-lg font-bold mb-2" style={{ fontFamily: 'var(--sans)' }}>Open in Safari</h2>
           <p className="text-[#7b879e] text-sm mb-4">Adding to your Home Screen only works in Safari. Copy <span className="text-[#d4af37] font-semibold">carryon.us</span> and paste it into Safari.</p>
           <button onClick={onClose} className="w-full py-3 rounded-xl text-sm font-bold active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }} data-testid="install-guide-done">Got it</button>
         </div>
@@ -130,7 +130,7 @@ const PWAInstallGuide = ({ open, onClose }) => {
       <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center" style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }} data-testid="pwa-install-guide">
         <div className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6" style={{ background: '#0f1a2e', border: '1px solid rgba(212,175,55,0.2)' }}>
           <div className="flex items-start justify-between mb-4">
-            <h2 className="text-white text-lg font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>Install CarryOn</h2>
+            <h2 className="text-white text-lg font-bold" style={{ fontFamily: 'var(--sans)' }}>Install CarryOn</h2>
             <button onClick={onClose} className="text-[#475569] hover:text-white p-2" data-testid="install-guide-close" aria-label="Close"><X className="w-5 h-5" /></button>
           </div>
           <div className="space-y-4 mb-5">
@@ -149,7 +149,7 @@ const PWAInstallGuide = ({ open, onClose }) => {
     <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center" style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }} data-testid="pwa-install-guide">
       <div className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl overflow-hidden max-h-[92vh] overflow-y-auto" style={{ background: '#0f1a2e', border: '1px solid rgba(212,175,55,0.2)', borderBottom: 'none' }}>
         <div className="sticky top-0 z-10 flex items-center justify-between p-4 pb-2" style={{ background: '#0f1a2e' }}>
-          <h2 className="text-white text-base font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>Install CarryOn</h2>
+          <h2 className="text-white text-base font-bold" style={{ fontFamily: 'var(--sans)' }}>Install CarryOn</h2>
           <button onClick={onClose} className="text-[#475569] hover:text-white p-2" data-testid="install-guide-close" aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
 

@@ -95,7 +95,7 @@ export default function FoundersCirclePage() {
           <Crown className="w-4 h-4 text-[var(--gold)]" />
           <span className="text-xs font-bold text-[var(--gold)] tracking-wide uppercase">Founding Member — Limited Time</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+        <h1 className="text-3xl sm:text-4xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
           Founders Circle
         </h1>
         <p className="text-[var(--t4)] mt-2 text-base max-w-2xl mx-auto">

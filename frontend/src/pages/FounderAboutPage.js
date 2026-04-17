@@ -119,7 +119,7 @@ const FounderAboutPage = () => {
           <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-5 sm:mb-6" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)' }}>
             <ShieldX className="w-7 h-7 sm:w-9 sm:h-9 text-[#d4af37]" />
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>Access Restricted</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-white mb-3" style={{ fontFamily: 'var(--sans)' }}>Access Restricted</h1>
           <p className="text-[#9aa5b4] text-sm sm:text-base mb-8 leading-relaxed">{messages[reason] || messages.error}</p>
           <button onClick={() => navigate('/about')} className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95" style={{ background: '#d4af37', color: '#0d1b2a' }} data-testid="founder-page-back-btn">
             Visit About CarryOn
@@ -160,7 +160,7 @@ const FounderAboutPage = () => {
           {gateMode === 'request' && !reqStatus && (
             <>
               <div className="text-center mb-5">
-                <h1 className="text-lg sm:text-xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>Meet the Founder</h1>
+                <h1 className="text-lg sm:text-xl font-bold text-white" style={{ fontFamily: 'var(--sans)' }}>Meet the Founder</h1>
                 <p className="text-[#9aa5b4] text-xs sm:text-sm mt-2 leading-relaxed">
                   Interested in learning more about the founder of CarryOn&#8482; and what inspired him to build it? Request access below, and you&#8217;ll be notified when your request is approved.
                 </p>
@@ -227,7 +227,7 @@ const FounderAboutPage = () => {
             <>
               <div className="text-center mb-5">
                 <Lock className="w-7 h-7 sm:w-8 sm:h-8 text-[#d4af37] mx-auto mb-3" />
-                <h1 className="text-lg sm:text-xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>About the Founder</h1>
+                <h1 className="text-lg sm:text-xl font-bold text-white" style={{ fontFamily: 'var(--sans)' }}>About the Founder</h1>
                 <p className="text-[#9aa5b4] text-xs sm:text-sm mt-1">Enter your credentials to view</p>
               </div>
               <form onSubmit={handleLogin} className="space-y-3" autoComplete="off" data-form-type="other">

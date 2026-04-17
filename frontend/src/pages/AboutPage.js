@@ -66,7 +66,7 @@ const AboutPage = () => {
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 80% 60% at 10% 50%, rgba(255,255,255,0.08) 0%, transparent 50%)' }} />
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 80% 70% at 85% 85%, rgba(255,255,255,0.14) 0%, transparent 55%)' }} />
         <RevealSection className="max-w-[800px] mx-auto px-6 text-center relative z-10">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-6" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-6" style={{ fontFamily: 'var(--sans)' }}>
             We Believe Readiness Is the Greatest Gift a Family Can Give Itself.
           </h1>
           <div className="w-16 h-1 mx-auto rounded-full mb-6" style={{ background: '#d4af37' }} />
@@ -83,7 +83,7 @@ const AboutPage = () => {
           <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(13,27,42,0.55) 0%, rgba(13,27,42,0.92) 100%)' }} />
           <div className="max-w-[800px] mx-auto px-6 relative z-10">
             <RevealSection>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-8" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-8" style={{ fontFamily: 'var(--sans)' }}>
                 Built for Every Family. Period.
               </h2>
             </RevealSection>
@@ -99,7 +99,7 @@ const AboutPage = () => {
             </RevealSection>
 
             <RevealSection delay={0.2}>
-              <h3 className="text-xl sm:text-2xl font-bold text-white text-center mb-6" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h3 className="text-xl sm:text-2xl font-bold text-white text-center mb-6" style={{ fontFamily: 'var(--sans)' }}>
                 That&apos;s why CarryOn exists.
               </h3>
             </RevealSection>
@@ -135,7 +135,7 @@ const AboutPage = () => {
             <div className="grid md:grid-cols-2 gap-6">
               <RevealSection delay={0} direction="left">
                 <div className="rounded-xl p-6 lg:p-8 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
-                  <h3 className="text-[#d4af37] text-lg font-bold mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>Our Mission</h3>
+                  <h3 className="text-[#d4af37] text-lg font-bold mb-4" style={{ fontFamily: 'var(--sans)' }}>Our Mission</h3>
                   <p className="text-[#7b879e] text-sm leading-relaxed">
                     Ensure every American family has the clarity, organization, and readiness they need for life&apos;s most critical transitions &mdash; reducing overwhelm through secure estate infrastructure and intelligent document analysis.
                   </p>
@@ -143,7 +143,7 @@ const AboutPage = () => {
               </RevealSection>
               <RevealSection delay={0.12} direction="right">
                 <div className="rounded-xl p-6 lg:p-8 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
-                  <h3 className="text-[#d4af37] text-lg font-bold mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>Our Vision</h3>
+                  <h3 className="text-[#d4af37] text-lg font-bold mb-4" style={{ fontFamily: 'var(--sans)' }}>Our Vision</h3>
                   <p className="text-[#7b879e] text-sm leading-relaxed">
                     Define the family readiness category and become the standard for families and institutions that refuse to leave their affairs to chance.
                   </p>
@@ -161,7 +161,7 @@ const AboutPage = () => {
           <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(13,27,42,0.55) 0%, rgba(13,27,42,0.92) 100%)' }} />
           <div className="max-w-[1000px] mx-auto px-6 relative z-10">
             <RevealSection>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-12" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-12" style={{ fontFamily: 'var(--sans)' }}>
                 Our Values
               </h2>
             </RevealSection>
@@ -218,7 +218,7 @@ const AboutPage = () => {
           <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(13,27,42,0.45) 0%, rgba(13,27,42,0.88) 100%)' }} />
           <div className="max-w-[800px] mx-auto px-6 relative z-10">
             <RevealSection>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-8" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-8" style={{ fontFamily: 'var(--sans)' }}>
                 Who We Are
               </h2>
             </RevealSection>
@@ -267,7 +267,7 @@ const AboutPage = () => {
           <div className="absolute inset-0 opacity-[0.25]" style={{ backgroundImage: 'url(/texture-pulse.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
           <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 50% 50% at 50% 60%, rgba(212,175,55,0.05) 0%, transparent 70%)' }} />
           <RevealSection className="max-w-[600px] mx-auto px-6 text-center relative z-10">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white italic mb-8" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white italic mb-8" style={{ fontFamily: 'var(--sans)' }}>
               Your Family Deserves to Be Ready.
             </h2>
             <a href="/signup" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-all hover:brightness-110 hover:scale-105 active:scale-95"

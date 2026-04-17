@@ -65,7 +65,7 @@ const BillCalendar = ({ bills, month, onMonthChange, selectedDay, onDaySelect, c
           <ChevronLeft className="w-4 h-4 text-[var(--t4)]" />
         </button>
         <div className="text-center">
-          <div className="text-sm font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>{monthName}</div>
+          <div className="text-sm font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>{monthName}</div>
           <button onClick={goToday} className="text-xs text-[#10b981] hover:underline" data-testid="cal-today">Today</button>
         </div>
         <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors" data-testid="cal-next" aria-label="Next month">

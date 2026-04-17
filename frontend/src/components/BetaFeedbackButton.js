@@ -212,7 +212,7 @@ export default function BetaFeedbackButton() {
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--b, #2a2f4a)', paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
               <div>
-                <h3 className="text-lg font-bold" style={{ color: 'var(--t, #fff)', fontFamily: 'Outfit, sans-serif' }}>Beta Feedback</h3>
+                <h3 className="text-lg font-bold" style={{ color: 'var(--t, #fff)', fontFamily: 'var(--sans)' }}>Beta Feedback</h3>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--t5, #6b7280)' }}>Report a bug or suggestion</p>
               </div>
               <button

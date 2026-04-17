@@ -91,7 +91,7 @@ const UploadCertificatePage = () => {
             <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{ background: `${config.color}15` }}>
               <StatusIcon className="w-7 h-7" style={{ color: config.color }} />
             </div>
-            <h2 className="text-lg font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>{config.label}</h2>
+            <h2 className="text-lg font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>{config.label}</h2>
             <p className="text-sm text-[var(--t4)] leading-relaxed">{config.description}</p>
             {existingCert.file_name && (
               <p className="text-xs text-[var(--t5)] mt-2">File: {existingCert.file_name}</p>
@@ -137,7 +137,7 @@ const UploadCertificatePage = () => {
             <Shield className="w-5 h-5 text-[#60A5FA]" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Transition Verification</h1>
+            <h1 className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Transition Verification</h1>
             <p className="text-xs text-[var(--t5)]">Death Certificate Upload</p>
           </div>
         </div>
@@ -173,7 +173,7 @@ const UploadCertificatePage = () => {
               style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.08))', border: '1px solid rgba(96,165,250,0.15)' }}>
               <FileText className="w-7 h-7 text-[#60A5FA]" />
             </div>
-            <h2 className="text-lg font-bold text-center text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Before You Begin</h2>
+            <h2 className="text-lg font-bold text-center text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>Before You Begin</h2>
             <p className="text-sm text-[var(--t4)] text-center leading-relaxed mb-4">
               We need an official death certificate to verify the transition and unlock estate access.
             </p>
@@ -208,7 +208,7 @@ const UploadCertificatePage = () => {
 
           {/* Step 1: Upload */}
           {step === 1 && (<>
-            <h2 className="text-lg font-bold text-center text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Upload Death Certificate</h2>
+            <h2 className="text-lg font-bold text-center text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>Upload Death Certificate</h2>
             <p className="text-sm text-[var(--t5)] text-center mb-4">Drag and drop or tap to select</p>
 
             {!file ? (
@@ -254,7 +254,7 @@ const UploadCertificatePage = () => {
 
           {/* Step 2: Confirm & Submit */}
           {step === 2 && (<>
-            <h2 className="text-lg font-bold text-center text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Confirm Submission</h2>
+            <h2 className="text-lg font-bold text-center text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>Confirm Submission</h2>
             <p className="text-sm text-[var(--t5)] text-center leading-relaxed mb-4">
               Verify the details below before submitting.
             </p>
