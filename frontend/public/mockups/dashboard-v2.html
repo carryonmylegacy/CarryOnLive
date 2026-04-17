@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CarryOn — Dashboard v2 (Prototype)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    /* ══════════════════════════════════════════════════════════════
+       ISOLATED PROTOTYPE — not imported by any React code.
+       Lives at /public/mockups/dashboard-v2.html
+       Does NOT affect production dashboard.
+       ══════════════════════════════════════════════════════════════ */
+
+    * { box-sizing: border-box; }
+
+    :root[data-theme="dark"] {
+      --bg: #0B1424;
+      --bg2: #111A2E;
+      --bg3: #17243D;
+      --surface: rgba(255,255,255,0.04);
+      --surface-hover: rgba(255,255,255,0.07);
+      --border: rgba(255,255,255,0.08);
+      --border-strong: rgba(255,255,255,0.14);
+      --t: #EDF2F7;
+      --t2: #CBD5E1;
+      --t3: #94A3B8;
+      --t4: #64748B;
+      --t5: #475569;
+      --gold: #D4AF37;
+      --gold-soft: #F0C95C;
+      --gold-rail: linear-gradient(180deg, #F0C95C 0%, #B8901E 100%);
+      --accent-success: #10b981;
+      --accent-warn: #fbbf24;
+      --accent-danger: #ef4444;
+      --shadow-soft: 0 1px 0 0 rgba(255,255,255,0.04) inset, 0 10px 40px -8px rgba(0,0,0,0.5);
+      --shadow-strong: 0 20px 60px -15px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+    }
+
+    :root[data-theme="light"] {
+      --bg: #F4F7FB;
+      --bg2: #FFFFFF;
+      --bg3: #E9EFF6;
+      --surface: rgba(15,23,42,0.03);
+      --surface-hover: rgba(15,23,42,0.05);
+      --border: rgba(15,23,42,0.08);
+      --border-strong: rgba(15,23,42,0.14);
+      --t: #0F172A;
+      --t2: #1E293B;
+      --t3: #334155;
+      --t4: #64748B;
+      --t5: #94A3B8;
+      --gold: #B8901E;
+      --gold-soft: #D4AF37;
+      --gold-rail: linear-gradient(180deg, #D4AF37 0%, #9A7516 100%);
+      --accent-success: #059669;
+      --accent-warn: #D97706;
+      --accent-danger: #DC2626;
+      --shadow-soft: 0 1px 3px rgba(15,23,42,0.04), 0 8px 24px -6px rgba(15,23,42,0.08);
+      --shadow-strong: 0 16px 40px -10px rgba(15,23,42,0.14);
+    }
+
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--t); font-family: "Outfit", -apple-system, BlinkMacSystemFont, sans-serif; -webkit-font-smoothing: antialiased; }
+
+    /* ── Theme toggle (top-right) ── */
+    .theme-toggle {
+      position: fixed; top: 20px; right: 20px; z-index: 100;
+      display: flex; gap: 4px; padding: 4px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 999px;
+    }
+    .theme-toggle button {
+      border: 0; padding: 6px 14px; font: 600 11px/1 "Outfit"; color: var(--t4); background: transparent;
+      border-radius: 999px; cursor: pointer; letter-spacing: 0.05em; text-transform: uppercase;
+      transition: all 200ms cubic-bezier(0.4,0,0.2,1);
+    }
+    .theme-toggle button.active { background: var(--bg2); color: var(--gold); box-shadow: var(--shadow-soft); }
+
+    /* ── App container ── */
+    .app {
+      display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; max-width: 1600px; margin: 0 auto;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      padding: 28px 20px 24px; border-right: 1px solid var(--border); background: var(--bg);
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 0 4px 28px; }
+    .brand-mark {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--gold-soft), var(--gold));
+      display: flex; align-items: center; justify-content: center; color: #0B1424; font-weight: 800;
+      font-family: "Cormorant Garamond", serif; font-size: 22px; letter-spacing: -0.02em;
+    }
+    .brand-text .name { font-weight: 700; font-size: 15px; letter-spacing: -0.01em; color: var(--t); }
+    .brand-text .sub { font: 500 10px/1 "Outfit"; letter-spacing: 0.14em; text-transform: uppercase; color: var(--t4); margin-top: 3px; }
+
+    .nav { display: flex; flex-direction: column; gap: 2px; }
+    .nav-section {
+      font: 600 10px/1 "Outfit"; letter-spacing: 0.18em; text-transform: uppercase; color: var(--t5);
+      padding: 20px 12px 10px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px;
+      color: var(--t3); font-size: 14px; font-weight: 500; cursor: pointer;
+      transition: color 150ms ease, background 150ms ease;
+    }
+    .nav-item:hover { color: var(--t); background: var(--surface); }
+    .nav-item.active { color: var(--t); background: var(--surface); position: relative; }
+    .nav-item.active::before {
+      content: ''; position: absolute; left: -20px; top: 50%; transform: translateY(-50%);
+      width: 3px; height: 20px; background: var(--gold-rail); border-radius: 0 3px 3px 0;
+    }
+    .nav-icon { width: 16px; height: 16px; color: var(--t4); stroke-width: 2; }
+    .nav-item.active .nav-icon { color: var(--gold); }
+
+    /* ── Main ── */
+    .main { padding: 44px 56px 80px; min-width: 0; }
+    @media (max-width: 860px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .main { padding: 32px 20px 80px; }
+    }
+
+    /* ── Welcome line (restrained, editorial feel) ── */
+    .welcome {
+      font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: clamp(28px, 4vw, 44px);
+      letter-spacing: -0.02em; line-height: 1.1; margin: 0 0 6px; color: var(--t);
+    }
+    .welcome em { font-style: italic; color: var(--gold); }
+    .welcome-sub { font-size: 13px; color: var(--t4); letter-spacing: 0.02em; margin: 0 0 44px; }
+
+    /* ══════════════════════════════════════════════════════════════
+       ZONE 1 — READINESS HERO (the single star of the page)
+       ══════════════════════════════════════════════════════════════ */
+    .hero {
+      display: grid; grid-template-columns: 1.1fr 1fr; gap: 56px; align-items: center;
+      padding: 48px 56px; background: var(--bg2); border: 1px solid var(--border); border-radius: 20px;
+      box-shadow: var(--shadow-strong); margin-bottom: 32px; position: relative; overflow: hidden;
+    }
+    @media (max-width: 860px) { .hero { grid-template-columns: 1fr; padding: 32px 24px; gap: 32px; } }
+    .hero::before {
+      content: ''; position: absolute; top: -80px; right: -80px; width: 320px; height: 320px;
+      background: radial-gradient(circle, rgba(212,175,55,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-label {
+      font: 600 10px/1 "Outfit"; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--gold); margin: 0 0 16px;
+    }
+    .hero-headline {
+      font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: clamp(28px, 3vw, 40px);
+      letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 18px; color: var(--t);
+    }
+    .hero-body {
+      font-size: 15px; line-height: 1.6; color: var(--t3); margin: 0 0 32px; max-width: 42ch;
+    }
+    .hero-meta {
+      display: flex; gap: 28px; padding-top: 24px; border-top: 1px solid var(--border);
+    }
+    .meta-stat .val { font-family: "Outfit"; font-weight: 700; font-size: 22px; color: var(--t); letter-spacing: -0.02em; }
+    .meta-stat .lbl { font: 500 11px/1.2 "Outfit"; color: var(--t4); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; }
+
+    /* Gauge */
+    .gauge-wrap { display: flex; justify-content: center; align-items: center; position: relative; }
+    .gauge { width: 280px; height: 280px; position: relative; }
+    .gauge svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .gauge .track { fill: none; stroke: var(--border); stroke-width: 8; }
+    .gauge .fill {
+      fill: none; stroke: url(#goldGrad); stroke-width: 8; stroke-linecap: round;
+      transition: stroke-dashoffset 1200ms cubic-bezier(0.16,1,0.3,1);
+      filter: drop-shadow(0 0 8px rgba(212,175,55,0.3));
+    }
+    .gauge-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .gauge-value {
+      font-family: "Cormorant Garamond", serif; font-weight: 500;
+      font-size: 72px; line-height: 1; color: var(--t); letter-spacing: -0.03em;
+    }
+    .gauge-value span { font-family: "Outfit"; font-size: 24px; color: var(--t4); font-weight: 500; margin-left: 2px; }
+    .gauge-label { font: 600 10px/1 "Outfit"; letter-spacing: 0.22em; text-transform: uppercase; color: var(--t4); margin-top: 10px; }
+
+    /* ══════════════════════════════════════════════════════════════
+       ZONE 2 — NEXT STEP (ONE action, beautifully presented)
+       ══════════════════════════════════════════════════════════════ */
+    .section-label {
+      display: flex; align-items: center; gap: 10px; margin: 0 0 14px;
+      font: 600 11px/1 "Outfit"; letter-spacing: 0.18em; text-transform: uppercase; color: var(--t4);
+    }
+    .section-label::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    .next-step {
+      display: grid; grid-template-columns: 64px 1fr auto; gap: 20px; align-items: center;
+      padding: 24px 28px; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: var(--shadow-soft); margin-bottom: 40px; cursor: pointer;
+      transition: transform 200ms cubic-bezier(0.4,0,0.2,1), border-color 200ms, box-shadow 200ms;
+    }
+    .next-step:hover {
+      transform: translateY(-1px); border-color: var(--border-strong);
+      box-shadow: var(--shadow-strong);
+    }
+    .next-step-icon {
+      width: 64px; height: 64px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05));
+      border: 1px solid rgba(212,175,55,0.2);
+    }
+    .next-step-icon svg { width: 28px; height: 28px; color: var(--gold); }
+    .next-step-title {
+      font-family: "Outfit"; font-size: 18px; font-weight: 600; color: var(--t);
+      margin: 0 0 4px; letter-spacing: -0.01em;
+    }
+    .next-step-desc { font-size: 13px; color: var(--t3); line-height: 1.5; margin: 0; }
+    .next-step-cta {
+      display: flex; align-items: center; gap: 8px; padding: 10px 18px;
+      background: var(--t); color: var(--bg2); border-radius: 999px;
+      font: 600 13px/1 "Outfit"; letter-spacing: 0.02em;
+      transition: transform 150ms ease;
+    }
+    .next-step:hover .next-step-cta { transform: translateX(2px); }
+    .next-step-cta svg { width: 14px; height: 14px; }
+    @media (max-width: 640px) {
+      .next-step { grid-template-columns: 1fr; text-align: center; }
+      .next-step-icon { margin: 0 auto; }
+      .next-step-cta { justify-self: center; }
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       ZONE 3 — ACTIVITY FEED (timeline style)
+       ══════════════════════════════════════════════════════════════ */
+    .activity {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: var(--shadow-soft); overflow: hidden;
+    }
+    .activity-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 24px; border-bottom: 1px solid var(--border);
+    }
+    .activity-title { font: 600 15px/1 "Outfit"; color: var(--t); }
+    .activity-link {
+      font: 500 12px/1 "Outfit"; color: var(--gold); text-decoration: none; letter-spacing: 0.02em;
+    }
+    .activity-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+    .feed { display: flex; flex-direction: column; }
+    .feed-item {
+      display: grid; grid-template-columns: 36px 1fr auto; gap: 16px; align-items: center;
+      padding: 16px 24px; border-bottom: 1px solid var(--border);
+      transition: background 150ms ease;
+    }
+    .feed-item:last-child { border-bottom: none; }
+    .feed-item:hover { background: var(--surface); }
+    .feed-dot {
+      width: 36px; height: 36px; border-radius: 50%; background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .feed-dot svg { width: 14px; height: 14px; color: var(--t3); }
+    .feed-dot.gold svg { color: var(--gold); }
+    .feed-text { min-width: 0; }
+    .feed-action { font: 500 14px/1.4 "Outfit"; color: var(--t); margin: 0; }
+    .feed-action strong { font-weight: 600; }
+    .feed-meta { font: 400 12px/1.2 "Outfit"; color: var(--t5); margin-top: 2px; }
+    .feed-time { font: 500 11px/1 "Outfit"; color: var(--t5); white-space: nowrap; letter-spacing: 0.02em; }
+
+    /* ── Module strip (quieter, at the bottom) ── */
+    .modules {
+      margin-top: 48px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    }
+    @media (max-width: 640px) { .modules { grid-template-columns: repeat(2, 1fr); } }
+    .module {
+      display: flex; flex-direction: column; gap: 10px; padding: 18px;
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+      cursor: pointer; transition: border-color 150ms, transform 150ms;
+      text-decoration: none; color: inherit;
+    }
+    .module:hover { border-color: var(--gold); transform: translateY(-1px); }
+    .module-icon { width: 20px; height: 20px; color: var(--t4); stroke-width: 1.8; }
+    .module:hover .module-icon { color: var(--gold); }
+    .module-name { font: 600 13px/1 "Outfit"; color: var(--t); letter-spacing: -0.005em; }
+    .module-meta { font: 500 11px/1 "Outfit"; color: var(--t5); letter-spacing: 0.02em; margin-top: 2px; }
+
+    /* Mount animation */
+    .mount { opacity: 0; transform: translateY(8px); animation: mount 600ms cubic-bezier(0.16,1,0.3,1) forwards; }
+    .mount:nth-child(1) { animation-delay: 0ms; }
+    .mount:nth-child(2) { animation-delay: 80ms; }
+    .mount:nth-child(3) { animation-delay: 160ms; }
+    .mount:nth-child(4) { animation-delay: 240ms; }
+    .mount:nth-child(5) { animation-delay: 320ms; }
+    @keyframes mount { to { opacity: 1; transform: translateY(0); } }
+
+    /* Prototype disclaimer */
+    .disclaimer {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: var(--bg2); border: 1px solid var(--gold); border-radius: 999px;
+      padding: 10px 20px; font: 500 11px/1 "Outfit"; color: var(--gold);
+      letter-spacing: 0.14em; text-transform: uppercase;
+      box-shadow: var(--shadow-strong); z-index: 200;
+    }
+  </style>
+</head>
+<body>
+  <!-- Theme toggle -->
+  <div class="theme-toggle" role="tablist">
+    <button id="t-dark" class="active" onclick="setTheme('dark')" data-testid="dark-btn">Dark</button>
+    <button id="t-light" onclick="setTheme('light')" data-testid="light-btn">Light</button>
+  </div>
+
+  <div class="app">
+    <!-- Sidebar (restrained, just navigation) -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">C</div>
+        <div class="brand-text">
+          <div class="name">CarryOn</div>
+          <div class="sub">Family Preparedness</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <div class="nav-item active">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12 12 3l9 9v8a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/></svg>
+          <span>Home</span>
+        </div>
+        <div class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>Messages</span>
+        </div>
+        <div class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/></svg>
+          <span>Document Vault</span>
+        </div>
+        <div class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="17" cy="7" r="4"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg>
+          <span>Beneficiaries</span>
+        </div>
+        <div class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span>Financial</span>
+        </div>
+
+        <div class="nav-section">Preparedness</div>
+        <div class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>Connected Protocol</span>
+        </div>
+        <div class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11 3 12l6 1 1 6 2-6 6-1-6-1-1-6z"/></svg>
+          <span>Milestones</span>
+        </div>
+        <div class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
+          <span>Guardian AI</span>
+        </div>
+
+        <div class="nav-section">Account</div>
+        <div class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Settings</span>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main">
+      <!-- Welcome -->
+      <div class="mount">
+        <h1 class="welcome">Good evening, <em>Rebekah</em>.</h1>
+        <p class="welcome-sub">Thursday, April 17 · Your family's preparedness dashboard</p>
+      </div>
+
+      <!-- ═══════════ ZONE 1 — HERO ═══════════ -->
+      <section class="hero mount">
+        <div>
+          <p class="hero-label">Family Readiness Score</p>
+          <h2 class="hero-headline">You're almost there. A few final touches will protect everyone you love.</h2>
+          <p class="hero-body">Your vault is secure, messages are scheduled, and two of three beneficiaries have accepted their invitations. One more document and you're fully prepared.</p>
+          <div class="hero-meta">
+            <div class="meta-stat">
+              <div class="val">24</div>
+              <div class="lbl">Documents</div>
+            </div>
+            <div class="meta-stat">
+              <div class="val">12</div>
+              <div class="lbl">Messages</div>
+            </div>
+            <div class="meta-stat">
+              <div class="val">3</div>
+              <div class="lbl">Beneficiaries</div>
+            </div>
+            <div class="meta-stat">
+              <div class="val">7d</div>
+              <div class="lbl">Last drill</div>
+            </div>
+          </div>
+        </div>
+        <div class="gauge-wrap">
+          <div class="gauge">
+            <svg viewBox="0 0 200 200" aria-hidden="true">
+              <defs>
+                <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#F0C95C" />
+                  <stop offset="100%" stop-color="#B8901E" />
+                </linearGradient>
+              </defs>
+              <circle class="track" cx="100" cy="100" r="86" />
+              <circle id="gauge-fill" class="fill" cx="100" cy="100" r="86"
+                stroke-dasharray="540" stroke-dashoffset="540" />
+            </svg>
+            <div class="gauge-center">
+              <div class="gauge-value" id="gauge-value">0<span>%</span></div>
+              <div class="gauge-label">Ready</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════ ZONE 2 — NEXT STEP ═══════════ -->
+      <div class="section-label mount">Your Next Step</div>
+      <div class="next-step mount" role="button" tabindex="0">
+        <div class="next-step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="M12 11v6M9 14h6"/></svg>
+        </div>
+        <div>
+          <p class="next-step-title">Upload your Advance Healthcare Directive</p>
+          <p class="next-step-desc">The last document needed for full preparedness. Takes about 3 minutes. We'll store it encrypted and release it to your designated beneficiaries if the time ever comes.</p>
+        </div>
+        <div class="next-step-cta">
+          <span>Begin</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+      </div>
+
+      <!-- ═══════════ ZONE 3 — RECENT ACTIVITY ═══════════ -->
+      <div class="section-label mount">Recent Activity</div>
+      <section class="activity mount">
+        <div class="activity-header">
+          <div class="activity-title">What happened lately</div>
+          <a href="#" class="activity-link">View all →</a>
+        </div>
+        <div class="feed">
+          <div class="feed-item">
+            <div class="feed-dot gold">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </div>
+            <div class="feed-text">
+              <p class="feed-action"><strong>Sarah</strong> accepted her beneficiary invitation</p>
+              <div class="feed-meta">Designated as primary executor</div>
+            </div>
+            <div class="feed-time">2h ago</div>
+          </div>
+
+          <div class="feed-item">
+            <div class="feed-dot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/></svg>
+            </div>
+            <div class="feed-text">
+              <p class="feed-action">You added <strong>Insurance-Whole Life 2026.pdf</strong> to the vault</p>
+              <div class="feed-meta">Encrypted · Visible only to Alex and Sarah</div>
+            </div>
+            <div class="feed-time">Yesterday</div>
+          </div>
+
+          <div class="feed-item">
+            <div class="feed-dot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div class="feed-text">
+              <p class="feed-action">Scheduled message <strong>"Happy 30th, Maya"</strong> saved</p>
+              <div class="feed-meta">Delivers April 2042 · 16 years from now</div>
+            </div>
+            <div class="feed-time">2d ago</div>
+          </div>
+
+          <div class="feed-item">
+            <div class="feed-dot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div class="feed-text">
+              <p class="feed-action">Ran a <strong>wildfire evacuation drill</strong></p>
+              <div class="feed-meta">Household completed in 8 min · 2 min below target</div>
+            </div>
+            <div class="feed-time">7d ago</div>
+          </div>
+
+          <div class="feed-item">
+            <div class="feed-dot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7z"/></svg>
+            </div>
+            <div class="feed-text">
+              <p class="feed-action"><strong>Guardian AI</strong> suggested: "Add your passport to the vault"</p>
+              <div class="feed-meta">One-tap to start · Declined twice · Offering again</div>
+            </div>
+            <div class="feed-time">1w ago</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─────── Quiet module access (no competing colors) ─────── -->
+      <div class="modules">
+        <a class="module" href="#">
+          <svg class="module-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <div>
+            <div class="module-name">Estate Chat</div>
+            <div class="module-meta">12 messages · 3 unread</div>
+          </div>
+        </a>
+        <a class="module" href="#">
+          <svg class="module-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/></svg>
+          <div>
+            <div class="module-name">Document Vault</div>
+            <div class="module-meta">24 documents</div>
+          </div>
+        </a>
+        <a class="module" href="#">
+          <svg class="module-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+          <div>
+            <div class="module-name">Beneficiaries</div>
+            <div class="module-meta">2 of 3 accepted</div>
+          </div>
+        </a>
+        <a class="module" href="#">
+          <svg class="module-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <div>
+            <div class="module-name">Financial</div>
+            <div class="module-meta">Last updated 3d ago</div>
+          </div>
+        </a>
+      </div>
+    </main>
+  </div>
+
+  <div class="disclaimer">Prototype · not in production</div>
+
+  <script>
+    // Theme toggle
+    function setTheme(t) {
+      document.documentElement.dataset.theme = t;
+      document.getElementById('t-dark').classList.toggle('active', t === 'dark');
+      document.getElementById('t-light').classList.toggle('active', t === 'light');
+    }
+    setTheme('dark');
+
+    // Gauge animation (87%)
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const target = 87;
+        const circumference = 2 * Math.PI * 86;
+        const offset = circumference - (target / 100) * circumference;
+        document.getElementById('gauge-fill').style.strokeDashoffset = offset;
+
+        // Animated number
+        const el = document.getElementById('gauge-value');
+        let cur = 0;
+        const step = () => {
+          cur = Math.min(target, cur + 2);
+          el.innerHTML = cur + '<span>%</span>';
+          if (cur < target) requestAnimationFrame(step);
+        };
+        setTimeout(step, 200);
+      }, 400);
+    });
+  </script>
+</body>
+</html>
