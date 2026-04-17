@@ -457,24 +457,24 @@ const AdminPage = ({ operatorMode = false }) => {
           </p>
         </div>
         {!operatorMode && isFounder && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
         <AdminCommandPalette tabs={visibleTabs} operatorMode={operatorMode} />
         <QueueAlertsPanel />
         <button
           onClick={handleCleanup}
           disabled={cleaning}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-[var(--t5)] hover:text-[var(--t3)] transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-[var(--t5)] hover:text-[var(--t3)] transition-colors whitespace-nowrap flex-shrink-0"
           style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
           title="Remove orphaned records from deleted users"
           data-testid="admin-cleanup-btn"
         >
-          {cleaning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-          Clean Up
+          {cleaning ? <Loader2 className="w-3 h-3" /> : <Trash2 className="w-3 h-3" />}
+          <span className="hidden sm:inline">Clean Up</span>
         </button>
         </div>
         )}
         {operatorMode && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <AdminCommandPalette tabs={visibleTabs} operatorMode={operatorMode} />
             <QueueAlertsPanel />
           </div>

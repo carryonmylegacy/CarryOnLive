@@ -1774,7 +1774,21 @@ export default function EstateChatPage() {
                 }));
                 if (validated.length) setPendingFiles(prev => [...prev, ...validated]);
               }}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && window.innerWidth > 1024) { e.preventDefault(); sendMessage(); } }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  if (window.innerWidth > 1024) {
+                    // Desktop: Enter sends the message
+                    e.preventDefault();
+                    sendMessage();
+                  } else {
+                    // Mobile: the keyboard's blue Done/checkmark dismisses the keyboard
+                    // (previously it inserted a newline, which felt broken to users)
+                    e.preventDefault();
+                    if (inputRef.current) inputRef.current.blur();
+                    setInputFocused(false);
+                  }
+                }
+              }}
               onFocus={() => {
                 setInputFocused(true);
                 // Tell iOS to scroll the input into view
@@ -1792,7 +1806,7 @@ export default function EstateChatPage() {
                 setTimeout(doScroll, 100);
                 setTimeout(doScroll, 350);
               }}
-              enterKeyHint="return"
+              enterKeyHint="done"
               rows={1}
               placeholder="Type a message..."
               className="w-full rounded-2xl px-4 py-2 text-base"
