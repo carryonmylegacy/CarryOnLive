@@ -75,7 +75,7 @@ export default function FoundersCirclePage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
         <Crown className="w-12 h-12 text-[var(--t4)] mb-4" />
-        <h1 className="text-2xl font-bold text-[var(--t)]">Founders Circle</h1>
+        <h1 className="text-2xl font-semibold text-[var(--t)] tracking-tight" style={{ fontFamily: 'var(--serif)' }}>Founders Circle</h1>
         <p className="text-[var(--t4)] mt-2">This exclusive program is not currently available.</p>
         <button onClick={() => navigate(-1)} className="mt-6 px-6 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--bg3)', color: 'var(--t)' }}>Go Back</button>
       </div>
@@ -95,7 +95,7 @@ export default function FoundersCirclePage() {
           <Crown className="w-4 h-4 text-[var(--gold)]" />
           <span className="text-xs font-bold text-[var(--gold)] tracking-wide uppercase">Founding Member — Limited Time</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
+        <h1 className="text-3xl sm:text-4xl font-semibold text-[var(--t)] tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
           Founders Circle
         </h1>
         <p className="text-[var(--t4)] mt-2 text-base max-w-2xl mx-auto">

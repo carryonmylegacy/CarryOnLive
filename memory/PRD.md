@@ -118,12 +118,13 @@ See detailed V11 documentation in prior version. Key points:
 - Each card offers **inline iframe preview** + **Open in new tab** button with data-testids.
 - Appears in Admin → Prototypes (founder scope only). Zero production footprint — mockups stay isolated HTML until explicitly promoted.
 
-## Varsity Serif Treatment — Pillars & Heroes (Apr 17, 2026 — second pass)
+## Varsity Serif Treatment — Pillars, Heroes & Post-Login (Apr 17, 2026)
 - Applied Cormorant Garamond (`var(--serif)`) to trust-carrying headers:
   - HomePage hero: "Every American Family. *Ready.*" (italic gold on "Ready")
   - LoginPage hero (both desktop + mobile variants)
   - LandingContent section h2s: "More Than Estate Planning.", "Valuable Right Now.", "Nine Pillars of Family Readiness.", "Built for Real Families.", "Family Readiness in Five Steps.", "Your Family's Privacy Is Non-Negotiable.", "Free for Every American in Hospice Care.", "Readiness Starts Today."
   - Each pillar title (9 titles) + "Comprehensive Family Preparedness." end-state + italic "They're ready. Because you prepared." sign-off
+  - **Post-login carry-over (second pass)**: Dashboard greeting "Welcome back, *{name}*" (italic gold name) + Founders Circle hero + fallback hero
 - Body text, buttons, UI controls remain Inter for clarity.
 - Weight downgraded from bold → semibold/medium for the "editorial confidence" look.
 

@@ -535,10 +535,10 @@ const DashboardPage = () => {
       {/* Header + Estate Selector */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
         <div>
-          <h1 className="text-2xl lg:text-4xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>
+          <h1 className="text-2xl lg:text-4xl font-semibold text-[var(--t)] mb-1 tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
             {justCompletedActivation
               ? <>{getUserFirstName()}, let's continue exploring CarryOn</>
-              : <>Welcome back, {getUserFirstName()}</>}
+              : <>Welcome back, <span className="italic text-[var(--gold)]">{getUserFirstName()}</span></>}
           </h1>
           <p className="text-[var(--t4)] text-base lg:text-xl">
             {justCompletedActivation
