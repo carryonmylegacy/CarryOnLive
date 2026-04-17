@@ -320,7 +320,7 @@ export function VoicesTab({ getAuthHeaders }) {
                 {s.label}
                 {s.key === 'pending' && pendingCount > 0 ? (
                   <span
-                    className="inline-flex items-center justify-center px-1.5 rounded-full text-[10px] font-bold"
+                    className="inline-flex items-center justify-center px-1.5 rounded-full text-[11px] font-bold"
                     style={{
                       background: active ? 'rgba(0,0,0,0.2)' : '#f59e0b',
                       color: active ? '#080e1a' : '#fff',

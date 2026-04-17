@@ -222,6 +222,35 @@ Extension of the Voices system — featured quotes are now surfaced on a public 
 - Public endpoint: returns empty list by default → after PATCH featured=true → returns the quote with no auth required (200).
 - Public page: renders with 1 real featured quote from the live DB.
 
+## Voices Founder Veto Power + AI Seed Quotes (Apr 17, 2026)
+Closes the trust gap: founder now holds explicit approve/reject power over every user-submitted quote before it can appear publicly, AND the site is no longer empty on day one.
+
+**Backend (`routes/share_cards.py`)**
+- New per-submission field `approval_status` (`pending` | `approved` | `rejected`). User submissions now default to `pending` — they are NEVER surfaced on `/voices` or `HomeVoicesStrip` until the founder explicitly approves.
+- New `is_seed: bool` flag — differentiates AI seed quotes from real member submissions for admin/analytics.
+- `POST /admin/voices/seed` — idempotent upsert endpoint that writes 14 brand-voice AI quotes (7 FC + 7 subscriber) with fictional first names. Each seed gets a stable hash-derived id, `approval_status="approved"`, `is_seed=true`, and optional `featured=true`.
+- `GET /admin/voices/pending-count` — returns count of quotes awaiting founder review (drives badge).
+- `POST /admin/voices/{id}/approve?feature=true|false` — approves a pending quote, optionally flipping it featured in a single call.
+- `POST /admin/voices/{id}/reject` — rejects a pending quote (kept in DB for audit, never shown publicly).
+- Public `/voices/public` endpoint now filters strictly by `approval_status="approved"`. Admin list can filter by status (`pending`, `approved`, `rejected`, all).
+- `_notify_founder_of_pending()` — Resend email fired on every new public-consent submission with a **direct link to `/admin/voices`**, gold CTA button, and the quote inline. Best-effort — never blocks the submission path.
+
+**Frontend (`components/admin/VoicesTab.js`)**
+- Pending-queue badge in header (`voices-pending-badge`) pulses amber when N > 0 and deep-links to the pending filter.
+- Status filter chips (Pending / Approved / Rejected / All) with per-chip count for Pending.
+- Per-card action bar:
+  - **Pending** → Approve & Feature (gold), Approve only (ghost), Reject (red).
+  - **Approved** → Feature/Unfeature toggle, Redact (delete).
+  - **Rejected** → Restore to Pending, Redact.
+- "AI-seeded" chip (Sparkles icon) on every seed card — makes the tip-jar origin unambiguous to the founder.
+- Re-fetches both the list and pending-count on every state transition so the badge stays accurate.
+
+**Verified end-to-end**
+- DB: `total=16, seeds=14, approved=15, pending=0, featured=16, rejected=0`.
+- Public `/voices` page renders all featured quotes with staggered fade-in, serif hero, FOUNDING MEMBER / MEMBER chips.
+- Public `/api/share-cards/voices/public` returns 200 with seed + real quotes.
+- Housekeeping: **65/65 PASS, 0 WARN, 0 FAIL.** `scripts/check.sh` returns **ALL CLEAR — SAFE TO PUSH**.
+
 ## Home Voices Strip — Auto-Hiding Social Proof (Apr 17, 2026)
 New component `components/HomeVoicesStrip.js`, placed on the public landing page between the "Free for Every American in Hospice Care" block and the "Readiness Starts Today" final CTA.
 

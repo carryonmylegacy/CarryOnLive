@@ -376,7 +376,7 @@ async def _notify_founder_of_pending(first_name: str, quote: str, variant: str) 
     try:
         founder = await db.users.find_one(
             {"role": "admin", "admin_scope": "founder"},
-            {"_id": 0, "email": 1},
+            {"_id": 0, "id": 1, "email": 1},
         )
         if not founder or not founder.get("email"):
             return
