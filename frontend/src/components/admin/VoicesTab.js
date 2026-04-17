@@ -12,6 +12,7 @@ import {
   MessageSquareQuote,
   Crown,
   Sparkles,
+  Star,
 } from 'lucide-react';
 import { API_URL } from '../../config';
 import { toast } from '../../utils/toast';
@@ -36,15 +37,18 @@ export function VoicesTab({ getAuthHeaders }) {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [variant, setVariant] = useState(''); // "" | "fc" | "sub"
+  const [featuredOnly, setFeaturedOnly] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [togglingFeature, setTogglingFeature] = useState(null);
 
   const load = useCallback(
-    async (searchTerm = '', variantFilter = '') => {
+    async (searchTerm = '', variantFilter = '', featuredFilter = false) => {
       setLoading(true);
       try {
         const params = { limit: 200, offset: 0 };
         if (searchTerm.trim()) params.q = searchTerm.trim();
         if (variantFilter) params.variant = variantFilter;
+        if (featuredFilter) params.featured_only = true;
         const res = await axios.get(`${API_URL}/share-cards/admin/voices`, {
           params,
           ...getAuthHeaders(),
@@ -61,14 +65,14 @@ export function VoicesTab({ getAuthHeaders }) {
   );
 
   useEffect(() => {
-    load('', '');
+    load('', '', false);
   }, [load]);
 
-  // Debounced search
+  // Debounced search / filter
   useEffect(() => {
-    const t = setTimeout(() => load(q, variant), 300);
+    const t = setTimeout(() => load(q, variant, featuredOnly), 300);
     return () => clearTimeout(t);
-  }, [q, variant, load]);
+  }, [q, variant, featuredOnly, load]);
 
   const exportCsv = async () => {
     try {
@@ -103,6 +107,23 @@ export function VoicesTab({ getAuthHeaders }) {
       toast.error('Could not redact');
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const toggleFeature = async (id, nextValue) => {
+    setTogglingFeature(id);
+    try {
+      await axios.patch(
+        `${API_URL}/share-cards/admin/voices/${id}/feature`,
+        null,
+        { params: { featured: nextValue }, ...getAuthHeaders() },
+      );
+      setItems((prev) => prev.map((it) => (it.id === id ? { ...it, featured: nextValue } : it)));
+      toast.success(nextValue ? 'Featured publicly' : 'Unfeatured');
+    } catch {
+      toast.error('Could not update feature flag');
+    } finally {
+      setTogglingFeature(null);
     }
   };
 
@@ -162,7 +183,7 @@ export function VoicesTab({ getAuthHeaders }) {
             data-testid="voices-search"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {[
             { key: '', label: 'All' },
             { key: 'fc', label: 'Founders', icon: Crown },
@@ -187,6 +208,20 @@ export function VoicesTab({ getAuthHeaders }) {
               </button>
             );
           })}
+          <button
+            onClick={() => setFeaturedOnly((p) => !p)}
+            className="px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5"
+            style={{
+              background: featuredOnly ? '#d4af37' : 'var(--s)',
+              color: featuredOnly ? '#080e1a' : 'var(--t)',
+              border: `1px solid ${featuredOnly ? '#d4af37' : 'var(--b)'}`,
+            }}
+            data-testid="voices-filter-featured"
+            title="Show only quotes published on /voices"
+          >
+            <Star className="w-3.5 h-3.5" fill={featuredOnly ? '#080e1a' : 'transparent'} />
+            Featured
+          </button>
         </div>
         <Button
           onClick={exportCsv}
@@ -260,6 +295,25 @@ export function VoicesTab({ getAuthHeaders }) {
                     data-testid={`voice-copy-${it.id}`}
                   >
                     Copy
+                  </button>
+                  <button
+                    onClick={() => toggleFeature(it.id, !it.featured)}
+                    disabled={togglingFeature === it.id}
+                    className="text-[11px] px-2.5 py-1 rounded-md flex items-center gap-1"
+                    style={{
+                      background: it.featured ? 'rgba(212,175,55,0.18)' : 'var(--b)',
+                      color: it.featured ? '#d4af37' : 'var(--t2)',
+                      border: `1px solid ${it.featured ? '#d4af37' : 'var(--b)'}`,
+                    }}
+                    data-testid={`voice-feature-${it.id}`}
+                    title={it.featured ? 'Remove from public /voices page' : 'Publish to /voices page'}
+                  >
+                    {togglingFeature === it.id ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Star className="w-3 h-3" fill={it.featured ? '#d4af37' : 'transparent'} />
+                    )}
+                    {it.featured ? 'Featured' : 'Feature'}
                   </button>
                   <button
                     onClick={() => redact(it.id)}

@@ -199,6 +199,29 @@ Closes two gaps: users could only reach the share sheet during the 30-sec post-p
 - Backend: consent=true persists, consent=false does not, blank (random) never persists, dedup returns same id on repeat, admin list + CSV export + redact all return correct results.
 - Frontend: Dashboard tile renders, Voices tab loads the 1 real consented quote from testing.
 
+## Public "Voices" Page — Social Proof + Member Thank-You (Apr 17, 2026)
+Extension of the Voices system — featured quotes are now surfaced on a public unauthenticated page.
+
+**Backend**
+- Added `featured: bool` column to `share_quote_submissions` (defaults to False).
+- `GET /api/share-cards/voices/public` — no-auth endpoint serving only featured quotes (CDN-friendly payload).
+- `PATCH /api/share-cards/admin/voices/{id}/feature?featured=true|false` — founder-only toggle.
+- Admin list (`/admin/voices`) gained optional `featured_only` filter.
+
+**Frontend**
+- `components/admin/VoicesTab.js` — per-card **Star / "Feature"** button (toggles the public flag with toast feedback) + a **"Featured" filter chip** in the top bar.
+- `pages/VoicesPage.js` — brand-new public page at `/voices`:
+  - Cormorant Garamond hero: *"The words our members **chose for themselves.**"* (italic gold second line).
+  - Subhead explains the source honestly: *"Not marketing copy. Not a testimonial request. Just their answer to a single question: what does CarryOn mean to you?"*
+  - Grid of quote cards with FC / Subscriber chips (Crown for FC, Sparkles for subscriber), staggered fade-up animation.
+  - Graceful empty state when no featured quotes exist yet.
+  - Closing CTA: italic serif *"Your family deserves a plan, not a panic."* + gold "Start your CarryOn" button.
+- Registered in `App.js` lazy-loaded public route.
+
+**Verified**
+- Public endpoint: returns empty list by default → after PATCH featured=true → returns the quote with no auth required (200).
+- Public page: renders with 1 real featured quote from the live DB.
+
 ## Upcoming Tasks (Launch Week — Wed–Fri)
 - [Audit action] Fix FC `free_access` grant for late-added beneficiaries (🔴 15 min)
 - [Audit action] Verify Stripe webhook signature enforcement (curl test, 5 min)

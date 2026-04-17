@@ -521,6 +521,7 @@ class VoiceEntry(BaseModel):
     quote: str
     variant: str
     created_at: str
+    featured: bool = False
 
 
 class VoicesResponse(BaseModel):
@@ -533,6 +534,7 @@ async def list_voices(
     current_user: dict = Depends(get_current_user),
     q: str = Query("", max_length=80, description="Optional substring search."),
     variant: str = Query("", pattern="^(fc|sub|)$"),
+    featured_only: bool = Query(False),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
 ):
@@ -544,19 +546,76 @@ async def list_voices(
         mongo_q["variant"] = variant
     if q.strip():
         mongo_q["quote"] = {"$regex": q.strip(), "$options": "i"}
+    if featured_only:
+        mongo_q["featured"] = True
 
     total = await db.share_quote_submissions.count_documents(mongo_q)
     cursor = (
         db.share_quote_submissions.find(
             mongo_q,
-            {"_id": 0, "id": 1, "first_name": 1, "quote": 1, "variant": 1, "created_at": 1},
+            {
+                "_id": 0,
+                "id": 1,
+                "first_name": 1,
+                "quote": 1,
+                "variant": 1,
+                "created_at": 1,
+                "featured": 1,
+            },
         )
         .sort("created_at", -1)
         .skip(offset)
         .limit(limit)
     )
-    items = [VoiceEntry(**doc) async for doc in cursor]
+    items = [VoiceEntry(**{"featured": False, **doc}) async for doc in cursor]
     return VoicesResponse(total=total, items=items)
+
+
+@router.get("/voices/public", response_model=VoicesResponse)
+async def list_public_voices(limit: int = Query(60, ge=1, le=200)):
+    """Public (no auth) — only quotes the founder has explicitly featured.
+
+    Feeds the public `/voices` page. Returns a light payload so it can be
+    aggressively cached by edge / CDN."""
+    mongo_q = {"consent_public": True, "featured": True}
+    cursor = (
+        db.share_quote_submissions.find(
+            mongo_q,
+            {
+                "_id": 0,
+                "id": 1,
+                "first_name": 1,
+                "quote": 1,
+                "variant": 1,
+                "created_at": 1,
+                "featured": 1,
+            },
+        )
+        .sort("created_at", -1)
+        .limit(limit)
+    )
+    items = [VoiceEntry(**{"featured": True, **doc}) async for doc in cursor]
+    return VoicesResponse(total=len(items), items=items)
+
+
+@router.patch("/admin/voices/{submission_id}/feature")
+async def toggle_feature(
+    submission_id: str,
+    featured: bool = Query(..., description="True to feature publicly; False to unfeature."),
+    current_user: dict = Depends(get_current_user),
+):
+    """Founder-only: toggle a quote's `featured` flag. Featured quotes appear
+    on the public /voices page."""
+    check_founder_role(current_user)
+    if not submission_id or len(submission_id) > 64:
+        raise HTTPException(status_code=400, detail="Invalid submission id")
+    res = await db.share_quote_submissions.update_one(
+        {"id": submission_id},
+        {"$set": {"featured": bool(featured)}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    return {"id": submission_id, "featured": bool(featured)}
 
 
 @router.get("/admin/voices/export")
