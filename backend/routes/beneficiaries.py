@@ -42,7 +42,7 @@ async def _grant_fc_free_access_if_applicable(estate_id: str, user_id: str) -> b
     try:
         fc = await db.founders_circle.find_one(
             {"estate_id": estate_id, "status": "active"},
-            {"_id": 0, "tier": 1, "estate_id": 1},
+            {"_id": 0, "id": 1, "tier": 1, "estate_id": 1},
         )
         if not fc:
             return False

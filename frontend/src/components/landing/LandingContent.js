@@ -84,7 +84,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="absolute inset-0 opacity-[0.25]" style={{ backgroundImage: 'url(/texture-roots.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 40%, rgba(212,175,55,0.03) 0%, transparent 60%), linear-gradient(180deg, rgba(14,24,41,0.35) 0%, rgba(14,24,41,0.85) 100%)' }} />
         <RevealSection className="max-w-[800px] mx-auto px-6 text-center relative z-10">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight" style={{ fontFamily: 'var(--sans)' }}>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white mb-6 leading-tight tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
             More Than Estate Planning.<br />
             <span className="text-[#d4af37]">Total Family Preparedness.</span>
           </h2>
@@ -113,7 +113,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="absolute inset-0 opacity-[0.45]" style={{ backgroundImage: 'url(/texture-reframe.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(14,24,41,0.35) 0%, rgba(14,24,41,0.7) 100%)' }} />
         <RevealSection className="max-w-[800px] mx-auto px-6 text-center relative z-10">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 leading-tight" style={{ fontFamily: 'var(--sans)' }}>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-white mb-6 leading-tight tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
             Valuable Right Now.<br />
             <span className="text-[#d4af37]">Essential When It Matters Most.</span>
           </h2>
@@ -138,7 +138,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(15,29,48,0.4) 0%, rgba(15,29,48,0.7) 100%)' }} />
         <div className="max-w-[900px] mx-auto px-6 relative z-10">
           <RevealSection>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center mb-4" style={{ fontFamily: 'var(--sans)' }}>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white text-center mb-4 tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
               Nine Pillars of Family Readiness.
             </h2>
             <p className="text-[#a0aec0] text-base text-center max-w-[650px] mx-auto mb-16 leading-relaxed">
@@ -190,7 +190,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline gap-3 mb-2">
-                            <h4 className="text-white text-lg font-bold leading-tight" style={{ fontFamily: 'var(--sans)' }}>{title}</h4>
+                            <h4 className="text-white text-xl font-semibold leading-tight tracking-tight" style={{ fontFamily: 'var(--serif)' }}>{title}</h4>
                             <span className="text-[#8b97ab] text-xs font-semibold tracking-wider flex-shrink-0">{abbr}</span>
                           </div>
                           <p className="text-sm font-medium mb-2.5 leading-relaxed" style={{ color: '#e8c972' }}>{bold}</p>
@@ -217,13 +217,13 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                     style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.08))', border: '1.5px solid rgba(212,175,55,0.25)' }}>
                     <Shield className="w-6 h-6 text-[#d4af37]" />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-bold text-[#d4af37] mb-3" style={{ fontFamily: 'var(--sans)' }}>
+                  <h3 className="text-2xl sm:text-3xl font-semibold text-[#d4af37] mb-3 tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
                     Comprehensive Family Preparedness.
                   </h3>
                   <p className="text-[#a0aec0] text-sm lg:text-base leading-relaxed mb-4">
                     Nine pillars. One family. A living system that grows with you, protects what matters most, and ensures that no matter what life brings &mdash; your family is never left searching, wondering, or scrambling.
                   </p>
-                  <p className="text-white text-2xl font-semibold italic">
+                  <p className="text-white text-2xl font-medium italic" style={{ fontFamily: 'var(--serif)' }}>
                     They&apos;re ready. Because you prepared.
                   </p>
                 </div>
@@ -245,7 +245,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(14,24,41,0.1) 0%, rgba(14,24,41,0.4) 100%)' }} />
         <div className="max-w-[1100px] mx-auto px-6 relative z-10">
           <RevealSection>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center mb-4" style={{ fontFamily: 'var(--sans)' }}>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white text-center mb-4 tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
               Built for Real Families.
             </h2>
             <p className="text-[#7b879e] text-base text-center max-w-[650px] mx-auto mb-14 leading-relaxed">
@@ -279,7 +279,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 30%, rgba(212,175,55,0.03) 0%, transparent 70%)' }} />
         <div className="max-w-[800px] mx-auto px-6 text-center relative z-10">
           <RevealSection>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-5" style={{ fontFamily: 'var(--sans)' }}>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white mb-5 tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
               Family Readiness in Five Steps.
             </h2>
             <p className="text-[#7b879e] text-base max-w-[600px] mx-auto mb-14 leading-relaxed">
@@ -314,7 +314,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(14,24,41,0.15) 0%, rgba(14,24,41,0.45) 100%)' }} />
         <div className="max-w-[1100px] mx-auto px-6 text-center relative z-10">
           <RevealSection>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4" style={{ fontFamily: 'var(--sans)' }}>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white mb-4 tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
               Your Family&apos;s Privacy Is Non-Negotiable.
             </h2>
             <p className="text-[#7b879e] text-base max-w-[700px] mx-auto mb-14 leading-relaxed">
@@ -345,7 +345,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="absolute inset-0 hidden sm:block" style={{ background: 'radial-gradient(ellipse 80% 80% at 50% 50%, rgba(17,31,52,0.4) 0%, rgba(17,31,52,0.75) 60%, #111F34 100%)' }} />
         <RevealSection className="max-w-[800px] mx-auto px-6 relative z-10" delay={0.15} distance={60} duration={0.9}>
           <div className="rounded-2xl p-8 lg:p-12 text-center transition-all duration-700 hover:border-[#d4af37]/40 backdrop-blur-md" style={{ border: '1px solid rgba(212,175,55,0.25)', background: 'rgba(212,175,55,0.04)', boxShadow: '0 4px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)' }}>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#d4af37] mb-5" style={{ fontFamily: 'var(--sans)' }}>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-[#d4af37] mb-5 tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
               Free for Every American in Hospice Care.
             </h2>
             <p className="text-[#7b879e] text-base leading-relaxed mb-6">
@@ -385,7 +385,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="absolute inset-0 opacity-[0.5]" style={{ backgroundImage: 'url(/texture-dawn.jpg)', backgroundSize: 'cover', backgroundPosition: 'center 60%' }} />
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 50%, rgba(14,24,41,0.3) 0%, rgba(14,24,41,0.75) 100%)' }} />
         <RevealSection className="max-w-[600px] mx-auto px-6 text-center relative z-10">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-5" style={{ fontFamily: 'var(--sans)' }}>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white mb-5 tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
             Readiness Starts Today.
           </h2>
           <p className="text-[#7b879e] text-base mb-8">

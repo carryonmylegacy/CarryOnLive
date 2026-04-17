@@ -112,7 +112,7 @@ export function PrototypesTab() {
                         {p.title}
                       </h3>
                       <span
-                        className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full"
+                        className="text-[11px] uppercase tracking-wider px-2 py-0.5 rounded-full"
                         style={{ background: 'var(--s)', color: 'var(--t3)', border: '1px solid var(--b)' }}
                       >
                         {p.tag}

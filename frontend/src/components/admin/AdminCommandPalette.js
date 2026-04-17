@@ -121,7 +121,7 @@ export function AdminCommandPalette({ tabs = [], operatorMode = false }) {
       >
         <Search className="w-3 h-3" />
         <span className="hidden sm:inline">Quick Search</span>
-        <kbd className="hidden sm:inline px-1 py-0.5 rounded text-[10px]" style={{ background: 'var(--b)', color: 'var(--t3)' }}>⌘K</kbd>
+        <kbd className="hidden sm:inline px-1 py-0.5 rounded text-[11px]" style={{ background: 'var(--b)', color: 'var(--t3)' }}>⌘K</kbd>
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>

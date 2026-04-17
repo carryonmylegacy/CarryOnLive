@@ -38,6 +38,34 @@ don't want to remember to ask — they want it reported automatically.
 
 ---
 
+## 🔴 RULE 1b — Housekeeping WARNs must be FIXED, not reported (Apr 17, 2026)
+
+**The housekeeping script exists to fix things, not surface them.** Any
+`WARN` or `FAIL` line emitted by `bash /app/housekeeping.sh` or
+`bash /app/scripts/check.sh` MUST be resolved before calling `finish` —
+regardless of whether the issue was introduced in the current session
+or predates it.
+
+- Do not hand the user a summary containing unresolved WARNs.
+- Do not rationalize ("pre-existing", "out of scope", "low priority"):
+  the whole point of the gate is zero-noise pushes.
+- If a WARN genuinely cannot be fixed (e.g. requires user credentials,
+  3rd-party config), escalate explicitly in the summary and ask what
+  the user wants done — do not silently leave it.
+
+Common fixes:
+- **Mongo projection safety**: add `"id": 1` to inclusion projections.
+- **Min font size (11px)**: bump any `text-[10px]` / `text-[9px]` etc.
+  to `text-[11px]` minimum — Apple accessibility review rejects below that.
+- **ruff format**: run `cd /app/backend && ruff format .`.
+- **Frontend lint errors**: run `cd /app/frontend && yarn lint:errors`.
+
+**Why**: the user explicitly stated "I didn't have you build the
+housekeeping script for you to simply identify things, it is meant for
+you to identify AND FIX things before I push." Logged Apr 17, 2026.
+
+---
+
 ## 🔴 RULE 2 — Preserve ALL functionality on EVERY change
 
 **No exceptions.** The user has repeatedly emphasized: "MAKE SURE THAT NO

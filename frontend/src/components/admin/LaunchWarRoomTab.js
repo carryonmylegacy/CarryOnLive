@@ -230,7 +230,7 @@ export function LaunchWarRoomTab() {
         </Card>
       </div>
 
-      <p className="text-[10px] text-[var(--t5)] text-center pt-2">
+      <p className="text-[11px] text-[var(--t5)] text-center pt-2">
         Generated at {data.generated_at}
       </p>
     </div>
@@ -256,7 +256,7 @@ function MetricCard({ icon: Icon, label, value, accent, pulse, testid }) {
           <Icon className="w-4 h-4" style={{ color: c }} />
           {pulse && <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: c }} />}
         </div>
-        <p className="text-[var(--t5)] text-[10px] uppercase font-bold tracking-wider mb-1">{label}</p>
+        <p className="text-[var(--t5)] text-[11px] uppercase font-bold tracking-wider mb-1">{label}</p>
         <p className="text-[var(--t)] text-2xl font-bold tabular-nums" style={{ fontFamily: 'var(--sans)' }}>{value}</p>
       </CardContent>
     </Card>

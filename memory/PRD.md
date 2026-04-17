@@ -4,11 +4,16 @@
 >
 > **Before doing ANYTHING, read `/app/memory/AGENT_RULES.md`.**
 > It contains persistent rules the user has established across sessions that
-> MUST survive agent forks. The most important one:
+> MUST survive agent forks. The most important ones:
 >
-> **Every summary to the user MUST include a full housekeeping + ruff report**
-> run via `bash /app/scripts/check.sh`. No exceptions. Do not make the user
-> ask for this.
+> 1. **Every summary to the user MUST include a full housekeeping + ruff report**
+>    run via `bash /app/scripts/check.sh`. No exceptions.
+> 2. **Housekeeping WARNs must be FIXED, not reported.** Fix every WARN/FAIL
+>    before calling `finish`, regardless of whether it predates the session.
+>    Do not rationalize. The user's words (Apr 17, 2026): "These things are
+>    easy to fix. I want them always fixed! I didn't have you build the
+>    housekeeping script for you to simply identify things, it is meant for
+>    you to identify AND FIX things before I push."
 
 ---
 
@@ -112,6 +117,21 @@ See detailed V11 documentation in prior version. Key points:
   - `mobile-key-screens.html` (iPhone 13 mini → 17 Pro Max surfaces)
 - Each card offers **inline iframe preview** + **Open in new tab** button with data-testids.
 - Appears in Admin → Prototypes (founder scope only). Zero production footprint — mockups stay isolated HTML until explicitly promoted.
+
+## Varsity Serif Treatment — Pillars & Heroes (Apr 17, 2026 — second pass)
+- Applied Cormorant Garamond (`var(--serif)`) to trust-carrying headers:
+  - HomePage hero: "Every American Family. *Ready.*" (italic gold on "Ready")
+  - LoginPage hero (both desktop + mobile variants)
+  - LandingContent section h2s: "More Than Estate Planning.", "Valuable Right Now.", "Nine Pillars of Family Readiness.", "Built for Real Families.", "Family Readiness in Five Steps.", "Your Family's Privacy Is Non-Negotiable.", "Free for Every American in Hospice Care.", "Readiness Starts Today."
+  - Each pillar title (9 titles) + "Comprehensive Family Preparedness." end-state + italic "They're ready. Because you prepared." sign-off
+- Body text, buttons, UI controls remain Inter for clarity.
+- Weight downgraded from bold → semibold/medium for the "editorial confidence" look.
+
+## Housekeeping WARN Cleanup (Apr 17, 2026)
+Per user mandate, housekeeping WARNs are now fix-before-finish:
+- **Mongo projection safety (A1.2)**: Added `"id": 1` to `founders_circle` projection in `routes/beneficiaries.py:_grant_fc_free_access_if_applicable`.
+- **Min font size / iOS accessibility**: Bumped 4 instances of `text-[10px]` → `text-[11px]` across `PrototypesTab.js`, `LaunchWarRoomTab.js` (2 places), and `AdminCommandPalette.js`.
+- Result: `bash /app/housekeeping.sh` now reports **66 PASS, 0 WARN, 0 FAIL**. `scripts/check.sh` says **ALL CLEAR — SAFE TO PUSH**.
 
 ## Upcoming Tasks (Launch Week — Wed–Fri)
 - [Audit action] Fix FC `free_access` grant for late-added beneficiaries (🔴 15 min)
