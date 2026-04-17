@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CarryOn — Mobile-First Key Screens (Prototype)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    :root[data-theme="dark"] {
+      --bg: #0B1424; --paper: #111A2E; --paper2: #17243D;
+      --ink: #EDF2F7; --ink-soft: #94A3B8; --ink-faint: #64748B;
+      --line: rgba(255,255,255,0.08); --line-strong: rgba(255,255,255,0.14);
+      --gold: #D4AF37; --gold-soft: #F0C95C;
+      --stage: #070D18; --bezel: #1F2937;
+    }
+    :root[data-theme="light"] {
+      --bg: #EEF2F7; --paper: #FFFFFF; --paper2: #F8FAFC;
+      --ink: #0F172A; --ink-soft: #64748B; --ink-faint: #94A3B8;
+      --line: rgba(15,23,42,0.08); --line-strong: rgba(15,23,42,0.14);
+      --gold: #B8901E; --gold-soft: #D4AF37;
+      --stage: #E2E8F0; --bezel: #1F2937;
+    }
+    html, body { margin:0; padding:0; background: var(--stage); color: var(--ink); font-family: Inter, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+
+    /* Page */
+    .page { padding: 48px 32px 140px; max-width: 1800px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 48px; }
+    .header h1 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 42px; letter-spacing: -0.02em; margin: 0 0 8px; color: var(--ink); }
+    .header .sub { color: var(--ink-soft); font-size: 14px; letter-spacing: 0.02em; }
+    .header .badge { display: inline-block; margin-top: 14px; padding: 6px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; border: 1px solid var(--gold); color: var(--gold); border-radius: 999px; }
+
+    /* Theme toggle */
+    .theme-toggle { position: fixed; top: 20px; right: 20px; z-index: 100; display: flex; gap: 4px; padding: 4px; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; }
+    .theme-toggle button { border: 0; padding: 6px 14px; font: 600 11px/1 Inter; color: var(--ink-soft); background: transparent; border-radius: 999px; cursor: pointer; letter-spacing: 0.05em; text-transform: uppercase; }
+    .theme-toggle button.active { background: var(--paper2); color: var(--gold); }
+
+    /* Device rail */
+    .device-rail { display: flex; gap: 48px; justify-content: center; align-items: flex-start; flex-wrap: wrap; margin-bottom: 56px; }
+    .device-group { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    .device-label { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); }
+    .device-label strong { color: var(--gold); }
+
+    /* iPhone shell */
+    .iphone {
+      background: var(--bezel); border-radius: 48px; padding: 12px; position: relative;
+      box-shadow: 0 30px 60px -20px rgba(0,0,0,0.5), 0 0 0 2px rgba(0,0,0,0.4) inset, 0 0 0 4px rgba(100,116,139,0.2);
+    }
+    .iphone.mini { width: 320px; }
+    .iphone.std { width: 380px; }
+    .iphone.pro-max { width: 440px; }
+    .iphone-notch {
+      position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+      width: 100px; height: 24px; background: #000; border-radius: 20px; z-index: 5;
+    }
+    .iphone-screen {
+      background: var(--bg); border-radius: 38px; overflow: hidden;
+      aspect-ratio: 9/19.5;
+    }
+    .iphone.mini .iphone-screen { aspect-ratio: 9/19.5; }
+    .iphone .iphone-screen { height: 620px; }
+    .iphone.pro-max .iphone-screen { height: 700px; }
+
+    /* Status bar */
+    .status-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 28px 8px; font-size: 11px; font-weight: 600; color: var(--ink);
+    }
+    .status-bar .right { display: flex; gap: 6px; align-items: center; font-size: 10px; }
+
+    /* App content */
+    .app-content { padding: 20px 16px 80px; height: calc(100% - 40px); overflow: hidden; }
+    .greeting { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 24px; letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 6px; color: var(--ink); }
+    .greeting em { font-style: italic; color: var(--gold); }
+    .meta { font-size: 11px; color: var(--ink-faint); margin: 0 0 18px; }
+
+    /* Shared components */
+    .hero-card {
+      background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 16px;
+      display: flex; gap: 14px; align-items: center; margin-bottom: 14px;
+    }
+    .hero-label {
+      font-size: 9px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--gold); margin: 0 0 4px;
+    }
+    .hero-title { font-family: "Cormorant Garamond", serif; font-size: 15px; font-weight: 500; line-height: 1.25; color: var(--ink); margin: 0; }
+
+    /* Mini gauge */
+    .gauge-mini {
+      width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: conic-gradient(var(--gold) 0deg, var(--gold) 313deg, var(--line) 313deg);
+    }
+    .gauge-mini-inner {
+      width: 52px; height: 52px; border-radius: 50%; background: var(--paper);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .gauge-mini-val { font-family: "Cormorant Garamond", serif; font-size: 20px; font-weight: 500; line-height: 1; color: var(--ink); }
+    .gauge-mini-lbl { font-size: 7px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1px; }
+
+    /* Next step */
+    .step {
+      background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 14px;
+      display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; margin-bottom: 14px;
+    }
+    .step-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, rgba(212,175,55,0.18), rgba(212,175,55,0.04));
+      border: 1px solid rgba(212,175,55,0.2); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 16px;
+    }
+    .step-title { font-weight: 600; font-size: 12px; color: var(--ink); margin: 0 0 2px; line-height: 1.3; }
+    .step-sub { font-size: 10px; color: var(--ink-soft); line-height: 1.35; }
+    .step-cta {
+      background: var(--ink); color: var(--paper); border-radius: 999px; padding: 6px 10px;
+      font-size: 10px; font-weight: 600;
+    }
+
+    /* Section label */
+    .section-label {
+      font-size: 9px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--ink-faint); margin: 0 0 8px; display: flex; align-items: center; gap: 6px;
+    }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+    /* Activity row */
+    .feed { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+    .feed-item {
+      display: grid; grid-template-columns: 24px 1fr auto; gap: 10px; align-items: center;
+      padding: 10px 12px; border-bottom: 1px solid var(--line);
+    }
+    .feed-item:last-child { border-bottom: none; }
+    .feed-dot { width: 24px; height: 24px; border-radius: 50%; background: var(--paper2); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; color: var(--ink-soft); font-size: 11px; font-weight: 600; }
+    .feed-dot.gold { background: rgba(212,175,55,0.12); color: var(--gold); border-color: var(--gold); }
+    .feed-text { font-size: 10px; color: var(--ink); line-height: 1.35; font-weight: 500; }
+    .feed-text strong { font-weight: 600; }
+    .feed-meta { font-size: 9px; color: var(--ink-faint); margin-top: 1px; }
+    .feed-time { font-size: 9px; color: var(--ink-faint); font-weight: 500; }
+
+    /* Bottom tab bar */
+    .tab-bar {
+      position: absolute; bottom: 12px; left: 12px; right: 12px;
+      background: var(--paper); border: 1px solid var(--line); border-radius: 999px;
+      display: flex; justify-content: space-around; padding: 8px 4px;
+    }
+    .tab { font-size: 10px; color: var(--ink-faint); padding: 6px 10px; font-weight: 600; }
+    .tab.active { color: var(--gold); }
+
+    /* Vault-specific */
+    .search {
+      background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px;
+      font-size: 11px; color: var(--ink-faint); margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .search::before { content: '⌕'; font-size: 14px; }
+    .vault-group {
+      font-size: 9px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--ink-faint); margin: 12px 0 8px;
+    }
+    .doc-row {
+      background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px;
+      display: grid; grid-template-columns: 32px 1fr auto; gap: 10px; align-items: center; margin-bottom: 6px;
+    }
+    .doc-ico { width: 32px; height: 32px; border-radius: 8px; background: var(--paper2); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--ink-soft); }
+    .doc-name { font-size: 11px; font-weight: 500; color: var(--ink); margin: 0; }
+    .doc-meta { font-size: 9px; color: var(--ink-faint); margin-top: 1px; }
+    .doc-status { font-size: 8px; padding: 2px 6px; border-radius: 999px; background: var(--paper2); color: var(--ink-soft); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; border: 1px solid var(--line); }
+    .doc-status.shared { color: var(--gold); border-color: var(--gold); background: rgba(212,175,55,0.08); }
+
+    /* Messages-specific */
+    .msg-thread {
+      background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 12px;
+      display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; margin-bottom: 8px;
+    }
+    .msg-thread.unread { border-color: var(--gold); background: linear-gradient(90deg, rgba(212,175,55,0.04), transparent); }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--gold-soft), var(--gold)); display: flex; align-items: center; justify-content: center; color: #0B1424; font-weight: 700; font-size: 12px; font-family: "Cormorant Garamond", serif; }
+    .msg-name { font-size: 11px; font-weight: 600; color: var(--ink); margin: 0 0 2px; line-height: 1.2; }
+    .msg-preview { font-size: 10px; color: var(--ink-soft); line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+    .msg-right { text-align: right; }
+    .msg-time { font-size: 9px; color: var(--ink-faint); margin-bottom: 4px; }
+    .msg-badge { display: inline-block; font-size: 9px; font-weight: 700; background: var(--gold); color: #0B1424; border-radius: 999px; padding: 1px 6px; }
+
+    .disclaimer {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: var(--paper); border: 1px solid var(--gold); border-radius: 999px;
+      padding: 10px 20px; font-size: 11px; font-weight: 600; color: var(--gold);
+      letter-spacing: 0.14em; text-transform: uppercase;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3); z-index: 200;
+    }
+  </style>
+</head>
+<body>
+  <div class="theme-toggle">
+    <button id="t-dark" class="active" onclick="setTheme('dark')">Dark</button>
+    <button id="t-light" onclick="setTheme('light')">Light</button>
+  </div>
+
+  <div class="page">
+    <div class="header">
+      <h1>Mobile-First Key Screens</h1>
+      <div class="sub">Dashboard · Document Vault · Estate Chat · across iPhone 13 mini → iPhone 17 Pro Max</div>
+      <div class="badge">Prototype · not in production</div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div style="text-align: center; margin-bottom: 20px;">
+      <div style="display: inline-block; padding: 6px 16px; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-soft);">Dashboard</div>
+    </div>
+    <div class="device-rail">
+      <!-- iPhone 13 mini -->
+      <div class="device-group">
+        <div class="iphone mini">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen">
+            <div class="status-bar"><span>9:41</span><span class="right">● ● ●</span></div>
+            <div class="app-content">
+              <h1 class="greeting">Good evening, <em>Rebekah</em>.</h1>
+              <p class="meta">Thu · Apr 17</p>
+              <div class="hero-card">
+                <div class="gauge-mini"><div class="gauge-mini-inner"><div class="gauge-mini-val">87</div><div class="gauge-mini-lbl">Ready</div></div></div>
+                <div>
+                  <div class="hero-label">Family Readiness</div>
+                  <div class="hero-title">Almost there — one more doc.</div>
+                </div>
+              </div>
+              <div class="section-label">Next Step</div>
+              <div class="step">
+                <div class="step-icon">+</div>
+                <div>
+                  <div class="step-title">Add Healthcare Directive</div>
+                  <div class="step-sub">3 min</div>
+                </div>
+                <div class="step-cta">Go</div>
+              </div>
+              <div class="section-label">Recent</div>
+              <div class="feed">
+                <div class="feed-item">
+                  <div class="feed-dot gold">✓</div>
+                  <div>
+                    <div class="feed-text"><strong>Sarah</strong> joined</div>
+                  </div>
+                  <div class="feed-time">2h</div>
+                </div>
+                <div class="feed-item">
+                  <div class="feed-dot">📄</div>
+                  <div>
+                    <div class="feed-text">Insurance added</div>
+                  </div>
+                  <div class="feed-time">1d</div>
+                </div>
+              </div>
+              <div class="tab-bar">
+                <div class="tab active">Home</div>
+                <div class="tab">Vault</div>
+                <div class="tab">Chat</div>
+                <div class="tab">•••</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="device-label"><strong>iPhone 13 mini</strong> · 375pt</div>
+      </div>
+
+      <!-- iPhone 14/15 standard -->
+      <div class="device-group">
+        <div class="iphone std">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen">
+            <div class="status-bar"><span>9:41</span><span class="right">● ● ●</span></div>
+            <div class="app-content">
+              <h1 class="greeting">Good evening, <em>Rebekah</em>.</h1>
+              <p class="meta">Thursday · April 17</p>
+              <div class="hero-card">
+                <div class="gauge-mini"><div class="gauge-mini-inner"><div class="gauge-mini-val">87</div><div class="gauge-mini-lbl">Ready</div></div></div>
+                <div>
+                  <div class="hero-label">Family Readiness</div>
+                  <div class="hero-title">You're almost there — one more document and you're fully prepared.</div>
+                </div>
+              </div>
+              <div class="section-label">Your Next Step</div>
+              <div class="step">
+                <div class="step-icon">+</div>
+                <div>
+                  <div class="step-title">Add your Healthcare Directive</div>
+                  <div class="step-sub">Takes about 3 minutes</div>
+                </div>
+                <div class="step-cta">Begin</div>
+              </div>
+              <div class="section-label">Recent Activity</div>
+              <div class="feed">
+                <div class="feed-item">
+                  <div class="feed-dot gold">✓</div>
+                  <div>
+                    <div class="feed-text"><strong>Sarah</strong> accepted invitation</div>
+                    <div class="feed-meta">Primary executor</div>
+                  </div>
+                  <div class="feed-time">2h</div>
+                </div>
+                <div class="feed-item">
+                  <div class="feed-dot">📄</div>
+                  <div>
+                    <div class="feed-text">Insurance-Whole Life added</div>
+                    <div class="feed-meta">Encrypted</div>
+                  </div>
+                  <div class="feed-time">1d</div>
+                </div>
+                <div class="feed-item">
+                  <div class="feed-dot">💬</div>
+                  <div>
+                    <div class="feed-text">"Happy 30th Maya" saved</div>
+                    <div class="feed-meta">Delivers 2042</div>
+                  </div>
+                  <div class="feed-time">2d</div>
+                </div>
+              </div>
+              <div class="tab-bar">
+                <div class="tab active">Home</div>
+                <div class="tab">Vault</div>
+                <div class="tab">Chat</div>
+                <div class="tab">•••</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="device-label"><strong>iPhone 15</strong> · 393pt</div>
+      </div>
+
+      <!-- iPhone 17 Pro Max -->
+      <div class="device-group">
+        <div class="iphone pro-max">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen">
+            <div class="status-bar"><span>9:41</span><span class="right">● ● ●</span></div>
+            <div class="app-content">
+              <h1 class="greeting" style="font-size: 28px;">Good evening, <em>Rebekah</em>.</h1>
+              <p class="meta">Thursday · April 17 · Your family's preparedness</p>
+              <div class="hero-card" style="padding: 20px;">
+                <div class="gauge-mini" style="width: 78px; height: 78px;"><div class="gauge-mini-inner" style="width: 64px; height: 64px;"><div class="gauge-mini-val" style="font-size: 24px;">87</div><div class="gauge-mini-lbl">Ready</div></div></div>
+                <div>
+                  <div class="hero-label">Family Readiness Score</div>
+                  <div class="hero-title" style="font-size: 16px;">You're almost there. A few final touches will protect everyone you love.</div>
+                </div>
+              </div>
+              <div class="section-label">Your Next Step</div>
+              <div class="step">
+                <div class="step-icon">+</div>
+                <div>
+                  <div class="step-title">Add your Healthcare Directive</div>
+                  <div class="step-sub">The last document needed — takes 3 minutes</div>
+                </div>
+                <div class="step-cta">Begin</div>
+              </div>
+              <div class="section-label">Recent Activity</div>
+              <div class="feed">
+                <div class="feed-item">
+                  <div class="feed-dot gold">✓</div>
+                  <div>
+                    <div class="feed-text"><strong>Sarah</strong> accepted her invitation</div>
+                    <div class="feed-meta">Designated as primary executor</div>
+                  </div>
+                  <div class="feed-time">2h ago</div>
+                </div>
+                <div class="feed-item">
+                  <div class="feed-dot">📄</div>
+                  <div>
+                    <div class="feed-text">You added <strong>Insurance-Whole Life.pdf</strong></div>
+                    <div class="feed-meta">Encrypted · Visible to Alex + Sarah</div>
+                  </div>
+                  <div class="feed-time">Yesterday</div>
+                </div>
+                <div class="feed-item">
+                  <div class="feed-dot">💬</div>
+                  <div>
+                    <div class="feed-text">"Happy 30th, Maya" message saved</div>
+                    <div class="feed-meta">Delivers April 2042</div>
+                  </div>
+                  <div class="feed-time">2d ago</div>
+                </div>
+                <div class="feed-item">
+                  <div class="feed-dot">🛡</div>
+                  <div>
+                    <div class="feed-text">Ran wildfire evacuation drill</div>
+                    <div class="feed-meta">8 min · 2 min below target</div>
+                  </div>
+                  <div class="feed-time">7d ago</div>
+                </div>
+              </div>
+              <div class="tab-bar">
+                <div class="tab active">Home</div>
+                <div class="tab">Vault</div>
+                <div class="tab">Chat</div>
+                <div class="tab">•••</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="device-label"><strong>iPhone 17 Pro Max</strong> · 440pt</div>
+      </div>
+    </div>
+
+    <!-- VAULT -->
+    <div style="text-align: center; margin: 40px 0 20px;">
+      <div style="display: inline-block; padding: 6px 16px; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-soft);">Secure Document Vault</div>
+    </div>
+    <div class="device-rail">
+      <div class="device-group">
+        <div class="iphone std">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen">
+            <div class="status-bar"><span>9:41</span><span class="right">● ● ●</span></div>
+            <div class="app-content">
+              <h1 class="greeting" style="font-size: 22px;">Your Vault</h1>
+              <p class="meta">24 documents · 4 categories · Fully encrypted</p>
+              <div class="search">Search your vault</div>
+              <div class="vault-group">Legal</div>
+              <div class="doc-row">
+                <div class="doc-ico">📜</div>
+                <div><div class="doc-name">Last Will & Testament</div><div class="doc-meta">Updated 2 weeks ago</div></div>
+                <div class="doc-status shared">Shared</div>
+              </div>
+              <div class="doc-row">
+                <div class="doc-ico">🏠</div>
+                <div><div class="doc-name">Living Trust</div><div class="doc-meta">3.2 MB · PDF</div></div>
+                <div class="doc-status">Private</div>
+              </div>
+              <div class="vault-group">Financial</div>
+              <div class="doc-row">
+                <div class="doc-ico">💰</div>
+                <div><div class="doc-name">Whole Life Insurance</div><div class="doc-meta">Yesterday</div></div>
+                <div class="doc-status shared">Shared</div>
+              </div>
+              <div class="doc-row">
+                <div class="doc-ico">🏦</div>
+                <div><div class="doc-name">Account Inventory</div><div class="doc-meta">8 accounts listed</div></div>
+                <div class="doc-status">Private</div>
+              </div>
+              <div class="tab-bar">
+                <div class="tab">Home</div>
+                <div class="tab active">Vault</div>
+                <div class="tab">Chat</div>
+                <div class="tab">•••</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="device-label"><strong>iPhone 15</strong> · 393pt</div>
+      </div>
+
+      <div class="device-group">
+        <div class="iphone pro-max">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen">
+            <div class="status-bar"><span>9:41</span><span class="right">● ● ●</span></div>
+            <div class="app-content">
+              <h1 class="greeting" style="font-size: 26px;">Your Vault</h1>
+              <p class="meta">24 documents · 4 categories · AES-256 encrypted</p>
+              <div class="search">Search 24 documents</div>
+              <div class="vault-group">Legal · 6</div>
+              <div class="doc-row">
+                <div class="doc-ico">📜</div>
+                <div><div class="doc-name">Last Will & Testament</div><div class="doc-meta">Updated 2 weeks ago · Alex + Sarah</div></div>
+                <div class="doc-status shared">Shared</div>
+              </div>
+              <div class="doc-row">
+                <div class="doc-ico">🏠</div>
+                <div><div class="doc-name">Living Trust Agreement</div><div class="doc-meta">3.2 MB · Signed · PDF</div></div>
+                <div class="doc-status">Private</div>
+              </div>
+              <div class="doc-row">
+                <div class="doc-ico">⚕</div>
+                <div><div class="doc-name">Power of Attorney</div><div class="doc-meta">Healthcare + Financial</div></div>
+                <div class="doc-status shared">Shared</div>
+              </div>
+              <div class="vault-group">Financial · 9</div>
+              <div class="doc-row">
+                <div class="doc-ico">💰</div>
+                <div><div class="doc-name">Whole Life Insurance Policy</div><div class="doc-meta">Yesterday · 2.1 MB</div></div>
+                <div class="doc-status shared">Shared</div>
+              </div>
+              <div class="doc-row">
+                <div class="doc-ico">🏦</div>
+                <div><div class="doc-name">Account Inventory</div><div class="doc-meta">8 accounts · Updated monthly</div></div>
+                <div class="doc-status">Private</div>
+              </div>
+              <div class="doc-row">
+                <div class="doc-ico">📈</div>
+                <div><div class="doc-name">Retirement Statements</div><div class="doc-meta">Q1 2026</div></div>
+                <div class="doc-status">Private</div>
+              </div>
+              <div class="tab-bar">
+                <div class="tab">Home</div>
+                <div class="tab active">Vault</div>
+                <div class="tab">Chat</div>
+                <div class="tab">•••</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="device-label"><strong>iPhone 17 Pro Max</strong> · 440pt</div>
+      </div>
+    </div>
+
+    <!-- MESSAGES / ESTATE CHAT -->
+    <div style="text-align: center; margin: 40px 0 20px;">
+      <div style="display: inline-block; padding: 6px 16px; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-soft);">Estate Chat</div>
+    </div>
+    <div class="device-rail">
+      <div class="device-group">
+        <div class="iphone std">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen">
+            <div class="status-bar"><span>9:41</span><span class="right">● ● ●</span></div>
+            <div class="app-content">
+              <h1 class="greeting" style="font-size: 22px;">Messages</h1>
+              <p class="meta">3 conversations · 2 unread</p>
+              <div class="msg-thread unread">
+                <div class="avatar">A</div>
+                <div>
+                  <div class="msg-name">Alex Matthews</div>
+                  <div class="msg-preview">I got the vault link — it's incredible. Questi…</div>
+                </div>
+                <div class="msg-right"><div class="msg-time">9:24</div><div class="msg-badge">2</div></div>
+              </div>
+              <div class="msg-thread unread">
+                <div class="avatar">S</div>
+                <div>
+                  <div class="msg-name">Sarah Matthews</div>
+                  <div class="msg-preview">Thanks for trusting me with this. I've got it.</div>
+                </div>
+                <div class="msg-right"><div class="msg-time">Yesterday</div><div class="msg-badge">1</div></div>
+              </div>
+              <div class="msg-thread">
+                <div class="avatar">M</div>
+                <div>
+                  <div class="msg-name">Maya (future)</div>
+                  <div class="msg-preview">Scheduled · Delivers April 2042</div>
+                </div>
+                <div class="msg-right"><div class="msg-time">2d</div></div>
+              </div>
+              <div class="section-label" style="margin-top: 16px;">Milestone Messages</div>
+              <div class="msg-thread">
+                <div class="avatar" style="background: linear-gradient(135deg, #94A3B8, #64748B);">🎂</div>
+                <div>
+                  <div class="msg-name">Happy 30th, Maya</div>
+                  <div class="msg-preview">2042 · 16 years from now · 1 photo</div>
+                </div>
+                <div class="msg-right"><div class="msg-time">Saved</div></div>
+              </div>
+              <div class="tab-bar">
+                <div class="tab">Home</div>
+                <div class="tab">Vault</div>
+                <div class="tab active">Chat</div>
+                <div class="tab">•••</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="device-label"><strong>iPhone 15</strong> · 393pt</div>
+      </div>
+
+      <div class="device-group">
+        <div class="iphone pro-max">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen">
+            <div class="status-bar"><span>9:41</span><span class="right">● ● ●</span></div>
+            <div class="app-content">
+              <h1 class="greeting" style="font-size: 26px;">Messages</h1>
+              <p class="meta">3 active conversations · 8 scheduled milestones</p>
+              <div class="msg-thread unread">
+                <div class="avatar">A</div>
+                <div>
+                  <div class="msg-name">Alex Matthews</div>
+                  <div class="msg-preview">I got the vault link — it's incredible. Questions about the trust...</div>
+                </div>
+                <div class="msg-right"><div class="msg-time">9:24 AM</div><div class="msg-badge">2</div></div>
+              </div>
+              <div class="msg-thread unread">
+                <div class="avatar">S</div>
+                <div>
+                  <div class="msg-name">Sarah Matthews</div>
+                  <div class="msg-preview">Thanks for trusting me with this responsibility. I've got it.</div>
+                </div>
+                <div class="msg-right"><div class="msg-time">Yesterday</div><div class="msg-badge">1</div></div>
+              </div>
+              <div class="msg-thread">
+                <div class="avatar">M</div>
+                <div>
+                  <div class="msg-name">Maya (future)</div>
+                  <div class="msg-preview">Scheduled · Delivers April 12, 2042</div>
+                </div>
+                <div class="msg-right"><div class="msg-time">2d</div></div>
+              </div>
+              <div class="section-label" style="margin-top: 20px;">Upcoming Milestones</div>
+              <div class="msg-thread">
+                <div class="avatar" style="background: linear-gradient(135deg, #94A3B8, #64748B);">🎂</div>
+                <div>
+                  <div class="msg-name">Happy 30th, Maya</div>
+                  <div class="msg-preview">Delivers 2042 · 16 years from now · 1 photo + 3 min voice</div>
+                </div>
+                <div class="msg-right"><div class="msg-time">Saved</div></div>
+              </div>
+              <div class="msg-thread">
+                <div class="avatar" style="background: linear-gradient(135deg, #94A3B8, #64748B);">🎓</div>
+                <div>
+                  <div class="msg-name">College Graduation — Alex Jr.</div>
+                  <div class="msg-preview">Delivers May 2028 · Handwritten letter attached</div>
+                </div>
+                <div class="msg-right"><div class="msg-time">Saved</div></div>
+              </div>
+              <div class="tab-bar">
+                <div class="tab">Home</div>
+                <div class="tab">Vault</div>
+                <div class="tab active">Chat</div>
+                <div class="tab">•••</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="device-label"><strong>iPhone 17 Pro Max</strong> · 440pt</div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 80px; color: var(--ink-soft); font-size: 13px; line-height: 1.6; max-width: 640px; margin-left: auto; margin-right: auto;">
+      <strong style="color: var(--ink);">Design principles:</strong> Single primary action per screen · Typography scales gracefully (Cormorant headline adapts from 22→28pt) · Tab bar pinned to safe area with rounded pill · Gold used only for emphasis, never for category-coding · Whitespace scales with device size — more breathing room on Pro Max, denser on mini but still legible.
+    </div>
+  </div>
+
+  <div class="disclaimer">Prototype · not in production</div>
+
+  <script>
+    function setTheme(t) {
+      document.documentElement.dataset.theme = t;
+      document.getElementById('t-dark').classList.toggle('active', t === 'dark');
+      document.getElementById('t-light').classList.toggle('active', t === 'light');
+    }
+    setTheme('dark');
+  </script>
+</body>
+</html>

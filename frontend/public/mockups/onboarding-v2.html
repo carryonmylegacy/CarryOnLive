@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CarryOn — Onboarding Flow v2 (Wireframe Prototype)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ══════════════════════════════════════════════════════════════
+       ISOLATED WIREFRAME PROTOTYPE
+       Lives at /public/mockups/onboarding-v2.html
+       Wireframe-style: grayscale + gold hints + focus on hierarchy.
+       ══════════════════════════════════════════════════════════════ */
+    * { box-sizing: border-box; }
+    :root {
+      --bg: #F8F9FB;
+      --paper: #FFFFFF;
+      --ink: #0F172A;
+      --ink-soft: #475569;
+      --ink-faint: #94A3B8;
+      --line: #CBD5E1;
+      --line-soft: #E2E8F0;
+      --gold: #B8901E;
+      --gold-soft: #D4AF37;
+      --shade: #F1F5F9;
+    }
+    html, body { margin:0; padding:0; background: var(--bg); color: var(--ink); font-family: Inter, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+
+    .page {
+      max-width: 1400px; margin: 0 auto; padding: 48px 40px 120px;
+    }
+
+    .header { text-align: center; margin-bottom: 52px; }
+    .header h1 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 40px; letter-spacing: -0.02em; margin: 0 0 8px; color: var(--ink); }
+    .header .meta { font-size: 13px; color: var(--ink-soft); letter-spacing: 0.04em; }
+    .header .badge {
+      display: inline-block; margin-top: 14px; padding: 6px 14px; font-size: 10px;
+      font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase;
+      border: 1px solid var(--gold); color: var(--gold); border-radius: 999px;
+    }
+
+    .legend {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-bottom: 56px; padding: 14px 20px;
+      background: var(--paper); border: 1px solid var(--line-soft); border-radius: 12px;
+    }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-soft); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ink); }
+    .legend-dot.action { background: var(--gold); }
+    .legend-dot.input { background: transparent; border: 1.5px solid var(--ink-soft); }
+
+    /* ── Flow grid (10 frames) ── */
+    .flow {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 24px;
+    }
+    @media (max-width: 1100px) { .flow { grid-template-columns: repeat(2, 1fr); } }
+
+    .frame {
+      background: var(--paper); border: 1px solid var(--line-soft); border-radius: 14px; overflow: hidden;
+      display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(15,23,42,0.03), 0 8px 24px -12px rgba(15,23,42,0.08);
+      transition: transform 200ms ease, box-shadow 200ms ease;
+    }
+    .frame:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(15,23,42,0.06), 0 18px 40px -12px rgba(15,23,42,0.14); }
+
+    .frame-head {
+      padding: 14px 16px; border-bottom: 1px solid var(--line-soft);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .frame-num {
+      font-family: "Cormorant Garamond", serif; font-size: 18px; font-weight: 600; color: var(--gold);
+    }
+    .frame-title { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); }
+
+    /* ── Phone-shaped canvas for each frame ── */
+    .phone {
+      padding: 16px 14px; min-height: 440px;
+      display: flex; flex-direction: column; gap: 12px;
+      background: linear-gradient(180deg, var(--paper) 0%, var(--shade) 100%);
+      border-top: 1px solid var(--line-soft);
+    }
+
+    /* ── Wireframe atoms ── */
+    .w-stat {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 10px; color: var(--ink-faint); margin-bottom: 6px;
+    }
+    .w-bar {
+      height: 3px; background: var(--line-soft); border-radius: 2px; overflow: hidden; margin-bottom: 14px;
+    }
+    .w-bar-fill { height: 100%; background: var(--gold); }
+    .w-title {
+      font-family: "Cormorant Garamond", serif; font-size: 22px; font-weight: 500; line-height: 1.15; color: var(--ink);
+      letter-spacing: -0.02em; margin: 8px 0;
+    }
+    .w-body {
+      font-size: 11px; line-height: 1.5; color: var(--ink-soft); margin: 0 0 10px;
+    }
+    .w-input {
+      height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 0 10px;
+      display: flex; align-items: center; font-size: 11px; color: var(--ink-faint); background: var(--paper);
+    }
+    .w-input.filled { color: var(--ink); border-color: var(--ink); }
+    .w-input-lbl { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); margin: 8px 0 4px; font-weight: 600; }
+    .w-btn {
+      margin-top: auto; height: 40px; border-radius: 999px; background: var(--ink); color: var(--paper);
+      display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 600;
+    }
+    .w-btn.ghost { background: transparent; color: var(--ink-soft); border: 1px solid var(--line); }
+    .w-note {
+      font-size: 9px; color: var(--ink-faint); text-align: center; line-height: 1.4;
+    }
+    .w-row { display: flex; gap: 8px; }
+    .w-row > * { flex: 1; }
+    .w-card {
+      background: var(--paper); border: 1px solid var(--line-soft); border-radius: 8px; padding: 10px;
+      display: flex; gap: 10px; align-items: center;
+    }
+    .w-card-icon {
+      width: 28px; height: 28px; border-radius: 6px; background: var(--shade);
+      border: 1px solid var(--line-soft); flex-shrink: 0;
+    }
+    .w-card-icon.gold { background: rgba(212,175,55,0.12); border-color: var(--gold); }
+    .w-card-title { font-size: 11px; font-weight: 600; color: var(--ink); margin: 0 0 2px; }
+    .w-card-sub { font-size: 9px; color: var(--ink-soft); line-height: 1.3; }
+    .w-pill { display: inline-block; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: var(--shade); color: var(--ink-soft); border: 1px solid var(--line-soft); }
+    .w-pill.gold { background: rgba(212,175,55,0.1); color: var(--gold); border-color: var(--gold); }
+    .w-illust {
+      height: 110px; background:
+        linear-gradient(180deg, transparent 49%, var(--line-soft) 50%, transparent 51%),
+        linear-gradient(90deg, transparent 49%, var(--line-soft) 50%, transparent 51%),
+        var(--shade);
+      border-radius: 10px; border: 1px dashed var(--line); display: flex; align-items: center; justify-content: center;
+      font-size: 9px; color: var(--ink-faint); letter-spacing: 0.14em; text-transform: uppercase;
+    }
+    .w-check {
+      width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--line);
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .w-check.done { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+    .w-gauge {
+      width: 90px; height: 90px; border-radius: 50%;
+      background: conic-gradient(var(--gold) 0deg, var(--gold) 312deg, var(--line-soft) 312deg);
+      display: flex; align-items: center; justify-content: center; margin: 8px auto;
+    }
+    .w-gauge-inner {
+      width: 72px; height: 72px; border-radius: 50%; background: var(--paper);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .w-gauge-val { font-family: "Cormorant Garamond", serif; font-size: 24px; font-weight: 600; line-height: 1; color: var(--ink); }
+    .w-gauge-lbl { font-size: 8px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); margin-top: 2px; }
+
+    .footer { margin-top: 64px; text-align: center; color: var(--ink-faint); font-size: 12px; }
+    .footer strong { color: var(--ink-soft); }
+
+    .disclaimer {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: var(--paper); border: 1px solid var(--gold); border-radius: 999px;
+      padding: 10px 20px; font-size: 11px; font-weight: 600; color: var(--gold);
+      letter-spacing: 0.14em; text-transform: uppercase;
+      box-shadow: 0 4px 14px rgba(15,23,42,0.1); z-index: 200;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <h1>Onboarding Flow — Redesigned</h1>
+      <div class="meta">10-frame wireframe · Benefactor first-time signup journey</div>
+      <div class="badge">Wireframe Prototype</div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot"></div> Primary action</div>
+      <div class="legend-item"><div class="legend-dot action"></div> Gold emphasis</div>
+      <div class="legend-item"><div class="legend-dot input"></div> User input</div>
+      <div class="legend-item" style="color: var(--ink-soft);">Grayscale by design — color added in final implementation</div>
+    </div>
+
+    <div class="flow">
+
+      <!-- FRAME 1: Welcome / value prop -->
+      <div class="frame">
+        <div class="frame-head">
+          <div class="frame-num">01</div>
+          <div class="frame-title">Welcome</div>
+        </div>
+        <div class="phone">
+          <div class="w-illust">HERO · FAMILY · TRUST</div>
+          <div class="w-title">Prepare your family for anything.</div>
+          <div class="w-body">CarryOn helps you carry your voice, your documents, and your plans forward — securely, privately, exactly when they're needed.</div>
+          <div class="w-row">
+            <div class="w-btn">Get Started →</div>
+          </div>
+          <div class="w-btn ghost">I already have an account</div>
+          <div class="w-note">AES-256 encrypted · SOC 2 audit trail</div>
+        </div>
+      </div>
+
+      <!-- FRAME 2: Role choice -->
+      <div class="frame">
+        <div class="frame-head">
+          <div class="frame-num">02</div>
+          <div class="frame-title">Role</div>
+        </div>
+        <div class="phone">
+          <div class="w-stat"><span>Step 1 of 7</span><span>15%</span></div>
+          <div class="w-bar"><div class="w-bar-fill" style="width: 15%;"></div></div>
+          <div class="w-title">How will you use CarryOn?</div>
+          <div class="w-body">Choose the role that fits you. You can always add more later.</div>
+          <div class="w-card" style="border-color: var(--gold); background: rgba(212,175,55,0.05);">
+            <div class="w-card-icon gold"></div>
+            <div>
+              <div class="w-card-title">I'm building a plan</div>
+              <div class="w-card-sub">For yourself or your family</div>
+            </div>
+          </div>
+          <div class="w-card">
+            <div class="w-card-icon"></div>
+            <div>
+              <div class="w-card-title">I've been invited</div>
+              <div class="w-card-sub">By a family member</div>
+            </div>
+          </div>
+          <div class="w-btn">Continue →</div>
+        </div>
+      </div>
+
+      <!-- FRAME 3: Account basics (email + name) -->
+      <div class="frame">
+        <div class="frame-head">
+          <div class="frame-num">03</div>
+          <div class="frame-title">Basics</div>
+        </div>
+        <div class="phone">
+          <div class="w-stat"><span>Step 2 of 7</span><span>28%</span></div>
+          <div class="w-bar"><div class="w-bar-fill" style="width: 28%;"></div></div>
+          <div class="w-title">Let's start with the essentials.</div>
+          <div class="w-body">Just the basics. You can complete the rest whenever you're ready.</div>
+          <div class="w-input-lbl">Your name</div>
+          <div class="w-input filled">Rebekah Matthews</div>
+          <div class="w-input-lbl">Email address</div>
+          <div class="w-input filled">rebekah@matthews.family</div>
+          <div class="w-input-lbl">Create a password</div>
+          <div class="w-input">Minimum 12 characters</div>
+          <div class="w-btn">Continue →</div>
+        </div>
+      </div>
+
+      <!-- FRAME 4: Verify (OTP) -->
+      <div class="frame">
+        <div class="frame-head">
+          <div class="frame-num">04</div>
+          <div class="frame-title">Verify</div>
+        </div>
+        <div class="phone">
+          <div class="w-stat"><span>Step 3 of 7</span><span>40%</span></div>
+          <div class="w-bar"><div class="w-bar-fill" style="width: 40%;"></div></div>
+          <div class="w-title">Check your email for a 6-digit code.</div>
+          <div class="w-body">We sent it to <strong>rebekah@matthews.family</strong>. Enter it below.</div>
+          <div class="w-row" style="margin: 16px 0;">
+            <div class="w-input filled" style="text-align: center; font-size: 18px; font-family: Cormorant Garamond;">4</div>
+            <div class="w-input filled" style="text-align: center; font-size: 18px; font-family: Cormorant Garamond;">2</div>
+            <div class="w-input filled" style="text-align: center; font-size: 18px; font-family: Cormorant Garamond;">7</div>
+            <div class="w-input" style="text-align: center;"></div>
+            <div class="w-input" style="text-align: center;"></div>
+            <div class="w-input" style="text-align: center;"></div>
+          </div>
+          <div class="w-note">Didn't get it? <strong style="color: var(--gold);">Resend</strong></div>
+          <div class="w-btn">Verify →</div>
+        </div>
+      </div>
+
+      <!-- FRAME 5: Estate setup -->
+      <div class="frame">
+        <div class="frame-head">
+          <div class="frame-num">05</div>
+          <div class="frame-title">Estate</div>
+        </div>
+        <div class="phone">
+          <div class="w-stat"><span>Step 4 of 7</span><span>55%</span></div>
+          <div class="w-bar"><div class="w-bar-fill" style="width: 55%;"></div></div>
+          <div class="w-title">Name your estate plan.</div>
+          <div class="w-body">A plan is a private space for your documents, messages, and beneficiaries. Most people name theirs after their family.</div>
+          <div class="w-input-lbl">Estate name</div>
+          <div class="w-input filled">The Matthews Family</div>
+          <div class="w-input-lbl">Who does this plan protect?</div>
+          <div class="w-input filled">My spouse and two children</div>
+          <div class="w-btn">Continue →</div>
+          <div class="w-note">You can create more plans later</div>
+        </div>
+      </div>
+
+      <!-- FRAME 6: First beneficiary -->
+      <div class="frame">
+        <div class="frame-head">
+          <div class="frame-num">06</div>
+          <div class="frame-title">Beneficiary</div>
+        </div>
+        <div class="phone">
+          <div class="w-stat"><span>Step 5 of 7</span><span>70%</span></div>
+          <div class="w-bar"><div class="w-bar-fill" style="width: 70%;"></div></div>
+          <div class="w-title">Who should receive this when the time comes?</div>
+          <div class="w-body">Invite your first beneficiary. They'll only see what you decide, only when you decide.</div>
+          <div class="w-input-lbl">Name</div>
+          <div class="w-input filled">Alex Matthews</div>
+          <div class="w-input-lbl">Email</div>
+          <div class="w-input filled">alex@matthews.family</div>
+          <div class="w-input-lbl">Relationship</div>
+          <div class="w-input filled">Spouse</div>
+          <div class="w-btn">Send Invitation →</div>
+          <div class="w-btn ghost">Skip for now</div>
+        </div>
+      </div>
+
+      <!-- FRAME 7: First document -->
+      <div class="frame">
+        <div class="frame-head">
+          <div class="frame-num">07</div>
+          <div class="frame-title">Vault</div>
+        </div>
+        <div class="phone">
+          <div class="w-stat"><span>Step 6 of 7</span><span>82%</span></div>
+          <div class="w-bar"><div class="w-bar-fill" style="width: 82%;"></div></div>
+          <div class="w-title">Add one document to your vault.</div>
+          <div class="w-body">Start with something simple. Many people begin with a will, insurance policy, or list of accounts.</div>
+          <div class="w-illust" style="height: 90px;">DROP A FILE · OR TAP TO UPLOAD</div>
+          <div class="w-card" style="margin-top: 6px;">
+            <div class="w-check"></div>
+            <div>
+              <div class="w-card-title">Encrypt with a unique key</div>
+              <div class="w-card-sub">AES-256 · your key never leaves this device</div>
+            </div>
+          </div>
+          <div class="w-btn">Upload →</div>
+          <div class="w-btn ghost">Skip for now</div>
+        </div>
+      </div>
+
+      <!-- FRAME 8: Subscription tier -->
+      <div class="frame">
+        <div class="frame-head">
+          <div class="frame-num">08</div>
+          <div class="frame-title">Plan</div>
+        </div>
+        <div class="phone">
+          <div class="w-stat"><span>Step 7 of 7</span><span>95%</span></div>
+          <div class="w-bar"><div class="w-bar-fill" style="width: 95%;"></div></div>
+          <div class="w-title">Choose a tier that fits your family.</div>
+          <div class="w-body">All tiers include encryption, audit, and beneficiary access. Upgrade any time.</div>
+          <div class="w-card"><div class="w-card-icon"></div><div><div class="w-card-title">Base · $12/mo</div><div class="w-card-sub">Core vault + 1 beneficiary</div></div></div>
+          <div class="w-card" style="border-color: var(--gold); background: rgba(212,175,55,0.05);">
+            <div class="w-card-icon gold"></div>
+            <div>
+              <div class="w-card-title">Premium · $29/mo <span class="w-pill gold" style="margin-left: 4px;">Recommended</span></div>
+              <div class="w-card-sub">Unlimited · Milestones · Guardian AI</div>
+            </div>
+          </div>
+          <div class="w-btn">Start 14-day free trial →</div>
+        </div>
+      </div>
+
+      <!-- FRAME 9: Celebration -->
+      <div class="frame">
+        <div class="frame-head">
+          <div class="frame-num">09</div>
+          <div class="frame-title">Complete</div>
+        </div>
+        <div class="phone">
+          <div class="w-gauge"><div class="w-gauge-inner"><div class="w-gauge-val">87</div><div class="w-gauge-lbl">Ready</div></div></div>
+          <div class="w-title" style="text-align: center;">Beautifully done, Rebekah.</div>
+          <div class="w-body" style="text-align: center;">Your family is 87% prepared. Here's what's protecting them right now:</div>
+          <div class="w-card"><div class="w-check done">✓</div><div><div class="w-card-title">Plan created</div></div></div>
+          <div class="w-card"><div class="w-check done">✓</div><div><div class="w-card-title">Alex invited as beneficiary</div></div></div>
+          <div class="w-card"><div class="w-check done">✓</div><div><div class="w-card-title">1 document encrypted</div></div></div>
+          <div class="w-btn">Go to my dashboard →</div>
+        </div>
+      </div>
+
+      <!-- FRAME 10: First dashboard -->
+      <div class="frame">
+        <div class="frame-head">
+          <div class="frame-num">10</div>
+          <div class="frame-title">Dashboard</div>
+        </div>
+        <div class="phone">
+          <div class="w-body" style="color: var(--ink); font-size: 13px; font-family: Cormorant Garamond; font-style: italic;">Good evening, Rebekah.</div>
+          <div class="w-gauge" style="margin: 6px auto;"><div class="w-gauge-inner"><div class="w-gauge-val">87</div><div class="w-gauge-lbl">Ready</div></div></div>
+          <div class="w-input-lbl">Your next step</div>
+          <div class="w-card">
+            <div class="w-card-icon gold"></div>
+            <div>
+              <div class="w-card-title">Add a second beneficiary</div>
+              <div class="w-card-sub">Diversify access · takes 2 min</div>
+            </div>
+          </div>
+          <div class="w-input-lbl">Recent activity</div>
+          <div class="w-card"><div class="w-check done">✓</div><div><div class="w-card-sub"><strong>Alex</strong> received invitation · 30s ago</div></div></div>
+          <div class="w-btn ghost" style="margin-top: auto;">Explore all modules</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p><strong>Design principles applied:</strong> One decision per screen · Progress always visible · Cormorant for headlines, Inter for UI · Gold only for emphasis · Skip-able where possible · Celebrated completion.</p>
+      <p style="margin-top: 8px;">10 frames · ~4 minutes end-to-end · Maps directly to existing `/api/auth/register` + `/api/estates` + `/api/beneficiaries/invite` endpoints.</p>
+    </div>
+  </div>
+  <div class="disclaimer">Wireframe · not in production</div>
+</body>
+</html>
