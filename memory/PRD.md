@@ -222,6 +222,24 @@ Extension of the Voices system — featured quotes are now surfaced on a public 
 - Public endpoint: returns empty list by default → after PATCH featured=true → returns the quote with no auth required (200).
 - Public page: renders with 1 real featured quote from the live DB.
 
+## Home Voices Strip — Auto-Hiding Social Proof (Apr 17, 2026)
+New component `components/HomeVoicesStrip.js`, placed on the public landing page between the "Free for Every American in Hospice Care" block and the "Readiness Starts Today" final CTA.
+
+**Empty-state behavior (honesty first)**
+- **0 featured quotes** → component renders `null`. Home page looks identical to today. No fake placeholders, no pool fallback. Zero risk of appearing astroturfed.
+- **1 featured** → single static quote, no rotation, no pagination dots.
+- **2+ featured** → auto-rotates every 8s with staggered fade-in. Pagination dots (gold active indicator) + next-arrow + pause-on-hover.
+
+**Visual**
+- Gold "IN OUR MEMBERS' WORDS" chip at top.
+- Cormorant Garamond italic, ~32px → scales up on large screens.
+- FC vs Subscriber chip colored gold / emerald with matching Crown / Sparkles icon.
+- "Read more voices →" link leading to `/voices`.
+
+**Verified both states**
+- With 1 featured: strip renders with Rebekah's quote + FOUNDING MEMBER chip + link.
+- With 0 featured (tested by toggling off and reloading): strip returns `null`, hospice section flows straight to final CTA.
+
 ## Upcoming Tasks (Launch Week — Wed–Fri)
 - [Audit action] Fix FC `free_access` grant for late-added beneficiaries (🔴 15 min)
 - [Audit action] Verify Stripe webhook signature enforcement (curl test, 5 min)

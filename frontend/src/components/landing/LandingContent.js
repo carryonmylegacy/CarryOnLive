@@ -1,6 +1,7 @@
 import React from 'react';
 import { Shield, Users, ChevronRight, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Radio, MessageCircle, DollarSign } from 'lucide-react';
 import { RevealSection } from './RevealSection';
+import HomeVoicesStrip from '../HomeVoicesStrip';
 
 /* ── data: 8 pillars ── */
 const PILLARS = [
@@ -378,6 +379,9 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         </div>
       </div>
     </section>
+
+    {/* ═══════════════════ VOICES (auto-hides if no featured quotes) ═══════════════════ */}
+    <HomeVoicesStrip />
 
     {/* ═══════════════════ FINAL CTA ═══════════════════ */}
     <section className="relative z-[70] -mt-1">
