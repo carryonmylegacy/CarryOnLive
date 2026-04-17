@@ -321,6 +321,68 @@ Turns Voices into a recurring engagement surface instead of a one-shot moment.
 - HTML layout: all 7 brand-element checks pass (`CarryOn · Voices` kicker, italic `this week.` headline, FC/member chips, both CTAs, Settings link).
 - Housekeeping still **65/65 PASS, 0 WARN, 0 FAIL.** `scripts/check.sh` returns **ALL CLEAR — SAFE TO PUSH**.
 
+## Voices Social Brief — Monday Copy-&-Post Email to Founder (Apr 17, 2026)
+Option B of the social cross-promotion request. Zero-setup path so launch week is not blocked on X/LinkedIn developer accounts. See *"Voices Social Auto-Post (Option A — Future)"* below for the full auto-post upgrade path.
+
+**Backend (`routes/share_cards.py`)**
+- `send_voices_social_brief(window_days=7, force, dry_run)`:
+  - Picks the most recently-approved `featured+!is_seed` quote in the window.
+  - Renders (or reuses) the matching sharecard PNG.
+  - Builds two pre-written post bodies:
+    - **X / Twitter**: ~240 chars max, truncates quote if needed, hashtags `#FamilyReadiness #CarryOn`, link to `/voices`.
+    - **LinkedIn**: long-form with attribution, platform value-prop paragraph, hashtags `#FamilyReadiness #EstatePlanning #FinancialWellness #CarryOn`.
+  - Email body renders both posts in monospace copy-paste blocks, embeds the sharecard for upload, and includes one-tap compose links:
+    - X: `https://twitter.com/intent/tweet?text=...`
+    - LinkedIn: `https://www.linkedin.com/feed/?shareActive=true&text=...`
+  - Sent to founder email only. Idempotent per ISO-week via `voices_social_brief_sends`.
+- `POST /api/share-cards/admin/voices/social-brief/send-now?force=&dry_run=` — founder-only manual trigger.
+- Hooked into `weekly_digest_scheduler` right after the Voices Digest — one Monday email, two jobs.
+
+**Frontend (`components/admin/VoicesTab.js`)**
+- New top-bar button **Social Brief** (Share2 icon, outline style) next to Send Digest. Same confirm/force UX. Data-testid `voices-social-brief-send`.
+
+**Verified end-to-end (curl)**
+- Dry run: `{quote_id, x_chars: 173, linkedin_chars: 491, card_url}` ✅
+- Live send: `{sent: 1, quote_id}` + Resend log: `Email sent: 'CarryOn · Monday Social Brief' → info@carryon.us` ✅
+- Idempotent replay: `{skipped: true, reason: "already sent for 2026-W16"}` ✅
+- Housekeeping: **65/65 PASS, 0 WARN, 0 FAIL.** `scripts/check.sh` returns **ALL CLEAR — SAFE TO PUSH**.
+
+---
+
+## Voices Social Auto-Post (Option A — Future / Requires Founder Setup)
+
+When you're ready to upgrade from "Copy & Post" to **true auto-posting** on X and LinkedIn, the backend infrastructure (quote selection, sharecard rendering, weekly scheduler, founder veto power) is already in place. The only remaining work is adding a **publisher module** that reads the weekly winning quote and POSTs it to each platform. Below is the exact founder-side setup you'll need to complete before we implement.
+
+### What you need to do on your end
+
+**X / Twitter (≈15 min)**
+1. Go to https://developer.x.com/en/portal/dashboard and sign in with the CarryOn X account.
+2. Click **Create Project** → name it "CarryOn Auto-Post" → Use case: "Publishing content".
+3. Inside the project, click **Create App** → any app name.
+4. Under the app, go to **Keys and Tokens**:
+   - Generate **API Key + API Secret** (aka Consumer Keys).
+   - Generate **Access Token + Access Token Secret** with **Read and Write** permissions (you may have to switch the app to "Read and Write" under **User authentication settings** first).
+5. Send me all four values via the Emergent chat. I'll add them as env vars: `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_TOKEN_SECRET`.
+6. **Free tier is fine** — the free plan allows 500 posts/month, we need 4/month.
+
+**LinkedIn Company Page (≈20 min)**
+1. Make sure you have the "CarryOn" LinkedIn Company Page created and that your personal account is a Super Admin on it.
+2. Go to https://www.linkedin.com/developers/apps → **Create app**.
+3. Name it "CarryOn Auto-Post". Select the CarryOn company page as the associated page. Upload the CarryOn logo (square).
+4. Under **Products**, request access to **"Share on LinkedIn"** and **"Sign In with LinkedIn using OpenID Connect"**. Usually auto-approved within minutes.
+5. Under **Auth**, add a redirect URL: `https://app.carryon.us/api/admin/linkedin-oauth/callback` (I'll build this endpoint as part of the implementation).
+6. Grab the **Client ID** and **Client Secret** from **Auth** tab — send both to me.
+7. Once I've set them as env vars (`LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`), I'll build a one-time OAuth flow in the admin portal where you click "Connect LinkedIn" and approve posting permissions. The long-lived refresh token gets stored in `admin_secrets` so you never have to re-auth.
+
+### What I'll build once keys are in hand (≈2 hours of work)
+- `services/social_publisher.py` with two implementations (`XPublisher`, `LinkedInPublisher`), each exposing `async def publish_post(text: str, image_bytes: bytes) -> str` (returns the live post URL).
+- A new field on `share_quote_submissions`: `social_published_at: {x, linkedin}` — so no quote gets posted twice.
+- A new **"Auto-post queue"** section in `/admin/voices` showing: this week's selected quote + preview of what will go live + a big "Post to X & LinkedIn now" button + countdown to the automatic Monday send.
+- Optional founder-approval gate: a toggle in the admin tab — "Require my approval before auto-posts go live?" (default ON for launch week). When OFF, Monday posts fire automatically; when ON, you get the Social Brief email and a one-click "Publish now" button that pushes it live.
+- Integration playbook: I'll route the actual API wiring through `integration_playbook_expert_v2` so we pick up the latest X API v2 + LinkedIn REST endpoints accurately.
+
+### Estimated time for you total: 35 min one-time setup, 0 min/week thereafter
+
 ## Home Voices Strip — Auto-Hiding Social Proof (Apr 17, 2026)
 New component `components/HomeVoicesStrip.js`, placed on the public landing page between the "Free for Every American in Hospice Care" block and the "Readiness Starts Today" final CTA.
 

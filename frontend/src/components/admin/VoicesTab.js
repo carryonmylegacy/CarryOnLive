@@ -19,6 +19,7 @@ import {
   Bot,
   Mail,
   Send,
+  Share2,
 } from 'lucide-react';
 import { API_URL } from '../../config';
 import { toast } from '../../utils/toast';
@@ -154,6 +155,31 @@ export function VoicesTab({ getAuthHeaders }) {
         toast.info(d.reason || 'Digest skipped.');
       } else {
         toast.success(`Digest sent · ${d.sent} delivered, ${d.skipped} skipped · ${d.week_key}.`);
+      }
+    } catch {
+      toast.error('Send failed');
+    } finally {
+      setDigestBusy(false);
+    }
+  };
+
+  const sendSocialBrief = async () => {
+    if (!window.confirm('Email yourself this week\'s Monday Social Brief (pre-written X + LinkedIn posts)?')) {
+      return;
+    }
+    const force = window.confirm('Force-send even if you already received this week\'s brief?');
+    setDigestBusy(true);
+    try {
+      const res = await axios.post(
+        `${API_URL}/share-cards/admin/voices/social-brief/send-now?force=${force ? 'true' : 'false'}`,
+        null,
+        getAuthHeaders(),
+      );
+      const d = res.data || {};
+      if (d.skipped) {
+        toast.info(d.reason || 'Brief skipped.');
+      } else {
+        toast.success(`Social Brief sent to your inbox · ${d.week_key}.`);
       }
     } catch {
       toast.error('Send failed');
@@ -419,6 +445,17 @@ export function VoicesTab({ getAuthHeaders }) {
         >
           {digestBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           Send Digest
+        </Button>
+        <Button
+          onClick={sendSocialBrief}
+          disabled={digestBusy}
+          variant="outline"
+          className="flex items-center gap-2"
+          data-testid="voices-social-brief-send"
+          title="Email yourself this week's X + LinkedIn copy-and-post brief"
+        >
+          {digestBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+          Social Brief
         </Button>
       </div>
 

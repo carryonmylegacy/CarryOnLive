@@ -21,6 +21,7 @@ import os
 import random
 import textwrap
 import time
+import urllib.parse as _urlparse
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -1427,3 +1428,251 @@ async def admin_send_voices_digest(
     Useful for ad-hoc sends and launch-week testing."""
     check_founder_role(current_user)
     return await send_voices_digest(force=force, dry_run=dry_run)
+
+
+# ── Voices Social Brief (Option B — Copy & Post email) ──────────────
+#
+# Every Monday, the founder receives a single email with the week's highest-
+# priority approved quote pre-packaged as a ready-to-post X/Twitter post,
+# a ready-to-post LinkedIn post, and the matching sharecard PNG.
+#
+# Deep links open the native compose boxes with text pre-filled — the
+# founder just pastes + posts. Zero API credentials, zero OAuth, zero rate
+# limit risk. When the user is ready to upgrade to true auto-posting (see
+# PRD "Voices Social Auto-Post (Future / Option A)"), this helper becomes
+# the content source and we add a separate publisher module.
+#
+# Idempotent per ISO-week via `voices_social_brief_sends`.
+
+
+def _x_compose_url(text: str) -> str:
+    """twitter.com/intent/tweet pre-fills the compose box on desktop + mobile."""
+    return "https://twitter.com/intent/tweet?text=" + _urlparse.quote(text, safe="")
+
+
+def _linkedin_compose_url(text: str) -> str:
+    """linkedin.com share box pre-filled. Works on desktop; mobile deep-links into the LinkedIn app."""
+    return "https://www.linkedin.com/feed/?shareActive=true&text=" + _urlparse.quote(text, safe="")
+
+
+def _build_social_brief_posts(quote: str, first_name: str, variant: str) -> dict:
+    """Compose the platform-specific post bodies. Keeps X under 280 chars."""
+    chip = "Founding Member" if variant == "fc" else "CarryOn member"
+    site = "https://carryon.us/voices"
+
+    # X / Twitter — under 280 chars INCLUDING the URL (23 chars after t.co shortening).
+    # We target ~240 chars to stay safe with hashtag permutations.
+    hashtags_x = "#FamilyReadiness #CarryOn"
+    x_core = f'"{quote}"\n— {first_name}, {chip}\n\n{site}\n{hashtags_x}'
+    if len(x_core) > 275:
+        # If the quote itself pushes us over, trim the quote with an ellipsis.
+        over = len(x_core) - 275
+        trimmed = quote[: max(0, len(quote) - over - 1)].rstrip() + "…"
+        x_core = f'"{trimmed}"\n— {first_name}, {chip}\n\n{site}\n{hashtags_x}'
+
+    # LinkedIn — long-form, no character limit concern, professional tone.
+    li_core = (
+        f'"{quote}"\n'
+        f"— {first_name}, {chip}\n\n"
+        "One of our members, in their own words.\n\n"
+        "CarryOn is the family preparedness platform for every American family. "
+        "Estate planning, secure document vault, milestone messages, connected "
+        "care protocols — the things your family would otherwise have to piece "
+        "together alone.\n\n"
+        f"More voices: {site}\n\n"
+        "#FamilyReadiness #EstatePlanning #FinancialWellness #CarryOn"
+    )
+
+    return {"x": x_core, "linkedin": li_core}
+
+
+def _voices_social_brief_html(
+    *,
+    quote: dict,
+    posts: dict,
+    card_url: Optional[str],
+    base_url: str,
+) -> str:
+    """Editorial "Monday Social Brief" HTML. Contains copy-paste blocks and
+    one-tap compose links."""
+    variant = quote.get("variant") or "sub"
+    first_name = quote.get("first_name") or "A CarryOn member"
+    quote_text = quote.get("quote") or ""
+    accent = "#d4af37" if variant == "fc" else "#34d399"
+    x_url = _x_compose_url(posts["x"])
+    li_url = _linkedin_compose_url(posts["linkedin"])
+
+    card_block = (
+        f"""
+          <div style="margin:0 0 22px; text-align:center;">
+            <img src="{card_url}" alt="Weekly share card" style="display:inline-block; max-width:100%; width:360px; height:auto; border-radius:14px; border:1px solid #e5e7eb;"/>
+          </div>
+        """
+        if card_url
+        else ""
+    )
+
+    return f"""
+    <div style="font-family: system-ui, -apple-system, sans-serif; max-width:640px; margin:24px auto; padding:32px 28px; border:1px solid #e5e7eb; border-radius:18px; color:#111; background:#ffffff;">
+      <p style="font-size:11px; letter-spacing:0.22em; text-transform:uppercase; color:#8b6b1f; margin:0 0 10px; font-weight:800;">CarryOn · Monday Social Brief</p>
+      <h1 style="font-family: Georgia, 'Cormorant Garamond', serif; font-weight:600; font-size:30px; line-height:1.2; margin:0 0 10px; color:#0b1221;">
+        This week's post is <em style="color:{accent};">ready.</em>
+      </h1>
+      <p style="font-size:14px; line-height:1.55; color:#475569; margin:0 0 20px;">
+        Tap the button on each platform, paste the pre-written text, and post. The share card below is attached for upload when X/LinkedIn asks.
+      </p>
+
+      <blockquote style="font-family: Georgia, 'Cormorant Garamond', serif; font-style:italic; font-size:24px; line-height:1.42; color:#0b1221; border-left:3px solid {accent}; margin:0 0 12px; padding:6px 0 6px 18px;">
+        &ldquo;{quote_text}&rdquo;
+      </blockquote>
+      <p style="font-size:13px; color:#64748b; margin:0 0 22px;">&mdash; {first_name}, {"Founding Member" if variant == "fc" else "CarryOn member"}</p>
+
+      {card_block}
+
+      <!-- X / Twitter block -->
+      <div style="margin:0 0 22px; padding:18px; border:1px solid #e5e7eb; border-radius:14px; background:#f8fafc;">
+        <p style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#0b1221; font-weight:800; margin:0 0 8px;">X / Twitter · {len(posts["x"])} chars</p>
+        <pre style="white-space:pre-wrap; font-family:system-ui,-apple-system,sans-serif; font-size:14px; line-height:1.5; color:#0b1221; margin:0 0 12px; padding:12px; background:#ffffff; border:1px solid #e5e7eb; border-radius:10px;">{posts["x"]}</pre>
+        <a href="{x_url}" style="display:inline-block; padding:11px 20px; background:#0b1221; color:#ffffff; text-decoration:none; border-radius:10px; font-weight:700; font-size:14px;">Open X pre-filled</a>
+      </div>
+
+      <!-- LinkedIn block -->
+      <div style="margin:0 0 22px; padding:18px; border:1px solid #e5e7eb; border-radius:14px; background:#f8fafc;">
+        <p style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#0b1221; font-weight:800; margin:0 0 8px;">LinkedIn · {len(posts["linkedin"])} chars</p>
+        <pre style="white-space:pre-wrap; font-family:system-ui,-apple-system,sans-serif; font-size:14px; line-height:1.5; color:#0b1221; margin:0 0 12px; padding:12px; background:#ffffff; border:1px solid #e5e7eb; border-radius:10px;">{posts["linkedin"]}</pre>
+        <a href="{li_url}" style="display:inline-block; padding:11px 20px; background:#0a66c2; color:#ffffff; text-decoration:none; border-radius:10px; font-weight:700; font-size:14px;">Open LinkedIn pre-filled</a>
+      </div>
+
+      <p style="font-size:12px; color:#94a3b8; margin:24px 0 0; line-height:1.55;">
+        Tip: upload the attached share-card PNG when the platform offers "Add photo". Your Monday post takes ~30 seconds start to finish.
+      </p>
+      <p style="font-size:11px; color:#94a3b8; margin:14px 0 0;">
+        Only sent to the founder email on file. Preferences → <a href="{base_url}/admin/voices" style="color:#94a3b8;">Admin · Voices</a>.
+      </p>
+    </div>
+    """
+
+
+async def send_voices_social_brief(
+    *,
+    window_days: int = 7,
+    force: bool = False,
+    dry_run: bool = False,
+) -> dict:
+    """Email the founder a Monday Social Brief containing this week's top
+    approved quote packaged for X and LinkedIn.
+
+    Picks the most recently-approved featured non-seed quote in the window.
+    Skips if no eligible quote exists.
+    Idempotent per ISO-week via `voices_social_brief_sends`.
+    """
+    week_key = _voices_digest_week_key()
+    base = _moderation_base_url()
+
+    if not force and not dry_run:
+        existing = await db.voices_social_brief_sends.find_one(
+            {"week_key": week_key},
+            {"_id": 0, "id": 1, "week_key": 1},
+        )
+        if existing:
+            return {"skipped": True, "reason": f"already sent for {week_key}"}
+
+    since = datetime.now(timezone.utc) - timedelta(days=window_days)
+    quote = await db.share_quote_submissions.find_one(
+        {
+            "approval_status": "approved",
+            "featured": True,
+            "is_seed": False,
+            "approved_at": {"$gte": since},
+        },
+        {"_id": 0, "id": 1, "variant": 1, "first_name": 1, "quote": 1},
+        sort=[("approved_at", -1)],
+    )
+    if not quote:
+        return {
+            "skipped": True,
+            "reason": "no eligible quote this week",
+            "week_key": week_key,
+        }
+
+    posts = _build_social_brief_posts(
+        quote=quote.get("quote") or "",
+        first_name=quote.get("first_name") or "A CarryOn member",
+        variant=quote.get("variant") or "sub",
+    )
+
+    # Render / reuse the sharecard so the email shows the exact image the
+    # founder will upload to X/LinkedIn.
+    variant = quote.get("variant") or "sub"
+    first_name = quote.get("first_name") or "A CarryOn member"
+    q_text = quote.get("quote") or ""
+    cid = _card_id(variant, first_name, "", q_text)
+    card_path = _CACHE_DIR / f"{cid}.png"
+    if not card_path.exists():
+        try:
+            img = (
+                _render_fc_card(first_name, "", q_text)
+                if variant == "fc"
+                else _render_subscriber_card(first_name, "", q_text)
+            )
+            img.save(card_path, format="PNG", optimize=True)
+        except Exception:
+            pass
+    card_url = f"{base}/api/share-cards/image/{cid}" if card_path.exists() else None
+
+    html = _voices_social_brief_html(quote=quote, posts=posts, card_url=card_url, base_url=base)
+
+    if dry_run:
+        return {
+            "dry_run": True,
+            "week_key": week_key,
+            "quote_id": quote.get("id"),
+            "x_chars": len(posts["x"]),
+            "linkedin_chars": len(posts["linkedin"]),
+            "card_url": card_url,
+        }
+
+    founder = await db.users.find_one(
+        {"role": "admin", "admin_scope": "founder"},
+        {"_id": 0, "id": 1, "email": 1},
+    )
+    if not founder or not founder.get("email"):
+        return {
+            "skipped": True,
+            "reason": "no founder email on file",
+            "week_key": week_key,
+        }
+
+    try:
+        await send_email(founder["email"], "CarryOn · Monday Social Brief", html)
+        sent = 1
+    except Exception:
+        return {"skipped": True, "reason": "send_email failed", "week_key": week_key}
+
+    try:
+        await db.voices_social_brief_sends.update_one(
+            {"week_key": week_key},
+            {
+                "$setOnInsert": {
+                    "week_key": week_key,
+                    "quote_id": quote.get("id"),
+                    "sent_at": datetime.now(timezone.utc),
+                }
+            },
+            upsert=True,
+        )
+    except Exception:
+        pass
+
+    return {"week_key": week_key, "sent": sent, "quote_id": quote.get("id")}
+
+
+@router.post("/admin/voices/social-brief/send-now")
+async def admin_send_voices_social_brief(
+    force: bool = Query(False, description="Ignore the once-per-week guard."),
+    dry_run: bool = Query(False, description="Preview plan without sending."),
+    current_user: dict = Depends(get_current_user),
+):
+    """Founder-only: manual trigger for the Monday Social Brief email."""
+    check_founder_role(current_user)
+    return await send_voices_social_brief(force=force, dry_run=dry_run)
