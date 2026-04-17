@@ -142,6 +142,20 @@ Per user mandate, housekeeping WARNs are now fix-before-finish:
 - All data-testids wired: `fc-celebration`, `fc-celebration-title`, `fc-celebration-share`, `fc-celebration-continue`, `fc-celebration-close`.
 - Backend already returns `tier_name` + `estate_name` on the `founders_circle` record — no API change needed.
 
+## Personalized Share Cards + Social Share Sheet (Apr 17, 2026)
+- **Backend**: `routes/share_cards.py` — Pillow-based 1080×1080 PNG generator. Two variants:
+  - `POST /api/share-cards/founders-circle` (auth) — opulent gold-on-navy, serif "Welcome to the Founders Circle, *— {name}*", crown seal, "FOUNDING MEMBER" chip.
+  - `POST /api/share-cards/subscriber` (auth) — calmer teal accent, sans headline "My family is now prepared with CarryOn.", "I'M READY" chip, serif italic name accent.
+  - `GET /api/share-cards/image/{id}` (public) — serves the cached PNG, 7-day TTL with auto-cleanup; path-traversal-safe (24-char hex id only).
+  - Cormorant Garamond fonts (Bold/SemiBold/Italic) bundled at `backend/assets/fonts/`. Sans falls back to Liberation Sans (preinstalled).
+- **Frontend**:
+  - `components/SocialShareSheet.js` — reusable bottom-sheet modal. Image preview + 3 primary actions (Native Web Share, Copy image, Download) + 4×2 platform grid (X/Twitter, Facebook, LinkedIn, WhatsApp, Telegram, Reddit, iMessage/SMS, Email) + Copy caption text. Each platform opens a prefilled deep link in a new tab. Web Share API attaches the image when supported.
+  - `components/FoundersCircleCelebration.js` — pre-fetches FC sharecard on mount; "Share the news" opens the share sheet (gold accent).
+  - `components/SubscriberCelebration.js` — new less-opulent celebration shown after regular Stripe success. Emerald accent, sans headline, single italic serif accent line, "Tell your people" CTA opens the share sheet (teal accent).
+  - `pages/SubscriptionPage.js` — both celebrations now triggered from the existing checkout-status handlers (replaces toast). FC: `fc_session_id` query param. Standard: `session_id` query param.
+- All wired with full data-testids: `social-share-sheet`, `share-sheet-{x|facebook|linkedin|whatsapp|telegram|reddit|sms|email}`, `share-sheet-{native|copy-image|download|copy-text|close}`, `sub-celebration*`, `fc-celebration*`.
+- Verified end-to-end: backend endpoints respond 200 with PNG (108KB FC, 112KB sub); frontend share sheet renders all 8 platform tiles + image preview correctly.
+
 ## Upcoming Tasks (Launch Week — Wed–Fri)
 - [Audit action] Fix FC `free_access` grant for late-added beneficiaries (🔴 15 min)
 - [Audit action] Verify Stripe webhook signature enforcement (curl test, 5 min)

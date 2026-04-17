@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Crown, Heart, Infinity as InfinityIcon, Share2, Check, X, Sparkles } from 'lucide-react';
+import axios from 'axios';
+import { Crown, Heart, Infinity as InfinityIcon, Share2, X, Sparkles } from 'lucide-react';
+import { API_URL } from '../config';
+import { useAuth } from '../contexts/AuthContext';
+import SocialShareSheet from './SocialShareSheet';
 
 /**
  * Founders Circle Celebration — fullscreen confirmation after successful
@@ -13,7 +17,9 @@ import { Crown, Heart, Infinity as InfinityIcon, Share2, Check, X, Sparkles } fr
  *   onDismiss : () => void   — called when user closes the celebration
  */
 export default function FoundersCircleCelebration({ firstName, tierName, estateName, onDismiss }) {
-  const [copied, setCopied] = useState(false);
+  const { token } = useAuth();
+  const [showShare, setShowShare] = useState(false);
+  const [card, setCard] = useState(null); // { image_url, share_text }
   const displayName = (firstName || '').trim() || 'Founding Member';
 
   // Lock body scroll while the celebration is up
@@ -34,30 +40,28 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
     return () => window.removeEventListener('keydown', onKey);
   }, [onDismiss]);
 
-  const shareText =
-    `I just joined the CarryOn Founders Circle — lifetime access to the family preparedness platform that protects the people I love. ${window.location.origin}`;
-
-  const handleShare = async () => {
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: 'I joined the CarryOn Founders Circle',
-          text: shareText,
-          url: window.location.origin,
-        });
-        return;
+  // Pre-generate the share card so the share sheet opens instantly
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await axios.post(
+          `${API_URL}/share-cards/founders-circle`,
+          { first_name: displayName, tier_name: tierName || '' },
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!cancelled && res.data) setCard(res.data);
+      } catch {
+        /* graceful: the share sheet just won't show an image */
       }
-    } catch {
-      /* fall through to clipboard */
-    }
-    try {
-      await navigator.clipboard.writeText(shareText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2400);
-    } catch {
-      /* ignore */
-    }
-  };
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, displayName, tierName]);
+
+  const openShare = () => setShowShare(true);
 
   return (
     <div
@@ -209,7 +213,7 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-3 max-w-sm mx-auto">
           <button
-            onClick={handleShare}
+            onClick={openShare}
             className="flex-1 py-3 px-5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
             style={{
               background: 'rgba(255,255,255,0.06)',
@@ -218,17 +222,8 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
             }}
             data-testid="fc-celebration-share"
           >
-            {copied ? (
-              <>
-                <Check className="w-4 h-4" style={{ color: '#10b981' }} />
-                <span>Copied!</span>
-              </>
-            ) : (
-              <>
-                <Share2 className="w-4 h-4" />
-                <span>Share the news</span>
-              </>
-            )}
+            <Share2 className="w-4 h-4" />
+            <span>Share the news</span>
           </button>
           <button
             onClick={onDismiss}
@@ -268,6 +263,16 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
           50% { opacity: 1; transform: scale(1.15); }
         }
       `}</style>
+
+      <SocialShareSheet
+        open={showShare}
+        onClose={() => setShowShare(false)}
+        imageUrl={card?.image_url ? `${API_URL}${card.image_url}` : ''}
+        shareText={card?.share_text || `I just joined the CarryOn Founders Circle — lifetime access to the family preparedness platform that protects the people I love. https://carryon.us`}
+        shareUrl="https://carryon.us"
+        title="Share your Founding Member moment"
+        accent="gold"
+      />
     </div>
   );
 }

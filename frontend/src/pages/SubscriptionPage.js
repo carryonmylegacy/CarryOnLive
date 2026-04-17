@@ -6,6 +6,7 @@ import { SubscriptionManagement } from '../components/settings/SubscriptionManag
 import FamilyPlanSettings from '../components/FamilyPlanSettings';
 import SubscriptionPaywall from '../components/SubscriptionPaywall';
 import FoundersCircleCelebration from '../components/FoundersCircleCelebration';
+import SubscriberCelebration from '../components/SubscriberCelebration';
 import { Loader2, CheckCircle2, Crown, ChevronRight } from 'lucide-react';
 import { toast } from '../utils/toast';
 import { API_URL } from '../config';
@@ -19,6 +20,7 @@ const SubscriptionPage = () => {
   const [fcActive, setFcActive] = useState(false);
   const [fcSubs, setFcSubs] = useState([]);
   const [fcCelebration, setFcCelebration] = useState(null); // { tierName, estateName } or null
+  const [subCelebration, setSubCelebration] = useState(null); // { tierName } or null
 
   // Portal-aware: beneficiary subscription page only shows their locked tier
   const isInBeneficiaryPortal = window.location.pathname.startsWith('/beneficiary');
@@ -37,20 +39,21 @@ const SubscriptionPage = () => {
         const res = await axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers });
         if (res.data?.payment_status === 'paid' || res.data?.payment_status === 'complete') {
           setPaymentSuccess(true);
-          toast.success('Subscription activated! All premium features are now unlocked.');
           window.history.replaceState({}, '', window.location.pathname);
           if (refreshSubscription) await refreshSubscription();
           setTimeout(() => setPaymentSuccess(false), 5000);
+          // Fullscreen celebration replaces the bare toast (Apr 17, 2026)
+          setSubCelebration({ tierName: res.data?.plan_name || subscriptionStatus?.plan_name || '' });
         } else {
           // Retry after a few seconds for async processing
           await new Promise(r => setTimeout(r, 5000));
           const retry = await axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers });
           if (retry.data?.payment_status === 'paid' || retry.data?.payment_status === 'complete') {
             setPaymentSuccess(true);
-            toast.success('Subscription activated! All premium features are now unlocked.');
             window.history.replaceState({}, '', window.location.pathname);
             if (refreshSubscription) await refreshSubscription();
             setTimeout(() => setPaymentSuccess(false), 5000);
+            setSubCelebration({ tierName: retry.data?.plan_name || subscriptionStatus?.plan_name || '' });
           } else {
             toast.error('Payment is still processing. Please refresh in a moment.');
           }
@@ -191,6 +194,14 @@ const SubscriptionPage = () => {
           tierName={fcCelebration.tierName}
           estateName={fcCelebration.estateName}
           onDismiss={() => setFcCelebration(null)}
+        />
+      )}
+
+      {subCelebration && (
+        <SubscriberCelebration
+          firstName={user?.first_name || (user?.name ? user.name.split(' ')[0] : '')}
+          tierName={subCelebration.tierName}
+          onDismiss={() => setSubCelebration(null)}
         />
       )}
     </div>
