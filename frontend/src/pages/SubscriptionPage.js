@@ -5,18 +5,20 @@ import { useAuth } from '../contexts/AuthContext';
 import { SubscriptionManagement } from '../components/settings/SubscriptionManagement';
 import FamilyPlanSettings from '../components/FamilyPlanSettings';
 import SubscriptionPaywall from '../components/SubscriptionPaywall';
+import FoundersCircleCelebration from '../components/FoundersCircleCelebration';
 import { Loader2, CheckCircle2, Crown, ChevronRight } from 'lucide-react';
 import { toast } from '../utils/toast';
 import { API_URL } from '../config';
 
 const SubscriptionPage = () => {
-  const { subscriptionStatus, refreshSubscription, token, getAuthHeaders } = useAuth();
+  const { subscriptionStatus, refreshSubscription, token, getAuthHeaders, user } = useAuth();
   const navigate = useNavigate();
   const [showPaywall, setShowPaywall] = useState(false);
   const [confirmingPayment, setConfirmingPayment] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [fcActive, setFcActive] = useState(false);
   const [fcSubs, setFcSubs] = useState([]);
+  const [fcCelebration, setFcCelebration] = useState(null); // { tierName, estateName } or null
 
   // Portal-aware: beneficiary subscription page only shows their locked tier
   const isInBeneficiaryPortal = window.location.pathname.startsWith('/beneficiary');
@@ -79,11 +81,15 @@ const SubscriptionPage = () => {
         .then(async (r) => {
           if (r.data.status === 'active' || r.data.status === 'completed') {
             setPaymentSuccess(true);
-            toast.success('Founders Circle activated! Lifetime access unlocked.');
             window.history.replaceState({}, '', window.location.pathname);
             if (refreshSubscription) await refreshSubscription();
             setFcSubs(prev => [...prev.filter(s => s.id !== r.data.fc?.id), r.data.fc].filter(Boolean));
             setTimeout(() => setPaymentSuccess(false), 5000);
+            // Fullscreen celebration replaces the bare toast (Apr 17, 2026)
+            setFcCelebration({
+              tierName: r.data.fc?.tier_name || '',
+              estateName: r.data.fc?.estate_name || '',
+            });
           } else {
             toast.error('Payment is still processing. Please refresh in a moment.');
           }
@@ -177,6 +183,15 @@ const SubscriptionPage = () => {
 
       {showPaywall && !isInBeneficiaryPortal && (
         <SubscriptionPaywall onDismiss={() => setShowPaywall(false)} />
+      )}
+
+      {fcCelebration && (
+        <FoundersCircleCelebration
+          firstName={user?.first_name || (user?.name ? user.name.split(' ')[0] : '')}
+          tierName={fcCelebration.tierName}
+          estateName={fcCelebration.estateName}
+          onDismiss={() => setFcCelebration(null)}
+        />
       )}
     </div>
   );

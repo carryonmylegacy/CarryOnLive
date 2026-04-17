@@ -134,6 +134,14 @@ Per user mandate, housekeeping WARNs are now fix-before-finish:
 - **Min font size / iOS accessibility**: Bumped 4 instances of `text-[10px]` → `text-[11px]` across `PrototypesTab.js`, `LaunchWarRoomTab.js` (2 places), and `AdminCommandPalette.js`.
 - Result: `bash /app/housekeeping.sh` now reports **66 PASS, 0 WARN, 0 FAIL**. `scripts/check.sh` says **ALL CLEAR — SAFE TO PUSH**.
 
+## Founders Circle Celebration Screen (Apr 17, 2026)
+- New component `FoundersCircleCelebration.js` — fullscreen confirmation shown after a successful FC purchase (`SubscriptionPage.js` hook on `fc_session_id` query param).
+- Replaces the bare `toast.success('Founders Circle activated! ...')` with a proper "moment": gold crown seal, pulsing ring, sparkle decorations, serif hero *"Welcome to the Founders Circle, **{firstName}**."*, tier + estate callout, 3-perk bullet list, dual CTA (Share the news + Continue), italic serif sign-off *"Thank you for carrying us forward."*
+- Share button uses `navigator.share` (Web Share API) with clipboard fallback — works on iOS/Android PWA and desktop.
+- Escape key + close button dismiss the overlay. Body scroll locked while open.
+- All data-testids wired: `fc-celebration`, `fc-celebration-title`, `fc-celebration-share`, `fc-celebration-continue`, `fc-celebration-close`.
+- Backend already returns `tier_name` + `estate_name` on the `founders_circle` record — no API change needed.
+
 ## Upcoming Tasks (Launch Week — Wed–Fri)
 - [Audit action] Fix FC `free_access` grant for late-added beneficiaries (🔴 15 min)
 - [Audit action] Verify Stripe webhook signature enforcement (curl test, 5 min)
