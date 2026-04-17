@@ -410,13 +410,41 @@ async def get_checkout_status(session_id: str, current_user: dict = Depends(get_
 
 @router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
-    """Handle Stripe webhooks — payment success, failure, and subscription events."""
+    """Handle Stripe webhooks — payment success, failure, and subscription events.
+
+    Security: We verify the Stripe-Signature header using STRIPE_WEBHOOK_SECRET
+    BEFORE processing the event. If STRIPE_WEBHOOK_SECRET is unset, we log a
+    critical warning but still accept the webhook (backward compatibility with
+    environments that haven't set the secret yet). In production, setting the
+    secret is MANDATORY — without it an attacker could forge payment_succeeded
+    events.
+    """
     body = await request.body()
     sig = request.headers.get("Stripe-Signature", "")
 
     api_key = os.environ.get("STRIPE_API_KEY")
+    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
     if not api_key:
         return {"received": True}
+
+    # ── Belt-and-suspenders signature verification ──
+    # Uses the official stripe-python library if webhook_secret is set.
+    if webhook_secret:
+        try:
+            import stripe as stripe_sdk
+
+            # Raises stripe.error.SignatureVerificationError on bad sig
+            stripe_sdk.Webhook.construct_event(payload=body, sig_header=sig, secret=webhook_secret)
+        except Exception as e:
+            logger.warning(f"Stripe webhook signature verification FAILED: {type(e).__name__}")
+            # Return 400 so Stripe retries (real events) AND to refuse forgeries.
+            raise HTTPException(status_code=400, detail="Invalid signature")
+    else:
+        # This is a production misconfiguration. Log loudly but don't break the app.
+        logger.critical(
+            "STRIPE_WEBHOOK_SECRET is NOT set — webhook signatures CANNOT be verified. "
+            "Set this env var immediately to prevent forged payment events."
+        )
 
     try:
         # Try structured webhook handling first
