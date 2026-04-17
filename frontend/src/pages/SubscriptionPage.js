@@ -7,6 +7,7 @@ import FamilyPlanSettings from '../components/FamilyPlanSettings';
 import SubscriptionPaywall from '../components/SubscriptionPaywall';
 import FoundersCircleCelebration from '../components/FoundersCircleCelebration';
 import SubscriberCelebration from '../components/SubscriberCelebration';
+import ShareYourCarryOn from '../components/ShareYourCarryOn';
 import { Loader2, CheckCircle2, Crown, ChevronRight } from 'lucide-react';
 import { toast } from '../utils/toast';
 import { API_URL } from '../config';
@@ -143,6 +144,13 @@ const SubscriptionPage = () => {
           Back
         </button>
       </div>
+
+      {/* Permanent share entry — works for any active subscriber */}
+      {!isInBeneficiaryPortal && subscriptionStatus?.is_active ? (
+        <div className="flex" data-testid="subscription-share-row">
+          <ShareYourCarryOn variant="tile" />
+        </div>
+      ) : null}
 
       {/* Founders Circle member status */}
       {fcSubs.filter(s => s.status === 'active' || s.status === 'completed').map(fc => (

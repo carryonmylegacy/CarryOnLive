@@ -9,7 +9,7 @@ import {
   CheckSquare, AlertTriangle, Clock, TrendingUp, Trash2,
   Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap, Puzzle, Mail, Film, Hourglass,
   Globe, UserCog, Power, MessageSquare, BarChart3, Download, Radio,
-  Calendar, GraduationCap, Bell, Sparkles
+  Calendar, GraduationCap, Bell, Sparkles, MessageSquareQuote
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { toast } from '../utils/toast';
@@ -67,6 +67,7 @@ import { SectionMembersTab } from '../components/admin/SectionMembersTab';
 import { NotificationCategoriesTab } from '../components/admin/NotificationCategoriesTab';
 import { PlatformRulesTab } from '../components/admin/PlatformRulesTab';
 import { PrototypesTab } from '../components/admin/PrototypesTab';
+import { VoicesTab } from '../components/admin/VoicesTab';
 import AdminCommandPalette from '../components/admin/AdminCommandPalette';
 
 // ── Section-based tab organization ────────────────────────
@@ -151,6 +152,7 @@ const FOUNDER_SECTIONS = [
       { key: 'maintenance', label: 'Maintenance', icon: Power, path: '/admin/maintenance' },
       { key: 'dev-switcher', label: 'Dev Switcher', icon: Settings, path: '/admin/dev-switcher' },
       { key: 'notification-categories', label: 'Notifications', icon: Bell, path: '/admin/notification-categories' },
+      { key: 'voices', label: 'Voices', icon: MessageSquareQuote, path: '/admin/voices' },
       { key: 'prototypes', label: 'Prototypes', icon: Sparkles, path: '/admin/prototypes' },
     ],
   },
@@ -226,6 +228,7 @@ const PATH_TO_TAB = {
   '/admin/shifts': 'shifts',
   '/admin/training': 'training',
   '/admin/notification-categories': 'notification-categories',
+  '/admin/voices': 'voices',
   '/admin/prototypes': 'prototypes',
   '/admin/ops-members': 'ops-members',
   '/admin/finance-members': 'finance-members',
@@ -571,6 +574,7 @@ const AdminPage = ({ operatorMode = false }) => {
         {effectiveTab === 'shifts' && <ShiftScheduleTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'training' && <TrainingTrackerTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'notification-categories' && <NotificationCategoriesTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'voices' && <VoicesTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'prototypes' && <PrototypesTab />}
         {/* Section Members tabs */}
         {effectiveTab === 'ops-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['ops_manager', 'ops_team']} sectionLabel="Operations" />}

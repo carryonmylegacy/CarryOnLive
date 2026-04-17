@@ -140,13 +140,14 @@ export default function SocialShareSheet({
   editableQuote = false,
   quote = '',
   quoteSource = 'random',  // "user" | "random"
-  onQuoteChange,           // (newQuote: string) => void — called on blur/debounced
+  onQuoteChange,           // (newQuote: string, consentPublic: boolean) => void
   onRandomize,             // () => void — called when user taps "Surprise me"
   regenerating = false,    // parent sets true while re-fetching the card
 }) {
   const [copied, setCopied] = useState(false);
   const [imageCopied, setImageCopied] = useState(false);
   const [draftQuote, setDraftQuote] = useState(quote || '');
+  const [consentPublic, setConsentPublic] = useState(false);
 
   // Keep the draft in sync when the parent swaps in a new random quote
   React.useEffect(() => {
@@ -331,14 +332,14 @@ export default function SocialShareSheet({
                 onChange={(e) => setDraftQuote(e.target.value)}
                 onBlur={() => {
                   if ((draftQuote || '').trim() !== (quote || '').trim()) {
-                    onQuoteChange?.(draftQuote);
+                    onQuoteChange?.(draftQuote, consentPublic);
                   }
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
                     if ((draftQuote || '').trim() !== (quote || '').trim()) {
-                      onQuoteChange?.(draftQuote);
+                      onQuoteChange?.(draftQuote, consentPublic);
                     }
                     e.currentTarget.blur();
                   }
@@ -385,6 +386,37 @@ export default function SocialShareSheet({
                 </>
               )}
             </p>
+
+            {/* Consent — only meaningful when the user has typed their own quote */}
+            <label
+              className="flex items-start gap-2 mt-2.5 cursor-pointer select-none"
+              style={{ opacity: (draftQuote || '').trim() ? 1 : 0.5 }}
+              data-testid="share-sheet-consent-label"
+            >
+              <input
+                type="checkbox"
+                checked={consentPublic}
+                disabled={!(draftQuote || '').trim()}
+                onChange={(e) => {
+                  const next = e.target.checked;
+                  setConsentPublic(next);
+                  // If they're flipping consent on an already-saved quote, re-submit
+                  // so the backend can persist / un-persist accordingly.
+                  if ((draftQuote || '').trim() && (draftQuote || '').trim() === (quote || '').trim()) {
+                    onQuoteChange?.(draftQuote, next);
+                  }
+                }}
+                className="mt-0.5"
+                style={{ accentColor: accentColor }}
+                data-testid="share-sheet-consent-checkbox"
+              />
+              <span className="text-[11px] leading-snug" style={{ color: 'rgba(255,255,255,0.72)' }}>
+                Let CarryOn use this quote publicly (website, marketing, social).
+                <span className="block" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  We&apos;ll credit just your first name. Uncheck to keep it private to your card.
+                </span>
+              </span>
+            </label>
           </div>
         ) : null}
 

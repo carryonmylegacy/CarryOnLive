@@ -26,6 +26,7 @@ import {
 import TrialBanner from '../components/TrialBanner';
 import BillingStatusBanner from '../components/BillingStatusBanner';
 import OnboardingWizard from '../components/OnboardingWizard';
+import ShareYourCarryOn from '../components/ShareYourCarryOn';
 import { API_URL } from '../config';
 
 import PushPrompt from '../components/PushPrompt';
@@ -914,6 +915,11 @@ const DashboardPage = () => {
           </button>
         </div>
         )}
+
+        {/* Share your CarryOn — always-available entry to the share sheet */}
+        <div className="mt-6 lg:mt-8" data-testid="dashboard-share-tile">
+          <ShareYourCarryOn variant="tile" />
+        </div>
       </div>
       {showCelebration && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center overflow-y-auto" data-testid="celebration-overlay"

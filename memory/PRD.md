@@ -176,6 +176,29 @@ Extension of the sharecard system — adds opt-in personalization + a fallback q
 - Backend: user-quote + blank (random fallback) paths both return 200 with correct `quote_source`.
 - Visual: sharecard renders the italic serif quote with smart curly quotes; share sheet shows quote editor with live preview; Surprise-me cycles through pool deterministically per day.
 
+## Voices — Permanent Share Entry + Consent + Testimonial Feed (Apr 17, 2026)
+Closes two gaps: users could only reach the share sheet during the 30-sec post-purchase celebration, and their submitted quotes weren't being captured as real feedback.
+
+**A. Permanent "Share your CarryOn" entry point**
+- New reusable component: `components/ShareYourCarryOn.js` (`variant` = `"button"` | `"tile"`). Auto-detects if the user is a Founders Circle member and picks the FC or subscriber sharecard accordingly.
+- Placed on the **Dashboard** (bottom tile, always visible) and the **Subscription page** (top tile, visible to any active subscriber).
+
+**B. Consent + persistence**
+- `CardRequest.consent_public` (default `False`). When `True` AND a non-empty user quote is provided, the backend persists to `share_quote_submissions` collection: `{id, user_id, first_name, variant, quote, consent_public, dedup_hash, created_at}`.
+- Dedup hash is `sha256(user_id|variant|quote)[:32]` — repeat submissions are no-ops. The randomizer pool is never persisted.
+- `SocialShareSheet.js` now renders a consent checkbox under the quote input: *"Let CarryOn use this quote publicly (website, marketing, social)."* Disabled until the user types something. Toggling it on a saved quote re-submits so the backend persists/unpersists accordingly.
+- `CardResponse.submission_id` returned when persistence fires — makes future revocation trivial.
+
+**C. Admin "Voices" tab (founder-only)**
+- `GET /api/share-cards/admin/voices?q=...&variant=fc|sub&limit&offset` — searchable list.
+- `GET /api/share-cards/admin/voices/export` — one-click CSV download.
+- `DELETE /api/share-cards/admin/voices/{id}` — redaction (for offensive content).
+- Frontend: `components/admin/VoicesTab.js` + registered at `/admin/voices` (MessageSquareQuote icon) in `AdminPage.js`. Shows Cormorant-serif quotes in grid cards, per-card Copy + Redact actions, FC/Subscriber filter chips, debounced search.
+
+**Verified end-to-end**
+- Backend: consent=true persists, consent=false does not, blank (random) never persists, dedup returns same id on repeat, admin list + CSV export + redact all return correct results.
+- Frontend: Dashboard tile renders, Voices tab loads the 1 real consented quote from testing.
+
 ## Upcoming Tasks (Launch Week — Wed–Fri)
 - [Audit action] Fix FC `free_access` grant for late-added beneficiaries (🔴 15 min)
 - [Audit action] Verify Stripe webhook signature enforcement (curl test, 5 min)

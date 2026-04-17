@@ -243,7 +243,7 @@ export default function SubscriberCelebration({ firstName, tierName, onDismiss }
         editableQuote
         quote={quote}
         quoteSource={card?.quote_source || 'random'}
-        onQuoteChange={(q) => fetchCard(q)}
+        onQuoteChange={(q, consent) => fetchCard(q, consent)}
         onRandomize={() => fetchCard('')}
         regenerating={regenerating}
       />

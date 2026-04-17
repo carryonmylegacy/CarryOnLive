@@ -25,13 +25,18 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
   const displayName = (firstName || '').trim() || 'Founding Member';
 
   const fetchCard = React.useCallback(
-    async (quoteValue) => {
+    async (quoteValue, consentPublic = false) => {
       if (!token) return;
       setRegenerating(true);
       try {
         const res = await axios.post(
           `${API_URL}/share-cards/founders-circle`,
-          { first_name: displayName, tier_name: tierName || '', quote: quoteValue || '' },
+          {
+            first_name: displayName,
+            tier_name: tierName || '',
+            quote: quoteValue || '',
+            consent_public: !!consentPublic,
+          },
           { headers: { Authorization: `Bearer ${token}` } },
         );
         if (res.data) {
@@ -285,7 +290,7 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
         editableQuote
         quote={quote}
         quoteSource={card?.quote_source || 'random'}
-        onQuoteChange={(q) => fetchCard(q)}
+        onQuoteChange={(q, consent) => fetchCard(q, consent)}
         onRandomize={() => fetchCard('')}
         regenerating={regenerating}
       />

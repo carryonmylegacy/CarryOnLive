@@ -14,17 +14,23 @@ each request.
 
 from __future__ import annotations
 
+import csv
 import hashlib
+import io
 import random
 import textwrap
 import time
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from PIL import Image, ImageDraw, ImageFont
 from pydantic import BaseModel, Field
 
+from config import db
+from guards import check_founder_role
 from utils import get_current_user
 
 router = APIRouter(prefix="/share-cards", tags=["share-cards"])
@@ -347,6 +353,11 @@ class CardRequest(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=60)
     tier_name: str = Field("", max_length=60)
     quote: str = Field("", max_length=110, description="Optional user quote. Blank = random.")
+    consent_public: bool = Field(
+        False,
+        description="User has opted in to let CarryOn use this quote publicly "
+        "(website, marketing, social). Only relevant when `quote` is non-empty.",
+    )
 
 
 class CardResponse(BaseModel):
@@ -355,6 +366,41 @@ class CardResponse(BaseModel):
     share_text: str
     quote: str  # The actual quote rendered on the card (user or random)
     quote_source: str  # "user" | "random"
+    submission_id: Optional[str] = None  # Present only when we persisted the quote
+
+
+async def _persist_submission(
+    *,
+    user: dict,
+    variant: str,
+    first_name: str,
+    quote: str,
+    consent_public: bool,
+) -> Optional[str]:
+    """Store a user-submitted quote (only when consent_public is True).
+
+    Dedup: we hash (user_id|variant|quote) so repeatedly submitting the same
+    quote doesn't create duplicate rows. Each doc is append-only.
+    """
+    if not quote or not consent_public:
+        return None
+    user_id = str(user.get("id") or user.get("_id") or "")
+    dedup = hashlib.sha256(f"{user_id}|{variant}|{quote}".encode()).hexdigest()[:32]
+    existing = await db.share_quote_submissions.find_one({"dedup_hash": dedup}, {"_id": 0, "id": 1})
+    if existing:
+        return existing.get("id")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "variant": variant,  # "fc" | "sub"
+        "first_name": first_name[:60],
+        "quote": quote,
+        "consent_public": True,
+        "dedup_hash": dedup,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.share_quote_submissions.insert_one(doc)
+    return doc["id"]
 
 
 # ── Endpoints ────────────────────────────────────────────
@@ -391,6 +437,13 @@ async def create_fc_card(req: CardRequest, current_user: dict = Depends(get_curr
         share_text=share_text,
         quote=quote,
         quote_source=source,
+        submission_id=await _persist_submission(
+            user=current_user,
+            variant="fc",
+            first_name=fname,
+            quote=quote if source == "user" else "",
+            consent_public=req.consent_public,
+        ),
     )
 
 
@@ -425,6 +478,13 @@ async def create_subscriber_card(req: CardRequest, current_user: dict = Depends(
         share_text=share_text,
         quote=quote,
         quote_source=source,
+        submission_id=await _persist_submission(
+            user=current_user,
+            variant="sub",
+            first_name=fname,
+            quote=quote if source == "user" else "",
+            consent_public=req.consent_public,
+        ),
     )
 
 
@@ -447,3 +507,88 @@ async def get_card_image(card_id: str):
             "Content-Disposition": 'inline; filename="carryon-share.png"',
         },
     )
+
+
+# ── Admin "Voices" endpoints ──────────────────────────────────
+#
+# Surfaces user-submitted quotes (consented only) to founder admins so they
+# can pull them into marketing, investor decks, etc.
+
+
+class VoiceEntry(BaseModel):
+    id: str
+    first_name: str
+    quote: str
+    variant: str
+    created_at: str
+
+
+class VoicesResponse(BaseModel):
+    total: int
+    items: list[VoiceEntry]
+
+
+@router.get("/admin/voices", response_model=VoicesResponse)
+async def list_voices(
+    current_user: dict = Depends(get_current_user),
+    q: str = Query("", max_length=80, description="Optional substring search."),
+    variant: str = Query("", pattern="^(fc|sub|)$"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+):
+    """Founder-only: list user-submitted, publicly-consented quotes."""
+    check_founder_role(current_user)
+
+    mongo_q: dict = {"consent_public": True}
+    if variant in ("fc", "sub"):
+        mongo_q["variant"] = variant
+    if q.strip():
+        mongo_q["quote"] = {"$regex": q.strip(), "$options": "i"}
+
+    total = await db.share_quote_submissions.count_documents(mongo_q)
+    cursor = (
+        db.share_quote_submissions.find(
+            mongo_q,
+            {"_id": 0, "id": 1, "first_name": 1, "quote": 1, "variant": 1, "created_at": 1},
+        )
+        .sort("created_at", -1)
+        .skip(offset)
+        .limit(limit)
+    )
+    items = [VoiceEntry(**doc) async for doc in cursor]
+    return VoicesResponse(total=total, items=items)
+
+
+@router.get("/admin/voices/export")
+async def export_voices_csv(current_user: dict = Depends(get_current_user)):
+    """Founder-only: CSV export of every consented quote (no auth on the
+    response itself — the caller just needs founder scope)."""
+    check_founder_role(current_user)
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["id", "first_name", "variant", "quote", "created_at"])
+    cursor = db.share_quote_submissions.find(
+        {"consent_public": True},
+        {"_id": 0, "id": 1, "first_name": 1, "variant": 1, "quote": 1, "created_at": 1},
+    ).sort("created_at", -1)
+    async for doc in cursor:
+        w.writerow([doc["id"], doc["first_name"], doc["variant"], doc["quote"], doc["created_at"]])
+    return Response(
+        content=buf.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": 'attachment; filename="carryon-voices.csv"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+@router.delete("/admin/voices/{submission_id}")
+async def delete_voice(submission_id: str, current_user: dict = Depends(get_current_user)):
+    """Founder-only: redact a submission (e.g. offensive content).
+    Removes the document outright — this is a destructive operation."""
+    check_founder_role(current_user)
+    if not submission_id or len(submission_id) > 64:
+        raise HTTPException(status_code=400, detail="Invalid submission id")
+    res = await db.share_quote_submissions.delete_one({"id": submission_id})
+    return {"deleted": res.deleted_count}
