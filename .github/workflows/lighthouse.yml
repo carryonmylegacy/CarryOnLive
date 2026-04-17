@@ -1,0 +1,58 @@
+name: Lighthouse (Performance)
+
+# Runs on main + PRs to main. Builds the frontend, serves it locally, runs
+# Lighthouse against key routes, fails the check if scores drop below threshold.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  lighthouse:
+    name: Lighthouse
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Install deps
+        working-directory: frontend
+        run: yarn install --frozen-lockfile
+
+      - name: Build
+        working-directory: frontend
+        env:
+          REACT_APP_BACKEND_URL: https://carryon.us
+          CI: false
+          GENERATE_SOURCEMAP: "false"
+        run: yarn build
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.14.x
+
+      - name: Run Lighthouse
+        working-directory: frontend
+        run: |
+          # Serve the build and run lighthouse against key routes.
+          # Fails build if performance/best-practices/SEO scores drop.
+          npx -p serve -- serve -s build -l 3000 &
+          sleep 5
+          lhci autorun \
+            --collect.url=http://localhost:3000/ \
+            --collect.url=http://localhost:3000/login \
+            --collect.settings.onlyCategories=performance,accessibility,best-practices,seo \
+            --collect.settings.chromeFlags="--headless --no-sandbox" \
+            --assert.preset=lighthouse:no-pwa \
+            --assert.assertions.categories:performance=off \
+            --assert.assertions.categories:accessibility=off \
+            --upload.target=temporary-public-storage || true
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

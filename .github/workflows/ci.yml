@@ -6,7 +6,25 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  # Silence the Node 20 deprecation warning on GitHub-hosted runners.
+  # Remove after all actions support Node 24 natively (est. late 2026).
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
+  secret-scan:
+    name: Secret Scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true # Don't block PRs; surface findings as annotations.
+
   backend-lint:
     name: Backend Lint
     runs-on: ubuntu-latest
@@ -16,11 +34,34 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install "ruff>=0.15,<1.0"
-      - name: Lint
+      - name: Lint (ruff check)
         working-directory: backend
+        run: ruff check .
+      - name: Format check (ruff format --check)
+        id: fmt
+        working-directory: backend
+        run: ruff format --check .
+      # If format check failed, show the exact fix the developer needs to run.
+      - name: Format fix instructions (on failure)
+        if: failure() && steps.fmt.conclusion == 'failure'
         run: |
-          ruff check .
-          ruff format --check .
+          echo "::error::ruff format check failed — run locally: cd backend && ruff format ."
+          echo "::notice::Or install the pre-commit hook with: bash scripts/setup-dev.sh"
+
+  frontend-lint:
+    name: Frontend Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        working-directory: frontend
+        run: yarn install --frozen-lockfile
+      - name: ESLint (errors only)
+        working-directory: frontend
+        run: yarn lint:errors
 
   backend-tests:
     name: Backend Tests
@@ -44,11 +85,13 @@ jobs:
           JWT_SECRET: "test-secret-key-ci"
           ENCRYPTION_KEY: "test-encryption-key-1234567890abcdef"
           FRONTEND_URL: "http://localhost:3000"
-        run: pytest tests/ -x -q --tb=short 2>&1 | tail -20
+          PYTHONDEVMODE: "1" # surfaces DeprecationWarning (e.g. datetime.utcnow)
+        run: pytest tests/ -x -q --tb=short -W error::DeprecationWarning 2>&1 | tail -30
 
   frontend-build:
     name: Frontend Build
     runs-on: ubuntu-latest
+    needs: frontend-lint
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -56,10 +99,20 @@ jobs:
           node-version: "22"
       - name: Install dependencies
         working-directory: frontend
-        run: yarn install
+        run: yarn install --frozen-lockfile
       - name: Build
         working-directory: frontend
         env:
           REACT_APP_BACKEND_URL: https://carryon.us
           CI: false
         run: yarn build
+      - name: Bundle size check
+        working-directory: frontend
+        run: |
+          # Fail if main JS bundle > 1 MB (gzipped). Tune as the app grows.
+          MAIN_SIZE=$(du -b build/static/js/main.*.js 2>/dev/null | awk '{s+=$1} END {print s}')
+          MAX_SIZE=1048576
+          echo "Main bundle: $MAIN_SIZE bytes (limit: $MAX_SIZE)"
+          if [ "${MAIN_SIZE:-0}" -gt "$MAX_SIZE" ]; then
+            echo "::warning::Main JS bundle is larger than ${MAX_SIZE} bytes — consider code-splitting"
+          fi

@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# CarryOn™ — Git pre-commit hook
+# ============================================================================
+# Auto-runs the critical subset of /app/housekeeping.sh's pre-flight section
+# BEFORE allowing any commit. Fixes safe formatting issues automatically and
+# re-stages them; blocks the commit if unfixable issues remain.
+#
+# Install:
+#   git config core.hooksPath scripts/git-hooks
+# Uninstall:
+#   git config --unset core.hooksPath
+#
+# Skip (emergency only):
+#   git commit --no-verify
+# ============================================================================
+
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# Only act on staged Python files
+STAGED_PY=$(git diff --cached --name-only --diff-filter=ACM | grep -E '^backend/.*\.py$' || true)
+STAGED_JS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '^frontend/src/.*\.(js|jsx)$' || true)
+
+# ── Backend: ruff format + check ─────────────────────────────────────────
+if [ -n "$STAGED_PY" ]; then
+  echo -e "${YELLOW}[pre-commit]${NC} Checking backend ($(echo "$STAGED_PY" | wc -l | tr -d ' ') file(s))…"
+  cd backend
+
+  # Auto-fix formatting
+  if ! ruff format --check . > /dev/null 2>&1; then
+    echo -e "${YELLOW}[pre-commit]${NC} Auto-formatting with ruff…"
+    ruff format . > /dev/null
+    # Re-stage the files that were just reformatted
+    cd ..
+    echo "$STAGED_PY" | while read -r f; do git add "$f"; done
+    cd backend
+    echo -e "${GREEN}[pre-commit]${NC} ✓ Auto-formatted and re-staged"
+  fi
+
+  # Auto-fix safe lint issues
+  if ! ruff check . > /dev/null 2>&1; then
+    echo -e "${YELLOW}[pre-commit]${NC} Auto-fixing safe lint issues…"
+    ruff check --fix . > /dev/null 2>&1 || true
+    cd ..
+    echo "$STAGED_PY" | while read -r f; do git add "$f"; done
+    cd backend
+
+    # Hard-block if anything is still broken
+    if ! ruff check . > /tmp/precommit_ruff.log 2>&1; then
+      echo -e "${RED}[pre-commit]${NC} ✗ Backend lint errors remain:"
+      cat /tmp/precommit_ruff.log
+      echo ""
+      echo "Fix manually, then commit again. To bypass: git commit --no-verify"
+      exit 1
+    fi
+  fi
+
+  echo -e "${GREEN}[pre-commit]${NC} ✓ Backend ruff check + format clean"
+  cd ..
+fi
+
+# ── Frontend: ESLint (errors only — warnings don't block) ───────────────
+if [ -n "$STAGED_JS" ]; then
+  echo -e "${YELLOW}[pre-commit]${NC} Checking frontend ($(echo "$STAGED_JS" | wc -l | tr -d ' ') file(s))…"
+  cd frontend
+  if ! npx eslint --quiet $(echo "$STAGED_JS" | sed 's|^frontend/||') 2>/tmp/precommit_eslint.log; then
+    ESLINT_ERRORS=$(grep -c "error" /tmp/precommit_eslint.log 2>/dev/null || echo "0")
+    if [ "$ESLINT_ERRORS" != "0" ]; then
+      echo -e "${RED}[pre-commit]${NC} ✗ Frontend ESLint errors:"
+      cat /tmp/precommit_eslint.log
+      echo ""
+      echo "Fix manually, then commit again. To bypass: git commit --no-verify"
+      exit 1
+    fi
+  fi
+  echo -e "${GREEN}[pre-commit]${NC} ✓ Frontend ESLint clean"
+  cd ..
+fi
+
+echo -e "${GREEN}[pre-commit]${NC} All checks passed — committing."
+exit 0

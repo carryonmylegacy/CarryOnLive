@@ -18,6 +18,25 @@
 #
 
 set +e  # Don't exit on errors — this is an audit script, run ALL checks
+
+# ── Flags ─────────────────────────────────────────────────────────────
+# --strict: treat WARNs as FAILs (for release-candidate validation)
+STRICT_MODE=0
+for arg in "$@"; do
+  case "$arg" in
+    --strict|-s) STRICT_MODE=1 ;;
+    --help|-h)
+      echo "Usage: bash housekeeping.sh [--strict]"
+      echo "  --strict   Treat WARNs as FAILs (stricter, for release candidates)"
+      echo ""
+      echo "Environment variables:"
+      echo "  HK_RUN_TESTS=1        Also run backend pytest suite"
+      echo "  HK_SKIP_BUILD=1       Skip the frontend yarn build (faster)"
+      exit 0
+      ;;
+  esac
+done
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -113,7 +132,9 @@ fi
 
 # ── 3. Frontend Build ────────────────────────────────────────────────
 echo -n "4.  Frontend build ................ "
-if CI=false GENERATE_SOURCEMAP=false yarn build > /tmp/hk_build.log 2>&1; then
+if [ "$HK_SKIP_BUILD" = "1" ]; then
+  echo -e "$INFO (skipped via HK_SKIP_BUILD=1)"
+elif CI=false GENERATE_SOURCEMAP=false yarn build > /tmp/hk_build.log 2>&1; then
   echo -e "$PASS"
 else
   echo -e "$FAIL"
@@ -1172,6 +1193,25 @@ echo ""
 echo "Safety reminder: Do NOT run yarn add/remove."
 echo "To fix ruff format: cd /app/backend && ruff format ."
 echo ""
+
+# ══════════════════════════════════════════════════════════════
+# OPTIONAL: Backend pytest suite (HK_RUN_TESTS=1)
+# ══════════════════════════════════════════════════════════════
+if [ "$HK_RUN_TESTS" = "1" ]; then
+  echo -e "${BOLD}OPTIONAL: Backend tests (pytest)${NC}"
+  echo "------------------------------------------"
+  cd /app/backend
+  if pytest tests/ -x -q --tb=short > /tmp/hk_pytest.log 2>&1; then
+    PYTEST_SUMMARY=$(tail -2 /tmp/hk_pytest.log | head -1)
+    echo -e "PT. Backend tests ............... ${GREEN}PASS${NC} ($PYTEST_SUMMARY)"
+  else
+    echo -e "PT. Backend tests ............... ${RED}FAIL${NC}"
+    tail -30 /tmp/hk_pytest.log
+    ISSUES=$((ISSUES + 1))
+  fi
+  echo ""
+fi
+
 echo "SOC 2 Trust Service Criteria Reference:"
 echo "  CC6.1  Logical access security"
 echo "  CC7.2  System monitoring & audit"
@@ -1193,3 +1233,25 @@ echo "  F3     Capacitor core/plugin version alignment"
 echo "  F4     Engine compatibility (.yarnrc)"
 echo "  F5     Key peer dependencies satisfied"
 echo ""
+
+# ══════════════════════════════════════════════════════════════
+# EXIT CODE — total issue count so this script is usable as a
+# gating step in CI or pre-push hooks.
+#
+# Semantics:
+#   --strict      : exit with TOTAL count (WARNs blocker-equivalent). Use for
+#                   release-candidate validation.
+#   default       : exit 0 (advisory tool). Only block on explicit FAILs of
+#                   push-blocking nature (ruff check, ruff format, ESLint
+#                   errors, build). These are checked separately by callers
+#                   (scripts/check.sh, pre-commit hook, CI) so housekeeping
+#                   doesn't double-block on its own WARN-level findings.
+# ══════════════════════════════════════════════════════════════
+if [ "$STRICT_MODE" = "1" ]; then
+  echo -e "${YELLOW}STRICT MODE${NC}: WARNs counted as failures."
+  STRICT_TOTAL=$((ISSUES + SOC2_ISSUES + IOS_ISSUES + MOBILE_ISSUES + VERCEL_ISSUES))
+  exit "$STRICT_TOTAL"
+else
+  # Advisory mode: succeed regardless (each caller decides its own blocking rules)
+  exit 0
+fi

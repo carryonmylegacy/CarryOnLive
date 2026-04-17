@@ -1,0 +1,52 @@
+version: 2
+
+# Dependabot automates dependency update PRs + vulnerability alerts.
+# Free, GitHub-native. PRs land weekly with security patches.
+updates:
+  - package-ecosystem: "pip"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "backend"
+    groups:
+      # Group security patches into one PR for easier review
+      security-patches:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "frontend"
+    ignore:
+      # Pin Capacitor major version — cross-plugin coordination required
+      - dependency-name: "@capacitor/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@capgo/*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      security-patches:
+        applies-to: security-updates
+        patterns:
+          - "*"
+      radix-ui:
+        patterns:
+          - "@radix-ui/*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "ci"
