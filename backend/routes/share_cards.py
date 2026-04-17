@@ -31,6 +31,7 @@ from pydantic import BaseModel, Field
 
 from config import db
 from guards import check_founder_role
+from services.email import send_email
 from utils import get_current_user
 
 router = APIRouter(prefix="/share-cards", tags=["share-cards"])
@@ -369,6 +370,44 @@ class CardResponse(BaseModel):
     submission_id: Optional[str] = None  # Present only when we persisted the quote
 
 
+async def _notify_founder_of_pending(first_name: str, quote: str, variant: str) -> None:
+    """Best-effort Resend email to the founder that a new quote awaits review.
+    Never blocks the submission flow — exceptions swallowed."""
+    try:
+        founder = await db.users.find_one(
+            {"role": "admin", "admin_scope": "founder"},
+            {"_id": 0, "email": 1},
+        )
+        if not founder or not founder.get("email"):
+            return
+        label = "Founding Member" if variant == "fc" else "CarryOn member"
+        html = f"""
+        <div style="font-family: system-ui, -apple-system, sans-serif; max-width:560px; margin:24px auto; padding:24px; border:1px solid #e5e7eb; border-radius:16px; color:#111;">
+          <p style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:#8b6b1f; margin:0 0 12px;">New voice awaiting review</p>
+          <blockquote style="font-family: Georgia, serif; font-size:22px; font-style:italic; line-height:1.4; color:#0b1221; border-left:3px solid #d4af37; margin:0 0 14px; padding:4px 0 4px 14px;">
+            &ldquo;{quote}&rdquo;
+          </blockquote>
+          <p style="font-size:14px; color:#475569; margin:0 0 20px;">— {first_name}, {label}</p>
+          <p style="font-size:13px; color:#475569; margin:0 0 6px;">
+            Review, approve, or reject this submission in the Founder portal:
+          </p>
+          <p style="margin:0;">
+            <a href="https://carryon.us/admin/voices" style="display:inline-block; padding:10px 16px; background:#d4af37; color:#080e1a; text-decoration:none; border-radius:10px; font-weight:700; font-size:14px;">Open Voices Admin</a>
+          </p>
+          <p style="font-size:11px; color:#94a3b8; margin:18px 0 0;">
+            Nothing appears on /voices until you approve it.
+          </p>
+        </div>
+        """
+        await send_email(
+            founder["email"],
+            "New CarryOn voice awaiting your review",
+            html,
+        )
+    except Exception:
+        pass  # notification must never break the submission path
+
+
 async def _persist_submission(
     *,
     user: dict,
@@ -379,8 +418,10 @@ async def _persist_submission(
 ) -> Optional[str]:
     """Store a user-submitted quote (only when consent_public is True).
 
-    Dedup: we hash (user_id|variant|quote) so repeatedly submitting the same
-    quote doesn't create duplicate rows. Each doc is append-only.
+    New submissions land as `approval_status="pending"`. They remain invisible
+    on the public /voices page until the founder approves them.
+    Dedup: we hash (user_id|variant|quote) so repeated submissions don't
+    create duplicate rows.
     """
     if not quote or not consent_public:
         return None
@@ -397,9 +438,13 @@ async def _persist_submission(
         "quote": quote,
         "consent_public": True,
         "dedup_hash": dedup,
+        "approval_status": "pending",  # "pending" | "approved" | "rejected"
+        "featured": False,
+        "is_seed": False,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.share_quote_submissions.insert_one(doc)
+    await _notify_founder_of_pending(first_name, quote, variant)
     return doc["id"]
 
 
@@ -522,6 +567,8 @@ class VoiceEntry(BaseModel):
     variant: str
     created_at: str
     featured: bool = False
+    approval_status: str = "approved"  # "pending" | "approved" | "rejected"
+    is_seed: bool = False
 
 
 class VoicesResponse(BaseModel):
@@ -534,6 +581,7 @@ async def list_voices(
     current_user: dict = Depends(get_current_user),
     q: str = Query("", max_length=80, description="Optional substring search."),
     variant: str = Query("", pattern="^(fc|sub|)$"),
+    status: str = Query("", pattern="^(pending|approved|rejected|)$"),
     featured_only: bool = Query(False),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
@@ -548,6 +596,8 @@ async def list_voices(
         mongo_q["quote"] = {"$regex": q.strip(), "$options": "i"}
     if featured_only:
         mongo_q["featured"] = True
+    if status:
+        mongo_q["approval_status"] = status
 
     total = await db.share_quote_submissions.count_documents(mongo_q)
     cursor = (
@@ -561,23 +611,42 @@ async def list_voices(
                 "variant": 1,
                 "created_at": 1,
                 "featured": 1,
+                "approval_status": 1,
+                "is_seed": 1,
             },
         )
         .sort("created_at", -1)
         .skip(offset)
         .limit(limit)
     )
-    items = [VoiceEntry(**{"featured": False, **doc}) async for doc in cursor]
+    # Apply safe defaults for legacy rows without the new fields
+    items = [
+        VoiceEntry(
+            **{
+                "featured": False,
+                "approval_status": "approved",
+                "is_seed": False,
+                **doc,
+            }
+        )
+        async for doc in cursor
+    ]
     return VoicesResponse(total=total, items=items)
+
+
+@router.get("/admin/voices/pending-count")
+async def pending_count(current_user: dict = Depends(get_current_user)):
+    """Founder-only: count of new voices awaiting review (for the tab badge)."""
+    check_founder_role(current_user)
+    n = await db.share_quote_submissions.count_documents({"consent_public": True, "approval_status": "pending"})
+    return {"pending": n}
 
 
 @router.get("/voices/public", response_model=VoicesResponse)
 async def list_public_voices(limit: int = Query(60, ge=1, le=200)):
-    """Public (no auth) — only quotes the founder has explicitly featured.
-
-    Feeds the public `/voices` page. Returns a light payload so it can be
-    aggressively cached by edge / CDN."""
-    mongo_q = {"consent_public": True, "featured": True}
+    """Public (no auth) — only quotes the founder has approved.
+    Featured=true gets priority ordering so curated picks surface first."""
+    mongo_q = {"consent_public": True, "approval_status": "approved"}
     cursor = (
         db.share_quote_submissions.find(
             mongo_q,
@@ -589,12 +658,23 @@ async def list_public_voices(limit: int = Query(60, ge=1, le=200)):
                 "variant": 1,
                 "created_at": 1,
                 "featured": 1,
+                "is_seed": 1,
             },
         )
-        .sort("created_at", -1)
+        .sort([("featured", -1), ("created_at", -1)])
         .limit(limit)
     )
-    items = [VoiceEntry(**{"featured": True, **doc}) async for doc in cursor]
+    items = [
+        VoiceEntry(
+            **{
+                "approval_status": "approved",
+                "featured": False,
+                "is_seed": False,
+                **doc,
+            }
+        )
+        async for doc in cursor
+    ]
     return VoicesResponse(total=len(items), items=items)
 
 
@@ -604,8 +684,8 @@ async def toggle_feature(
     featured: bool = Query(..., description="True to feature publicly; False to unfeature."),
     current_user: dict = Depends(get_current_user),
 ):
-    """Founder-only: toggle a quote's `featured` flag. Featured quotes appear
-    on the public /voices page."""
+    """Founder-only: toggle a quote's `featured` flag. Featured quotes
+    appear first on /voices and on the home rotation strip."""
     check_founder_role(current_user)
     if not submission_id or len(submission_id) > 64:
         raise HTTPException(status_code=400, detail="Invalid submission id")
@@ -616,6 +696,120 @@ async def toggle_feature(
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Submission not found")
     return {"id": submission_id, "featured": bool(featured)}
+
+
+@router.patch("/admin/voices/{submission_id}/approve")
+async def approve_voice(
+    submission_id: str,
+    feature: bool = Query(False, description="Also feature this quote immediately."),
+    current_user: dict = Depends(get_current_user),
+):
+    """Founder-only: approve a pending submission. Optionally feature it
+    immediately so it starts showing on the home rotation strip."""
+    check_founder_role(current_user)
+    if not submission_id or len(submission_id) > 64:
+        raise HTTPException(status_code=400, detail="Invalid submission id")
+    update = {"approval_status": "approved"}
+    if feature:
+        update["featured"] = True
+    res = await db.share_quote_submissions.update_one(
+        {"id": submission_id},
+        {
+            "$set": update,
+            "$currentDate": {"approved_at": True},
+        },
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    return {"id": submission_id, "approval_status": "approved", "featured": feature}
+
+
+@router.patch("/admin/voices/{submission_id}/reject")
+async def reject_voice(
+    submission_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Founder-only: reject a pending submission. Keeps the row for audit
+    but marks it permanently hidden."""
+    check_founder_role(current_user)
+    if not submission_id or len(submission_id) > 64:
+        raise HTTPException(status_code=400, detail="Invalid submission id")
+    res = await db.share_quote_submissions.update_one(
+        {"id": submission_id},
+        {
+            "$set": {"approval_status": "rejected", "featured": False},
+            "$currentDate": {"rejected_at": True},
+        },
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    return {"id": submission_id, "approval_status": "rejected"}
+
+
+# ── Seed library (AI-written starter quotes, first-launch "tip jar" effect) ──
+_SEED_VOICES = [
+    # Founders Circle — legacy / leadership tone
+    ("fc", "Marcus", "My dad left us with a shoebox of papers and three weeks of chaos. My kids will never have that."),
+    (
+        "fc",
+        "Elena",
+        "I'm the organized one in this family. I finally made it count for something beyond birthday parties.",
+    ),
+    ("fc", "David", "My wife kept saying we should. CarryOn is the first thing I've actually done."),
+    ("fc", "Priya", "I don't want my funeral to be the first time my brother sees my handwriting."),
+    ("fc", "Hannah", "I'm fifty-two. My mom's seventy-nine. It's time I led."),
+    ("fc", "Ray", "My whole career was contingency planning. It's embarrassing it took me this long to do it at home."),
+    ("fc", "Trisha", "I'm the family CFO whether I wanted the job or not. This just gave me the office."),
+    # Regular subscribers — practical / ready tone
+    ("sub", "Jason", "Before CarryOn: four passwords on sticky notes. After: one place my wife can find them."),
+    ("sub", "Sarah", "My doctor asked if my family knew my wishes. I didn't have a good answer. Now I do."),
+    ("sub", "Omar", "I did this on a Saturday morning in under two hours. Easiest adult thing I've ever done."),
+    ("sub", "Nadia", "I travel a lot. My girls have peace of mind now. So do I."),
+    ("sub", "Kevin", "I'm not ready for the worst. But my family is."),
+    ("sub", "Luis", "Setting this up was the first thing my wife and I agreed on in a month."),
+    ("sub", "Mariana", "I stopped carrying the anxiety alone."),
+]
+
+
+@router.post("/admin/voices/seed")
+async def seed_voices(
+    current_user: dict = Depends(get_current_user),
+    feature_all: bool = Query(True, description="Mark every seed quote as featured."),
+):
+    """Founder-only: one-shot loader for the starter voice library.
+
+    Safe to re-run — each seed has a stable id and is upserted, not duplicated.
+    Seeds land as `approval_status="approved"` and `is_seed=True` so you can
+    always distinguish them from real member submissions in your admin view.
+    """
+    check_founder_role(current_user)
+    inserted = 0
+    updated = 0
+    for variant, name, quote in _SEED_VOICES:
+        seed_id = "seed-" + hashlib.sha256(f"{variant}|{name}|{quote}".encode()).hexdigest()[:18]
+        doc = {
+            "id": seed_id,
+            "user_id": "__seed__",
+            "variant": variant,
+            "first_name": name,
+            "quote": quote,
+            "consent_public": True,
+            "dedup_hash": seed_id,
+            "approval_status": "approved",
+            "featured": bool(feature_all),
+            "is_seed": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        res = await db.share_quote_submissions.update_one(
+            {"id": seed_id},
+            {"$set": doc},
+            upsert=True,
+        )
+        if res.upserted_id:
+            inserted += 1
+        elif res.modified_count:
+            updated += 1
+    return {"inserted": inserted, "updated": updated, "total": len(_SEED_VOICES)}
 
 
 @router.get("/admin/voices/export")
