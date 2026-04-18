@@ -10,11 +10,13 @@ workflows:
         - pattern: main
           include: true
     environment:
+      # API keys stored in Codemagic UI → Environment groups → "carryon-app-keys"
+      # Values: REACT_APP_STRIPE_PUBLISHABLE_KEY, REACT_APP_GOOGLE_PLACES_API_KEY,
+      #         REACT_APP_FIREBASE_API_KEY, REACT_APP_VAPID_PUBLIC_KEY
+      groups:
+        - carryon-app-keys
       vars:
         REACT_APP_BACKEND_URL: https://carryon-api-production.up.railway.app
-        REACT_APP_GOOGLE_PLACES_API_KEY: AIzaSyDHf5S59xv3uTH9YE3I97EDkEeCJFTZ1U4
-        REACT_APP_STRIPE_PUBLISHABLE_KEY: pk_live_51T54ldGKXPelgYl9sCqO7RJ4HzvUoZxIvi1SaDpTvihy1MURzEKllKe8qX26DXtI2n5kNjLcRDkLLhgwXcBR37FB00E2VDX0nk
-        REACT_APP_VAPID_PUBLIC_KEY: BBp9byUYFg_v3_CTpCcqywdThpv-zF1w3LRes-U3q_oisA-JZTiNOd-8GjnX1B6fszPhNVKNqLQVxtjmTrsW5HI
       node: 20
     cache:
       cache_paths:
@@ -40,12 +42,10 @@ workflows:
     integrations:
       app_store_connect: CarryOn-ASC-Key
     environment:
+      groups:
+        - carryon-app-keys
       vars:
         REACT_APP_BACKEND_URL: https://carryon-api-production.up.railway.app
-        REACT_APP_GOOGLE_PLACES_API_KEY: AIzaSyDHf5S59xv3uTH9YE3I97EDkEeCJFTZ1U4
-        REACT_APP_STRIPE_PUBLISHABLE_KEY: pk_live_51T54ldGKXPelgYl9sCqO7RJ4HzvUoZxIvi1SaDpTvihy1MURzEKllKe8qX26DXtI2n5kNjLcRDkLLhgwXcBR37FB00E2VDX0nk
-        REACT_APP_VAPID_PUBLIC_KEY: BBp9byUYFg_v3_CTpCcqywdThpv-zF1w3LRes-U3q_oisA-JZTiNOd-8GjnX1B6fszPhNVKNqLQVxtjmTrsW5HI
-        REACT_APP_FIREBASE_API_KEY: AIzaSyAuc7mMRJMr5qLsusi-_XRItoRbYoaYXrY
         REACT_APP_FIREBASE_AUTH_DOMAIN: carryon-74e7e.firebaseapp.com
         REACT_APP_FIREBASE_PROJECT_ID: carryon-74e7e
         REACT_APP_FIREBASE_STORAGE_BUCKET: carryon-74e7e.firebasestorage.app
@@ -129,11 +129,10 @@ workflows:
     environment:
       android_signing:
         - carryon_keystore
+      groups:
+        - carryon-app-keys
       vars:
         REACT_APP_BACKEND_URL: https://carryon-api-production.up.railway.app
-        REACT_APP_GOOGLE_PLACES_API_KEY: AIzaSyDHf5S59xv3uTH9YE3I97EDkEeCJFTZ1U4
-        REACT_APP_STRIPE_PUBLISHABLE_KEY: pk_live_51T54ldGKXPelgYl9sCqO7RJ4HzvUoZxIvi1SaDpTvihy1MURzEKllKe8qX26DXtI2n5kNjLcRDkLLhgwXcBR37FB00E2VDX0nk
-        REACT_APP_VAPID_PUBLIC_KEY: BBp9byUYFg_v3_CTpCcqywdThpv-zF1w3LRes-U3q_oisA-JZTiNOd-8GjnX1B6fszPhNVKNqLQVxtjmTrsW5HI
       node: 20
       java: 17
     cache:

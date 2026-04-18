@@ -550,9 +550,9 @@ async def _build_integrations_data():
                 {"label": "Auth Domain", "value": "carryon-74e7e.firebaseapp.com", "verified": True},
                 {
                     "label": "API Key",
-                    "value": "AIzaSyAuc7mMRJMr5qLsusi-_XRItoRbYoaYXrY",
+                    "value": os.environ.get("REACT_APP_FIREBASE_API_KEY", "Set REACT_APP_FIREBASE_API_KEY in env"),
                     "sensitive": True,
-                    "verified": True,
+                    "verified": bool(os.environ.get("REACT_APP_FIREBASE_API_KEY")),
                 },
                 {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],

@@ -1,0 +1,34 @@
+# .gitleaks.toml — CarryOn secret scanner configuration
+#
+# This file tells gitleaks which patterns are intentional and safe in this repo.
+# The keys below are PUBLIC client-side keys, not secrets:
+#
+#  • Stripe pk_live_ (publishable key) — designed to be in frontend code.
+#    See: https://docs.stripe.com/keys  "It's okay to embed this key..."
+#
+#  • Google Maps / Firebase API keys — client-side keys restricted by
+#    HTTP referrer and package name. The actual restriction is configured
+#    in Google Cloud Console, not by keeping the key out of the repo.
+#    See: https://developers.google.com/maps/api-security-best-practices
+#
+#  • VAPID public key — half of a public/private keypair. Public half is safe.
+#
+# True secrets (STRIPE_API_KEY sk_live_, STRIPE_WEBHOOK_SECRET whsec_, etc.)
+# are in .env and Railway environment variables — never committed to git.
+
+[allowlist]
+description = "Public frontend API keys — visible in browser bundle, not secrets"
+regexes = [
+    # Stripe publishable key (pk_live_) — intentionally public
+    "pk_live_51T54ldGKXPelgYl9sCqO7R[A-Za-z0-9]+",
+    # Google Places API key — frontend key with HTTP referrer restrictions
+    "AIzaSyDHf5S59xv3uTH9YE3I97EDkEeCJFTZ1U4",
+    # Firebase API key — frontend key with app/domain restrictions
+    "AIzaSyAuc7mMRJMr5qLsusi-_XRItoRbYoaYXrY",
+    # VAPID public key — public half of push notification keypair
+    "BBp9byUYFg_v3_CTpCcqywdThpv-zF1w3LRes-U3q_oisA-JZTiNOd-8GjnX1B6fszPhNVKNqLQVxtjmTrsW5HI",
+]
+paths = [
+    "codemagic.yaml",
+    "backend/routes/staff_tools.py",
+]
