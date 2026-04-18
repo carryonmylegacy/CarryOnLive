@@ -35,6 +35,7 @@ export default function ShareYourCarryOn({
   const [card, setCard] = useState(null);
   const [quote, setQuote] = useState('');
   const [regenerating, setRegenerating] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   const isFounders = forceFounders || (
     !forceSubscriber && (
@@ -51,8 +52,11 @@ export default function ShareYourCarryOn({
 
   const fetchCard = useCallback(
     async (quoteValue, consentPublic = false, nonce = '') => {
-      if (!token) return;
+      // Use token from context OR fall back to localStorage (handles async context load)
+      const authToken = token || localStorage.getItem('carryon_token');
+      if (!authToken) return;
       setRegenerating(true);
+      setFetchError(false);
       try {
         const res = await axios.post(
           `${API_URL}/share-cards/${endpoint}`,
@@ -63,14 +67,17 @@ export default function ShareYourCarryOn({
             consent_public: !!consentPublic,
             nonce,
           },
-          { headers: { Authorization: `Bearer ${token}` } },
+          { headers: { Authorization: `Bearer ${authToken}` } },
         );
         if (res.data) {
           setCard(res.data);
+          // Always surface the chosen quote in the text field so users can see
+          // what was selected and optionally edit it
           setQuote(res.data.quote || '');
         }
-      } catch {
-        /* graceful */
+      } catch (err) {
+        console.error('[ShareYourCarryOn] card fetch failed:', err?.response?.status, err?.message);
+        setFetchError(true);
       } finally {
         setRegenerating(false);
       }
@@ -139,7 +146,7 @@ export default function ShareYourCarryOn({
         </button>
         <SocialShareSheet
           open={open}
-          onClose={() => setOpen(false)}
+          onClose={() => { setOpen(false); setFetchError(false); }}
           imageUrl={card?.image_url ? `${API_URL}${card.image_url}` : ''}
           shareText={card?.share_text || ''}
           shareUrl="https://carryon.us"
@@ -151,6 +158,7 @@ export default function ShareYourCarryOn({
           onQuoteChange={(q, c) => fetchCard(q, c)}
           onRandomize={() => fetchCard('', false, String(Date.now()))}
           regenerating={regenerating}
+          fetchError={fetchError}
         />
       </>
     );
@@ -178,7 +186,7 @@ export default function ShareYourCarryOn({
       </button>
       <SocialShareSheet
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={() => { setOpen(false); setFetchError(false); }}
         imageUrl={card?.image_url ? `${API_URL}${card.image_url}` : ''}
         shareText={card?.share_text || ''}
         shareUrl="https://carryon.us"
@@ -190,6 +198,7 @@ export default function ShareYourCarryOn({
         onQuoteChange={(q, c) => fetchCard(q, c)}
         onRandomize={() => fetchCard('', false, String(Date.now()))}
         regenerating={regenerating}
+        fetchError={fetchError}
       />
     </>
   );

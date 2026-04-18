@@ -143,6 +143,7 @@ export default function SocialShareSheet({
   onQuoteChange,           // (newQuote: string, consentPublic: boolean) => void
   onRandomize,             // () => void — called when user taps "Surprise me"
   regenerating = false,    // parent sets true while re-fetching the card
+  fetchError = false,      // parent sets true when the card fetch failed
 }) {
   const [copied, setCopied] = useState(false);
   const [imageCopied, setImageCopied] = useState(false);
@@ -285,15 +286,40 @@ export default function SocialShareSheet({
           style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
         >
 
-        {/* Image preview — capped height on mobile so controls remain reachable */}
-        {imageUrl ? (
+        {/* Image preview / loading / error states */}
+        {fetchError ? (
+          /* Card fetch failed — tell the user, let them retry */
+          <div className="px-5 mb-4">
+            <div
+              className="rounded-2xl flex flex-col items-center justify-center gap-2 py-6"
+              style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}
+            >
+              <p className="text-sm font-semibold" style={{ color: '#f87171' }}>
+                Couldn't load your share card
+              </p>
+              <p className="text-xs text-center px-4" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                Check your connection, then tap Surprise me to try again.
+              </p>
+            </div>
+          </div>
+        ) : !imageUrl && regenerating ? (
+          /* First load — card is being generated */
+          <div className="px-5 mb-4">
+            <div
+              className="rounded-2xl flex items-center justify-center py-8"
+              style={{ background: '#0b1221', border: `1px solid ${accentColor}55`, minHeight: '120px' }}
+            >
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: accentColor }} />
+            </div>
+          </div>
+        ) : imageUrl ? (
+          /* Card loaded — show image preview */
           <div className="px-5">
             <div
               className="rounded-2xl overflow-hidden mb-4 relative"
               style={{
                 background: '#0b1221',
                 border: `1px solid ${accentColor}55`,
-                // Cap image height on small screens; full 1:1 on desktop
                 maxHeight: 'min(200px, 45vw)',
               }}
             >
