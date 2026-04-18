@@ -122,6 +122,17 @@ async def lifespan(app):
 
     logger.info("CarryOn™ API started - ready for real accounts")
 
+    # ── Startup security checks ──────────────────────────────────────────────
+    import os as _os
+
+    if _os.environ.get("STRIPE_API_KEY") and not _os.environ.get("STRIPE_WEBHOOK_SECRET"):
+        logger.critical(
+            "⚠️  STRIPE_WEBHOOK_SECRET is NOT set. Stripe webhooks will be REJECTED. "
+            "Add it to Railway env vars: Stripe Dashboard → Developers → Webhooks → Signing Secret."
+        )
+    if not _os.environ.get("SENTRY_DSN"):
+        logger.warning("SENTRY_DSN not set — error monitoring inactive.")
+
     # Run migrations and create indexes (extracted to db_indexes.py)
     from db_indexes import ensure_indexes, run_migrations
 

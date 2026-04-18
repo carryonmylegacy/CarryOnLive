@@ -60,9 +60,13 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
     if missing_ids:
         extra = await db.estates.find({"id": {"$in": missing_ids}}, {"_id": 0}).to_list(100)
         ben_estates.extend(extra)
-        # Repair: add user_id to the estate's beneficiaries array for future queries
+        # Repair: add user_id to the estate's beneficiaries array for future queries.
+        # Best-effort — failure here must NOT block the estates response.
         for eid in missing_ids:
-            await db.estates.update_one({"id": eid}, {"$addToSet": {"beneficiaries": current_user["id"]}})
+            try:
+                await db.estates.update_one({"id": eid}, {"$addToSet": {"beneficiaries": current_user["id"]}})
+            except Exception as _e:
+                logger.warning(f"get_estates: repair write failed for estate {eid}: {_e}")
 
     ben_estates = [be for be in ben_estates if be["id"] not in seen_ids]
 

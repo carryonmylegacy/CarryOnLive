@@ -38,10 +38,10 @@ const PILLARS = [
 const PLATFORM_FEATURES = [
   { icon: UserCheck, title: 'Benefactor & Beneficiary System', desc: 'Enroll the people who matter most. Control what each person can see, access, and manage within your family\'s readiness plan.' },
   { icon: ArrowUpDown, title: 'Succession Hierarchy', desc: 'Ranked beneficiary succession with automatic promotion when a primary can no longer serve. Your chain of responsibility never breaks.' },
-  { icon: Layers, title: 'Multi-Estate Support', desc: 'Manage multiple estates under one account &mdash; built for blended, extended, and modern families with complex structures.' },
+  { icon: Layers, title: 'Multi-Estate Support', desc: 'Manage multiple estates under one account — built for blended, extended, and modern families with complex structures.' },
   { icon: Users, title: 'Family Plan Savings', desc: 'Bundle your household for percentage-based discounts on every tier. The more family members you prepare, the more you save.' },
   { icon: ShieldAlert, title: 'Emergency Access', desc: 'Verified protocol for beneficiaries to request vault access when a benefactor is incapacitated. Built for real emergencies.' },
-  { icon: SlidersHorizontal, title: 'Section Permissions', desc: 'Control exactly what each beneficiary can see &mdash; vault, messages, checklists, protocols, and more. Granular, per-person access.' },
+  { icon: SlidersHorizontal, title: 'Section Permissions', desc: 'Control exactly what each beneficiary can see — vault, messages, checklists, protocols, and more. Granular, per-person access.' },
   { icon: Smartphone, title: 'Native Mobile App', desc: 'iOS and Android with biometric login, push notifications, and full platform access. Your family\'s readiness goes wherever you go.' },
   { icon: MapPin, title: '50-State Legal Intelligence', desc: 'Estate Guardian calibrates every analysis to your declared state of residence and its specific laws. Personalized, not generic.' },
 ];
@@ -262,7 +262,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                     <Icon className="w-4 h-4 text-[#d4af37]" />
                   </div>
                   <h4 className="text-white text-sm font-semibold mb-1.5">{title}</h4>
-                  <p className="text-[#6b7a90] text-xs leading-relaxed" dangerouslySetInnerHTML={{ __html: desc }} />
+                  <p className="text-[#6b7a90] text-xs leading-relaxed">{desc}</p>
                 </div>
               </RevealSection>
             ))}
