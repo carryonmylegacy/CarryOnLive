@@ -14,7 +14,8 @@
  */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
-const THUMB_FRACTION = 1 / 6;
+const THUMB_FRACTION = 1 / 12; // half the previous 1/6
+const THUMB_H = 36;             // fixed px — never changes, never causes flash
 const TOP_OFFSET  = 70;  // below mobile header (~56px + some margin)
 const BOT_OFFSET  = 90;  // above dock (~83px + some margin)
 
@@ -34,13 +35,13 @@ export default function PageScrollBar({ scrollRef }) {
     }
 
     const trackHeight = window.innerHeight - TOP_OFFSET - BOT_OFFSET;
-    const thumbHeight = Math.max(24, trackHeight * THUMB_FRACTION);
+    const thumbHeight = THUMB_H;
     const trackRange = trackHeight - thumbHeight;
     const scrollRange = scrollHeight - clientHeight;
     const pct = scrollRange > 0 ? scrollTop / scrollRange : 0;
     const top = TOP_OFFSET + pct * trackRange;
 
-    setState({ top, height: thumbHeight, visible: true });
+    setState({ top, height: THUMB_H, visible: true });
     clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => setState(s => ({ ...s, visible: false })), 1800);
   }, [scrollRef]);
@@ -72,7 +73,7 @@ export default function PageScrollBar({ scrollRef }) {
       if (!el) return;
       const { scrollHeight, clientHeight } = el;
       const trackH = window.innerHeight - TOP_OFFSET - BOT_OFFSET;
-      const thumbH = Math.max(24, trackH * THUMB_FRACTION);
+      const thumbH = THUMB_H;
       const trackRange = trackH - thumbH;
       const scrollRange = scrollHeight - clientHeight;
       if (trackRange <= 0) return;
@@ -128,7 +129,7 @@ export default function PageScrollBar({ scrollRef }) {
           borderRadius: 999,
           cursor: 'grab',
           pointerEvents: 'all',
-          transition: 'background 150ms ease',
+          transition: 'background 150ms ease',  // NO transition on top/height
           touchAction: 'none',
         }}
         data-testid="page-scroll-thumb"

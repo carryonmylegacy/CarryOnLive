@@ -1,10 +1,11 @@
 /**
- * ScrollBar — custom scroll indicator for contained scrollable divs.
- * (For page-level scroll on the dashboard, use PageScrollBar instead.)
+ * ScrollBar — stable scroll indicator for contained scrollable divs.
  *
- * MOUNT DELAY: Waits 350ms before attaching listeners to let entrance
- * animations complete. This prevents the entrance animation's changing
- * clientHeight from causing flash/height-jump bugs.
+ * FIXED THUMB HEIGHT: The thumb is always 36px tall. This is the key
+ * anti-glitch decision — dynamic height (clientHeight * fraction) causes
+ * flashing when flex layout recalculates clientHeight by even 1px.
+ *
+ * MOUNT DELAY: 360ms so entrance animations complete before first measurement.
  *
  * Usage:
  *   const ref = useRef();
@@ -15,19 +16,19 @@
  */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
-const THUMB_FRACTION = 1 / 6;
-const MOUNT_DELAY_MS = 360; // let entrance animations (≤300ms) settle first
+const THUMB_H = 36;          // fixed px — never changes, never causes flash
+const MOUNT_DELAY = 360;     // ms — wait for entrance animations to settle
 
-export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.55)' }) {
-  const [state, setState] = useState({ top: 0, height: 40, visible: false });
+export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.6)' }) {
+  const [thumbTop, setThumbTop] = useState(0);
+  const [visible, setVisible] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [ready, setReady] = useState(false);
   const hideTimer = useRef(null);
-  const rafRef = useRef(null);
+  const raf = useRef(null);
 
-  // Delay attaching listeners until animations complete
   useEffect(() => {
-    const t = setTimeout(() => setReady(true), MOUNT_DELAY_MS);
+    const t = setTimeout(() => setReady(true), MOUNT_DELAY);
     return () => clearTimeout(t);
   }, []);
 
@@ -35,27 +36,21 @@ export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.55)' }
     const el = scrollRef.current;
     if (!el) return;
     const { scrollTop, scrollHeight, clientHeight } = el;
-    if (scrollHeight <= clientHeight + 4) {
-      setState(s => s.visible ? { ...s, visible: false } : s);
-      return;
-    }
-    const thumbHeight = Math.max(24, clientHeight * THUMB_FRACTION);
-    const trackRange = clientHeight - thumbHeight;
+    if (scrollHeight <= clientHeight + 4) { setVisible(false); return; }
+
+    const trackRange = clientHeight - THUMB_H;    // how far thumb can travel
     const scrollRange = scrollHeight - clientHeight;
     const top = scrollRange > 0 ? (scrollTop / scrollRange) * trackRange : 0;
 
-    // Single atomic update — prevents split renders that cause flashing
-    setState({ top, height: thumbHeight, visible: true });
-
+    setThumbTop(top);
+    setVisible(true);
     clearTimeout(hideTimer.current);
-    hideTimer.current = setTimeout(() => {
-      setState(s => ({ ...s, visible: false }));
-    }, 1600);
+    hideTimer.current = setTimeout(() => setVisible(false), 1600);
   }, [scrollRef]);
 
   const onScroll = useCallback(() => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(compute);
+    if (raf.current) cancelAnimationFrame(raf.current);
+    raf.current = requestAnimationFrame(compute);
   }, [compute]);
 
   useEffect(() => {
@@ -66,27 +61,25 @@ export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.55)' }
     return () => {
       el.removeEventListener('scroll', onScroll);
       clearTimeout(hideTimer.current);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (raf.current) cancelAnimationFrame(raf.current);
     };
   }, [scrollRef, onScroll, ready]);
 
+  // Drag to scroll
   const onPointerDown = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
     setDragging(true);
-
     const startY = e.clientY;
-    const startScrollTop = scrollRef.current?.scrollTop || 0;
+    const startTop = scrollRef.current?.scrollTop || 0;
 
     const onMove = (ev) => {
       const el = scrollRef.current;
       if (!el) return;
-      const { scrollHeight, clientHeight } = el;
-      const thumbH = Math.max(24, clientHeight * THUMB_FRACTION);
-      const trackRange = clientHeight - thumbH;
-      const scrollRange = scrollHeight - clientHeight;
+      const trackRange = el.clientHeight - THUMB_H;
+      const scrollRange = el.scrollHeight - el.clientHeight;
       if (trackRange <= 0) return;
-      el.scrollTop = startScrollTop + ((ev.clientY - startY) / trackRange) * scrollRange;
+      el.scrollTop = startTop + ((ev.clientY - startY) / trackRange) * scrollRange;
     };
 
     const onUp = () => {
@@ -98,7 +91,6 @@ export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.55)' }
     window.addEventListener('pointerup', onUp, { once: true });
   }, [scrollRef]);
 
-  const { top, height, visible } = state;
   const show = visible || dragging;
 
   return (
@@ -110,7 +102,8 @@ export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.55)' }
         width: dragging ? 5 : 3,
         pointerEvents: 'none',
         opacity: show ? 1 : 0,
-        transition: 'opacity 250ms ease, width 120ms ease',
+        // Opacity fade only — NEVER animate width during scroll (causes jitter)
+        transition: `opacity 250ms ease${dragging ? ', width 100ms ease' : ''}`,
         zIndex: 50,
       }}
     >
@@ -119,16 +112,16 @@ export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.55)' }
         style={{
           position: 'absolute',
           right: 0,
-          top,
+          top: thumbTop,
           width: '100%',
-          height,
-          background: dragging ? 'rgba(212,175,55,0.9)' : color,
+          height: THUMB_H,             // fixed — never changes
+          background: dragging ? 'rgba(212,175,55,0.95)' : color,
           borderRadius: 999,
           cursor: 'grab',
           pointerEvents: 'all',
-          transition: 'background 150ms ease',  // NO transition on top/height
+          // ZERO transitions on position — position must snap with scroll
+          transition: 'background 150ms ease',
           touchAction: 'none',
-          willChange: 'transform',
         }}
         data-testid="scroll-thumb"
       />
