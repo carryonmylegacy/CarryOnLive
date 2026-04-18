@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { X, Download, Copy, Check, Share2, MessageCircle, Mail, Shuffle, Loader2 } from 'lucide-react';
+import ScrollBar from './ScrollBar';
 
 /**
  * SocialShareSheet — dumb-simple, one-tap share links to every major
@@ -149,6 +150,7 @@ export default function SocialShareSheet({
   const [imageCopied, setImageCopied] = useState(false);
   const [draftQuote, setDraftQuote] = useState(quote || '');
   const [consentPublic, setConsentPublic] = useState(false);
+  const scrollRef = useRef(null);  // must be before any early return
 
   // Keep the draft in sync when the parent swaps in a new random quote
   React.useEffect(() => {
@@ -239,26 +241,31 @@ export default function SocialShareSheet({
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center"
+      className="fixed inset-0 z-[120] flex items-center justify-center px-4"
       style={{
-        background: 'rgba(0,0,0,0.72)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        // Mobile: push sheet up above the dock (≈80px) and respect safe-area
-        paddingTop: 'env(safe-area-inset-top, 0px)',
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+        background: 'rgba(0,0,0,0.75)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 70px)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)',
       }}
       onClick={onClose}
       data-testid="social-share-sheet"
     >
       <div
-        className="w-full max-w-lg rounded-3xl flex flex-col overflow-hidden mx-3"
+        className="w-full max-w-lg rounded-3xl flex flex-col overflow-hidden"
         style={{
           background: 'var(--bg2)',
-          border: '1px solid var(--b)',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-          animation: 'ssUp 340ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
-          maxHeight: 'calc(100dvh - 64px - 80px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))',
+          /* Multi-layer shadow: ambient + directional + deep — creates true elevation */
+          boxShadow: [
+            '0 1px 2px rgba(0,0,0,0.25)',
+            '0 4px 12px rgba(0,0,0,0.35)',
+            '0 16px 40px rgba(0,0,0,0.5)',
+            '0 40px 80px rgba(0,0,0,0.35)',
+          ].join(', '),
+          border: '1px solid rgba(255,255,255,0.12)',
+          animation: 'ssUp 300ms cubic-bezier(0.34, 1.3, 0.64, 1) both',
+          maxHeight: 'calc(100dvh - 64px - 90px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -280,10 +287,9 @@ export default function SocialShareSheet({
 
         {/* ── Scrollable content area — all the actual content ── */}
         <div
+          ref={scrollRef}
           className="overflow-y-auto flex-1"
           style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', position: 'relative' }}
-          ref={(el) => { if (el) el._scrollRef = el; }}
-          id="share-sheet-scroll"
         >
 
         {/* Image preview — REMOVED. Quote text is the primary content. */}
@@ -470,6 +476,8 @@ export default function SocialShareSheet({
         <p className="px-4 pb-4 pt-1.5 text-[11px] text-center" style={{ color: 'var(--t5)' }}>
           For Instagram &amp; iMessage, download the image first and attach it manually.
         </p>
+
+        <ScrollBar scrollRef={scrollRef} />
 
         </div>{/* end scrollable content */}
       </div>
