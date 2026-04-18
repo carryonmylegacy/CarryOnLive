@@ -113,9 +113,16 @@ _SUB_QUOTES = [
 ]
 
 
-def _pick_quote(variant: str, name_seed: str) -> str:
+def _pick_quote(variant: str, name_seed: str, nonce: str = "") -> str:
+    """Pick a quote from the pool.
+
+    Deterministic per day per user by default (stable cache).
+    When `nonce` is supplied (e.g. from "Surprise me"), it's mixed into the
+    seed so each call with a different nonce returns a different quote.
+    """
     pool = _FC_QUOTES if variant == "fc" else _SUB_QUOTES
-    seed = hashlib.sha256(f"{variant}|{name_seed}|{datetime.now(timezone.utc).date().isoformat()}".encode()).hexdigest()
+    seed_data = f"{variant}|{name_seed}|{datetime.now(timezone.utc).date().isoformat()}|{nonce}"
+    seed = hashlib.sha256(seed_data.encode()).hexdigest()
     rng = random.Random(seed)
     return rng.choice(pool)
 
@@ -447,6 +454,12 @@ class CardRequest(BaseModel):
     tier_name: str = Field("", max_length=60)
     quote: str = Field("", max_length=110)
     consent_public: bool = Field(False)
+    nonce: str = Field(
+        "",
+        max_length=32,
+        description="Optional random value from client. When set, breaks the deterministic "
+        "daily-seed so 'Surprise me' returns a different quote each click.",
+    )
 
 
 class CardResponse(BaseModel):

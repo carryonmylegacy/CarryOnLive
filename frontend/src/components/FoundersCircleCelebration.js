@@ -25,7 +25,7 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
   const displayName = (firstName || '').trim() || 'Founding Member';
 
   const fetchCard = React.useCallback(
-    async (quoteValue, consentPublic = false) => {
+    async (quoteValue, consentPublic = false, nonce = '') => {
       if (!token) return;
       setRegenerating(true);
       try {
@@ -36,6 +36,7 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
             tier_name: tierName || '',
             quote: quoteValue || '',
             consent_public: !!consentPublic,
+            nonce,
           },
           { headers: { Authorization: `Bearer ${token}` } },
         );

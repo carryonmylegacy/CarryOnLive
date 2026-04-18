@@ -29,13 +29,13 @@ export default function SubscriberCelebration({ firstName, tierName, onDismiss }
   const displayName = (firstName || '').trim() || 'A CarryOn Member';
 
   const fetchCard = React.useCallback(
-    async (quoteValue) => {
+    async (quoteValue, consentPublic = false, nonce = '') => {
       if (!token) return;
       setRegenerating(true);
       try {
         const res = await axios.post(
           `${API_URL}/share-cards/subscriber`,
-          { first_name: displayName, tier_name: tierName || '', quote: quoteValue || '' },
+          { first_name: displayName, tier_name: tierName || '', quote: quoteValue || '', consent_public: !!consentPublic, nonce },
           { headers: { Authorization: `Bearer ${token}` } },
         );
         if (res.data) {
@@ -244,7 +244,7 @@ export default function SubscriberCelebration({ firstName, tierName, onDismiss }
         quote={quote}
         quoteSource={card?.quote_source || 'random'}
         onQuoteChange={(q, consent) => fetchCard(q, consent)}
-        onRandomize={() => fetchCard('')}
+        onRandomize={() => fetchCard('', false, String(Date.now()))}
         regenerating={regenerating}
       />
     </div>

@@ -28,7 +28,7 @@ async def create_fc_card(req: CardRequest, current_user: dict = Depends(get_curr
     if user_quote:
         quote, source = user_quote, "user"
     else:
-        quote, source = _pick_quote("fc", fname), "random"
+        quote, source = _pick_quote("fc", fname, nonce=req.nonce), "random"
     cid = _card_id("fc", fname, req.tier_name, quote)
     path = _CACHE_DIR / f"{cid}.png"
     if not path.exists():
@@ -69,7 +69,7 @@ async def create_subscriber_card(req: CardRequest, current_user: dict = Depends(
     if user_quote:
         quote, source = user_quote, "user"
     else:
-        quote, source = _pick_quote("sub", fname), "random"
+        quote, source = _pick_quote("sub", fname, nonce=req.nonce), "random"
     cid = _card_id("sub", fname, req.tier_name, quote)
     path = _CACHE_DIR / f"{cid}.png"
     if not path.exists():

@@ -50,7 +50,7 @@ export default function ShareYourCarryOn({
   const tierName = subscriptionStatus?.tier_name || subscriptionStatus?.plan_name || '';
 
   const fetchCard = useCallback(
-    async (quoteValue, consentPublic = false) => {
+    async (quoteValue, consentPublic = false, nonce = '') => {
       if (!token) return;
       setRegenerating(true);
       try {
@@ -61,6 +61,7 @@ export default function ShareYourCarryOn({
             tier_name: tierName,
             quote: quoteValue || '',
             consent_public: !!consentPublic,
+            nonce,
           },
           { headers: { Authorization: `Bearer ${token}` } },
         );
@@ -148,7 +149,7 @@ export default function ShareYourCarryOn({
           quote={quote}
           quoteSource={card?.quote_source || 'random'}
           onQuoteChange={(q, c) => fetchCard(q, c)}
-          onRandomize={() => fetchCard('')}
+          onRandomize={() => fetchCard('', false, String(Date.now()))}
           regenerating={regenerating}
         />
       </>
@@ -187,7 +188,7 @@ export default function ShareYourCarryOn({
         quote={quote}
         quoteSource={card?.quote_source || 'random'}
         onQuoteChange={(q, c) => fetchCard(q, c)}
-        onRandomize={() => fetchCard('')}
+        onRandomize={() => fetchCard('', false, String(Date.now()))}
         regenerating={regenerating}
       />
     </>

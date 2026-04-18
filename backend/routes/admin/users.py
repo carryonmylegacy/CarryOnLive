@@ -22,12 +22,16 @@ async def get_all_users(current_user: dict = Depends(require_staff)):
         10000
     )
     estates_by_owner = {}
+    estate_ids_owned = []
     for e in estates:
         if e.get("id") and e.get("owner_id"):
             estates_by_owner.setdefault(e["owner_id"], []).append(e["id"])
+            estate_ids_owned.append(e["id"])
 
+    # Scoped fetch: only load beneficiaries for estates that exist in this result set.
+    # Avoids loading 100k rows when the user list is capped at 1000.
     all_bens = await db.beneficiaries.find(
-        {},
+        {"estate_id": {"$in": estate_ids_owned}} if estate_ids_owned else {},
         {
             "_id": 0,
             "id": 1,
@@ -39,7 +43,7 @@ async def get_all_users(current_user: dict = Depends(require_staff)):
             "is_stub": 1,
             "invitation_status": 1,
         },
-    ).to_list(100000)
+    ).to_list(50000)
 
     bens_by_estate = {}
     for b in all_bens:

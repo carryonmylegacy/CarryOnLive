@@ -485,6 +485,20 @@ export default function EstateChatPage() {
       className={`${showChannelList || !activeChannel ? 'flex' : 'hidden'} lg:flex flex-col h-full`}
       style={{ width: '100%', maxWidth: '100%', borderRight: '1px solid var(--b)' }}
     >
+      {/* Desktop-only back-to-app bar — invisible on mobile (platform header handles that) */}
+      <div className="hidden lg:flex items-center px-4 pt-3 pb-1">
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="flex items-center gap-1.5 text-xs font-semibold transition-colors hover:opacity-80"
+          data-testid="ect-back-to-dashboard"
+          style={{ color: 'var(--t4)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          aria-label="Back to Dashboard"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Dashboard
+        </button>
+      </div>
+
       {/* ECT-own header */}
       <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--b)' }}>
         <div className="flex items-center gap-3">
