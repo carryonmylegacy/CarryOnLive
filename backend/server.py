@@ -7,7 +7,8 @@ Routes organized in /routes/*.py, middleware in middleware.py, schedulers in sch
 import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, Depends, FastAPI
+from guards import require_admin
 from starlette.middleware.gzip import GZipMiddleware
 
 from config import client, db, logger
@@ -246,7 +247,7 @@ api_router.include_router(staff_ops_router)
 api_router.include_router(platform_rules_router)
 
 
-BUILD_HASH = "2026-03-10T17:05:00Z-fix-welcome-redirect"
+BUILD_HASH = "2026-04-28T00:00:00Z-pre-launch-refactor"
 
 
 @api_router.get("/health")
@@ -297,8 +298,8 @@ async def health_ready():
 
 
 @api_router.get("/debug/user-state")
-async def debug_user_state(email: str):
-    """Diagnostic: check a user's multi-role state. No sensitive data exposed."""
+async def debug_user_state(email: str, current_user: dict = Depends(require_admin)):
+    """Diagnostic: check a user's multi-role state. Admin-only."""
     user = await db.users.find_one(
         {"email": email.lower().strip()},
         {

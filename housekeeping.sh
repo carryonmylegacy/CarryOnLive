@@ -354,15 +354,15 @@ fi
 
 # ── CC7.2 — OTP Security ────────────────────────────────────────────
 echo -n "20. [CC7.2] OTP expiry check ...... "
-if grep -q "timedelta(minutes=10)" /app/backend/routes/auth.py 2>/dev/null; then
+if grep -rq "timedelta(minutes=10)" /app/backend/routes/auth/ 2>/dev/null || grep -q "timedelta(minutes=10)" /app/backend/routes/auth.py 2>/dev/null; then
   echo -e "$PASS (10-minute OTP expiry enforced)"
 else
-  echo -e "$WARN (OTP expiry not verified — check auth.py)"
+  echo -e "$WARN (OTP expiry not verified — check routes/auth/)"
   SOC2_ISSUES=$((SOC2_ISSUES + 1))
 fi
 
 echo -n "21. [CC7.2] Account lockout ....... "
-if grep -q "recent_failures >= 5\|lockout" /app/backend/routes/auth.py 2>/dev/null; then
+if grep -rq "recent_failures >= 5\|lockout" /app/backend/routes/auth/ 2>/dev/null || grep -q "recent_failures >= 5\|lockout" /app/backend/routes/auth.py 2>/dev/null; then
   echo -e "$PASS (5-attempt lockout with 15-min window)"
 else
   echo -e "$FAIL (no account lockout on failed logins)"

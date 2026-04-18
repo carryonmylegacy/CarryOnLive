@@ -1,0 +1,38 @@
+# Development-only dependencies — NOT installed on Railway/production.
+# Install locally with: pip install -r requirements-dev.txt
+#
+# These tools are used for linting, type-checking, and security scanning.
+# CI installs ruff and eslint independently from their own steps.
+
+ruff==0.15.4
+black==26.1.0
+isort==8.0.0
+mypy==1.19.1
+mypy_extensions==1.1.0
+flake8==7.3.0
+pycodestyle==2.14.0
+pyflakes==3.4.0
+mccabe==0.7.0
+safety==3.7.0
+safety-schemas==0.0.16
+
+# ML / voice-biometrics (archived — see services/voice_biometrics.py)
+# These are NOT installed in production. The feature is archived.
+# Re-add here if voice biometrics are reactivated.
+librosa==0.11.0
+scipy==1.17.1
+scikit-learn==1.8.0
+numba==0.64.0
+llvmlite==0.46.0
+soundfile==0.13.1
+soxr==1.0.0
+audioread==3.1.0
+huggingface_hub==1.4.1
+tokenizers==0.22.2
+hf-xet==1.2.0
+joblib==1.5.3
+threadpoolctl==3.6.0
+nltk==3.9.4
+pooch==1.9.0
+lazy_loader==0.4
+fsspec==2026.2.0

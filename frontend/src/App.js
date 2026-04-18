@@ -18,7 +18,7 @@ import { checkForUpdates } from './utils/versionCheck';
 import { isFeatureEnabled } from './utils/featureGates';
 import { Loader2 } from 'lucide-react';
 
-const CARRYON_BUILD = '2026-03-10T20:30:00Z-fix-portal-paywall';
+const CARRYON_BUILD = '2026-04-28T00:00:00Z-pre-launch-refactor';
 if (typeof window !== 'undefined') {
   window.__CARRYON_BUILD = CARRYON_BUILD;
   console.log(`%c[CarryOn] Build: ${CARRYON_BUILD}`, 'color: #d4af37; font-weight: bold');

@@ -21,7 +21,12 @@ logger = logging.getLogger(__name__)
 
 # MongoDB
 mongo_url = os.environ["MONGO_URL"]
-client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=5000)
+client = AsyncIOMotorClient(
+    mongo_url,
+    serverSelectionTimeoutMS=5000,
+    maxPoolSize=50,
+    minPoolSize=5,
+)
 db = client[os.environ["DB_NAME"]]
 
 # JWT — NO FALLBACK: missing secret MUST fail fast

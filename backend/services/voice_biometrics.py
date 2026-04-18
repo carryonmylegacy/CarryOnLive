@@ -1,11 +1,15 @@
 """
 CarryOn™ Enhanced Voice Biometric Engine
 =========================================
+⚠️  ARCHIVED — NOT IMPORTED ANYWHERE IN PRODUCTION  ⚠️
+See /app/memory/VOICE_BIOMETRIC_ARCHIVE.md for context.
+
+This module requires ML dependencies (librosa, scipy, scikit-learn, numpy)
+that are listed in requirements-dev.txt, NOT in requirements.txt.
+Do NOT import this module unless those packages are installed.
+
 Multi-feature voiceprint extraction, quality-aware enrollment,
 and multi-metric verification — all built on librosa + scipy + numpy.
-
-Replaces the basic MFCC-only approach with a ~130-dimension voiceprint
-combining spectral, temporal, pitch, and energy features.
 """
 
 import difflib
