@@ -401,7 +401,24 @@ New component `components/HomeVoicesStrip.js`, placed on the public landing page
 - With 1 featured: strip renders with Rebekah's quote + FOUNDING MEMBER chip + link.
 - With 0 featured (tested by toggling off and reloading): strip returns `null`, hospice section flows straight to final CTA.
 
-## Upcoming Tasks (Launch Week — Wed–Fri)
+## EstateChatPage.js Refactor (Apr 28, 2026)
+
+EstateChatPage.js reduced from **2,182 → 1,248 lines** (-43%) via custom hook extraction.
+Zero behavioural changes. iOS keyboard handling fully preserved.
+
+**New files:**
+- `useECTChannelList.js` — channel list state, selection, swipe/long-press, bulk ops
+- `useECTSearch.js` — global message search
+- `useECTMessageActions.js` — long-press menu, reactions, pins, edit, delete
+- `useECTMedia.js` — file upload, multi-upload, voice recording
+- `ECTConfirmDialogs.js` — pure delete confirmation dialogs
+
+**AGENT_RULES.md Rule 8 added:** All tiles/modals/sheets must fit between header and dock on ALL mobile sizes (iPhone 13 Mini → 17 Pro Max), using `maxHeight: calc(100dvh - 64px - 80px - safe-area)` with internal scroll.
+
+## SocialShareSheet Fix (Apr 28, 2026)
+Fixed vertical overflow on compact iPhones. Sheet now has `maxHeight` constraint and `overflow-y: auto` on content area. Dock clearance via `paddingBottom: calc(80px + safe-area-inset-bottom)`.
+
+
 - [Audit action] Fix FC `free_access` grant for late-added beneficiaries (🔴 15 min)
 - [Audit action] Verify Stripe webhook signature enforcement (curl test, 5 min)
 - [Audit action] Run FC installment-failure test (30 min)
