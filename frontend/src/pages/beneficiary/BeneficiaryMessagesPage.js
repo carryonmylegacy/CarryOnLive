@@ -93,7 +93,7 @@ const BeneficiaryMessagesPage = () => {
             <CardContent className="p-5 lg:p-8">
               {m.video_url ? (
                 videoBlobUrl ? (
-                  <div className="rounded-xl overflow-hidden mb-4" style={{ background: '#000', aspectRatio: '16/9' }}>
+                  <div className="rounded-xl overflow-hidden mb-4" style={{ background: 'var(--bg)', aspectRatio: '16/9' }}>
                     <video controls autoPlay playsInline className="w-full h-full" src={videoBlobUrl}>
                       Your browser does not support video playback.
                     </video>

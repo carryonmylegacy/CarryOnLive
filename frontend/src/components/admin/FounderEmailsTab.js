@@ -217,9 +217,9 @@ export const FounderEmailsTab = ({ getAuthHeaders }) => {
       {previewHtml && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => { setPreviewHtml(''); setPreviewType(''); }}>
           <div className="rounded-xl border border-[var(--b)] w-full max-w-2xl max-h-[85vh] overflow-auto"
-            style={{ background: '#0b1120' }}
+            style={{ background: 'var(--bg)' }}
             onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-[var(--b)] sticky top-0 z-10" style={{ background: '#0b1120' }}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--b)] sticky top-0 z-10" style={{ background: 'var(--bg)' }}>
               <h3 className="text-white font-bold text-sm uppercase tracking-wider">
                 {previewType === 'analytics' ? 'Analytics Digest Preview' : 'Audit Digest Preview'}
               </h3>

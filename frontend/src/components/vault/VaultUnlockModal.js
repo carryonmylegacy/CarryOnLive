@@ -100,7 +100,7 @@ const VaultUnlockModal = ({
                 )}
                 
                 {spokenText && (
-                  <div className="mt-3 p-2 bg-[#0F1629] rounded-lg">
+                  <div className="mt-3 p-2 bg-[var(--bg)] rounded-lg">
                     <p className="text-[#94a3b8] text-xs">Heard:</p>
                     <p className="text-white">{spokenText}</p>
                   </div>

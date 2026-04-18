@@ -75,7 +75,7 @@ export default function VoiceMessagePlayer({ fileId }) {
           : <Play className="w-4 h-4 ml-0.5" style={{ color: '#d4af37' }} />}
       </button>
       <div className="flex-1 min-w-0">
-        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--b)' }}>
           <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: '#d4af37' }} />
         </div>
         <div className="text-[11px] mt-0.5" style={{ color: 'var(--t4)' }}>

@@ -63,7 +63,7 @@ const TreeNode = ({ initials, color, size = 44, label, sublabel, badge, glowColo
           width: size, height: size,
           background: color,
           fontSize: size * 0.3,
-          color: '#080e1a',
+          color: 'var(--bg)',
           border: `2px solid ${glowColor || color}`,
           boxShadow: `0 0 10px ${(glowColor || color)}40`,
         }}

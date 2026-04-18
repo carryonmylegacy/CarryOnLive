@@ -80,7 +80,7 @@ export default function ImagePreviewModal({ previewImage, onClose }) {
         style={{
           position: 'absolute', top: 'env(safe-area-inset-top, 12px)', right: 12,
           marginTop: 12, width: 40, height: 40, borderRadius: '50%',
-          background: 'rgba(255,255,255,0.15)', border: 'none',
+          background: 'var(--b2)', border: 'none',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', zIndex: 10000,
         }}

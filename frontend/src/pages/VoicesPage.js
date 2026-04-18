@@ -127,7 +127,7 @@ export default function VoicesPage() {
           <div
             className="max-w-xl mx-auto text-center rounded-2xl p-10"
             style={{
-              background: 'rgba(255,255,255,0.04)',
+              background: 'var(--s)',
               border: '1px dashed rgba(212,175,55,0.3)',
             }}
           >

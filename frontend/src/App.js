@@ -89,6 +89,7 @@ const VoicesPage = lazy(() => import('./pages/VoicesPage'));
 const SharedPlanPage = lazy(() => import('./pages/SharedPlanPage'));
 
 const SpeakWithUsPage = lazy(() => import('./pages/SpeakWithUsPage'));
+const SharePage = lazy(() => import('./pages/SharePage'));
 
 import UsernameReviewModal from './components/UsernameReviewModal';
 
@@ -301,6 +302,7 @@ function AppRoutes() {
         </ProtectedRoute>
       }>
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/share" element={<SharePage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/vault" element={<VaultPage />} />
         <Route path="/messages" element={<MessagesPage />} />

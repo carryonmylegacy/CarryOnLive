@@ -101,7 +101,7 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
         onClick={onDismiss}
         className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center transition-colors"
         style={{
-          background: 'rgba(255,255,255,0.06)',
+          background: 'var(--s)',
           border: '1px solid rgba(255,255,255,0.1)',
           color: 'rgba(255,255,255,0.7)',
         }}
@@ -211,7 +211,7 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
               key={i}
               className="flex items-start gap-3 px-4 py-2.5 rounded-xl"
               style={{
-                background: 'rgba(255,255,255,0.04)',
+                background: 'var(--s)',
                 border: '1px solid rgba(255,255,255,0.06)',
               }}
             >
@@ -232,7 +232,7 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
             onClick={openShare}
             className="flex-1 py-3 px-5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
             style={{
-              background: 'rgba(255,255,255,0.06)',
+              background: 'var(--s)',
               border: '1px solid rgba(255,255,255,0.14)',
               color: '#ffffff',
             }}
@@ -246,7 +246,7 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
             className="flex-1 py-3 px-5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
             style={{
               background: 'linear-gradient(135deg, #d4af37, #b8962e)',
-              color: '#080e1a',
+              color: 'var(--bg)',
               boxShadow: '0 8px 28px rgba(212,175,55,0.35)',
             }}
             data-testid="fc-celebration-continue"

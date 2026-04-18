@@ -85,7 +85,7 @@ const VideoRecordingOverlay = ({
             <StopCircle className="w-8 h-8 text-white" />
           </button>
         ) : (
-          <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.1)' }}>
+          <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'var(--b)' }}>
             <span className="text-3xl font-bold text-white">{countdown}</span>
           </div>
         )}

@@ -366,7 +366,7 @@ const SignupPage = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{
-      background: '#080e1a',
+      background: 'var(--bg)',
       animation: 'signupPageEnter 0.6s cubic-bezier(0.16,1,0.3,1) both',
     }}>
       <style>{`

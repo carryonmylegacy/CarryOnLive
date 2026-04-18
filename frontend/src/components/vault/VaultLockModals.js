@@ -141,7 +141,7 @@ export const VaultBackupCodeModal = ({
         </DialogHeader>
         
         <div className="py-4">
-          <div className="bg-[#0F1629]/50 rounded-xl p-4 text-center mb-4">
+          <div className="bg-[var(--bg)]/50 rounded-xl p-4 text-center mb-4">
             <p className="text-2xl font-mono text-[var(--gold)] tracking-wider">{backupCode}</p>
           </div>
           

@@ -183,7 +183,7 @@ export function EmojiPickerGrid({ onSelect, onClose, isOwn, searchPosition = 'to
   const searchBar = (
     <div className={searchPosition === 'top' ? 'px-3 pt-3 pb-2' : 'px-3 pt-2 pb-3'} style={{ flexShrink: 0 }}>
       <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5"
-        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        style={{ background: 'var(--s)', border: '1px solid rgba(255,255,255,0.08)' }}>
         <Search className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--t5)' }} />
         <input
           ref={searchRef}
@@ -284,7 +284,7 @@ export function EmojiPickerButtonSmall({ onClick }) {
     <button
       onClick={(e) => { e.stopPropagation(); onClick(); }}
       className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid transparent' }}
+      style={{ background: 'var(--s)', border: '1px solid transparent' }}
       data-testid="emoji-picker-open-btn-small"
       title="More emojis"
     >

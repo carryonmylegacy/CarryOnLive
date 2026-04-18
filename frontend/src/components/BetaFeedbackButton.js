@@ -306,7 +306,7 @@ export default function BetaFeedbackButton() {
                 className="w-full h-11 text-sm font-bold rounded-xl flex items-center justify-center gap-2"
                 style={{
                   background: submitting ? 'var(--s)' : 'linear-gradient(135deg, #d4af37, #b8942e)',
-                  color: submitting ? 'var(--t4)' : '#0F1629',
+                  color: submitting ? 'var(--t4)' : 'var(--bg2)',
                 }}
                 data-testid="beta-feedback-submit"
               >

@@ -21,7 +21,7 @@ const NewChatModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.7)', padding: '16px', paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
-      <div className="w-full max-w-md rounded-2xl flex flex-col" style={{ background: '#0F1629', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '80vh' }}>
+      <div className="w-full max-w-md rounded-2xl flex flex-col" style={{ background: 'var(--bg2)', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '80vh' }}>
         <div className="flex items-center justify-between p-6 pb-4 flex-shrink-0">
           <h3 className="text-lg font-bold" style={{ color: 'var(--t)' }}>New Conversation</h3>
           <button onClick={() => { setShowNewChat(false); setSelectedMembers([]); setGroupName(''); }} data-testid="ect-new-chat-close">

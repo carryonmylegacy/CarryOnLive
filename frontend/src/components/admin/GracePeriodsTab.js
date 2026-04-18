@@ -112,7 +112,7 @@ export const GracePeriodsTab = ({ getAuthHeaders }) => {
           { label: 'On Hold', count: holdCount, color: '#3B82F6', f: 'paused' },
           { label: 'Files Purged', count: filesPurgedCount, color: '#F97316', f: 'files_purged' },
           { label: 'Completed', count: periods.filter(p => p.status === 'completed').length, color: '#6B7280', f: 'completed' },
-          { label: 'All', count: periods.length, color: '#94A3B8', f: 'all' },
+          { label: 'All', count: periods.length, color: 'var(--t3)', f: 'all' },
         ].map(s => (
           <div key={s.label} className="rounded-xl p-3 text-center cursor-pointer transition-all"
             style={{

@@ -238,7 +238,7 @@ const AcceptInvitationPage = () => {
                 </div>
 
                 {/* CTA */}
-                <Button onClick={() => setStep(2)} className="w-full h-12 text-base font-bold" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 4px 24px rgba(212,175,55,0.3)' }} data-testid="continue-to-account-btn">
+                <Button onClick={() => setStep(2)} className="w-full h-12 text-base font-bold" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 4px 24px rgba(212,175,55,0.3)' }} data-testid="continue-to-account-btn">
                   Continue to Create Account <ChevronRight className="w-5 h-5 ml-2" />
                 </Button>
 
@@ -336,7 +336,7 @@ const AcceptInvitationPage = () => {
 
                     <Button onClick={handleLinkExisting} disabled={submitting || !loginUsername || !loginPassword}
                       className="w-full h-12 text-base font-bold mt-6"
-                      style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 4px 24px rgba(212,175,55,0.3)' }}
+                      style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 4px 24px rgba(212,175,55,0.3)' }}
                       data-testid="link-account-submit">
                       {submitting ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Connecting...</> : <><CheckCircle className="w-5 h-5 mr-2" />Sign In & Connect</>}
                     </Button>
@@ -441,7 +441,7 @@ const AcceptInvitationPage = () => {
 
                     <Button onClick={handleAccept} disabled={submitting || !password || !confirmPassword}
                       className="w-full h-12 text-base font-bold mt-6"
-                      style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 4px 24px rgba(212,175,55,0.3)' }}
+                      style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 4px 24px rgba(212,175,55,0.3)' }}
                       data-testid="accept-invitation-submit">
                       {submitting ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Creating Account...</> : <><CheckCircle className="w-5 h-5 mr-2" />Create Account & Connect</>}
                     </Button>

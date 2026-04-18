@@ -466,7 +466,7 @@ export default function ConnectedProtocolPage() {
               data-testid="ccp-submit-checkin"
               style={{
                 background: 'linear-gradient(135deg, #d4af37, #F0C95C)',
-                color: '#080e1a',
+                color: 'var(--bg)',
                 minHeight: 64,
               }}
             >

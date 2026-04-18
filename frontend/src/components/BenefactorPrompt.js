@@ -69,7 +69,7 @@ export default function BenefactorPrompt({ onDismiss }) {
           className="w-full h-12 text-sm font-bold rounded-xl flex items-center justify-center gap-2"
           style={{
             background: 'linear-gradient(135deg, #d4af37, #b8942e)',
-            color: '#0F1629',
+            color: 'var(--bg2)',
           }}
           data-testid="benefactor-prompt-create-btn"
         >

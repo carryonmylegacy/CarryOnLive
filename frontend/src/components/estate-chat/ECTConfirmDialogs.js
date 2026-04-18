@@ -13,7 +13,7 @@ export function ECTDeleteConfirmDialog({ channel, onConfirm, onCancel }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }}>
       <div className="w-full max-w-xs rounded-2xl p-6 text-center overflow-y-auto"
-        style={{ background: '#0F1629', border: '1px solid rgba(255,255,255,0.1)', maxHeight: 'calc(100dvh - 120px)' }}>
+        style={{ background: 'var(--bg)', border: '1px solid rgba(255,255,255,0.1)', maxHeight: 'calc(100dvh - 120px)' }}>
         <Trash2 className="w-10 h-10 mx-auto mb-3" style={{ color: '#dc2626' }} />
         <h3 className="text-base font-bold mb-1" style={{ color: 'var(--t)' }}>Delete Conversation</h3>
         <p className="text-sm mb-5" style={{ color: 'var(--t4)' }}>
@@ -24,7 +24,7 @@ export function ECTDeleteConfirmDialog({ channel, onConfirm, onCancel }) {
             onClick={onCancel}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
             data-testid="ect-delete-cancel"
-            style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}
+            style={{ background: 'var(--s)', color: 'var(--t4)' }}
           >Cancel</button>
           <button
             onClick={() => onConfirm(channel.id)}
@@ -45,7 +45,7 @@ export function ECTBulkDeleteConfirmDialog({ count, loading, onConfirm, onCancel
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }}>
       <div className="w-full max-w-xs rounded-2xl p-6 text-center overflow-y-auto"
-        style={{ background: '#0F1629', border: '1px solid rgba(255,255,255,0.1)', maxHeight: 'calc(100dvh - 120px)' }}>
+        style={{ background: 'var(--bg)', border: '1px solid rgba(255,255,255,0.1)', maxHeight: 'calc(100dvh - 120px)' }}>
         <Trash2 className="w-10 h-10 mx-auto mb-3" style={{ color: '#dc2626' }} />
         <h3 className="text-base font-bold mb-1" style={{ color: 'var(--t)' }}>
           Delete {count} Conversation{count !== 1 ? 's' : ''}
@@ -58,7 +58,7 @@ export function ECTBulkDeleteConfirmDialog({ count, loading, onConfirm, onCancel
             onClick={onCancel}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
             data-testid="ect-bulk-delete-cancel"
-            style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}
+            style={{ background: 'var(--s)', color: 'var(--t4)' }}
           >Cancel</button>
           <button
             onClick={onConfirm}

@@ -92,7 +92,7 @@ export default function SubscriberCelebration({ firstName, tierName, onDismiss }
         onClick={onDismiss}
         className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center"
         style={{
-          background: 'rgba(255,255,255,0.06)',
+          background: 'var(--s)',
           border: '1px solid rgba(255,255,255,0.1)',
           color: 'rgba(255,255,255,0.7)',
         }}
@@ -176,7 +176,7 @@ export default function SubscriberCelebration({ firstName, tierName, onDismiss }
               key={i}
               className="flex items-start gap-3 px-4 py-2.5 rounded-xl"
               style={{
-                background: 'rgba(255,255,255,0.04)',
+                background: 'var(--s)',
                 border: '1px solid rgba(255,255,255,0.06)',
               }}
             >
@@ -194,7 +194,7 @@ export default function SubscriberCelebration({ firstName, tierName, onDismiss }
             onClick={() => setShowShare(true)}
             className="flex-1 py-3 px-5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
             style={{
-              background: 'rgba(255,255,255,0.06)',
+              background: 'var(--s)',
               border: '1px solid rgba(52,211,153,0.35)',
               color: '#ffffff',
             }}

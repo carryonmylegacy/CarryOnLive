@@ -84,7 +84,7 @@ export default function ECTSecurityIntro({ introStep, setIntroStep, onDismiss, o
               <button onClick={() => setIntroStep(1)}
                 className="px-4 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-[0.97]"
                 data-testid="ect-intro-back-2"
-                style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}>
+                style={{ background: 'var(--s)', color: 'var(--t4)' }}>
                 <ArrowLeft className="w-3.5 h-3.5 inline mr-1" /> Back
               </button>
               <button

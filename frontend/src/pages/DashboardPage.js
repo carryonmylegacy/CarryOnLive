@@ -423,7 +423,7 @@ const DashboardPage = () => {
             </p>
             <button onClick={() => { localStorage.setItem('carryon_welcome_guided_shown', 'true'); setShowWelcomeStep(false); }}
               className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
+              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
               data-testid="welcome-step-continue">
               Let's Get Started <ChevronRight className="w-5 h-5" />
             </button>
@@ -464,7 +464,7 @@ const DashboardPage = () => {
               </p>
               <button onClick={confirmOptionalSkip}
                 className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
-                style={{ background: `linear-gradient(135deg, ${stepColor}, ${stepColor}cc)`, color: '#080e1a', boxShadow: `0 8px 32px ${stepColor}30` }}
+                style={{ background: `linear-gradient(135deg, ${stepColor}, ${stepColor}cc)`, color: 'var(--bg)', boxShadow: `0 8px 32px ${stepColor}30` }}
                 data-testid="guided-optional-confirm-btn">
                 Got It <ChevronRight className="w-5 h-5" />
               </button>
@@ -500,7 +500,7 @@ const DashboardPage = () => {
           {/* CTA button */}
           <button onClick={() => { setShowGuidedFlow(false); navigate(route, { state: { fromGettingStarted: true } }); }}
             className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
-            style={{ background: `linear-gradient(135deg, ${stepColor}, ${stepColor}cc)`, color: '#080e1a', boxShadow: `0 8px 32px ${stepColor}30` }}
+            style={{ background: `linear-gradient(135deg, ${stepColor}, ${stepColor}cc)`, color: 'var(--bg)', boxShadow: `0 8px 32px ${stepColor}30` }}
             data-testid="guided-cta-btn">
             Show Me How <ChevronRight className="w-5 h-5" />
           </button>
@@ -966,7 +966,7 @@ const DashboardPage = () => {
             </p>
             <button onClick={handleCelebrationDismiss}
               className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold transition-transform active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
+              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
               data-testid="celebration-explore-btn">
               Explore Your Dashboard
             </button>

@@ -120,7 +120,7 @@ function buildPlatforms({ shareText, shareUrl, imageUrl }) {
     {
       key: 'email',
       label: 'Email',
-      color: '#94A3B8',
+      color: 'var(--t3)',
       icon: Mail,
       href: `mailto:?subject=${encode('I joined CarryOn')}&body=${encode(emailBody)}`,
       note: 'Opens your email app with the message prefilled.',
@@ -272,7 +272,7 @@ export default function SocialShareSheet({
           <button
             onClick={onClose}
             className="w-9 h-9 rounded-full flex items-center justify-center"
-            style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)' }}
+            style={{ background: 'var(--s)', color: 'rgba(255,255,255,0.7)' }}
             data-testid="share-sheet-close"
             aria-label="Close"
           >
@@ -326,7 +326,7 @@ export default function SocialShareSheet({
               }}
               className="w-full rounded-xl px-4 py-3 text-base resize-none"
               style={{
-                background: 'rgba(255,255,255,0.04)',
+                background: 'var(--s)',
                 border: `1px solid ${accentColor}55`,
                 color: draftQuote ? '#fff' : 'rgba(255,255,255,0.4)',
                 outline: 'none',
@@ -346,7 +346,7 @@ export default function SocialShareSheet({
               disabled={regenerating}
               className="w-full mt-2 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
               style={{
-                background: 'rgba(255,255,255,0.06)',
+                background: 'var(--s)',
                 border: `1px solid ${accentColor}33`,
                 color: '#fff',
                 opacity: regenerating ? 0.55 : 1,
@@ -404,7 +404,7 @@ export default function SocialShareSheet({
               className="flex-1 min-w-[140px] py-3 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
               style={{
                 background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
-                color: '#080e1a',
+                color: 'var(--bg)',
               }}
               data-testid="share-sheet-native"
             >
@@ -415,7 +415,7 @@ export default function SocialShareSheet({
             onClick={copyImage}
             className="flex-1 min-w-[140px] py-3 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
             style={{
-              background: 'rgba(255,255,255,0.06)',
+              background: 'var(--s)',
               border: '1px solid rgba(255,255,255,0.14)',
               color: '#fff',
             }}
@@ -435,7 +435,7 @@ export default function SocialShareSheet({
             onClick={downloadImage}
             className="flex-1 min-w-[140px] py-3 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
             style={{
-              background: 'rgba(255,255,255,0.06)',
+              background: 'var(--s)',
               border: '1px solid rgba(255,255,255,0.14)',
               color: '#fff',
             }}
@@ -459,7 +459,7 @@ export default function SocialShareSheet({
                   onClick={() => openPlatform(p.href)}
                   className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl transition-transform active:scale-[0.97]"
                   style={{
-                    background: 'rgba(255,255,255,0.04)',
+                    background: 'var(--s)',
                     border: '1px solid rgba(255,255,255,0.08)',
                   }}
                   data-testid={`share-sheet-${p.key}`}

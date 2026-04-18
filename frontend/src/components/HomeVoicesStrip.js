@@ -146,7 +146,7 @@ export default function HomeVoicesStrip() {
               onClick={() => setIdx((i) => (i + 1) % items.length)}
               className="w-8 h-8 rounded-full flex items-center justify-center"
               style={{
-                background: 'rgba(255,255,255,0.06)',
+                background: 'var(--s)',
                 color: 'rgba(255,255,255,0.6)',
                 border: '1px solid rgba(255,255,255,0.12)',
               }}

@@ -44,7 +44,7 @@ const SpeakWithUsPage = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: '#080e1a' }}>
+    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
       {/* ═══════════════════ HERO ═══════════════════ */}
       <section id="speak-calendar" className="relative overflow-hidden" style={{ minHeight: '100vh' }}>
         {/* Dark gradient background — no flag */}

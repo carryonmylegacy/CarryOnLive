@@ -228,7 +228,7 @@ const AmberAlert = ({ alert, onAcknowledge }) => {
           {alert?.metadata?.estate_id && (
             <div
               className="inline-block rounded-lg px-3 py-1.5 mb-5 text-[11px] text-[#94A3B8]"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+              style={{ background: 'var(--s)', border: '1px solid rgba(255,255,255,0.06)' }}
             >
               Estate: {alert.metadata.estate_name || alert.metadata.estate_id}
             </div>

@@ -116,7 +116,7 @@ const PWAInstallGuide = ({ open, onClose }) => {
   if (ios && !safari) {
     return (
       <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center" style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }} data-testid="pwa-install-guide">
-        <div className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6" style={{ background: '#0f1a2e', border: '1px solid rgba(212,175,55,0.2)' }}>
+        <div className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6" style={{ background: 'var(--bg)', border: '1px solid rgba(212,175,55,0.2)' }}>
           <h2 className="text-white text-lg font-bold mb-2" style={{ fontFamily: 'var(--sans)' }}>Open in Safari</h2>
           <p className="text-[#7b879e] text-sm mb-4">Adding to your Home Screen only works in Safari. Copy <span className="text-[#d4af37] font-semibold">carryon.us</span> and paste it into Safari.</p>
           <button onClick={onClose} className="w-full py-3 rounded-xl text-sm font-bold active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }} data-testid="install-guide-done">Got it</button>
@@ -128,7 +128,7 @@ const PWAInstallGuide = ({ open, onClose }) => {
   if (android) {
     return (
       <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center" style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }} data-testid="pwa-install-guide">
-        <div className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6" style={{ background: '#0f1a2e', border: '1px solid rgba(212,175,55,0.2)' }}>
+        <div className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6" style={{ background: 'var(--bg)', border: '1px solid rgba(212,175,55,0.2)' }}>
           <div className="flex items-start justify-between mb-4">
             <h2 className="text-white text-lg font-bold" style={{ fontFamily: 'var(--sans)' }}>Install CarryOn</h2>
             <button onClick={onClose} className="text-[#475569] hover:text-white p-2" data-testid="install-guide-close" aria-label="Close"><X className="w-5 h-5" /></button>
@@ -147,8 +147,8 @@ const PWAInstallGuide = ({ open, onClose }) => {
   /* ── iOS Safari: 4-step with real iOS-style mockups ── */
   return (
     <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center" style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }} data-testid="pwa-install-guide">
-      <div className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl overflow-hidden max-h-[92vh] overflow-y-auto" style={{ background: '#0f1a2e', border: '1px solid rgba(212,175,55,0.2)', borderBottom: 'none' }}>
-        <div className="sticky top-0 z-10 flex items-center justify-between p-4 pb-2" style={{ background: '#0f1a2e' }}>
+      <div className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl overflow-hidden max-h-[92vh] overflow-y-auto" style={{ background: 'var(--bg)', border: '1px solid rgba(212,175,55,0.2)', borderBottom: 'none' }}>
+        <div className="sticky top-0 z-10 flex items-center justify-between p-4 pb-2" style={{ background: 'var(--bg)' }}>
           <h2 className="text-white text-base font-bold" style={{ fontFamily: 'var(--sans)' }}>Install CarryOn</h2>
           <button onClick={onClose} className="text-[#475569] hover:text-white p-2" data-testid="install-guide-close" aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
@@ -157,7 +157,7 @@ const PWAInstallGuide = ({ open, onClose }) => {
           {/* Step 1 */}
           <div data-testid="install-step-1">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold" style={{ background: 'rgba(255,255,255,0.15)', color: '#ffffff' }}>1</div>
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold" style={{ background: 'var(--b2)', color: '#ffffff' }}>1</div>
               <span className="text-white text-sm">Tap <span className="text-white font-bold">•••</span></span>
             </div>
             <ToolbarMini />
@@ -166,7 +166,7 @@ const PWAInstallGuide = ({ open, onClose }) => {
           {/* Step 2 */}
           <div data-testid="install-step-2">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold" style={{ background: 'rgba(255,255,255,0.15)', color: '#ffffff' }}>2</div>
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold" style={{ background: 'var(--b2)', color: '#ffffff' }}>2</div>
               <span className="text-white text-sm">Tap <span className="text-white font-bold">&ldquo;Share&rdquo;</span></span>
             </div>
             <DotMenuMini />
@@ -175,7 +175,7 @@ const PWAInstallGuide = ({ open, onClose }) => {
           {/* Step 3 */}
           <div data-testid="install-step-3">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold" style={{ background: 'rgba(255,255,255,0.15)', color: '#ffffff' }}>3</div>
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold" style={{ background: 'var(--b2)', color: '#ffffff' }}>3</div>
               <span className="text-white text-sm">Tap <span className="text-white font-bold">&ldquo;+ Add to Home Screen&rdquo;</span></span>
             </div>
             <ShareSheetMini />
@@ -184,7 +184,7 @@ const PWAInstallGuide = ({ open, onClose }) => {
           {/* Step 4 */}
           <div data-testid="install-step-4">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold" style={{ background: 'rgba(255,255,255,0.15)', color: '#ffffff' }}>4</div>
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold" style={{ background: 'var(--b2)', color: '#ffffff' }}>4</div>
               <span className="text-white text-sm">Tap <span className="text-white font-bold">&ldquo;Add&rdquo;</span></span>
             </div>
             <AddConfirmMini />

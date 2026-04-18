@@ -684,7 +684,7 @@ export default function EditMilestoneMessagePage() {
                       <StopCircle className="h-8 w-8 text-white" />
                     </button>
                   ) : (
-                    <div className="flex h-20 w-20 items-center justify-center rounded-full" style={{ background: 'rgba(255,255,255,0.1)' }}>
+                    <div className="flex h-20 w-20 items-center justify-center rounded-full" style={{ background: 'var(--b)' }}>
                       <span className="text-3xl font-bold text-white">{countdown}</span>
                     </div>
                   )}

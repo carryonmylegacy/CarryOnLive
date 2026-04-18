@@ -87,14 +87,14 @@ const ECTActionMenu = ({
             data-testid="action-reply-btn">
             <ArrowLeft className="w-4 h-4" style={{ color: 'var(--t4)', transform: 'scaleX(-1)' }} /> Reply
           </button>
-          <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+          <div style={{ height: '1px', background: 'var(--b)' }} />
           <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(actionMsg.content || '').then(() => toast.success('Copied')).catch(() => {}); closeMsgAction(); }}
             className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/5" style={{ color: 'var(--t)' }}
             data-testid="action-copy-btn">
             <Copy className="w-4 h-4" style={{ color: 'var(--t4)' }} /> Copy
           </button>
           {(actionMsg.attachment || (actionMsg.attachments && actionMsg.attachments.length > 0)) && (
-            <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+            <><div style={{ height: '1px', background: 'var(--b)' }} />
             <button onClick={async (e) => {
               e.stopPropagation();
               const att = actionMsg.attachment || (actionMsg.attachments && actionMsg.attachments[0]);
@@ -131,7 +131,7 @@ const ECTActionMenu = ({
             </button></>
           )}
           {isOwnMsg && !actionMsg.attachment && !(actionMsg.attachments && actionMsg.attachments.length) && actionMsg.message_type !== 'voice' && (
-            <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+            <><div style={{ height: '1px', background: 'var(--b)' }} />
             <button onClick={(e) => { e.stopPropagation(); setEditingMsg({ id: actionMsg.id, content: actionMsg.content || '' }); closeMsgAction(); }}
               className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/5" style={{ color: '#d4af37' }}
               data-testid="action-edit-btn">
@@ -139,7 +139,7 @@ const ECTActionMenu = ({
             </button></>
           )}
           {isBenefactor && (
-            <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+            <><div style={{ height: '1px', background: 'var(--b)' }} />
             <button onClick={(e) => { e.stopPropagation(); togglePin(actionMsg.id); closeMsgAction(); }}
               className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/5" style={{ color: '#d4af37' }}
               data-testid="action-pin-btn">
@@ -147,14 +147,14 @@ const ECTActionMenu = ({
             </button></>
           )}
           {(isOwnMsg || isBenefactor) && (
-            <><div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+            <><div style={{ height: '1px', background: 'var(--b)' }} />
             <button onClick={(e) => { e.stopPropagation(); if (window.confirm('Delete this message?')) handleDeleteMessage(actionMsg.id); closeMsgAction(); }}
               className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/5" style={{ color: '#ef4444' }}
               data-testid="action-delete-btn">
               <Trash2 className="w-4 h-4" style={{ color: '#ef4444' }} /> Delete
             </button></>
           )}
-          <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+          <div style={{ height: '1px', background: 'var(--b)' }} />
           <button onClick={(e) => {
             e.stopPropagation();
             const chId = activeChannel?.id;

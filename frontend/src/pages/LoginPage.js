@@ -283,7 +283,7 @@ const LoginPage = () => {
   // Show nothing while checking biometric
   if (biometricLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0E1829' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <img src="/carryon-logo.png" alt="CarryOn" className="w-32 h-auto opacity-60" />
       </div>
     );
@@ -365,7 +365,7 @@ const LoginPage = () => {
               </div>
               <button onClick={handlePasskeyLogin} disabled={passkeyLoading}
                 className="w-full h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.97]"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0' }}
+                style={{ background: 'var(--s)', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0' }}
                 data-testid="login-passkey-native">
                 {passkeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-[#d4af37]" />}
                 Sign in with Passkey
@@ -496,9 +496,9 @@ const LoginPage = () => {
           {passkeyAvailable && (
             <>
               <div className="flex items-center gap-3 my-3">
-                <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                <div className="flex-1 h-px" style={{ background: 'var(--s)' }} />
                 <span className="text-[#334155] text-[11px] uppercase tracking-widest font-medium">or</span>
-                <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                <div className="flex-1 h-px" style={{ background: 'var(--s)' }} />
               </div>
               <button onClick={handlePasskeyLogin} disabled={passkeyLoading}
                 className="w-full h-10 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-all"
@@ -548,7 +548,7 @@ const LoginPage = () => {
 
           {/* Visit Homepage — opens in device browser */}
           <button onClick={() => window.open('/home', '_blank')} className="mt-4 w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.97] transition-transform" data-testid="visit-homepage-pwa"
-            style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#e2e8f0', backdropFilter: 'blur(8px)' }}>
+            style={{ background: 'var(--b)', border: '1px solid rgba(255,255,255,0.2)', color: '#e2e8f0', backdropFilter: 'blur(8px)' }}>
             <ExternalLink className="w-3.5 h-3.5" />
             Visit Homepage
           </button>
@@ -601,7 +601,7 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen" style={{
-      background: '#0E1829',
+      background: 'var(--bg)',
       opacity: exiting ? 0 : 1,
       ...(exiting ? { transform: 'scale(0.98)' } : {}),
       transition: 'opacity 0.45s ease, transform 0.45s ease',
@@ -739,9 +739,9 @@ const LoginPage = () => {
                   {passkeyAvailable && (
                     <>
                       <div className="flex items-center gap-3 my-4">
-                        <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                        <div className="flex-1 h-px" style={{ background: 'var(--s)' }} />
                         <span className="text-[#334155] text-[11px] uppercase tracking-widest font-medium">or</span>
-                        <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                        <div className="flex-1 h-px" style={{ background: 'var(--s)' }} />
                       </div>
                       <button onClick={handlePasskeyLogin} disabled={passkeyLoading}
                         className="w-full h-11 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:border-[#d4af37]/30"

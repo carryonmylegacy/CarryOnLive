@@ -218,6 +218,51 @@ else
   ISSUES=$((ISSUES + 1))
 fi
 
+# ── 7c. Light/Dark mode compatibility scan ───────────────────────────
+# Catches NEW pages/components that use zero CSS variables AND have hardcoded
+# dark hex colors — these will be invisible or broken in light mode.
+# Files that use var(--bg)/var(--t) alongside hardcoded colors are acceptable.
+echo -n "7c. Light/dark mode safety ........ "
+cd /app/frontend/src
+# Pattern: truly dark colors where all three RGB channels are ≤ 0x2F (≤47 decimal).
+# Matches: #0b1221, #111a2e, #1a2840 etc. but NOT #22C993 (vivid green) or #2A1519 (intentional warm red).
+# Format: background: '#RRGGBB' where RR ≤ 2F AND GG ≤ 2F AND BB ≤ 2F
+DARKMODE_HITS=$(grep -rEn \
+  "background: '#[0-2][0-9a-fA-F][0-2][0-9a-fA-F][0-2][0-9a-fA-F]'" \
+  --include="*.js" pages/ components/ 2>/dev/null \
+  | grep -v "EstateChatPage\|FamilyTree\|LandingContent\|HomePage\|SpeakWith\|SharedPlan\|MobileNav\|Sidebar\|FounderAbout\|AboutPage" \
+  | wc -l)
+if [ "$DARKMODE_HITS" = "0" ]; then
+  echo -e "$PASS (no hardcoded dark backgrounds — CSS variables used throughout)"
+else
+  echo -e "$WARN ($DARKMODE_HITS hardcoded dark background(s) found — replace with var(--bg)/var(--bg2)/var(--bg3))"
+  grep -rEn "background: '#[0-2][0-9a-fA-F][0-2][0-9a-fA-F][0-2][0-9a-fA-F]'" \
+    --include="*.js" pages/ components/ 2>/dev/null \
+    | grep -v "EstateChatPage\|FamilyTree\|LandingContent\|HomePage\|SpeakWith\|SharedPlan\|MobileNav\|Sidebar\|FounderAbout\|AboutPage" \
+    | head -5
+fi
+
+# ── 7d. Responsive mobile sizing scan ───────────────────────────────
+# Flags NEW pages/components with large fixed px heights (>400px) that
+# could overflow small screens without overflow scroll.
+echo -n "7d. Mobile responsive safety ...... "
+cd /app/frontend/src
+FIXED_FAILS=0
+FIXED_LIST=""
+for f in $(find pages components -name "*.js" -newer /app/housekeeping.sh 2>/dev/null); do
+  has_overflow=$(grep -c "overflow.*auto\|overflow.*scroll\|overflow-y" "$f" 2>/dev/null || echo 0)
+  has_large_fixed=$(grep -cE "height:[[:space:]]*['\"]?[4-9][0-9]{2}px|height:[[:space:]]*['\"]?[0-9]{4}px|minHeight:[[:space:]]*['\"]?[4-9][0-9]{2}px" "$f" 2>/dev/null || echo 0)
+  if [ "$has_large_fixed" -gt "0" ] && [ "$has_overflow" = "0" ]; then
+    FIXED_FAILS=$((FIXED_FAILS + 1))
+    FIXED_LIST="$FIXED_LIST\n    → $f (fixed height without overflow scroll)"
+  fi
+done
+if [ "$FIXED_FAILS" = "0" ]; then
+  echo -e "$PASS (new pages/components have scroll-safe height handling)"
+else
+  echo -e "$WARN ($FIXED_FAILS new file(s) use large fixed heights without overflow — add overflow-y:auto or use dvh)$FIXED_LIST"
+fi
+
 # ── 7. Sensitive Console Log Scan ────────────────────────────────────
 echo -n "8.  Sensitive console.log scan .... "
 SENS_LOGS=$(grep -rn "console\.\(log\|error\)" /app/frontend/src --include="*.js" 2>/dev/null | grep -i "password\|token\|secret" | grep -v "error.*token\|passkey\|showPassword\|showDeletePw\|showFormPw\|showEditPw" | wc -l)

@@ -19,7 +19,7 @@ const CHART_COLORS = ['#d4af37', '#60A5FA', '#22C993', '#B794F6', '#F59E0B', '#e
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: '#1a2035', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px' }}>
+    <div style={{ background: 'var(--bg2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px' }}>
       <p style={{ color: '#A0AABF', fontSize: 12, margin: 0 }}>{label}</p>
       {payload.map((p, i) => (
         <p key={i} style={{ color: p.color || '#d4af37', fontSize: 13, fontWeight: 700, margin: '4px 0 0' }}>

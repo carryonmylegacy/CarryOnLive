@@ -34,7 +34,7 @@ const ForgotPasswordModal = ({
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-start sm:items-center justify-center p-4 pt-24 sm:pt-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
-      <div className="w-full max-w-sm rounded-2xl p-6 max-h-[90vh] overflow-y-auto" style={{ background: '#152238', border: '1px solid rgba(212,175,55,0.5)', boxShadow: '0 0 60px rgba(212,175,55,0.08), 0 8px 40px rgba(0,0,0,0.6)' }}>
+      <div className="w-full max-w-sm rounded-2xl p-6 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--bg2)', border: '1px solid rgba(212,175,55,0.5)', boxShadow: '0 0 60px rgba(212,175,55,0.08), 0 8px 40px rgba(0,0,0,0.6)' }}>
         <h2 className="text-lg font-bold text-white mb-1" style={{ fontFamily: 'var(--sans)' }}>Reset Password</h2>
         {forgotStep === 1 ? (
           <>
@@ -53,7 +53,7 @@ const ForgotPasswordModal = ({
                 setForgotStep(2);
               } catch (err) { setForgotMsg(err.response?.data?.detail || 'Failed to send code. Please try again.'); setForgotError(true); }
               finally { setForgotLoading(false); }
-            }} className="w-full py-3 rounded-xl text-sm font-bold mb-3" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', opacity: !forgotEmail || forgotLoading ? 0.5 : 1 }}
+            }} className="w-full py-3 rounded-xl text-sm font-bold mb-3" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', opacity: !forgotEmail || forgotLoading ? 0.5 : 1 }}
               data-testid="forgot-send-code-btn">
               {forgotLoading ? 'Sending...' : 'Send Reset Code'}
             </button>
@@ -95,7 +95,7 @@ const ForgotPasswordModal = ({
                 setTimeout(resetAndClose, 2000);
               } catch (err) { setForgotMsg(err.response?.data?.detail || 'Reset failed. Please try again.'); setForgotError(true); }
               finally { setForgotLoading(false); }
-            }} className="w-full py-3 rounded-xl text-sm font-bold mb-3 mt-2" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', opacity: !forgotOtp || !forgotNewPw || forgotNewPw !== forgotConfirmPw || forgotLoading ? 0.5 : 1 }}
+            }} className="w-full py-3 rounded-xl text-sm font-bold mb-3 mt-2" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', opacity: !forgotOtp || !forgotNewPw || forgotNewPw !== forgotConfirmPw || forgotLoading ? 0.5 : 1 }}
               data-testid="forgot-reset-btn">
               {forgotLoading ? 'Resetting...' : 'Reset Password'}
             </button>

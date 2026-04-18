@@ -66,7 +66,7 @@ const UsernameReviewModal = () => {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.8)' }}>
-      <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl p-6 relative" style={{ background: '#152238', border: '1px solid rgba(212,175,55,0.5)', boxShadow: '0 0 60px rgba(212,175,55,0.08), 0 8px 40px rgba(0,0,0,0.6)' }}>
+      <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl p-6 relative" style={{ background: 'var(--bg2)', border: '1px solid rgba(212,175,55,0.5)', boxShadow: '0 0 60px rgba(212,175,55,0.08), 0 8px 40px rgba(0,0,0,0.6)' }}>
         <button onClick={handleDismiss} className="absolute top-4 right-4 text-[#475569] hover:text-white transition-colors" data-testid="username-review-dismiss">
           <X className="w-5 h-5" />
         </button>
@@ -129,7 +129,7 @@ const UsernameReviewModal = () => {
           data-testid="username-review-save"
           style={{
             background: 'linear-gradient(135deg, #d4af37, #b8962e)',
-            color: '#080e1a',
+            color: 'var(--bg)',
             opacity: saving || !!usernameError || !username.trim() ? 0.5 : 1,
           }}>
           {saving ? 'Saving...' : 'Confirm Username'}

@@ -539,7 +539,7 @@ const GuardianPage = () => {
           </p>
           <button onClick={() => navigate(`/settings?editAddress=true${fromGettingStarted ? '&fromOnboarding=true' : ''}`)}
             className="w-full py-3.5 rounded-xl text-sm font-bold mb-3 flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
+            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
             data-testid="address-gate-settings-btn">
             Go to Settings <ChevronRight className="w-4 h-4" />
           </button>
@@ -940,7 +940,7 @@ const GuardianPage = () => {
               className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold transition-transform active:scale-[0.97]"
               style={{
                 background: 'linear-gradient(135deg, #d4af37, #b8962e)',
-                color: '#080e1a',
+                color: 'var(--bg)',
                 boxShadow: '0 4px 20px rgba(212,175,55,0.3)',
                 animation: 'onboardingPulse 2.5s ease-in-out infinite',
               }}

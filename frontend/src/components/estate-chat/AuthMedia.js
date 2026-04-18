@@ -170,7 +170,7 @@ export function AuthVideo({ fileId, fileName }) {
         controls
         playsInline
         className="rounded-xl max-w-full max-h-[240px] mb-1"
-        style={{ background: '#000' }}
+        style={{ background: 'var(--bg)' }}
       />
       <span className="text-xs" style={{ color: 'var(--t4)' }}>{fileName}</span>
     </div>

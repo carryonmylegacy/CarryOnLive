@@ -335,12 +335,12 @@ export default function GetStartedPage() {
                 <ArrowLeft className="w-5 h-5 text-[#334155]" />
               </button>
             )}
-            <span style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', borderRadius: '2rem', padding: '0.375rem 1rem', border: '1px solid rgba(255,255,255,0.5)', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', fontWeight: 700, fontSize: '0.8125rem', color: '#475569' }}>
+            <span style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', borderRadius: '2rem', padding: '0.375rem 1rem', border: '1px solid rgba(255,255,255,0.5)', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', fontWeight: 700, fontSize: '0.8125rem', color: 'var(--t5)' }}>
               Step {step} of 5
             </span>
           </div>
           <button onClick={() => navigate('/login')} data-testid="funnel-login-link"
-            style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', borderRadius: '2rem', padding: '0.375rem 1rem', border: '1px solid rgba(255,255,255,0.5)', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', fontWeight: 700, fontSize: '0.8125rem', color: '#475569', transition: 'all 0.2s' }}
+            style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', borderRadius: '2rem', padding: '0.375rem 1rem', border: '1px solid rgba(255,255,255,0.5)', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', fontWeight: 700, fontSize: '0.8125rem', color: 'var(--t5)', transition: 'all 0.2s' }}
             className="hover:bg-white/80">
             Already have an account?
           </button>

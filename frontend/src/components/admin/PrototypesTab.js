@@ -100,7 +100,7 @@ export function PrototypesTab() {
                   <div
                     className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center"
                     style={{
-                      background: 'rgba(255,255,255,0.04)',
+                      background: 'var(--s)',
                       color: p.accent,
                     }}
                   >
@@ -185,7 +185,7 @@ export function PrototypesTab() {
                       width: '100%',
                       height: '720px',
                       border: 'none',
-                      background: '#0b1222',
+                      background: 'var(--bg)',
                       display: 'block',
                     }}
                     data-testid={`prototype-iframe-${p.key}`}

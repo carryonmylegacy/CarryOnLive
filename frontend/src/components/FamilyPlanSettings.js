@@ -209,7 +209,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
               className="w-full p-4 rounded-xl text-center transition-all hover:-translate-y-0.5 font-bold"
               style={{ 
                 background: 'linear-gradient(135deg, #d4af37, #b8962e)', 
-                color: '#0F1629',
+                color: 'var(--bg2)',
                 boxShadow: '0 4px 20px rgba(212,175,55,0.3)',
               }}
               data-testid="activate-family-plan"

@@ -187,7 +187,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
           <div className="flex gap-3 justify-center">
             <button onClick={() => setDismissPhase('idle')}
               className="px-8 py-4 rounded-2xl text-base font-bold transition-transform active:scale-[0.97]"
-              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--guided-desc, #94a3b8)' }}
+              style={{ background: 'var(--b)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--guided-desc, #94a3b8)' }}
               data-testid="onboarding-dismiss-cancel">
               Cancel
             </button>
@@ -197,7 +197,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
               setDismissPhase('info');
             }}
               className="px-8 py-4 rounded-2xl text-base font-bold transition-transform active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
+              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
               data-testid="onboarding-dismiss-confirm-btn">
               Yes, Close It
             </button>
@@ -252,7 +252,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
             setManuallyDismissed(true);
           }}
             className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
+            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
             data-testid="onboarding-dismiss-proceed">
             Proceed
           </button>

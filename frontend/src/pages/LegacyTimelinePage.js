@@ -17,7 +17,7 @@ const CATEGORY_CONFIG = {
   family:     { icon: Users,         color: '#22C993', bg: 'rgba(34,201,147,0.12)',  label: 'Family' },
   message:    { icon: MessageSquare, color: '#A78BFA', bg: 'rgba(167,139,250,0.12)', label: 'Messages' },
   checklist:  { icon: CheckCircle2,  color: '#F59E0B', bg: 'rgba(245,158,11,0.12)', label: 'Checklist' },
-  activity:   { icon: Activity,      color: '#94A3B8', bg: 'rgba(148,163,184,0.08)', label: 'Activity' },
+  activity:   { icon: Activity,      color: 'var(--t3)', bg: 'rgba(148,163,184,0.08)', label: 'Activity' },
 };
 
 const formatDate = (dateStr) => {

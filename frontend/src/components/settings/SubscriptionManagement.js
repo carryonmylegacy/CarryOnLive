@@ -638,7 +638,7 @@ export const SubscriptionManagement = ({
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[11px] font-bold px-3 py-0.5 rounded-b-lg z-10"
                     style={{
                       background: showRecommendedPulse ? '#22C993' : style.accent,
-                      color: showRecommendedPulse ? '#fff' : '#0F1629',
+                      color: showRecommendedPulse ? '#fff' : 'var(--bg2)',
                     }}>
                     {isCurrent ? 'Current Plan' : isAutoSelected ? 'Your Tier' : showRecommendedPulse ? 'Recommended — Best Value' : style.label}
                   </div>
@@ -702,7 +702,7 @@ export const SubscriptionManagement = ({
                           className="w-full text-xs font-bold py-3 transition-all duration-300"
                           style={isDowngrade(currentPlanId, billing)
                             ? { background: 'transparent', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.3)' }
-                            : { background: `linear-gradient(135deg, ${style.accent}, ${style.accent}cc)`, color: '#0F1629', boxShadow: `0 4px 16px ${style.accent}30` }
+                            : { background: `linear-gradient(135deg, ${style.accent}, ${style.accent}cc)`, color: 'var(--bg2)', boxShadow: `0 4px 16px ${style.accent}30` }
                           }
                           data-testid="change-billing-btn"
                         >
@@ -760,7 +760,7 @@ export const SubscriptionManagement = ({
                       className="w-full text-xs font-bold py-4 transition-all duration-300"
                       style={isDowngrade(plan.id, billing)
                         ? { background: 'transparent', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.3)' }
-                        : { background: `linear-gradient(135deg, ${style.accent}, ${style.accent}cc)`, color: '#0F1629', boxShadow: `0 4px 16px ${style.accent}30` }
+                        : { background: `linear-gradient(135deg, ${style.accent}, ${style.accent}cc)`, color: 'var(--bg2)', boxShadow: `0 4px 16px ${style.accent}30` }
                       }
                       data-testid={`change-plan-${plan.id}`}
                     >

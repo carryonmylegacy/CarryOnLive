@@ -114,7 +114,7 @@ export default function CCPActiveView({
         data-testid="ccp-checkin-btn"
         style={{
           background: 'linear-gradient(135deg, #22C993, #4EDBA8)',
-          color: '#080e1a',
+          color: 'var(--bg)',
           boxShadow: '0 4px 20px rgba(34,201,147,0.3)',
           minHeight: 80,
         }}

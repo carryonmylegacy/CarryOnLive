@@ -490,7 +490,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                       background: showRecommendedPulse
                         ? 'linear-gradient(180deg, #22C993, #16A34A)'
                         : 'linear-gradient(180deg, #d4af37, #b8962e)',
-                      color: showRecommendedPulse ? 'white' : '#0F1629',
+                      color: showRecommendedPulse ? 'white' : 'var(--bg2)',
                       boxShadow: showRecommendedPulse
                         ? '0 4px 16px rgba(34,201,147,0.4)'
                         : '0 4px 16px rgba(212,175,55,0.4)',
