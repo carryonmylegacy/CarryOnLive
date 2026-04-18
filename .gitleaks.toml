@@ -31,4 +31,6 @@ regexes = [
 paths = [
     "codemagic.yaml",
     "backend/routes/staff_tools.py",
+    "load_tests/signup_and_dashboard.js",
+    "memory/LAUNCH_DAY_OPERATOR_GUIDE.md",
 ]

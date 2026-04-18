@@ -53,7 +53,7 @@ function newEmail() {
 
 export default function () {
   const email = newEmail();
-  const password = 'LoadTest!Password123';
+  const password = __ENV.LOAD_TEST_PASSWORD || 'LoadTest!Password123';
   let token = null;
 
   group('signup', () => {
