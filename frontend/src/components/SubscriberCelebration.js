@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { CheckCircle2, Share2, X, FileLock2, MessageSquare, ClipboardCheck } from 'lucide-react';
-import { API_URL } from '../config';
+import { API_URL, BASE_URL } from '../config';
 import { useAuth } from '../contexts/AuthContext';
 import SocialShareSheet from './SocialShareSheet';
 
@@ -235,7 +235,7 @@ export default function SubscriberCelebration({ firstName, tierName, onDismiss }
       <SocialShareSheet
         open={showShare}
         onClose={() => setShowShare(false)}
-        imageUrl={card?.image_url ? `${API_URL}${card.image_url}` : ''}
+        imageUrl={card?.image_url ? `${BASE_URL}${card.image_url}` : ''}
         shareText={card?.share_text || `I just signed up for CarryOn — the family preparedness platform that organizes everything my loved ones would ever need. https://carryon.us`}
         shareUrl="https://carryon.us"
         title="Tell your people"
