@@ -286,74 +286,14 @@ export default function SocialShareSheet({
           style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
         >
 
-        {/* Image preview / loading / error states */}
-        {fetchError ? (
-          /* Card fetch failed — tell the user, let them retry */
-          <div className="px-5 mb-4">
-            <div
-              className="rounded-2xl flex flex-col items-center justify-center gap-2 py-6"
-              style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}
-            >
-              <p className="text-sm font-semibold" style={{ color: '#f87171' }}>
-                Couldn't load your share card
-              </p>
-              <p className="text-xs text-center px-4" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                Check your connection, then tap Surprise me to try again.
-              </p>
-            </div>
-          </div>
-        ) : !imageUrl && regenerating ? (
-          /* First load — card is being generated */
-          <div className="px-5 mb-4">
-            <div
-              className="rounded-2xl flex items-center justify-center py-8"
-              style={{ background: '#0b1221', border: `1px solid ${accentColor}55`, minHeight: '120px' }}
-            >
-              <Loader2 className="w-8 h-8 animate-spin" style={{ color: accentColor }} />
-            </div>
-          </div>
-        ) : imageUrl ? (
-          /* Card loaded — show image preview */
-          <div className="px-5">
-            <div
-              className="rounded-2xl overflow-hidden mb-4 relative"
-              style={{
-                background: '#0b1221',
-                border: `1px solid ${accentColor}55`,
-                maxHeight: 'min(200px, 45vw)',
-              }}
-            >
-              <img
-                src={imageUrl}
-                alt="Your personalized CarryOn share card"
-                className="w-full h-auto block"
-                style={{
-                  aspectRatio: '1 / 1',
-                  objectFit: 'cover',
-                  opacity: regenerating ? 0.55 : 1,
-                  transition: 'opacity 200ms ease',
-                  maxHeight: 'min(200px, 45vw)',
-                }}
-                data-testid="share-sheet-image"
-              />
-              {regenerating ? (
-                <div
-                  className="absolute inset-0 flex items-center justify-center"
-                  style={{ background: 'rgba(8,14,26,0.35)' }}
-                >
-                  <Loader2 className="w-8 h-8 animate-spin" style={{ color: accentColor }} />
-                </div>
-              ) : null}
-            </div>
-          </div>
-        ) : null}
+        {/* Image preview — REMOVED. Quote text is the primary content. */}
 
-        {/* Quote composer (optional) */}
+        {/* Quote composer — full width textarea + full width Surprise me */}
         {editableQuote ? (
           <div className="px-5 pb-3">
             <label
               htmlFor="share-sheet-quote"
-              className="block text-[11px] uppercase tracking-wider mb-1.5"
+              className="block text-[11px] uppercase tracking-wider mb-2"
               style={{ color: 'rgba(255,255,255,0.55)' }}
             >
               Your quote on the card
@@ -361,72 +301,71 @@ export default function SocialShareSheet({
                 (optional)
               </span>
             </label>
-            <div className="flex gap-2 items-stretch">
-              <input
-                id="share-sheet-quote"
-                type="text"
-                value={draftQuote}
-                maxLength={110}
-                placeholder="What does CarryOn mean to you?"
-                onChange={(e) => setDraftQuote(e.target.value)}
-                onBlur={() => {
+
+            {/* Full-width multi-line quote display */}
+            <textarea
+              id="share-sheet-quote"
+              value={draftQuote}
+              maxLength={110}
+              rows={3}
+              placeholder="What does CarryOn mean to you?"
+              onChange={(e) => setDraftQuote(e.target.value)}
+              onBlur={() => {
+                if ((draftQuote || '').trim() !== (quote || '').trim()) {
+                  onQuoteChange?.(draftQuote, consentPublic);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
                   if ((draftQuote || '').trim() !== (quote || '').trim()) {
                     onQuoteChange?.(draftQuote, consentPublic);
                   }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if ((draftQuote || '').trim() !== (quote || '').trim()) {
-                      onQuoteChange?.(draftQuote, consentPublic);
-                    }
-                    e.currentTarget.blur();
-                  }
-                }}
-                className="flex-1 px-3 py-2.5 rounded-xl text-sm"
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${accentColor}55`,
-                  color: '#fff',
-                  outline: 'none',
-                }}
-                data-testid="share-sheet-quote-input"
-              />
-              <button
-                onClick={() => {
-                  setDraftQuote('');
-                  onRandomize?.();
-                }}
-                disabled={regenerating}
-                className="px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 flex-shrink-0"
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.14)',
-                  color: '#fff',
-                  opacity: regenerating ? 0.55 : 1,
-                }}
-                title="Replace with a random quote"
-                data-testid="share-sheet-quote-random"
-              >
-                <Shuffle className="w-3.5 h-3.5" />
-                Surprise me
-              </button>
-            </div>
-            <p className="text-[11px] mt-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              {(draftQuote || '').trim() ? (
-                <>
-                  {draftQuote.length}/110 · your words on the card.
-                </>
-              ) : quoteSource === 'user' ? (
-                <>Your words are saved.</>
-              ) : (
-                <>
-                  Leave blank and we&apos;ll use an inspiring quote — yours can still replace it anytime.
-                </>
-              )}
+                  e.currentTarget.blur();
+                }
+              }}
+              className="w-full rounded-xl px-4 py-3 text-base resize-none"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: `1px solid ${accentColor}55`,
+                color: draftQuote ? '#fff' : 'rgba(255,255,255,0.4)',
+                outline: 'none',
+                fontSize: '16px',
+                lineHeight: '1.5',
+                minHeight: '88px',
+              }}
+              data-testid="share-sheet-quote-input"
+            />
+
+            {/* Surprise me — full width */}
+            <button
+              onClick={() => {
+                setDraftQuote('');
+                onRandomize?.();
+              }}
+              disabled={regenerating}
+              className="w-full mt-2 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                border: `1px solid ${accentColor}33`,
+                color: '#fff',
+                opacity: regenerating ? 0.55 : 1,
+              }}
+              data-testid="share-sheet-quote-random"
+            >
+              {regenerating
+                ? <Loader2 className="w-4 h-4 animate-spin" style={{ color: accentColor }} />
+                : <Shuffle className="w-4 h-4" style={{ color: accentColor }} />}
+              {regenerating ? 'Finding a quote…' : 'Surprise me — pick a quote for me'}
+            </button>
+
+            <p className="text-[11px] mt-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              {(draftQuote || '').trim()
+                ? `${draftQuote.length}/110 · your words on the card.`
+                : 'Leave blank and we\'ll use an inspiring quote — yours can still replace it anytime.'}
             </p>
 
-            {/* Consent — only meaningful when the user has typed their own quote */}
+            {/* Consent */}
             <label
               className="flex items-start gap-2 mt-2.5 cursor-pointer select-none"
               style={{ opacity: (draftQuote || '').trim() ? 1 : 0.5 }}
