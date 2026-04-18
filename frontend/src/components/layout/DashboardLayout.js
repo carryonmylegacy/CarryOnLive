@@ -9,6 +9,7 @@ import { haptics } from '../../utils/haptics';
 import BetaFeedbackButton from '../BetaFeedbackButton';
 import BetaWelcomeModal from '../BetaWelcomeModal';
 import ScrollBar from '../ScrollBar';
+import PageScrollBar from '../PageScrollBar';
 
 const GuardianPage = lazy(() => import('../../pages/GuardianPage'));
 
@@ -110,10 +111,9 @@ const DashboardLayout = () => {
         className={`main-content ${sidebarCollapsed ? 'sb-collapsed' : ''}`}
         role="main"
         aria-label="Main content"
-        style={{ position: 'relative' }}
       >
         <Outlet />
-        <ScrollBar scrollRef={mainRef} />
+        <PageScrollBar scrollRef={mainRef} />
       </main>
 
       {/* Persistent Guardian — stays mounted after first visit so chat state survives navigation */}

@@ -1,35 +1,28 @@
 /**
- * ScrollBar — custom scroll indicator for contained scrollable divs.
- * (For page-level scroll on the dashboard, use PageScrollBar instead.)
+ * PageScrollBar — fixed-position scroll indicator for page-level scrollable containers.
  *
- * MOUNT DELAY: Waits 350ms before attaching listeners to let entrance
- * animations complete. This prevents the entrance animation's changing
- * clientHeight from causing flash/height-jump bugs.
+ * Use this when the scrollable element is the FULL PAGE container (e.g. DashboardLayout's
+ * <main> element). Unlike ScrollBar (which uses position:absolute inside the scroll
+ * container and scrolls away with content), PageScrollBar is position:fixed so it
+ * always stays on the right edge of the screen regardless of scroll position.
  *
  * Usage:
- *   const ref = useRef();
- *   <div ref={ref} className="overflow-y-auto" style={{ position: 'relative' }}>
- *     {content}
- *     <ScrollBar scrollRef={ref} />
- *   </div>
+ *   const mainRef = useRef();
+ *   <main ref={mainRef} style={{ overflowY: 'auto' }}>
+ *     <PageScrollBar scrollRef={mainRef} />
+ *   </main>
  */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 const THUMB_FRACTION = 1 / 6;
-const MOUNT_DELAY_MS = 360; // let entrance animations (≤300ms) settle first
+const TOP_OFFSET  = 70;  // below mobile header (~56px + some margin)
+const BOT_OFFSET  = 90;  // above dock (~83px + some margin)
 
-export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.55)' }) {
-  const [state, setState] = useState({ top: 0, height: 40, visible: false });
+export default function PageScrollBar({ scrollRef }) {
+  const [state, setState] = useState({ top: TOP_OFFSET, height: 40, visible: false });
   const [dragging, setDragging] = useState(false);
-  const [ready, setReady] = useState(false);
   const hideTimer = useRef(null);
   const rafRef = useRef(null);
-
-  // Delay attaching listeners until animations complete
-  useEffect(() => {
-    const t = setTimeout(() => setReady(true), MOUNT_DELAY_MS);
-    return () => clearTimeout(t);
-  }, []);
 
   const compute = useCallback(() => {
     const el = scrollRef.current;
@@ -39,18 +32,17 @@ export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.55)' }
       setState(s => s.visible ? { ...s, visible: false } : s);
       return;
     }
-    const thumbHeight = Math.max(24, clientHeight * THUMB_FRACTION);
-    const trackRange = clientHeight - thumbHeight;
+
+    const trackHeight = window.innerHeight - TOP_OFFSET - BOT_OFFSET;
+    const thumbHeight = Math.max(24, trackHeight * THUMB_FRACTION);
+    const trackRange = trackHeight - thumbHeight;
     const scrollRange = scrollHeight - clientHeight;
-    const top = scrollRange > 0 ? (scrollTop / scrollRange) * trackRange : 0;
+    const pct = scrollRange > 0 ? scrollTop / scrollRange : 0;
+    const top = TOP_OFFSET + pct * trackRange;
 
-    // Single atomic update — prevents split renders that cause flashing
     setState({ top, height: thumbHeight, visible: true });
-
     clearTimeout(hideTimer.current);
-    hideTimer.current = setTimeout(() => {
-      setState(s => ({ ...s, visible: false }));
-    }, 1600);
+    hideTimer.current = setTimeout(() => setState(s => ({ ...s, visible: false })), 1800);
   }, [scrollRef]);
 
   const onScroll = useCallback(() => {
@@ -59,7 +51,6 @@ export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.55)' }
   }, [compute]);
 
   useEffect(() => {
-    if (!ready) return;
     const el = scrollRef.current;
     if (!el) return;
     el.addEventListener('scroll', onScroll, { passive: true });
@@ -68,13 +59,11 @@ export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.55)' }
       clearTimeout(hideTimer.current);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [scrollRef, onScroll, ready]);
+  }, [scrollRef, onScroll]);
 
   const onPointerDown = useCallback((e) => {
     e.preventDefault();
-    e.stopPropagation();
     setDragging(true);
-
     const startY = e.clientY;
     const startScrollTop = scrollRef.current?.scrollTop || 0;
 
@@ -82,8 +71,9 @@ export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.55)' }
       const el = scrollRef.current;
       if (!el) return;
       const { scrollHeight, clientHeight } = el;
-      const thumbH = Math.max(24, clientHeight * THUMB_FRACTION);
-      const trackRange = clientHeight - thumbH;
+      const trackH = window.innerHeight - TOP_OFFSET - BOT_OFFSET;
+      const thumbH = Math.max(24, trackH * THUMB_FRACTION);
+      const trackRange = trackH - thumbH;
       const scrollRange = scrollHeight - clientHeight;
       if (trackRange <= 0) return;
       el.scrollTop = startScrollTop + ((ev.clientY - startY) / trackRange) * scrollRange;
@@ -92,6 +82,7 @@ export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.55)' }
     const onUp = () => {
       setDragging(false);
       window.removeEventListener('pointermove', onMove);
+      hideTimer.current = setTimeout(() => setState(s => ({ ...s, visible: false })), 1200);
     };
 
     window.addEventListener('pointermove', onMove);
@@ -105,15 +96,26 @@ export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.55)' }
     <div
       aria-hidden="true"
       style={{
-        position: 'absolute',
-        top: 0, right: 2, bottom: 0,
+        position: 'fixed',
+        right: 3,
+        top: 0,
+        bottom: 0,
         width: dragging ? 5 : 3,
         pointerEvents: 'none',
         opacity: show ? 1 : 0,
         transition: 'opacity 250ms ease, width 120ms ease',
-        zIndex: 50,
+        zIndex: 200,
       }}
     >
+      {/* Track */}
+      <div style={{
+        position: 'absolute',
+        top: TOP_OFFSET, bottom: BOT_OFFSET,
+        right: 0, width: '100%',
+        background: 'rgba(255,255,255,0.04)',
+        borderRadius: 999,
+      }} />
+      {/* Thumb */}
       <div
         onPointerDown={onPointerDown}
         style={{
@@ -122,15 +124,14 @@ export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.55)' }
           top,
           width: '100%',
           height,
-          background: dragging ? 'rgba(212,175,55,0.9)' : color,
+          background: dragging ? 'rgba(212,175,55,0.9)' : 'rgba(212,175,55,0.55)',
           borderRadius: 999,
           cursor: 'grab',
           pointerEvents: 'all',
-          transition: 'background 150ms ease',  // NO transition on top/height
+          transition: 'background 150ms ease',
           touchAction: 'none',
-          willChange: 'transform',
         }}
-        data-testid="scroll-thumb"
+        data-testid="page-scroll-thumb"
       />
     </div>
   );
