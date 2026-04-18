@@ -420,24 +420,54 @@ Fixed vertical overflow on compact iPhones. Sheet now has `maxHeight` constraint
 
 
 - [Audit action] Fix FC `free_access` grant for late-added beneficiaries (🔴 15 min)
-- [Audit action] Verify Stripe webhook signature enforcement (curl test, 5 min)
+- [Audit action] Verify Stripe webhook signature enforcement — **DONE Apr 28: webhook now rejects unverified events + STRIPE_WEBHOOK_SECRET added to Railway**
 - [Audit action] Run FC installment-failure test (30 min)
 - [Audit action] Implement Stripe reconciliation scheduler safety net (1 hr)
 - [Optional] Seed default checklist on estate Paths 1 & 2 (20 min)
 - [Optional] Add `(owner_id, status=pre-transition)` partial unique index (5 min)
-- Set `SENTRY_DSN` and `REACT_APP_SENTRY_DSN` in prod env
+- Set `SENTRY_DSN` and `REACT_APP_SENTRY_DSN` in prod env — **DONE Apr 28**
 - Run `k6 run load_tests/signup_and_dashboard.js` against staging; confirm thresholds
 - (P0) Google Play Store Launch
 - (P1) iOS Share Extension
 - (P1) iOS Live Updates (Capgo)
 - (P2) Readiness Scoring Policy Page
 
+## App Store / Codemagic Setup (BLOCKED — awaiting DUNS number)
+
+When DUNS number is obtained and Apple Developer enrollment is complete:
+
+1. **Codemagic Environment Group** ← do this first
+   - Go to **codemagic.io → Teams → CarryOn → Global variables & secrets**
+   - Click **"Add group"** → name it exactly: `carryon-app-keys`
+   - Add these 4 variables to the group:
+     - `REACT_APP_STRIPE_PUBLISHABLE_KEY` → Stripe Dashboard → API Keys → Publishable key (`pk_live_...`)
+     - `REACT_APP_GOOGLE_PLACES_API_KEY` → Google Cloud Console → Credentials (`AIzaSyDHf5...`)
+     - `REACT_APP_FIREBASE_API_KEY` → Firebase Console → Project Settings → Web app config (`AIzaSyAuc7...`)
+     - `REACT_APP_VAPID_PUBLIC_KEY` → from your Railway backend env variable (`BBp9byUYFg...`)
+   - This unblocks all 3 Codemagic workflows (live-update, ios-build, android-build)
+   - **Why**: `codemagic.yaml` was refactored Apr 28 to use `groups: [carryon-app-keys]` instead of hardcoded keys, to fix a git secret scanner block.
+
+2. **Apple Developer Program** — Enroll at developer.apple.com using DUNS number
+3. **App Store Connect** — Create CarryOn app entry, configure IAP products
+4. **iOS Share Extension** — See `/app/memory/SHARE_EXTENSION_SETUP.md`
+5. **Capgo Live Updates** — Configure production channel (see `/app/memory/CAPACITOR_LIVE_UPDATES.md`)
+
 ## Known Refactor Targets (Post-Launch, Low Urgency)
-- `routes/auth.py` (1775 lines) → split into `auth/{login,register,otp,passkeys,sessions}.py`
-- `routes/beneficiaries.py` (1440), `routes/estate_chat.py` (1250), `routes/financial_portal.py` (1010) — similar splits
-- `pages/EstateChatPage.js` (2100+ lines) — break out voice, media, reactions
-- `components/layout/MobileNav.js` (1313), `Sidebar.js` (1001)
-- Consolidate 3 deploy configs (railway.toml / render.yaml / docker-compose.yml / Procfile) to single primary
+
+**Apr 28, 2026 — ALL major monoliths refactored this session:**
+- ✅ `routes/auth.py` (1775 lines) → `routes/auth/` package (8 focused modules)
+- ✅ `routes/share_cards.py` (1678 lines) → `routes/share_cards/` package (4 modules)
+- ✅ `routes/beneficiaries.py` (1491 lines) → `routes/beneficiaries/` package (5 modules)
+- ✅ `routes/estate_chat.py` (1250 lines) → `routes/estate_chat/` package (6 modules)
+- ✅ `routes/financial_portal.py` (1010 lines) → `routes/financial_portal/` package (8 modules)
+- ✅ `pages/EstateChatPage.js` (2182 lines) → 1248 lines via 4 custom hooks + 2 dialog components
+- ✅ `components/layout/MobileNav.js` → extracted navConfig.js, MobileOtpToggle.js, DebugValues.js
+- ✅ `render.yaml` deleted (using Railway + Vercel only)
+
+**Remaining low-urgency refactor targets:**
+- `pages/MessagesPage.js` (1416 lines) — extract CreateMessageModal as prop-driven component
+- `components/layout/Sidebar.js` (1001 lines) — split into navigation sections
+- Add frontend Playwright/Cypress e2e test suite (zero frontend tests currently)
 
 ## Recent Session Work Summary
 See `CHANGELOG.md` for full chronological history if this file exceeds 700 lines.
