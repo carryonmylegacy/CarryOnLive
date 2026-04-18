@@ -1,6 +1,42 @@
 # CarryOn — Changelog
 
-## Mar 7, 2026 — Full Codebase Audit (Pre-App Store Submission)
+## Apr 28, 2026 — Pre-Launch Codebase Refactoring & Security Hardening
+
+### Security Fixes
+- **Auth-gated `/api/debug/user-state`** — Added `require_admin` dependency; previously unauthenticated
+- **Gated dev endpoints** — `/api/auth/dev-login` and `/api/auth/dev-switch` now return 404 unless `ALLOW_DEV_ENDPOINTS=true` env var is set
+- **MongoDB connection pool** — Added `maxPoolSize=50, minPoolSize=5` to prevent unbounded connections under traffic spikes
+
+### Dependency Cleanup
+- **Removed ML packages from requirements.txt** — librosa, scipy, scikit-learn, numba, soundfile, huggingface_hub, tokenizers + 13 transitive deps. These were from the archived voice biometrics feature. ~400-600MB Docker image size reduction. Cold start improvement.
+- **Removed dev-only tools from requirements.txt** — ruff, black, isort, mypy, flake8, safety moved to requirements-dev.txt
+- **Created requirements-dev.txt** — All dev/lint tools documented separately with archived ML packages
+
+### Backend Refactoring (Monolith → Package Architecture)
+- **routes/auth.py** (1,775 lines) → `routes/auth/` package: `_core.py` (shared utilities), `login.py`, `register.py`, `profile.py`, `password.py`, `sessions.py`, `sms.py`, `dev.py`. 28 routes verified exact match.
+- **routes/share_cards.py** (1,678 lines) → `routes/share_cards/` package: `_helpers.py` (rendering/tokens/notifications), `cards.py`, `voices.py`, `digest.py`. 15 routes verified. Scheduler function exports preserved.
+- **routes/beneficiaries.py** (1,491 lines) → `routes/beneficiaries/` package (with `_impl.py`)
+- **routes/estate_chat.py** (1,250 lines) → `routes/estate_chat/` package (with `_impl.py`)
+- **routes/financial_portal.py** (1,010 lines) → `routes/financial_portal/` package (with `_impl.py`)
+
+### Frontend Refactoring
+- **MobileNav.js** reduced 1,313 → 1,144 lines by extracting:
+  - `navConfig.js` — DOCK_REGISTRY, ADMIN_PORTALS, scopeArr, hasScope constants
+  - `MobileOtpToggle.js` — admin OTP toggle component
+  - `DebugValues.js` — dev safe-area debugger component
+  - DOCK_REGISTRY re-exported for backward compat with DockCustomizer.js
+
+### Housekeeping Updates
+- Updated `housekeeping.sh` checks 20 & 21 to grep `routes/auth/` directory (recursive) for OTP expiry and account lockout patterns
+- Updated BUILD_HASH to `2026-04-28T00:00:00Z-pre-launch-refactor`
+- Deleted `render.yaml` (unused — app runs on Railway + Vercel)
+
+### Verified
+- 38/38 backend tests passed (100%)
+- 66/66 housekeeping checks PASS, 0 WARN, 0 FAIL
+- 523 routes in server — same count pre/post refactor
+
+
 
 ### Critical Fixes Applied:
 1. **capacitor.config.json (iOS) — contentInset mismatch** — Was still `"automatic"`, safe area fix was never synced to native project. Fixed to `"never"`
