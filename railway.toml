@@ -3,7 +3,7 @@ builder = "nixpacks"
 
 [build.nixpacks]
 plan_path = "backend"
-aptPkgs = ["ffmpeg", "libsndfile1", "curl"]
+aptPkgs = ["ffmpeg", "libsndfile1", "curl", "fonts-liberation", "fontconfig"]
 
 [deploy]
 healthcheckPath = "/api/health"
