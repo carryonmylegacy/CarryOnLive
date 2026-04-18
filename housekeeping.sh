@@ -180,9 +180,47 @@ else
   echo -e "$WARN ($SECRET_HITS suspicious patterns — review manually)"
 fi
 
+# ── 7b. Emergent Push-Blocker Pattern Scan ───────────────────────────
+# Catches the exact patterns that have blocked git pushes in the past.
+# Scans all tracked files EXCEPT those in .gitleaks.toml allowlist.
+echo -n "7b. Push-blocker secrets scan ..... "
+cd /app
+ALLOWLISTED_FILES="codemagic.yaml backend/routes/staff_tools.py load_tests/signup_and_dashboard.js memory/LAUNCH_DAY_OPERATOR_GUIDE.md"
+BLOCKER_HITS=0
+BLOCKER_FILES=""
+
+# Patterns the Emergent scanner flags (from observed failures)
+PATTERNS="pk_live_[A-Za-z0-9]\{20,\}\|AIzaSy[A-Za-z0-9_-]\{20,\}\|whsec_[A-Za-z0-9]\{20,\}\|sk_live_[A-Za-z0-9]\{20,\}"
+
+while IFS= read -r file; do
+  # Skip allowlisted files
+  skip=0
+  for af in $ALLOWLISTED_FILES; do
+    if [[ "$file" == *"$af"* ]]; then skip=1; break; fi
+  done
+  [ "$skip" = "1" ] && continue
+
+  # Skip node_modules, .git, binary files
+  [[ "$file" == *"node_modules"* ]] && continue
+  [[ "$file" == *".git/"* ]] && continue
+
+  hits=$(grep -lE "$PATTERNS" "$file" 2>/dev/null | wc -l)
+  if [ "$hits" -gt "0" ]; then
+    BLOCKER_HITS=$((BLOCKER_HITS + 1))
+    BLOCKER_FILES="$BLOCKER_FILES\n    → $file"
+  fi
+done < <(git ls-files 2>/dev/null | grep -vE "\.(png|jpg|jpeg|gif|ico|svg|woff|ttf|eot|jar|lock)$")
+
+if [ "$BLOCKER_HITS" = "0" ]; then
+  echo -e "$PASS (no push-blocking secret patterns detected)"
+else
+  echo -e "$FAIL ($BLOCKER_HITS file(s) will block git push — add to .gitleaks.toml or remove secrets)$BLOCKER_FILES"
+  ISSUES=$((ISSUES + 1))
+fi
+
 # ── 7. Sensitive Console Log Scan ────────────────────────────────────
 echo -n "8.  Sensitive console.log scan .... "
-SENS_LOGS=$(grep -rn "console\.\(log\|error\)" --include="*.js" 2>/dev/null | grep -i "password\|token\|secret" | grep -v "error.*token\|passkey\|showPassword\|showDeletePw\|showFormPw\|showEditPw" | wc -l)
+SENS_LOGS=$(grep -rn "console\.\(log\|error\)" /app/frontend/src --include="*.js" 2>/dev/null | grep -i "password\|token\|secret" | grep -v "error.*token\|passkey\|showPassword\|showDeletePw\|showFormPw\|showEditPw" | wc -l)
 if [ "$SENS_LOGS" = "0" ]; then
   echo -e "$PASS"
 else
