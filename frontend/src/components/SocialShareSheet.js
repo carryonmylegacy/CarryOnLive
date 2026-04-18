@@ -252,45 +252,45 @@ export default function SocialShareSheet({
       data-testid="social-share-sheet"
     >
       <div
-        className="w-full max-w-lg rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden"
+        className="w-full max-w-lg rounded-3xl flex flex-col overflow-hidden mx-3"
         style={{
-          background: 'linear-gradient(180deg, #0f1d30 0%, #0b1221 100%)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          boxShadow: '0 -20px 60px rgba(0,0,0,0.6)',
+          background: 'var(--bg2)',
+          border: '1px solid var(--b)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
           animation: 'ssUp 340ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
-          // Constrain height so content never overflows the available space
-          // between the top header bar (~64px) and the dock (~80px) on any iPhone
           maxHeight: 'calc(100dvh - 64px - 80px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Fixed header — never scrolls ── */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-3 flex-shrink-0">
-          <h3 className="text-lg font-semibold" style={{ color: '#fff' }}>
+        <div className="flex items-center justify-between px-4 pt-3 pb-2.5 flex-shrink-0">
+          <h3 className="text-base font-semibold" style={{ color: 'var(--t)' }}>
             {title}
           </h3>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full flex items-center justify-center"
-            style={{ background: 'var(--s)', color: 'rgba(255,255,255,0.7)' }}
+            className="w-8 h-8 rounded-full flex items-center justify-center"
+            style={{ background: 'var(--s)', color: 'var(--t4)' }}
             data-testid="share-sheet-close"
             aria-label="Close"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* ── Scrollable content area — all the actual content ── */}
         <div
           className="overflow-y-auto flex-1"
-          style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
+          style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', position: 'relative' }}
+          ref={(el) => { if (el) el._scrollRef = el; }}
+          id="share-sheet-scroll"
         >
 
         {/* Image preview — REMOVED. Quote text is the primary content. */}
 
         {/* Quote composer — full width textarea + full width Surprise me */}
         {editableQuote ? (
-          <div className="px-5 pb-3">
+          <div className="px-4 pb-2">
             <label
               htmlFor="share-sheet-quote"
               className="block text-[11px] uppercase tracking-wider mb-2"
@@ -397,15 +397,12 @@ export default function SocialShareSheet({
         ) : null}
 
         {/* Native share + image actions */}
-        <div className="px-5 flex gap-2 flex-wrap mb-4">
+        <div className="px-4 flex gap-2 flex-wrap mb-3">
           {typeof navigator !== 'undefined' && navigator.share ? (
             <button
               onClick={nativeShare}
-              className="flex-1 min-w-[140px] py-3 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
-              style={{
-                background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
-                color: 'var(--bg)',
-              }}
+              className="flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+              style={{ background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`, color: 'var(--bg)' }}
               data-testid="share-sheet-native"
             >
               <Share2 className="w-4 h-4" /> Share via…
@@ -413,32 +410,18 @@ export default function SocialShareSheet({
           ) : null}
           <button
             onClick={copyImage}
-            className="flex-1 min-w-[140px] py-3 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
-            style={{
-              background: 'var(--s)',
-              border: '1px solid rgba(255,255,255,0.14)',
-              color: '#fff',
-            }}
+            className="flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+            style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)' }}
             data-testid="share-sheet-copy-image"
           >
-            {imageCopied ? (
-              <>
-                <Check className="w-4 h-4" style={{ color: '#10b981' }} /> Copied
-              </>
-            ) : (
-              <>
-                <Copy className="w-4 h-4" /> Copy image
-              </>
-            )}
+            {imageCopied
+              ? <><Check className="w-4 h-4" style={{ color: '#10b981' }} /> Copied</>
+              : <><Copy className="w-4 h-4" /> Copy image</>}
           </button>
           <button
             onClick={downloadImage}
-            className="flex-1 min-w-[140px] py-3 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
-            style={{
-              background: 'var(--s)',
-              border: '1px solid rgba(255,255,255,0.14)',
-              color: '#fff',
-            }}
+            className="flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+            style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)' }}
             data-testid="share-sheet-download"
           >
             <Download className="w-4 h-4" /> Download
@@ -446,30 +429,24 @@ export default function SocialShareSheet({
         </div>
 
         {/* Platform grid */}
-        <div className="px-5 pb-3">
-          <p className="text-[11px] uppercase tracking-wider mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
+        <div className="px-4 pb-2">
+          <p className="text-[11px] uppercase tracking-wider mb-2" style={{ color: 'var(--t4)' }}>
             Or post directly to
           </p>
-          <div className="grid grid-cols-4 gap-2 mb-3">
+          <div className="grid grid-cols-4 gap-2 mb-2">
             {platforms.map((p) => {
               const Ic = p.icon;
               return (
                 <button
                   key={p.key}
                   onClick={() => openPlatform(p.href)}
-                  className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl transition-transform active:scale-[0.97]"
-                  style={{
-                    background: 'var(--s)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                  }}
+                  className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl transition-transform active:scale-[0.97]"
+                  style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
                   data-testid={`share-sheet-${p.key}`}
                   title={p.note}
                 >
                   <Ic className="w-5 h-5" style={{ color: p.color }} />
-                  <span
-                    className="text-[11px] font-medium text-center leading-tight px-1"
-                    style={{ color: '#fff' }}
-                  >
+                  <span className="text-[11px] font-medium text-center leading-tight px-0.5" style={{ color: 'var(--t3)' }}>
                     {p.label}
                   </span>
                 </button>
@@ -480,30 +457,17 @@ export default function SocialShareSheet({
           {/* Copy text */}
           <button
             onClick={copyText}
-            className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2"
-            style={{
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px dashed rgba(255,255,255,0.14)',
-              color: 'rgba(255,255,255,0.75)',
-            }}
+            className="w-full py-2 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2"
+            style={{ background: 'var(--s)', border: '1px dashed var(--b)', color: 'var(--t4)' }}
             data-testid="share-sheet-copy-text"
           >
-            {copied ? (
-              <>
-                <Check className="w-3.5 h-3.5" style={{ color: '#10b981' }} /> Caption copied
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" /> Copy caption text
-              </>
-            )}
+            {copied
+              ? <><Check className="w-3.5 h-3.5" style={{ color: '#10b981' }} /> Caption copied</>
+              : <><Copy className="w-3.5 h-3.5" /> Copy caption text</>}
           </button>
         </div>
 
-        <p
-          className="px-5 pb-5 pt-1 text-[11px] text-center"
-          style={{ color: 'rgba(255,255,255,0.42)' }}
-        >
+        <p className="px-4 pb-4 pt-1.5 text-[11px] text-center" style={{ color: 'var(--t5)' }}>
           For Instagram &amp; iMessage, download the image first and attach it manually.
         </p>
 
@@ -512,8 +476,8 @@ export default function SocialShareSheet({
 
       <style>{`
         @keyframes ssUp {
-          from { opacity: 0; transform: translateY(18px); }
-          to { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; transform: scale(0.97) translateY(12px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
         }
       `}</style>
     </div>
