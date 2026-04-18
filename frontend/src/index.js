@@ -27,6 +27,7 @@ try {
         },
       });
       window.__SENTRY_READY__ = true;
+      window.Sentry = Sentry; // expose so errorReporter can route through Sentry
     }).catch(() => {});
   }
 } catch {}
