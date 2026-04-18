@@ -94,3 +94,28 @@
 - Security audit: 19/19 tests passed (95% rate)
 - Enhancement features: 24/24 backend tests passed (100%)
 - All frontend components verified working
+
+## Apr 28, 2026 — Full Codebase Audit + Security Fixes
+
+### Security
+- **Stripe webhook hardened**: Now returns HTTP 400 if `STRIPE_WEBHOOK_SECRET` is not set (was silently processing unverified webhooks — critical forgery risk)
+- **Startup check added**: Server logs CRITICAL at boot if Stripe key is set without webhook secret
+- **XSS removed**: `dangerouslySetInnerHTML` eliminated from LandingContent.js — `&mdash;` entities replaced with literal `—` characters, plain text node used
+
+### Error Handling
+- `routes/estates.py` repair loop wrapped in try/except — DB write failures during login-time repair no longer crash the estates response
+
+### Dead Code Removed (5 files)
+- `pages/EditBeneficiaryPage.js` — superseded by SlidePanel
+- `components/admin/CustomerContextPanel.js` — never imported
+- `components/dev/DevSwitcher.js` — never imported (DevSwitcherTab.js handles this)
+- `components/settings/SecurityCard.js` — never imported
+- `utils/initials.js` — never imported
+
+### Audit Findings — Not Fixed (Low Risk, Post-Launch)
+- Admin bulk export routes use `.to_list(100000)` — acceptable for admin-only, needs pagination at scale
+- `beneficiary_feature_access` in localStorage used as UI hint only (backed by server-side checks)
+- Billing lifecycle has no rollback — inherent to MongoDB without multi-doc transactions
+
+### Verified
+- 18/18 tests passed (100%) — 0 regressions
