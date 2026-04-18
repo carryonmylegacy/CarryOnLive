@@ -129,6 +129,7 @@ export default function ECTSecurityIntro({ introStep, setIntroStep, onDismiss, o
                 { num: '2', title: 'Pick Who to Chat With', desc: 'Choose one person for a direct message or select several to create a group.' },
                 { num: '3', title: 'Type and Send',         desc: 'Type your message at the bottom bar and tap the gold send arrow.' },
                 { num: '4', title: 'Photos & Attachments',  desc: 'Tap the paperclip to attach files or images. Press the mic to record a voice message.' },
+                { num: '5', title: 'Pin Important Messages', desc: 'Long-press any message and tap Pin. Pinned messages are saved for everyone in the chat and accessible from the header — perfect for keeping critical info at your fingertips.' },
               ].map((item, i) => (
                 <div
                   key={i}
