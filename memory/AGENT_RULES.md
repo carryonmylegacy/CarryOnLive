@@ -142,3 +142,35 @@ Add new rules numbered and prefixed with severity:
 - 🟢 REMINDER (good practice)
 
 Keep existing rules intact — they represent accumulated trust.
+
+---
+
+## 🔴 RULE 8 — Every tile/modal/sheet MUST fit on ALL mobile screen sizes (Apr 28, 2026)
+
+**User's exact words:** "A PRD item going forward needs to be that whatever tile you
+create must always scale to every mobile size screen, from an iPhone 13 mini to an
+iPhone 17 Pro Max, and always be centered between the bottom edge of the logo and
+hamburger menu bar and the top edge of the dock."
+
+**Enforcement rules:**
+- ANY new modal, sheet, drawer, or panel MUST apply:
+  ```css
+  max-height: calc(100dvh - 64px - 80px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  /* 64px = header bar, 80px = dock */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  ```
+- The header/title row of the tile MUST be `flex-shrink: 0` (never scrolls away)
+- The content area below the header MUST be `overflow-y: auto; flex: 1`
+- `WebkitOverflowScrolling: touch` and `overscrollBehavior: contain` on the scroll area
+- The backdrop/overlay MUST use `paddingBottom: calc(env(safe-area-inset-bottom, 0px) + 80px)` on mobile to clear the dock
+- Images or media previews inside a tile MUST use `maxHeight: min(200px, 45vw)` on mobile to leave room for controls
+
+**Target devices (minimum support):**
+- iPhone 13 Mini: 375 × 812 px — ~584px of usable tile height
+- iPhone 16: 393 × 852 px — ~620px of usable tile height  
+- iPhone 17 Pro Max: ~440 × 956 px — ~730px of usable tile height
+
+**Why:** Discovered Apr 28, 2026 when the SocialShareSheet was clipped at the bottom on compact iPhones because it had no `maxHeight` constraint and no internal scroll.
+

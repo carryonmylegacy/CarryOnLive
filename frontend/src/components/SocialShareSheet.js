@@ -238,29 +238,33 @@ export default function SocialShareSheet({
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center overflow-y-auto"
+      className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center"
       style={{
         background: 'rgba(0,0,0,0.72)',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
-        paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))',
-        paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
+        // Mobile: push sheet up above the dock (≈80px) and respect safe-area
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
       }}
       onClick={onClose}
       data-testid="social-share-sheet"
     >
       <div
-        className="w-full max-w-lg rounded-t-3xl sm:rounded-3xl overflow-hidden"
+        className="w-full max-w-lg rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden"
         style={{
           background: 'linear-gradient(180deg, #0f1d30 0%, #0b1221 100%)',
           border: '1px solid rgba(255,255,255,0.08)',
           boxShadow: '0 -20px 60px rgba(0,0,0,0.6)',
           animation: 'ssUp 340ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
+          // Constrain height so content never overflows the available space
+          // between the top header bar (~64px) and the dock (~80px) on any iPhone
+          maxHeight: 'calc(100dvh - 64px - 80px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-3">
+        {/* ── Fixed header — never scrolls ── */}
+        <div className="flex items-center justify-between px-5 pt-4 pb-3 flex-shrink-0">
           <h3 className="text-lg font-semibold" style={{ color: '#fff' }}>
             {title}
           </h3>
@@ -275,7 +279,13 @@ export default function SocialShareSheet({
           </button>
         </div>
 
-        {/* Image preview */}
+        {/* ── Scrollable content area — all the actual content ── */}
+        <div
+          className="overflow-y-auto flex-1"
+          style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
+        >
+
+        {/* Image preview — capped height on mobile so controls remain reachable */}
         {imageUrl ? (
           <div className="px-5">
             <div
@@ -283,6 +293,8 @@ export default function SocialShareSheet({
               style={{
                 background: '#0b1221',
                 border: `1px solid ${accentColor}55`,
+                // Cap image height on small screens; full 1:1 on desktop
+                maxHeight: 'min(200px, 45vw)',
               }}
             >
               <img
@@ -294,6 +306,7 @@ export default function SocialShareSheet({
                   objectFit: 'cover',
                   opacity: regenerating ? 0.55 : 1,
                   transition: 'opacity 200ms ease',
+                  maxHeight: 'min(200px, 45vw)',
                 }}
                 data-testid="share-sheet-image"
               />
@@ -400,8 +413,6 @@ export default function SocialShareSheet({
                 onChange={(e) => {
                   const next = e.target.checked;
                   setConsentPublic(next);
-                  // If they're flipping consent on an already-saved quote, re-submit
-                  // so the backend can persist / un-persist accordingly.
                   if ((draftQuote || '').trim() && (draftQuote || '').trim() === (quote || '').trim()) {
                     onQuoteChange?.(draftQuote, next);
                   }
@@ -528,8 +539,10 @@ export default function SocialShareSheet({
           className="px-5 pb-5 pt-1 text-[11px] text-center"
           style={{ color: 'rgba(255,255,255,0.42)' }}
         >
-          For Instagram & iMessage, download the image first and attach it manually.
+          For Instagram &amp; iMessage, download the image first and attach it manually.
         </p>
+
+        </div>{/* end scrollable content */}
       </div>
 
       <style>{`
