@@ -12,7 +12,7 @@ try {
     import('@sentry/react').then((Sentry) => {
       Sentry.init({
         dsn: SENTRY_DSN,
-        environment: process.env.REACT_APP_SENTRY_ENV || 'production',
+        environment: process.env.REACT_APP_SENTRY_ENVIRONMENT || process.env.REACT_APP_SENTRY_ENV || 'production',
         release: process.env.REACT_APP_SENTRY_RELEASE,
         tracesSampleRate: parseFloat(process.env.REACT_APP_SENTRY_TRACES_RATE || '0.05'),
         replaysSessionSampleRate: 0,
