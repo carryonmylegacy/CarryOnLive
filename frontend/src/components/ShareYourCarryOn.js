@@ -85,7 +85,8 @@ export default function ShareYourCarryOn({
     [token, endpoint, firstName, tierName, isFounders],
   );
 
-  // Pre-fetch once the sheet opens so the preview is instant
+  // Pre-fetch once the sheet opens so the preview is instant.
+  // Card resets to null on close (see onClose handlers) so each open is fresh.
   useEffect(() => {
     if (open && !card) fetchCard('');
   }, [open, card, fetchCard]);
@@ -146,7 +147,7 @@ export default function ShareYourCarryOn({
         </button>
         <SocialShareSheet
           open={open}
-          onClose={() => { setOpen(false); setFetchError(false); }}
+          onClose={() => { setOpen(false); setCard(null); setQuote(''); setFetchError(false); }}
           imageUrl={card?.image_url ? `${BASE_URL}${card.image_url}` : ''}
           shareText={card?.share_text || ''}
           shareUrl="https://carryon.us"

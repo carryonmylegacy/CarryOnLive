@@ -234,7 +234,7 @@ export default function SubscriberCelebration({ firstName, tierName, onDismiss }
 
       <SocialShareSheet
         open={showShare}
-        onClose={() => setShowShare(false)}
+        onClose={() => { setShowShare(false); setCard(null); setQuote(''); }}
         imageUrl={card?.image_url ? `${BASE_URL}${card.image_url}` : ''}
         shareText={card?.share_text || `I just signed up for CarryOn — the family preparedness platform that organizes everything my loved ones would ever need. https://carryon.us`}
         shareUrl="https://carryon.us"
