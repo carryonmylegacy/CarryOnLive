@@ -1,14 +1,15 @@
 /**
  * PageScrollBar — fixed-position scroll indicator for full-page scroll containers.
  *
- * Uses direct DOM mutation. Zero React re-renders during scroll.
- * Renders as position:fixed so it stays visible regardless of scroll position.
+ * Direct DOM mutation + addEventListener drag = zero React re-renders = zero glitch.
+ * position:fixed so it stays visible regardless of scroll position.
  */
 import React, { useRef, useEffect } from 'react';
 
-const THUMB_H  = 32;
-const TOP_OFF  = 70;   // below mobile header
-const BOT_OFF  = 90;   // above dock
+const THUMB_H   = 64;   // px — doubled per user request
+const THICKNESS = 6;    // px — doubled per user request
+const TOP_OFF   = 72;   // px — below mobile header
+const BOT_OFF   = 92;   // px — above dock
 const HIDE_DELAY = 1800;
 
 export default function PageScrollBar({ scrollRef }) {
@@ -18,26 +19,24 @@ export default function PageScrollBar({ scrollRef }) {
   const raf = useRef(null);
 
   useEffect(() => {
-    const show = () => { if (wrapRef.current)  wrapRef.current.style.opacity  = '1'; };
-    const hide = () => { if (wrapRef.current)  wrapRef.current.style.opacity  = '0'; };
+    const show = () => { if (wrapRef.current)  wrapRef.current.style.opacity = '1'; };
+    const hide = () => { if (wrapRef.current)  wrapRef.current.style.opacity = '0'; };
 
+    // ── Scroll position update ───────────────────────────────────────────
     const update = () => {
-      const el = scrollRef.current;
+      const el   = scrollRef.current;
       const thumb = thumbRef.current;
       if (!el || !thumb) return;
-
       const { scrollTop, scrollHeight, clientHeight } = el;
       if (scrollHeight <= clientHeight + 4) { hide(); return; }
 
-      const trackH = window.innerHeight - TOP_OFF - BOT_OFF;
-      const trackRange = trackH - THUMB_H;
+      const trackH    = window.innerHeight - TOP_OFF - BOT_OFF;
+      const trackRange  = trackH - THUMB_H;
       const scrollRange = scrollHeight - clientHeight;
       const pct = scrollRange > 0 ? scrollTop / scrollRange : 0;
       const top = TOP_OFF + pct * trackRange;
 
-      // Direct DOM mutation — zero React re-render
-      thumb.style.top = `${top}px`;
-
+      thumb.style.top = `${top}px`;  // direct DOM — no React
       show();
       clearTimeout(hideTimer.current);
       hideTimer.current = setTimeout(hide, HIDE_DELAY);
@@ -48,12 +47,42 @@ export default function PageScrollBar({ scrollRef }) {
       raf.current = requestAnimationFrame(update);
     };
 
-    const el = scrollRef.current;
-    if (!el) return;
-    el.addEventListener('scroll', onScroll, { passive: true });
+    // ── Drag to scroll ────────────────────────────────────────────────────
+    const onThumbDown = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const el = scrollRef.current;
+      if (!el) return;
+      const startY      = e.clientY;
+      const startScroll = el.scrollTop;
+
+      const onMove = (ev) => {
+        const trackH    = window.innerHeight - TOP_OFF - BOT_OFF;
+        const trackRange  = trackH - THUMB_H;
+        const scrollRange = el.scrollHeight - el.clientHeight;
+        if (trackRange <= 0) return;
+        el.scrollTop = startScroll + ((ev.clientY - startY) / trackRange) * scrollRange;
+      };
+
+      const onUp = () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup',   onUp);
+      };
+
+      window.addEventListener('pointermove', onMove, { passive: false });
+      window.addEventListener('pointerup',   onUp,   { once: true });
+    };
+
+    const el   = scrollRef.current;
+    const thumb = thumbRef.current;
+    if (!el || !thumb) return;
+
+    el.addEventListener('scroll',        onScroll,    { passive: true });
+    thumb.addEventListener('pointerdown', onThumbDown);
 
     return () => {
       el.removeEventListener('scroll', onScroll);
+      thumb.removeEventListener('pointerdown', onThumbDown);
       clearTimeout(hideTimer.current);
       if (raf.current) cancelAnimationFrame(raf.current);
     };
@@ -65,26 +94,29 @@ export default function PageScrollBar({ scrollRef }) {
       aria-hidden="true"
       style={{
         position: 'fixed', right: 3, top: 0, bottom: 0,
-        width: 3, zIndex: 200, pointerEvents: 'none',
+        width: THICKNESS, zIndex: 200, pointerEvents: 'none',
         opacity: 0, transition: 'opacity 300ms ease',
       }}
     >
-      {/* Track */}
+      {/* Subtle track */}
       <div style={{
         position: 'absolute',
         top: TOP_OFF, bottom: BOT_OFF, right: 0, width: '100%',
-        background: 'rgba(255,255,255,0.04)', borderRadius: 999,
+        background: 'rgba(255,255,255,0.05)', borderRadius: 999,
       }} />
-      {/* Thumb — position controlled via direct DOM (thumb.style.top) */}
+      {/* Thumb — position controlled via direct DOM */}
       <div
         ref={thumbRef}
         style={{
           position: 'absolute', right: 0,
-          top: TOP_OFF,  // initial position — overwritten by direct DOM
+          top: TOP_OFF,
           width: '100%', height: THUMB_H,
-          background: 'rgba(212,175,55,0.6)',
+          background: 'rgba(212,175,55,0.65)',
           borderRadius: 999,
           willChange: 'top',
+          cursor: 'grab',
+          pointerEvents: 'all',
+          touchAction: 'none',
         }}
         data-testid="page-scroll-thumb"
       />

@@ -14,7 +14,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
  */
 const ECTActionMenu = ({
   msgActionId, menuPosition, menuReady, messages, user,
-  isBenefactor, recentEmojis, showActionEmojiPicker, setShowActionEmojiPicker,
+  isBenefactor, canPin, recentEmojis, showActionEmojiPicker, setShowActionEmojiPicker,
   toggleReaction, togglePin, handleDeleteMessage, closeMsgAction,
   setReplyTo, setEditingMsg, inputRef, token,
   activeChannel, fetchMessages, scrollContainerRef, menuOpenedAtRef,
@@ -138,7 +138,7 @@ const ECTActionMenu = ({
               <Pencil className="w-4 h-4" style={{ color: '#d4af37' }} /> Edit
             </button></>
           )}
-          {isBenefactor && (
+          {(canPin || isBenefactor) && (
             <><div style={{ height: '1px', background: 'var(--b)' }} />
             <button onClick={(e) => { e.stopPropagation(); togglePin(actionMsg.id); closeMsgAction(); }}
               className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left active:bg-white/5" style={{ color: '#d4af37' }}

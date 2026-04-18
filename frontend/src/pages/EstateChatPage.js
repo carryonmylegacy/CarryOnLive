@@ -456,6 +456,7 @@ export default function EstateChatPage() {
   };
 
   const isBenefactor = user?.role === 'benefactor' || user?.is_also_benefactor;
+  const canPin = isBenefactor || user?.role === 'admin'; // admins can also pin
 
   // ── Loading state ─────────────────────────────────────────────────────────
   if (loading) {
@@ -885,7 +886,7 @@ export default function EstateChatPage() {
                                   );
                                 })}
                                 <EmojiPickerButtonSmall onClick={() => setShowInlineEmojiPicker(showInlineEmojiPicker === msg.id ? null : msg.id)} />
-                                {isBenefactor && (
+                                {canPin && (
                                   <button onClick={(e) => { e.stopPropagation(); togglePin(msg.id); }} className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95"
                                     data-testid={`pin-btn-${msg.id}`} style={{ background: msg.pinned ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)', border: msg.pinned ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent' }} title={msg.pinned ? 'Unpin' : 'Pin'}>
                                     <Pin className="w-4 h-4" style={{ color: msg.pinned ? '#d4af37' : 'var(--t4)' }} />
@@ -1225,6 +1226,7 @@ export default function EstateChatPage() {
         recentEmojis={recentEmojis} showActionEmojiPicker={showActionEmojiPicker}
         setShowActionEmojiPicker={setShowActionEmojiPicker}
         toggleReaction={toggleReaction} togglePin={togglePin}
+        isBenefactor={isBenefactor} canPin={canPin}
         handleDeleteMessage={handleDeleteMessage} closeMsgAction={closeMsgAction}
         setReplyTo={setReplyTo} setEditingMsg={setEditingMsg} inputRef={inputRef}
         token={token} activeChannel={activeChannel} fetchMessages={fetchMessages}
