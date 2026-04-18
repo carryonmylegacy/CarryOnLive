@@ -1,16 +1,22 @@
 /**
  * ScrollBar — zero-React-state scroll indicator for contained scrollable divs.
  *
- * Direct DOM mutation during scroll = zero React re-renders = zero glitch.
- * Drag wired via addEventListener on the thumb DOM node (not React synthetic events).
+ * KEY GEOMETRY FIX: The thumb is position:absolute INSIDE the scrollable
+ * container. When the container scrolls by N px, the thumb physically moves
+ * N px in the opposite direction. The transform must compensate:
+ *   translateY = scrollTop + (pct * trackRange)
+ *                ^^^^^^^^^^
+ *                cancels the container's scroll offset
+ *
+ * Without this, the thumb appears to scroll in the OPPOSITE direction.
  */
 import { useRef, useEffect } from 'react';
 import React from 'react';
 
-const THUMB_H    = 64;    // px — fixed height, doubled per user request
-const THICKNESS  = 6;     // px — track/thumb width
-const HIDE_DELAY = 1500;  // ms
-const MOUNT_DELAY = 360;  // ms — let entrance animations settle
+const THUMB_H     = 64;    // px — fixed height
+const THICKNESS   = 6;     // px — track width
+const HIDE_DELAY  = 1500;  // ms
+const MOUNT_DELAY = 360;   // ms — let entrance animations settle
 
 export default function ScrollBar({ scrollRef }) {
   const wrapRef  = useRef(null);
@@ -22,17 +28,22 @@ export default function ScrollBar({ scrollRef }) {
     const show = () => { if (wrapRef.current)  wrapRef.current.style.opacity = '1'; };
     const hide = () => { if (wrapRef.current)  wrapRef.current.style.opacity = '0'; };
 
-    // ── Scroll position update ───────────────────────────────────────────
+    // ── Scroll position update ────────────────────────────────────────────
     const update = () => {
-      const el = scrollRef.current;
+      const el    = scrollRef.current;
       const thumb = thumbRef.current;
       if (!el || !thumb) return;
       const { scrollTop, scrollHeight, clientHeight } = el;
       if (scrollHeight <= clientHeight + 4) { hide(); return; }
+
       const trackRange  = clientHeight - THUMB_H;
       const scrollRange = scrollHeight - clientHeight;
       const pct = scrollRange > 0 ? scrollTop / scrollRange : 0;
-      thumb.style.transform = `translateY(${pct * trackRange}px)`;
+
+      // scrollTop offsets the element back into the visible area;
+      // pct * trackRange places it at the correct position within the track.
+      thumb.style.transform = `translateY(${scrollTop + pct * trackRange}px)`;
+
       show();
       clearTimeout(hideTimer.current);
       hideTimer.current = setTimeout(hide, HIDE_DELAY);
@@ -50,17 +61,29 @@ export default function ScrollBar({ scrollRef }) {
       const el = scrollRef.current;
       if (!el) return;
 
-      // Suppress text selection for the entire drag gesture
-      document.body.style.userSelect = 'none';
-      document.body.style.webkitUserSelect = 'none';
+      // Suppress ALL text selection during drag (body + documentElement for iOS)
+      const noSelect = () => {
+        document.body.style.userSelect       = 'none';
+        document.body.style.webkitUserSelect = 'none';
+        document.documentElement.style.userSelect       = 'none';
+        document.documentElement.style.webkitUserSelect = 'none';
+      };
+      const restoreSelect = () => {
+        document.body.style.userSelect       = '';
+        document.body.style.webkitUserSelect = '';
+        document.documentElement.style.userSelect       = '';
+        document.documentElement.style.webkitUserSelect = '';
+      };
 
-      const startY      = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+      noSelect();
+
+      const startY      = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
       const startScroll = el.scrollTop;
 
       const onMove = (ev) => {
-        ev.preventDefault();
-        const clientY = ev.clientY || (ev.touches && ev.touches[0].clientY) || 0;
-        const dy = clientY - startY;
+        ev.preventDefault();  // requires { passive: false }
+        const y = ev.clientY ?? ev.touches?.[0]?.clientY ?? 0;
+        const dy = y - startY;
         const trackRange  = el.clientHeight - THUMB_H;
         const scrollRange = el.scrollHeight - el.clientHeight;
         if (trackRange <= 0) return;
@@ -68,8 +91,7 @@ export default function ScrollBar({ scrollRef }) {
       };
 
       const onUp = () => {
-        document.body.style.userSelect = '';
-        document.body.style.webkitUserSelect = '';
+        restoreSelect();
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup',   onUp);
         window.removeEventListener('touchmove',   onMove);
@@ -78,17 +100,19 @@ export default function ScrollBar({ scrollRef }) {
 
       window.addEventListener('pointermove', onMove, { passive: false });
       window.addEventListener('pointerup',   onUp,   { once: true });
+      window.addEventListener('touchmove',   onMove, { passive: false });
+      window.addEventListener('touchend',    onUp,   { once: true });
     };
 
     let attached = false;
 
     const t = setTimeout(() => {
-      const el   = scrollRef.current;
+      const el    = scrollRef.current;
       const thumb = thumbRef.current;
       if (!el || !thumb) return;
-
-      el.addEventListener('scroll',    onScroll,    { passive: true });
+      el.addEventListener('scroll',        onScroll,    { passive: true });
       thumb.addEventListener('pointerdown', onThumbDown);
+      thumb.addEventListener('touchstart',  onThumbDown, { passive: false });
       attached = true;
     }, MOUNT_DELAY);
 
@@ -99,8 +123,11 @@ export default function ScrollBar({ scrollRef }) {
       if (attached) {
         const el    = scrollRef.current;
         const thumb = thumbRef.current;
-        if (el)    el.removeEventListener('scroll', onScroll);
-        if (thumb) thumb.removeEventListener('pointerdown', onThumbDown);
+        if (el)    el.removeEventListener('scroll',        onScroll);
+        if (thumb) {
+          thumb.removeEventListener('pointerdown', onThumbDown);
+          thumb.removeEventListener('touchstart',  onThumbDown);
+        }
       }
     };
   }, [scrollRef]);

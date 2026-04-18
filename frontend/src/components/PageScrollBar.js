@@ -54,9 +54,11 @@ export default function PageScrollBar({ scrollRef }) {
       const el = scrollRef.current;
       if (!el) return;
 
-      // Suppress text selection for the entire drag gesture
-      document.body.style.userSelect = 'none';
+      // Suppress ALL text selection during drag
+      document.body.style.userSelect       = 'none';
       document.body.style.webkitUserSelect = 'none';
+      document.documentElement.style.userSelect       = 'none';
+      document.documentElement.style.webkitUserSelect = 'none';
 
       const startY      = e.clientY;
       const startScroll = el.scrollTop;
@@ -71,8 +73,10 @@ export default function PageScrollBar({ scrollRef }) {
       };
 
       const onUp = () => {
-        document.body.style.userSelect = '';
+        document.body.style.userSelect       = '';
         document.body.style.webkitUserSelect = '';
+        document.documentElement.style.userSelect       = '';
+        document.documentElement.style.webkitUserSelect = '';
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup',   onUp);
       };
@@ -87,10 +91,12 @@ export default function PageScrollBar({ scrollRef }) {
 
     el.addEventListener('scroll',        onScroll,    { passive: true });
     thumb.addEventListener('pointerdown', onThumbDown);
+    thumb.addEventListener('touchstart',  onThumbDown, { passive: false });
 
     return () => {
       el.removeEventListener('scroll', onScroll);
       thumb.removeEventListener('pointerdown', onThumbDown);
+      thumb.removeEventListener('touchstart',  onThumbDown);
       clearTimeout(hideTimer.current);
       if (raf.current) cancelAnimationFrame(raf.current);
     };
