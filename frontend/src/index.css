@@ -1096,39 +1096,22 @@
 }
 
 /* ── Scrollbar styling ─────────────────────────────────────────────────────
-   Desktop/Android: thin gold accent scrollbar that grows on hover.
-   iOS Safari: uses native system scroll indicator — cannot be styled with CSS.
-   Use the <ScrollBar> React component for mobile iOS scroll indicators.
+   Hide native browser scrollbars everywhere — the React <ScrollBar> component
+   renders a custom indicator where needed (see ScrollBar.js).
+   On desktop, show a minimal 2px gold line for mouse-drag support.
 ────────────────────────────────────────────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-  transition: width 200ms ease;
-}
 
-::-webkit-scrollbar:hover {
-  width: 8px;
-}
+/* Mobile: hide all native scrollbars — React ScrollBar handles indicators */
+::-webkit-scrollbar { width: 0; height: 0; background: transparent; }
+* { scrollbar-width: none; }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(212,175,55,0.25);
-  border-radius: 999px;
-  transition: background 200ms ease;
-}
-
-::-webkit-scrollbar-thumb:hover,
-::-webkit-scrollbar-thumb:active {
-  background: rgba(212,175,55,0.7);
-}
-
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(212,175,55,0.25) transparent;
+/* Desktop only: show a subtle 2px scrollbar */
+@media (min-width: 1024px) {
+  ::-webkit-scrollbar { width: 2px; height: 2px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,0.6); }
+  * { scrollbar-width: thin; scrollbar-color: rgba(212,175,55,0.3) transparent; }
 }
 
 /* Mobile Styles */

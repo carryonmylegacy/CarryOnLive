@@ -85,6 +85,44 @@ export default function ShareYourCarryOn({
 
   const displayLabel = label || 'Tell your people';
 
+  // ── Pill variant — wide gold button for dashboard bottom ─────────────────
+  if (variant === 'pill') {
+    return (
+      <>
+        <button
+          onClick={() => setOpen(true)}
+          className={`w-full flex items-center justify-center gap-3 py-4 rounded-full font-bold text-base transition-transform active:scale-[0.98] ${className}`}
+          style={{
+            background: 'linear-gradient(135deg, #d4af37 0%, #f0c94c 50%, #d4af37 100%)',
+            color: '#080e1a',
+            boxShadow: '0 4px 20px rgba(212,175,55,0.35), 0 2px 8px rgba(0,0,0,0.2)',
+            letterSpacing: '0.01em',
+          }}
+          data-testid="share-pill-btn"
+        >
+          <Share2 className="w-5 h-5" />
+          Tell your people
+        </button>
+        <SocialShareSheet
+          open={open}
+          onClose={handleClose}
+          imageUrl={card?.image_url ? `${BASE_URL}${card.image_url}` : ''}
+          shareText={card?.share_text || ''}
+          shareUrl="https://carryon.us"
+          title={sheetTitle}
+          accent={accent}
+          editableQuote
+          quote={quote}
+          quoteSource={card?.quote_source || 'random'}
+          onQuoteChange={(q, c) => fetchCard(q, c)}
+          onRandomize={() => fetchCard('', false, String(Date.now()))}
+          regenerating={regenerating}
+          fetchError={fetchError}
+        />
+      </>
+    );
+  }
+
   // ── Tile variant ─────────────────────────────────────────────────────────
   if (variant === 'tile') {
     return (

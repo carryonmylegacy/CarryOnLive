@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
@@ -8,6 +8,7 @@ import PullToRefreshIndicator from '../PullToRefreshIndicator';
 import { haptics } from '../../utils/haptics';
 import BetaFeedbackButton from '../BetaFeedbackButton';
 import BetaWelcomeModal from '../BetaWelcomeModal';
+import ScrollBar from '../ScrollBar';
 
 const GuardianPage = lazy(() => import('../../pages/GuardianPage'));
 
@@ -17,7 +18,8 @@ const DashboardLayout = () => {
   const isOnGuardian = location.pathname === '/guardian';
   const [guardianMounted, setGuardianMounted] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('carryon_sidebar_collapsed') === 'true');
-  const [betaAccepted, setBetaAccepted] = useState(true); // default true to avoid flash
+  const [betaAccepted, setBetaAccepted] = useState(true);
+  const mainRef = useRef(null);
 
   // Check if user is a beta tester who hasn't accepted yet
   const isBetaTester = user?.is_beta_tester || subscriptionStatus?.is_beta_tester;
@@ -102,8 +104,16 @@ const DashboardLayout = () => {
       <MobileNav />
       
       {/* Main Content */}
-      <main id="main-content" className={`main-content ${sidebarCollapsed ? 'sb-collapsed' : ''}`} role="main" aria-label="Main content">
+      <main
+        ref={mainRef}
+        id="main-content"
+        className={`main-content ${sidebarCollapsed ? 'sb-collapsed' : ''}`}
+        role="main"
+        aria-label="Main content"
+        style={{ position: 'relative' }}
+      >
         <Outlet />
+        <ScrollBar scrollRef={mainRef} />
       </main>
 
       {/* Persistent Guardian — stays mounted after first visit so chat state survives navigation */}
