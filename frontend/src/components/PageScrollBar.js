@@ -53,10 +53,16 @@ export default function PageScrollBar({ scrollRef }) {
       e.stopPropagation();
       const el = scrollRef.current;
       if (!el) return;
+
+      // Suppress text selection for the entire drag gesture
+      document.body.style.userSelect = 'none';
+      document.body.style.webkitUserSelect = 'none';
+
       const startY      = e.clientY;
       const startScroll = el.scrollTop;
 
       const onMove = (ev) => {
+        ev.preventDefault();
         const trackH    = window.innerHeight - TOP_OFF - BOT_OFF;
         const trackRange  = trackH - THUMB_H;
         const scrollRange = el.scrollHeight - el.clientHeight;
@@ -65,6 +71,8 @@ export default function PageScrollBar({ scrollRef }) {
       };
 
       const onUp = () => {
+        document.body.style.userSelect = '';
+        document.body.style.webkitUserSelect = '';
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup',   onUp);
       };
@@ -117,6 +125,8 @@ export default function PageScrollBar({ scrollRef }) {
           cursor: 'grab',
           pointerEvents: 'all',
           touchAction: 'none',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
         }}
         data-testid="page-scroll-thumb"
       />

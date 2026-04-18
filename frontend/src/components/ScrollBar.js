@@ -50,10 +50,15 @@ export default function ScrollBar({ scrollRef }) {
       const el = scrollRef.current;
       if (!el) return;
 
+      // Suppress text selection for the entire drag gesture
+      document.body.style.userSelect = 'none';
+      document.body.style.webkitUserSelect = 'none';
+
       const startY      = e.clientY || (e.touches && e.touches[0].clientY) || 0;
       const startScroll = el.scrollTop;
 
       const onMove = (ev) => {
+        ev.preventDefault();
         const clientY = ev.clientY || (ev.touches && ev.touches[0].clientY) || 0;
         const dy = clientY - startY;
         const trackRange  = el.clientHeight - THUMB_H;
@@ -63,6 +68,8 @@ export default function ScrollBar({ scrollRef }) {
       };
 
       const onUp = () => {
+        document.body.style.userSelect = '';
+        document.body.style.webkitUserSelect = '';
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup',   onUp);
         window.removeEventListener('touchmove',   onMove);
@@ -117,8 +124,10 @@ export default function ScrollBar({ scrollRef }) {
           borderRadius: 999,
           willChange: 'transform',
           cursor: 'grab',
-          pointerEvents: 'all',  // thumb is clickable even though parent isn't
+          pointerEvents: 'all',
           touchAction: 'none',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
         }}
         data-testid="scroll-thumb"
       />
