@@ -4,6 +4,8 @@
  * CSS scrollbars don't render on iOS Safari. This component renders a
  * thin gold thumb on the right edge of any scrollable container.
  *
+ * Thumb is always 1/8 the track height — indicator style, not proportional.
+ *
  * Usage:
  *   const ref = useRef();
  *   <div ref={ref} className="overflow-y-auto" style={{ position: 'relative' }}>
@@ -13,9 +15,11 @@
  */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
+const THUMB_FRACTION = 1 / 8; // thumb is always 1/8 of the track height
+
 export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.5)' }) {
   const [visible, setVisible] = useState(false);
-  const [thumb, setThumb] = useState({ top: 0, pct: 0 });
+  const [thumbTop, setThumbTop] = useState(0);
   const [dragging, setDragging] = useState(false);
   const hideTimer = useRef(null);
   const dragStartY = useRef(0);
@@ -26,9 +30,13 @@ export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.5)' })
     if (!el) return;
     const { scrollTop, scrollHeight, clientHeight } = el;
     if (scrollHeight <= clientHeight + 2) { setVisible(false); return; }
-    const thumbPct = clientHeight / scrollHeight;           // thumb height as fraction
-    const thumbTop = (scrollTop / (scrollHeight - clientHeight)) * (clientHeight * (1 - thumbPct));
-    setThumb({ top: thumbTop, pct: thumbPct });
+
+    const thumbHeight = clientHeight * THUMB_FRACTION;
+    const trackRange = clientHeight - thumbHeight;               // how far thumb can travel
+    const scrollRange = scrollHeight - clientHeight;
+    const top = (scrollTop / scrollRange) * trackRange;
+
+    setThumbTop(top);
     setVisible(true);
     clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => { if (!dragging) setVisible(false); }, 1800);
@@ -56,11 +64,12 @@ export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.5)' })
     const el = scrollRef.current;
     if (!el) return;
     const { scrollHeight, clientHeight } = el;
-    const dy = e.clientY - dragStartY.current;
+    const thumbHeight = clientHeight * THUMB_FRACTION;
+    const trackRange = clientHeight - thumbHeight;
     const scrollRange = scrollHeight - clientHeight;
-    const trackRange = clientHeight * (1 - thumb.pct);
+    const dy = e.clientY - dragStartY.current;
     el.scrollTop = dragStartScrollTop.current + (dy / trackRange) * scrollRange;
-  }, [scrollRef, thumb.pct]);
+  }, [scrollRef]);
 
   const onPointerUp = useCallback(() => {
     setDragging(false);
@@ -74,8 +83,7 @@ export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.5)' })
 
   const el = scrollRef.current;
   if (!el) return null;
-  const clientHeight = el.clientHeight || 200;
-  const thumbHeight = Math.max(32, clientHeight * thumb.pct);
+  const thumbHeight = Math.max(20, (el.clientHeight || 200) * THUMB_FRACTION);
 
   return (
     <div
@@ -92,7 +100,7 @@ export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.5)' })
       }}
       aria-hidden="true"
     >
-      {/* Track */}
+      {/* Track — subtle background */}
       <div style={{ position: 'absolute', inset: 0, borderRadius: 999, background: 'rgba(255,255,255,0.04)' }} />
       {/* Thumb */}
       <div
@@ -100,14 +108,14 @@ export default function ScrollBar({ scrollRef, color = 'rgba(212,175,55,0.5)' })
         style={{
           position: 'absolute',
           right: 0,
-          top: thumb.top,
+          top: thumbTop,
           width: '100%',
           height: thumbHeight,
-          background: dragging ? 'rgba(212,175,55,0.85)' : color,
+          background: dragging ? 'rgba(212,175,55,0.9)' : color,
           borderRadius: 999,
           cursor: 'grab',
           pointerEvents: 'all',
-          transition: 'background 150ms ease, top 50ms linear, height 50ms linear',
+          transition: dragging ? 'none' : 'background 150ms ease, opacity 300ms ease',
           touchAction: 'none',
         }}
         data-testid="scroll-thumb"
