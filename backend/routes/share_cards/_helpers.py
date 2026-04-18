@@ -152,7 +152,16 @@ def _clean_expired() -> None:
 
 
 def _font(path: str, size: int) -> ImageFont.FreeTypeFont:
-    return ImageFont.truetype(path, size)
+    """Load a font by path.  Falls back to the shipped Cormorant Garamond if the
+    system font is missing (e.g. Railway containers without fonts-liberation)."""
+    try:
+        return ImageFont.truetype(path, size)
+    except OSError:
+        # System font not installed — use the serif font we ship with the app.
+        try:
+            return ImageFont.truetype(str(_FONT_DIR / "CormorantGaramond-Bold.ttf"), size)
+        except OSError:
+            return ImageFont.load_default()
 
 
 def _card_id(variant: str, name: str, detail: str, quote: str = "") -> str:
