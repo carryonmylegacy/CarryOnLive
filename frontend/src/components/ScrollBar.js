@@ -1,22 +1,29 @@
 /**
- * ScrollBar — zero-React-state scroll indicator for contained scrollable divs.
+ * ScrollBar — scroll indicator that lives OUTSIDE (as a sibling of) the
+ * scrollable div. This is the only architecture that works correctly:
  *
- * KEY GEOMETRY FIX: The thumb is position:absolute INSIDE the scrollable
- * container. When the container scrolls by N px, the thumb physically moves
- * N px in the opposite direction. The transform must compensate:
- *   translateY = scrollTop + (pct * trackRange)
- *                ^^^^^^^^^^
- *                cancels the container's scroll offset
+ * DOM structure:
+ *   <div style="position:relative; overflow:hidden">   ← wrapper
+ *     <div ref={scrollRef} className="overflow-y-auto"> ← scrollable content
+ *       {children}
+ *     </div>
+ *     <ScrollBar scrollRef={scrollRef} />              ← sibling, NOT child
+ *   </div>
  *
- * Without this, the thumb appears to scroll in the OPPOSITE direction.
+ * Because the thumb is position:absolute relative to the WRAPPER (not the
+ * scrollable div), it never scrolls with the content — no scrollTop
+ * compensation is needed, and the direction is always correct.
+ *
+ * Direct DOM mutation during scroll = zero React re-renders = zero glitch.
+ * Drag wired via addEventListener on the thumb DOM node.
  */
 import { useRef, useEffect } from 'react';
 import React from 'react';
 
-const THUMB_H     = 64;    // px — fixed height
-const THICKNESS   = 6;     // px — track width
-const HIDE_DELAY  = 1500;  // ms
-const MOUNT_DELAY = 360;   // ms — let entrance animations settle
+const THUMB_H    = 64;    // px — fixed height
+const THICKNESS  = 6;     // px
+const HIDE_DELAY = 1500;  // ms
+const MOUNT_DELAY = 360;  // ms — let entrance animations settle
 
 export default function ScrollBar({ scrollRef }) {
   const wrapRef  = useRef(null);
@@ -28,7 +35,7 @@ export default function ScrollBar({ scrollRef }) {
     const show = () => { if (wrapRef.current)  wrapRef.current.style.opacity = '1'; };
     const hide = () => { if (wrapRef.current)  wrapRef.current.style.opacity = '0'; };
 
-    // ── Scroll position update ────────────────────────────────────────────
+    // ── Position update — simple, no scrollTop compensation needed ────────
     const update = () => {
       const el    = scrollRef.current;
       const thumb = thumbRef.current;
@@ -40,9 +47,8 @@ export default function ScrollBar({ scrollRef }) {
       const scrollRange = scrollHeight - clientHeight;
       const pct = scrollRange > 0 ? scrollTop / scrollRange : 0;
 
-      // scrollTop offsets the element back into the visible area;
-      // pct * trackRange places it at the correct position within the track.
-      thumb.style.transform = `translateY(${scrollTop + pct * trackRange}px)`;
+      // Simple: no scrollTop offset — the wrapper handles positioning context
+      thumb.style.transform = `translateY(${pct * trackRange}px)`;
 
       show();
       clearTimeout(hideTimer.current);
@@ -61,28 +67,17 @@ export default function ScrollBar({ scrollRef }) {
       const el = scrollRef.current;
       if (!el) return;
 
-      // Suppress ALL text selection during drag (body + documentElement for iOS)
-      const noSelect = () => {
-        document.body.style.userSelect       = 'none';
-        document.body.style.webkitUserSelect = 'none';
-        document.documentElement.style.userSelect       = 'none';
-        document.documentElement.style.webkitUserSelect = 'none';
-      };
-      const restoreSelect = () => {
-        document.body.style.userSelect       = '';
-        document.body.style.webkitUserSelect = '';
-        document.documentElement.style.userSelect       = '';
-        document.documentElement.style.webkitUserSelect = '';
-      };
-
-      noSelect();
+      document.body.style.userSelect = 'none';
+      document.body.style.webkitUserSelect = 'none';
+      document.documentElement.style.userSelect = 'none';
+      document.documentElement.style.webkitUserSelect = 'none';
 
       const startY      = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
       const startScroll = el.scrollTop;
 
       const onMove = (ev) => {
-        ev.preventDefault();  // requires { passive: false }
-        const y = ev.clientY ?? ev.touches?.[0]?.clientY ?? 0;
+        ev.preventDefault();
+        const y  = ev.clientY ?? ev.touches?.[0]?.clientY ?? 0;
         const dy = y - startY;
         const trackRange  = el.clientHeight - THUMB_H;
         const scrollRange = el.scrollHeight - el.clientHeight;
@@ -91,7 +86,10 @@ export default function ScrollBar({ scrollRef }) {
       };
 
       const onUp = () => {
-        restoreSelect();
+        document.body.style.userSelect = '';
+        document.body.style.webkitUserSelect = '';
+        document.documentElement.style.userSelect = '';
+        document.documentElement.style.webkitUserSelect = '';
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup',   onUp);
         window.removeEventListener('touchmove',   onMove);
@@ -137,6 +135,7 @@ export default function ScrollBar({ scrollRef }) {
       ref={wrapRef}
       aria-hidden="true"
       style={{
+        // Positioned relative to the wrapper div (sibling of scrollable content)
         position: 'absolute', top: 0, right: 2, bottom: 0,
         width: THICKNESS, zIndex: 50, pointerEvents: 'none',
         opacity: 0, transition: 'opacity 300ms ease',

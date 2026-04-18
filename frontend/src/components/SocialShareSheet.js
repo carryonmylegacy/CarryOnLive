@@ -285,12 +285,19 @@ export default function SocialShareSheet({
           </button>
         </div>
 
-        {/* ── Scrollable content area — all the actual content ── */}
-        <div
-          ref={scrollRef}
-          className="overflow-y-auto flex-1"
-          style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', position: 'relative' }}
-        >
+        {/* ── Scrollable content + indicator — sibling layout so ScrollBar
+             is NOT inside the scrollable div (fixes inverted direction bug) ── */}
+        <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
+          {/* The actual scrollable content div */}
+          <div
+            ref={scrollRef}
+            className="overflow-y-auto"
+            style={{
+              height: '100%',
+              WebkitOverflowScrolling: 'touch',
+              overscrollBehavior: 'contain',
+            }}
+          >
 
         {/* Image preview — REMOVED. Quote text is the primary content. */}
 
@@ -477,9 +484,11 @@ export default function SocialShareSheet({
           For Instagram &amp; iMessage, download the image first and attach it manually.
         </p>
 
-        <ScrollBar scrollRef={scrollRef} />
+          </div>{/* end scrollable content */}
 
-        </div>{/* end scrollable content */}
+          {/* ScrollBar lives OUTSIDE the scrollable div as a sibling — no scrollTop compensation needed */}
+          <ScrollBar scrollRef={scrollRef} />
+        </div>{/* end scrollable+indicator wrapper */}
       </div>
 
       <style>{`
