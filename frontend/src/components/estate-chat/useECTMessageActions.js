@@ -108,28 +108,18 @@ export default function useECTMessageActions({
   // ── Pin ───────────────────────────────────────────────────────────────────
   const togglePin = async (messageId) => {
     try {
-      console.log('[ECT pin] calling pin for', messageId, 'channel:', activeChannel?.id);
       const res = await fetch(`${API_URL}/estate-chat/messages/${messageId}/pin`, { method: 'POST', headers });
-      console.log('[ECT pin] response status:', res.status);
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        console.error('[ECT pin] FAILED:', errData);
         toast.error(errData.detail || `Pin failed (${res.status})`);
         return;
       }
       const data = await res.json();
-      console.log('[ECT pin] SUCCESS:', data);
-      toast.success(data.pinned ? 'Message pinned ✓' : 'Message unpinned ✓');
+      toast.success(data.pinned ? 'Message pinned ✓' : 'Message unpinned');
       setReactingMsgId(null);
-      if (activeChannel) {
-        console.log('[ECT pin] refreshing messages for channel', activeChannel.id);
-        await fetchMessages(activeChannel.id);
-        console.log('[ECT pin] messages refreshed');
-      } else {
-        console.warn('[ECT pin] activeChannel is null — cannot refresh');
-      }
+      if (activeChannel) await fetchMessages(activeChannel.id);
     } catch (err) {
-      console.error('[ECT pin] exception:', err);
+      console.error('[ECT pin] error:', err);
       toast.error('Could not pin message — check connection');
     }
   };

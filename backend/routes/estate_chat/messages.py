@@ -13,7 +13,6 @@ from config import db
 from uuid import uuid4
 from datetime import datetime, timezone
 from typing import Optional
-from services.estate_auth import is_estate_owner as _is_estate_owner
 
 
 @router.get("/estate-chat/channels/{channel_id}/messages")
@@ -319,10 +318,7 @@ async def toggle_pin(
     )
     if not channel or current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Not a member of this channel")
-    if not await _is_estate_owner(current_user["id"], channel["estate_id"]):
-        # Also allow system admins to pin (they need to test ECT flows)
-        if current_user.get("role") not in ("admin",):
-            raise HTTPException(status_code=403, detail="Only the estate owner can pin messages")
+    # Any channel member can pin — no estate ownership check needed
     is_pinned = msg.get("pinned", False)
     now = datetime.now(timezone.utc).isoformat()
     await db.estate_messages.update_one(
