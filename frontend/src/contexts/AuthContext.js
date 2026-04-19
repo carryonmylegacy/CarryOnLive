@@ -170,6 +170,14 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (e) { /* proceed with client-side logout even if server call fails */ }
     clearCache();
+    // Purge the service worker's per-user API + image caches so the next
+    // user to log in on this device doesn't see a flash of the previous
+    // user's dashboard data.
+    try {
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_APP_CACHES' });
+      }
+    } catch {}
     localStorage.removeItem('carryon_token');
     localStorage.removeItem('dev_switcher_admin_session');
     localStorage.removeItem('dev_switcher_admin_token');

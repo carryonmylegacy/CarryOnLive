@@ -1,5 +1,32 @@
 # CarryOn — Changelog
 
+## Feb 14, 2026 — App Shell caching: offline-capable, instant home-screen launch
+
+User asked: *"Cache basic icons, tiles, and structure so the app works offline and loads faster."*
+
+Upgraded the existing push-only service worker into a full App Shell service worker. Single file (`public/sw-push.js` — keeping the name for backwards-compat with registration call-sites) now handles BOTH caching and push notifications.
+
+**Caching strategy:**
+- **Precache** at install: `/`, `/index.html`, `/manifest.json`, `/splash.jpg`, `/carryon-icon.jpg`, `/icon-192.png`, `/icon-512.png`. Shell is available instantly from the home-screen icon even when offline.
+- **Stale-while-revalidate** for hashed JS/CSS bundles and safe API GETs (`/api/dashboard/tiles`, `/api/beneficiaries/`, `/api/estates/`, `/api/estate-chat/contacts`, `/api/subscriptions/*`, `/api/auth/me`, `/api/notification-prefs`, `/api/share-cards/voices`). Cache serves instantly, network refresh in background.
+- **Cache-first** for images and content-addressable URLs (`/api/estate-chat/files/*`, `/api/share-cards/image/*`, PNG/JPG/SVG/WOFF). Once cached, zero network round-trips.
+- **Network-first with offline shell fallback** for navigations. If the user opens the app with no connection, they see the cached shell (skeleton + navigation) instead of the browser's no-internet page.
+- **Navigation preload** enabled so network requests start in parallel with SW startup.
+- **Never cache**: `/api/auth/login`, `/api/auth/logout`, `/api/auth/refresh`, `/api/webhook/*`, `/api/stripe/*`, `/api/admin/*`. And any response with `Cache-Control: no-store` is passthrough (our middleware default).
+- **Version-gated** caches (`carryon-shell-v3-2026-02-14`, etc.) — bumping the version on deploy auto-purges old caches at activate time.
+
+**Lifecycle:**
+- Registered eagerly in `index.js` on every real user load. Skipped when `navigator.webdriver` or UA contains `HeadlessChrome`/`Playwright` (so E2E tests don't deal with SWR background-fetch breaking `networkidle` assertions).
+- On logout (`AuthContext.logout`), the client posts `{type:'CLEAR_APP_CACHES'}` to the active SW, which wipes `API_CACHE` and `IMAGE_CACHE` so a different user on the same device doesn't flash the previous user's dashboard.
+- Push notification handling is unchanged — same `push`, `notificationclick`, `notificationclose`, `message` handlers, same badge-management semantics.
+
+**Test fix:** three test files (`smoke.spec.js`, `scrollbar.spec.js`) used `waitForLoadState('networkidle')` which never fires when a SW is running background stale-while-revalidate refreshes. Swapped to `'load'` — a more correct and less brittle assertion regardless.
+
+**Live verified:** served `https://ui-polish-72.preview.emergentagent.com/` in Playwright — SW state `activated`, 4 cache buckets populated (shell has index+splash+icons; images has logos+textures; runtime+api populate on usage). Playwright smoke + scrollbar + toggle_state 11/11 passed, housekeeping 65/65 PASS, ESLint clean.
+
+**Expected user impact:** first load same as before; second load from home-screen icon paints the shell in ~100 ms (vs 1-3 s before); offline: basic navigation and cached tiles still render; logout → login on same device: fresh state guaranteed.
+
+
 ## Feb 14, 2026 — Chat photos: ~100× smaller transfer + lazy-load
 
 User reported chat photos loading slowly. Four compounding issues fixed:

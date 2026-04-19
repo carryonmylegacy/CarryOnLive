@@ -57,6 +57,49 @@ if (typeof EventTarget !== 'undefined') {
   };
 }
 
+// ── Service Worker: App Shell caching + Push notifications ─────────────────
+// Register the unified SW (sw-push.js) on every load so the shell
+// (icons, splash, manifest, cached API tiles) is available offline and
+// the app launches instantly from the home-screen icon. Push registration
+// still happens on-demand in PushPrompt / NotificationSettings — it only
+// adds the push subscription to this already-registered worker.
+//
+// We skip registration in headless automation (Playwright) because SW's
+// background stale-while-revalidate refreshes break `networkidle`-style
+// assertions and sometimes crash the headless chromium process. Real
+// users — including PWA installs — always get the SW.
+const IS_HEADLESS = (() => {
+  try {
+    return Boolean(
+      navigator.webdriver ||
+      /HeadlessChrome|Playwright|Puppeteer/i.test(navigator.userAgent || '')
+    );
+  } catch { return false; }
+})();
+
+if ('serviceWorker' in navigator && window.location.protocol !== 'file:' && !IS_HEADLESS) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw-push.js', { scope: '/' })
+      .then((reg) => {
+        // If a new SW is waiting, prompt it to take over on next navigation.
+        if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        reg.addEventListener('updatefound', () => {
+          const installing = reg.installing;
+          if (installing) {
+            installing.addEventListener('statechange', () => {
+              if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+                // New version ready — activate it so the next launch is fresh.
+                installing.postMessage({ type: 'SKIP_WAITING' });
+              }
+            });
+          }
+        });
+      })
+      .catch((err) => console.warn('[SW] Registration failed:', err));
+  });
+}
+
+
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(

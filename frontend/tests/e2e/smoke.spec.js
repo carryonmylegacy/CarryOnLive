@@ -81,7 +81,12 @@ test.describe('CarryOn E2E Smoke Path', () => {
     await loginAsAdmin(page);
     // Admin may auto-route to /admin; follow to /dashboard to assert tiles
     await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
+    // Use `load` instead of `networkidle` — our service worker fires
+    // background stale-while-revalidate refreshes on every cached API,
+    // so strict network-idle never occurs on an SW-enabled app.
+    await page.waitForLoadState('load');
+    // Give tiles a moment to render their first paint
+    await page.waitForTimeout(1500);
     // The benefactor dashboard container or page body should be present
     await expect(page.locator('body')).toBeVisible();
     // Ensure no tile-level error boundary fired

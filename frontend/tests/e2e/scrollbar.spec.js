@@ -36,7 +36,7 @@ async function loginAsAdmin(page) {
 test.describe('Scrollbar integration', () => {
   test('home page retains native scroll (no OverlayScrollbars)', async ({ page }) => {
     await page.goto('/home');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     const osBarsOnMarketing = await page.evaluate(
       () => document.querySelectorAll('.os-scrollbar').length
     );
@@ -46,7 +46,7 @@ test.describe('Scrollbar integration', () => {
   test('Settings page initializes overlay scrollbar on .main-content', async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto('/settings');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     const info = await page.evaluate(() => {
@@ -71,7 +71,7 @@ test.describe('Scrollbar integration', () => {
   test('scroll direction is correct: thumb moves down when content scrolls down', async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto('/settings');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     // Skip on viewports where .main-content isn't the scroll container
