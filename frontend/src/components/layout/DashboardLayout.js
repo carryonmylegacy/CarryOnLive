@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import 'overlayscrollbars/overlayscrollbars.css';
 import '../../styles/overlay-scrollbars.css';
+import attachDragMomentum from '../../utils/scrollbarMomentum';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import { useAuth } from '../../contexts/AuthContext';
@@ -51,6 +52,8 @@ const OS_EVENTS = {
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
     window.addEventListener('blur', onUp);
+    // iOS-style "toss" inertia on vertical thumb release
+    attachDragMomentum(instance);
   },
   updated: (instance) => {
     const host = instance.elements().host;

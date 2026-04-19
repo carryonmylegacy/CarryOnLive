@@ -15,6 +15,7 @@ import { useEffect } from 'react';
 import { OverlayScrollbars } from 'overlayscrollbars';
 import 'overlayscrollbars/overlayscrollbars.css';
 import '../styles/overlay-scrollbars.css';
+import attachDragMomentum from '../utils/scrollbarMomentum';
 
 const RATIO_THRESHOLD = 1.5;
 
@@ -59,11 +60,13 @@ export function useOverlayScrollbars(ref, deps = []) {
           window.addEventListener('pointerup', onUp);
           window.addEventListener('pointercancel', onUp);
           window.addEventListener('blur', onUp);
+          const disposeMomentum = attachDragMomentum(inst);
           inst.__carryon_cleanup = () => {
             handles.forEach((h) => h.removeEventListener('pointerdown', onDown));
             window.removeEventListener('pointerup', onUp);
             window.removeEventListener('pointercancel', onUp);
             window.removeEventListener('blur', onUp);
+            disposeMomentum?.();
           };
         },
         updated: (inst) => {
