@@ -1,6 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { X, Download, Copy, Check, Share2, MessageCircle, Mail, Shuffle, Loader2 } from 'lucide-react';
-import ScrollBar from './ScrollBar';
 
 /**
  * SocialShareSheet — dumb-simple, one-tap share links to every major
@@ -150,7 +149,6 @@ export default function SocialShareSheet({
   const [imageCopied, setImageCopied] = useState(false);
   const [draftQuote, setDraftQuote] = useState(quote || '');
   const [consentPublic, setConsentPublic] = useState(false);
-  const scrollRef = useRef(null);  // must be before any early return
 
   // Keep the draft in sync when the parent swaps in a new random quote
   React.useEffect(() => {
@@ -285,19 +283,14 @@ export default function SocialShareSheet({
           </button>
         </div>
 
-        {/* ── Scrollable content + indicator — sibling layout so ScrollBar
-             is NOT inside the scrollable div (fixes inverted direction bug) ── */}
-        <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
-          {/* The actual scrollable content div */}
-          <div
-            ref={scrollRef}
-            className="overflow-y-auto"
-            style={{
-              height: '100%',
-              WebkitOverflowScrolling: 'touch',
-              overscrollBehavior: 'contain',
-            }}
-          >
+        {/* ── Scrollable content ── */}
+        <div
+          className="overflow-y-auto flex-1"
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain',
+          }}
+        >
 
         {/* Image preview — REMOVED. Quote text is the primary content. */}
 
@@ -484,11 +477,7 @@ export default function SocialShareSheet({
           For Instagram &amp; iMessage, download the image first and attach it manually.
         </p>
 
-          </div>{/* end scrollable content */}
-
-          {/* ScrollBar lives OUTSIDE the scrollable div as a sibling — no scrollTop compensation needed */}
-          <ScrollBar scrollRef={scrollRef} />
-        </div>{/* end scrollable+indicator wrapper */}
+        </div>{/* end scrollable content */}
       </div>
 
       <style>{`

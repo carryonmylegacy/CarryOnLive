@@ -1096,22 +1096,17 @@
 }
 
 /* ── Scrollbar styling ─────────────────────────────────────────────────────
-   Hide native browser scrollbars everywhere — the React <ScrollBar> component
-   renders a custom indicator where needed (see ScrollBar.js).
-   On desktop, show a minimal 2px gold line for mouse-drag support.
+   Let iOS show its native scroll indicators — they work perfectly.
+   On desktop, use a subtle 2px gold scrollbar.
 ────────────────────────────────────────────────────────────────────────── */
 
-/* Mobile: hide all native scrollbars — React ScrollBar handles indicators */
-::-webkit-scrollbar { width: 0; height: 0; background: transparent; }
-* { scrollbar-width: none; }
-
-/* Desktop only: show a subtle 2px scrollbar */
+/* Desktop only: subtle gold scrollbar */
 @media (min-width: 1024px) {
-  ::-webkit-scrollbar { width: 2px; height: 2px; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 999px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,0.6); }
-  * { scrollbar-width: thin; scrollbar-color: rgba(212,175,55,0.3) transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.35); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,0.65); }
+  * { scrollbar-width: thin; scrollbar-color: rgba(212,175,55,0.35) transparent; }
 }
 
 /* Mobile Styles */
