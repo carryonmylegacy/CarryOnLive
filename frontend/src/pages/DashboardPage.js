@@ -917,7 +917,7 @@ const DashboardPage = () => {
         )}
 
         {/* Share your CarryOn — gold pill button at the bottom of the dashboard */}
-        <div className="mt-8 mb-2 px-1" data-testid="dashboard-share-tile">
+        <div className="mt-4 mb-2 px-1" data-testid="dashboard-share-tile">
           <ShareYourCarryOn variant="pill" />
         </div>
       </div>
