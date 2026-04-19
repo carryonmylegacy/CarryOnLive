@@ -25,6 +25,9 @@ const SettingsPage = () => {
   const [searchParams] = useSearchParams();
   const [settingsReady, setSettingsReady] = useState(false);
   const [guideHidden, setGuideHidden] = useState(true);
+  const [betaBugIconHidden, setBetaBugIconHidden] = useState(
+    () => localStorage.getItem('hide_beta_bug_icon') === 'true'
+  );
 
   const isStaff = user?.role === 'admin' || user?.role === 'operator';
   const fromOnboarding = searchParams.get('from') === 'onboarding';
@@ -219,8 +222,9 @@ const SettingsPage = () => {
                   <p className="text-xs text-[var(--t5)]">Hide the floating bug icon on all pages</p>
                 </div>
                 <Switch
-                  checked={localStorage.getItem('hide_beta_bug_icon') === 'true'}
+                  checked={betaBugIconHidden}
                   onCheckedChange={(checked) => {
+                    setBetaBugIconHidden(checked);
                     localStorage.setItem('hide_beta_bug_icon', checked ? 'true' : 'false');
                     // Broadcast to DashboardLayout so the floating bug button
                     // appears/disappears instantly — no page reload needed.

@@ -82,31 +82,37 @@
     <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>
         <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded">Skip to main content</a>
-        <div id="root">
-            <!-- CarryOn boot splash — shows instantly on cold load so the
-                 user sees brand + spinner, not a blank white screen, while
-                 the JS bundle downloads and React mounts. React replaces
-                 this markup on hydrate. ~1KB of inline HTML+CSS, zero
-                 network requests (SVG + CSS animation only). -->
-            <div id="carryon-boot-splash" role="status" aria-label="Loading CarryOn"
-                 style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0B1221;color:#d4af37;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;z-index:999999;">
-                <div style="width:72px;height:72px;border-radius:18px;background:#0F1A2E;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 40px rgba(212,175,55,0.18),inset 0 0 0 1px rgba(212,175,55,0.3);">
-                    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M12 2 L4 6 v6 c0 5 3.5 9 8 10 4.5-1 8-5 8-10 V6 Z"/>
-                    </svg>
-                </div>
-                <div style="margin-top:22px;font-size:20px;font-weight:700;letter-spacing:-0.02em;">CarryOn<span style="font-size:12px;vertical-align:top;margin-left:2px;">™</span></div>
-                <div style="margin-top:8px;font-size:12px;color:rgba(212,175,55,0.55);letter-spacing:0.1em;text-transform:uppercase;">Loading your vault…</div>
-                <div style="margin-top:28px;width:34px;height:34px;border-radius:50%;border:3px solid rgba(212,175,55,0.15);border-top-color:#d4af37;animation:carryon-spin 0.9s linear infinite;"></div>
-                <style>
-                    @keyframes carryon-spin { to { transform: rotate(360deg); } }
-                    @media (prefers-color-scheme: light) {
-                        #carryon-boot-splash { background:#FDF7E5 !important; color:#0B1221 !important; }
-                        #carryon-boot-splash > div:first-child { background:#FFF8E0 !important; box-shadow:0 10px 40px rgba(11,18,33,0.12),inset 0 0 0 1px rgba(212,175,55,0.45) !important; }
-                    }
-                </style>
-            </div>
+        <div id="root"></div>
+        <!-- CarryOn boot splash — SIBLING of #root so React mounting
+             doesn't clobber it. A tiny inline script below fades it out
+             when the app dispatches `carryon:app-ready`, giving a
+             seamless native-like handoff instead of a navy-blank gap
+             between HTML hydration and the app's first paint. -->
+        <div id="carryon-boot-splash" role="status" aria-label="Loading CarryOn"
+             style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0B1221;z-index:2147483000;-webkit-font-smoothing:antialiased;transition:opacity 0.35s ease-out,visibility 0s linear 0.35s;">
+            <img src="%PUBLIC_URL%/carryon-icon.jpg" alt="CarryOn"
+                 style="width:128px;height:128px;border-radius:28px;box-shadow:0 24px 60px rgba(0,0,0,0.45),0 0 0 1px rgba(212,175,55,0.12);object-fit:cover;" />
+            <div style="margin-top:42px;width:28px;height:28px;border-radius:50%;border:2px solid rgba(212,175,55,0.15);border-top-color:#d4af37;animation:carryon-spin 0.85s linear infinite;"></div>
+            <style>
+                @keyframes carryon-spin { to { transform: rotate(360deg); } }
+                #carryon-boot-splash.carryon-splash-hide { opacity: 0; visibility: hidden; pointer-events: none; }
+            </style>
         </div>
+        <script>
+            (function () {
+                var splash = document.getElementById('carryon-boot-splash');
+                if (!splash) return;
+                var remove = function () {
+                    splash.classList.add('carryon-splash-hide');
+                    setTimeout(function () { splash && splash.parentNode && splash.parentNode.removeChild(splash); }, 420);
+                };
+                window.addEventListener('carryon:app-ready', remove, { once: true });
+                // Safety net — if for any reason the app-ready event is never
+                // dispatched (route error before mount, etc.), hide after 20s
+                // so the user isn't permanently stuck staring at the splash.
+                setTimeout(remove, 20000);
+            })();
+        </script>
         <!--
       This HTML file is a template.
       If you open it directly in the browser, you will see an empty page.

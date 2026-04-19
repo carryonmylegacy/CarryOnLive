@@ -1,5 +1,20 @@
 # CarryOn — Changelog
 
+## Feb 14, 2026 — Splash polish (JV → varsity) + Switch-state fix
+
+**Splash screen:** Previous version had a generic shield SVG, "LOADING YOUR VAULT…" marketing copy, and a light-mode media query that painted cream on iOS. User (correctly) called it JV. Replaced with a direct mirror of the native iOS launch screen.
+
+- **`public/index.html`** — splash now uses the real `/carryon-icon.jpg` brand mark (your hands + gold infinity logo), dark navy `#0B1221` background matching the native launch, no marketing copy, one thin elegant spinner beneath the icon.
+- **Moved splash OUT of `#root`** and made it a sibling element. Previously React's `createRoot().render()` atomically replaced `#root` children on mount, producing a ~180ms navy-blank gap between the splash and the app's own `PageLoader` (which has an anti-flash 180ms delay). Splash is now sibling + fades via CSS class.
+- **Added `carryon:app-ready` event handoff.** `AuthContext.initAuth` dispatches the event after `setLoading(false)`. Inline script in `index.html` listens once, adds `.carryon-splash-hide` class for a 350ms opacity fade, then removes the element from the DOM. 20s safety timeout so a boot failure never traps the user.
+
+**Switch not turning green after flip ("Hide Bug Report Icon"):** The Switch read `localStorage` directly at render, so once I removed the page reload there was no re-render trigger — the `checked` prop stayed stale even though the toast fired and the state was persisted.
+
+- **`pages/SettingsPage.js`** — added a `betaBugIconHidden` React state initialised from localStorage, driving both the Switch's `checked` prop and the localStorage write. Switch now flips visually the instant the user taps, toast fires, custom event broadcasts to DashboardLayout (which already listens) so the floating bug button appears/disappears in place. Zero page reload, zero freeze.
+
+Tests: Playwright smoke + scrollbar → 10/10 passed. Housekeeping 65/65 PASS. Live screenshot captured showing the new varsity splash with real brand mark.
+
+
 ## Feb 14, 2026 — Perf: Toggle-freeze fix + cold-boot white-screen fix
 
 **Issue 1 — "Hide Bug Report Icon" toggle locked the UI for ~30s:** My earlier change fired a `toast + setTimeout(reload, 900ms)`. The reload re-downloaded the whole JS bundle + re-authed + refetched dashboard data, which on a cold Railway backend can stall for 30s+. Root cause: DashboardLayout was reading `localStorage.hide_beta_bug_icon` directly at render, so a reload was the only way to reflect the change.

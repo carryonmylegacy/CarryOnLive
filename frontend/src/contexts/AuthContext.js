@@ -102,6 +102,12 @@ export const AuthProvider = ({ children }) => {
         }
       }
       setLoading(false);
+      // Signal to the inline boot splash in index.html that it's safe to
+      // fade itself out — auth either resolved (cached login) or we're
+      // heading to /login. Either way, real app chrome is about to render.
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('carryon:app-ready'));
+      }
     };
     initAuth();
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
