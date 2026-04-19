@@ -86,8 +86,9 @@ Comprehensive family preparedness platform with estate planning, secure document
 - Launch-readiness: 8.0/10 post-hardening
 
 ### Playwright E2E Smoke Suite (regression harness)
-- `frontend/playwright.config.js` + `frontend/tests/e2e/smoke.spec.js` + `scrollbar.spec.js`
-- 21 tests passing, 1 intentionally skipped on desktop viewport
+- `frontend/playwright.config.js` + `tests/e2e/smoke.spec.js` + `scrollbar.spec.js` + `signup_invite_flow.spec.js`
+- **27 passed, 1 skipped, 0 failed** in ~75s
+- Covers: 16 UI smoke tests (landing, login, signup, admin login, dashboard, settings, marketing, health) × 2 viewports; 6 scrollbar regression tests; 6 revenue-funnel API tests (register → login → invite → accept → auth-me)
 - `yarn e2e` runs suite locally; `e2e-smoke` CI job gated on `vars.RUN_E2E == 'true'`
 
 ### Per-Tile Error Boundaries

@@ -3,8 +3,9 @@
 Playwright-based functional smoke tests. Catches the "did we break something
 critical?" class of bug before CI → production.
 
-## What's covered (8 tests, 2 viewports = 16 test runs)
+## What's covered (11 tests, 2 viewports = 22 test runs + 6 API tests)
 
+### `smoke.spec.js` — UI smoke (×2 viewports)
 1. Landing page renders without JS errors
 2. Login page interactive
 3. Signup page interactive
@@ -13,6 +14,18 @@ critical?" class of bug before CI → production.
 6. Settings page loads post-login
 7. Public marketing page renders
 8. `/api/health` is reachable
+
+### `scrollbar.spec.js` — Overlay scrollbar regression (×2 viewports)
+9. Marketing pages retain native scroll (no `.os-scrollbar` present)
+10. Settings page initializes overlay scrollbar on `.main-content` with gold theme
+11. Scroll direction is correct — thumb moves DOWN when content scrolls down
+    (skipped on desktop where window scrolls, not .main-content)
+
+### `signup_invite_flow.spec.js` — Revenue funnel (API only, ×2 viewports)
+12. `POST /api/auth/register` creates a new benefactor + estate
+13. `POST /api/auth/login` responds correctly for a fresh account (OTP-required is acceptable)
+14. Admin → create beneficiary → invitation token returned → accept invitation → token
+    authenticates subsequent calls. Full chain in ~1 second.
 
 ## Running
 

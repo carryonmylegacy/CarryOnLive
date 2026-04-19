@@ -147,6 +147,7 @@ jobs:
         working-directory: frontend
         env:
           E2E_BASE_URL: ${{ secrets.E2E_BASE_URL }}
+          E2E_API_URL: ${{ secrets.E2E_API_URL }}
           E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
           E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
         run: yarn e2e
