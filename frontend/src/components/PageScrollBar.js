@@ -108,7 +108,7 @@ export default function PageScrollBar({ scrollRef }) {
       aria-hidden="true"
       style={{
         position: 'fixed', right: 3, top: 0, bottom: 0,
-        width: THICKNESS, zIndex: 200, pointerEvents: 'none',
+        width: THICKNESS, zIndex: 40, pointerEvents: 'none',
         opacity: 0, transition: 'opacity 300ms ease',
       }}
     >
