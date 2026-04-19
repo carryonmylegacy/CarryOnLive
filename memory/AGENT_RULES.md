@@ -6,6 +6,34 @@
 
 ---
 
+## 🔴 RULE 0 — Housekeeping runs after EVERY batch of changes. No exceptions.
+
+**This is the prime directive. It was violated repeatedly by previous agents and
+caused production regressions. Do not be that agent.**
+
+Run `bash /app/housekeeping.sh` after **every single batch of changes** —
+not just at the end of a task, not just before calling `finish`, but after
+every set of file edits before moving to the next task.
+
+The correct workflow is:
+1. Make changes
+2. `bash /app/housekeeping.sh` → must show 0 WARN, 0 FAIL
+3. Fix anything it flags
+4. Only then move to the next task or respond to the user
+
+**Why:** Skipping this means broken code accumulates silently across iterations.
+The user discovered this pattern and explicitly asked how to prevent it.
+The answer is: you run housekeeping every time, without being told to.
+
+```bash
+# After EVERY batch of changes:
+bash /app/housekeeping.sh 2>&1 | grep -c "PASS"    # must be 69
+bash /app/housekeeping.sh 2>&1 | grep "WARN\|FAIL"  # must be empty
+bash /app/scripts/check.sh 2>&1 | tail -3           # must say ALL CLEAR
+```
+
+---
+
 ## 🔴 RULE 1 — Every summary includes a full housekeeping + ruff report
 
 **No exceptions.** Before calling the `finish` tool, the agent MUST run:

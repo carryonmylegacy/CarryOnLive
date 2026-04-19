@@ -1335,8 +1335,10 @@ echo ""
 # Surface the persistent rule in case an agent runs this without reading
 # /app/memory/AGENT_RULES.md first. Human operators can ignore this line.
 echo ""
-echo -e "${YELLOW}📋 AGENT REMINDER${NC}: Every summary to the user MUST include this"
-echo "   housekeeping output. See /app/memory/AGENT_RULES.md for persistent rules."
+echo -e "${YELLOW}📋 AGENT PRIME DIRECTIVE (RULE 0)${NC}: Run this script after EVERY batch"
+echo "   of changes — not just at finish, but after each set of edits."
+echo "   0 WARN + 0 FAIL is the only acceptable state before responding to the user."
+echo "   See /app/memory/AGENT_RULES.md Rule 0 for full context."
 echo ""
 
 if [ "$STRICT_MODE" = "1" ]; then
