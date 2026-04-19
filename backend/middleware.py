@@ -170,8 +170,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
         path = request.url.path
         if path.startswith("/api/") and path not in ("/api/health",):
-            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
-            response.headers["Pragma"] = "no-cache"
+            # Preserve route-level caching decisions: if a handler explicitly
+            # set a `max-age` directive (e.g. chat photo thumbnails, share
+            # card images — content-addressable UUIDs that are safe to cache
+            # forever), leave it alone. Otherwise default to no-store so
+            # sensitive JSON isn't cached by intermediaries.
+            existing_cc = response.headers.get("Cache-Control", "")
+            if "max-age=" not in existing_cc:
+                response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+                response.headers["Pragma"] = "no-cache"
         return response
 
 

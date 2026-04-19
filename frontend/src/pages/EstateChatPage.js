@@ -215,12 +215,17 @@ export default function EstateChatPage() {
       if (msgRes.ok) {
         const data = await msgRes.json();
         setMessages(data);
-        const fileIds = [];
-        data.forEach(m => {
-          if (m.attachment?.file_id) fileIds.push(m.attachment.file_id);
-          if (m.attachments) m.attachments.forEach(a => { if (a.file_id) fileIds.push(a.file_id); });
+        // Prefetch ONLY the most recent 10 image/file attachments rather
+        // than the entire scroll-back. A long conversation can contain
+        // hundreds of attachments the user will never scroll to; the
+        // IntersectionObserver in AuthImage will fetch the rest on demand.
+        const recentFileIds = [];
+        const recent = data.slice(-40); // last ~40 messages covers the first screenful on most devices
+        recent.forEach(m => {
+          if (m.attachment?.file_id) recentFileIds.push(m.attachment.file_id);
+          if (m.attachments) m.attachments.forEach(a => { if (a.file_id) recentFileIds.push(a.file_id); });
         });
-        if (fileIds.length) prefetchMedia(fileIds);
+        if (recentFileIds.length) prefetchMedia(recentFileIds.slice(-10));
       }
       if (readRes.ok) setReadStatus(await readRes.json());
       if (pinRes.ok) setPinnedMsgs(await pinRes.json());

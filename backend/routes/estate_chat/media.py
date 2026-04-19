@@ -202,9 +202,16 @@ async def upload_multi_attachment(
 @router.get("/estate-chat/files/{file_id}")
 async def serve_chat_file(
     file_id: str,
+    variant: str | None = None,
     current_user: dict = Depends(get_current_user),
 ):
     """Serve a chat attachment file.
+
+    Query params:
+        variant: "thumb" → returns a 480-px longest-side JPEG (~50-80 KB),
+                 suitable for chat-bubble previews. Anything else or omitted
+                 returns the original raw file (used for full-screen preview
+                 and download).
 
     Supports both Bearer header auth and ?token= query param (for img src / window.open).
     """
@@ -241,11 +248,63 @@ async def serve_chat_file(
         data = await storage.download_raw(att["storage_key"])
     except Exception:
         raise HTTPException(status_code=404, detail="File not found in storage")
+
+    file_type = att.get("file_type", "application/octet-stream")
+    is_image = file_type.startswith("image/")
+
+    # Thumbnail variant: server-side resize to 480px longest side.
+    # A typical 5-10 MB iPhone photo becomes a 50-80 KB JPEG — a 60-100×
+    # reduction that transforms chat bubble load time from ~3-5s to ~200ms
+    # on mobile networks. HEIC is decoded by pillow-heif when available;
+    # if that's missing we fall back to the original file.
+    if variant == "thumb" and is_image:
+        try:
+            from io import BytesIO
+            from PIL import Image
+
+            try:
+                # Ensure HEIC/HEIF support if the installed pillow_heif is present.
+                import pillow_heif  # type: ignore
+
+                pillow_heif.register_heif_opener()
+            except Exception:
+                pass
+
+            img = Image.open(BytesIO(data))
+            # Respect EXIF orientation so portrait photos don't arrive sideways.
+            try:
+                from PIL import ImageOps
+
+                img = ImageOps.exif_transpose(img)
+            except Exception:
+                pass
+            img.thumbnail((480, 480), Image.LANCZOS)
+            if img.mode not in ("RGB", "L"):
+                img = img.convert("RGB")
+            buf = BytesIO()
+            img.save(buf, format="JPEG", quality=82, optimize=True, progressive=True)
+            thumb_bytes = buf.getvalue()
+            return Response(
+                content=thumb_bytes,
+                media_type="image/jpeg",
+                headers={
+                    "Content-Disposition": f'inline; filename="thumb-{att.get("file_name", "file")}.jpg"',
+                    # Chat file IDs are UUIDs → content is immutable → safe to
+                    # cache for a year. Browser + Cache API hit rates spike.
+                    "Cache-Control": "private, max-age=31536000, immutable",
+                },
+            )
+        except Exception:
+            # If thumbnail generation fails for any reason, fall through and
+            # serve the original file rather than erroring.
+            pass
+
     return Response(
         content=data,
-        media_type=att.get("file_type", "application/octet-stream"),
+        media_type=file_type,
         headers={
             "Content-Disposition": f'inline; filename="{att.get("file_name", "file")}"',
-            "Cache-Control": "private, max-age=3600",
+            # Content-addressable UUIDs → safe to cache for a year.
+            "Cache-Control": "private, max-age=31536000, immutable",
         },
     )

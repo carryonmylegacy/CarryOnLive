@@ -1,5 +1,24 @@
 # CarryOn — Changelog
 
+## Feb 14, 2026 — Chat photos: ~100× smaller transfer + lazy-load
+
+User reported chat photos loading slowly. Four compounding issues fixed:
+
+1. **Backend was serving full-res originals (5-10 MB iPhone photos) for chat bubbles that display at 240 px.** Added `?variant=thumb` query param to `/api/estate-chat/files/{file_id}`. Server-side Pillow thumbnail at 480 px longest side, JPEG q82 progressive, ~50-80 KB. EXIF orientation respected. HEIC/HEIF supported when `pillow_heif` is installed. Falls back to original if thumbnail generation fails. (`backend/routes/estate_chat/media.py`)
+
+2. **Frontend was fetching every image on chat open via blob.** `AuthImage` now wraps the fetch in an `IntersectionObserver` with `rootMargin: 800px` — images below the fold don't fetch until the user scrolls near them. Full-res original is only fetched when the user taps to open the preview modal. `<img>` tags get `loading="lazy"` and `decoding="async"` for good measure. (`components/estate-chat/AuthMedia.js`)
+
+3. **`prefetchMedia` was warming every attachment in the scroll-back.** Now limited to the last 10 attachments from the final 40 messages — covers everything the user will actually see on first screenful. (`pages/EstateChatPage.js`)
+
+4. **Global middleware forcibly overrode every `/api/` `Cache-Control` header with `no-store`.** This silently defeated any route-level caching decisions. Updated `middleware.py` to preserve any `Cache-Control` that already contains a `max-age=` directive — routes can now opt into caching for content-addressable resources (UUID-keyed files, image CDN cards, etc.) while the default remains `no-store` for JSON responses. (`backend/middleware.py`)
+
+5. **Added backend regression test** `tests/test_chat_photo_thumbnail.py` — uploads a 2000×2000 JPEG, asserts `?variant=thumb` is at least 5× smaller AND ≤480 px AND decodes, asserts original endpoint still returns the full file. Three tests, all pass.
+
+Impact: a chat history with 50 photos now transfers ~4 MB of thumbnails on first load instead of ~500 MB of originals. Repeat visits hit the browser Cache API instantly.
+
+Tests: Playwright smoke + scrollbar + toggle_state 11/11 passed, backend photo-thumbnail 3/3 passed, housekeeping 65/65 PASS, ESLint + ruff clean.
+
+
 ## Feb 14, 2026 — Toggle state fix (bulletproof) + platform-wide audit + regression test
 
 **Why the previous fix failed:** My prior `useState(() => localStorage.getItem(...) === 'true')` + manual `CustomEvent` was brittle under certain mount/unmount conditions (the PWA on iOS Safari exhibited this — the Switch fired the toast but the `checked` prop ignored the state update). The user correctly reported the switch still wasn't flipping.

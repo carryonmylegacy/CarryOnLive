@@ -10,13 +10,20 @@ const ECT_CACHE_NAME = 'carryon-ect-media-v1';
 // In-flight fetch deduplication
 const inflight = new Map();
 
-export async function cachedFetch(fileId) {
-  // Deduplicate: if already fetching this fileId, return same promise
-  if (inflight.has(fileId)) return inflight.get(fileId);
+/**
+ * Fetch a chat attachment with auth, caching it in the Cache API so
+ * subsequent visits are instant. A URL `variant` parameter is appended
+ * (e.g. `?variant=thumb`) so the thumbnail and original are cached
+ * independently.
+ */
+export async function cachedFetch(fileId, variant = null) {
+  const cacheKey = variant
+    ? `${API_URL}/estate-chat/files/${fileId}?variant=${variant}`
+    : `${API_URL}/estate-chat/files/${fileId}`;
+  const dedupeKey = variant ? `${fileId}:${variant}` : fileId;
+  if (inflight.has(dedupeKey)) return inflight.get(dedupeKey);
 
   const promise = (async () => {
-    const cacheKey = `${API_URL}/estate-chat/files/${fileId}`;
-    // 1. Try the Cache API first
     if ('caches' in window) {
       try {
         const cache = await caches.open(ECT_CACHE_NAME);
@@ -27,14 +34,12 @@ export async function cachedFetch(fileId) {
         }
       } catch { /* cache miss, fall through */ }
     }
-    // 2. Fetch from server
     const token = localStorage.getItem('carryon_token');
     const res = await fetch(cacheKey, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error('fetch failed');
     const blob = await res.blob();
-    // 3. Store in cache for next time
     if ('caches' in window) {
       try {
         const cache = await caches.open(ECT_CACHE_NAME);
@@ -44,135 +49,183 @@ export async function cachedFetch(fileId) {
     return URL.createObjectURL(blob);
   })();
 
-  inflight.set(fileId, promise);
-  promise.finally(() => inflight.delete(fileId));
+  inflight.set(dedupeKey, promise);
+  promise.finally(() => inflight.delete(dedupeKey));
   return promise;
 }
 
 /**
- * Prefetch a batch of file IDs into the cache in parallel (up to 3 concurrent).
- * Call this when a conversation is opened to warm the cache for visible media.
+ * Warm the cache for a batch of file IDs (thumbnail variant). Concurrency
+ * capped at 3 so we don't saturate the connection on slow mobile networks.
+ * Caller typically passes only the most recently-visible attachments to
+ * avoid wasting bandwidth on messages far up the scrollback.
  */
 export function prefetchMedia(fileIds) {
   if (!fileIds?.length) return;
-  // Limit concurrency to 3 to avoid saturating the connection
   let i = 0;
   const next = () => {
     if (i >= fileIds.length) return;
     const id = fileIds[i++];
-    cachedFetch(id).catch(() => {}).then(next);
+    cachedFetch(id, 'thumb').catch(() => {}).then(next);
   };
-  // Start up to 3 concurrent fetches
   for (let c = 0; c < Math.min(3, fileIds.length); c++) next();
 }
 
 // ── Authenticated Image ──
+// Loads the ~50-80 KB thumbnail variant (server-resized to 480px) when
+// the bubble is close to the viewport. Falls back to the full-res original
+// only when the user taps to open the preview modal — so a chat history
+// with 50 photos transfers ~4 MB of thumbnails instead of ~500 MB of
+// full-res originals.
 export function AuthImage({ fileId, fileName, msgId, onPreview }) {
   const [src, setSrc] = useState(null);
+  const [inView, setInView] = useState(false);
+  const containerRef = useRef(null);
   const retryCount = useRef(0);
 
+  // Lazy-load: only fetch when the bubble is within 800px of the viewport.
+  // Before this, every image in the conversation fired a blob fetch on mount
+  // which hammered mobile networks and stalled scroll.
   useEffect(() => {
+    const el = containerRef.current;
+    if (!el || inView) return;
+    if (typeof IntersectionObserver === 'undefined') { setInView(true); return; }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some(e => e.isIntersecting)) {
+          setInView(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: '800px 0px' } // start loading well before the bubble enters view
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [inView]);
+
+  useEffect(() => {
+    if (!inView) return;
     retryCount.current = 0;
-    cachedFetch(fileId).then(setSrc).catch(() => {});
-    return () => { /* blob URLs cleaned up via onError retry cycle */ };
-  }, [fileId]); // eslint-disable-line react-hooks/exhaustive-deps
+    cachedFetch(fileId, 'thumb').then(setSrc).catch(() => {});
+  }, [fileId, inView]);
 
   const reloadImage = () => {
     // iOS can revoke blob: URLs when the app backgrounds (Share Sheet, etc.)
     if (retryCount.current >= 2) return;
     retryCount.current += 1;
-    cachedFetch(fileId).then(newSrc => setSrc(newSrc)).catch(() => {});
+    cachedFetch(fileId, 'thumb').then(newSrc => setSrc(newSrc)).catch(() => {});
   };
 
-  const handleDownload = async () => {
-    if (!fileId) return;
+  // Preview = full-res. We hand the original URL to the preview handler
+  // so the zoomed modal shows the uncompressed image.
+  const handlePreview = async () => {
+    if (!onPreview) return;
     try {
-      const token = localStorage.getItem('carryon_token');
-      const resp = await fetch(`${API_URL}/estate-chat/files/${fileId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const blob = await resp.blob();
-      const ext = (fileName || '').split('.').pop()?.toLowerCase() || 'jpg';
-      const mimeMap = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif' };
-      const mimeType = mimeMap[ext] || blob.type || 'image/jpeg';
-      const file = new File([blob], fileName || 'photo.jpg', { type: mimeType });
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file] });
-        return;
-      }
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName || 'photo.jpg';
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      if (err.name !== 'AbortError') toast.error('Could not save photo');
+      const fullSrc = await cachedFetch(fileId); // no variant → original
+      onPreview(fullSrc, fileName, fileId);
+    } catch {
+      // Fall back to the thumbnail if full fetch fails
+      if (src) onPreview(src, fileName, fileId);
     }
   };
 
-  if (!src) return <div className="w-full h-[160px] rounded-xl bg-white/5 flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /></div>;
-
   return (
-    <div>
+    <div ref={containerRef}>
       <div className="relative">
-        <img
-          src={src}
-          alt={fileName}
-          onError={reloadImage}
-          draggable="false"
-          className="rounded-xl max-w-full max-h-[240px] object-cover mb-1"
-          style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none', pointerEvents: 'none' }}
-          data-testid={`chat-image-${msgId}`}
-        />
-        {/* Transparent overlay — blocks iOS native image save; handles tap vs long-press */}
-        <div
-          className="absolute inset-0 rounded-xl"
-          style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
-          onTouchStart={(e) => { e.currentTarget._tapTime = Date.now(); }}
-          onTouchEnd={(e) => {
-            const dt = Date.now() - (e.currentTarget._tapTime || 0);
-            // Only treat as a tap if < 300ms (not a long press) and no action menu visible
-            if (dt < 300 && !document.querySelector('[data-testid^="msg-action-menu-"]')) {
-              e.stopPropagation();
-              e.preventDefault();
-              if (onPreview) onPreview(src, fileName, fileId);
-            }
-            // Long presses fall through — parent bubble handles them
-          }}
-          onClick={(e) => {
-            // Block all clicks from reaching the bubble — touch handler above handles taps
-            e.stopPropagation();
-            e.preventDefault();
-          }}
-          onContextMenu={(e) => e.preventDefault()}
-        />
+        {!src ? (
+          <div className="w-full h-[160px] rounded-xl bg-white/5 flex items-center justify-center">
+            <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} />
+          </div>
+        ) : (
+          <>
+            <img
+              src={src}
+              alt={fileName}
+              onError={reloadImage}
+              draggable="false"
+              loading="lazy"
+              decoding="async"
+              className="rounded-xl max-w-full max-h-[240px] object-cover mb-1"
+              style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none', pointerEvents: 'none' }}
+              data-testid={`chat-image-${msgId}`}
+            />
+            {/* Transparent overlay — blocks iOS native image save; handles tap vs long-press */}
+            <div
+              className="absolute inset-0 rounded-xl"
+              style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
+              onTouchStart={(e) => { e.currentTarget._tapTime = Date.now(); }}
+              onTouchEnd={(e) => {
+                const dt = Date.now() - (e.currentTarget._tapTime || 0);
+                if (dt < 300 && !document.querySelector('[data-testid^="msg-action-menu-"]')) {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  handlePreview();
+                }
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                handlePreview();
+              }}
+              onContextMenu={(e) => e.preventDefault()}
+            />
+          </>
+        )}
       </div>
-      <span className="text-xs" style={{ color: 'var(--t4)' }}>{fileName}</span>
+      {src && <span className="text-xs" style={{ color: 'var(--t4)' }}>{fileName}</span>}
     </div>
   );
 }
 
 // ── Authenticated Video ──
+// Videos also lazy-load (they're far more bandwidth-expensive than photos).
 export function AuthVideo({ fileId, fileName }) {
   const [src, setSrc] = useState(null);
+  const [inView, setInView] = useState(false);
+  const containerRef = useRef(null);
+
   useEffect(() => {
+    const el = containerRef.current;
+    if (!el || inView) return;
+    if (typeof IntersectionObserver === 'undefined') { setInView(true); return; }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some(e => e.isIntersecting)) {
+          setInView(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: '400px 0px' }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [inView]);
+
+  useEffect(() => {
+    if (!inView) return;
     cachedFetch(fileId).then(setSrc).catch(() => {});
     return () => { if (src) URL.revokeObjectURL(src); };
-  }, [fileId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (!src) return <div className="w-full h-[160px] rounded-xl bg-white/5 flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /></div>;
+  }, [fileId, inView]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div>
-      <video
-        src={src}
-        controls
-        playsInline
-        className="rounded-xl max-w-full max-h-[240px] mb-1"
-        style={{ background: 'var(--bg)' }}
-      />
-      <span className="text-xs" style={{ color: 'var(--t4)' }}>{fileName}</span>
+    <div ref={containerRef}>
+      {!src ? (
+        <div className="w-full h-[160px] rounded-xl bg-white/5 flex items-center justify-center">
+          <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} />
+        </div>
+      ) : (
+        <>
+          <video
+            src={src}
+            controls
+            playsInline
+            preload="metadata"
+            className="rounded-xl max-w-full max-h-[240px] mb-1"
+            style={{ background: 'var(--bg)' }}
+          />
+          <span className="text-xs" style={{ color: 'var(--t4)' }}>{fileName}</span>
+        </>
+      )}
     </div>
   );
 }
