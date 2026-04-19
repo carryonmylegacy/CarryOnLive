@@ -29,6 +29,20 @@
   --os-handle-perpendicular-size-active: 100%;
 }
 
+/* Override the library's base visibility:hidden/opacity:0 for themed bars.
+   The library will still apply `.os-scrollbar-auto-hide-hidden` when the
+   autoHide state kicks in; we respect that by using :not(). This keeps the
+   bar visible when the library thinks it should be, regardless of the
+   library's own default-hidden style leaking through. */
+.os-scrollbar.os-theme-carryon-gold:not(.os-scrollbar-auto-hide-hidden) {
+  opacity: 1;
+  visibility: visible;
+}
+.os-scrollbar.os-theme-carryon-gold.os-scrollbar-auto-hide-hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
 .os-scrollbar.os-theme-carryon-gold .os-scrollbar-handle {
   cursor: grab;
   transition: background-color 160ms ease, opacity 220ms ease;
@@ -60,10 +74,12 @@ html.os-dragging * {
     --os-handle-max-size: 68px;
   }
 
-  /* Offset vertical track so it clears the fixed mobile header and dock
-     on routes that use DashboardLayout (the .main-content container). */
-  .main-content > .os-scrollbar.os-scrollbar-vertical.os-theme-carryon-gold,
-  .main-content .os-scrollbar.os-scrollbar-vertical.os-theme-carryon-gold {
+  /* Offset vertical track so it clears the fixed mobile header and dock.
+     Direct-child selector only — otherwise this rule would also push down
+     any NESTED overlay scrollbars (e.g., the chat message list inside
+     main-content), which would hide them under the chat's internal header
+     and composer. */
+  .main-content > .os-scrollbar.os-scrollbar-vertical.os-theme-carryon-gold {
     top: calc(48px + env(safe-area-inset-top, 0px) + 4px) !important;
     bottom: calc(56px + env(safe-area-inset-bottom, 8px) + 4px) !important;
     height: auto !important;
@@ -73,9 +89,11 @@ html.os-dragging * {
 
 /* Hide the vertical scrollbar entirely when content does not exceed 1.5×
    the viewport. The `data-ratio-low` attribute is toggled by the `updated`
-   callback in DashboardLayout and useOverlayScrollbars hook. Scales
-   automatically with any device size because it's relative to the viewport. */
-[data-overlayscrollbars-initialize][data-ratio-low="true"] .os-scrollbar-vertical {
+   callback. Uses `>` (direct child) — NOT descendant — so the rule only
+   applies to THIS host's own scrollbar and doesn't cascade down to nested
+   scroll containers (e.g., the chat message list inside main-content). */
+[data-overlayscrollbars-initialize][data-ratio-low="true"] > .os-scrollbar-vertical,
+[data-overlayscrollbars][data-ratio-low="true"] > .os-scrollbar-vertical {
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;

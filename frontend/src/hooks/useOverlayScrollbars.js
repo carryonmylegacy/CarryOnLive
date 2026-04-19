@@ -22,11 +22,15 @@ const RATIO_THRESHOLD = 1.5;
 const DEFAULT_OPTIONS = {
   scrollbars: {
     theme: 'os-theme-carryon-gold',
-    visibility: 'auto',
+    // `visible` = always considered "needed"; autoHide: 'scroll' controls
+    // when it's actually rendered. With `auto` the library can override
+    // our intent and force visibility:hidden on the element even when the
+    // `os-scrollbar-visible` class is present, which manifested as a
+    // permanently invisible bar on chat/nested scroll containers.
+    visibility: 'visible',
     autoHide: 'scroll',
     autoHideDelay: 1200,
-    // Hidden on mount; only appears once the user starts scrolling.
-    autoHideSuspend: true,
+    autoHideSuspend: false,
     dragScroll: true,
     clickScroll: false,
     pointers: ['mouse', 'touch', 'pen'],

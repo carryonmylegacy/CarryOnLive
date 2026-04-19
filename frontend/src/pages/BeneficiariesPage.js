@@ -687,7 +687,7 @@ const BeneficiariesPage = () => {
                       />
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-sm sm:text-base truncate" style={{ color: isInSuccession ? succStyle.color : 'var(--t)' }}>{ben.name}</h3>
-                        <p className="text-[var(--gold)] text-xs">{ben.relation}</p>
+                        <p className="text-[var(--gold)] text-xs truncate">{ben.relation}</p>
                         {!ben.photo_url && (
                           <p className="text-[11px] text-[var(--t5)] mt-0.5 cursor-pointer hover:text-[var(--t4)] transition-colors"
                             onClick={() => { setQuickUploadBenId(ben.id); setTimeout(() => quickFileRef.current?.click(), 50); }}
