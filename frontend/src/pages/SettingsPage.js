@@ -21,7 +21,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
-  const { user, token, logout, getAuthHeaders } = useAuth();
+  const { user, token, logout, getAuthHeaders, refreshUser } = useAuth();
   const [searchParams] = useSearchParams();
   const [settingsReady, setSettingsReady] = useState(false);
   const [guideHidden, setGuideHidden] = useState(true);
@@ -164,9 +164,9 @@ const SettingsPage = () => {
                     await axios.put(`${API_URL}/auth/profile`, { hide_benefactor_reminder: !checked }, {
                       headers: { Authorization: `Bearer ${token}` },
                     });
+                    // Refresh AuthContext state in place — no full page reload.
+                    await refreshUser();
                     toast.success(checked ? 'Create-Estate Reminder turned on — saved.' : 'Create-Estate Reminder turned off — saved.');
-                    // Let the user see the toast before refreshing so AuthContext picks up the new flag
-                    setTimeout(() => window.location.reload(), 900);
                   } catch {
                     toast.error('Could not save that change. Please try again.');
                   }
@@ -222,8 +222,12 @@ const SettingsPage = () => {
                   checked={localStorage.getItem('hide_beta_bug_icon') === 'true'}
                   onCheckedChange={(checked) => {
                     localStorage.setItem('hide_beta_bug_icon', checked ? 'true' : 'false');
+                    // Broadcast to DashboardLayout so the floating bug button
+                    // appears/disappears instantly — no page reload needed.
+                    window.dispatchEvent(new CustomEvent('carryon:beta-icon-changed', {
+                      detail: { hidden: checked }
+                    }));
                     toast.success(checked ? 'Bug report icon hidden — saved.' : 'Bug report icon restored — saved.');
-                    setTimeout(() => window.location.reload(), 900);
                   }}
                   data-testid="beta-hide-bug-toggle"
                 />

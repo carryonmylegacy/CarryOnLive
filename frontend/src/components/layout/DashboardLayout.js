@@ -89,6 +89,22 @@ const DashboardLayout = () => {
   const [guardianMounted, setGuardianMounted] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('carryon_sidebar_collapsed') === 'true');
   const [betaAccepted, setBetaAccepted] = useState(true);
+  // Reactive mirror of `localStorage.hide_beta_bug_icon` — listens to a
+  // CustomEvent dispatched by the Settings toggle so the floating bug
+  // button appears/disappears in place without a page reload.
+  const [betaIconHidden, setBetaIconHidden] = useState(
+    () => localStorage.getItem('hide_beta_bug_icon') === 'true'
+  );
+
+  useEffect(() => {
+    const onChange = (e) => {
+      setBetaIconHidden(
+        e?.detail?.hidden ?? (localStorage.getItem('hide_beta_bug_icon') === 'true')
+      );
+    };
+    window.addEventListener('carryon:beta-icon-changed', onChange);
+    return () => window.removeEventListener('carryon:beta-icon-changed', onChange);
+  }, []);
 
   // Check if user is a beta tester who hasn't accepted yet
   const isBetaTester = user?.is_beta_tester || subscriptionStatus?.is_beta_tester;
@@ -222,7 +238,7 @@ const DashboardLayout = () => {
       )}
 
       {/* Beta Tester: Floating Feedback Button (can be hidden via settings) */}
-      {isBetaTester && betaAccepted && localStorage.getItem('hide_beta_bug_icon') !== 'true' && <BetaFeedbackButton />}
+      {isBetaTester && betaAccepted && !betaIconHidden && <BetaFeedbackButton />}
     </div>
   );
 };

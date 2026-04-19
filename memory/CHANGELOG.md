@@ -1,5 +1,22 @@
 # CarryOn — Changelog
 
+## Feb 14, 2026 — Perf: Toggle-freeze fix + cold-boot white-screen fix
+
+**Issue 1 — "Hide Bug Report Icon" toggle locked the UI for ~30s:** My earlier change fired a `toast + setTimeout(reload, 900ms)`. The reload re-downloaded the whole JS bundle + re-authed + refetched dashboard data, which on a cold Railway backend can stall for 30s+. Root cause: DashboardLayout was reading `localStorage.hide_beta_bug_icon` directly at render, so a reload was the only way to reflect the change.
+
+Fix:
+- **`components/layout/DashboardLayout.js`** — converted the localStorage read to a reactive `betaIconHidden` React state initialized from localStorage. Added a `carryon:beta-icon-changed` window-event listener that updates the state in place; floating bug button now toggles instantly.
+- **`pages/SettingsPage.js`** — removed `setTimeout(() => window.location.reload(), 900)` from both the Beta "Hide Bug Icon" toggle and the "Create-Estate Reminder" toggle. The beta toggle now dispatches the CustomEvent. The reminder toggle calls `refreshUser()` from AuthContext instead of a full reload.
+
+**Issue 2 — >1 minute white screen on cold boot from home-screen icon:** Three compounding bottlenecks identified:
+
+1. **Empty `<div id="root">`** — nothing visible until the full JS bundle downloaded, parsed, and hydrated. Added an inline brand splash (navy background, gold CarryOn logo + "Loading your vault…" + spinner) directly inside `#root` in `public/index.html`. ~1KB of HTML+CSS, zero network requests. React automatically replaces it on first render. Auto-respects `prefers-color-scheme: light`.
+2. **Sequential boot API calls** — `AuthContext.initAuth` awaited `/auth/me`, then `/subscriptions/status`, then `/subscriptions/enabled-features` in series. On a cold Railway backend (10–40s cold start), that's up to 2 minutes. Refactored to `Promise.allSettled` so all three fly in parallel — ~3× faster on cold starts. Added per-request 20s timeout so a dead backend logs the user out instead of hanging forever.
+3. **Render-blocking Google Fonts CSS** — swapped the blocking `<link rel="stylesheet">` for the `<link rel="preload" … onload="this.rel='stylesheet'">` pattern with a `<noscript>` fallback, unblocking First Contentful Paint by 200–800ms.
+
+Tests: Playwright smoke + scrollbar → 10/10 passed, housekeeping 65/65 PASS, ESLint clean across all 3 files.
+
+
 ## Feb 14, 2026 — Toast system fix: sonner was never mounted, routed through AppNotification
 
 **Root cause of "no toasts appearing":** 10 files across the app imported `toast` from the `sonner` library, but sonner's `<Toaster />` component was never mounted in `App.js`. The app uses a custom branded notification system at `components/AppNotification.js` (rendered via `NotificationContainer`). A shim at `utils/toast.js` exists to translate sonner-style calls into that system, but half the codebase bypassed it and went directly to sonner — sending every toast into the void.

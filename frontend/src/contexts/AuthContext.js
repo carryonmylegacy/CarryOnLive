@@ -65,20 +65,37 @@ export const AuthProvider = ({ children }) => {
     const initAuth = async () => {
       if (token) {
         try {
-          const response = await axios.get(`${API_URL}/auth/me`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          // Include multi-role flags in user object
-          const userData = response.data;
+          // Fire all three boot requests in PARALLEL, not sequentially.
+          // Previously these were awaited in series, so a cold Railway
+          // backend (10-40s cold start) multiplied by 3 could produce a
+          // 2-minute white screen. A 20s timeout per request prevents
+          // indefinite hangs if the backend is unreachable.
+          const authHeaders = { headers: { Authorization: `Bearer ${token}` }, timeout: 20000 };
+          const savedEstateId = localStorage.getItem('selected_estate_id');
+          const estateParam = savedEstateId ? `?estate_id=${savedEstateId}` : '';
+
+          const [meRes, subRes, featRes] = await Promise.allSettled([
+            axios.get(`${API_URL}/auth/me`, authHeaders),
+            axios.get(`${API_URL}/subscriptions/status`, authHeaders),
+            axios.get(`${API_URL}/subscriptions/enabled-features${estateParam}`, authHeaders),
+          ]);
+
+          if (meRes.status !== 'fulfilled') {
+            throw meRes.reason;
+          }
+          const userData = meRes.value.data;
           setUser({
             ...userData,
             is_also_benefactor: userData.is_also_benefactor || false,
             is_also_beneficiary: userData.is_also_beneficiary || false,
             _serverScope: userData.admin_scope,
           });
-          await fetchSubscriptionStatus(token);
-          const savedEstateId = localStorage.getItem('selected_estate_id');
-          await fetchEnabledFeatures(token, savedEstateId);
+          if (subRes.status === 'fulfilled') {
+            setSubscriptionStatus(subRes.value.data);
+          }
+          if (featRes.status === 'fulfilled') {
+            setEnabledFeatures(featRes.value.data?.enabled_features || null);
+          }
         } catch (error) {
           console.error('Auth init error:', error);
           logout();
