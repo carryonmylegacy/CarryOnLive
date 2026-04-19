@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Bell, BellOff, Loader2 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { API_URL } from '../../config';
@@ -25,7 +26,7 @@ export const NotificationPrefsCard = () => {
     })();
   }, []);
 
-  const updatePref = async (updates) => {
+  const updatePref = async (updates, toastLabel) => {
     setSaving(true);
     try {
       const res = await fetch(`${API_URL}/notification-prefs`, {
@@ -37,8 +38,13 @@ export const NotificationPrefsCard = () => {
           ...(updates.master_enabled !== undefined ? { master_enabled: updates.master_enabled } : {}),
           ...(updates.toggles ? { toggles: { ...prev.toggles, ...updates.toggles } } : {}),
         }));
+        if (toastLabel) toast.success(toastLabel);
+      } else if (toastLabel) {
+        toast.error('Could not save that change. Please try again.');
       }
-    } catch {} finally { setSaving(false); }
+    } catch {
+      if (toastLabel) toast.error('Could not save that change. Please try again.');
+    } finally { setSaving(false); }
   };
 
   if (loading) {
@@ -67,7 +73,10 @@ export const NotificationPrefsCard = () => {
         </div>
         <Switch
           checked={prefs.master_enabled}
-          onCheckedChange={(val) => updatePref({ master_enabled: val })}
+          onCheckedChange={(val) => updatePref(
+            { master_enabled: val },
+            val ? 'Push notifications turned on — saved.' : 'Push notifications turned off — saved.'
+          )}
           data-testid="notification-master-toggle"
         />
       </div>
@@ -94,7 +103,10 @@ export const NotificationPrefsCard = () => {
                 </div>
                 <Switch
                   checked={enabled}
-                  onCheckedChange={(val) => updatePref({ toggles: { [cat.id]: val } })}
+                  onCheckedChange={(val) => updatePref(
+                    { toggles: { [cat.id]: val } },
+                    `${cat.label} ${val ? 'enabled' : 'disabled'} — saved.`
+                  )}
                 />
               </div>
             );

@@ -1,5 +1,23 @@
 # CarryOn — Changelog
 
+## Feb 14, 2026 — Per-toggle "— saved." confirmation toasts
+
+User request: *"After each toggle switch is moved and is auto-saved there should be a toast that says those settings were specifically saved. Then if they want to hit Save at the top they can do that."*
+
+Every auto-saving toggle now fires a named toast after its write succeeds. The top-of-page Save button remains as a second-layer affirmation. Wording is uniform: `"<thing> <new-state> — saved."`
+
+Files touched:
+- **`components/settings/AppearanceCard.js`** — theme + onboarding-guide toggles now say `"Dark mode enabled — saved."` / `"Light mode enabled — saved."` / `"Getting Started Guide turned on — saved."` etc. (imported `sonner`).
+- **`components/settings/NotificationPrefsCard.js`** — master push toggle + every per-category toggle say `"<Category> <enabled|disabled> — saved."`. Error path now also surfaces a toast so users know if saving failed.
+- **`components/settings/PrivacyCard.js`** — generic `"Preference updated"` replaced with `"Marketing Emails enabled — saved."`, `"Analytics Tracking disabled — saved."`, `"Third-Party Data Sharing enabled — saved."` (label map added).
+- **`components/NotificationSettings.js`** — the `// toast removed` comments replaced with `toast.success('Push notifications turned on — saved.')` and `... turned off — saved.`.
+- **`pages/SettingsPage.js`** — inline "Create-Estate Reminder" and "Hide Bug Report Icon" toggles now show save toasts and the hard `window.location.reload()` is delayed 900ms so the toast is actually readable. Error toasts added on failure.
+- **`pages/SecuritySettingsPage.js`** — passkey / 2FA / SMS-OTP / auto-logout toasts all updated to the uniform `"— saved."` voice. Top-bar Save button copy updated: `"All security settings on this page are saved."`
+- **`pages/SettingsPage.js`** top-bar Save: `"All settings on this page are saved."`
+
+Verification: ESLint clean on all 6 files, `bash /app/housekeeping.sh` → 65/65 PASS, `yarn playwright test smoke.spec.js scrollbar.spec.js` → 10/10 passed.
+
+
 ## Feb 14, 2026 — Explicit Save affirmation on Settings & Security Settings
 
 User request: "give me both a Back button and a Save button on both Settings and Security Settings pages. On Save, show a toast confirming changes were saved."

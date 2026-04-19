@@ -62,9 +62,9 @@ const SettingsPage = () => {
     // so any child card with a pending debounced write can flush, then
     // surface a toast.
     window.dispatchEvent(new CustomEvent('carryon:settings:flush'));
-    toast.success('Your settings have been saved.', {
+    toast.success('All settings on this page are saved.', {
       duration: 2500,
-      description: 'All changes on this page are committed to your account.',
+      description: 'Every change you just made is committed to your account.',
     });
   };
 
@@ -164,8 +164,12 @@ const SettingsPage = () => {
                     await axios.put(`${API_URL}/auth/profile`, { hide_benefactor_reminder: !checked }, {
                       headers: { Authorization: `Bearer ${token}` },
                     });
-                    window.location.reload();
-                  } catch {}
+                    toast.success(checked ? 'Create-Estate Reminder turned on — saved.' : 'Create-Estate Reminder turned off — saved.');
+                    // Let the user see the toast before refreshing so AuthContext picks up the new flag
+                    setTimeout(() => window.location.reload(), 900);
+                  } catch {
+                    toast.error('Could not save that change. Please try again.');
+                  }
                 }}
                 data-testid="settings-benefactor-reminder-toggle"
               />
@@ -218,7 +222,8 @@ const SettingsPage = () => {
                   checked={localStorage.getItem('hide_beta_bug_icon') === 'true'}
                   onCheckedChange={(checked) => {
                     localStorage.setItem('hide_beta_bug_icon', checked ? 'true' : 'false');
-                    window.location.reload();
+                    toast.success(checked ? 'Bug report icon hidden — saved.' : 'Bug report icon restored — saved.');
+                    setTimeout(() => window.location.reload(), 900);
                   }}
                   data-testid="beta-hide-bug-toggle"
                 />

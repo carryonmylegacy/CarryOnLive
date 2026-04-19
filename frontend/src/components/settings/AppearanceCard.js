@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Moon, Sun } from 'lucide-react';
@@ -35,7 +36,10 @@ const AppearanceCard = ({ isStaff }) => {
           </div>
           <Switch
             checked={theme === 'dark'}
-            onCheckedChange={toggleTheme}
+            onCheckedChange={(checked) => {
+              toggleTheme();
+              toast.success(checked ? 'Dark mode enabled — saved.' : 'Light mode enabled — saved.');
+            }}
             data-testid="settings-theme-toggle"
           />
         </div>
@@ -58,6 +62,7 @@ const AppearanceCard = ({ isStaff }) => {
                   localStorage.setItem('carryon_welcome_guided_shown', 'true');
                   try { await axios.post(`${API_URL}/onboarding/dismiss`, {}, getAuthHeaders()); } catch (e) { /* ignore */ }
                 }
+                toast.success(checked ? 'Getting Started Guide turned on — saved.' : 'Getting Started Guide hidden — saved.');
               }}
               data-testid="settings-onboarding-toggle"
             />

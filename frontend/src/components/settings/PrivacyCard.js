@@ -30,13 +30,20 @@ const PrivacyCard = () => {
       .catch(() => {});
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const PREF_LABELS = {
+    marketing_emails: 'Marketing Emails',
+    analytics_tracking: 'Analytics Tracking',
+    third_party_sharing: 'Third-Party Data Sharing',
+  };
+
   const updateConsent = useCallback(async (key, value) => {
     setConsentLoading(true);
     try {
       const updated = { ...consent, [key]: value };
       await axios.put(`${API_URL}/compliance/consent`, { [key]: value }, getAuthHeaders());
       setConsent(updated);
-      toast.success('Preference updated');
+      const label = PREF_LABELS[key] || 'Preference';
+      toast.success(`${label} ${value ? 'enabled' : 'disabled'} — saved.`);
     } catch { toast.error('Failed to update preference'); }
     finally { setConsentLoading(false); }
   }, [consent, getAuthHeaders]);

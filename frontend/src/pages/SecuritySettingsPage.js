@@ -81,7 +81,7 @@ const SecuritySettingsPage = () => {
         const credential = await startRegistration(optionsRes.data);
         await axios.post(`${API_URL}/auth/passkey/register-verify`, credential, headers);
         setPasskeyRegistered(true);
-        toast.success('Passkey registered');
+        toast.success('Passkey registered — saved.');
       } else {
         const res = await axios.get(`${API_URL}/auth/passkeys`, headers);
         const passkeys = res.data.passkeys || [];
@@ -89,7 +89,7 @@ const SecuritySettingsPage = () => {
           await axios.delete(`${API_URL}/auth/passkeys/${passkeys[0].id}`, headers);
         }
         setPasskeyRegistered(false);
-        toast.success('Passkey removed');
+        toast.success('Passkey removed — saved.');
       }
     } catch (err) {
       if (err.name !== 'NotAllowedError') {
@@ -101,7 +101,8 @@ const SecuritySettingsPage = () => {
   const handleAutoLogoutChange = (value) => {
     setAutoLogoutMinutes(value);
     localStorage.setItem('carryon_auto_logout_minutes', value);
-    toast.success(value === '0' ? 'Auto-logout set to instant on app leave' : value === 'midnight' ? 'Auto-logout set to daily at midnight' : `Auto-logout set to ${value} minutes`);
+    const label = value === '0' ? 'instant on app leave' : value === 'midnight' ? 'daily at midnight' : `${value} minutes`;
+    toast.success(`Auto-logout set to ${label} — saved.`);
   };
 
   const handleSave = () => {
@@ -109,9 +110,9 @@ const SecuritySettingsPage = () => {
     // backend when toggled (passkey, 2FA, SMS, auto-logout). The Save
     // button provides an explicit confirmation that pending work is done.
     window.dispatchEvent(new CustomEvent('carryon:security:flush'));
-    toast.success('Your security settings have been saved.', {
+    toast.success('All security settings on this page are saved.', {
       duration: 2500,
-      description: 'All changes are committed to your account.',
+      description: 'Every change you just made is committed to your account.',
     });
   };
 
@@ -186,7 +187,7 @@ const SecuritySettingsPage = () => {
                 try {
                   await axios.put(`${API_URL}/auth/2fa-preference`, { otp_enabled: checked }, headers);
                   setUserOtpEnabled(checked);
-                  toast.success(checked ? '2FA enabled' : '2FA disabled');
+                  toast.success(checked ? 'Two-factor authentication enabled — saved.' : 'Two-factor authentication disabled — saved.');
                 } catch (err) {
                   toast.error(err.response?.data?.detail || 'Failed to update 2FA preference');
                 } finally { setOtpToggling(false); }
@@ -225,7 +226,7 @@ const SecuritySettingsPage = () => {
                           setSmsOtpEnabled(false);
                           setSmsMaskedPhone(null);
                           setSmsSetupStep('idle');
-                          toast.success('SMS verification disabled');
+                          toast.success('SMS verification disabled — saved.');
                         } catch (err) {
                           toast.error(err.response?.data?.detail || 'Failed to disable SMS');
                         } finally { setSmsLoading(false); }
@@ -315,7 +316,7 @@ const SecuritySettingsPage = () => {
                             setSmsOtpEnabled(true);
                             setSmsSetupStep('idle');
                             setSmsVerifyCode('');
-                            toast.success('SMS verification enabled! Login codes will now be sent via text message.');
+                            toast.success('SMS verification enabled — saved. Login codes will now be sent via text message.');
                           } catch (err) {
                             toast.error(err.response?.data?.detail || 'Verification failed');
                           } finally { setSmsLoading(false); }
