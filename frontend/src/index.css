@@ -1096,11 +1096,8 @@
 }
 
 /* ── Scrollbar styling ─────────────────────────────────────────────────────
-   Let iOS show its native scroll indicators — they work perfectly.
-   On desktop, use a subtle 2px gold scrollbar.
+   Native browser/iOS scrollbars only. Desktop gets a subtle gold tint.
 ────────────────────────────────────────────────────────────────────────── */
-
-/* Desktop only: subtle gold scrollbar */
 @media (min-width: 1024px) {
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }

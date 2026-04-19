@@ -8,8 +8,6 @@ import PullToRefreshIndicator from '../PullToRefreshIndicator';
 import { haptics } from '../../utils/haptics';
 import BetaFeedbackButton from '../BetaFeedbackButton';
 import BetaWelcomeModal from '../BetaWelcomeModal';
-import ScrollBar from '../ScrollBar';
-import PageScrollBar from '../PageScrollBar';
 
 const GuardianPage = lazy(() => import('../../pages/GuardianPage'));
 
@@ -20,7 +18,6 @@ const DashboardLayout = () => {
   const [guardianMounted, setGuardianMounted] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('carryon_sidebar_collapsed') === 'true');
   const [betaAccepted, setBetaAccepted] = useState(true);
-  const mainRef = useRef(null);
 
   // Check if user is a beta tester who hasn't accepted yet
   const isBetaTester = user?.is_beta_tester || subscriptionStatus?.is_beta_tester;
@@ -106,14 +103,13 @@ const DashboardLayout = () => {
       
       {/* Main Content */}
       <main
-        ref={mainRef}
+       
         id="main-content"
         className={`main-content ${sidebarCollapsed ? 'sb-collapsed' : ''}`}
         role="main"
         aria-label="Main content"
       >
         <Outlet />
-        <PageScrollBar scrollRef={mainRef} />
       </main>
 
       {/* Persistent Guardian — stays mounted after first visit so chat state survives navigation */}
