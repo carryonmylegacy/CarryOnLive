@@ -1096,14 +1096,28 @@
 }
 
 /* ── Scrollbar styling ─────────────────────────────────────────────────────
-   Native browser/iOS scrollbars only. Desktop gets a subtle gold tint.
+   Hide all scrollbar indicators on mobile — iOS/Android handle scroll
+   through touch gestures. Desktop gets a subtle gold tint.
 ────────────────────────────────────────────────────────────────────────── */
+
+/* Hide scrollbars everywhere while keeping scroll functionality */
+* {
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE/Edge */
+}
+*::-webkit-scrollbar {
+  display: none;                /* Chrome, Safari, iOS */
+  width: 0;
+  height: 0;
+}
+
+/* Desktop only: restore a subtle gold scrollbar for mouse users */
 @media (min-width: 1024px) {
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.35); border-radius: 999px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,0.65); }
   * { scrollbar-width: thin; scrollbar-color: rgba(212,175,55,0.35) transparent; }
+  *::-webkit-scrollbar { display: block; width: 4px; height: 4px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.35); border-radius: 999px; }
+  *::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,0.65); }
 }
 
 /* Mobile Styles */
