@@ -62,11 +62,36 @@ export function useOverlayScrollbars(ref, deps = []) {
           window.addEventListener('pointercancel', onUp);
           window.addEventListener('blur', onUp);
           const disposeMomentum = attachDragMomentum(inst);
+
+          // Safety net: OverlayScrollbars `updated` callback can miss some
+          // async content-load cases (e.g., chat messages streamed in). Also
+          // re-evaluate the ratio whenever the user scrolls, so the bar
+          // becomes visible if content has grown past the threshold since
+          // the last `updated` event.
+          const viewport = inst.elements().viewport;
+          const host = inst.elements().host;
+          const recomputeRatio = () => {
+            if (!host || !viewport) return;
+            const visible = viewport.clientHeight || 1;
+            const total = viewport.scrollHeight || 0;
+            const ratio = total / visible;
+            host.setAttribute('data-ratio-low', ratio < RATIO_THRESHOLD ? 'true' : 'false');
+          };
+          viewport?.addEventListener('scroll', recomputeRatio, { passive: true });
+          // Also recheck once per second for 5s after init to catch late
+          // content loads in chat / vault / any dynamic page.
+          const checkTimers = [];
+          [250, 750, 2000, 5000].forEach((ms) => {
+            checkTimers.push(setTimeout(recomputeRatio, ms));
+          });
+
           inst.__carryon_cleanup = () => {
             handles.forEach((h) => h.removeEventListener('pointerdown', onDown));
             window.removeEventListener('pointerup', onUp);
             window.removeEventListener('pointercancel', onUp);
             window.removeEventListener('blur', onUp);
+            viewport?.removeEventListener('scroll', recomputeRatio);
+            checkTimers.forEach((t) => clearTimeout(t));
             disposeMomentum?.();
           };
         },

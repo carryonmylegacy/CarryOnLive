@@ -55,8 +55,21 @@ const OS_EVENTS = {
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
     window.addEventListener('blur', onUp);
-    // iOS-style "toss" inertia on vertical thumb release
     attachDragMomentum(instance);
+
+    // Safety net: also recompute ratio on scroll events, not just on
+    // OS's internal ResizeObserver. Catches async content-load cases
+    // where `updated` may not fire (e.g., late-loaded images).
+    const recomputeRatio = () => {
+      const h = instance.elements().host;
+      const v = instance.elements().viewport;
+      if (!h || !v) return;
+      const visible = v.clientHeight || 1;
+      const total = v.scrollHeight || 0;
+      h.setAttribute('data-ratio-low', (total / visible) < RATIO_THRESHOLD ? 'true' : 'false');
+    };
+    els.viewport?.addEventListener('scroll', recomputeRatio, { passive: true });
+    [250, 750, 2000].forEach((ms) => setTimeout(recomputeRatio, ms));
   },
   updated: (instance) => {
     const host = instance.elements().host;
@@ -92,6 +105,25 @@ const DashboardLayout = () => {
   useEffect(() => {
     if (isOnGuardian) setGuardianMounted(true);
   }, [isOnGuardian]);
+
+  // Reset scroll to top on every route change so pages like Settings/Vault
+  // don't preserve prior scroll position across visits. Targets the
+  // OverlayScrollbars viewport (the real scroll container on mobile) and
+  // falls back to window scroll on desktop. `smooth` ensures it feels
+  // natural instead of a hard jump.
+  useEffect(() => {
+    const scrollToTop = () => {
+      const viewport = document.querySelector('.main-content [data-overlayscrollbars-viewport]');
+      if (viewport) {
+        viewport.scrollTo({ top: 0, behavior: 'auto' });
+      }
+      // Desktop fallback where window scrolls instead of main-content
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    };
+    // Run after the next paint so lazy route content has mounted
+    const id = requestAnimationFrame(scrollToTop);
+    return () => cancelAnimationFrame(id);
+  }, [location.pathname]);
 
   useEffect(() => {
     const onStorage = () => setSidebarCollapsed(localStorage.getItem('carryon_sidebar_collapsed') === 'true');
