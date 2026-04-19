@@ -1,5 +1,14 @@
 # CarryOn — Changelog
 
+## Feb 14, 2026 — Explicit Save affirmation on Settings & Security Settings
+
+User request: "give me both a Back button and a Save button on both Settings and Security Settings pages. On Save, show a toast confirming changes were saved."
+
+- **`pages/SettingsPage.js`** — imported `toast` from `sonner`, added a matching header row with both a transparent outlined **Back** button (testid `settings-back-button`) and a gold **Save** button (testid `settings-save-button`). `handleSave` dispatches a `carryon:settings:flush` CustomEvent (so any future debounced card writes can flush) and raises a `toast.success('Your settings have been saved.')` with a description line. All sub-cards on this page already auto-save on change; the Save button is the explicit affirmation UX the user asked for.
+- **`pages/SecuritySettingsPage.js`** — added a **Save** button (testid `security-settings-save-button`) next to the existing Back button. `handleSave` dispatches `carryon:security:flush` and shows `toast.success('Your security settings have been saved.')`.
+- Tests: Playwright smoke + scrollbar specs all green (10/10 passed, 1 skipped, 0 failed). Housekeeping 65/65 PASS. Live smoke confirmed: Save button rendered, click fired, no console errors.
+
+
 ## Feb 14, 2026 — Scrollbar Polish: Remove "grit under the slider" feel
 
 User report: "When moving up and down the pill it is a little bit sticky, as if there was grit under a mechanical slider." Two independent root causes, both fixed without regressing any existing behaviour (all 8 smoke + all 2 runnable scrollbar E2E tests green, housekeeping 65/65 PASS).

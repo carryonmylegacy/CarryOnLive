@@ -104,6 +104,17 @@ const SecuritySettingsPage = () => {
     toast.success(value === '0' ? 'Auto-logout set to instant on app leave' : value === 'midnight' ? 'Auto-logout set to daily at midnight' : `Auto-logout set to ${value} minutes`);
   };
 
+  const handleSave = () => {
+    // Every security control on this page commits immediately to the
+    // backend when toggled (passkey, 2FA, SMS, auto-logout). The Save
+    // button provides an explicit confirmation that pending work is done.
+    window.dispatchEvent(new CustomEvent('carryon:security:flush'));
+    toast.success('Your security settings have been saved.', {
+      duration: 2500,
+      description: 'All changes are committed to your account.',
+    });
+  };
+
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="security-settings-page">
       <div className="flex items-center justify-between">
@@ -115,14 +126,24 @@ const SecuritySettingsPage = () => {
             Manage your account security, session controls, and vault protection
           </p>
         </div>
-        <button
-          onClick={() => navigate(-1)}
-          className="px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-transform hover:scale-105"
-          style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
-          data-testid="security-settings-back-button"
-        >
-          Back
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => navigate(-1)}
+            className="px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-transform hover:scale-105 border"
+            style={{ background: 'transparent', color: 'var(--t)', borderColor: 'var(--b)' }}
+            data-testid="security-settings-back-button"
+          >
+            Back
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-transform hover:scale-105"
+            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
+            data-testid="security-settings-save-button"
+          >
+            Save
+          </button>
+        </div>
       </div>
 
       {/* Account Security Card (Passkey, 2FA, SMS, Auto-Logout) */}
