@@ -1,5 +1,23 @@
 # CarryOn — Changelog
 
+## Feb 14, 2026 — Scrollbar Polish: Remove "grit under the slider" feel
+
+User report: "When moving up and down the pill it is a little bit sticky, as if there was grit under a mechanical slider." Two independent root causes, both fixed without regressing any existing behaviour (all 8 smoke + all 2 runnable scrollbar E2E tests green, housekeeping 65/65 PASS).
+
+### Drag smoothness (continuous up/down movement)
+- **`frontend/src/styles/overlay-scrollbars.css`** — permanently GPU-composite the handle via `will-change: transform` + `backface-visibility: hidden`. Prevents Safari/Chrome from deferring layer promotion until the first paint of a transform change (which caused a visible "stick" on the first few pixels of each drag).
+- **`html.os-dragging`** now also kills every transition on scrollbar descendants (`transition: none !important`). The library applies 0.15s transitions to opacity/background/border/height that momentarily starve the transform pipeline on busy frames.
+- **Viewport `overscroll-behavior: contain`** on OverlayScrollbars hosts — stops rubber-band/overscroll from clamping scrollTop and producing a perceptible "grab" at the boundaries.
+
+### Toss smoothness (post-release momentum)
+- **`frontend/src/utils/scrollbarMomentum.js`** — replaced frame-rate-dependent `Math.pow(FRICTION, dt/16)` with a true time-constant exponential `v *= exp(-dt/τ)` (τ = 325ms). This is the same physics model UIScrollView uses and is frame-rate independent.
+- **Sub-pixel accumulator** — keep a float `position` across frames and round only at the `scrollTop` write boundary. Previously, integer-quantized `scrollTop` writes discarded sub-pixel velocity contribution between frames (stick-slip).
+- **Trapezoidal integration** — use average velocity across each frame instead of end-velocity, eliminating the micro-lurch that Euler integration produces on the first frame of the toss.
+- **MAX_VELOCITY clamp** (6 px/ms) so runaway flicks still feel natural.
+
+Verification: `yarn playwright test tests/e2e/scrollbar.spec.js tests/e2e/smoke.spec.js --project=smoke-chromium` → 10 passed, 1 skipped, 0 failed. `bash /app/housekeeping.sh` → 65/65 PASS.
+
+
 ## Apr 19, 2026 — Pre-Launch Hardening: E2E Suite, Tile Error Boundaries, iOS-like Scrollbar
 
 ### Playwright E2E Smoke Suite (new)

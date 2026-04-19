@@ -46,9 +46,29 @@
 .os-scrollbar.os-theme-carryon-gold .os-scrollbar-handle {
   cursor: grab;
   transition: background-color 160ms ease, opacity 220ms ease;
+  /* Force the handle onto its own GPU-composited layer at all times.
+     Without this, Safari/Chrome promote the handle to a layer only on
+     first paint of a transform change, producing a visible "stick" on
+     the first few pixels of each drag. `translateZ(0)` + `will-change`
+     keep it permanently composited so thumb movement tracks the pointer
+     sub-pixel-smoothly. */
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 .os-scrollbar.os-theme-carryon-gold.os-scrollbar-handle-interactive:active .os-scrollbar-handle {
   cursor: grabbing;
+}
+
+/* While the user is actively dragging the thumb, kill EVERY transition
+   on the scrollbar element tree. The library applies a 0.15s transition
+   to opacity/background/border/height; on compositors that batch style
+   changes, these transitions can momentarily starve the transform
+   pipeline and produce the "grit under a mechanical slider" feel. */
+html.os-dragging .os-scrollbar,
+html.os-dragging .os-scrollbar *,
+html.os-dragging .os-scrollbar-handle {
+  transition: none !important;
 }
 
 /* Disable global text selection while dragging the thumb */
@@ -105,4 +125,14 @@ html.os-dragging * {
 }
 [data-scroll-overlay="true"] .os-scrollbar {
   z-index: 1000;
+}
+
+/* Prevent rubber-band/overscroll on scroll hosts that use OverlayScrollbars.
+   When the pointer drags the thumb past the end and the viewport briefly
+   bounces, the library re-clamps scrollTop which produces a visible "grab"
+   at the boundaries. `contain` stops the chain and gives us pin-tight
+   behaviour at both ends. */
+[data-overlayscrollbars] > .os-viewport,
+[data-overlayscrollbars-initialize] > .os-viewport {
+  overscroll-behavior: contain;
 }

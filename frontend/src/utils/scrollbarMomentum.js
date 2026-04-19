@@ -1,12 +1,23 @@
 // CarryOn™ — Scrollbar Drag Momentum
 // ============================================================================
 // Adds iOS-style "toss" inertia to an OverlayScrollbars instance's vertical
-// thumb drag. When the user releases the thumb with non-zero velocity, we
-// continue scrolling under an exponential decay until velocity dips below
-// a threshold, bounds are hit, or the user grabs again.
+// thumb drag. Physics model matches iOS UIScrollView decelerationRate:
 //
-// Matches the feel of the BeneficiaryOrbit spin: exponential friction
-// (~0.94 per frame) produces the same visual deceleration curve.
+//   v(t) = v0 * exp(-t / τ)
+//
+// where τ (tau) is the time constant. iOS "normal" decelerationRate ≈ 0.998
+// per ms ⇒ τ ≈ 500ms. We use τ ≈ 325ms for a slightly tighter "quick" feel
+// that matches the rest of the CarryOn UI (BeneficiaryOrbit spin).
+//
+// Two key refinements over the naive version:
+//   1. Sub-pixel accumulator — `scrollTop` is integer-quantized in every
+//      browser; writing integers each frame from a float velocity produces
+//      visible stick-slip. We keep a float position and round only at the
+//      write boundary, so sub-pixel velocity still advances the scroll
+//      across frames.
+//   2. Time-constant decay — frame-rate independent AND physically correct,
+//      so the tail of the toss eases out smoothly rather than snapping at
+//      the MIN_VELOCITY threshold.
 
 /**
  * Attach pointer-based momentum to the vertical handle of an OverlayScrollbars
@@ -19,11 +30,12 @@ export function attachDragMomentum(instance) {
   const viewport = elements.viewport;
   if (!handle || !viewport) return () => {};
 
-  // Physics tuning — match the BeneficiaryOrbit spin feel.
-  const FRICTION = 0.94;           // velocity multiplier per 16ms frame
-  const MIN_VELOCITY = 0.04;       // px/ms — below this, stop the animation
-  const MIN_TOSS_VELOCITY = 0.15;  // px/ms — below this, don't animate at all
+  // Physics tuning — iOS-style time-constant exponential decay.
+  const TAU_MS = 325;              // time constant; smaller = snappier stop
+  const MIN_VELOCITY = 0.02;       // px/ms — below this, stop the animation
+  const MIN_TOSS_VELOCITY = 0.12;  // px/ms — below this, don't animate at all
   const SAMPLE_WINDOW_MS = 80;     // velocity averaged over last N ms
+  const MAX_VELOCITY = 6.0;        // px/ms — clamp extreme flicks
 
   let dragging = false;
   let samples = [];                 // [{ t, scrollTop }]
@@ -56,31 +68,49 @@ export function attachDragMomentum(instance) {
     dragging = false;
     if (samples.length < 2) return;
 
-    // Compute velocity from the oldest sample in the window to the newest
+    // Compute velocity from the oldest sample in the window to the newest.
     const first = samples[0];
     const last = samples[samples.length - 1];
     const dt = last.t - first.t;
-    if (dt <= 0) return;
-    let velocity = (last.scrollTop - first.scrollTop) / dt; // px per ms
     samples = [];
+    if (dt <= 0) return;
 
+    let velocity = (last.scrollTop - first.scrollTop) / dt; // px per ms
     if (Math.abs(velocity) < MIN_TOSS_VELOCITY) return;
+    // Clamp runaway flicks so the toss always feels natural
+    if (velocity > MAX_VELOCITY) velocity = MAX_VELOCITY;
+    if (velocity < -MAX_VELOCITY) velocity = -MAX_VELOCITY;
 
-    // Animate with exponential decay until velocity settles or bounds hit
+    // Sub-pixel accumulator: float position advances smoothly even when
+    // integer scrollTop writes would otherwise quantize the motion.
+    let position = viewport.scrollTop;
     let lastFrame = performance.now();
+
     const tick = (now) => {
       const frameDt = now - lastFrame;
       lastFrame = now;
-      // Apply friction scaled by frame duration (frame-rate independent)
-      const frictionForFrame = Math.pow(FRICTION, frameDt / 16);
-      velocity *= frictionForFrame;
 
-      const next = viewport.scrollTop + velocity * frameDt;
+      // True exponential decay: v *= exp(-dt / τ)
+      // Frame-rate independent and physically matches iOS UIScrollView.
+      const decay = Math.exp(-frameDt / TAU_MS);
+      // Integrate position using the AVERAGE velocity across this frame,
+      // not the end-velocity — this is the trapezoidal rule and removes
+      // the micro-lurch you get with simple Euler integration.
+      const vStart = velocity;
+      const vEnd = velocity * decay;
+      const avgV = (vStart + vEnd) * 0.5;
+      position += avgV * frameDt;
+      velocity = vEnd;
+
       const maxScroll = viewport.scrollHeight - viewport.clientHeight;
-      const clamped = Math.max(0, Math.min(next, maxScroll));
-      viewport.scrollTop = clamped;
+      if (position < 0) { position = 0; velocity = 0; }
+      else if (position > maxScroll) { position = maxScroll; velocity = 0; }
 
-      if (Math.abs(velocity) < MIN_VELOCITY || clamped === 0 || clamped === maxScroll) {
+      // Round only at the write boundary; the float `position` still
+      // advances sub-pixel-smoothly across frames.
+      viewport.scrollTop = Math.round(position);
+
+      if (Math.abs(velocity) < MIN_VELOCITY || position <= 0 || position >= maxScroll) {
         rafId = null;
         return;
       }
