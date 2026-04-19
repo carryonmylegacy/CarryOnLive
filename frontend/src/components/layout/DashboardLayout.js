@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
+import 'overlayscrollbars/overlayscrollbars.css';
+import '../../styles/overlay-scrollbars.css';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,6 +13,39 @@ import BetaFeedbackButton from '../BetaFeedbackButton';
 import BetaWelcomeModal from '../BetaWelcomeModal';
 
 const GuardianPage = lazy(() => import('../../pages/GuardianPage'));
+
+// OverlayScrollbars options — iOS-like overlay with brand theme.
+const OS_OPTIONS = {
+  scrollbars: {
+    theme: 'os-theme-carryon-gold',
+    visibility: 'auto',
+    autoHide: 'scroll',
+    autoHideDelay: 1200,
+    autoHideSuspend: false,
+    dragScroll: true,
+    clickScroll: false,
+    pointers: ['mouse', 'touch', 'pen'],
+  },
+  overflow: { x: 'hidden', y: 'scroll' },
+};
+
+// Sets html.os-dragging while the user drags the thumb so CSS can
+// globally disable text selection.
+const OS_EVENTS = {
+  initialized: (instance) => {
+    const els = instance.elements();
+    const handles = [
+      els.scrollbarHorizontal?.handle,
+      els.scrollbarVertical?.handle,
+    ].filter(Boolean);
+    const onDown = () => document.documentElement.classList.add('os-dragging');
+    const onUp = () => document.documentElement.classList.remove('os-dragging');
+    handles.forEach((h) => h.addEventListener('pointerdown', onDown));
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    window.addEventListener('blur', onUp);
+  },
+};
 
 const DashboardLayout = () => {
   const location = useLocation();
@@ -101,16 +137,21 @@ const DashboardLayout = () => {
       {/* Mobile Navigation */}
       <MobileNav />
       
-      {/* Main Content */}
-      <main
-       
+      {/* Main Content — wrapped in OverlayScrollbarsComponent for
+          React-aware, iOS-like auto-hide scrollbars. `defer` avoids a
+          flash during lazy route transitions. */}
+      <OverlayScrollbarsComponent
+        element="main"
+        options={OS_OPTIONS}
+        events={OS_EVENTS}
+        defer
         id="main-content"
         className={`main-content ${sidebarCollapsed ? 'sb-collapsed' : ''}`}
         role="main"
         aria-label="Main content"
       >
         <Outlet />
-      </main>
+      </OverlayScrollbarsComponent>
 
       {/* Persistent Guardian — stays mounted after first visit so chat state survives navigation */}
       {guardianMounted && (

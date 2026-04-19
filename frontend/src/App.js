@@ -17,7 +17,6 @@ import { initErrorReporter, reportError } from './utils/errorReporter';
 import { checkForUpdates } from './utils/versionCheck';
 import { isFeatureEnabled } from './utils/featureGates';
 import { Loader2 } from 'lucide-react';
-import AppScroller from './components/AppScroller';
 
 const CARRYON_BUILD = '2026-04-28T00:00:00Z-pre-launch-refactor';
 if (typeof window !== 'undefined') {
@@ -110,22 +109,54 @@ const PageLoader = () => {
   );
 };
 
-// Error boundary for lazy-loaded routes — reports to backend
+// Error boundary for lazy-loaded routes — reports to backend and
+// auto-recovers on route changes so a transient error on one page
+// doesn't lock the user on a "Something went wrong" screen until reload.
 class RouteErrorBoundary extends React.Component {
-  state = { hasError: false };
+  state = { hasError: false, errorPath: null };
   static getDerivedStateFromError() { return { hasError: true }; }
   componentDidCatch(error, info) {
+    this.setState({ errorPath: typeof window !== 'undefined' ? window.location.pathname : null });
     reportError(error, info?.componentStack ? `ErrorBoundary:${info.componentStack.split('\n')[1]?.trim()}` : 'ErrorBoundary');
   }
+  componentDidMount() {
+    this._onPop = () => {
+      // Any navigation event should clear the error so the new route can render.
+      if (this.state.hasError) this.setState({ hasError: false, errorPath: null });
+    };
+    window.addEventListener('popstate', this._onPop);
+    window.addEventListener('pushstate', this._onPop);
+    // Patch history.pushState/replaceState once so React Router navigations also clear.
+    if (!window.__carryon_history_patched) {
+      const fire = () => window.dispatchEvent(new Event('pushstate'));
+      const push = window.history.pushState;
+      const replace = window.history.replaceState;
+      window.history.pushState = function (...args) { push.apply(this, args); fire(); };
+      window.history.replaceState = function (...args) { replace.apply(this, args); fire(); };
+      window.__carryon_history_patched = true;
+    }
+  }
+  componentWillUnmount() {
+    window.removeEventListener('popstate', this._onPop);
+    window.removeEventListener('pushstate', this._onPop);
+  }
+  handleRetry = () => {
+    this.setState({ hasError: false, errorPath: null });
+  };
   render() {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg, #0F1629)' }}>
           <div className="text-center p-6">
             <p className="text-white text-lg font-bold mb-2">Something went wrong</p>
-            <button onClick={() => window.location.reload()} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: '#d4af37', color: '#080e1a' }}>
-              Reload
-            </button>
+            <div className="flex gap-2 justify-center">
+              <button onClick={this.handleRetry} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: '#d4af37', color: '#080e1a' }} data-testid="error-boundary-retry">
+                Try again
+              </button>
+              <button onClick={() => window.location.reload()} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff' }} data-testid="error-boundary-reload">
+                Reload
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -439,7 +470,6 @@ function App() {
       <AuthProvider>
         <SectionLockProvider>
         <BrowserRouter>
-          <AppScroller />
           <NetworkStatusBanner />
           <NotificationContainer />
           <AmberAlertProvider />
