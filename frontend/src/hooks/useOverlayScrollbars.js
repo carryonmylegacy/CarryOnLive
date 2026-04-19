@@ -25,7 +25,8 @@ const DEFAULT_OPTIONS = {
     visibility: 'auto',
     autoHide: 'scroll',
     autoHideDelay: 1200,
-    autoHideSuspend: false,
+    // Hidden on mount; only appears once the user starts scrolling.
+    autoHideSuspend: true,
     dragScroll: true,
     clickScroll: false,
     pointers: ['mouse', 'touch', 'pen'],

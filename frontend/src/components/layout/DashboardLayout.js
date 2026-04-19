@@ -22,7 +22,10 @@ const OS_OPTIONS = {
     visibility: 'auto',
     autoHide: 'scroll',
     autoHideDelay: 1200,
-    autoHideSuspend: false,
+    // `true` = bar stays hidden on mount until the user's first scroll.
+    // Without this, the bar appears on page load for any overflowing page,
+    // which violates the "only appear while scrolling" UX rule.
+    autoHideSuspend: true,
     dragScroll: true,
     clickScroll: false,
     pointers: ['mouse', 'touch', 'pen'],
