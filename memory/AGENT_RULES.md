@@ -202,3 +202,36 @@ hamburger menu bar and the top edge of the dock."
 
 **Why:** Discovered Apr 28, 2026 when the SocialShareSheet was clipped at the bottom on compact iPhones because it had no `maxHeight` constraint and no internal scroll.
 
+
+---
+
+## 🟡 RULE 9 — Revenue-funnel Playwright E2E activation path (Feb 14, 2026)
+
+**Why this rule exists:** We added `/app/frontend/tests/e2e/signup_invite_flow.spec.js`
+which exercises the full signup → paywall → Stripe checkout → post-payment dashboard
+funnel. It is currently EXCLUDED from `yarn e2e:prod-safe` because it requires a
+live Stripe test mode key and a staging URL. Once those exist, flipping the switch
+gives us launch-grade regression coverage on every PR and is the single highest-ROI
+safety net before the App Store cutover.
+
+**Activation procedure (for the agent, when user says "turn on revenue tests"):**
+
+1. Confirm a staging environment exists with:
+   - `STRIPE_SECRET_KEY=sk_test_...` and `REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_test_...`
+   - Seeded test user in `/app/memory/test_credentials.md` under "Playwright Revenue Funnel"
+2. In GitHub → Repo → Settings → Secrets and variables → Actions → Variables tab,
+   set `RUN_E2E` to `true` (not a secret; it's a boolean flag gate in `ci.yml`).
+3. In the same screen, under Secrets tab, add:
+   - `E2E_BASE_URL` → the staging URL (e.g. `https://staging.carryon.us`)
+   - `E2E_TEST_USER_EMAIL` / `E2E_TEST_USER_PASSWORD`
+   - `E2E_STRIPE_TEST_CARD` (default: `4242 4242 4242 4242` — card number can be
+     hardcoded in the spec, this var is for edge-case cards like 3DS)
+4. Update `package.json` script (already present) so `yarn e2e:prod-safe` drops the
+   `--grep-invert 'Revenue funnel'` flag, OR add a new `yarn e2e:revenue` that runs
+   only that spec on a schedule.
+5. Re-run `bash /app/housekeeping.sh` and `yarn e2e` locally against staging to
+   confirm the spec is green BEFORE merging the CI change.
+
+**Do NOT** run the revenue spec against `app.carryon.us` production — it creates a
+real user and a real (test-mode) Stripe customer. Always point it at staging.
+

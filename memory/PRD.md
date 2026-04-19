@@ -472,6 +472,7 @@ Fixed vertical overflow on compact iPhones. Sheet now has `maxHeight` constraint
 - (P0) Google Play Store Launch
 - (P1) iOS Share Extension
 - (P1) iOS Live Updates (Capgo)
+- (P1) Activate Revenue-Funnel Playwright spec in CI — see AGENT_RULES.md Rule 9
 - (P2) Readiness Scoring Policy Page
 
 ## App Store / Codemagic Setup (BLOCKED — awaiting DUNS number)
