@@ -1,0 +1,76 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   CarryOn — OverlayScrollbars theme
+   ============================================================================
+   iOS-like overlay scrollbar: appears on scroll, fades after idle,
+   grab-to-drag, no text selection during drag, correct direction,
+   gold accent to match brand. Works on pages, modals, sheets.
+
+   NOTE: The theme class `os-theme-carryon-gold` is applied directly to the
+   `.os-scrollbar` element by OverlayScrollbars v2, so selectors target
+   `.os-scrollbar.os-theme-carryon-gold`, NOT a parent selector.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@import 'overlayscrollbars/overlayscrollbars.css';
+
+/* ── CarryOn gold theme ─────────────────────────────────────────────────── */
+.os-scrollbar.os-theme-carryon-gold {
+  --os-size: 10px;
+  --os-padding-perpendicular: 2px;
+  --os-padding-axis: 2px;
+  --os-track-border-radius: 10px;
+  --os-track-bg: transparent;
+  --os-track-bg-hover: transparent;
+  --os-track-bg-active: transparent;
+  --os-handle-bg: rgba(212, 175, 55, 0.55); /* gold @ 55% */
+  --os-handle-bg-hover: rgba(212, 175, 55, 0.8);
+  --os-handle-bg-active: rgba(212, 175, 55, 0.95);
+  --os-handle-border-radius: 10px;
+  --os-handle-min-size: 44px;
+  --os-handle-max-size: none;
+  --os-handle-perpendicular-size: 100%;
+  --os-handle-perpendicular-size-hover: 100%;
+  --os-handle-perpendicular-size-active: 100%;
+}
+
+/* Grab cursor on the thumb, with soft transition */
+.os-scrollbar.os-theme-carryon-gold .os-scrollbar-handle {
+  cursor: grab;
+  transition:
+    background-color 160ms ease,
+    opacity 220ms ease;
+}
+.os-scrollbar.os-theme-carryon-gold.os-scrollbar-handle-interactive:active .os-scrollbar-handle {
+  cursor: grabbing;
+}
+
+/* Disable text selection while dragging the thumb */
+html.os-dragging,
+html.os-dragging * {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  cursor: grabbing !important;
+}
+
+/* Mobile tune: slightly brighter handle so it's easier to see on iOS */
+@media (max-width: 1023px) {
+  .os-scrollbar.os-theme-carryon-gold {
+    --os-size: 9px;
+    --os-handle-bg: rgba(212, 175, 55, 0.7);
+    --os-handle-bg-hover: rgba(212, 175, 55, 0.9);
+    --os-handle-bg-active: rgba(212, 175, 55, 1);
+    --os-handle-min-size: 60px;
+  }
+}
+
+/* Ensure the scrollbar floats above page content */
+.os-scrollbar {
+  z-index: 10;
+}
+
+/* Inside modals/overlays, pop above content */
+[data-scroll-overlay="true"] .os-scrollbar {
+  z-index: 1000;
+}

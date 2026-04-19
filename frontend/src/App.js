@@ -17,6 +17,7 @@ import { initErrorReporter, reportError } from './utils/errorReporter';
 import { checkForUpdates } from './utils/versionCheck';
 import { isFeatureEnabled } from './utils/featureGates';
 import { Loader2 } from 'lucide-react';
+import AppScroller from './components/AppScroller';
 
 const CARRYON_BUILD = '2026-04-28T00:00:00Z-pre-launch-refactor';
 if (typeof window !== 'undefined') {
@@ -438,6 +439,7 @@ function App() {
       <AuthProvider>
         <SectionLockProvider>
         <BrowserRouter>
+          <AppScroller />
           <NetworkStatusBanner />
           <NotificationContainer />
           <AmberAlertProvider />

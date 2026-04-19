@@ -1,5 +1,41 @@
 # CarryOn — Changelog
 
+## Apr 19, 2026 — Pre-Launch Hardening: E2E Suite, Tile Error Boundaries, iOS-like Scrollbar
+
+### Playwright E2E Smoke Suite (new)
+- **`frontend/playwright.config.js`** — 3 projects: smoke-chromium (desktop 1440x900), smoke-mobile (iPhone-style 390x844 via Chromium), visual (existing).
+- **`frontend/tests/e2e/smoke.spec.js`** — 8 functional smoke tests × 2 viewports = 16 test runs. Covers landing, login, signup, admin login, dashboard, settings nav, public marketing, `/api/health`.
+- **`frontend/tests/e2e/scrollbar.spec.js`** — 3 regression tests for the scrollbar: marketing pages retain native scroll, settings page initializes overlay scrollbar, scroll direction is correct.
+- **Package scripts** — `yarn e2e`, `yarn e2e:visual`, `yarn e2e:ui`, `yarn e2e:smoke:desktop`.
+- **CI job** — `.github/workflows/ci.yml` has a new `e2e-smoke` job gated on `vars.RUN_E2E == 'true'` so it only fires when staging is wired up.
+- **Result:** 21 passed, 1 skipped (desktop direction test skips on window-scroll viewport), 0 failed. Run time ~40s.
+
+### Per-Tile Error Boundaries on Dashboard
+- **`frontend/src/components/TileErrorBoundary.js`** — new reusable error boundary with compact fallback + Retry. Reports to Sentry via existing `reportError`.
+- **`pages/DashboardPage.js`** — TrialBanner, BillingStatusBanner, OnboardingWizard, and ShareYourCarryOn now wrapped. A crash in any one tile no longer unmounts the dashboard.
+
+### iOS-like Auto-hide Scrollbar (overlayscrollbars-react)
+- **Added dependencies** — `overlayscrollbars@2.15.1` and `overlayscrollbars-react@0.5.6`.
+- **`frontend/src/components/AppScroller.js`** — initializes OverlayScrollbars on `.main-content` only (authenticated dashboard layout). Uses MutationObserver to catch lazy route mounts. Mounted once in `App.js` under BrowserRouter.
+- **`frontend/src/styles/overlay-scrollbars.css`** — `os-theme-carryon-gold` theme. 9px width on mobile (iOS-feeling), 10px desktop, 60px min thumb height for easy grabbing, gold `#d4af37` accent at 0.55–0.95 opacity.
+- **Text-selection guard** — `html.os-dragging` class added during thumb pointerdown, removed on pointerup/cancel/blur. CSS disables user-select globally while dragging.
+- **Auto-hide** — `visibility: 'auto'`, `autoHide: 'scroll'`, `autoHideDelay: 1200ms` (0ms when OS prefers-reduced-motion).
+- **Public marketing routes unaffected** — AppScroller only hooks `.main-content`, which lives inside DashboardLayout; `/home`, `/login`, `/signup`, `/speak-with-us` keep native scroll.
+- **Regression tests** — 3 Playwright tests verify presence, correct direction, and no marketing-page interference.
+
+### JWT Secret Rotation Procedure (documented)
+- **`/app/memory/test_credentials.md`** — added a fresh 64-char JWT_SECRET for launch-day rotation in Railway production, with step-by-step procedure and expected behavior (session invalidation).
+- **Stripe key hygiene notice** — documented two paths (rotate+strip, or replace with sk_test) for removing the live key from the preview pod.
+
+### Load-test baseline (preview pod)
+- **`load_tests/smoke_load.js`** — new lightweight health+auth-path load test.
+- **100 VUs, 20s** → 10,500 requests, **0 5xx errors**, p95 = 310ms, 513 req/s sustained. Preview pod held up; Railway production (multi-pod, CDN) should comfortably handle 500+ concurrent users.
+
+### Housekeeping
+- 69 checks **PASS**, 0 WARN, 0 FAIL.
+- Ruff clean, ESLint clean on all new files.
+
+
 ## Apr 28, 2026 — Pre-Launch Codebase Refactoring & Security Hardening
 
 ### Security Fixes

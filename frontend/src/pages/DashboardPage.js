@@ -27,6 +27,7 @@ import TrialBanner from '../components/TrialBanner';
 import BillingStatusBanner from '../components/BillingStatusBanner';
 import OnboardingWizard from '../components/OnboardingWizard';
 import ShareYourCarryOn from '../components/ShareYourCarryOn';
+import TileErrorBoundary from '../components/TileErrorBoundary';
 import { API_URL } from '../config';
 
 import PushPrompt from '../components/PushPrompt';
@@ -552,9 +553,11 @@ const DashboardPage = () => {
       </div>
 
       {/* Onboarding Wizard — shown early so it's visible on mobile */}
-      <OnboardingWizard onAllComplete={() => {
-        // Celebration is handled by fetchEstateData via backend flag — no-op here
-      }} />
+      <TileErrorBoundary name="onboarding-wizard">
+        <OnboardingWizard onAllComplete={() => {
+          // Celebration is handled by fetchEstateData via backend flag — no-op here
+        }} />
+      </TileErrorBoundary>
 
       {/* CarryOn Financial Picture — Guide Tile (above gauge, only when empty & feature enabled) */}
       {isFeatureKeyEnabled('cfp', enabledFeatures) && financialSummary && (financialSummary.bills_count === 0 && financialSummary.debts_count === 0 && financialSummary.accounts_count === 0 && (financialSummary.property_count || 0) === 0) && (
@@ -918,7 +921,9 @@ const DashboardPage = () => {
 
         {/* Share your CarryOn — gold pill button at the bottom of the dashboard */}
         <div className="mt-4 mb-2 px-1" data-testid="dashboard-share-tile">
-          <ShareYourCarryOn variant="pill" />
+          <TileErrorBoundary name="share-your-carryon">
+            <ShareYourCarryOn variant="pill" />
+          </TileErrorBoundary>
         </div>
       </div>
       {showCelebration && (

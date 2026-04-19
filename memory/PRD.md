@@ -76,6 +76,40 @@ Comprehensive family preparedness platform with estate planning, secure document
 - `/app/memory/ESTATE_CREATION_PATHS.md` — traces all 7 estate-creation paths, flags: default checklist seed missing on Path 1/2, race condition on concurrent Path 2 posts (suggested partial unique index fix), and drift between 3 ghost-estate detectors.
 - `/app/memory/PAYMENT_FLOW_AUDIT.md` — traces Stripe + Founders Circle + Apple IAP + grace-period flows. Flags: **missing `free_access` override for NEW beneficiaries added AFTER FC activation** (15-min fix), Stripe webhook reconciliation gap (safety-net scheduler suggested), unverified FC installment-failure → revert-to-monthly logic (test recommended), pre-launch Stripe webhook secret verification (curl test provided).
 
+
+## Pre-Launch Hardening (Apr 19, 2026)
+
+### Codebase Audit Scorecard
+- Stability: 7.0/10 — strong backend, no frontend tests until this session
+- Security: 8.5/10 — CSP/HSTS/CORS already tight; JWT rotation procedure documented for launch
+- Quality: 6.5/10 — modular backend, monolith frontend pages remain
+- Launch-readiness: 8.0/10 post-hardening
+
+### Playwright E2E Smoke Suite (regression harness)
+- `frontend/playwright.config.js` + `frontend/tests/e2e/smoke.spec.js` + `scrollbar.spec.js`
+- 21 tests passing, 1 intentionally skipped on desktop viewport
+- `yarn e2e` runs suite locally; `e2e-smoke` CI job gated on `vars.RUN_E2E == 'true'`
+
+### Per-Tile Error Boundaries
+- `components/TileErrorBoundary.js` — compact fallback + Retry button, reports to Sentry
+- Wrapped: TrialBanner, BillingStatusBanner, OnboardingWizard, ShareYourCarryOn on Dashboard
+
+### iOS-like Auto-hide Scrollbar (shipped)
+- Added `overlayscrollbars@2.15.1` + `overlayscrollbars-react@0.5.6`
+- `components/AppScroller.js` mounts OverlayScrollbars on `.main-content` in DashboardLayout
+- `styles/overlay-scrollbars.css` — gold theme, 9px mobile / 10px desktop, 60px min thumb
+- Drag guard: `html.os-dragging` + `user-select: none` during thumb drag
+- Marketing pages (home/login/signup) keep native scroll (confirmed via E2E)
+- Supersedes the failed custom-JS scrollbar work from Apr 18
+
+### Load Test Baseline
+- `load_tests/smoke_load.js` — lightweight health/auth path load test
+- 100 VUs × 20s against preview pod: **0 5xx**, p95 = 310ms, 513 req/s sustained
+
+### Launch-Day Procedures
+- `/app/memory/test_credentials.md` contains fresh 64-char JWT_SECRET for production rotation
+- Stripe preview-pod hygiene: rotate `sk_live_...` OR swap with `sk_test_...` before demo usage
+
 ## Blocked Items (3rd party)
 - Apple IAP: awaiting Apple "Paid Applications Agreement"
 - Twilio SMS: awaiting A2P 10DLC campaign approval
