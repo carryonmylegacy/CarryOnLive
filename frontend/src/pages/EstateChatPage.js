@@ -658,7 +658,7 @@ export default function EstateChatPage() {
   const messageArea = activeChannel && (
     <div className={`${!showChannelList || activeChannel ? 'flex' : 'hidden'} lg:flex flex-col flex-1`} style={{ minHeight: 0 }}>
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="flex items-center gap-3 p-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', position: 'relative' }}>
         <button onClick={handleBackOut} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" data-testid="ect-back-btn" style={{ background: 'rgba(255,255,255,0.06)' }} aria-label="Back to conversations">
           <ArrowLeft className="w-4 h-4" style={{ color: 'var(--t4)' }} />
         </button>
@@ -717,11 +717,120 @@ export default function EstateChatPage() {
           )}
         </div>
         {pinnedMsgs.length > 0 && (
-          <button onClick={() => setShowPinned(!showPinned)} className="h-8 px-2.5 rounded-full flex items-center gap-1.5" data-testid="ect-header-pinned-btn"
-            style={{ background: showPinned ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)', border: showPinned ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent' }}>
-            <Pin className="w-3.5 h-3.5" style={{ color: '#d4af37' }} />
-            <span className="text-xs font-bold" style={{ color: '#d4af37' }}>{pinnedMsgs.length}</span>
-          </button>
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowPinned(!showPinned)}
+              className="h-8 px-2.5 rounded-full flex items-center gap-1.5"
+              data-testid="ect-header-pinned-btn"
+              style={{
+                background: showPinned ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)',
+                border: showPinned ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent',
+              }}
+            >
+              <Pin className="w-3.5 h-3.5" style={{ color: '#d4af37' }} />
+              <span className="text-xs font-bold" style={{ color: '#d4af37' }}>{pinnedMsgs.length}</span>
+            </button>
+
+            {/* Pinned messages dropdown — anchored to this button */}
+            {showPinned && (
+              <>
+                {/* Backdrop to close on outside tap */}
+                <div
+                  className="fixed inset-0 z-[55]"
+                  onClick={() => setShowPinned(false)}
+                />
+                <div
+                  className="absolute z-[56] rounded-2xl overflow-hidden"
+                  data-testid="ect-pinned-dropdown"
+                  style={{
+                    top: 'calc(100% + 8px)',
+                    right: 0,
+                    width: 'min(320px, calc(100vw - 32px))',
+                    background: 'var(--bg2)',
+                    border: '1px solid rgba(212,175,55,0.3)',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                    maxHeight: 'calc(100dvh - 64px - 80px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))',
+                  }}
+                >
+                  {/* Dropdown header */}
+                  <div
+                    className="flex items-center gap-2 px-4 py-3 flex-shrink-0"
+                    style={{ borderBottom: '1px solid rgba(212,175,55,0.15)' }}
+                  >
+                    <Pin className="w-4 h-4 flex-shrink-0" style={{ color: '#d4af37' }} />
+                    <span className="text-xs font-bold flex-1" style={{ color: '#d4af37' }}>
+                      {pinnedMsgs.length} Pinned Message{pinnedMsgs.length !== 1 ? 's' : ''}
+                    </span>
+                    <button
+                      onClick={() => setShowPinned(false)}
+                      className="p-1 rounded-full"
+                      style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Scrollable list */}
+                  <div style={{ overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                    {pinnedMsgs.map((pm, idx) => {
+                      const ts = pm.created_at
+                        ? new Date(pm.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : '';
+                      return (
+                        <button
+                          key={pm.id}
+                          onClick={() => {
+                            setShowPinned(false);
+                            // Jump to the message in the chat
+                            setTimeout(() => {
+                              const el = scrollContainerRef.current?.querySelector(
+                                `[data-testid="msg-bubble-${pm.id}"]`
+                              );
+                              if (el) {
+                                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                el.style.transition = 'background 300ms ease';
+                                el.style.background = 'rgba(212,175,55,0.18)';
+                                setTimeout(() => { el.style.background = ''; }, 1500);
+                              }
+                            }, 100);
+                          }}
+                          className="w-full text-left px-4 py-3 transition-colors active:opacity-70"
+                          data-testid={`pinned-item-${pm.id}`}
+                          style={{
+                            borderBottom: idx < pinnedMsgs.length - 1
+                              ? '1px solid rgba(255,255,255,0.06)'
+                              : 'none',
+                            background: 'transparent',
+                          }}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[11px] font-bold" style={{ color: '#d4af37' }}>
+                              {pm.sender_name || 'Unknown'}
+                            </span>
+                            {ts && (
+                              <span className="text-[11px]" style={{ color: 'var(--t5)' }}>{ts}</span>
+                            )}
+                          </div>
+                          <p
+                            className="text-sm leading-snug"
+                            style={{
+                              color: 'var(--t)',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            {pm.content || (pm.attachment ? '📎 Attachment' : '—')}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         )}
         {activeChannel.type === 'group' && isBenefactor && (
           <button onClick={() => deleteChannel(activeChannel.id)} className="w-8 h-8 rounded-full flex items-center justify-center" data-testid="ect-delete-channel" style={{ background: 'rgba(240,82,82,0.1)' }}>
@@ -733,26 +842,6 @@ export default function EstateChatPage() {
       {/* Messages scroll container */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
         <div className="px-4 pt-4 pb-1 space-y-3" style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-          {/* Pinned messages panel */}
-          {showPinned && pinnedMsgs.length > 0 && (
-            <div className="mb-3 rounded-2xl overflow-hidden" style={{ background: 'rgba(30,40,60,0.95)', border: '1px solid rgba(212,175,55,0.25)', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)' }}>
-              <div className="flex items-center gap-2 px-4 py-2.5" style={{ borderBottom: '1px solid rgba(212,175,55,0.15)' }}>
-                <Pin className="w-4 h-4" style={{ color: '#d4af37' }} />
-                <span className="text-xs font-bold flex-1" style={{ color: '#d4af37' }}>Pinned Messages</span>
-                <button onClick={() => setShowPinned(false)} className="p-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}><X className="w-3.5 h-3.5" style={{ color: 'var(--t4)' }} /></button>
-              </div>
-              <div className="max-h-[200px] overflow-y-auto">
-                {pinnedMsgs.map(pm => (
-                  <div key={pm.id} className="flex items-start gap-3 px-4 py-2.5" data-testid={`pinned-msg-${pm.id}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[11px] font-semibold" style={{ color: '#d4af37' }}>{pm.sender_name}</span>
-                      <p className="text-sm" style={{ color: '#D8DEE9' }}>{pm.content}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
           {msgLoading && <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" style={{ color: '#d4af37' }} /></div>}
           {!msgLoading && messages.length === 0 && (
             <div className="text-center py-12"><MessageCircle className="w-10 h-10 mx-auto mb-2" style={{ color: 'var(--t5)' }} /><p className="text-sm" style={{ color: 'var(--t4)' }}>No messages yet. Say hello!</p></div>
