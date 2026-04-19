@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from '../utils/toast';
 import { useAuth } from '../contexts/AuthContext';
+import { useLocalStorageBoolean } from '../hooks/useLocalStorageBoolean';
 import { Shield, LogOut, Loader2, ShieldCheck } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Switch } from '../components/ui/switch';
@@ -25,9 +26,7 @@ const SettingsPage = () => {
   const [searchParams] = useSearchParams();
   const [settingsReady, setSettingsReady] = useState(false);
   const [guideHidden, setGuideHidden] = useState(true);
-  const [betaBugIconHidden, setBetaBugIconHidden] = useState(
-    () => localStorage.getItem('hide_beta_bug_icon') === 'true'
-  );
+  const [betaBugIconHidden, setBetaBugIconHidden] = useLocalStorageBoolean('hide_beta_bug_icon');
 
   const isStaff = user?.role === 'admin' || user?.role === 'operator';
   const fromOnboarding = searchParams.get('from') === 'onboarding';
@@ -225,12 +224,6 @@ const SettingsPage = () => {
                   checked={betaBugIconHidden}
                   onCheckedChange={(checked) => {
                     setBetaBugIconHidden(checked);
-                    localStorage.setItem('hide_beta_bug_icon', checked ? 'true' : 'false');
-                    // Broadcast to DashboardLayout so the floating bug button
-                    // appears/disappears instantly — no page reload needed.
-                    window.dispatchEvent(new CustomEvent('carryon:beta-icon-changed', {
-                      detail: { hidden: checked }
-                    }));
                     toast.success(checked ? 'Bug report icon hidden — saved.' : 'Bug report icon restored — saved.');
                   }}
                   data-testid="beta-hide-bug-toggle"

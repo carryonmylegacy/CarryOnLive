@@ -1,5 +1,21 @@
 # CarryOn — Changelog
 
+## Feb 14, 2026 — Toggle state fix (bulletproof) + platform-wide audit + regression test
+
+**Why the previous fix failed:** My prior `useState(() => localStorage.getItem(...) === 'true')` + manual `CustomEvent` was brittle under certain mount/unmount conditions (the PWA on iOS Safari exhibited this — the Switch fired the toast but the `checked` prop ignored the state update). The user correctly reported the switch still wasn't flipping.
+
+**The bulletproof fix:**
+- **New hook `hooks/useLocalStorageBoolean.js`** — backed by React 19's `useSyncExternalStore`. Subscribes to both the native `storage` event (cross-tab) and a custom `carryon:localstorage-changed` event (intra-tab). Writes automatically dispatch the custom event so every component using the same key re-renders in lockstep. Returned tuple is `[value, setValue]` — identical ergonomics to `useState`.
+- **`pages/SettingsPage.js`** — swapped `useState` + manual `localStorage.setItem` + manual `CustomEvent` dispatch for one line: `useLocalStorageBoolean('hide_beta_bug_icon')`. The onChange handler is now 3 lines: call setter, fire toast, done.
+- **`components/layout/DashboardLayout.js`** — replaced the `useState` + `useEffect` event-listener combo with the same hook. The floating bug button now appears/disappears in sync with the Settings toggle, across any mount/unmount cycle.
+
+**Platform-wide audit:** grepped every `<Switch>` in the codebase (44 total). Confirmed no other toggle had the same `checked={localStorage.getItem(...)}` anti-pattern — the broken one was isolated. Future localStorage-backed toggles should use `useLocalStorageBoolean` as the canonical primitive.
+
+**Regression test:** `tests/e2e/toggle_state.spec.js` — clicks the theme toggle in Settings, asserts `data-state` attribute on Radix Switch flips from `checked` ↔ `unchecked`, and verifies a second click round-trips back. This catches the entire class of "toast fires but visual state never changes" bugs.
+
+Verified: new regression test passes (10.6s), Playwright smoke + scrollbar 10/10 green, housekeeping 65/65 PASS, ESLint clean.
+
+
 ## Feb 14, 2026 — Splash asset parity: web ↔ native iOS pixel-identical
 
 User asked to line up the web boot splash with the native iOS `LaunchScreen.storyboard` so PWA installs, home-screen icons, TestFlight, and App Store all show the same splash.

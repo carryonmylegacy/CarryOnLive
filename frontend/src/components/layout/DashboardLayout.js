@@ -12,6 +12,7 @@ import PullToRefreshIndicator from '../PullToRefreshIndicator';
 import { haptics } from '../../utils/haptics';
 import BetaFeedbackButton from '../BetaFeedbackButton';
 import BetaWelcomeModal from '../BetaWelcomeModal';
+import { useLocalStorageBoolean } from '../../hooks/useLocalStorageBoolean';
 
 const GuardianPage = lazy(() => import('../../pages/GuardianPage'));
 
@@ -89,22 +90,12 @@ const DashboardLayout = () => {
   const [guardianMounted, setGuardianMounted] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('carryon_sidebar_collapsed') === 'true');
   const [betaAccepted, setBetaAccepted] = useState(true);
-  // Reactive mirror of `localStorage.hide_beta_bug_icon` — listens to a
-  // CustomEvent dispatched by the Settings toggle so the floating bug
-  // button appears/disappears in place without a page reload.
-  const [betaIconHidden, setBetaIconHidden] = useState(
-    () => localStorage.getItem('hide_beta_bug_icon') === 'true'
-  );
-
-  useEffect(() => {
-    const onChange = (e) => {
-      setBetaIconHidden(
-        e?.detail?.hidden ?? (localStorage.getItem('hide_beta_bug_icon') === 'true')
-      );
-    };
-    window.addEventListener('carryon:beta-icon-changed', onChange);
-    return () => window.removeEventListener('carryon:beta-icon-changed', onChange);
-  }, []);
+  // Reactive mirror of `localStorage.hide_beta_bug_icon`. Backed by
+  // `useSyncExternalStore` via useLocalStorageBoolean — guarantees this
+  // component re-renders the instant the Settings toggle writes a new
+  // value, even if both live in the same tab. Replaces a previous manual
+  // CustomEvent + useState setup that was brittle under remounts.
+  const [betaIconHidden] = useLocalStorageBoolean('hide_beta_bug_icon');
 
   // Check if user is a beta tester who hasn't accepted yet
   const isBetaTester = user?.is_beta_tester || subscriptionStatus?.is_beta_tester;
