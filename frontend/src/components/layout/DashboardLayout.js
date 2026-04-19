@@ -29,8 +29,15 @@ const OS_OPTIONS = {
   overflow: { x: 'hidden', y: 'scroll' },
 };
 
+// Threshold: hide the scrollbar when content doesn't exceed this multiple
+// of the viewport height. 1.5 means "if the page is less than 1.5 screens
+// tall, don't bother showing a scrollbar." Scales automatically with any
+// device size because it's relative to the viewport.
+const RATIO_THRESHOLD = 1.5;
+
 // Sets html.os-dragging while the user drags the thumb so CSS can
-// globally disable text selection.
+// globally disable text selection. Also toggles `data-ratio-low` on the
+// host element when content is below the threshold.
 const OS_EVENTS = {
   initialized: (instance) => {
     const els = instance.elements();
@@ -44,6 +51,15 @@ const OS_EVENTS = {
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
     window.addEventListener('blur', onUp);
+  },
+  updated: (instance) => {
+    const host = instance.elements().host;
+    const viewport = instance.elements().viewport;
+    if (!host || !viewport) return;
+    const visible = viewport.clientHeight || 1;
+    const total = viewport.scrollHeight || 0;
+    const ratio = total / visible;
+    host.setAttribute('data-ratio-low', ratio < RATIO_THRESHOLD ? 'true' : 'false');
   },
 };
 

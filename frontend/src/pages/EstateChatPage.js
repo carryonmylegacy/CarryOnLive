@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { platformDownload } from '../utils/downloadFile';
 import useVoiceRecorder from '../components/estate-chat/useVoiceRecorder';
+import useOverlayScrollbars from '../hooks/useOverlayScrollbars';
 import VoiceMessagePlayer from '../components/estate-chat/VoiceMessagePlayer';
 import { AuthImage, AuthVideo, AuthFileLink, prefetchMedia } from '../components/estate-chat/AuthMedia';
 import ECTSecurityIntro from '../components/estate-chat/ECTSecurityIntro';
@@ -88,13 +89,17 @@ export default function EstateChatPage() {
     swipedChannel, setSwipedChannel,
     deleteConfirm, setDeleteConfirm,
     selectMode, setSelectMode, selectedChannels, setSelectedChannels,
-    bulkDeleting, bulkDeleteConfirm, setBulkDeleteConfirm,
-    showHeaderMembers, setShowHeaderMembers,
+    bulkDeleting, bulkDeleteConfirm, setBulkDeleteConfirm, showHeaderMembers, setShowHeaderMembers,
     showListMembersId, setShowListMembersId, listMembersPosRef,
     fetchChannels, openChannel: _openChannel, handleBackOut: _handleBackOut,
     deleteChannel, bulkDeleteChannels,    toggleChannelSelection, toggleSelectAll, exitSelectMode,
     handleTouchStart, handleTouchMove, handleTouchEnd,
   } = channelList;
+
+  // Attach iOS-like overlay scrollbar to the chat message list.
+  // Re-attaches when the active channel changes, since the scroll container
+  // only mounts once a channel is selected.
+  useOverlayScrollbars(scrollContainerRef, [activeChannel?.id]);
 
   // Wrap openChannel to inject the refs it needs and manage msgLoading/typers
   const openChannel = (ch) => {

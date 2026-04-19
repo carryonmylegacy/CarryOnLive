@@ -1,16 +1,17 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   CarryOn — OverlayScrollbars theme (v2)
+   CarryOn — OverlayScrollbars theme (v3)
    ============================================================================
-   iOS-like overlay scrollbar, pill-thumb, grab-to-drag, no text selection.
+   iOS-like overlay scrollbar, pill-thumb, grab-to-drag, no text selection,
+   auto-hide when content doesn't exceed 1.5× viewport height.
 
-   Selector note: the theme class lands on `.os-scrollbar` itself.
+   Theme class lands on `.os-scrollbar` itself (not the parent).
    ────────────────────────────────────────────────────────────────────────── */
 
 @import 'overlayscrollbars/overlayscrollbars.css';
 
-/* ── CarryOn gold theme — BASE (desktop defaults) ─────────────────────── */
+/* ── Gold theme — desktop defaults ─────────────────────────────────────── */
 .os-scrollbar.os-theme-carryon-gold {
-  --os-size: 16px;
+  --os-size: 14px;
   --os-padding-perpendicular: 3px;
   --os-padding-axis: 4px;
   --os-track-border-radius: 999px;
@@ -22,26 +23,21 @@
   --os-handle-bg-active: rgba(212, 175, 55, 1);
   --os-handle-border-radius: 999px;
   --os-handle-min-size: 44px;
-  /* PILL CAP — regardless of page length, thumb stays pill-sized */
-  --os-handle-max-size: 80px;
-  /* Handle fills the track width so it's visually thick and grabbable */
+  --os-handle-max-size: 72px;
   --os-handle-perpendicular-size: 100%;
   --os-handle-perpendicular-size-hover: 100%;
   --os-handle-perpendicular-size-active: 100%;
 }
 
-/* Grab cursor + smooth transitions on the thumb */
 .os-scrollbar.os-theme-carryon-gold .os-scrollbar-handle {
   cursor: grab;
-  transition:
-    background-color 160ms ease,
-    opacity 220ms ease;
+  transition: background-color 160ms ease, opacity 220ms ease;
 }
 .os-scrollbar.os-theme-carryon-gold.os-scrollbar-handle-interactive:active .os-scrollbar-handle {
   cursor: grabbing;
 }
 
-/* While the user drags the thumb, disable text selection globally */
+/* Disable global text selection while dragging the thumb */
 html.os-dragging,
 html.os-dragging * {
   -webkit-user-select: none !important;
@@ -55,27 +51,34 @@ html.os-dragging * {
 /* ── Mobile tune ──────────────────────────────────────────────────────── */
 @media (max-width: 1023px) {
   .os-scrollbar.os-theme-carryon-gold {
-    /* Thickness: ~2× previous (was 9px) so it feels grabbable on iOS */
-    --os-size: 18px;
+    /* 15px ≈ 3px slimmer than the v2 18px — still a clear grab target */
+    --os-size: 15px;
     --os-handle-bg: rgba(212, 175, 55, 0.75);
     --os-handle-bg-hover: rgba(212, 175, 55, 0.95);
     --os-handle-bg-active: rgba(212, 175, 55, 1);
-    /* Pill thumb, slightly larger min for fat-finger tap targets */
-    --os-handle-min-size: 56px;
-    --os-handle-max-size: 72px;
+    --os-handle-min-size: 52px;
+    --os-handle-max-size: 68px;
   }
 
-  /* Offset the vertical track so it clears the fixed mobile header (~48px +
-     safe-area) and the bottom dock (~56px + safe-area). Without this, the
-     top of the track is hidden under the sticky header and impossible to
-     grab until the user has already scrolled. */
-  .os-scrollbar.os-scrollbar-vertical.os-theme-carryon-gold {
+  /* Offset vertical track so it clears the fixed mobile header and dock
+     on routes that use DashboardLayout (the .main-content container). */
+  .main-content > .os-scrollbar.os-scrollbar-vertical.os-theme-carryon-gold,
+  .main-content .os-scrollbar.os-scrollbar-vertical.os-theme-carryon-gold {
     top: calc(48px + env(safe-area-inset-top, 0px) + 4px) !important;
     bottom: calc(56px + env(safe-area-inset-bottom, 8px) + 4px) !important;
     height: auto !important;
-    /* Boost hit area slightly beyond the visible thumb */
     padding-left: 2px;
   }
+}
+
+/* Hide the vertical scrollbar entirely when content does not exceed 1.5×
+   the viewport. The `data-ratio-low` attribute is toggled by the `updated`
+   callback in DashboardLayout and useOverlayScrollbars hook. Scales
+   automatically with any device size because it's relative to the viewport. */
+[data-overlayscrollbars-initialize][data-ratio-low="true"] .os-scrollbar-vertical {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Ensure scrollbar floats above page content but below modals */
