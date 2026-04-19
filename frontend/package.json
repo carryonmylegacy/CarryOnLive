@@ -91,6 +91,7 @@
     "lint:fix": "eslint src/ --ext .js,.jsx --fix",
     "lint:errors": "eslint src/ --ext .js,.jsx --quiet",
     "e2e": "playwright test --project=smoke-chromium --project=smoke-mobile",
+    "e2e:prod-safe": "playwright test --project=smoke-chromium --project=smoke-mobile --grep-invert 'Revenue funnel'",
     "e2e:visual": "playwright test --project=visual",
     "e2e:ui": "playwright test --ui",
     "e2e:smoke:desktop": "playwright test --project=smoke-chromium"

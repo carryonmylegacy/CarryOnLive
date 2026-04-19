@@ -89,7 +89,14 @@ Comprehensive family preparedness platform with estate planning, secure document
 - `frontend/playwright.config.js` + `tests/e2e/smoke.spec.js` + `scrollbar.spec.js` + `signup_invite_flow.spec.js`
 - **27 passed, 1 skipped, 0 failed** in ~75s
 - Covers: 16 UI smoke tests (landing, login, signup, admin login, dashboard, settings, marketing, health) × 2 viewports; 6 scrollbar regression tests; 6 revenue-funnel API tests (register → login → invite → accept → auth-me)
-- `yarn e2e` runs suite locally; `e2e-smoke` CI job gated on `vars.RUN_E2E == 'true'`
+- Scripts: `yarn e2e` (all), `yarn e2e:prod-safe` (read-only subset, 21 tests), `yarn e2e:visual`, `yarn e2e:ui`
+- `e2e-smoke` CI job gated on `vars.RUN_E2E == 'true'`
+
+### Production Uptime Sentinel (new)
+- `.github/workflows/uptime-sentinel.yml` — scheduled GitHub Action (every 30 min) that runs `yarn e2e:prod-safe` against production.
+- On failure: opens/updates a `uptime-alert` GitHub issue (auto-deduped, auto-closed on recovery) + optional Slack ping via `SLACK_WEBHOOK_URL` secret.
+- Gated on `vars.RUN_UPTIME_SENTINEL == 'true'` so it's off by default; enable via Repo Settings → Variables.
+- Secrets required: `PROD_BASE_URL`, `PROD_API_URL`, `PROD_E2E_ADMIN_EMAIL`, `PROD_E2E_ADMIN_PASSWORD`.
 
 ### Per-Tile Error Boundaries
 - `components/TileErrorBoundary.js` — compact fallback + Retry button, reports to Sentry

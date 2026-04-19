@@ -1,0 +1,162 @@
+name: Production Uptime Sentinel
+
+# Runs the full E2E smoke suite against production every 30 minutes during
+# launch week. On failure, opens (or updates) a GitHub issue tagged
+# `uptime-alert` so the on-call engineer sees it immediately. Optionally
+# pings a Slack webhook if SLACK_WEBHOOK_URL is configured.
+#
+# To enable:
+#   1. Repo Settings → Variables → add vars.RUN_UPTIME_SENTINEL = "true"
+#   2. Repo Settings → Secrets → add:
+#        PROD_BASE_URL            e.g. https://app.carryon.us
+#        PROD_API_URL             e.g. https://api.carryon.us   (same as BASE if single-domain)
+#        PROD_E2E_ADMIN_EMAIL     admin account for the funnel-accept test
+#        PROD_E2E_ADMIN_PASSWORD  admin password (rotated with JWT_SECRET)
+#        SLACK_WEBHOOK_URL        (optional) Slack incoming webhook URL
+#
+# Cost: ~2 min runner minutes per run × 48 runs/day × 7 days = ~11 hours
+# (~free on public repos; $0.70/run on private). Tune the cron to every
+# 15/60 minutes as needed.
+#   3. Run read-only paths only (smoke + scrollbar; no signup/invite writes).
+#      Write-path tests still run in normal CI and manual workflow_dispatch.
+#
+# IMPORTANT: The sentinel runs `yarn e2e:prod-safe` which SKIPS the revenue
+# funnel test (which creates beneficiary records). Smoke + scrollbar tests
+# are entirely read-only: landing, login form render, admin login,
+# dashboard read, settings read, /api/health, scrollbar visual checks.
+
+on:
+  schedule:
+    - cron: "*/30 * * * *" # every 30 minutes
+  workflow_dispatch: # allow manual trigger from Actions tab
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  probe:
+    name: Probe production E2E paths
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ vars.RUN_UPTIME_SENTINEL == 'true' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: yarn install --frozen-lockfile || yarn install
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run prod-safe E2E suite (excludes write-path tests)
+        id: probe
+        working-directory: frontend
+        env:
+          E2E_BASE_URL: ${{ secrets.PROD_BASE_URL }}
+          E2E_API_URL: ${{ secrets.PROD_API_URL }}
+          E2E_ADMIN_EMAIL: ${{ secrets.PROD_E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.PROD_E2E_ADMIN_PASSWORD }}
+        run: yarn e2e:prod-safe
+
+      - name: Upload Playwright artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uptime-sentinel-report-${{ github.run_id }}
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+          retention-days: 14
+
+      # ── Alerting ─────────────────────────────────────────────────────────
+      - name: Open or update GitHub issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `🚨 Uptime sentinel: production E2E failed at ${new Date().toISOString()}`;
+            const body = [
+              `**Run:** [${context.runId}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+              `**Commit:** ${context.sha}`,
+              `**Triggered:** ${context.eventName}`,
+              '',
+              'One or more production E2E paths failed. Playwright HTML report is attached to the run.',
+              '',
+              'Likely culprits (in order of recency):',
+              '- A recent deploy broke the signup/login/dashboard path',
+              '- Backend API returned a 5xx',
+              '- An expected selector (login form, dashboard container) changed',
+              '- Admin credentials rotated without updating PROD_E2E_ADMIN_PASSWORD',
+              '',
+              'Open the HTML report artifact for screenshots and traces.',
+            ].join('\n');
+
+            // Look for an existing open alert issue (last 24h) to avoid spam
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'uptime-alert',
+              state: 'open',
+              per_page: 1,
+            });
+
+            if (existing.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing[0].number,
+                body: `**Still failing** — ${new Date().toISOString()}\n\n${body}`,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['uptime-alert', 'p0'],
+              });
+            }
+
+      - name: Close the open uptime-alert on recovery
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'uptime-alert',
+              state: 'open',
+              per_page: 5,
+            });
+            for (const issue of existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `✅ Recovered — probe at ${new Date().toISOString()} succeeded.`,
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+              });
+            }
+
+      - name: Ping Slack on failure
+        if: failure() && env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          curl -sS -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"🚨 *CarryOn production E2E failed.* <${RUN_URL}|Open run>\"}" \
+            "$SLACK_WEBHOOK_URL"
