@@ -287,8 +287,8 @@ export default function SocialShareSheet({
         <div
           className="overflow-y-auto flex-1"
           style={{
+            minHeight: 0,                      /* iOS Safari: flex child must have this or overflow-y has no effect */
             WebkitOverflowScrolling: 'touch',
-            overscrollBehavior: 'contain',
           }}
         >
 
