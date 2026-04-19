@@ -1,5 +1,18 @@
 # CarryOn — Changelog
 
+## Feb 14, 2026 — Splash asset parity: web ↔ native iOS pixel-identical
+
+User asked to line up the web boot splash with the native iOS `LaunchScreen.storyboard` so PWA installs, home-screen icons, TestFlight, and App Store all show the same splash.
+
+- **Downscaled** the existing iOS source (`splash-2732x2732.png`, 2732×2732) to two web-friendly assets via Pillow/LANCZOS:
+  - `public/splash.png` (1024×1024, ~110 KB, lossless)
+  - `public/splash.jpg` (1024×1024, ~29 KB, q88 progressive) — what the web actually loads.
+- **`public/index.html`** — splash markup now loads `/splash.jpg` full-screen with `object-fit: contain` (max 82% of viewport to leave breathing room) on a `#0F1629` background. That hex is the exact sRGB equivalent of the iOS storyboard's `backgroundColor="red=0.0588 green=0.0862 blue=0.1607"` — pixel-identical backdrop. Removed the separate logo tile + bespoke layout; now the rendered splash is just the brand artwork + a subtle gold spinner 14vh from the bottom.
+- **`memory/SPLASH_ASSET_PAIRING.md`** — new doc explains the pairing, the exact hex/rgb, and the regenerate-from-iOS-source Pillow snippet. Future agents can't drift the two surfaces apart without consciously ignoring the doc.
+
+Tests: Playwright smoke + scrollbar 10/10 green. Housekeeping 65/65 PASS. Live screenshot confirms the new web splash is visually identical to the native iOS launch screen the user shared.
+
+
 ## Feb 14, 2026 — Splash polish (JV → varsity) + Switch-state fix
 
 **Splash screen:** Previous version had a generic shield SVG, "LOADING YOUR VAULT…" marketing copy, and a light-mode media query that painted cream on iOS. User (correctly) called it JV. Replaced with a direct mirror of the native iOS launch screen.

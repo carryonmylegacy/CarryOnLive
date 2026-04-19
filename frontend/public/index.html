@@ -84,15 +84,17 @@
         <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded">Skip to main content</a>
         <div id="root"></div>
         <!-- CarryOn boot splash — SIBLING of #root so React mounting
-             doesn't clobber it. A tiny inline script below fades it out
-             when the app dispatches `carryon:app-ready`, giving a
-             seamless native-like handoff instead of a navy-blank gap
-             between HTML hydration and the app's first paint. -->
+             doesn't clobber it. Uses THE SAME artwork as the native iOS
+             LaunchScreen.storyboard (splash-2732x2732.png downscaled to
+             splash.jpg, 29KB) so the web cold-boot and the native
+             cold-boot are pixel-for-pixel identical. Inline script
+             below fades it out on `carryon:app-ready`. -->
         <div id="carryon-boot-splash" role="status" aria-label="Loading CarryOn"
-             style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0B1221;z-index:2147483000;-webkit-font-smoothing:antialiased;transition:opacity 0.35s ease-out,visibility 0s linear 0.35s;">
-            <img src="%PUBLIC_URL%/carryon-icon.jpg" alt="CarryOn"
-                 style="width:128px;height:128px;border-radius:28px;box-shadow:0 24px 60px rgba(0,0,0,0.45),0 0 0 1px rgba(212,175,55,0.12);object-fit:cover;" />
-            <div style="margin-top:42px;width:28px;height:28px;border-radius:50%;border:2px solid rgba(212,175,55,0.15);border-top-color:#d4af37;animation:carryon-spin 0.85s linear infinite;"></div>
+             style="position:fixed;inset:0;background:#0F1629;z-index:2147483000;display:flex;align-items:center;justify-content:center;transition:opacity 0.35s ease-out,visibility 0s linear 0.35s;">
+            <img src="%PUBLIC_URL%/splash.jpg" alt=""
+                 style="max-width:82%;max-height:82%;object-fit:contain;" />
+            <div aria-hidden="true"
+                 style="position:absolute;bottom:14vh;width:28px;height:28px;border-radius:50%;border:2px solid rgba(212,175,55,0.14);border-top-color:#d4af37;animation:carryon-spin 0.85s linear infinite;"></div>
             <style>
                 @keyframes carryon-spin { to { transform: rotate(360deg); } }
                 #carryon-boot-splash.carryon-splash-hide { opacity: 0; visibility: hidden; pointer-events: none; }
