@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { toast } from 'sonner';
+import { toast } from '../utils/toast';
 import { useAuth } from '../contexts/AuthContext';
 import SecuritySettings from '../components/SecuritySettings';
 import { Lock, Mail, Loader2, Timer } from 'lucide-react';

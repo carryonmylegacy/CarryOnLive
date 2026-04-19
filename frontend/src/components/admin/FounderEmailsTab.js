@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 import { Mail, Shield, TrendingUp, AlertTriangle, Loader2, Trash2, Send, Eye } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Switch } from '../ui/switch';

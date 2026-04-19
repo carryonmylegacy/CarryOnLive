@@ -1,5 +1,16 @@
 # CarryOn — Changelog
 
+## Feb 14, 2026 — Toast system fix: sonner was never mounted, routed through AppNotification
+
+**Root cause of "no toasts appearing":** 10 files across the app imported `toast` from the `sonner` library, but sonner's `<Toaster />` component was never mounted in `App.js`. The app uses a custom branded notification system at `components/AppNotification.js` (rendered via `NotificationContainer`). A shim at `utils/toast.js` exists to translate sonner-style calls into that system, but half the codebase bypassed it and went directly to sonner — sending every toast into the void.
+
+Fix:
+- **Swapped `from 'sonner'` → `from '../utils/toast'` across 10 files**: `SettingsPage.js`, `SecuritySettingsPage.js`, `AppearanceCard.js`, `PersonalInfoCard.js`, `PrivacyCard.js`, `NotificationPrefsCard.js`, `DigestCard.js`, `EstatePhotoCard.js`, `ProfileCard.js`, `FounderEmailsTab.js`.
+- **Upgraded the shim (`utils/toast.js`)** to accept sonner's full options object (`{ duration, description, action, title }`) and forward them to `notify.success/error/info/warning`. The `description` field is flattened into the message with a middle-dot separator so users see the supporting context inline.
+
+Verified live: logged in via Playwright, clicked the Save button on Security Settings → the CarryOn-branded gold-bordered toast `"Success — All security settings on this page are saved.  ·  Every change you just made is committed to your account."` rendered at the top of the page. ESLint clean across all 11 files, housekeeping 65/65 PASS, Playwright smoke + scrollbar → 10/10 passed.
+
+
 ## Feb 14, 2026 — Per-toggle "— saved." confirmation toasts
 
 User request: *"After each toggle switch is moved and is auto-saved there should be a toast that says those settings were specifically saved. Then if they want to hit Save at the top they can do that."*

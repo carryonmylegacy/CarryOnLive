@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { toast } from 'sonner';
+import { toast } from '../utils/toast';
 import { useAuth } from '../contexts/AuthContext';
 import { Shield, LogOut, Loader2, ShieldCheck } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';

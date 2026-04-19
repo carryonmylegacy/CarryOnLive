@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { User, Pencil, ChevronRight, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';

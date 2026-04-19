@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 import { Bell, BellOff, Loader2 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { API_URL } from '../../config';
