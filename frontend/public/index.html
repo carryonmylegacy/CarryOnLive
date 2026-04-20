@@ -110,9 +110,11 @@
                 };
                 window.addEventListener('carryon:app-ready', remove, { once: true });
                 // Safety net — if for any reason the app-ready event is never
-                // dispatched (route error before mount, etc.), hide after 20s
-                // so the user isn't permanently stuck staring at the splash.
-                setTimeout(remove, 20000);
+                // dispatched (route error before mount, SW upgrade mid-boot,
+                // etc.), hide after 10s so the user isn't permanently stuck
+                // staring at the splash. Tightened from 20s → 10s after a
+                // user-reported "stuck splash" on iOS SW upgrade.
+                setTimeout(remove, 10000);
             })();
         </script>
         <!--

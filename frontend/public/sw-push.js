@@ -67,10 +67,18 @@ self.addEventListener('install', (event) => {
   console.log('[SW] Installing', SHELL_VERSION);
   event.waitUntil(
     caches.open(SHELL_CACHE)
-      .then((cache) => cache.addAll(PRECACHE_URLS).catch((err) => {
-        // Even if one asset fails, install should not fatally error — log and continue.
-        console.warn('[SW] Precache partial failure:', err);
-      }))
+      .then(async (cache) => {
+        // IMPORTANT: cache.addAll is atomic — if ANY url 404s the ENTIRE
+        // precache rejects and the shell cache is left empty. That caused
+        // a cold-boot stall where the boot splash couldn't find any asset.
+        // Switch to independent `cache.add` calls so each asset is
+        // best-effort and a single missing file can't brick the whole SW.
+        await Promise.all(PRECACHE_URLS.map((url) =>
+          cache.add(url).catch((err) => {
+            console.warn(`[SW] Precache skipped ${url}:`, err?.message || err);
+          })
+        ));
+      })
       .then(() => self.skipWaiting())
   );
 });
@@ -135,15 +143,24 @@ async function staleWhileRevalidate(request, cacheName) {
 }
 
 // Cache-first with fallback to network. For content-addressable resources.
+// Never throws — on total failure returns a synthesized 504 response so
+// the fetch router can't leave respondWith() dangling.
 async function cacheFirst(request, cacheName) {
-  const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
-  if (cached) return cached;
-  const response = await fetch(request);
-  if (response && response.ok) {
-    cache.put(request, response.clone()).catch(() => {});
+  try {
+    const cache = await caches.open(cacheName);
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    const response = await fetch(request);
+    if (response && response.ok) {
+      cache.put(request, response.clone()).catch(() => {});
+    }
+    return response;
+  } catch (err) {
+    // Offline and the asset isn't cached yet — return a transparent 504
+    // instead of throwing (which would fall through to browser's default
+    // broken-image placeholder and can also wedge respondWith).
+    return new Response('', { status: 504, statusText: 'Offline and not in cache' });
   }
-  return response;
 }
 
 // Network-first with cache fallback. For navigations.

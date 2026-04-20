@@ -106,26 +106,38 @@ export const AuthProvider = ({ children }) => {
             const notExpired = jwtPayload?.exp && jwtPayload.exp * 1000 > Date.now();
 
             if (isNetworkError && offline && notExpired) {
-              // Build a best-effort user snapshot from cached profile + JWT.
-              let cachedProfile = null;
+              // Wrap the whole hydrate path so NOTHING can escape and wedge
+              // the boot splash. On any failure, still release the splash
+              // and keep the user on an authenticated shell — at worst
+              // they'll see empty dashboards until reconnect.
               try {
-                const { getLocalProfile } = await import('../offline/repos/profileRepo');
-                cachedProfile = await getLocalProfile();
-              } catch { /* offline cache not available — use JWT fields only */ }
-              setUser({
-                id: jwtPayload.user_id || jwtPayload.sub,
-                email: jwtPayload.email || cachedProfile?.email,
-                role: jwtPayload.role || cachedProfile?.role || 'benefactor',
-                name: cachedProfile?.name || cachedProfile?.first_name || '',
-                ...(cachedProfile || {}),
-                _offlineHydrated: true,
-              });
-              // Keep whatever subscription/features snapshot we have in cache.
-              try {
-                const { getLocalSubscription } = await import('../offline/repos/subscriptionRepo');
-                const localSub = await getLocalSubscription();
-                if (localSub) setSubscriptionStatus(localSub);
-              } catch {}
+                let cachedProfile = null;
+                try {
+                  const { getLocalProfile } = await import('../offline/repos/profileRepo');
+                  cachedProfile = await getLocalProfile();
+                } catch { /* offline cache not available — use JWT fields only */ }
+                setUser({
+                  id: jwtPayload.user_id || jwtPayload.sub,
+                  email: jwtPayload.email || cachedProfile?.email,
+                  role: jwtPayload.role || cachedProfile?.role || 'benefactor',
+                  name: cachedProfile?.name || cachedProfile?.first_name || '',
+                  ...(cachedProfile || {}),
+                  _offlineHydrated: true,
+                });
+                try {
+                  const { getLocalSubscription } = await import('../offline/repos/subscriptionRepo');
+                  const localSub = await getLocalSubscription();
+                  if (localSub) setSubscriptionStatus(localSub);
+                } catch {}
+              } catch (hydrateErr) {
+                console.warn('[auth] offline hydrate failed, continuing with JWT-only user:', hydrateErr);
+                setUser({
+                  id: jwtPayload.user_id || jwtPayload.sub,
+                  email: jwtPayload.email,
+                  role: jwtPayload.role || 'benefactor',
+                  _offlineHydrated: true,
+                });
+              }
               setLoading(false);
               if (typeof window !== 'undefined') {
                 window.dispatchEvent(new Event('carryon:app-ready'));
