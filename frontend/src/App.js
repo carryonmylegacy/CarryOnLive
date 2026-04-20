@@ -117,19 +117,40 @@ const PageLoader = () => {
 // auto-recovers on route changes so a transient error on one page
 // doesn't lock the user on a "Something went wrong" screen until reload.
 class RouteErrorBoundary extends React.Component {
-  state = { hasError: false, errorPath: null };
-  static getDerivedStateFromError() { return { hasError: true }; }
+  state = { hasError: false, errorPath: null, errorKind: null };
+  static getDerivedStateFromError(error) {
+    // Detect "chunk failed to load" errors — these happen when the user
+    // navigates to a lazy-loaded route whose JS bundle isn't in the SW
+    // cache and the device is offline. They need a friendlier message.
+    const msg = String(error?.message || error || '');
+    const name = String(error?.name || '');
+    const isChunk = /loading chunk \d+ failed|failed to fetch dynamically imported module|import.*(failed|error)|script error/i.test(msg)
+      || name === 'ChunkLoadError';
+    return { hasError: true, errorKind: isChunk ? 'chunk' : 'generic' };
+  }
   componentDidCatch(error, info) {
     this.setState({ errorPath: typeof window !== 'undefined' ? window.location.pathname : null });
-    reportError(error, info?.componentStack ? `ErrorBoundary:${info.componentStack.split('\n')[1]?.trim()}` : 'ErrorBoundary');
+    // Don't spam Sentry with offline chunk-load failures — those are
+    // an environmental condition, not a real bug.
+    const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    if (!(offline && this.state.errorKind === 'chunk')) {
+      reportError(error, info?.componentStack ? `ErrorBoundary:${info.componentStack.split('\n')[1]?.trim()}` : 'ErrorBoundary');
+    }
   }
   componentDidMount() {
     this._onPop = () => {
       // Any navigation event should clear the error so the new route can render.
-      if (this.state.hasError) this.setState({ hasError: false, errorPath: null });
+      if (this.state.hasError) this.setState({ hasError: false, errorPath: null, errorKind: null });
+    };
+    // If we went offline and into a chunk error, auto-retry the moment we come back online.
+    this._onOnline = () => {
+      if (this.state.hasError && this.state.errorKind === 'chunk') {
+        this.setState({ hasError: false, errorPath: null, errorKind: null });
+      }
     };
     window.addEventListener('popstate', this._onPop);
     window.addEventListener('pushstate', this._onPop);
+    window.addEventListener('online', this._onOnline);
     // Patch history.pushState/replaceState once so React Router navigations also clear.
     if (!window.__carryon_history_patched) {
       const fire = () => window.dispatchEvent(new Event('pushstate'));
@@ -143,16 +164,29 @@ class RouteErrorBoundary extends React.Component {
   componentWillUnmount() {
     window.removeEventListener('popstate', this._onPop);
     window.removeEventListener('pushstate', this._onPop);
+    window.removeEventListener('online', this._onOnline);
   }
   handleRetry = () => {
-    this.setState({ hasError: false, errorPath: null });
+    this.setState({ hasError: false, errorPath: null, errorKind: null });
   };
   render() {
     if (this.state.hasError) {
+      const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      const isOfflineChunk = this.state.errorKind === 'chunk' && offline;
+      // The red "You're offline" banner at the top already communicates
+      // the state — so when this is clearly an offline-chunk issue, show
+      // an honest, reassuring message instead of the scary generic one.
+      const title = isOfflineChunk ? 'This page needs a connection the first time' : 'Something went wrong';
+      const subtitle = isOfflineChunk
+        ? "We couldn't load this page offline because you haven't opened it before. Pick another page, or reconnect and try again — it'll work everywhere from then on."
+        : null;
       return (
         <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg, #0F1629)' }}>
-          <div className="text-center p-6">
-            <p className="text-white text-lg font-bold mb-2">Something went wrong</p>
+          <div className="text-center p-6 max-w-md">
+            <p className="text-white text-lg font-bold mb-2" data-testid="error-boundary-title">{title}</p>
+            {subtitle && (
+              <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.7)' }} data-testid="error-boundary-offline-subtitle">{subtitle}</p>
+            )}
             <div className="flex gap-2 justify-center">
               <button onClick={this.handleRetry} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: '#d4af37', color: '#080e1a' }} data-testid="error-boundary-retry">
                 Try again

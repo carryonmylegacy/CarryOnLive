@@ -197,6 +197,14 @@ export const AuthProvider = ({ children }) => {
           if (typeof navigator !== 'undefined' && navigator.onLine) {
             import('../offline/chunkedUploader').then((m) => m.drainPendingUploads(token)).catch(() => {});
           }
+          // Pre-warm every lazy-loaded page chunk in the background so that
+          // offline navigation to an unvisited page paints from SW cache
+          // instead of crashing the ErrorBoundary. Fires only once per
+          // session and only when online; idle-callback-scheduled so it
+          // doesn't fight the post-login page's first paint.
+          if (typeof navigator !== 'undefined' && navigator.onLine) {
+            import('../offline/prewarmChunks').then((m) => m.prewarmRouteChunks()).catch(() => {});
+          }
         } catch (error) {
           console.error('Auth init error:', error);
           logout();
