@@ -45,6 +45,7 @@ import { API_URL } from '../../config';
 import { filterNavByFeatures } from '../../utils/featureGates';
 import { DOCK_REGISTRY, ADMIN_PORTALS, scopeArr, hasScope } from './navConfig';
 import MobileOtpToggle from './MobileOtpToggle';
+import MobileOfflineToggle from './MobileOfflineToggle';
 import DebugValues from './DebugValues';
 
 export { DOCK_REGISTRY }; // re-export so existing consumers don't break
@@ -820,8 +821,10 @@ const MobileNav = () => {
 
               {/* Admin OTP Toggle — Founder only */}
               {user?.role === 'admin' && !window.location.pathname.startsWith('/ops') && (
-                <div className="px-4 pb-2">
+                <div className="px-4 pb-2 space-y-2">
                   <MobileOtpToggle />
+                  {/* Offline master switch — placed directly below OTP per PM request. */}
+                  <MobileOfflineToggle />
                 </div>
               )}
 

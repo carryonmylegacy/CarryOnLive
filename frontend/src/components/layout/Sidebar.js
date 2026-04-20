@@ -20,6 +20,7 @@ import {
   Home,
   Headphones,
   ShieldCheck,
+  CloudOff,
   KeyRound,
   Clock,
   CreditCard,
@@ -77,6 +78,61 @@ const OtpToggle = ({ collapsed }) => {
         <span className="text-xs font-bold text-[var(--t)]">OTP</span>
       </div>
       <Switch checked={!otpDisabled} onCheckedChange={toggle} />
+    </div>
+  );
+};
+
+/**
+ * OfflineModeToggle — founder-only switch to flip the platform-wide offline
+ * feature on/off. Single source of truth lives in `localStorage.carryon_offline_v1`.
+ * When ON, every offline feature engages: IndexedDB sync, outbox + drain,
+ * pending chunked uploads, AES-GCM at-rest encryption, conflict resolver.
+ *
+ * Styled to sit directly below the OTP toggle in the admin sidebar so founders
+ * have one-tap control over both platform kill-switches from any page.
+ */
+const OfflineModeToggle = ({ collapsed }) => {
+  const [on, setOn] = useState(() => {
+    try { return localStorage.getItem('carryon_offline_v1') === 'on'; }
+    catch { return false; }
+  });
+  const toggle = () => {
+    const next = !on;
+    setOn(next);
+    try {
+      if (next) localStorage.setItem('carryon_offline_v1', 'on');
+      else localStorage.setItem('carryon_offline_v1', 'off');
+    } catch {}
+    // Broadcast so any listening components update without a reload.
+    try { window.dispatchEvent(new CustomEvent('carryon:offline-flag-changed', { detail: { mode: next ? 'on' : 'off' } })); } catch {}
+    // Reload so repos, service worker, and crypto session key reinitialize cleanly.
+    // Use a short delay so React state flush completes first.
+    setTimeout(() => { try { window.location.reload(); } catch {} }, 150);
+  };
+  if (collapsed) {
+    return (
+      <div
+        className="mx-1 my-2 flex items-center justify-center px-2 py-2 rounded-lg cursor-pointer"
+        onClick={toggle}
+        title={`Offline mode ${on ? 'On' : 'Off'}`}
+        style={{ background: on ? 'rgba(212,175,55,0.10)' : 'var(--s)', border: `1px solid ${on ? 'rgba(212,175,55,0.35)' : 'var(--b)'}` }}
+        data-testid="sidebar-offline-toggle-collapsed"
+      >
+        <CloudOff className="w-5 h-5" style={{ color: on ? '#d4af37' : 'var(--t3)' }} />
+      </div>
+    );
+  }
+  return (
+    <div
+      className="mx-3 my-2 flex items-center justify-between px-3 py-2 rounded-lg"
+      style={{ background: on ? 'rgba(212,175,55,0.10)' : 'var(--s)', border: `1px solid ${on ? 'rgba(212,175,55,0.35)' : 'var(--b)'}` }}
+      data-testid="sidebar-offline-toggle"
+    >
+      <div className="flex items-center gap-2">
+        <CloudOff className="w-4 h-4" style={{ color: on ? '#d4af37' : 'var(--t3)' }} />
+        <span className="text-xs font-bold text-[var(--t)]">Offline</span>
+      </div>
+      <Switch checked={on} onCheckedChange={toggle} data-testid="sidebar-offline-switch" />
     </div>
   );
 };
@@ -639,7 +695,14 @@ const Sidebar = () => {
 
       {/* Admin OTP Toggle — Founder only, not operators */}
       {user?.role === 'admin' && !window.location.pathname.startsWith('/ops') && (
-        <OtpToggle collapsed={collapsed} />
+        <>
+          <OtpToggle collapsed={collapsed} />
+          {/* Offline mode master switch — founder-only. Placed directly
+              below the OTP toggle per PM request. Single knob engages
+              IndexedDB sync, outbox drain, pending uploads, and at-rest
+              encryption together. */}
+          <OfflineModeToggle collapsed={collapsed} />
+        </>
       )}
 
       {/* Beta Banner — only shows when beta_mode is active */}
