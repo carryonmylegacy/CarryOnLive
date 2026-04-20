@@ -23,14 +23,18 @@ import { getDB, smokeCheck, purgeLocalData } from './db';
 import { isOfflineEnabled, getOfflineMode } from './featureFlag';
 import { drain as drainOutbox, pendingCount as outboxPendingCount } from './outbox';
 
-const PHASE = 8;
+const PHASE = 9;
 
 class SyncClient {
   constructor() {
     this.initialized = false;
     this.online = typeof navigator !== 'undefined' ? navigator.onLine : true;
     this._listeners = [];
+    this._token = null; // set post-login via setAuthToken
   }
+
+  /** Called by AuthContext post-login so we can drive chunked uploads. */
+  setAuthToken(token) { this._token = token; }
 
   /** Idempotent bootstrap. Safe to call many times. */
   async init() {
@@ -60,6 +64,12 @@ class SyncClient {
     this.online = true;
     // Reconnect → replay anything we queued while offline.
     drainOutbox().catch(() => {});
+    // Also drain the pending large-file uploads (Phase 9).
+    if (this._token) {
+      import('./chunkedUploader')
+        .then((m) => m.drainPendingUploads(this._token))
+        .catch(() => {});
+    }
   };
 
   _onOffline = () => {

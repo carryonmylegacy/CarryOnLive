@@ -134,6 +134,11 @@ export const AuthProvider = ({ children }) => {
           // so returning users always start with a fresh local cache.
           // Fire-and-forget; no-op when the offline flag is off.
           import('../offline/warmup').then((m) => m.warmUpAfterLogin(token)).catch(() => {});
+          // Drive chunked pending uploads on reconnect (Phase 9).
+          import('../offline/syncClient').then((m) => { try { m.syncClient.setAuthToken(token); } catch {} }).catch(() => {});
+          if (typeof navigator !== 'undefined' && navigator.onLine) {
+            import('../offline/chunkedUploader').then((m) => m.drainPendingUploads(token)).catch(() => {});
+          }
         } catch (error) {
           console.error('Auth init error:', error);
           logout();

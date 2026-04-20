@@ -37,6 +37,7 @@ from routes.messages import router as messages_router
 from routes.onboarding import router as onboarding_router
 from routes.pdf_export import router as pdf_export_router
 from routes.push import router as push_router
+from routes.uploads_chunked import router as uploads_chunked_router
 from routes.security import router as security_router
 from routes.share_cards import router as share_cards_router
 from routes.subscriptions import router as subscriptions_router
@@ -223,6 +224,7 @@ api_router.include_router(messages_router)
 api_router.include_router(onboarding_router)
 api_router.include_router(pdf_export_router)
 api_router.include_router(push_router)
+api_router.include_router(uploads_chunked_router)
 api_router.include_router(security_router)
 api_router.include_router(share_cards_router)
 api_router.include_router(subscriptions_router)

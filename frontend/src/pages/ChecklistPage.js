@@ -139,14 +139,27 @@ const ChecklistPage = () => {
     if (!form.title.trim()) { toast.error('Title is required'); return; }
     setSaving(true);
     try {
-      if (editingItem) {
-        const res = await axios.put(`${API_URL}/checklists/${editingItem.id}`, form, getAuthHeaders());
-        setChecklists(prev => prev.map(c => c.id === editingItem.id ? res.data : c));
-        // toast removed
+      const { mutateWithOutbox } = await import('../utils/offlineMutation');
+      const r = await mutateWithOutbox({
+        entity_type: 'checklist_item',
+        entity_id: editingItem?.id || undefined,
+        method: editingItem ? 'PUT' : 'POST',
+        url: editingItem ? `/checklists/${editingItem.id}` : `/checklists`,
+        body: editingItem ? form : { ...form, estate_id: estate.id },
+        authHeaders: getAuthHeaders(),
+      });
+      if (!r.ok) throw r.error || new Error('save failed');
+      if (r.queued) {
+        if (editingItem) {
+          setChecklists(prev => prev.map(c => c.id === editingItem.id ? { ...c, ...form } : c));
+        } else {
+          const tempId = `local-checklist-${Date.now()}`;
+          setChecklists(prev => [...prev, { ...form, id: tempId, estate_id: estate.id, _local_pending: true }]);
+        }
+        toast.success(editingItem ? 'Change saved offline — will sync when you reconnect.' : 'Item queued — will sync when you reconnect.');
       } else {
-        const res = await axios.post(`${API_URL}/checklists`, { ...form, estate_id: estate.id }, getAuthHeaders());
-        setChecklists(prev => [...prev, res.data]);
-        // toast removed
+        if (editingItem) setChecklists(prev => prev.map(c => c.id === editingItem.id ? r.data : c));
+        else setChecklists(prev => [...prev, r.data]);
       }
       closeForm();
     } catch (err) {

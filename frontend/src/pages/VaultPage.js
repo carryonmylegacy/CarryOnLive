@@ -449,6 +449,13 @@ const VaultPage = () => {
   };
 
   const handleDownload = async (doc, password = null, backupCode = null) => {
+    // Phase 5/Tier C — block cloud file opens when offline with an honest toast.
+    // The document list itself paints from the offline mirror (Phase 5); this
+    // guard only fires when the user actually tries to OPEN the blob.
+    try {
+      const { canOpenCloudFile } = await import('../utils/offlineGuard');
+      if (!canOpenCloudFile({ kind: 'document' })) return;
+    } catch { /* non-fatal — fall through */ }
     setDownloading(doc.id);
     try {
       const fileName = resolveFileName(doc.name, doc.file_type);
@@ -567,6 +574,10 @@ const VaultPage = () => {
 
   // Preview functions — always opens the floating PDF/image viewer
   const handlePreview = async (doc) => {
+    try {
+      const { canOpenCloudFile } = await import('../utils/offlineGuard');
+      if (!canOpenCloudFile({ kind: 'document' })) return;
+    } catch { /* non-fatal */ }
     const previewable = doc.file_type && (
       doc.file_type.toLowerCase().includes('pdf') ||
       doc.file_type.toLowerCase().includes('image')

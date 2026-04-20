@@ -36,7 +36,7 @@
 import Dexie from 'dexie';
 
 export const DB_NAME = 'carryon-offline';
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 class CarryOnDB extends Dexie {
   constructor() {
@@ -79,6 +79,13 @@ class CarryOnDB extends Dexie {
       // syncMeta: per-entity-type last-sync timestamps so incremental
       // fetches know what's changed.
       syncMeta: 'entity_type, last_synced_at',
+
+      // ── Pending Uploads (Tier B / Phase 9) ───────────────────────────
+      // Large blobs awaiting chunked upload. `blob` is a Blob object;
+      // Dexie serializes it efficiently in IndexedDB. `kind` mirrors
+      // the server's upload finalizer: 'document' | 'milestone_video' |
+      // 'milestone_audio' | 'chat_media'.
+      pendingUpload: '++id, kind, status, created_at',
     });
   }
 }

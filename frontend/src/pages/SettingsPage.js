@@ -13,6 +13,7 @@ import { NotificationPrefsCard } from '../components/settings/NotificationPrefsC
 import ProfileCard from '../components/settings/ProfileCard';
 import PersonalInfoCard from '../components/settings/PersonalInfoCard';
 import EstatePhotoCard from '../components/settings/EstatePhotoCard';
+import OfflineBehaviorCard from '../components/settings/OfflineBehaviorCard';
 import AppearanceCard from '../components/settings/AppearanceCard';
 import DigestCard from '../components/settings/DigestCard';
 import PrivacyCard from '../components/settings/PrivacyCard';
@@ -130,6 +131,10 @@ const SettingsPage = () => {
 
       {/* Estate Photo — benefactors only */}
       {!isStaff && <EstatePhotoCard />}
+
+      {/* ── Section: Offline ── */}
+      <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--t5)] pt-3 pl-1">Offline</div>
+      <OfflineBehaviorCard />
 
       {/* ── Section: Security ── */}
       <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--t5)] pt-3 pl-1">Security</div>

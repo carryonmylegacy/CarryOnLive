@@ -537,6 +537,8 @@ See `CHANGELOG.md` for full chronological history if this file exceeds 700 lines
 - ✅ Phase 6 — Login sync packet + visible progress pill (Feb 20, 2026)
 - ✅ Phase 7 — Encryption at rest (AES-256-GCM + PBKDF2, profile sealed) (Feb 20, 2026)
 - ✅ Phase 8 — Conflict resolution UI (Feb 20, 2026)
+- ✅ Phase 9 — Tier C honest UX + Tier A universal text creation + Tier B chunked resumable uploader backend (Feb 21, 2026 overnight)
+- 🟡 Phase 9a — Wire chunked uploader into DAV document upload + milestone recorder (infrastructure ready, cutover deferred)
 
 **Testing**: Per-phase Playwright spec at `tests/e2e/offline_phase{N}.spec.js`. Manual shadow-mode verification in `CHANGELOG.md`.
 

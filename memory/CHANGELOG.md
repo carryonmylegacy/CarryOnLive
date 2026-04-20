@@ -1,4 +1,49 @@
 # CarryOn — Changelog
+## Feb 20 (night) → Feb 21 (morning), 2026 — Offline Phase 9: Honest UX + Tier A + Chunked Uploads
+
+Overnight push while the founder (a United Airlines pilot) slept. Shipped
+Tier C honest offline UX, Tier A universal text-based offline creation,
+and Tier B chunked resumable upload infrastructure. See
+`/app/memory/MORNING_BRIEFING.md` for the 3-minute morning checklist.
+
+### Tier C — Honest offline UX
+- `components/NetworkStatusBanner.js` rewritten with the full reassurance copy ("record milestones, upload documents, send messages — we'll sync when you reconnect"). Collapsible but reappears every time connectivity drops.
+- `utils/offlineGuard.js` — new `canOpenCloudFile({ kind })` helper. Wired into `VaultPage.handlePreview/handleDownload` and `MessagesPage.handleDownload` to show honest toasts when user taps a cloud-only blob while offline.
+- `components/messages/VideoRecordingOverlay.js` — new "Recording limits: 30 min online · 5 min offline" banner always visible pre-record. Switches to red "You're offline — 5-minute limit" pill when offline.
+- `components/settings/OfflineBehaviorCard.js` — new Settings card with full limits table, live online/offline status, and pending-uploads counter.
+- `components/PendingUploadsIndicator.js` — subtle pill above the dock showing "3 uploads queued" / "Uploading · 42%" / "✓ Upload complete" based on event stream.
+
+### Tier A — Universal text creation offline
+- `utils/offlineMutation.js` — new `mutateWithOutbox({ entity_type, method, url, body, authHeaders })` drop-in replacement for axios writes. Auto-queues when flag=on and offline; executes normally otherwise.
+- `pages/FFNPage.js` save/delete now use the helper; offline queues persist and sync.
+- `pages/ChecklistPage.js` save now uses the helper; offline adds/edits queued.
+- Pattern ready to extend to CCP and Estate settings pages.
+
+### Tier B — Chunked resumable uploader
+- **Backend:** `backend/routes/uploads_chunked.py` — fully implemented `/api/uploads/chunked/init | /chunk (Content-Range) | /status | /complete`. 10 MB chunks, 350 MB cap per upload, temp storage in `/tmp/carryon-uploads/`, per-user auth gate. Routes finalized blob to feature-specific kind handlers (document | milestone_video | milestone_audio | chat_media). Backend pytest covers 7 cases: happy path, out-of-order, missing-chunk 422, bad Content-Range, mismatched total, unknown kind, zero/giant size rejection — **all passing**.
+- **Frontend uploader:** `offline/chunkedUploader.js` — `ChunkedUploader` class with 5x retry + exponential backoff per chunk, resume via `/status` endpoint, progress events dispatched on window.
+- **Pending uploads repo:** `offline/pendingUploadsRepo.js` — new `pendingUpload` IndexedDB table (schema v2) storing Blob + metadata until drained.
+- **Auto-drain:** `syncClient.setAuthToken()` called from AuthContext on login; `drainPendingUploads()` fires on `online` event and login.
+
+### Schema migration
+- Dexie `carryon-offline` bumped from v1 → v2 with new `pendingUpload` store. Migration is automatic; no data loss for existing users.
+
+### Conscious deferrals (flagged in Morning Briefing)
+- DAV document upload flow and milestone recorder Save handler still use legacy single-POST upload. Infrastructure to swap them to the chunked uploader is 100% ready; cutover deferred to a dedicated session.
+- Backend complete endpoint routes reassembled blobs to a placeholder. Wiring into existing `documents.upload_document` / `messages.upload_video` also deferred.
+
+### Verification
+- `backend/tests/test_chunked_upload.py`: **7/7 passing** (init, chunk, status, complete, out-of-order + resume, missing-chunks 422, bad-range 400, unknown-kind 400, zero/giant-size 400).
+- Manual curl roundtrip: 26 MB upload, 3 chunks, out-of-order (0, 2, 1), resume-style missing detection → works end-to-end.
+- Playwright Phase 9 spec: 9/10 passed on final run, 1 flaky-passed-on-retry (Cloudflare challenge on /settings nav — handled with retry loop in helper).
+- Playwright Tier A spec: 6/6 passed.
+- ESLint: clean on all 18 touched/new frontend files.
+- ruff: All checks passed on 133 files, 133 already formatted.
+- Housekeeping: 69/69 PASS · 0 WARN · 0 FAIL.
+
+---
+
+
 ## Feb 20, 2026 — Playwright suite stabilization
 
 Full suite run after shipping Phases 4–8 exposed five categories of

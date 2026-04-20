@@ -14,6 +14,7 @@ import NetworkStatusBanner from './components/NetworkStatusBanner';
 import NotificationContainer from './components/AppNotification';
 import OfflineSyncProgress from './components/OfflineSyncProgress';
 import ConflictResolver from './components/ConflictResolver';
+import PendingUploadsIndicator from './components/PendingUploadsIndicator';
 import { AmberAlertProvider } from './components/AmberAlert';
 import { initErrorReporter, reportError } from './utils/errorReporter';
 import { checkForUpdates } from './utils/versionCheck';
@@ -477,6 +478,7 @@ function App() {
           <NetworkStatusBanner />
           <NotificationContainer />
           <OfflineSyncProgress />
+          <PendingUploadsIndicator />
           <ConflictResolver />
           <AmberAlertProvider />
           <UsernameReviewModal />

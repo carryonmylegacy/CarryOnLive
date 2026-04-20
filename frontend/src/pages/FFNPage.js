@@ -51,15 +51,31 @@ export default function FFNPage() {
     if (!form.name.trim()) { toast.error('Name is required'); return; }
     setSaving(true);
     try {
-      if (editingId) {
-        await axios.put(`${API_URL}/ffn/${editingId}`, form, getAuthHeaders());
+      const { mutateWithOutbox } = await import('../utils/offlineMutation');
+      const r = await mutateWithOutbox({
+        entity_type: 'ffn',
+        entity_id: editingId || undefined,
+        method: editingId ? 'PUT' : 'POST',
+        url: editingId ? `/ffn/${editingId}` : `/ffn/${estateId}`,
+        body: form,
+        authHeaders: getAuthHeaders(),
+      });
+      if (!r.ok) throw r.error || new Error('save failed');
+      if (r.queued) {
+        toast.success(editingId ? 'Contact saved offline — will sync when you reconnect.' : 'Contact queued — will sync when you reconnect.');
+        // Optimistically update the UI so the user sees their change.
+        if (editingId) {
+          setContacts(prev => prev.map(c => c.id === editingId ? { ...c, ...form } : c));
+        } else {
+          const tempId = `local-ffn-${Date.now()}`;
+          setContacts(prev => [...prev, { ...form, id: tempId, _local_pending: true }]);
+        }
       } else {
-        await axios.post(`${API_URL}/ffn/${estateId}`, form, getAuthHeaders());
+        fetchData();
       }
       setShowForm(false);
       setEditingId(null);
       setForm(EMPTY_FORM);
-      fetchData();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to save contact');
     }
@@ -69,8 +85,18 @@ export default function FFNPage() {
   const handleDelete = async (id) => {
     setDeleting(id);
     try {
-      await axios.delete(`${API_URL}/ffn/${id}`, getAuthHeaders());
+      const { mutateWithOutbox } = await import('../utils/offlineMutation');
+      const r = await mutateWithOutbox({
+        entity_type: 'ffn',
+        entity_id: id,
+        method: 'DELETE',
+        url: `/ffn/${id}`,
+        body: null,
+        authHeaders: getAuthHeaders(),
+      });
+      if (!r.ok) throw r.error || new Error('delete failed');
       setContacts(prev => prev.filter(c => c.id !== id));
+      if (r.queued) toast.success('Contact removal queued — will sync when you reconnect.');
     } catch (err) {
       toast.error('Failed to delete contact');
     }

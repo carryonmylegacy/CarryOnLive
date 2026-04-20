@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, Camera, StopCircle, SwitchCamera } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Camera, StopCircle, SwitchCamera, WifiOff } from 'lucide-react';
 
 const VideoRecordingOverlay = ({
   videoRef,
@@ -12,6 +12,18 @@ const VideoRecordingOverlay = ({
   releaseCamera,
   flipCamera,
 }) => {
+  // Tier C — show recording limits up-front and warn if offline with
+  // a stricter cap so the user never records a 20-minute epic they
+  // can't save.
+  const [offline, setOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false);
+  useEffect(() => {
+    const on = () => setOffline(false);
+    const off = () => setOffline(true);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
+  }, []);
+
   if (!showRecordingOverlay) return null;
 
   return (
@@ -38,6 +50,42 @@ const VideoRecordingOverlay = ({
           <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: 'rgba(0,0,0,0.75)' }}>
             <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
             <span className="text-white text-sm font-bold">Recording</span>
+          </div>
+        )}
+
+        {/* Tier C — Recording limits banner, always visible pre-record. */}
+        {!isRecording && countdown === null && (
+          <div
+            className="absolute left-4 right-4"
+            style={{ top: 'calc(env(safe-area-inset-top, 0px) + 72px)' }}
+            data-testid="recording-limits-banner"
+          >
+            <div
+              className="rounded-xl px-3 py-2 text-[12px]"
+              style={{
+                background: offline ? 'rgba(124,29,29,0.92)' : 'rgba(0,0,0,0.72)',
+                color: '#FFF6E8',
+                boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
+                backdropFilter: 'blur(10px)',
+              }}
+            >
+              {offline ? (
+                <>
+                  <div className="flex items-center gap-2 font-bold mb-0.5">
+                    <WifiOff className="w-3.5 h-3.5" />
+                    <span>You're offline — 5-minute limit</span>
+                  </div>
+                  <div style={{ opacity: 0.9 }}>
+                    Your video will save to your device and upload when you reconnect.
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <span className="font-bold">Recording limits: </span>
+                  30 min online · 5 min offline
+                </div>
+              )}
+            </div>
           </div>
         )}
 

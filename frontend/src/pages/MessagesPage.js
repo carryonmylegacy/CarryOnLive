@@ -484,6 +484,10 @@ const MessagesPage = () => {
   };
 
   const handleDownload = async (msg) => {
+    try {
+      const { canOpenCloudFile } = await import('../utils/offlineGuard');
+      if (!canOpenCloudFile({ kind: 'milestone' })) return;
+    } catch { /* non-fatal */ }
     setDownloadingId(msg.id);
     try {
       const msgType = msg.message_type || 'text';
