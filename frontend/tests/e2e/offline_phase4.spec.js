@@ -19,7 +19,7 @@ async function loginAsAdminWithMode(page, mode) {
     try { localStorage.setItem('carryon_offline_v1', m); } catch {}
   }, mode);
   await page.waitForTimeout(400);
-  const inputs = page.locator('input');
+  const inputs = page.locator('input:not([type="hidden"]):visible');
   await inputs.nth(0).fill('info@carryon.us');
   await inputs.nth(1).fill('Demo1234!');
   await page.locator('button[type="submit"]').first().click();

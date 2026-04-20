@@ -7,22 +7,13 @@
 //   3. Clicking "Keep mine" flips the row back to status='pending'.
 
 import { test, expect } from '@playwright/test';
+import { BASE, loginAsAdminWithMode } from './_helpers.js';
 
-const BASE = process.env.BASE_URL || process.env.REACT_APP_BACKEND_URL || 'https://ui-polish-72.preview.emergentagent.com';
-
-async function loginAsAdminWithMode(page, mode) {
-  await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(400);
-  await page.evaluate((m) => {
-    try { localStorage.setItem('carryon_offline_v1', m); } catch {}
-  }, mode);
-  await page.waitForTimeout(400);
-  const inputs = page.locator('input');
-  await inputs.nth(0).fill('info@carryon.us');
-  await inputs.nth(1).fill('Demo1234!');
-  await page.locator('button[type="submit"]').first().click();
-  await page.waitForTimeout(3500);
-}
+// Run Phase 8 tests serially to avoid hitting Cloudflare's rate limiter
+// with three back-to-back admin logins from the same preview URL.
+// Bumped test timeout to 90s because each test re-logs-in and the login
+// helper may retry past a Cloudflare interstitial.
+test.describe.configure({ mode: 'serial', timeout: 90_000 });
 
 async function injectConflict(page) {
   return await page.evaluate(async () => {
@@ -75,7 +66,8 @@ async function outboxStatus(page, id) {
 
 test.describe('Offline Phase 8 — Conflict resolver', () => {
   test('flag=on: injected conflict opens the resolver modal', async ({ page }) => {
-    await loginAsAdminWithMode(page, 'on');
+    await loginAsAdminWithMode(page, 'on', { postLoginWaitMs: 6000 });
+    await page.waitForLoadState('load').catch(() => {});
     await injectConflict(page);
     await expect(page.locator('[data-testid="conflict-resolver"]')).toBeVisible({ timeout: 8000 });
 
@@ -92,7 +84,8 @@ test.describe('Offline Phase 8 — Conflict resolver', () => {
   });
 
   test('Keep theirs deletes the conflicting outbox row', async ({ page }) => {
-    await loginAsAdminWithMode(page, 'on');
+    await loginAsAdminWithMode(page, 'on', { postLoginWaitMs: 6000 });
+    await page.waitForLoadState('load').catch(() => {});
     const id = await injectConflict(page);
     await expect(page.locator('[data-testid="conflict-resolver"]')).toBeVisible({ timeout: 8000 });
     await page.locator('[data-testid="conflict-keep-theirs"]').click();
@@ -102,7 +95,8 @@ test.describe('Offline Phase 8 — Conflict resolver', () => {
   });
 
   test('Keep mine flips the conflicting row back to pending', async ({ page }) => {
-    await loginAsAdminWithMode(page, 'on');
+    await loginAsAdminWithMode(page, 'on', { postLoginWaitMs: 6000 });
+    await page.waitForLoadState('load').catch(() => {});
     const id = await injectConflict(page);
     await expect(page.locator('[data-testid="conflict-resolver"]')).toBeVisible({ timeout: 8000 });
     await page.locator('[data-testid="conflict-keep-mine"]').click();

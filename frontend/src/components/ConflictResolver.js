@@ -42,13 +42,30 @@ export default function ConflictResolver() {
   }, []);
 
   useEffect(() => {
-    if (getOfflineMode() !== 'on') return;
-    const onConflict = () => { pickNext(); };
+    // Phase 8: always attach the listener, but no-op when the flag is
+    // not 'on' at the moment the event fires. This allows users (and
+    // tests) to toggle the flag AFTER the component mounts without
+    // requiring a page reload.
+    const onConflict = () => {
+      if (getOfflineMode() !== 'on') return;
+      pickNext();
+    };
+    const onStorage = (e) => {
+      if (e.key === 'carryon_offline_v1') {
+        // Flag changed mid-session: refresh the conflict queue.
+        if (getOfflineMode() === 'on') pickNext();
+        else setConflict(null);
+      }
+    };
     window.addEventListener('carryon:outbox:conflict', onConflict);
+    window.addEventListener('storage', onStorage);
     // Also poll once on mount in case a conflict was persisted from a
     // previous session.
-    pickNext();
-    return () => window.removeEventListener('carryon:outbox:conflict', onConflict);
+    if (getOfflineMode() === 'on') pickNext();
+    return () => {
+      window.removeEventListener('carryon:outbox:conflict', onConflict);
+      window.removeEventListener('storage', onStorage);
+    };
   }, [pickNext]);
 
   const handle = async (choice) => {
