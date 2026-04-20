@@ -247,13 +247,34 @@ export default function ConnectedProtocolPage() {
     setSubmitting(true);
     try {
       const isNew = !editPlan.id;
-      const url = isNew ? `${API_URL}/ccp/plans` : `${API_URL}/ccp/plans/${editPlan.id}`;
+      const relUrl = isNew ? `/ccp/plans` : `/ccp/plans/${editPlan.id}`;
       const method = isNew ? 'POST' : 'PUT';
-      const body = isNew
-        ? { estate_id: estateId, ...editPlan }
-        : editPlan;
-      const res = await fetch(url, { method, headers, body: JSON.stringify(body) });
-      if (res.ok) {
+      const body = isNew ? { estate_id: estateId, ...editPlan } : editPlan;
+      const { mutateWithOutbox } = await import('../utils/offlineMutation');
+      const r = await mutateWithOutbox({
+        entity_type: 'ccp_plan',
+        entity_id: editPlan.id || `local-ccp-${Date.now()}`,
+        method,
+        url: relUrl,
+        body,
+        authHeaders: { headers },
+      });
+      if (!r.ok) throw r.error || new Error('ccp save failed');
+      if (r.queued) {
+        // Optimistically reflect the queued change in the local plans list.
+        if (isNew) {
+          const tempId = `local-ccp-${Date.now()}`;
+          setPlans(prev => [...prev, { ...body, id: tempId, _local_pending: true }]);
+        } else {
+          setPlans(prev => prev.map(p => p.id === editPlan.id ? { ...p, ...body, _local_pending: true } : p));
+        }
+        try {
+          const { toast } = await import('../utils/toast');
+          toast.success(isNew ? 'Plan saved offline — will sync when you reconnect.' : 'Plan changes queued — will sync when you reconnect.');
+        } catch {}
+        setEditPlan(null);
+        setView('plans');
+      } else {
         setEditPlan(null);
         setView('plans');
         await fetchPlans();
@@ -264,8 +285,25 @@ export default function ConnectedProtocolPage() {
   const deletePlan = async (planId) => {
     if (!window.confirm('Delete this emergency plan?')) return;
     try {
-      await fetch(`${API_URL}/ccp/plans/${planId}`, { method: 'DELETE', headers });
-      await fetchPlans();
+      const { mutateWithOutbox } = await import('../utils/offlineMutation');
+      const r = await mutateWithOutbox({
+        entity_type: 'ccp_plan',
+        entity_id: planId,
+        method: 'DELETE',
+        url: `/ccp/plans/${planId}`,
+        body: null,
+        authHeaders: { headers },
+      });
+      if (!r.ok) throw r.error || new Error('ccp delete failed');
+      if (r.queued) {
+        setPlans(prev => prev.filter(p => p.id !== planId));
+        try {
+          const { toast } = await import('../utils/toast');
+          toast.success('Plan deletion queued — will sync when you reconnect.');
+        } catch {}
+      } else {
+        await fetchPlans();
+      }
     } catch {}
   };
 

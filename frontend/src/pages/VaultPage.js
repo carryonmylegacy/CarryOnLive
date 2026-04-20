@@ -249,6 +249,51 @@ const VaultPage = () => {
     
     setUploading(true);
     try {
+      // Tier B wiring — if the user is offline and the offline flag is on,
+      // queue the upload via the chunked uploader's pending queue instead
+      // of attempting a single multipart POST that will fail. The pending
+      // uploads drainer runs on reconnect + on login and posts chunks to
+      // /api/uploads/chunked/*, where the document finalizer creates the
+      // same Document row + encrypted blob as the online path would.
+      const offlineMode = getOfflineMode();
+      const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      if (offlineMode === 'on' && isOffline) {
+        const { addPendingUpload } = await import('../offline/pendingUploadsRepo');
+        await addPendingUpload({
+          kind: 'document',
+          filename: uploadFile.name || uploadName,
+          mime_type: uploadFile.type || 'application/octet-stream',
+          blob: uploadFile,
+          metadata: {
+            estate_id: estate.id,
+            name: uploadName,
+            category: uploadCategory,
+            lock_type: uploadLockType === 'none' ? null : uploadLockType,
+            lock_password: uploadLockType === 'password' ? uploadLockPassword : null,
+            file_type: uploadFile.type || 'application/octet-stream',
+          },
+        });
+        toast.success('Document queued — we\'ll finish uploading it when you reconnect.');
+        // Optimistically show a local pending entry so the user sees their doc in the list.
+        setDocuments(prev => [
+          ...prev,
+          {
+            id: `local-doc-${Date.now()}`,
+            estate_id: estate.id,
+            name: uploadName,
+            category: uploadCategory,
+            file_type: uploadFile.type || 'application/octet-stream',
+            file_size: uploadFile.size,
+            is_locked: uploadLockType !== 'none',
+            lock_type: uploadLockType === 'none' ? null : uploadLockType,
+            _local_pending: true,
+          },
+        ]);
+        setShowUploadModal(false);
+        resetUploadForm();
+        return;
+      }
+
       const formData = new FormData();
       formData.append('file', uploadFile);
       

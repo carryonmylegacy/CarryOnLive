@@ -84,9 +84,19 @@ const EstatePhotoCard = () => {
                     if (e.key === 'Enter' && estateNameDraft.trim()) {
                       setEstateSaving(true);
                       try {
-                        await axios.patch(`${API_URL}/estates/${estateId}`, { name: estateNameDraft.trim() }, getAuthHeaders());
+                        const { mutateWithOutbox } = await import('../../utils/offlineMutation');
+                        const r = await mutateWithOutbox({
+                          entity_type: 'estate',
+                          entity_id: estateId,
+                          method: 'PATCH',
+                          url: `/estates/${estateId}`,
+                          body: { name: estateNameDraft.trim() },
+                          authHeaders: getAuthHeaders(),
+                        });
+                        if (!r.ok) throw r.error || new Error('rename failed');
                         setEstateName(estateNameDraft.trim());
-                        toast.success('Estate name saved');
+                        invalidateCache('/estates');
+                        toast.success(r.queued ? 'Estate name queued — will sync when you reconnect.' : 'Estate name saved');
                       } catch { toast.error('Failed to rename estate'); }
                       setEstateSaving(false);
                       setEditingEstateName(false);
@@ -102,10 +112,19 @@ const EstatePhotoCard = () => {
                       if (estateNameDraft.trim()) {
                         setEstateSaving(true);
                         try {
-                          await axios.patch(`${API_URL}/estates/${estateId}`, { name: estateNameDraft.trim() }, getAuthHeaders());
+                          const { mutateWithOutbox } = await import('../../utils/offlineMutation');
+                          const r = await mutateWithOutbox({
+                            entity_type: 'estate',
+                            entity_id: estateId,
+                            method: 'PATCH',
+                            url: `/estates/${estateId}`,
+                            body: { name: estateNameDraft.trim() },
+                            authHeaders: getAuthHeaders(),
+                          });
+                          if (!r.ok) throw r.error || new Error('rename failed');
                           setEstateName(estateNameDraft.trim());
                           invalidateCache('/estates');
-                          toast.success('Estate name saved');
+                          toast.success(r.queued ? 'Estate name queued — will sync when you reconnect.' : 'Estate name saved');
                         } catch { toast.error('Failed to rename estate'); }
                         setEstateSaving(false);
                       }

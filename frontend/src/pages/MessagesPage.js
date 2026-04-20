@@ -404,6 +404,62 @@ const MessagesPage = () => {
         custom_event_label: triggerValue === 'custom' ? customEventLabel : null,
       };
 
+      // Tier B wiring — if we're offline with the flag on AND the user
+      // recorded a video, short-circuit to the chunked-upload queue. The
+      // backend's milestone finalizer will create the Message row AND
+      // attach the video in one atomic call when the queue drains. Keeps
+      // offline-captured 5-minute recordings reliably in flight.
+      const hasVideo = videoBlob && videoBlob !== 'existing';
+      const hasAudio = !!audioBlob;
+      try {
+        const { getOfflineMode } = await import('../offline/featureFlag');
+        const offlineMode = getOfflineMode();
+        const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+        if (offlineMode === 'on' && isOffline && !editingMessage && (hasVideo || hasAudio)) {
+          const { addPendingUpload } = await import('../offline/pendingUploadsRepo');
+          const messageCreate = {
+            estate_id: estate.id,
+            title,
+            content,
+            message_type: messageType,
+            recipients: selectedRecipients,
+            trigger_type: triggerType,
+            trigger_value: triggerValue || null,
+            trigger_age: triggerAge ? parseInt(triggerAge) : null,
+            trigger_date: triggerDate || null,
+            custom_event_label: triggerValue === 'custom' ? customEventLabel : null,
+            video_thumbnail: videoThumbnail,
+          };
+          if (hasVideo) {
+            await addPendingUpload({
+              kind: 'milestone_video',
+              filename: `milestone-${Date.now()}.webm`,
+              mime_type: videoBlob.type || 'video/webm',
+              blob: videoBlob,
+              metadata: { message_create: messageCreate },
+            });
+            toast.success('Video queued — we\'ll send your milestone when you reconnect.');
+          } else if (hasAudio) {
+            await addPendingUpload({
+              kind: 'milestone_audio',
+              filename: `milestone-${Date.now()}.webm`,
+              mime_type: audioBlob.type || 'audio/webm',
+              blob: audioBlob,
+              metadata: { message_create: messageCreate },
+            });
+            toast.success('Voice message queued — we\'ll send it when you reconnect.');
+          }
+          setShowCreateModal(false);
+          setEditingMessage(null);
+          resetForm();
+          return;
+        }
+      } catch (qerr) {
+        // Fall through to the online path if queueing failed — better
+        // to surface the real error than silently drop the recording.
+        console.warn('[offline] milestone queue skipped:', qerr);
+      }
+
       // For voice, include inline (small)
       if (audioBlob) {
         const reader = new FileReader();
