@@ -200,6 +200,12 @@ const MobileNav = () => {
   };
 
   const handleDevSwitch = async (account) => {
+    // Portal switching mints a fresh server-side JWT — genuinely cannot
+    // work offline. Friendly message instead of a raw network error.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      toast.error('Portal switching requires an internet connection. Reconnect and try again.');
+      return;
+    }
     setDevSwitching(account.role);
     try {
       const currentToken = localStorage.getItem('carryon_token');

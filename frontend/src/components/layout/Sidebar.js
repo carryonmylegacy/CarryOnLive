@@ -241,6 +241,13 @@ const Sidebar = () => {
   };
 
   const handleDevSwitch = async (account) => {
+    // Portal switching mints a fresh server-side JWT, so it genuinely
+    // cannot work offline. Surface a clean explanation instead of the
+    // raw "Load failed" network error.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      toast.error('Portal switching requires an internet connection. Reconnect and try again.');
+      return;
+    }
     setDevSwitching(account.role);
     try {
       const currentToken = localStorage.getItem('carryon_token');

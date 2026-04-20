@@ -115,8 +115,11 @@ const NetworkStatusBanner = () => {
       ref={bannerRef}
       className="fixed top-0 left-0 right-0 z-[9999]"
       style={{
-        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)',
-        paddingBottom: 10,
+        // Sit snug under the iOS status bar — just a 2 px breather so
+        // the Wi-Fi icon isn't kissing the camera notch. Tightened at
+        // user request (was +8 / pb:10).
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 2px)',
+        paddingBottom: 6,
         paddingLeft: 14,
         paddingRight: 14,
         background: '#7C1D1D',
@@ -127,7 +130,7 @@ const NetworkStatusBanner = () => {
       data-testid="network-status-banner"
       role="alert"
     >
-      <div className="flex items-center gap-2 mb-1">
+      <div className="flex items-center gap-2 mb-0.5">
         <WifiOff className="w-4 h-4 shrink-0" />
         <span className="text-sm font-bold">You're offline</span>
         <button
