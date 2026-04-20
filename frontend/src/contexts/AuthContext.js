@@ -19,6 +19,14 @@ export const AuthProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       setSubscriptionStatus(res.data);
+      // Shadow/on: mirror the authoritative subscription for offline paint.
+      import('../offline/featureFlag').then(({ getOfflineMode }) => {
+        if (getOfflineMode() !== 'off') {
+          import('../offline/repos/subscriptionRepo').then((m) =>
+            m.upsertLocalSubscription(res.data),
+          ).catch(() => {});
+        }
+      }).catch(() => {});
     } catch (err) {
       console.error('Subscription status fetch error:', err);
     }
@@ -96,6 +104,21 @@ export const AuthProvider = ({ children }) => {
           if (featRes.status === 'fulfilled') {
             setEnabledFeatures(featRes.value.data?.enabled_features || null);
           }
+          // Mirror subscription + profile snapshots into the offline cache
+          // so next cold boot can paint trial banners and header avatar
+          // instantly (shadow + on modes only).
+          import('../offline/featureFlag').then(({ getOfflineMode }) => {
+            if (getOfflineMode() === 'off') return;
+            Promise.all([
+              import('../offline/repos/profileRepo'),
+              import('../offline/repos/subscriptionRepo'),
+            ]).then(([prof, sub]) => {
+              try { prof.upsertLocalProfile(userData); } catch {}
+              if (subRes.status === 'fulfilled') {
+                try { sub.upsertLocalSubscription(subRes.value.data); } catch {}
+              }
+            }).catch(() => {});
+          }).catch(() => {});
           // Warm the offline mirror on every boot (not just fresh login)
           // so returning users always start with a fresh local cache.
           // Fire-and-forget; no-op when the offline flag is off.

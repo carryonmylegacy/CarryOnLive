@@ -1,4 +1,55 @@
 # CarryOn — Changelog
+## Feb 20, 2026 — Offline-first Phase 3: Estates, Dashboard, Profile, Subscription
+
+Fourth of nine phases. Extends the offline mirror beyond Beneficiaries to the
+data that paints the Dashboard home screen and the Settings profile card — so
+a returning user sees their stat cards, readiness speedometer, avatar, and
+trial banner instantly on cold boot, even on zero connectivity.
+
+**New repos** (all gated on `isOfflineEnabled()`):
+- `src/offline/repos/estatesRepo.js` — owned + beneficiary estates list, keyed by server id. `getLocalEstates()`, `upsertLocalEstates()`, `updateLocalEstate()`.
+- `src/offline/repos/dashboardRepo.js` — per-estate dashboard tile snapshot (stats, readiness, checklists, financialSummary) in the `dashboardTile` singleton-per-estate store, plus a parallel `readinessScore` table for the scorecard widget.
+- `src/offline/repos/profileRepo.js` — current user profile stored as singleton `id='current'` in the `user` table. Includes `updateLocalProfile(patch)` for optimistic edits.
+- `src/offline/repos/subscriptionRepo.js` — current subscription status snapshot (singleton `id='current'` in `subscription`). Read-only from client; writes happen exclusively via Stripe webhooks.
+
+**Wired into pages:**
+- `pages/DashboardPage.js`:
+  - `fetchEstates()` — flag=on paints from local estate list first, short-circuits the server call when offline. Shadow/on both mirror the server response.
+  - `fetchEstateData(estateId)` — flag=on paints stats/readiness/checklists/financial from the local tile first, short-circuits when offline. Shadow/on both upsert the tile + readiness on every successful fetch.
+- `components/settings/PersonalInfoCard.js`:
+  - Initial paint pulls from `getLocalProfile()` first, then refreshes from server.
+  - `saveProfile()` — flag=on + offline: patches local, enqueues `PUT /auth/profile` in the outbox with `entity_type='profile'`, toasts "Profile saved offline — will sync when you reconnect."
+- `contexts/AuthContext.js`:
+  - On boot, after `/auth/me` + `/subscriptions/status` resolve, mirror both into IndexedDB (shadow + on modes). Makes trial banners and the header avatar paint instantly on next boot.
+
+**Outbox drain upgrade:**
+- `src/offline/outbox.js` now recognizes `entity_type='profile'` on a successful `PUT /auth/profile` and calls `upsertLocalProfile()` with the server response so the mirror stays fresh after replay.
+
+**Warm-up expanded** (`src/offline/warmup.js`):
+- Now seeds estate list + profile + subscription + per-estate dashboard tile (stats + readiness + checklists) + readiness scorecard, in addition to the existing beneficiary list. Concurrency capped at 3 tasks to avoid uplink saturation.
+
+**Debug console copy bumped** to "Phase 3 — Estates, Dashboard, Profile, Subscription are now mirrored locally."
+
+**Regression:** `tests/e2e/offline_phase3.spec.js` — four assertions:
+1. Flag=off: visiting `/dashboard` doesn't populate `estate`, `dashboardTile`, `user`, or `subscription`.
+2. Flag=shadow: AuthContext warm-up populates user + subscription; Dashboard tile populates either via warm-up (owned estates) or render path.
+3. Flag=on: second visit paints from cache without crashing, elapsed <15s sanity bound.
+4. Direct-insert profile PUT persists to outbox tagged `entity_type='profile'`.
+
+**Manual verification** (shadow mode, admin `info@carryon.us`):
+```
+IDB counts: estate=100, dashboardTile=100, user=1, subscription=1,
+            readinessScore=45, beneficiary=91
+Subscription row: { subscription, trial, beta_mode, is_beta_tester,
+                    beta_accepted, free_access, custom_discount,
+                    has_active_subscription }
+```
+
+**Verification:** housekeeping 69/69 PASS · 0 WARN · 0 FAIL · ESLint clean on all 9 touched/added frontend files · `scripts/check.sh` → ALL CLEAR — SAFE TO PUSH.
+
+---
+
+
 
 ## Feb 14, 2026 — Offline-first: Post-login warm-up + Phase 2 (write-through + outbox)
 

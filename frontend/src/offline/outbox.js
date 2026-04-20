@@ -128,6 +128,17 @@ export async function drain() {
           }
         }
 
+        // Phase 3 — Refresh the local mirror with the server's authoritative
+        // response for profile PUTs so next cold boot sees post-replay
+        // state. Best-effort; never blocks the drain on failure.
+        if (next.entity_type === 'profile' && next.method === 'PUT') {
+          try {
+            const repo = await import('./repos/profileRepo');
+            const merged = response?.data || next.body || null;
+            if (merged) await repo.upsertLocalProfile(merged);
+          } catch { /* non-fatal */ }
+        }
+
         await db.outbox.update(next.id, { status: 'done' });
         sent++;
         console.log(`[offline] drain ok #${next.id} ${next.method} ${next.url}`);

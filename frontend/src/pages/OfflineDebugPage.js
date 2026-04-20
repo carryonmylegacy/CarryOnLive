@@ -57,8 +57,9 @@ export default function OfflineDebugPage() {
     <div className="max-w-3xl mx-auto p-6 text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
       <h1 className="text-2xl font-bold mb-1">Offline Debug Console</h1>
       <p className="text-sm text-[var(--t4)] mb-6">
-        Phase 0 — foundation only. Toggle the flag to verify no regression.
-        When <code>off</code>, the offline subsystem is entirely inert.
+        Phase 3 — Estates, Dashboard, Profile, and Subscription are now
+        mirrored locally. Toggle the flag to verify no regression. When
+        <code> off</code>, the offline subsystem is entirely inert.
       </p>
 
       <section className="rounded-xl border p-4 mb-4" style={{ borderColor: 'var(--b)', background: 'var(--bg2)' }}>

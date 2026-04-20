@@ -29,6 +29,13 @@ import OnboardingWizard from '../components/OnboardingWizard';
 import ShareYourCarryOn from '../components/ShareYourCarryOn';
 import TileErrorBoundary from '../components/TileErrorBoundary';
 import { API_URL } from '../config';
+import { getOfflineMode } from '../offline/featureFlag';
+import { getLocalEstates, upsertLocalEstates } from '../offline/repos/estatesRepo';
+import {
+  getLocalDashboardTile,
+  upsertLocalDashboardTile,
+  upsertLocalReadiness,
+} from '../offline/repos/dashboardRepo';
 
 import PushPrompt from '../components/PushPrompt';
 
@@ -78,6 +85,31 @@ const DashboardPage = () => {
 
   const fetchEstates = async () => {
     try {
+      const mode = getOfflineMode();
+      // Offline-first paint: if we have a local estate list, seed the
+      // switcher immediately so the user sees something before the server
+      // responds. We only CHOOSE an estate from the local list when we're
+      // truly offline — otherwise the server call below is authoritative.
+      if (mode === 'on') {
+        const localEstates = await getLocalEstates();
+        const localOwned = localEstates.filter(
+          e => e.user_role_in_estate === 'owner' || (!e.user_role_in_estate && !e.is_beneficiary_estate)
+        );
+        if (localOwned.length > 0) {
+          setEstates(localOwned);
+          if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            // Offline: pick an estate from the local list and short-circuit.
+            const savedEstateId = localStorage.getItem('selected_estate_id');
+            const primaryEstateId = user?.primary_estate_id;
+            const selectedEstate = (savedEstateId && localOwned.find(e => e.id === savedEstateId))
+              || (primaryEstateId && localOwned.find(e => e.id === primaryEstateId))
+              || localOwned[0];
+            localStorage.setItem('selected_estate_id', selectedEstate.id);
+            setEstate(selectedEstate);
+            return;
+          }
+        }
+      }
       const response = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       // In dashboard (benefactor) view, only show estates the user OWNS
       const ownedEstates = response.data.filter(
@@ -94,10 +126,37 @@ const DashboardPage = () => {
         setEstate(selectedEstate);
         refreshEnabledFeatures(selectedEstate.id);
       }
+      // Fire-and-forget mirror update for next cold boot (shadow + on modes).
+      if (mode !== 'off') {
+        upsertLocalEstates(response.data).catch(() => {});
+      }
     } catch (error) { console.error('Fetch estates error:', error); setLoading(false); }
   };
 
   const fetchEstateData = async (estateId) => {
+    const mode = getOfflineMode();
+    // Offline-first paint: seed stats + readiness from the local dashboard
+    // tile snapshot so the page renders instantly. When we're fully offline
+    // we short-circuit and never attempt the server fetch.
+    if (mode === 'on') {
+      try {
+        const tile = await getLocalDashboardTile(estateId);
+        if (tile) {
+          if (tile.stats) setStats(tile.stats);
+          if (tile.readiness) {
+            setReadiness(tile.readiness);
+            setEstate(prev => prev ? { ...prev, readiness_score: tile.readiness.overall_score } : prev);
+          }
+          if (tile.checklists) setChecklists(tile.checklists);
+          if (tile.financialSummary) setFinancialSummary(tile.financialSummary);
+          setLoading(false);
+          requestAnimationFrame(() => requestAnimationFrame(() => setDashboardReady(true)));
+        }
+      } catch { /* non-fatal */ }
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        return;
+      }
+    }
     try {
       // Always fetch estate data AND onboarding progress in parallel
       const [docsRes, msgsRes, bensRes, checklistRes, readinessRes, progressRes] = await Promise.all([
@@ -108,7 +167,8 @@ const DashboardPage = () => {
         axios.get(`${API_URL}/estate/${estateId}/readiness`, getAuthHeaders()).catch(() => null),
         axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders()).catch(() => null),
       ]);
-      setStats({ documents: docsRes.data.length, messages: msgsRes.data.length, beneficiaries: bensRes.data.length });
+      const statsPayload = { documents: docsRes.data.length, messages: msgsRes.data.length, beneficiaries: bensRes.data.length };
+      setStats(statsPayload);
       setChecklists(checklistRes.data);
       if (readinessRes) {
         setReadiness(readinessRes.data);
@@ -116,7 +176,31 @@ const DashboardPage = () => {
       }
       // Fetch financial summary (non-blocking)
       axios.get(`${API_URL}/financial/summary/${estateId}`, getAuthHeaders())
-        .then(res => setFinancialSummary(res.data)).catch(() => {});
+        .then(res => {
+          setFinancialSummary(res.data);
+          // Mirror the completed tile snapshot so next cold boot has full data.
+          if (mode !== 'off') {
+            upsertLocalDashboardTile(estateId, {
+              stats: statsPayload,
+              readiness: readinessRes ? readinessRes.data : null,
+              checklists: checklistRes.data,
+              financialSummary: res.data,
+            }).catch(() => {});
+          }
+        }).catch(() => {
+          if (mode !== 'off') {
+            upsertLocalDashboardTile(estateId, {
+              stats: statsPayload,
+              readiness: readinessRes ? readinessRes.data : null,
+              checklists: checklistRes.data,
+              financialSummary: null,
+            }).catch(() => {});
+          }
+        });
+      // Also mirror the readiness scorecard into its own singleton table.
+      if (mode !== 'off' && readinessRes) {
+        upsertLocalReadiness(estateId, readinessRes.data).catch(() => {});
+      }
 
       // Show guided flow overlay if there are incomplete steps and user hasn't dismissed this visit
       if (!guidedDismissedRef.current && progressRes?.data) {

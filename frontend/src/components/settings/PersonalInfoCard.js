@@ -10,6 +10,9 @@ import { Separator } from '../ui/separator';
 import AddressAutocomplete from '../AddressAutocomplete';
 import { formatPhoneUS } from '../../utils/phoneFormat';
 import DateMaskInput from '../DateMaskInput';
+import { getOfflineMode } from '../../offline/featureFlag';
+import { getLocalProfile, upsertLocalProfile, updateLocalProfile } from '../../offline/repos/profileRepo';
+import { enqueue as enqueueOutbox } from '../../offline/outbox';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
@@ -24,9 +27,26 @@ const PersonalInfoCard = ({ initialEditAddress = false }) => {
 
   useEffect(() => {
     if (!user) return;
-    axios.get(`${API_URL}/auth/profile`, getAuthHeaders()).then(res => {
-      setProfileData(res.data || {});
-    }).catch(() => {});
+    const mode = getOfflineMode();
+    let cancelled = false;
+    // Offline-first paint: seed from local cache first, then refresh from
+    // server. On a totally offline boot we stop at the local cache.
+    (async () => {
+      if (mode === 'on') {
+        const local = await getLocalProfile();
+        if (local && !cancelled) setProfileData(local);
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+      }
+      try {
+        const res = await axios.get(`${API_URL}/auth/profile`, getAuthHeaders());
+        if (cancelled) return;
+        setProfileData(res.data || {});
+        if (mode !== 'off') {
+          upsertLocalProfile(res.data || {}).catch(() => {});
+        }
+      } catch { /* swallow — keep local paint if any */ }
+    })();
+    return () => { cancelled = true; };
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -42,8 +62,33 @@ const PersonalInfoCard = ({ initialEditAddress = false }) => {
 
   const saveProfile = async () => {
     setProfileSaving(true);
+    const mode = getOfflineMode();
+    const payload = profileData;
+    // Offline path (flag=on): patch local mirror, enqueue PUT for replay,
+    // toast "queued", and short-circuit without a failing network call.
+    if (mode === 'on' && typeof navigator !== 'undefined' && navigator.onLine === false) {
+      try {
+        await updateLocalProfile(payload);
+        await enqueueOutbox({
+          entity_type: 'profile',
+          entity_id: 'current',
+          method: 'PUT',
+          url: '/auth/profile',
+          body: payload,
+        });
+        toast.success('Profile saved offline — will sync when you reconnect.');
+        setProfileEditing(false);
+      } catch (err) {
+        toast.error('Could not save profile offline.');
+      } finally { setProfileSaving(false); }
+      return;
+    }
     try {
-      await axios.put(`${API_URL}/auth/profile`, profileData, getAuthHeaders());
+      await axios.put(`${API_URL}/auth/profile`, payload, getAuthHeaders());
+      if (mode !== 'off') {
+        // Refresh local mirror so next cold boot reflects the new values.
+        updateLocalProfile(payload).catch(() => {});
+      }
       toast.success('Profile updated');
       setProfileEditing(false);
     } catch (err) {

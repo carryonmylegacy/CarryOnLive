@@ -23,7 +23,7 @@ import { getDB, smokeCheck, purgeLocalData } from './db';
 import { isOfflineEnabled, getOfflineMode } from './featureFlag';
 import { drain as drainOutbox, pendingCount as outboxPendingCount } from './outbox';
 
-const PHASE = 2;
+const PHASE = 3;
 
 class SyncClient {
   constructor() {

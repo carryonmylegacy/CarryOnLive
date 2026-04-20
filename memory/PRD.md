@@ -514,3 +514,31 @@ When DUNS number is obtained and Apple Developer enrollment is complete:
 
 ## Recent Session Work Summary
 See `CHANGELOG.md` for full chronological history if this file exceeds 700 lines.
+
+## Offline-First Architecture (Feb 2026 — in progress)
+
+**Goal**: Instant cold-boot paint + full offline read/write/create so the app is usable on cellular dead zones, flights, and spotty WiFi.
+
+**Infrastructure** (`/app/frontend/src/offline/`):
+- `featureFlag.js` — three-way gate (`off` | `shadow` | `on`) persisted at `localStorage.carryon_offline_v1`. URL override via `?offline=...`. Default `off`.
+- `db.js` — Dexie-backed IndexedDB schema (`carryon-offline`, v1) covering user/subscription/estate/beneficiary/dashboardTile/readinessScore/chat/shareCard/voicesQuote/vaultItem/outbox.
+- `outbox.js` — reliable FIFO write queue with retry budget, temp-id reconciliation, and entity-specific post-drain hooks.
+- `syncClient.js` — online/offline event handler + startup drain.
+- `warmup.js` — post-login background seeder (estate list + profile + subscription + per-estate dashboard tiles + beneficiaries).
+
+**Phase status:**
+- ✅ Phase 0 — Foundation (Dexie + flag + DB + syncClient)
+- ✅ Phase 1 — Beneficiaries read-through
+- ✅ Phase 2 — Beneficiaries write-through (edit/delete via outbox)
+- ✅ Phase 2.1 — Beneficiaries offline CREATE with temp-id lifecycle
+- ✅ Phase 3 — Estates + Dashboard tiles + User profile + Subscription + Readiness (Feb 20, 2026)
+- 🟡 Phase 4 — Chat messages read + queued send (airplane-mode messaging)
+- 🟡 Phase 5 — Share Cards, Voices, Vault offline
+- 🟡 Phase 6 — Login sync packet with visible progress indicator
+- 🟡 Phase 7 — Encryption at rest (session-derived key)
+- 🟡 Phase 8 — Conflict resolution UI
+
+**Testing**: Per-phase Playwright spec at `tests/e2e/offline_phase{N}.spec.js`. Manual shadow-mode verification in `CHANGELOG.md`.
+
+**Feature flag is default OFF** — the offline subsystem is bit-for-bit inert for all users until we flip a user or cohort to `shadow`/`on` via the admin `/debug/offline` page.
+
