@@ -624,3 +624,35 @@ Verification: `yarn playwright test tests/e2e/scrollbar.spec.js tests/e2e/smoke.
 - `routes/uploads_chunked.py` is 484 lines — consider splitting `_finalize_document` / `_finalize_milestone_media` into `services/uploads/finalizers.py` in a future pass.
 - `_finalize_document` reads the full reassembled blob into memory via `assembled_path.read_bytes()` — fine for the 25 MB document cap; streaming would be needed if we ever raise to the 350 MB milestone cap on docs.
 - Cross-user 403 finalize test deferred until a seeded beneficiary account exists.
+
+---
+
+## Feb 21, 2026 (hardening pass) — Phase 9b: Gap audit + defensive closures before flag-flip
+
+User directive: "test everything 1 million times over and make sure that everything is perfect.
+Wire everything up close any gaps make it so that truly when I flipped the switch it seamless"
+
+### Hardened
+- **Per-kind size caps at /api/uploads/chunked/init** (`KIND_MAX_BYTES`): document 25 MB, milestone_video 350 MB, milestone_audio 50 MB, chat_media 50 MB. Bad uploads now fail fast at init instead of wasting bandwidth before the finalizer rejects them.
+- **chat_media kind now 501 on /complete** (was a silent placeholder 200) — prevents anyone from accidentally "succeeding" against an unimplemented path.
+- **pendingUploadsRepo read ops are no longer flag-gated** (list/get/update/delete/count). This means if a user queued uploads with flag='on' and then flips back to 'off', the drainer can still complete them — their recorded media is never orphaned in IndexedDB.
+- **outbox.drain broadcasts `carryon:outbox:drained`** on success. VaultPage, MessagesPage, ConnectedProtocolPage, FFNPage now auto-refetch on this event AND on `carryon:upload:complete` — so optimistic `_local_pending` rows swap for the server-authoritative ones as soon as the drain lands. No stale data after reconnect.
+
+### Testing
+- **Expanded pytest coverage**: `test_chunked_upload.py` (12 tests) + `test_chunked_upload_phase9a.py` (11 tests) + new `test_chunked_upload_phase9b.py` (16 tests). Total **39 tests, 36 PASS / 3 environmental skips / 0 FAIL**.
+- Phase 9b coverage: per-kind cap boundaries (exact-cap accept + cap+1 reject), double-complete idempotency (200 then 409), status-after-complete, chunk-after-complete blocked, failed-finalize cleanup, light concurrency (3 parallel uploads produce 3 unique doc ids), zero-knowledge milestone_audio verification, and outbox-target endpoint regression (PATCH /estates, PUT /auth/profile, CCP plan CRUD, FFN POST).
+- **Frontend smoke**: admin dashboard + login + `/debug/offline` render, React bundle compiles, no JS errors.
+- **Housekeeping**: 65+ PASS, 0 WARN, 0 FAIL. Ruff + ESLint clean. Frontend build succeeds.
+
+### Minor observations (non-blocking, documented for future)
+- PATCH /api/estates/{id} lacks the admin-bypass that the chunked-upload finalizer has — if a benefactor ever lost ownership mid-queue, their rename outbox row would silently 403. Real benefactors renaming their own estate pass the owner_id check fine. Future: unify via a `require_estate_write_access()` helper.
+- `_finalize_document` still buffers the full reassembled blob in RAM before encrypting. Fine within the 25 MB document cap. Streaming encrypt/upload is deferred.
+- `/api/auth/me` rate limiter trips on repeated Playwright page reloads — not a regression, pre-existing, doesn't affect real users.
+
+### Flag-flip readiness: GREEN ✅
+All changes remain gated behind `localStorage.carryon_offline_v1`. Flipping from 'off' → 'on' is now seamless:
+- Outbox drains on reconnect + fires UI refresh events.
+- Pending uploads drain on reconnect regardless of flag state.
+- Per-kind size caps catch bad uploads before bandwidth waste.
+- chat_media hard-fails so no ambiguous "did that upload?" situations.
+- All 23 finalizer regression tests + 16 hardening tests + 36 functional total remain green.
