@@ -1,5 +1,29 @@
 # CarryOn — Changelog
 
+## Feb 14, 2026 — Offline-first: Phase 1 (Beneficiaries read-through)
+
+Second of 9 planned phases. Phase 1 adds a read-through local cache for the Beneficiaries page so that with the flag set to `on`, the page paints instantly from IndexedDB on repeat visits and in shadow mode the local mirror is kept in sync without changing the UI.
+
+**New file:**
+- `src/offline/repos/beneficiariesRepo.js` — minimal read/write adapter over `db.beneficiary`. Two functions only: `getLocalBeneficiaries(estateId)` (returns cached list, strips internal `_updatedAt`) and `upsertLocalBeneficiaries(estateId, list)` (atomic replace inside a Dexie transaction; also bumps `syncMeta`). Every function short-circuits when the flag is off so there's zero overhead for non-offline users. Includes defensive try/catches — a local DB write failure can NEVER break the server response path.
+
+**One-surface wiring in `BeneficiariesPage.js`:**
+- Imported `getOfflineMode` + repo functions.
+- `fetchData()` now has three explicit paths:
+  - `mode === 'off'`: code executes a bit-for-bit identical path to the pre-Phase-1 version. Zero new work.
+  - `mode === 'shadow'`: same UI path as off, PLUS a fire-and-forget `upsertLocalBeneficiaries(...)` after the server response. Lets us verify the local mirror stays in sync without risking UI breakage.
+  - `mode === 'on'`: BEFORE the server fetch, read local rows via `getLocalBeneficiaries(...)`. If any exist, call `setBeneficiaries(local)` + `setLoading(false)` so the UI paints instantly. THEN run the server fetch normally and reconcile via `setBeneficiaries(server)` + `upsertLocalBeneficiaries(server)`.
+
+**New regression test `tests/e2e/offline_phase1.spec.js` (3 assertions):**
+1. Flag off → Beneficiaries page renders AND writes zero rows to IndexedDB (proves gating works).
+2. Flag shadow → one visit populates the `beneficiary` table (proves the side-effect write runs).
+3. Flag on → second visit survives the new code path and paints within a generous upper bound (proves read-through doesn't crash and doesn't hang).
+
+**Verification:** housekeeping 65/65 PASS, ESLint clean on the two touched files, Playwright **17/17 green** (11 baseline + 3 Phase 0 + 3 Phase 1).
+
+**Next: Phase 2 (Beneficiaries write-through + outbox)** — awaiting user green-light.
+
+
 ## Feb 14, 2026 — Offline-first: Phase 0 foundation (inert by default)
 
 First of 9 planned phases to make CarryOn fully functional offline. Phase 0 installs the scaffolding only — zero user-visible change, zero existing code modified. The entire subsystem is gated by a feature flag defaulted to `off`; flipping it to `shadow` or `on` activates increasingly aggressive offline behaviour in later phases.

@@ -4,6 +4,8 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
 import { formatPhoneUS } from '../utils/phoneFormat';
+import { getOfflineMode } from '../offline/featureFlag';
+import { getLocalBeneficiaries, upsertLocalBeneficiaries } from '../offline/repos/beneficiariesRepo';
 import { ReturnPopup } from '../components/GuidedActivation';
 import {
   DndContext,
@@ -186,6 +188,10 @@ const BeneficiariesPage = () => {
   }, [loading, fromGettingStarted, beneficiaries.length, estate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
+    // PHASE 1 — Read-through. Three mode-specific code paths, carefully
+    // isolated so the default path (mode === 'off') is bit-for-bit
+    // identical to pre-offline behaviour.
+    const mode = getOfflineMode();
     try {
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       const allEstates = estatesRes.data;
@@ -200,6 +206,19 @@ const BeneficiariesPage = () => {
       setBenEstates(bEstates);
       if (ownedEstate) {
         setEstate(ownedEstate);
+
+        // ── Offline mode 'on': paint from local cache FIRST for instant
+        // feedback, then fetch from server and reconcile. If there's no
+        // local data yet (first visit), this is a no-op and the user sees
+        // the same loading spinner they would have before.
+        if (mode === 'on') {
+          const local = await getLocalBeneficiaries(ownedEstate.id);
+          if (local.length > 0) {
+            setBeneficiaries(local);
+            setLoading(false); // unblock the UI immediately; server refresh runs below
+          }
+        }
+
         const [bensRes, requestsRes, permsRes] = await Promise.all([
           axios.get(`${API_URL}/beneficiaries/${ownedEstate.id}`, getAuthHeaders()),
           axios.get(`${API_URL}/beneficiaries/access-requests/${ownedEstate.id}`, getAuthHeaders()).catch(() => ({ data: [] })),
@@ -212,6 +231,13 @@ const BeneficiariesPage = () => {
           permsMap[p.beneficiary_id] = p.sections;
         }
         setSectionPerms(permsMap);
+
+        // ── Mirror the server's canonical list into IndexedDB for the
+        // NEXT visit. Runs in both 'shadow' and 'on' modes; is a no-op
+        // when 'off'. Fire-and-forget — we never block UI on the write.
+        if (mode !== 'off') {
+          upsertLocalBeneficiaries(ownedEstate.id, bensRes.data).catch(() => {});
+        }
       }
     } catch (error) {
       console.error('Fetch error:', error);
