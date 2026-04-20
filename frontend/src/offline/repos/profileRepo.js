@@ -17,8 +17,11 @@
 
 import { getDB } from '../db';
 import { isOfflineEnabled } from '../featureFlag';
+import { sealRecord, unsealRecord } from '../crypto';
 
 const KEY = 'current';
+// Columns that MUST stay plaintext so Dexie can still query/index them.
+const PLAIN_FIELDS = ['id', 'email'];
 
 /** Read the cached profile, or null if never seeded. */
 export async function getLocalProfile() {
@@ -26,7 +29,11 @@ export async function getLocalProfile() {
   try {
     const row = await getDB().user.get(KEY);
     if (!row) return null;
-    const { _updatedAt, id, ...rest } = row;
+    // If the row was stored encrypted, unseal it. Transparent passthrough
+    // when the row predates encryption.
+    const unsealed = await unsealRecord(row);
+    if (!unsealed) return null;
+    const { _updatedAt, id, ...rest } = unsealed;
     return rest.data || null;
   } catch (err) {
     console.warn('[offline] getLocalProfile failed:', err);
@@ -38,12 +45,14 @@ export async function getLocalProfile() {
 export async function upsertLocalProfile(profile) {
   if (!isOfflineEnabled() || !profile) return;
   try {
-    await getDB().user.put({
+    const row = {
       id: KEY,
       email: profile.email || null,
       data: profile,
       _updatedAt: Date.now(),
-    });
+    };
+    const sealed = await sealRecord(row, PLAIN_FIELDS);
+    await getDB().user.put(sealed);
   } catch (err) {
     console.warn('[offline] upsertLocalProfile failed:', err);
   }
@@ -54,14 +63,17 @@ export async function updateLocalProfile(patch) {
   if (!isOfflineEnabled() || !patch) return null;
   try {
     const db = getDB();
-    const existing = await db.user.get(KEY);
+    const existingRaw = await db.user.get(KEY);
+    const existing = existingRaw ? await unsealRecord(existingRaw) : null;
     const mergedProfile = { ...(existing?.data || {}), ...patch };
-    await db.user.put({
+    const row = {
       id: KEY,
       email: mergedProfile.email || existing?.email || null,
       data: mergedProfile,
       _updatedAt: Date.now(),
-    });
+    };
+    const sealed = await sealRecord(row, PLAIN_FIELDS);
+    await db.user.put(sealed);
     return mergedProfile;
   } catch (err) {
     console.warn('[offline] updateLocalProfile failed:', err);

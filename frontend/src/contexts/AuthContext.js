@@ -106,18 +106,29 @@ export const AuthProvider = ({ children }) => {
           }
           // Mirror subscription + profile snapshots into the offline cache
           // so next cold boot can paint trial banners and header avatar
-          // instantly (shadow + on modes only).
+          // instantly (shadow + on modes only). Phase 7: if encryption-at-rest
+          // is enabled, prime the session key BEFORE the first upsert so
+          // sensitive fields are sealed as they land in IndexedDB.
           import('../offline/featureFlag').then(({ getOfflineMode }) => {
             if (getOfflineMode() === 'off') return;
-            Promise.all([
-              import('../offline/repos/profileRepo'),
-              import('../offline/repos/subscriptionRepo'),
-            ]).then(([prof, sub]) => {
-              try { prof.upsertLocalProfile(userData); } catch {}
-              if (subRes.status === 'fulfilled') {
-                try { sub.upsertLocalSubscription(subRes.value.data); } catch {}
-              }
-            }).catch(() => {});
+            (async () => {
+              try {
+                const crypto = await import('../offline/crypto');
+                if (crypto.isEncryptionEnabled()) {
+                  await crypto.primeSessionKey(token);
+                }
+              } catch {}
+              try {
+                const [prof, sub] = await Promise.all([
+                  import('../offline/repos/profileRepo'),
+                  import('../offline/repos/subscriptionRepo'),
+                ]);
+                try { await prof.upsertLocalProfile(userData); } catch {}
+                if (subRes.status === 'fulfilled') {
+                  try { await sub.upsertLocalSubscription(subRes.value.data); } catch {}
+                }
+              } catch {}
+            })();
           }).catch(() => {});
           // Warm the offline mirror on every boot (not just fresh login)
           // so returning users always start with a fresh local cache.
@@ -202,6 +213,12 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (e) { /* proceed with client-side logout even if server call fails */ }
     clearCache();
+    // Phase 7: clear the in-memory offline encryption key so the next user
+    // on this device derives their own key and cannot decrypt the previous
+    // user's sealed IndexedDB rows.
+    try {
+      import('../offline/crypto').then((m) => m.clearSessionKey()).catch(() => {});
+    } catch {}
     // Purge the service worker's per-user API + image caches so the next
     // user to log in on this device doesn't see a flash of the previous
     // user's dashboard data.

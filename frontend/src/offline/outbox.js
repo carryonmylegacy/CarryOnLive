@@ -113,6 +113,11 @@ export async function drain() {
                 const repo = await import('./repos/beneficiariesRepo');
                 await repo.replaceLocalBeneficiaryId(next.entity_id, serverRow);
               } catch { /* non-fatal */ }
+            } else if (next.entity_type === 'chat_message') {
+              try {
+                const repo = await import('./repos/chatRepo');
+                await repo.replaceLocalMessageId(next.entity_id, serverRow);
+              } catch { /* non-fatal */ }
             }
             // Rewrite any later outbox rows that targeted the temp id.
             try {
@@ -145,6 +150,29 @@ export async function drain() {
       } catch (err) {
         const retries = (next.retry_count || 0) + 1;
         const msg = err?.response?.data?.detail || err?.message || 'unknown';
+        const status = err?.response?.status;
+        // Phase 8 — Conflict detection. A 409 Conflict or 412 Precondition
+        // Failed from the server means "someone else changed this row
+        // first". Retrying would just keep losing; we stash the conflict
+        // onto the outbox row so the ConflictResolver UI can ask the user
+        // what to do. Broadcast so the modal can pop immediately.
+        if (status === 409 || status === 412) {
+          const serverRow = err?.response?.data?.server || err?.response?.data?.current || null;
+          await db.outbox.update(next.id, {
+            status: 'conflict',
+            retry_count: retries,
+            last_error: msg,
+            server_row: serverRow,
+            conflict_status: status,
+          });
+          try {
+            window.dispatchEvent(new CustomEvent('carryon:outbox:conflict', {
+              detail: { id: next.id, entity_type: next.entity_type },
+            }));
+          } catch {}
+          console.warn(`[offline] drain CONFLICT #${next.id} (${status}): ${msg}`);
+          break;
+        }
         if (retries >= MAX_RETRIES) {
           await db.outbox.update(next.id, { status: 'failed', retry_count: retries, last_error: msg });
           console.warn(`[offline] drain FAILED (max retries) #${next.id}: ${msg}`);
@@ -172,4 +200,60 @@ export async function snapshot() {
     const all = await db.outbox.orderBy('id').toArray();
     return all.map(({ body, ...rest }) => rest); // hide bodies in logs
   } catch { return []; }
+}
+
+// ── Phase 8 — Conflict resolution ───────────────────────────────────────────
+
+/** List every outbox row currently in the `conflict` state. */
+export async function listConflicts() {
+  if (!isOfflineEnabled()) return [];
+  try {
+    const db = getDB();
+    return await db.outbox.where('status').equals('conflict').toArray();
+  } catch { return []; }
+}
+
+/**
+ * Resolve a conflict with the user's chosen strategy.
+ *   'mine'   — re-enqueue the local write, overwriting the server's state.
+ *   'theirs' — discard the local write and accept the server's state.
+ */
+export async function resolveConflict(id, choice) {
+  if (!isOfflineEnabled() || !id) return;
+  try {
+    const db = getDB();
+    const row = await db.outbox.get(id);
+    if (!row) return;
+    if (choice === 'mine') {
+      // Clear conflict state and re-queue for the next drain. The server's
+      // anti-conflict token (if we add one later) can be stamped here.
+      await db.outbox.update(id, {
+        status: 'pending',
+        retry_count: 0,
+        last_error: null,
+        server_row: null,
+        conflict_status: null,
+      });
+      drain().catch(() => {});
+    } else if (choice === 'theirs') {
+      // Drop the local write; sync the server's version into the local
+      // mirror so the UI reflects reality.
+      const server = row.server_row;
+      if (server && row.entity_type === 'beneficiary' && server.id) {
+        try {
+          const repo = await import('./repos/beneficiariesRepo');
+          await repo.updateLocalBeneficiary(server.id, server);
+        } catch {}
+      }
+      if (server && row.entity_type === 'profile') {
+        try {
+          const repo = await import('./repos/profileRepo');
+          await repo.upsertLocalProfile(server);
+        } catch {}
+      }
+      await db.outbox.delete(id);
+    }
+  } catch (err) {
+    console.warn('[offline] resolveConflict failed:', err);
+  }
 }

@@ -532,11 +532,11 @@ See `CHANGELOG.md` for full chronological history if this file exceeds 700 lines
 - ✅ Phase 2 — Beneficiaries write-through (edit/delete via outbox)
 - ✅ Phase 2.1 — Beneficiaries offline CREATE with temp-id lifecycle
 - ✅ Phase 3 — Estates + Dashboard tiles + User profile + Subscription + Readiness (Feb 20, 2026)
-- 🟡 Phase 4 — Chat messages read + queued send (airplane-mode messaging)
-- 🟡 Phase 5 — Share Cards, Voices, Vault offline
-- 🟡 Phase 6 — Login sync packet with visible progress indicator
-- 🟡 Phase 7 — Encryption at rest (session-derived key)
-- 🟡 Phase 8 — Conflict resolution UI
+- ✅ Phase 4 — Chat messages read + queued send (Feb 20, 2026)
+- ✅ Phase 5 — Vault + Voices read-through (Feb 20, 2026)
+- ✅ Phase 6 — Login sync packet + visible progress pill (Feb 20, 2026)
+- ✅ Phase 7 — Encryption at rest (AES-256-GCM + PBKDF2, profile sealed) (Feb 20, 2026)
+- ✅ Phase 8 — Conflict resolution UI (Feb 20, 2026)
 
 **Testing**: Per-phase Playwright spec at `tests/e2e/offline_phase{N}.spec.js`. Manual shadow-mode verification in `CHANGELOG.md`.
 

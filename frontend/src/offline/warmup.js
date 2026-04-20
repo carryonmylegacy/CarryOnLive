@@ -1,27 +1,23 @@
 /**
- * CarryOn — Post-Login Offline Warm-up
+ * CarryOn — Post-Login Offline Warm-up (with progress events — Phase 6)
  * ============================================================================
  * Fire-and-forget bootstrap that pre-fills the local IndexedDB mirror
- * with the entities most likely to be visited first. Called once, the
- * moment a user successfully logs in (and again on every boot via
- * AuthContext so returning users start with a fresh local cache).
+ * with the entities most likely to be visited first. Called on every
+ * successful login and every session boot.
  *
- * Runs entirely in the background — never blocks the login flow, never
- * throws. If anything fails the user just sees the current (server-fetch)
- * behavior on their next page visit, which is the pre-offline baseline.
+ * Phase 6 added: the warm-up now dispatches progress events on `window`
+ * so the root `<OfflineSyncProgress />` widget can surface a subtle
+ * "Syncing for offline use" pill while the initial sync runs. The
+ * warm-up still never blocks login — the pill simply updates in the
+ * background.
  *
- * Gated by the feature flag: completely skipped when mode === 'off'.
+ * Event contract (all dispatched on `window`):
+ *   'carryon:sync:start'    { detail: { total } }
+ *   'carryon:sync:progress' { detail: { done, total, label } }
+ *   'carryon:sync:finish'   { detail: { done, total, ms } }
  *
- * Phase 3 expanded scope:
- *   - Estate list (all roles)
- *   - Current user profile
- *   - Current subscription status
- *   - Per-estate dashboard tile (stats + readiness + checklists)
- *   - Per-estate beneficiaries (Phase 1)
- *
- * Keep the parallel count small so we don't saturate the user's uplink
- * right after login. Each task is isolated — one failure doesn't stop
- * the others.
+ * Gated by the offline feature flag. When mode is 'off' nothing fires
+ * and no events are dispatched.
  */
 
 import axios from 'axios';
@@ -35,50 +31,125 @@ import {
   upsertLocalDashboardTile,
   upsertLocalReadiness,
 } from './repos/dashboardRepo';
+import {
+  upsertLocalChannels,
+  upsertLocalContacts,
+  upsertLocalMessages,
+} from './repos/chatRepo';
+import { upsertLocalVaultItems } from './repos/vaultRepo';
+import { upsertLocalVoices } from './repos/voicesRepo';
 
-async function warmProfile(headers) {
-  try {
-    const res = await axios.get(`${API_URL}/auth/profile`, headers);
-    await upsertLocalProfile(res.data || {});
-  } catch { /* silent */ }
+function emit(type, detail) {
+  if (typeof window === 'undefined') return;
+  try { window.dispatchEvent(new CustomEvent(type, { detail })); } catch {}
 }
 
-async function warmSubscription(headers) {
-  try {
-    const res = await axios.get(`${API_URL}/subscriptions/status`, headers);
-    await upsertLocalSubscription(res.data || {});
-  } catch { /* silent */ }
+function taskProfile(headers) {
+  return {
+    label: 'profile',
+    run: async () => {
+      const res = await axios.get(`${API_URL}/auth/profile`, headers);
+      await upsertLocalProfile(res.data || {});
+    },
+  };
 }
 
-async function warmDashboardTile(estateId, headers) {
-  try {
-    const [docs, msgs, bens, checklist, readiness] = await Promise.all([
-      axios.get(`${API_URL}/documents/${estateId}`, headers).catch(() => null),
-      axios.get(`${API_URL}/messages/${estateId}`, headers).catch(() => null),
-      axios.get(`${API_URL}/beneficiaries/${estateId}`, headers).catch(() => null),
-      axios.get(`${API_URL}/checklists/${estateId}`, headers).catch(() => null),
-      axios.get(`${API_URL}/estate/${estateId}/readiness`, headers).catch(() => null),
-    ]);
-    const tile = {
-      stats: {
-        documents: docs?.data?.length || 0,
-        messages: msgs?.data?.length || 0,
-        beneficiaries: bens?.data?.length || 0,
-      },
-      readiness: readiness?.data || null,
-      checklists: checklist?.data || [],
-      financialSummary: null,
-    };
-    await upsertLocalDashboardTile(estateId, tile);
-    if (readiness?.data) {
-      await upsertLocalReadiness(estateId, readiness.data);
+function taskSubscription(headers) {
+  return {
+    label: 'subscription',
+    run: async () => {
+      const res = await axios.get(`${API_URL}/subscriptions/status`, headers);
+      await upsertLocalSubscription(res.data || {});
+    },
+  };
+}
+
+function taskChat(headers) {
+  return {
+    label: 'chat',
+    run: async () => {
+      const [channelsRes, contactsRes] = await Promise.all([
+        axios.get(`${API_URL}/estate-chat/channels`, headers).catch(() => null),
+        axios.get(`${API_URL}/estate-chat/contacts`, headers).catch(() => null),
+      ]);
+      if (channelsRes?.data) await upsertLocalChannels(channelsRes.data);
+      if (contactsRes?.data) await upsertLocalContacts(contactsRes.data);
+      const top = (channelsRes?.data || []).slice(0, 5);
+      await Promise.all(top.map(async (ch) => {
+        try {
+          const msgs = await axios.get(`${API_URL}/estate-chat/channels/${ch.id}/messages`, headers);
+          if (msgs?.data) await upsertLocalMessages(ch.id, msgs.data);
+        } catch { /* isolated */ }
+      }));
+    },
+  };
+}
+
+function taskVoices() {
+  return {
+    label: 'voices',
+    run: async () => {
+      const res = await axios.get(`${API_URL}/share-cards/voices/public?limit=48`);
+      const items = res?.data?.items || [];
+      if (items.length) await upsertLocalVoices(items);
+    },
+  };
+}
+
+function taskDashboard(estateId, headers) {
+  return {
+    label: `dashboard:${estateId.slice(0, 6)}`,
+    run: async () => {
+      const [docs, msgs, bens, checklist, readiness] = await Promise.all([
+        axios.get(`${API_URL}/documents/${estateId}`, headers).catch(() => null),
+        axios.get(`${API_URL}/messages/${estateId}`, headers).catch(() => null),
+        axios.get(`${API_URL}/beneficiaries/${estateId}`, headers).catch(() => null),
+        axios.get(`${API_URL}/checklists/${estateId}`, headers).catch(() => null),
+        axios.get(`${API_URL}/estate/${estateId}/readiness`, headers).catch(() => null),
+      ]);
+      const tile = {
+        stats: {
+          documents: docs?.data?.length || 0,
+          messages: msgs?.data?.length || 0,
+          beneficiaries: bens?.data?.length || 0,
+        },
+        readiness: readiness?.data || null,
+        checklists: checklist?.data || [],
+        financialSummary: null,
+      };
+      await upsertLocalDashboardTile(estateId, tile);
+      if (readiness?.data) await upsertLocalReadiness(estateId, readiness.data);
+      if (bens?.data) await upsertLocalBeneficiaries(estateId, bens.data);
+      if (docs?.data) await upsertLocalVaultItems(estateId, docs.data);
+    },
+  };
+}
+
+/** Drain a list of lazy tasks with a concurrency cap, dispatching progress. */
+async function runTasksWithProgress(tasks) {
+  const total = tasks.length;
+  let done = 0;
+  emit('carryon:sync:start', { total });
+  const started = Date.now();
+
+  // True concurrency limiter — tasks are invoked lazily.
+  const LIMIT = 3;
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(LIMIT, total) }, async () => {
+    while (cursor < tasks.length) {
+      const t = tasks[cursor++];
+      try { await t.run(); } catch (err) {
+        console.warn(`[offline] task ${t.label} failed:`, err);
+      }
+      done += 1;
+      emit('carryon:sync:progress', { done, total, label: t.label });
     }
-    if (bens?.data) {
-      await upsertLocalBeneficiaries(estateId, bens.data);
-    }
-  } catch (err) {
-    console.warn(`[offline] warm-up dashboard(${estateId}) failed:`, err);
-  }
+  });
+  await Promise.all(workers);
+
+  const ms = Date.now() - started;
+  emit('carryon:sync:finish', { done, total, ms });
+  console.log(`[offline] warm-up complete: ${done}/${total} tasks in ${ms}ms`);
 }
 
 export async function warmUpAfterLogin(token) {
@@ -103,24 +174,15 @@ export async function warmUpAfterLogin(token) {
   // Mirror the estate list itself for the Dashboard switcher.
   try { await upsertLocalEstates(allEstates); } catch {}
 
-  // Warm profile + subscription in parallel with per-estate dashboard
-  // tiles. Cap concurrency at 3 so a slow uplink doesn't choke.
   const tasks = [
-    warmProfile(headers),
-    warmSubscription(headers),
-    ...ownedEstateIds.map((id) => warmDashboardTile(id, headers)),
+    taskProfile(headers),
+    taskSubscription(headers),
+    taskChat(headers),
+    taskVoices(),
+    ...ownedEstateIds.map((id) => taskDashboard(id, headers)),
   ];
 
-  const limit = 3;
-  let i = 0;
-  const workers = Array.from({ length: Math.min(limit, tasks.length) }, async () => {
-    while (i < tasks.length) {
-      const my = tasks[i++];
-      try { await my; } catch { /* isolated */ }
-    }
-  });
-  await Promise.all(workers);
-  console.log(`[offline] warm-up complete: ${ownedEstateIds.length} estate(s) seeded + profile + subscription`);
+  await runTasksWithProgress(tasks);
 }
 
 export default warmUpAfterLogin;

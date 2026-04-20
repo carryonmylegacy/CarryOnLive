@@ -27,6 +27,16 @@ import useECTSearch from '../components/estate-chat/useECTSearch';
 import useECTMessageActions from '../components/estate-chat/useECTMessageActions';
 import useECTMedia from '../components/estate-chat/useECTMedia';
 import { ECTDeleteConfirmDialog, ECTBulkDeleteConfirmDialog } from '../components/estate-chat/ECTConfirmDialogs';
+import { getOfflineMode } from '../offline/featureFlag';
+import {
+  getLocalMessages,
+  upsertLocalMessages,
+  insertLocalMessage,
+  generateTempMessageId,
+  getLocalContacts,
+  upsertLocalContacts,
+} from '../offline/repos/chatRepo';
+import { enqueue as enqueueOutbox } from '../offline/outbox';
 
 const ECT_POLL_INTERVAL = 8000;
 
@@ -199,13 +209,36 @@ export default function EstateChatPage() {
 
   // ── Data fetching ─────────────────────────────────────────────────────────
   const fetchContacts = useCallback(async () => {
+    const mode = getOfflineMode();
+    if (mode === 'on') {
+      try {
+        const local = await getLocalContacts();
+        if (local.length > 0) setContacts(local);
+      } catch { /* non-fatal */ }
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+    }
     try {
       const res = await fetch(`${API_URL}/estate-chat/contacts`, { headers });
-      if (res.ok) setContacts(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        setContacts(data);
+        if (mode !== 'off') upsertLocalContacts(data).catch(() => {});
+      }
     } catch {} // eslint-disable-line no-empty
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchMessages = useCallback(async (channelId) => {
+    const mode = getOfflineMode();
+    // Offline-first paint: seed the transcript from the local mirror
+    // IMMEDIATELY so the user sees history without waiting on the network.
+    // When fully offline we short-circuit past the server fetch.
+    if (mode === 'on') {
+      try {
+        const local = await getLocalMessages(channelId);
+        if (local.length > 0) setMessages(local);
+      } catch { /* non-fatal */ }
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+    }
     try {
       const [msgRes, readRes, pinRes] = await Promise.all([
         fetch(`${API_URL}/estate-chat/channels/${channelId}/messages`, { headers }),
@@ -215,6 +248,7 @@ export default function EstateChatPage() {
       if (msgRes.ok) {
         const data = await msgRes.json();
         setMessages(data);
+        if (mode !== 'off') upsertLocalMessages(channelId, data).catch(() => {});
         // Prefetch ONLY the most recent 10 image/file attachments rather
         // than the entire scroll-back. A long conversation can contain
         // hundreds of attachments the user will never scroll to; the
@@ -365,9 +399,54 @@ export default function EstateChatPage() {
   const sendMessage = async () => {
     if (!draft.trim() || !activeChannel || sending) return;
     setSending(true);
+    const content = draft.trim();
+    const replyToId = replyTo?.id || null;
+    const mode = getOfflineMode();
+
+    // Airplane-mode path: stamp the transcript with an optimistic local
+    // message, enqueue the POST in the outbox, and clear the composer so
+    // the user can keep typing. The outbox drains when connectivity
+    // returns and swaps the temp id for the server's canonical message.
+    if (mode === 'on' && typeof navigator !== 'undefined' && navigator.onLine === false) {
+      try {
+        const tempId = generateTempMessageId();
+        const optimistic = {
+          id: tempId,
+          channel_id: activeChannel.id,
+          sender_id: user?.id || null,
+          sender_name: user?.name || user?.first_name || 'You',
+          content,
+          reply_to: replyToId,
+          created_at: new Date().toISOString(),
+          _local_pending: true,
+        };
+        await insertLocalMessage(activeChannel.id, optimistic);
+        setMessages(prev => [...prev, optimistic]);
+        await enqueueOutbox({
+          entity_type: 'chat_message',
+          entity_id: tempId,
+          method: 'POST',
+          url: `/estate-chat/channels/${activeChannel.id}/messages`,
+          body: { content, reply_to: replyToId },
+        });
+        setDraft('');
+        setReplyTo(null);
+        if (inputRef.current) {
+          inputRef.current.value = '';
+          inputRef.current.style.height = 'auto';
+        }
+        toast.success('Message queued — will send when you reconnect.');
+        const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
+        requestAnimationFrame(doScroll);
+      } catch (err) {
+        toast.error('Could not queue message offline.');
+      } finally { setSending(false); }
+      return;
+    }
+
     try {
       const res = await fetch(`${API_URL}/estate-chat/channels/${activeChannel.id}/messages`, {
-        method: 'POST', headers, body: JSON.stringify({ content: draft.trim(), reply_to: replyTo?.id || null }),
+        method: 'POST', headers, body: JSON.stringify({ content, reply_to: replyToId }),
       });
       if (res.ok) {
         setDraft('');

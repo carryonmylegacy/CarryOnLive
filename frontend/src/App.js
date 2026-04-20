@@ -12,6 +12,8 @@ import ShareUploadModal from './components/ShareUploadModal';
 import ForceUpdateGate from './components/ForceUpdateGate';
 import NetworkStatusBanner from './components/NetworkStatusBanner';
 import NotificationContainer from './components/AppNotification';
+import OfflineSyncProgress from './components/OfflineSyncProgress';
+import ConflictResolver from './components/ConflictResolver';
 import { AmberAlertProvider } from './components/AmberAlert';
 import { initErrorReporter, reportError } from './utils/errorReporter';
 import { checkForUpdates } from './utils/versionCheck';
@@ -474,6 +476,8 @@ function App() {
         <BrowserRouter>
           <NetworkStatusBanner />
           <NotificationContainer />
+          <OfflineSyncProgress />
+          <ConflictResolver />
           <AmberAlertProvider />
           <UsernameReviewModal />
           <AppRoutes />

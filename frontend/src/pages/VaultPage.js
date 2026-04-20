@@ -28,6 +28,8 @@ import { Skeleton } from '../components/ui/skeleton';
 import DocThumbnail from '../components/DocThumbnail';
 import { ReturnPopup } from '../components/GuidedActivation';
 import { API_URL } from '../config';
+import { getOfflineMode } from '../offline/featureFlag';
+import { getLocalVaultItems, upsertLocalVaultItems } from '../offline/repos/vaultRepo';
 import VaultDocumentCard from '../components/vault/VaultDocumentCard';
 import VaultUploadPanel from '../components/vault/VaultUploadPanel';
 import VaultUnlockModal from '../components/vault/VaultUnlockModal';
@@ -196,6 +198,7 @@ const VaultPage = () => {
   }, [loading, fromGettingStarted, documents.length, estate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
+    const mode = getOfflineMode();
     try {
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       const estates = Array.isArray(estatesRes.data) ? estatesRes.data : [];
@@ -203,8 +206,20 @@ const VaultPage = () => {
         const savedId = localStorage.getItem('selected_estate_id');
         const selected = (savedId && estates.find(e => e.id === savedId)) || estates[0];
         setEstate(selected);
+        // Offline-first paint: seed from local mirror, short-circuit when
+        // fully offline, otherwise refresh from server and upsert.
+        if (mode === 'on') {
+          const local = await getLocalVaultItems(selected.id);
+          if (local.length > 0) {
+            setDocuments(local);
+            setLoading(false);
+          }
+          if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+        }
         const docsRes = await axios.get(`${API_URL}/documents/${selected.id}`, getAuthHeaders()).catch(() => ({ data: [] }));
-        setDocuments(Array.isArray(docsRes.data) ? docsRes.data : []);
+        const docs = Array.isArray(docsRes.data) ? docsRes.data : [];
+        setDocuments(docs);
+        if (mode !== 'off') upsertLocalVaultItems(selected.id, docs).catch(() => {});
         // Fetch beneficiaries for SDV designation
         try {
           const benRes = await axios.get(`${API_URL}/beneficiaries/${selected.id}`, getAuthHeaders());

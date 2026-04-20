@@ -11,12 +11,14 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { getOfflineMode, setOfflineMode } from '../offline/featureFlag';
+import { isEncryptionEnabled, setEncryptionMode, primeSessionKey } from '../offline/crypto';
 import { syncClient } from '../offline/syncClient';
 import { toast } from '../utils/toast';
 
 export default function OfflineDebugPage() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [mode, setMode] = useState(getOfflineMode());
+  const [enc, setEnc] = useState(isEncryptionEnabled());
   const [snapshot, setSnapshot] = useState(null);
   const [busy, setBusy] = useState(false);
 
@@ -53,6 +55,17 @@ export default function OfflineDebugPage() {
     } finally { setBusy(false); }
   };
 
+  const handleEncryptionToggle = async (next) => {
+    setEncryptionMode(next);
+    setEnc(next === 'on');
+    if (next === 'on' && token) {
+      await primeSessionKey(token);
+      toast.success('Encryption at rest enabled. New writes will be sealed with AES-256-GCM.');
+    } else {
+      toast.success('Encryption at rest disabled. New writes will be plaintext.');
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto p-6 text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
       <h1 className="text-2xl font-bold mb-1">Offline Debug Console</h1>
@@ -84,6 +97,33 @@ export default function OfflineDebugPage() {
         <p className="text-xs text-[var(--t4)] mt-3">
           Current: <strong>{mode}</strong>. Persisted in <code>localStorage.carryon_offline_v1</code>.
           URL override: <code>?offline=on|off|shadow</code>.
+        </p>
+      </section>
+
+      <section className="rounded-xl border p-4 mb-4" style={{ borderColor: 'var(--b)', background: 'var(--bg2)' }}>
+        <h2 className="font-semibold mb-3">Encryption at rest (Phase 7)</h2>
+        <div className="flex gap-2">
+          {['off', 'on'].map((m) => (
+            <button
+              key={m}
+              onClick={() => handleEncryptionToggle(m)}
+              className="px-4 py-2 rounded-lg text-sm font-semibold transition"
+              style={{
+                background: (enc ? 'on' : 'off') === m ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'transparent',
+                color: (enc ? 'on' : 'off') === m ? '#080e1a' : 'var(--t)',
+                border: `1px solid ${(enc ? 'on' : 'off') === m ? 'transparent' : 'var(--b)'}`,
+              }}
+              data-testid={`offline-enc-${m}`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-[var(--t4)] mt-3">
+          When on, sensitive rows (profile data) are sealed with AES-256-GCM
+          using a session key derived from the bearer token via PBKDF2
+          (210k iterations). Indexed fields (id, email) stay plaintext so
+          Dexie queries work. Flag: <code>carryon_offline_enc_v1</code>.
         </p>
       </section>
 

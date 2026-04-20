@@ -3,6 +3,8 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { Crown, Sparkles, Quote, ArrowRight } from 'lucide-react';
 import { API_URL } from '../config';
+import { getOfflineMode } from '../offline/featureFlag';
+import { getLocalVoices, upsertLocalVoices } from '../offline/repos/voicesRepo';
 
 /**
  * Public "Voices" page — displays quotes the founder has explicitly
@@ -20,9 +22,27 @@ export default function VoicesPage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      const mode = getOfflineMode();
+      // Offline-first paint: seed from local cache so the wall appears
+      // instantly on repeat visits. Public data → safe to cache.
+      if (mode === 'on') {
+        try {
+          const local = await getLocalVoices();
+          if (!cancelled && local.length > 0) {
+            setItems(local);
+            setLoading(false);
+          }
+        } catch { /* non-fatal */ }
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          if (!cancelled) setLoading(false);
+          return;
+        }
+      }
       try {
         const res = await axios.get(`${API_URL}/share-cards/voices/public`);
-        if (!cancelled) setItems(res.data?.items || []);
+        const list = res.data?.items || [];
+        if (!cancelled) setItems(list);
+        if (mode !== 'off') upsertLocalVoices(list).catch(() => {});
       } catch {
         /* graceful — show empty state */
       } finally {

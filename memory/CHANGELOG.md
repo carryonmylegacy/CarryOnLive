@@ -1,4 +1,67 @@
 # CarryOn — Changelog
+## Feb 20, 2026 — Offline-first Phases 4 + 5 + 6 + 7 + 8 (remainder of the nine-phase rollout)
+
+Closing out the full offline-first rollout in a single push. The feature
+flag (`carryon_offline_v1`) remains default OFF — everything below is
+inert until deliberately enabled per-user via the `/debug/offline`
+admin page.
+
+### Phase 4 — Chat: airplane-mode messaging
+- **New repo** `src/offline/repos/chatRepo.js` with channel / contact / message read-through and the `local-msg-*` temp-id lifecycle for queued sends.
+- **Wired into**:
+  - `components/estate-chat/useECTChannelList.js` `fetchChannels()` — paints from local first; shadow/on both mirror the server response.
+  - `pages/EstateChatPage.js` `fetchContacts()`, `fetchMessages()`, and `sendMessage()`. Offline sends insert an optimistic `_local_pending:true` row into the transcript, enqueue a `POST /estate-chat/channels/{id}/messages` in the outbox tagged `entity_type='chat_message'`, and toast "Message queued — will send when you reconnect."
+- **Outbox drain** learns `chat_message` temp-id reconciliation so on reconnect the temp row swaps for the server's canonical message and any later queued jobs targeting the temp id are rewritten.
+- **Warm-up** seeds channel list + contacts + messages for the top 5 channels.
+- **Regression:** `tests/e2e/offline_phase4.spec.js`.
+
+### Phase 5 — Vault + Voices read-through
+- **New repos** `vaultRepo.js` (per-estate document metadata — deliberately metadata-only; encrypted blobs stay server-side) and `voicesRepo.js` (public Voices feed).
+- **Wired into** `pages/VaultPage.js` `fetchData()` and `pages/VoicesPage.js` initial `useEffect()` — both paint from local first, refresh from server, upsert the mirror.
+- **Warm-up** mirrors vault per estate and the public voices feed (limit=48).
+- **Regression:** `tests/e2e/offline_phase5.spec.js`.
+
+### Phase 6 — Login sync packet with visible progress pill
+- **Warm-up rewritten** to dispatch `carryon:sync:start`, `carryon:sync:progress`, and `carryon:sync:finish` events on `window`. Concurrency limiter now lazy-invokes tasks (the previous implementation was in-flight the moment the array was built — fixed).
+- **New component** `components/OfflineSyncProgress.js` — subtle bottom-right pill with a gold-gradient progress bar, done/total counter, and current task label. Mounted once at `App.js`, listens for sync events, auto-dismisses 1.2s after finish. Only mounts when flag is 'on'.
+- **Manual verification** on admin account: start emitted `total: 104`, 23 events over ~4 seconds, 12 tasks done before screenshot.
+- **Regression:** `tests/e2e/offline_phase6.spec.js`.
+
+### Phase 7 — Encryption at rest (AES-256-GCM + PBKDF2)
+- **New module** `src/offline/crypto.js`:
+  - Derives a 256-bit AES-GCM key from the bearer token via PBKDF2 (SHA-256, 210,000 iterations) — key never persisted, held in a module-scoped variable.
+  - `sealRecord(row, plainKeys)` / `unsealRecord(stored)` — move all non-indexed fields into an encrypted `{ __enc: { iv, ct } }` blob with a fresh 96-bit IV per record. Indexed columns stay plaintext so Dexie queries still work.
+  - Separate flag `carryon_offline_enc_v1` (default off) — rolls out independently of the offline flag.
+- **Wired into**:
+  - `AuthContext.js` — primes the session key after `/auth/me` resolves (flag-gated).
+  - `AuthContext.js` logout — calls `clearSessionKey()` so the next user on the same device derives their own key.
+  - `repos/profileRepo.js` `getLocalProfile`, `upsertLocalProfile`, `updateLocalProfile` — seal before put, unseal after get. PLAIN_FIELDS = `['id', 'email']`; everything else (name, DOB, address, phone) gets encrypted.
+- **Debug toggle** added to `/debug/offline`.
+- **Manual verification**: admin profile row in IndexedDB now stores only `{ id, email, _updatedAt, __enc: { iv, ct } }` with ct=1256 bytes. `data` field is gone.
+- **Regression:** `tests/e2e/offline_phase7.spec.js`.
+
+### Phase 8 — Conflict resolution UI
+- **Outbox drain** now recognizes HTTP 409 / 412 as conflicts. Instead of retrying, the row is stashed with `status='conflict'`, `server_row` captured from `err.response.data.server || .current`, and a `carryon:outbox:conflict` event is dispatched.
+- **New helpers** `listConflicts()` / `resolveConflict(id, 'mine' | 'theirs')` in `outbox.js`:
+  - 'mine' → flip the row back to `status='pending'`, reset retry count, trigger `drain()`.
+  - 'theirs' → upsert the server's row into the local mirror (beneficiary or profile), delete the outbox row.
+- **New component** `components/ConflictResolver.js` — accessible modal with a side-by-side diff (your version vs server version) and two buttons. Only mounts when flag is 'on'. Mounted at `App.js` root, handles conflicts one at a time.
+- **Regression:** `tests/e2e/offline_phase8.spec.js` — injects a synthetic 409 conflict, asserts the modal renders, and exercises both "Keep theirs" (deletes row) and "Keep mine" (flips back to pending).
+
+### Phase flag roadmap
+- `carryon_offline_v1` (default `off`) — the master gate; covers Phases 0–6 + 8.
+- `carryon_offline_enc_v1` (default `off`) — Phase 7 encryption; independent so we can enable offline reads without encryption-at-rest.
+
+### Verification
+- housekeeping 69/69 PASS · 0 WARN · 0 FAIL
+- ESLint clean on all 13 touched/added frontend files
+- `scripts/check.sh` → ALL CLEAR — SAFE TO PUSH
+- Frontend webpack: compiled successfully
+- Manual: admin login with flag=on + enc=on → 104 warm-up tasks, progress events firing, profile row sealed to `__enc` blob.
+
+---
+
+
 ## Feb 20, 2026 — Offline-first Phase 3: Estates, Dashboard, Profile, Subscription
 
 Fourth of nine phases. Extends the offline mirror beyond Beneficiaries to the

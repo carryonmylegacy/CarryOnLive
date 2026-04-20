@@ -8,6 +8,8 @@
 import { useState, useCallback, useRef } from 'react';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
+import { getOfflineMode } from '../../offline/featureFlag';
+import { getLocalChannels, upsertLocalChannels } from '../../offline/repos/chatRepo';
 
 export default function useECTChannelList({ token, navigate, user }) {
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -37,11 +39,25 @@ export default function useECTChannelList({ token, navigate, user }) {
 
   // ── API calls ─────────────────────────────────────────────────────────────
   const fetchChannels = useCallback(async () => {
+    const mode = getOfflineMode();
+    // Offline-first paint: seed from local mirror so the channel list
+    // appears instantly. When fully offline we short-circuit and trust
+    // the local list until reconnection.
+    if (mode === 'on') {
+      try {
+        const local = await getLocalChannels();
+        if (local.length > 0) setChannels(local);
+      } catch { /* non-fatal */ }
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+    }
     try {
       const res = await fetch(`${API_URL}/estate-chat/channels`, { headers });
       if (res.ok) {
         const data = await res.json();
         setChannels(data);
+        if (mode !== 'off') {
+          upsertLocalChannels(data).catch(() => {});
+        }
       } else {
         console.error('fetchChannels failed:', res.status);
       }
