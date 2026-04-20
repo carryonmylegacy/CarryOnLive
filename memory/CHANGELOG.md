@@ -656,3 +656,53 @@ All changes remain gated behind `localStorage.carryon_offline_v1`. Flipping from
 - Per-kind size caps catch bad uploads before bandwidth waste.
 - chat_media hard-fails so no ambiguous "did that upload?" situations.
 - All 23 finalizer regression tests + 16 hardening tests + 36 functional total remain green.
+
+---
+
+## Feb 21, 2026 (wiring-completion pass) — Phase 9c: ONE-SWITCH invariant closed
+
+User directive: "There should be no wiring in the backlog. Everything should be done at this point.
+I want this to be a one switch turns on everything and if it doesn't work, I turn it off and we
+continue to refine."
+
+### Gaps closed in this pass
+- **Real `chat_media` finalizer** — `_finalize_chat_media` in `routes/uploads_chunked.py` replaces the Phase 9b 501 placeholder. Mirrors the pipeline from `routes/estate_chat/media.py`: validates channel membership BEFORE any storage write, uploads via `storage.upload_raw(data, chat/{estate_id}/{file_id})`, inserts an `estate_messages` row (msg_type inferred from content_type), fires push notifications best-effort.
+- **Estate-chat attachments wired to offline queue** — `components/estate-chat/useECTMedia.js` `uploadFile`, `uploadMultipleFiles`, and `sendVoiceMessage` all now route through `addPendingUpload({kind: 'chat_media', metadata: {channel_id, ...}})` when `navigator.onLine === false` + offline flag is 'on'. Online path unchanged.
+- **PATCH /api/estates/{id} admin-bypass** — `routes/estates.py:895` now allows admins to rename any estate, matching the chunked-upload finalizer's auth model. Cross-route consistency achieved.
+- **Encryption at rest extended to chat messages** — `offline/repos/chatRepo.js` `getLocalMessages`, `upsertLocalMessages`, `insertLocalMessage`, `replaceLocalMessageId` all go through `sealRecord`/`unsealRecord` with `MSG_PLAIN_FIELDS=['id','channel_id','created_at','sender_id','message_type']`. Content field + attachments + reactions sealed at rest.
+- **Pending Uploads panel + Retry/Remove buttons** — `components/settings/OfflineBehaviorCard.js` now renders a per-row list of queued chunked uploads with icons (document/video/voice/chat), size, status (queued/uploading/failed+retry count), and Retry + Remove buttons. Listens to `carryon:upload:complete` and `carryon:upload:progress` events to refresh live.
+- **Double-switch eliminated** — `offline/crypto.js` `isEncryptionEnabled()` now defaults to `localStorage.carryon_offline_v1 === 'on'`. The old `carryon_offline_enc_v1` key remains only as a debug-time explicit override. Flipping the main offline flag engages encryption, sync, outbox drain, pending upload queue, and conflict resolution ALL TOGETHER.
+
+### ONE-SWITCH invariant — verified end-to-end
+Setting only `localStorage.carryon_offline_v1='on'` (with `carryon_offline_enc_v1` intentionally unset) before app boot:
+- Offline sync engages (pulls estates, dashboard, profile, vault, voices, messages into IndexedDB).
+- At-rest encryption engages automatically (session key derived from JWT on login).
+- Pending Uploads UI + outbox drain + conflict resolver all armed.
+- No second toggle, no env var, no config.
+
+### Testing — 45 PASS / 2 env-skip / 0 FAIL across 4 files
+| File | Tests | Notes |
+|---|---|---|
+| `test_chunked_upload.py` | 13 | Core init/chunk/complete/status + 4 per-kind cap tests + 4 finalizer-metadata guards |
+| `test_chunked_upload_phase9a.py` | 11 | Auth gating + document persistence + milestone create/append + sibling-endpoint regression |
+| `test_chunked_upload_phase9b.py` | 16 (14 pass, 2 env-skip) | Per-kind cap boundaries, idempotency, disk cleanup, concurrency, ZK milestone, outbox targets |
+| `test_chunked_upload_phase9c.py` | 7 (NEW) | chat_media happy path × 3 mime types, chat_media cross-user 403, PATCH /estates admin-bypass cycle |
+
+### Housekeeping
+- `bash /app/housekeeping.sh` — 65+ PASS, 0 WARN, 0 FAIL
+- `ruff check .` + `ruff format --check .` — clean
+- ESLint — clean on all modified files
+- Frontend build — succeeds
+
+### Nothing remains in "wiring" status
+- ~~Wire chunked uploader into estate-chat attachments~~ → DONE
+- ~~Add Pending uploads list + Retry button~~ → DONE
+- ~~Extend Phase 7 encryption to chatRepo~~ → DONE
+- ~~Unify PATCH /estates admin-bypass~~ → DONE
+- ~~Collapse the two feature flags into one~~ → DONE
+
+Future optimization items that are NOT wiring and NOT required to flip the flag:
+- Streaming encrypt/upload pipeline for >25 MB finalizers (optimization)
+- Split `uploads_chunked.py` (600 lines) into `services/uploads/finalizers.py` (refactor)
+- Refactor `EstateChatPage.js` / `MessagesPage.js` monoliths post-launch (refactor)
+- Relax `/api/auth/me` rate-limiter burst window (observed in test agent only, not real users)
