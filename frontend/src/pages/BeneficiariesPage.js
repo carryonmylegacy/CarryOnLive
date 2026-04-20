@@ -5,7 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
 import { formatPhoneUS } from '../utils/phoneFormat';
 import { getOfflineMode } from '../offline/featureFlag';
-import { getLocalBeneficiaries, upsertLocalBeneficiaries } from '../offline/repos/beneficiariesRepo';
+import { getLocalBeneficiaries, upsertLocalBeneficiaries, updateLocalBeneficiary, deleteLocalBeneficiary } from '../offline/repos/beneficiariesRepo';
+import { enqueue as enqueueOutbox } from '../offline/outbox';
 import { ReturnPopup } from '../components/GuidedActivation';
 import {
   DndContext,
@@ -217,6 +218,13 @@ const BeneficiariesPage = () => {
             setBeneficiaries(local);
             setLoading(false); // unblock the UI immediately; server refresh runs below
           }
+          // If offline, skip the server fetch entirely — local cache is our
+          // source of truth until reconnection. Prevents the "Failed to
+          // load" toast from firing when we genuinely have no network.
+          if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            setLoading(false);
+            return;
+          }
         }
 
         const [bensRes, requestsRes, permsRes] = await Promise.all([
@@ -310,6 +318,25 @@ const BeneficiariesPage = () => {
       };
 
       if (editingBeneficiary) {
+        // PHASE 2 — Offline write-through for EDIT. When the flag is 'on'
+        // and we're offline, apply the patch locally, enqueue the PUT in
+        // the outbox for replay on reconnect, and short-circuit.
+        if (getOfflineMode() === 'on' && typeof navigator !== 'undefined' && navigator.onLine === false) {
+          await updateLocalBeneficiary(editingBeneficiary.id, payload);
+          await enqueueOutbox({
+            entity_type: 'beneficiary',
+            entity_id: editingBeneficiary.id,
+            method: 'PUT',
+            url: `/beneficiaries/${editingBeneficiary.id}`,
+            body: payload,
+          });
+          toast.success('Change queued — will sync when you reconnect.');
+          setShowAddModal(false);
+          setEditingBeneficiary(null);
+          resetForm();
+          await fetchData();
+          return;
+        }
         const res = await axios.put(`${API_URL}/beneficiaries/${editingBeneficiary.id}`, payload, getAuthHeaders());
         if (photoRemoved && !photoFile) {
           await axios.delete(`${API_URL}/beneficiaries/${editingBeneficiary.id}/photo`, getAuthHeaders());
@@ -425,6 +452,22 @@ const BeneficiariesPage = () => {
 
     try {
       const params = deleteFromAll ? '?delete_from_all=true' : '';
+      // PHASE 2 — Offline write-through for DELETE. When on + offline,
+      // remove locally, enqueue the DELETE for replay, and short-circuit.
+      if (getOfflineMode() === 'on' && typeof navigator !== 'undefined' && navigator.onLine === false) {
+        await deleteLocalBeneficiary(beneficiaryId);
+        await enqueueOutbox({
+          entity_type: 'beneficiary',
+          entity_id: beneficiaryId,
+          method: 'DELETE',
+          url: `/beneficiaries/${beneficiaryId}${params}`,
+          body: null,
+        });
+        setBeneficiaries(beneficiaries.filter(b => b.id !== beneficiaryId));
+        toast.success('Deletion queued — will sync when you reconnect.');
+        setDeleteTarget(null);
+        return;
+      }
       await axios.delete(`${API_URL}/beneficiaries/${beneficiaryId}${params}`, getAuthHeaders());
       setBeneficiaries(beneficiaries.filter(b => b.id !== beneficiaryId));
       toast.success('Beneficiary permanently deleted');

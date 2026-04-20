@@ -21,8 +21,9 @@
 
 import { getDB, smokeCheck, purgeLocalData } from './db';
 import { isOfflineEnabled, getOfflineMode } from './featureFlag';
+import { drain as drainOutbox, pendingCount as outboxPendingCount } from './outbox';
 
-const PHASE = 0;
+const PHASE = 2;
 
 class SyncClient {
   constructor() {
@@ -50,11 +51,15 @@ class SyncClient {
     }
     this.initialized = true;
     console.log(`[offline] Sync client initialized (phase ${PHASE}, mode=${getOfflineMode()})`);
+    // If we came online before the app started, or there were queued jobs
+    // from a previous session, drain them now.
+    drainOutbox().catch(() => {});
   }
 
   _onOnline = () => {
     this.online = true;
-    // Phase 2+: replay outbox here.
+    // Reconnect → replay anything we queued while offline.
+    drainOutbox().catch(() => {});
   };
 
   _onOffline = () => {
@@ -85,6 +90,7 @@ class SyncClient {
       online: this.online,
       initialized: this.initialized,
       counts,
+      outbox_pending: await outboxPendingCount(),
     };
   }
 }

@@ -59,3 +59,31 @@ export async function upsertLocalBeneficiaries(estateId, list) {
 export async function countLocalBeneficiaries() {
   try { return await getDB().beneficiary.count(); } catch { return 0; }
 }
+
+/**
+ * Apply an optimistic patch to a single beneficiary locally. Merges the
+ * patch into the existing row, bumps `_updatedAt`, and returns the merged
+ * row (or null if the row doesn't exist yet). Call this BEFORE the server
+ * PUT so the UI reacts instantly.
+ */
+export async function updateLocalBeneficiary(id, patch) {
+  if (!isOfflineEnabled() || !id) return null;
+  try {
+    const db = getDB();
+    const existing = await db.beneficiary.get(id);
+    if (!existing) return null;
+    const merged = { ...existing, ...patch, _updatedAt: Date.now() };
+    await db.beneficiary.put(merged);
+    return merged;
+  } catch (err) {
+    console.warn('[offline] updateLocalBeneficiary failed:', err);
+    return null;
+  }
+}
+
+/** Remove a beneficiary from the local mirror. */
+export async function deleteLocalBeneficiary(id) {
+  if (!isOfflineEnabled() || !id) return;
+  try { await getDB().beneficiary.delete(id); }
+  catch (err) { console.warn('[offline] deleteLocalBeneficiary failed:', err); }
+}

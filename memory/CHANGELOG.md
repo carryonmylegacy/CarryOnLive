@@ -1,5 +1,38 @@
 # CarryOn — Changelog
 
+## Feb 14, 2026 — Offline-first: Post-login warm-up + Phase 2 (write-through + outbox)
+
+### Warm-up (the mini-improvement before Phase 2)
+- New `src/offline/warmup.js` — fires once after successful login (both direct and OTP-verify paths hook it via fire-and-forget `import()`). Fetches the user's estate list, then in parallel (capped at 3 concurrent) fetches the beneficiary list for every owned estate and seeds the local mirror. Completely gated on the offline flag; no-op when `off`. Every error is swallowed so a warm-up failure never affects the user's login experience.
+- Hooked into `AuthContext.js` `login()` success and `verifyOtp()` success.
+
+### Phase 2 — Beneficiaries write-through + outbox
+Third of 9 phases. Introduces the **outbox**: an IndexedDB-backed queue of writes that get replayed to the server when the device comes back online.
+
+**New file:**
+- `src/offline/outbox.js` — generic enqueue/drain for any entity. Ordered by insertion id (FIFO). Drain runs one request at a time and halts on first failure so later requests can't race ahead of a still-unacked earlier one. Per-item retry budget of 3. On the 3rd failure the item is marked `failed` and surfaced via the debug console. Completed rows are garbage-collected to keep the table small. A global lock prevents concurrent drains across tabs.
+
+**Extended files:**
+- `src/offline/syncClient.js` — registers the `online` event handler to call `outbox.drain()` on reconnect. Also runs one drain at startup in case jobs were queued in a previous session. Snapshot now reports `outbox_pending` count.
+- `src/offline/repos/beneficiariesRepo.js` — added `updateLocalBeneficiary(id, patch)` (optimistic merge) and `deleteLocalBeneficiary(id)`.
+- `src/pages/BeneficiariesPage.js`:
+  - Edit flow: when flag is `on` AND `navigator.onLine === false`, apply local patch → enqueue PUT in outbox → toast "Change queued — will sync when you reconnect." → close modal → `fetchData()` (now reads from cache because we also taught it to skip the server fetch when offline + flag on).
+  - Delete flow: same pattern with DELETE method.
+  - Online edits/deletes are **unchanged** — they already triggered `fetchData()` which re-upserts the local mirror via the Phase 1 code path.
+
+**Regression:** `tests/e2e/offline_phase2.spec.js` — three assertions:
+1. Flag off → outbox stays empty during normal app use.
+2. Flag on + online → editing a beneficiary never spuriously enqueues.
+3. Flag on + simulated offline (directly writing to IndexedDB, mirroring what the handler does) → the job persists to outbox as `status='pending'`.
+
+**Verification:** housekeeping 65/65 PASS, ESLint clean on all 5 touched/added files, Playwright **20/20 green** across the entire suite.
+
+### Explicitly out of scope for Phase 2 (moved to Phase 2.1)
+- Offline CREATE (adding a brand-new beneficiary while on a plane). Requires a temp-id lifecycle — we generate a local UUID, enqueue POST, then on replay swap the temp id for the server-assigned real id across any chained outbox jobs referencing it. Small, clean project, ~1 hour of work.
+
+**Next: Phase 2.1 (offline create) OR jump to Phase 3 (Estates / Dashboard / Profile)** — user's call.
+
+
 ## Feb 14, 2026 — Offline-first: Phase 1 (Beneficiaries read-through)
 
 Second of 9 planned phases. Phase 1 adds a read-through local cache for the Beneficiaries page so that with the flag set to `on`, the page paints instantly from IndexedDB on repeat visits and in shadow mode the local mirror is kept in sync without changing the UI.

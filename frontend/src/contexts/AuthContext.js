@@ -138,6 +138,9 @@ export const AuthProvider = ({ children }) => {
       setToken(data.access_token);
       setUser({ ...data.user, _serverScope: data.user.admin_scope });
       setPendingEmail(null);
+      // Fire-and-forget: warm the offline mirror while the splash fades.
+      // No-op when the offline flag is off.
+      import('../offline/warmup').then((m) => m.warmUpAfterLogin(data.access_token)).catch(() => {});
       return { direct: true, user: data.user };
     }
     // OTP flow fallback
@@ -152,6 +155,8 @@ export const AuthProvider = ({ children }) => {
     setToken(access_token);
     setUser({ ...userData, _serverScope: userData.admin_scope });
     setPendingEmail(null);
+    // Fire-and-forget: warm the offline mirror. No-op when flag is off.
+    import('../offline/warmup').then((m) => m.warmUpAfterLogin(access_token)).catch(() => {});
     return userData;
   };
 
