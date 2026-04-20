@@ -47,7 +47,12 @@ test.describe('Scrollbar integration', () => {
     await loginAsAdmin(page);
     await page.goto('/settings');
     await page.waitForLoadState('load');
-    await page.waitForTimeout(1500);
+    // Wait for OverlayScrollbars to attach. The bar may be hidden if the
+    // content doesn't overflow, so we wait for presence, not visibility.
+    await page.waitForFunction(
+      () => !!document.querySelector('.main-content .os-scrollbar-vertical.os-theme-carryon-gold'),
+      { timeout: 15000 }
+    );
 
     const info = await page.evaluate(() => {
       const mc = document.querySelector('.main-content');

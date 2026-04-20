@@ -87,3 +87,51 @@ export async function deleteLocalBeneficiary(id) {
   try { await getDB().beneficiary.delete(id); }
   catch (err) { console.warn('[offline] deleteLocalBeneficiary failed:', err); }
 }
+
+/**
+ * Phase 2.1 — Insert a beneficiary that was created while offline into
+ * the local mirror. Caller is responsible for generating the temp id
+ * (use `generateTempId()` below). The record is tagged with
+ * `_local_pending: true` so the UI can show a "syncing" badge if desired.
+ */
+export async function insertLocalBeneficiary(beneficiary) {
+  if (!isOfflineEnabled() || !beneficiary?.id) return;
+  try {
+    const db = getDB();
+    await db.beneficiary.put({
+      ...beneficiary,
+      _local_pending: true,
+      _updatedAt: Date.now(),
+    });
+  } catch (err) { console.warn('[offline] insertLocalBeneficiary failed:', err); }
+}
+
+/**
+ * Phase 2.1 — After the outbox drains a POST, the server returns the
+ * real row with its canonical id. This helper atomically replaces the
+ * temp row with the real row so the UI and local queries now see a
+ * valid server id.
+ */
+export async function replaceLocalBeneficiaryId(tempId, serverRow) {
+  if (!isOfflineEnabled() || !tempId || !serverRow?.id) return;
+  try {
+    const db = getDB();
+    await db.transaction('rw', db.beneficiary, async () => {
+      await db.beneficiary.delete(tempId);
+      await db.beneficiary.put({ ...serverRow, _updatedAt: Date.now() });
+    });
+  } catch (err) { console.warn('[offline] replaceLocalBeneficiaryId failed:', err); }
+}
+
+/** Generate a client-side temp id for offline-created rows. */
+export function generateTempId() {
+  const rand = (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `local-${rand}`;
+}
+
+/** Is this id a client-generated temp id (vs a server-assigned one)? */
+export function isTempId(id) {
+  return typeof id === 'string' && id.startsWith('local-');
+}

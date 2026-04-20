@@ -96,6 +96,10 @@ export const AuthProvider = ({ children }) => {
           if (featRes.status === 'fulfilled') {
             setEnabledFeatures(featRes.value.data?.enabled_features || null);
           }
+          // Warm the offline mirror on every boot (not just fresh login)
+          // so returning users always start with a fresh local cache.
+          // Fire-and-forget; no-op when the offline flag is off.
+          import('../offline/warmup').then((m) => m.warmUpAfterLogin(token)).catch(() => {});
         } catch (error) {
           console.error('Auth init error:', error);
           logout();

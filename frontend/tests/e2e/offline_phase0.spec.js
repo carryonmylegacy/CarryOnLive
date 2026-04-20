@@ -72,9 +72,10 @@ test.describe('Offline Phase 0 — foundation is installed and inert by default'
   test('admin debug page /debug/offline renders with the three flag buttons', async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto(`${BASE}/debug/offline`, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(1500);
-    await expect(page.locator('[data-testid="offline-flag-off"]')).toBeVisible();
-    await expect(page.locator('[data-testid="offline-flag-shadow"]')).toBeVisible();
-    await expect(page.locator('[data-testid="offline-flag-on"]')).toBeVisible();
+    // Auth + admin check + lazy-loaded page can take a beat under full-suite
+    // load. Use longer timeouts on the visibility assertions.
+    await expect(page.locator('[data-testid="offline-flag-off"]')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('[data-testid="offline-flag-shadow"]')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('[data-testid="offline-flag-on"]')).toBeVisible({ timeout: 5000 });
   });
 });

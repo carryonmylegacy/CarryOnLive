@@ -96,7 +96,38 @@ export async function drain() {
       await db.outbox.update(next.id, { status: 'inflight' });
       try {
         const url = next.url.startsWith('http') ? next.url : `${API_URL}${next.url}`;
-        await axios.request({ method: next.method, url, data: next.body, headers });
+        const response = await axios.request({ method: next.method, url, data: next.body, headers });
+
+        // Phase 2.1 — Temp-ID reconciliation for offline creates.
+        // When a POST succeeds for an entity we inserted with a
+        // client-generated `local-*` id, we must (a) replace the temp
+        // row in the local mirror with the server's canonical row, and
+        // (b) rewrite any later queued jobs that referenced the temp id
+        // so subsequent drains use the real server id.
+        if (next.method === 'POST' && typeof next.entity_id === 'string' && next.entity_id.startsWith('local-')) {
+          const serverRow = response?.data;
+          const realId = serverRow?.id;
+          if (realId && realId !== next.entity_id) {
+            if (next.entity_type === 'beneficiary') {
+              try {
+                const repo = await import('./repos/beneficiariesRepo');
+                await repo.replaceLocalBeneficiaryId(next.entity_id, serverRow);
+              } catch { /* non-fatal */ }
+            }
+            // Rewrite any later outbox rows that targeted the temp id.
+            try {
+              const later = await db.outbox
+                .where('entity_id').equals(next.entity_id).toArray();
+              for (const row of later) {
+                if (row.id === next.id) continue;
+                const newUrl = row.url && row.url.includes(next.entity_id)
+                  ? row.url.replace(next.entity_id, realId) : row.url;
+                await db.outbox.update(row.id, { entity_id: realId, url: newUrl });
+              }
+            } catch { /* non-fatal */ }
+          }
+        }
+
         await db.outbox.update(next.id, { status: 'done' });
         sent++;
         console.log(`[offline] drain ok #${next.id} ${next.method} ${next.url}`);

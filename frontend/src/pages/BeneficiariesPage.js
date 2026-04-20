@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
 import { formatPhoneUS } from '../utils/phoneFormat';
 import { getOfflineMode } from '../offline/featureFlag';
-import { getLocalBeneficiaries, upsertLocalBeneficiaries, updateLocalBeneficiary, deleteLocalBeneficiary } from '../offline/repos/beneficiariesRepo';
+import { getLocalBeneficiaries, upsertLocalBeneficiaries, updateLocalBeneficiary, deleteLocalBeneficiary, insertLocalBeneficiary, generateTempId } from '../offline/repos/beneficiariesRepo';
 import { enqueue as enqueueOutbox } from '../offline/outbox';
 import { ReturnPopup } from '../components/GuidedActivation';
 import {
@@ -360,6 +360,35 @@ const BeneficiariesPage = () => {
           return;
         }
       } else {
+        // PHASE 2.1 — Offline write-through for CREATE. When flag is 'on'
+        // and we're offline, generate a client-side temp id, insert the
+        // beneficiary locally so the UI reflects it immediately, and
+        // enqueue the POST for replay on reconnect. After drain, the
+        // outbox swaps the temp id for the server's canonical id.
+        if (getOfflineMode() === 'on' && typeof navigator !== 'undefined' && navigator.onLine === false) {
+          const tempId = generateTempId();
+          const localRow = {
+            ...payload,
+            id: tempId,
+            estate_id: estate?.id,
+            created_at: new Date().toISOString(),
+          };
+          await insertLocalBeneficiary(localRow);
+          await enqueueOutbox({
+            entity_type: 'beneficiary',
+            entity_id: tempId,
+            method: 'POST',
+            url: '/beneficiaries',
+            body: payload,
+          });
+          toast.success('New beneficiary queued — will sync when you reconnect.');
+          setShowAddModal(false);
+          setEditingBeneficiary(null);
+          resetForm();
+          await fetchData();
+          setAdding(false);
+          return;
+        }
         const res = await axios.post(`${API_URL}/beneficiaries`, payload, getAuthHeaders());
         if (photoFile && res.data?.id) await uploadPhoto(res.data.id);
         if (res.data?.auto_invited) {
