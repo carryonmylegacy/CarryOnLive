@@ -158,6 +158,18 @@ const MessagesPage = () => {
     fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-refresh when a queued milestone media upload finishes draining
+  // on reconnect — swaps the "queued" UI for the server-authoritative row.
+  useEffect(() => {
+    const refetch = () => { fetchData(); };
+    window.addEventListener('carryon:upload:complete', refetch);
+    window.addEventListener('carryon:outbox:drained', refetch);
+    return () => {
+      window.removeEventListener('carryon:upload:complete', refetch);
+      window.removeEventListener('carryon:outbox:drained', refetch);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Auto-open guided creation when arriving from Getting Started
   useEffect(() => {
     if (!loading && fromGettingStarted && !autoOpenedRef.current && messages.length === 0 && estate) {

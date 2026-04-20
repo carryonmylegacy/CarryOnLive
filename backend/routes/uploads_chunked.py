@@ -48,6 +48,14 @@ router = APIRouter(prefix="/uploads/chunked", tags=["uploads"])
 MAX_UPLOAD_BYTES = 350 * 1024 * 1024  # 350 MB — caps 5-minute 720p video + headroom
 # Max single chunk size. 5 MB is comfortable for cellular.
 MAX_CHUNK_BYTES = 10 * 1024 * 1024  # 10 MB
+# Per-kind hard caps enforced at /init so we fail fast instead of
+# accepting megabytes of chunks only to reject at /complete.
+KIND_MAX_BYTES = {
+    "document": 25 * 1024 * 1024,  # DAV documents: same 25 MB cap as the legacy single-POST path
+    "milestone_video": MAX_UPLOAD_BYTES,
+    "milestone_audio": 50 * 1024 * 1024,  # audio recordings: 50 MB plenty for 5 min
+    "chat_media": 50 * 1024 * 1024,
+}
 # Where chunks live on-disk while the upload is in progress.
 CHUNK_ROOT = Path(os.environ.get("CARRYON_CHUNK_UPLOAD_DIR", "/tmp/carryon-uploads"))
 CHUNK_ROOT.mkdir(parents=True, exist_ok=True)
@@ -76,8 +84,17 @@ class CompleteRequest(BaseModel):
 async def init_chunked_upload(body: InitRequest, user: dict = Depends(get_current_user)):
     if body.total_bytes <= 0 or body.total_bytes > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=400, detail="File too large or invalid size")
-    if body.kind not in ("document", "milestone_video", "milestone_audio", "chat_media"):
+    if body.kind not in KIND_MAX_BYTES:
         raise HTTPException(status_code=400, detail=f"Unknown upload kind '{body.kind}'")
+    # Per-kind cap: fail fast before the user spends data sending chunks
+    # that would be rejected at finalize time (e.g. a 200 MB PDF into
+    # the document finalizer's 25 MB cap).
+    kind_cap = KIND_MAX_BYTES[body.kind]
+    if body.total_bytes > kind_cap:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{body.kind} uploads capped at {kind_cap // (1024 * 1024)} MB (got {body.total_bytes // (1024 * 1024)} MB)",
+        )
     upload_id = str(uuid.uuid4())
     folder = CHUNK_ROOT / upload_id
     folder.mkdir(parents=True, exist_ok=True)
@@ -218,14 +235,13 @@ async def _finalize_by_kind(kind: str, metadata: dict, assembled_path: Path, rec
     if kind == "milestone_audio":
         return await _finalize_milestone_media(metadata, assembled_path, record, user, media="audio")
     if kind == "chat_media":
-        # Reserved. Left as a placeholder — no client currently posts with
-        # this kind. When estate-chat offline attachments land we'll wire
-        # the chat-media path here (see Phase 9a).
-        return {
-            "kind": "chat_media",
-            "size_bytes": assembled_path.stat().st_size,
-            "note": "chat_media finalizer reserved — not yet wired.",
-        }
+        # Reserved kind — the chunked-chat-attachment flow is not yet wired
+        # on either the frontend or backend. Hard-fail so callers don't
+        # silently "succeed" against a phantom endpoint.
+        raise HTTPException(
+            status_code=501,
+            detail="chat_media chunked finalizer is not implemented yet. Use /api/estate-chat/* upload endpoints instead.",
+        )
     raise HTTPException(status_code=400, detail=f"Unknown kind '{kind}'")
 
 

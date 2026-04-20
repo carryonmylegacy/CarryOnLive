@@ -189,6 +189,18 @@ const VaultPage = () => {
     fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-refresh when a chunked upload completes (offline DAV docs
+  // draining on reconnect) or when the outbox drains any DAV mutations.
+  useEffect(() => {
+    const refetch = () => { fetchData(); };
+    window.addEventListener('carryon:upload:complete', refetch);
+    window.addEventListener('carryon:outbox:drained', refetch);
+    return () => {
+      window.removeEventListener('carryon:upload:complete', refetch);
+      window.removeEventListener('carryon:outbox:drained', refetch);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Auto-open upload panel when arriving from Getting Started with no documents
   useEffect(() => {
     if (!loading && fromGettingStarted && !autoOpenedRef.current && documents.length === 0 && estate) {

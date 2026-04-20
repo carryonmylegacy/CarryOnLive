@@ -187,6 +187,14 @@ export async function drain() {
     }
     // Garbage-collect completed rows so the outbox stays small.
     try { await db.outbox.where('status').equals('done').delete(); } catch {}
+    // Broadcast so pages that display queued entities can refetch and
+    // swap their optimistic `_local_pending` rows for the server-authoritative
+    // data. Best-effort — never blocks the drain on failure.
+    if (sent > 0) {
+      try {
+        window.dispatchEvent(new CustomEvent('carryon:outbox:drained', { detail: { sent, failed } }));
+      } catch {}
+    }
     return { sent, failed, skipped: false };
   })();
   try { return await _drainLock; }

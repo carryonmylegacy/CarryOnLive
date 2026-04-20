@@ -42,8 +42,12 @@ export async function addPendingUpload({ kind, filename, mime_type, blob, metada
   return id;
 }
 
+// NOTE: listPendingUploads / getPendingUpload / countPendingUploads
+// intentionally do NOT gate on isOfflineEnabled(). If a user queued
+// uploads while the flag was 'on' and then switched it to 'off', we
+// still want the drain path to be able to see + complete those pending
+// items so the user's recorded media never gets orphaned in IndexedDB.
 export async function listPendingUploads() {
-  if (!isOfflineEnabled()) return [];
   try {
     const rows = await getDB().pendingUpload.orderBy('created_at').toArray();
     return rows.map(({ blob, ...rest }) => ({ ...rest, has_blob: !!blob }));
@@ -63,7 +67,6 @@ export async function deletePendingUpload(id) {
 }
 
 export async function countPendingUploads() {
-  if (!isOfflineEnabled()) return 0;
   try { return await getDB().pendingUpload.where('status').notEqual('complete').count(); }
   catch { return 0; }
 }

@@ -47,6 +47,15 @@ export default function FFNPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Auto-refresh when the offline outbox drains on reconnect so that
+  // any FFN contacts queued offline swap their temp-id row for the
+  // server-authoritative one automatically.
+  useEffect(() => {
+    const onDrained = () => { fetchData(); };
+    window.addEventListener('carryon:outbox:drained', onDrained);
+    return () => window.removeEventListener('carryon:outbox:drained', onDrained);
+  }, [fetchData]);
+
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error('Name is required'); return; }
     setSaving(true);

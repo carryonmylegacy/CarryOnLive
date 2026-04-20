@@ -157,6 +157,14 @@ export default function ConnectedProtocolPage() {
     })();
   }, []);
 
+  // Auto-refresh when the offline outbox drains on reconnect — swaps
+  // optimistic `_local_pending` CCP plans for the server-authoritative ones.
+  useEffect(() => {
+    const refetch = () => { fetchPlans(); };
+    window.addEventListener('carryon:outbox:drained', refetch);
+    return () => window.removeEventListener('carryon:outbox:drained', refetch);
+  }, [fetchPlans]);
+
   // Poll when emergency is active
   useEffect(() => {
     if (!activeEmergency) return;
