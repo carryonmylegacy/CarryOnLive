@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'v4-2026-04-20';
+const SHELL_VERSION = 'v5-2026-04-20-images';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
@@ -112,10 +112,16 @@ function isCacheableApiRequest(url) {
 }
 
 function isImageRequest(url, request) {
-  if (url.pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|ico)$/i)) return true;
+  if (url.pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|ico|avif|heic|heif)$/i)) return true;
   // Chat attachment endpoint — either variant=thumb or original.
   if (url.pathname.startsWith('/api/estate-chat/files/')) return true;
   if (url.pathname.startsWith('/api/share-cards/image/')) return true;
+  // Profile / estate / beneficiary photo endpoints (when served same-origin).
+  if (/\/photo(\/|$|\?)/.test(url.pathname)) return true;
+  if (/\/avatar(\/|$|\?)/.test(url.pathname)) return true;
+  // Cross-origin S3 / R2 / CloudFront presigned photo URLs — the
+  // `destination` field is set by the browser for <img> elements.
+  if (request.destination === 'image') return true;
   const accept = request.headers.get('accept') || '';
   return accept.includes('image/');
 }
@@ -151,7 +157,13 @@ async function cacheFirst(request, cacheName) {
     const cached = await cache.match(request);
     if (cached) return cached;
     const response = await fetch(request);
-    if (response && response.ok) {
+    // Cache `ok` responses AND opaque cross-origin responses (S3-presigned
+    // image URLs, CDN no-cors fetches). Opaque responses have status=0 and
+    // response.ok=false but are still valid to cache and replay to an
+    // <img> tag — which is exactly what we need for profile/beneficiary
+    // photos to survive offline.
+    const shouldCache = response && (response.ok || response.type === 'opaque');
+    if (shouldCache) {
       cache.put(request, response.clone()).catch(() => {});
     }
     return response;
@@ -193,9 +205,17 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-  // Only handle same-origin requests. Third-party (Stripe, Google Fonts,
-  // Analytics, etc.) bypass the SW entirely.
-  if (url.origin !== self.location.origin) return;
+  // Same-origin requests: run the full router below.
+  // Cross-origin requests: only intercept IMAGE GETs so S3-presigned
+  // profile photos / beneficiary avatars / estate photos are cache-first
+  // and survive a reconnect-offline cycle. Everything else third-party
+  // (Stripe, Google Fonts, Analytics) still bypasses the SW entirely.
+  if (url.origin !== self.location.origin) {
+    if (isImageRequest(url, request)) {
+      event.respondWith(cacheFirst(request, IMAGE_CACHE));
+    }
+    return;
+  }
 
   // 1) Top-level navigations (HTML) → network-first, offline shell fallback.
   if (request.mode === 'navigate') {
@@ -209,7 +229,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3) Images (PNG/JPG/etc. + chat/share-card image endpoints) → cache-first.
+  // 3) Images (PNG/JPG/etc. + chat/share-card image endpoints + avatar
+  //    endpoints) → cache-first.
   if (isImageRequest(url, request)) {
     event.respondWith(cacheFirst(request, IMAGE_CACHE));
     return;
