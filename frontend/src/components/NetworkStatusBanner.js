@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { WifiOff, Wifi, Info } from 'lucide-react';
 
 /**
@@ -12,12 +12,19 @@ import { WifiOff, Wifi, Info } from 'lucide-react';
  * Two states:
  *   - Offline: full reassurance banner (taller, readable, non-dismissible).
  *   - Back online: brief "Back online" confirmation (auto-hides).
+ *
+ * Layout contract: the banner publishes its rendered height into the
+ * `--cy-offline-banner-h` CSS variable on :root. The mobile header
+ * (`.mobile-header`) and main content (`.main-content`) read this var
+ * and shift down accordingly so the banner never occludes the logo /
+ * hamburger / page body. When hidden, the var is set back to 0px.
  */
 const NetworkStatusBanner = () => {
   const [online, setOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [showReconnected, setShowReconnected] = useState(false);
   const [wasOffline, setWasOffline] = useState(false);
   const [expanded, setExpanded] = useState(true);
+  const bannerRef = useRef(null);
 
   useEffect(() => {
     const goOffline = () => {
@@ -41,12 +48,44 @@ const NetworkStatusBanner = () => {
     };
   }, [wasOffline]);
 
+  // Push the rendered banner height into a CSS variable so the
+  // mobile header + main content can shift out of the way. Runs on
+  // every visibility / expanded-state change.
+  const visible = !online || showReconnected;
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    if (!visible) {
+      root.style.setProperty('--cy-offline-banner-h', '0px');
+      return;
+    }
+    const measure = () => {
+      const h = bannerRef.current?.offsetHeight || 0;
+      root.style.setProperty('--cy-offline-banner-h', `${h}px`);
+    };
+    measure();
+    // Re-measure after a tick in case fonts or safe-area insets resolved late.
+    const t = setTimeout(measure, 60);
+    let ro = null;
+    try {
+      if (typeof ResizeObserver !== 'undefined' && bannerRef.current) {
+        ro = new ResizeObserver(measure);
+        ro.observe(bannerRef.current);
+      }
+    } catch { /* ResizeObserver not supported — fall back to measure on re-render */ }
+    return () => {
+      clearTimeout(t);
+      if (ro) ro.disconnect();
+      root.style.setProperty('--cy-offline-banner-h', '0px');
+    };
+  }, [visible, expanded]);
+
   if (online && !showReconnected) return null;
 
   // Back-online confirmation — thin green bar, same as before.
   if (online && showReconnected) {
     return (
       <div
+        ref={bannerRef}
         className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold"
         style={{
           paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)',
@@ -66,6 +105,7 @@ const NetworkStatusBanner = () => {
   // Offline — honest, reassuring, teaching banner.
   return (
     <div
+      ref={bannerRef}
       className="fixed top-0 left-0 right-0 z-[9999]"
       style={{
         paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)',

@@ -280,12 +280,14 @@
     min-height: 100vh;
   }
   
-  /* Sidebar - ALWAYS DARK regardless of theme */
+  /* Sidebar - ALWAYS DARK regardless of theme.
+     Shifts down + shortens when the offline banner is visible so the
+     top of the sidebar (logo, OTP / Offline toggles) never hides behind it. */
   .sb {
     position: fixed;
     left: 0;
-    top: 0;
-    height: 100vh;
+    top: var(--cy-offline-banner-h, 0px);
+    height: calc(100vh - var(--cy-offline-banner-h, 0px));
     width: var(--sidebar-width);
     background: linear-gradient(180deg, rgba(24,35,60,0.99) 0%, rgba(15,22,38,1) 100%);
     border-right: 1px solid rgba(255,255,255,0.07);
@@ -293,7 +295,7 @@
     display: flex;
     flex-direction: column;
     z-index: 40;
-    transition: width 0.3s ease, transform 0.3s ease;
+    transition: width 0.3s ease, transform 0.3s ease, top 180ms ease-out, height 180ms ease-out;
     overflow: hidden;
     overscroll-behavior: contain;
   }
@@ -606,7 +608,9 @@
 
 
   
-  /* Main Content Area */
+  /* Main Content Area.
+     padding-top matches the offline banner height so body content never
+     hides underneath it. Sidebar is already shifted down via .sb rules. */
   .main-content {
     flex: 1;
     margin-left: var(--sidebar-width);
@@ -614,7 +618,8 @@
     max-width: calc(100vw - var(--sidebar-width));
     overflow-x: hidden;
     background: var(--content-bg);
-    transition: background 0.3s ease, margin-left 0.3s ease, max-width 0.3s ease;
+    padding-top: var(--cy-offline-banner-h, 0px);
+    transition: background 0.3s ease, margin-left 0.3s ease, max-width 0.3s ease, padding-top 180ms ease-out;
     position: relative;
   }
   
@@ -1137,8 +1142,11 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: none;
     padding-bottom: calc(56px + env(safe-area-inset-bottom, 8px));
-    /* 48px = mobile header bar height (h-12), plus safe-area for the notch/status bar */
-    padding-top: calc(48px + env(safe-area-inset-top, 0px));
+    /* 48px = mobile header bar height (h-12), plus safe-area for the notch/status bar.
+       When the offline banner is visible it publishes its height into
+       --cy-offline-banner-h so the content can shift down as the header does. */
+    padding-top: calc(48px + env(safe-area-inset-top, 0px) + var(--cy-offline-banner-h, 0px));
+    transition: padding-top 180ms ease-out;
     touch-action: manipulation;
   }
   
@@ -1151,12 +1159,17 @@
   }
 }
 
-/* Mobile Header - Adapts to theme */
+/* Mobile Header - Adapts to theme.
+   Sits below the offline banner when one is shown. The banner publishes
+   its height into --cy-offline-banner-h so the header can step out of
+   the way without occluding logo/hamburger. */
 .mobile-header {
   background: var(--mobile-nav-bg);
   border-bottom: 1px solid var(--b);
   box-shadow: var(--header-shadow, 0 2px 12px -2px rgba(0,0,0,0.08));
   padding-top: env(safe-area-inset-top, 0px);
+  top: var(--cy-offline-banner-h, 0px);
+  transition: top 180ms ease-out;
   touch-action: none;
   overscroll-behavior: none;
 }
