@@ -706,3 +706,23 @@ Future optimization items that are NOT wiring and NOT required to flip the flag:
 - Split `uploads_chunked.py` (600 lines) into `services/uploads/finalizers.py` (refactor)
 - Refactor `EstateChatPage.js` / `MessagesPage.js` monoliths post-launch (refactor)
 - Relax `/api/auth/me` rate-limiter burst window (observed in test agent only, not real users)
+
+---
+
+## Feb 21, 2026 (late) — Sidebar Offline Toggle (Phase 9d)
+
+### Promoted
+- **Founder-only Offline toggle in main admin sidebar**, placed directly below the existing Global OTP toggle per PM request. Desktop: `OfflineModeToggle` component inline in `components/layout/Sidebar.js`. Mobile: new `components/layout/MobileOfflineToggle.js` rendered below `MobileOtpToggle` in `MobileNav.js`. Both write `localStorage.carryon_offline_v1`, broadcast `carryon:offline-flag-changed`, and reload the page so repos / SW / crypto session key reinitialize cleanly.
+- Gold palette (#d4af37) when ON, neutral `var(--s)/var(--b)` when OFF — matches the founder portal visual language. Collapsed-sidebar variant shows the `CloudOff` icon pill.
+- Visibility gated identically to OtpToggle (`user.role === 'admin' && !pathname.startsWith('/ops')`).
+
+### Bug fix flagged by testing agent
+- **`upsertLocalContacts failed: DexieError`** noise when offline mode engaged. Root cause: `/api/estate-chat/contacts` returns rows keyed by `estate_id` with no top-level `id` field, but the `chatContact` Dexie store requires `id` as PK. Fix in `offline/repos/chatRepo.js`: lift `estate_id` into `id` for rows that lack one; pass-through rows that already have `id`. No schema bump needed.
+
+### Testing
+- Testing agent (iter-79) confirmed end-to-end: login as admin, toggle visible below OTP toggle, click toggles `localStorage.carryon_offline_v1`, gold styling on ON, mobile variant works, non-admin visibility gating inherited from OtpToggle.
+- Backend regression: 45 pass / 2 env-skip / 0 fail across `test_chunked_upload*.py`.
+- Housekeeping: 65+ PASS, 0 WARN, 0 FAIL.
+
+### Single source of truth
+Everything reads `localStorage.carryon_offline_v1`. Toggling from the new sidebar switch, the mobile nav switch, or the legacy `/debug/offline` page all write to the same key. There is one switch.

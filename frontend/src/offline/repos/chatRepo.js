@@ -77,7 +77,19 @@ export async function upsertLocalContacts(list) {
   try {
     const db = getDB();
     const now = Date.now();
-    const rows = list.map((c) => ({ ...c, _updatedAt: now }));
+    // `/api/estate-chat/contacts` returns one row per estate keyed by
+    // `estate_id` — with no `id` field of its own. Dexie's `chatContact`
+    // store uses `id` as the primary key, so we normalize by lifting
+    // `estate_id` into `id`. Rows that already carry an `id` (future
+    // per-contact shape) pass through unchanged.
+    const rows = list
+      .map((c) => {
+        if (!c) return null;
+        if (c.id) return { ...c, _updatedAt: now };
+        if (c.estate_id) return { ...c, id: c.estate_id, _updatedAt: now };
+        return null;
+      })
+      .filter(Boolean);
     await db.transaction('rw', db.chatContact, async () => {
       await db.chatContact.clear();
       if (rows.length) await db.chatContact.bulkPut(rows);
