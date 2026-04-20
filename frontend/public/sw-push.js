@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'v3-2026-02-14';
+const SHELL_VERSION = 'v4-2026-04-20';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
@@ -23,13 +23,17 @@ const IMAGE_CACHE = `carryon-images-${SHELL_VERSION}`;
 
 // The "app shell" — static files the PWA needs to render the first frame
 // with chrome + branding. These all come from /public/ so their URLs are
-// stable across deploys.
+// stable across deploys. The login-page brand logo MUST be here — if it's
+// missing, a cold-start-while-offline user sees a broken-image box where
+// the CarryOn logo should be.
 const PRECACHE_URLS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/splash.jpg',
   '/carryon-icon.jpg',
+  '/carryon-logo.png',          // login + header brand mark
+  '/carryon-app-icon.jpg',      // iOS/Android home-screen icon
   '/icon-192.png',
   '/icon-512.png',
 ];

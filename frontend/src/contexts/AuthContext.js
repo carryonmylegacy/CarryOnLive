@@ -89,6 +89,52 @@ export const AuthProvider = ({ children }) => {
           ]);
 
           if (meRes.status !== 'fulfilled') {
+            // Network failed (or timed out). If the device is simply offline
+            // AND the stored JWT hasn't expired yet, trust the cached session
+            // and hydrate the user from whatever we have in IndexedDB or the
+            // JWT payload itself. The alternative — logging them out and
+            // bouncing to /login — is the exact 'force-quit-while-offline'
+            // regression the user flagged: returning users lose access to
+            // an app they were already signed into.
+            const isNetworkError = !meRes.reason?.response;
+            const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+            let jwtPayload = null;
+            try {
+              const [, body] = token.split('.');
+              jwtPayload = JSON.parse(atob(body.replace(/-/g, '+').replace(/_/g, '/')));
+            } catch { /* malformed token — fall through to logout */ }
+            const notExpired = jwtPayload?.exp && jwtPayload.exp * 1000 > Date.now();
+
+            if (isNetworkError && offline && notExpired) {
+              // Build a best-effort user snapshot from cached profile + JWT.
+              let cachedProfile = null;
+              try {
+                const { getLocalProfile } = await import('../offline/repos/profileRepo');
+                cachedProfile = await getLocalProfile();
+              } catch { /* offline cache not available — use JWT fields only */ }
+              setUser({
+                id: jwtPayload.user_id || jwtPayload.sub,
+                email: jwtPayload.email || cachedProfile?.email,
+                role: jwtPayload.role || cachedProfile?.role || 'benefactor',
+                name: cachedProfile?.name || cachedProfile?.first_name || '',
+                ...(cachedProfile || {}),
+                _offlineHydrated: true,
+              });
+              // Keep whatever subscription/features snapshot we have in cache.
+              try {
+                const { getLocalSubscription } = await import('../offline/repos/subscriptionRepo');
+                const localSub = await getLocalSubscription();
+                if (localSub) setSubscriptionStatus(localSub);
+              } catch {}
+              setLoading(false);
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new Event('carryon:app-ready'));
+              }
+              return; // skip the rest of the online-only warmup
+            }
+
+            // Online but server returned an error (401 etc.) OR expired JWT —
+            // treat as genuinely signed out.
             throw meRes.reason;
           }
           const userData = meRes.value.data;

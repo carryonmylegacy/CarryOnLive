@@ -208,6 +208,12 @@ const LoginPage = () => {
         const match = detail.match(/(\d+)\s*seconds/);
         const secs = match ? parseInt(match[1], 10) : 180;
         setLockoutSeconds(secs);
+      } else if (!error.response && typeof navigator !== 'undefined' && navigator.onLine === false) {
+        // Honest offline message — the server never saw the request,
+        // so we shouldn't blame the credentials. Passes through the
+        // toast wrapper's `force: true` so it surfaces despite the
+        // global "suppress network-error toasts while offline" filter.
+        toast.error("You're offline. Sign in requires a connection — reconnect and try again.", { force: true, duration: 6000 });
       } else {
         const detail = error.response?.data?.detail || 'Invalid credentials';
         if (detail.includes('Multiple accounts')) {
