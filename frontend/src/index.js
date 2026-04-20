@@ -101,6 +101,17 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:' && !IS_
 
 
 
+
+// ── Offline-first subsystem (Phase 0 foundation) ───────────────────────────
+// Gated entirely by the `carryon_offline_v1` flag. Default OFF → this block
+// is a no-op and the app behaves exactly as it did pre-offline. Flip the
+// flag to 'shadow' or 'on' to activate the sync client.
+try {
+  import('./offline/syncClient').then((m) => {
+    m.syncClient.init().catch(() => {});
+  }).catch(() => {});
+} catch {}
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>

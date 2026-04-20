@@ -42,6 +42,7 @@ const AcceptInvitationPage = lazy(() => import('./pages/AcceptInvitationPage'));
 const EditMilestoneMessagePage = lazy(() => import('./pages/EditMilestoneMessagePage'));
 const GuardianPage = lazy(() => import('./pages/GuardianPage'));
 const ChecklistPage = lazy(() => import('./pages/ChecklistPage'));
+const OfflineDebugPage = lazy(() => import('./pages/OfflineDebugPage'));
 const TrusteePage = lazy(() => import('./pages/TrusteePage'));
 const FFNPage = lazy(() => import('./pages/FFNPage'));
 const EstateChatPage = lazy(() => import('./pages/EstateChatPage'));
@@ -405,6 +406,7 @@ function AppRoutes() {
         <Route path="/founders-circle" element={<FoundersCirclePage />} />
         <Route path="/security-settings" element={<SecuritySettingsPage />} />
         <Route path="/support" element={<SupportChatPage />} />
+        <Route path="/debug/offline" element={<OfflineDebugPage />} />
       </Route>
 
       {/* Default Redirect */}

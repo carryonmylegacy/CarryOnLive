@@ -1,5 +1,32 @@
 # CarryOn — Changelog
 
+## Feb 14, 2026 — Offline-first: Phase 0 foundation (inert by default)
+
+First of 9 planned phases to make CarryOn fully functional offline. Phase 0 installs the scaffolding only — zero user-visible change, zero existing code modified. The entire subsystem is gated by a feature flag defaulted to `off`; flipping it to `shadow` or `on` activates increasingly aggressive offline behaviour in later phases.
+
+**New files:**
+- `frontend/package.json` — added `dexie@4.4.2` (20 KB promise-based IndexedDB wrapper).
+- `src/offline/featureFlag.js` — three-state flag (`off` / `shadow` / `on`) persisted in `localStorage.carryon_offline_v1`. Supports URL override via `?offline=on`.
+- `src/offline/db.js` — Dexie schema for every entity (user, estate, beneficiary, dashboardTile, readinessScore, chatChannel, chatContact, chatMessage, chatFile, shareCard, voicesQuote, vaultItem, notificationPref, outbox, syncMeta). Every row carries `_updatedAt` for sync comparison. Outbox uses auto-increment id so replay order is preserved.
+- `src/offline/syncClient.js` — singleton orchestrator skeleton. Gated on `isOfflineEnabled()`; when off, `init()` is a no-op. Watches `online`/`offline` events so Phase 2+ can replay the outbox. Provides `clearAll()` for logout and `snapshot()` for the debug console.
+- `src/pages/OfflineDebugPage.js` — admin-only developer console at `/debug/offline`. Lets us flip the flag, inspect table counts, and purge local data.
+
+**Wiring (minimal):**
+- `src/index.js` — lazy-imports `syncClient` after ReactDOM render and calls `init()`. Gated by the flag internally; no-op when off.
+- `src/App.js` — added lazy `OfflineDebugPage` + `/debug/offline` route. Admin-only via in-component `<Navigate />` guards.
+
+**Nothing else touched.** No existing page, context, or API call was modified. When the flag is `off` (default), the only observable difference vs pre-Phase-0 is that one extra tiny JS chunk loads on the admin debug route.
+
+**Regression test:** `tests/e2e/offline_phase0.spec.js` — three assertions:
+1. Flag off → `carryon-offline` IndexedDB is NOT created by normal navigation.
+2. Flag on → IndexedDB exists with schema version ≥1.
+3. `/debug/offline` renders the three flag buttons for admin.
+
+Verification: **14/14 Playwright tests green** (11 existing + 3 new Phase 0), housekeeping 65/65 PASS, ESLint clean. The "no regression guarantee" is now concretely enforced by CI.
+
+**Next: Phase 1 (Beneficiaries read-through)** — awaiting user green-light.
+
+
 ## Feb 14, 2026 — App Shell caching: offline-capable, instant home-screen launch
 
 User asked: *"Cache basic icons, tiles, and structure so the app works offline and loads faster."*
