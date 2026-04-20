@@ -56,8 +56,14 @@ const NetworkStatusBanner = () => {
     const root = document.documentElement;
     if (!visible) {
       root.style.setProperty('--cy-offline-banner-h', '0px');
+      // Restore the header's own safe-area padding when the banner is gone.
+      root.style.setProperty('--cy-header-safe-top', 'env(safe-area-inset-top, 0px)');
       return;
     }
+    // While the banner owns the top of the screen it already absorbs the
+    // iOS status bar inset — zero out the header's own safe-area padding
+    // so the two don't stack and leave a dead gap below the banner.
+    root.style.setProperty('--cy-header-safe-top', '0px');
     const measure = () => {
       const h = bannerRef.current?.offsetHeight || 0;
       root.style.setProperty('--cy-offline-banner-h', `${h}px`);
@@ -76,6 +82,7 @@ const NetworkStatusBanner = () => {
       clearTimeout(t);
       if (ro) ro.disconnect();
       root.style.setProperty('--cy-offline-banner-h', '0px');
+      root.style.setProperty('--cy-header-safe-top', 'env(safe-area-inset-top, 0px)');
     };
   }, [visible, expanded]);
 

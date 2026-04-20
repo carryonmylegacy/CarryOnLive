@@ -1142,10 +1142,12 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: none;
     padding-bottom: calc(56px + env(safe-area-inset-bottom, 8px));
-    /* 48px = mobile header bar height (h-12), plus safe-area for the notch/status bar.
-       When the offline banner is visible it publishes its height into
-       --cy-offline-banner-h so the content can shift down as the header does. */
-    padding-top: calc(48px + env(safe-area-inset-top, 0px) + var(--cy-offline-banner-h, 0px));
+    /* 48px = mobile header bar height (h-12). When the offline banner is
+       hidden, --cy-header-safe-top resolves to env(safe-area-inset-top)
+       and --cy-offline-banner-h is 0, giving the classic layout.
+       When the banner is shown it absorbs the status-bar inset itself,
+       so --cy-header-safe-top collapses to 0 to prevent double padding. */
+    padding-top: calc(48px + var(--cy-header-safe-top, env(safe-area-inset-top, 0px)) + var(--cy-offline-banner-h, 0px));
     transition: padding-top 180ms ease-out;
     touch-action: manipulation;
   }
@@ -1162,14 +1164,17 @@
 /* Mobile Header - Adapts to theme.
    Sits below the offline banner when one is shown. The banner publishes
    its height into --cy-offline-banner-h so the header can step out of
-   the way without occluding logo/hamburger. */
+   the way without occluding logo/hamburger. When the banner is showing,
+   it already owns the iOS status-bar safe area, so the header's own
+   padding-top (--cy-header-safe-top) collapses to 0 to prevent a
+   double-inset gap. */
 .mobile-header {
   background: var(--mobile-nav-bg);
   border-bottom: 1px solid var(--b);
   box-shadow: var(--header-shadow, 0 2px 12px -2px rgba(0,0,0,0.08));
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: var(--cy-header-safe-top, env(safe-area-inset-top, 0px));
   top: var(--cy-offline-banner-h, 0px);
-  transition: top 180ms ease-out;
+  transition: top 180ms ease-out, padding-top 180ms ease-out;
   touch-action: none;
   overscroll-behavior: none;
 }
