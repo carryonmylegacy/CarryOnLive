@@ -22,6 +22,13 @@
 
 import { getDB } from '../db';
 import { isOfflineEnabled } from '../featureFlag';
+import { sealRecord, unsealRecord } from '../crypto';
+
+// Indexed / queryable fields on the `chatMessage` store stay plaintext so
+// Dexie can still sort/filter them. Everything else (content, attachments,
+// reactions, sender_name) goes through the AES-GCM seal when encryption
+// is on.
+const MSG_PLAIN_FIELDS = ['id', 'channel_id', 'created_at', 'sender_id', 'message_type'];
 
 // ── Channels ────────────────────────────────────────────────────────────────
 
@@ -91,7 +98,14 @@ export async function getLocalMessages(channelId) {
       .where('channel_id')
       .equals(channelId)
       .sortBy('created_at');
-    return rows.map(({ _updatedAt, ...rest }) => rest);
+    const unsealed = [];
+    for (const row of rows) {
+      const open = await unsealRecord(row);
+      if (!open) continue; // encryption on but session key missing — hide the row
+      const { _updatedAt, ...rest } = open;
+      unsealed.push(rest);
+    }
+    return unsealed;
   } catch (err) {
     console.warn('[offline] getLocalMessages failed:', err);
     return [];
@@ -109,11 +123,11 @@ export async function upsertLocalMessages(channelId, list) {
   try {
     const db = getDB();
     const now = Date.now();
-    const rows = list.map((m) => ({
+    const sealedRows = await Promise.all(list.map((m) => sealRecord({
       ...m,
       channel_id: channelId,
       _updatedAt: now,
-    }));
+    }, MSG_PLAIN_FIELDS)));
     await db.transaction('rw', db.chatMessage, async () => {
       // Preserve queued-but-not-yet-sent messages for this channel.
       const pending = await db.chatMessage
@@ -121,7 +135,7 @@ export async function upsertLocalMessages(channelId, list) {
         .filter((m) => m._local_pending === true)
         .toArray();
       await db.chatMessage.where('channel_id').equals(channelId).delete();
-      if (rows.length) await db.chatMessage.bulkPut(rows);
+      if (sealedRows.length) await db.chatMessage.bulkPut(sealedRows);
       if (pending.length) await db.chatMessage.bulkPut(pending);
     });
     await db.syncMeta.put({
@@ -141,12 +155,13 @@ export async function upsertLocalMessages(channelId, list) {
 export async function insertLocalMessage(channelId, msg) {
   if (!isOfflineEnabled() || !channelId || !msg?.id) return;
   try {
-    await getDB().chatMessage.put({
+    const sealed = await sealRecord({
       ...msg,
       channel_id: channelId,
       _local_pending: true,
       _updatedAt: Date.now(),
-    });
+    }, MSG_PLAIN_FIELDS);
+    await getDB().chatMessage.put(sealed);
   } catch (err) {
     console.warn('[offline] insertLocalMessage failed:', err);
   }
@@ -161,14 +176,16 @@ export async function replaceLocalMessageId(tempId, serverMsg) {
   try {
     const db = getDB();
     await db.transaction('rw', db.chatMessage, async () => {
-      const existing = await db.chatMessage.get(tempId);
+      const existingRaw = await db.chatMessage.get(tempId);
+      const existing = existingRaw ? await unsealRecord(existingRaw) : null;
       const channelId = existing?.channel_id || serverMsg.channel_id;
       await db.chatMessage.delete(tempId);
-      await db.chatMessage.put({
+      const sealed = await sealRecord({
         ...serverMsg,
         channel_id: channelId || serverMsg.channel_id,
         _updatedAt: Date.now(),
-      });
+      }, MSG_PLAIN_FIELDS);
+      await db.chatMessage.put(sealed);
     });
   } catch (err) {
     console.warn('[offline] replaceLocalMessageId failed:', err);

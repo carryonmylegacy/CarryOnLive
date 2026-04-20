@@ -235,14 +235,111 @@ async def _finalize_by_kind(kind: str, metadata: dict, assembled_path: Path, rec
     if kind == "milestone_audio":
         return await _finalize_milestone_media(metadata, assembled_path, record, user, media="audio")
     if kind == "chat_media":
-        # Reserved kind — the chunked-chat-attachment flow is not yet wired
-        # on either the frontend or backend. Hard-fail so callers don't
-        # silently "succeed" against a phantom endpoint.
-        raise HTTPException(
-            status_code=501,
-            detail="chat_media chunked finalizer is not implemented yet. Use /api/estate-chat/* upload endpoints instead.",
-        )
+        return await _finalize_chat_media(metadata, assembled_path, record, user)
     raise HTTPException(status_code=400, detail=f"Unknown kind '{kind}'")
+
+
+async def _finalize_chat_media(metadata: dict, assembled_path: Path, record: dict, user: dict):
+    """Attach reassembled bytes to an estate-chat message.
+
+    Mirrors the essential pipeline from
+    `routes.estate_chat.media.upload_attachment` so an offline-captured
+    chat image/voice/file surfaces in the channel identically to an
+    online one on drain.
+
+    Metadata contract:
+      {
+        "channel_id":   str,           # required
+        "content_type": str | None,    # e.g. "image/jpeg"; falls back to record.mime_type
+        "filename":     str | None,    # display name
+      }
+    """
+    from config import db as _db  # re-bind for clarity inside this helper
+    from services.storage import storage
+    import asyncio as _asyncio
+    from utils import send_push_notification
+
+    channel_id = (metadata or {}).get("channel_id")
+    if not channel_id:
+        raise HTTPException(status_code=400, detail="chat_media finalizer requires channel_id")
+
+    channel = await _db.estate_channels.find_one({"id": channel_id}, {"_id": 0})
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+    if user["id"] not in channel.get("members", []):
+        raise HTTPException(status_code=403, detail="Not a member of this channel")
+
+    content_type = (metadata or {}).get("content_type") or record.get("mime_type") or "application/octet-stream"
+    filename = (metadata or {}).get("filename") or record.get("filename") or "attachment"
+    size = assembled_path.stat().st_size
+    file_id = str(uuid.uuid4())
+    estate_id = channel.get("estate_id", "unknown")
+    storage_key = f"chat/{estate_id}/{file_id}"
+
+    data = assembled_path.read_bytes()
+    try:
+        await storage.upload_raw(data, storage_key, content_type)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to store chat media: {exc}")
+
+    now = datetime.now(timezone.utc).isoformat()
+    is_image = content_type.startswith("image/")
+    is_audio = content_type.startswith("audio/") or content_type == "video/webm"
+    msg_type = "image" if is_image else ("voice" if is_audio else "file")
+
+    message = {
+        "id": str(uuid.uuid4()),
+        "channel_id": channel_id,
+        "estate_id": estate_id,
+        "sender_id": user["id"],
+        "sender_name": user.get("name", "Unknown"),
+        "content": filename,
+        "message_type": msg_type,
+        "attachment": {
+            "file_id": file_id,
+            "file_name": filename,
+            "file_type": content_type,
+            "file_size": size,
+            "storage_key": storage_key,
+        },
+        "reactions": [],
+        "created_at": now,
+    }
+    await _db.estate_messages.insert_one({k: v for k, v in message.items()})
+    await _db.estate_channel_reads.update_one(
+        {"channel_id": channel_id, "user_id": user["id"]},
+        {"$set": {"last_read_at": now}},
+        upsert=True,
+    )
+    await _db.estate_typing.delete_one({"channel_id": channel_id, "user_id": user["id"]})
+    await _db.estate_channel_dismissals.delete_many({"channel_id": channel_id})
+
+    # Fire push notifications to the rest of the channel. Best-effort.
+    other_members = [m for m in channel.get("members", []) if m != user["id"] and not m.startswith("ffn_")]
+    if other_members:
+        sender_name = user.get("name", "Unknown")
+        channel_name = channel.get("name", "Chat")
+        body = f"Sent a {msg_type}" if msg_type in ("image", "video") else "Sent a file"
+        for member_id in other_members:
+            _asyncio.create_task(
+                send_push_notification(
+                    user_id=member_id,
+                    title=f"{sender_name} in {channel_name}",
+                    body=body,
+                    url="/estate-chat",
+                    tag=f"ect-{channel_id}",
+                    notification_type="ect_message",
+                )
+            )
+
+    return {
+        "kind": "chat_media",
+        "message_id": message["id"],
+        "file_id": file_id,
+        "channel_id": channel_id,
+        "size_bytes": size,
+        "msg_type": msg_type,
+    }
 
 
 # ── Per-feature finalizers ─────────────────────────────────────────────────

@@ -892,7 +892,7 @@ async def update_estate(estate_id: str, data: EstateUpdate, current_user: dict =
     if not estate:
         raise HTTPException(status_code=404, detail="Estate not found")
 
-    if estate["owner_id"] != current_user["id"]:
+    if estate["owner_id"] != current_user["id"] and current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
 
     update_data = {}

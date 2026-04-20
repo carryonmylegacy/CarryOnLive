@@ -39,9 +39,19 @@ const FIXED_SALT = new TextEncoder().encode('carryon-offline-v1');
 
 let _cachedKey = null; // CryptoKey | null — in-memory only, never persisted.
 
+// One-switch design: encryption at rest is ON whenever the main offline
+// feature flag (`carryon_offline_v1`) is set to 'on'. The legacy
+// `carryon_offline_enc_v1` key is retained only for explicit override
+// during debug sessions — if a developer sets it to 'off' it wins, but
+// in normal operation flipping the main flag is all the user needs to do.
 export function isEncryptionEnabled() {
-  try { return localStorage.getItem(KEY_FLAG) === 'on'; }
-  catch { return false; }
+  try {
+    const override = localStorage.getItem(KEY_FLAG);
+    if (override === 'off') return false; // explicit opt-out (debug only)
+    if (override === 'on') return true;   // explicit opt-in (debug only)
+    // Default: follow the main offline flag.
+    return localStorage.getItem('carryon_offline_v1') === 'on';
+  } catch { return false; }
 }
 
 export function setEncryptionMode(mode) {
