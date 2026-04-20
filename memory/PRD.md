@@ -538,7 +538,7 @@ See `CHANGELOG.md` for full chronological history if this file exceeds 700 lines
 - ✅ Phase 7 — Encryption at rest (AES-256-GCM + PBKDF2, profile sealed) (Feb 20, 2026)
 - ✅ Phase 8 — Conflict resolution UI (Feb 20, 2026)
 - ✅ Phase 9 — Tier C honest UX + Tier A universal text creation + Tier B chunked resumable uploader backend (Feb 21, 2026 overnight)
-- 🟡 Phase 9a — Wire chunked uploader into DAV document upload + milestone recorder (infrastructure ready, cutover deferred)
+- ✅ Phase 9a — Chunked uploader wired into DAV document upload + milestone recorder; backend per-kind finalizers now create real Document and Message rows (AES-256-GCM, same pipeline as the online path). Tier A extended to CCP plan create/edit/delete and Estate rename. 20/20 backend regression passing across `test_chunked_upload.py` + `test_chunked_upload_phase9a.py`. (Feb 21, 2026 morning)
 
 **Testing**: Per-phase Playwright spec at `tests/e2e/offline_phase{N}.spec.js`. Manual shadow-mode verification in `CHANGELOG.md`.
 

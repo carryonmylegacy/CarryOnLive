@@ -592,3 +592,35 @@ Verification: `yarn playwright test tests/e2e/scrollbar.spec.js tests/e2e/smoke.
 
 ### Verified
 - 18/18 tests passed (100%) — 0 regressions
+
+---
+
+## Feb 21, 2026 (morning) — Phase 9a: Chunked Upload Finalizer + Tier A Expansion
+
+### Shipped
+- **Backend: real per-kind finalizers** in `routes/uploads_chunked.py` replacing the Phase 9 placeholders.
+  - `kind=document` now creates a real `Document` row (AES-256-GCM encrypted blob → `storage.upload`, audit_log, log_activity, readiness bump) — same pipeline as `/api/documents/upload`.
+  - `kind=milestone_video` / `kind=milestone_audio` support TWO modes:
+    1. `metadata.message_id` — append encrypted blob to an existing Message (sets `video_url` or `voice_url`).
+    2. `metadata.message_create` — create a Message + attach the blob atomically (offline create-and-attach path).
+  - All auth/ownership checks mirror the legacy routes (benefactor role + estate owner OR admin).
+- **Frontend: chunked uploader wired into real flows**
+  - `pages/VaultPage.js handleUpload` — when offline+flag-on, calls `addPendingUpload({kind: 'document', ...})` with full metadata + optimistically inserts a `_local_pending` document card.
+  - `pages/MessagesPage.js handleCreate` — when offline+flag-on with a recorded video or voice, queues via `addPendingUpload({kind: 'milestone_video'|'milestone_audio', ...})` passing the full `message_create` payload. Online path unchanged.
+- **Tier A extension (offline mutation helper) to new surfaces**
+  - `pages/ConnectedProtocolPage.js` — `savePlan` (POST/PUT) + `deletePlan` (DELETE) now route through `mutateWithOutbox` with `entity_type='ccp_plan'`. Offline saves show "Plan saved/queued — will sync when you reconnect" and optimistically update the plans list.
+  - `components/settings/EstatePhotoCard.js` — estate-name PATCH routes through `mutateWithOutbox` with `entity_type='estate'`. Offline rename shows queued toast and updates cached `/estates` response.
+- **Testing**
+  - Expanded `test_chunked_upload.py` 7 → 9 tests (new: `test_document_finalizer_requires_metadata`, `test_milestone_finalizer_requires_message_reference`).
+  - Testing subagent added `test_chunked_upload_phase9a.py` (11 new tests): auth gating on all 4 endpoints, document persistence via GET /api/documents/{estate_id}, milestone audio create-new-message, video/audio append-to-existing-message, and sibling-endpoint regression coverage (/api/documents/upload multipart, /api/messages POST, /api/ccp/plans POST).
+  - **Full suite: 20/20 passing.**
+- **Housekeeping**: `bash /app/housekeeping.sh` — 65+ PASS, 0 WARN, 0 FAIL. `ruff check` clean, ESLint clean, frontend build succeeded.
+
+### Safety
+- All new frontend behavior is gated behind `localStorage.carryon_offline_v1 === 'on'` (default OFF). Live users see zero change.
+- Backend finalizer writes production artifacts under the same auth + encryption guarantees as the legacy single-POST paths.
+
+### Deferred (flagged in review)
+- `routes/uploads_chunked.py` is 484 lines — consider splitting `_finalize_document` / `_finalize_milestone_media` into `services/uploads/finalizers.py` in a future pass.
+- `_finalize_document` reads the full reassembled blob into memory via `assembled_path.read_bytes()` — fine for the 25 MB document cap; streaming would be needed if we ever raise to the 350 MB milestone cap on docs.
+- Cross-user 403 finalize test deferred until a seeded beneficiary account exists.
