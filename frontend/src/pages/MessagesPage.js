@@ -201,7 +201,13 @@ const MessagesPage = () => {
       }
     } catch (error) {
       console.error('Fetch error:', error);
-      toast.error('Failed to load messages');
+      // The global offline banner already communicates "You're offline" —
+      // a duplicate "Failed to load messages" toast is just noise and makes
+      // the user think something is actually broken. Only surface the toast
+      // for real server-side failures while online.
+      if (typeof navigator === 'undefined' || navigator.onLine !== false) {
+        toast.error('Failed to load messages');
+      }
     } finally {
       setLoading(false);
     }

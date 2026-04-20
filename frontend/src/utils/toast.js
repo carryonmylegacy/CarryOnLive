@@ -24,8 +24,35 @@ const normalize = (message, options = {}) => {
   return [combined, forwarded];
 };
 
+/**
+ * When the device is offline the global red "You're offline" banner already
+ * communicates the root cause. Individual pages' "Failed to load X" toasts
+ * become noise that makes the user think something is actually broken.
+ *
+ * This filter silently drops `toast.error` calls whose message matches a
+ * generic load/fetch/network failure pattern WHILE we're offline. Real
+ * action-failure toasts (e.g. "Please enter a recipient", "Invalid file
+ * size", server 500s while online) still render.
+ *
+ * Callers can opt out with `{ force: true }` if they absolutely need the
+ * toast to surface even when offline.
+ */
+const NETWORK_ERROR_RE = /^(failed to (load|fetch|connect|get|retrieve|refresh)|network error|load failed|unable to (load|connect|reach)|couldn'?t (load|reach|connect))/i;
+
+const isOffline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
+
+const shouldSuppressError = (message, options) => {
+  if (options && options.force) return false;
+  if (!isOffline()) return false;
+  const text = typeof message === 'string' ? message : String(message || '');
+  return NETWORK_ERROR_RE.test(text.trim());
+};
+
 export const toast = {
-  error: (message, options) => notify.error(...normalize(message, options)),
+  error: (message, options) => {
+    if (shouldSuppressError(message, options)) return;
+    notify.error(...normalize(message, options));
+  },
   success: (message, options) => notify.success(...normalize(message, options)),
   info: (message, options) => notify.info(...normalize(message, options)),
   warning: (message, options) => notify.warning(...normalize(message, options)),
