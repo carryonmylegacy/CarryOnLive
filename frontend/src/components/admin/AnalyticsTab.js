@@ -240,7 +240,13 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
               <h3 className="font-bold text-[var(--t)] text-sm">Weekly Analytics Digest Preview</h3>
               <button onClick={() => setDigestPreview(null)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform"><X className="w-4 h-4" /></button>
             </div>
-            <div className="p-4" dangerouslySetInnerHTML={{ __html: digestPreview }} />
+            <iframe
+              title="Weekly Analytics Digest Preview"
+              srcDoc={digestPreview}
+              sandbox=""
+              className="w-full"
+              style={{ height: '70vh', border: 0, background: '#fff' }}
+            />
           </div>
         </div>
       )}

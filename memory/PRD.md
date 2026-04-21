@@ -79,6 +79,12 @@ Comprehensive family preparedness platform with estate planning, secure document
 
 ## Pre-Launch Hardening (Apr 19, 2026)
 
+### XSS Hardening (Feb 21, 2026 session)
+- Eliminated final 3 `dangerouslySetInnerHTML` sites in the app.
+- `FamilyTree.js` blue + gold strand SVGs rewritten as JSX (`<defs>`/`<linearGradient>`/`<path>`/`<circle>`). No visual change.
+- `AnalyticsTab.js` digest preview now rendered inside `<iframe srcDoc={html} sandbox="" />` so any backend-sourced template HTML cannot touch the admin app session.
+- Unblocks stricter future CSP.
+
 ### Codebase Audit Scorecard
 - Stability: 7.0/10 — strong backend, no frontend tests until this session
 - Security: 8.5/10 — CSP/HSTS/CORS already tight; JWT rotation procedure documented for launch

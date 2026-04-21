@@ -192,7 +192,8 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               viewBox={`0 0 ${vbW} ${vbH}`}
               preserveAspectRatio="none"
               style={{ top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, willChange: 'transform', transform: 'translateZ(0)' }}
-              dangerouslySetInnerHTML={{ __html: (() => {
+            >
+              {(() => {
                 const gradColor1 = isLight ? '#3B82F6' : '#60A5FA';
                 const gradColor2 = isLight ? '#2563EB' : '#93C5FD';
                 const gradOp1 = isLight ? 0.18 : 0.12;
@@ -201,17 +202,6 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                 const sw = isLight ? 0.6 : 0.5;
                 const lightColor = isLight ? 'rgba(100,160,255,0.3)' : 'rgba(160,200,255,0.25)';
                 const overlayW = isLight ? 0.8 : 0.7;
-                let svgContent = `
-                  <defs>
-                    <linearGradient id="lineFlow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="${gradColor1}" stop-opacity="${gradOp1}" />
-                      <stop offset="100%" stop-color="${gradColor2}" stop-opacity="${gradOp2}" />
-                    </linearGradient>
-                    <filter id="lineGlow" x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur stdDeviation="${blurDev}" result="blur" />
-                      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                    </filter>
-                  </defs>`;
                 // All paths flow from estate circles down to convergence point near Pete
                 // Odd estate goes to LEFT column (no centering) — asymmetric layout
                 const allPaths = [];
@@ -226,16 +216,29 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const cp2y = rowCenterY + 0.5 * (97 - rowCenterY);
                   allPaths.push(`M ${sx.toFixed(1)},${rowCenterY.toFixed(1)} C ${cp1x.toFixed(1)},${rowCenterY.toFixed(1)} ${cx.toFixed(1)},${cp2y.toFixed(1)} ${cx.toFixed(1)},97`);
                 }
-                allPaths.forEach(d => {
-                  svgContent += `<path d="${d}" fill="none" stroke="url(#lineFlow)" stroke-width="${sw}" filter="url(#lineGlow)" />`;
-                });
-                allPaths.forEach(d => {
-                  svgContent += `<path class="fill-path-blue" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" />`;
-                });
-                svgContent += `<circle class="flash-blue" cx="${cx}" cy="96" r="4" fill="${lightColor}" opacity="0" />`;
-                return svgContent;
-              })() }}
-            />
+                return (
+                  <>
+                    <defs>
+                      <linearGradient id="lineFlow" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={gradColor1} stopOpacity={gradOp1} />
+                        <stop offset="100%" stopColor={gradColor2} stopOpacity={gradOp2} />
+                      </linearGradient>
+                      <filter id="lineGlow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation={blurDev} result="blur" />
+                        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                      </filter>
+                    </defs>
+                    {allPaths.map((d, i) => (
+                      <path key={`bp-${i}`} d={d} fill="none" stroke="url(#lineFlow)" strokeWidth={sw} filter="url(#lineGlow)" />
+                    ))}
+                    {allPaths.map((d, i) => (
+                      <path key={`bf-${i}`} className="fill-path-blue" d={d} fill="none" stroke={lightColor} strokeWidth={overlayW} pathLength="1" strokeDasharray="1" strokeDashoffset="1" />
+                    ))}
+                    <circle className="flash-blue" cx={cx} cy={96} r={4} fill={lightColor} opacity={0} />
+                  </>
+                );
+              })()}
+            </svg>
 
             {/* No centered estate connector needed — odd estates go to left column */}
 
@@ -315,14 +318,15 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               viewBox={`0 0 ${vbW} ${vbH}`}
               preserveAspectRatio="none"
               style={{ top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, willChange: 'transform', transform: 'translateZ(0)' }}
-              dangerouslySetInnerHTML={{ __html: (() => {
+            >
+              {(() => {
                 const blurDev = isLight ? 1.5 : 2;
                 const sw = isLight ? 0.6 : 0.5;
                 const lightColor = isLight ? 'rgba(200,170,50,0.3)' : 'rgba(255,230,140,0.25)';
                 const overlayW = isLight ? 0.8 : 0.7;
                 // All paths fan from ONE point (cx,2) downward — original pattern
                 const allPaths = [];
-                let centeredPath = null;
+                const endpoints = [];
                 for (let idx = 0; idx < n; idx++) {
                   const rIdx = Math.floor(idx / 2);
                   const isLeft = idx % 2 === 0;
@@ -337,55 +341,42 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                     const containerH = trailPx + numBenRows * estRowH + Math.max(0, numBenRows - 1) * 12;
                     const circleTopPx = trailPx + fullRows * (estRowH + 12);
                     const circleTopVB = (circleTopPx / containerH) * vbH;
-                    centeredPath = `M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${circleTopVB.toFixed(1)}`;
-                    allPaths.push(centeredPath);
+                    allPaths.push(`M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${circleTopVB.toFixed(1)}`);
+                    endpoints.push({ x: cx, y: circleTopVB });
                   } else {
                     const ex = nodeX + dir * circleR;
                     const cp1y = 2 + 0.5 * (rowCenterY - 2);
                     const cp2x = ex + 0.6 * (cx - ex);
                     allPaths.push(`M ${cx.toFixed(1)},2 C ${cx.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${rowCenterY.toFixed(1)} ${ex.toFixed(1)},${rowCenterY.toFixed(1)}`);
+                    endpoints.push({ x: ex, y: rowCenterY });
                   }
                 }
-                let svg = `
-                  <defs>
-                    <linearGradient id="ftGoldGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="${goldStart}" stop-opacity="${isLight ? 0.18 : 0.12}" />
-                      <stop offset="100%" stop-color="${goldEnd}" stop-opacity="${isLight ? 0.06 : 0.03}" />
-                    </linearGradient>
-                    <filter id="ftGoldGlow" x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur stdDeviation="${blurDev}" result="blur" />
-                      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                    </filter>
-                  </defs>`;
-                allPaths.forEach(d => {
-                  svg += `<path d="${d}" fill="none" stroke="url(#ftGoldGrad)" stroke-width="${sw}" filter="url(#ftGoldGlow)" />`;
-                });
-                svg += `<circle class="flash-gold-origin" cx="${cx}" cy="2" r="4" fill="${lightColor}" opacity="0" />`;
-                allPaths.forEach(d => {
-                  svg += `<path class="fill-path-gold" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" />`;
-                });
-                for (let fi = 0; fi < n; fi++) {
-                  const fiR = Math.floor(fi / 2);
-                  const fiLeft = fi % 2 === 0;
-                  const fiCen = (n % 2 !== 0 && fi === n - 1);
-                  const fiNx = fiCen ? cx : (fiLeft ? leftCol : rightCol);
-                  const fiDir = fiCen ? 0 : (fiLeft ? 1 : -1);
-                  const fiX = fiNx + fiDir * circleR;
-                  let fiY;
-                  if (fiCen) {
-                    // Match the accurate centered path endpoint
-                    const fullRows = Math.floor(fi / 2);
-                    const containerH = trailPx + numBenRows * estRowH + Math.max(0, numBenRows - 1) * 12;
-                    const circleTopPx = trailPx + fullRows * (estRowH + 12);
-                    fiY = (circleTopPx / containerH) * vbH;
-                  } else {
-                    fiY = topTrail + (fiR + 0.3) * rowH;
-                  }
-                  svg += `<circle class="flash-gold-end" cx="${fiX.toFixed(1)}" cy="${fiY.toFixed(1)}" r="3" fill="${lightColor}" opacity="0" />`;
-                }
-                return svg;
-              })() }}
-            />
+                return (
+                  <>
+                    <defs>
+                      <linearGradient id="ftGoldGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={goldStart} stopOpacity={isLight ? 0.18 : 0.12} />
+                        <stop offset="100%" stopColor={goldEnd} stopOpacity={isLight ? 0.06 : 0.03} />
+                      </linearGradient>
+                      <filter id="ftGoldGlow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation={blurDev} result="blur" />
+                        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                      </filter>
+                    </defs>
+                    {allPaths.map((d, i) => (
+                      <path key={`gp-${i}`} d={d} fill="none" stroke="url(#ftGoldGrad)" strokeWidth={sw} filter="url(#ftGoldGlow)" />
+                    ))}
+                    <circle className="flash-gold-origin" cx={cx} cy={2} r={4} fill={lightColor} opacity={0} />
+                    {allPaths.map((d, i) => (
+                      <path key={`gf-${i}`} className="fill-path-gold" d={d} fill="none" stroke={lightColor} strokeWidth={overlayW} pathLength="1" strokeDasharray="1" strokeDashoffset="1" />
+                    ))}
+                    {endpoints.map((p, i) => (
+                      <circle key={`ge-${i}`} className="flash-gold-end" cx={Number(p.x.toFixed(1))} cy={Number(p.y.toFixed(1))} r={3} fill={lightColor} opacity={0} />
+                    ))}
+                  </>
+                );
+              })()}
+            </svg>
 
             {/* Beneficiary grid — two columns with wide center gap */}
             <div className="grid px-1" style={{ gridTemplateColumns: 'repeat(2, 1fr)', columnGap: '20%', rowGap: 12, justifyItems: 'center', paddingTop: trailPx, position: 'relative', zIndex: 1 }}>

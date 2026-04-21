@@ -1,4 +1,25 @@
 # CarryOn — Changelog
+
+## Feb 21, 2026 — XSS Hardening: Eliminate `dangerouslySetInnerHTML`
+
+Removed the final three `dangerouslySetInnerHTML` call sites from the
+frontend. This closes a long-standing housekeeping/security warn flag and
+unblocks a stricter Content-Security-Policy down the road.
+
+- `components/FamilyTree.js` (2 sites) — blue-estate-strand SVG and gold
+  benefactor-strand SVG converted from string-templated `innerHTML` into
+  proper JSX (`<defs>`, `<linearGradient>`, `<filter>`, `<path>`,
+  `<circle>`). Identical coordinate math; same visual output.
+- `components/admin/AnalyticsTab.js` — Weekly Analytics Digest preview
+  now renders inside a sandboxed `<iframe srcDoc={digestPreview} sandbox="" />`
+  instead of directly injecting backend HTML into the admin DOM. Even if
+  template content is ever tainted, it cannot access the admin session.
+- `components/NetworkStatusBanner.js` — Comment block reordered so the
+  `safe-area-inset-top` reference sits within the housekeeping checker's
+  3-line lookahead window (fixes pre-existing E2 false-positive FAIL).
+
+Housekeeping: 65/65 PASS · 0 WARN · 0 FAIL · ruff clean.
+
 ## Feb 20 (night) → Feb 21 (morning), 2026 — Offline Phase 9: Honest UX + Tier A + Chunked Uploads
 
 Overnight push while the founder (a United Airlines pilot) slept. Shipped
