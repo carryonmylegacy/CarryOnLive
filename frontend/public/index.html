@@ -84,20 +84,49 @@
         <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded">Skip to main content</a>
         <div id="root"></div>
         <!-- CarryOn boot splash — SIBLING of #root so React mounting
-             doesn't clobber it. Uses THE SAME artwork as the native iOS
-             LaunchScreen.storyboard (splash-2732x2732.png downscaled to
-             splash.jpg, 29KB) so the web cold-boot and the native
-             cold-boot are pixel-for-pixel identical. Inline script
+             doesn't clobber it. Pure CSS, zero network dependencies so
+             it always renders crisply (no broken-image boxes on cold-boot
+             offline, no tile-scaling artifacts from splash.jpg, no
+             mystery 'CarrvOn' misrender from the artwork). Inline script
              below fades it out on `carryon:app-ready`. -->
         <div id="carryon-boot-splash" role="status" aria-label="Loading CarryOn"
-             style="position:fixed;inset:0;background:#0F1629;z-index:2147483000;display:flex;align-items:center;justify-content:center;transition:opacity 0.35s ease-out,visibility 0s linear 0.35s;">
-            <img src="%PUBLIC_URL%/splash.jpg" alt=""
-                 style="max-width:82%;max-height:82%;object-fit:contain;" />
+             style="position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity 0.4s ease-out,visibility 0s linear 0.4s;background:radial-gradient(ellipse at center, #142243 0%, #0B1226 58%, #070D1B 100%);color:#ECE4D0;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+            <div aria-hidden="true" style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+                <!-- Infinity mark in CarryOn gold. SVG, 72px, stroke-animated. -->
+                <svg width="88" height="56" viewBox="0 0 88 56" fill="none" xmlns="http://www.w3.org/2000/svg"
+                     style="filter:drop-shadow(0 4px 18px rgba(212,175,55,0.35));">
+                    <path d="M22 28 C22 14, 40 14, 44 28 C48 42, 66 42, 66 28 C66 14, 48 14, 44 28 C40 42, 22 42, 22 28 Z"
+                          stroke="#d4af37" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"
+                          stroke-dasharray="260" stroke-dashoffset="260"
+                          style="animation:carryon-draw 1.6s cubic-bezier(0.65,0.05,0.36,1) forwards infinite;" />
+                </svg>
+                <div style="font-size:28px;font-weight:700;letter-spacing:0.02em;color:#F4E7C1;">
+                    Carry<span style="color:#d4af37;">On</span><sup style="font-size:12px;opacity:0.55;margin-left:2px;">™</sup>
+                </div>
+                <div style="font-size:12px;opacity:0.55;letter-spacing:0.25em;text-transform:uppercase;margin-top:2px;">
+                    Loading your legacy
+                </div>
+            </div>
             <div aria-hidden="true"
-                 style="position:absolute;bottom:14vh;width:28px;height:28px;border-radius:50%;border:2px solid rgba(212,175,55,0.14);border-top-color:#d4af37;animation:carryon-spin 0.85s linear infinite;"></div>
+                 style="width:24px;height:24px;border-radius:50%;border:2px solid rgba(212,175,55,0.14);border-top-color:#d4af37;animation:carryon-spin 0.85s linear infinite;margin-top:4px;"></div>
             <style>
                 @keyframes carryon-spin { to { transform: rotate(360deg); } }
+                @keyframes carryon-draw {
+                    0%   { stroke-dashoffset: 260; opacity: 0.2; }
+                    40%  { opacity: 1; }
+                    70%  { stroke-dashoffset: 0;   opacity: 1; }
+                    100% { stroke-dashoffset: 0;   opacity: 0.85; }
+                }
                 #carryon-boot-splash.carryon-splash-hide { opacity: 0; visibility: hidden; pointer-events: none; }
+                @media (prefers-color-scheme: light) {
+                    #carryon-boot-splash {
+                        background: radial-gradient(ellipse at center, #F7F3E8 0%, #EFE8D1 60%, #E2D9B8 100%) !important;
+                        color: #2A2013 !important;
+                    }
+                    #carryon-boot-splash svg path { stroke: #8c6a1a !important; }
+                    #carryon-boot-splash div[style*="F4E7C1"] { color: #2A2013 !important; }
+                    #carryon-boot-splash div[style*="F4E7C1"] span { color: #8c6a1a !important; }
+                }
             </style>
         </div>
         <script>
@@ -106,7 +135,7 @@
                 if (!splash) return;
                 var remove = function () {
                     splash.classList.add('carryon-splash-hide');
-                    setTimeout(function () { splash && splash.parentNode && splash.parentNode.removeChild(splash); }, 420);
+                    setTimeout(function () { splash && splash.parentNode && splash.parentNode.removeChild(splash); }, 460);
                 };
                 window.addEventListener('carryon:app-ready', remove, { once: true });
                 // Safety net — if for any reason the app-ready event is never

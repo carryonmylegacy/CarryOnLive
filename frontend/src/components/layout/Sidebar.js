@@ -50,19 +50,41 @@ const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
 const OtpToggle = ({ collapsed }) => {
   const [otpDisabled, setOtpDisabled] = useState(false);
+  const [busy, setBusy] = useState(false);
   useEffect(() => {
     const token = localStorage.getItem('carryon_token');
     if (token) {
       axios.get(`${API_URL}/admin/platform-settings`, { headers: { Authorization: `Bearer ${token}` } })
-        .then(res => setOtpDisabled(res.data?.otp_disabled || false))
-        .catch(() => {});
+        .then(res => setOtpDisabled(!!res.data?.otp_disabled))
+        .catch((err) => {
+          if (err?.response?.status && err.response.status !== 401) {
+            try { toast.error("Couldn't read OTP state — tap to retry."); } catch {}
+          }
+        });
     }
   }, []);
   const toggle = async () => {
+    if (busy) return;
     const newVal = !otpDisabled;
     setOtpDisabled(newVal);
+    setBusy(true);
     const token = localStorage.getItem('carryon_token');
-    axios.put(`${API_URL}/admin/platform-settings`, { otp_disabled: newVal }, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }).catch(() => setOtpDisabled(!newVal));
+    try {
+      const res = await axios.put(
+        `${API_URL}/admin/platform-settings`,
+        { otp_disabled: newVal },
+        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } },
+      );
+      const authoritative = !!res.data?.otp_disabled;
+      setOtpDisabled(authoritative);
+      try { toast.success(authoritative ? 'OTP disabled platform-wide' : 'OTP enabled platform-wide'); } catch {}
+    } catch (err) {
+      setOtpDisabled(!newVal);
+      const detail = err?.response?.data?.detail || err?.message || 'request failed';
+      try { toast.error(`Could not update OTP setting — ${detail}`); } catch {}
+    } finally {
+      setBusy(false);
+    }
   };
   if (collapsed) {
     return (
