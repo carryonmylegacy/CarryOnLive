@@ -110,41 +110,52 @@
         <div id="root"></div>
         <!-- CarryOn boot splash — mirrors the PWA homepage hero so the
              cold-boot transition is visually continuous with what the
-             user sees on carryon.us. American-flag hero photo behind
-             the brand logo, logo floating slightly above the surface
-             with a soft drop-shadow + tiny parallax rise to feel
-             three-dimensional. Gold spinner at the base mirrors the
-             homepage "Get Started" CTA palette.
+             user sees on carryon.us. Two modes:
+
+               • Browser / website: draws its OWN flag-hero background +
+                 floating CarryOn logo + caption + spinner. Full scene.
+
+               • Installed PWA (iOS Home-Screen, Android "Install app"):
+                 iOS/Android have ALREADY drawn the flag-hero composite
+                 via `apple-touch-startup-image` / manifest
+                 `background_color`. Drawing another flag + logo here
+                 would stack two logos on top of each other (exactly
+                 what the user reported). So in standalone mode this
+                 splash becomes a TRANSPARENT overlay that only adds
+                 the spinner + caption at the bottom — no background,
+                 no logo, no gradients. The native launch image shows
+                 through cleanly and the two scenes read as one.
 
              Still a SIBLING of #root so React mounting doesn't clobber
-             it, and precached in the SW so it renders on cold-boot-offline.
-             Inline script at the bottom fades it on `carryon:app-ready`. -->
+             it. Inline script at the bottom fades it on `carryon:app-ready`. -->
         <div id="carryon-boot-splash" role="status" aria-label="Loading CarryOn"
+             data-mode="browser"
              style="position:fixed;inset:0;z-index:2147483000;overflow:hidden;background:#0B1221;color:#F4E7C1;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;transition:opacity 0.45s ease-out,visibility 0s linear 0.45s;">
-            <!-- Hero flag background, brightened + saturated to match /home -->
-            <img src="%PUBLIC_URL%/flag-bg.jpg" alt="" aria-hidden="true"
-                 style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.85;filter:brightness(1.3) contrast(1.05) saturate(1.1);" />
-            <!-- Atmospheric overlays (identical to /home hero) -->
-            <div aria-hidden="true" style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(11,18,33,0.0) 0%, rgba(11,18,33,0.05) 50%, rgba(14,24,41,0.35) 100%);"></div>
-            <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(ellipse 90% 80% at 20% 80%, rgba(255,255,255,0.12) 0%, transparent 60%);"></div>
-            <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 10% 50%, rgba(255,255,255,0.08) 0%, transparent 50%);"></div>
-            <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 70% at 85% 85%, rgba(255,255,255,0.14) 0%, transparent 55%);"></div>
-            <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 35% 50%, rgba(212,175,55,0.06) 0%, transparent 70%);"></div>
-
-            <!-- Centered content column: logo + caption + spinner -->
-            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:24px;text-align:center;">
-                <!-- Logo — floats in with a subtle scale + rise so it feels
-                     3D against the flag. Crisp drop-shadow anchors it. -->
-                <img src="%PUBLIC_URL%/carryon-logo.png" alt="CarryOn"
-                     style="width:min(62vw,280px);height:auto;display:block;filter:drop-shadow(0 12px 28px rgba(0,0,0,0.55)) drop-shadow(0 4px 12px rgba(212,175,55,0.18));animation:carryon-float-in 0.9s cubic-bezier(0.22,1,0.36,1) both, carryon-float 4.5s ease-in-out 0.9s infinite alternate;" />
-                <div style="font-size:12px;letter-spacing:0.3em;text-transform:uppercase;color:rgba(244,231,193,0.72);text-shadow:0 1px 6px rgba(0,0,0,0.6);">
+            <!-- Browser-only scene: flag hero background + logo. Hidden
+                 in standalone PWA mode via CSS below. -->
+            <div class="carryon-splash-scene" aria-hidden="true">
+                <img src="%PUBLIC_URL%/flag-bg.jpg" alt="" aria-hidden="true"
+                     style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.85;filter:brightness(1.3) contrast(1.05) saturate(1.1);" />
+                <div aria-hidden="true" style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(11,18,33,0.0) 0%, rgba(11,18,33,0.05) 50%, rgba(14,24,41,0.35) 100%);"></div>
+                <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(ellipse 90% 80% at 20% 80%, rgba(255,255,255,0.12) 0%, transparent 60%);"></div>
+                <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 10% 50%, rgba(255,255,255,0.08) 0%, transparent 50%);"></div>
+                <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 70% at 85% 85%, rgba(255,255,255,0.14) 0%, transparent 55%);"></div>
+                <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 35% 50%, rgba(212,175,55,0.06) 0%, transparent 70%);"></div>
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
+                    <img src="%PUBLIC_URL%/carryon-logo.png" alt="CarryOn"
+                         style="width:min(62vw,280px);height:auto;display:block;filter:drop-shadow(0 12px 28px rgba(0,0,0,0.55)) drop-shadow(0 4px 12px rgba(212,175,55,0.18));animation:carryon-float-in 0.9s cubic-bezier(0.22,1,0.36,1) both, carryon-float 4.5s ease-in-out 0.9s infinite alternate;" />
+                </div>
+            </div>
+            <!-- Caption + spinner: visible in BOTH modes, positioned near
+                 the bottom of the screen so it doesn't crowd the logo. -->
+            <div class="carryon-splash-foot"
+                 style="position:absolute;left:0;right:0;bottom:max(14vh, calc(env(safe-area-inset-bottom, 0px) + 80px));display:flex;flex-direction:column;align-items:center;gap:14px;pointer-events:none;">
+                <div style="font-size:12px;letter-spacing:0.3em;text-transform:uppercase;color:rgba(244,231,193,0.85);text-shadow:0 1px 6px rgba(0,0,0,0.6);">
                     Loading your legacy
                 </div>
-                <!-- Gold spinner — same gold as homepage Get Started CTA -->
                 <div aria-hidden="true"
-                     style="width:26px;height:26px;border-radius:50%;border:2px solid rgba(212,175,55,0.18);border-top-color:#d4af37;animation:carryon-spin 0.9s linear infinite;margin-top:2px;"></div>
+                     style="width:26px;height:26px;border-radius:50%;border:2px solid rgba(212,175,55,0.18);border-top-color:#d4af37;animation:carryon-spin 0.9s linear infinite;"></div>
             </div>
-
             <style>
                 @keyframes carryon-spin { to { transform: rotate(360deg); } }
                 @keyframes carryon-float-in {
@@ -152,13 +163,15 @@
                     60%  { opacity: 1; }
                     100% { transform: translateY(0) scale(1); opacity: 1; filter: drop-shadow(0 12px 28px rgba(0,0,0,0.55)) drop-shadow(0 4px 12px rgba(212,175,55,0.18)); }
                 }
-                /* Gentle idle float so the logo reads as "floating in front
-                   of" the flag instead of flatly pinned to it. */
                 @keyframes carryon-float {
                     0%   { transform: translateY(0); }
                     100% { transform: translateY(-6px); }
                 }
                 #carryon-boot-splash.carryon-splash-hide { opacity: 0; visibility: hidden; pointer-events: none; }
+                /* PWA standalone mode: let iOS/Android's native launch image
+                   show through. We only add the spinner + caption on top. */
+                #carryon-boot-splash[data-mode="pwa"] { background: transparent !important; }
+                #carryon-boot-splash[data-mode="pwa"] .carryon-splash-scene { display: none !important; }
                 @media (prefers-reduced-motion: reduce) {
                     #carryon-boot-splash img[alt="CarryOn"] { animation: none !important; }
                 }
@@ -168,6 +181,14 @@
             (function () {
                 var splash = document.getElementById('carryon-boot-splash');
                 if (!splash) return;
+                // Detect PWA standalone mode — iOS sets navigator.standalone,
+                // Android + desktop PWAs expose display-mode: standalone.
+                try {
+                    var isPwa = window.navigator.standalone === true
+                        || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+                    if (isPwa) splash.setAttribute('data-mode', 'pwa');
+                } catch (e) { /* fall through to browser mode */ }
+
                 var remove = function () {
                     splash.classList.add('carryon-splash-hide');
                     setTimeout(function () { splash && splash.parentNode && splash.parentNode.removeChild(splash); }, 500);
