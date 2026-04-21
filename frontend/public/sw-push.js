@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'v15-2026-02-21-precache-bundles-event-offline';
+const SHELL_VERSION = 'v16-2026-02-21-cache-first-bundle-client-cache-urls';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
@@ -343,9 +343,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2) Bundle assets (hashed JS/CSS, fonts) → stale-while-revalidate.
+  // 2) Bundle assets (hashed JS/CSS, fonts) → cache-first. Cache is
+  //    authoritative: if we've got it, serve instantly. If the cache
+  //    misses, fall back to network. If network fails too (airplane
+  //    mode), `cacheFirst` returns a synthesized 504 rather than
+  //    `undefined` — which is what was causing the cold-boot white
+  //    screen (respondWith(undefined) leaves the WebView hanging with
+  //    no JS bundle, so React never mounts).
   if (isBundleAsset(url)) {
-    event.respondWith(staleWhileRevalidate(request, RUNTIME_CACHE));
+    event.respondWith(cacheFirst(request, RUNTIME_CACHE));
     return;
   }
 
@@ -383,6 +389,22 @@ self.addEventListener('message', (event) => {
     })());
   } else if (event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  } else if (event.data.type === 'CACHE_URLS') {
+    // Client telling the SW "please make sure these are cached." Sent
+    // from index.js right after SW takes control, so any hashed JS/CSS
+    // bundles that the browser already fetched uncontrolled on first
+    // load get copied into RUNTIME_CACHE. Without this, a user's very
+    // first offline launch can white-screen because the main bundle is
+    // referenced in the HTML but isn't in any cache.
+    const urls = Array.isArray(event.data.urls) ? event.data.urls : [];
+    event.waitUntil((async () => {
+      const cache = await caches.open(RUNTIME_CACHE);
+      await Promise.all(urls.map((u) =>
+        cache.add(u).catch((err) => {
+          console.warn(`[SW] Client-requested cache skipped ${u}:`, err?.message || err);
+        })
+      ));
+    })());
   }
 });
 

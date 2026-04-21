@@ -29,6 +29,28 @@ if (typeof window !== 'undefined') {
   window.addEventListener('online', () => { __deviceOffline = false; });
 }
 
+// Exposed on window so any module (AuthContext, page guards, etc.) can ask
+// the authoritative question "is the device offline right now?" without
+// duplicating the event-listener boilerplate or falling for iOS Safari's
+// `navigator.onLine` false-positive. The helper accepts TWO signals —
+// the tracked flag, and a recent axios-style error — because on a cold
+// launch with airplane mode already engaged the `offline` event may
+// have fired before any listener was attached.
+if (typeof window !== 'undefined') {
+  window.__isDeviceOffline = (err) => {
+    if (__deviceOffline) return true;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
+    if (err) {
+      if (err.code === 'ERR_OFFLINE') return true;
+      if (err.code === 'ECONNABORTED') return true;
+      if (err.code === 'ERR_NETWORK') return true;
+      if (err.message === 'Network Error') return true;
+      if (!err.response && err.request) return true;
+    }
+    return false;
+  };
+}
+
 axios.interceptors.request.use(
   (config) => {
     try {
@@ -49,6 +71,27 @@ axios.interceptors.request.use(
     return config;
   },
   (err) => Promise.reject(err),
+);
+
+// Response interceptor — promote any no-response / timeout failure into
+// the tracked `__deviceOffline` flag. This is what catches iOS Safari's
+// `navigator.onLine` lie: the very first request to fail proves the
+// device is offline, and every subsequent request short-circuits
+// instantly instead of waiting 8s each.
+axios.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    try {
+      const networkish = !err?.response && (
+        err?.code === 'ERR_NETWORK' ||
+        err?.code === 'ECONNABORTED' ||
+        err?.message === 'Network Error' ||
+        err?.code === 'ERR_OFFLINE'
+      );
+      if (networkish) __deviceOffline = true;
+    } catch {}
+    return Promise.reject(err);
+  },
 );
 
 // ── Sentry: activate only when REACT_APP_SENTRY_DSN is present ──
@@ -142,6 +185,40 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:' && !IS_
             });
           }
         });
+        // Tell the SW about every same-origin bundle the browser has
+        // already fetched on this page so it can copy them into
+        // RUNTIME_CACHE. CRITICAL for offline boot: the FIRST page load
+        // after install happens BEFORE the SW is controlling, so those
+        // bundles are never seen by the SW and never cached. Without
+        // this message, the next offline launch white-screens because
+        // `bundle.js` (or hashed chunks) 404s and React never mounts.
+        const postBundles = () => {
+          try {
+            const urls = new Set();
+            document.querySelectorAll('script[src]').forEach((s) => {
+              const u = s.getAttribute('src');
+              if (u && (u.startsWith('/static/') || u.startsWith(window.location.origin + '/static/'))) {
+                urls.add(u.startsWith('http') ? new URL(u).pathname : u);
+              }
+            });
+            document.querySelectorAll('link[rel="stylesheet"][href]').forEach((l) => {
+              const u = l.getAttribute('href');
+              if (u && (u.startsWith('/static/') || u.startsWith(window.location.origin + '/static/'))) {
+                urls.add(u.startsWith('http') ? new URL(u).pathname : u);
+              }
+            });
+            if (urls.size && navigator.serviceWorker.controller) {
+              navigator.serviceWorker.controller.postMessage({
+                type: 'CACHE_URLS',
+                urls: Array.from(urls),
+              });
+            }
+          } catch { /* best-effort; ignore */ }
+        };
+        // If a controller already exists, cache right now. Otherwise wait
+        // until `controllerchange` (first activation after install).
+        if (navigator.serviceWorker.controller) postBundles();
+        navigator.serviceWorker.addEventListener('controllerchange', postBundles);
       })
       .catch((err) => console.warn('[SW] Registration failed:', err));
   });

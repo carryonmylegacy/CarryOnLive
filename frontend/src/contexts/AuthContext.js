@@ -97,7 +97,15 @@ export const AuthProvider = ({ children }) => {
             // regression the user flagged: returning users lose access to
             // an app they were already signed into.
             const isNetworkError = !meRes.reason?.response;
-            const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+            // iOS Safari's `navigator.onLine` lies in installed PWAs. Use
+            // the authoritative helper from index.js which ALSO considers
+            // the error shape itself (code, message) — a request that
+            // came back with no response IS offline, regardless of what
+            // `navigator.onLine` claims.
+            const offline =
+              (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function')
+                ? window.__isDeviceOffline(meRes.reason)
+                : (typeof navigator !== 'undefined' && navigator.onLine === false);
             let jwtPayload = null;
             try {
               const [, body] = token.split('.');
