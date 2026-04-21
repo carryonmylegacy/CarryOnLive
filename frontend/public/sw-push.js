@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'v12-2026-02-21-sw-offline-fast-fallback';
+const SHELL_VERSION = 'v13-2026-02-21-sw-inline-offline-fallback';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
@@ -38,6 +38,47 @@ const PRECACHE_URLS = [
   '/icon-192.png',
   '/icon-512.png',
 ];
+
+// Hard-coded HTML served when ALL cache lookups fail AND the network is
+// unreachable. Self-contained — NO external assets referenced, so it
+// renders even if every precached file is missing. The user sees a
+// branded splash + a clear "you're offline" message instead of a white
+// blank WebView error page. On reconnect, tapping "Try again" forces a
+// navigation back through the SW, which will then serve the real shell.
+const OFFLINE_FALLBACK_HTML = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0B1221" />
+  <title>CarryOn — Offline</title>
+  <style>
+    html,body{margin:0;padding:0;height:100%;background:#0B1221;color:#F4E7C1;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;}
+    .wrap{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;}
+    .badge{width:96px;height:96px;border-radius:22px;background:linear-gradient(135deg,#0F1A33 0%,#1E3A5F 50%,#0B1221 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 12px 36px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.08);margin-bottom:28px;}
+    .badge svg{width:52px;height:52px;}
+    h1{font-size:22px;margin:0 0 8px;font-weight:600;letter-spacing:0.01em;color:#F4E7C1;}
+    p{font-size:14px;line-height:1.55;margin:0 0 24px;max-width:320px;color:rgba(244,231,193,0.75);}
+    .btn{appearance:none;border:0;background:#d4af37;color:#0B1221;font-weight:700;font-size:15px;padding:14px 28px;border-radius:999px;cursor:pointer;box-shadow:0 8px 22px rgba(212,175,55,0.3);-webkit-tap-highlight-color:transparent;}
+    .btn:active{transform:scale(0.97);}
+    .tag{font-size:11px;letter-spacing:0.3em;text-transform:uppercase;margin-top:32px;color:rgba(244,231,193,0.4);}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="badge" aria-hidden="true">
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 20c3-5 9-5 12 0s9 5 12 0c3-5 9-5 12 0M16 44c3-5 9-5 12 0s9 5 12 0c3-5 9-5 12 0" stroke="#d4af37" stroke-width="3" stroke-linecap="round" fill="none"/>
+        <circle cx="32" cy="32" r="4" fill="#d4af37"/>
+      </svg>
+    </div>
+    <h1>You're offline</h1>
+    <p>CarryOn couldn't reach the server. Your saved data is safe. When you're back online, tap the button below.</p>
+    <button class="btn" onclick="location.reload()">Try again</button>
+    <div class="tag">CarryOn&trade;</div>
+  </div>
+</body>
+</html>`;
 
 // API endpoints that are SAFE to cache (idempotent reads, no sensitive data
 // that changes per-second). Matched by path prefix.
@@ -179,7 +220,11 @@ async function cacheFirst(request, cacheName) {
 // Network-first with cache fallback. For navigations.
 async function networkFirstNavigation(event) {
   const cache = await caches.open(SHELL_CACHE);
-  const cachedShell = async () => (await cache.match('/index.html')) || (await cache.match('/'));
+  const cachedShell = async () =>
+    (await cache.match('/index.html')) ||
+    (await cache.match('/')) ||
+    (await cache.match(event.request)) ||
+    (await cache.match(new URL(event.request.url).pathname));
 
   // Fast-path: if the browser already knows we're offline, don't waste
   // a minute waiting for a fetch that will never resolve. Serve the
@@ -189,6 +234,12 @@ async function networkFirstNavigation(event) {
   if (self.navigator && self.navigator.onLine === false) {
     const shell = await cachedShell();
     if (shell) return shell;
+    // No cached shell at all — serve the inline offline page so the
+    // user sees a branded screen instead of a white WebView error.
+    return new Response(OFFLINE_FALLBACK_HTML, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
   }
 
   try {
@@ -212,7 +263,12 @@ async function networkFirstNavigation(event) {
     });
     const response = await netRace;
     if (response && response.ok) {
+      // Cache under BOTH `/index.html` and `/` so any fallback path
+      // matches. Also cache under the requested URL (e.g. `/dashboard`)
+      // so a client-side route reload works offline too.
       cache.put('/index.html', response.clone()).catch(() => {});
+      cache.put('/', response.clone()).catch(() => {});
+      cache.put(event.request, response.clone()).catch(() => {});
     }
     return response;
   } catch {
@@ -222,7 +278,13 @@ async function networkFirstNavigation(event) {
     // any data that can't be fetched.
     const shell = await cachedShell();
     if (shell) return shell;
-    return new Response('Offline', { status: 503, statusText: 'Offline' });
+    // Ultimate fallback — a self-contained offline splash baked into
+    // the SW. No external assets required; renders even if every
+    // precached file is missing (e.g. private-browsing install races).
+    return new Response(OFFLINE_FALLBACK_HTML, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
   }
 }
 
