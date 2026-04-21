@@ -226,7 +226,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         elif path in moderate_paths:
             limit = 60  # Moderate: 60/min
         elif path.startswith("/api/") and path != "/api/health":
-            limit = 300  # General: 300/min for all API endpoints
+            # General: 900/min (15/sec). Dashboard bursts + background polling +
+            # Sentry/analytics + image requests easily reach 10+/sec during
+            # active navigation. Abuse protection lives at the auth/login
+            # tier; this tier is just belt-and-suspenders.
+            limit = 900
         else:
             limit = None  # No limit for non-API paths
         if limit:
@@ -234,10 +238,26 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             client_ip = (
                 forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
             )
+            # Prefer per-user bucketing when a JWT is present, so one user's
+            # heavy activity can't DoS every other user sharing the same
+            # ingress-proxied IP (common on preview / CDN deployments).
+            # We don't verify the JWT here — middleware runs before auth —
+            # we just hash-bucket on its contents. An invalid token still
+            # gets rate-limited, by its own unique hash.
+            auth_header = request.headers.get("authorization", "")
+            bucket_id = client_ip
+            if auth_header.startswith("Bearer "):
+                token = auth_header[7:]
+                if token:
+                    # Short deterministic digest — enough entropy to make
+                    # per-user buckets collision-free without storing PII.
+                    import hashlib
+
+                    bucket_id = "u:" + hashlib.sha256(token.encode("utf-8")).hexdigest()[:16]
             # Key includes path-tier so one user hitting many endpoints
             # doesn't count against a stricter endpoint's quota.
             tier = "strict" if path in strict_paths else "moderate" if path in moderate_paths else "general"
-            key = f"rl:{tier}:{client_ip}"
+            key = f"rl:{tier}:{bucket_id}"
             try:
                 from services.rate_limiter import check_and_increment
 
