@@ -103,6 +103,58 @@
           "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
         }
         </script>
+        <!-- Boot-splash CSS — placed in <head> so it applies during HTML
+             parse, BEFORE #carryon-boot-splash paints. Without this, the
+             splash div renders in "browser" mode for one frame (solid
+             dark bg + icon logo), then flips to "pwa" mode once the JS
+             at the bottom of <body> runs. That one-frame flicker is
+             exactly the "logo flash" the user reported on iOS PWA boot.
+
+             Two activation paths — either wins the race:
+               1. CSS-only @media (display-mode: standalone) — iOS 16.4+
+                  and every modern Android PWA. No JS needed.
+               2. <html data-pwa="1"> set by an inline head script that
+                  also checks navigator.standalone (older iOS legacy). -->
+        <style>
+            @keyframes carryon-spin { to { transform: rotate(360deg); } }
+            @keyframes carryon-float-in {
+                0%   { transform: translateY(24px) scale(0.94); opacity: 0; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.2)); }
+                60%  { opacity: 1; }
+                100% { transform: translateY(0) scale(1); opacity: 1; filter: drop-shadow(0 12px 28px rgba(0,0,0,0.55)) drop-shadow(0 4px 12px rgba(212,175,55,0.18)); }
+            }
+            @keyframes carryon-float {
+                0%   { transform: translateY(0); }
+                100% { transform: translateY(-6px); }
+            }
+            #carryon-boot-splash.carryon-splash-hide { opacity: 0; visibility: hidden; pointer-events: none; }
+            /* PWA standalone mode: iOS/Android have already drawn the
+               flag-hero via `apple-touch-startup-image` / manifest
+               `background_color`. We must NOT repaint a second logo on
+               top — that causes the double-draw flash. Transparent bg
+               + hidden scene lets the native image show through; we
+               only add the spinner + caption. */
+            @media (display-mode: standalone) {
+                #carryon-boot-splash { background: transparent !important; }
+                #carryon-boot-splash .carryon-splash-scene { display: none !important; }
+            }
+            html[data-pwa="1"] #carryon-boot-splash { background: transparent !important; }
+            html[data-pwa="1"] #carryon-boot-splash .carryon-splash-scene { display: none !important; }
+            @media (prefers-reduced-motion: reduce) {
+                #carryon-boot-splash img[alt="CarryOn"] { animation: none !important; }
+            }
+        </style>
+        <script>
+            // Legacy iOS <16.4 — `@media (display-mode: standalone)` is not
+            // supported, but `window.navigator.standalone === true` is.
+            // Set `<html data-pwa="1">` before the body parses so the CSS
+            // above matches on the first paint. No-op in Safari/Chrome.
+            try {
+                if (window.navigator.standalone === true
+                    || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)) {
+                    document.documentElement.setAttribute('data-pwa', '1');
+                }
+            } catch (e) { /* fall through to browser mode */ }
+        </script>
 </head>
     <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>
@@ -157,37 +209,27 @@
                      style="width:26px;height:26px;border-radius:50%;border:2px solid rgba(212,175,55,0.18);border-top-color:#d4af37;animation:carryon-spin 0.9s linear infinite;"></div>
             </div>
             <style>
-                @keyframes carryon-spin { to { transform: rotate(360deg); } }
-                @keyframes carryon-float-in {
-                    0%   { transform: translateY(24px) scale(0.94); opacity: 0; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.2)); }
-                    60%  { opacity: 1; }
-                    100% { transform: translateY(0) scale(1); opacity: 1; filter: drop-shadow(0 12px 28px rgba(0,0,0,0.55)) drop-shadow(0 4px 12px rgba(212,175,55,0.18)); }
-                }
-                @keyframes carryon-float {
-                    0%   { transform: translateY(0); }
-                    100% { transform: translateY(-6px); }
-                }
-                #carryon-boot-splash.carryon-splash-hide { opacity: 0; visibility: hidden; pointer-events: none; }
-                /* PWA standalone mode: let iOS/Android's native launch image
-                   show through. We only add the spinner + caption on top. */
+                /* Base keyframes are duplicated in <head> so they apply
+                   even before this style block parses. Kept minimal here
+                   only in case of inline-style overrides. */
                 #carryon-boot-splash[data-mode="pwa"] { background: transparent !important; }
                 #carryon-boot-splash[data-mode="pwa"] .carryon-splash-scene { display: none !important; }
-                @media (prefers-reduced-motion: reduce) {
-                    #carryon-boot-splash img[alt="CarryOn"] { animation: none !important; }
-                }
             </style>
         </div>
         <script>
             (function () {
                 var splash = document.getElementById('carryon-boot-splash');
                 if (!splash) return;
-                // Detect PWA standalone mode — iOS sets navigator.standalone,
-                // Android + desktop PWAs expose display-mode: standalone.
+                // Re-assert standalone mode on the splash element itself
+                // as a third safety net (head CSS + data-pwa html attr
+                // already cover both modern + legacy iOS). This handles
+                // edge cases where the display-mode changes post-load
+                // (rare but possible on iPadOS multitasking).
                 try {
                     var isPwa = window.navigator.standalone === true
                         || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
                     if (isPwa) splash.setAttribute('data-mode', 'pwa');
-                } catch (e) { /* fall through to browser mode */ }
+                } catch (e) { /* fall through */ }
 
                 var remove = function () {
                     splash.classList.add('carryon-splash-hide');
