@@ -88,11 +88,11 @@ def build_rect(width: int, height: int, logo_width_frac: float = 0.52) -> Image.
     flag = flag.resize((nw, nh), Image.LANCZOS)
     flag = flag.crop(((nw - width) // 2, (nh - height) // 2,
                      (nw - width) // 2 + width, (nh - height) // 2 + height))
-    flag = ImageEnhance.Brightness(flag).enhance(1.30)
-    flag = ImageEnhance.Contrast(flag).enhance(1.05)
-    flag = ImageEnhance.Color(flag).enhance(1.10)
+    flag = ImageEnhance.Brightness(flag).enhance(1.45)
+    flag = ImageEnhance.Contrast(flag).enhance(1.10)
+    flag = ImageEnhance.Color(flag).enhance(1.35)
     flag_rgba = flag.convert("RGBA")
-    flag_rgba.putalpha(int(255 * 0.85))
+    flag_rgba.putalpha(int(255 * 0.95))
     canvas = Image.alpha_composite(canvas.convert("RGBA"), flag_rgba)
 
     # Same four atmospheric overlays used on the square version, scaled
@@ -114,11 +114,14 @@ def build_rect(width: int, height: int, logo_width_frac: float = 0.52) -> Image.
         return Image.fromarray(np.dstack([rgb, a]), mode="RGBA")
 
     for ov in [
-        rgrad(0.5, 1.0, 0.9, 1.0, (14, 24, 41, int(255 * 0.35))),
-        rgrad(0.20, 0.80, 0.90, 0.80, (255, 255, 255, int(255 * 0.12))),
-        rgrad(0.10, 0.50, 0.80, 0.60, (255, 255, 255, int(255 * 0.08))),
-        rgrad(0.85, 0.85, 0.80, 0.70, (255, 255, 255, int(255 * 0.14))),
-        rgrad(0.35, 0.50, 0.70, 0.50, (212, 175, 55, int(255 * 0.06))),
+        # Subtle dark fade at the very bottom only (was full-canvas radial
+        # that washed out the flag — dropped ry from 1.0 → 0.35).
+        rgrad(0.5, 1.05, 0.9, 0.35, (14, 24, 41, int(255 * 0.35))),
+        # Light haze in upper-left area for depth (unchanged — small).
+        rgrad(0.20, 0.80, 0.90, 0.40, (255, 255, 255, int(255 * 0.08))),
+        rgrad(0.85, 0.85, 0.80, 0.35, (255, 255, 255, int(255 * 0.10))),
+        # Tiny warm gold glow behind logo.
+        rgrad(0.50, 0.50, 0.55, 0.35, (212, 175, 55, int(255 * 0.06))),
     ]:
         canvas = Image.alpha_composite(canvas, ov)
 
