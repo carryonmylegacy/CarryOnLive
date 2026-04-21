@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'v11-2026-02-21-splash-big-logo';
+const SHELL_VERSION = 'v12-2026-02-21-sw-offline-fast-fallback';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
@@ -178,22 +178,49 @@ async function cacheFirst(request, cacheName) {
 
 // Network-first with cache fallback. For navigations.
 async function networkFirstNavigation(event) {
+  const cache = await caches.open(SHELL_CACHE);
+  const cachedShell = async () => (await cache.match('/index.html')) || (await cache.match('/'));
+
+  // Fast-path: if the browser already knows we're offline, don't waste
+  // a minute waiting for a fetch that will never resolve. Serve the
+  // cached shell immediately. This is what rescues airplane-mode cold
+  // starts — `event.preloadResponse` can stall ~60s on iOS before
+  // failing, leaving the user on a dark blank screen.
+  if (self.navigator && self.navigator.onLine === false) {
+    const shell = await cachedShell();
+    if (shell) return shell;
+  }
+
   try {
-    // Use navigation preload response if available — saves one RTT.
-    const preload = await event.preloadResponse;
-    if (preload) return preload;
-    const response = await fetch(event.request);
+    // Race the navigation-preload response (and/or a normal fetch) against
+    // a 3.5-second timeout. Whichever finishes first wins. If neither
+    // succeeds in time, we fall through to the cached shell.
+    const netRace = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('nav-timeout')), 3500);
+      (async () => {
+        try {
+          const preload = await event.preloadResponse;
+          if (preload) { clearTimeout(timer); return resolve(preload); }
+          const response = await fetch(event.request);
+          clearTimeout(timer);
+          resolve(response);
+        } catch (e) {
+          clearTimeout(timer);
+          reject(e);
+        }
+      })();
+    });
+    const response = await netRace;
     if (response && response.ok) {
-      const cache = await caches.open(SHELL_CACHE);
       cache.put('/index.html', response.clone()).catch(() => {});
     }
     return response;
   } catch {
-    // Offline fallback: serve the cached app shell so the user sees the UI
-    // skeleton instead of the browser's "No Internet" page. React will then
-    // show its own loading states for any data that can't be fetched.
-    const cache = await caches.open(SHELL_CACHE);
-    const shell = await cache.match('/index.html') || await cache.match('/');
+    // Offline (or network timeout): serve the cached app shell so the
+    // user sees the splash + UI skeleton instead of the browser's "No
+    // Internet" page. React will then show its own loading states for
+    // any data that can't be fetched.
+    const shell = await cachedShell();
     if (shell) return shell;
     return new Response('Offline', { status: 503, statusText: 'Offline' });
   }
