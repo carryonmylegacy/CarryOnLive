@@ -11,6 +11,31 @@
         <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
         <meta name="description" content="CarryOn™ helps families organize estate plans, secure important documents, manage beneficiaries, and prepare for life's transitions — all in one secure platform." />
         <link rel="apple-touch-icon" href="%PUBLIC_URL%/carryon-icon.jpg" />
+        <!-- PWA launch splash (iOS Home-Screen / Save-to-Home-Screen).
+             Without these, iOS shows the `apple-touch-icon` as a tiny tile
+             on a generic background before the HTML loads, producing a
+             visible flash of the old small logo. One portrait 1290×2796
+             image covers every iPhone model — iOS scales it down cleanly. -->
+        <link rel="apple-touch-startup-image" href="%PUBLIC_URL%/apple-splash.png" />
+        <!-- Plus device-specific media queries so iOS picks the sharpest
+             rendering on each display. All point to the same file;
+             duplicated only so iOS honours at least one `media` match. -->
+        <link rel="apple-touch-startup-image" href="%PUBLIC_URL%/apple-splash.png"
+              media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="%PUBLIC_URL%/apple-splash.png"
+              media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="%PUBLIC_URL%/apple-splash.png"
+              media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="%PUBLIC_URL%/apple-splash.png"
+              media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="%PUBLIC_URL%/apple-splash.png"
+              media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="%PUBLIC_URL%/apple-splash.png"
+              media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="%PUBLIC_URL%/apple-splash.png"
+              media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="%PUBLIC_URL%/apple-splash.png"
+              media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
         <link rel="canonical" href="https://carryon.us/" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="CarryOn™ - Secure Family Preparedness & Estate Planning" />

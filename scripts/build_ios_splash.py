@@ -26,6 +26,13 @@ OUT_FILES = [
 SIZE = 2732  # square canvas (covers iPad Pro 12.9 portrait + landscape)
 BG_RGB = (11, 18, 33)  # #0B1221 — matches HTML splash base
 
+# Portrait PWA splash — single image used by all iOS `apple-touch-startup-image`
+# media queries. 1290×2796 is iPhone 15 Pro Max native resolution; iOS scales
+# it down smoothly for smaller screens, so one file covers every model.
+PWA_SPLASH_W = 1290
+PWA_SPLASH_H = 2796
+PWA_OUT = ROOT / "public" / "apple-splash.png"
+
 
 def _cover(img: Image.Image, side: int) -> Image.Image:
     """Scale `img` to cover a `side × side` square (aspect-fill, center crop)."""
@@ -66,91 +73,105 @@ def _radial_gradient(side: int, cx_frac: float, cy_frac: float,
     return Image.fromarray(rgba, mode="RGBA")
 
 
-def build() -> Image.Image:
-    # 1. Base canvas (navy).
-    canvas = Image.new("RGB", (SIZE, SIZE), BG_RGB)
+def build_rect(width: int, height: int, logo_width_frac: float = 0.52) -> Image.Image:
+    """Build the flag-hero + floating-logo composite at an arbitrary
+    rectangular size. Used for the square native launch image AND the
+    tall portrait PWA apple-touch-startup-image."""
+    canvas = Image.new("RGB", (width, height), BG_RGB)
+    side = max(width, height)
 
-    # 2. Flag hero — aspect-fill, brightness/contrast/saturation match CSS.
+    # Flag — scale cover to the larger dimension, center-crop.
     flag = Image.open(FLAG).convert("RGB")
-    flag = _cover(flag, SIZE)
+    fw, fh = flag.size
+    scale = max(width / fw, height / fh)
+    nw, nh = int(fw * scale + 0.5), int(fh * scale + 0.5)
+    flag = flag.resize((nw, nh), Image.LANCZOS)
+    flag = flag.crop(((nw - width) // 2, (nh - height) // 2,
+                     (nw - width) // 2 + width, (nh - height) // 2 + height))
     flag = ImageEnhance.Brightness(flag).enhance(1.30)
     flag = ImageEnhance.Contrast(flag).enhance(1.05)
     flag = ImageEnhance.Color(flag).enhance(1.10)
-    # Blend flag over navy at 0.85 opacity to mirror the CSS opacity.
     flag_rgba = flag.convert("RGBA")
     flag_rgba.putalpha(int(255 * 0.85))
     canvas = Image.alpha_composite(canvas.convert("RGBA"), flag_rgba)
 
-    # 3. Four atmospheric overlays — exact copies of the CSS radial gradients.
-    overlays = [
-        # Bottom linear fade (CSS: linear-gradient(180deg, ..0 → ..0.35 at bottom))
-        # Approximate with a vertical gradient by using a wide radial at (0.5, 1.0).
-        _radial_gradient(SIZE, 0.5, 1.0, 0.9, 1.0, (14, 24, 41, int(255 * 0.35))),
-        # highlight: ellipse 90% 80% at 20% 80%, rgba(255,255,255,0.12)
-        _radial_gradient(SIZE, 0.20, 0.80, 0.90, 0.80, (255, 255, 255, int(255 * 0.12))),
-        # highlight: ellipse 80% 60% at 10% 50%, rgba(255,255,255,0.08)
-        _radial_gradient(SIZE, 0.10, 0.50, 0.80, 0.60, (255, 255, 255, int(255 * 0.08))),
-        # highlight: ellipse 80% 70% at 85% 85%, rgba(255,255,255,0.14)
-        _radial_gradient(SIZE, 0.85, 0.85, 0.80, 0.70, (255, 255, 255, int(255 * 0.14))),
-        # gold hotspot: ellipse 70% 50% at 35% 50%, rgba(212,175,55,0.06)
-        _radial_gradient(SIZE, 0.35, 0.50, 0.70, 0.50, (212, 175, 55, int(255 * 0.06))),
-    ]
-    for ov in overlays:
+    # Same four atmospheric overlays used on the square version, scaled
+    # to this aspect ratio.
+    def rgrad(cx, cy, rx, ry, color):
+        yy, xx = np.meshgrid(
+            np.arange(height, dtype=np.float32),
+            np.arange(width, dtype=np.float32),
+            indexing="ij",
+        )
+        d = ((xx - cx * width) / (rx * width)) ** 2 + ((yy - cy * height) / (ry * height)) ** 2
+        a = np.clip(1.0 - d, 0.0, 1.0)
+        a = (a * color[3]).astype(np.uint8)
+        rgb = np.stack([
+            np.full_like(a, color[0]),
+            np.full_like(a, color[1]),
+            np.full_like(a, color[2]),
+        ], axis=-1).astype(np.uint8)
+        return Image.fromarray(np.dstack([rgb, a]), mode="RGBA")
+
+    for ov in [
+        rgrad(0.5, 1.0, 0.9, 1.0, (14, 24, 41, int(255 * 0.35))),
+        rgrad(0.20, 0.80, 0.90, 0.80, (255, 255, 255, int(255 * 0.12))),
+        rgrad(0.10, 0.50, 0.80, 0.60, (255, 255, 255, int(255 * 0.08))),
+        rgrad(0.85, 0.85, 0.80, 0.70, (255, 255, 255, int(255 * 0.14))),
+        rgrad(0.35, 0.50, 0.70, 0.50, (212, 175, 55, int(255 * 0.06))),
+    ]:
         canvas = Image.alpha_composite(canvas, ov)
 
-    # 4. Logo in the center — target width ≈ 62% of the canvas to match
-    #    the CSS `width:min(62vw,280px)` on a phone viewport. Since the
-    #    launch screen is a universal 2732 square and the logo renders
-    #    centered on any device size, a slightly smaller 42% reads well
-    #    on both phone and iPad (on phone the storyboard scale-aspect-
-    #    fills the square, so the logo lands at roughly 60%+ of the
-    #    narrow side — exactly what we want visually).
+    # Logo centered. On tall portrait aspect ratios we want it slightly
+    # smaller so it doesn't dominate the screen.
     logo = Image.open(LOGO).convert("RGBA")
-    target_w = int(SIZE * 0.42)
+    target_w = int(width * logo_width_frac)
     scale = target_w / logo.width
-    target_h = int(logo.height * scale)
-    logo = logo.resize((target_w, target_h), Image.LANCZOS)
+    logo = logo.resize((target_w, int(logo.height * scale)), Image.LANCZOS)
 
-    # 5. Drop-shadows matching CSS:
-    #    drop-shadow(0 12px 28px rgba(0,0,0,0.55))
-    #  + drop-shadow(0 4px 12px rgba(212,175,55,0.18))
-    def _shadow(alpha_src: Image.Image, rgb: tuple[int, int, int],
-                opacity: float, dy: int, blur: int) -> Image.Image:
-        # Create a canvas the same size as the full splash with an
-        # opaque-colored silhouette of the logo alpha, blur it, offset
-        # it, return it as an RGBA layer.
-        layer = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
-        # silhouette: same shape as logo alpha, filled with `rgb`.
-        silhouette = Image.new("RGBA", alpha_src.size, rgb + (0,))
-        silhouette.putalpha(alpha_src.getchannel("A").point(lambda a: int(a * opacity)))
-        cx = (SIZE - alpha_src.width) // 2
-        cy = (SIZE - alpha_src.height) // 2 + dy
-        layer.paste(silhouette, (cx, cy), silhouette)
+    # Same two-layer drop-shadow (dark 55 % + gold 18 %) as the CSS.
+    def shadow(src, rgb, opacity, dy, blur):
+        layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+        sil = Image.new("RGBA", src.size, rgb + (0,))
+        sil.putalpha(src.getchannel("A").point(lambda a: int(a * opacity)))
+        cx = (width - src.width) // 2
+        cy = (height - src.height) // 2 + dy
+        layer.paste(sil, (cx, cy), sil)
         return layer.filter(ImageFilter.GaussianBlur(radius=blur))
 
-    dark_shadow = _shadow(logo, (0, 0, 0), 0.55, dy=int(SIZE * 0.012), blur=int(SIZE * 0.028))
-    gold_shadow = _shadow(logo, (212, 175, 55), 0.18, dy=int(SIZE * 0.004), blur=int(SIZE * 0.012))
-    canvas = Image.alpha_composite(canvas, dark_shadow)
-    canvas = Image.alpha_composite(canvas, gold_shadow)
+    canvas = Image.alpha_composite(canvas, shadow(logo, (0, 0, 0), 0.55, int(side * 0.012), int(side * 0.028)))
+    canvas = Image.alpha_composite(canvas, shadow(logo, (212, 175, 55), 0.18, int(side * 0.004), int(side * 0.012)))
 
-    # 6. Finally, paint the logo itself, centered.
-    logo_layer = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
-    cx = (SIZE - logo.width) // 2
-    cy = (SIZE - logo.height) // 2
-    logo_layer.paste(logo, (cx, cy), logo)
+    logo_layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    logo_layer.paste(logo, ((width - logo.width) // 2, (height - logo.height) // 2), logo)
     canvas = Image.alpha_composite(canvas, logo_layer)
-
     return canvas.convert("RGB")
+
+
+def build() -> Image.Image:
+    """Backward-compat wrapper — square composite at SIZE × SIZE."""
+    return build_rect(SIZE, SIZE, logo_width_frac=0.42)
 
 
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    img = build()
+    # 1. Native iOS launch screen (square).
+    square = build()
     for name in OUT_FILES:
         out = OUT_DIR / name
-        img.save(out, format="PNG", optimize=True)
+        square.save(out, format="PNG", optimize=True)
         size_kb = out.stat().st_size // 1024
-        print(f"✓ wrote {out} ({size_kb} KB, {img.size[0]}×{img.size[1]})")
+        print(f"✓ wrote {out} ({size_kb} KB, {square.size[0]}×{square.size[1]})")
+
+    # 2. PWA apple-touch-startup-image (portrait 1290×2796). Covers every
+    #    iPhone model because iOS scales it — this is what the home-screen
+    #    PWA launch uses BEFORE index.html starts rendering, which is the
+    #    exact moment the user reported the old logo flashing.
+    PWA_OUT.parent.mkdir(parents=True, exist_ok=True)
+    portrait = build_rect(PWA_SPLASH_W, PWA_SPLASH_H, logo_width_frac=0.52)
+    portrait.save(PWA_OUT, format="PNG", optimize=True)
+    size_kb = PWA_OUT.stat().st_size // 1024
+    print(f"✓ wrote {PWA_OUT} ({size_kb} KB, {portrait.size[0]}×{portrait.size[1]})")
 
 
 if __name__ == "__main__":

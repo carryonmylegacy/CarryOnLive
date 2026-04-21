@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'v6-2026-04-20-hero';
+const SHELL_VERSION = 'v7-2026-04-21-pwa-splash';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
@@ -35,6 +35,7 @@ const PRECACHE_URLS = [
   '/carryon-logo.png',          // login + boot splash + header brand mark
   '/carryon-app-icon.jpg',      // iOS/Android home-screen icon
   '/flag-bg.jpg',               // boot splash + homepage hero background
+  '/apple-splash.png',          // PWA apple-touch-startup-image
   '/icon-192.png',
   '/icon-512.png',
 ];
