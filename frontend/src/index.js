@@ -17,14 +17,26 @@ import App from "./App";
 // `.catch` handlers to show cached data from IndexedDB / skeleton empty
 // states — they just get to run in <100ms instead of 60+s.
 axios.defaults.timeout = 8000;
+
+// iOS Safari's `navigator.onLine` is notoriously unreliable in installed
+// PWAs — it can return `true` even when airplane mode is on. The
+// `online`/`offline` window events ARE reliable on iOS. Track them in a
+// module-level flag so axios can short-circuit requests even when
+// `navigator.onLine` lies.
+let __deviceOffline = (typeof navigator !== 'undefined' && navigator.onLine === false);
+if (typeof window !== 'undefined') {
+  window.addEventListener('offline', () => { __deviceOffline = true; });
+  window.addEventListener('online', () => { __deviceOffline = false; });
+}
+
 axios.interceptors.request.use(
   (config) => {
     try {
-      // `navigator.onLine === false` is reliable on iOS Safari when
-      // airplane mode is engaged. Only the `false` case short-circuits;
-      // `true` and `undefined` fall through to a normal request (and
-      // will fail naturally if the network is actually down).
-      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      // Accept EITHER signal: the tracked event-based flag OR the
+      // standard API. Either being true is enough to short-circuit.
+      const isOffline = __deviceOffline ||
+        (typeof navigator !== 'undefined' && navigator.onLine === false);
+      if (isOffline) {
         const err = new Error('offline');
         err.code = 'ERR_OFFLINE';
         err.config = config;

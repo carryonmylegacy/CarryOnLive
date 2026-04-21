@@ -208,11 +208,23 @@ const LoginPage = () => {
         const match = detail.match(/(\d+)\s*seconds/);
         const secs = match ? parseInt(match[1], 10) : 180;
         setLockoutSeconds(secs);
-      } else if (!error.response && typeof navigator !== 'undefined' && navigator.onLine === false) {
+      } else if (
+        !error.response && (
+          error.code === 'ERR_OFFLINE' ||
+          error.code === 'ECONNABORTED' ||
+          error.code === 'ERR_NETWORK' ||
+          error.message === 'Network Error' ||
+          error.message === 'offline' ||
+          (typeof navigator !== 'undefined' && navigator.onLine === false)
+        )
+      ) {
         // Honest offline message — the server never saw the request,
-        // so we shouldn't blame the credentials. Passes through the
-        // toast wrapper's `force: true` so it surfaces despite the
-        // global "suppress network-error toasts while offline" filter.
+        // so we shouldn't blame the credentials. iOS Safari's
+        // `navigator.onLine` can return true even in airplane mode, so
+        // we ALSO accept timeout / network-error codes as proof the
+        // device couldn't reach the backend. Passes `force: true` so
+        // the global "suppress network-error toasts while offline"
+        // filter doesn't swallow it.
         toast.error("You're offline. Sign in requires a connection — reconnect and try again.", { force: true, duration: 6000 });
       } else {
         const detail = error.response?.data?.detail || 'Invalid credentials';

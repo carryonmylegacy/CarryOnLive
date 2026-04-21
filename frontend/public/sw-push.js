@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'v14-2026-02-21-axios-offline-fast-fail';
+const SHELL_VERSION = 'v15-2026-02-21-precache-bundles-event-offline';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
@@ -120,6 +120,36 @@ self.addEventListener('install', (event) => {
             console.warn(`[SW] Precache skipped ${url}:`, err?.message || err);
           })
         ));
+        // Parse index.html and precache its hashed JS/CSS bundles into
+        // the runtime cache. CRITICAL for offline boot: on first page
+        // load the SW isn't yet controlling, so the browser fetches
+        // main.*.js directly — bypassing the SW, never populating the
+        // cache. When the user next opens the app offline, the HTML
+        // loads but the JS bundle 404s and React never mounts (blank
+        // white page). Fetching index.html here and pre-seeding the
+        // bundle URLs guarantees they're in cache before any offline
+        // launch.
+        try {
+          const indexResp = await fetch('/index.html', { cache: 'no-store' });
+          if (indexResp && indexResp.ok) {
+            const html = await indexResp.text();
+            const scriptUrls = Array.from(html.matchAll(/<script[^>]+src=["']([^"']+)["']/g)).map((m) => m[1]);
+            const cssUrls = Array.from(html.matchAll(/<link[^>]+href=["']([^"']+\.css[^"']*)["']/g)).map((m) => m[1]);
+            const bundleUrls = [...scriptUrls, ...cssUrls]
+              .map((u) => (u.startsWith('http') ? u : u.replace(/^\/+/, '/')))
+              // Only same-origin /static/ bundles; skip external scripts.
+              .filter((u) => u.startsWith('/static/') || u.startsWith(self.location.origin + '/static/'));
+            const runtimeCache = await caches.open(RUNTIME_CACHE);
+            await Promise.all(bundleUrls.map((u) =>
+              runtimeCache.add(u).catch((err) => {
+                console.warn(`[SW] Bundle precache skipped ${u}:`, err?.message || err);
+              })
+            ));
+            console.log(`[SW] Precached ${bundleUrls.length} bundle(s)`);
+          }
+        } catch (e) {
+          console.warn('[SW] Bundle precache failed:', e?.message || e);
+        }
       })
       .then(() => self.skipWaiting())
   );
