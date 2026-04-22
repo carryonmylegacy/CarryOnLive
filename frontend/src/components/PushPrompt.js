@@ -99,9 +99,26 @@ const PushPrompt = ({ getAuthHeaders }) => {
         return;
       }
 
+      // If the browser has already recorded "denied" for this origin,
+      // Notification.requestPermission() silently returns "denied" without
+      // re-prompting. Detect up-front and show browser-specific unblock
+      // steps instead of a dead-end "permission denied" toast.
+      const prePerm = typeof Notification !== 'undefined' ? Notification.permission : 'denied';
+      if (prePerm === 'denied') {
+        const { notificationUnblockInstruction } = await import('../utils/notificationPermissionHelp');
+        toast.error(notificationUnblockInstruction(), { duration: 12000 });
+        dismiss();
+        return;
+      }
+
       const permResult = await Notification.requestPermission();
       if (permResult !== 'granted') {
-        toast.error('Notification permission denied. You can change this in your device Settings.');
+        if (permResult === 'denied') {
+          const { notificationUnblockInstruction } = await import('../utils/notificationPermissionHelp');
+          toast.error(notificationUnblockInstruction(), { duration: 12000 });
+        } else {
+          toast.error('Notification permission was not granted. Try again and accept the browser prompt.');
+        }
         dismiss();
         return;
       }
