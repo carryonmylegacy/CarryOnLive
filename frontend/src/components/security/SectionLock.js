@@ -16,6 +16,7 @@ const LOCKABLE_SECTIONS = {
   iac: { name: 'Immediate Action Checklist', abbr: 'IAC' },
   dts: { name: 'Designated Trustee Services', abbr: 'DTS' },
   ega: { name: 'Estate Guardian AI', abbr: 'EGA' },
+  dav: { name: 'Digital Access Vault', abbr: 'DAV' },
 };
 
 // Map page sectionIds to API section_ids
@@ -26,6 +27,7 @@ const SECTION_ID_MAP = {
   checklist: 'iac',
   dts: 'dts',
   guardian: 'ega',
+  'digital-access': 'dav',
 };
 
 const SectionLockContext = createContext(null);

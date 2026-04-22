@@ -466,6 +466,16 @@ Zero behavioural changes. iOS keyboard handling fully preserved.
 ## SocialShareSheet Fix (Apr 28, 2026)
 Fixed vertical overflow on compact iPhones. Sheet now has `maxHeight` constraint and `overflow-y: auto` on content area. Dock clearance via `paddingBottom: calc(80px + safe-area-inset-bottom)`.
 
+## Feature Page Header Standardization (Apr 22, 2026)
+User uploaded 5 "good" reference screenshots (Beneficiaries / MM / SDV / CFP / IAC) and 5 "bad" screenshots (EGA / CCP / DAV / EPT / ECT). Surgical fixes applied to match the good spec: icon-box left, title + 1-line subtitle, primary action button on the right, `SectionLockBanner` directly below, content fills full column width.
+
+- **DAV (`DigitalWalletPage.js`)**: Removed `max-w-4xl mx-auto` so content fills the column (left-justified like good pages). Changed `sectionId="vault"` → `sectionId="digital-access"` on both `SectionLockBanner` and `SectionLockedOverlay` so the banner correctly reads *"Set up security in Settings to protect Digital Access Vault"* instead of *"Secure Document Vault"*.
+- **SectionLock (`components/security/SectionLock.js`)**: Added `dav: { name: 'Digital Access Vault', abbr: 'DAV' }` to `LOCKABLE_SECTIONS` and `'digital-access': 'dav'` mapping in `SECTION_ID_MAP` to support the DAV banner text fix.
+- **EPT (`LegacyTimelinePage.js`)**: Removed `max-w-4xl mx-auto`, `space-y-6 → space-y-5` to exactly match Beneficiaries / MM / SDV outer-div class pattern.
+- **EGA (`GuardianPage.js`)**: Added primary **"+ New Chat"** (gold-button) action to the header right, matching the right-side-primary-button pattern of MM / SDV / DAV / Beneficiaries.
+- **ECT (`EstateChatPage.js`) — desktop gap fix**: The 56px platform-header-clearance spacer at the top of `#ect-root` was rendering on all viewports, creating a visible empty band above the channel-list column on desktop. The `.lg\:ect-desktop-inset` CSS rule already sets `top: var(--cy-offline-banner-h, 0px)` on desktop, so the spacer is redundant there. Added `className="lg:hidden"` so the spacer is mobile-only. DOM-verified via Playwright: `rootTop=0, firstChildDisplay="none", firstChildHeight=0` on desktop.
+- Housekeeping: 69 PASS, 0 WARN, 0 FAIL.
+
 
 - [Audit action] Fix FC `free_access` grant for late-added beneficiaries (🔴 15 min)
 - [Audit action] Verify Stripe webhook signature enforcement — **DONE Apr 28: webhook now rejects unverified events + STRIPE_WEBHOOK_SECRET added to Railway**

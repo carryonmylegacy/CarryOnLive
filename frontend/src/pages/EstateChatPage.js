@@ -1325,12 +1325,12 @@ export default function EstateChatPage() {
     <>
       <div id="ect-root" data-testid="estate-chat-page" className="flex flex-col lg:ect-desktop-inset"
         style={{ background: 'var(--bg)', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 45, overflow: 'hidden' }}>
-        {/* Spacer that matches the platform header height. Must ALSO include
-            the offline-banner height, otherwise the red "You're offline"
-            bar pushes the CarryOn header down over this spacer and the
-            chat's own sub-header (back button, avatar, "Direct message")
-            gets clipped behind the platform header. */}
-        <div style={{ height: 'calc(env(safe-area-inset-top, 0px) + 56px + var(--cy-offline-banner-h, 0px))', flexShrink: 0 }} />
+        {/* Spacer that matches the platform header height. MOBILE ONLY.
+            On desktop (lg+), the `.lg:ect-desktop-inset` CSS rule already
+            sets `top: var(--cy-offline-banner-h, 0px)` so there is no
+            platform header to clear — rendering this spacer on desktop
+            caused a large empty gap above the ECT column. */}
+        <div className="lg:hidden" style={{ height: 'calc(env(safe-area-inset-top, 0px) + 56px + var(--cy-offline-banner-h, 0px))', flexShrink: 0 }} />
         <div className="hidden lg:flex flex-1 min-h-0">
           <div style={{ width: 340, minWidth: 340 }}>{channelPanel}</div>
           <div className="flex-1 flex flex-col">{activeChannel ? messageArea : (

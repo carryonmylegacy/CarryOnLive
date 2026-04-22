@@ -584,6 +584,13 @@ const GuardianPage = () => {
                   </p>
                 </div>
               </div>
+              <button
+                onClick={() => startNewChat()}
+                className="gold-button w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-bold"
+                data-testid="new-chat-header-btn"
+              >
+                <Plus className="w-5 h-5 mr-2" /> New Chat
+              </button>
             </div>
 
             {/* Recent Conversations */}
