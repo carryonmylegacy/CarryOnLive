@@ -51,7 +51,20 @@ const OnboardingWizard = ({ onAllComplete }) => {
       const steps = res.data.steps || [];
       const hasIncomplete = steps.some(s => !s.completed);
 
-      if (hasIncomplete && !res.data.all_complete && !res.data.manually_dismissed) {
+      // ── Sync local dismissal state with the backend's authoritative
+      // `manually_dismissed` flag. Without this, a device where
+      // localStorage is empty (new browser, cleared storage, fresh PWA
+      // install, cross-device login) would happily show the wizard even
+      // though the user explicitly turned it off in Settings on another
+      // device. The Settings toggle writes to both localStorage AND the
+      // backend via /onboarding/dismiss — here we read back from the
+      // backend and let it override local state.
+      if (res.data.manually_dismissed === true) {
+        localStorage.setItem('carryon_onboarding_dismissed', 'true');
+        setManuallyDismissed(true);
+      } else if (hasIncomplete && !res.data.all_complete) {
+        // Backend says NOT manually dismissed and there's still work to
+        // do → user-facing wizard should reappear. Clear local flag.
         localStorage.removeItem('carryon_onboarding_dismissed');
         setManuallyDismissed(false);
       }

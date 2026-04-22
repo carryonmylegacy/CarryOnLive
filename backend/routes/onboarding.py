@@ -200,6 +200,26 @@ async def dismiss_onboarding(current_user: dict = Depends(get_current_user)):
     return {"success": True}
 
 
+@router.get("/onboarding/status")
+async def get_onboarding_status(current_user: dict = Depends(get_current_user)):
+    """Lightweight read of the dismissal state — used by the Settings
+    "Getting Started Guide" toggle so it reflects the true server state
+    (not just localStorage). Needs to stay in lockstep with
+    /onboarding/progress's `dismissed` / `manually_dismissed` semantics.
+    """
+    progress = await db.onboarding_progress.find_one({"user_id": current_user["id"]}) or {}
+    manually_dismissed = bool(progress.get("manually_dismissed", False))
+    celebration_shown = bool(progress.get("celebration_shown", False))
+    # `dismissed` here is the UI-facing single boolean used by the
+    # Settings toggle: true ⇒ wizard hidden.
+    dismissed = manually_dismissed or celebration_shown
+    return {
+        "dismissed": dismissed,
+        "manually_dismissed": manually_dismissed,
+        "celebration_shown": celebration_shown,
+    }
+
+
 @router.post("/onboarding/celebration-shown")
 async def mark_celebration_shown(current_user: dict = Depends(get_current_user)):
     """Mark the celebration as shown so it never appears again."""
