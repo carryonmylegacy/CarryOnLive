@@ -446,6 +446,31 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ── Keep enabledFeatures fresh without requiring logout/login ──
+  // The feature-gate config lives in the DB and can be changed by an
+  // admin at any time (Founder Portal → Subscriptions → Feature Gates).
+  // Without this effect, `enabledFeatures` is loaded once at login and
+  // then sits stale for the whole session — meaning an admin toggle of
+  // DTS or EPT for a tier wouldn't reach a user whose tab was already
+  // open. Three triggers keep it fresh:
+  //   1. Page focus (user tabs back in after making an admin change)
+  //   2. 5-minute poll (long-lived tabs stay current)
+  //   3. Explicit pushes via the exposed `refreshEnabledFeatures()`
+  useEffect(() => {
+    if (!token) return;
+    const onFocus = () => { fetchEnabledFeatures(token); };
+    window.addEventListener('focus', onFocus);
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchEnabledFeatures(token);
+      }
+    }, 5 * 60 * 1000);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      clearInterval(interval);
+    };
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <AuthContext.Provider value={{
       user,
