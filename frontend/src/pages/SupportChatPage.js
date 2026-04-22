@@ -196,11 +196,19 @@ const SupportChatPage = () => {
          + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Desktop = two-pane side-by-side; mobile = single-pane with list OR chat.
   return (
     <div
       className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10 ccs-root"
-      style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', left: 0 }}
+      style={{
+        // Mirror the ECT top-offset pattern so the platform header AND the
+        // red "You're offline" banner both push this page down. Previously
+        // we used only `headerHeight` which ignored both the safe-area
+        // inset and the offline banner, so the CarryOn header sat on top
+        // of the CCS sub-header.
+        top: 'calc(env(safe-area-inset-top, 0px) + 56px + var(--cy-offline-banner-h, 0px))',
+        bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))',
+        left: 0,
+      }}
       data-testid="support-chat-page"
     >
       <style>{`

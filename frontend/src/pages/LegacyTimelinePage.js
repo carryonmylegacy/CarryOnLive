@@ -174,14 +174,22 @@ const LegacyTimelinePage = () => {
 
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="legacy-timeline-page">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
-          Estate Plan Timeline
-        </h1>
-        <p className="text-[var(--t4)] mt-1 text-sm sm:text-base">
-          A chronological story of your estate — every document, message, and milestone.
-        </p>
+      {/* Header — standardized icon-box + title + 1-line description to
+          match MM, SDV, DAV, etc. */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(217,119,6,0.15))' }}>
+            <Clock className="w-5 h-5 text-[#F59E0B]" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
+              Estate Plan Timeline (EPT)
+            </h1>
+            <p className="text-xs text-[var(--t5)]">
+              A chronological story of your estate — every document, message, and milestone
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Summary Stats */}

@@ -589,9 +589,12 @@ export default function EstateChatPage() {
         </button>
       </div>
 
-      {/* ECT-own header */}
+      {/* ECT-own header. Explicit `order-*` classes ensure the title stays
+          LEFT and action buttons stay RIGHT regardless of any ambient CSS
+          (e.g., an RTL wrapper or flex-direction override somewhere up the
+          tree). Defensive because a user reported the two halves swapped. */}
       <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--b)' }}>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 order-1">
           {selectMode ? (
             <button onClick={exitSelectMode} className="w-9 h-9 rounded-full flex items-center justify-center" data-testid="ect-select-cancel" style={{ background: 'rgba(255,255,255,0.06)' }}>
               <X className="w-4 h-4" style={{ color: 'var(--t4)' }} />
@@ -605,7 +608,7 @@ export default function EstateChatPage() {
             {selectMode ? `${selectedChannels.size} Selected` : 'Estate Comms Tool (ECT)'}
           </h2>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 order-2">
           {selectMode ? (
             <>
               <button onClick={toggleSelectAll} className="h-10 px-3 rounded-full flex items-center justify-center gap-1.5 transition-all" data-testid="ect-select-all-btn"

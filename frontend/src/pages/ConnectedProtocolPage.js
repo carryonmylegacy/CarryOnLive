@@ -833,10 +833,18 @@ export default function ConnectedProtocolPage() {
   return (
     <>
     <div data-testid="ccp-home" className="max-w-lg lg:max-w-4xl mx-auto px-4 lg:px-8 py-6 pb-28 sm:pb-6 space-y-4">
-      <div className="text-center mb-4">
-        <Shield className="w-10 h-10 mx-auto mb-2" style={{ color: '#d4af37' }} />
-        <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>CarryOn Contingency Protocols (CCP)</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--t4)' }}>Family disaster preparedness</p>
+      {/* Header — standardized icon-box + title + 1-line description to
+          match MM, SDV, DAV, EPT, etc. (centered hero replaced). */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(240,201,92,0.15))' }}>
+            <Shield className="w-5 h-5 text-[#d4af37]" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>CarryOn Contingency Protocols (CCP)</h1>
+            <p className="text-xs text-[var(--t5)]">Family disaster preparedness — plans, check-ins &amp; rendezvous</p>
+          </div>
+        </div>
       </div>
 
       {/* Emergency Alert Banner */}

@@ -111,6 +111,28 @@ const DigitalWalletPage = () => {
 
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="digital-wallet-page">
+      {/* Header — standardized layout (icon box on left, title + 1-line
+          description, action button on right, then SectionLockBanner
+          below). Matches MM / SDV / IAC / FFN for uniform feel. */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.2), rgba(219,39,119,0.15))' }}>
+            <KeyRound className="w-5 h-5 text-[#ec4899]" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
+              Digital Access Vault (DAV)
+            </h1>
+            <p className="text-xs text-[var(--t5)]">
+              {entries.length} account{entries.length === 1 ? '' : 's'} · Logins, passwords &amp; credentials for beneficiaries
+            </p>
+          </div>
+        </div>
+        <Button className="gold-button w-full sm:w-auto" onClick={() => setShowAdd(true)} data-testid="add-wallet-entry">
+          <Plus className="w-5 h-5 mr-2" /> Add Account
+        </Button>
+      </div>
+
       <SectionLockBanner sectionId="vault" />
 
       {/* Getting Started context banner */}
@@ -134,19 +156,6 @@ const DigitalWalletPage = () => {
       )}
 
       <SectionLockedOverlay sectionId="vault">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
-            Digital Access Vault (DAV)
-          </h1>
-          <p className="text-[var(--t4)] mt-1 text-sm">
-            Securely store logins, passwords, and access credentials for your beneficiaries
-          </p>
-        </div>
-        <Button className="gold-button" onClick={() => setShowAdd(true)} data-testid="add-wallet-entry">
-          <Plus className="w-4 h-4 mr-2" /> Add Account
-        </Button>
-      </div>
 
       {entries.length === 0 ? (
         <Card className="glass-card">
