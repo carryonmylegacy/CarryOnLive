@@ -1329,8 +1329,15 @@ export default function EstateChatPage() {
             On desktop (lg+), the `.lg:ect-desktop-inset` CSS rule already
             sets `top: var(--cy-offline-banner-h, 0px)` so there is no
             platform header to clear — rendering this spacer on desktop
-            caused a large empty gap above the ECT column. */}
-        <div className="lg:hidden" style={{ height: 'calc(env(safe-area-inset-top, 0px) + 56px + var(--cy-offline-banner-h, 0px))', flexShrink: 0 }} />
+            caused a large empty gap above the ECT column.
+
+            Must use `--cy-header-safe-top` (NOT raw `env(safe-area-inset-top)`)
+            so when the offline banner is showing — and absorbing the iOS
+            status-bar inset itself — we don't double-count that inset and
+            also don't under-count it. Mirrors the `.main-content`
+            padding-top formula in index.css for pixel parity. 56px matches
+            the inner `min-h-[3rem] py-1` of the platform mobile header. */}
+        <div className="lg:hidden" style={{ height: 'calc(var(--cy-header-safe-top, env(safe-area-inset-top, 0px)) + 56px + var(--cy-offline-banner-h, 0px))', flexShrink: 0 }} />
         <div className="hidden lg:flex flex-1 min-h-0">
           <div style={{ width: 340, minWidth: 340 }}>{channelPanel}</div>
           <div className="flex-1 flex flex-col">{activeChannel ? messageArea : (

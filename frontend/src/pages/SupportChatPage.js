@@ -201,11 +201,10 @@ const SupportChatPage = () => {
       className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10 ccs-root"
       style={{
         // Mirror the ECT top-offset pattern so the platform header AND the
-        // red "You're offline" banner both push this page down. Previously
-        // we used only `headerHeight` which ignored both the safe-area
-        // inset and the offline banner, so the CarryOn header sat on top
-        // of the CCS sub-header.
-        top: 'calc(env(safe-area-inset-top, 0px) + 56px + var(--cy-offline-banner-h, 0px))',
+        // red "You're offline" banner both push this page down. Uses
+        // `--cy-header-safe-top` so we don't double-count the iOS status
+        // bar inset when the offline banner has already absorbed it.
+        top: 'calc(var(--cy-header-safe-top, env(safe-area-inset-top, 0px)) + 56px + var(--cy-offline-banner-h, 0px))',
         bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))',
         left: 0,
       }}

@@ -560,7 +560,7 @@ const GuardianPage = () => {
   // ═══════════════════════════════════════════════
   if (view === 'landing') {
     return (
-      <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 56px + var(--cy-offline-banner-h, 0px))', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', left: 0, overscrollBehavior: 'contain' }} data-testid="estate-guardian">
+      <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10" style={{ top: 'calc(var(--cy-header-safe-top, env(safe-area-inset-top, 0px)) + 56px + var(--cy-offline-banner-h, 0px))', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', left: 0, overscrollBehavior: 'contain' }} data-testid="estate-guardian">
       <style>{`@media (min-width: 1024px) { [data-testid="estate-guardian"] { left: var(--sb-offset, var(--sidebar-width, 260px)) !important; top: var(--cy-offline-banner-h, 0px) !important; bottom: 0 !important; } }`}</style>
       {renderAddressGate()}
 
