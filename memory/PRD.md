@@ -17,6 +17,27 @@
 
 ---
 
+## 🔁 Operational Playbook — Things That Rotate
+
+> **Preview URL rotation (GitHub Actions E2E secrets)** — the `E2E_BASE_URL`
+> and `E2E_API_URL` repository secrets both point at the current preview
+> URL (today: `https://ui-polish-72.preview.emergentagent.com`). If the
+> preview URL ever changes (e.g. Emergent re-provisions the pod, rename,
+> staging migration), **the `e2e-smoke` job will start failing with
+> `net::ERR_CONNECTION_REFUSED` or 502**. Fix:
+>
+> 1. GitHub → repo **Settings** → **Secrets and variables** → **Actions**
+> 2. **Secrets** tab → click the ✏️ (pencil) icon next to `E2E_BASE_URL` →
+>    paste the new URL → **Update secret**
+> 3. Repeat for `E2E_API_URL` (same value)
+>
+> No code change needed, no redeploy — next workflow run picks up the new
+> URL automatically. A more durable long-term fix is to point both at a
+> stable alias (e.g. `staging.carryon.us` → current preview) so this
+> never needs touching again.
+
+---
+
 ## Original Problem Statement
 Comprehensive family preparedness platform with estate planning, secure document vault, milestone messages, estate chat, connected care protocol, financial portal, and subscription management.
 
