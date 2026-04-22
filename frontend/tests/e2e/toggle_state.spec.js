@@ -23,9 +23,12 @@
 
 import { test, expect } from '@playwright/test';
 
-const BASE = process.env.BASE_URL || process.env.REACT_APP_BACKEND_URL || 'https://ui-polish-72.preview.emergentagent.com';
-const EMAIL = process.env.E2E_EMAIL || 'info@carryon.us';
-const PASSWORD = process.env.E2E_PASSWORD || 'Demo1234!';
+const BASE = process.env.E2E_BASE_URL || process.env.BASE_URL || process.env.REACT_APP_BACKEND_URL || 'https://ui-polish-72.preview.emergentagent.com';
+// Reuse the same env var names the rest of the e2e suite uses
+// (smoke.spec.js, scrollbar.spec.js, signup_invite_flow.spec.js) so CI only
+// needs one pair of secrets: `E2E_ADMIN_EMAIL` + `E2E_ADMIN_PASSWORD`.
+const EMAIL = process.env.E2E_ADMIN_EMAIL || 'info@carryon.us';
+const PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'Demo1234!';
 
 async function login(page) {
   await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
