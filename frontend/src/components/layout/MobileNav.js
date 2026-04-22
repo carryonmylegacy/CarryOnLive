@@ -325,7 +325,7 @@ const MobileNav = () => {
     { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
     { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
     { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
-    { to: '/estate-chat', icon: MessageCircle, label: 'Estate Comms (ECT)', badge: ectUnread },
+    { to: '/estate-chat', icon: MessageCircle, label: 'Estate Comms Tool (ECT)', badge: ectUnread },
     { to: '/connected-protocol', icon: Shield, label: 'CarryOn Contingency Protocols (CCP)' },
   ], enabledFeatures);
 
@@ -356,7 +356,7 @@ const MobileNav = () => {
     { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
     { to: '/beneficiary/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
     { to: '/beneficiary/milestone', icon: Gift, label: 'Report Milestone' },
-    { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Comms (ECT)', badge: ectUnread },
+    { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Comms Tool (ECT)', badge: ectUnread },
     { to: '/beneficiary/connected-protocol', icon: Shield, label: 'CarryOn Contingency Protocols (CCP)' },
   ]), enabledFeatures);
 

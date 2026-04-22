@@ -20,17 +20,25 @@ router = APIRouter()
 class SupportMessageCreate(BaseModel):
     content: str
     conversation_id: Optional[str] = None
+    thread_id: Optional[str] = None  # Topic thread within the user's conversation.
 
 
 class SupportMessageResponse(BaseModel):
     id: str
     conversation_id: str
+    thread_id: Optional[str] = None
     sender_id: str
     sender_name: str
     sender_role: str
     content: str
     created_at: str
     read: bool = False
+
+
+class SupportThreadCreate(BaseModel):
+    """User-facing: create a new topic thread with CarryOn Customer Support (CCS)."""
+
+    title: str
 
 
 @router.post("/support/messages")
@@ -49,6 +57,11 @@ async def send_support_message(data: SupportMessageCreate, current_user: dict = 
     message = {
         "id": str(uuid.uuid4()),
         "conversation_id": conversation_id,
+        # Thread = a topic-scoped sub-conversation within the user's support
+        # history. "default" is the catch-all legacy bucket. A user can
+        # open as many named threads as they like ("Billing question",
+        # "How do I invite my dad?", etc.) — see CCS two-pane UI.
+        "thread_id": data.thread_id or "default",
         "sender_id": current_user["id"],
         "sender_name": current_user.get("name", current_user.get("email", "User")),
         "sender_role": "admin" if current_user["role"] in ("admin", "operator") else current_user["role"],
@@ -104,22 +117,111 @@ async def send_support_message(data: SupportMessageCreate, current_user: dict = 
 
 
 @router.get("/support/messages")
-async def get_my_support_messages(current_user: dict = Depends(get_current_user)):
-    """Get support messages for the current user"""
+async def get_my_support_messages(
+    thread_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user),
+):
+    """Get support messages for the current user, optionally scoped to a
+    single topic thread. Omitting `thread_id` returns the legacy "default"
+    thread for backward compatibility with old clients."""
     conversation_id = current_user["id"]
-    messages = (
-        await db.support_messages.find({"conversation_id": conversation_id}, {"_id": 0})
-        .sort("created_at", 1)
-        .to_list(500)
-    )
+    query = {"conversation_id": conversation_id}
+    query["thread_id"] = thread_id if thread_id else "default"
 
-    # Mark messages from support as read
+    messages = await db.support_messages.find(query, {"_id": 0}).sort("created_at", 1).to_list(500)
+
+    # Mark messages from support as read in THIS thread only.
     await db.support_messages.update_many(
-        {"conversation_id": conversation_id, "sender_role": "admin", "read": False},
+        {**query, "sender_role": "admin", "read": False},
         {"$set": {"read": True}},
     )
 
     return messages
+
+
+# ── User-facing topic threads (CCS two-pane UI) ────────────────────────────
+@router.get("/support/threads")
+async def list_my_support_threads(current_user: dict = Depends(get_current_user)):
+    """List every CCS conversation thread the current user has ever opened,
+    newest-activity first, with last-message preview + unread count."""
+    conversation_id = current_user["id"]
+    pipeline = [
+        {"$match": {"conversation_id": conversation_id, "soft_deleted": {"$ne": True}}},
+        {"$sort": {"created_at": -1}},
+        {
+            "$group": {
+                "_id": {"$ifNull": ["$thread_id", "default"]},
+                "latest_message": {"$first": "$content"},
+                "latest_time": {"$first": "$created_at"},
+                "latest_sender_role": {"$first": "$sender_role"},
+                "unread_count": {
+                    "$sum": {
+                        "$cond": [
+                            {
+                                "$and": [
+                                    {"$eq": ["$read", False]},
+                                    {"$eq": ["$sender_role", "admin"]},
+                                ]
+                            },
+                            1,
+                            0,
+                        ]
+                    }
+                },
+            }
+        },
+        {"$sort": {"latest_time": -1}},
+    ]
+    grouped = await db.support_messages.aggregate(pipeline).to_list(200)
+
+    # Overlay any titles stored in support_threads (user-provided names).
+    titles = {}
+    async for doc in db.support_threads.find(
+        {"conversation_id": conversation_id}, {"_id": 0, "id": 1, "thread_id": 1, "title": 1}
+    ):
+        titles[doc["thread_id"]] = doc.get("title", "")
+
+    threads = []
+    for row in grouped:
+        tid = row["_id"] or "default"
+        threads.append(
+            {
+                "thread_id": tid,
+                "title": titles.get(tid, "General support" if tid == "default" else "Conversation"),
+                "latest_message": (row["latest_message"][:120] + "…")
+                if len(row["latest_message"]) > 120
+                else row["latest_message"],
+                "latest_time": row["latest_time"],
+                "latest_sender_role": row["latest_sender_role"],
+                "unread_count": row["unread_count"],
+            }
+        )
+    return threads
+
+
+@router.post("/support/threads")
+async def create_my_support_thread(
+    data: SupportThreadCreate,
+    current_user: dict = Depends(get_current_user),
+):
+    """Create a new named topic thread under the user's conversation. Does
+    NOT post a message — the thread becomes visible in the list as soon as
+    the first message is sent to it."""
+    title = (data.title or "").strip()
+    if not title:
+        raise HTTPException(status_code=400, detail="Title is required")
+    if len(title) > 120:
+        title = title[:120]
+    thread_id = str(uuid.uuid4())
+    await db.support_threads.insert_one(
+        {
+            "thread_id": thread_id,
+            "conversation_id": current_user["id"],
+            "title": title,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+    return {"thread_id": thread_id, "title": title}
 
 
 @router.get("/support/messages/{conversation_id}")

@@ -30,32 +30,34 @@ import {
 
 // ── Complete registry of all dock-eligible items by role group ──
 // Used by both the dock customizer (settings) and the bottom nav renderer.
+// Labels are short acronyms because mobile dock cells are narrow. Full
+// names are surfaced in the desktop Sidebar + each page's own H1.
 export const DOCK_REGISTRY = {
   benefactor: [
     { to: '/dashboard', icon: Home, label: 'Dashboard' },
     { to: '/beneficiaries', icon: Users, label: 'Benefic.' },
-    { to: '/messages', icon: MessageSquare, label: 'Milestone' },
-    { to: '/vault', icon: FolderLock, label: 'Vault' },
-    { to: '/guardian', icon: Sparkles, label: 'Guardian' },
-    { to: '/checklist', icon: CheckSquare, label: 'Checklist' },
-    { to: '/ffn', icon: Heart, label: 'FFN' },
-    { to: '/digital-wallet', icon: KeyRound, label: 'Wallet' },
-    { to: '/trustee', icon: Shield, label: 'DTS' },
-    { to: '/timeline', icon: Clock, label: 'Timeline' },
-    { to: '/estate-chat', icon: MessageCircle, label: 'Chat' },
+    { to: '/messages', icon: MessageSquare, label: 'MM' },
+    { to: '/vault', icon: FolderLock, label: 'SDV' },
+    { to: '/guardian', icon: Sparkles, label: 'EGA' },
+    { to: '/financial', icon: DollarSign, label: 'CFP' },
     { to: '/connected-protocol', icon: Shield, label: 'CCP' },
-    { to: '/financial', icon: DollarSign, label: 'Financial' },
+    { to: '/estate-chat', icon: MessageCircle, label: 'ECT' },
+    { to: '/checklist', icon: CheckSquare, label: 'IAC' },
+    { to: '/trustee', icon: Shield, label: 'DTS' },
+    { to: '/ffn', icon: Heart, label: 'FFN' },
+    { to: '/digital-wallet', icon: KeyRound, label: 'DAV' },
+    { to: '/timeline', icon: Clock, label: 'EPT' },
   ],
   beneficiary: [
     { to: '/beneficiary', icon: Home, label: 'Dashboard' },
-    { to: '/beneficiary/vault', icon: FolderLock, label: 'Vault' },
-    { to: '/beneficiary/guardian', icon: Sparkles, label: 'Guardian' },
-    { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Checklist' },
-    { to: '/beneficiary/messages', icon: MessageSquare, label: 'Messages' },
+    { to: '/beneficiary/vault', icon: FolderLock, label: 'SDV' },
+    { to: '/beneficiary/guardian', icon: Sparkles, label: 'EGA' },
+    { to: '/beneficiary/checklist', icon: CheckSquare, label: 'IAC' },
+    { to: '/beneficiary/messages', icon: MessageSquare, label: 'MM' },
     { to: '/beneficiary/milestone', icon: Gift, label: 'Milestone' },
-    { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Chat' },
+    { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'ECT' },
     { to: '/beneficiary/connected-protocol', icon: Shield, label: 'CCP' },
-    { to: '/beneficiary/financial', icon: DollarSign, label: 'Financial' },
+    { to: '/beneficiary/financial', icon: DollarSign, label: 'CFP' },
   ],
   admin: [
     { to: '/admin', icon: Home, label: 'Dashboard' },

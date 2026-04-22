@@ -375,7 +375,11 @@ const Sidebar = () => {
     navigate('/login');
   };
 
-  // Navigation structure matching prototype
+  // Navigation structure matching prototype. Order + labels per user spec:
+  // Dashboard → Beneficiaries → MM → SDV → EGA → CFP → CCP → ECT → IAC →
+  // DTS → FFN → DAV → EPT. FFN / DAV / EPT live at the bottom as the
+  // 'post-transition' trio. Labels are "Full Name (ACRONYM)" everywhere
+  // so users learn the shorthand that's used throughout the platform.
   const benefactorNavSections = [
     {
       title: 'ESTATE PLAN ACCESS',
@@ -383,16 +387,16 @@ const Sidebar = () => {
         { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
         { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
         { to: '/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
-        { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
         { to: '/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
         { to: '/guardian', icon: Sparkles, label: 'Estate Guardian AI (EGA)' },
+        { to: '/financial', icon: DollarSign, label: 'CarryOn Financial Picture (CFP)' },
+        { to: '/connected-protocol', icon: Shield, label: 'CarryOn Contingency Protocols (CCP)' },
+        { to: '/estate-chat', icon: MessageCircle, label: 'Estate Comms Tool (ECT)', badge: ectUnread },
+        { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
+        { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
         { to: '/ffn', icon: Heart, label: 'Family & Friends Notification (FFN)' },
         { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
-        { to: '/financial', icon: DollarSign, label: 'Financial Picture' },
-        { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
-        { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
-        { to: '/estate-chat', icon: MessageCircle, label: 'Estate Comms (ECT)', badge: ectUnread },
-        { to: '/connected-protocol', icon: Shield, label: 'CarryOn Contingency Protocols (CCP)' },
+        { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline (EPT)' },
       ], enabledFeatures)
     },
     {
@@ -437,9 +441,9 @@ const Sidebar = () => {
         { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
         { to: '/beneficiary/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
         { to: '/beneficiary/milestone', icon: Home, label: 'Report Milestone' },
-        { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Comms (ECT)', badge: ectUnread },
+        { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Comms Tool (ECT)', badge: ectUnread },
         { to: '/beneficiary/connected-protocol', icon: Shield, label: 'CarryOn Contingency Protocols (CCP)' },
-        { to: '/beneficiary/financial', icon: DollarSign, label: 'Financial Picture' },
+        { to: '/beneficiary/financial', icon: DollarSign, label: 'CarryOn Financial Picture (CFP)' },
       ]), enabledFeatures)
     },
     {

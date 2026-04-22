@@ -955,7 +955,7 @@ const DashboardPage = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-[#10b981]" />
-              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">Financial Picture</h3>
+              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">CarryOn Financial Picture (CFP)</h3>
             </div>
             <span className="text-[var(--t4)] text-sm">
               {financialSummary ? `${(financialSummary.bills_count || 0) + (financialSummary.debts_count || 0) + (financialSummary.accounts_count || 0) + (financialSummary.property_count || 0)} items` : '0 items'}

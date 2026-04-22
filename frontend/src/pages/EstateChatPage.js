@@ -602,7 +602,7 @@ export default function EstateChatPage() {
             </div>
           )}
           <h2 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>
-            {selectMode ? `${selectedChannels.size} Selected` : 'Estate Comms (ECT)'}
+            {selectMode ? `${selectedChannels.size} Selected` : 'Estate Comms Tool (ECT)'}
           </h2>
         </div>
         <div className="flex gap-2">

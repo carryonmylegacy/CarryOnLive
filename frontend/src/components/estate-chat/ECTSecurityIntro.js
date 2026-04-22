@@ -41,7 +41,7 @@ export default function ECTSecurityIntro({ introStep, setIntroStep, onDismiss, o
         <div className="flex items-center justify-center mb-4">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
             <Shield className="w-3.5 h-3.5" style={{ color: '#d4af37' }} />
-            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#d4af37' }}>Estate Comms (ECT)</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#d4af37' }}>Estate Comms Tool (ECT)</span>
           </div>
         </div>
 
@@ -68,7 +68,7 @@ export default function ECTSecurityIntro({ introStep, setIntroStep, onDismiss, o
                 The Most Private Chat<br />You'll Ever Use
               </h2>
               <p className="text-sm" style={{ color: 'var(--t4)' }}>
-                Here's what makes Estate Comms different from every other messaging app.
+                Here's what makes the Estate Comms Tool different from every other messaging app.
               </p>
             </div>
 
@@ -116,7 +116,7 @@ export default function ECTSecurityIntro({ introStep, setIntroStep, onDismiss, o
           <div data-testid="ect-intro-step-2">
             <div className="text-center mb-5">
               <h2 className="text-xl font-bold mb-1.5" style={{ color: 'var(--t)', fontFamily: 'var(--serif)' }}>
-                How to Use Estate Comms
+                How to Use the Estate Comms Tool
               </h2>
               <p className="text-sm" style={{ color: 'var(--t4)' }}>
                 Everything you need to know in about 30 seconds.
