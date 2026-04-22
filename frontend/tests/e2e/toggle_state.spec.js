@@ -58,17 +58,55 @@ async function assertRendersWithState(page, testid, { timeout = 8000 } = {}) {
 /**
  * Full round-trip: click → flip → reload → persists → click back → reload → restores.
  * Cleans up after itself so the test account's state is unchanged at the end.
+ *
+ * If `expectWriteEndpoints` is provided, we also assert the browser actually
+ * issued matching network calls (with a non-error status) for each click.
+ * This guards against the subtler bug where the UI flips optimistically but
+ * the backend write silently 500s — the toggle would appear to work until
+ * the user reloaded and saw their change reverted.
+ *
+ * `expectWriteEndpoints` shape:
+ *   { onFlipTo: { checked: '/re-enable/endpoint', unchecked: '/dismiss/endpoint' } }
+ * Each value is a substring to match against the network URL.
  */
-async function assertPersistsAcrossReload(page, testid, settleMs = 900) {
+async function assertPersistsAcrossReload(page, testid, opts = {}) {
+  const { settleMs = 900, expectWriteEndpoints = null } = opts;
   const toggle = page.locator(`[data-testid="${testid}"]`);
   await expect(toggle).toBeVisible({ timeout: 10000 });
 
   const before = await toggle.getAttribute('data-state');
   expect(before).toMatch(/^(checked|unchecked)$/);
+  // Target state after the first click is the opposite of `before`.
+  const afterFirstClick = before === 'checked' ? 'unchecked' : 'checked';
+
+  // Optionally wait for the write call in parallel with the click.
+  const clickWithNetworkAssert = async (expectedTargetState) => {
+    // Always scroll into view — some toggles live deep below the fold
+    // (e.g. digest preferences). After a reload the page is scrolled to
+    // the top, so without this Playwright throws "Element is outside of
+    // the viewport" on force-click.
+    await toggle.scrollIntoViewIfNeeded();
+    if (expectWriteEndpoints?.onFlipTo?.[expectedTargetState]) {
+      const needle = expectWriteEndpoints.onFlipTo[expectedTargetState];
+      const [resp] = await Promise.all([
+        page.waitForResponse(
+          (r) => r.url().includes(needle) && ['PUT', 'POST'].includes(r.request().method()),
+          { timeout: 8000 },
+        ),
+        toggle.click({ force: true }),
+      ]);
+      expect(
+        resp.status(),
+        `${testid} → expected ${needle} to return 2xx on click (got ${resp.status()})`,
+      ).toBeLessThan(400);
+    } else {
+      await toggle.click({ force: true });
+    }
+    await page.waitForTimeout(settleMs);
+  };
 
   // Flip
-  await toggle.click({ force: true });
-  await page.waitForTimeout(settleMs); // let PUT settle
+  await clickWithNetworkAssert(afterFirstClick);
   let after = await toggle.getAttribute('data-state');
   expect(after, `${testid} should visually flip on click`).not.toBe(before);
 
@@ -80,8 +118,7 @@ async function assertPersistsAcrossReload(page, testid, settleMs = 900) {
   expect(after, `${testid} flipped state must persist across reload (proves backend roundtrip)`).not.toBe(before);
 
   // Flip back → reload → original restored
-  await toggle.click({ force: true });
-  await page.waitForTimeout(settleMs);
+  await clickWithNetworkAssert(before);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(1500);
   await expect(toggle).toBeVisible({ timeout: 10000 });
@@ -123,7 +160,16 @@ test.describe('Settings toggle regression', () => {
     const visible = await toggle.isVisible().catch(() => false);
     test.skip(!visible, 'settings-onboarding-toggle is benefactor-only; skipping on staff account');
 
-    await assertPersistsAcrossReload(page, 'settings-onboarding-toggle');
+    await assertPersistsAcrossReload(page, 'settings-onboarding-toggle', {
+      expectWriteEndpoints: {
+        onFlipTo: {
+          // AppearanceCard posts `/onboarding/reset` when turning ON
+          // and `/onboarding/dismiss` when turning OFF.
+          checked: '/onboarding/reset',
+          unchecked: '/onboarding/dismiss',
+        },
+      },
+    });
   });
 
   test('weekly digest toggle persists across reload (regression: /digest/preferences)', async ({ page }) => {
@@ -134,7 +180,15 @@ test.describe('Settings toggle regression', () => {
     const visible = await toggle.isVisible().catch(() => false);
     test.skip(!visible, 'weekly digest toggle not rendered on this account');
 
-    await assertPersistsAcrossReload(page, 'settings-weekly-digest-toggle');
+    await assertPersistsAcrossReload(page, 'settings-weekly-digest-toggle', {
+      expectWriteEndpoints: {
+        onFlipTo: {
+          // DigestCard PUTs `/digest/preferences` in both directions.
+          checked: '/digest/preferences',
+          unchecked: '/digest/preferences',
+        },
+      },
+    });
   });
 
   test('passkey toggle renders with a valid state (regression: /auth/passkeys 404)', async ({ page }) => {
