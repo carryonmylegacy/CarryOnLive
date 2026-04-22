@@ -531,6 +531,18 @@ User uploaded 5 "good" reference screenshots (Beneficiaries / MM / SDV / CFP / I
 - Housekeeping: 69 PASS, 0 WARN, 0 FAIL.
 
 
+## E2E CI Fix — Phase 0 "inert when flag=off" invariant restored (Apr 22, 2026)
+**Failure**: `offline_phase0.spec.js` started failing in GitHub Actions E2E Smoke — one assertion: with the offline flag at default `'off'`, the `carryon-offline` IndexedDB must NOT be created by normal navigation. CI was showing `dbs = ['carryon-offline']` after a plain login + dashboard visit.
+
+**Root cause**: `AuthContext.initAuth` fires `drainPendingUploads(token)` unconditionally on every login (gated only by `navigator.onLine`, not by the offline flag). That function called `listPendingUploads()` → `getDB()` → opened the Dexie database even when the user had never turned the flag on, violating the Phase 0 inert-when-off guarantee. The comment in `pendingUploadsRepo.js` intentionally does NOT gate the list/count functions on the flag so that uploads queued in a prior `flag=on` session can still drain after a flag flip — that's correct, but the gate had to move up to the caller.
+
+**Fix** (`frontend/src/offline/chunkedUploader.js`):
+- Added `_offlineDbExists()` helper — probes `indexedDB.databases()` WITHOUT opening the DB. Returns false only when we can confirm the DB doesn't exist; fails open for browsers that don't support the API (Firefox).
+- `drainPendingUploads` now short-circuits with `{processed: 0}` when `!isOfflineEnabled() && !await _offlineDbExists()`. No Dexie instantiation, no IndexedDB side-effects.
+- Flag-on behaviour unchanged. Flag-off with old queued items (DB exists) still drains correctly.
+
+**Verified**: housekeeping 65/65 PASS, 0 WARN, 0 FAIL. ESLint clean on the changed file.
+
 ## Admin Feature-Gate Preview Fix (Apr 22, 2026)
 **Root cause of "DTS/EPT still show in my menu despite gates off for all tiers"** (user report):
 - `/api/subscriptions/enabled-features` short-circuited for `role in ('admin','operator')` and returned `all_enabled: true` with every feature, regardless of the persisted feature-gate config.

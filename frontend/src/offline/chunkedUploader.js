@@ -151,9 +151,32 @@ export class ChunkedUploader {
  * Drain the pending uploads queue. Called when navigator.onLine flips
  * true. Processes one upload at a time so we don't saturate the uplink
  * or exhaust browser memory on a 50 MB video.
+ *
+ * IMPORTANT: this is called unconditionally from AuthContext on every
+ * login so that queued uploads from a previous "offline=on" session
+ * still drain even if the user has since flipped the flag back to off.
+ * To preserve the "inert when flag=off" Phase 0 invariant — the
+ * carryon-offline IndexedDB must NOT be created just by logging in
+ * when the flag has never been turned on — we first probe for the DB
+ * without opening it. If it doesn't exist, there's definitionally
+ * nothing to drain and we return early without touching Dexie.
  */
+async function _offlineDbExists() {
+  try {
+    if (typeof indexedDB === 'undefined') return false;
+    if (typeof indexedDB.databases !== 'function') return true; // Firefox: can't detect, assume yes
+    const dbs = await indexedDB.databases();
+    return dbs.some((d) => d.name === 'carryon-offline');
+  } catch {
+    return true; // fail open — opening Dexie on a non-existent DB is cheap
+  }
+}
+
 export async function drainPendingUploads(token) {
   if (typeof navigator === 'undefined' || !navigator.onLine) return { processed: 0 };
+  // Phase 0 invariant: don't instantiate IndexedDB on cold boot when flag=off.
+  const { isOfflineEnabled } = await import('./featureFlag');
+  if (!isOfflineEnabled() && !(await _offlineDbExists())) return { processed: 0 };
   const { listPendingUploads, getPendingUpload, updatePendingUpload, deletePendingUpload }
     = await import('./pendingUploadsRepo');
   const rows = await listPendingUploads();
