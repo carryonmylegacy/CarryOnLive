@@ -769,7 +769,7 @@ const DashboardPage = () => {
         <StatCard 
           icon={DollarSign}
           value={(financialSummary?.bills_count || 0) + (financialSummary?.debts_count || 0) + (financialSummary?.accounts_count || 0) + (financialSummary?.property_count || 0)}
-          label="Financial Picture"
+          label="CarryOn Financial Picture (CFP)"
           cardClass="stat-card-financial"
           onClick={() => navigate('/financial')}
           sectionKey="financial_portal"
@@ -1004,11 +1004,12 @@ const DashboardPage = () => {
         )}
 
         {/* Share your CarryOn — gold pill button at the bottom of the dashboard.
-            `lg:flex lg:justify-center` centers the pill on desktop where the
-            dashboard column is wide (otherwise a `w-full` pill stretches
-            edge-to-edge and looks awkward). Inner wrapper caps the pill
-            width on lg; mobile keeps the full-bleed pill. */}
-        <div className="mt-4 mb-2 px-1 lg:flex lg:justify-center" data-testid="dashboard-share-tile">
+            `lg:col-span-2` makes the pill span the FULL width of the 2-column
+            dashboard grid on desktop (otherwise it would sit in a single
+            grid cell and appear left-justified). Inside that full span
+            `flex justify-center` + `lg:max-w-md` caps the pill's width
+            and centers it horizontally across the full dashboard content. */}
+        <div className="mt-4 mb-2 px-1 lg:col-span-2 lg:flex lg:justify-center" data-testid="dashboard-share-tile">
           <div className="w-full lg:max-w-md">
             <TileErrorBoundary name="share-your-carryon">
               <ShareYourCarryOn variant="pill" />
