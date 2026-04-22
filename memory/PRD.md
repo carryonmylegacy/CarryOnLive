@@ -543,6 +543,13 @@ User uploaded 5 "good" reference screenshots (Beneficiaries / MM / SDV / CFP / I
 
 **Verified**: housekeeping 65/65 PASS, 0 WARN, 0 FAIL. ESLint clean on the changed file.
 
+## Feature-Gate Bypass #2 — Untiered users (Apr 22, 2026 — follow-up)
+**User discovered the original admin-bypass fix didn't cover the common case**: after fixing the `role in ('admin','operator')` short-circuit, users who resolved no tier at all (Portal Switcher demo accounts, seeded test users with no Stripe subscription and no `verified_tier`) still hit a second bypass in `feature_gates.py` that returned `{enabled_features: FEATURE_KEYS, all_enabled: true}`. That's how the user's "Barnet" demo benefactor account still saw DTS/EPT in the sidebar despite both being toggled off for every tier in the admin UI.
+
+**Fix**: Collapsed the untiered fallback into the same "treat as premium" behaviour I previously gave admins. Nobody can now bypass the published gates — untiered users see whatever the top tier sees. Paywall and per-route guards still enforce actual access; this only controls visibility.
+
+**Verified** end-to-end on preview pod: admin → 9 features (premium tier gates applied), `all_enabled: false`. Housekeeping 65 PASS / 0 WARN / 0 FAIL.
+
 ## Admin Feature-Gate Preview Fix (Apr 22, 2026)
 **Root cause of "DTS/EPT still show in my menu despite gates off for all tiers"** (user report):
 - `/api/subscriptions/enabled-features` short-circuited for `role in ('admin','operator')` and returned `all_enabled: true` with every feature, regardless of the persisted feature-gate config.

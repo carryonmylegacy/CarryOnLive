@@ -181,7 +181,9 @@ async def get_user_enabled_features(
     1. Active subscription plan_id  (Stripe)
     2. Estate-level verified_tier   (admin-assigned, per-account)
     3. User-level verified_tier     (legacy fallback)
-    4. No tier → all features       (paywall handles access separately)
+    4. No tier → fall back to "premium" so the published gates still apply.
+       Prior behaviour ("all features enabled") let trial/demo/freshly-
+       seeded accounts bypass the admin's published gates entirely.
 
     Admins/operators are NOT short-circuited: they must see the same
     gated navigation a real benefactor would, otherwise previewing the
@@ -190,7 +192,6 @@ async def get_user_enabled_features(
     has no effect on admin-panel access.
     """
 
-    is_admin_or_operator = current_user.get("role") in ("admin", "operator")
     effective_tier = None
 
     # 1. Check active subscription
@@ -226,14 +227,16 @@ async def get_user_enabled_features(
             effective_tier = benefactor_tier
 
     if not effective_tier:
-        # Admin/operator without any resolved tier → preview as Premium
-        # (highest tier) so nav reflects the top-of-stack customer view.
-        # Regular users with no tier still fall back to all features
-        # (paywall controls actual access).
-        if is_admin_or_operator:
-            effective_tier = "premium"
-        else:
-            return {"enabled_features": FEATURE_KEYS, "all_enabled": True}
+        # Nobody should bypass the published feature gates. If we can't
+        # determine a tier from subscription, estate, or legacy user
+        # record, fall back to the top tier ("premium") so the admin's
+        # published gates are ALWAYS the source of truth for what's
+        # visible. Trial / demo / freshly-seeded accounts previously
+        # short-circuited to "all features enabled," which produced
+        # ghost menu items for features that had been turned off for
+        # every real tier. Paywall and per-route guards handle actual
+        # access enforcement — this decides visibility only.
+        effective_tier = "premium"
 
     gates = await get_feature_gates()
     enabled = get_enabled_features_for_tier(gates, effective_tier)
