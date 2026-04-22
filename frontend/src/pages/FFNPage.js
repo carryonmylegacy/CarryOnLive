@@ -140,16 +140,17 @@ export default function FFNPage() {
   }
 
   return (
-    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="ffn-page">
+    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="ffn-page"
+      style={{ background: 'radial-gradient(ellipse at top left, rgba(236,72,153,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(219,39,119,0.06), transparent 55%)' }}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.15), rgba(236,72,153,0.05))', border: '1px solid rgba(236,72,153,0.2)' }}>
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.2), rgba(219,39,119,0.15))' }}>
             <Heart className="w-5 h-5 text-[#ec4899]" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Family & Friends Notification</h1>
-            <p className="text-xs text-[var(--t4)]">{contacts.length} contact{contacts.length !== 1 ? 's' : ''} to notify</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Family &amp; Friends Notification (FFN)</h1>
+            <p className="text-xs text-[var(--t5)]">{contacts.length} contact{contacts.length !== 1 ? 's' : ''} to notify</p>
           </div>
         </div>
         <Button onClick={openNew} className="gold-button flex items-center gap-1.5" data-testid="ffn-add-btn">

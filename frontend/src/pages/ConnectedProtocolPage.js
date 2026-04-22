@@ -832,7 +832,7 @@ export default function ConnectedProtocolPage() {
   // ===================== HOME VIEW — Big Bubble Buttons =====================
   return (
     <>
-    <div data-testid="ccp-home" className="max-w-lg lg:max-w-4xl mx-auto px-4 lg:px-8 py-6 pb-28 sm:pb-6 space-y-4"
+    <div data-testid="ccp-home" className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in"
       style={{ background: 'radial-gradient(ellipse at top left, rgba(212,175,55,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(240,201,92,0.06), transparent 55%)' }}>
       {/* Header — standardized icon-box + title + 1-line description to
           match MM, SDV, DAV, EPT, etc. (centered hero replaced). */}

@@ -567,10 +567,10 @@ const GuardianPage = () => {
         <div className="flex-1 overflow-y-auto flex flex-col" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y',
           // Signature page glow — matches MM/SDV/CFP/IAC/Beneficiaries pattern.
           background: 'radial-gradient(ellipse at top left, rgba(212,175,55,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(240,201,92,0.06), transparent 55%)' }}>
-          <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 lg:px-8 pt-4 pb-4 w-full">
+          <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-4 w-full space-y-5">
             {/* Header — standardized icon-box + title + 1-line description,
                 matching MM/SDV/CFP/IAC/Beneficiaries/DTS. */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(240,201,92,0.15))' }}>
                   <Sparkles className="w-5 h-5 text-[var(--gold)]" />
@@ -594,7 +594,7 @@ const GuardianPage = () => {
             </div>
 
             {/* Recent Conversations */}
-            <div className="glass-card p-4 mb-4">
+            <div className="glass-card p-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider">Recent Conversations</h2>
                 <button onClick={() => startNewChat()} className="flex items-center gap-1.5 text-xs font-bold text-[var(--gold)]" data-testid="new-chat-btn">
@@ -638,7 +638,7 @@ const GuardianPage = () => {
             </div>
 
             {/* Quick Actions */}
-            <div className="glass-card p-4 mb-4">
+            <div className="glass-card p-4">
               <h2 className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider mb-3">Quick Actions</h2>
               <div className="grid grid-cols-2 gap-2">
                 {actionButtons.map(({ key, label, icon: Icon, color }) => {
