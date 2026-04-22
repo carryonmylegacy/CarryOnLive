@@ -83,39 +83,46 @@ const SettingsPage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-8 max-w-2xl lg:max-w-4xl mx-auto space-y-5 pb-28 sm:pb-8 animate-page-in">
-      {/* Header — polished hero with Back + Save controls */}
-      <div className="mb-1">
-        <div className="flex items-start justify-between gap-3 mb-1">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-1 h-8 rounded-full flex-shrink-0" style={{ background: 'linear-gradient(180deg, var(--gold2), var(--gold))' }} />
-            <h1 className="text-2xl lg:text-3xl font-bold text-[var(--t)] truncate" style={{ fontFamily: 'var(--sans)', letterSpacing: '-0.02em' }}>Settings</h1>
+    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-28 sm:pb-8 space-y-5 animate-page-in max-w-2xl lg:max-w-4xl mx-auto" data-testid="settings-page"
+      style={{ background: 'radial-gradient(ellipse at top left, rgba(212,175,55,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(240,201,92,0.06), transparent 55%)' }}>
+      {/* Header — standardized icon-box + title + 1-line description,
+          matching MM / SDV / IAC / Beneficiaries. Back + Save utility
+          buttons preserved on the right. */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(240,201,92,0.15))' }}>
+            <Shield className="w-5 h-5 text-[var(--gold)]" />
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <button
-              onClick={() => navigate(-1)}
-              className="px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-transform hover:scale-105 border"
-              style={{ background: 'transparent', color: 'var(--t)', borderColor: 'var(--b)' }}
-              data-testid="settings-back-button"
-            >
-              Back
-            </button>
-            <button
-              onClick={handleSave}
-              className="px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-transform hover:scale-105"
-              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
-              data-testid="settings-save-button"
-            >
-              Save
-            </button>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)] truncate" style={{ fontFamily: 'var(--sans)' }}>
+              Settings
+            </h1>
+            <p className="text-xs text-[var(--t5)]">Manage your profile, security, and preferences</p>
           </div>
         </div>
-        <p className="text-[var(--t4)] text-sm pl-4">Manage your profile, security, and preferences.</p>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => navigate(-1)}
+            className="px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-transform hover:scale-105 border"
+            style={{ background: 'transparent', color: 'var(--t)', borderColor: 'var(--b)' }}
+            data-testid="settings-back-button"
+          >
+            Back
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-transform hover:scale-105"
+            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
+            data-testid="settings-save-button"
+          >
+            Save
+          </button>
+        </div>
       </div>
 
       {/* Onboarding Notice */}
       {fromOnboarding && (
-        <div className="rounded-xl p-4 mb-2 flex items-center gap-3" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)' }}>
+        <div className="rounded-xl p-4 flex items-center gap-3" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)' }}>
           <span className="text-[var(--gold)] text-lg font-bold">!</span>
           <div>
             <p className="text-[var(--t)] text-sm font-semibold">Complete Your Profile</p>
@@ -125,7 +132,7 @@ const SettingsPage = () => {
       )}
 
       {/* ── Section: Profile ── */}
-      <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--t5)] pt-1 pl-1">Profile</div>
+      <SectionHeader title="Profile" hint="Your name, photo, and personal info." />
       <ProfileCard />
       <PersonalInfoCard initialEditAddress={editAddress || fromOnboarding} />
 
@@ -133,11 +140,11 @@ const SettingsPage = () => {
       {!isStaff && <EstatePhotoCard />}
 
       {/* ── Section: Offline ── */}
-      <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--t5)] pt-3 pl-1">Offline</div>
+      <SectionHeader title="Offline" hint="Control how CarryOn behaves when you lose signal." />
       <OfflineBehaviorCard />
 
       {/* ── Section: Security ── */}
-      <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--t5)] pt-3 pl-1">Security</div>
+      <SectionHeader title="Security" hint="2FA, passkeys, auto-logout, vault locks." />
       <Card className="glass-card cursor-pointer hover:border-[var(--gold)]/30 transition-colors" onClick={() => navigate('/security-settings')} data-testid="settings-security-link">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
@@ -186,7 +193,7 @@ const SettingsPage = () => {
       )}
 
       {/* ── Section: Appearance & Navigation ── */}
-      <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--t5)] pt-3 pl-1">Appearance & Navigation</div>
+      <SectionHeader title="Appearance & Navigation" hint="Theme, dock, and navigation preferences." />
       <AppearanceCard isStaff={isStaff} />
 
       {/* Dock Customizer */}
@@ -197,7 +204,7 @@ const SettingsPage = () => {
       </Card>
 
       {/* ── Section: Notifications ── */}
-      <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--t5)] pt-3 pl-1">Notifications</div>
+      <SectionHeader title="Notifications" hint="Push, in-app, and email preferences." />
       {/* Notification Settings (push notifications) */}
       <NotificationSettings getAuthHeaders={getAuthHeaders} />
 
@@ -209,7 +216,7 @@ const SettingsPage = () => {
       {/* ── Section: Privacy — non-staff only ── */}
       {!isStaff && (
         <>
-          <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--t5)] pt-3 pl-1">Privacy & Data</div>
+          <SectionHeader title="Privacy & Data" hint="What we collect and how you control it." />
           <PrivacyCard />
         </>
       )}
@@ -217,7 +224,7 @@ const SettingsPage = () => {
       {/* Beta Tester Settings */}
       {user?.is_beta_tester && (
         <>
-          <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--t5)] pt-3 pl-1">Beta Testing</div>
+          <SectionHeader title="Beta Testing" hint="Preferences for beta-only controls." />
           <Card className="glass-card" data-testid="settings-beta-card">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -256,18 +263,31 @@ const SettingsPage = () => {
         </Card>
       </div>
 
-      {/* Footer */}
-      <div className="text-center py-4">
-        <div className="flex items-center justify-center gap-2 text-[var(--t5)] text-sm mb-2">
-          <Shield className="w-4 h-4" />
-          <span>AES-256 Encrypted · Zero-Knowledge · 2FA Protected</span>
+      {/* Footer — hairline divider + breathing room */}
+      <div className="pt-4 mt-2" style={{ borderTop: '1px solid var(--b)' }}>
+        <div className="text-center pt-6 pb-4">
+          <div className="flex items-center justify-center gap-2 text-[var(--t5)] text-sm mb-2">
+            <Shield className="w-4 h-4" />
+            <span>AES-256 Encrypted · Zero-Knowledge · 2FA Protected</span>
+          </div>
+          <p className="text-[var(--t5)] text-xs">
+            CarryOn™ v1.0.0 · © 2024 CarryOn Inc.
+          </p>
         </div>
-        <p className="text-[var(--t5)] text-xs">
-          CarryOn™ v1.0.0 · © 2024 CarryOn Inc.
-        </p>
       </div>
     </div>
   );
 };
+
+/**
+ * Two-line section header — large title + 1-line hint. Replaces the tiny
+ * uppercase label pattern for better scannability on long Settings pages.
+ */
+const SectionHeader = ({ title, hint }) => (
+  <div className="pt-3 pl-1">
+    <h2 className="text-base font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)', letterSpacing: '-0.01em' }}>{title}</h2>
+    {hint && <p className="text-xs text-[var(--t5)] mt-0.5">{hint}</p>}
+  </div>
+);
 
 export default SettingsPage;

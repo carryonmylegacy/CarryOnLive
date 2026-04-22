@@ -4,7 +4,7 @@ import axios from 'axios';
 import { toast } from '../utils/toast';
 import { useAuth } from '../contexts/AuthContext';
 import SecuritySettings from '../components/SecuritySettings';
-import { Lock, Mail, Loader2, Timer } from 'lucide-react';
+import { Lock, Mail, Loader2, Timer, ShieldCheck, Check } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Switch } from '../components/ui/switch';
 import { Input } from '../components/ui/input';
@@ -117,15 +117,23 @@ const SecuritySettingsPage = () => {
   };
 
   return (
-    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="security-settings-page">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
-            Security Settings
-          </h1>
-          <p className="text-[var(--t4)] mt-1 text-sm sm:text-base">
-            Manage your account security, session controls, and vault protection
-          </p>
+    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in max-w-4xl mx-auto" data-testid="security-settings-page"
+      style={{ background: 'radial-gradient(ellipse at top left, rgba(212,175,55,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(240,201,92,0.06), transparent 55%)' }}>
+      {/* Header — standardized icon-box + title + 1-line description to
+          match MM / SDV / IAC / Settings. Back + Save preserved on right. */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(240,201,92,0.15))' }}>
+            <ShieldCheck className="w-5 h-5 text-[var(--gold)]" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)] truncate" style={{ fontFamily: 'var(--sans)' }}>
+              Security Settings
+            </h1>
+            <p className="text-xs text-[var(--t5)]">
+              Passkeys, 2FA, session controls, and vault protection
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
@@ -160,8 +168,11 @@ const SecuritySettingsPage = () => {
           {passkeySupported && (
             <>
               <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-[var(--t)] font-medium">Passkey (Face ID / Touch ID)</h4>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="text-[var(--t)] font-medium">Passkey (Face ID / Touch ID)</h4>
+                    <StatusChip tone={passkeyRegistered ? 'on' : 'off'} label={passkeyRegistered ? 'Enabled' : 'Off'} />
+                  </div>
                   <p className="text-[var(--t5)] text-sm">Sign in without a password</p>
                 </div>
                 <Switch checked={passkeyRegistered} onCheckedChange={handlePasskeyToggle} disabled={passkeyLoading} data-testid="settings-passkey-toggle" />
@@ -172,8 +183,13 @@ const SecuritySettingsPage = () => {
 
           {/* 2FA */}
           <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-[var(--t)] font-medium">Two-Factor Authentication</h4>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="text-[var(--t)] font-medium">Two-Factor Authentication</h4>
+                {globalOtpDisabled
+                  ? <StatusChip tone="admin" label="Disabled by admin" />
+                  : <StatusChip tone={userOtpEnabled ? 'on' : 'off'} label={userOtpEnabled ? 'Enabled' : 'Off'} />}
+              </div>
               <p className="text-[var(--t5)] text-sm">
                 {globalOtpDisabled
                   ? 'Disabled platform-wide by administrator'
@@ -203,14 +219,17 @@ const SecuritySettingsPage = () => {
               <Separator className="bg-[var(--b)]" />
               <div data-testid="sms-otp-section">
                 <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="text-[var(--t)] font-medium flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
-                      SMS Verification Codes
-                    </h4>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="text-[var(--t)] font-medium flex items-center gap-2">
+                        <Mail className="w-4 h-4" />
+                        SMS Verification Codes
+                      </h4>
+                      <StatusChip tone={smsOtpEnabled ? 'on' : 'off'} label={smsOtpEnabled ? 'Enabled' : 'Off'} />
+                    </div>
                     <p className="text-[var(--t5)] text-sm">
                       {smsOtpEnabled
-                        ? `Enabled — codes sent to ${smsMaskedPhone || 'your phone'}`
+                        ? `Codes sent to ${smsMaskedPhone || 'your phone'}`
                         : 'Receive login codes via text message instead of email'}
                     </p>
                   </div>
@@ -248,6 +267,13 @@ const SecuritySettingsPage = () => {
 
                 {!smsOtpEnabled && smsSetupStep === 'entering' && (
                   <div className="mt-3 space-y-3 p-3 rounded-lg" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--t5)]" data-testid="sms-step-indicator">
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.2)', color: '#d4af37' }}>1</span>
+                      <span style={{ color: '#d4af37' }}>Phone</span>
+                      <span className="mx-1 opacity-40">›</span>
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)' }}>2</span>
+                      <span>Verify</span>
+                    </div>
                     <div>
                       <label className="text-[var(--t5)] text-xs mb-1 block">Mobile Phone Number</label>
                       <Input type="tel" value={smsPhoneInput}
@@ -299,6 +325,13 @@ const SecuritySettingsPage = () => {
 
                 {!smsOtpEnabled && smsSetupStep === 'verifying' && (
                   <div className="mt-3 space-y-3 p-3 rounded-lg" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--t5)]" data-testid="sms-step-indicator">
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(34,201,147,0.2)', color: '#22C993' }}><Check className="w-3 h-3" /></span>
+                      <span>Phone</span>
+                      <span className="mx-1 opacity-40">›</span>
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.2)', color: '#d4af37' }}>2</span>
+                      <span style={{ color: '#d4af37' }}>Verify</span>
+                    </div>
                     <p className="text-[var(--t5)] text-sm">Enter the 6-digit code sent to {smsMaskedPhone}</p>
                     <Input type="text" inputMode="numeric" maxLength={6} value={smsVerifyCode}
                       onChange={e => setSmsVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -367,3 +400,25 @@ const SecuritySettingsPage = () => {
 };
 
 export default SecuritySettingsPage;
+
+/**
+ * Status chip used next to Passkey / 2FA / SMS toggles. Tiny visual cue
+ * that makes the current state scannable without reading the subtitle.
+ */
+const StatusChip = ({ tone = 'off', label }) => {
+  const palette = {
+    on:       { bg: 'rgba(34,201,147,0.12)', border: 'rgba(34,201,147,0.3)', fg: '#22C993' },
+    off:      { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', fg: 'var(--t5)' },
+    admin:    { bg: 'rgba(212,175,55,0.12)',  border: 'rgba(212,175,55,0.3)',  fg: '#d4af37' },
+  }[tone] || {};
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap"
+      style={{ background: palette.bg, border: `1px solid ${palette.border}`, color: palette.fg }}
+      data-testid={`status-chip-${tone}`}
+    >
+      {tone === 'on' && <Check className="w-2.5 h-2.5" />}
+      {label}
+    </span>
+  );
+};
