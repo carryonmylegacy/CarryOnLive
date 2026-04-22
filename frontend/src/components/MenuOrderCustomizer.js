@@ -22,6 +22,7 @@ import {
   applyUserMenuOrder,
 } from '../config/menuRegistry';
 import { filterNavByFeatures } from '../utils/featureGates';
+import { useListReorder } from '../utils/useListReorder';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -111,6 +112,15 @@ const MenuOrderCustomizer = () => {
     }
   };
 
+  // Drag-to-reorder hook. Only the grip handle captures pointer events —
+  // scrolling elsewhere on the row behaves normally. MUST be declared
+  // before any conditional `return` so hook ordering is stable.
+  const { bindGrip, draggingIdx } = useListReorder({
+    items: orderedRoutes,
+    onReorder: setOrderedRoutes,
+    rowSelector: '[data-menu-order-row]',
+  });
+
   if (!loaded) return null;
 
   const isDark = theme === 'dark';
@@ -121,6 +131,7 @@ const MenuOrderCustomizer = () => {
   const renderItems = orderedRoutes
     .map((r) => byRoute.get(r))
     .filter(Boolean);
+
   const isPreTransition = roleKey === 'beneficiary' && (() => {
     // Use the same localStorage flag the DockCustomizer uses for locked state
     try {
@@ -149,27 +160,40 @@ const MenuOrderCustomizer = () => {
       </div>
 
       <p className="text-xs mb-4" style={{ color: isDark ? '#64748B' : '#94A3B8' }}>
-        Reorder the features in your sidebar and hamburger menu. Use the arrows to move
-        items up or down. Account links (Settings, Subscription, Security Settings,
-        Customer Support) stay anchored at the bottom and aren&apos;t reorderable.
+        Reorder the features in your sidebar and hamburger menu. Drag the grip
+        handle on the left to move items, or use the arrows. Account links
+        (Settings, Subscription, Security Settings, Customer Support) stay
+        anchored at the bottom and aren&apos;t reorderable.
       </p>
 
       <div className="flex flex-col gap-1 mb-4">
         {renderItems.map((item, idx) => {
           const Icon = item.icon;
           const locked = roleKey === 'beneficiary' && isPreTransition && POST_TRANSITION_ONLY.has(item.to);
+          const isDragging = draggingIdx === idx;
           return (
             <div
               key={item.to}
+              data-menu-order-row
               data-testid={`menu-order-item-${idx}`}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all"
               style={{
                 background: `${accent}12`,
-                border: `1px solid ${accent}30`,
-                opacity: locked ? 0.5 : 1,
+                border: `1px solid ${isDragging ? accent : `${accent}30`}`,
+                opacity: locked ? 0.5 : (isDragging ? 0.7 : 1),
+                boxShadow: isDragging ? `0 8px 24px ${accent}40` : 'none',
+                transform: isDragging ? 'scale(1.02)' : 'scale(1)',
               }}
             >
-              <GripVertical className="w-4 h-4 flex-shrink-0" style={{ color: `${accent}60` }} />
+              <button
+                type="button"
+                {...bindGrip(idx)}
+                className="p-1 -m-1 rounded-md flex-shrink-0"
+                aria-label={`Drag ${item.label}`}
+                data-testid={`menu-order-grip-${idx}`}
+              >
+                <GripVertical className="w-4 h-4" style={{ color: `${accent}80` }} />
+              </button>
               <Icon className="w-4 h-4 flex-shrink-0" style={{ color: accent }} />
               <span className="flex-1 text-sm font-medium truncate" style={{ color: isDark ? '#E2E8F0' : '#1E293B' }}>
                 {item.label}

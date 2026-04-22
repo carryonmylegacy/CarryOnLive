@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { toast } from '../utils/toast';
 import { GripVertical, Check, RotateCcw, ChevronUp, ChevronDown, Lock } from 'lucide-react';
+import { useListReorder } from '../utils/useListReorder';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -134,6 +135,16 @@ const DockCustomizer = () => {
     }
   };
 
+  // Drag-to-reorder for the user's selected dock items. Only the grip
+  // handle captures pointer events — the rest of the row and the
+  // surrounding scroll container behave normally. NOTE: must be declared
+  // BEFORE any conditional `return` so hook ordering is stable.
+  const { bindGrip, draggingIdx } = useListReorder({
+    items: selected,
+    onReorder: setSelected,
+    rowSelector: '[data-dock-selected-row]',
+  });
+
   if (!loaded) return null;
 
   const isDark = theme === 'dark';
@@ -172,14 +183,30 @@ const DockCustomizer = () => {
               const item = available.find(a => a.to === route);
               if (!item) return null;
               const Icon = item.icon;
+              const isDragging = draggingIdx === idx;
               return (
                 <div
                   key={route}
+                  data-dock-selected-row
                   data-testid={`dock-selected-${idx}`}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
-                  style={{ background: `${accent}12`, border: `1px solid ${accent}30` }}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all"
+                  style={{
+                    background: `${accent}12`,
+                    border: `1px solid ${isDragging ? accent : `${accent}30`}`,
+                    opacity: isDragging ? 0.7 : 1,
+                    boxShadow: isDragging ? `0 8px 24px ${accent}40` : 'none',
+                    transform: isDragging ? 'scale(1.02)' : 'scale(1)',
+                  }}
                 >
-                  <GripVertical className="w-4 h-4 flex-shrink-0" style={{ color: `${accent}60` }} />
+                  <button
+                    type="button"
+                    {...bindGrip(idx)}
+                    className="p-1 -m-1 rounded-md flex-shrink-0"
+                    aria-label={`Drag ${item.label}`}
+                    data-testid={`dock-grip-${idx}`}
+                  >
+                    <GripVertical className="w-4 h-4" style={{ color: `${accent}80` }} />
+                  </button>
                   <Icon className="w-4 h-4 flex-shrink-0" style={{ color: accent }} />
                   <span className="flex-1 text-sm font-medium" style={{ color: isDark ? '#E2E8F0' : '#1E293B' }}>
                     {item.label}
