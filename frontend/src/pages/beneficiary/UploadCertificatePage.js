@@ -81,7 +81,7 @@ const UploadCertificatePage = () => {
     const currentStageIdx = stages.indexOf(existingCert.status === 'authenticated' ? 'approved' : existingCert.status);
 
     return (
-      <div className="p-4 pb-24 animate-fade-in max-w-md mx-auto"
+      <div className="p-4 lg:p-8 pb-24 lg:pb-8 animate-fade-in max-w-md lg:max-w-3xl mx-auto"
         data-testid="certificate-status">
           <button onClick={() => navigate('/beneficiary/pre')} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA] mb-4">
             <ChevronLeft className="w-4 h-4" /> Back
@@ -128,7 +128,7 @@ const UploadCertificatePage = () => {
   }
 
   return (
-    <div className="p-4 pb-24 animate-fade-in max-w-xl mx-auto"
+    <div className="p-4 lg:p-8 pb-24 lg:pb-8 animate-fade-in max-w-xl lg:max-w-4xl mx-auto"
       data-testid="upload-certificate">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">

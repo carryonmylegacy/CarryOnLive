@@ -52,7 +52,7 @@ const BeneficiarySettingsPage = () => {
   const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
-    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in max-w-2xl mx-auto" data-testid="beneficiary-settings">
+    <div className="p-4 lg:p-8 pt-4 lg:pt-8 pb-24 lg:pb-8 space-y-5 animate-fade-in max-w-2xl lg:max-w-4xl mx-auto" data-testid="beneficiary-settings">
       <div>
         <h1 className="text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Settings</h1>
         <p className="text-sm text-[var(--t4)]">Account and subscription</p>

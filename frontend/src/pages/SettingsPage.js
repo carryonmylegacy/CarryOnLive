@@ -83,7 +83,7 @@ const SettingsPage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 max-w-2xl mx-auto space-y-5 pb-28 sm:pb-8 animate-page-in">
+    <div className="p-4 lg:p-8 max-w-2xl lg:max-w-4xl mx-auto space-y-5 pb-28 sm:pb-8 animate-page-in">
       {/* Header — polished hero with Back + Save controls */}
       <div className="mb-1">
         <div className="flex items-start justify-between gap-3 mb-1">

@@ -565,7 +565,7 @@ const GuardianPage = () => {
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto flex flex-col" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
-          <div className="max-w-2xl mx-auto px-4 pt-4 pb-4 w-full">
+          <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 lg:px-8 pt-4 pb-4 w-full">
             {/* Header — matches SDV, DTS, Beneficiaries format */}
             <div className="flex items-start gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
@@ -656,7 +656,7 @@ const GuardianPage = () => {
         {/* Fixed input at bottom */}
         <div className="flex-shrink-0 px-3 pb-2 pt-1">
           <form onSubmit={handleLandingSubmit}>
-            <div className="rounded-2xl px-3 py-1.5 max-w-2xl mx-auto" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+            <div className="rounded-2xl px-3 py-1.5 max-w-2xl lg:max-w-5xl mx-auto" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
               <textarea
                 ref={landingInputRef}
                 value={landingInput}
@@ -741,7 +741,7 @@ const GuardianPage = () => {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto min-h-0" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }} data-testid="chat-messages-area">
-        <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
+        <div className="max-w-3xl lg:max-w-5xl mx-auto px-4 lg:px-8 py-4 space-y-4">
           {messages.map((msg, index) => (
             <div
               key={index}
@@ -955,7 +955,7 @@ const GuardianPage = () => {
           <span className="text-[11px] text-[var(--t5)]">Encrypted · Not legal advice</span>
         </div>
 
-        <form onSubmit={handleChatSubmit} className="flex items-end gap-2 max-w-3xl mx-auto px-3 pb-2">
+        <form onSubmit={handleChatSubmit} className="flex items-end gap-2 max-w-3xl lg:max-w-5xl mx-auto px-3 lg:px-8 pb-2">
           <div className="flex-1 rounded-2xl px-3 py-1.5" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
             <textarea
               ref={inputRef}

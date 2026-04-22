@@ -1320,7 +1320,7 @@ export default function EstateChatPage() {
   // ── Root render ────────────────────────────────────────────────────────────
   return (
     <>
-      <div id="ect-root" data-testid="estate-chat-page" className="flex flex-col"
+      <div id="ect-root" data-testid="estate-chat-page" className="flex flex-col lg:ect-desktop-inset"
         style={{ background: 'var(--bg)', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 45, overflow: 'hidden' }}>
         {/* Spacer that matches the platform header height. Must ALSO include
             the offline-banner height, otherwise the red "You're offline"

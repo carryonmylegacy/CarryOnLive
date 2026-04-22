@@ -1003,11 +1003,17 @@ const DashboardPage = () => {
         </div>
         )}
 
-        {/* Share your CarryOn — gold pill button at the bottom of the dashboard */}
-        <div className="mt-4 mb-2 px-1" data-testid="dashboard-share-tile">
-          <TileErrorBoundary name="share-your-carryon">
-            <ShareYourCarryOn variant="pill" />
-          </TileErrorBoundary>
+        {/* Share your CarryOn — gold pill button at the bottom of the dashboard.
+            `lg:flex lg:justify-center` centers the pill on desktop where the
+            dashboard column is wide (otherwise a `w-full` pill stretches
+            edge-to-edge and looks awkward). Inner wrapper caps the pill
+            width on lg; mobile keeps the full-bleed pill. */}
+        <div className="mt-4 mb-2 px-1 lg:flex lg:justify-center" data-testid="dashboard-share-tile">
+          <div className="w-full lg:max-w-md">
+            <TileErrorBoundary name="share-your-carryon">
+              <ShareYourCarryOn variant="pill" />
+            </TileErrorBoundary>
+          </div>
         </div>
       </div>
       {showCelebration && (

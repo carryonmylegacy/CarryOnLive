@@ -449,7 +449,7 @@ export default function ConnectedProtocolPage() {
   // ===================== CHECK-IN VIEW =====================
   if (view === 'checkin' && activeEmergency) {
     return (
-      <div data-testid="ccp-checkin-view" className="max-w-lg mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-4">
+      <div data-testid="ccp-checkin-view" className="max-w-lg lg:max-w-4xl mx-auto px-4 lg:px-8 py-6 pb-28 sm:pb-6 space-y-4">
         <button onClick={() => setView('active')} className="flex items-center gap-2 text-sm font-semibold mb-2" style={{ color: 'var(--t4)' }}>
           <ArrowLeft className="w-4 h-4" />Back to Status Board
         </button>
@@ -568,7 +568,7 @@ export default function ConnectedProtocolPage() {
   // ===================== PLANS LIST VIEW =====================
   if (view === 'plans') {
     return (
-      <div data-testid="ccp-plans-list" className="max-w-2xl mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-4">
+      <div data-testid="ccp-plans-list" className="max-w-2xl lg:max-w-6xl mx-auto px-4 lg:px-8 py-6 pb-28 sm:pb-6 space-y-4">
         <button onClick={() => setView('home')} className="flex items-center gap-2 text-sm font-semibold mb-2" style={{ color: 'var(--t4)' }}>
           <ArrowLeft className="w-4 h-4" />Back
         </button>
@@ -609,6 +609,8 @@ export default function ConnectedProtocolPage() {
             <p className="text-sm" style={{ color: 'var(--t4)' }}>No plans created yet</p>
           </div>
         )}
+        {plans.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {plans.map(p => (
           <div key={p.id} className="rounded-xl p-4" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
             <div className="flex items-center justify-between mb-2">
@@ -697,6 +699,8 @@ export default function ConnectedProtocolPage() {
             )}
           </div>
         ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -704,7 +708,7 @@ export default function ConnectedProtocolPage() {
   // ===================== HISTORY VIEW =====================
   if (view === 'history') {
     return (
-      <div data-testid="ccp-history" className="max-w-2xl mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-4">
+      <div data-testid="ccp-history" className="max-w-2xl lg:max-w-6xl mx-auto px-4 lg:px-8 py-6 pb-28 sm:pb-6 space-y-4">
         <button onClick={() => setView('home')} className="flex items-center gap-2 text-sm font-semibold mb-2" style={{ color: 'var(--t4)' }}>
           <ArrowLeft className="w-4 h-4" />Back
         </button>
@@ -828,7 +832,7 @@ export default function ConnectedProtocolPage() {
   // ===================== HOME VIEW — Big Bubble Buttons =====================
   return (
     <>
-    <div data-testid="ccp-home" className="max-w-lg mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-4">
+    <div data-testid="ccp-home" className="max-w-lg lg:max-w-4xl mx-auto px-4 lg:px-8 py-6 pb-28 sm:pb-6 space-y-4">
       <div className="text-center mb-4">
         <Shield className="w-10 h-10 mx-auto mb-2" style={{ color: '#d4af37' }} />
         <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>CarryOn Contingency Protocols (CCP)</h1>

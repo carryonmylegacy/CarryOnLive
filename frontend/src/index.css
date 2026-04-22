@@ -1064,6 +1064,12 @@
     .slide-panel-root {
       left: var(--sb-offset, var(--sidebar-width, 260px));
     }
+    /* Estate Chat root is `position: fixed; left: 0` so its channel list
+       covered the platform sidebar on desktop. Offset it by the same
+       sidebar-width variable the slide-panel uses. Mobile is untouched. */
+    #ect-root.lg\:ect-desktop-inset {
+      left: var(--sb-offset, var(--sidebar-width, 260px)) !important;
+    }
   }
 
   /* Mobile: full screen, panel body starts below the fixed mobile header, stays under bottom nav */
