@@ -110,7 +110,8 @@ const DigitalWalletPage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="digital-wallet-page">
+    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="digital-wallet-page"
+      style={{ background: 'radial-gradient(ellipse at top left, rgba(236,72,153,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(219,39,119,0.06), transparent 55%)' }}>
       {/* Header — standardized layout (icon box on left, title + 1-line
           description, action button on right, then SectionLockBanner
           below). Matches MM / SDV / IAC / FFN for uniform feel. */}

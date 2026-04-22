@@ -1069,6 +1069,7 @@
        sidebar-width variable the slide-panel uses. Mobile is untouched. */
     #ect-root.lg\:ect-desktop-inset {
       left: var(--sb-offset, var(--sidebar-width, 260px)) !important;
+      top: var(--cy-offline-banner-h, 0px) !important;
     }
   }
 

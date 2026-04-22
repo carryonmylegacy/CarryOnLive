@@ -559,27 +559,30 @@ const GuardianPage = () => {
   // ═══════════════════════════════════════════════
   if (view === 'landing') {
     return (
-      <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', left: 0, overscrollBehavior: 'contain' }} data-testid="estate-guardian">
-      <style>{`@media (min-width: 1024px) { [data-testid="estate-guardian"] { left: var(--sidebar-width, 260px) !important; bottom: 0 !important; } }`}</style>
+      <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 56px + var(--cy-offline-banner-h, 0px))', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', left: 0, overscrollBehavior: 'contain' }} data-testid="estate-guardian">
+      <style>{`@media (min-width: 1024px) { [data-testid="estate-guardian"] { left: var(--sb-offset, var(--sidebar-width, 260px)) !important; top: var(--cy-offline-banner-h, 0px) !important; bottom: 0 !important; } }`}</style>
       {renderAddressGate()}
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto flex flex-col" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
+        <div className="flex-1 overflow-y-auto flex flex-col" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y',
+          // Signature page glow — matches MM/SDV/CFP/IAC/Beneficiaries pattern.
+          background: 'radial-gradient(ellipse at top left, rgba(212,175,55,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(240,201,92,0.06), transparent 55%)' }}>
           <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 lg:px-8 pt-4 pb-4 w-full">
-            {/* Header — matches SDV, DTS, Beneficiaries format */}
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
-                <Sparkles className="w-5 h-5 text-[var(--gold)]" />
-              </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }} data-testid="guardian-hero-title">
-                  Estate Guardian AI (EGA)
-                </h1>
-                <ul className="text-xs text-[var(--t5)] mt-1 space-y-0.5">
-                  <li>· AI estate planning assistant trained in all 50 U.S. states</li>
-                  <li>· Analyzes your vault, identifies gaps, generates to-do lists</li>
-                  <li>· Not legal advice — consult a licensed attorney for decisions</li>
-                </ul>
+            {/* Header — standardized icon-box + title + 1-line description,
+                matching MM/SDV/CFP/IAC/Beneficiaries/DTS. */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(240,201,92,0.15))' }}>
+                  <Sparkles className="w-5 h-5 text-[var(--gold)]" />
+                </div>
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }} data-testid="guardian-hero-title">
+                    Estate Guardian AI (EGA)
+                  </h1>
+                  <p className="text-xs text-[var(--t5)]">
+                    AI estate assistant trained in all 50 U.S. states — not legal advice
+                  </p>
+                </div>
               </div>
             </div>
 

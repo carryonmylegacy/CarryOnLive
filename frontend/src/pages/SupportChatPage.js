@@ -215,6 +215,7 @@ const SupportChatPage = () => {
         @media (min-width: 1024px) {
           .ccs-root {
             left: var(--sb-offset, var(--sidebar-width, 260px)) !important;
+            top: var(--cy-offline-banner-h, 0px) !important;
             bottom: 0 !important;
             flex-direction: row;
           }
