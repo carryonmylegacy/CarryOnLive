@@ -684,28 +684,27 @@ export const SubscriptionManagement = ({
                   {/* Features — prefer admin-configured tier_features (single
                       source of truth with Feature Gates config); fall back to
                       the plan's legacy marketing copy only if the gate grid
-                      is missing. Matches the logic in SubscriptionPaywall so
-                      both places stay in lockstep. */}
+                      is missing. We intentionally DO NOT render disabled
+                      items here (even with a strikethrough) — negative
+                      advertising hurts conversion. Each tile shows only
+                      what's included at that tier. */}
                   <div className="space-y-2 mb-5 flex-1">
                     {(tierFeatures[plan.id] && tierFeatures[plan.id].length > 0
                       ? tierFeatures[plan.id]
                       : (plan.features || []).map(f => typeof f === 'string' ? { label: f, enabled: true } : f)
-                    ).map((f, i) => {
-                      const label = typeof f === 'string' ? f : f.label;
-                      const enabled = typeof f === 'string' ? true : f.enabled !== false;
-                      return (
-                        <div key={i} className="flex items-start gap-2 text-sm">
-                          <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                            style={{ background: enabled ? `${style.accent}12` : 'rgba(127,127,127,0.08)' }}>
-                            {enabled
-                              ? <Check className="w-2.5 h-2.5" style={{ color: style.accent }} />
-                              : <X className="w-2.5 h-2.5 text-[var(--t6)]" />
-                            }
+                    ).filter(f => (typeof f === 'string' ? true : f.enabled !== false))
+                      .map((f, i) => {
+                        const label = typeof f === 'string' ? f : f.label;
+                        return (
+                          <div key={i} className="flex items-start gap-2 text-sm text-[var(--t3)]">
+                            <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                              style={{ background: `${style.accent}12` }}>
+                              <Check className="w-2.5 h-2.5" style={{ color: style.accent }} />
+                            </div>
+                            <span>{label}</span>
                           </div>
-                          <span className={enabled ? 'text-[var(--t3)]' : 'text-[var(--t6)] line-through'}>{label}</span>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                   </div>
 
                   {plan.note && <p className="text-sm text-[var(--t4)] italic mb-3">{plan.note}</p>}

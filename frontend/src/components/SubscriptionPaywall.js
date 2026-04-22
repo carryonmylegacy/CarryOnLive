@@ -532,27 +532,28 @@ export default function SubscriptionPaywall({ onDismiss }) {
                   {/* Divider */}
                   <div className="h-px mb-4" style={{ background: `linear-gradient(90deg, transparent, ${colors.accent}30, transparent)` }} />
 
-                  {/* Features — dynamic from feature gates, all listed in consistent order */}
+                  {/* Features — dynamic from feature gates. We only render
+                      ENABLED features per tile; disabled ones are hidden
+                      entirely (no strikethrough). Product decision:
+                      negative advertising hurts conversion — each tile
+                      should present itself as a complete, positive offer. */}
                   <div className="space-y-2.5 mb-5">
                     {(tierFeatures[plan.id] && tierFeatures[plan.id].length > 0
                       ? tierFeatures[plan.id]
                       : (plan.features || []).map(f => typeof f === 'string' ? { label: f, enabled: true } : f)
-                    ).map((f, i) => {
-                      const label = typeof f === 'string' ? f : f.label;
-                      const enabled = typeof f === 'string' ? true : f.enabled !== false;
-                      return (
-                        <div key={i} className="flex items-start gap-2.5 text-sm">
-                          <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5`}
-                            style={{ background: enabled ? `${colors.accent}15` : 'rgba(127,127,127,0.08)' }}>
-                            {enabled
-                              ? <Check className="w-3 h-3" style={{ color: colors.accent }} />
-                              : <X className="w-3 h-3 text-[var(--t6)]" />
-                            }
+                    ).filter(f => (typeof f === 'string' ? true : f.enabled !== false))
+                      .map((f, i) => {
+                        const label = typeof f === 'string' ? f : f.label;
+                        return (
+                          <div key={i} className="flex items-start gap-2.5 text-sm">
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5`}
+                              style={{ background: `${colors.accent}15` }}>
+                              <Check className="w-3 h-3" style={{ color: colors.accent }} />
+                            </div>
+                            <span className="text-[var(--t4)]">{label}</span>
                           </div>
-                          <span className={enabled ? 'text-[var(--t4)]' : 'text-[var(--t6)] line-through'}>{label}</span>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                   </div>
 
                   {plan.note && (
