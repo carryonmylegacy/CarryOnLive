@@ -38,6 +38,7 @@ import {
 import { toast } from '../utils/toast';
 import { downloadFile, platformDownload } from '../utils/downloadFile';
 import { API_URL } from '../config';
+import { Button } from '../components/ui/button';
 // removed unused SectionLock from '../components/security/SectionLock';
 
 const suggestedQuestions = [
@@ -584,13 +585,13 @@ const GuardianPage = () => {
                   </p>
                 </div>
               </div>
-              <button
+              <Button
                 onClick={() => startNewChat()}
-                className="gold-button w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-bold"
+                className="gold-button w-full sm:w-auto"
                 data-testid="new-chat-header-btn"
               >
                 <Plus className="w-5 h-5 mr-2" /> New Chat
-              </button>
+              </Button>
             </div>
 
             {/* Recent Conversations */}

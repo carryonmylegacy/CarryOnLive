@@ -143,9 +143,9 @@ export default function FFNPage() {
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="ffn-page"
       style={{ background: 'radial-gradient(ellipse at top left, rgba(236,72,153,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(219,39,119,0.06), transparent 55%)' }}>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.2), rgba(219,39,119,0.15))' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.2), rgba(219,39,119,0.15))' }}>
             <Heart className="w-5 h-5 text-[#ec4899]" />
           </div>
           <div>
@@ -153,8 +153,8 @@ export default function FFNPage() {
             <p className="text-xs text-[var(--t5)]">{contacts.length} contact{contacts.length !== 1 ? 's' : ''} to notify</p>
           </div>
         </div>
-        <Button onClick={openNew} className="gold-button flex items-center gap-1.5" data-testid="ffn-add-btn">
-          <Plus className="w-4 h-4" /> Add
+        <Button onClick={openNew} className="gold-button w-full sm:w-auto" data-testid="ffn-add-btn">
+          <Plus className="w-5 h-5 mr-2" /> Add Contact
         </Button>
       </div>
 
