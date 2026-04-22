@@ -182,12 +182,15 @@ async def get_user_enabled_features(
     2. Estate-level verified_tier   (admin-assigned, per-account)
     3. User-level verified_tier     (legacy fallback)
     4. No tier → all features       (paywall handles access separately)
+
+    Admins/operators are NOT short-circuited: they must see the same
+    gated navigation a real benefactor would, otherwise previewing the
+    customer experience via "My Benefactor Portal" is impossible.
+    Administrative routes remain protected by `require_admin`, so this
+    has no effect on admin-panel access.
     """
 
-    # Admin / operator → everything
-    if current_user.get("role") in ("admin", "operator"):
-        return {"enabled_features": FEATURE_KEYS, "all_enabled": True}
-
+    is_admin_or_operator = current_user.get("role") in ("admin", "operator")
     effective_tier = None
 
     # 1. Check active subscription
@@ -223,7 +226,14 @@ async def get_user_enabled_features(
             effective_tier = benefactor_tier
 
     if not effective_tier:
-        return {"enabled_features": FEATURE_KEYS, "all_enabled": True}
+        # Admin/operator without any resolved tier → preview as Premium
+        # (highest tier) so nav reflects the top-of-stack customer view.
+        # Regular users with no tier still fall back to all features
+        # (paywall controls actual access).
+        if is_admin_or_operator:
+            effective_tier = "premium"
+        else:
+            return {"enabled_features": FEATURE_KEYS, "all_enabled": True}
 
     gates = await get_feature_gates()
     enabled = get_enabled_features_for_tier(gates, effective_tier)

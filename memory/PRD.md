@@ -531,6 +531,22 @@ User uploaded 5 "good" reference screenshots (Beneficiaries / MM / SDV / CFP / I
 - Housekeeping: 69 PASS, 0 WARN, 0 FAIL.
 
 
+## Admin Feature-Gate Preview Fix (Apr 22, 2026)
+**Root cause of "DTS/EPT still show in my menu despite gates off for all tiers"** (user report):
+- `/api/subscriptions/enabled-features` short-circuited for `role in ('admin','operator')` and returned `all_enabled: true` with every feature, regardless of the persisted feature-gate config.
+- User's personal `barnetharris` account is an admin. When he viewed his Benefactor Portal via the "My Benefactor Portal" switcher, the backend still reported him as admin → unfiltered menu → DTS/EPT remained.
+
+**Fix** (`backend/routes/feature_gates.py`):
+- Removed the admin/operator short-circuit. Admins now resolve through normal tier logic (active sub → estate verified_tier → user verified_tier).
+- New fallback: if the resolved tier is still empty AND the user is admin/operator, use `"premium"` as effective tier so the admin sees exactly what a top-tier customer sees when previewing.
+- Non-admin users with no tier continue to get `all_enabled: true` (pre-existing behavior; paywall handles real access).
+- Administrative routes remain gated by `require_admin` — no security impact.
+
+**Verified end-to-end** on preview pod:
+- Before: admin got 12 features (`all_enabled: true`).
+- After: admin gets 7 features (drops `ect`, `ccp`, `cfp` which are OFF for premium in DB). Further toggling `dts` + `timeline` OFF via admin UI → API drops to 7 features minus those two, sidebar on `/dashboard` reflects the filtered set.
+- Housekeeping: 65 PASS, 0 WARN, 0 FAIL. Ruff: clean.
+
 - [Audit action] Fix FC `free_access` grant for late-added beneficiaries (🔴 15 min)
 - [Audit action] Verify Stripe webhook signature enforcement — **DONE Apr 28: webhook now rejects unverified events + STRIPE_WEBHOOK_SECRET added to Railway**
 - [Audit action] Run FC installment-failure test (30 min)
