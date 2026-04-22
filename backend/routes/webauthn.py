@@ -251,3 +251,31 @@ async def webauthn_login_complete(data: LoginCompleteRequest):
             "role": user.get("role", "benefactor"),
         },
     }
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Passkey management endpoints consumed by the Security Settings UI.
+# These were previously missing — the frontend was issuing GET/DELETE
+# against `/api/auth/passkeys(/*)` and silently swallowing the 404,
+# which made the Passkey toggle lie about the true state.
+# ─────────────────────────────────────────────────────────────────────
+
+
+@router.get("/auth/passkeys")
+async def list_passkeys(current_user: dict = Depends(get_current_user)):
+    """Return the current user's registered passkeys. Used by Security
+    Settings → Passkey toggle to determine whether a credential exists."""
+    docs = await db.webauthn_credentials.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "credential_id": 0, "public_key": 0},
+    ).to_list(50)
+    return {"passkeys": docs}
+
+
+@router.delete("/auth/passkeys/{passkey_id}")
+async def delete_passkey(passkey_id: str, current_user: dict = Depends(get_current_user)):
+    """Remove a passkey credential. Used when the user toggles Passkey OFF."""
+    res = await db.webauthn_credentials.delete_one({"id": passkey_id, "user_id": current_user["id"]})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Passkey not found")
+    return {"success": True}
