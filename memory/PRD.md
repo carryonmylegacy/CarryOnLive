@@ -466,6 +466,24 @@ Zero behavioural changes. iOS keyboard handling fully preserved.
 ## SocialShareSheet Fix (Apr 28, 2026)
 Fixed vertical overflow on compact iPhones. Sheet now has `maxHeight` constraint and `overflow-y: auto` on content area. Dock clearance via `paddingBottom: calc(80px + safe-area-inset-bottom)`.
 
+## Menu Order Customization (Apr 22, 2026)
+New user-facing feature: reorder the feature section of the sidebar / hamburger menu via drag-friendly tile UI in Settings. Mirrors the existing `DockCustomizer` UX exactly (up/down chevrons, Reset, Save).
+
+**Scope rules (honored in code):**
+- Only reorders FEATURE items ABOVE the "Account" divider. Settings / Subscription / Security Settings / Customer Support / Sign Out stay anchored.
+- Benefactor and beneficiary roles only — staff portals (admin / operator) have workflow-only menus and the card is gated off with `!isStaff`.
+- This is a **cosmetic overlay on top of the existing tier-gated list**. The admin's per-tier feature gating (`filterNavByFeatures(items, enabledFeatures)`) runs first; the user's saved order is applied after. Newly-granted features append at the bottom; revoked features silently drop out.
+
+**Files:**
+- `/app/backend/routes/user_preferences.py` — added `GET` and `PUT /api/user-preferences/menu-order` endpoints (mirror of the dock endpoints, keyed per role).
+- `/app/frontend/src/config/menuRegistry.js` (new) — single source of truth for the benefactor / beneficiary feature registries + `applyUserMenuOrder(items, savedOrder)` helper.
+- `/app/frontend/src/components/MenuOrderCustomizer.js` (new) — the Settings-page UI. Exact UX mirror of `DockCustomizer` minus add/remove (all tier-gated items are always shown; user only reorders).
+- `/app/frontend/src/components/layout/Sidebar.js` — imports `applyUserMenuOrder`, fetches saved order on mount, applies to both `benefactorNavSections` and `beneficiaryNavSections` feature lists.
+- `/app/frontend/src/components/layout/MobileNav.js` — same treatment for `myLegacyItems` and `beneficiaryLegacyItems`.
+- `/app/frontend/src/pages/SettingsPage.js` — renders `MenuOrderCustomizer` directly below the existing Dock Customizer, gated by `!isStaff`.
+
+**Verified:** backend GET/PUT roundtrip persists ordered items correctly (curl), lint clean, housekeeping 69 PASS / 0 WARN / 0 FAIL.
+
 ## Feature Page Header Standardization (Apr 22, 2026)
 User uploaded 5 "good" reference screenshots (Beneficiaries / MM / SDV / CFP / IAC) and 5 "bad" screenshots (EGA / CCP / DAV / EPT / ECT). Surgical fixes applied to match the good spec: icon-box left, title + 1-line subtitle, primary action button on the right, `SectionLockBanner` directly below, content fills full column width.
 

@@ -45,6 +45,7 @@ import { toast } from '../../utils/toast';
 import NotificationBell from '../NotificationBell';
 import { API_URL } from '../../config';
 import { filterNavByFeatures } from '../../utils/featureGates';
+import { applyUserMenuOrder } from '../../config/menuRegistry';
 
 const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -180,6 +181,12 @@ const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('carryon_sidebar_collapsed') === 'true');
   const [estatePickerOpen, setEstatePickerOpen] = useState(false);
   const [ectUnread, setEctUnread] = useState(0);
+  // User's custom menu order (from /api/user-preferences/menu-order).
+  // This is a cosmetic reorder overlay applied AFTER tier gating.
+  // Keyed by role so benefactor-context and beneficiary-context orders
+  // persist independently.
+  const [menuOrderBenefactor, setMenuOrderBenefactor] = useState([]);
+  const [menuOrderBeneficiary, setMenuOrderBeneficiary] = useState([]);
   // Dev portal switcher (founder only)
   const [devOpen, setDevOpen] = useState(false);
   const [devConfig, setDevConfig] = useState(() => {
@@ -370,6 +377,24 @@ const Sidebar = () => {
     return () => clearInterval(interval);
   }, [user]);
 
+  // Load the user's saved menu order (cosmetic reorder overlay on top of
+  // the tier-gated feature list). Only benefactor + beneficiary roles have
+  // a reorder-able feature section — staff portals are workflow tools.
+  useEffect(() => {
+    if (user?.role === 'admin' || user?.role === 'operator') return;
+    const tk = localStorage.getItem('carryon_token');
+    if (!tk) return;
+    const roles = ['benefactor', 'beneficiary'];
+    Promise.all(roles.map((role) =>
+      fetch(`${BASE_URL}/api/user-preferences/menu-order?role=${role}`, { headers: { Authorization: `Bearer ${tk}` } })
+        .then((r) => (r.ok ? r.json() : { items: [] }))
+        .catch(() => ({ items: [] }))
+    )).then(([ben, bny]) => {
+      setMenuOrderBenefactor(Array.isArray(ben?.items) ? ben.items : []);
+      setMenuOrderBeneficiary(Array.isArray(bny?.items) ? bny.items : []);
+    });
+  }, [user]);
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -383,7 +408,7 @@ const Sidebar = () => {
   const benefactorNavSections = [
     {
       title: 'ESTATE PLAN ACCESS',
-      items: filterNavByFeatures([
+      items: applyUserMenuOrder(filterNavByFeatures([
         { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
         { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
         { to: '/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
@@ -397,7 +422,7 @@ const Sidebar = () => {
         { to: '/ffn', icon: Heart, label: 'Family & Friends Notification (FFN)' },
         { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
         { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline (EPT)' },
-      ], enabledFeatures)
+      ], enabledFeatures), menuOrderBenefactor)
     },
     {
       title: 'ACCOUNT',
@@ -434,7 +459,7 @@ const Sidebar = () => {
   const beneficiaryNavSections = [
     {
       title: 'ESTATE PLAN ACCESS',
-      items: filterNavByFeatures(filterByFeatureAccess([
+      items: applyUserMenuOrder(filterNavByFeatures(filterByFeatureAccess([
         { to: '/beneficiary', icon: LayoutDashboard, label: 'Dashboard' },
         { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
         { to: '/beneficiary/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
@@ -444,7 +469,7 @@ const Sidebar = () => {
         { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Comms Tool (ECT)', badge: ectUnread },
         { to: '/beneficiary/connected-protocol', icon: Shield, label: 'CarryOn Contingency Protocols (CCP)' },
         { to: '/beneficiary/financial', icon: DollarSign, label: 'CarryOn Financial Picture (CFP)' },
-      ]), enabledFeatures)
+      ]), enabledFeatures), menuOrderBeneficiary)
     },
     {
       title: 'ACCOUNT',

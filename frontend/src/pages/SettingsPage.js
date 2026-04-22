@@ -18,6 +18,7 @@ import AppearanceCard from '../components/settings/AppearanceCard';
 import DigestCard from '../components/settings/DigestCard';
 import PrivacyCard from '../components/settings/PrivacyCard';
 import DockCustomizer from '../components/DockCustomizer';
+import MenuOrderCustomizer from '../components/MenuOrderCustomizer';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
@@ -202,6 +203,16 @@ const SettingsPage = () => {
           <DockCustomizer />
         </CardContent>
       </Card>
+
+      {/* Menu Order Customizer — benefactor + beneficiary only (staff
+          portals have workflow-only menus and aren't user-reorderable). */}
+      {!isStaff && (
+        <Card className="glass-card" data-testid="settings-menu-order-card">
+          <CardContent className="pt-5">
+            <MenuOrderCustomizer />
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── Section: Notifications ── */}
       <SectionHeader title="Notifications" hint="Push, in-app, and email preferences." />

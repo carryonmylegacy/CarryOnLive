@@ -43,6 +43,7 @@ import NotificationBell from '../NotificationBell';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 import { filterNavByFeatures } from '../../utils/featureGates';
+import { applyUserMenuOrder } from '../../config/menuRegistry';
 import { DOCK_REGISTRY, ADMIN_PORTALS, scopeArr, hasScope } from './navConfig';
 import MobileOtpToggle from './MobileOtpToggle';
 import MobileOfflineToggle from './MobileOfflineToggle';
@@ -64,6 +65,10 @@ const MobileNav = () => {
   const [mobileEstatePicker, setMobileEstatePicker] = useState(false);
   const [ectUnread, setEctUnread] = useState(0);
   const [customDockItems, setCustomDockItems] = useState(null); // null = not loaded yet
+  // User's custom menu-order preference (applied to the feature section of
+  // the hamburger menu). Keyed per-role.
+  const [menuOrderBenefactor, setMenuOrderBenefactor] = useState([]);
+  const [menuOrderBeneficiary, setMenuOrderBeneficiary] = useState([]);
 
   // Fetch estates for portal switching
   React.useEffect(() => {
@@ -123,6 +128,23 @@ const MobileNav = () => {
       })
       .catch(() => {});
   }, [user, dockRole]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch custom menu-order preferences. The hamburger menu (feature section
+  // above ACCOUNT) applies this reorder on top of the tier-gated list.
+  React.useEffect(() => {
+    if (user?.role === 'admin' || user?.role === 'operator') return;
+    const tk = localStorage.getItem('carryon_token');
+    if (!tk) return;
+    const roles = ['benefactor', 'beneficiary'];
+    Promise.all(roles.map((role) =>
+      fetch(`${BASE_URL}/api/user-preferences/menu-order?role=${role}`, { headers: { Authorization: `Bearer ${tk}` } })
+        .then((r) => (r.ok ? r.json() : { items: [] }))
+        .catch(() => ({ items: [] }))
+    )).then(([ben, bny]) => {
+      setMenuOrderBenefactor(Array.isArray(ben?.items) ? ben.items : []);
+      setMenuOrderBeneficiary(Array.isArray(bny?.items) ? bny.items : []);
+    });
+  }, [user]);
 
   // Dev portal switcher (founder only)
   const [devOpen, setDevOpen] = useState(false);
@@ -314,7 +336,7 @@ const MobileNav = () => {
   };
 
   // Navigation structure matching prototype - with sections
-  const myLegacyItems = filterNavByFeatures([
+  const myLegacyItems = applyUserMenuOrder(filterNavByFeatures([
     { to: '/dashboard', icon: Home, label: 'Dashboard' },
     { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
     { to: '/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
@@ -327,7 +349,7 @@ const MobileNav = () => {
     { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
     { to: '/estate-chat', icon: MessageCircle, label: 'Estate Comms Tool (ECT)', badge: ectUnread },
     { to: '/connected-protocol', icon: Shield, label: 'CarryOn Contingency Protocols (CCP)' },
-  ], enabledFeatures);
+  ], enabledFeatures), menuOrderBenefactor);
 
   // Get feature access flags from localStorage (set by TransitionGate/Dashboard)
   const featureAccess = (() => {
@@ -349,7 +371,7 @@ const MobileNav = () => {
       return !flag || featureAccess[flag] !== false;
     });
 
-  const beneficiaryLegacyItems = filterNavByFeatures(filterByFeatureAccess([
+  const beneficiaryLegacyItems = applyUserMenuOrder(filterNavByFeatures(filterByFeatureAccess([
     { to: '/beneficiary', icon: Home, label: 'Dashboard' },
     { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
     { to: '/beneficiary/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
@@ -358,7 +380,7 @@ const MobileNav = () => {
     { to: '/beneficiary/milestone', icon: Gift, label: 'Report Milestone' },
     { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Comms Tool (ECT)', badge: ectUnread },
     { to: '/beneficiary/connected-protocol', icon: Shield, label: 'CarryOn Contingency Protocols (CCP)' },
-  ]), enabledFeatures);
+  ]), enabledFeatures), menuOrderBeneficiary);
 
   // Staff portals — tool shortcuts in hamburger menu
   const adminMenuItems = [

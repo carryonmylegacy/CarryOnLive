@@ -14,6 +14,49 @@ class DockPreferences(BaseModel):
     role: str = "benefactor"  # role key for per-role storage
 
 
+class MenuOrderPreferences(BaseModel):
+    items: list[str]  # ordered list of route paths (no max — full feature menu)
+    role: str = "benefactor"  # role key for per-role storage
+
+
+@router.get("/user-preferences/menu-order")
+async def get_menu_order_preferences(
+    role: str = "benefactor",
+    current_user: dict = Depends(get_current_user),
+):
+    """Get the user's saved menu-order configuration for a specific role.
+
+    This is a cosmetic reorder overlay applied on top of the tier-gated
+    feature list shown in the sidebar / hamburger menu. Gating itself
+    remains owned by admin/tier config — this endpoint only persists
+    the user's preferred order.
+    """
+    doc = await db.user_preferences.find_one(
+        {"user_id": current_user["id"], "key": f"menu_order_{role}"},
+        {"_id": 0},
+    )
+    if not doc:
+        return {"items": []}
+    return {"items": doc.get("items", [])}
+
+
+@router.put("/user-preferences/menu-order")
+async def save_menu_order_preferences(
+    data: MenuOrderPreferences,
+    current_user: dict = Depends(get_current_user),
+):
+    """Save the user's menu-order configuration for a specific role."""
+    # Sanity cap — no single user should have >64 menu items; this
+    # also blocks accidental payload blow-ups from a broken client.
+    items = data.items[:64]
+    await db.user_preferences.update_one(
+        {"user_id": current_user["id"], "key": f"menu_order_{data.role}"},
+        {"$set": {"items": items}},
+        upsert=True,
+    )
+    return {"items": items}
+
+
 @router.get("/user-preferences/dock")
 async def get_dock_preferences(
     role: str = "benefactor",
