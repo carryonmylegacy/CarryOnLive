@@ -466,6 +466,21 @@ Zero behavioural changes. iOS keyboard handling fully preserved.
 ## SocialShareSheet Fix (Apr 28, 2026)
 Fixed vertical overflow on compact iPhones. Sheet now has `maxHeight` constraint and `overflow-y: auto` on content area. Dock clearance via `paddingBottom: calc(80px + safe-area-inset-bottom)`.
 
+## Subscription Tiles ↔ Admin Feature Gates Alignment (Apr 22, 2026)
+**Audit finding**: The Subscription page tiles were rendering **hardcoded marketing copy** from `DEFAULT_PLANS[].features` ("Everything in Standard", "Priority human support (CST)" etc.), completely ignoring the admin's per-tier `feature_gates` configuration. Meanwhile `SubscriptionPaywall.js` (the modal variant) was correctly using the `tier_features` field returned by `/api/subscriptions/plans`. The two renderers had diverged.
+
+**Fix applied** (`frontend/src/components/settings/SubscriptionManagement.js`):
+- Added `tierFeatures` state populated from `res.data.tier_features` on the same `/subscriptions/plans` fetch that was already happening.
+- Replaced the feature list render block to use the same conditional as the paywall: prefer `tierFeatures[plan.id]` (the canonical 12-feature grid with `{label, enabled}` items), fall back to `plan.features` marketing copy only if the gate grid is missing.
+- Struck-through style for disabled features, identical visual language to the paywall.
+
+**Verified end-to-end:**
+- `GET /api/admin/feature-gates` (admin) and `GET /api/subscriptions/plans` (public) both report the same 12 features × 8 tiers matrix.
+- User-facing tiles on `/subscription` now show all 12 features per tile — 9 with green checks, 3 (ECT / CCP / CFP — currently `default_off` in the registry) struck through.
+- Admin toggle of any feature for any tier now propagates to the Subscription page live, no code change needed.
+
+**Finding for product**: ECT, CCP, and CFP are OFF for every tier in the current admin config (they carry `default_off: True` in `PLATFORM_FEATURES`). If these are meant to be available on Premium/Standard, the admin needs to flip them on via the Feature Gates table in the admin Subscriptions tab.
+
 ## Menu Order Customization (Apr 22, 2026)
 New user-facing feature: reorder the feature section of the sidebar / hamburger menu via drag-friendly tile UI in Settings. Mirrors the existing `DockCustomizer` UX exactly (up/down chevrons, Reset, Save).
 

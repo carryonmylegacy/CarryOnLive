@@ -111,6 +111,12 @@ export const SubscriptionManagement = ({
 }) => {
   const [plans, setPlans] = useState([]);
   const [beneficiaryPlans, setBeneficiaryPlans] = useState([]);
+  // Admin-configured per-tier feature gates (keyed by tier id).
+  // Each value is an array of { label, enabled } in canonical order.
+  // Source: GET /subscriptions/plans — built from subscription_settings.feature_gates.
+  // When present, replaces plan.features marketing copy so the tiles
+  // stay in lockstep with what's shown in the admin Feature Gates table.
+  const [tierFeatures, setTierFeatures] = useState({});
   const [billing, setBilling] = useState('annual');
   const [subscribing, setSubscribing] = useState(null);
   const [cancellingPlan, setCancellingPlan] = useState(false);
@@ -152,6 +158,8 @@ export const SubscriptionManagement = ({
         const res = await axios.get(`${API_URL}/subscriptions/plans`);
         setPlans(res.data.plans || []);
         setBeneficiaryPlans(res.data.beneficiary_plans || []);
+        // Keep the tile checklist in sync with admin Feature Gates config.
+        if (res.data.tier_features) setTierFeatures(res.data.tier_features);
       } catch (e) { /* fallback empty */ }
     };
     const fetchVerification = async () => {
@@ -673,17 +681,31 @@ export const SubscriptionManagement = ({
                   {/* Divider */}
                   <div className="h-px mb-4" style={{ background: `linear-gradient(90deg, transparent, ${style.accent}20, transparent)` }} />
 
-                  {/* Features */}
+                  {/* Features — prefer admin-configured tier_features (single
+                      source of truth with Feature Gates config); fall back to
+                      the plan's legacy marketing copy only if the gate grid
+                      is missing. Matches the logic in SubscriptionPaywall so
+                      both places stay in lockstep. */}
                   <div className="space-y-2 mb-5 flex-1">
-                    {(plan.features || []).map((f, i) => (
-                      <div key={i} className="flex items-start gap-2 text-sm text-[var(--t3)]">
-                        <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                          style={{ background: `${style.accent}12` }}>
-                          <Check className="w-2.5 h-2.5" style={{ color: style.accent }} />
+                    {(tierFeatures[plan.id] && tierFeatures[plan.id].length > 0
+                      ? tierFeatures[plan.id]
+                      : (plan.features || []).map(f => typeof f === 'string' ? { label: f, enabled: true } : f)
+                    ).map((f, i) => {
+                      const label = typeof f === 'string' ? f : f.label;
+                      const enabled = typeof f === 'string' ? true : f.enabled !== false;
+                      return (
+                        <div key={i} className="flex items-start gap-2 text-sm">
+                          <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                            style={{ background: enabled ? `${style.accent}12` : 'rgba(127,127,127,0.08)' }}>
+                            {enabled
+                              ? <Check className="w-2.5 h-2.5" style={{ color: style.accent }} />
+                              : <X className="w-2.5 h-2.5 text-[var(--t6)]" />
+                            }
+                          </div>
+                          <span className={enabled ? 'text-[var(--t3)]' : 'text-[var(--t6)] line-through'}>{label}</span>
                         </div>
-                        <span>{f}</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {plan.note && <p className="text-sm text-[var(--t4)] italic mb-3">{plan.note}</p>}
