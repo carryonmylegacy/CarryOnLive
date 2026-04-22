@@ -4,14 +4,28 @@
   "description": "Secure estate planning and legacy management for every American family.",
   "icons": [
     {
-      "src": "carryon-icon.jpg",
+      "src": "carryon-app-icon-square-192.png",
       "sizes": "192x192",
-      "type": "image/jpeg"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "carryon-app-icon.jpg",
+      "src": "carryon-app-icon-square-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "carryon-app-icon-square.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "carryon-app-icon-square-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "start_url": "/",
