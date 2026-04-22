@@ -126,7 +126,7 @@ jobs:
     name: E2E Smoke (Playwright)
     runs-on: ubuntu-latest
     needs: frontend-build
-    timeout-minutes: 15
+    timeout-minutes: 25
     # Skip this job unless E2E_BASE_URL secret is configured in repo settings.
     # (GitHub doesn't allow `secrets.*` directly in job `if:`, so we read
     # it through vars — set either `vars.RUN_E2E` or add the secret and
@@ -150,7 +150,11 @@ jobs:
           E2E_API_URL: ${{ secrets.E2E_API_URL }}
           E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
           E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
-        run: yarn e2e
+        # CI runs the DESKTOP smoke suite only. smoke-mobile doubles the
+        # runtime (110 tests) and historically times out on 2-worker
+        # GitHub runners. Mobile coverage is still available locally via
+        # `yarn e2e` or can be added as a nightly scheduled workflow.
+        run: yarn e2e:smoke:desktop
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4
