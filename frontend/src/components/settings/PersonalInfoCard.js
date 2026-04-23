@@ -185,7 +185,7 @@ const PersonalInfoCard = ({ initialEditAddress = false }) => {
             <label className="text-[var(--t5)] text-xs mb-1 block">Gender</label>
             {profileEditing ? (
               <select value={profileData.gender || ''} onChange={e => setProfileData(p => ({...p, gender: e.target.value}))}
-                className="w-full h-9 px-3 rounded-md bg-[var(--card)] border border-[var(--b)] text-[var(--t)] text-sm" data-testid="profile-gender">
+                className="select-themed w-full h-9 px-3 rounded-md bg-[var(--card)] border border-[var(--b)] text-[var(--t)] text-sm" data-testid="profile-gender">
                 <option value="">Select...</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
@@ -200,7 +200,7 @@ const PersonalInfoCard = ({ initialEditAddress = false }) => {
             <label className="text-[var(--t5)] text-xs mb-1 block">Marital Status</label>
             {profileEditing ? (
               <select value={profileData.marital_status || ''} onChange={e => setProfileData(p => ({...p, marital_status: e.target.value}))}
-                className="w-full h-9 px-3 rounded-md bg-[var(--card)] border border-[var(--b)] text-[var(--t)] text-sm" data-testid="profile-marital">
+                className="select-themed w-full h-9 px-3 rounded-md bg-[var(--card)] border border-[var(--b)] text-[var(--t)] text-sm" data-testid="profile-marital">
                 <option value="">Select...</option>
                 <option value="single">Single</option>
                 <option value="married">Married</option>
@@ -254,7 +254,7 @@ const PersonalInfoCard = ({ initialEditAddress = false }) => {
                 </div>
                 <div>
                   <select value={profileData.address_state || ''} onChange={e => setProfileData(p => ({...p, address_state: e.target.value}))}
-                    className="w-full h-9 px-2 rounded-md bg-[var(--card)] border border-[var(--b)] text-[var(--t)] text-sm" data-testid="profile-state">
+                    className="select-themed w-full h-9 px-2 rounded-md bg-[var(--card)] border border-[var(--b)] text-[var(--t)] text-sm" data-testid="profile-state">
                     <option value="">State</option>
                     {['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC'].map(s => (
                       <option key={s} value={s}>{s}</option>
