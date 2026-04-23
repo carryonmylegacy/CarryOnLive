@@ -43,6 +43,7 @@ import {
 import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
 import NotificationBell from '../NotificationBell';
+import SidebarPillButton from './SidebarPillButton';
 import { API_URL } from '../../config';
 import { filterNavByFeatures } from '../../utils/featureGates';
 import { applyUserMenuOrder } from '../../config/menuRegistry';
@@ -805,26 +806,23 @@ const Sidebar = () => {
         <NotificationBell collapsed={collapsed} />
 
         {/* Light/Dark Mode — pill button */}
-        <button
+        <SidebarPillButton
+          collapsed={collapsed}
           onClick={toggleTheme}
-          className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
           data-testid="theme-toggle"
-          title={collapsed ? (theme === 'dark' ? 'Light Mode' : 'Dark Mode') : undefined}
-        >
-          {theme === 'dark' ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
-          {!collapsed && <span>{theme === 'dark' ? 'Light' : 'Dark'} Mode</span>}
-        </button>
+          icon={theme === 'dark' ? <Sun /> : <Moon />}
+          label={`${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+        />
 
         {/* Collapse — pill button */}
-        <button
+        <SidebarPillButton
+          collapsed={collapsed}
           onClick={toggleCollapsed}
-          className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
           data-testid="sidebar-collapse-toggle"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {collapsed ? <PanelLeftOpen className="w-[18px] h-[18px]" /> : <PanelLeftClose className="w-[18px] h-[18px]" />}
-          {!collapsed && <span>Collapse</span>}
-        </button>
+          icon={collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
+          label="Collapse"
+        />
 
         {/* ── Separator ── */}
         <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.08)', margin: '2px 0' }} />
@@ -1069,15 +1067,14 @@ const Sidebar = () => {
         <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.08)', margin: '2px 0' }} />
 
         {/* Sign Out — pill button, danger style */}
-        <button
+        <SidebarPillButton
+          collapsed={collapsed}
           onClick={handleLogout}
-          className={`sb-pill danger w-full ${collapsed ? 'justify-center' : ''}`}
           data-testid="logout-button"
-          title={collapsed ? 'Sign Out' : undefined}
-        >
-          <LogOut className="w-[18px] h-[18px]" />
-          {!collapsed && <span>Sign Out</span>}
-        </button>
+          variant="danger"
+          icon={<LogOut />}
+          label="Sign Out"
+        />
       </div>
     </aside>
   );
