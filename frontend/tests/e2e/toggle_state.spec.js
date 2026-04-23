@@ -206,6 +206,25 @@ test.describe('Settings toggle regression', () => {
     const visible = await toggle.isVisible().catch(() => false);
     test.skip(!visible, 'weekly digest toggle not rendered on this account');
 
+    // Warm-up: fire a GET /digest/preferences from the page first. This
+    // lets DigestCard's own useEffect settle, populates any lazy-initialised
+    // cache, and crucially nudges Cloudflare to issue a cf_clearance cookie
+    // for this origin before we POST — the Safari-UA edge can occasionally
+    // 403 the first non-GET on a fresh session without it.
+    await page.evaluate(async () => {
+      try {
+        const apiBase = (window).REACT_APP_BACKEND_URL || '';
+        const token = localStorage.getItem('token');
+        if (token) {
+          await fetch(`${apiBase}/api/digest/preferences`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+          }).catch(() => {});
+        }
+      } catch {}
+    });
+    await page.waitForTimeout(500);
+
     await assertPersistsAcrossReload(page, 'settings-weekly-digest-toggle', {
       expectWriteEndpoints: {
         onFlipTo: {
