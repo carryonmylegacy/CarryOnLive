@@ -420,29 +420,58 @@ export default function EstateChatPage() {
       setMsgLoading(false);
       const sc = _scrollEl(scrollContainerRef);
       if (!sc) return;
+      let target;
       if (jumpToBottom) {
-        sc.scrollTop = sc.scrollHeight;
+        target = sc.scrollHeight;
+        sc.scrollTop = target;
       } else {
-        sc.scrollTop = Math.min(savedScrollTop, Math.max(0, sc.scrollHeight - sc.clientHeight));
+        target = Math.min(savedScrollTop, Math.max(0, sc.scrollHeight - sc.clientHeight));
+        sc.scrollTop = target;
       }
       // Bind scroll listener and reveal the messages on the NEXT frame so
       // the fade-in happens AFTER the scroll position is final, not during.
       bindScrollListener();
       requestAnimationFrame(() => setEctMsgsVisible(true));
 
-      let lastH = sc.scrollHeight;
-      const check = setInterval(() => {
-        const s = _scrollEl(scrollContainerRef);
-        if (!s) { clearInterval(check); return; }
-        if (s.scrollHeight !== lastH) {
-          lastH = s.scrollHeight;
-          // Only keep pinning to bottom during the grow-in window if the
-          // initial decision was "jump to bottom" — otherwise the user's
-          // restored position must not be overridden by message paint-ins.
-          if (jumpToBottom) s.scrollTop = s.scrollHeight;
+      // Actively enforce the target scroll position for a short window to
+      // defeat ANY stray `scrollTop = scrollHeight` writes that might fire
+      // during message paint-in (images loading, content growing, other
+      // components dispatching scroll). Release the enforcement as soon
+      // as the user initiates their own scroll (wheel / touch / key).
+      let userScrolling = false;
+      const onUserIntent = () => { userScrolling = true; };
+      sc.addEventListener('wheel', onUserIntent, { passive: true });
+      sc.addEventListener('touchstart', onUserIntent, { passive: true });
+      sc.addEventListener('keydown', onUserIntent, { passive: true });
+
+      const enforceStart = Date.now();
+      const enforce = () => {
+        if (userScrolling || Date.now() - enforceStart > 1200) {
+          sc.removeEventListener('wheel', onUserIntent);
+          sc.removeEventListener('touchstart', onUserIntent);
+          sc.removeEventListener('keydown', onUserIntent);
+          return;
         }
-      }, 100);
-      setTimeout(() => clearInterval(check), 3000);
+        const s = _scrollEl(scrollContainerRef);
+        if (!s) return;
+        if (jumpToBottom) {
+          // scrollHeight may still be growing — always stick to the latest bottom.
+          if (Math.abs(s.scrollTop - (s.scrollHeight - s.clientHeight)) > 2) {
+            s.scrollTop = s.scrollHeight;
+          }
+          target = s.scrollHeight;
+        } else {
+          // Clamp the saved target against the current scrollable range so
+          // it lands at a meaningful position even before all messages paint.
+          const newTarget = Math.min(savedScrollTop, Math.max(0, s.scrollHeight - s.clientHeight));
+          if (Math.abs(s.scrollTop - newTarget) > 2) {
+            s.scrollTop = newTarget;
+          }
+          target = newTarget;
+        }
+        requestAnimationFrame(enforce);
+      };
+      requestAnimationFrame(enforce);
     });
     let msgCount = 0;
     const poll = setInterval(() => {
