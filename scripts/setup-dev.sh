@@ -12,14 +12,15 @@ cd "$(dirname "$0")/.."
 echo "Setting up CarryOn dev environment..."
 
 # 1. Make all scripts executable
-chmod +x scripts/check.sh scripts/git-hooks/pre-commit scripts/setup-dev.sh 2>/dev/null || true
+chmod +x scripts/check.sh scripts/git-hooks/pre-commit scripts/git-hooks/pre-push scripts/setup-dev.sh 2>/dev/null || true
 
-# 2. Wire pre-commit hook
+# 2. Wire pre-commit + pre-push hooks (both live in scripts/git-hooks/)
 if [ -d .git ]; then
   git config core.hooksPath scripts/git-hooks
-  echo "✓ Pre-commit hook wired (scripts/git-hooks/pre-commit)"
+  echo "✓ Pre-commit hook wired  (scripts/git-hooks/pre-commit — lint/format auto-fix)"
+  echo "✓ Pre-push hook wired    (scripts/git-hooks/pre-push — housekeeping --strict)"
 else
-  echo "⚠ Not a git repo — skipping pre-commit hook setup"
+  echo "⚠ Not a git repo — skipping hook setup"
 fi
 
 # 3. Verify dependencies

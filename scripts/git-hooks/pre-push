@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# CarryOn™ — Git pre-push hook
+# ============================================================================
+# Runs `bash /app/housekeeping.sh --strict` BEFORE any push is allowed to a
+# remote. Blocks the push with a non-zero exit code if ANY check fails
+# (including the design-invariant regression guards in Sections G and H).
+#
+# Why --strict? Because regressions that sneak into the default repo silently
+# (muted Save buttons, custom mobile scrollbars, missing select carets) all
+# passed the old "non-strict" mode as WARNs. Strict makes them push blockers.
+#
+# Install:
+#   git config core.hooksPath scripts/git-hooks   # already set if pre-commit works
+# Skip (emergency only — do NOT make this a habit):
+#   git push --no-verify
+# ============================================================================
+
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+HK="${REPO_ROOT}/housekeeping.sh"
+
+if [ ! -x "$HK" ] && [ ! -f "$HK" ]; then
+  echo -e "${YELLOW}⚠️  pre-push: /app/housekeeping.sh not found — skipping invariant guard.${NC}"
+  exit 0
+fi
+
+echo -e "${BOLD}🛡️  pre-push: running housekeeping in strict mode…${NC}"
+echo "   (this catches Settings UI primitive regressions, mobile scrollbar"
+echo "    regressions, lint errors, iOS/App Store readiness, and more)"
+echo ""
+
+# Run strict mode. Capture exit code (set -e is disabled here intentionally
+# so we can print a friendlier failure message).
+set +e
+bash "$HK" --strict
+EXIT=$?
+set -e
+
+if [ "$EXIT" -eq 0 ]; then
+  echo ""
+  echo -e "${GREEN}✅ pre-push: all invariants PASS — proceeding with push.${NC}"
+  exit 0
+fi
+
+echo ""
+echo -e "${RED}${BOLD}❌ pre-push BLOCKED — housekeeping reported $EXIT issue(s).${NC}"
+echo ""
+echo -e "${YELLOW}What to do:${NC}"
+echo "  1. Scroll up and read the SECTION G / SECTION H details."
+echo "  2. Fix each flagged file (see memory/AGENT_RULES.md for the pattern)."
+echo "  3. Re-run locally:   bash /app/housekeeping.sh --strict"
+echo "  4. When it's clean, retry:  git push"
+echo ""
+echo -e "${YELLOW}Emergency bypass (avoid unless truly urgent):${NC}"
+echo "  git push --no-verify"
+echo ""
+exit 1

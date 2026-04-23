@@ -321,6 +321,40 @@ z-index bugs, ratcheting scroll position — before we ripped them all out.
 
 If a user asks for a custom mobile scrollbar: push back. Share the
 handoff history — it's been tried, it's been regressed, native scroll
+
+---
+
+## 🪝 GIT HOOKS — One-time install per clone
+
+The repo ships with two invariant-enforcing git hooks at
+`scripts/git-hooks/`. Running `bash scripts/setup-dev.sh` once wires both:
+
+- **`pre-commit`**: auto-fixes safe lint/format issues, re-stages them,
+  and blocks the commit if unfixable issues remain.
+- **`pre-push`**: runs `bash /app/housekeeping.sh --strict` — blocks any
+  push that would introduce a regression in Sections G (Settings UI
+  primitives) or H (mobile scrollbar invariants), plus all other WARNs
+  and FAILs. Prints a friendly remediation message when it blocks.
+
+### Install
+```bash
+bash scripts/setup-dev.sh
+```
+
+### Verify
+```bash
+git config core.hooksPath   # should print: scripts/git-hooks
+```
+
+### Emergency bypass (do NOT make this a habit)
+```bash
+git push --no-verify
+```
+
+If you bypass a block and push anyway, the regression WILL be caught by
+the CarryOn CI pipeline on GitHub — it just means a slower feedback loop
+and a noisier branch status. Local hook is the courteous first line.
+
 won. Offer desktop-only scrollbar visibility instead, which is what the
 current setup already provides via `@media (min-width: 1024px)`.
 
