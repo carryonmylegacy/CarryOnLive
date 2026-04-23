@@ -5,6 +5,7 @@
 //      yarn e2e:visual   → visual diff suite
 //      yarn e2e:ui       → interactive UI mode
 import { defineConfig, devices } from '@playwright/test';
+import fs from 'fs';
 
 const BASE_URL = process.env.E2E_BASE_URL || 'http://localhost:3000';
 
@@ -16,6 +17,10 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 1,
   workers: process.env.CI ? 2 : 1,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : [['list']],
+  // Pre-warm Cloudflare's `cf_clearance` cookie once before the suite runs
+  // so individual specs don't hit the "Performing security verification"
+  // interstitial on their first goto. See tests/global-setup.js.
+  globalSetup: './tests/global-setup.js',
   use: {
     baseURL: BASE_URL,
     trace: 'retain-on-failure',
@@ -23,6 +28,11 @@ export default defineConfig({
     video: 'retain-on-failure',
     actionTimeout: 10_000,
     navigationTimeout: 20_000,
+    // Reuse the CF-cleared storage state captured by global-setup.js. This
+    // is a best-effort optimisation — if the file is missing (e.g. brand-new
+    // checkout) Playwright falls back to an empty state and tests still
+    // work via their in-spec CF-aware retry.
+    storageState: fs.existsSync('./tests/.auth/cf.json') ? './tests/.auth/cf.json' : undefined,
   },
   projects: [
     {

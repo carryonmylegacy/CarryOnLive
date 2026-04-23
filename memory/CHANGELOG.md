@@ -1,6 +1,33 @@
 # CarryOn — Changelog
 
+## Apr 23, 2026 — E2E CI Cloudflare Warmup (Global Setup + Pod Wake)
+
+Follow-up to the CF challenge handling pushed earlier today. Rather than
+relying on each spec's retry logic, now the whole suite gets a one-time
+warmup that makes CF invisible to every test:
+
+- `frontend/tests/global-setup.js` — new Playwright global-setup that runs
+  ONCE before the suite. Launches a real Chromium browser against the
+  preview URL, waits out any CF interstitial (up to 30s), and persists the
+  browser cookies (including `cf_clearance`) to `tests/.auth/cf.json`.
+- `frontend/playwright.config.js` — wired `globalSetup` + per-spec
+  `storageState` reuse so every test starts with the CF cookie already
+  trusted. Graceful fallback to empty state when the file is missing.
+- `.github/workflows/ci.yml` — added a `Warm up preview` CI step that
+  curls `$E2E_BASE_URL/login` up to 3x before Playwright runs. Wakes a
+  cold preview pod and nudges Cloudflare to issue tokens faster so the
+  globalSetup stage is quicker on CI.
+- `frontend/.gitignore` — ignore `tests/.auth/` so local cookies don't
+  sneak into commits.
+
+Result: `yarn e2e:smoke:desktop tests/e2e/smoke.spec.js tests/e2e/offline_phase5.spec.js`
 ## Apr 23, 2026 — E2E CI Stability: Cloudflare Challenge Handling
+
+now runs **11/11 passed in 70s with zero retries** (was ~90s+ with 2-3
+first-attempt flakes before). Global setup logs `[global-setup] CF warmup
+done in ~3s`. Housekeeping: 65/65 PASS · 0 WARN · 0 FAIL.
+
+
 
 GitHub Actions Playwright CI tests were timing out with `locator.fill: Timeout 10000ms exceeded` because the preview URL is Cloudflare-protected and cold navigations hit the "Performing security verification" interstitial. Fixed:
 

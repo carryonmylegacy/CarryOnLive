@@ -143,6 +143,24 @@ jobs:
       - name: Install Playwright Chromium
         working-directory: frontend
         run: npx playwright install --with-deps chromium
+      - name: Warm up preview (wake pod + prime Cloudflare cookie)
+        # Hits the preview URL a few times so Cloudflare issues a
+        # `cf_clearance` cookie to the runner and the preview pod is
+        # no longer cold when Playwright starts. `globalSetup` then
+        # captures the cf cookie into storageState for all specs.
+        env:
+          E2E_BASE_URL: ${{ secrets.E2E_BASE_URL }}
+        run: |
+          if [ -z "$E2E_BASE_URL" ]; then
+            echo "::notice::E2E_BASE_URL not set, skipping warmup"
+            exit 0
+          fi
+          for i in 1 2 3; do
+            code=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 20 "$E2E_BASE_URL/login" || echo "000")
+            echo "Warmup attempt $i → HTTP $code"
+            if [ "$code" = "200" ]; then break; fi
+            sleep 3
+          done
       - name: Run E2E smoke suite
         working-directory: frontend
         env:
