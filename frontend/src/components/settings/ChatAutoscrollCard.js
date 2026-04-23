@@ -126,20 +126,7 @@ export const ChatAutoscrollCard = () => {
                 onClick={save}
                 disabled={loading || saving || Number(draft) === minutes}
                 data-testid="chat-autoscroll-save-btn"
-                className="px-4 py-2 rounded-md text-sm font-semibold disabled:cursor-not-allowed transition-colors inline-flex items-center gap-2 border"
-                style={{
-                  // Enabled → solid gold pill with dark text. Disabled →
-                  // hollow outline in the same gold so it stays readable
-                  // against both the light-mode white card and the dark-
-                  // mode navy card without relying on opacity.
-                  background: (loading || saving || Number(draft) === minutes)
-                    ? 'transparent'
-                    : 'var(--accent, #daa520)',
-                  color: (loading || saving || Number(draft) === minutes)
-                    ? 'var(--accent, #daa520)'
-                    : '#0B1221',
-                  borderColor: 'var(--accent, #daa520)',
-                }}
+                className="px-4 py-2 rounded-md text-sm font-semibold btn-gold-cta inline-flex items-center gap-2"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 Save

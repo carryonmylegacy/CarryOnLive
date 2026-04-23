@@ -279,6 +279,28 @@
   }
 }
 
+/* Shared gold-CTA save button — always legible in both light + dark mode.
+   Enabled: solid gold fill with navy text.
+   Disabled: outlined gold pill (transparent bg, gold border + text).
+   Use on Settings-card Save buttons instead of `disabled:opacity-50` on a
+   solid gold bg (which blends into both white and navy card surfaces). */
+.btn-gold-cta {
+  background: var(--gold, #daa520);
+  color: #0b1120;
+  border: 1px solid var(--gold, #daa520);
+  transition: background-color 200ms ease, color 200ms ease;
+}
+.btn-gold-cta:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--gold, #daa520) 88%, black 12%);
+}
+.btn-gold-cta:disabled {
+  background: transparent;
+  color: var(--gold, #daa520);
+  cursor: not-allowed;
+  /* No opacity change — outlined variant stays fully visible. */
+}
+
+
 @layer components {
   /* App Container */
   .app {

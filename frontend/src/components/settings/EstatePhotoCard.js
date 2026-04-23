@@ -131,7 +131,7 @@ const EstatePhotoCard = () => {
                       setEditingEstateName(false);
                     }}
                     disabled={estateSaving || !estateNameDraft.trim()}
-                    className="h-8 px-4 rounded-md text-sm font-bold bg-[var(--gold)] text-[#0b1120] hover:bg-[var(--gold)]/90 disabled:opacity-50"
+                    className="h-8 px-4 rounded-md text-sm font-bold btn-gold-cta"
                     data-testid="estate-name-save"
                   >
                     {estateSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}

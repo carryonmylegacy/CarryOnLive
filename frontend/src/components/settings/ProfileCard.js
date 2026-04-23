@@ -113,7 +113,7 @@ const ProfileCard = () => {
                       }
                       setEditingName(false);
                     }}
-                    className="h-8 px-4 rounded-md text-sm font-bold bg-[var(--gold)] text-[#0b1120] hover:bg-[var(--gold)]/90 disabled:opacity-50"
+                    className="h-8 px-4 rounded-md text-sm font-bold btn-gold-cta"
                     data-testid="display-name-save"
                   >
                     {nameSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}
@@ -186,7 +186,7 @@ const ProfileCard = () => {
                     }
                     setEditingUsername(false);
                   }}
-                  className="h-8 px-4 rounded-md text-sm font-bold bg-[var(--gold)] text-[#0b1120] hover:bg-[var(--gold)]/90 disabled:opacity-50"
+                  className="h-8 px-4 rounded-md text-sm font-bold btn-gold-cta"
                   data-testid="username-save"
                 >
                   {usernameSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}
