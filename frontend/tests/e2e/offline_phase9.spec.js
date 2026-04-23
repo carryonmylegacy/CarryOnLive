@@ -106,16 +106,25 @@ test.describe('Offline Phase 9 — Chunked uploads + Tier C polish', () => {
     // thin E2E check just confirms the endpoint is deployed + returns a
     // 401 without a token (rather than a 404) so a misconfigured pod is
     // caught before beta rollouts.
-    const res = await page.evaluate(async (base) => {
-      try {
-        const r = await fetch(`${base}/api/uploads/chunked/init`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: 'x', total_bytes: 1, kind: 'document' }),
-        });
-        return r.status;
-      } catch { return -1; }
-    }, BASE);
+    //
+    // Retry the fetch a few times — Cloudflare can occasionally RST a
+    // brand-new POST connection from a mobile-UA context before the
+    // cf_clearance cookie fully kicks in.
+    let res = -1;
+    for (let i = 0; i < 4; i++) {
+      res = await page.evaluate(async (base) => {
+        try {
+          const r = await fetch(`${base}/api/uploads/chunked/init`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename: 'x', total_bytes: 1, kind: 'document' }),
+          });
+          return r.status;
+        } catch { return -1; }
+      }, BASE);
+      if (res !== -1) break;
+      await page.waitForTimeout(1500);
+    }
     // 401/403 = deployed + auth-gated. 429 = deployed + rate-limited by
     // Cloudflare (acceptable — still proves it exists). 404 = NOT deployed.
     expect([401, 403, 429]).toContain(res);

@@ -1,54 +1,46 @@
 # CarryOn — Changelog
 
-## Apr 23, 2026 — E2E CI Cloudflare Warmup (Global Setup + Pod Wake)
+## Apr 23, 2026 — E2E CI Cloudflare Warmup — Full Cold Suite Green
 
-Follow-up to the CF challenge handling pushed earlier today. Rather than
-relying on each spec's retry logic, now the whole suite gets a one-time
-warmup that makes CF invisible to every test:
+Full rewrite of the E2E Cloudflare strategy after a cold full-suite
+validation (110 tests: desktop + mobile):
 
 - `frontend/tests/global-setup.js` — new Playwright global-setup that runs
-  ONCE before the suite. Launches a real Chromium browser against the
-  preview URL, waits out any CF interstitial (up to 30s), and persists the
-  browser cookies (including `cf_clearance`) to `tests/.auth/cf.json`.
-- `frontend/playwright.config.js` — wired `globalSetup` + per-spec
-  `storageState` reuse so every test starts with the CF cookie already
-  trusted. Graceful fallback to empty state when the file is missing.
+  ONCE before the suite. Launches Chromium and warms up **both** desktop
+  and mobile (iPhone UA) contexts, waits out any CF interstitial, and
+  persists `cf_clearance` cookies to `tests/.auth/cf-desktop.json` and
+  `cf-mobile.json`. CF scopes the cookie per User-Agent so both must be
+  warmed separately.
+- `frontend/playwright.config.js` — wired `globalSetup` + per-project
+  `storageState` reuse so every test starts with the appropriate CF
+  cookie already trusted. Bumped global test timeout 45s → 90s to
+  absorb CF retry budget on first-attempt runs.
 - `.github/workflows/ci.yml` — added a `Warm up preview` CI step that
-  curls `$E2E_BASE_URL/login` up to 3x before Playwright runs. Wakes a
-  cold preview pod and nudges Cloudflare to issue tokens faster so the
-  globalSetup stage is quicker on CI.
+  curls `$E2E_BASE_URL/login` up to 3x before Playwright runs (wakes
+  cold preview pod, nudges Cloudflare to issue tokens faster).
+- `frontend/tests/e2e/_helpers.js` — added `waitOutCloudflareChallenge()`
+  and `robustLogin()` with tight CF waits (12s single-pass since
+  storageState pre-clears the cookie, down from 25+15s per attempt).
+  All 7 offline_phase specs + `toggle_state` + `scrollbar` + `smoke`
+  now use the shared helper. Removed ~120 lines of duplicated login
+  boilerplate.
+- `frontend/tests/e2e/offline_phase5.spec.js` — wrapped public-voices
+  test in CF-aware retry (public routes skip /login so CF sometimes
+  re-challenges mid-flow).
+- `frontend/tests/e2e/offline_phase9.spec.js` — added fetch retry to the
+  chunked-upload-reachability test (mobile-UA CORS preflight can RST
+  before cf_clearance takes effect).
 - `frontend/.gitignore` — ignore `tests/.auth/` so local cookies don't
   sneak into commits.
 
-Result: `yarn e2e:smoke:desktop tests/e2e/smoke.spec.js tests/e2e/offline_phase5.spec.js`
-## Apr 23, 2026 — E2E CI Stability: Cloudflare Challenge Handling
-
-now runs **11/11 passed in 70s with zero retries** (was ~90s+ with 2-3
-first-attempt flakes before). Global setup logs `[global-setup] CF warmup
-done in ~3s`. Housekeeping: 65/65 PASS · 0 WARN · 0 FAIL.
-
-
-
-GitHub Actions Playwright CI tests were timing out with `locator.fill: Timeout 10000ms exceeded` because the preview URL is Cloudflare-protected and cold navigations hit the "Performing security verification" interstitial. Fixed:
-
-- `tests/e2e/_helpers.js` — added `waitOutCloudflareChallenge()` that polls
-  for the CF heading to disappear. New `robustLogin()` helper wraps the
-  full login flow (goto → CF wait → input fill → submit) in a 3-attempt
-  retry so mid-flow CF navigations restart cleanly. Accepts
-  `localStorageKeys` so specs that need to set a flag post-goto don't
-  need to migrate to `addInitScript`.
-- All 7 offline_phase specs (`phase1`, `phase2`, `phase2_1`, `phase3`,
-  `phase4`, `phase5`, `phase7`) + `toggle_state.spec.js` +
-  `scrollbar.spec.js` + `smoke.spec.js` now use the shared helper or
-  have CF wait baked into their inline login functions. Removed
-  ~120 lines of duplicated login boilerplate.
-- `playwright.config.js` — bumped global test timeout from 45s → 75s to
-  give CF challenges headroom on first-attempt runs (was the root cause
-  of the "flaky on first try, pass on retry" pattern).
-
-Result: 47/47 passing (0 flaky) on local re-runs vs. 47/47 with 6 flaky
-before. CI retries=2 would have masked this, but the underlying flakiness
-is now eliminated. Housekeeping: 65/65 PASS · 0 WARN · 0 FAIL.
+**Result (`yarn e2e` against cold preview pod, 110 tests):**
+- 106 passed · 0 failed · 3 skipped
+- 1 flaky: theme toggle visual flip (pre-existing UI timing flake;
+  passes on retry, not CF-related)
+- `[global-setup] desktop CF warmup done in ~3s`
+- `[global-setup] mobile CF warmup done in ~2s`
+- Total suite runtime: 26 minutes
+- Housekeeping: 65/65 PASS · 0 WARN · 0 FAIL
 
 
 ## Feb 21, 2026 — XSS Hardening: Eliminate `dangerouslySetInnerHTML`

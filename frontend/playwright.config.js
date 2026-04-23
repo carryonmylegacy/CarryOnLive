@@ -9,17 +9,19 @@ import fs from 'fs';
 
 const BASE_URL = process.env.E2E_BASE_URL || 'http://localhost:3000';
 
+const storageIfExists = (p) => (fs.existsSync(p) ? p : undefined);
+
 export default defineConfig({
   testDir: './tests',
-  timeout: 75_000,
+  timeout: 90_000,
   expect: { timeout: 10_000 },
   fullyParallel: false, // ordered smoke path uses shared admin session
   retries: process.env.CI ? 2 : 1,
   workers: process.env.CI ? 2 : 1,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : [['list']],
-  // Pre-warm Cloudflare's `cf_clearance` cookie once before the suite runs
-  // so individual specs don't hit the "Performing security verification"
-  // interstitial on their first goto. See tests/global-setup.js.
+  // Pre-warm Cloudflare's `cf_clearance` cookie once per project UA before
+  // the suite runs so individual specs don't hit the "Performing security
+  // verification" interstitial on their first goto. See tests/global-setup.js.
   globalSetup: './tests/global-setup.js',
   use: {
     baseURL: BASE_URL,
@@ -28,17 +30,17 @@ export default defineConfig({
     video: 'retain-on-failure',
     actionTimeout: 10_000,
     navigationTimeout: 20_000,
-    // Reuse the CF-cleared storage state captured by global-setup.js. This
-    // is a best-effort optimisation — if the file is missing (e.g. brand-new
-    // checkout) Playwright falls back to an empty state and tests still
-    // work via their in-spec CF-aware retry.
-    storageState: fs.existsSync('./tests/.auth/cf.json') ? './tests/.auth/cf.json' : undefined,
   },
   projects: [
     {
       name: 'smoke-chromium',
       testDir: './tests/e2e',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1440, height: 900 },
+        // Reuse the CF-cleared desktop cookie. Graceful fallback to empty.
+        storageState: storageIfExists('./tests/.auth/cf-desktop.json'),
+      },
     },
     {
       name: 'smoke-mobile',
@@ -52,6 +54,9 @@ export default defineConfig({
         hasTouch: true,
         userAgent:
           'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+        // Cloudflare scopes cf_clearance per User-Agent, so mobile gets its
+        // own pre-warmed cookie distinct from desktop.
+        storageState: storageIfExists('./tests/.auth/cf-mobile.json'),
       },
     },
     {

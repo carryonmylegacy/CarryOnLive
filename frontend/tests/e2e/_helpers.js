@@ -63,12 +63,10 @@ async function robustLogin(page, {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
-      await page.waitForTimeout(500);
-      await waitOutCloudflareChallenge(page, { timeout: 25000 });
-      // Re-check CF once more — the auto-clear reload can briefly show a
-      // blank page that resolves into CF challenge seconds later.
-      await page.waitForTimeout(1000);
-      await waitOutCloudflareChallenge(page, { timeout: 15000 });
+      await page.waitForTimeout(400);
+      // Fast CF wait — storageState usually pre-clears the cookie so we
+      // only need a short check. Longer waits just eat the test timeout.
+      await waitOutCloudflareChallenge(page, { timeout: 12000 });
       if (localStorageKeys) {
         await page.evaluate((kv) => {
           for (const [k, v] of Object.entries(kv)) {
@@ -77,16 +75,16 @@ async function robustLogin(page, {
         }, localStorageKeys);
       }
       const inputs = page.locator('input:not([type="hidden"]):visible');
-      await inputs.first().waitFor({ state: 'visible', timeout: 15000 });
-      await inputs.nth(0).fill(email, { timeout: 8000 });
-      await inputs.nth(1).fill(password, { timeout: 8000 });
-      await page.locator('button[type="submit"]').first().click({ timeout: 8000 });
+      await inputs.first().waitFor({ state: 'visible', timeout: 12000 });
+      await inputs.nth(0).fill(email, { timeout: 6000 });
+      await inputs.nth(1).fill(password, { timeout: 6000 });
+      await page.locator('button[type="submit"]').first().click({ timeout: 6000 });
       await page.waitForTimeout(postLoginWaitMs);
       lastErr = null;
       break;
     } catch (e) {
       lastErr = e;
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(1500);
     }
   }
   if (lastErr) throw lastErr;
