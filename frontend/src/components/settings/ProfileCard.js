@@ -119,7 +119,7 @@ const ProfileCard = () => {
                     {nameSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}
                   </button>
                   <button onClick={() => setEditingName(false)}
-                    className="h-8 px-4 rounded-md text-sm text-[var(--t4)] border border-[var(--b)] hover:bg-[var(--s)]">
+                    className="h-8 px-4 rounded-md text-sm btn-outline-cta">
                     Cancel
                   </button>
                 </div>
@@ -192,7 +192,7 @@ const ProfileCard = () => {
                   {usernameSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}
                 </button>
                 <button onClick={() => setEditingUsername(false)}
-                  className="h-8 px-4 rounded-md text-sm text-[var(--t4)] border border-[var(--b)] hover:bg-[var(--s)]">
+                  className="h-8 px-4 rounded-md text-sm btn-outline-cta">
                   Cancel
                 </button>
               </div>

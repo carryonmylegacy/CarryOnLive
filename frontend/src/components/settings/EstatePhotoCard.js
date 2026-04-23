@@ -138,7 +138,7 @@ const EstatePhotoCard = () => {
                   </button>
                   <button
                     onClick={() => setEditingEstateName(false)}
-                    className="h-8 px-4 rounded-md text-sm text-[var(--t4)] border border-[var(--b)] hover:bg-[var(--s)]"
+                    className="h-8 px-4 rounded-md text-sm btn-outline-cta"
                   >
                     Cancel
                   </button>
