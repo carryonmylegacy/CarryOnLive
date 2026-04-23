@@ -19,6 +19,7 @@ import DigestCard from '../components/settings/DigestCard';
 import PrivacyCard from '../components/settings/PrivacyCard';
 import DockCustomizer from '../components/DockCustomizer';
 import MenuOrderCustomizer from '../components/MenuOrderCustomizer';
+import ChatAutoscrollCard from '../components/settings/ChatAutoscrollCard';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
@@ -223,6 +224,11 @@ const SettingsPage = () => {
       <NotificationPrefsCard />
 
       <DigestCard />
+
+      {/* Chat auto-scroll threshold — per-user preference applied by
+          EstateChatPage when re-opening a channel. Non-staff only
+          because staff portals don't surface the ECT. */}
+      {!isStaff && <ChatAutoscrollCard />}
 
       {/* ── Section: Privacy — non-staff only ── */}
       {!isStaff && (

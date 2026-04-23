@@ -91,6 +91,20 @@ export default function EstateChatPage() {
   const [newChatType, setNewChatType] = useState('direct');
   const lastTypingSentRef = useRef(0);
 
+  // ── Chat auto-scroll-to-latest threshold (minutes) ──────────────────────
+  // User-configurable in Settings → "Jump-to-latest in chat". When the
+  // channel was last opened > threshold minutes ago, we scroll to the
+  // most recent message; otherwise we restore the previous scrollTop.
+  // Per-channel last-visit timestamp + scroll offset are persisted in
+  // localStorage (see `_autoscrollKey` helpers in the channel-open effect).
+  const [autoscrollThresholdMin, setAutoscrollThresholdMin] = useState(240);
+  useEffect(() => {
+    fetch(`${API_URL}/user-preferences/chat-autoscroll`, { headers })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.threshold_minutes) setAutoscrollThresholdMin(d.threshold_minutes); })
+      .catch(() => { /* keep default 240 min */ });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Extracted hooks ───────────────────────────────────────────────────────
   const channelList = useECTChannelList({ token, navigate, user });
   const {
@@ -337,14 +351,37 @@ export default function EstateChatPage() {
   useEffect(() => {
     if (!activeChannel) return;
     if (inputRef.current) inputRef.current.blur();
-    fetchMessages(activeChannel.id).then(() => {
+
+    // Auto-scroll threshold gate — if it's been longer than the user-set
+    // minutes since we last opened THIS channel, jump to the bottom.
+    // Otherwise restore the previous scrollTop (iMessage-like).
+    const chId = activeChannel.id;
+    const visitKey = `carryon_chat_last_visited_${chId}`;
+    const scrollKey = `carryon_chat_scroll_${chId}`;
+    const lastVisitedMs = parseInt(localStorage.getItem(visitKey) || '0', 10);
+    const savedScrollTop = parseInt(localStorage.getItem(scrollKey) || '0', 10);
+    const ageMin = lastVisitedMs ? (Date.now() - lastVisitedMs) / 60000 : Infinity;
+    const jumpToBottom = !lastVisitedMs || ageMin > autoscrollThresholdMin || savedScrollTop <= 0;
+
+    fetchMessages(chId).then(() => {
       const sc = scrollContainerRef.current;
-      if (sc) sc.scrollTop = sc.scrollHeight;
-      let lastH = sc?.scrollHeight || 0;
+      if (!sc) return;
+      if (jumpToBottom) {
+        sc.scrollTop = sc.scrollHeight;
+      } else {
+        sc.scrollTop = Math.min(savedScrollTop, Math.max(0, sc.scrollHeight - sc.clientHeight));
+      }
+      let lastH = sc.scrollHeight;
       const check = setInterval(() => {
         const s = scrollContainerRef.current;
         if (!s) { clearInterval(check); return; }
-        if (s.scrollHeight !== lastH) { lastH = s.scrollHeight; s.scrollTop = s.scrollHeight; }
+        if (s.scrollHeight !== lastH) {
+          lastH = s.scrollHeight;
+          // Only keep pinning to bottom during the grow-in window if the
+          // initial decision was "jump to bottom" — otherwise the user's
+          // restored position must not be overridden by message paint-ins.
+          if (jumpToBottom) s.scrollTop = s.scrollHeight;
+        }
       }, 100);
       setTimeout(() => clearInterval(check), 3000);
     });
@@ -363,8 +400,43 @@ export default function EstateChatPage() {
         fetchChannels();
       }
     }, 2000);
-    return () => clearInterval(poll);
-  }, [activeChannel?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Cleanup: save current scroll position + visit timestamp when we
+    // leave this channel (channel switch OR page unmount). Reading the
+    // scroll container at teardown guarantees we capture the latest
+    // user-controlled position, not an intermediate programmatic one.
+    return () => {
+      clearInterval(poll);
+      try {
+        const sc = scrollContainerRef.current;
+        if (sc) localStorage.setItem(scrollKey, String(Math.max(0, Math.round(sc.scrollTop))));
+        localStorage.setItem(visitKey, String(Date.now()));
+      } catch { /* storage quota / private mode — non-fatal */ }
+    };
+  }, [activeChannel?.id, autoscrollThresholdMin]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Persist last-visit timestamp + scroll offset when the tab/window is
+  // hidden or unloaded (user closes tab, switches app, backgrounds iOS,
+  // etc.). The channel-open useEffect's cleanup only fires on channel
+  // switch or page unmount — this covers the remaining escape hatches.
+  useEffect(() => {
+    const save = () => {
+      const ch = activeChannelRef.current;
+      if (!ch) return;
+      try {
+        const sc = scrollContainerRef.current;
+        if (sc) localStorage.setItem(`carryon_chat_scroll_${ch.id}`, String(Math.max(0, Math.round(sc.scrollTop))));
+        localStorage.setItem(`carryon_chat_last_visited_${ch.id}`, String(Date.now()));
+      } catch { /* non-fatal */ }
+    };
+    const onVis = () => { if (document.visibilityState === 'hidden') save(); };
+    window.addEventListener('pagehide', save);
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      window.removeEventListener('pagehide', save);
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, []);
 
   useEffect(() => {
     if (contacts.length === 1 && !newChatEstate) setNewChatEstate(contacts[0].estate_id);

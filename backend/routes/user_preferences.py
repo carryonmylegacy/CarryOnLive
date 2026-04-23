@@ -19,6 +19,14 @@ class MenuOrderPreferences(BaseModel):
     role: str = "benefactor"  # role key for per-role storage
 
 
+class ChatAutoscrollPreferences(BaseModel):
+    # Minutes since the user last opened a specific chat channel after which
+    # the chat should auto-scroll to the latest message on re-open. Under this
+    # threshold, the last scroll position is restored (iMessage-like). Range
+    # 1-1440 minutes (1 min to 24 hours). Default 240 (4 hours).
+    threshold_minutes: int = 240
+
+
 @router.get("/user-preferences/menu-order")
 async def get_menu_order_preferences(
     role: str = "benefactor",
@@ -91,3 +99,36 @@ async def save_dock_preferences(
         upsert=True,
     )
     return {"items": items}
+
+
+@router.get("/user-preferences/chat-autoscroll")
+async def get_chat_autoscroll_preferences(
+    current_user: dict = Depends(get_current_user),
+):
+    """Return the user's chat auto-scroll-to-latest threshold (minutes).
+
+    When re-opening a chat channel, the client checks the age of the
+    locally-tracked last-visit timestamp: if older than this threshold
+    we jump to the most recent message, otherwise we restore the
+    previous scroll position.
+    """
+    doc = await db.user_preferences.find_one(
+        {"user_id": current_user["id"], "key": "chat_autoscroll"},
+        {"_id": 0},
+    )
+    return {"threshold_minutes": int((doc or {}).get("threshold_minutes", 240))}
+
+
+@router.put("/user-preferences/chat-autoscroll")
+async def save_chat_autoscroll_preferences(
+    data: ChatAutoscrollPreferences,
+    current_user: dict = Depends(get_current_user),
+):
+    """Persist the user's chat auto-scroll threshold (1-1440 minutes)."""
+    minutes = max(1, min(1440, int(data.threshold_minutes)))
+    await db.user_preferences.update_one(
+        {"user_id": current_user["id"], "key": "chat_autoscroll"},
+        {"$set": {"threshold_minutes": minutes}},
+        upsert=True,
+    )
+    return {"threshold_minutes": minutes}
