@@ -1269,6 +1269,54 @@ if [ "$PRIMITIVE_ISSUES" != "0" ]; then
 fi
 
 echo ""
+echo -e "${BOLD}SECTION H: Mobile Scrollbar Invariants (Regression Guard)${NC}"
+echo "------------------------------------------"
+# Custom JS scrollbars on mobile caused 4+ user-visible regressions before
+# we ripped them out in favour of native iOS scrolling + globally-hidden
+# scrollbar indicators. Lock that decision in place. See handoff
+# "Known issue recurrence" for the full history.
+SCROLL_ISSUES=0
+SCROLL_DETAILS=""
+
+# ── H1. No custom ScrollBar.js / PageScrollBar.js component files ───
+echo -n "H1. [UX]    No custom JS scrollbar components .... "
+CUSTOM_SB=$(find /app/frontend/src -type f \( -name "ScrollBar.js" -o -name "PageScrollBar.js" -o -name "Scrollbar.js" \) 2>/dev/null)
+if [ -z "$CUSTOM_SB" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL (custom scrollbar component(s) detected — native scroll only, per handoff)"
+  SCROLL_DETAILS="${SCROLL_DETAILS}${CUSTOM_SB}\n"
+  SCROLL_ISSUES=$((SCROLL_ISSUES + 1))
+fi
+
+# ── H2. Global ::-webkit-scrollbar { display: none } still present ──
+echo -n "H2. [UX]    Native scrollbar hidden globally ..... "
+if grep -A1 "\\*::-webkit-scrollbar" /app/frontend/src/index.css 2>/dev/null | grep -q "display: none"; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL (global *::-webkit-scrollbar display:none rule missing — iOS Safari will show ugly native indicators)"
+  SCROLL_ISSUES=$((SCROLL_ISSUES + 1))
+fi
+
+# ── H3. No raw pointerdown scrollbar drag handlers ──────────────────
+echo -n "H3. [UX]    No raw pointerdown scrollbar drag ..... "
+RAW_DRAG=$(grep -rln "pointerdown.*scrollTop\|scrollTop.*pointerdown" /app/frontend/src/ 2>/dev/null \
+  | grep -v "useOverlayScrollbars\|scrollbarMomentum\|.test.js\|.spec.js" || true)
+if [ -z "$RAW_DRAG" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL (hand-rolled scroll drag logic detected — use OverlayScrollbars or native scroll)"
+  SCROLL_DETAILS="${SCROLL_DETAILS}${RAW_DRAG}\n"
+  SCROLL_ISSUES=$((SCROLL_ISSUES + 1))
+fi
+
+if [ "$SCROLL_ISSUES" != "0" ]; then
+  echo -e "   Details:"
+  echo -e "$SCROLL_DETAILS" | sed 's/^/     /'
+  echo "   Fix: see handoff → custom JS scrollbars were explicitly ripped out. Use native scroll + .select-themed pattern."
+fi
+
+echo ""
 echo -e "${BOLD}SECTION D: Post-Check Verification${NC}"
 echo "------------------------------------------"
 
@@ -1298,7 +1346,7 @@ echo ""
 # SUMMARY
 # ══════════════════════════════════════════════════════════════
 echo "=========================================="
-TOTAL_ISSUES=$((ISSUES + SOC2_ISSUES + IOS_ISSUES + MOBILE_ISSUES + VERCEL_ISSUES + PRIMITIVE_ISSUES))
+TOTAL_ISSUES=$((ISSUES + SOC2_ISSUES + IOS_ISSUES + MOBILE_ISSUES + VERCEL_ISSUES + PRIMITIVE_ISSUES + SCROLL_ISSUES))
 if [ "$TOTAL_ISSUES" = "0" ]; then
   echo -e "  ${GREEN}ALL CHECKS PASSED${NC} — codebase is clean"
   echo -e "  ${GREEN}READY TO PUSH${NC} — CodeMagic → TestFlight → App Store"
@@ -1320,6 +1368,9 @@ else
   fi
   if [ "$PRIMITIVE_ISSUES" -gt 0 ]; then
     echo -e "  ${YELLOW}$PRIMITIVE_ISSUES SETTINGS UI PRIMITIVE(S) REGRESSED${NC} — use .btn-gold-cta / .select-themed (AGENT_RULES.md)"
+  fi
+  if [ "$SCROLL_ISSUES" -gt 0 ]; then
+    echo -e "  ${RED}$SCROLL_ISSUES MOBILE SCROLLBAR REGRESSION(S)${NC} — custom JS scrollbars were explicitly removed (handoff)"
   fi
 fi
 if [ "$REPAIRS" -gt 0 ]; then
@@ -1397,7 +1448,7 @@ echo ""
 
 if [ "$STRICT_MODE" = "1" ]; then
   echo -e "${YELLOW}STRICT MODE${NC}: WARNs counted as failures."
-  STRICT_TOTAL=$((ISSUES + SOC2_ISSUES + IOS_ISSUES + MOBILE_ISSUES + VERCEL_ISSUES + PRIMITIVE_ISSUES))
+  STRICT_TOTAL=$((ISSUES + SOC2_ISSUES + IOS_ISSUES + MOBILE_ISSUES + VERCEL_ISSUES + PRIMITIVE_ISSUES + SCROLL_ISSUES))
   exit "$STRICT_TOTAL"
 else
   # Advisory mode: succeed regardless (each caller decides its own blocking rules)

@@ -294,3 +294,33 @@ document it here with an enabled/disabled spec, and ensure it works in
 BOTH themes before using it. CSS variables: use `var(--gold)`, `var(--t)`,
 `var(--bg)`, `var(--card)` — never hardcode `#0F1629` etc. (light mode
 will be unreadable).
+
+---
+
+## 📜 MOBILE SCROLLBAR INVARIANTS — Native scroll only
+
+Custom JavaScript scrollbars on mobile viewports are **permanently retired**.
+Previous attempts (`ScrollBar.js`, `PageScrollBar.js`, pointerdown drag
+handlers) caused at least 4 distinct user-visible regressions on iOS
+Safari — thumb direction inverted, text selection glitches, flex-box
+z-index bugs, ratcheting scroll position — before we ripped them all out.
+
+### Rules
+1. **Do not create** any `ScrollBar*.js` / `Scrollbar*.js` / `PageScrollBar*.js`
+   component file. Housekeeping H1 fails the run if one appears.
+2. **Do not modify** the global `*::-webkit-scrollbar { display: none }`
+   rule in `frontend/src/index.css`. It's the reason iOS no longer shows
+   the ugly native gutter indicator. H2 verifies it's still there.
+3. **Do not hand-roll** pointerdown-based scroll drag handlers that
+   manipulate `scrollTop` directly. H3 fails the run. If you genuinely
+   need a visible scrollbar on desktop, use `useOverlayScrollbars()`
+   (already installed) — it's the only sanctioned scrollbar lib.
+4. **Existing `useOverlayScrollbars` callers** (`EstateChatPage.js`,
+   `DashboardLayout.js`) are desktop-only by render path. Don't introduce
+   new mobile-only call-sites.
+
+If a user asks for a custom mobile scrollbar: push back. Share the
+handoff history — it's been tried, it's been regressed, native scroll
+won. Offer desktop-only scrollbar visibility instead, which is what the
+current setup already provides via `@media (min-width: 1024px)`.
+
