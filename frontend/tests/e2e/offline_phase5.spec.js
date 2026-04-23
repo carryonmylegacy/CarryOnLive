@@ -6,21 +6,13 @@
 //   3. Public /voices page reads from local cache first on second visit.
 
 import { test, expect } from '@playwright/test';
-
-const BASE = process.env.BASE_URL || process.env.REACT_APP_BACKEND_URL || 'https://ui-polish-72.preview.emergentagent.com';
+import { BASE, robustLogin } from './_helpers.js';
 
 async function loginAsAdminWithMode(page, mode) {
-  await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(400);
-  await page.evaluate((m) => {
-    try { localStorage.setItem('carryon_offline_v1', m); } catch {}
-  }, mode);
-  await page.waitForTimeout(400);
-  const inputs = page.locator('input:not([type="hidden"]):visible');
-  await inputs.nth(0).fill('info@carryon.us');
-  await inputs.nth(1).fill('Demo1234!');
-  await page.locator('button[type="submit"]').first().click();
-  await page.waitForTimeout(2500);
+  return robustLogin(page, {
+    postLoginWaitMs: 2500,
+    localStorageKeys: { carryon_offline_v1: mode },
+  });
 }
 
 async function countStore(page, storeName) {

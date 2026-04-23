@@ -10,7 +10,7 @@ const BASE_URL = process.env.E2E_BASE_URL || 'http://localhost:3000';
 
 export default defineConfig({
   testDir: './tests',
-  timeout: 45_000,
+  timeout: 75_000,
   expect: { timeout: 10_000 },
   fullyParallel: false, // ordered smoke path uses shared admin session
   retries: process.env.CI ? 2 : 1,

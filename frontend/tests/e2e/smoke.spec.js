@@ -17,6 +17,14 @@ const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'Demo1234!';
 // Helper: log in and land on dashboard. Returns after navigation settles.
 async function loginAsAdmin(page) {
   await page.goto('/login');
+  // Wait out Cloudflare "Performing security verification" interstitial if
+  // one is present on the preview URL.
+  const cfDeadline = Date.now() + 25000;
+  while (Date.now() < cfDeadline) {
+    const cf = await page.locator('text=Performing security verification').count().catch(() => 0);
+    if (cf === 0) break;
+    await page.waitForTimeout(1500);
+  }
   await expect(page).toHaveURL(/\/login/);
   // CarryOn login uses a single "username or email" text input.
   // Try whichever testid variant is visible in the current viewport (PWA, mobile, desktop).

@@ -17,13 +17,21 @@ const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'Demo1234!';
 
 async function loginAsAdmin(page) {
   await page.goto('/login');
+  // Wait out Cloudflare "Performing security verification" interstitial if
+  // one is present on the preview URL.
+  const cfDeadline = Date.now() + 25000;
+  while (Date.now() < cfDeadline) {
+    const cf = await page.locator('text=Performing security verification').count().catch(() => 0);
+    if (cf === 0) break;
+    await page.waitForTimeout(1500);
+  }
   const identifier = page.locator(
     '[data-testid="login-email-input"], [data-testid="login-email-pwa"], [data-testid="login-email"], input[autocomplete="username"]'
   ).first();
   const password = page.locator(
     '[data-testid="login-password-pwa"], [data-testid="login-password"], input[type="password"]'
   ).first();
-  await identifier.waitFor({ state: 'visible' });
+  await identifier.waitFor({ state: 'visible', timeout: 15000 });
   await identifier.fill(ADMIN_EMAIL);
   await password.fill(ADMIN_PASSWORD);
   const submit = page.locator(

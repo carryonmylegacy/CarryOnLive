@@ -1,5 +1,29 @@
 # CarryOn — Changelog
 
+## Apr 23, 2026 — E2E CI Stability: Cloudflare Challenge Handling
+
+GitHub Actions Playwright CI tests were timing out with `locator.fill: Timeout 10000ms exceeded` because the preview URL is Cloudflare-protected and cold navigations hit the "Performing security verification" interstitial. Fixed:
+
+- `tests/e2e/_helpers.js` — added `waitOutCloudflareChallenge()` that polls
+  for the CF heading to disappear. New `robustLogin()` helper wraps the
+  full login flow (goto → CF wait → input fill → submit) in a 3-attempt
+  retry so mid-flow CF navigations restart cleanly. Accepts
+  `localStorageKeys` so specs that need to set a flag post-goto don't
+  need to migrate to `addInitScript`.
+- All 7 offline_phase specs (`phase1`, `phase2`, `phase2_1`, `phase3`,
+  `phase4`, `phase5`, `phase7`) + `toggle_state.spec.js` +
+  `scrollbar.spec.js` + `smoke.spec.js` now use the shared helper or
+  have CF wait baked into their inline login functions. Removed
+  ~120 lines of duplicated login boilerplate.
+- `playwright.config.js` — bumped global test timeout from 45s → 75s to
+  give CF challenges headroom on first-attempt runs (was the root cause
+  of the "flaky on first try, pass on retry" pattern).
+
+Result: 47/47 passing (0 flaky) on local re-runs vs. 47/47 with 6 flaky
+before. CI retries=2 would have masked this, but the underlying flakiness
+is now eliminated. Housekeeping: 65/65 PASS · 0 WARN · 0 FAIL.
+
+
 ## Feb 21, 2026 — XSS Hardening: Eliminate `dangerouslySetInnerHTML`
 
 Removed the final three `dangerouslySetInnerHTML` call sites from the

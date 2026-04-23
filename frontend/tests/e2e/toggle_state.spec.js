@@ -31,13 +31,36 @@ const EMAIL = process.env.E2E_ADMIN_EMAIL || 'info@carryon.us';
 const PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'Demo1234!';
 
 async function login(page) {
-  await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(800);
-  const inputs = page.locator('input');
-  await inputs.nth(0).fill(EMAIL);
-  await inputs.nth(1).fill(PASSWORD);
-  await page.locator('button[type="submit"]').first().click();
-  await page.waitForTimeout(2500);
+  // Wrap the entire login flow in a retry loop. The preview URL is Cloudflare-
+  // protected and "Performing security verification" can appear either on the
+  // initial goto OR between locator calls (replacing the page mid-flow).
+  let lastErr;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(500);
+      // Wait out CF challenge if present.
+      const deadline = Date.now() + 25000;
+      while (Date.now() < deadline) {
+        const cf = await page.locator('text=Performing security verification').count().catch(() => 0);
+        if (cf === 0) break;
+        await page.waitForTimeout(1500);
+      }
+      await page.waitForTimeout(800);
+      const inputs = page.locator('input:not([type="hidden"]):visible');
+      await inputs.first().waitFor({ state: 'visible', timeout: 15000 });
+      await inputs.nth(0).fill(EMAIL, { timeout: 8000 });
+      await inputs.nth(1).fill(PASSWORD, { timeout: 8000 });
+      await page.locator('button[type="submit"]').first().click({ timeout: 8000 });
+      await page.waitForTimeout(2500);
+      lastErr = null;
+      break;
+    } catch (e) {
+      lastErr = e;
+      await page.waitForTimeout(2000);
+    }
+  }
+  if (lastErr) throw lastErr;
 }
 
 async function openSettings(page) {

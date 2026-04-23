@@ -10,17 +10,10 @@
 //      and any later outbox jobs using the temp id would be rewritten.
 
 import { test, expect } from '@playwright/test';
-
-const BASE = process.env.BASE_URL || process.env.REACT_APP_BACKEND_URL || 'https://ui-polish-72.preview.emergentagent.com';
+import { BASE, robustLogin } from './_helpers.js';
 
 async function loginAsAdmin(page) {
-  await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(800);
-  const inputs = page.locator('input:not([type="hidden"]):visible');
-  await inputs.nth(0).fill('info@carryon.us');
-  await inputs.nth(1).fill('Demo1234!');
-  await page.locator('button[type="submit"]').first().click();
-  await page.waitForTimeout(2500);
+  return robustLogin(page, { postLoginWaitMs: 2500 });
 }
 
 test.describe('Offline Phase 2.1 — offline CREATE (temp id lifecycle)', () => {

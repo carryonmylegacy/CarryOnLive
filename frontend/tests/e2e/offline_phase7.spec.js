@@ -9,22 +9,16 @@
 //   3. Round-trip: reading back via repo returns the original plaintext.
 
 import { test, expect } from '@playwright/test';
-
-const BASE = process.env.BASE_URL || process.env.REACT_APP_BACKEND_URL || 'https://ui-polish-72.preview.emergentagent.com';
+import { BASE, robustLogin } from './_helpers.js';
 
 async function loginAsAdminWithModes(page, offlineMode, encMode) {
-  await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(400);
-  await page.evaluate(({ off, enc }) => {
-    try { localStorage.setItem('carryon_offline_v1', off); } catch {}
-    try { localStorage.setItem('carryon_offline_enc_v1', enc); } catch {}
-  }, { off: offlineMode, enc: encMode });
-  await page.waitForTimeout(400);
-  const inputs = page.locator('input:not([type="hidden"]):visible');
-  await inputs.nth(0).fill('info@carryon.us');
-  await inputs.nth(1).fill('Demo1234!');
-  await page.locator('button[type="submit"]').first().click();
-  await page.waitForTimeout(5000);
+  return robustLogin(page, {
+    postLoginWaitMs: 5000,
+    localStorageKeys: {
+      carryon_offline_v1: offlineMode,
+      carryon_offline_enc_v1: encMode,
+    },
+  });
 }
 
 async function getUserRow(page) {
