@@ -454,10 +454,12 @@ export default function EstateChatPage() {
         target = Math.min(savedScrollTop, Math.max(0, sc.scrollHeight - sc.clientHeight));
         sc.scrollTop = target;
       }
-      // Bind scroll listener and reveal the messages on the NEXT frame so
-      // the fade-in happens AFTER the scroll position is final, not during.
+      // Bind scroll listener. Reveal the messages ONLY after the scroll
+      // position has settled (scrollHeight stable for 2 consecutive frames
+      // AND we're at the target) — otherwise the user sees a visible
+      // "ratchet" as images load and the enforcement loop snaps to the
+      // new bottom each frame.
       bindScrollListener();
-      requestAnimationFrame(() => setEctMsgsVisible(true));
 
       // Actively enforce the target scroll position for a short window to
       // defeat ANY stray `scrollTop = scrollHeight` writes that might fire
@@ -471,29 +473,48 @@ export default function EstateChatPage() {
       sc.addEventListener('keydown', onUserIntent, { passive: true });
 
       const enforceStart = Date.now();
+      let prevH = -1;
+      let stableFrames = 0;
+      let revealed = false;
+      const reveal = () => {
+        if (revealed) return;
+        revealed = true;
+        setEctMsgsVisible(true);
+      };
       const enforce = () => {
-        if (userScrolling || Date.now() - enforceStart > 1200) {
+        const elapsed = Date.now() - enforceStart;
+        if (userScrolling || elapsed > 1500) {
           sc.removeEventListener('wheel', onUserIntent);
           sc.removeEventListener('touchstart', onUserIntent);
           sc.removeEventListener('keydown', onUserIntent);
+          reveal();
           return;
         }
         const s = _scrollEl(scrollContainerRef);
-        if (!s) return;
+        if (!s) { reveal(); return; }
         if (jumpToBottom) {
-          // scrollHeight may still be growing — always stick to the latest bottom.
           if (Math.abs(s.scrollTop - (s.scrollHeight - s.clientHeight)) > 2) {
             s.scrollTop = s.scrollHeight;
           }
           target = s.scrollHeight;
         } else {
-          // Clamp the saved target against the current scrollable range so
-          // it lands at a meaningful position even before all messages paint.
           const newTarget = Math.min(savedScrollTop, Math.max(0, s.scrollHeight - s.clientHeight));
           if (Math.abs(s.scrollTop - newTarget) > 2) {
             s.scrollTop = newTarget;
           }
           target = newTarget;
+        }
+        // Count consecutive frames where scrollHeight hasn't changed —
+        // after ~3 stable frames (≈50 ms) we can safely reveal because
+        // the paint-in is done.
+        if (s.scrollHeight === prevH) {
+          stableFrames++;
+        } else {
+          stableFrames = 0;
+          prevH = s.scrollHeight;
+        }
+        if (!revealed && stableFrames >= 3 && elapsed > 80) {
+          reveal();
         }
         requestAnimationFrame(enforce);
       };
