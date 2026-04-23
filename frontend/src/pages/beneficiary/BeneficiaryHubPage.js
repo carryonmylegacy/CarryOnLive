@@ -215,7 +215,7 @@ const BeneficiaryHubPage = () => {
           />
         </div>
       )}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto mb-6">
+      <div className={`grid ${estates.length === 1 ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-3'} gap-4 max-w-4xl mx-auto mb-6`}>
         {estates.map(estate => {
           const isTransitioned = estate.status === 'transitioned';
           const ownerInitials = estate.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
