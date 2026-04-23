@@ -12,6 +12,7 @@ import {
 } from '../ui/command';
 import { Dialog, DialogContent } from '../ui/dialog';
 import { Search, User, ArrowRight, Sparkles } from 'lucide-react';
+import AdminHeaderIconButton from './AdminHeaderIconButton';
 import { API_URL } from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -107,20 +108,14 @@ export function AdminCommandPalette({ tabs = [], operatorMode = false }) {
 
   return (
     <>
-      <button
+      <AdminHeaderIconButton
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center justify-center w-10 h-10 rounded-lg transition-colors"
-        style={{
-          background: 'var(--s)',
-          color: 'var(--t4)',
-          border: '1px solid var(--b)',
-        }}
         data-testid="admin-cmdk-trigger"
         title="Quick search (⌘K)"
       >
-        <Search className="w-5 h-5" />
-      </button>
+        <Search />
+      </AdminHeaderIconButton>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent

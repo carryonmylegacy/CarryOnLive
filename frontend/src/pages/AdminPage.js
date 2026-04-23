@@ -69,6 +69,7 @@ import { PlatformRulesTab } from '../components/admin/PlatformRulesTab';
 import { PrototypesTab } from '../components/admin/PrototypesTab';
 import { VoicesTab } from '../components/admin/VoicesTab';
 import AdminCommandPalette from '../components/admin/AdminCommandPalette';
+import AdminHeaderIconButton from '../components/admin/AdminHeaderIconButton';
 
 // ── Section-based tab organization ────────────────────────
 // Each section has a label, scopes (which admin scopes can see it), and tabs
@@ -466,16 +467,14 @@ const AdminPage = ({ operatorMode = false }) => {
         <div className="flex items-center gap-2 flex-shrink-0">
         <AdminCommandPalette tabs={visibleTabs} operatorMode={operatorMode} />
         <QueueAlertsPanel />
-        <button
+        <AdminHeaderIconButton
           onClick={handleCleanup}
           disabled={cleaning}
-          className="flex items-center justify-center w-10 h-10 rounded-lg text-[var(--t4)] hover:text-[var(--t3)] transition-colors flex-shrink-0"
-          style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
           title="Remove orphaned records from deleted users"
           data-testid="admin-cleanup-btn"
         >
-          {cleaning ? <Loader2 className="w-5 h-5 animate-spin" /> : <Recycle className="w-5 h-5" />}
-        </button>
+          {cleaning ? <Loader2 className="animate-spin" /> : <Recycle />}
+        </AdminHeaderIconButton>
         </div>
         )}
         {operatorMode && (

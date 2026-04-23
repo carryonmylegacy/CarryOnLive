@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, AlertTriangle, Clock, X, CheckCircle } from 'lucide-react';
+import AdminHeaderIconButton from './AdminHeaderIconButton';
 import { API_URL, BASE_URL } from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -109,20 +110,16 @@ export const QueueAlertsPanel = () => {
 
   return (
     <div className="relative" ref={panelRef} data-testid="queue-alerts-panel">
-      <button
+      <AdminHeaderIconButton
         onClick={() => { setOpen(!open); if (!open) markAllRead(); }}
-        className="relative flex items-center justify-center w-10 h-10 rounded-lg transition-colors"
-        style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
         data-testid="queue-alerts-bell"
         title={connected ? 'Queue alerts (live)' : 'Queue alerts — reconnecting…'}
-      >
-        <Bell className={`w-5 h-5 ${connected ? 'text-[var(--t4)]' : 'text-[var(--t5)]'}`} />
-        {unreadCount > 0 && (
+        badge={unreadCount > 0 ? (
           <span className="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full text-[11px] font-bold leading-none text-white bg-[#ef4444]" data-testid="alerts-badge">
             {unreadCount}
           </span>
-        )}
-        {!connected && (
+        ) : null}
+        indicator={!connected ? (
           // Only show the status dot when DISCONNECTED. The old design
           // always showed a green dot when connected, which users kept
           // mistaking for "unread notifications waiting". Silence when
@@ -132,8 +129,10 @@ export const QueueAlertsPanel = () => {
             style={{ background: '#ef4444' }}
             aria-label="Disconnected"
           />
-        )}
-      </button>
+        ) : null}
+      >
+        <Bell className={connected ? 'text-[var(--t4)]' : 'text-[var(--t5)]'} />
+      </AdminHeaderIconButton>
 
       {open && (
         <div
