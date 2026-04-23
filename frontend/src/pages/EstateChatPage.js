@@ -157,23 +157,16 @@ export default function EstateChatPage() {
     if (document.activeElement) document.activeElement.blur();
     setActiveChannel(ch);
     setShowChannelList(false);
-    setMsgLoading(true);
     setTypers([]);
     setSwipedChannel(null);
     setShowListMembersId(null);
     setShowHeaderMembers(false);
-    fetchMessages(ch.id).then(() => {
-      setMsgLoading(false);
-      const sc = scrollContainerRef.current;
-      if (sc) sc.scrollTop = sc.scrollHeight;
-      let lastH = sc?.scrollHeight || 0;
-      const check = setInterval(() => {
-        const s = scrollContainerRef.current;
-        if (!s) { clearInterval(check); return; }
-        if (s.scrollHeight !== lastH) { lastH = s.scrollHeight; s.scrollTop = s.scrollHeight; }
-      }, 100);
-      setTimeout(() => clearInterval(check), 3000);
-    });
+    // NOTE: scroll positioning + message fetch + msgLoading state are
+    // owned EXCLUSIVELY by the activeChannel-scoped useEffect below. We
+    // used to duplicate a `fetchMessages().then(() => sc.scrollTop = ...)`
+    // block here too, and its 3-second setInterval pinned to bottom —
+    // stomping the restore logic on every re-entry and causing a
+    // visible "2-second wiggle" from the pin repeating.
   };
 
   const handleBackOut = () => {
@@ -383,8 +376,9 @@ export default function EstateChatPage() {
     if (!activeChannel) return;
     if (inputRef.current) inputRef.current.blur();
 
-    // Reset the visibility gate whenever we switch channels.
+    // Reset the visibility gate + loading state whenever we switch channels.
     setEctMsgsVisible(false);
+    setMsgLoading(true);
 
     // Auto-scroll threshold gate — if it's been longer than the user-set
     // minutes since we last opened THIS channel, jump to the bottom.
@@ -423,6 +417,7 @@ export default function EstateChatPage() {
     };
 
     fetchMessages(chId).then(() => {
+      setMsgLoading(false);
       const sc = _scrollEl(scrollContainerRef);
       if (!sc) return;
       if (jumpToBottom) {
@@ -453,7 +448,19 @@ export default function EstateChatPage() {
     const poll = setInterval(() => {
       fetch(`${API_URL}/estate-chat/channels/${activeChannel.id}/typing`, { headers })
         .then(r => r.ok ? r.json() : [])
-        .then(d => setTypers(d || []))
+        .then(d => {
+          // Avoid spurious re-renders when the typer list is unchanged —
+          // typing polls run every 2s and normally return an empty array,
+          // so a naive setTypers([]) would trigger a re-render every tick
+          // (new array identity !== old), causing visible layout churn.
+          setTypers(prev => {
+            const next = d || [];
+            if (prev.length === next.length && prev.every((p, i) => p?.user_id === next[i]?.user_id)) {
+              return prev; // identity-stable — React bails on re-render
+            }
+            return next;
+          });
+        })
         .catch(() => {});
       msgCount++;
       if (msgCount % 4 === 0) {
