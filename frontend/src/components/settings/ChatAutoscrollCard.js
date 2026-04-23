@@ -23,9 +23,9 @@ export const ChatAutoscrollCard = () => {
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState(240);
 
-  // Presets: minute-granularity under an hour, then whole-hour steps up to 24 hr.
+  // Presets: every minute for 1-15, then 30 / 45 / 60, then whole-hour steps up to 24 hr.
   const PRESETS = [
-    { value: 15, label: '15 minutes' },
+    ...Array.from({ length: 15 }, (_, i) => ({ value: i + 1, label: `${i + 1} minute${i === 0 ? '' : 's'}` })),
     { value: 30, label: '30 minutes' },
     { value: 45, label: '45 minutes' },
     { value: 60, label: '1 hour' },
