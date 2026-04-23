@@ -119,6 +119,9 @@ export default function EstateChatPage() {
   // Updated by the channel-open effect on mount (jumpToBottom ⇒ true)
   // and by the user's own scroll events (see scroll listener).
   const stickToBottomRef = useRef(true);
+  // Holds the ResizeObserver tied to the current channel's content so we
+  // can tear it down in the effect cleanup.
+  const resizeObsRef = useRef(null);
 
   // ── Chat auto-scroll-to-latest threshold (minutes) ──────────────────────
   // User-configurable in Settings → "Jump-to-latest in chat". When the
@@ -399,7 +402,12 @@ export default function EstateChatPage() {
     const lastVisitedMs = parseInt(localStorage.getItem(visitKey) || '0', 10);
     const savedScrollTop = parseInt(localStorage.getItem(scrollKey) || '0', 10);
     const ageMin = lastVisitedMs ? (Date.now() - lastVisitedMs) / 60000 : Infinity;
-    const jumpToBottom = !lastVisitedMs || ageMin > autoscrollThresholdMinRef.current || savedScrollTop <= 0;
+    // Within-threshold + visited-before = ALWAYS restore. Previously we
+    // also treated savedScrollTop <= 0 as "no valid save" — but a user
+    // who scrolled to the literal top of a short chat then left has a
+    // legitimate savedScrollTop of 0, and that case was mis-classified
+    // as "first visit" and got snapped back to the bottom on return.
+    const jumpToBottom = !lastVisitedMs || ageMin > autoscrollThresholdMinRef.current;
 
     // On first-open / past-threshold we follow the bottom for new
     // messages. On restore we DO NOT — the user intentionally parked
@@ -519,6 +527,32 @@ export default function EstateChatPage() {
         requestAnimationFrame(enforce);
       };
       requestAnimationFrame(enforce);
+
+      // Long-lived safety net: a ResizeObserver on the content element
+      // that re-snaps to bottom whenever it grows (image finishes
+      // loading, late message paints in) BUT only when the user's intent
+      // is "follow the bottom" (stickToBottomRef = true). This covers
+      // growth that happens AFTER the 1.5 s enforcement window ends,
+      // which otherwise left the newest message hidden below the input.
+      let resizeObs = null;
+      try {
+        const inner = _scrollEl(scrollContainerRef)?.firstElementChild;
+        if (inner && typeof ResizeObserver !== 'undefined') {
+          resizeObs = new ResizeObserver(() => {
+            if (!stickToBottomRef.current) return;
+            const s = _scrollEl(scrollContainerRef);
+            if (!s) return;
+            const distFromBottom = s.scrollHeight - s.scrollTop - s.clientHeight;
+            // Only snap if we're ACTUALLY near-ish the bottom — don't
+            // override a user who has scrolled way up while stick was
+            // still true (scheduleSave will flip it false next tick).
+            if (distFromBottom < 200) s.scrollTop = s.scrollHeight;
+          });
+          resizeObs.observe(inner);
+        }
+      } catch { /* ResizeObserver unavailable — fall back to existing poll */ }
+      // Register cleanup for the observer
+      resizeObsRef.current = resizeObs;
     });
     let msgCount = 0;
     const poll = setInterval(() => {
@@ -555,6 +589,10 @@ export default function EstateChatPage() {
       clearInterval(poll);
       if (saveTimer) clearTimeout(saveTimer);
       try {
+        if (resizeObsRef.current) {
+          resizeObsRef.current.disconnect();
+          resizeObsRef.current = null;
+        }
         const sc = _scrollEl(scrollContainerRef);
         if (sc) {
           localStorage.setItem(scrollKey, String(Math.max(0, Math.round(sc.scrollTop))));
