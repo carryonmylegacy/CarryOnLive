@@ -36,6 +36,8 @@ Outputs (into /app/frontend/public/):
   apple-touch-icon.png                   180×180  any (default fallback)
   notification-icon-64.png                64×64   any (small web-push glyph)
   notification-icon-128.png              128×128  any (web-push @2x)
+  notification-badge-72.png               72×72   mono (Android tray badge @xxhdpi)
+  notification-badge-96.png               96×96   mono (Android tray badge @xxxhdpi)
 """
 from __future__ import annotations
 
@@ -76,6 +78,42 @@ def extract_artwork(src_path: Path) -> Image.Image:
     cw, ch = int(w * SOURCE_CROP_FRAC), int(h * SOURCE_CROP_FRAC)
     left, top = (w - cw) // 2, (h - ch) // 2
     return src.crop((left, top, left + cw, top + ch))
+
+
+def build_mono_badge(src_path: Path, size: int,
+                     luma_threshold: int = 100,
+                     inner_scale: float = 0.80) -> Image.Image:
+    """Render a white-on-transparent silhouette of the source artwork.
+
+    Android's notification tray strips color from the `badge` image and
+    re-tints it with the system accent, so a flat silhouette reads far
+    sharper than the auto-flattened full-color logo. We threshold the
+    source's luminance (gold artwork ~175 vs navy bg ~16), tight-crop to
+    the artwork's bbox, and center it on a transparent canvas.
+    """
+    artwork = extract_artwork(src_path)
+    gray = artwork.convert('L')
+    mask = gray.point(lambda p: 255 if p > luma_threshold else 0)
+    bbox = mask.getbbox()
+    if bbox:
+        mask = mask.crop(bbox)
+
+    # White pixels wherever the mask is non-zero, transparent elsewhere.
+    silhouette = Image.new('RGBA', mask.size, (255, 255, 255, 0))
+    silhouette.putalpha(mask)
+
+    # Fit the silhouette into `inner_scale` of the target canvas while
+    # preserving its aspect ratio.
+    target_inner = int(size * inner_scale)
+    sw, sh = silhouette.size
+    scale = min(target_inner / sw, target_inner / sh)
+    new_w, new_h = max(1, int(sw * scale)), max(1, int(sh * scale))
+    resized = silhouette.resize((new_w, new_h), Image.LANCZOS)
+
+    canvas = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    pos = ((size - new_w) // 2, (size - new_h) // 2)
+    canvas.paste(resized, pos, resized)
+    return canvas
 
 
 def composite(artwork: Image.Image, size: int, scale: float,
@@ -149,6 +187,14 @@ def generate(src_path: Path, navy: tuple[int, int, int]) -> None:
         (512, 'carryon-app-icon-maskable-512.png'),
     ]
 
+    # Monochrome badges — white silhouette on transparent background.
+    # Android's notification tray strips color and re-tints; a flat
+    # silhouette reads far sharper than a flattened full-color logo.
+    mono_outputs = [
+        (72, 'notification-badge-72.png'),
+        (96, 'notification-badge-96.png'),
+    ]
+
     for size, name in any_outputs:
         out = PUBLIC_DIR / name
         composite(artwork, size, ANY_SCALE, navy).save(out, 'PNG', optimize=True)
@@ -161,7 +207,21 @@ def generate(src_path: Path, navy: tuple[int, int, int]) -> None:
         verify_edges(out, navy)
         print(f'PASS  {name:40s}  {size}x{size}  maskable')
 
-    print(f'\nAll {len(any_outputs) + len(maskable_outputs)} icons generated + verified.')
+    for size, name in mono_outputs:
+        out = PUBLIC_DIR / name
+        badge = build_mono_badge(src_path, size)
+        badge.save(out, 'PNG', optimize=True)
+        # Transparent-corner check: alpha at (1,1) must be 0.
+        im = Image.open(out)
+        alpha_corner = im.getpixel((1, 1))[3]
+        if alpha_corner != 0:
+            raise RuntimeError(
+                f'mono-badge corner not transparent for {out}: alpha={alpha_corner}'
+            )
+        print(f'PASS  {name:40s}  {size}x{size}  mono')
+
+    total = len(any_outputs) + len(maskable_outputs) + len(mono_outputs)
+    print(f'\nAll {total} icons generated + verified.')
 
 
 def main() -> None:

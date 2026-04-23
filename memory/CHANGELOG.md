@@ -1,5 +1,24 @@
 # CarryOn — Changelog
 
+## Apr 23, 2026 — Android Notification Badge — Mono Silhouette
+
+Added a dedicated white-on-transparent silhouette badge for Android's
+notification tray. Android strips color from the `badge` image and
+re-tints it with the system accent, so a flat silhouette reads far
+sharper than an auto-flattened color logo.
+
+- `scripts/generate_app_icons.py` — new `build_mono_badge()` step that
+  luminance-thresholds the source logo (gold vs navy), tight-crops to
+  the artwork bbox, and centers it on a transparent canvas at 80% scale.
+  Emits `notification-badge-72.png` (@xxhdpi) and
+  `notification-badge-96.png` (@xxxhdpi). Verification asserts corner
+  alpha=0 (truly transparent).
+- `frontend/public/sw-push.js` — pointed `showNotification({ badge })`
+  to `/notification-badge-96.png` and added it to the precache. iOS /
+  macOS ignore `badge`, so color icon behaviour there is unchanged.
+
+`bash /app/housekeeping.sh` → ALL CHECKS PASSED, 0 WARN, 0 FAIL.
+
 ## Apr 23, 2026 — macOS Safari Notification Icon Crispness
 
 Fixed the blurry / aliased app icon shown in the macOS Safari "CarryOn

@@ -37,8 +37,9 @@ const PRECACHE_URLS = [
   '/flag-bg.jpg',               // HTML boot splash flag background + homepage hero
   '/icon-192.png',
   '/icon-512.png',
-  '/notification-icon-64.png',  // Web-push badge
+  '/notification-icon-64.png',  // Web-push reserve
   '/notification-icon-128.png', // Web-push toast icon (crisp at 64-128px)
+  '/notification-badge-96.png', // Android tray mono silhouette
   '/apple-touch-icon-180.png',  // macOS Safari notification permission toast
 ];
 
@@ -423,7 +424,10 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || 'You have a new notification',
     icon: data.icon || '/notification-icon-128.png',
-    badge: '/notification-icon-64.png',
+    // Android strips color from `badge` and re-tints it; a white
+    // silhouette on transparent bg reads far sharper than a flattened
+    // color logo. iOS/macOS ignore `badge`, so this is Android-only.
+    badge: '/notification-badge-96.png',
     vibrate: [100, 50, 100],
     data: { url: data.url || '/', type: data.type || 'general' },
     actions: data.actions || [],
