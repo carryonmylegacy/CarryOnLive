@@ -115,7 +115,7 @@ export const ChatAutoscrollCard = () => {
                 value={draft}
                 onChange={(e) => setDraft(Number(e.target.value))}
                 disabled={loading || saving}
-                className="px-3 py-2 rounded-md bg-[var(--bg2)] border border-[var(--border)] text-[var(--t)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent,#daa520)]/40"
+                className="select-themed px-3 py-2 rounded-md bg-[var(--bg2)] border border-[var(--border)] text-[var(--t)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent,#daa520)]/40"
               >
                 {PRESETS.map(p => (
                   <option key={p.value} value={p.value}>{p.label}</option>

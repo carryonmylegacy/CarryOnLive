@@ -319,6 +319,29 @@
   cursor: not-allowed;
 }
 
+/* ===== Custom <select> caret =====================================
+   iOS Safari doesn't reliably tint the native up/down stepper arrows
+   when `color-scheme` changes, so we strip the native chrome and draw
+   our own SVG caret that uses the current text color (`currentColor`).
+   This guarantees the caret is always visible in both light and dark
+   themes without any JS. Apply via `className="select-themed"`. */
+.select-themed {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 0.9rem;
+  padding-right: 2.2rem;
+  /* Encoded inline SVG — a pair of chevrons (up + down). The `stroke`
+     uses a CSS variable so we can swap the color per theme without
+     re-encoding the SVG. */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14' fill='none' stroke='%23F3E9D2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='3 5 7 1.5 11 5'/><polyline points='3 9 7 12.5 11 9'/></svg>");
+}
+[data-theme="light"] .select-themed {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14' fill='none' stroke='%231E293B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='3 5 7 1.5 11 5'/><polyline points='3 9 7 12.5 11 9'/></svg>");
+}
+
 
 @layer components {
   /* App Container */
