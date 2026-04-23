@@ -14,6 +14,25 @@ import {
 import { platformDownload } from '../utils/downloadFile';
 import useVoiceRecorder from '../components/estate-chat/useVoiceRecorder';
 import useOverlayScrollbars from '../hooks/useOverlayScrollbars';
+import { OverlayScrollbars } from 'overlayscrollbars';
+
+/**
+ * Resolve the actual scrollable element for a ref that may be attached to
+ * an OverlayScrollbars host. The HOST element has overflow:hidden; setting
+ * scrollTop on it is a no-op. The real scroller is the internal viewport.
+ * When OverlayScrollbars isn't attached (or library is absent), fall back
+ * to the host element so this helper works in both cases.
+ */
+const _scrollEl = (ref) => {
+  const host = ref?.current;
+  if (!host) return null;
+  try {
+    const inst = OverlayScrollbars(host);
+    return inst?.elements?.()?.viewport || host;
+  } catch {
+    return host;
+  }
+};
 import VoiceMessagePlayer from '../components/estate-chat/VoiceMessagePlayer';
 import { AuthImage, AuthVideo, AuthFileLink, prefetchMedia } from '../components/estate-chat/AuthMedia';
 import ECTSecurityIntro from '../components/estate-chat/ECTSecurityIntro';
@@ -371,7 +390,7 @@ export default function EstateChatPage() {
     const jumpToBottom = !lastVisitedMs || ageMin > autoscrollThresholdMinRef.current || savedScrollTop <= 0;
 
     fetchMessages(chId).then(() => {
-      const sc = scrollContainerRef.current;
+      const sc = _scrollEl(scrollContainerRef);
       if (!sc) return;
       if (jumpToBottom) {
         sc.scrollTop = sc.scrollHeight;
@@ -380,7 +399,7 @@ export default function EstateChatPage() {
       }
       let lastH = sc.scrollHeight;
       const check = setInterval(() => {
-        const s = scrollContainerRef.current;
+        const s = _scrollEl(scrollContainerRef);
         if (!s) { clearInterval(check); return; }
         if (s.scrollHeight !== lastH) {
           lastH = s.scrollHeight;
@@ -415,7 +434,7 @@ export default function EstateChatPage() {
     return () => {
       clearInterval(poll);
       try {
-        const sc = scrollContainerRef.current;
+        const sc = _scrollEl(scrollContainerRef);
         if (sc) localStorage.setItem(scrollKey, String(Math.max(0, Math.round(sc.scrollTop))));
         localStorage.setItem(visitKey, String(Date.now()));
       } catch { /* storage quota / private mode — non-fatal */ }
@@ -431,7 +450,7 @@ export default function EstateChatPage() {
       const ch = activeChannelRef.current;
       if (!ch) return;
       try {
-        const sc = scrollContainerRef.current;
+        const sc = _scrollEl(scrollContainerRef);
         if (sc) localStorage.setItem(`carryon_chat_scroll_${ch.id}`, String(Math.max(0, Math.round(sc.scrollTop))));
         localStorage.setItem(`carryon_chat_last_visited_${ch.id}`, String(Date.now()));
       } catch { /* non-fatal */ }
@@ -450,8 +469,12 @@ export default function EstateChatPage() {
   }, [contacts, newChatEstate]);
 
   // ── Scroll helpers ────────────────────────────────────────────────────────
+  // Always go through `_scrollEl(scrollContainerRef)` — the ref is attached
+  // to an OverlayScrollbars HOST element. The host has overflow:hidden; the
+  // real scroller is the internal viewport. Writing scrollTop on the host
+  // is silently a no-op.
   const scrollToBottomIfNear = () => {
-    const sc = scrollContainerRef.current;
+    const sc = _scrollEl(scrollContainerRef);
     if (!sc) return;
     const distFromBottom = sc.scrollHeight - sc.scrollTop - sc.clientHeight;
     if (distFromBottom < 150) sc.scrollTop = sc.scrollHeight;
@@ -515,7 +538,7 @@ export default function EstateChatPage() {
           inputRef.current.style.height = 'auto';
         }
         toast.success('Message queued — will send when you reconnect.');
-        const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
+        const doScroll = () => { const sc = _scrollEl(scrollContainerRef); if (sc) sc.scrollTop = sc.scrollHeight; };
         requestAnimationFrame(doScroll);
       } catch (err) {
         toast.error('Could not queue message offline.');
@@ -536,7 +559,7 @@ export default function EstateChatPage() {
         }
         await fetchMessages(activeChannel.id);
         await fetchChannels();
-        const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
+        const doScroll = () => { const sc = _scrollEl(scrollContainerRef); if (sc) sc.scrollTop = sc.scrollHeight; };
         requestAnimationFrame(doScroll);
         setTimeout(doScroll, 250);
       }
@@ -1319,7 +1342,7 @@ export default function EstateChatPage() {
                 setInputFocused(true);
                 const scrollInput = () => { try { inputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {} };
                 setTimeout(scrollInput, 100); setTimeout(scrollInput, 300); setTimeout(scrollInput, 600);
-                const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
+                const doScroll = () => { const sc = _scrollEl(scrollContainerRef); if (sc) sc.scrollTop = sc.scrollHeight; };
                 requestAnimationFrame(doScroll); setTimeout(doScroll, 150); setTimeout(doScroll, 400); setTimeout(doScroll, 700);
               }}
               onTouchStart={() => {
@@ -1329,7 +1352,7 @@ export default function EstateChatPage() {
               }}
               onBlur={() => {
                 setInputFocused(false);
-                const doScroll = () => { const sc = scrollContainerRef.current; if (sc) sc.scrollTop = sc.scrollHeight; };
+                const doScroll = () => { const sc = _scrollEl(scrollContainerRef); if (sc) sc.scrollTop = sc.scrollHeight; };
                 setTimeout(doScroll, 100); setTimeout(doScroll, 350);
               }}
               enterKeyHint="done" rows={1} placeholder="Type a message..." className="w-full rounded-2xl px-4 py-2 text-base"
