@@ -374,9 +374,17 @@ export default function EstateChatPage() {
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Visibility gate: keep the messages wrapper opacity 0 until we've
+  // applied the correct scroll position once, then fade in. Eliminates
+  // the visible "flash at top then jump to bottom" on channel open.
+  const [ectMsgsVisible, setEctMsgsVisible] = useState(false);
+
   useEffect(() => {
     if (!activeChannel) return;
     if (inputRef.current) inputRef.current.blur();
+
+    // Reset the visibility gate whenever we switch channels.
+    setEctMsgsVisible(false);
 
     // Auto-scroll threshold gate — if it's been longer than the user-set
     // minutes since we last opened THIS channel, jump to the bottom.
@@ -389,6 +397,31 @@ export default function EstateChatPage() {
     const ageMin = lastVisitedMs ? (Date.now() - lastVisitedMs) / 60000 : Infinity;
     const jumpToBottom = !lastVisitedMs || ageMin > autoscrollThresholdMinRef.current || savedScrollTop <= 0;
 
+    // Eager save: every user-initiated scroll updates the stored scroll
+    // position. Debounced to 250 ms so we don't hammer localStorage on
+    // rapid wheel events. This makes the restore-on-reopen behaviour
+    // robust even if the effect cleanup fires in a funky order.
+    let saveTimer = null;
+    const scheduleSave = () => {
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        try {
+          const s = _scrollEl(scrollContainerRef);
+          if (s) localStorage.setItem(scrollKey, String(Math.max(0, Math.round(s.scrollTop))));
+        } catch { /* non-fatal */ }
+      }, 250);
+    };
+    // Bind the scroll listener once the viewport exists (may be right
+    // now or after fetchMessages paints). We re-bind in the fetchMessages
+    // .then() callback below to guarantee it's attached.
+    let scrollElForListener = null;
+    const bindScrollListener = () => {
+      const s = _scrollEl(scrollContainerRef);
+      if (!s || scrollElForListener === s) return;
+      scrollElForListener = s;
+      s.addEventListener('scroll', scheduleSave, { passive: true });
+    };
+
     fetchMessages(chId).then(() => {
       const sc = _scrollEl(scrollContainerRef);
       if (!sc) return;
@@ -397,6 +430,11 @@ export default function EstateChatPage() {
       } else {
         sc.scrollTop = Math.min(savedScrollTop, Math.max(0, sc.scrollHeight - sc.clientHeight));
       }
+      // Bind scroll listener and reveal the messages on the NEXT frame so
+      // the fade-in happens AFTER the scroll position is final, not during.
+      bindScrollListener();
+      requestAnimationFrame(() => setEctMsgsVisible(true));
+
       let lastH = sc.scrollHeight;
       const check = setInterval(() => {
         const s = _scrollEl(scrollContainerRef);
@@ -427,15 +465,18 @@ export default function EstateChatPage() {
       }
     }, 2000);
 
-    // Cleanup: save current scroll position + visit timestamp when we
-    // leave this channel (channel switch OR page unmount). Reading the
-    // scroll container at teardown guarantees we capture the latest
-    // user-controlled position, not an intermediate programmatic one.
+    // Cleanup: final save + unbind listener. Eager-save ran on every
+    // scroll, so the stored scrollTop should already be current; this is
+    // just a belt-and-suspenders write + always-fresh visit timestamp.
     return () => {
       clearInterval(poll);
+      if (saveTimer) clearTimeout(saveTimer);
       try {
         const sc = _scrollEl(scrollContainerRef);
-        if (sc) localStorage.setItem(scrollKey, String(Math.max(0, Math.round(sc.scrollTop))));
+        if (sc) {
+          localStorage.setItem(scrollKey, String(Math.max(0, Math.round(sc.scrollTop))));
+          if (scrollElForListener) scrollElForListener.removeEventListener('scroll', scheduleSave);
+        }
         localStorage.setItem(visitKey, String(Date.now()));
       } catch { /* storage quota / private mode — non-fatal */ }
     };
@@ -1034,7 +1075,7 @@ export default function EstateChatPage() {
       </div>
 
       {/* Messages scroll container */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', touchAction: 'pan-y', opacity: ectMsgsVisible ? 1 : 0, transition: 'opacity 120ms ease-out' }}>
         <div className="px-4 pt-4 pb-1 space-y-3" style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
           {msgLoading && <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" style={{ color: '#d4af37' }} /></div>}
           {!msgLoading && messages.length === 0 && (
