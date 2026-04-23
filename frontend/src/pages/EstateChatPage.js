@@ -97,11 +97,18 @@ export default function EstateChatPage() {
   // most recent message; otherwise we restore the previous scrollTop.
   // Per-channel last-visit timestamp + scroll offset are persisted in
   // localStorage (see `_autoscrollKey` helpers in the channel-open effect).
-  const [autoscrollThresholdMin, setAutoscrollThresholdMin] = useState(240);
+  //
+  // IMPORTANT: we hold the threshold in a REF (not a deps-tracked state)
+  // so the async fetch on mount does NOT re-trigger the channel-open
+  // effect — otherwise opening a channel races with the fetch, the effect
+  // re-runs mid-paint, its cleanup stamps a fresh visit timestamp, and
+  // the second run then switches to "restore scroll" mode, leaving the
+  // user stranded where the scroll happened to be when threshold loaded.
+  const autoscrollThresholdMinRef = useRef(240);
   useEffect(() => {
     fetch(`${API_URL}/user-preferences/chat-autoscroll`, { headers })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.threshold_minutes) setAutoscrollThresholdMin(d.threshold_minutes); })
+      .then(d => { if (d?.threshold_minutes) autoscrollThresholdMinRef.current = d.threshold_minutes; })
       .catch(() => { /* keep default 240 min */ });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -361,7 +368,7 @@ export default function EstateChatPage() {
     const lastVisitedMs = parseInt(localStorage.getItem(visitKey) || '0', 10);
     const savedScrollTop = parseInt(localStorage.getItem(scrollKey) || '0', 10);
     const ageMin = lastVisitedMs ? (Date.now() - lastVisitedMs) / 60000 : Infinity;
-    const jumpToBottom = !lastVisitedMs || ageMin > autoscrollThresholdMin || savedScrollTop <= 0;
+    const jumpToBottom = !lastVisitedMs || ageMin > autoscrollThresholdMinRef.current || savedScrollTop <= 0;
 
     fetchMessages(chId).then(() => {
       const sc = scrollContainerRef.current;
@@ -413,7 +420,7 @@ export default function EstateChatPage() {
         localStorage.setItem(visitKey, String(Date.now()));
       } catch { /* storage quota / private mode — non-fatal */ }
     };
-  }, [activeChannel?.id, autoscrollThresholdMin]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeChannel?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Persist last-visit timestamp + scroll offset when the tab/window is
   // hidden or unloaded (user closes tab, switches app, backgrounds iOS,
