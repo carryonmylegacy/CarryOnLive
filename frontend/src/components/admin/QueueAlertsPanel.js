@@ -111,20 +111,28 @@ export const QueueAlertsPanel = () => {
     <div className="relative" ref={panelRef} data-testid="queue-alerts-panel">
       <button
         onClick={() => { setOpen(!open); if (!open) markAllRead(); }}
-        className="relative flex items-center justify-center w-9 h-9 rounded-lg transition-colors"
+        className="relative flex items-center justify-center w-10 h-10 rounded-lg transition-colors"
         style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
         data-testid="queue-alerts-bell"
+        title={connected ? 'Queue alerts (live)' : 'Queue alerts — reconnecting…'}
       >
-        <Bell className={`w-4 h-4 ${connected ? 'text-[var(--t4)]' : 'text-[var(--t5)]'}`} />
+        <Bell className={`w-5 h-5 ${connected ? 'text-[var(--t4)]' : 'text-[var(--t5)]'}`} />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full text-[11px] font-bold leading-none text-white bg-[#ef4444]" data-testid="alerts-badge">
             {unreadCount}
           </span>
         )}
-        <span
-          className="absolute bottom-1 right-1 w-1.5 h-1.5 rounded-full"
-          style={{ background: connected ? '#22C993' : '#ef4444' }}
-        />
+        {!connected && (
+          // Only show the status dot when DISCONNECTED. The old design
+          // always showed a green dot when connected, which users kept
+          // mistaking for "unread notifications waiting". Silence when
+          // everything is fine; speak up only when reconnecting.
+          <span
+            className="absolute bottom-1 right-1 w-1.5 h-1.5 rounded-full"
+            style={{ background: '#ef4444' }}
+            aria-label="Disconnected"
+          />
+        )}
       </button>
 
       {open && (

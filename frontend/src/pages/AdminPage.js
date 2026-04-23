@@ -6,7 +6,7 @@ import { API_URL } from '../config';
 import {
   Shield, Users, FileKey, Loader2,
   Headphones, CreditCard, Activity, Settings,
-  CheckSquare, AlertTriangle, Clock, TrendingUp, Trash2,
+  CheckSquare, AlertTriangle, Clock, TrendingUp, Recycle,
   Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap, Puzzle, Mail, Film, Hourglass,
   Globe, UserCog, Power, MessageSquare, BarChart3, Download, Radio,
   Calendar, GraduationCap, Bell, Sparkles, MessageSquareQuote
@@ -469,13 +469,12 @@ const AdminPage = ({ operatorMode = false }) => {
         <button
           onClick={handleCleanup}
           disabled={cleaning}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-[var(--t5)] hover:text-[var(--t3)] transition-colors whitespace-nowrap flex-shrink-0"
+          className="flex items-center justify-center w-10 h-10 rounded-lg text-[var(--t4)] hover:text-[var(--t3)] transition-colors flex-shrink-0"
           style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
           title="Remove orphaned records from deleted users"
           data-testid="admin-cleanup-btn"
         >
-          {cleaning ? <Loader2 className="w-3 h-3" /> : <Trash2 className="w-3 h-3" />}
-          <span className="hidden sm:inline">Clean Up</span>
+          {cleaning ? <Loader2 className="w-5 h-5 animate-spin" /> : <Recycle className="w-5 h-5" />}
         </button>
         </div>
         )}
