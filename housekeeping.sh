@@ -1218,6 +1218,57 @@ else
 fi
 
 echo ""
+echo -e "${BOLD}SECTION G: Settings UI Primitives (Regression Guard)${NC}"
+echo "------------------------------------------"
+# Prevents the `disabled:opacity-50` on gold buttons and native-select-caret
+# regressions that bit us three times before the `.btn-gold-cta` /
+# `.btn-outline-cta` / `.select-themed` primitives existed. See
+# memory/AGENT_RULES.md → "Settings UI Primitives".
+PRIMITIVE_ISSUES=0
+PRIMITIVE_DETAILS=""
+
+# ── G1. No `disabled:opacity-50` on gold-tinted buttons ─────────────
+echo -n "G1. [UX]    No opacity-dim gold CTAs in Settings ... "
+DIM_GOLD=$(grep -rEn "disabled:opacity-(30|40|50)" /app/frontend/src/components/settings/ /app/frontend/src/pages/SettingsPage.js 2>/dev/null \
+  | grep -E "bg-\[var\(--gold|var\(--accent|#daa520|#d4a537" || true)
+if [ -z "$DIM_GOLD" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL (gold buttons using opacity-dim pattern — use .btn-gold-cta instead)"
+  PRIMITIVE_DETAILS="${PRIMITIVE_DETAILS}${DIM_GOLD}\n"
+  PRIMITIVE_ISSUES=$((PRIMITIVE_ISSUES + 1))
+fi
+
+# ── G2. All Settings <select> use .select-themed ────────────────────
+echo -n "G2. [UX]    Settings <select> carets themed ....... "
+# <select> + className often span multiple lines in JSX, so read each file
+# and for every `<select ` opener verify the class appears within the next
+# 5 lines (covers the opening-tag block).
+UNTHEMED_SELECT=""
+for f in /app/frontend/src/components/settings/*.js; do
+  [ ! -f "$f" ] && continue
+  while IFS= read -r ln; do
+    CONTEXT=$(sed -n "${ln},$((ln+5))p" "$f" 2>/dev/null)
+    if ! echo "$CONTEXT" | grep -q "select-themed"; then
+      UNTHEMED_SELECT="${UNTHEMED_SELECT}$(basename "$f"):${ln}\n"
+    fi
+  done < <(grep -n "<select " "$f" 2>/dev/null | cut -d: -f1)
+done
+if [ -z "$UNTHEMED_SELECT" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL (native <select> without .select-themed — iOS Safari will paint black stepper arrows on dark)"
+  PRIMITIVE_DETAILS="${PRIMITIVE_DETAILS}${UNTHEMED_SELECT}"
+  PRIMITIVE_ISSUES=$((PRIMITIVE_ISSUES + 1))
+fi
+
+if [ "$PRIMITIVE_ISSUES" != "0" ]; then
+  echo -e "   Details:"
+  echo -e "$PRIMITIVE_DETAILS" | sed 's/^/     /'
+  echo "   Fix: see /app/memory/AGENT_RULES.md → 'Settings UI Primitives'"
+fi
+
+echo ""
 echo -e "${BOLD}SECTION D: Post-Check Verification${NC}"
 echo "------------------------------------------"
 
@@ -1247,7 +1298,7 @@ echo ""
 # SUMMARY
 # ══════════════════════════════════════════════════════════════
 echo "=========================================="
-TOTAL_ISSUES=$((ISSUES + SOC2_ISSUES + IOS_ISSUES + MOBILE_ISSUES + VERCEL_ISSUES))
+TOTAL_ISSUES=$((ISSUES + SOC2_ISSUES + IOS_ISSUES + MOBILE_ISSUES + VERCEL_ISSUES + PRIMITIVE_ISSUES))
 if [ "$TOTAL_ISSUES" = "0" ]; then
   echo -e "  ${GREEN}ALL CHECKS PASSED${NC} — codebase is clean"
   echo -e "  ${GREEN}READY TO PUSH${NC} — CodeMagic → TestFlight → App Store"
@@ -1266,6 +1317,9 @@ else
   fi
   if [ "$VERCEL_ISSUES" -gt 0 ]; then
     echo -e "  ${RED}$VERCEL_ISSUES VERCEL DEPLOYMENT ISSUE(S)${NC} — will break CI build"
+  fi
+  if [ "$PRIMITIVE_ISSUES" -gt 0 ]; then
+    echo -e "  ${YELLOW}$PRIMITIVE_ISSUES SETTINGS UI PRIMITIVE(S) REGRESSED${NC} — use .btn-gold-cta / .select-themed (AGENT_RULES.md)"
   fi
 fi
 if [ "$REPAIRS" -gt 0 ]; then
@@ -1343,7 +1397,7 @@ echo ""
 
 if [ "$STRICT_MODE" = "1" ]; then
   echo -e "${YELLOW}STRICT MODE${NC}: WARNs counted as failures."
-  STRICT_TOTAL=$((ISSUES + SOC2_ISSUES + IOS_ISSUES + MOBILE_ISSUES + VERCEL_ISSUES))
+  STRICT_TOTAL=$((ISSUES + SOC2_ISSUES + IOS_ISSUES + MOBILE_ISSUES + VERCEL_ISSUES + PRIMITIVE_ISSUES))
   exit "$STRICT_TOTAL"
 else
   # Advisory mode: succeed regardless (each caller decides its own blocking rules)

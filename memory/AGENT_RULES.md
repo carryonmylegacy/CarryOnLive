@@ -235,3 +235,62 @@ safety net before the App Store cutover.
 **Do NOT** run the revenue spec against `app.carryon.us` production — it creates a
 real user and a real (test-mode) Stripe customer. Always point it at staging.
 
+
+
+---
+
+## 🎨 SETTINGS UI PRIMITIVES — Use these, do not re-invent
+
+When building or touching Settings-page cards (or any card-like UI with a
+primary CTA), **always** use the shared primitives in `frontend/src/index.css`.
+Hand-rolling `bg-[var(--gold)] disabled:opacity-50` etc. creates the muted,
+unreadable state that regressed twice before these primitives existed. Don't
+be the agent who brings it back.
+
+### `.btn-gold-cta` — primary Save / Apply action
+- **Enabled**: solid gold fill (`var(--gold)`), navy text (`#0b1120`).
+- **Disabled**: outlined gold pill (transparent bg, gold border + gold text,
+  no opacity change). Stays fully legible on both white (light) and navy
+  (dark) card surfaces.
+- **Usage**:
+  ```jsx
+  <button
+    disabled={saving || noChange}
+    className="px-4 py-2 rounded-md text-sm font-semibold btn-gold-cta"
+  >
+    Save
+  </button>
+  ```
+- **Never** combine with `bg-*`, `text-*`, `border-*`, or `disabled:opacity-*`
+  Tailwind utilities — they'll fight the class.
+
+### `.btn-outline-cta` — secondary Cancel / Dismiss action
+- Transparent bg, `var(--t)` text, soft 28%-alpha border. Hover lifts to
+  50% alpha + subtle tint.
+- **Usage**:
+  ```jsx
+  <button className="px-4 py-2 rounded-md text-sm btn-outline-cta">
+    Cancel
+  </button>
+  ```
+- Pairs visually with `.btn-gold-cta` for primary/secondary action rhythm.
+
+### `.select-themed` — theme-aware `<select>` caret
+- Strips the native stepper arrows (iOS Safari draws them black-on-black in
+  dark mode — a persistent regression) and paints a double-chevron SVG in
+  cream (dark mode) or slate (light mode).
+- **Usage**:
+  ```jsx
+  <select className="select-themed w-full h-9 px-3 rounded-md bg-[var(--card)] border border-[var(--b)] text-[var(--t)]">
+    {/* options */}
+  </select>
+  ```
+- Safe to stack with Tailwind utilities; `.select-themed` only sets
+  `appearance: none` + `background-image` + `padding-right`.
+
+### If you need a new primitive
+Add it to `frontend/src/index.css` in the "Settings UI primitives" block,
+document it here with an enabled/disabled spec, and ensure it works in
+BOTH themes before using it. CSS variables: use `var(--gold)`, `var(--t)`,
+`var(--bg)`, `var(--card)` — never hardcode `#0F1629` etc. (light mode
+will be unreadable).
