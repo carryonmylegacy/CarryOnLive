@@ -55,6 +55,7 @@ const BeneficiaryCCPPage = lazy(() => import('./pages/beneficiary/BeneficiaryCCP
 const TransitionPage = lazy(() => import('./pages/TransitionPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
+const AdminPrimitivesPage = lazy(() => import('./pages/AdminPrimitivesPage'));
 const SupportChatPage = lazy(() => import('./pages/SupportChatPage'));
 const SecuritySettingsPage = lazy(() => import('./pages/SecuritySettingsPage'));
 const LegacyTimelinePage = lazy(() => import('./pages/LegacyTimelinePage'));
@@ -420,6 +421,8 @@ function AppRoutes() {
           <DashboardLayout />
         </ProtectedRoute>
       }>
+        {/* Staff-only UI primitives showcase — must precede the splat. */}
+        <Route path="/admin/primitives" element={<AdminPrimitivesPage />} />
         <Route path="/admin/*" element={<AdminPage />} />
       </Route>
 
