@@ -132,10 +132,16 @@
     --input: 221 26% 18%;
     --ring: 43 74% 52%;
     --radius: 0.75rem;
+
+    /* Native form controls (selects, date pickers, scrollbars) must render
+       their browser-drawn chrome in dark-mode colors. Without this, the
+       OS draws black-on-black stepper arrows on <select> elements. */
+    color-scheme: dark;
   }
   
   /* ===== LIGHT MODE — Warm cream + soft teal ===== */
   [data-theme="light"] {
+    color-scheme: light;
     --bg: #E4EFF9;
     --bg2: #DCE8F4;
     --bg3: #D2E0EF;
