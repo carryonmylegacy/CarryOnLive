@@ -4,8 +4,15 @@
 - Email: info@carryon.us
 - Password: Demo1234!
 - Username: admin_5dfa64
-- Role: benefactor (founder)
-- Note: Login works with either email or username
+- Role: admin (founder) — `isStaff=true` in the frontend. Hides non-staff-only UI (MenuOrderCustomizer, ChatAutoscrollCard, etc.) and the Founder Portal sidebar does not surface the ECT.
+- Note: Login works with either email or username.
+
+## Gap: No non-staff benefactor test account seeded
+- `dev_switcher_active_role=benefactor` in localStorage does NOT flip `isStaff` to false (driven by user.role on the backend).
+- To E2E test non-staff-only UI (incl. ChatAutoscrollCard, MenuOrderCustomizer, ECT channel scroll-restore logic), either:
+  (a) register a fresh benefactor via `POST /api/auth/register` inside the test, OR
+  (b) use the admin's "My Benefactor Portal" switch in the logo menu (this swaps the token to a real benefactor user via `/api/auth/dev-switch`), OR
+  (c) seed a persistent non-staff benefactor here and list creds below.
 
 ## Auth System Notes
 - Username is the primary login identifier (unique, not an email)

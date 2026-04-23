@@ -531,6 +531,25 @@ User uploaded 5 "good" reference screenshots (Beneficiaries / MM / SDV / CFP / I
 - Housekeeping: 69 PASS, 0 WARN, 0 FAIL.
 
 
+## Chat Auto-Scroll-to-Latest Threshold (Apr 22, 2026 — new feature)
+**User request**: "Whenever I open a chat conversation that I haven't visited in over X amount of time (user-definable in settings), default the chat conversation to the most recent message (at the bottom) when opening it. Same for both beneficiary and benefactor."
+
+**Design picks (user-chosen)**: unit=minutes, per-channel last-visit timestamp, restore prior scroll position when under threshold (iMessage-like), ECT only to start, default=240 minutes (4 hours). Minutes range resolved to 1–1440 so the 4 hr default fits.
+
+**Implementation**:
+- Backend: `GET/PUT /api/user-preferences/chat-autoscroll` in `backend/routes/user_preferences.py`. Clamps to 1-1440, default 240. Uses existing `user_preferences` collection with key `chat_autoscroll`.
+- Settings UI: new `components/settings/ChatAutoscrollCard.js` — minutes input (1-1440), Save button, success toast. Inserted in `SettingsPage.js` under `!isStaff` gate (staff portals don't have ECT).
+- ECT logic (`pages/EstateChatPage.js`):
+  - Fetches threshold on mount, caches in `autoscrollThresholdMin` state.
+  - On channel open: reads `localStorage['carryon_chat_last_visited_{chId}']` + `['carryon_chat_scroll_{chId}']`. Decides `jumpToBottom = !lastVisited || ageMin > threshold || savedScroll <= 0`. Either snaps to `scrollHeight` or restores `scrollTop`.
+  - Cleanup on channel switch/unmount persists both keys.
+  - Additional `pagehide` + `visibilitychange` listeners persist on tab close / app background.
+
+**Testing** (iteration_80.json):
+- Backend: 7/7 pytest pass (GET default / PUT round-trip / PUT clamp both directions / auth required).
+- Frontend: ChatAutoscrollCard API-on-mount verified via network capture; negative path (card hidden for staff admin) confirmed. E2E scroll restore/jump not exercised due to no seeded non-staff benefactor — logic verified via code review against spec.
+- Housekeeping: 65/65 PASS, 0 WARN, 0 FAIL. Ruff clean.
+
 ## E2E CI Fix — Phase 0 "inert when flag=off" invariant restored (Apr 22, 2026)
 **Failure**: `offline_phase0.spec.js` started failing in GitHub Actions E2E Smoke — one assertion: with the offline flag at default `'off'`, the `carryon-offline` IndexedDB must NOT be created by normal navigation. CI was showing `dbs = ['carryon-offline']` after a plain login + dashboard visit.
 
