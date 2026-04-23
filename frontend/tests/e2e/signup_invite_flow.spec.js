@@ -56,6 +56,22 @@ test.describe('Revenue funnel — signup → invite → accept', () => {
   });
 
   test('02 — POST /api/auth/login on the new account responds correctly', async ({ request }) => {
+    // Make this test self-contained: re-register the account if needed so
+    // retries don't fail just because the describe-level `state` was reset
+    // by a fresh Playwright worker. Accepts duplicate-account statuses.
+    await request.post(`${API_URL}/api/auth/register`, {
+      data: {
+        email: state.benefactorEmail,
+        password: STRONG_PASSWORD,
+        first_name: 'Smoke',
+        last_name: 'Bennett',
+        username: state.benefactorUsername,
+        date_of_birth: '1980-06-15',
+        marital_status: 'single',
+        role: 'benefactor',
+      },
+    });
+
     const resp = await request.post(`${API_URL}/api/auth/login`, {
       data: {
         email: state.benefactorUsername,
@@ -63,11 +79,30 @@ test.describe('Revenue funnel — signup → invite → accept', () => {
       },
     });
     expect(resp.status()).toBeLessThan(500);
-    const body = await resp.json();
-    // Non-admin accounts get OTP flow (`otp_required: true`); that's expected.
-    // The test just proves the endpoint responds without a server error for
-    // valid creds.
-    expect(body.otp_required === true || !!body.access_token).toBe(true);
+
+    // Parse safely — CF or edge caching can occasionally return HTML error
+    // pages on the preview URL. Surface the content-type + body preview in
+    // the failure message instead of a cryptic `Unexpected token '<'`.
+    const ct = (resp.headers()['content-type'] || '').toLowerCase();
+    const raw = await resp.text();
+    expect(
+      ct.includes('application/json'),
+      `expected JSON response, got content-type="${ct}", body preview="${raw.slice(0, 160)}"`,
+    ).toBe(true);
+    const body = JSON.parse(raw);
+
+    // Non-admin accounts either get the OTP flow (`otp_required: true`),
+    // a direct access_token (when OTP is globally disabled), or the
+    // "account exists on another device" reconciliation response — all
+    // three prove the endpoint handled valid credentials correctly.
+    const okShape =
+      body.otp_required === true
+      || !!body.access_token
+      || body.active_session_exists === true;
+    expect(
+      okShape,
+      `unexpected login response shape (status=${resp.status()}): ${JSON.stringify(body).slice(0, 240)}`,
+    ).toBe(true);
   });
 
   test('03 — Admin creates a beneficiary + invitation, beneficiary accepts and gets a token', async ({ request }) => {
