@@ -1,5 +1,25 @@
 # CarryOn — Changelog
 
+## Apr 23, 2026 — Proper App Icon — Vignette Bands Eliminated
+
+User provided a new clean 1024×1024 source logo (`carryon-app-icon-source.jpg`).
+The previous 780×881 source had a light-blue radial vignette that
+bleed-through to the icon's left/right edges appeared as visible
+"white bands" around the logo inside the macOS Safari notification
+permission toast.
+
+- Added `carryon-app-icon-source.jpg` as the canonical source.
+- `scripts/generate_app_icons.py` now color-keys the source: any pixel
+  that isn't distinctly gold (R > B + 20, luma ≥ 100) OR a light-blue
+  hand-line-art stroke (B > R + 20, luma ≥ 130) is flattened to pure
+  `#0B1221`. Dropped the brittle `SOURCE_CROP_FRAC` center crop in
+  favour of full-frame flatten so the whole artwork is preserved
+  aspect-correct.
+- Regenerated all 17 icons from the new source. Verification confirms
+  every corner is solid `#0B1221`, the gold infinity is centered, and
+  both hand line-art strokes survive at their natural positions (17
+  blue pixels per hand row on the 180×180 icon).
+
 ## Apr 23, 2026 — Android Notification Badge — Mono Silhouette
 
 Added a dedicated white-on-transparent silhouette badge for Android's

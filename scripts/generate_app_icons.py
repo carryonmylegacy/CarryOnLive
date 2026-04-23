@@ -59,6 +59,15 @@ PUBLIC_DIR = REPO_ROOT / 'frontend' / 'public'
 # 0.88 drops ~6% from each edge, which is where gradient/fade usually lives.
 SOURCE_CROP_FRAC = 0.88
 
+# Color-key thresholds for detecting the gold artwork vs the source
+# background. The source has a light-blue vignette that leaks into the
+# final icons as visible bands if we don't flatten it. We detect the
+# gold artwork as pixels where red > blue by a margin AND luminance is
+# bright — this cleanly separates the warm-tone artwork from any shade
+# of blue-gray.
+GOLD_MIN_LUMA = 100          # on a 0-255 scale; gold ≈ 170, blue-gray ≤ 140
+GOLD_MIN_R_MINUS_B = 20      # gold has red >> blue; blue-gray has red < blue
+
 # Artwork-on-canvas scale per purpose.
 ANY_SCALE = 0.92       # tiny breathing room around the logo
 MASKABLE_SCALE = 0.72  # 14% safe ring on each side for Android masks
@@ -71,13 +80,55 @@ def hex_to_rgb(hex_str: str) -> tuple[int, int, int]:
     return tuple(int(s[i:i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
 
 
-def extract_artwork(src_path: Path) -> Image.Image:
-    """Load the source, crop the gradient-fade edges, return the artwork."""
-    src = Image.open(src_path).convert('RGB')
+def _gold_mask(src: Image.Image) -> Image.Image:
+    """Build an L-mode mask (255 = artwork, 0 = background) for the source.
+
+    Uses a color-key test: warm-tone (R - B >= 20) AND bright enough
+    (luma >= 100). This correctly keeps the gold infinity symbol and
+    rejects every shade of navy/blue/gray in the source's vignette.
+    """
+    src = src.convert('RGB')
+    r, _, b = src.split()
+    luma = src.convert('L')
+    r_px, b_px, luma_px = r.load(), b.load(), luma.load()
     w, h = src.size
-    cw, ch = int(w * SOURCE_CROP_FRAC), int(h * SOURCE_CROP_FRAC)
-    left, top = (w - cw) // 2, (h - ch) // 2
-    return src.crop((left, top, left + cw, top + ch))
+    out = Image.new('L', src.size, 0)
+    out_px = out.load()
+    for y in range(h):
+        for x in range(w):
+            if luma_px[x, y] >= GOLD_MIN_LUMA and (r_px[x, y] - b_px[x, y]) >= GOLD_MIN_R_MINUS_B:
+                out_px[x, y] = 255
+    return out
+
+
+def extract_artwork(src_path: Path, bg: tuple[int, int, int]) -> Image.Image:
+    """Load the source and flatten any non-gold pixel to pure `bg`.
+
+    The source has a light-blue radial vignette (top corners ≈
+    rgb(146,172,223)) that bleeds into icons as visible bands at small
+    display sizes. We keep only the gold artwork and replace everything
+    else — navy, vignette, and all — with pure `bg`.
+    """
+    src = Image.open(src_path).convert('RGB')
+    mask = _gold_mask(src)
+
+    # Also keep the light-blue HAND line-art so the full logo survives.
+    # Hand lines are ~rgb(146,172,223) — brighter than navy but NOT
+    # warm. We include pixels that are clearly *not* the dark navy
+    # background: luma > 90 AND blue dominates (B >= R).
+    r, _, b = src.convert('RGB').split()
+    luma = src.convert('L')
+    r_px, b_px, luma_px = r.load(), b.load(), luma.load()
+    w, h = src.size
+    mask_px = mask.load()
+    for y in range(h):
+        for x in range(w):
+            if luma_px[x, y] >= 130 and b_px[x, y] > r_px[x, y] + 20:
+                mask_px[x, y] = 255
+
+    flat = Image.new('RGB', src.size, bg)
+    flat.paste(src, (0, 0), mask=mask)
+    return flat
 
 
 def build_mono_badge(src_path: Path, size: int,
@@ -91,7 +142,7 @@ def build_mono_badge(src_path: Path, size: int,
     source's luminance (gold artwork ~175 vs navy bg ~16), tight-crop to
     the artwork's bbox, and center it on a transparent canvas.
     """
-    artwork = extract_artwork(src_path)
+    artwork = extract_artwork(src_path, (11, 18, 33))
     gray = artwork.convert('L')
     mask = gray.point(lambda p: 255 if p > luma_threshold else 0)
     bbox = mask.getbbox()
@@ -159,7 +210,7 @@ def generate(src_path: Path, navy: tuple[int, int, int]) -> None:
         sys.stderr.write(f'Public dir not found: {PUBLIC_DIR}\n')
         sys.exit(1)
 
-    artwork = extract_artwork(src_path)
+    artwork = extract_artwork(src_path, navy)
 
     any_outputs = [
         (192, 'carryon-app-icon-square-192.png'),
