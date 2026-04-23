@@ -28,6 +28,14 @@ Outputs (into /app/frontend/public/):
   icon-512.png                           512×512  any (back-compat)
   carryon-app-icon-maskable-192.png      192×192  maskable
   carryon-app-icon-maskable-512.png      512×512  maskable
+
+  apple-touch-icon-120.png               120×120  any (iPhone @2x)
+  apple-touch-icon-152.png               152×152  any (iPad @2x)
+  apple-touch-icon-167.png               167×167  any (iPad Pro)
+  apple-touch-icon-180.png               180×180  any (iPhone @3x / macOS Safari notif)
+  apple-touch-icon.png                   180×180  any (default fallback)
+  notification-icon-64.png                64×64   any (small web-push glyph)
+  notification-icon-128.png              128×128  any (web-push @2x)
 """
 from __future__ import annotations
 
@@ -83,14 +91,19 @@ def composite(artwork: Image.Image, size: int, scale: float,
 
 def verify_edges(path: Path, expected: tuple[int, int, int]) -> None:
     """Sample 4 corners + top/bottom mids + left/right mids; raise if any
-    pixel differs from `expected`."""
+    pixel differs from `expected`.
+
+    Samples at 1px offset from each edge so this works for icons as small
+    as 16px (where deeper sampling would land on artwork for small
+    `ANY_SCALE` values).
+    """
     im = Image.open(path)
     w, h = im.size
     samples = [
-        im.getpixel((4, 4)), im.getpixel((w - 4, 4)),
-        im.getpixel((4, h - 4)), im.getpixel((w - 4, h - 4)),
-        im.getpixel((w // 2, 4)), im.getpixel((w // 2, h - 4)),
-        im.getpixel((4, h // 2)), im.getpixel((w - 4, h // 2)),
+        im.getpixel((1, 1)), im.getpixel((w - 2, 1)),
+        im.getpixel((1, h - 2)), im.getpixel((w - 2, h - 2)),
+        im.getpixel((w // 2, 1)), im.getpixel((w // 2, h - 2)),
+        im.getpixel((1, h // 2)), im.getpixel((w - 2, h // 2)),
     ]
     bad = [s for s in samples if s != expected]
     if bad:
@@ -117,6 +130,19 @@ def generate(src_path: Path, navy: tuple[int, int, int]) -> None:
         (1024, 'app-icon-1024.png'),
         (192, 'icon-192.png'),
         (512, 'icon-512.png'),
+        # Apple-touch-icon family — covers all iOS/iPadOS/macOS Safari home-screen
+        # and notification-toast sizes. Declaring explicit sizes prevents Safari
+        # from downscaling the 512 master to ~64px with heavy aliasing in the
+        # macOS notification permission toast.
+        (120, 'apple-touch-icon-120.png'),
+        (152, 'apple-touch-icon-152.png'),
+        (167, 'apple-touch-icon-167.png'),
+        (180, 'apple-touch-icon-180.png'),
+        (180, 'apple-touch-icon.png'),
+        # Dedicated small-size icons for the service-worker `showNotification`
+        # `icon` parameter (rendered ~48-64px in system toasts).
+        (64, 'notification-icon-64.png'),
+        (128, 'notification-icon-128.png'),
     ]
     maskable_outputs = [
         (192, 'carryon-app-icon-maskable-192.png'),

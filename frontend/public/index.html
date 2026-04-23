@@ -10,7 +10,15 @@
         <meta name="apple-mobile-web-app-title" content="CarryOn" />
         <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
         <meta name="description" content="CarryOn™ helps families organize estate plans, secure important documents, manage beneficiaries, and prepare for life's transitions — all in one secure platform." />
-        <link rel="apple-touch-icon" href="%PUBLIC_URL%/carryon-app-icon-square-512.png" />
+        <!-- Apple-touch-icon family: declaring explicit sizes lets Safari pick
+             the best-matching source instead of downscaling the 512px master
+             (which produces aliased/blurry glyphs in the macOS notification
+             permission toast and other small-icon contexts). -->
+        <link rel="apple-touch-icon" sizes="120x120" href="%PUBLIC_URL%/apple-touch-icon-120.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="%PUBLIC_URL%/apple-touch-icon-152.png" />
+        <link rel="apple-touch-icon" sizes="167x167" href="%PUBLIC_URL%/apple-touch-icon-167.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon-180.png" />
+        <link rel="apple-touch-icon" href="%PUBLIC_URL%/apple-touch-icon.png" />
         <!-- iOS `apple-touch-startup-image` intentionally NOT used.
              iOS caches those PNGs at install time and refuses to refresh
              them, causing old splash images to persist through deploys.

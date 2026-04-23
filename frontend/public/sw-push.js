@@ -37,6 +37,9 @@ const PRECACHE_URLS = [
   '/flag-bg.jpg',               // HTML boot splash flag background + homepage hero
   '/icon-192.png',
   '/icon-512.png',
+  '/notification-icon-64.png',  // Web-push badge
+  '/notification-icon-128.png', // Web-push toast icon (crisp at 64-128px)
+  '/apple-touch-icon-180.png',  // macOS Safari notification permission toast
 ];
 
 // Hard-coded HTML served when ALL cache lookups fail AND the network is
@@ -411,7 +414,7 @@ self.addEventListener('message', (event) => {
 // ── Push Notifications (unchanged behaviour) ────────────────────────────────
 self.addEventListener('push', (event) => {
   console.log('[SW] Push received.');
-  let data = { title: 'CarryOn™', body: 'You have a new notification', icon: '/icon-192.png' };
+  let data = { title: 'CarryOn™', body: 'You have a new notification', icon: '/notification-icon-128.png' };
   try {
     if (event.data) data = event.data.json();
   } catch (e) {
@@ -419,8 +422,8 @@ self.addEventListener('push', (event) => {
   }
   const options = {
     body: data.body || 'You have a new notification',
-    icon: data.icon || '/icon-192.png',
-    badge: '/icon-192.png',
+    icon: data.icon || '/notification-icon-128.png',
+    badge: '/notification-icon-64.png',
     vibrate: [100, 50, 100],
     data: { url: data.url || '/', type: data.type || 'general' },
     actions: data.actions || [],

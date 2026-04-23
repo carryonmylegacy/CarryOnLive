@@ -1,5 +1,31 @@
 # CarryOn — Changelog
 
+## Apr 23, 2026 — macOS Safari Notification Icon Crispness
+
+Fixed the blurry / aliased app icon shown in the macOS Safari "CarryOn
+Notifications" permission toast. Safari was downscaling the 512×512
+`apple-touch-icon` to ~64px with heavy aliasing because no smaller sizes
+were declared.
+
+- `scripts/generate_app_icons.py` — extended the icon manifest to also
+  emit the full Apple-touch-icon family (120/152/167/180) plus dedicated
+  small web-push glyphs (`notification-icon-64.png`,
+  `notification-icon-128.png`). Edge-verification now samples at 1px
+  offset so tiny (64px) icons still pass.
+- `frontend/public/index.html` — replaced the single 512px
+  `apple-touch-icon` link with explicit `sizes="120x120"` / `152x152` /
+  `167x167` / `180x180` + default. Safari now picks a crisp source
+  instead of downscaling the master.
+- `frontend/public/sw-push.js` — pointed `showNotification`'s `icon` to
+  `/notification-icon-128.png` and `badge` to `/notification-icon-64.png`
+  (both rendered from the source logo at their native size). Added
+  those two files plus `apple-touch-icon-180.png` to the SW precache so
+  they are offline-available for Web Push.
+
+All 15 icons regenerated + edge-verified (strict `#0B1221` navy
+corners, gold artwork centered). `bash /app/housekeeping.sh` → ALL
+CHECKS PASSED, 0 WARN, 0 FAIL.
+
 ## Apr 23, 2026 — E2E CI Cloudflare Warmup — Full Cold Suite Green
 
 Full rewrite of the E2E Cloudflare strategy after a cold full-suite
