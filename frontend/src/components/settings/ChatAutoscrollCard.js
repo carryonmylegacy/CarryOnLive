@@ -21,7 +21,29 @@ export const ChatAutoscrollCard = () => {
   const [loading, setLoading] = useState(true);
   const [minutes, setMinutes] = useState(240);
   const [saving, setSaving] = useState(false);
-  const [draft, setDraft] = useState('240');
+  const [draft, setDraft] = useState(240);
+
+  // Presets: minute-granularity under an hour, then whole-hour steps up to 24 hr.
+  const PRESETS = [
+    { value: 15, label: '15 minutes' },
+    { value: 30, label: '30 minutes' },
+    { value: 45, label: '45 minutes' },
+    { value: 60, label: '1 hour' },
+    { value: 120, label: '2 hours' },
+    { value: 180, label: '3 hours' },
+    { value: 240, label: '4 hours' },
+    { value: 360, label: '6 hours' },
+    { value: 480, label: '8 hours' },
+    { value: 720, label: '12 hours' },
+    { value: 1080, label: '18 hours' },
+    { value: 1440, label: '24 hours' },
+  ];
+
+  // Snap a stored value (could be anything 1-1440) to the nearest preset.
+  const snapToPreset = (m) => {
+    const n = Math.max(1, Math.min(1440, Number(m) || 240));
+    return PRESETS.reduce((best, p) => Math.abs(p.value - n) < Math.abs(best - n) ? p.value : best, PRESETS[0].value);
+  };
 
   useEffect(() => {
     (async () => {
@@ -29,9 +51,9 @@ export const ChatAutoscrollCard = () => {
         const r = await fetch(`${API_URL}/user-preferences/chat-autoscroll`, { headers });
         if (r.ok) {
           const d = await r.json();
-          const val = Math.max(1, Math.min(1440, Number(d.threshold_minutes) || 240));
-          setMinutes(val);
-          setDraft(String(val));
+          const snapped = snapToPreset(d.threshold_minutes);
+          setMinutes(snapped);
+          setDraft(snapped);
         }
       } catch {
         /* network — keep defaults */
@@ -42,7 +64,7 @@ export const ChatAutoscrollCard = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = async () => {
-    const clean = Math.max(1, Math.min(1440, Math.round(Number(draft) || 240)));
+    const clean = snapToPreset(draft);
     setSaving(true);
     try {
       const r = await fetch(`${API_URL}/user-preferences/chat-autoscroll`, {
@@ -50,8 +72,9 @@ export const ChatAutoscrollCard = () => {
       });
       if (r.ok) {
         const d = await r.json();
-        setMinutes(d.threshold_minutes);
-        setDraft(String(d.threshold_minutes));
+        const snapped = snapToPreset(d.threshold_minutes);
+        setMinutes(snapped);
+        setDraft(snapped);
         toast.success('Chat scroll preference saved');
       } else {
         toast.error('Could not save preference. Try again.');
@@ -64,12 +87,8 @@ export const ChatAutoscrollCard = () => {
   };
 
   const prettyDuration = (m) => {
-    if (m < 60) return `${m} minute${m === 1 ? '' : 's'}`;
-    if (m < 1440) {
-      const h = m / 60;
-      return `${Number.isInteger(h) ? h : h.toFixed(1)} hour${h === 1 ? '' : 's'}`;
-    }
-    return '24 hours';
+    const match = PRESETS.find(p => p.value === m);
+    return match ? match.label : `${m} min`;
   };
 
   return (
@@ -88,20 +107,20 @@ export const ChatAutoscrollCard = () => {
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <label htmlFor="chat-autoscroll-input" className="text-sm text-[var(--t)]">
-                Minutes away before jumping to latest:
+                Time away before jumping to latest:
               </label>
-              <input
+              <select
                 id="chat-autoscroll-input"
                 data-testid="chat-autoscroll-input"
-                type="number"
-                min={1}
-                max={1440}
-                step={1}
                 value={draft}
-                onChange={(e) => setDraft(e.target.value)}
+                onChange={(e) => setDraft(Number(e.target.value))}
                 disabled={loading || saving}
-                className="w-24 px-3 py-2 rounded-md bg-[var(--bg2)] border border-[var(--border)] text-[var(--t)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent,#daa520)]/40"
-              />
+                className="px-3 py-2 rounded-md bg-[var(--bg2)] border border-[var(--border)] text-[var(--t)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent,#daa520)]/40"
+              >
+                {PRESETS.map(p => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
+                ))}
+              </select>
               <button
                 type="button"
                 onClick={save}
@@ -114,7 +133,7 @@ export const ChatAutoscrollCard = () => {
               </button>
             </div>
             <p className="text-xs text-[var(--t2)] mt-2" data-testid="chat-autoscroll-summary">
-              Current: <span className="text-[var(--t)] font-medium">{prettyDuration(minutes)}</span> away · Range 1–1440 min
+              Current: <span className="text-[var(--t)] font-medium">{prettyDuration(minutes)}</span> away
             </p>
           </div>
         </div>
