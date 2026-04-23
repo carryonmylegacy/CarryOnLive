@@ -110,6 +110,16 @@ export default function EstateChatPage() {
   const [newChatType, setNewChatType] = useState('direct');
   const lastTypingSentRef = useRef(0);
 
+  // `stickToBottomRef` drives the iMessage-style auto-follow behaviour:
+  // - TRUE  → new messages / typing indicators pull us to the bottom.
+  // - FALSE → restored-scroll state; polling must not snap us to the
+  //           bottom even when we're visually close (which short chats
+  //           always are — scrollHeight ≲ 2× clientHeight means distance
+  //           from bottom is tiny for any scrollTop).
+  // Updated by the channel-open effect on mount (jumpToBottom ⇒ true)
+  // and by the user's own scroll events (see scroll listener).
+  const stickToBottomRef = useRef(true);
+
   // ── Chat auto-scroll-to-latest threshold (minutes) ──────────────────────
   // User-configurable in Settings → "Jump-to-latest in chat". When the
   // channel was last opened > threshold minutes ago, we scroll to the
@@ -391,12 +401,28 @@ export default function EstateChatPage() {
     const ageMin = lastVisitedMs ? (Date.now() - lastVisitedMs) / 60000 : Infinity;
     const jumpToBottom = !lastVisitedMs || ageMin > autoscrollThresholdMinRef.current || savedScrollTop <= 0;
 
+    // On first-open / past-threshold we follow the bottom for new
+    // messages. On restore we DO NOT — the user intentionally parked
+    // themselves mid-thread and must stay there until they scroll.
+    stickToBottomRef.current = jumpToBottom;
+
     // Eager save: every user-initiated scroll updates the stored scroll
     // position. Debounced to 250 ms so we don't hammer localStorage on
     // rapid wheel events. This makes the restore-on-reopen behaviour
     // robust even if the effect cleanup fires in a funky order.
     let saveTimer = null;
     const scheduleSave = () => {
+      // Update stickToBottom intent on every scroll — within 60 px of the
+      // bottom means the user is tracking the live thread; otherwise they
+      // want to stay where they are. Pixel-threshold guards against
+      // floating-point off-by-one on some browsers.
+      try {
+        const s = _scrollEl(scrollContainerRef);
+        if (s) {
+          const distFromBottom = s.scrollHeight - s.scrollTop - s.clientHeight;
+          stickToBottomRef.current = distFromBottom < 60;
+        }
+      } catch { /* non-fatal */ }
       if (saveTimer) clearTimeout(saveTimer);
       saveTimer = setTimeout(() => {
         try {
@@ -551,6 +577,13 @@ export default function EstateChatPage() {
   // real scroller is the internal viewport. Writing scrollTop on the host
   // is silently a no-op.
   const scrollToBottomIfNear = () => {
+    // iMessage-style gate: only auto-follow the bottom when the user is
+    // genuinely tracking the live thread (stickToBottomRef = true). If
+    // they intentionally scrolled up or we restored a mid-thread position,
+    // the 150 px "near" heuristic is NOT enough — a short chat (less than
+    // two viewport heights) always appears "near" the bottom for any
+    // scrollTop, which would fight the restore.
+    if (!stickToBottomRef.current) return;
     const sc = _scrollEl(scrollContainerRef);
     if (!sc) return;
     const distFromBottom = sc.scrollHeight - sc.scrollTop - sc.clientHeight;
