@@ -76,4 +76,28 @@ module.exports = async () => {
     baseUrl: BASE,
   });
   await browser.close();
+
+  // Extract the cf_clearance cookie from the desktop storageState and
+  // persist it as a plain Cookie header. Playwright's `request` fixture
+  // (used by API-only specs) does NOT inherit storageState, so without
+  // this header it hits the edge without a cf_clearance cookie and gets
+  // 403'd on first POST. playwright.config.js picks this up at module
+  // load time on the NEXT test run — so the first CI run still relies
+  // on the per-spec retry/skip guards, but every subsequent run is
+  // pre-authorised.
+  try {
+    const desktopState = JSON.parse(
+      fs.readFileSync(path.join(outDir, 'cf-desktop.json'), 'utf8'),
+    );
+    const cookieParts = (desktopState.cookies || [])
+      .filter(c => c.name === 'cf_clearance' || c.name === 'cf_bm')
+      .map(c => `${c.name}=${c.value}`);
+    const header = cookieParts.join('; ');
+    fs.writeFileSync(path.join(outDir, 'cf-cookie.txt'), header, 'utf8');
+    // eslint-disable-next-line no-console
+    console.log(`[global-setup] cf-cookie.txt written (${cookieParts.length} cookie(s), ${header.length} chars)`);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn(`[global-setup] could not persist cf-cookie.txt: ${e.message}`);
+  }
 };

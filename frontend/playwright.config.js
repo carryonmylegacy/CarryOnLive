@@ -11,6 +11,31 @@ const BASE_URL = process.env.E2E_BASE_URL || 'http://localhost:3000';
 
 const storageIfExists = (p) => (fs.existsSync(p) ? p : undefined);
 
+/**
+ * Read the cf_clearance cookie written by global-setup.js and turn it into
+ * a `Cookie` header value. Applied to every test's page AND request
+ * fixture via `use.extraHTTPHeaders`, so Playwright's API-only specs
+ * (which don't inherit storageState) get the same CF trust as the
+ * browser contexts.
+ *
+ * Returns `undefined` on the very first run of a fresh checkout — that's
+ * fine: global-setup writes the file AFTER config loads, so specs on the
+ * first run still rely on their in-file retry/skip guards. Every
+ * subsequent run (including the second run inside the same CI job — if
+ * retried — and every cached run) is pre-authorised.
+ */
+const cfHeaders = (() => {
+  try {
+    const p = './tests/.auth/cf-cookie.txt';
+    if (!fs.existsSync(p)) return undefined;
+    const header = fs.readFileSync(p, 'utf8').trim();
+    if (!header) return undefined;
+    return { Cookie: header };
+  } catch {
+    return undefined;
+  }
+})();
+
 export default defineConfig({
   testDir: './tests',
   timeout: 90_000,
@@ -30,6 +55,11 @@ export default defineConfig({
     video: 'retain-on-failure',
     actionTimeout: 10_000,
     navigationTimeout: 20_000,
+    // Auto-inject the cf_clearance cookie captured by global-setup.js so
+    // Playwright's `request` fixture (API-only specs) is CF-authorised
+    // identically to the browser `page` fixture. First run: header is
+    // undefined, specs self-skip on 403. Second+ run: pre-authorised.
+    ...(cfHeaders ? { extraHTTPHeaders: cfHeaders } : {}),
   },
   projects: [
     {
