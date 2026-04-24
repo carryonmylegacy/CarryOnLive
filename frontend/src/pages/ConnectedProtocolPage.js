@@ -100,14 +100,27 @@ export default function ConnectedProtocolPage() {
 
   const fetchPlans = useCallback(async () => {
     if (!estateId) return;
+    // Airplane-mode short-circuit — raw fetch bypasses the axios offline
+    // interceptor, so the SW could replay a stale empty cached response
+    // as HTTP-200 and wipe the visible plan list. Apr 24, 2026 regression
+    // fix pattern. Keeps whatever is already in `plans` state.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
     try {
       const res = await fetch(`${API_URL}/ccp/plans/${estateId}`, { headers });
-      if (res.ok) setPlans(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        // Empty-response clobber guard — never overwrite a populated
+        // list with an empty response.
+        if (Array.isArray(data) && (data.length > 0 || plans.length === 0)) {
+          setPlans(data);
+        }
+      }
     } catch {}
-  }, [estateId]);
+  }, [estateId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchActive = useCallback(async () => {
     if (!estateId) return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
     try {
       const res = await fetch(`${API_URL}/ccp/active/${estateId}`, { headers });
       if (res.ok) {
@@ -125,14 +138,21 @@ export default function ConnectedProtocolPage() {
 
   const fetchLinkedResources = useCallback(async () => {
     if (!estateId) return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
     try {
       const res = await fetch(`${API_URL}/ccp/active/${estateId}/linked-resources`, { headers });
-      if (res.ok) setLinkedResources(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && (data.length > 0 || linkedResources.length === 0)) {
+          setLinkedResources(data);
+        }
+      }
     } catch {}
-  }, [estateId]);
+  }, [estateId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchAvailableResources = useCallback(async () => {
     if (!estateId) return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
     try {
       const [docsRes, ffnRes, davRes, membersRes] = await Promise.all([
         fetch(`${API_URL}/documents/${estateId}`, { headers }),
@@ -159,10 +179,18 @@ export default function ConnectedProtocolPage() {
 
   // Auto-refresh when the offline outbox drains on reconnect — swaps
   // optimistic `_local_pending` CCP plans for the server-authoritative ones.
+  // Also refetch on airplane-mode transitions so the plan list doesn't
+  // require manual navigate-off-and-back to refresh.
   useEffect(() => {
     const refetch = () => { fetchPlans(); };
     window.addEventListener('carryon:outbox:drained', refetch);
-    return () => window.removeEventListener('carryon:outbox:drained', refetch);
+    window.addEventListener('online', refetch);
+    window.addEventListener('offline', refetch);
+    return () => {
+      window.removeEventListener('carryon:outbox:drained', refetch);
+      window.removeEventListener('online', refetch);
+      window.removeEventListener('offline', refetch);
+    };
   }, [fetchPlans]);
 
   // Poll when emergency is active

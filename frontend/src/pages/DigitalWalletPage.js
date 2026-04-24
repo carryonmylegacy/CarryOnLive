@@ -50,6 +50,12 @@ const DigitalWalletPage = () => {
   }, [loading, fromGettingStarted, entries.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
+    // Airplane-mode short-circuit — preserve current state instead of
+    // letting .catch() fallbacks wipe it with empty arrays.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setLoading(false);
+      return;
+    }
     try {
       const headers = getAuthHeaders()?.headers;
       if (!headers) { setLoading(false); return; }
@@ -61,14 +67,28 @@ const DigitalWalletPage = () => {
           axios.get(`${API_URL}/digital-wallet/${eid}`, { headers }).catch(() => ({ data: [] })),
           axios.get(`${API_URL}/beneficiaries/${eid}`, { headers }).catch(() => ({ data: [] })),
         ]);
-        setEntries(Array.isArray(walletRes.data) ? walletRes.data : []);
-        setBeneficiaries(Array.isArray(benRes.data) ? benRes.data : []);
+        // Empty-response clobber guard.
+        const nextEntries = Array.isArray(walletRes.data) ? walletRes.data : [];
+        const nextBens = Array.isArray(benRes.data) ? benRes.data : [];
+        if (nextEntries.length > 0 || entries.length === 0) setEntries(nextEntries);
+        if (nextBens.length > 0 || beneficiaries.length === 0) setBeneficiaries(nextBens);
       }
     } catch (err) {
       console.error('Digital wallet fetch error:', err);
     }
     setLoading(false);
   };
+
+  // Auto-refresh on reconnect.
+  useEffect(() => {
+    const refetch = () => { fetchData(); };
+    window.addEventListener('online', refetch);
+    window.addEventListener('offline', refetch);
+    return () => {
+      window.removeEventListener('online', refetch);
+      window.removeEventListener('offline', refetch);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCredentialSaved = async () => {
     const wasFirstEntry = entries.length === 0;

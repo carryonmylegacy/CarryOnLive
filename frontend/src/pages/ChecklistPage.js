@@ -88,7 +88,19 @@ const ChecklistPage = () => {
   getAuthHeadersRef.current = getAuthHeaders;
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-refresh on reconnect so airplane-mode toggling re-hydrates the
+  // list without requiring a manual navigate-off-and-back.
+  useEffect(() => {
+    const refetch = () => { fetchData(); };
+    window.addEventListener('online', refetch);
+    window.addEventListener('offline', refetch);
+    return () => {
+      window.removeEventListener('online', refetch);
+      window.removeEventListener('offline', refetch);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Poll for EGA IAC task status (real-time updates while Guardian generates)
   useEffect(() => {
@@ -118,6 +130,13 @@ const ChecklistPage = () => {
   }, [estate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
+    // Airplane-mode short-circuit — don't try the axios call and don't
+    // show the "Failed to load checklist" toast when the user is just
+    // offline. Preserves whatever state is already displayed.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setLoading(false);
+      return;
+    }
     try {
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       if (estatesRes.data.length > 0) {
@@ -125,11 +144,16 @@ const ChecklistPage = () => {
         const selected = (savedId && estatesRes.data.find(e => e.id === savedId)) || estatesRes.data[0];
         setEstate(selected);
         const checklistRes = await axios.get(`${API_URL}/checklists/${selected.id}`, getAuthHeaders());
-        setChecklists(checklistRes.data);
+        // Empty-response clobber guard.
+        const next = Array.isArray(checklistRes.data) ? checklistRes.data : [];
+        if (next.length > 0 || checklists.length === 0) setChecklists(next);
       }
     } catch (error) {
       console.error('Fetch error:', error);
-      toast.error('Failed to load checklist');
+      // Only surface the toast for real server-side failures while online.
+      if (typeof navigator === 'undefined' || navigator.onLine !== false) {
+        toast.error('Failed to load checklist');
+      }
     } finally {
       setLoading(false);
     }

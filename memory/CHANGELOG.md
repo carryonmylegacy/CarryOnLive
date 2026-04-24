@@ -1,5 +1,58 @@
 # CarryOn — Changelog
 
+## Apr 24, 2026 (audit sweep) — Offline Anti-Pattern Cleanup Across All Data Pages
+
+Following the BeneficiariesPage / ECT regression fix, did a full sweep of
+every other main data page to preemptively hunt the same 3 anti-patterns
+(raw-fetch bypass, empty-response clobber, no auto-refetch on reconnect).
+
+### Pages hardened
+- **ConnectedProtocolPage** — 4 raw `fetch()` data loaders (`fetchPlans`,
+  `fetchActive`, `fetchLinkedResources`, `fetchAvailableResources`) were
+  bypassing the axios offline interceptor entirely. All now short-circuit
+  when `navigator.onLine === false`, guard the success path with empty-
+  response checks, and `fetchPlans` is now wired to `online`/`offline`
+  auto-refresh.
+- **VaultPage** — `fetchData` now short-circuits before the axios call
+  regardless of the offline flag, guards both `setDocuments` and
+  `setBeneficiaries` against empty-response clobber, and auto-refreshes
+  on `online`/`offline`.
+- **FFNPage** — `fetchData` short-circuit + empty-guard + online/offline
+  auto-refetch.
+- **FinancialPortalPage** — `fetchAll` short-circuit + empty-guard on
+  every one of bills/debts/accounts/property/beneficiaries/davEntries +
+  online/offline auto-refetch. This one was the worst offender because
+  it already used `.catch(() => ({ data: [] }))` on every axios call,
+  meaning an airplane-mode transition flooded six setters with empty
+  arrays simultaneously.
+- **DigitalWalletPage** — short-circuit + empty-guard + online/offline
+  auto-refetch.
+- **ChecklistPage** — short-circuit + empty-guard + online/offline
+  auto-refetch + suppress the "Failed to load checklist" toast when the
+  failure is just the user being offline.
+
+### Verification (Playwright)
+Logged in, then for every hardened page: loaded while online (captured
+body content length) → flipped offline → captured length again. Every
+single page preserved content on airplane-mode toggle (offline length
+was `online + ~200` chars from the added offline banner). Pre-fix the
+lengths dropped precipitously.
+
+### Cumulative outcome
+All 8 main data pages (Beneficiaries, ECT, Vault, FFN, Financial,
+Digital Wallet, Checklist, Connected Protocol) now uniformly:
+1. Short-circuit fetch-on-mount when `navigator.onLine === false`.
+2. Guard success-path setters with `if (fresh.length > 0 || state.length === 0)`.
+3. Auto-refetch on `online` / `offline` events so airplane-mode toggling
+   re-hydrates without the user having to navigate off-and-back.
+4. Honor local Dexie mirror reads regardless of the offline flag.
+
+### Housekeeping
+- `yarn eslint src` → 0 errors.
+- `yarn build` → compiled successfully.
+- `bash /app/housekeeping.sh` → **ALL CHECKS PASSED · 0 WARN · 0 FAIL**.
+
+
 ## Apr 24, 2026 (regression fix) — Airplane-Mode Clears Beneficiaries + ECT
 
 Founder reported: toggling airplane mode ON empties the Beneficiaries

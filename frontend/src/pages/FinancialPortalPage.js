@@ -96,6 +96,12 @@ const FinancialPortalPage = () => {
   useEffect(() => { fetchAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchAll = async () => {
+    // Airplane-mode short-circuit — preserve current state instead of
+    // letting the .catch() fallbacks flood every setter with empty arrays.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setLoading(false);
+      return;
+    }
     try {
       const headers = getAuthHeaders()?.headers;
       if (!headers) { setLoading(false); return; }
@@ -118,13 +124,23 @@ const FinancialPortalPage = () => {
         axios.get(`${API_URL}/financial/categories/${eid}?module=accounts`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/digital-wallet/${eid}`, { headers }).catch(() => ({ data: [] })),
       ]);
-      setBills(Array.isArray(billsRes.data) ? billsRes.data : []);
-      setDebts(Array.isArray(debtsRes.data) ? debtsRes.data : []);
-      setAccounts(Array.isArray(acctsRes.data) ? acctsRes.data : []);
-      setPropertyAssets(Array.isArray(propsRes.data) ? propsRes.data : []);
-      setSummary(summaryRes.data);
-      setBeneficiaries(Array.isArray(bensRes.data) ? bensRes.data : []);
-      setDavEntries(Array.isArray(davRes.data) ? davRes.data : []);
+      // Empty-response clobber guard on every list — only overwrite if
+      // the response has data OR the state was already empty. This way
+      // a transient empty response from an airplane-mode transition
+      // can't wipe the populated UI.
+      const nextBills = Array.isArray(billsRes.data) ? billsRes.data : [];
+      const nextDebts = Array.isArray(debtsRes.data) ? debtsRes.data : [];
+      const nextAccts = Array.isArray(acctsRes.data) ? acctsRes.data : [];
+      const nextProps = Array.isArray(propsRes.data) ? propsRes.data : [];
+      const nextBens = Array.isArray(bensRes.data) ? bensRes.data : [];
+      const nextDav = Array.isArray(davRes.data) ? davRes.data : [];
+      if (nextBills.length > 0 || bills.length === 0) setBills(nextBills);
+      if (nextDebts.length > 0 || debts.length === 0) setDebts(nextDebts);
+      if (nextAccts.length > 0 || accounts.length === 0) setAccounts(nextAccts);
+      if (nextProps.length > 0 || propertyAssets.length === 0) setPropertyAssets(nextProps);
+      if (summaryRes.data) setSummary(summaryRes.data); // summary is a number/object, keep old on null
+      if (nextBens.length > 0 || beneficiaries.length === 0) setBeneficiaries(nextBens);
+      if (nextDav.length > 0 || davEntries.length === 0) setDavEntries(nextDav);
       setCustomCategories({
         bills: Array.isArray(catBills.data) ? catBills.data : [],
         debts: Array.isArray(catDebts.data) ? catDebts.data : [],
@@ -133,6 +149,17 @@ const FinancialPortalPage = () => {
     } catch (err) { console.error('Financial portal fetch error:', err); }
     setLoading(false);
   };
+
+  // Auto-refresh on reconnect so the user doesn't have to navigate off-and-back.
+  useEffect(() => {
+    const refetch = () => { fetchAll(); };
+    window.addEventListener('online', refetch);
+    window.addEventListener('offline', refetch);
+    return () => {
+      window.removeEventListener('online', refetch);
+      window.removeEventListener('offline', refetch);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSaved = () => {
     setShowBillForm(false);

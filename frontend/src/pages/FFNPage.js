@@ -28,6 +28,12 @@ export default function FFNPage() {
   const [deleting, setDeleting] = useState(null);
 
   const fetchData = useCallback(async () => {
+    // Airplane-mode short-circuit — don't attempt the axios call when
+    // offline. Preserves whatever state is already displayed.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setLoading(false);
+      return;
+    }
     try {
       const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
       const owned = (() => {
@@ -38,7 +44,9 @@ export default function FFNPage() {
       if (!owned) { setLoading(false); return; }
       setEstateId(owned.id);
       const contactsRes = await axios.get(`${API_URL}/ffn/${owned.id}`, getAuthHeaders());
-      setContacts(contactsRes.data);
+      // Empty-response clobber guard.
+      const fresh = Array.isArray(contactsRes.data) ? contactsRes.data : [];
+      if (fresh.length > 0 || contacts.length === 0) setContacts(fresh);
     } catch (err) {
       console.error('FFN fetch error:', err);
     }
@@ -47,13 +55,18 @@ export default function FFNPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Auto-refresh when the offline outbox drains on reconnect so that
-  // any FFN contacts queued offline swap their temp-id row for the
-  // server-authoritative one automatically.
+  // Auto-refresh on reconnect so airplane-mode toggling re-hydrates the
+  // list without the user having to navigate away and back.
   useEffect(() => {
-    const onDrained = () => { fetchData(); };
-    window.addEventListener('carryon:outbox:drained', onDrained);
-    return () => window.removeEventListener('carryon:outbox:drained', onDrained);
+    const refetch = () => { fetchData(); };
+    window.addEventListener('online', refetch);
+    window.addEventListener('offline', refetch);
+    window.addEventListener('carryon:outbox:drained', refetch);
+    return () => {
+      window.removeEventListener('online', refetch);
+      window.removeEventListener('offline', refetch);
+      window.removeEventListener('carryon:outbox:drained', refetch);
+    };
   }, [fetchData]);
 
   const handleSave = async () => {

@@ -191,13 +191,19 @@ const VaultPage = () => {
 
   // Auto-refresh when a chunked upload completes (offline DAV docs
   // draining on reconnect) or when the outbox drains any DAV mutations.
+  // Also refresh on network transitions so airplane-mode toggling
+  // re-hydrates the list without the user navigating off-and-back.
   useEffect(() => {
     const refetch = () => { fetchData(); };
     window.addEventListener('carryon:upload:complete', refetch);
     window.addEventListener('carryon:outbox:drained', refetch);
+    window.addEventListener('online', refetch);
+    window.addEventListener('offline', refetch);
     return () => {
       window.removeEventListener('carryon:upload:complete', refetch);
       window.removeEventListener('carryon:outbox:drained', refetch);
+      window.removeEventListener('online', refetch);
+      window.removeEventListener('offline', refetch);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -220,23 +226,39 @@ const VaultPage = () => {
         setEstate(selected);
         // Offline-first paint: seed from local mirror, short-circuit when
         // fully offline, otherwise refresh from server and upsert.
+        // Flag-agnostic offline short-circuit: regardless of the flag,
+        // never hit the server when the device is airplane-mode — the
+        // axios interceptor will reject anyway, and we want the code
+        // path to return cleanly with the mirror (if any) rather than
+        // flowing into an empty-response state-wipe.
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          try {
+            const local = await getLocalVaultItems(selected.id);
+            if (local.length > 0) setDocuments(local);
+          } catch {}
+          setLoading(false);
+          return;
+        }
         if (mode === 'on') {
           const local = await getLocalVaultItems(selected.id);
           if (local.length > 0) {
             setDocuments(local);
             setLoading(false);
           }
-          if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
         }
         const docsRes = await axios.get(`${API_URL}/documents/${selected.id}`, getAuthHeaders()).catch(() => ({ data: [] }));
         const docs = Array.isArray(docsRes.data) ? docsRes.data : [];
-        setDocuments(docs);
+        // Empty-response clobber guard — never overwrite a populated
+        // list with an empty response from a transient airplane-mode
+        // transition or a stale SW cache replay.
+        if (docs.length > 0 || documents.length === 0) setDocuments(docs);
         if (mode !== 'off') upsertLocalVaultItems(selected.id, docs).catch(() => {});
         // Fetch beneficiaries for SDV designation
         try {
           const benRes = await axios.get(`${API_URL}/beneficiaries/${selected.id}`, getAuthHeaders());
-          setBeneficiaries(Array.isArray(benRes.data) ? benRes.data : []);
-        } catch { setBeneficiaries([]); }
+          const bens = Array.isArray(benRes.data) ? benRes.data : [];
+          if (bens.length > 0 || beneficiaries.length === 0) setBeneficiaries(bens);
+        } catch { /* keep existing state — never blank it on error */ }
       }
     } catch (error) {
       console.error('Fetch error:', error);
