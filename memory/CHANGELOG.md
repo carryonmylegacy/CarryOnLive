@@ -1,5 +1,51 @@
 # CarryOn — Changelog
 
+## Apr 24, 2026 (final pass) — ConflictResolver Merged Into PendingSyncPanel
+
+Single-surface rule: users should see every deferred / pending / conflicted
+write in one place. Removed the legacy standalone `ConflictResolver`
+modal and folded its UX into `PendingSyncPanel`.
+
+### Panel now renders inline conflict resolution
+- Conflict rows render a mine-vs-server card (side-by-side) with the
+  keys of each payload, plus two buttons:
+  - **Keep theirs** (outlined) — discards the user's queued write.
+  - **Keep mine** (gold) — re-queues the user's version; drain re-applies
+    on the next cycle.
+- Calls the existing `resolveConflict(id, 'mine' | 'theirs')` outbox
+  helper, so underlying logic is unchanged.
+- Conflict rows are the only rows where Retry / Remove are hidden — the
+  Keep-mine/Keep-theirs chooser replaces them (Keep-mine already retries,
+  Keep-theirs already removes).
+- `listPending()` updated to include `body` + `server_row` on conflict
+  rows so the panel has the data it needs. Non-conflict rows still strip
+  `body`.
+
+### Chip auto-opens the panel on new conflicts
+- `PendingSyncChip` now listens for `carryon:outbox:conflict` and flips
+  `panelOpen = true` the instant a conflict lands. This preserves the
+  previous "modal pops up automatically" behavior of `ConflictResolver`
+  without needing a separate component.
+
+### Removed
+- Deleted `components/ConflictResolver.js` (182 LOC).
+- Removed the `<ConflictResolver />` mount from `App.js`.
+
+### E2E spec updated
+- `frontend/tests/e2e/offline_phase8.spec.js` migrated from
+  `[data-testid="conflict-resolver"]` to `[data-testid="pending-sync-panel"]`
+  and uses per-row testids `conflict-keep-theirs-{id}` /
+  `conflict-keep-mine-{id}`.
+
+### Verification
+- `yarn eslint src` → 0 errors.
+- `yarn build` → compiled successfully.
+- `bash /app/housekeeping.sh` → **ALL CHECKS PASSED · 0 WARN · 0 FAIL**
+  (fixed 2 additional sub-11px uppercase chip labels).
+- Smoke screenshot on preview confirmed the login page renders clean
+  post-deletion of ConflictResolver.
+
+
 ## Apr 24, 2026 (later) — Tap-to-Expand Pending Sync Panel
 
 Upgraded the platform-wide chip so users can drill into the per-item queue

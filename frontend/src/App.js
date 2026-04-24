@@ -13,7 +13,6 @@ import ForceUpdateGate from './components/ForceUpdateGate';
 import NetworkStatusBanner from './components/NetworkStatusBanner';
 import NotificationContainer from './components/AppNotification';
 import OfflineSyncProgress from './components/OfflineSyncProgress';
-import ConflictResolver from './components/ConflictResolver';
 import PendingUploadsIndicator from './components/PendingUploadsIndicator';
 import PendingSyncChip from './components/PendingSyncChip';
 import { AmberAlertProvider } from './components/AmberAlert';
@@ -518,7 +517,6 @@ function App() {
           <NotificationContainer />
           <OfflineSyncProgress />
           <PendingUploadsIndicator />
-          <ConflictResolver />
           <AmberAlertProvider />
           <UsernameReviewModal />
           <AppRoutes />

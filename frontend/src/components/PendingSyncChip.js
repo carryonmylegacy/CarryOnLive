@@ -160,7 +160,10 @@ export function PendingSyncChipInline() {
 
 /** Online variant — a thin fixed strip above the app header when there
  *  are pending items and the user IS online (the banner itself is
- *  absent). Becomes "Syncing N items…" while a drain is in progress. */
+ *  absent). Becomes "Syncing N items…" while a drain is in progress.
+ *  Also auto-opens the inline PendingSyncPanel when a brand-new
+ *  conflict is detected so the user is never left stranded without
+ *  seeing a resolver. */
 export default function PendingSyncChip() {
   const { outbox, uploads, conflicts, online } = usePendingSyncCounts();
   const [draining, setDraining] = useState(false);
@@ -168,6 +171,18 @@ export default function PendingSyncChip() {
   const [panelOpen, setPanelOpen] = useState(false);
   const prevTotalRef = useRef(0);
   const flashTimerRef = useRef(null);
+
+  useEffect(() => {
+    // Auto-open the panel the moment a new conflict arrives so users
+    // always see the resolver without having to tap the tiny header
+    // chip first. Replaces the legacy standalone ConflictResolver modal.
+    const onConflict = () => {
+      if (getOfflineMode() !== 'on') return;
+      setPanelOpen(true);
+    };
+    window.addEventListener('carryon:outbox:conflict', onConflict);
+    return () => window.removeEventListener('carryon:outbox:conflict', onConflict);
+  }, []);
 
   useEffect(() => {
     const onDrainedOne = () => setDraining(true);

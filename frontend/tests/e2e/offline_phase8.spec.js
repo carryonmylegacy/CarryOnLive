@@ -69,7 +69,11 @@ test.describe('Offline Phase 8 — Conflict resolver', () => {
     await loginAsAdminWithMode(page, 'on', { postLoginWaitMs: 6000 });
     await page.waitForLoadState('load').catch(() => {});
     await injectConflict(page);
-    await expect(page.locator('[data-testid="conflict-resolver"]')).toBeVisible({ timeout: 8000 });
+    // Post Apr 24, 2026 refactor: the standalone ConflictResolver modal
+    // was merged into the platform-wide PendingSyncPanel. The `conflict-
+    // resolver` testid is retained as a class alias on the panel so this
+    // spec keeps working, but we also accept the new testid.
+    await expect(page.locator('[data-testid="pending-sync-panel"]')).toBeVisible({ timeout: 8000 });
 
     // Clean up so later runs start clean.
     await page.evaluate(async () => {
@@ -87,8 +91,8 @@ test.describe('Offline Phase 8 — Conflict resolver', () => {
     await loginAsAdminWithMode(page, 'on', { postLoginWaitMs: 6000 });
     await page.waitForLoadState('load').catch(() => {});
     const id = await injectConflict(page);
-    await expect(page.locator('[data-testid="conflict-resolver"]')).toBeVisible({ timeout: 8000 });
-    await page.locator('[data-testid="conflict-keep-theirs"]').click();
+    await expect(page.locator('[data-testid="pending-sync-panel"]')).toBeVisible({ timeout: 8000 });
+    await page.locator(`[data-testid="conflict-keep-theirs-${id}"]`).first().click();
     await page.waitForTimeout(800);
     const status = await outboxStatus(page, id);
     expect(status).toBe('missing');
@@ -98,8 +102,8 @@ test.describe('Offline Phase 8 — Conflict resolver', () => {
     await loginAsAdminWithMode(page, 'on', { postLoginWaitMs: 6000 });
     await page.waitForLoadState('load').catch(() => {});
     const id = await injectConflict(page);
-    await expect(page.locator('[data-testid="conflict-resolver"]')).toBeVisible({ timeout: 8000 });
-    await page.locator('[data-testid="conflict-keep-mine"]').click();
+    await expect(page.locator('[data-testid="pending-sync-panel"]')).toBeVisible({ timeout: 8000 });
+    await page.locator(`[data-testid="conflict-keep-mine-${id}"]`).first().click();
     await page.waitForTimeout(800);
     // Either the drain popped it off and it's now done/inflight, or it's
     // pending waiting for the next drain. The one unacceptable state is

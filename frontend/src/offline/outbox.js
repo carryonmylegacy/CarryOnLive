@@ -213,7 +213,10 @@ export async function snapshot() {
 
 /** List every outbox row that isn't completed yet (pending, inflight,
  *  failed, conflict). Sorted newest-first. Used by the platform-wide
- *  PendingSyncPanel to render the per-item list. */
+ *  PendingSyncPanel to render the per-item list. Conflict rows keep
+ *  their full `body` + `server_row` so the panel can render the
+ *  inline diff; non-conflict rows strip `body` to keep the payload
+ *  small. */
 export async function listPending() {
   if (!isOfflineEnabled()) return [];
   try {
@@ -221,7 +224,11 @@ export async function listPending() {
     const all = await db.outbox.orderBy('id').reverse().toArray();
     return all
       .filter((r) => ['pending', 'inflight', 'failed', 'conflict'].includes(r.status))
-      .map(({ body, ...rest }) => rest);
+      .map((r) => {
+        if (r.status === 'conflict') return r; // keep body + server_row
+        const { body, ...rest } = r;
+        return rest;
+      });
   } catch { return []; }
 }
 
