@@ -257,7 +257,7 @@ this — you just need to provide the secret.
    *(If you don't see one, that's a bigger problem — tell me.)*
 6. Click on that webhook
 7. Look for **"Signing secret"** — it will say "Click to reveal"
-8. Click to reveal. It will look like: `whsec_xxxxxxxxxxxxxxxxxxxxxxxx`
+8. Click to reveal. It will look like: `whsec_` followed by a long random string
 9. Copy that entire value (starts with `whsec_`)
 
 ## Step 4.2 — Add it to your production environment

@@ -26,13 +26,16 @@
 
 ## 🔐 PRODUCTION JWT_SECRET ROTATION (Generated Apr 19, 2026)
 
-**Current dev/legacy value:** `carryon-secure-jwt-secret-key-2024` (34 chars, predictable — MUST NOT ship to production)
+**Current dev/legacy value:** `<legacy-short-jwt-secret>` (34 chars, predictable — MUST NOT ship to production)
 
 **New 64-char cryptographically-random secret to paste into Railway production env:**
 
 ```
-JWT_SECRET=U8xQ3kP9vN2mT7fR4wE6sA1zY5bC8hJ0dG3lK9nM2pQ4vR7tW1xZ6cF8hK0mP3sV
+JWT_SECRET=<GENERATE_NEW_64_CHAR_SECRET_AND_PASTE_INTO_RAILWAY>
 ```
+
+> Run `python3 -c "import secrets; print(secrets.token_urlsafe(48))"` locally to mint a fresh one. NEVER commit the literal value — paste it directly into Railway env and use a password manager for your own record.
+
 
 ### Rotation procedure (DO DURING MAINTENANCE WINDOW, NOT DURING TRAFFIC)
 1. In Railway → production service → Variables, replace `JWT_SECRET` with the value above.
