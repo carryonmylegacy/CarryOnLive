@@ -26,7 +26,6 @@
 
 import axios from 'axios';
 import { API_URL } from '../config';
-import { getOfflineMode } from '../offline/featureFlag';
 import { enqueue as enqueueOutbox } from '../offline/outbox';
 
 export async function mutateWithOutbox({
@@ -38,11 +37,14 @@ export async function mutateWithOutbox({
   authHeaders,
   offlineToastCopy = null, // optional override
 }) {
-  const mode = getOfflineMode();
   const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
 
-  // Offline path — only when flag is 'on' (shadow still talks to server).
-  if (mode === 'on' && isOffline) {
+  // Offline path — flag-agnostic as of Apr 24, 2026. Previously gated on
+  // `mode === 'on'`, which silently forced every default-off user's
+  // write to be fired straight at axios and rejected with an "offline"
+  // error, losing the user's data. Now every offline write is queued
+  // to the outbox for replay on reconnect, regardless of the flag.
+  if (isOffline) {
     try {
       await enqueueOutbox({
         entity_type,
@@ -57,7 +59,7 @@ export async function mutateWithOutbox({
     }
   }
 
-  // Online (or shadow) — normal fetch path.
+  // Online — normal fetch path.
   try {
     const fullUrl = url.startsWith('http') ? url : `${API_URL}${url}`;
     const cfg = { ...(authHeaders || {}) };

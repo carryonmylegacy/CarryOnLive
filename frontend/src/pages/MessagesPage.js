@@ -472,18 +472,19 @@ const MessagesPage = () => {
         custom_event_label: triggerValue === 'custom' ? customEventLabel : null,
       };
 
-      // Tier B wiring — if we're offline with the flag on AND the user
-      // recorded a video, short-circuit to the chunked-upload queue. The
-      // backend's milestone finalizer will create the Message row AND
-      // attach the video in one atomic call when the queue drains. Keeps
+      // Tier B wiring — if we're offline AND the user recorded a video,
+      // short-circuit to the chunked-upload queue. The backend's
+      // milestone finalizer will create the Message row AND attach the
+      // video in one atomic call when the queue drains. Keeps
       // offline-captured 5-minute recordings reliably in flight.
+      // Flag-agnostic as of Apr 24, 2026: runs for every user whenever
+      // the device is offline, because there is literally no other way
+      // to save the recording.
       const hasVideo = videoBlob && videoBlob !== 'existing';
       const hasAudio = !!audioBlob;
       try {
-        const { getOfflineMode } = await import('../offline/featureFlag');
-        const offlineMode = getOfflineMode();
         const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
-        if (offlineMode === 'on' && isOffline && !editingMessage && (hasVideo || hasAudio)) {
+        if (isOffline && !editingMessage && (hasVideo || hasAudio)) {
           const { addPendingUpload } = await import('../offline/pendingUploadsRepo');
           const messageCreate = {
             estate_id: estate.id,
@@ -546,16 +547,15 @@ const MessagesPage = () => {
 
       let messageId = null;
 
-      // Offline text-only path: when the flag is 'on' AND we're offline AND
-      // there's no media attachment (media uses the chunked-upload queue
-      // above), fall through to mutateWithOutbox. A local-only optimistic
-      // row is inserted into `messages` so the list renders immediately.
+      // Offline write path (flag-agnostic): when the device is offline
+      // AND there's no media attachment (media uses the chunked-upload
+      // queue above), fall through to mutateWithOutbox. A local-only
+      // optimistic row is inserted into `messages` so the list renders
+      // immediately, and the POST/PUT is replayed on reconnect.
       {
-        const { getOfflineMode } = await import('../offline/featureFlag');
-        const offlineMode = getOfflineMode();
         const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
         const hasMedia = hasVideo || hasAudio || !!attachmentFile;
-        if (offlineMode === 'on' && isOffline && !hasMedia) {
+        if (isOffline && !hasMedia) {
           const { mutateWithOutbox } = await import('../utils/offlineMutation');
           const { upsertLocalMessages } = await import('../offline/repos/messagesRepo');
           if (editingMessage) {
@@ -646,10 +646,8 @@ const MessagesPage = () => {
     if (!window.confirm('Are you sure you want to delete this message?')) return;
 
     try {
-      const { getOfflineMode } = await import('../offline/featureFlag');
-      const offlineMode = getOfflineMode();
       const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
-      if (offlineMode === 'on' && isOffline) {
+      if (isOffline) {
         const { mutateWithOutbox } = await import('../utils/offlineMutation');
         const { upsertLocalMessages } = await import('../offline/repos/messagesRepo');
         await mutateWithOutbox({

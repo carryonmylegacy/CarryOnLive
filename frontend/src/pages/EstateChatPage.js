@@ -718,11 +718,12 @@ export default function EstateChatPage() {
     const replyToId = replyTo?.id || null;
     const mode = getOfflineMode();
 
-    // Airplane-mode path: stamp the transcript with an optimistic local
-    // message, enqueue the POST in the outbox, and clear the composer so
-    // the user can keep typing. The outbox drains when connectivity
-    // returns and swaps the temp id for the server's canonical message.
-    if (mode === 'on' && typeof navigator !== 'undefined' && navigator.onLine === false) {
+    // Airplane-mode path (flag-agnostic): stamp the transcript with an
+    // optimistic local message, enqueue the POST in the outbox, and
+    // clear the composer so the user can keep typing. The outbox drains
+    // when connectivity returns and swaps the temp id for the server's
+    // canonical message.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       try {
         const tempId = generateTempMessageId();
         const optimistic = {

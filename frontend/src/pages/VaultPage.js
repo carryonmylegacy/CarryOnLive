@@ -296,15 +296,14 @@ const VaultPage = () => {
     
     setUploading(true);
     try {
-      // Tier B wiring — if the user is offline and the offline flag is on,
-      // queue the upload via the chunked uploader's pending queue instead
-      // of attempting a single multipart POST that will fail. The pending
+      // Tier B wiring (flag-agnostic): if the user is offline, queue the
+      // upload via the chunked uploader's pending queue instead of
+      // attempting a single multipart POST that will fail. The pending
       // uploads drainer runs on reconnect + on login and posts chunks to
       // /api/uploads/chunked/*, where the document finalizer creates the
       // same Document row + encrypted blob as the online path would.
-      const offlineMode = getOfflineMode();
       const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
-      if (offlineMode === 'on' && isOffline) {
+      if (isOffline) {
         const { addPendingUpload } = await import('../offline/pendingUploadsRepo');
         await addPendingUpload({
           kind: 'document',

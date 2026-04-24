@@ -396,10 +396,10 @@ const BeneficiariesPage = () => {
       };
 
       if (editingBeneficiary) {
-        // PHASE 2 — Offline write-through for EDIT. When the flag is 'on'
-        // and we're offline, apply the patch locally, enqueue the PUT in
-        // the outbox for replay on reconnect, and short-circuit.
-        if (getOfflineMode() === 'on' && typeof navigator !== 'undefined' && navigator.onLine === false) {
+        // Offline write-through for EDIT — flag-agnostic. When we're
+        // offline, apply the patch locally, enqueue the PUT in the
+        // outbox for replay on reconnect, and short-circuit.
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
           await updateLocalBeneficiary(editingBeneficiary.id, payload);
           await enqueueOutbox({
             entity_type: 'beneficiary',
@@ -438,12 +438,12 @@ const BeneficiariesPage = () => {
           return;
         }
       } else {
-        // PHASE 2.1 — Offline write-through for CREATE. When flag is 'on'
-        // and we're offline, generate a client-side temp id, insert the
+        // Offline write-through for CREATE — flag-agnostic. When we're
+        // offline, generate a client-side temp id, insert the
         // beneficiary locally so the UI reflects it immediately, and
         // enqueue the POST for replay on reconnect. After drain, the
         // outbox swaps the temp id for the server's canonical id.
-        if (getOfflineMode() === 'on' && typeof navigator !== 'undefined' && navigator.onLine === false) {
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
           const tempId = generateTempId();
           const localRow = {
             ...payload,
@@ -559,9 +559,9 @@ const BeneficiariesPage = () => {
 
     try {
       const params = deleteFromAll ? '?delete_from_all=true' : '';
-      // PHASE 2 — Offline write-through for DELETE. When on + offline,
+      // Offline write-through for DELETE — flag-agnostic. When offline,
       // remove locally, enqueue the DELETE for replay, and short-circuit.
-      if (getOfflineMode() === 'on' && typeof navigator !== 'undefined' && navigator.onLine === false) {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
         await deleteLocalBeneficiary(beneficiaryId);
         await enqueueOutbox({
           entity_type: 'beneficiary',

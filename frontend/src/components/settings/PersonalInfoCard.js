@@ -62,11 +62,11 @@ const PersonalInfoCard = ({ initialEditAddress = false }) => {
 
   const saveProfile = async () => {
     setProfileSaving(true);
-    const mode = getOfflineMode();
     const payload = profileData;
-    // Offline path (flag=on): patch local mirror, enqueue PUT for replay,
-    // toast "queued", and short-circuit without a failing network call.
-    if (mode === 'on' && typeof navigator !== 'undefined' && navigator.onLine === false) {
+    // Offline path (flag-agnostic): patch local mirror, enqueue PUT for
+    // replay, toast "queued", and short-circuit without a failing
+    // network call.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       try {
         await updateLocalProfile(payload);
         await enqueueOutbox({
@@ -85,10 +85,8 @@ const PersonalInfoCard = ({ initialEditAddress = false }) => {
     }
     try {
       await axios.put(`${API_URL}/auth/profile`, payload, getAuthHeaders());
-      if (mode !== 'off') {
-        // Refresh local mirror so next cold boot reflects the new values.
-        updateLocalProfile(payload).catch(() => {});
-      }
+      // Refresh local mirror so next cold boot reflects the new values.
+      updateLocalProfile(payload).catch(() => {});
       toast.success('Profile updated');
       setProfileEditing(false);
     } catch (err) {
