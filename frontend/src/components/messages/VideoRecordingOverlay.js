@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Camera, StopCircle, SwitchCamera, WifiOff } from 'lucide-react';
 
 const VideoRecordingOverlay = ({
@@ -26,8 +27,21 @@ const VideoRecordingOverlay = ({
 
   if (!showRecordingOverlay) return null;
 
-  return (
-    <div className="fixed inset-0 z-[200] bg-black flex flex-col overflow-y-auto" data-testid="video-recording-overlay">
+  // When offline the NetworkStatusBanner pushes content down AND the
+  // mobile dock was sitting on top of the overlay because an ancestor
+  // was creating a stacking context — so we both (a) render via portal
+  // to escape every parent stacking context, (b) raise z-index above
+  // the dock (z-50) and below the offline banner (z-[9999]), and
+  // (c) reshape the record button into an oval pill that fits inside
+  // a tighter vertical band while still staying clear of the dock.
+  const DOCK_CLEARANCE = 96; // mobile dock is ~80px tall + bottom safe-area slack
+
+  const overlay = (
+    <div
+      className="fixed inset-0 bg-black flex flex-col overflow-y-auto"
+      style={{ zIndex: 9998 }}
+      data-testid="video-recording-overlay"
+    >
       {/* Camera feed */}
       <div className="flex-1 relative">
         <video
@@ -112,34 +126,65 @@ const VideoRecordingOverlay = ({
         </div>
       </div>
 
-      {/* Bottom controls */}
-      <div className="flex-shrink-0 flex items-center justify-center py-8 px-6" style={{ background: 'rgba(0,0,0,0.8)', paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}>
+      {/* Bottom controls — oval pill record button so it stays fully
+          visible even when the offline banner pushes content down and
+          the mobile dock sits right above the system home-indicator. */}
+      <div
+        className="flex-shrink-0 flex items-center justify-center py-5 px-6"
+        style={{
+          background: 'rgba(0,0,0,0.88)',
+          paddingBottom: `calc(1.25rem + env(safe-area-inset-bottom, 0px) + ${DOCK_CLEARANCE}px)`,
+        }}
+      >
         {!isRecording && countdown === null ? (
           <button
             onClick={startRecording}
-            className="w-20 h-20 rounded-full flex items-center justify-center transition-transform active:scale-90"
-            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', boxShadow: '0 4px 24px rgba(212,175,55,0.4)' }}
+            className="rounded-full flex items-center justify-center gap-2 transition-transform active:scale-95"
+            style={{
+              minWidth: 160,
+              height: 56,
+              padding: '0 28px',
+              background: 'linear-gradient(135deg, #d4af37, #b8962e)',
+              boxShadow: '0 4px 24px rgba(212,175,55,0.4)',
+            }}
             data-testid="start-recording-btn"
           >
-            <Camera className="w-8 h-8 text-[#080e1a]" />
+            <Camera className="w-6 h-6 text-[#080e1a]" />
+            <span className="font-bold text-[#080e1a] text-base" style={{ fontFamily: 'var(--sans)' }}>Record</span>
           </button>
         ) : isRecording ? (
           <button
             onClick={stopRecording}
-            className="w-20 h-20 rounded-full flex items-center justify-center transition-transform active:scale-90"
-            style={{ background: '#ef4444', boxShadow: '0 4px 24px rgba(239,68,68,0.4)' }}
+            className="rounded-full flex items-center justify-center gap-2 transition-transform active:scale-95"
+            style={{
+              minWidth: 160,
+              height: 56,
+              padding: '0 28px',
+              background: '#ef4444',
+              boxShadow: '0 4px 24px rgba(239,68,68,0.4)',
+            }}
             data-testid="stop-recording-btn"
           >
-            <StopCircle className="w-8 h-8 text-white" />
+            <StopCircle className="w-6 h-6 text-white" />
+            <span className="font-bold text-white text-base" style={{ fontFamily: 'var(--sans)' }}>Stop</span>
           </button>
         ) : (
-          <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'var(--b)' }}>
+          <div
+            className="rounded-full flex items-center justify-center"
+            style={{ minWidth: 160, height: 56, background: 'var(--b)' }}
+          >
             <span className="text-3xl font-bold text-white">{countdown}</span>
           </div>
         )}
       </div>
     </div>
   );
+
+  // Portal to document.body so the overlay escapes any ancestor
+  // stacking context (Radix SlidePanel, modal wrappers, transforms)
+  // and reliably covers the mobile dock.
+  if (typeof document === 'undefined') return overlay;
+  return createPortal(overlay, document.body);
 };
 
 export default VideoRecordingOverlay;

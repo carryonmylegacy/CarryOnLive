@@ -1,5 +1,80 @@
 # CarryOn — Changelog
 
+## Apr 24, 2026 — Offline Capabilities: Photos, MM Read-Through, Record-Button Pill
+
+User reported three airplane-mode issues after login: (1) beneficiary/estate
+avatars render as broken-image `?` icons, (2) the MM page falsely shows its
+"Create your first milestone message" empty state even though both messages
+and beneficiaries exist server-side, and (3) the offline banner pushes the
+video-recording overlay down so the record button is clipped by the mobile
+dock. All three fixed in one pass.
+
+### 1. Beneficiary / estate / profile photos survive airplane mode
+- Added `frontend/src/offline/prefetchPhotos.js` — one fire-and-forget
+  helper that issues `fetch(url, { mode: 'no-cors' })` for every known
+  photo field (`photo_url`, `photo_url_thumb`, `estate_photo_url`,
+  `owner_photo_url`, `avatar_url`, `picture_url`). The Service Worker's
+  existing `cacheFirst(IMAGE_CACHE)` strategy is already written to
+  accept opaque cross-origin responses, so these pre-fetches warm the
+  image cache without any SW changes.
+- `offline/warmup.js` now calls `prefetchPhotosFrom(...)` on (a) the
+  profile response, (b) the estates list, and (c) each estate's
+  beneficiary list. Runs fire-and-forget so a slow S3 never stalls
+  login.
+- `pages/BeneficiariesPage.js` also prefetches photos on every
+  server-successful fetch so a user who logs in and THEN navigates to
+  Beneficiaries while online gets the cache populated even if
+  warm-up had already finished.
+
+### 2. MessagesPage offline read-through
+- New repo `frontend/src/offline/repos/messagesRepo.js` —
+  `getLocalMessages(estateId)` / `upsertLocalMessages(estateId, list)`
+  mirroring the pattern used by `beneficiariesRepo`. New Dexie table
+  `milestoneMessage` with index `[estate_id+created_at]`. Schema
+  bumped to **v3** with explicit v2 migration path for existing users.
+- `offline/warmup.js` now also persists the messages list into the new
+  repo during the per-estate dashboard warm-up task.
+- `pages/MessagesPage.js` — `fetchData()` refactored to three
+  code paths that mirror `BeneficiariesPage.js`:
+  1. Flag `off` → unchanged.
+  2. Flag `on` + online → paint from local mirror first, then refresh
+     from server, reconcile + re-upsert.
+  3. Flag `on` + offline → paint from local mirror and short-circuit
+     the server call so the misleading "Failed to load" toast never
+     fires.
+- Empty-state trigger (`filteredMessages.length === 0`) now correctly
+  renders the real MM list on airplane-mode launch; the "No
+  beneficiaries added yet" modal helper text disappears too because
+  beneficiaries paint from local cache.
+
+### 3. Record-button pill + portal escape
+- `components/messages/VideoRecordingOverlay.js` — rewritten:
+  - Now rendered via `createPortal(document.body)` so the overlay
+    escapes every ancestor stacking context (SlidePanel, modals,
+    transforms) that previously let the `z-50` mobile dock paint
+    over it. Z-index bumped to `9998` (one below the global
+    offline banner at `9999`).
+  - Record / Stop / Countdown buttons reshaped from 80×80 circles
+    into 160×56 oval pills with icon + label (`Record` / `Stop`).
+    They fit in a shorter vertical band so the offline banner can't
+    push them down into the dock zone.
+  - Bottom-controls bar now applies explicit `DOCK_CLEARANCE = 96px`
+    of additional `paddingBottom` on top of the safe-area inset, so
+    the pill stays comfortably above the mobile dock even when the
+    offline banner pushes content down.
+
+### Schema migration
+- Dexie `carryon-offline` bumped v2 → v3 to add `milestoneMessage`.
+  Migration is automatic and additive; no existing data is touched.
+
+### Verification
+- `yarn eslint src` → 0 errors (161 pre-existing no-unused-vars warnings
+  elsewhere, none introduced by this change).
+- `yarn build` → compiled successfully.
+- `bash /app/housekeeping.sh` → **ALL CHECKS PASSED · 0 WARN · 0 FAIL**.
+- Smoke screenshot on preview pod confirmed app boots clean.
+
+
 ## Apr 23, 2026 — Proper App Icon — Vignette Bands Eliminated
 
 User provided a new clean 1024×1024 source logo (`carryon-app-icon-source.jpg`).

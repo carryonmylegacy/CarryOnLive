@@ -6,6 +6,7 @@ import { cachedGet } from '../utils/apiCache';
 import { formatPhoneUS } from '../utils/phoneFormat';
 import { getOfflineMode } from '../offline/featureFlag';
 import { getLocalBeneficiaries, upsertLocalBeneficiaries, updateLocalBeneficiary, deleteLocalBeneficiary, insertLocalBeneficiary, generateTempId } from '../offline/repos/beneficiariesRepo';
+import { prefetchPhotosFrom } from '../offline/prefetchPhotos';
 import { enqueue as enqueueOutbox } from '../offline/outbox';
 import { ReturnPopup } from '../components/GuidedActivation';
 import {
@@ -245,6 +246,11 @@ const BeneficiariesPage = () => {
         // when 'off'. Fire-and-forget — we never block UI on the write.
         if (mode !== 'off') {
           upsertLocalBeneficiaries(ownedEstate.id, bensRes.data).catch(() => {});
+          // Pre-warm every photo into the SW IMAGE_CACHE while online so
+          // airplane-mode visits paint with real avatars instead of
+          // broken-image placeholders.
+          prefetchPhotosFrom(bensRes.data);
+          prefetchPhotosFrom(allEstates);
         }
       }
     } catch (error) {

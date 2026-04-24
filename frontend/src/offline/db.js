@@ -36,11 +36,33 @@
 import Dexie from 'dexie';
 
 export const DB_NAME = 'carryon-offline';
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 class CarryOnDB extends Dexie {
   constructor() {
     super(DB_NAME);
+    // v2 schema (kept for legacy upgrade path)
+    this.version(2).stores({
+      user: 'id, email, _updatedAt',
+      subscription: 'id, _updatedAt',
+      enabledFeatures: 'id, _updatedAt',
+      estate: 'id, owner_id, _updatedAt',
+      beneficiary: 'id, estate_id, email, _updatedAt',
+      dashboardTile: 'id, estate_id, _updatedAt',
+      readinessScore: 'estate_id, _updatedAt',
+      chatChannel: 'id, estate_id, type, _updatedAt',
+      chatContact: 'id, _updatedAt',
+      chatMessage: 'id, channel_id, created_at, _updatedAt, [channel_id+created_at]',
+      chatFile: 'file_id, channel_id, _updatedAt',
+      shareCard: 'id, _updatedAt',
+      voicesQuote: 'id, _updatedAt',
+      vaultItem: 'id, estate_id, category, _updatedAt',
+      notificationPref: 'id, _updatedAt',
+      outbox: '++id, entity_type, entity_id, status, created_at',
+      syncMeta: 'entity_type, last_synced_at',
+      pendingUpload: '++id, kind, status, created_at',
+    });
+    // v3 — adds `milestoneMessage` for MM offline read-through.
     this.version(DB_VERSION).stores({
       // ── Core user & session ──────────────────────────────────────────
       user: 'id, email, _updatedAt',
@@ -79,6 +101,11 @@ class CarryOnDB extends Dexie {
       // syncMeta: per-entity-type last-sync timestamps so incremental
       // fetches know what's changed.
       syncMeta: 'entity_type, last_synced_at',
+
+      // ── Milestone Messages (MM) ──────────────────────────────────────
+      // Per-estate MM list cached for offline paint; written by page
+      // read-through + warm-up.
+      milestoneMessage: 'id, estate_id, created_at, _updatedAt, [estate_id+created_at]',
 
       // ── Pending Uploads (Tier B / Phase 9) ───────────────────────────
       // Large blobs awaiting chunked upload. `blob` is a Blob object;

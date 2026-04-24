@@ -34,10 +34,12 @@ import {
 import {
   upsertLocalChannels,
   upsertLocalContacts,
-  upsertLocalMessages,
+  upsertLocalMessages as upsertLocalChatMessages,
 } from './repos/chatRepo';
 import { upsertLocalVaultItems } from './repos/vaultRepo';
 import { upsertLocalVoices } from './repos/voicesRepo';
+import { upsertLocalMessages } from './repos/messagesRepo';
+import { prefetchPhotosFrom } from './prefetchPhotos';
 
 function emit(type, detail) {
   if (typeof window === 'undefined') return;
@@ -50,6 +52,7 @@ function taskProfile(headers) {
     run: async () => {
       const res = await axios.get(`${API_URL}/auth/profile`, headers);
       await upsertLocalProfile(res.data || {});
+      prefetchPhotosFrom(res.data);
     },
   };
 }
@@ -78,7 +81,7 @@ function taskChat(headers) {
       await Promise.all(top.map(async (ch) => {
         try {
           const msgs = await axios.get(`${API_URL}/estate-chat/channels/${ch.id}/messages`, headers);
-          if (msgs?.data) await upsertLocalMessages(ch.id, msgs.data);
+          if (msgs?.data) await upsertLocalChatMessages(ch.id, msgs.data);
         } catch { /* isolated */ }
       }));
     },
@@ -119,7 +122,13 @@ function taskDashboard(estateId, headers) {
       };
       await upsertLocalDashboardTile(estateId, tile);
       if (readiness?.data) await upsertLocalReadiness(estateId, readiness.data);
-      if (bens?.data) await upsertLocalBeneficiaries(estateId, bens.data);
+      if (bens?.data) {
+        await upsertLocalBeneficiaries(estateId, bens.data);
+        // Pre-warm every beneficiary photo into the SW IMAGE_CACHE so
+        // the family tree paints correctly on airplane mode.
+        prefetchPhotosFrom(bens.data);
+      }
+      if (msgs?.data) await upsertLocalMessages(estateId, msgs.data);
       if (docs?.data) await upsertLocalVaultItems(estateId, docs.data);
     },
   };
@@ -173,6 +182,8 @@ export async function warmUpAfterLogin(token) {
 
   // Mirror the estate list itself for the Dashboard switcher.
   try { await upsertLocalEstates(allEstates); } catch {}
+  // Pre-warm estate / owner photos for the tree + dashboard header.
+  prefetchPhotosFrom(allEstates);
 
   const tasks = [
     taskProfile(headers),

@@ -47,6 +47,10 @@ import { API_URL } from '../config';
 import VideoPlaybackModal from '../components/messages/VideoPlaybackModal';
 import MessageCard from '../components/messages/MessageCard';
 import VideoRecordingOverlay from '../components/messages/VideoRecordingOverlay';
+import { getOfflineMode } from '../offline/featureFlag';
+import { getLocalEstates } from '../offline/repos/estatesRepo';
+import { getLocalBeneficiaries, upsertLocalBeneficiaries } from '../offline/repos/beneficiariesRepo';
+import { getLocalMessages, upsertLocalMessages } from '../offline/repos/messagesRepo';
 
 const triggerIcons = {
   immediate: Send,
@@ -186,6 +190,45 @@ const MessagesPage = () => {
   }, [loading, fromGettingStarted, messages.length, estate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
+    // Offline read-through: when the flag is 'on', paint from the local
+    // mirror first so airplane-mode users see their real estate,
+    // beneficiaries, and MM list instead of a spurious "Create your
+    // first milestone" empty state. Mirrors the pattern used by
+    // BeneficiariesPage (Phase 1 read-through).
+    const mode = getOfflineMode();
+    const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+
+    if (mode === 'on') {
+      try {
+        const localEstates = await getLocalEstates();
+        if (localEstates && localEstates.length > 0) {
+          const savedId = localStorage.getItem('selected_estate_id');
+          const selected = (savedId && localEstates.find(e => e.id === savedId)) || localEstates[0];
+          if (selected) {
+            setEstate(selected);
+            const [localMsgs, localBens] = await Promise.all([
+              getLocalMessages(selected.id),
+              getLocalBeneficiaries(selected.id),
+            ]);
+            if (localMsgs.length > 0) setMessages(localMsgs);
+            if (localBens.length > 0) setBeneficiaries(localBens);
+            // Unblock the UI immediately; server refresh runs below when
+            // reachable and reconciles.
+            if (localMsgs.length > 0 || localBens.length > 0 || isOffline) {
+              setLoading(false);
+            }
+          }
+        }
+      } catch (err) { console.warn('[offline] MM local read failed:', err); }
+
+      // Skip the server fetch entirely when we know we're offline —
+      // prevents a doomed axios call and its misleading error toast.
+      if (isOffline) {
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       if (estatesRes.data.length > 0) {
@@ -198,6 +241,12 @@ const MessagesPage = () => {
         ]);
         setMessages(msgsRes.data);
         setBeneficiaries(bensRes.data);
+        // Mirror the canonical server list into IndexedDB for the next
+        // visit. Runs in both 'shadow' and 'on' modes; no-op when 'off'.
+        if (mode !== 'off') {
+          upsertLocalMessages(selected.id, msgsRes.data).catch(() => {});
+          upsertLocalBeneficiaries(selected.id, bensRes.data).catch(() => {});
+        }
       }
     } catch (error) {
       console.error('Fetch error:', error);
