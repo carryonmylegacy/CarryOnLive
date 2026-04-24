@@ -931,7 +931,7 @@ const MessagesPage = () => {
                 <h3 className="text-xl font-semibold text-white mb-2">Leave a Message for Your Loved Ones</h3>
                 <p className="text-[#94a3b8] mb-2">Record a video, voice, or written message — delivered when they need it most.</p>
                 <p className="text-xs text-[#64748b] mb-6">You can edit or re-record anytime. Nothing is permanent until you say so.</p>
-                <Button className="gold-button text-sm sm:text-base px-5 sm:px-8 py-3" onClick={() => { setEditingMessage(null); resetForm(); setShowCreateModal(true); }}>
+                <Button className="gold-button text-sm sm:text-base px-5 sm:px-8 py-3 mx-auto flex" onClick={() => { setEditingMessage(null); resetForm(); setShowCreateModal(true); }}>
                   <Plus className="w-5 h-5 mr-2 flex-shrink-0" />
                   <span>Create Your First Milestone Message</span>
                 </Button>
