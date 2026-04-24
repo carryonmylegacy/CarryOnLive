@@ -44,6 +44,7 @@ import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 import { filterNavByFeatures } from '../../utils/featureGates';
 import { applyUserMenuOrder } from '../../config/menuRegistry';
+import { usePendingSyncCounts } from '../PendingSyncChip';
 import { DOCK_REGISTRY, ADMIN_PORTALS, scopeArr, hasScope } from './navConfig';
 import MobileOtpToggle from './MobileOtpToggle';
 import MobileOfflineToggle from './MobileOfflineToggle';
@@ -69,6 +70,14 @@ const MobileNav = () => {
   // the hamburger menu). Keyed per-role.
   const [menuOrderBenefactor, setMenuOrderBenefactor] = useState([]);
   const [menuOrderBeneficiary, setMenuOrderBeneficiary] = useState([]);
+
+  // Platform-wide queued-write tally so we can paint a subtle amber
+  // dot on the hamburger menu whenever there's anything waiting to
+  // sync (outbox items + chunked uploads + conflicts). Matches the
+  // PendingSyncChip surface without adding a second network indicator.
+  const { outbox: syncOutboxCount, uploads: syncUploadsCount, conflicts: syncConflictsCount } = usePendingSyncCounts();
+  const syncPendingTotal = (syncOutboxCount || 0) + (syncUploadsCount || 0) + (syncConflictsCount || 0);
+  const syncHasConflict = (syncConflictsCount || 0) > 0;
 
   // Fetch estates for portal switching
   React.useEffect(() => {
@@ -707,8 +716,23 @@ const MobileNav = () => {
 
           <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (v) haptics.light(); }}>
             <SheetTrigger asChild>
-              <button className="p-2 text-[var(--t)]" data-testid="mobile-menu-button" aria-label="Open navigation menu">
+              <button className="p-2 text-[var(--t)] relative" data-testid="mobile-menu-button" aria-label={syncPendingTotal > 0 ? `Open navigation menu — ${syncPendingTotal} queued to sync` : 'Open navigation menu'}>
                 <Menu className="w-6 h-6" />
+                {syncPendingTotal > 0 && (
+                  <span
+                    className="absolute top-1 right-1 rounded-full"
+                    style={{
+                      width: 9,
+                      height: 9,
+                      background: syncHasConflict ? '#ef4444' : '#d4af37',
+                      boxShadow: `0 0 0 2px var(--bg, #0B1221), 0 0 8px ${syncHasConflict ? 'rgba(239,68,68,0.6)' : 'rgba(212,175,55,0.55)'}`,
+                      animation: syncHasConflict ? 'pulse 1.4s ease-in-out infinite' : undefined,
+                    }}
+                    data-testid="menu-pending-sync-dot"
+                    data-variant={syncHasConflict ? 'conflict' : 'pending'}
+                    aria-hidden="true"
+                  />
+                )}
               </button>
             </SheetTrigger>
           <SheetContent 

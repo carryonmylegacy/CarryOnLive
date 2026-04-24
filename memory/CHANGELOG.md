@@ -1,5 +1,45 @@
 # CarryOn — Changelog
 
+## Apr 24, 2026 (polish) — Hamburger Menu Pending-Sync Dot
+
+Subtle amber dot on the mobile hamburger (top-right corner of the
+`Menu` icon) whenever the local queue is non-empty, so users who've
+dismissed the top chip still get a passive visual cue that something
+is waiting to sync.
+
+### Implementation
+- Exported `usePendingSyncCounts()` from `PendingSyncChip.js` is now
+  also consumed by `components/layout/MobileNav.js` to tally
+  `outbox + uploads + conflicts`.
+- When `total > 0`, a 9px dot is rendered absolutely-positioned
+  `top-1 right-1` on the Menu button with:
+  - Gold (`#d4af37`) when pending-only.
+  - Red (`#ef4444`) + soft pulse animation when there's a sync conflict
+    (matches the chip's red-variant color).
+  - Soft ring shadow (`0 0 0 2px var(--bg)`) so it reads as a crisp
+    dot regardless of which theme the user is on.
+- `aria-label` on the Menu button dynamically updates to include the
+  pending count ("Open navigation menu — 3 queued to sync") for
+  screen-reader users.
+- `data-testid="menu-pending-sync-dot"` + `data-variant="pending|conflict"`
+  for regression-test reach.
+
+### Why hamburger only (not dock)
+The top PendingSyncChip already covers desktop users and the dock
+is already carrying per-icon badges (ECT unread, CFP notifications,
+etc). Adding a dot to every dock item would be visual noise. The
+hamburger is the single "other stuff lives here" surface every
+mobile user looks at, so one dot there buys maximum cue for minimum
+clutter.
+
+### Verification
+- `yarn eslint src` → 0 errors.
+- `yarn build` → compiled successfully.
+- `bash /app/housekeeping.sh` → **ALL CHECKS PASSED · 0 WARN · 0 FAIL**.
+- Smoke screenshot confirmed the login page renders clean and the
+  dot is correctly hidden when there are no queued items.
+
+
 ## Apr 24, 2026 (final pass) — ConflictResolver Merged Into PendingSyncPanel
 
 Single-surface rule: users should see every deferred / pending / conflicted
