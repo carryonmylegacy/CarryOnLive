@@ -425,7 +425,7 @@ Upgraded the existing push-only service worker into a full App Shell service wor
 
 **Test fix:** three test files (`smoke.spec.js`, `scrollbar.spec.js`) used `waitForLoadState('networkidle')` which never fires when a SW is running background stale-while-revalidate refreshes. Swapped to `'load'` — a more correct and less brittle assertion regardless.
 
-**Live verified:** served `https://ui-polish-72.preview.emergentagent.com/` in Playwright — SW state `activated`, 4 cache buckets populated (shell has index+splash+icons; images has logos+textures; runtime+api populate on usage). Playwright smoke + scrollbar + toggle_state 11/11 passed, housekeeping 65/65 PASS, ESLint clean.
+**Live verified:** served `https://ccp-wizard.preview.emergentagent.com/` in Playwright — SW state `activated`, 4 cache buckets populated (shell has index+splash+icons; images has logos+textures; runtime+api populate on usage). Playwright smoke + scrollbar + toggle_state 11/11 passed, housekeeping 65/65 PASS, ESLint clean.
 
 **Expected user impact:** first load same as before; second load from home-screen icon paints the shell in ~100 ms (vs 1-3 s before); offline: basic navigation and cached tiles still render; logout → login on same device: fresh state guaranteed.
 
