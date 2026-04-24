@@ -1,5 +1,45 @@
 # CarryOn — Changelog
 
+## Apr 24, 2026 (regression fix) — Airplane-Mode Clears Beneficiaries + ECT
+
+Founder reported: toggling airplane mode ON empties the Beneficiaries
+Estate Tree (and the Estate Chat list) to zero. Toggling back OFF only
+restores the UI after manually navigating off-and-back. Repeated ON/OFF
+cycles always clear again.
+
+### Root cause (three bugs stacked)
+
+1. **Raw `fetch()` in ECT bypasses axios interceptor.** `EstateChatPage.fetchContacts`, `fetchMessages`, and `useECTChannelList.fetchChannels` use the platform `fetch` directly, not axios. Axios's global offline-request interceptor (`index.js`) rejects instantly when `navigator.onLine === false`, but raw fetch flows through to the Service Worker. The SW's `staleWhileRevalidate` can replay a cached empty `[]` response as HTTP-200 during the airplane-mode transition → `setMessages([])` / `setContacts([])` wipes state.
+
+2. **Empty-response clobber in `BeneficiariesPage.fetchData`.** The axios path was `setBeneficiaries(bensRes.data)` — no guard. A transient empty response (from SW cache during the offline transition, or a server edge-case) would wipe a populated list.
+
+3. **`getLocal*` repo reads gated on the offline flag.** Users whose flag is `off` or `shadow` had `getLocalBeneficiaries()` return `[]` even when the mirror was populated from a previous session, so the read-through safety net never fired. The flag was meant to gate WRITES, not reads.
+
+### Fixes
+
+- **`BeneficiariesPage.fetchData`** — added a hard airplane-mode short-circuit at the top that paints from the local mirror and returns. Also guarded the success path with `if (data.length > 0 || current.length === 0)` so an empty response can never overwrite a populated list. Added an `online`/`offline` event listener that re-runs fetchData automatically so users no longer need to manually navigate off-and-back after coming online.
+- **`EstateChatPage.fetchContacts` + `fetchMessages`** — same hard airplane-mode short-circuit before the raw fetch, same empty-response clobber guard on the success path, same online/offline auto-refresh.
+- **`useECTChannelList.fetchChannels`** — same pattern.
+- **`offline/repos/*.js`** — removed the `isOfflineEnabled()` gate from every `getLocal*` read function (`beneficiariesRepo`, `chatRepo.getLocalChannels/Contacts/Messages`, `estatesRepo`, `messagesRepo`). The mirror is now a read-safety-net for everyone: flag continues to gate WRITES (so users with flag off still get zero IndexedDB churn), but if mirror data happens to exist — from a prior session with flag on, or from a future flag flip — it is honored on every read.
+
+### Verification
+
+- Playwright repro: login → /beneficiaries → count tree nodes (110) →
+  airplane ON → count again (110, banner visible) → airplane OFF → count
+  (110) → airplane ON again → count (110). Every cycle preserved.
+  Pre-fix: the count dropped to 0 on each airplane ON.
+- `yarn eslint src` → 0 errors.
+- `yarn build` → compiled successfully.
+- `bash /app/housekeeping.sh` → **ALL CHECKS PASSED · 0 WARN · 0 FAIL**.
+
+### Why this also explains the "returns after clicking off and back" symptom
+
+Before the fix, going offline wiped state. Coming back online did nothing automatic — state stayed empty. When the user navigated away and back, the Beneficiaries route re-mounted, fetchData re-ran, axios succeeded (online again), state re-populated. Now:
+
+- The online/offline event listener auto-refetches on reconnect — no manual navigate-off-and-back needed.
+- The empty-response guard and flag-agnostic read ensure the list never goes blank in the first place.
+
+
 ## Apr 24, 2026 (polish) — Hamburger Menu Pending-Sync Dot
 
 Subtle amber dot on the mobile hamburger (top-right corner of the

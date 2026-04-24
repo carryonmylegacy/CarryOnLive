@@ -39,24 +39,38 @@ export default function useECTChannelList({ token, navigate, user }) {
 
   // ── API calls ─────────────────────────────────────────────────────────────
   const fetchChannels = useCallback(async () => {
+    // Hard airplane-mode short-circuit — must precede the raw `fetch()`
+    // below because it isn't intercepted by the axios offline guard.
+    // Without this, the SW can replay a stale/empty cached response
+    // as "ok:200" and `setChannels(data)` wipes the visible chat list.
+    // Apr 24, 2026 regression fix.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      try {
+        const local = await getLocalChannels();
+        if (local.length > 0) setChannels(local);
+      } catch { /* non-fatal */ }
+      return;
+    }
     const mode = getOfflineMode();
     // Offline-first paint: seed from local mirror so the channel list
-    // appears instantly. When fully offline we short-circuit and trust
-    // the local list until reconnection.
+    // appears instantly.
     if (mode === 'on') {
       try {
         const local = await getLocalChannels();
         if (local.length > 0) setChannels(local);
       } catch { /* non-fatal */ }
-      if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
     }
     try {
       const res = await fetch(`${API_URL}/estate-chat/channels`, { headers });
       if (res.ok) {
         const data = await res.json();
-        setChannels(data);
-        if (mode !== 'off') {
-          upsertLocalChannels(data).catch(() => {});
+        // Never overwrite a populated list with an empty response
+        // (airplane-mode SW race).
+        if (Array.isArray(data) && (data.length > 0 || channels.length === 0)) {
+          setChannels(data);
+          if (mode !== 'off') {
+            upsertLocalChannels(data).catch(() => {});
+          }
         }
       } else {
         console.error('fetchChannels failed:', res.status);

@@ -255,35 +255,57 @@ export default function EstateChatPage() {
 
   // ── Data fetching ─────────────────────────────────────────────────────────
   const fetchContacts = useCallback(async () => {
+    // Hard airplane-mode short-circuit — must precede every raw `fetch()`
+    // call because (unlike axios) raw fetch is NOT intercepted by the
+    // global offline guard in index.js. Without this, the SW would
+    // happily serve a stale/empty `/estate-chat/contacts` response and
+    // `setContacts(data)` would wipe the visible chat list. See Apr 24,
+    // 2026 airplane-mode regression.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      try {
+        const local = await getLocalContacts();
+        if (local.length > 0) setContacts(local);
+      } catch { /* non-fatal */ }
+      return;
+    }
     const mode = getOfflineMode();
     if (mode === 'on') {
       try {
         const local = await getLocalContacts();
         if (local.length > 0) setContacts(local);
       } catch { /* non-fatal */ }
-      if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
     }
     try {
       const res = await fetch(`${API_URL}/estate-chat/contacts`, { headers });
       if (res.ok) {
         const data = await res.json();
-        setContacts(data);
-        if (mode !== 'off') upsertLocalContacts(data).catch(() => {});
+        // Guard against the SW replaying an empty cached response as
+        // "ok:200" while the device is actually transitioning offline.
+        if (Array.isArray(data) && (data.length > 0 || contacts.length === 0)) {
+          setContacts(data);
+          if (mode !== 'off') upsertLocalContacts(data).catch(() => {});
+        }
       }
     } catch {} // eslint-disable-line no-empty
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchMessages = useCallback(async (channelId) => {
+    // Hard airplane-mode short-circuit — see fetchContacts.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      try {
+        const local = await getLocalMessages(channelId);
+        if (local.length > 0) setMessages(local);
+      } catch { /* non-fatal */ }
+      return;
+    }
     const mode = getOfflineMode();
     // Offline-first paint: seed the transcript from the local mirror
     // IMMEDIATELY so the user sees history without waiting on the network.
-    // When fully offline we short-circuit past the server fetch.
     if (mode === 'on') {
       try {
         const local = await getLocalMessages(channelId);
         if (local.length > 0) setMessages(local);
       } catch { /* non-fatal */ }
-      if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
     }
     try {
       const [msgRes, readRes, pinRes] = await Promise.all([
@@ -293,19 +315,23 @@ export default function EstateChatPage() {
       ]);
       if (msgRes.ok) {
         const data = await msgRes.json();
-        setMessages(data);
-        if (mode !== 'off') upsertLocalMessages(channelId, data).catch(() => {});
-        // Prefetch ONLY the most recent 10 image/file attachments rather
-        // than the entire scroll-back. A long conversation can contain
-        // hundreds of attachments the user will never scroll to; the
-        // IntersectionObserver in AuthImage will fetch the rest on demand.
-        const recentFileIds = [];
-        const recent = data.slice(-40); // last ~40 messages covers the first screenful on most devices
-        recent.forEach(m => {
-          if (m.attachment?.file_id) recentFileIds.push(m.attachment.file_id);
-          if (m.attachments) m.attachments.forEach(a => { if (a.file_id) recentFileIds.push(a.file_id); });
-        });
-        if (recentFileIds.length) prefetchMedia(recentFileIds.slice(-10));
+        // Never replace populated state with an empty list — that's the
+        // SW-returns-empty-cache race on airplane-mode toggle.
+        if (Array.isArray(data) && (data.length > 0 || messages.length === 0)) {
+          setMessages(data);
+          if (mode !== 'off') upsertLocalMessages(channelId, data).catch(() => {});
+          // Prefetch ONLY the most recent 10 image/file attachments rather
+          // than the entire scroll-back. A long conversation can contain
+          // hundreds of attachments the user will never scroll to; the
+          // IntersectionObserver in AuthImage will fetch the rest on demand.
+          const recentFileIds = [];
+          const recent = data.slice(-40); // last ~40 messages covers the first screenful on most devices
+          recent.forEach(m => {
+            if (m.attachment?.file_id) recentFileIds.push(m.attachment.file_id);
+            if (m.attachments) m.attachments.forEach(a => { if (a.file_id) recentFileIds.push(a.file_id); });
+          });
+          if (recentFileIds.length) prefetchMedia(recentFileIds.slice(-10));
+        }
       }
       if (readRes.ok) setReadStatus(await readRes.json());
       if (pinRes.ok) setPinnedMsgs(await pinRes.json());
@@ -378,6 +404,24 @@ export default function EstateChatPage() {
       await Promise.all([fetchChannels(), fetchContacts()]);
       setLoading(false);
     })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-refresh on reconnect + re-paint from local on disconnect so the
+  // chat list + active transcript survive airplane-mode toggling instead
+  // of going blank. Apr 24, 2026 regression fix.
+  useEffect(() => {
+    const refetch = () => {
+      fetchChannels();
+      fetchContacts();
+      const ch = activeChannelRef.current;
+      if (ch?.id) fetchMessages(ch.id);
+    };
+    window.addEventListener('online', refetch);
+    window.addEventListener('offline', refetch);
+    return () => {
+      window.removeEventListener('online', refetch);
+      window.removeEventListener('offline', refetch);
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Visibility gate: keep the messages wrapper opacity 0 until we've

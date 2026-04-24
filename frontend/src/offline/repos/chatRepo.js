@@ -33,7 +33,6 @@ const MSG_PLAIN_FIELDS = ['id', 'channel_id', 'created_at', 'sender_id', 'messag
 // ── Channels ────────────────────────────────────────────────────────────────
 
 export async function getLocalChannels() {
-  if (!isOfflineEnabled()) return [];
   try {
     const rows = await getDB().chatChannel.toArray();
     return rows.map(({ _updatedAt, ...rest }) => rest);
@@ -62,7 +61,6 @@ export async function upsertLocalChannels(list) {
 // ── Contacts ────────────────────────────────────────────────────────────────
 
 export async function getLocalContacts() {
-  if (!isOfflineEnabled()) return [];
   try {
     const rows = await getDB().chatContact.toArray();
     return rows.map(({ _updatedAt, ...rest }) => rest);
@@ -101,9 +99,10 @@ export async function upsertLocalContacts(list) {
 
 // ── Messages ────────────────────────────────────────────────────────────────
 
-/** Read the cached messages for a channel, ordered by created_at ascending. */
+/** Read the cached messages for a channel, ordered by created_at ascending.
+ *  Flag-agnostic read — see getLocalBeneficiaries rationale. */
 export async function getLocalMessages(channelId) {
-  if (!isOfflineEnabled() || !channelId) return [];
+  if (!channelId) return [];
   try {
     const db = getDB();
     const rows = await db.chatMessage

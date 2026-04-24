@@ -15,9 +15,11 @@
 import { getDB } from '../db';
 import { isOfflineEnabled } from '../featureFlag';
 
-/** Read all locally-cached estates (owned + beneficiary). */
+/** Read all locally-cached estates (owned + beneficiary). Read path is
+ *  flag-agnostic so a user who flips the flag off (or joined before it
+ *  was on) still benefits from any mirror data that happens to exist.
+ *  See Apr 24, 2026 airplane-mode regression. */
 export async function getLocalEstates() {
-  if (!isOfflineEnabled()) return [];
   try {
     const rows = await getDB().estate.toArray();
     return rows.map(({ _updatedAt, ...rest }) => rest);

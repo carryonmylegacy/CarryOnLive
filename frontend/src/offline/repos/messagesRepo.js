@@ -12,9 +12,11 @@
 import { getDB } from '../db';
 import { isOfflineEnabled } from '../featureFlag';
 
-/** Returns all locally-cached MM rows for an estate, ordered by created_at desc. */
+/** Returns all locally-cached MM rows for an estate, ordered by created_at desc.
+ *  Flag-agnostic read — the mirror is a safety net even for users who have
+ *  the offline flag off. See Apr 24, 2026 airplane-mode regression. */
 export async function getLocalMessages(estateId) {
-  if (!isOfflineEnabled() || !estateId) return [];
+  if (!estateId) return [];
   try {
     const db = getDB();
     const rows = await db.milestoneMessage

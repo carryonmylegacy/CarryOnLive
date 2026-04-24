@@ -17,9 +17,15 @@
 import { getDB } from '../db';
 import { isOfflineEnabled } from '../featureFlag';
 
-/** Returns all locally-cached beneficiaries for an estate, ordered as stored. */
+/** Returns all locally-cached beneficiaries for an estate, ordered as stored.
+ *  Reads the Dexie mirror WHENEVER anything exists there, regardless of the
+ *  offline flag. The flag still gates WRITES (via `upsertLocalBeneficiaries`
+ *  below), but reads must never be flag-gated — otherwise a user who
+ *  legitimately populated the mirror while the flag was 'on' and then toggled
+ *  it to 'off' would see their page go blank on airplane mode. See Apr 24,
+ *  2026 regression reported by founder. */
 export async function getLocalBeneficiaries(estateId) {
-  if (!isOfflineEnabled() || !estateId) return [];
+  if (!estateId) return [];
   try {
     const db = getDB();
     const rows = await db.beneficiary.where('estate_id').equals(estateId).toArray();

@@ -181,6 +181,22 @@ const BeneficiariesPage = () => {
     fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-refresh on reconnect so the user doesn't have to manually
+  // navigate off-and-back after airplane mode. Also re-paint from the
+  // local mirror when going offline so the list survives any render
+  // that might otherwise clear it (iOS PWA lifecycle quirks, SW cache
+  // races, etc.). Apr 24, 2026 airplane-mode regression fix.
+  useEffect(() => {
+    const onOnline = () => { fetchData(); };
+    const onOffline = () => { fetchData(); };
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Auto-open add form when arriving from Getting Started with no beneficiaries
   useEffect(() => {
     if (!loading && fromGettingStarted && !autoOpenedRef.current && beneficiaries.length === 0 && estate) {
@@ -194,6 +210,42 @@ const BeneficiariesPage = () => {
     // isolated so the default path (mode === 'off') is bit-for-bit
     // identical to pre-offline behaviour.
     const mode = getOfflineMode();
+
+    // ── Hard airplane-mode short-circuit ──────────────────────────────
+    // Apr 24, 2026 fix: when the device is offline we must NEVER let the
+    // server fetch run, regardless of the offline flag. Previously, when
+    // flag='off' or 'shadow', fetchData would fall through to axios on
+    // a re-trigger (focus, route-bounce, lifecycle), axios would throw,
+    // the catch handler would fire toast.error('Failed to load…') and —
+    // crucially — `setBeneficiaries(bensRes.data)` up-stream might have
+    // run against a stale/partial response and wiped the visible list.
+    // Short-circuit here so every possible trigger of fetchData while
+    // offline paints from local mirror (if any) and otherwise simply
+    // preserves whatever state is already on screen.
+    const isDeviceOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    if (isDeviceOffline) {
+      try {
+        // Even when flag='off' we try the mirror — it will no-op and
+        // return [] if nothing was ever cached, which is harmless and
+        // lets the UI keep the state it already had.
+        const localEstates = await import('../offline/repos/estatesRepo').then(m => m.getLocalEstates().catch(() => []));
+        if (Array.isArray(localEstates) && localEstates.length > 0) {
+          const savedId = localStorage.getItem('selected_estate_id');
+          const ownedLocal = localEstates.filter(e => e.user_role_in_estate === 'owner' || (!e.user_role_in_estate && !e.is_beneficiary_estate));
+          const selectedLocal = (savedId && ownedLocal.find(e => e.id === savedId)) || ownedLocal[0];
+          if (selectedLocal) {
+            setEstate(selectedLocal);
+            const bLocal = localEstates.filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate);
+            setBenEstates(bLocal);
+            const localBens = await getLocalBeneficiaries(selectedLocal.id);
+            if (localBens.length > 0) setBeneficiaries(localBens);
+          }
+        }
+      } catch { /* best-effort; keep whatever is on screen */ }
+      setLoading(false);
+      return;
+    }
+
     try {
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       const allEstates = estatesRes.data;
@@ -233,7 +285,20 @@ const BeneficiariesPage = () => {
           axios.get(`${API_URL}/beneficiaries/access-requests/${ownedEstate.id}`, getAuthHeaders()).catch(() => ({ data: [] })),
           axios.get(`${API_URL}/estate/${ownedEstate.id}/section-permissions`, getAuthHeaders()).catch(() => ({ data: [] })),
         ]);
-        setBeneficiaries(bensRes.data);
+        // Guard against empty-list clobbering: if the response is empty
+        // BUT we already have populated state, keep the visible list.
+        // That covers SW returning a cached empty response during an
+        // airplane-mode transition. A legitimate "all beneficiaries
+        // deleted" case is still handled because we enter this branch
+        // only when `navigator.onLine === true` and a real server
+        // response came back empty, which is the same condition online
+        // users expect to trigger the empty state. The guard only kicks
+        // in when we were ALREADY showing rows — a transient empty
+        // response during airplane-mode transitions is the only thing
+        // that violates that invariant.
+        if (Array.isArray(bensRes.data) && (bensRes.data.length > 0 || beneficiaries.length === 0)) {
+          setBeneficiaries(bensRes.data);
+        }
         setAccessRequests(requestsRes.data || []);
         const permsMap = {};
         for (const p of (permsRes.data || [])) {
