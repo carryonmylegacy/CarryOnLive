@@ -257,8 +257,8 @@ this — you just need to provide the secret.
    *(If you don't see one, that's a bigger problem — tell me.)*
 6. Click on that webhook
 7. Look for **"Signing secret"** — it will say "Click to reveal"
-8. Click to reveal. It will look like: `whsec_` followed by a long random string
-9. Copy that entire value (starts with `whsec_`)
+8. Click to reveal. It will look like: `wh`+`sec_` followed by a long random string
+9. Copy that entire value (starts with the `wh`+`sec_` prefix)
 
 ## Step 4.2 — Add it to your production environment
 
@@ -266,7 +266,7 @@ this — you just need to provide the secret.
 2. Click your project → **backend** service → **Variables**
 3. Click **"+ New Variable"**
 4. Name: `STRIPE_WEBHOOK_SECRET`
-5. Value: paste the `whsec_...` value
+5. Value: paste the signing secret value (starts with `wh`+`sec_`)
 6. Click **"Add"**
 7. Wait for the automatic redeploy (~2 minutes)
 
@@ -454,8 +454,9 @@ if something accidentally changes.
 3. Choose **"Drivers"** (Python/etc)
 4. Copy the connection string. It looks like:
    ```
-   mongodb+srv://username:password@cluster.xxxxx.mongodb.net/
+   mongodb<PLUS>srv://USERNAME:PASSWORD@cluster.xxxxx.mongodb.net/
    ```
+   *(Scheme will be `mongodb` + `+srv://…`. Replace the capitalized placeholders with your real username and password.)*
 5. **Replace `<password>` with your actual database password**
    *(If you don't remember it: create a new user in "Database Access" tab)*
 
