@@ -1,15 +1,18 @@
 /**
  * CarryOn — Photo Pre-cache Helper
  * ============================================================================
- * Fire-and-forget background fetches that warm the Service Worker's
+ * Fire-and-forget image preloads that warm the Service Worker's
  * IMAGE_CACHE with cross-origin photo URLs (S3 presigned links) so
  * profile / beneficiary / estate avatars survive an airplane-mode
- * session. Safe to call from anywhere — only runs when the browser
- * is actually online. Flag-agnostic as of Apr 24, 2026: we always
- * warm the cache because `no-cors` + `cache:'default'` is cheap and
- * the payoff (avatars instead of "?" placeholders on airplane mode)
- * applies to EVERY user, not just those who explicitly enabled
- * offline mode.
+ * session.
+ *
+ * Implementation note (Apr 24, 2026): we use `new Image()` rather than
+ * `fetch()` because the SW's cross-origin image detector keys off
+ * `request.destination === 'image'`. `fetch()` calls have
+ * `destination === ''` and silently bypass the cache-first handler —
+ * which meant every "warmup" the app kicked off was actually a no-op
+ * that never populated the IMAGE_CACHE. Loading via `new Image()`
+ * triggers the real browser image path, guaranteeing SW interception.
  *
  * Pairs with sw-push.js `cacheFirst(IMAGE_CACHE)` which is specifically
  * written to cache opaque cross-origin responses.
@@ -24,13 +27,22 @@ const PHOTO_FIELDS = [
   'picture_url',
 ];
 
-/** One background fetch, every error swallowed. */
+/** One background preload, every error swallowed. */
 export function prefetchPhoto(url) {
   if (!url || typeof url !== 'string') return;
   if (!/^https?:\/\//i.test(url)) return;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+  if (typeof Image === 'undefined') return;
   try {
-    fetch(url, { mode: 'no-cors', credentials: 'omit', cache: 'default' }).catch(() => {});
+    const img = new Image();
+    // `decoding=async` + `loading=eager` keeps this off the main thread
+    // while still triggering a real image fetch the SW will intercept.
+    img.decoding = 'async';
+    img.loading = 'eager';
+    // No onload/onerror — the byproduct we want is the cached response
+    // in IMAGE_CACHE, not a DOM element. The Image object is discarded
+    // by GC once the load completes (or errors).
+    img.src = url;
   } catch { /* no-op */ }
 }
 
