@@ -1,5 +1,37 @@
 # CarryOn — Changelog
 
+## Apr 24, 2026 (the real fix) — Flag-Agnostic Mirror for iOS PWA Re-Mount
+
+Previous 2 passes were insufficient. User confirmed on iOS installed PWA: airplane mode on → beneficiaries empty-state CTA visible → red offline banner visible → toggle off → content returns after manual navigate-off-and-back. Same for ECT and all other areas.
+
+### True root cause
+
+iOS installed PWAs **hard re-mount the page on airplane-mode toggle** (not a bfcache restore). The SW's `networkFirstNavigation` handler serves the cached app shell, the app boots fresh, `useState([])` fires, and fetchData runs against an airplane-mode network. Because every `getLocal*` read AND every `upsertLocal*` write was gated on `isOfflineEnabled()`, flag-off users had a completely empty Dexie mirror — the airplane-mode short-circuit had nothing to rehydrate from.
+
+### Fix — mirror is now flag-agnostic
+
+- **Every `getLocal*` repo function** (beneficiariesRepo, chatRepo, estatesRepo, messagesRepo, dashboardRepo, profileRepo, subscriptionRepo, vaultRepo, voicesRepo) now reads from Dexie regardless of flag state.
+- **Every `upsertLocal*` repo function** now writes to Dexie regardless of flag state.
+- **Every call-site** in `BeneficiariesPage`, `EstateChatPage`, `MessagesPage`, `DashboardPage`, `VaultPage`, `VoicesPage`, `useECTChannelList` that previously wrapped `upsertLocal...()` in `if (mode !== 'off')` now calls it unconditionally.
+- **`BeneficiariesPage.fetchData`** now also mirrors the estates list (via `upsertLocalEstates`) on every successful server fetch, so the airplane-mode short-circuit can rehydrate the `estate` + `benEstates` state even on a hard re-mount.
+
+The offline flag in the sidebar toggle is now purely about the **write-through outbox behavior** — whether offline edits get queued and synced — not about whether the local cache exists. The cache exists for everyone.
+
+### Playwright verification
+
+Logged in → /beneficiaries (online) → mirror count confirmed: **96 beneficiaries + 100 estates**. Flipped offline → navigated away (/dashboard) → back to /beneficiaries. Result: 110 tree nodes rendered, `96 configured` header, red "You're offline" banner visible, empty-state CTA NOT visible. On real iOS this same path triggers on every airplane toggle (via SW shell re-serve + React re-mount).
+
+### Housekeeping
+
+- `yarn eslint src` → 0 errors.
+- `yarn build` → compiled successfully.
+- `bash /app/housekeeping.sh` → **ALL CHECKS PASSED · 0 WARN · 0 FAIL**.
+
+### Migration note for users
+
+Existing iOS PWA users will need to **open the app once online after deploying this fix** so their mirror gets populated. After that, every airplane-mode toggle will survive. No action required on their end beyond the one online visit.
+
+
 ## Apr 24, 2026 (audit sweep) — Offline Anti-Pattern Cleanup Across All Data Pages
 
 Following the BeneficiariesPage / ECT regression fix, did a full sweep of

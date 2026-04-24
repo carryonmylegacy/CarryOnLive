@@ -68,9 +68,7 @@ export default function useECTChannelList({ token, navigate, user }) {
         // (airplane-mode SW race).
         if (Array.isArray(data) && (data.length > 0 || channels.length === 0)) {
           setChannels(data);
-          if (mode !== 'off') {
-            upsertLocalChannels(data).catch(() => {});
-          }
+          upsertLocalChannels(data).catch(() => {});
         }
       } else {
         console.error('fetchChannels failed:', res.status);

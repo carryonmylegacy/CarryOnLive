@@ -13,7 +13,6 @@
  */
 
 import { getDB } from '../db';
-import { isOfflineEnabled } from '../featureFlag';
 
 /** Read all locally-cached estates (owned + beneficiary). Read path is
  *  flag-agnostic so a user who flips the flag off (or joined before it
@@ -31,7 +30,7 @@ export async function getLocalEstates() {
 
 /** Replace the local estate list with the server's canonical list. */
 export async function upsertLocalEstates(list) {
-  if (!isOfflineEnabled() || !Array.isArray(list)) return;
+  if (!Array.isArray(list)) return;
   try {
     const db = getDB();
     const now = Date.now();
@@ -48,7 +47,7 @@ export async function upsertLocalEstates(list) {
 
 /** Optimistic local patch to a single estate (e.g. rename). */
 export async function updateLocalEstate(id, patch) {
-  if (!isOfflineEnabled() || !id) return null;
+  if (!id) return null;
   try {
     const db = getDB();
     const existing = await db.estate.get(id);

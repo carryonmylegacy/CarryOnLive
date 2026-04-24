@@ -21,7 +21,6 @@
  */
 
 import { getDB } from '../db';
-import { isOfflineEnabled } from '../featureFlag';
 import { sealRecord, unsealRecord } from '../crypto';
 
 // Indexed / queryable fields on the `chatMessage` store stay plaintext so
@@ -43,7 +42,7 @@ export async function getLocalChannels() {
 }
 
 export async function upsertLocalChannels(list) {
-  if (!isOfflineEnabled() || !Array.isArray(list)) return;
+  if (!Array.isArray(list)) return;
   try {
     const db = getDB();
     const now = Date.now();
@@ -71,7 +70,7 @@ export async function getLocalContacts() {
 }
 
 export async function upsertLocalContacts(list) {
-  if (!isOfflineEnabled() || !Array.isArray(list)) return;
+  if (!Array.isArray(list)) return;
   try {
     const db = getDB();
     const now = Date.now();
@@ -130,7 +129,7 @@ export async function getLocalMessages(channelId) {
  * disappear mid-sync.
  */
 export async function upsertLocalMessages(channelId, list) {
-  if (!isOfflineEnabled() || !channelId || !Array.isArray(list)) return;
+  if (!channelId || !Array.isArray(list)) return;
   try {
     const db = getDB();
     const now = Date.now();
@@ -164,7 +163,7 @@ export async function upsertLocalMessages(channelId, list) {
  * use `generateTempMessageId()` for the id.
  */
 export async function insertLocalMessage(channelId, msg) {
-  if (!isOfflineEnabled() || !channelId || !msg?.id) return;
+  if (!channelId || !msg?.id) return;
   try {
     const sealed = await sealRecord({
       ...msg,
@@ -183,7 +182,7 @@ export async function insertLocalMessage(channelId, msg) {
  * canonical message so the UI now sees a real id (for reactions, edits, etc.).
  */
 export async function replaceLocalMessageId(tempId, serverMsg) {
-  if (!isOfflineEnabled() || !tempId || !serverMsg?.id) return;
+  if (!tempId || !serverMsg?.id) return;
   try {
     const db = getDB();
     await db.transaction('rw', db.chatMessage, async () => {

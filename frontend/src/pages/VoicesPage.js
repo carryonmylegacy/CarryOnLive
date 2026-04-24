@@ -42,7 +42,7 @@ export default function VoicesPage() {
         const res = await axios.get(`${API_URL}/share-cards/voices/public`);
         const list = res.data?.items || [];
         if (!cancelled) setItems(list);
-        if (mode !== 'off') upsertLocalVoices(list).catch(() => {});
+        upsertLocalVoices(list).catch(() => {});
       } catch {
         /* graceful — show empty state */
       } finally {

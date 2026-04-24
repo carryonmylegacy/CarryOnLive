@@ -283,7 +283,7 @@ export default function EstateChatPage() {
         // "ok:200" while the device is actually transitioning offline.
         if (Array.isArray(data) && (data.length > 0 || contacts.length === 0)) {
           setContacts(data);
-          if (mode !== 'off') upsertLocalContacts(data).catch(() => {});
+          upsertLocalContacts(data).catch(() => {});
         }
       }
     } catch {} // eslint-disable-line no-empty
@@ -319,7 +319,7 @@ export default function EstateChatPage() {
         // SW-returns-empty-cache race on airplane-mode toggle.
         if (Array.isArray(data) && (data.length > 0 || messages.length === 0)) {
           setMessages(data);
-          if (mode !== 'off') upsertLocalMessages(channelId, data).catch(() => {});
+          upsertLocalMessages(channelId, data).catch(() => {});
           // Prefetch ONLY the most recent 10 image/file attachments rather
           // than the entire scroll-back. A long conversation can contain
           // hundreds of attachments the user will never scroll to; the

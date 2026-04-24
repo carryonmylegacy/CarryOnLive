@@ -18,11 +18,10 @@
  */
 
 import { getDB } from '../db';
-import { isOfflineEnabled } from '../featureFlag';
 
 /** Read the cached document list for an estate, in the order stored. */
 export async function getLocalVaultItems(estateId) {
-  if (!isOfflineEnabled() || !estateId) return [];
+  if (!estateId) return [];
   try {
     const rows = await getDB().vaultItem.where('estate_id').equals(estateId).toArray();
     return rows.map(({ _updatedAt, ...rest }) => rest);
@@ -34,7 +33,7 @@ export async function getLocalVaultItems(estateId) {
 
 /** Replace the cached list for this estate with the server's canonical list. */
 export async function upsertLocalVaultItems(estateId, list) {
-  if (!isOfflineEnabled() || !estateId || !Array.isArray(list)) return;
+  if (!estateId || !Array.isArray(list)) return;
   try {
     const db = getDB();
     const now = Date.now();

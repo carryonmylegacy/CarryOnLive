@@ -252,7 +252,7 @@ const VaultPage = () => {
         // list with an empty response from a transient airplane-mode
         // transition or a stale SW cache replay.
         if (docs.length > 0 || documents.length === 0) setDocuments(docs);
-        if (mode !== 'off') upsertLocalVaultItems(selected.id, docs).catch(() => {});
+        upsertLocalVaultItems(selected.id, docs).catch(() => {});
         // Fetch beneficiaries for SDV designation
         try {
           const benRes = await axios.get(`${API_URL}/beneficiaries/${selected.id}`, getAuthHeaders());

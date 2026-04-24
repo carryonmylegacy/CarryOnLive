@@ -13,14 +13,12 @@
  */
 
 import { getDB } from '../db';
-import { isOfflineEnabled } from '../featureFlag';
 
 const KEY = 'current';
 
 /** Read the cached subscription status snapshot, or null. */
 export async function getLocalSubscription() {
-  if (!isOfflineEnabled()) return null;
-  try {
+    try {
     const row = await getDB().subscription.get(KEY);
     if (!row) return null;
     return row.data || null;
@@ -32,7 +30,7 @@ export async function getLocalSubscription() {
 
 /** Upsert the server-canonical subscription payload. */
 export async function upsertLocalSubscription(data) {
-  if (!isOfflineEnabled() || !data) return;
+  if (!data) return;
   try {
     await getDB().subscription.put({
       id: KEY,

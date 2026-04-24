@@ -12,12 +12,10 @@
  */
 
 import { getDB } from '../db';
-import { isOfflineEnabled } from '../featureFlag';
 
 /** All cached public voices, ordered as stored. */
 export async function getLocalVoices() {
-  if (!isOfflineEnabled()) return [];
-  try {
+    try {
     const rows = await getDB().voicesQuote.toArray();
     return rows.map(({ _updatedAt, ...rest }) => rest);
   } catch (err) {
@@ -28,7 +26,7 @@ export async function getLocalVoices() {
 
 /** Replace the cached list with the server's canonical list. */
 export async function upsertLocalVoices(list) {
-  if (!isOfflineEnabled() || !Array.isArray(list)) return;
+  if (!Array.isArray(list)) return;
   try {
     const db = getDB();
     const now = Date.now();

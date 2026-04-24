@@ -15,7 +15,6 @@
  */
 
 import { getDB } from '../db';
-import { isOfflineEnabled } from '../featureFlag';
 
 /** Returns all locally-cached beneficiaries for an estate, ordered as stored.
  *  Reads the Dexie mirror WHENEVER anything exists there, regardless of the
@@ -42,9 +41,17 @@ export async function getLocalBeneficiaries(estateId) {
  * Replace the locally-cached list of beneficiaries for this estate with the
  * server's canonical list. Uses a transaction so we never show a half-empty
  * local cache mid-write.
+ *
+ * Apr 24, 2026 — Removed the `isOfflineEnabled()` gate so the mirror is
+ * ALWAYS populated on successful server fetches. This is critical on iOS
+ * installed PWAs where airplane-mode toggling can trigger a hard re-mount
+ * (not a bfcache restore), wiping React state to the initial `useState([])`.
+ * With the mirror always populated, the airplane-mode short-circuit in
+ * fetchData rehydrates correctly from local instead of rendering the empty
+ * "Add your first beneficiary" CTA.
  */
 export async function upsertLocalBeneficiaries(estateId, list) {
-  if (!isOfflineEnabled() || !estateId || !Array.isArray(list)) return;
+  if (!estateId || !Array.isArray(list)) return;
   try {
     const db = getDB();
     const now = Date.now();
@@ -73,7 +80,7 @@ export async function countLocalBeneficiaries() {
  * PUT so the UI reacts instantly.
  */
 export async function updateLocalBeneficiary(id, patch) {
-  if (!isOfflineEnabled() || !id) return null;
+  if (!id) return null;
   try {
     const db = getDB();
     const existing = await db.beneficiary.get(id);
@@ -89,7 +96,7 @@ export async function updateLocalBeneficiary(id, patch) {
 
 /** Remove a beneficiary from the local mirror. */
 export async function deleteLocalBeneficiary(id) {
-  if (!isOfflineEnabled() || !id) return;
+  if (!id) return;
   try { await getDB().beneficiary.delete(id); }
   catch (err) { console.warn('[offline] deleteLocalBeneficiary failed:', err); }
 }
@@ -101,7 +108,7 @@ export async function deleteLocalBeneficiary(id) {
  * `_local_pending: true` so the UI can show a "syncing" badge if desired.
  */
 export async function insertLocalBeneficiary(beneficiary) {
-  if (!isOfflineEnabled() || !beneficiary?.id) return;
+  if (!beneficiary?.id) return;
   try {
     const db = getDB();
     await db.beneficiary.put({
@@ -119,7 +126,7 @@ export async function insertLocalBeneficiary(beneficiary) {
  * valid server id.
  */
 export async function replaceLocalBeneficiaryId(tempId, serverRow) {
-  if (!isOfflineEnabled() || !tempId || !serverRow?.id) return;
+  if (!tempId || !serverRow?.id) return;
   try {
     const db = getDB();
     await db.transaction('rw', db.beneficiary, async () => {

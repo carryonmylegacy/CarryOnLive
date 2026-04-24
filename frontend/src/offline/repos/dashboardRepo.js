@@ -24,11 +24,10 @@
  */
 
 import { getDB } from '../db';
-import { isOfflineEnabled } from '../featureFlag';
 
 /** Read the cached dashboard tile for an estate, or null if missing. */
 export async function getLocalDashboardTile(estateId) {
-  if (!isOfflineEnabled() || !estateId) return null;
+  if (!estateId) return null;
   try {
     const row = await getDB().dashboardTile.get(estateId);
     if (!row) return null;
@@ -42,7 +41,7 @@ export async function getLocalDashboardTile(estateId) {
 
 /** Upsert the full dashboard tile snapshot for an estate. */
 export async function upsertLocalDashboardTile(estateId, tile) {
-  if (!isOfflineEnabled() || !estateId || !tile) return;
+  if (!estateId || !tile) return;
   try {
     const db = getDB();
     const row = {
@@ -63,7 +62,7 @@ export async function upsertLocalDashboardTile(estateId, tile) {
 
 /** Read the cached readiness score for an estate, or null. */
 export async function getLocalReadiness(estateId) {
-  if (!isOfflineEnabled() || !estateId) return null;
+  if (!estateId) return null;
   try {
     const row = await getDB().readinessScore.get(estateId);
     if (!row) return null;
@@ -77,7 +76,7 @@ export async function getLocalReadiness(estateId) {
 
 /** Upsert the readiness score for an estate. `data` is the full API payload. */
 export async function upsertLocalReadiness(estateId, data) {
-  if (!isOfflineEnabled() || !estateId || !data) return;
+  if (!estateId || !data) return;
   try {
     const db = getDB();
     await db.readinessScore.put({

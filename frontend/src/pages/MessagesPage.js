@@ -241,12 +241,11 @@ const MessagesPage = () => {
         ]);
         setMessages(msgsRes.data);
         setBeneficiaries(bensRes.data);
-        // Mirror the canonical server list into IndexedDB for the next
-        // visit. Runs in both 'shadow' and 'on' modes; no-op when 'off'.
-        if (mode !== 'off') {
-          upsertLocalMessages(selected.id, msgsRes.data).catch(() => {});
-          upsertLocalBeneficiaries(selected.id, bensRes.data).catch(() => {});
-        }
+        // Always mirror the canonical server list into IndexedDB so the
+        // airplane-mode short-circuit (above) has data to rehydrate from
+        // even on iOS installed PWAs that hard-remount on airplane toggle.
+        upsertLocalMessages(selected.id, msgsRes.data).catch(() => {});
+        upsertLocalBeneficiaries(selected.id, bensRes.data).catch(() => {});
       }
     } catch (error) {
       console.error('Fetch error:', error);

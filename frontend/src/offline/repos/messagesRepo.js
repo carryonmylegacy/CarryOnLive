@@ -10,7 +10,6 @@
  */
 
 import { getDB } from '../db';
-import { isOfflineEnabled } from '../featureFlag';
 
 /** Returns all locally-cached MM rows for an estate, ordered by created_at desc.
  *  Flag-agnostic read — the mirror is a safety net even for users who have
@@ -44,7 +43,7 @@ export async function getLocalMessages(estateId) {
  * mid-write.
  */
 export async function upsertLocalMessages(estateId, list) {
-  if (!isOfflineEnabled() || !estateId || !Array.isArray(list)) return;
+  if (!estateId || !Array.isArray(list)) return;
   try {
     const db = getDB();
     const now = Date.now();

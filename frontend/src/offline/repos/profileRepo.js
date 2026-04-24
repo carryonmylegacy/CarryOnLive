@@ -16,7 +16,6 @@
  */
 
 import { getDB } from '../db';
-import { isOfflineEnabled } from '../featureFlag';
 import { sealRecord, unsealRecord } from '../crypto';
 
 const KEY = 'current';
@@ -25,8 +24,7 @@ const PLAIN_FIELDS = ['id', 'email'];
 
 /** Read the cached profile, or null if never seeded. */
 export async function getLocalProfile() {
-  if (!isOfflineEnabled()) return null;
-  try {
+    try {
     const row = await getDB().user.get(KEY);
     if (!row) return null;
     // If the row was stored encrypted, unseal it. Transparent passthrough
@@ -43,7 +41,7 @@ export async function getLocalProfile() {
 
 /** Upsert the full server-canonical profile snapshot. */
 export async function upsertLocalProfile(profile) {
-  if (!isOfflineEnabled() || !profile) return;
+  if (!profile) return;
   try {
     const row = {
       id: KEY,
@@ -60,7 +58,7 @@ export async function upsertLocalProfile(profile) {
 
 /** Merge an optimistic patch into the cached profile. */
 export async function updateLocalProfile(patch) {
-  if (!isOfflineEnabled() || !patch) return null;
+  if (!patch) return null;
   try {
     const db = getDB();
     const existingRaw = await db.user.get(KEY);

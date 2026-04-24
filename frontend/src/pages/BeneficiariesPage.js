@@ -206,10 +206,10 @@ const BeneficiariesPage = () => {
   }, [loading, fromGettingStarted, beneficiaries.length, estate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
-    // PHASE 1 — Read-through. Three mode-specific code paths, carefully
-    // isolated so the default path (mode === 'off') is bit-for-bit
-    // identical to pre-offline behaviour.
-    const mode = getOfflineMode();
+    // PHASE 1 — Read-through. The offline flag formerly gated this
+    // behavior; as of Apr 24, 2026 we always read from and write to
+    // the local Dexie mirror so iOS installed-PWA re-mounts survive
+    // airplane-mode toggling without needing any opt-in.
 
     // ── Hard airplane-mode short-circuit ──────────────────────────────
     // Apr 24, 2026 fix: when the device is offline we must NEVER let the
@@ -249,6 +249,13 @@ const BeneficiariesPage = () => {
     try {
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       const allEstates = estatesRes.data;
+      // Mirror the estates list unconditionally so the airplane-mode
+      // short-circuit above can rehydrate `estate` + `benEstates` even
+      // for users who never flipped the offline flag to 'on'.
+      try {
+        const { upsertLocalEstates } = await import('../offline/repos/estatesRepo');
+        upsertLocalEstates(allEstates).catch(() => {});
+      } catch { /* non-fatal */ }
       // Find the owned estate (benefactor context)
       const ownedEstate = (() => {
         const owned = allEstates.filter(e => e.user_role_in_estate === 'owner' || (!e.user_role_in_estate && !e.is_beneficiary_estate));
@@ -261,24 +268,21 @@ const BeneficiariesPage = () => {
       if (ownedEstate) {
         setEstate(ownedEstate);
 
-        // ── Offline mode 'on': paint from local cache FIRST for instant
-        // feedback, then fetch from server and reconcile. If there's no
-        // local data yet (first visit), this is a no-op and the user sees
-        // the same loading spinner they would have before.
-        if (mode === 'on') {
+        // ── Paint from local cache FIRST for instant feedback, then
+        // fetch from server and reconcile. Flag-agnostic: even if the
+        // user has never enabled offline mode, if the mirror happens
+        // to have data (e.g. from an earlier session with the flag
+        // on, or from this session's previous page load), we'll paint
+        // from it first. If there's no local data yet, the block is
+        // harmless — the user sees the same loading spinner they would
+        // have seen before.
+        try {
           const local = await getLocalBeneficiaries(ownedEstate.id);
           if (local.length > 0) {
             setBeneficiaries(local);
-            setLoading(false); // unblock the UI immediately; server refresh runs below
+            setLoading(false); // unblock the UI immediately
           }
-          // If offline, skip the server fetch entirely — local cache is our
-          // source of truth until reconnection. Prevents the "Failed to
-          // load" toast from firing when we genuinely have no network.
-          if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-            setLoading(false);
-            return;
-          }
-        }
+        } catch { /* non-fatal */ }
 
         const [bensRes, requestsRes, permsRes] = await Promise.all([
           axios.get(`${API_URL}/beneficiaries/${ownedEstate.id}`, getAuthHeaders()),
@@ -306,17 +310,20 @@ const BeneficiariesPage = () => {
         }
         setSectionPerms(permsMap);
 
-        // ── Mirror the server's canonical list into IndexedDB for the
-        // NEXT visit. Runs in both 'shadow' and 'on' modes; is a no-op
-        // when 'off'. Fire-and-forget — we never block UI on the write.
-        if (mode !== 'off') {
-          upsertLocalBeneficiaries(ownedEstate.id, bensRes.data).catch(() => {});
-          // Pre-warm every photo into the SW IMAGE_CACHE while online so
-          // airplane-mode visits paint with real avatars instead of
-          // broken-image placeholders.
-          prefetchPhotosFrom(bensRes.data);
-          prefetchPhotosFrom(allEstates);
-        }
+        // ── Always mirror the server's canonical list into IndexedDB
+        // (Apr 24, 2026 hardening). Previously this was gated on
+        // `mode !== 'off'`, but iOS installed PWAs can hard re-mount
+        // the page on airplane-mode toggle, wiping React state back to
+        // `useState([])` — which left flag-off users staring at the
+        // empty "Add your first beneficiary" CTA. Always populating
+        // the mirror guarantees the offline short-circuit at the top
+        // of fetchData has something to rehydrate from.
+        upsertLocalBeneficiaries(ownedEstate.id, bensRes.data).catch(() => {});
+        // Pre-warm every photo into the SW IMAGE_CACHE while online so
+        // airplane-mode visits paint with real avatars instead of
+        // broken-image placeholders.
+        prefetchPhotosFrom(bensRes.data);
+        prefetchPhotosFrom(allEstates);
       }
     } catch (error) {
       console.error('Fetch error:', error);
