@@ -4,14 +4,16 @@
  * Fire-and-forget background fetches that warm the Service Worker's
  * IMAGE_CACHE with cross-origin photo URLs (S3 presigned links) so
  * profile / beneficiary / estate avatars survive an airplane-mode
- * session. Safe to call from anywhere — gated on the offline flag and
- * only runs when the browser is actually online.
+ * session. Safe to call from anywhere — only runs when the browser
+ * is actually online. Flag-agnostic as of Apr 24, 2026: we always
+ * warm the cache because `no-cors` + `cache:'default'` is cheap and
+ * the payoff (avatars instead of "?" placeholders on airplane mode)
+ * applies to EVERY user, not just those who explicitly enabled
+ * offline mode.
  *
  * Pairs with sw-push.js `cacheFirst(IMAGE_CACHE)` which is specifically
  * written to cache opaque cross-origin responses.
  */
-
-import { isOfflineEnabled } from './featureFlag';
 
 const PHOTO_FIELDS = [
   'photo_url',
@@ -34,7 +36,6 @@ export function prefetchPhoto(url) {
 
 /** Walk an object (or array) and prefetch every known photo field. */
 export function prefetchPhotosFrom(data) {
-  if (!isOfflineEnabled()) return;
   const items = Array.isArray(data) ? data : [data];
   for (const it of items) {
     if (!it || typeof it !== 'object') continue;

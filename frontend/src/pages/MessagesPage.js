@@ -190,15 +190,17 @@ const MessagesPage = () => {
   }, [loading, fromGettingStarted, messages.length, estate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
-    // Offline read-through: when the flag is 'on', paint from the local
-    // mirror first so airplane-mode users see their real estate,
-    // beneficiaries, and MM list instead of a spurious "Create your
-    // first milestone" empty state. Mirrors the pattern used by
-    // BeneficiariesPage (Phase 1 read-through).
+    // Offline read-through: paint from the local mirror first so
+    // airplane-mode users see their real estate, beneficiaries, and MM
+    // list instead of a spurious "Create your first milestone" empty
+    // state. The rescue fires whenever offline mode is enabled OR the
+    // browser reports the device is offline — the `mode === 'on'`-only
+    // gate silently excluded the default-off majority and caused all
+    // previously-cached data to vanish on airplane-mode toggle.
     const mode = getOfflineMode();
     const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
 
-    if (mode === 'on') {
+    if (mode !== 'off' || isOffline) {
       try {
         const localEstates = await getLocalEstates();
         if (localEstates && localEstates.length > 0) {
@@ -931,10 +933,12 @@ const MessagesPage = () => {
                 <h3 className="text-xl font-semibold text-white mb-2">Leave a Message for Your Loved Ones</h3>
                 <p className="text-[#94a3b8] mb-2">Record a video, voice, or written message — delivered when they need it most.</p>
                 <p className="text-xs text-[#64748b] mb-6">You can edit or re-record anytime. Nothing is permanent until you say so.</p>
-                <Button className="gold-button text-sm sm:text-base px-5 sm:px-8 py-3 mx-auto flex" onClick={() => { setEditingMessage(null); resetForm(); setShowCreateModal(true); }}>
-                  <Plus className="w-5 h-5 mr-2 flex-shrink-0" />
-                  <span>Create Your First Milestone Message</span>
-                </Button>
+                <div className="flex justify-center">
+                  <Button className="gold-button text-sm sm:text-base px-5 sm:px-8 py-3" onClick={() => { setEditingMessage(null); resetForm(); setShowCreateModal(true); }}>
+                    <Plus className="w-5 h-5 mr-2 flex-shrink-0" />
+                    <span>Create Your First Milestone Message</span>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ) : (

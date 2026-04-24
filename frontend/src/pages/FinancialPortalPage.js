@@ -15,6 +15,7 @@ import { SectionLockBanner, SectionLockedOverlay } from '../components/security/
 import { Skeleton } from '../components/ui/skeleton';
 import SlidePanel from '../components/SlidePanel';
 import { API_URL } from '../config';
+import { saveList, readList } from '../utils/localListCache';
 import BillForm from '../components/financial/BillForm';
 import DebtForm from '../components/financial/DebtForm';
 import AccountForm from '../components/financial/AccountForm';
@@ -96,9 +97,37 @@ const FinancialPortalPage = () => {
   useEffect(() => { fetchAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchAll = async () => {
-    // Airplane-mode short-circuit — preserve current state instead of
-    // letting the .catch() fallbacks flood every setter with empty arrays.
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    // Airplane-mode rescue — rehydrate every list from its
+    // last-known-good localStorage cache so the user keeps seeing
+    // bills, debts, accounts, properties, etc. instead of a blank
+    // "first-time" state. Populated by the online branch below.
+    const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    if (isOffline) {
+      const savedEid = localStorage.getItem('selected_estate_id');
+      if (savedEid) {
+        const cachedEstate = readList(`financial:estate:${savedEid}`);
+        if (cachedEstate && typeof cachedEstate === 'object' && !Array.isArray(cachedEstate)) {
+          setEstate(cachedEstate);
+        } else {
+          setEstate({ id: savedEid });
+        }
+        const hydrate = (name, setter) => {
+          const v = readList(`financial:${name}:${savedEid}`);
+          if (Array.isArray(v) && v.length > 0) setter(v);
+        };
+        hydrate('bills', setBills);
+        hydrate('debts', setDebts);
+        hydrate('accounts', setAccounts);
+        hydrate('property', setPropertyAssets);
+        hydrate('beneficiaries', setBeneficiaries);
+        hydrate('dav', setDavEntries);
+        const cachedSummary = readList(`financial:summary:${savedEid}`);
+        if (cachedSummary && !Array.isArray(cachedSummary)) setSummary(cachedSummary);
+        const cachedCats = readList(`financial:categories:${savedEid}`);
+        if (cachedCats && typeof cachedCats === 'object' && !Array.isArray(cachedCats)) {
+          setCustomCategories(cachedCats);
+        }
+      }
       setLoading(false);
       return;
     }
@@ -112,6 +141,7 @@ const FinancialPortalPage = () => {
       const est = (savedId && estates.find(e => e.id === savedId)) || estates[0];
       setEstate(est);
       const eid = est.id;
+      saveList(`financial:estate:${eid}`, est);
       const [billsRes, debtsRes, acctsRes, propsRes, summaryRes, bensRes, catBills, catDebts, catAccts, davRes] = await Promise.all([
         axios.get(`${API_URL}/financial/bills/${eid}`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/financial/debts/${eid}`, { headers }).catch(() => ({ data: [] })),
@@ -141,11 +171,21 @@ const FinancialPortalPage = () => {
       if (summaryRes.data) setSummary(summaryRes.data); // summary is a number/object, keep old on null
       if (nextBens.length > 0 || beneficiaries.length === 0) setBeneficiaries(nextBens);
       if (nextDav.length > 0 || davEntries.length === 0) setDavEntries(nextDav);
-      setCustomCategories({
+      const nextCats = {
         bills: Array.isArray(catBills.data) ? catBills.data : [],
         debts: Array.isArray(catDebts.data) ? catDebts.data : [],
         accounts: Array.isArray(catAccts.data) ? catAccts.data : [],
-      });
+      };
+      setCustomCategories(nextCats);
+      // Persist every list for offline rehydration on the next visit.
+      saveList(`financial:bills:${eid}`, nextBills);
+      saveList(`financial:debts:${eid}`, nextDebts);
+      saveList(`financial:accounts:${eid}`, nextAccts);
+      saveList(`financial:property:${eid}`, nextProps);
+      saveList(`financial:beneficiaries:${eid}`, nextBens);
+      saveList(`financial:dav:${eid}`, nextDav);
+      if (summaryRes.data) saveList(`financial:summary:${eid}`, summaryRes.data);
+      saveList(`financial:categories:${eid}`, nextCats);
     } catch (err) { console.error('Financial portal fetch error:', err); }
     setLoading(false);
   };

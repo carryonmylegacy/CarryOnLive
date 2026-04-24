@@ -86,18 +86,23 @@ const DashboardPage = () => {
   const fetchEstates = async () => {
     try {
       const mode = getOfflineMode();
+      const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
       // Offline-first paint: if we have a local estate list, seed the
       // switcher immediately so the user sees something before the server
       // responds. We only CHOOSE an estate from the local list when we're
       // truly offline — otherwise the server call below is authoritative.
-      if (mode === 'on') {
+      // Flag-agnostic rescue: fires whenever offline mode is enabled OR
+      // the device reports offline. The `=== 'on'`-only gate silently
+      // excluded default-off users, leaving airplane-mode users staring
+      // at the "no estates yet" empty dashboard.
+      if (mode !== 'off' || isOffline) {
         const localEstates = await getLocalEstates();
         const localOwned = localEstates.filter(
           e => e.user_role_in_estate === 'owner' || (!e.user_role_in_estate && !e.is_beneficiary_estate)
         );
         if (localOwned.length > 0) {
           setEstates(localOwned);
-          if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          if (isOffline) {
             // Offline: pick an estate from the local list and short-circuit.
             const savedEstateId = localStorage.getItem('selected_estate_id');
             const primaryEstateId = user?.primary_estate_id;
@@ -108,6 +113,10 @@ const DashboardPage = () => {
             setEstate(selectedEstate);
             return;
           }
+        } else if (isOffline) {
+          // No local mirror + offline = nothing we can do; stop gracefully
+          // so the UI keeps its existing state instead of throwing below.
+          return;
         }
       }
       const response = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());

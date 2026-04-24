@@ -13,6 +13,7 @@ import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { API_URL } from '../config';
 import { formatPhoneUS } from '../utils/phoneFormat';
+import { saveList, readList } from '../utils/localListCache';
 
 const EMPTY_FORM = { name: '', phone: '', email: '', address: '', relationship: '', notes: '' };
 
@@ -28,9 +29,18 @@ export default function FFNPage() {
   const [deleting, setDeleting] = useState(null);
 
   const fetchData = useCallback(async () => {
-    // Airplane-mode short-circuit — don't attempt the axios call when
-    // offline. Preserves whatever state is already displayed.
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    // Airplane-mode rescue — rehydrate from the last-known-good cached
+    // list so the user sees their FFN contacts instead of a blank
+    // "first-time" state. The cache is populated on every successful
+    // online fetch below.
+    const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    if (isOffline) {
+      const savedEid = localStorage.getItem('selected_estate_id');
+      if (savedEid) {
+        setEstateId(savedEid);
+        const cached = readList(`ffn:${savedEid}`);
+        if (Array.isArray(cached) && cached.length > 0) setContacts(cached);
+      }
       setLoading(false);
       return;
     }
@@ -47,6 +57,8 @@ export default function FFNPage() {
       // Empty-response clobber guard.
       const fresh = Array.isArray(contactsRes.data) ? contactsRes.data : [];
       if (fresh.length > 0 || contacts.length === 0) setContacts(fresh);
+      // Persist for the next airplane-mode rehydration.
+      saveList(`ffn:${owned.id}`, fresh);
     } catch (err) {
       console.error('FFN fetch error:', err);
     }

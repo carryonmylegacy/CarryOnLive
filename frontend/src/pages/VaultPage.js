@@ -217,6 +217,27 @@ const VaultPage = () => {
 
   const fetchData = async () => {
     const mode = getOfflineMode();
+    // Flag-agnostic airplane-mode rescue — run BEFORE the estates
+    // fetch so a `cachedGet` miss doesn't throw us into the catch
+    // block with an empty Vault. Reads local estates + local vault
+    // items and short-circuits before any network call is attempted.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      try {
+        const { getLocalEstates } = await import('../offline/repos/estatesRepo');
+        const localEstates = await getLocalEstates().catch(() => []);
+        if (Array.isArray(localEstates) && localEstates.length > 0) {
+          const savedId = localStorage.getItem('selected_estate_id');
+          const selected = (savedId && localEstates.find(e => e.id === savedId)) || localEstates[0];
+          if (selected) {
+            setEstate(selected);
+            const local = await getLocalVaultItems(selected.id);
+            if (local.length > 0) setDocuments(local);
+          }
+        }
+      } catch {}
+      setLoading(false);
+      return;
+    }
     try {
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       const estates = Array.isArray(estatesRes.data) ? estatesRes.data : [];
@@ -224,22 +245,14 @@ const VaultPage = () => {
         const savedId = localStorage.getItem('selected_estate_id');
         const selected = (savedId && estates.find(e => e.id === savedId)) || estates[0];
         setEstate(selected);
-        // Offline-first paint: seed from local mirror, short-circuit when
-        // fully offline, otherwise refresh from server and upsert.
-        // Flag-agnostic offline short-circuit: regardless of the flag,
-        // never hit the server when the device is airplane-mode — the
-        // axios interceptor will reject anyway, and we want the code
-        // path to return cleanly with the mirror (if any) rather than
-        // flowing into an empty-response state-wipe.
-        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-          try {
-            const local = await getLocalVaultItems(selected.id);
-            if (local.length > 0) setDocuments(local);
-          } catch {}
-          setLoading(false);
-          return;
-        }
-        if (mode === 'on') {
+        // Mirror estates unconditionally so the airplane-mode rescue
+        // above has fresh data on the next offline re-mount.
+        try {
+          const { upsertLocalEstates } = await import('../offline/repos/estatesRepo');
+          upsertLocalEstates(estates).catch(() => {});
+        } catch {}
+        // Offline-first paint (instant rehydration when mirror has data).
+        if (mode !== 'off') {
           const local = await getLocalVaultItems(selected.id);
           if (local.length > 0) {
             setDocuments(local);

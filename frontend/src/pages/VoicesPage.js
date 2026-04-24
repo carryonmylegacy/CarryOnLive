@@ -23,9 +23,12 @@ export default function VoicesPage() {
     let cancelled = false;
     (async () => {
       const mode = getOfflineMode();
+      const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
       // Offline-first paint: seed from local cache so the wall appears
       // instantly on repeat visits. Public data → safe to cache.
-      if (mode === 'on') {
+      // Rescue fires whenever offline mode is enabled OR the device is
+      // reported offline, so airplane mode never blanks the list.
+      if (mode !== 'off' || isOffline) {
         try {
           const local = await getLocalVoices();
           if (!cancelled && local.length > 0) {
@@ -33,7 +36,7 @@ export default function VoicesPage() {
             setLoading(false);
           }
         } catch { /* non-fatal */ }
-        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        if (isOffline) {
           if (!cancelled) setLoading(false);
           return;
         }
