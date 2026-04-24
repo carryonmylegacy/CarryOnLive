@@ -39,6 +39,7 @@ import { upsertLocalVaultItems } from './repos/vaultRepo';
 import { upsertLocalVoices } from './repos/voicesRepo';
 import { upsertLocalMessages } from './repos/messagesRepo';
 import { prefetchPhotosFrom } from './prefetchPhotos';
+import { saveList } from '../utils/localListCache';
 
 function emit(type, detail) {
   if (typeof window === 'undefined') return;
@@ -133,6 +134,74 @@ function taskDashboard(estateId, headers) {
   };
 }
 
+function taskFFN(estateId, headers) {
+  return {
+    label: `ffn:${estateId.slice(0, 6)}`,
+    run: async () => {
+      const res = await axios.get(`${API_URL}/ffn/${estateId}`, headers);
+      const list = Array.isArray(res?.data) ? res.data : [];
+      saveList(`ffn:${estateId}`, list);
+    },
+  };
+}
+
+function taskFinancial(estateId, headers) {
+  return {
+    label: `financial:${estateId.slice(0, 6)}`,
+    run: async () => {
+      const [bills, debts, accts, props, summary, bens, cBills, cDebts, cAccts, dav] = await Promise.all([
+        axios.get(`${API_URL}/financial/bills/${estateId}`, headers).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/financial/debts/${estateId}`, headers).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/financial/accounts/${estateId}`, headers).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/financial/property/${estateId}`, headers).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/financial/summary/${estateId}`, headers).catch(() => ({ data: null })),
+        axios.get(`${API_URL}/beneficiaries/${estateId}`, headers).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/financial/categories/${estateId}?module=bills`, headers).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/financial/categories/${estateId}?module=debts`, headers).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/financial/categories/${estateId}?module=accounts`, headers).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/digital-wallet/${estateId}`, headers).catch(() => ({ data: [] })),
+      ]);
+      const pick = (r) => (Array.isArray(r?.data) ? r.data : []);
+      saveList(`financial:bills:${estateId}`, pick(bills));
+      saveList(`financial:debts:${estateId}`, pick(debts));
+      saveList(`financial:accounts:${estateId}`, pick(accts));
+      saveList(`financial:property:${estateId}`, pick(props));
+      saveList(`financial:beneficiaries:${estateId}`, pick(bens));
+      saveList(`financial:dav:${estateId}`, pick(dav));
+      if (summary?.data) saveList(`financial:summary:${estateId}`, summary.data);
+      saveList(`financial:categories:${estateId}`, {
+        bills: pick(cBills),
+        debts: pick(cDebts),
+        accounts: pick(cAccts),
+      });
+    },
+  };
+}
+
+function taskDTS(estateId, headers) {
+  return {
+    label: `dts:${estateId.slice(0, 6)}`,
+    run: async () => {
+      const [bens, tasks] = await Promise.all([
+        axios.get(`${API_URL}/beneficiaries/${estateId}`, headers).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/dts/tasks/${estateId}`, headers).catch(() => ({ data: [] })),
+      ]);
+      const mapped = (Array.isArray(tasks?.data) ? tasks.data : []).map((t) => ({
+        ...t,
+        type: t.task_type || t.type,
+        desc: t.description || t.desc,
+        lineItems: (t.line_items || t.lineItems || []),
+        paymentMethod: t.payment_method || t.paymentMethod,
+        discloseTo: t.disclose_to || t.discloseTo || [],
+        timedRelease: t.timed_release || t.timedRelease,
+        created: t.created_at?.split('T')[0] || t.created,
+      }));
+      saveList(`dts:beneficiaries:${estateId}`, Array.isArray(bens?.data) ? bens.data : []);
+      saveList(`dts:tasks:${estateId}`, mapped);
+    },
+  };
+}
+
 /** Drain a list of lazy tasks with a concurrency cap, dispatching progress. */
 async function runTasksWithProgress(tasks) {
   const total = tasks.length;
@@ -195,6 +264,9 @@ export async function warmUpAfterLogin(token) {
     taskChat(headers),
     taskVoices(),
     ...ownedEstateIds.map((id) => taskDashboard(id, headers)),
+    ...ownedEstateIds.map((id) => taskFFN(id, headers)),
+    ...ownedEstateIds.map((id) => taskFinancial(id, headers)),
+    ...ownedEstateIds.map((id) => taskDTS(id, headers)),
   ];
 
   await runTasksWithProgress(tasks);

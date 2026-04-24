@@ -30,6 +30,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
+import { saveList, readList } from '../utils/localListCache';
 import {
   Dialog,
   DialogContent,
@@ -264,7 +265,33 @@ const TrusteePage = () => {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
+    const mapTask = (t) => ({
+      ...t,
+      type: t.task_type || t.type,
+      desc: t.description || t.desc,
+      lineItems: (t.line_items || t.lineItems || []),
+      paymentMethod: t.payment_method || t.paymentMethod,
+      discloseTo: t.disclose_to || t.discloseTo || [],
+      timedRelease: t.timed_release || t.timedRelease,
+      created: t.created_at?.split('T')[0] || t.created,
+    });
     const fetchData = async () => {
+      // Airplane-mode rescue — rehydrate beneficiaries + DTS tasks from
+      // the last-known-good localStorage cache so the user keeps seeing
+      // their content offline instead of a blank page. Populated by the
+      // online branch below on every successful fetch.
+      const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      if (isOffline) {
+        const savedEid = localStorage.getItem('selected_estate_id');
+        if (savedEid) {
+          setEstateId(savedEid);
+          const cachedBens = readList(`dts:beneficiaries:${savedEid}`);
+          const cachedTasks = readList(`dts:tasks:${savedEid}`);
+          if (Array.isArray(cachedBens) && cachedBens.length > 0) setBeneficiaries(cachedBens);
+          if (Array.isArray(cachedTasks) && cachedTasks.length > 0) setTasks(cachedTasks);
+        }
+        return;
+      }
       try {
         const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
         if (estatesRes.data.length > 0) {
@@ -275,17 +302,11 @@ const TrusteePage = () => {
             axios.get(`${API_URL}/dts/tasks/${eid}`, getAuthHeaders()).catch(() => ({ data: [] })),
           ]);
           setBeneficiaries(bensRes.data);
-          // Map backend fields to frontend expected format
-          setTasks((dtsRes.data || []).map(t => ({
-            ...t,
-            type: t.task_type || t.type,
-            desc: t.description || t.desc,
-            lineItems: (t.line_items || t.lineItems || []),
-            paymentMethod: t.payment_method || t.paymentMethod,
-            discloseTo: t.disclose_to || t.discloseTo || [],
-            timedRelease: t.timed_release || t.timedRelease,
-            created: t.created_at?.split('T')[0] || t.created,
-          })));
+          const mapped = (dtsRes.data || []).map(mapTask);
+          setTasks(mapped);
+          // Persist both for airplane-mode rehydration on the next visit.
+          saveList(`dts:beneficiaries:${eid}`, bensRes.data);
+          saveList(`dts:tasks:${eid}`, mapped);
         }
       } catch (e) { console.error('Fetch error:', e); }
     };
