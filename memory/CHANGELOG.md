@@ -1,5 +1,66 @@
 # CarryOn — Changelog
 
+## Apr 24, 2026 (icon fix v3) — Source-Faithful Icon Generator
+
+User reported: "What happened to the logo?! It got all dark." Reference
+screenshot (IMG_2534) showed the intended bright gold + bright-blue
+gradient + light-blue rounded-rect frame + light-blue line-art hands.
+Current shipped icon had all gradient + frame + hands flattened into a
+solid dark navy background.
+
+### Root cause
+
+Previous `scripts/generate_app_icons.py` did aggressive color-keying to
+"fix" a gradient-bleed artifact on macOS dock rendering (Apr 23). It
+kept only the **gold pixels** (warm-tone + luma ≥ 100) and a narrow
+slice of **light-blue hand outlines** (luma ≥ 130 + blue > red), and
+replaced **everything else** (gradient background, outer frame, edge
+vignette) with pure `#0B1221`. When the user swapped in the new master
+that actually has a designed light-blue frame and a gradient, the
+generator stripped all of it, leaving a muddy-dark icon.
+
+### Fix — v3 generator
+
+Rewrote `scripts/generate_app_icons.py` to be **source-faithful**:
+
+- No color-keying, no artwork-extraction, no background flattening.
+- `any`-purpose icons are simply the source resized to each target
+  size via LANCZOS.
+- `maskable`-purpose icons paste the source at 72% on a solid navy
+  canvas so Android adaptive-icon masks (circle / squircle / rounded-
+  square / teardrop) have a 14% safe ring.
+- `mono` notification badges still use luminance thresholding (the
+  Android tray strips color and re-tints anyway).
+- Removed the `verify_edges(expected=navy)` check since the new master
+  has a gradient (edges are not expected to be solid navy).
+
+### Regenerated
+
+All 17 icon outputs from the new master (`carryon-app-icon-source.jpg`,
+1053×1053 — center-cropped to square, then resized):
+- 11 any-purpose (1024, 512×3, 192×2, 180×2, 167, 152, 120, 128, 64)
+- 2 maskable (192, 512)
+- 2 mono badges (72, 96)
+- (plus legacy duplicates: icon-192, icon-512, apple-touch-icon.png)
+
+Gemini vision analysis of the new `apple-touch-icon.png` confirms:
+"dark-navy-to-lighter-blue gradient ✓ · visible rounded-rectangle
+light-blue frame ✓ · line-art hands clearly discernible ✓ · gold
+infinity bright and prominent ✓ · overall bright and vibrant, not
+muddy or dark ✓".
+
+### Housekeeping
+
+- `bash /app/housekeeping.sh` → **ALL CHECKS PASSED · 0 WARN · 0 FAIL**.
+
+### User note
+
+Existing iOS PWA users will need to **uninstall + reinstall the PWA
+from the home screen** to pick up the new icon — iOS caches the
+install-time icon and doesn't pull updates. The web / Safari tab
+icon updates automatically on next page load.
+
+
 ## Apr 24, 2026 (the real fix) — Flag-Agnostic Mirror for iOS PWA Re-Mount
 
 Previous 2 passes were insufficient. User confirmed on iOS installed PWA: airplane mode on → beneficiaries empty-state CTA visible → red offline banner visible → toggle off → content returns after manual navigate-off-and-back. Same for ECT and all other areas.
