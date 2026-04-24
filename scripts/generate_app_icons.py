@@ -50,10 +50,17 @@ def hex_to_rgb(hex_str: str) -> tuple[int, int, int]:
     return tuple(int(s[i:i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
 
 
-def load_square(src_path: Path) -> Image.Image:
-    """Load the source and ensure it's a perfect square (center-crop if not).
-    Keeps the image RGB — we want every color (gradient, frame, hands)
-    preserved as-is through to the final icons.
+def load_square(src_path: Path, zoom_crop_pct: float = 5.0) -> Image.Image:
+    """Load the source and ensure it's a perfect square (center-crop if not),
+    then zoom in slightly to hide the outer rounded-rectangle frame line.
+
+    The new Apr 24 2026 master ships with a thin light-blue rounded-rect
+    frame about 2% from each edge; iOS / Android then add their own
+    rounded-corner mask on top, which visually stacks a second frame
+    just inside the OS mask and looks like a double border. We crop
+    `zoom_crop_pct` percent off each side (default 5% → 10% total
+    reduction per dimension, ≈ 90% of the original area) to push that
+    frame off-screen cleanly.
     """
     src = Image.open(src_path).convert('RGB')
     w, h = src.size
@@ -62,6 +69,11 @@ def load_square(src_path: Path) -> Image.Image:
         left = (w - short) // 2
         top = (h - short) // 2
         src = src.crop((left, top, left + short, top + short))
+        w = h = short
+    if zoom_crop_pct and zoom_crop_pct > 0:
+        inset = int(round(w * zoom_crop_pct / 100.0))
+        if inset > 0 and (w - 2 * inset) > 16:
+            src = src.crop((inset, inset, w - inset, h - inset))
     return src
 
 
@@ -113,7 +125,7 @@ def build_mono_badge(src: Image.Image, size: int,
     return canvas
 
 
-def generate(src_path: Path, navy: tuple[int, int, int]) -> None:
+def generate(src_path: Path, navy: tuple[int, int, int], zoom_crop_pct: float) -> None:
     if not src_path.exists():
         sys.stderr.write(f'Source not found: {src_path}\n')
         sys.exit(1)
@@ -121,7 +133,7 @@ def generate(src_path: Path, navy: tuple[int, int, int]) -> None:
         sys.stderr.write(f'Public dir not found: {PUBLIC_DIR}\n')
         sys.exit(1)
 
-    src = load_square(src_path)
+    src = load_square(src_path, zoom_crop_pct=zoom_crop_pct)
 
     any_outputs = [
         (192, 'carryon-app-icon-square-192.png'),
@@ -185,8 +197,12 @@ def main() -> None:
         '--navy', default='#0B1221',
         help='Background hex for maskable padding — must match CSS --bg (default: #0B1221)',
     )
+    ap.add_argument(
+        '--zoom', type=float, default=5.0,
+        help='Percent to crop off each edge to hide the outer frame line (default: 5.0)',
+    )
     args = ap.parse_args()
-    generate(args.source, hex_to_rgb(args.navy))
+    generate(args.source, hex_to_rgb(args.navy), args.zoom)
 
 
 if __name__ == '__main__':
