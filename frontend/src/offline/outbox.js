@@ -58,6 +58,7 @@ export async function enqueue({ entity_type, entity_id, method, url, body }) {
   };
   const id = await db.outbox.add(row);
   console.log(`[offline] enqueue #${id} ${method} ${url}`);
+  try { window.dispatchEvent(new CustomEvent('carryon:outbox:enqueued', { detail: { id, entity_type } })); } catch { /* SSR */ }
   return id;
 }
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { WifiOff, Wifi, Info } from 'lucide-react';
+import { PendingSyncChipInline } from './PendingSyncChip';
 
 /**
  * CarryOn — Network Status Banner (Offline UX Polish)
@@ -133,6 +134,7 @@ const NetworkStatusBanner = () => {
       <div className="flex items-center gap-2 mb-0.5">
         <WifiOff className="w-4 h-4 shrink-0" />
         <span className="text-sm font-bold">You're offline</span>
+        <PendingSyncChipInline />
         <button
           type="button"
           onClick={() => setExpanded((e) => !e)}

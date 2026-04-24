@@ -89,8 +89,16 @@ const DigitalWalletPage = () => {
   const handleDelete = async (entryId) => {
     if (!window.confirm('Delete this entry? This cannot be undone.')) return;
     try {
-      await axios.delete(`${API_URL}/digital-wallet/${entryId}`, getAuthHeaders());
-      // toast removed
+      const { mutateWithOutbox } = await import('../utils/offlineMutation');
+      const r = await mutateWithOutbox({
+        entity_type: 'digital_wallet_entry',
+        entity_id: entryId,
+        method: 'DELETE',
+        url: `/digital-wallet/${entryId}`,
+        authHeaders: getAuthHeaders(),
+      });
+      if (!r.ok) throw r.error || new Error('Delete failed');
+      if (r.queued) toast.success('Deletion queued — will sync when you reconnect.');
       fetchData();
     } catch (err) {
       toast.error('Failed to delete');
@@ -290,8 +298,17 @@ const WalletEntryPanel = ({ entry, beneficiaries, onClose, onSaved, getAuthHeade
         assigned_beneficiary_id: beneficiaryId || undefined,
       };
       const headers = getAuthHeaders();
-      if (entry) { await axios.put(`${API_URL}/digital-wallet/${entry.id}`, data, headers); }
-      else { await axios.post(`${API_URL}/digital-wallet`, data, headers); }
+      const { mutateWithOutbox } = await import('../utils/offlineMutation');
+      const r = await mutateWithOutbox({
+        entity_type: 'digital_wallet_entry',
+        entity_id: entry ? entry.id : `local-wallet-${Date.now()}`,
+        method: entry ? 'PUT' : 'POST',
+        url: entry ? `/digital-wallet/${entry.id}` : '/digital-wallet',
+        body: data,
+        authHeaders: headers,
+      });
+      if (!r.ok) throw r.error || new Error('Save failed');
+      if (r.queued) toast.success(`Account ${entry ? 'change' : 'saved'} offline — will sync when you reconnect.`);
       onSaved();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to save'); }
     setSaving(false);

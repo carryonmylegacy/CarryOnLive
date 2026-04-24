@@ -1,5 +1,73 @@
 # CarryOn — Changelog
 
+## Apr 24, 2026 (late) — Platform-wide Pending-Sync Chip + More "+" Surfaces Offline
+
+Extension of the earlier offline fixes. User requested a universal, fixed
+header chip that reports queued-offline items across the app, and demanded
+that "anywhere there is a + to add something" must work offline and sync
+on reconnect. Shipped the chip + expanded offline coverage to the remaining
+high-traffic create/edit/delete surfaces.
+
+### Platform-wide Pending Sync Chip
+- New `components/PendingSyncChip.js` — exports both a standalone fixed
+  chip (mounted in `App.js` above the offline banner) and an inline chip
+  (embedded inside `NetworkStatusBanner` so the count shows inline with
+  "You're offline" when offline). Aggregates three streams:
+  - `outbox` pending rows (text writes via `mutateWithOutbox`).
+  - `pendingUpload` rows (large-file chunked uploads).
+  - `outbox` conflict rows (HTTP 409/412) — red alert variant.
+- States:
+  - Offline + pending → gold pill inside the red "You're offline" banner.
+  - Online + pending (still draining) → gold "Syncing N items…" strip
+    with spinning icon across the top.
+  - Online + pending (waiting) → navy "N items queued — will sync when
+    connection stabilizes" strip.
+  - Any conflicts → red "N sync conflicts — tap Resolve below" strip.
+  - 0 pending → component returns `null` (zero DOM footprint).
+  - Just-drained → briefly flashes a green "All caught up" confirmation
+    pill for 2.2s before hiding.
+- Event contract expanded: `outbox.enqueue()` now fires
+  `carryon:outbox:enqueued`, `pendingUploadsRepo.addPendingUpload()`
+  fires `carryon:pending:changed`, and the chip also listens to the
+  existing `:drained`, `:drained-one`, `:conflict`, `:upload:progress`,
+  `:upload:complete` events plus `online`/`offline` network events.
+  Safety-net 8s poll so count never drifts.
+
+### "+" surfaces promoted to offline create/edit/delete
+All of these use the existing `mutateWithOutbox` helper, so offline
+writes enter the outbox and drain automatically on reconnect:
+- **Milestone Messages** — text-only create / edit / delete on
+  `MessagesPage.handleCreate` + `handleDelete`. Video / audio was
+  already handled via the chunked uploader (Phase 9a); this adds the
+  text-only path that was still online-only.
+- **Financial Portal — Bills** — `components/financial/BillForm.js`
+  handleSubmit.
+- **Financial Portal — Debts** — `components/financial/DebtForm.js`
+  handleSubmit.
+- **Financial Portal — Accounts** — `components/financial/AccountForm.js`
+  handleSubmit.
+- **Financial Portal — Property/Assets** —
+  `components/financial/PropertyAssetForm.js` handleSubmit.
+- **Digital Wallet (DAV)** — `pages/DigitalWalletPage.js` save + delete.
+
+### Already-offline surfaces (documented here for the audit trail)
+- Beneficiaries add / edit / delete (Phase 2.1)
+- Checklists add / edit (Tier A)
+- FFN add / edit / delete (Tier A)
+- CCP plans create / edit / delete (Tier A)
+- Estate rename (Tier A)
+- Vault / DAV document upload (Phase 9a chunked)
+- MM video / voice / attachment (Phase 9a chunked)
+- Estate Chat send message (Phase 4)
+
+### Verification
+- `yarn eslint src` → 0 errors.
+- `yarn build` → compiled successfully.
+- `bash /app/housekeeping.sh` → **ALL CHECKS PASSED · 0 WARN · 0 FAIL**.
+- Smoke screenshot on preview confirmed app boots clean and the chip is
+  correctly hidden when no pending items exist.
+
+
 ## Apr 24, 2026 — Offline Capabilities: Photos, MM Read-Through, Record-Button Pill
 
 User reported three airplane-mode issues after login: (1) beneficiary/estate

@@ -67,8 +67,17 @@ const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries
         interest_rate: form.interest_rate !== '' ? parseFloat(form.interest_rate) : null,
         dav_entry_id: form.dav_entry_id || null,
       };
-      if (isEdit) await axios.put(`${API_URL}/financial/accounts/${account.id}`, payload, getAuthHeaders());
-      else await axios.post(`${API_URL}/financial/accounts`, payload, getAuthHeaders());
+      const { mutateWithOutbox } = await import('../../utils/offlineMutation');
+      const r = await mutateWithOutbox({
+        entity_type: 'financial_account',
+        entity_id: isEdit ? account.id : `local-account-${Date.now()}`,
+        method: isEdit ? 'PUT' : 'POST',
+        url: isEdit ? `/financial/accounts/${account.id}` : '/financial/accounts',
+        body: payload,
+        authHeaders: getAuthHeaders(),
+      });
+      if (!r.ok) throw r.error || new Error('Save failed');
+      if (r.queued) toast.success(`Account ${isEdit ? 'change' : 'saved'} offline — will sync when you reconnect.`);
       onSaved();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to save account'); }
     setSaving(false);

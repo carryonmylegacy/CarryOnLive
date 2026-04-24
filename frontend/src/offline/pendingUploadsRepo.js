@@ -39,6 +39,7 @@ export async function addPendingUpload({ kind, filename, mime_type, blob, metada
     created_at: now,
     updated_at: now,
   });
+  try { window.dispatchEvent(new CustomEvent('carryon:pending:changed', { detail: { id, kind } })); } catch { /* SSR */ }
   return id;
 }
 

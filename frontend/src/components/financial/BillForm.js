@@ -77,11 +77,17 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
         grace_period_days: form.grace_period_days ? parseInt(form.grace_period_days) : null,
         dav_entry_id: form.dav_entry_id || null,
       };
-      if (isEdit) {
-        await axios.put(`${API_URL}/financial/bills/${bill.id}`, payload, getAuthHeaders());
-      } else {
-        await axios.post(`${API_URL}/financial/bills`, payload, getAuthHeaders());
-      }
+      const { mutateWithOutbox } = await import('../../utils/offlineMutation');
+      const r = await mutateWithOutbox({
+        entity_type: 'financial_bill',
+        entity_id: isEdit ? bill.id : `local-bill-${Date.now()}`,
+        method: isEdit ? 'PUT' : 'POST',
+        url: isEdit ? `/financial/bills/${bill.id}` : '/financial/bills',
+        body: payload,
+        authHeaders: getAuthHeaders(),
+      });
+      if (!r.ok) throw r.error || new Error('Save failed');
+      if (r.queued) toast.success(`Bill ${isEdit ? 'change' : 'saved'} offline — will sync when you reconnect.`);
       onSaved();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to save bill');

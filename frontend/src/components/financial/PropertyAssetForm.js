@@ -78,8 +78,17 @@ const PropertyAssetForm = ({ estateId, asset, davEntries, onSaved, getAuthHeader
         entity_state: form.entity_state || null,
         entity_ein: form.entity_ein || null,
       };
-      if (isEdit) await axios.put(`${API_URL}/financial/property/${asset.id}`, payload, getAuthHeaders());
-      else await axios.post(`${API_URL}/financial/property`, payload, getAuthHeaders());
+      const { mutateWithOutbox } = await import('../../utils/offlineMutation');
+      const r = await mutateWithOutbox({
+        entity_type: 'financial_property',
+        entity_id: isEdit ? asset.id : `local-property-${Date.now()}`,
+        method: isEdit ? 'PUT' : 'POST',
+        url: isEdit ? `/financial/property/${asset.id}` : '/financial/property',
+        body: payload,
+        authHeaders: getAuthHeaders(),
+      });
+      if (!r.ok) throw r.error || new Error('Save failed');
+      if (r.queued) toast.success(`Asset ${isEdit ? 'change' : 'saved'} offline — will sync when you reconnect.`);
       onSaved();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to save'); }
     setSaving(false);

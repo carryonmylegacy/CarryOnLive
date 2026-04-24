@@ -545,6 +545,54 @@ const MessagesPage = () => {
 
       let messageId = null;
 
+      // Offline text-only path: when the flag is 'on' AND we're offline AND
+      // there's no media attachment (media uses the chunked-upload queue
+      // above), fall through to mutateWithOutbox. A local-only optimistic
+      // row is inserted into `messages` so the list renders immediately.
+      {
+        const { getOfflineMode } = await import('../offline/featureFlag');
+        const offlineMode = getOfflineMode();
+        const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+        const hasMedia = hasVideo || hasAudio || !!attachmentFile;
+        if (offlineMode === 'on' && isOffline && !hasMedia) {
+          const { mutateWithOutbox } = await import('../utils/offlineMutation');
+          const { upsertLocalMessages } = await import('../offline/repos/messagesRepo');
+          if (editingMessage) {
+            await mutateWithOutbox({
+              entity_type: 'milestone_message',
+              entity_id: editingMessage.id,
+              method: 'PUT',
+              url: `/messages/${editingMessage.id}`,
+              body: payload,
+              authHeaders: getAuthHeaders(),
+            });
+            const patched = messages.map(m => m.id === editingMessage.id ? { ...m, ...payload, _local_pending: true } : m);
+            setMessages(patched);
+            if (estate?.id) upsertLocalMessages(estate.id, patched).catch(() => {});
+            toast.success('Change queued — will sync when you reconnect.');
+          } else {
+            const tempId = `local-mm-${(crypto?.randomUUID?.() || Date.now())}`;
+            const optimistic = { ...payload, id: tempId, estate_id: estate.id, created_at: new Date().toISOString(), _local_pending: true };
+            await mutateWithOutbox({
+              entity_type: 'milestone_message',
+              entity_id: tempId,
+              method: 'POST',
+              url: '/messages',
+              body: { ...payload, estate_id: estate.id },
+              authHeaders: getAuthHeaders(),
+            });
+            const next = [optimistic, ...messages];
+            setMessages(next);
+            if (estate?.id) upsertLocalMessages(estate.id, next).catch(() => {});
+            toast.success('Milestone message queued — will sync when you reconnect.');
+          }
+          setShowCreateModal(false);
+          setEditingMessage(null);
+          resetForm();
+          return;
+        }
+      }
+
       if (editingMessage) {
         await axios.put(`${API_URL}/messages/${editingMessage.id}`, payload, getAuthHeaders());
         messageId = editingMessage.id;
@@ -595,8 +643,27 @@ const MessagesPage = () => {
 
   const handleDelete = async (messageId) => {
     if (!window.confirm('Are you sure you want to delete this message?')) return;
-    
+
     try {
+      const { getOfflineMode } = await import('../offline/featureFlag');
+      const offlineMode = getOfflineMode();
+      const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      if (offlineMode === 'on' && isOffline) {
+        const { mutateWithOutbox } = await import('../utils/offlineMutation');
+        const { upsertLocalMessages } = await import('../offline/repos/messagesRepo');
+        await mutateWithOutbox({
+          entity_type: 'milestone_message',
+          entity_id: messageId,
+          method: 'DELETE',
+          url: `/messages/${messageId}`,
+          authHeaders: getAuthHeaders(),
+        });
+        const next = messages.filter(m => m.id !== messageId);
+        setMessages(next);
+        if (estate?.id) upsertLocalMessages(estate.id, next).catch(() => {});
+        toast.success('Deletion queued — will sync when you reconnect.');
+        return;
+      }
       await axios.delete(`${API_URL}/messages/${messageId}`, getAuthHeaders());
       // toast removed
       setMessages(messages.filter(m => m.id !== messageId));

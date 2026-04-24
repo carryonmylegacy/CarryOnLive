@@ -75,13 +75,21 @@ const DebtForm = ({ estateId, debt, categories, categoryLabels, davEntries, bene
         loan_term_months: form.loan_term_months !== '' ? parseInt(form.loan_term_months) : null,
         dav_entry_id: form.dav_entry_id || null,
       };
-      if (isEdit) await axios.put(`${API_URL}/financial/debts/${debt.id}`, payload, getAuthHeaders());
-      else await axios.post(`${API_URL}/financial/debts`, payload, getAuthHeaders());
+      const { mutateWithOutbox } = await import('../../utils/offlineMutation');
+      const r = await mutateWithOutbox({
+        entity_type: 'financial_debt',
+        entity_id: isEdit ? debt.id : `local-debt-${Date.now()}`,
+        method: isEdit ? 'PUT' : 'POST',
+        url: isEdit ? `/financial/debts/${debt.id}` : '/financial/debts',
+        body: payload,
+        authHeaders: getAuthHeaders(),
+      });
+      if (!r.ok) throw r.error || new Error('Save failed');
+      if (r.queued) toast.success(`Debt ${isEdit ? 'change' : 'saved'} offline — will sync when you reconnect.`);
       onSaved();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to save debt'); }
     setSaving(false);
   };
-
   const handleAddCategory = async () => {
     if (!newCatName.trim()) return;
     const success = await onAddCategory(newCatName.trim());
