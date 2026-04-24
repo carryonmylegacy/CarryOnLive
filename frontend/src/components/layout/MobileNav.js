@@ -554,7 +554,7 @@ const MobileNav = () => {
             onClick={handleLogoTap}
             style={{ cursor: 'pointer', touchAction: 'manipulation', userSelect: 'none', WebkitUserSelect: 'none' }}>
             <img 
-              src="/carryon-app-icon.jpg" 
+              src="/carryon-app-icon.png" 
               alt="CarryOn" 
               className="w-10 h-10 rounded-xl object-cover"
               style={{ pointerEvents: 'none' }}

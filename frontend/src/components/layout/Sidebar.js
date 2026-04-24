@@ -572,7 +572,7 @@ const Sidebar = () => {
         data-testid="sidebar-logo">
         <div className="sb-logo-top">
           <img 
-            src="/carryon-app-icon.jpg" 
+            src="/carryon-app-icon.png" 
             alt="CarryOn™" 
             className="sb-logo-img"
             onError={(e) => {
