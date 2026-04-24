@@ -22,7 +22,6 @@
 
 import axios from 'axios';
 import { API_URL } from '../config';
-import { isOfflineEnabled } from './featureFlag';
 import { upsertLocalBeneficiaries } from './repos/beneficiariesRepo';
 import { upsertLocalEstates } from './repos/estatesRepo';
 import { upsertLocalProfile } from './repos/profileRepo';
@@ -162,7 +161,12 @@ async function runTasksWithProgress(tasks) {
 }
 
 export async function warmUpAfterLogin(token) {
-  if (!isOfflineEnabled()) return;
+  // Flag-agnostic as of Apr 24, 2026. Previously gated on
+  // `isOfflineEnabled()`, which meant any user who never explicitly
+  // flipped offline mode to 'on' had an EMPTY local mirror — so every
+  // page's airplane-mode rescue fell through to an empty first-run
+  // state. Always warming the local cache is cheap (a handful of
+  // background GETs) and gives every user airplane-mode survival.
   if (!token) return;
   const headers = { headers: { Authorization: `Bearer ${token}` } };
 

@@ -172,30 +172,30 @@ export const AuthProvider = ({ children }) => {
           }
           // Mirror subscription + profile snapshots into the offline cache
           // so next cold boot can paint trial banners and header avatar
-          // instantly (shadow + on modes only). Phase 7: if encryption-at-rest
-          // is enabled, prime the session key BEFORE the first upsert so
-          // sensitive fields are sealed as they land in IndexedDB.
-          import('../offline/featureFlag').then(({ getOfflineMode }) => {
-            if (getOfflineMode() === 'off') return;
-            (async () => {
-              try {
-                const crypto = await import('../offline/crypto');
-                if (crypto.isEncryptionEnabled()) {
-                  await crypto.primeSessionKey(token);
-                }
-              } catch {}
-              try {
-                const [prof, sub] = await Promise.all([
-                  import('../offline/repos/profileRepo'),
-                  import('../offline/repos/subscriptionRepo'),
-                ]);
-                try { await prof.upsertLocalProfile(userData); } catch {}
-                if (subRes.status === 'fulfilled') {
-                  try { await sub.upsertLocalSubscription(subRes.value.data); } catch {}
-                }
-              } catch {}
-            })();
-          }).catch(() => {});
+          // instantly. Flag-agnostic as of Apr 24, 2026: every user
+          // benefits from airplane-mode survival, not just those who
+          // explicitly enabled offline mode. Phase 7: if encryption-
+          // at-rest is enabled, prime the session key BEFORE the first
+          // upsert so sensitive fields are sealed as they land in
+          // IndexedDB.
+          (async () => {
+            try {
+              const crypto = await import('../offline/crypto');
+              if (crypto.isEncryptionEnabled()) {
+                await crypto.primeSessionKey(token);
+              }
+            } catch {}
+            try {
+              const [prof, sub] = await Promise.all([
+                import('../offline/repos/profileRepo'),
+                import('../offline/repos/subscriptionRepo'),
+              ]);
+              try { await prof.upsertLocalProfile(userData); } catch {}
+              if (subRes.status === 'fulfilled') {
+                try { await sub.upsertLocalSubscription(subRes.value.data); } catch {}
+              }
+            } catch {}
+          })();
           // Warm the offline mirror on every boot (not just fresh login)
           // so returning users always start with a fresh local cache.
           // Fire-and-forget; no-op when the offline flag is off.
