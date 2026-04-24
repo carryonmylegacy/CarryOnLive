@@ -431,8 +431,10 @@
   .sb-logo-img {
     width: 54px;
     height: 54px;
-    border-radius: 12px;
-    object-fit: cover;
+    /* No border-radius / object-fit — the PNG source ships with its own
+       rounded border + transparent corners. Applying CSS radius here would
+       clip the artwork's outer stroke, leaving visible corner shave-marks. */
+    object-fit: contain;
   }
   
   .sb-logo-title {

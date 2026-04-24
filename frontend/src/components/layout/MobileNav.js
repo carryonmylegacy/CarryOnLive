@@ -556,8 +556,8 @@ const MobileNav = () => {
             <img 
               src="/carryon-app-icon.png" 
               alt="CarryOn" 
-              className="w-10 h-10 rounded-xl object-cover"
-              style={{ pointerEvents: 'none' }}
+              className="w-10 h-10"
+              style={{ pointerEvents: 'none', objectFit: 'contain' }}
             />
             <span className="text-[#E0AD2B] font-bold text-lg" style={{ fontFamily: 'var(--sans)', pointerEvents: 'none' }}>
               CarryOn™
