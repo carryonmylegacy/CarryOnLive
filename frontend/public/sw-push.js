@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'v16-2026-02-21-cache-first-bundle-client-cache-urls';
+const SHELL_VERSION = 'v17-2026-02-21-logo-png-transparent-corners';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
@@ -33,7 +33,8 @@ const PRECACHE_URLS = [
   '/splash.jpg',
   '/carryon-icon.jpg',
   '/carryon-logo.png',          // HTML boot splash logo + login brand mark
-  '/carryon-app-icon.jpg',      // iOS/Android home-screen icon
+  '/carryon-app-icon.png',      // In-app upper-left portal switcher (transparent)
+  '/carryon-app-icon.jpg',      // Legacy iOS/Android home-screen icon (kept for cache compat)
   '/flag-bg.jpg',               // HTML boot splash flag background + homepage hero
   '/icon-192.png',
   '/icon-512.png',
