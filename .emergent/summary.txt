@@ -1,33 +1,31 @@
-<analysis>### Handover Summary
-
-**original_problem_statement**: Expand the Connected Protocol (CCP) wizard, implement Founder Voices veto power, build one-click email moderation, add weekly Voices Digest and Social Brief emails, patch CI/CD pipeline issues regarding  sync, and fix mobile UI clipping issues. Maintain a strict zero-WARN 0-FAIL policy on all deployments. *Added in this session:* Conduct a full codebase audit and systematically refactor large backend monoliths into modular packages, remove heavy unused ML dependencies to improve cold-start times, integrate Sentry for frontend and backend observability, secure Stripe webhooks, and refine the UX/UI of the Share tile, ECT/CCP tiles, and scrollbars across the platform.
+<analysis>**original_problem_statement**: Expand the Connected Protocol (CCP) wizard, finalize offline-first architecture, implement Tier A-D chunked uploads, and maintain a strict zero-WARN 0-FAIL policy on all deployments. *Added in this session*: Fix the macOS Safari notification toast app icon which had white bands on either side, using a newly provided clean 1024x1024 square source image. Implement Android mono notification badges.
 
 **User's preferred language**: English (INSTRUCT next agent to respond in English only)
 
-**what currently exists?**: A React/FastAPI/MongoDB family preparedness platform featuring PWA architecture, bank-grade security, and newly integrated Sentry production error monitoring. The backend has been massively refactored, splitting 5 huge monoliths into 30+ focused modules. Heavy machine-learning dependencies were removed to optimize deployment speed. The UI has been polished with rounded tiles, light/dark mode CSS variable enforcement, and native iOS scrollbar behavior.
+**what currently exists?**: A React/FastAPI/MongoDB PWA with offline-first support. It features standardized UI headers, dynamic menu feature gating, chat auto-scroll engine, and a comprehensive Playwright E2E suite with a Cloudflare bypass setup. Strict Git hooks (pre-push) enforce a zero-WARN  policy. App icons are now correctly generated from a clean 1024x1024 source without gradient bleed, and Android push notifications use a dedicated mono badge.
 
 **Last working item**:
-    - Last item agent was working: Adjusting the margin-top gap above the Tell your people (ShareYourCarryOn) gold pill button on the Dashboard to match the spacing of the other tiles (reduced from  to ).
-    - Status: USER VERIFICATION PENDING
+    - Last item agent was working: Fixing the macOS Safari notification toast icon (removing white/light-blue bands caused by the old source image's gradient) using a newly provided clean source image, and implementing a white-on-transparent mono badge for Android notifications.
+    - Status: RESOLVED
     - Agent Testing Done: Y
-    - Which testing method agent to use?: manual testing by bash ( passed 69 checks)
+    - Which testing method agent to use?: manual testing by bash (Python image sampling to check edge pixels,  for visual confirmation, and  for regression guards).
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
   Issue 1: 🔴 Apple IAP flow is non-functional (P0)
-     - Attempted fixes: Code is implemented, blocked on third-party. Needs Founders Circle IAP products configured by the user.
+     - Attempted fixes: Awaiting third-party config.
      - Next debug checklist: Await user action with Apple.
      - Why fix this issue and what will be achieved with the fix? Unblocks mobile iOS payments.
-     - Status: BLOCKED
+     - Status: BLOCKED (User Action)
      - Is recurring issue? Y
      - Should Test frontend/backend/both after fix? Both
-     - Blocked on other issue: User's Apple Developer Paid Applications Agreement approval.
+     - Blocked on other issue: User's Apple Developer Agreement approval.
 
   Issue 2: 🔴 Twilio SMS OTP delivery is failing (P0)
-     - Attempted fixes: Code is implemented, blocked on third-party.
+     - Attempted fixes: Awaiting third-party config.
      - Next debug checklist: Await user action with Twilio.
      - Why fix this issue and what will be achieved with the fix? Unblocks SMS notifications.
-     - Status: BLOCKED
+     - Status: BLOCKED (User Action)
      - Is recurring issue? Y
      - Should Test frontend/backend/both after fix? Backend
      - Blocked on other issue: Twilio A2P 10DLC campaign approval.
@@ -36,47 +34,35 @@
 
 **Upcoming and Future Tasks**:
     Upcoming Tasks:
-    - 🔴 (P0) Google Play Store Launch: Operational steps needed from user.
-    - 🔴 (P0) Codemagic Environment Groups: User MUST create  group in Codemagic UI and add , , , and  (Keys were removed from  for security).
-    - 🟡 (P1) Share Extension Setup (iOS): Set up iOS Extension explicitly waiting on Native App Store Build.
-    - 🟡 (P1) iOS Live Updates (Capgo): Set up over-the-air updates.
-    - 🟡 (P1) Frontend E2E Testing: Add a frontend e2e test suite (Playwright/Cypress) to prevent visual UI regressions.
+    - 🟡 (P1) Server 301 Redirect for bare domain: Route  to  to prevent Safari origin-mismatch issues for Push Notifications.
+    - 🟡 (P1) Reactivate/Configure iOS Live Updates (Capgo) - AFTER App Store Build.
+    - 🟡 (P1) iOS Share Extension Setup - AFTER App Store Build.
     
     Future Tasks:
-    - 🟢 (P2) Refactor  (still 1,248 lines) and  visual sub-components.
-    - 🟢 (P2) Readiness Scoring Policy Page / Readiness score widget on Dashboard.
-    - 🟢 (P2) Add read receipts delivered to specific members in ECT to elevate iMessage-parity feel.
+    - 🟢 (P2) Phase 10: FFmpeg-wasm aggressive re-compression of video.
+    - 🟢 (P2) Phase 9a (Power User feature): Pin this document for offline access.
+    - 🟢 (P2) Refactor  and  into smaller hook-based visual sub-components.
+    - 🟢 (P2) Add read receipts delivered to specific members in Estate Chat.
+    - 🟢 (P2) Update the Admin Ops/Support page to utilize the new  grouping for Customer Support messages.
 
 **Completed work in this session**:
-- **Codebase Audit & Monolith Refactoring**: Split , , , , and  into modular packages. Maintained all 523 routes.
-- **Dependency Optimization**: Removed ~28 unused ML/Audio packages (e.g., , ), significantly speeding up Railway cold-starts and reducing image size.
-- **Sentry Integration**: Set up frontend and backend DSNs, verified events are properly captured, and routed legacy  to Sentry to prevent CORS errors.
-- **Security Hardening**: Enforced  check (returns 400 if forged), auth-gated , env-gated dev endpoints, removed  from LandingContent.
-- **CI/CD & Secrets**: Moved hardcoded frontend API keys from  and  to environment variables and created a  allowlist to fix git push blockers.
-- **ECT Enhancements**: Added desktop back button, redesigned Learn more security tile, removed estate-owner restriction for pinning messages (now any member/admin can pin), and converted the pinned messages list into a header dropdown.
-- **Share/Voices UX**: Fixed the Surprise Me button to generate unique quotes via a nonce, fixed broken share images caused by a double  URL string, and redesigned the trigger button on the Dashboard into a full-width gold pill.
-- **Global Scrollbars (Reverted to Native)**: After extensive iteration with custom React scrollbars, removed all custom UI scrollbars on mobile and used CSS to hide native scrollbar indicators globally (), relying purely on native iOS scrolling physics.
-- **Housekeeping Enhancements**: Added checks for hardcoded secrets (pre-push block), hardcoded dark mode colors (breaks light mode), and large fixed heights (responsive safety).
+- **Apple/macOS Notification Icon fix**: Modified  to output explicit  sizes (120, 152, 167, 180, etc.). Replaced the old source logo with a new clean 1024x1024 square image provided by the user to completely eliminate vertical white/light-blue gradient bands in the macOS toast.
+- **Android Mono Badge**: Added a white-on-transparent silhouette generator (, ) for Android push notification trays.
+- **PWA Asset Wiring**: Updated , , and  to reference the newly generated crisp icons and Android mono badges.
 
 **Earlier issues found/mentioned but not fixed**:
--  in localStorage: Currently used as a UI hint. Modifying it doesn't grant backend access, but the permanent fix is to always fetch permissions fresh from the API rather than caching in localStorage.
+- Admin panel for Customer Support views messages in a flat list instead of grouping by .
 
 **Known issue recurrence from previous fork**:
-- GitHub Actions CI failure due to  drifting out of sync (Workaround: patched the workflow files).
-- Mobile UI clipping/Scrollbar conflicts (Attempted custom scrollbar implementation, but eventually stripped it out due to glitchy UX on iOS Safari in favor of invisible native scrollbars).
-- Recurrence count: 4
+- App icon bands / visual artifacts in macOS toast.
+- Recurrence count: 1 (for this specific artifact visibility)
 - Status: RESOLVED
 
 **Code Architecture**:
-React Frontend (PWA) and FastAPI Backend with MongoDB.
-- Authentication: 
-- Share Cards: 
-- Beneficiaries: 
-- Estate Chat: 
-- Financial Portal: 
+React Frontend (PWA) / FastAPI Backend / MongoDB.
 
 **Key Technical Concepts**:
-- **Zero-WARN Policy**: 🚨 Rule 0. Any invocation of 
+- **Zero-WARN Policy**: Any invocation of 
 ==========================================
   CarryOn™ Housekeeping Protocol
   + SOC 2 Compliance Audit
@@ -92,7 +78,7 @@ React Frontend (PWA) and FastAPI Backend with MongoDB.
 2.  Backend ruff format ........... [0;32mPASS[0m
 3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
 4.  Frontend build ................ [0;32mPASS[0m
-5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: 1c5cbff7969e)
+5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: 8c1a45e91496)
 6.  MongoDB _id leak scan ......... [0;32mPASS[0m
 7.  Hardcoded secrets scan ........ [0;32mPASS[0m
 7b. Push-blocker secrets scan ..... [0;32mPASS[0m (no push-blocking secret patterns detected)
@@ -101,7 +87,7 @@ React Frontend (PWA) and FastAPI Backend with MongoDB.
 8.  Sensitive console.log scan .... [0;32mPASS[0m
 9.  Deprecated datetime scan ...... [0;32mPASS[0m
 10. Backend health check .......... [0;32mPASS[0m
-11. Unprotected endpoint audit .... [0;32mPASS[0m (51 route files audited)
+11. Unprotected endpoint audit .... [0;32mPASS[0m (52 route files audited)
 
 [1mSECTION B: SOC 2 Compliance Audit[0m
 ------------------------------------------
@@ -144,7 +130,7 @@ React Frontend (PWA) and FastAPI Backend with MongoDB.
 45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
 46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
 47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
-48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 70 JS bundles)
+48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 82 JS bundles)
 49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
 50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
 
@@ -168,6 +154,17 @@ React Frontend (PWA) and FastAPI Backend with MongoDB.
 63. [VCL]   Capacitor version sync .. [0;32mPASS[0m (all plugins aligned with @capacitor/core v8)
 64. [VCL]   Engine ignore flag ..... [0;32mPASS[0m (.yarnrc has --ignore-engines)
 65. [VCL]   Key peer deps .......... [0;32mPASS[0m
+
+[1mSECTION G: Settings UI Primitives (Regression Guard)[0m
+------------------------------------------
+G1. [UX]    No opacity-dim gold CTAs in Settings ... [0;32mPASS[0m
+G2. [UX]    Settings <select> carets themed ....... [0;32mPASS[0m
+
+[1mSECTION H: Mobile Scrollbar Invariants (Regression Guard)[0m
+------------------------------------------
+H1. [UX]    No custom JS scrollbar components .... [0;32mPASS[0m
+H2. [UX]    Native scrollbar hidden globally ..... [0;32mPASS[0m
+H3. [UX]    No raw pointerdown scrollbar drag ..... [0;32mPASS[0m
 
 [1mSECTION D: Post-Check Verification[0m
 ------------------------------------------
@@ -206,163 +203,25 @@ Vercel Deployment Reference:
 [1;33m📋 AGENT PRIME DIRECTIVE (RULE 0)[0m: Run this script after EVERY batch
    of changes — not just at finish, but after each set of edits.
    0 WARN + 0 FAIL is the only acceptable state before responding to the user.
-   See /app/memory/AGENT_RULES.md Rule 0 for full context. MUST return 0 WARN and 0 FAIL. It must be run before finishing any task.
-- **Mobile Safe UI**: All tiles/modals/sheets must fit between the header and dock on all mobile sizes ().
+   See /app/memory/AGENT_RULES.md Rule 0 for full context. MUST return 0 WARN and 0 FAIL. A strict pre-push Git hook guarantees this.
+- **Playwright Global Setup**: Tests rely on  generated by  to bypass Cloudflare on preview.
 
 **key DB schema**:
   - , , .
 
-**changes in tech stack**:
-  - **Added**: Sentry ().
-  - **Removed**: Heavy ML Python packages (, , , etc.).
+**changes in tech stack**: None.
 
 **All files of reference**:
-  -  (New modular packages)
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-==========================================
-  CarryOn™ Housekeeping Protocol
-  + SOC 2 Compliance Audit
-==========================================
-
-[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
-------------------------------------------
-  [0;36mINFO[0m No fixes needed — already clean
-
-[1mSECTION A: Standard Housekeeping[0m
-------------------------------------------
-1.  Backend ruff check ............ [0;32mPASS[0m
-2.  Backend ruff format ........... [0;32mPASS[0m
-3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
-4.  Frontend build ................ [0;32mPASS[0m
-5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: 1c5cbff7969e)
-6.  MongoDB _id leak scan ......... [0;32mPASS[0m
-7.  Hardcoded secrets scan ........ [0;32mPASS[0m
-7b. Push-blocker secrets scan ..... [0;32mPASS[0m (no push-blocking secret patterns detected)
-7c. Light/dark mode safety ........ [0;32mPASS[0m (no hardcoded dark backgrounds — CSS variables used throughout)
-7d. Mobile responsive safety ...... [0;32mPASS[0m (new pages/components have scroll-safe height handling)
-8.  Sensitive console.log scan .... [0;32mPASS[0m
-9.  Deprecated datetime scan ...... [0;32mPASS[0m
-10. Backend health check .......... [0;32mPASS[0m
-11. Unprotected endpoint audit .... [0;32mPASS[0m (51 route files audited)
-
-[1mSECTION B: SOC 2 Compliance Audit[0m
-------------------------------------------
-12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
-13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
-14. [CC6.1] Password hashing ...... [0;32mPASS[0m
-15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
-16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
-17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
-18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
-19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
-20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
-21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
-22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
-23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
-24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
-25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (10 hard deletes — reviewed)
-26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
-27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
-28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
-29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
-30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
-31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
-32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (108 indexes defined)
-33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
-34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
-35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
-36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
-37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
-38. [A1.2]  Mongo projection safety  [0;32mPASS[0m
-
-[1mSECTION C: iOS / App Store Readiness[0m
-------------------------------------------
-39. [iOS]   Capacitor sync ......... [0;32mPASS[0m (0 plugins for iOS)
-40. [iOS]   Native purchases plugin  [0;32mPASS[0m (package.json + Capacitor + Podfile, v^8.1.2)
-41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (37 products, no duplicates)
-42. [iOS]   Stripe gated on iOS .... [0;32mPASS[0m (all Stripe redirects gated behind isNative)
-43. [iOS]   IAP imports present .... [0;32mPASS[0m (iap/useIAPPurchase + native imported in both subscription components)
-44. [iOS]   Apple disclosures ...... [0;32mPASS[0m (auto-renew, 24h cancel, Terms, Privacy, Restore)
-45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
-46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
-47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
-48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 70 JS bundles)
-49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
-50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
-
-[1mSECTION E: Mobile / PWA / iOS UX Compliance[0m
-------------------------------------------
-51. [PWA]   viewport-fit=cover ..... [0;32mPASS[0m
-52. [PWA]   Fixed nav safe-area .... [0;32mPASS[0m
-53. [PWA]   Page safe-area insets .. [0;32mPASS[0m
-54. [iOS]   Input font-size zoom ... [0;32mPASS[0m (all text inputs use fontSize >= 16px)
-55. [PWA]   Modal scroll safety .... [0;32mPASS[0m
-56. [iOS]   Touch target size ...... [0;32mPASS[0m
-57. [PWA]   Horizontal overflow .... [0;32mPASS[0m (overflow-x contained at root level)
-58. [PWA]   Fixed bottom safe-area . [0;32mPASS[0m
-59. [PWA]   Responsive padding ..... [0;32mPASS[0m
-60. [PWA]   Manifest & theme ....... [0;32mPASS[0m
-
-[1mSECTION F: Vercel Deployment Readiness[0m
-------------------------------------------
-61. [VCL]   Unresolved imports ..... [0;32mPASS[0m
-62. [VCL]   Source map suppression .. [0;32mPASS[0m (env + craco ignoreWarnings)
-63. [VCL]   Capacitor version sync .. [0;32mPASS[0m (all plugins aligned with @capacitor/core v8)
-64. [VCL]   Engine ignore flag ..... [0;32mPASS[0m (.yarnrc has --ignore-engines)
-65. [VCL]   Key peer deps .......... [0;32mPASS[0m
-
-[1mSECTION D: Post-Check Verification[0m
-------------------------------------------
-R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
-
-==========================================
-  [0;32mALL CHECKS PASSED[0m — codebase is clean
-  [0;32mREADY TO PUSH[0m — CodeMagic → TestFlight → App Store
-==========================================
-
-Safety reminder: Do NOT run yarn add/remove.
-To fix ruff format: cd /app/backend && ruff format .
-
-SOC 2 Trust Service Criteria Reference:
-  CC6.1  Logical access security
-  CC7.2  System monitoring & audit
-  CC8.1  Change management
-  A1.2   System availability
-  PI1.1  Privacy (GDPR)
-
-Mobile / PWA / iOS UX Reference:
-  E1-E3  Safe-area insets (viewport, nav, pages)
-  E4     Input zoom prevention (fontSize >= 16px)
-  E5-E6  Modal scroll + touch target sizing
-  E7-E8  Overflow + bottom bar safe-area
-  E9-E10 Responsive padding + PWA manifest
-
-Vercel Deployment Reference:
-  F1     Unresolved package imports
-  F2     Source map suppression (env + craco)
-  F3     Capacitor core/plugin version alignment
-  F4     Engine compatibility (.yarnrc)
-  F5     Key peer dependencies satisfied
-
-
-[1;33m📋 AGENT PRIME DIRECTIVE (RULE 0)[0m: Run this script after EVERY batch
-   of changes — not just at finish, but after each set of edits.
-   0 WARN + 0 FAIL is the only acceptable state before responding to the user.
-   See /app/memory/AGENT_RULES.md Rule 0 for full context.
-  - 
+  -  (Heavily modified to support multiple sizes and mono-badges)
+  -  (Updated with new sizes)
+  -  (Added links to sizes)
+  -  (Configured new badge paths)
   - 
 
 **Areas that need refactoring**:
-  -  (Reduced to ~1250 lines using hooks, but still monolithic).
-  - Frontend E2E testing suite (Playwright/Cypress) is highly recommended to prevent recurring UI/UX regressions.
+  - : Remains monolithic at over 1,600 lines.
 
 **key api endpoints**:
-  - 
   - 
   - 
 
@@ -383,7 +242,7 @@ Vercel Deployment Reference:
 2.  Backend ruff format ........... [0;32mPASS[0m
 3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
 4.  Frontend build ................ [0;32mPASS[0m
-5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: 1c5cbff7969e)
+5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: 8c1a45e91496)
 6.  MongoDB _id leak scan ......... [0;32mPASS[0m
 7.  Hardcoded secrets scan ........ [0;32mPASS[0m
 7b. Push-blocker secrets scan ..... [0;32mPASS[0m (no push-blocking secret patterns detected)
@@ -392,7 +251,7 @@ Vercel Deployment Reference:
 8.  Sensitive console.log scan .... [0;32mPASS[0m
 9.  Deprecated datetime scan ...... [0;32mPASS[0m
 10. Backend health check .......... [0;32mPASS[0m
-11. Unprotected endpoint audit .... [0;32mPASS[0m (51 route files audited)
+11. Unprotected endpoint audit .... [0;32mPASS[0m (52 route files audited)
 
 [1mSECTION B: SOC 2 Compliance Audit[0m
 ------------------------------------------
@@ -435,7 +294,7 @@ Vercel Deployment Reference:
 45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
 46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
 47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
-48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 70 JS bundles)
+48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 82 JS bundles)
 49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
 50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
 
@@ -459,6 +318,17 @@ Vercel Deployment Reference:
 63. [VCL]   Capacitor version sync .. [0;32mPASS[0m (all plugins aligned with @capacitor/core v8)
 64. [VCL]   Engine ignore flag ..... [0;32mPASS[0m (.yarnrc has --ignore-engines)
 65. [VCL]   Key peer deps .......... [0;32mPASS[0m
+
+[1mSECTION G: Settings UI Primitives (Regression Guard)[0m
+------------------------------------------
+G1. [UX]    No opacity-dim gold CTAs in Settings ... [0;32mPASS[0m
+G2. [UX]    Settings <select> carets themed ....... [0;32mPASS[0m
+
+[1mSECTION H: Mobile Scrollbar Invariants (Regression Guard)[0m
+------------------------------------------
+H1. [UX]    No custom JS scrollbar components .... [0;32mPASS[0m
+H2. [UX]    Native scrollbar hidden globally ..... [0;32mPASS[0m
+H3. [UX]    No raw pointerdown scrollbar drag ..... [0;32mPASS[0m
 
 [1mSECTION D: Post-Check Verification[0m
 ------------------------------------------
@@ -497,59 +367,44 @@ Vercel Deployment Reference:
 [1;33m📋 AGENT PRIME DIRECTIVE (RULE 0)[0m: Run this script after EVERY batch
    of changes — not just at finish, but after each set of edits.
    0 WARN + 0 FAIL is the only acceptable state before responding to the user.
-   See /app/memory/AGENT_RULES.md Rule 0 for full context. and All checks passed! + Would reformat: scripts/schema_snapshot.py
-1 file would be reformatted, 132 files already formatted at the end of EVERY session. Do not leave any WARNs unresolved. Check  first thing.
-- The platform uses CSS variables for Light/Dark mode. Do NOT use hardcoded dark hex colors (e.g., ) in new components; use , , , etc.
-- Custom React scrollbars failed miserably on iOS Safari due to  and flex-box layout bugs. The current working state relies on native scrolling with the visual scrollbars hidden via CSS (). Do not attempt to re-introduce custom JS scrollbars for mobile viewports.
+   See /app/memory/AGENT_RULES.md Rule 0 for full context. at the end of EVERY session or after every batch of changes. Do not leave any WARNs unresolved. It will block your git pushes if broken.
+- **App Icons**: Do not attempt complex color-keying logic in the icon generator. The script is now set up to cleanly ingest the square 1024x1024 source provided by the user. 
 
 **documents and test reports created in this job**:
   -  (Updated)
   -  (Updated)
-  -  through 
 
 **Last 10 User Messages and any pending HUMAN messages**:
-- *User*: The tell others tile scroll is still super glitchy. The dashboard and all other page scroller is also totally ineffective and glitchy. Horrible.
-- *Agent*: Realized React  during scroll causes visible lag/flashing. Refactored  to use direct DOM manipulation (). Pushed changes.
-- *User*: I think due to all the refactoring and updates last night, some things broke: My founder portal portal switcher or dev switcher isn’t working. The pin feature in the ECT isn’t working.
-- *Agent*: Ran full regression test. Fixed dev-switch (removed overly aggressive env gate). Fixed ECT pin (removed  restriction, allowing all members/admins to pin).
-- *User*: The scroller is a little too small now, make it double its current length and thickness. It is also completely not selectable... Pin feature is still not working at all.
-- *Agent*: Fixed pin logic (admin bypass was missing in backend). Doubled scrollbar size and fixed drag interaction (added pointerdown listeners directly to DOM node).
-- *User*: Better but selecting the scroller also selects text in the screen.
-- *Agent*: Added  during drag events to prevent text selection.
-- *User*: Better. But on the tile the scroller is moving opposite of the scrolling...
-- *Agent*: Fixed absolute positioning math in .
-- *User*: The goddamn scroll bar is still moving in the opposite direction! Now the dashboard one is fucked up... We need to get this right!
-- *Agent*: Made  a line-for-line copy of the working  math. Ran housekeeping.
-- *User*: I am getting so fucking frustrated with you. The scroll is not working at all! Completely stripped out all scroll bars throughout the entire site right now...
-- *Agent*: Removed all custom ScrollBar JS components and wrapper hacks. Restored native scrolling and hid scrollbars via global CSS to fix the UX.
-- *User*: When a user taps the pin symbol in the header, I want it to provide a drop-down list summary of all the things that are pinned that is also scrollable.
-- *Agent*: Built the pinned messages dropdown anchored to the header. Pushed.
-- *User*: The side scroll bar is still everywhere. What the fuck?!
-- *Agent*: Hid the native iOS Safari scrollbar via CSS .
-- *User*: Close the gap to match the other gaps between tiles for the gap between Tell your people and the tile above it.
-- *Agent*: Changed  to  on the ShareYourCarryOn pill wrapper. Ran housekeeping (69 PASS). Pushed. **(USER VERIFICATION PENDING)**
+- *User*: Yes, I never pushed from last session.
+- *Agent*: Checked git status, ran housekeeping, asked for next task.
+- *User*: Uploaded screenshot of macOS toast icon with blurry/white bands and asked to fix it.
+- *Agent*: Assumed downscaling issue, generated multi-size icons, added them to HTML/manifest/sw. Suggested Android mono-badge.
+- *User*: Yes (to Android mono-badge).
+- *Agent*: Implemented Android mono-badge, verified pixel transparency, finished task.
+- *User*: Clarified the issue wasn't blurriness, but left/right bands on the icon.
+- *Agent*: Checked pixels, found gradient bleed from original source file. Tried to color-key it out.
+- *User*: Stopped agent, provided a new clean 1024x1024 logo source file to explicitly fix the bands.
+- *Agent*: Scrapped color-key logic, used the new clean square source file, generated icons, verified bands were gone via bash/vision, ran housekeeping, finished successfully.
 
 **Project Health Check:**
   - Broken: Twilio SMS (Blocked), Apple IAP (Blocked).
-  - Mocked: UX Prototypes (Dashboard v2, Onboarding v2).
+  - Mocked: None.
 
-**3rd Party Integrations** (Complete List):
+**3rd Party Integrations**:
 	 •	xAI (Grok) — LIVE (uses Emergent LLM Key)
 	 •	Resend (Emails) — LIVE (uses Env variable)
-	 •	Stripe (Payments / Webhooks) — LIVE (uses User API Key / Webhook Secret)
+	 •	Stripe (Payments) — LIVE (uses User API Key)
 	 •	Google Places API — LIVE (uses Env Variable)
      •	Sentry (Error Monitoring) — LIVE (uses Env Variable)
-	 •	Twilio SMS — Blocked by Twilio A2P
-	 •	@capgo/native-purchases — Blocked by Apple
 
 **Testing status**:
-  - Testing agent used after significant changes: YES (Iterations 71-75).
+  - Testing agent used after significant changes: NO (Changes were solely asset generation and script modifications).
   - Troubleshoot agent used after agent stuck in loop: NO.
   - Test files created: None.
-  - Known regressions: None (Scrollbar UX was a regression, but was ripped out and fixed).
+  - Known regressions: None.
 
 **Credentials to test flow**:
   - Refer to 
 
 **What agent forgot to execute**:
-  - Nothing. The agent completed the spacing adjustment for the Tell your people button and is awaiting user verification.</analysis>
+  - Nothing. The agent successfully generated clean app icons and Android mono badges based on the user's explicit instructions and provided assets.</analysis>
