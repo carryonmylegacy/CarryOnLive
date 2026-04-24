@@ -211,6 +211,47 @@ export async function snapshot() {
   } catch { return []; }
 }
 
+/** List every outbox row that isn't completed yet (pending, inflight,
+ *  failed, conflict). Sorted newest-first. Used by the platform-wide
+ *  PendingSyncPanel to render the per-item list. */
+export async function listPending() {
+  if (!isOfflineEnabled()) return [];
+  try {
+    const db = getDB();
+    const all = await db.outbox.orderBy('id').reverse().toArray();
+    return all
+      .filter((r) => ['pending', 'inflight', 'failed', 'conflict'].includes(r.status))
+      .map(({ body, ...rest }) => rest);
+  } catch { return []; }
+}
+
+/** Re-queue a failed or inflight outbox row for the next drain. */
+export async function retryRow(id) {
+  if (!isOfflineEnabled() || !id) return;
+  try {
+    const db = getDB();
+    await db.outbox.update(id, {
+      status: 'pending',
+      retry_count: 0,
+      last_error: null,
+    });
+    drain().catch(() => {});
+  } catch (err) {
+    console.warn('[offline] retryRow failed:', err);
+  }
+}
+
+/** Permanently remove an outbox row (user chose to cancel the write). */
+export async function removeRow(id) {
+  if (!isOfflineEnabled() || !id) return;
+  try {
+    await getDB().outbox.delete(id);
+    try { window.dispatchEvent(new CustomEvent('carryon:outbox:drained-one', { detail: { id } })); } catch { /* SSR */ }
+  } catch (err) {
+    console.warn('[offline] removeRow failed:', err);
+  }
+}
+
 // ── Phase 8 — Conflict resolution ───────────────────────────────────────────
 
 /** List every outbox row currently in the `conflict` state. */

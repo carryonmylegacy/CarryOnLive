@@ -37,8 +37,9 @@
  */
 
 import React, { useEffect, useState, useRef } from 'react';
-import { WifiOff, RefreshCw, AlertTriangle, CloudUpload } from 'lucide-react';
+import { RefreshCw, AlertTriangle, CloudUpload } from 'lucide-react';
 import { getOfflineMode } from '../offline/featureFlag';
+import PendingSyncPanel from './PendingSyncPanel';
 
 function safeCount(fn) {
   return fn().catch(() => 0);
@@ -116,31 +117,44 @@ export function usePendingSyncCounts() {
 /** Inline variant — a small chip designed to sit inside another banner. */
 export function PendingSyncChipInline() {
   const { outbox, uploads, conflicts } = usePendingSyncCounts();
+  const [panelOpen, setPanelOpen] = useState(false);
   const total = outbox + uploads;
   if (conflicts > 0) {
     return (
-      <span
-        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold"
-        style={{ background: '#991B1B', color: '#FEE2E2', border: '1px solid #FCA5A5' }}
-        data-testid="pending-sync-chip-inline"
-        data-variant="conflict"
-      >
-        <AlertTriangle className="w-3 h-3" />
-        {conflicts} {conflicts === 1 ? 'conflict' : 'conflicts'} — tap to resolve
-      </span>
+      <>
+        <button
+          type="button"
+          onClick={() => setPanelOpen(true)}
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold"
+          style={{ background: '#991B1B', color: '#FEE2E2', border: '1px solid #FCA5A5' }}
+          data-testid="pending-sync-chip-inline"
+          data-variant="conflict"
+          aria-label="View conflicts"
+        >
+          <AlertTriangle className="w-3 h-3" />
+          {conflicts} {conflicts === 1 ? 'conflict' : 'conflicts'} — tap to resolve
+        </button>
+        <PendingSyncPanel open={panelOpen} onClose={() => setPanelOpen(false)} />
+      </>
     );
   }
   if (total === 0) return null;
   return (
-    <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold"
-      style={{ background: '#d4af37', color: '#0B1221', border: '1px solid rgba(212,175,55,0.9)' }}
-      data-testid="pending-sync-chip-inline"
-      data-variant="pending"
-    >
-      <CloudUpload className="w-3 h-3" />
-      {total} queued
-    </span>
+    <>
+      <button
+        type="button"
+        onClick={() => setPanelOpen(true)}
+        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold"
+        style={{ background: '#d4af37', color: '#0B1221', border: '1px solid rgba(212,175,55,0.9)' }}
+        data-testid="pending-sync-chip-inline"
+        data-variant="pending"
+        aria-label="View queued items"
+      >
+        <CloudUpload className="w-3 h-3" />
+        {total} queued
+      </button>
+      <PendingSyncPanel open={panelOpen} onClose={() => setPanelOpen(false)} />
+    </>
   );
 }
 
@@ -148,9 +162,10 @@ export function PendingSyncChipInline() {
  *  are pending items and the user IS online (the banner itself is
  *  absent). Becomes "Syncing N items…" while a drain is in progress. */
 export default function PendingSyncChip() {
-  const { outbox, uploads, conflicts, online, lastSyncedAt } = usePendingSyncCounts();
+  const { outbox, uploads, conflicts, online } = usePendingSyncCounts();
   const [draining, setDraining] = useState(false);
   const [flashSynced, setFlashSynced] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
   const prevTotalRef = useRef(0);
   const flashTimerRef = useRef(null);
 
@@ -194,26 +209,31 @@ export default function PendingSyncChip() {
   // Conflict variant wins.
   if (conflicts > 0) {
     return (
-      <div
-        className="fixed top-0 left-0 right-0 z-[9998] flex items-center justify-center gap-2 px-4 py-1.5 text-[12px] font-bold"
-        style={{
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)',
-          background: '#991B1B',
-          color: '#FEE2E2',
-          boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
-          animation: 'slideDown 0.3s ease-out',
-        }}
-        data-testid="pending-sync-chip"
-        data-variant="conflict"
-        role="alert"
-      >
-        <AlertTriangle className="w-3.5 h-3.5" />
-        <span>{conflicts} sync {conflicts === 1 ? 'conflict' : 'conflicts'} — tap "Resolve" below to choose yours vs server</span>
-      </div>
+      <>
+        <button
+          type="button"
+          onClick={() => setPanelOpen(true)}
+          className="fixed top-0 left-0 right-0 z-[9998] flex items-center justify-center gap-2 px-4 py-1.5 text-[12px] font-bold w-full"
+          style={{
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)',
+            background: '#991B1B',
+            color: '#FEE2E2',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
+            animation: 'slideDown 0.3s ease-out',
+          }}
+          data-testid="pending-sync-chip"
+          data-variant="conflict"
+          aria-label="View sync conflicts"
+        >
+          <AlertTriangle className="w-3.5 h-3.5" />
+          <span>{conflicts} sync {conflicts === 1 ? 'conflict' : 'conflicts'} — tap to resolve</span>
+        </button>
+        <PendingSyncPanel open={panelOpen} onClose={() => setPanelOpen(false)} />
+      </>
     );
   }
 
-  // Just-synced celebration pill (briefly green).
+  // Just-synced celebration pill (briefly green). Not clickable — it's informational.
   if (total === 0 && flashSynced) {
     return (
       <div
@@ -238,24 +258,29 @@ export default function PendingSyncChip() {
   // Online + pending items. Gold while draining, muted while waiting.
   const label = draining
     ? `Syncing ${total} ${total === 1 ? 'item' : 'items'}…`
-    : `${total} ${total === 1 ? 'item' : 'items'} queued — will sync when connection stabilizes`;
+    : `${total} ${total === 1 ? 'item' : 'items'} queued — tap to review`;
   return (
-    <div
-      className="fixed top-0 left-0 right-0 z-[9998] flex items-center justify-center gap-2 px-4 py-1.5 text-[12px] font-bold"
-      style={{
-        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)',
-        background: draining ? '#d4af37' : '#1E3A5F',
-        color: draining ? '#0B1221' : '#F4E7C1',
-        boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
-        animation: 'slideDown 0.3s ease-out',
-      }}
-      data-testid="pending-sync-chip"
-      data-variant={draining ? 'syncing' : 'waiting'}
-      role="status"
-    >
-      <RefreshCw className={`w-3.5 h-3.5 ${draining ? 'animate-spin' : ''}`} />
-      <span>{label}</span>
-    </div>
+    <>
+      <button
+        type="button"
+        onClick={() => setPanelOpen(true)}
+        className="fixed top-0 left-0 right-0 z-[9998] flex items-center justify-center gap-2 px-4 py-1.5 text-[12px] font-bold w-full"
+        style={{
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)',
+          background: draining ? '#d4af37' : '#1E3A5F',
+          color: draining ? '#0B1221' : '#F4E7C1',
+          boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
+          animation: 'slideDown 0.3s ease-out',
+        }}
+        data-testid="pending-sync-chip"
+        data-variant={draining ? 'syncing' : 'waiting'}
+        aria-label="View queued items"
+      >
+        <RefreshCw className={`w-3.5 h-3.5 ${draining ? 'animate-spin' : ''}`} />
+        <span>{label}</span>
+      </button>
+      <PendingSyncPanel open={panelOpen} onClose={() => setPanelOpen(false)} />
+    </>
   );
 }
 

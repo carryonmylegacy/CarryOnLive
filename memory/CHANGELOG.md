@@ -1,5 +1,64 @@
 # CarryOn — Changelog
 
+## Apr 24, 2026 (later) — Tap-to-Expand Pending Sync Panel
+
+Upgraded the platform-wide chip so users can drill into the per-item queue
+instead of just seeing a count.
+
+### New component `components/PendingSyncPanel.js`
+- Slide-over modal (bottom-sheet on mobile, centered card on desktop)
+  rendered via `createPortal(document.body)` so it reliably sits above
+  every page, dock, and stacking context.
+- Lists **every queued outbox row** (text writes via `mutateWithOutbox`)
+  and **every active large-file upload** (chunked uploader). Per-row
+  details: entity label, verb (Create / Update / Delete), method + URL,
+  relative queue age (`queued 3m ago`), failure count, conflict chip,
+  file size + upload progress bar.
+- Per-row actions:
+  - **Retry** (gold button) — for outbox: flips status to `pending`,
+    clears retry_count, triggers drain. For uploads: flips to `queued`,
+    kicks `drainPendingUploads`.
+  - **Remove** (red trash icon) — permanently removes the queued row
+    with a confirmation dialog. Bytes or payload are lost.
+- Empty state: green check + "No queued changes — every edit you make
+  offline will show up here until it syncs."
+- Footer microcopy: "Queued changes are stored on your device only. They
+  sync automatically once you're back online."
+- Fully data-testid'd (`pending-sync-panel`, `pending-sync-panel-close`,
+  `pending-sync-row-{outbox|upload}-{id}`, `pending-sync-{retry|remove}-{id}`,
+  `pending-sync-upload-{retry|remove}-{id}`).
+- Auto-refresh every 4s while open + listens to all sync events
+  (enqueued / drained / drained-one / conflict / upload:progress /
+  upload:complete / pending:changed) so the list reflects reality in
+  near-real-time.
+- Esc + backdrop-tap closes.
+
+### New outbox helpers `offline/outbox.js`
+- `listPending()` — returns all non-complete rows (pending / inflight /
+  failed / conflict), newest-first. Used by the panel.
+- `retryRow(id)` — flip status to `pending`, clear retry/last_error,
+  trigger drain.
+- `removeRow(id)` — delete the row + dispatch `carryon:outbox:drained-one`
+  so UI counts update immediately.
+
+### Chip wiring (`components/PendingSyncChip.js`)
+- Inline chip (inside NetworkStatusBanner) is now a `<button>` that
+  opens the panel.
+- Main chip (fixed top strip when online + pending) is now a `<button>`
+  that opens the panel. Copy updated from "— will sync when connection
+  stabilizes" to "— tap to review" to cue the new affordance.
+- Conflict variant also tap-to-open so users can resolve from the
+  same UI.
+
+### Verification
+- `yarn eslint src` → 0 errors.
+- `yarn build` → compiled successfully.
+- `bash /app/housekeeping.sh` → **ALL CHECKS PASSED · 0 WARN · 0 FAIL**
+  (fixed 4 sub-11px font warnings introduced by the new status chips).
+- Smoke screenshot on preview confirmed: chip + panel both hidden when
+  the device has zero queued items (correct default).
+
+
 ## Apr 24, 2026 (late) — Platform-wide Pending-Sync Chip + More "+" Surfaces Offline
 
 Extension of the earlier offline fixes. User requested a universal, fixed
