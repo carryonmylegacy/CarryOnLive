@@ -961,10 +961,15 @@ const DashboardPage = () => {
           // wide enough to never clip the 6 chips at 13" laptop widths.
           const tiles = (
             <div className="lg:col-span-1">
-              <div className="grid grid-cols-3 gap-3 mb-4" data-testid="dashboard-stat-grid">
-                {ENTRIES.map((e) => (
-                  <React.Fragment key={e.key}>{e.tile}</React.Fragment>
-                ))}
+              <div className="glass-card p-4 lg:p-5 mb-4 h-full flex flex-col" data-testid="core-pillars-card">
+                <h2 className="text-3xl font-bold text-[var(--t)] uppercase tracking-wider mb-4 text-center" style={{ fontFamily: 'var(--sans)' }}>
+                  CarryOn Core Pillars
+                </h2>
+                <div className="grid grid-cols-3 gap-3 flex-1" data-testid="dashboard-stat-grid">
+                  {ENTRIES.map((e) => (
+                    <React.Fragment key={e.key}>{e.tile}</React.Fragment>
+                  ))}
+                </div>
               </div>
               {egaRunning && isFeatureKeyEnabled('ega', enabledFeatures) && (
                 <div className="flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold mb-4"
@@ -978,11 +983,13 @@ const DashboardPage = () => {
           );
           const dial = (
             <div className="lg:col-span-1">
-              <div className="glass-card p-4 lg:p-5 mb-4" data-testid="readiness-card-side">
-                <h2 className="text-2xl font-bold text-[var(--t)] uppercase tracking-wider mb-3 text-center" style={{ fontFamily: 'var(--sans)' }}>
+              <div className="glass-card p-4 lg:p-5 mb-4 h-full flex flex-col" data-testid="readiness-card-side">
+                <h2 className="text-3xl font-bold text-[var(--t)] uppercase tracking-wider mb-4 text-center" style={{ fontFamily: 'var(--sans)' }}>
                   Estate Readiness
                 </h2>
-                <ReadinessDial score={readinessScore} id="readiness-side" labelText={scoreInfo.label} labelColor={scoreInfo.color} />
+                <div className="flex-1 flex items-center justify-center">
+                  <ReadinessDial score={readinessScore} id="readiness-side" labelText={scoreInfo.label} labelColor={scoreInfo.color} />
+                </div>
                 <div className="mt-3 flex justify-center">
                   <KeyChips size="md" columns={2} />
                 </div>

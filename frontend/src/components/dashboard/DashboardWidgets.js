@@ -83,7 +83,15 @@ export const StatCard = ({ icon: Icon, value, label, cardClass, onClick, classNa
           {label.split(' ').slice(Math.ceil(label.split(' ').length / 2)).join(' ')}
         </>
       ) : (
-        label
+        // Reserve two lines of label height even for single-word labels so
+        // every tile in the grid has the same internal vertical rhythm
+        // (otherwise "Beneficiaries" sits noticeably higher than e.g.
+        // "Immediate Action Checklist").
+        <>
+          {label}
+          <br />
+          <span aria-hidden="true">&nbsp;</span>
+        </>
       )}
     </div>
   </div>
