@@ -961,11 +961,11 @@ const DashboardPage = () => {
           // wide enough to never clip the 6 chips at 13" laptop widths.
           const tiles = (
             <div className="lg:col-span-1">
-              <div className="glass-card p-4 lg:p-5 mb-4 h-full flex flex-col" data-testid="core-pillars-card">
+              <div className="glass-card p-4 lg:p-5 h-full flex flex-col" data-testid="core-pillars-card">
                 <h2 className="text-3xl font-bold text-[var(--t)] uppercase tracking-wider mb-4 text-center" style={{ fontFamily: 'var(--sans)' }}>
                   CarryOn Core Pillars
                 </h2>
-                <div className="grid grid-cols-3 gap-3 flex-1" data-testid="dashboard-stat-grid">
+                <div className="grid grid-cols-3 gap-4" data-testid="dashboard-stat-grid">
                   {ENTRIES.map((e) => (
                     <React.Fragment key={e.key}>{e.tile}</React.Fragment>
                   ))}
@@ -983,7 +983,7 @@ const DashboardPage = () => {
           );
           const dial = (
             <div className="lg:col-span-1">
-              <div className="glass-card p-4 lg:p-5 mb-4 h-full flex flex-col" data-testid="readiness-card-side">
+              <div className="glass-card p-4 lg:p-5 h-full flex flex-col" data-testid="readiness-card-side">
                 <h2 className="text-3xl font-bold text-[var(--t)] uppercase tracking-wider mb-4 text-center" style={{ fontFamily: 'var(--sans)' }}>
                   Estate Readiness
                 </h2>
@@ -998,7 +998,7 @@ const DashboardPage = () => {
           );
           desktopBlock = (
             <div
-              className="hidden lg:grid lg:grid-cols-2 lg:gap-6 mb-2"
+              className="hidden lg:grid lg:grid-cols-2 lg:gap-4 mb-4"
             >
               {dashboardLayout === 'tiles-right' ? <>{dial}{tiles}</> : <>{tiles}{dial}</>}
             </div>
