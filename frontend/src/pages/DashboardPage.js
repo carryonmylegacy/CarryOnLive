@@ -5,6 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
 import { isFeatureKeyEnabled, isFeatureEnabled } from '../utils/featureGates';
 import { SpeedometerGauge, StatCard } from '../components/dashboard/DashboardWidgets';
+import { ReadinessDial } from '../components/dashboard/ReadinessDial';
+import { useDashboardPrefs } from '../hooks/useDashboardPrefs';
 import { 
   FolderLock, 
   MessageSquare, 
@@ -21,7 +23,8 @@ import {
   Loader2,
   DollarSign,
   Receipt,
-  TrendingUp
+  TrendingUp,
+  ShieldAlert
 } from 'lucide-react';
 import TrialBanner from '../components/TrialBanner';
 import BillingStatusBanner from '../components/BillingStatusBanner';
@@ -46,7 +49,7 @@ const DashboardPage = () => {
   const [estates, setEstates] = useState([]);
   const [estate, setEstate] = useState(null);
   const [checklists, setChecklists] = useState([]);
-  const [stats, setStats] = useState({ documents: 0, messages: 0, beneficiaries: 0 });
+  const [stats, setStats] = useState({ documents: 0, messages: 0, beneficiaries: 0, ccp_plans: 0 });
   const [readiness, setReadiness] = useState({ documents: { score: 0 }, messages: { score: 0 }, checklist: { score: 0 } });
   const [financialSummary, setFinancialSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -165,15 +168,22 @@ const DashboardPage = () => {
     }
     try {
       // Always fetch estate data AND onboarding progress in parallel
-      const [docsRes, msgsRes, bensRes, checklistRes, readinessRes, progressRes] = await Promise.all([
+      const [docsRes, msgsRes, bensRes, checklistRes, readinessRes, progressRes, ccpRes] = await Promise.all([
         axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/messages/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/beneficiaries/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/checklists/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/estate/${estateId}/readiness`, getAuthHeaders()).catch(() => null),
         axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders()).catch(() => null),
+        axios.get(`${API_URL}/ccp/plans/${estateId}`, getAuthHeaders()).catch(() => null),
       ]);
-      const statsPayload = { documents: docsRes.data.length, messages: msgsRes.data.length, beneficiaries: bensRes.data.length };
+      const ccpCount = Array.isArray(ccpRes?.data) ? ccpRes.data.length : 0;
+      const statsPayload = {
+        documents: docsRes.data.length,
+        messages: msgsRes.data.length,
+        beneficiaries: bensRes.data.length,
+        ccp_plans: ccpCount,
+      };
       setStats(statsPayload);
       setChecklists(checklistRes.data);
       if (readinessRes) {
@@ -281,13 +291,48 @@ const DashboardPage = () => {
 
   const completedTasks = checklists.filter(c => c.is_completed).length;
   const totalTasks = checklists.length || 5;
-  const readinessScore = estate?.readiness_score || 0;
 
-  // Use real readiness breakdown from API
+  // Use real readiness breakdown from API for the four backend categories.
   const docsPercent = readiness?.documents?.score ?? 0;
   const msgsPercent = readiness?.messages?.score ?? 0;
   const checklistPercent = readiness?.checklist?.score ?? 0;
   const financialsPercent = readiness?.financials?.score ?? 0;
+
+  // Two new client-derived categories — Beneficiaries and CCP — feed
+  // the unified Readiness Score alongside the four server-side ones.
+  // Beneficiaries: linear ramp 0..3 → 0..100% (3+ beneficiaries = full).
+  // CCP: 100% if at least one Emergency Plan exists, else 0%.
+  // Both heuristics intentionally simple — they reward the user for
+  // *having configured anything at all*, not for sophistication.
+  const beneficiariesPercent = Math.min(100, Math.round(((stats.beneficiaries || 0) / 3) * 100));
+  const ccpPercent = (stats.ccp_plans || 0) > 0 ? 100 : 0;
+
+  // Weighted overall readiness — priority order (Beneficiaries → IAC →
+  // MM → SDV → CFP → CCP) maps to weights 6..1. Total weight = 21.
+  // We override the backend's `overall_score` so the gauge always
+  // reflects all six tiles even before the backend learns about
+  // beneficiaries + CCP. The colored chips beside the gauge use the
+  // same per-category percents, so the math is fully transparent.
+  const READINESS_WEIGHTS = {
+    beneficiaries: 6,
+    checklist: 5,
+    messages: 4,
+    documents: 3,
+    financials: 2,
+    ccp: 1,
+  };
+  const weightedSum =
+    beneficiariesPercent * READINESS_WEIGHTS.beneficiaries +
+    checklistPercent * READINESS_WEIGHTS.checklist +
+    msgsPercent * READINESS_WEIGHTS.messages +
+    docsPercent * READINESS_WEIGHTS.documents +
+    financialsPercent * READINESS_WEIGHTS.financials +
+    ccpPercent * READINESS_WEIGHTS.ccp;
+  const totalWeight = Object.values(READINESS_WEIGHTS).reduce((a, b) => a + b, 0);
+  const readinessScore = Math.round(weightedSum / totalWeight);
+
+  // Dashboard layout/gauge preferences (per-device).
+  const { layout: dashboardLayout } = useDashboardPrefs();
 
   // Get score label and color
   const getScoreLabel = (score) => {
@@ -666,155 +711,268 @@ const DashboardPage = () => {
       </div>
       )}
 
-      {/* Estate Readiness Score — Single Gauge */}
-      <div className="glass-card p-5 lg:p-8 mb-4" data-testid="readiness-card">
-        {/* Title — always centered */}
-        <h2 className="text-base lg:text-3xl font-bold text-[var(--t)] uppercase tracking-wider mb-4 lg:mb-5 text-center" style={{ fontFamily: 'var(--sans)' }}>
-          Estate Readiness
-        </h2>
-        {/* Desktop: key box upper right, gauge below */}
-        <div className="hidden lg:flex lg:justify-end lg:mb-4 lg:px-4">
-          <div className="flex flex-col gap-1.5 rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            {isFeatureKeyEnabled('mm', enabledFeatures) && (
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6] flex-shrink-0" />
-              <span className="text-[var(--t4)] text-sm font-medium">{msgsPercent}% Messages</span>
-            </div>
-            )}
-            {isFeatureKeyEnabled('iac', enabledFeatures) && (
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#f97316] flex-shrink-0" />
-              <span className="text-[var(--t4)] text-sm font-medium">{checklistPercent}% Checklist</span>
-            </div>
-            )}
-            {isFeatureKeyEnabled('sdv', enabledFeatures) && (
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb] flex-shrink-0" />
-              <span className="text-[var(--t4)] text-sm font-medium">{docsPercent}% Docs</span>
-            </div>
-            )}
-            {isFeatureKeyEnabled('cfp', enabledFeatures) && (
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] flex-shrink-0" />
-              <span className="text-[var(--t4)] text-sm font-medium">{financialsPercent}% Financials</span>
-            </div>
-            )}
-          </div>
-        </div>
-        {/* Mobile/PWA key — split two-and-two in corners */}
-        <div className="flex justify-between mb-3 px-2 lg:hidden">
-          <div className="flex flex-col gap-1">
-            {isFeatureKeyEnabled('mm', enabledFeatures) && (
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#8b5cf6] flex-shrink-0" />
-              <span className="text-[var(--t4)] text-[11px] font-medium">{msgsPercent}% Messages</span>
-            </div>
-            )}
-            {isFeatureKeyEnabled('iac', enabledFeatures) && (
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#f97316] flex-shrink-0" />
-              <span className="text-[var(--t4)] text-[11px] font-medium">{checklistPercent}% Checklist</span>
-            </div>
-            )}
-          </div>
-          <div className="flex flex-col gap-1 items-end">
-            {isFeatureKeyEnabled('sdv', enabledFeatures) && (
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#2563eb] flex-shrink-0" />
-              <span className="text-[var(--t4)] text-[11px] font-medium">{docsPercent}% Docs</span>
-            </div>
-            )}
-            {isFeatureKeyEnabled('cfp', enabledFeatures) && (
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#10b981] flex-shrink-0" />
-              <span className="text-[var(--t4)] text-[11px] font-medium">{financialsPercent}% Financials</span>
-            </div>
-            )}
-          </div>
-        </div>
-        {/* Gauge */}
-        <SpeedometerGauge score={readinessScore} id="readiness" labelText={scoreInfo.label} labelColor={scoreInfo.color} />
-      </div>
+      {/* ════════════════════════════════════════════════════════════
+          Readiness + Stat Tiles surface
+          User-customizable via Settings → Appearance → Dashboard View.
+          Three desktop layouts: tiles-left (default), tiles-right,
+          readiness-top. Mobile/PWA always uses the compact vertical
+          flow regardless of `dashboardLayout` — too narrow to
+          benefit from the side-by-side grid.
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-4 mb-4">
-        {isFeatureKeyEnabled('mm', enabledFeatures) && (
-        <StatCard 
-          icon={MessageSquare}
-          value={stats.messages}
-          label="Milestone Messages (MM)"
-          cardClass="stat-card-messages"
-          onClick={() => navigate('/messages')}
-          sectionKey="messages"
-        />
-        )}
-        {isFeatureKeyEnabled('iac', enabledFeatures) && (
-        <StatCard 
-          icon={CheckSquare}
-          value={totalTasks}
-          label="Immediate Action Checklist (IAC)"
-          cardClass="stat-card-checklist"
-          onClick={() => navigate('/checklist')}
-          sectionKey="checklist"
-        />
-        )}
-        {isFeatureKeyEnabled('sdv', enabledFeatures) && (
-        <StatCard 
-          icon={FolderLock}
-          value={stats.documents}
-          label="Secure Document Vault (SDV)"
-          cardClass="stat-card-vault"
-          onClick={() => navigate('/vault')}
-          sectionKey="vault"
-        />
-        )}
-        {isFeatureKeyEnabled('cfp', enabledFeatures) && (
-        <StatCard 
-          icon={DollarSign}
-          value={(financialSummary?.bills_count || 0) + (financialSummary?.debts_count || 0) + (financialSummary?.accounts_count || 0) + (financialSummary?.property_count || 0)}
-          label="CarryOn Financial Picture (CFP)"
-          cardClass="stat-card-financial"
-          onClick={() => navigate('/financial')}
-          sectionKey="financial_portal"
-        />
-        )}
-        {egaRunning && isFeatureKeyEnabled('ega', enabledFeatures) && (
-          <div className="col-span-3 lg:col-span-4 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold"
-            style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)', color: '#d4af37' }}
-            data-testid="ega-running-banner">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            Estate Guardian is generating IAC items — counts will update automatically
-          </div>
-        )}
-        {isFeatureKeyEnabled('beneficiaries', enabledFeatures) && (
-        <StatCard 
-          icon={Users}
-          value={stats.beneficiaries}
-          label="Beneficiaries"
-          cardClass="stat-card-beneficiaries"
-          onClick={() => navigate('/beneficiaries')}
-          className="hidden lg:block lg:col-span-full"
-          sectionKey="beneficiaries"
-        />
-        )}
-      </div>
+          The 6 readiness categories (in priority order Beneficiaries
+          → IAC → MM → SDV → CFP → CCP) feed the same gauge AND the
+          same key chips. Each tile maps 1:1 to a category. The
+          gauge graphic respects `dashboardGauge` ('speedometer' or
+          'circle').
+          ════════════════════════════════════════════════════════════ */}
+      {(() => {
+        const ENTRIES = [
+          // Order = displayed order = priority order. Beneficiaries first.
+          isFeatureKeyEnabled('beneficiaries', enabledFeatures) && {
+            key: 'beneficiaries',
+            chipColor: '#22c55e',
+            chipPercent: beneficiariesPercent,
+            chipLabel: 'Beneficiaries',
+            tile: (
+              <StatCard
+                icon={Users}
+                value={stats.beneficiaries}
+                label="Beneficiaries"
+                cardClass="stat-card-beneficiaries"
+                onClick={() => navigate('/beneficiaries')}
+                sectionKey="beneficiaries"
+              />
+            ),
+          },
+          isFeatureKeyEnabled('iac', enabledFeatures) && {
+            key: 'iac',
+            chipColor: '#f97316',
+            chipPercent: checklistPercent,
+            chipLabel: 'Checklist',
+            tile: (
+              <StatCard
+                icon={CheckSquare}
+                value={totalTasks}
+                label="Immediate Action Checklist (IAC)"
+                cardClass="stat-card-checklist"
+                onClick={() => navigate('/checklist')}
+                sectionKey="checklist"
+              />
+            ),
+          },
+          isFeatureKeyEnabled('mm', enabledFeatures) && {
+            key: 'mm',
+            chipColor: '#8b5cf6',
+            chipPercent: msgsPercent,
+            chipLabel: 'Messages',
+            tile: (
+              <StatCard
+                icon={MessageSquare}
+                value={stats.messages}
+                label="Milestone Messages (MM)"
+                cardClass="stat-card-messages"
+                onClick={() => navigate('/messages')}
+                sectionKey="messages"
+              />
+            ),
+          },
+          isFeatureKeyEnabled('sdv', enabledFeatures) && {
+            key: 'sdv',
+            chipColor: '#2563eb',
+            chipPercent: docsPercent,
+            chipLabel: 'Docs',
+            tile: (
+              <StatCard
+                icon={FolderLock}
+                value={stats.documents}
+                label="Secure Document Vault (SDV)"
+                cardClass="stat-card-vault"
+                onClick={() => navigate('/vault')}
+                sectionKey="vault"
+              />
+            ),
+          },
+          isFeatureKeyEnabled('cfp', enabledFeatures) && {
+            key: 'cfp',
+            chipColor: '#10b981',
+            chipPercent: financialsPercent,
+            chipLabel: 'Financials',
+            tile: (
+              <StatCard
+                icon={DollarSign}
+                value={(financialSummary?.bills_count || 0) + (financialSummary?.debts_count || 0) + (financialSummary?.accounts_count || 0) + (financialSummary?.property_count || 0)}
+                label="CarryOn Financial Picture (CFP)"
+                cardClass="stat-card-financial"
+                onClick={() => navigate('/financial')}
+                sectionKey="financial_portal"
+              />
+            ),
+          },
+          isFeatureKeyEnabled('ccp', enabledFeatures) && {
+            key: 'ccp',
+            chipColor: '#ef4444',
+            chipPercent: ccpPercent,
+            chipLabel: 'Emergency Plans',
+            tile: (
+              <StatCard
+                icon={ShieldAlert}
+                value={stats.ccp_plans}
+                label="Connected Protocol (CCP)"
+                cardClass="stat-card-ccp"
+                onClick={() => navigate('/connected-protocol')}
+                sectionKey="connected_protocol"
+              />
+            ),
+          },
+        ].filter(Boolean);
 
-      {/* Mobile only - Beneficiaries full width */}
-      {isFeatureKeyEnabled('beneficiaries', enabledFeatures) && (
-      <div className="lg:hidden mb-4">
-        <div 
-          className="stat-card-beneficiaries rounded-2xl p-4 cursor-pointer transition-transform duration-150 active:scale-[0.96] lg:hover:scale-[1.02] flex flex-col items-center justify-center"
-          onClick={() => navigate('/beneficiaries')}
-          data-testid="stat-card-beneficiaries-mobile"
-        >
-          <Users className="stat-icon w-8 h-8 opacity-70 mb-2" />
-          <span className="text-3xl font-bold mb-1">
-            {stats.beneficiaries}
-          </span>
-          <span className="opacity-80 text-base lg:text-lg font-bold text-center">Beneficiaries</span>
-        </div>
-      </div>
-      )}
+        // Compact key chips (used in side-by-side layouts where
+        // horizontal real-estate beside the gauge is tight).
+        const KeyChips = ({ size = 'md' }) => (
+          <div
+            className="flex flex-col gap-1.5 rounded-xl px-4 py-3"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            {ENTRIES.map((e) => (
+              <div key={e.key} className="flex items-center gap-2">
+                <span className="rounded-full flex-shrink-0" style={{ background: e.chipColor, width: size === 'sm' ? 8 : 10, height: size === 'sm' ? 8 : 10 }} />
+                <span className="text-[var(--t4)] font-medium" style={{ fontSize: size === 'sm' ? 12 : 14 }}>
+                  {e.chipPercent}% {e.chipLabel}
+                </span>
+              </div>
+            ))}
+          </div>
+        );
+
+        // The readiness card shell — gauge + responsive heading. Used
+        // by all three layouts; the variant just controls the wrap.
+        const ReadinessCard = ({ keyChipsPosition = 'top-right', dense = false }) => (
+          <div className={`glass-card ${dense ? 'p-4 lg:p-5' : 'p-5 lg:p-8'} mb-4`} data-testid="readiness-card">
+            <h2 className={`${dense ? 'text-base lg:text-2xl mb-3' : 'text-base lg:text-3xl mb-4 lg:mb-5'} font-bold text-[var(--t)] uppercase tracking-wider text-center`} style={{ fontFamily: 'var(--sans)' }}>
+              Estate Readiness
+            </h2>
+            {keyChipsPosition === 'top-right' && (
+              <div className="hidden lg:flex lg:justify-end lg:mb-4 lg:px-2">
+                <KeyChips />
+              </div>
+            )}
+            {/* Mobile/PWA key — always two-and-two split-corner layout. */}
+            <div className="flex justify-between mb-3 px-2 lg:hidden">
+              <div className="flex flex-col gap-1">
+                {ENTRIES.slice(0, 3).map((e) => (
+                  <div key={e.key} className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: e.chipColor }} />
+                    <span className="text-[var(--t4)] text-[11px] font-medium">{e.chipPercent}% {e.chipLabel}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-col gap-1 items-end">
+                {ENTRIES.slice(3, 6).map((e) => (
+                  <div key={e.key} className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: e.chipColor }} />
+                    <span className="text-[var(--t4)] text-[11px] font-medium">{e.chipPercent}% {e.chipLabel}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <ReadinessDial score={readinessScore} id="readiness" labelText={scoreInfo.label} labelColor={scoreInfo.color} />
+          </div>
+        );
+
+        const TilesGrid = ({ chiclet = false }) => (
+          <div
+            className={
+              chiclet
+                ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4'
+                : 'grid grid-cols-2 lg:grid-cols-2 gap-3 lg:gap-4 mb-4'
+            }
+            data-testid="dashboard-stat-grid"
+          >
+            {ENTRIES.map((e) => (
+              <React.Fragment key={e.key}>{e.tile}</React.Fragment>
+            ))}
+            {egaRunning && isFeatureKeyEnabled('ega', enabledFeatures) && (
+              <div
+                className={`${chiclet ? 'col-span-2 sm:col-span-3 lg:col-span-6' : 'col-span-2'} flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold`}
+                style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)', color: '#d4af37' }}
+                data-testid="ega-running-banner"
+              >
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Estate Guardian is generating IAC items — counts will update automatically
+              </div>
+            )}
+          </div>
+        );
+
+        // Mobile/PWA: always vertical readiness-top → 2-col tiles.
+        const mobileBlock = (
+          <div className="lg:hidden">
+            <ReadinessCard />
+            <TilesGrid />
+          </div>
+        );
+
+        // Desktop: switch on user pref.
+        let desktopBlock = null;
+        if (dashboardLayout === 'readiness-top') {
+          desktopBlock = (
+            <div className="hidden lg:block">
+              <ReadinessCard dense />
+              <TilesGrid chiclet />
+            </div>
+          );
+        } else {
+          // Side-by-side layouts. tiles-left puts the tile grid on the
+          // LEFT and the readiness card on the RIGHT (default). tiles-
+          // right reverses it. The 380-col reservation for the dial is
+          // wide enough to never clip the 6 chips at 13" laptop widths.
+          const tiles = (
+            <div className="lg:col-span-1">
+              <div className="grid grid-cols-2 gap-4 mb-4" data-testid="dashboard-stat-grid">
+                {ENTRIES.map((e) => (
+                  <React.Fragment key={e.key}>{e.tile}</React.Fragment>
+                ))}
+              </div>
+              {egaRunning && isFeatureKeyEnabled('ega', enabledFeatures) && (
+                <div className="flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold mb-4"
+                  style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)', color: '#d4af37' }}
+                  data-testid="ega-running-banner">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Estate Guardian is generating IAC items — counts will update automatically
+                </div>
+              )}
+            </div>
+          );
+          const dial = (
+            <div className="lg:col-span-1">
+              <div className="glass-card p-5 mb-4 sticky top-4" data-testid="readiness-card-side">
+                <h2 className="text-xl font-bold text-[var(--t)] uppercase tracking-wider mb-4 text-center" style={{ fontFamily: 'var(--sans)' }}>
+                  Estate Readiness
+                </h2>
+                <ReadinessDial score={readinessScore} id="readiness-side" labelText={scoreInfo.label} labelColor={scoreInfo.color} />
+                <div className="mt-4 flex justify-center">
+                  <KeyChips size="sm" />
+                </div>
+              </div>
+            </div>
+          );
+          desktopBlock = (
+            <div
+              className="hidden lg:grid lg:gap-6 mb-2"
+              style={{ gridTemplateColumns: dashboardLayout === 'tiles-right' ? '380px 1fr' : '1fr 380px' }}
+            >
+              {dashboardLayout === 'tiles-right' ? <>{dial}{tiles}</> : <>{tiles}{dial}</>}
+            </div>
+          );
+        }
+
+        return (
+          <>
+            {desktopBlock}
+            {mobileBlock}
+          </>
+        );
+      })()}
 
       {/* Bottom Section - Messages, Checklist, Vault & Financial Previews */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

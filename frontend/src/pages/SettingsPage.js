@@ -15,6 +15,7 @@ import PersonalInfoCard from '../components/settings/PersonalInfoCard';
 import EstatePhotoCard from '../components/settings/EstatePhotoCard';
 import OfflineBehaviorCard from '../components/settings/OfflineBehaviorCard';
 import AppearanceCard from '../components/settings/AppearanceCard';
+import DashboardViewCard from '../components/settings/DashboardViewCard';
 import DigestCard from '../components/settings/DigestCard';
 import PrivacyCard from '../components/settings/PrivacyCard';
 import DockCustomizer from '../components/DockCustomizer';
@@ -197,6 +198,10 @@ const SettingsPage = () => {
       {/* ── Section: Appearance & Navigation ── */}
       <SectionHeader title="Appearance & Navigation" hint="Theme, dock, and navigation preferences." />
       <AppearanceCard isStaff={isStaff} />
+
+      {/* Dashboard View — layout + readiness gauge graphic.
+          Hidden for staff since they don't see the benefactor dashboard. */}
+      {!isStaff && <DashboardViewCard />}
 
       {/* Dock Customizer */}
       <Card className="glass-card" data-testid="settings-dock-card">
