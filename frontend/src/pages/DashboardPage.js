@@ -910,7 +910,7 @@ const DashboardPage = () => {
             className={
               chiclet
                 ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4'
-                : 'grid grid-cols-2 lg:grid-cols-2 gap-3 lg:gap-4 mb-4'
+                : 'grid grid-cols-3 gap-3 mb-4'
             }
             data-testid="dashboard-stat-grid"
           >
@@ -956,7 +956,9 @@ const DashboardPage = () => {
             <div className="lg:col-span-1">
               <div className="grid grid-cols-3 gap-3 mb-4" data-testid="dashboard-stat-grid">
                 {ENTRIES.map((e) => (
-                  <React.Fragment key={e.key}>{e.tile}</React.Fragment>
+                  <React.Fragment key={e.key}>
+                    {React.cloneElement(e.tile, { compact: true })}
+                  </React.Fragment>
                 ))}
               </div>
               {egaRunning && isFeatureKeyEnabled('ega', enabledFeatures) && (
@@ -984,8 +986,7 @@ const DashboardPage = () => {
           );
           desktopBlock = (
             <div
-              className="hidden lg:grid lg:gap-6 mb-2"
-              style={{ gridTemplateColumns: dashboardLayout === 'tiles-right' ? '380px 1fr' : '1fr 380px' }}
+              className="hidden lg:grid lg:grid-cols-2 lg:gap-6 mb-2"
             >
               {dashboardLayout === 'tiles-right' ? <>{dial}{tiles}</> : <>{tiles}{dial}</>}
             </div>

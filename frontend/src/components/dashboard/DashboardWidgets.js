@@ -9,7 +9,7 @@ export const SpeedometerGauge = ({ score, id = 'main', labelText, labelColor }) 
   const gId = `gauge-${id}`;
 
   return (
-    <div className="flex flex-col items-center w-full max-w-[240px] lg:max-w-[380px] mx-auto">
+    <div className="flex flex-col items-center w-full max-w-[240px] lg:max-w-[600px] mx-auto">
       <svg viewBox="0 0 200 105" className="w-full h-auto">
         <defs>
           <linearGradient id={`${gId}-arc`} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -58,20 +58,24 @@ export const SpeedometerGauge = ({ score, id = 'main', labelText, labelColor }) 
 /**
  * StatCard — clickable stat tile used on the dashboard grid.
  * Extracted from DashboardPage for reuse and render optimization.
+ *
+ * `compact` (desktop side-by-side layouts): roughly halves the
+ * vertical real-estate so the gauge column can expand. Smaller
+ * padding, smaller value font, smaller icon — same colors/labels.
  */
-export const StatCard = ({ icon: Icon, value, label, cardClass, onClick, className = '', sectionKey }) => (
+export const StatCard = ({ icon: Icon, value, label, cardClass, onClick, className = '', sectionKey, compact = false }) => (
   <div
-    className={`${cardClass} rounded-2xl p-4 lg:p-6 cursor-pointer transition-transform duration-150 active:scale-[0.96] lg:hover:scale-[1.03] lg:hover:shadow-xl flex flex-col items-center justify-center ${className}`}
+    className={`${cardClass} rounded-2xl ${compact ? 'p-3 lg:p-3' : 'p-4 lg:p-6'} cursor-pointer transition-transform duration-150 active:scale-[0.96] lg:hover:scale-[1.03] lg:hover:shadow-xl flex flex-col items-center justify-center ${className}`}
     onClick={onClick}
     data-testid={`stat-card-${label.toLowerCase().replace(/\s+/g, '-')}`}
     aria-label={`${label}: ${value}`}
     role="button"
   >
-    <Icon className="stat-icon w-6 h-6 lg:w-8 lg:h-8 opacity-70 mb-2 lg:mb-4" />
-    <div className="text-3xl lg:text-5xl font-bold mb-2 text-center">
+    <Icon className={`stat-icon ${compact ? 'w-5 h-5 lg:w-5 lg:h-5 mb-1 lg:mb-1' : 'w-6 h-6 lg:w-8 lg:h-8 mb-2 lg:mb-4'} opacity-70`} />
+    <div className={`${compact ? 'text-2xl lg:text-3xl mb-1' : 'text-3xl lg:text-5xl mb-2'} font-bold text-center`}>
       {value}
     </div>
-    <div className="opacity-80 text-base lg:text-lg font-bold leading-tight text-center">
+    <div className={`opacity-80 ${compact ? 'text-xs lg:text-sm' : 'text-base lg:text-lg'} font-bold leading-tight text-center`}>
       {label.split(' ').length > 2 ? (
         <>
           {label.split(' ').slice(0, Math.ceil(label.split(' ').length / 2)).join(' ')}
