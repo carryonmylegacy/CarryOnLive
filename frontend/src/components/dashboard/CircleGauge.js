@@ -15,7 +15,13 @@ import React from 'react';
 export const CircleGauge = ({ score, id = 'main', labelText, labelColor }) => {
   const safe = Math.max(0, Math.min(100, Number(score) || 0));
   const gId = `circle-gauge-${id}`;
-  const radius = 90;
+  // Triple the gold-ring thickness while preserving the same outer
+  // circumference (do NOT let the ring grow outward — only inward).
+  // Original ring lived at r=90 with strokeWidth=8 (outer edge = 94).
+  // New strokeWidth=24 puts the centerline at r=82 so the outer edge
+  // still sits at 94, and the inner edge moves inward from r=86 → r=70.
+  const STROKE = 24;
+  const radius = 94 - STROKE / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - safe / 100);
 
@@ -35,7 +41,7 @@ export const CircleGauge = ({ score, id = 'main', labelText, labelColor }) => {
             r={radius}
             fill="none"
             stroke="var(--b, rgba(255,255,255,0.08))"
-            strokeWidth="8"
+            strokeWidth={STROKE}
           />
           <circle
             cx="100"
@@ -43,7 +49,7 @@ export const CircleGauge = ({ score, id = 'main', labelText, labelColor }) => {
             r={radius}
             fill="none"
             stroke={`url(#${gId}-grad)`}
-            strokeWidth="8"
+            strokeWidth={STROKE}
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={offset}
