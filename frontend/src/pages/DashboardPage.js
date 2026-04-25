@@ -962,10 +962,27 @@ const DashboardPage = () => {
           const tiles = (
             <div className="lg:col-span-1">
               <div className="glass-card p-4 lg:p-5 h-full flex flex-col" data-testid="core-pillars-card">
-                <h2 className="text-3xl font-bold text-[var(--t)] uppercase tracking-wider mb-4 text-center" style={{ fontFamily: 'var(--sans)' }}>
+                <h2
+                  className="text-3xl lg:text-4xl font-semibold text-[var(--t)] mb-4 text-center tracking-tight"
+                  style={{ fontFamily: 'var(--serif)' }}
+                >
                   CarryOn Core Pillars
                 </h2>
-                <div className="grid grid-cols-3 gap-4" data-testid="dashboard-stat-grid">
+                {/*
+                  3 cols × 2 rows of perfectly equal squares:
+                  - aspectRatio 3/2 on the grid container shapes the box
+                    so each cell's width/height come out identical.
+                  - gridAutoRows: minmax(0,1fr) forces both rows to share
+                    height equally regardless of label line-count.
+                  - StatCard's `lg:aspect-square` is overridden by the
+                    grid stretch (cells are already square), so no tile
+                    can ever bulge taller than its neighbour.
+                */}
+                <div
+                  className="grid grid-cols-3 gap-4"
+                  style={{ aspectRatio: '3 / 2', gridAutoRows: 'minmax(0, 1fr)' }}
+                  data-testid="dashboard-stat-grid"
+                >
                   {ENTRIES.map((e) => (
                     <React.Fragment key={e.key}>{e.tile}</React.Fragment>
                   ))}
@@ -984,7 +1001,10 @@ const DashboardPage = () => {
           const dial = (
             <div className="lg:col-span-1">
               <div className="glass-card p-4 lg:p-5 h-full flex flex-col" data-testid="readiness-card-side">
-                <h2 className="text-3xl font-bold text-[var(--t)] uppercase tracking-wider mb-4 text-center" style={{ fontFamily: 'var(--sans)' }}>
+                <h2
+                  className="text-3xl lg:text-4xl font-semibold text-[var(--t)] mb-4 text-center tracking-tight"
+                  style={{ fontFamily: 'var(--serif)' }}
+                >
                   Estate Readiness
                 </h2>
                 <div className="flex-1 flex items-center justify-center">
