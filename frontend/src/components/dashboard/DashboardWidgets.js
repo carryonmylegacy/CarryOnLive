@@ -81,7 +81,20 @@ export const StatCard = ({ icon: Icon, value, label, cardClass, onClick, classNa
     <div className={`${compact ? 'text-2xl lg:text-3xl mb-1' : 'text-3xl lg:text-5xl mb-2'} font-bold text-center leading-none flex-shrink-0`}>
       {value}
     </div>
-    <div className={`opacity-80 ${compact ? 'text-xs lg:text-sm' : 'text-base lg:text-lg'} font-bold leading-tight text-center min-w-0`}>
+    <div
+      className={`opacity-80 ${compact ? 'text-xs lg:text-sm' : ''} font-bold leading-tight text-center min-w-0`}
+      style={
+        compact
+          ? undefined
+          : {
+              // Auto-scale label so single long words like "Beneficiaries"
+              // fit on one line across all phone widths (iPhone 13 mini
+              // 375px → ~10.5px ; iPhone 17 Pro Max 430px → ~12.0px) and
+              // top out at the desktop `text-lg` (18px) on >= ~640px.
+              fontSize: 'clamp(0.66rem, 2.8vw, 1.125rem)',
+            }
+      }
+    >
       {label}
     </div>
   </div>
