@@ -1,5 +1,18 @@
 # CarryOn — Changelog
 
+## Apr 25, 2026 (later) — Side-by-side dashboard: 3×2 tiles, larger title + key
+
+User feedback: the side-by-side layouts (Tiles Left / Tiles Right) wasted space with 2-col × 3-row tiles, and the right-side Estate Readiness card had a too-small title and tiny key chips.
+
+### What changed (DashboardPage.js, side-by-side layouts only)
+- Tiles grid: `grid-cols-2 gap-4` → **`grid-cols-3 gap-3`** (6 tiles in 3 columns × 2 rows; tighter gap economizes horizontal space).
+- Estate Readiness side card title: `text-xl` → **`text-3xl`**.
+- Estate Readiness side card key chips: `size="sm"` (12px font / 8px dot) → **`size="lg"`** (24px font / 14px dot).
+
+The Readiness Top layout is unchanged — it already uses chiclets + absolute-positioned `lg` chips from the previous batch.
+
+
+
 ## Apr 25, 2026 — Dashboard "Readiness Top" Proportions + Circle Gauge Fit Fix
 
 ### What changed

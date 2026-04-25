@@ -954,7 +954,7 @@ const DashboardPage = () => {
           // wide enough to never clip the 6 chips at 13" laptop widths.
           const tiles = (
             <div className="lg:col-span-1">
-              <div className="grid grid-cols-2 gap-4 mb-4" data-testid="dashboard-stat-grid">
+              <div className="grid grid-cols-3 gap-3 mb-4" data-testid="dashboard-stat-grid">
                 {ENTRIES.map((e) => (
                   <React.Fragment key={e.key}>{e.tile}</React.Fragment>
                 ))}
@@ -972,12 +972,12 @@ const DashboardPage = () => {
           const dial = (
             <div className="lg:col-span-1">
               <div className="glass-card p-5 mb-4 sticky top-4" data-testid="readiness-card-side">
-                <h2 className="text-xl font-bold text-[var(--t)] uppercase tracking-wider mb-4 text-center" style={{ fontFamily: 'var(--sans)' }}>
+                <h2 className="text-3xl font-bold text-[var(--t)] uppercase tracking-wider mb-4 text-center" style={{ fontFamily: 'var(--sans)' }}>
                   Estate Readiness
                 </h2>
                 <ReadinessDial score={readinessScore} id="readiness-side" labelText={scoreInfo.label} labelColor={scoreInfo.color} />
                 <div className="mt-4 flex justify-center">
-                  <KeyChips size="sm" />
+                  <KeyChips size="lg" />
                 </div>
               </div>
             </div>
