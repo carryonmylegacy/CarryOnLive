@@ -636,6 +636,20 @@ When DUNS number is obtained and Apple Developer enrollment is complete:
 - `components/layout/Sidebar.js` (1001 lines) — split into navigation sections
 - Add frontend Playwright/Cypress e2e test suite (zero frontend tests currently)
 
+
+## Post-Launch Backlog — UX Discoverability (Apr 25, 2026 — saved, not for launch)
+
+**Idea**: One-time coachmark/tooltip on the first dashboard visit pointing at *Settings → Dashboard View* to drive discovery of the new dashboard customization (3 layouts × 2 gauges).
+
+**Why later**: Adds non-trivial UX work — first-visit detection (per-user, not per-device, to survive PWA reinstalls), dismiss + "don't show again" persistence, mobile vs desktop placement variants, and Playwright coverage. User explicitly deferred ("save that idea for later, launching in a day").
+
+**Reference for the future agent**:
+- Existing pattern to mimic: the `/api/onboarding/celebration-shown` flag + `guided-overlay` system in `DashboardPage.js` already handles per-user one-time UI state and can be extended.
+- Add a new flag like `dashboard_view_coachmark_shown` to the same backend onboarding model.
+- Anchor the tooltip on the sidebar's Settings link (desktop) and the gear icon in PWA shell (mobile).
+- Expected uplift: 3–5× higher adoption of buried preferences with a brief discovery nudge (industry baseline).
+
+
 ## Recent Session Work Summary
 See `CHANGELOG.md` for full chronological history if this file exceeds 700 lines.
 
