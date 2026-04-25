@@ -19,9 +19,18 @@ export const ChatAutoscrollCard = () => {
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
   const [loading, setLoading] = useState(true);
-  const [minutes, setMinutes] = useState(240);
+  // Hydrate from localStorage cache so the value shown matches what
+  // EstateChatPage will actually use on the current session — and so
+  // a save here is reflected before the API round-trip completes.
+  const cachedInitial = (() => {
+    try {
+      const raw = parseInt(localStorage.getItem('carryon_chat_autoscroll_min') || '', 10);
+      return Number.isFinite(raw) && raw >= 1 && raw <= 1440 ? raw : 240;
+    } catch { return 240; }
+  })();
+  const [minutes, setMinutes] = useState(cachedInitial);
   const [saving, setSaving] = useState(false);
-  const [draft, setDraft] = useState(240);
+  const [draft, setDraft] = useState(cachedInitial);
 
   // Presets: every minute for 1-15, then 30 / 45 / 60, then whole-hour steps up to 24 hr.
   const PRESETS = [
@@ -54,6 +63,11 @@ export const ChatAutoscrollCard = () => {
           const snapped = snapToPreset(d.threshold_minutes);
           setMinutes(snapped);
           setDraft(snapped);
+          // Mirror to localStorage so EstateChatPage can read it
+          // synchronously on next mount and avoid the race where the
+          // user-set threshold isn't applied because the API fetch
+          // hadn't completed by the time the channel-open effect ran.
+          try { localStorage.setItem('carryon_chat_autoscroll_min', String(snapped)); } catch { /* quota */ }
         }
       } catch {
         /* network — keep defaults */
@@ -75,6 +89,7 @@ export const ChatAutoscrollCard = () => {
         const snapped = snapToPreset(d.threshold_minutes);
         setMinutes(snapped);
         setDraft(snapped);
+        try { localStorage.setItem('carryon_chat_autoscroll_min', String(snapped)); } catch { /* quota */ }
         toast.success('Chat scroll preference saved');
       } else {
         toast.error('Could not save preference. Try again.');

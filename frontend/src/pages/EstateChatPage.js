@@ -136,12 +136,30 @@ export default function EstateChatPage() {
   // re-runs mid-paint, its cleanup stamps a fresh visit timestamp, and
   // the second run then switches to "restore scroll" mode, leaving the
   // user stranded where the scroll happened to be when threshold loaded.
-  const autoscrollThresholdMinRef = useRef(240);
+  //
+  // SEED THE REF SYNCHRONOUSLY from the localStorage mirror written by
+  // ChatAutoscrollCard. Otherwise a freshly-loaded page falls back to the
+  // 240-minute default and a chat reopened past the user's actual
+  // threshold (e.g. 30 min) but under 240 fails to jump to bottom.
+  const autoscrollThresholdMinRef = useRef((() => {
+    try {
+      const raw = parseInt(localStorage.getItem('carryon_chat_autoscroll_min') || '', 10);
+      if (Number.isFinite(raw) && raw >= 1 && raw <= 1440) return raw;
+    } catch { /* localStorage blocked */ }
+    return 240;
+  })());
   useEffect(() => {
     fetch(`${API_URL}/user-preferences/chat-autoscroll`, { headers })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.threshold_minutes) autoscrollThresholdMinRef.current = d.threshold_minutes; })
-      .catch(() => { /* keep default 240 min */ });
+      .then(d => {
+        if (d?.threshold_minutes) {
+          autoscrollThresholdMinRef.current = d.threshold_minutes;
+          // Refresh the localStorage mirror so subsequent page loads /
+          // tabs pick up the latest server value without another race.
+          try { localStorage.setItem('carryon_chat_autoscroll_min', String(d.threshold_minutes)); } catch { /* quota */ }
+        }
+      })
+      .catch(() => { /* keep cached / default */ });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Extracted hooks ───────────────────────────────────────────────────────
