@@ -36,7 +36,7 @@
 import Dexie from 'dexie';
 
 export const DB_NAME = 'carryon-offline';
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 
 class CarryOnDB extends Dexie {
   constructor() {
@@ -113,6 +113,15 @@ class CarryOnDB extends Dexie {
       // the server's upload finalizer: 'document' | 'milestone_video' |
       // 'milestone_audio' | 'chat_media'.
       pendingUpload: '++id, kind, status, created_at',
+
+      // ── Image Blob Cache (v4) ────────────────────────────────────────
+      // Stable-key blob storage for cross-origin photos (S3 presigned
+      // URLs change per session because of expiring signatures, so a
+      // simple URL-keyed SW cache misses each time). The OfflineImage
+      // component looks up by `cache_key` (e.g. `beneficiary:abc:photo`)
+      // not by URL, so the same beneficiary photo survives URL rotation.
+      // Stores up to ~5MB per row; Dexie/IndexedDB handles that fine.
+      imageBlob: 'cache_key, fetched_at, kind',
     });
   }
 }

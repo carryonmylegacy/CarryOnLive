@@ -1,0 +1,146 @@
+/**
+ * CarryOn — OfflineImage
+ * ============================================================================
+ * Drop-in replacement for `<img>` that survives airplane mode for
+ * cross-origin S3-presigned URLs whose signatures expire each session.
+ *
+ * How it works:
+ *   • While ONLINE, it renders the `src` directly. As a side effect, it
+ *     fetches the bytes once and persists them as a Blob in IndexedDB
+ *     keyed by `cacheKey` (NOT the URL — see `imageBlobsRepo.js`).
+ *   • While OFFLINE, it skips the network entirely. It looks up the
+ *     blob by `cacheKey`, materializes a fresh `URL.createObjectURL`
+ *     for it, and renders that. If the cache misses, the caller's
+ *     `fallback` slot is rendered instead (initials, "?" placeholder,
+ *     etc.).
+ *
+ * Object URLs are revoked on unmount and on src change to avoid blob
+ * memory leaks.
+ *
+ * The component never tries to suppress the natural error path of
+ * `<img>`; if the live URL fails for any reason while online (e.g. S3
+ * 403 because the signature expired during a long session), the
+ * `onError` handler falls back to the cached blob if available.
+ */
+
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  fetchAndStoreImageBlob,
+  getImageObjectUrl,
+} from '../offline/imageBlobsRepo';
+
+export default function OfflineImage({
+  src,
+  cacheKey,
+  alt = '',
+  className,
+  style,
+  onLoad,
+  onError,
+  fallback = null,
+  // Optional: kind tag stored alongside the blob ('photo', 'thumb', etc.).
+  kind = 'photo',
+  ...rest
+}) {
+  const [resolvedSrc, setResolvedSrc] = useState(null);
+  const [errored, setErrored] = useState(false);
+  const objectUrlRef = useRef(null);
+
+  // Track the latest invocation so an in-flight async lookup can't
+  // overwrite a newer src/cacheKey with a stale resolution.
+  const generationRef = useRef(0);
+
+  useEffect(() => {
+    const myGen = ++generationRef.current;
+    setErrored(false);
+
+    // Revoke any previous object URL to free GPU/memory.
+    if (objectUrlRef.current) {
+      try { URL.revokeObjectURL(objectUrlRef.current); } catch {}
+      objectUrlRef.current = null;
+    }
+
+    if (!src && !cacheKey) {
+      setResolvedSrc(null);
+      return;
+    }
+
+    const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+
+    if (isOffline) {
+      // Offline: try the blob cache first.
+      if (cacheKey) {
+        getImageObjectUrl(cacheKey).then((url) => {
+          if (myGen !== generationRef.current) {
+            // A newer src arrived — ignore this stale lookup.
+            if (url) try { URL.revokeObjectURL(url); } catch {}
+            return;
+          }
+          if (url) {
+            objectUrlRef.current = url;
+            setResolvedSrc(url);
+          } else {
+            // No cached blob — show caller's fallback.
+            setResolvedSrc(null);
+            setErrored(true);
+          }
+        });
+      } else {
+        setResolvedSrc(null);
+        setErrored(true);
+      }
+      return;
+    }
+
+    // Online: render the live URL immediately, and warm the blob cache
+    // in the background so the next offline visit has bytes to serve.
+    setResolvedSrc(src || null);
+    if (src && cacheKey) {
+      fetchAndStoreImageBlob(src, cacheKey, kind).catch(() => {});
+    }
+
+    return () => {
+      if (objectUrlRef.current) {
+        try { URL.revokeObjectURL(objectUrlRef.current); } catch {}
+        objectUrlRef.current = null;
+      }
+    };
+  }, [src, cacheKey, kind]);
+
+  const handleError = (e) => {
+    setErrored(true);
+    if (typeof onError === 'function') onError(e);
+    // If the live URL failed (e.g. 403 expired signature) and we have a
+    // cached blob, swap to that.
+    if (cacheKey) {
+      getImageObjectUrl(cacheKey).then((url) => {
+        if (url) {
+          objectUrlRef.current = url;
+          setResolvedSrc(url);
+          setErrored(false);
+        }
+      });
+    }
+  };
+
+  if (errored && !resolvedSrc) {
+    return fallback;
+  }
+
+  if (!resolvedSrc) {
+    // Nothing to render yet — render the fallback to avoid layout shift.
+    return fallback;
+  }
+
+  return (
+    <img
+      src={resolvedSrc}
+      alt={alt}
+      className={className}
+      style={style}
+      onLoad={onLoad}
+      onError={handleError}
+      {...rest}
+    />
+  );
+}

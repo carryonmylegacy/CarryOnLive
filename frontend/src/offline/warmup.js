@@ -39,6 +39,7 @@ import { upsertLocalVaultItems } from './repos/vaultRepo';
 import { upsertLocalVoices } from './repos/voicesRepo';
 import { upsertLocalMessages } from './repos/messagesRepo';
 import { prefetchPhotosFrom } from './prefetchPhotos';
+import { fetchAndStoreImageBlob } from './imageBlobsRepo';
 import { saveList } from '../utils/localListCache';
 
 function emit(type, detail) {
@@ -127,6 +128,15 @@ function taskDashboard(estateId, headers) {
         // Pre-warm every beneficiary photo into the SW IMAGE_CACHE so
         // the family tree paints correctly on airplane mode.
         prefetchPhotosFrom(bens.data);
+        // Phase 9b — also persist photo BYTES under stable cache keys
+        // so they survive S3 presigned-URL rotation across sessions.
+        // Fire-and-forget; failures are non-fatal.
+        for (const b of bens.data) {
+          if (b.photo_url && b.id) {
+            fetchAndStoreImageBlob(b.photo_url, `beneficiary:${b.id}:photo`, 'photo')
+              .catch(() => {});
+          }
+        }
       }
       if (msgs?.data) await upsertLocalMessages(estateId, msgs.data);
       if (docs?.data) await upsertLocalVaultItems(estateId, docs.data);
@@ -287,6 +297,16 @@ export async function warmUpAfterLogin(token) {
   try { await upsertLocalEstates(allEstates); } catch {}
   // Pre-warm estate / owner photos for the tree + dashboard header.
   prefetchPhotosFrom(allEstates);
+  // Phase 9b — persist estate cover + owner photo BYTES under stable
+  // cache keys so they survive S3 URL rotation. Fire-and-forget.
+  for (const e of allEstates) {
+    if (e.estate_photo_url && e.id) {
+      fetchAndStoreImageBlob(e.estate_photo_url, `estate:${e.id}:cover`, 'photo').catch(() => {});
+    }
+    if (e.owner_photo_url && e.id) {
+      fetchAndStoreImageBlob(e.owner_photo_url, `estate:${e.id}:owner`, 'photo').catch(() => {});
+    }
+  }
 
   const tasks = [
     taskProfile(headers),

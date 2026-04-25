@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { Mail, Lock, Eye, EyeOff, Loader2, Shield, ChevronRight, ChevronDown, Sparkles, ExternalLink } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, Shield, ChevronRight, ChevronDown, Sparkles, ExternalLink, WifiOff } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { toast } from '../utils/toast';
@@ -15,6 +15,44 @@ import { API_URL } from '../config';
 import { RevealSection } from '../components/landing/RevealSection';
 import LandingContent from '../components/landing/LandingContent';
 import ForgotPasswordModal from '../components/auth/ForgotPasswordModal';
+
+/**
+ * Offline notice + recovery tip rendered above the sign-in form when
+ * the device has no signal. CarryOn's offline-first runtime kicks in
+ * AFTER login (it needs a JWT and a synced local mirror to work
+ * without a server), so explaining that boundary up front avoids a
+ * confusing "why is everything broken?" moment when a traveling user
+ * lands here in airplane mode.
+ */
+const LoginOfflineBanner = ({ isOffline }) => {
+  if (!isOffline) return null;
+  return (
+    <div
+      data-testid="login-offline-banner"
+      className="rounded-xl px-4 py-3 mb-4 flex gap-3 items-start"
+      style={{
+        background: 'rgba(239, 68, 68, 0.12)',
+        border: '1px solid rgba(239, 68, 68, 0.4)',
+      }}
+    >
+      <WifiOff className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#fca5a5' }} />
+      <div className="text-[13px] leading-snug" style={{ color: 'rgba(255,255,255,0.92)' }}>
+        <div className="font-semibold mb-1" style={{ color: '#fca5a5' }}>You&apos;re offline — sign-in needs a connection.</div>
+        <p className="mb-2">
+          Once you&apos;re signed in and the app finishes its first sync, CarryOn keeps working offline:
+          you can record milestones, upload documents, send messages, and create or edit anything —
+          we&apos;ll sync it all when you reconnect. The catch is you have to be logged in <em>before</em> losing signal.
+        </p>
+        <p style={{ color: 'rgba(255,255,255,0.78)' }}>
+          Travel a lot or work in spotty coverage? After signing in, head to{' '}
+          <span className="font-semibold" style={{ color: '#fcd34d' }}>Settings → Security</span>{' '}
+          and extend your session timeout so you stay logged in longer and don&apos;t get
+          locked out the next time you lose signal.
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const useIsMobileViewport = (breakpoint = 768) => {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < breakpoint);
@@ -53,6 +91,20 @@ const LoginPage = () => {
   const [maskedPhone, setMaskedPhone] = useState(null);
   const [forgotMode, setForgotMode] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
+  // Live online/offline status for the login-offline banner.
+  const [isOffline, setIsOffline] = useState(
+    () => typeof navigator !== 'undefined' && navigator.onLine === false
+  );
+  useEffect(() => {
+    const onOff = () => setIsOffline(true);
+    const onOn = () => setIsOffline(false);
+    window.addEventListener('offline', onOff);
+    window.addEventListener('online', onOn);
+    return () => {
+      window.removeEventListener('offline', onOff);
+      window.removeEventListener('online', onOn);
+    };
+  }, []);
   const [forgotOtp, setForgotOtp] = useState('');
   const [forgotNewPw, setForgotNewPw] = useState('');
   const [forgotConfirmPw, setForgotConfirmPw] = useState('');
@@ -335,6 +387,7 @@ const LoginPage = () => {
           <div className="absolute top-0 left-7 right-7 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
           <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Sign In</h2>
           <p className="text-[#475569] text-sm mb-6">Access your CarryOn account</p>
+          <LoginOfflineBanner isOffline={isOffline} />
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
@@ -466,6 +519,7 @@ const LoginPage = () => {
             <div className="absolute top-0 left-6 right-6 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
             <h2 className="text-white text-lg font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Sign In</h2>
             <p className="text-white/70 text-sm font-semibold mb-4">Access your CarryOn account</p>
+            <LoginOfflineBanner isOffline={isOffline} />
             <form onSubmit={handleLogin} className="space-y-3">
               <div>
                 <label className="text-white/80 text-sm font-bold mb-1 block">Username or Email</label>

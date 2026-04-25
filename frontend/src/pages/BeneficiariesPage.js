@@ -849,6 +849,7 @@ const BeneficiariesPage = () => {
                       </div>
                       <AvatarCircle
                         photo={ben.photo_url}
+                        cacheKey={ben.id ? `beneficiary:${ben.id}:photo` : undefined}
                         initials={ben.initials || (ben.first_name && ben.last_name 
                           ? (ben.first_name[0] + ben.last_name[0]).toUpperCase()
                           : ben.name?.split(' ').map(n => n[0]).join('').toUpperCase())}

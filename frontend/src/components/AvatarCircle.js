@@ -1,6 +1,7 @@
 import React from 'react';
 import { Camera } from 'lucide-react';
 import { resolvePhotoUrl } from '../utils/photoUrl';
+import OfflineImage from './OfflineImage';
 
 /**
  * Avatar circle with photo or initials-over-camera-icon.
@@ -8,6 +9,11 @@ import { resolvePhotoUrl } from '../utils/photoUrl';
  * - Has photo → shows photo, tap navigates (onNavigate)
  * - No photo → shows initials over subtle camera icon, tap opens upload (onUpload)
  * - If neither onNavigate nor onUpload is provided, circle is non-interactive
+ *
+ * `cacheKey` (optional but strongly recommended): a stable identifier
+ * such as `beneficiary:<id>:photo` or `estate:<id>:cover`. When set,
+ * the photo bytes are persisted in IndexedDB on first load and
+ * survive S3 presigned-URL rotation when the user goes offline.
  */
 export function AvatarCircle({
   photo,
@@ -20,6 +26,7 @@ export function AvatarCircle({
   className = '',
   badge,
   isPrimary,
+  cacheKey,
 }) {
   const hasPhoto = !!photo;
   const handleClick = () => {
@@ -30,6 +37,27 @@ export function AvatarCircle({
     }
   };
   const isClickable = (hasPhoto && onNavigate) || (!hasPhoto && onUpload);
+
+  // Initials fallback used both when there's no photo AND when the
+  // photo is offline-unavailable (no cached blob, expired URL, etc.).
+  const initialsBlock = (
+    <>
+      {onUpload && (
+        <Camera
+          className="absolute"
+          style={{
+            width: size * 0.45,
+            height: size * 0.45,
+            color: color,
+            opacity: 0.15,
+          }}
+        />
+      )}
+      <span className="relative z-10" style={{ fontSize: size * 0.32, fontWeight: 700 }}>
+        {initials}
+      </span>
+    </>
+  );
 
   return (
     <div className={`relative ${className}`} data-testid={testId}>
@@ -51,31 +79,14 @@ export function AvatarCircle({
         }}
       >
         {hasPhoto ? (
-          <img
+          <OfflineImage
             src={resolvePhotoUrl(photo)}
+            cacheKey={cacheKey}
             alt=""
             className="w-full h-full object-cover"
+            fallback={initialsBlock}
           />
-        ) : (
-          <>
-            {/* Camera icon as background */}
-            {onUpload && (
-              <Camera
-                className="absolute"
-                style={{
-                  width: size * 0.45,
-                  height: size * 0.45,
-                  color: color,
-                  opacity: 0.15,
-                }}
-              />
-            )}
-            {/* Initials on top */}
-            <span className="relative z-10" style={{ fontSize: size * 0.32, fontWeight: 700 }}>
-              {initials}
-            </span>
-          </>
-        )}
+        ) : initialsBlock}
       </div>
       {badge && !isPrimary && (
         <div
