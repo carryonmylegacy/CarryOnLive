@@ -836,21 +836,28 @@ const DashboardPage = () => {
           md: { dot: 10, font: 14, gap: 6,  pad: 'px-4 py-3' },
           lg: { dot: 14, font: 24, gap: 10, pad: 'px-5 py-4' },
         };
-        const KeyChips = ({ size = 'md' }) => {
+        // `columns` lets the dial card lay out the 6 entries in a
+        // 2-col × 3-row grid instead of a single tall column, which
+        // is critical for matching the chiclet grid's height in the
+        // 50/50 side-by-side desktop layout.
+        const KeyChips = ({ size = 'md', columns = 1 }) => {
           const cfg = CHIP_SIZES[size] || CHIP_SIZES.md;
           return (
             <div
-              className={`flex flex-col rounded-xl ${cfg.pad}`}
+              className={`rounded-xl ${cfg.pad}`}
               style={{
                 background: 'rgba(255,255,255,0.03)',
                 border: '1px solid rgba(255,255,255,0.06)',
-                gap: cfg.gap,
+                display: 'grid',
+                gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                columnGap: 24,
+                rowGap: cfg.gap,
               }}
             >
               {ENTRIES.map((e) => (
                 <div key={e.key} className="flex items-center gap-2">
                   <span className="rounded-full flex-shrink-0" style={{ background: e.chipColor, width: cfg.dot, height: cfg.dot }} />
-                  <span className="text-[var(--t4)] font-medium" style={{ fontSize: cfg.font }}>
+                  <span className="text-[var(--t4)] font-medium whitespace-nowrap" style={{ fontSize: cfg.font }}>
                     {e.chipPercent}% {e.chipLabel}
                   </span>
                 </div>
@@ -956,9 +963,7 @@ const DashboardPage = () => {
             <div className="lg:col-span-1">
               <div className="grid grid-cols-3 gap-3 mb-4" data-testid="dashboard-stat-grid">
                 {ENTRIES.map((e) => (
-                  <React.Fragment key={e.key}>
-                    {React.cloneElement(e.tile, { compact: true })}
-                  </React.Fragment>
+                  <React.Fragment key={e.key}>{e.tile}</React.Fragment>
                 ))}
               </div>
               {egaRunning && isFeatureKeyEnabled('ega', enabledFeatures) && (
@@ -973,13 +978,13 @@ const DashboardPage = () => {
           );
           const dial = (
             <div className="lg:col-span-1">
-              <div className="glass-card p-5 mb-4 sticky top-4" data-testid="readiness-card-side">
-                <h2 className="text-3xl font-bold text-[var(--t)] uppercase tracking-wider mb-4 text-center" style={{ fontFamily: 'var(--sans)' }}>
+              <div className="glass-card p-4 lg:p-5 mb-4" data-testid="readiness-card-side">
+                <h2 className="text-2xl font-bold text-[var(--t)] uppercase tracking-wider mb-3 text-center" style={{ fontFamily: 'var(--sans)' }}>
                   Estate Readiness
                 </h2>
                 <ReadinessDial score={readinessScore} id="readiness-side" labelText={scoreInfo.label} labelColor={scoreInfo.color} />
-                <div className="mt-4 flex justify-center">
-                  <KeyChips size="lg" />
+                <div className="mt-3 flex justify-center">
+                  <KeyChips size="md" columns={2} />
                 </div>
               </div>
             </div>

@@ -9,7 +9,7 @@ export const SpeedometerGauge = ({ score, id = 'main', labelText, labelColor }) 
   const gId = `gauge-${id}`;
 
   return (
-    <div className="flex flex-col items-center w-full max-w-[240px] lg:max-w-[600px] mx-auto">
+    <div className="flex flex-col items-center w-full max-w-[240px] lg:max-w-[460px] mx-auto">
       <svg viewBox="0 0 200 105" className="w-full h-auto">
         <defs>
           <linearGradient id={`${gId}-arc`} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -65,7 +65,7 @@ export const SpeedometerGauge = ({ score, id = 'main', labelText, labelColor }) 
  */
 export const StatCard = ({ icon: Icon, value, label, cardClass, onClick, className = '', sectionKey, compact = false }) => (
   <div
-    className={`${cardClass} rounded-2xl ${compact ? 'p-3 lg:p-3' : 'p-4 lg:p-6'} cursor-pointer transition-transform duration-150 active:scale-[0.96] lg:hover:scale-[1.03] lg:hover:shadow-xl flex flex-col items-center justify-center ${className}`}
+    className={`${cardClass} rounded-2xl ${compact ? 'p-3 lg:p-3' : 'p-4 lg:p-5 lg:aspect-square'} cursor-pointer transition-transform duration-150 active:scale-[0.96] lg:hover:scale-[1.03] lg:hover:shadow-xl flex flex-col items-center justify-center ${className}`}
     onClick={onClick}
     data-testid={`stat-card-${label.toLowerCase().replace(/\s+/g, '-')}`}
     aria-label={`${label}: ${value}`}

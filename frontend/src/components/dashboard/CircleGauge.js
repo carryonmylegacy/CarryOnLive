@@ -20,7 +20,7 @@ export const CircleGauge = ({ score, id = 'main', labelText, labelColor }) => {
   const offset = circumference * (1 - safe / 100);
 
   return (
-    <div className="flex flex-col items-center w-full max-w-[240px] lg:max-w-[520px] mx-auto">
+    <div className="flex flex-col items-center w-full max-w-[240px] lg:max-w-[380px] mx-auto">
       <div
         className="relative w-full aspect-square"
         style={{ containerType: 'inline-size' }}
