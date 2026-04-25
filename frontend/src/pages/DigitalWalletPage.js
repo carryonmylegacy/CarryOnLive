@@ -14,6 +14,7 @@ import SlidePanel from '../components/SlidePanel';
 import axios from 'axios';
 import { cachedGet } from '../utils/apiCache';
 import { API_URL } from '../config';
+import { saveList, readList } from '../utils/localListCache';
 
 const CATEGORIES = [
   { value: 'crypto', label: 'Cryptocurrency', icon: Wallet },
@@ -50,9 +51,18 @@ const DigitalWalletPage = () => {
   }, [loading, fromGettingStarted, entries.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
-    // Airplane-mode short-circuit — preserve current state instead of
-    // letting .catch() fallbacks wipe it with empty arrays.
+    // Airplane-mode rescue — rehydrate DAV entries + beneficiaries from
+    // the last-known-good localStorage cache so the user keeps seeing
+    // their digital wallet items offline. Populated by the online
+    // branch below on every successful fetch.
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      const savedEid = localStorage.getItem('selected_estate_id');
+      if (savedEid) {
+        const cachedEntries = readList(`financial:dav:${savedEid}`);
+        const cachedBens = readList(`dav:beneficiaries:${savedEid}`);
+        if (Array.isArray(cachedEntries) && cachedEntries.length > 0) setEntries(cachedEntries);
+        if (Array.isArray(cachedBens) && cachedBens.length > 0) setBeneficiaries(cachedBens);
+      }
       setLoading(false);
       return;
     }
@@ -67,11 +77,13 @@ const DigitalWalletPage = () => {
           axios.get(`${API_URL}/digital-wallet/${eid}`, { headers }).catch(() => ({ data: [] })),
           axios.get(`${API_URL}/beneficiaries/${eid}`, { headers }).catch(() => ({ data: [] })),
         ]);
-        // Empty-response clobber guard.
         const nextEntries = Array.isArray(walletRes.data) ? walletRes.data : [];
         const nextBens = Array.isArray(benRes.data) ? benRes.data : [];
         if (nextEntries.length > 0 || entries.length === 0) setEntries(nextEntries);
         if (nextBens.length > 0 || beneficiaries.length === 0) setBeneficiaries(nextBens);
+        // Persist both for airplane-mode rehydration next visit.
+        saveList(`financial:dav:${eid}`, nextEntries);
+        saveList(`dav:beneficiaries:${eid}`, nextBens);
       }
     } catch (err) {
       console.error('Digital wallet fetch error:', err);

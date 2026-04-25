@@ -192,9 +192,19 @@ class RouteErrorBoundary extends React.Component {
               <button onClick={this.handleRetry} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: '#d4af37', color: '#080e1a' }} data-testid="error-boundary-retry">
                 Try again
               </button>
-              <button onClick={() => window.location.reload()} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff' }} data-testid="error-boundary-reload">
-                Reload
-              </button>
+              {/* Hide the Reload button when offline — reloading while
+                  disconnected re-mounts the whole app from the SW shell
+                  cache, which rebuilds auth/role context from scratch
+                  and can land the user on the default Beneficiary
+                  Portal ("Welcome back, there! 0 benefactor estates")
+                  even when they were signed in as the benefactor/owner.
+                  Try-again without reloading keeps the current session
+                  and avoids the ghost-portal jump. */}
+              {!offline && (
+                <button onClick={() => window.location.reload()} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff' }} data-testid="error-boundary-reload">
+                  Reload
+                </button>
+              )}
             </div>
           </div>
         </div>

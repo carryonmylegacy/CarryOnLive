@@ -13,6 +13,7 @@ import {
 import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
+import { saveList, readList } from '../utils/localListCache';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import { API_URL } from '../config';
 
@@ -130,10 +131,22 @@ const ChecklistPage = () => {
   }, [estate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
-    // Airplane-mode short-circuit — don't try the axios call and don't
-    // show the "Failed to load checklist" toast when the user is just
-    // offline. Preserves whatever state is already displayed.
+    // Airplane-mode rescue — rehydrate checklist + estate from the
+    // last-known-good localStorage cache so the user keeps seeing
+    // their items offline. Populated by the online branch below on
+    // every successful fetch.
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      const savedEid = localStorage.getItem('selected_estate_id');
+      if (savedEid) {
+        const cachedEstate = readList(`checklist:estate:${savedEid}`);
+        if (cachedEstate && typeof cachedEstate === 'object' && !Array.isArray(cachedEstate)) {
+          setEstate(cachedEstate);
+        } else {
+          setEstate({ id: savedEid });
+        }
+        const cachedItems = readList(`checklist:items:${savedEid}`);
+        if (Array.isArray(cachedItems) && cachedItems.length > 0) setChecklists(cachedItems);
+      }
       setLoading(false);
       return;
     }
@@ -143,14 +156,14 @@ const ChecklistPage = () => {
         const savedId = localStorage.getItem('selected_estate_id');
         const selected = (savedId && estatesRes.data.find(e => e.id === savedId)) || estatesRes.data[0];
         setEstate(selected);
+        saveList(`checklist:estate:${selected.id}`, selected);
         const checklistRes = await axios.get(`${API_URL}/checklists/${selected.id}`, getAuthHeaders());
-        // Empty-response clobber guard.
         const next = Array.isArray(checklistRes.data) ? checklistRes.data : [];
         if (next.length > 0 || checklists.length === 0) setChecklists(next);
+        saveList(`checklist:items:${selected.id}`, next);
       }
     } catch (error) {
       console.error('Fetch error:', error);
-      // Only surface the toast for real server-side failures while online.
       if (typeof navigator === 'undefined' || navigator.onLine !== false) {
         toast.error('Failed to load checklist');
       }

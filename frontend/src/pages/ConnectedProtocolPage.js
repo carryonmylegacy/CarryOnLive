@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
 import { formatPhoneUS } from '../utils/phoneFormat';
+import { saveList, readList } from '../utils/localListCache';
 import CCPPlanEditor from '../components/ccp/CCPPlanEditor';
 import CCPActiveView from '../components/ccp/CCPActiveView';
 import CCPWizard from '../components/ccp/CCPWizard';
@@ -100,20 +101,23 @@ export default function ConnectedProtocolPage() {
 
   const fetchPlans = useCallback(async () => {
     if (!estateId) return;
-    // Airplane-mode short-circuit — raw fetch bypasses the axios offline
-    // interceptor, so the SW could replay a stale empty cached response
-    // as HTTP-200 and wipe the visible plan list. Apr 24, 2026 regression
-    // fix pattern. Keeps whatever is already in `plans` state.
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+    // Airplane-mode rescue — rehydrate from the last-known-good
+    // localStorage cache so the user keeps seeing their Emergency
+    // Plans instead of a blank list. Populated by the online branch
+    // below on every successful fetch.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      const cached = readList(`ccp:plans:${estateId}`);
+      if (Array.isArray(cached) && cached.length > 0) setPlans(cached);
+      return;
+    }
     try {
       const res = await fetch(`${API_URL}/ccp/plans/${estateId}`, { headers });
       if (res.ok) {
         const data = await res.json();
-        // Empty-response clobber guard — never overwrite a populated
-        // list with an empty response.
         if (Array.isArray(data) && (data.length > 0 || plans.length === 0)) {
           setPlans(data);
         }
+        if (Array.isArray(data)) saveList(`ccp:plans:${estateId}`, data);
       }
     } catch {}
   }, [estateId]); // eslint-disable-line react-hooks/exhaustive-deps

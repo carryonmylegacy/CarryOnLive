@@ -202,6 +202,36 @@ function taskDTS(estateId, headers) {
   };
 }
 
+function taskChecklist(estateId, headers) {
+  return {
+    label: `checklist:${estateId.slice(0, 6)}`,
+    run: async () => {
+      const res = await axios.get(`${API_URL}/checklists/${estateId}`, headers);
+      saveList(`checklist:items:${estateId}`, Array.isArray(res?.data) ? res.data : []);
+    },
+  };
+}
+
+function taskCCP(estateId, headers) {
+  return {
+    label: `ccp:${estateId.slice(0, 6)}`,
+    run: async () => {
+      const res = await axios.get(`${API_URL}/ccp/plans/${estateId}`, headers);
+      saveList(`ccp:plans:${estateId}`, Array.isArray(res?.data) ? res.data : []);
+    },
+  };
+}
+
+function taskDAVBeneficiaries(estateId, headers) {
+  return {
+    label: `dav:bens:${estateId.slice(0, 6)}`,
+    run: async () => {
+      const res = await axios.get(`${API_URL}/beneficiaries/${estateId}`, headers);
+      saveList(`dav:beneficiaries:${estateId}`, Array.isArray(res?.data) ? res.data : []);
+    },
+  };
+}
+
 /** Drain a list of lazy tasks with a concurrency cap, dispatching progress. */
 async function runTasksWithProgress(tasks) {
   const total = tasks.length;
@@ -267,6 +297,9 @@ export async function warmUpAfterLogin(token) {
     ...ownedEstateIds.map((id) => taskFFN(id, headers)),
     ...ownedEstateIds.map((id) => taskFinancial(id, headers)),
     ...ownedEstateIds.map((id) => taskDTS(id, headers)),
+    ...ownedEstateIds.map((id) => taskChecklist(id, headers)),
+    ...ownedEstateIds.map((id) => taskCCP(id, headers)),
+    ...ownedEstateIds.map((id) => taskDAVBeneficiaries(id, headers)),
   ];
 
   await runTasksWithProgress(tasks);
