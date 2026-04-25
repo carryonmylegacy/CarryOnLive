@@ -3,23 +3,17 @@ import React from 'react';
 /**
  * CircleGauge — slim gold-arc circular readiness gauge.
  *
- * Mirrors the visual treatment in `/public/mockups/dashboard-v2.html`:
- *   • 220-260px wide, stroke-dashoffset animated fill
- *   • Cormorant Garamond serif for the numeric score
- *   • Outfit uppercase tracked label
- *   • Gold gradient arc with a soft drop shadow glow
- *
- * Accepts the same prop shape as SpeedometerGauge so the dashboard
- * can swap between them seamlessly.
+ * Text (number + label) is HTML overlaid on the SVG and uses container
+ * query units (`cqi` = 1% of the inline size of the nearest container)
+ * for font-sizing. This guarantees the percentage and label always fit
+ * proportionally inside the ring whether the gauge is rendered at full
+ * dashboard size or shrunk inside a Settings preview tile.
  */
 export const CircleGauge = ({ score, id = 'main', labelText, labelColor }) => {
   const safe = Math.max(0, Math.min(100, Number(score) || 0));
   const gId = `circle-gauge-${id}`;
   // Triple the gold-ring thickness while preserving the same outer
   // circumference (do NOT let the ring grow outward — only inward).
-  // Original ring lived at r=90 with strokeWidth=8 (outer edge = 94).
-  // New strokeWidth=24 puts the centerline at r=82 so the outer edge
-  // still sits at 94, and the inner edge moves inward from r=86 → r=70.
   const STROKE = 24;
   const radius = 94 - STROKE / 2;
   const circumference = 2 * Math.PI * radius;
@@ -27,7 +21,10 @@ export const CircleGauge = ({ score, id = 'main', labelText, labelColor }) => {
 
   return (
     <div className="flex flex-col items-center w-full max-w-[240px] lg:max-w-[300px] mx-auto">
-      <div className="relative w-full aspect-square">
+      <div
+        className="relative w-full aspect-square"
+        style={{ containerType: 'inline-size' }}
+      >
         <svg viewBox="0 0 200 200" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
           <defs>
             <linearGradient id={`${gId}-grad`} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -65,7 +62,10 @@ export const CircleGauge = ({ score, id = 'main', labelText, labelColor }) => {
             style={{
               fontFamily: '"Cormorant Garamond", var(--serif), Georgia, serif',
               fontWeight: 500,
-              fontSize: 'clamp(48px, 8vw, 72px)',
+              // 28cqi = 28% of container inline size — scales perfectly
+              // with the wrapper, so a 112px container yields ~31px and
+              // a 300px container yields ~84px without ever overflowing.
+              fontSize: '28cqi',
               color: 'var(--t)',
               letterSpacing: '-0.03em',
             }}
@@ -81,7 +81,7 @@ export const CircleGauge = ({ score, id = 'main', labelText, labelColor }) => {
               style={{
                 fontFamily: 'var(--sans)',
                 letterSpacing: '0.22em',
-                fontSize: 11,
+                fontSize: '5.5cqi',
                 fontWeight: 600,
                 color: labelColor || 'var(--t4)',
               }}

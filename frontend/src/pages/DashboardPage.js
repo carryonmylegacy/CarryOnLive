@@ -828,32 +828,58 @@ const DashboardPage = () => {
 
         // Compact key chips (used in side-by-side layouts where
         // horizontal real-estate beside the gauge is tight).
-        const KeyChips = ({ size = 'md' }) => (
-          <div
-            className="flex flex-col gap-1.5 rounded-xl px-4 py-3"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-          >
-            {ENTRIES.map((e) => (
-              <div key={e.key} className="flex items-center gap-2">
-                <span className="rounded-full flex-shrink-0" style={{ background: e.chipColor, width: size === 'sm' ? 8 : 10, height: size === 'sm' ? 8 : 10 }} />
-                <span className="text-[var(--t4)] font-medium" style={{ fontSize: size === 'sm' ? 12 : 14 }}>
-                  {e.chipPercent}% {e.chipLabel}
-                </span>
-              </div>
-            ))}
-          </div>
-        );
+        // size === 'lg' is used by the Readiness Top layout where the
+        // chips are absolutely positioned in the empty corner beside
+        // the gauge — roughly 2x the default font for legibility.
+        const CHIP_SIZES = {
+          sm: { dot: 8, font: 12, gap: 6,  pad: 'px-3 py-2' },
+          md: { dot: 10, font: 14, gap: 6,  pad: 'px-4 py-3' },
+          lg: { dot: 14, font: 24, gap: 10, pad: 'px-5 py-4' },
+        };
+        const KeyChips = ({ size = 'md' }) => {
+          const cfg = CHIP_SIZES[size] || CHIP_SIZES.md;
+          return (
+            <div
+              className={`flex flex-col rounded-xl ${cfg.pad}`}
+              style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                gap: cfg.gap,
+              }}
+            >
+              {ENTRIES.map((e) => (
+                <div key={e.key} className="flex items-center gap-2">
+                  <span className="rounded-full flex-shrink-0" style={{ background: e.chipColor, width: cfg.dot, height: cfg.dot }} />
+                  <span className="text-[var(--t4)] font-medium" style={{ fontSize: cfg.font }}>
+                    {e.chipPercent}% {e.chipLabel}
+                  </span>
+                </div>
+              ))}
+            </div>
+          );
+        };
 
         // The readiness card shell — gauge + responsive heading. Used
         // by all three layouts; the variant just controls the wrap.
+        // For the `dense` (Readiness Top) layout we float the key
+        // chips into the empty top-right corner, bump the title size
+        // and tighten vertical padding so the box stays proportional
+        // to the gauge inside it.
         const ReadinessCard = ({ keyChipsPosition = 'top-right', dense = false }) => (
-          <div className={`glass-card ${dense ? 'p-4 lg:p-5' : 'p-5 lg:p-8'} mb-4`} data-testid="readiness-card">
-            <h2 className={`${dense ? 'text-base lg:text-2xl mb-3' : 'text-base lg:text-3xl mb-4 lg:mb-5'} font-bold text-[var(--t)] uppercase tracking-wider text-center`} style={{ fontFamily: 'var(--sans)' }}>
+          <div className={`glass-card relative ${dense ? 'p-4 lg:px-6 lg:py-4' : 'p-5 lg:p-8'} mb-4`} data-testid="readiness-card">
+            <h2 className={`${dense ? 'text-base lg:text-4xl mb-2 lg:mb-3' : 'text-base lg:text-3xl mb-4 lg:mb-5'} font-bold text-[var(--t)] uppercase tracking-wider text-center`} style={{ fontFamily: 'var(--sans)' }}>
               Estate Readiness
             </h2>
-            {keyChipsPosition === 'top-right' && (
+            {keyChipsPosition === 'top-right' && !dense && (
               <div className="hidden lg:flex lg:justify-end lg:mb-4 lg:px-2">
                 <KeyChips />
+              </div>
+            )}
+            {/* Dense layout: chips float in the empty corner beside the
+                gauge so they don't add to the box height. */}
+            {keyChipsPosition === 'top-right' && dense && (
+              <div className="hidden lg:block absolute top-6 right-6 z-10">
+                <KeyChips size="lg" />
               </div>
             )}
             {/* Mobile/PWA key — always two-and-two split-corner layout. */}

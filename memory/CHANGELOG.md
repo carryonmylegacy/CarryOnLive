@@ -1,5 +1,22 @@
 # CarryOn — Changelog
 
+## Apr 25, 2026 — Dashboard "Readiness Top" Proportions + Circle Gauge Fit Fix
+
+### What changed
+- **Readiness Top layout (desktop)** — bumped title from `lg:text-2xl` → `lg:text-4xl`, reduced vertical padding (`lg:p-5` → `lg:px-6 lg:py-4`), and floated the key chips into the empty top-right corner via `absolute` positioning so the box height is dictated by the gauge alone. Net: noticeably more proportional box.
+- **Key chip font** in the Readiness Top layout — added `size="lg"` variant on `KeyChips` (24px font / 14px dots) to roughly double the default (14px / 10px) for legibility against the wider top layout.
+- **Circle gauge text overflow** — switched `CircleGauge` from a fixed `clamp()` font-size to **container query units (`cqi`)** with `containerType: 'inline-size'` on the wrapper. The percentage and label now scale proportionally to the gauge's container, so they always fit inside the gold ring whether at full dashboard size or shrunk inside a Settings preview tile (140px × 0.8 scale).
+
+### Files touched
+- `/app/frontend/src/pages/DashboardPage.js` — `KeyChips` size variants, `ReadinessCard` dense-mode tweaks (absolute chip placement, larger title, tighter padding).
+- `/app/frontend/src/components/dashboard/CircleGauge.js` — HTML overlay text sized in `cqi` units (28cqi for score, 5.5cqi for label) with `containerType: inline-size` on wrapper.
+
+### Verification
+- Playwright screenshot confirmed the Circle gauge now renders "80%" + "PROTECTED" cleanly inside the gold ring (was previously rendering only the % glyph due to dev-tool plugin wrapping a `<span data-ve-dynamic>` inside the SVG `<text>`).
+- `bash /app/housekeeping.sh` → 0 WARN / 0 FAIL.
+
+
+
 ## Apr 24, 2026 (icon fix v3) — Source-Faithful Icon Generator
 
 User reported: "What happened to the logo?! It got all dark." Reference
@@ -899,7 +916,7 @@ Upgraded the existing push-only service worker into a full App Shell service wor
 
 **Test fix:** three test files (`smoke.spec.js`, `scrollbar.spec.js`) used `waitForLoadState('networkidle')` which never fires when a SW is running background stale-while-revalidate refreshes. Swapped to `'load'` — a more correct and less brittle assertion regardless.
 
-**Live verified:** served `https://ccp-wizard.preview.emergentagent.com/` in Playwright — SW state `activated`, 4 cache buckets populated (shell has index+splash+icons; images has logos+textures; runtime+api populate on usage). Playwright smoke + scrollbar + toggle_state 11/11 passed, housekeeping 65/65 PASS, ESLint clean.
+**Live verified:** served `https://readiness-top.preview.emergentagent.com/` in Playwright — SW state `activated`, 4 cache buckets populated (shell has index+splash+icons; images has logos+textures; runtime+api populate on usage). Playwright smoke + scrollbar + toggle_state 11/11 passed, housekeeping 65/65 PASS, ESLint clean.
 
 **Expected user impact:** first load same as before; second load from home-screen icon paints the shell in ~100 ms (vs 1-3 s before); offline: basic navigation and cached tiles still render; logout → login on same device: fresh state guaranteed.
 
