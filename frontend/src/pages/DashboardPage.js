@@ -969,18 +969,21 @@ const DashboardPage = () => {
                   CarryOn Core Pillars
                 </h2>
                 {/*
-                  3 cols × 2 rows of perfectly equal squares:
-                  - aspectRatio 3/2 on the grid container shapes the box
-                    so each cell's width/height come out identical.
-                  - gridAutoRows: minmax(0,1fr) forces both rows to share
-                    height equally regardless of label line-count.
-                  - StatCard's `lg:aspect-square` is overridden by the
-                    grid stretch (cells are already square), so no tile
-                    can ever bulge taller than its neighbour.
+                  Uniform cells via flex-1 grid + auto-rows 1fr:
+                  - Chiclet card matches the gauge card's height via the
+                    outer grid's `align-items: stretch`.
+                  - `flex-1` lets this grid take all remaining card
+                    height after the header.
+                  - `gridAutoRows: minmax(0, 1fr)` forces both rows to
+                    share that height EQUALLY regardless of which label
+                    wraps to more lines.
+                  - StatCards use `h-full w-full overflow-hidden` so no
+                    tile can grow taller than its neighbour or spill
+                    content into adjacent tiles.
                 */}
                 <div
-                  className="grid grid-cols-3 gap-4"
-                  style={{ aspectRatio: '3 / 2', gridAutoRows: 'minmax(0, 1fr)' }}
+                  className="grid grid-cols-3 gap-4 flex-1"
+                  style={{ gridAutoRows: 'minmax(0, 1fr)' }}
                   data-testid="dashboard-stat-grid"
                 >
                   {ENTRIES.map((e) => (

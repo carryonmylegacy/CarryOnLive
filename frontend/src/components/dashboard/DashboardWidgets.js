@@ -57,42 +57,32 @@ export const SpeedometerGauge = ({ score, id = 'main', labelText, labelColor }) 
 
 /**
  * StatCard — clickable stat tile used on the dashboard grid.
- * Extracted from DashboardPage for reuse and render optimization.
  *
  * `compact` (desktop side-by-side layouts): roughly halves the
  * vertical real-estate so the gauge column can expand. Smaller
  * padding, smaller value font, smaller icon — same colors/labels.
+ *
+ * Sizing is fully driven by the parent grid (uniform cells via
+ * `gridAutoRows: 1fr`). The card uses `h-full w-full` to fill its
+ * cell exactly — and `overflow-hidden` to GUARANTEE content can
+ * never push a single tile taller than its neighbours, regardless
+ * of label line-count. This is the contract that keeps the 6
+ * chiclets visually identical.
  */
 export const StatCard = ({ icon: Icon, value, label, cardClass, onClick, className = '', sectionKey, compact = false }) => (
   <div
-    className={`${cardClass} rounded-2xl ${compact ? 'p-3 lg:p-3' : 'p-4 lg:p-5 lg:aspect-square'} cursor-pointer transition-transform duration-150 active:scale-[0.96] lg:hover:scale-[1.03] lg:hover:shadow-xl flex flex-col items-center justify-center ${className}`}
+    className={`${cardClass} rounded-2xl ${compact ? 'p-3 lg:p-3' : 'p-4 lg:p-5'} cursor-pointer transition-transform duration-150 active:scale-[0.96] lg:hover:scale-[1.03] lg:hover:shadow-xl flex flex-col items-center justify-center w-full h-full overflow-hidden ${className}`}
     onClick={onClick}
     data-testid={`stat-card-${label.toLowerCase().replace(/\s+/g, '-')}`}
     aria-label={`${label}: ${value}`}
     role="button"
   >
-    <Icon className={`stat-icon ${compact ? 'w-5 h-5 lg:w-5 lg:h-5 mb-1 lg:mb-1' : 'w-6 h-6 lg:w-8 lg:h-8 mb-2 lg:mb-4'} opacity-70`} />
-    <div className={`${compact ? 'text-2xl lg:text-3xl mb-1' : 'text-3xl lg:text-5xl mb-2'} font-bold text-center`}>
+    <Icon className={`stat-icon ${compact ? 'w-5 h-5 lg:w-5 lg:h-5 mb-1 lg:mb-1' : 'w-6 h-6 lg:w-8 lg:h-8 mb-2 lg:mb-3'} opacity-70 flex-shrink-0`} />
+    <div className={`${compact ? 'text-2xl lg:text-3xl mb-1' : 'text-3xl lg:text-5xl mb-2'} font-bold text-center leading-none flex-shrink-0`}>
       {value}
     </div>
-    <div className={`opacity-80 ${compact ? 'text-xs lg:text-sm' : 'text-base lg:text-lg'} font-bold leading-tight text-center`}>
-      {label.split(' ').length > 2 ? (
-        <>
-          {label.split(' ').slice(0, Math.ceil(label.split(' ').length / 2)).join(' ')}
-          <br />
-          {label.split(' ').slice(Math.ceil(label.split(' ').length / 2)).join(' ')}
-        </>
-      ) : (
-        // Reserve two lines of label height even for single-word labels so
-        // every tile in the grid has the same internal vertical rhythm
-        // (otherwise "Beneficiaries" sits noticeably higher than e.g.
-        // "Immediate Action Checklist").
-        <>
-          {label}
-          <br />
-          <span aria-hidden="true">&nbsp;</span>
-        </>
-      )}
+    <div className={`opacity-80 ${compact ? 'text-xs lg:text-sm' : 'text-base lg:text-lg'} font-bold leading-tight text-center min-w-0`}>
+      {label}
     </div>
   </div>
 );
