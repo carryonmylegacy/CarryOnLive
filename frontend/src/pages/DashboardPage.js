@@ -30,7 +30,6 @@ import TrialBanner from '../components/TrialBanner';
 import BillingStatusBanner from '../components/BillingStatusBanner';
 import OnboardingWizard from '../components/OnboardingWizard';
 import ShareYourCarryOn from '../components/ShareYourCarryOn';
-import ChangedSinceWidget from '../components/dashboard/ChangedSinceWidget';
 import OfflineStorageWidget from '../components/dashboard/OfflineStorageWidget';
 import TileErrorBoundary from '../components/TileErrorBoundary';
 import { API_URL } from '../config';
@@ -667,11 +666,6 @@ const DashboardPage = () => {
       </div>
       {/* Billing Status Banner — Grace Period or Dormant */}
       <BillingStatusBanner onUpdatePayment={() => navigate('/settings')} />
-
-      {/* "What changed since last login" digest — only renders when there ARE changes */}
-      <div className="mb-5">
-        <ChangedSinceWidget />
-      </div>
 
       {/* "Storage used offline" — only renders when the user has pinned docs */}
       <div className="mb-5">
