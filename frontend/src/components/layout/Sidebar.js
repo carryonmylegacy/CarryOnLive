@@ -44,6 +44,7 @@ import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
 import NotificationBell from '../NotificationBell';
 import SidebarPillButton from './SidebarPillButton';
+import PublicDeviceModeMenuButton from './PublicDeviceModeMenuButton';
 import { API_URL } from '../../config';
 import { filterNavByFeatures } from '../../utils/featureGates';
 import { applyUserMenuOrder } from '../../config/menuRegistry';
@@ -1065,6 +1066,10 @@ const Sidebar = () => {
 
         {/* ── Separator ── */}
         <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.08)', margin: '2px 0' }} />
+
+        {/* Public Device Mode — panic switch directly above Sign Out.
+            Self-gates if the user has no estate. */}
+        <PublicDeviceModeMenuButton flavor="sidebar" collapsed={collapsed} />
 
         {/* Sign Out — pill button, danger style */}
         <SidebarPillButton

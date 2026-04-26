@@ -25,7 +25,8 @@
 3. Deferred-items batch 1 (5 items: weekly digest, support thread UI, content-visibility, Pydantic Literals, useFinancialForm hook) — iter 84: 48/48.
 4. Deferred-items batch 2 (3 items: late_fee schema split, Phase 9a pin-offline, monolith size guard) — iter 85: **55/55 pytest pass.**
 5. **Chat monolith refactor + Phase 9a closer** (4 extracted components + offline storage widget) — iter 87: **100% frontend pass.**
-6. **Public Device Mode** (disaster-comms borrowed-device protection — benefactor-activated estate flag, full client wipe on tab close + idle) — iter 89: **backend 6/6 + frontend 100% pass.**
+6. **Public Device Mode** (estate flag + Settings card + idle/pagehide wipe) — iter 89: **backend 6/6 + frontend 100% pass.**
+7. **Public Device Mode menu shortcut** (one-tap panic switch above Sign Out in sidebar + drawer) — iter 90: live Playwright verified, token preserved, final state clean.
 
 ✅ housekeeping 0 WARN/0 FAIL · backend pytest **61/61** (55 prior + 6 new) · zero regressions across 6 sequential batches · monolith size guard now PASS.
 

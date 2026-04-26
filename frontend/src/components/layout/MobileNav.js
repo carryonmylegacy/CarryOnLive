@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import NotificationBell from '../NotificationBell';
+import PublicDeviceModeMenuButton from './PublicDeviceModeMenuButton';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 import { filterNavByFeatures } from '../../utils/featureGates';
@@ -1091,6 +1092,12 @@ const MobileNav = () => {
 
                 {/* ── Separator ── */}
                 <div style={{ width: '100%', height: 1, background: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)', margin: '8px 0' }} />
+
+                {/* Public Device Mode — panic switch directly above Sign Out */}
+                <PublicDeviceModeMenuButton
+                  flavor="mobile"
+                  onAfterClick={() => setOpen(false)}
+                />
 
                 {/* Sign Out — pill, danger style */}
                 <button

@@ -623,6 +623,27 @@
   .sb-pill.danger:hover {
     background: rgba(244,63,94,0.12);
   }
+  /* Gold variant — used by Public Device Mode panic switch in the
+     sidebar/drawer. Two visual states: idle (gold-on-dark, like the
+     Beta = Free pill) and "armed" (filled gold gradient) when PDM is
+     active. The `armed` state is applied with .sb-pill.gold.armed. */
+  .sb-pill.gold {
+    border-color: rgba(212,175,55,0.25);
+    color: #d4af37;
+    background: rgba(212,175,55,0.06);
+  }
+  .sb-pill.gold:hover {
+    background: rgba(212,175,55,0.12);
+  }
+  .sb-pill.gold.armed {
+    border-color: rgba(212,175,55,0.45);
+    color: #080e1a;
+    background: linear-gradient(135deg, #d4af37, #F0C95C);
+    font-weight: 700;
+  }
+  .sb-pill.gold.armed:hover {
+    background: linear-gradient(135deg, #C39A2A, #E0B94A);
+  }
   [data-theme="light"] .sb-pill {
     border-color: rgba(0,0,0,0.08);
     background: rgba(0,0,0,0.03);

@@ -57,6 +57,8 @@ const SidebarPillButton = React.forwardRef(function SidebarPillButton(
       className={[
         'sb-pill w-full',
         variant === 'danger' ? 'danger' : '',
+        variant === 'gold' ? 'gold' : '',
+        variant === 'gold-armed' ? 'gold armed' : '',
         collapsed ? 'justify-center' : '',
         className,
       ]

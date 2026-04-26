@@ -1,5 +1,45 @@
 # CarryOn — Changelog
 
+## Apr 29, 2026 (later×2) — Public Device Mode menu shortcut (iter 90)
+
+User-requested follow-up to the Public Device Mode feature: surface
+it as a one-tap "panic switch" in the user menu directly above Sign
+Out, formatted to match the Sign Out pill button. Lives in both the
+desktop sidebar and the mobile drawer.
+
+### Behavior
+- **OFF state** — gold outline pill: "Public Device Mode" (Shield icon).
+- **ON state** — filled gold gradient pill: "Device Mode: ON".
+- Click flips the user's primary estate's PDM flag. ON also tightens
+  idle window to 60 seconds (vs the 90s default in the Settings card)
+  for the panic-button feel.
+- Self-gates via `user.is_also_benefactor` — beneficiaries who don't
+  own an estate don't see the button (they can't unilaterally toggle
+  their own session, and surfacing the button to them would produce a
+  confusing 403 toast on click).
+- Mobile drawer flavor matches the Sign Out button styling: same
+  rounded pill, same vertical rhythm, same `mb-` spacing.
+
+### Files
+- `components/layout/PublicDeviceModeMenuButton.js` (new) — dual-flavor
+  button (sidebar / mobile) wired to PATCH /estates/{id} + refreshUser.
+- `components/layout/SidebarPillButton.js` — added `gold` and `gold-armed`
+  variants alongside the existing `danger` variant.
+- `index.css` — added `.sb-pill.gold` and `.sb-pill.gold.armed` rules.
+- `components/layout/Sidebar.js` — renders the button immediately above
+  the Sign Out pill, using the same separator divider above it.
+- `components/layout/MobileNav.js` — same wiring for the drawer.
+
+### Verified
+- Live Playwright: button renders below the bottom-pinned controls and
+  above Sign Out (PDM y=989, Sign Out y=1032 — confirmed adjacency).
+  Click toggles `armed` class. Toast confirms ON/OFF transitions. Token
+  preserved across the toggle cycle (357 chars before, after ON, after
+  OFF). Final /auth/me state: pdm=False, idle=0.
+- Housekeeping ALL CLEAR. ESLint 0 errors.
+
+---
+
 ## Apr 29, 2026 (later) — Public Device Mode shipped (iter 88/89)
 
 User-requested feature for the disaster-comms scenario: a borrowed
