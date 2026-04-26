@@ -9,6 +9,7 @@ import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
 import axios from 'axios';
 import { API_URL } from '../../config';
+import { parseMoney, formatPydanticError } from '../../utils/financialFormHelpers';
 
 const REMINDER_OPTIONS = [10, 7, 5, 3, 1, 0];
 
@@ -72,9 +73,9 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
     // mandatory at the form level too — and mark them with `*` in the UI.
     const errs = [];
     if (!form.name.trim()) errs.push('Bill Name');
-    const cleanAmount = String(form.amount ?? '').replace(/[$,\s]/g, '');
-    if (!cleanAmount) errs.push('Amount');
-    else if (Number.isNaN(parseFloat(cleanAmount))) errs.push('Amount (must be a number)');
+    const amt = parseMoney(form.amount);
+    if (!String(form.amount ?? '').trim()) errs.push('Amount');
+    else if (!amt.ok) errs.push('Amount (must be a number)');
     if (form.is_recurring) {
       if (!String(form.due_day ?? '').trim()) errs.push('Due Day of Month');
       else {
@@ -93,8 +94,7 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
       const payload = {
         ...form,
         estate_id: estateId,
-        // Sanitize: strip $ , and whitespace so users can paste "$142.50"
-        amount: cleanAmount ? parseFloat(cleanAmount) : null,
+        amount: amt.value,
         due_day: form.due_day ? parseInt(form.due_day, 10) : null,
         grace_period_days: form.grace_period_days ? parseInt(form.grace_period_days, 10) : null,
         dav_entry_id: form.dav_entry_id || null,
@@ -112,19 +112,7 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
       if (r.queued) toast.success(`Bill ${isEdit ? 'change' : 'saved'} offline — will sync when you reconnect.`);
       onSaved();
     } catch (err) {
-      // Pydantic 422 returns `detail` as an array of {loc, msg} objects.
-      // Surface the FIRST field error to the user instead of letting the
-      // toast fall through to a generic "Failed to save bill".
-      const detail = err.response?.data?.detail;
-      let msg = 'Failed to save bill';
-      if (Array.isArray(detail) && detail.length) {
-        const first = detail[0];
-        const field = Array.isArray(first.loc) ? first.loc.slice(-1)[0] : '';
-        msg = field ? `${field}: ${first.msg}` : first.msg || msg;
-      } else if (typeof detail === 'string') {
-        msg = detail;
-      }
-      toast.error(msg);
+      toast.error(formatPydanticError(err, 'Failed to save bill'));
     }
     setSaving(false);
   };

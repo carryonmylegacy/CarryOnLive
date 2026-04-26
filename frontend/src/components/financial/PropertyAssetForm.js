@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from '../../utils/toast';
 import axios from 'axios';
 import { API_URL } from '../../config';
+import { parseMoney, formatPydanticError } from '../../utils/financialFormHelpers';
 
 const CATEGORIES = [
   { value: 'real_estate', label: 'Real Estate' },
@@ -67,12 +68,17 @@ const PropertyAssetForm = ({ estateId, asset, davEntries, onSaved, getAuthHeader
   const isBusiness = form.category === 'business_entity';
 
   const handleSubmit = async () => {
-    if (!form.name.trim()) { toast.error('Asset name is required'); return; }
+    const errs = [];
+    if (!form.name.trim()) errs.push('Asset Name');
+    const val = parseMoney(form.estimated_value);
+    if (!String(form.estimated_value ?? '').trim()) errs.push('Estimated Value');
+    else if (!val.ok) errs.push('Estimated Value (must be a number)');
+    if (errs.length) { toast.error(`Please fill in: ${errs.join(', ')}`); return; }
     setSaving(true);
     try {
       const payload = {
         ...form, estate_id: estateId,
-        estimated_value: form.estimated_value !== '' ? parseFloat(form.estimated_value) : null,
+        estimated_value: val.value,
         dav_entry_id: form.dav_entry_id || null,
         entity_type: form.entity_type && form.entity_type !== 'none' ? form.entity_type : null,
         entity_state: form.entity_state || null,
@@ -90,7 +96,7 @@ const PropertyAssetForm = ({ estateId, asset, davEntries, onSaved, getAuthHeader
       if (!r.ok) throw r.error || new Error('Save failed');
       if (r.queued) toast.success(`Asset ${isEdit ? 'change' : 'saved'} offline — will sync when you reconnect.`);
       onSaved();
-    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to save'); }
+    } catch (err) { toast.error(formatPydanticError(err, 'Failed to save asset')); }
     setSaving(false);
   };
 
@@ -110,8 +116,8 @@ const PropertyAssetForm = ({ estateId, asset, davEntries, onSaved, getAuthHeader
           </Select>
         </div>
         <div className="space-y-2">
-          <Label className="text-[#94a3b8]">Estimated Value</Label>
-          <Input type="number" value={form.estimated_value} onChange={e => update('estimated_value', e.target.value)}
+          <Label className="text-[#94a3b8]">Estimated Value <span className="text-red-400">*</span></Label>
+          <Input type="text" inputMode="decimal" value={form.estimated_value} onChange={e => update('estimated_value', e.target.value)}
             placeholder="0.00" className="input-field" data-testid="property-value-input" />
         </div>
       </div>

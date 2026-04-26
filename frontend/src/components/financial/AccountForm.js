@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from '../../utils/toast';
 import axios from 'axios';
 import { API_URL } from '../../config';
+import { parseMoney, formatPydanticError } from '../../utils/financialFormHelpers';
 
 const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries, beneficiaries, bills, onSaved, onAddCategory, getAuthHeaders }) => {
   const isEdit = !!account;
@@ -58,13 +59,19 @@ const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries
   }, [isEdit, getAuthHeaders]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async () => {
-    if (!form.name.trim()) { toast.error('Account name is required'); return; }
+    const errs = [];
+    if (!form.name.trim()) errs.push('Account Name');
+    const bal = parseMoney(form.approximate_balance);
+    if (!String(form.approximate_balance ?? '').trim()) errs.push('Approx. Balance');
+    else if (!bal.ok) errs.push('Approx. Balance (must be a number)');
+    if (errs.length) { toast.error(`Please fill in: ${errs.join(', ')}`); return; }
     setSaving(true);
     try {
+      const ir = parseMoney(form.interest_rate);
       const payload = {
         ...form, estate_id: estateId,
-        approximate_balance: form.approximate_balance !== '' ? parseFloat(form.approximate_balance) : null,
-        interest_rate: form.interest_rate !== '' ? parseFloat(form.interest_rate) : null,
+        approximate_balance: bal.value,
+        interest_rate: ir.value,
         dav_entry_id: form.dav_entry_id || null,
       };
       const { mutateWithOutbox } = await import('../../utils/offlineMutation');
@@ -79,7 +86,7 @@ const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries
       if (!r.ok) throw r.error || new Error('Save failed');
       if (r.queued) toast.success(`Account ${isEdit ? 'change' : 'saved'} offline — will sync when you reconnect.`);
       onSaved();
-    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to save account'); }
+    } catch (err) { toast.error(formatPydanticError(err, 'Failed to save account')); }
     setSaving(false);
   };
 
@@ -126,8 +133,8 @@ const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label className="text-[#94a3b8]">Approx. Balance ($)</Label>
-          <Input type="number" step="0.01" value={form.approximate_balance} onChange={e => update('approximate_balance', e.target.value)} placeholder="12,450" className="input-field" />
+          <Label className="text-[#94a3b8]">Approx. Balance ($) <span className="text-red-400">*</span></Label>
+          <Input type="text" inputMode="decimal" value={form.approximate_balance} onChange={e => update('approximate_balance', e.target.value)} placeholder="12,450" className="input-field" />
         </div>
         <div className="space-y-2">
           <Label className="text-[#94a3b8]">Status</Label>
@@ -144,7 +151,7 @@ const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label className="text-[#94a3b8]">Interest/Yield Rate (%)</Label>
-          <Input type="number" step="0.01" value={form.interest_rate} onChange={e => update('interest_rate', e.target.value)} placeholder="4.25" className="input-field" />
+          <Input type="text" inputMode="decimal" value={form.interest_rate} onChange={e => update('interest_rate', e.target.value)} placeholder="4.25" className="input-field" />
         </div>
         <div className="space-y-2">
           <Label className="text-[#94a3b8]">Balance Last Updated</Label>

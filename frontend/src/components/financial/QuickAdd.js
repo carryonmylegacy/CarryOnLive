@@ -62,6 +62,8 @@ const QuickAdd = ({ estateId, module, onDone, getAuthHeaders }) => {
 
     const endpoint = `${API_URL}/financial/${module}`;
     let saved = 0;
+    let failed = 0;
+    let lastError = '';
     const updated = [...results];
 
     for (let i = 0; i < updated.length; i++) {
@@ -85,15 +87,41 @@ const QuickAdd = ({ estateId, module, onDone, getAuthHeaders }) => {
         await axios.post(endpoint, payload, getAuthHeaders());
         updated[i] = { ...updated[i], status: 'saved' };
         saved++;
-      } catch {
-        updated[i] = { ...updated[i], status: 'error' };
+      } catch (err) {
+        // Capture detail per-row so the user can see WHY a specific
+        // entry failed (Pydantic 422 / 403 estate-access / network).
+        const d = err?.response?.data?.detail;
+        let errMsg = 'Save failed';
+        if (Array.isArray(d) && d.length) {
+          const f = Array.isArray(d[0].loc) ? d[0].loc.slice(-1)[0] : '';
+          errMsg = f ? `${f}: ${d[0].msg}` : d[0].msg || errMsg;
+        } else if (typeof d === 'string') {
+          errMsg = d;
+        } else if (err?.response?.status === 403) {
+          errMsg = 'No permission on this estate';
+        } else if (err?.response?.status) {
+          errMsg = `HTTP ${err.response.status}`;
+        } else if (err?.message) {
+          errMsg = err.message;
+        }
+        updated[i] = { ...updated[i], status: 'error', errorMsg: errMsg };
+        lastError = errMsg;
+        failed++;
       }
       setResults([...updated]);
     }
 
     setSaving(false);
-    toast.success(`${saved} ${module} added successfully`);
-    if (saved > 0) setTimeout(() => onDone(), 500);
+    // Truthful, non-contradictory toast: success only if 100% saved;
+    // mixed if some failed; pure error if 0 saved.
+    if (saved > 0 && failed === 0) {
+      toast.success(`${saved} ${module} added successfully`);
+      setTimeout(() => onDone(), 500);
+    } else if (saved > 0 && failed > 0) {
+      toast.error(`${saved} added, ${failed} failed${lastError ? ` — ${lastError}` : ''}`);
+    } else {
+      toast.error(`Could not add any ${module}${lastError ? ` — ${lastError}` : ''}`);
+    }
   };
 
   const selectedCount = results.filter(r => r.selected && r.status === 'ready').length;
@@ -181,7 +209,11 @@ const QuickAdd = ({ estateId, module, onDone, getAuthHeaders }) => {
                   </div>
                 </div>
                 {item.status === 'saved' && <span className="text-[11px] font-bold text-[#10b981]">Added</span>}
-                {item.status === 'error' && <span className="text-[11px] font-bold text-[#ef4444]">Failed</span>}
+                {item.status === 'error' && (
+                  <span className="text-[11px] font-bold text-[#ef4444]" title={item.errorMsg || 'Failed'}>
+                    {item.errorMsg ? `Failed — ${item.errorMsg}` : 'Failed'}
+                  </span>
+                )}
               </div>
             ))}
           </div>

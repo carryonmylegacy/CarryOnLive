@@ -9,6 +9,7 @@ import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
 import axios from 'axios';
 import { API_URL } from '../../config';
+import { parseMoney, parseInteger, formatPydanticError } from '../../utils/financialFormHelpers';
 
 const DebtForm = ({ estateId, debt, categories, categoryLabels, davEntries, beneficiaries, onSaved, onAddCategory, getAuthHeaders }) => {
   const isEdit = !!debt;
@@ -62,17 +63,27 @@ const DebtForm = ({ estateId, debt, categories, categoryLabels, davEntries, bene
   }, [isEdit, getAuthHeaders]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async () => {
-    if (!form.name.trim()) { toast.error('Debt name is required'); return; }
+    const errs = [];
+    if (!form.name.trim()) errs.push('Debt Name');
+    const bal = parseMoney(form.outstanding_balance);
+    if (!String(form.outstanding_balance ?? '').trim()) errs.push('Outstanding Balance');
+    else if (!bal.ok) errs.push('Outstanding Balance (must be a number)');
+    if (errs.length) { toast.error(`Please fill in: ${errs.join(', ')}`); return; }
     setSaving(true);
     try {
+      const orig = parseMoney(form.original_amount);
+      const ir = parseMoney(form.interest_rate);
+      const mp = parseMoney(form.monthly_payment);
+      const minp = parseMoney(form.minimum_payment);
+      const term = parseInteger(form.loan_term_months);
       const payload = {
         ...form, estate_id: estateId,
-        outstanding_balance: form.outstanding_balance !== '' ? parseFloat(form.outstanding_balance) : null,
-        original_amount: form.original_amount !== '' ? parseFloat(form.original_amount) : null,
-        interest_rate: form.interest_rate !== '' ? parseFloat(form.interest_rate) : null,
-        monthly_payment: form.monthly_payment !== '' ? parseFloat(form.monthly_payment) : null,
-        minimum_payment: form.minimum_payment !== '' ? parseFloat(form.minimum_payment) : null,
-        loan_term_months: form.loan_term_months !== '' ? parseInt(form.loan_term_months) : null,
+        outstanding_balance: bal.value,
+        original_amount: orig.value,
+        interest_rate: ir.value,
+        monthly_payment: mp.value,
+        minimum_payment: minp.value,
+        loan_term_months: term.value,
         dav_entry_id: form.dav_entry_id || null,
       };
       const { mutateWithOutbox } = await import('../../utils/offlineMutation');
@@ -87,7 +98,7 @@ const DebtForm = ({ estateId, debt, categories, categoryLabels, davEntries, bene
       if (!r.ok) throw r.error || new Error('Save failed');
       if (r.queued) toast.success(`Debt ${isEdit ? 'change' : 'saved'} offline — will sync when you reconnect.`);
       onSaved();
-    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to save debt'); }
+    } catch (err) { toast.error(formatPydanticError(err, 'Failed to save debt')); }
     setSaving(false);
   };
   const handleAddCategory = async () => {
@@ -133,32 +144,32 @@ const DebtForm = ({ estateId, debt, categories, categoryLabels, davEntries, bene
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label className="text-[#94a3b8]">Outstanding Balance ($)</Label>
-          <Input type="number" step="0.01" value={form.outstanding_balance} onChange={e => update('outstanding_balance', e.target.value)} placeholder="287,450" className="input-field" />
+          <Label className="text-[#94a3b8]">Outstanding Balance ($) <span className="text-red-400">*</span></Label>
+          <Input type="text" inputMode="decimal" value={form.outstanding_balance} onChange={e => update('outstanding_balance', e.target.value)} placeholder="287,450" className="input-field" />
         </div>
         <div className="space-y-2">
           <Label className="text-[#94a3b8]">Original Amount ($)</Label>
-          <Input type="number" step="0.01" value={form.original_amount} onChange={e => update('original_amount', e.target.value)} placeholder="320,000" className="input-field" />
+          <Input type="text" inputMode="decimal" value={form.original_amount} onChange={e => update('original_amount', e.target.value)} placeholder="320,000" className="input-field" />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label className="text-[#94a3b8]">Interest Rate (%)</Label>
-          <Input type="number" step="0.01" value={form.interest_rate} onChange={e => update('interest_rate', e.target.value)} placeholder="3.25" className="input-field" />
+          <Input type="text" inputMode="decimal" value={form.interest_rate} onChange={e => update('interest_rate', e.target.value)} placeholder="3.25" className="input-field" />
         </div>
         <div className="space-y-2">
           <Label className="text-[#94a3b8]">Monthly Payment ($)</Label>
-          <Input type="number" step="0.01" value={form.monthly_payment} onChange={e => update('monthly_payment', e.target.value)} placeholder="1,842" className="input-field" />
+          <Input type="text" inputMode="decimal" value={form.monthly_payment} onChange={e => update('monthly_payment', e.target.value)} placeholder="1,842" className="input-field" />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label className="text-[#94a3b8]">Minimum Payment ($)</Label>
-          <Input type="number" step="0.01" value={form.minimum_payment} onChange={e => update('minimum_payment', e.target.value)} placeholder="25" className="input-field" />
+          <Input type="text" inputMode="decimal" value={form.minimum_payment} onChange={e => update('minimum_payment', e.target.value)} placeholder="25" className="input-field" />
         </div>
         <div className="space-y-2">
           <Label className="text-[#94a3b8]">Loan Term (months)</Label>
-          <Input type="number" value={form.loan_term_months} onChange={e => update('loan_term_months', e.target.value)} placeholder="360" className="input-field" />
+          <Input type="text" inputMode="numeric" value={form.loan_term_months} onChange={e => update('loan_term_months', e.target.value)} placeholder="360" className="input-field" />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
