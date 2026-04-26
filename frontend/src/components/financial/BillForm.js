@@ -225,7 +225,7 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
           </div>
           <div className="space-y-2">
             <Label className="text-[#94a3b8]">Due Day of Month <span className="text-red-400">*</span></Label>
-            <Input type="number" min="1" max="31" value={form.due_day} onChange={e => update('due_day', e.target.value)} placeholder="15" className="input-field" data-testid="bill-due-day-input" />
+            <Input type="text" inputMode="numeric" value={form.due_day} onChange={e => update('due_day', e.target.value.replace(/\D/g, '').slice(0, 2))} placeholder="15" className="input-field" data-testid="bill-due-day-input" />
           </div>
         </div>
       ) : (
@@ -238,7 +238,7 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label className="text-[#94a3b8]">Grace Period (days)</Label>
-          <Input type="number" value={form.grace_period_days} onChange={e => update('grace_period_days', e.target.value)} placeholder="5" className="input-field" />
+          <Input type="text" inputMode="numeric" value={form.grace_period_days} onChange={e => update('grace_period_days', e.target.value.replace(/\D/g, '').slice(0, 2))} placeholder="5" className="input-field" />
         </div>
         <div className="space-y-2">
           <Label className="text-[#94a3b8]">Late Fee</Label>
