@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React from 'react';
 import { Loader2, Plus, Link2, Sparkles } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -6,112 +6,59 @@ import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Switch } from '../ui/switch';
-import { toast } from '../../utils/toast';
-import axios from 'axios';
-import { API_URL } from '../../config';
-import { parseMoney, parseInteger, formatPydanticError } from '../../utils/financialFormHelpers';
+import { useFinancialForm } from '../../hooks/useFinancialForm';
 import { PassdownNotes } from './PassdownNotes';
 import { VisibilityTimingPills } from './VisibilityTimingPills';
 
 const DebtForm = ({ estateId, debt, categories, categoryLabels, davEntries, beneficiaries, onSaved, onAddCategory, getAuthHeaders }) => {
-  const isEdit = !!debt;
-  const [saving, setSaving] = useState(false);
-  const [showNewCat, setShowNewCat] = useState(false);
-  const [newCatName, setNewCatName] = useState('');
-  const [form, setForm] = useState({
-    name: debt?.name || '',
-    category: debt?.category || 'other',
-    outstanding_balance: debt?.outstanding_balance ?? '',
-    original_amount: debt?.original_amount ?? '',
-    interest_rate: debt?.interest_rate ?? '',
-    monthly_payment: debt?.monthly_payment ?? '',
-    minimum_payment: debt?.minimum_payment ?? '',
-    loan_term_months: debt?.loan_term_months ?? '',
-    origination_date: debt?.origination_date || '',
-    estimated_payoff_date: debt?.estimated_payoff_date || '',
-    account_number_masked: debt?.account_number_masked || '',
-    lender_name: debt?.lender_name || '',
-    lender_phone: debt?.lender_phone || '',
-    lender_website: debt?.lender_website || '',
-    lender_address: debt?.lender_address || '',
-    collateral: debt?.collateral || '',
-    co_signer: debt?.co_signer || '',
-    has_life_insurance: debt?.has_life_insurance ?? false,
-    life_insurance_policy: debt?.life_insurance_policy || '',
-    dav_entry_id: debt?.dav_entry_id || '',
-    priority: debt?.priority || 'important',
-    notes: debt?.notes || '',
-    notes_first_action: debt?.notes_first_action || '',
-    notes_gotchas: debt?.notes_gotchas || '',
-    notes_who_to_call: debt?.notes_who_to_call || '',
-    status: debt?.status || 'active',
-    visibility_timing: debt?.visibility_timing || { pre: false, post: true },
+  const {
+    form, update, saving, smartLoading, smartCategorize,
+    handleSubmit, showNewCat, setShowNewCat, newCatName, setNewCatName,
+    handleAddCategory, isEdit,
+  } = useFinancialForm({
+    entityType: 'financial_debt',
+    module: 'debts',
+    urlBase: '/financial/debts',
+    entityLabel: 'Debt',
+    existing: debt,
+    estateId,
+    getAuthHeaders,
+    onSaved,
+    onAddCategory,
+    buildDefaults: () => ({
+      name: '', category: 'other', outstanding_balance: '', original_amount: '',
+      interest_rate: '', monthly_payment: '', minimum_payment: '', loan_term_months: '',
+      origination_date: '', estimated_payoff_date: '', account_number_masked: '',
+      lender_name: '', lender_phone: '', lender_website: '', lender_address: '',
+      collateral: '', co_signer: '', has_life_insurance: false, life_insurance_policy: '',
+      dav_entry_id: '', priority: 'important',
+      notes: '', notes_first_action: '', notes_gotchas: '', notes_who_to_call: '',
+      status: 'active', visibility_timing: { pre: false, post: true },
+    }),
+    validate: (f, { parseMoney }) => {
+      const errs = [];
+      if (!f.name.trim()) errs.push('Debt Name');
+      const bal = parseMoney(f.outstanding_balance);
+      if (!String(f.outstanding_balance ?? '').trim()) errs.push('Outstanding Balance');
+      else if (!bal.ok) errs.push('Outstanding Balance (must be a number)');
+      return errs;
+    },
+    buildPayload: (f, { parseMoney, parseInteger }) => ({
+      ...f,
+      outstanding_balance: parseMoney(f.outstanding_balance).value,
+      original_amount: parseMoney(f.original_amount).value,
+      interest_rate: parseMoney(f.interest_rate).value,
+      monthly_payment: parseMoney(f.monthly_payment).value,
+      minimum_payment: parseMoney(f.minimum_payment).value,
+      loan_term_months: parseInteger(f.loan_term_months).value,
+      dav_entry_id: f.dav_entry_id || null,
+    }),
+    applyAiSuggestion: (s, f, set) => {
+      if (s.category && s.category !== 'other') set('category', s.category);
+      if (s.biller_phone && !f.lender_phone) set('lender_phone', s.biller_phone);
+      if (s.biller_website && !f.lender_website) set('lender_website', s.biller_website);
+    },
   });
-  const update = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
-  const [smartLoading, setSmartLoading] = useState(false);
-  const smartTimerRef = useRef(null);
-
-  const smartCategorize = useCallback(async (name) => {
-    if (!name || name.length < 3 || isEdit) return;
-    clearTimeout(smartTimerRef.current);
-    smartTimerRef.current = setTimeout(async () => {
-      setSmartLoading(true);
-      try {
-        const res = await axios.post(`${API_URL}/financial/smart-categorize`, { bill_name: name, module: 'debts' }, getAuthHeaders());
-        const s = res.data;
-        if (s.category && s.category !== 'other') update('category', s.category);
-        if (s.biller_phone && !form.lender_phone) update('lender_phone', s.biller_phone);
-        if (s.biller_website && !form.lender_website) update('lender_website', s.biller_website);
-        toast.success('AI auto-filled details');
-      } catch { /* silent */ }
-      setSmartLoading(false);
-    }, 800);
-  }, [isEdit, getAuthHeaders]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleSubmit = async () => {
-    const errs = [];
-    if (!form.name.trim()) errs.push('Debt Name');
-    const bal = parseMoney(form.outstanding_balance);
-    if (!String(form.outstanding_balance ?? '').trim()) errs.push('Outstanding Balance');
-    else if (!bal.ok) errs.push('Outstanding Balance (must be a number)');
-    if (errs.length) { toast.error(`Please fill in: ${errs.join(', ')}`); return; }
-    setSaving(true);
-    try {
-      const orig = parseMoney(form.original_amount);
-      const ir = parseMoney(form.interest_rate);
-      const mp = parseMoney(form.monthly_payment);
-      const minp = parseMoney(form.minimum_payment);
-      const term = parseInteger(form.loan_term_months);
-      const payload = {
-        ...form, estate_id: estateId,
-        outstanding_balance: bal.value,
-        original_amount: orig.value,
-        interest_rate: ir.value,
-        monthly_payment: mp.value,
-        minimum_payment: minp.value,
-        loan_term_months: term.value,
-        dav_entry_id: form.dav_entry_id || null,
-      };
-      const { mutateWithOutbox } = await import('../../utils/offlineMutation');
-      const r = await mutateWithOutbox({
-        entity_type: 'financial_debt',
-        entity_id: isEdit ? debt.id : `local-debt-${Date.now()}`,
-        method: isEdit ? 'PUT' : 'POST',
-        url: isEdit ? `/financial/debts/${debt.id}` : '/financial/debts',
-        body: payload,
-        authHeaders: getAuthHeaders(),
-      });
-      if (!r.ok) throw r.error || new Error('Save failed');
-      if (r.queued) toast.success(`Debt ${isEdit ? 'change' : 'saved'} offline — will sync when you reconnect.`);
-      onSaved();
-    } catch (err) { toast.error(formatPydanticError(err, 'Failed to save debt')); }
-    setSaving(false);
-  };
-  const handleAddCategory = async () => {
-    if (!newCatName.trim()) return;
-    const success = await onAddCategory(newCatName.trim());
-    if (success) { update('category', newCatName.trim()); setNewCatName(''); setShowNewCat(false); }
-  };
 
   return (
     <div className="space-y-4 py-4">

@@ -61,7 +61,11 @@ const BillTile = ({ bill, categoryLabels, beneficiaries, onEdit, onDelete, onDes
   };
 
   return (
-    <Card className="glass-card relative overflow-hidden group" data-testid={`bill-tile-${bill.id}`}>
+    <Card
+      className="glass-card relative overflow-hidden group"
+      data-testid={`bill-tile-${bill.id}`}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: '200px' }}
+    >
       {due.urgent && (
         <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: due.color }} />
       )}

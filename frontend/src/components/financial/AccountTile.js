@@ -34,7 +34,11 @@ const AccountTile = ({ account, categoryLabels, beneficiaries, onEdit, onDelete,
   };
 
   return (
-    <Card className="glass-card relative overflow-hidden group" data-testid={`account-tile-${account.id}`}>
+    <Card
+      className="glass-card relative overflow-hidden group"
+      data-testid={`account-tile-${account.id}`}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: '200px' }}
+    >
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex-1 min-w-0">

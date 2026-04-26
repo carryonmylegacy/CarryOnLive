@@ -225,24 +225,28 @@ async def create_my_support_thread(
 
 
 @router.get("/support/messages/{conversation_id}")
-async def get_conversation_messages(conversation_id: str, current_user: dict = Depends(require_staff)):
-    """Admin/Operator: Get messages for a specific conversation"""
+async def get_conversation_messages(
+    conversation_id: str,
+    thread_id: Optional[str] = None,
+    current_user: dict = Depends(require_staff),
+):
+    """Admin/Operator: Get messages for a specific conversation. Pass
+    `thread_id` to scope to a single topic-thread within the conversation."""
+    query = {"conversation_id": conversation_id}
+    if thread_id:
+        # Match either explicit thread_id or the legacy "default" bucket.
+        if thread_id == "default":
+            query["$or"] = [{"thread_id": "default"}, {"thread_id": {"$exists": False}}, {"thread_id": None}]
+        else:
+            query["thread_id"] = thread_id
 
-    messages = (
-        await db.support_messages.find({"conversation_id": conversation_id}, {"_id": 0})
-        .sort("created_at", 1)
-        .to_list(500)
-    )
+    messages = await db.support_messages.find(query, {"_id": 0}).sort("created_at", 1).to_list(500)
 
-    # Mark messages from user as read
-    await db.support_messages.update_many(
-        {
-            "conversation_id": conversation_id,
-            "sender_role": {"$ne": "admin"},
-            "read": False,
-        },
-        {"$set": {"read": True}},
-    )
+    # Mark messages from user as read (scoped to the same thread if filtered).
+    read_query = dict(query)
+    read_query["sender_role"] = {"$ne": "admin"}
+    read_query["read"] = False
+    await db.support_messages.update_many(read_query, {"$set": {"read": True}})
 
     return messages
 

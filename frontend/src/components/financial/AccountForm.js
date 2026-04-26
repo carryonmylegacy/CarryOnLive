@@ -1,106 +1,58 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React from 'react';
 import { Loader2, Plus, Link2, Sparkles } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { toast } from '../../utils/toast';
-import axios from 'axios';
-import { API_URL } from '../../config';
-import { parseMoney, formatPydanticError } from '../../utils/financialFormHelpers';
+import { useFinancialForm } from '../../hooks/useFinancialForm';
 import { PassdownNotes } from './PassdownNotes';
 import { VisibilityTimingPills } from './VisibilityTimingPills';
 
 const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries, beneficiaries, bills, onSaved, onAddCategory, getAuthHeaders }) => {
-  const isEdit = !!account;
-  const [saving, setSaving] = useState(false);
-  const [showNewCat, setShowNewCat] = useState(false);
-  const [newCatName, setNewCatName] = useState('');
-  const [form, setForm] = useState({
-    name: account?.name || '',
-    category: account?.category || 'checking',
-    approximate_balance: account?.approximate_balance ?? '',
-    balance_last_updated: account?.balance_last_updated || '',
-    interest_rate: account?.interest_rate ?? '',
-    institution_name: account?.institution_name || '',
-    account_number_masked: account?.account_number_masked || '',
-    routing_number: account?.routing_number || '',
-    institution_phone: account?.institution_phone || '',
-    institution_website: account?.institution_website || '',
-    branch_address: account?.branch_address || '',
-    ownership_type: account?.ownership_type || 'individual',
-    joint_owner: account?.joint_owner || '',
-    named_beneficiary_at_institution: account?.named_beneficiary_at_institution || '',
-    beneficiary_on_account: account?.beneficiary_on_account || '',
-    dav_entry_id: account?.dav_entry_id || '',
-    linked_bill_ids: account?.linked_bill_ids || [],
-    priority: account?.priority || 'important',
-    notes: account?.notes || '',
-    notes_first_action: account?.notes_first_action || '',
-    notes_gotchas: account?.notes_gotchas || '',
-    notes_who_to_call: account?.notes_who_to_call || '',
-    status: account?.status || 'active',
-    visibility_timing: account?.visibility_timing || { pre: false, post: true },
+  const {
+    form, update, saving, smartLoading, smartCategorize,
+    handleSubmit, showNewCat, setShowNewCat, newCatName, setNewCatName,
+    handleAddCategory, isEdit,
+  } = useFinancialForm({
+    entityType: 'financial_account',
+    module: 'accounts',
+    urlBase: '/financial/accounts',
+    entityLabel: 'Account',
+    existing: account,
+    estateId,
+    getAuthHeaders,
+    onSaved,
+    onAddCategory,
+    buildDefaults: () => ({
+      name: '', category: 'checking', approximate_balance: '', balance_last_updated: '',
+      interest_rate: '', institution_name: '', account_number_masked: '', routing_number: '',
+      institution_phone: '', institution_website: '', branch_address: '',
+      ownership_type: 'individual', joint_owner: '', named_beneficiary_at_institution: '',
+      beneficiary_on_account: '', dav_entry_id: '', linked_bill_ids: [], priority: 'important',
+      notes: '', notes_first_action: '', notes_gotchas: '', notes_who_to_call: '',
+      status: 'active', visibility_timing: { pre: false, post: true },
+    }),
+    validate: (f, { parseMoney }) => {
+      const errs = [];
+      if (!f.name.trim()) errs.push('Account Name');
+      const bal = parseMoney(f.approximate_balance);
+      if (!String(f.approximate_balance ?? '').trim()) errs.push('Approx. Balance');
+      else if (!bal.ok) errs.push('Approx. Balance (must be a number)');
+      return errs;
+    },
+    buildPayload: (f, { parseMoney }) => ({
+      ...f,
+      approximate_balance: parseMoney(f.approximate_balance).value,
+      interest_rate: parseMoney(f.interest_rate).value,
+      dav_entry_id: f.dav_entry_id || null,
+    }),
+    applyAiSuggestion: (s, f, set) => {
+      if (s.category && s.category !== 'other') set('category', s.category);
+      if (s.biller_phone && !f.institution_phone) set('institution_phone', s.biller_phone);
+      if (s.biller_website && !f.institution_website) set('institution_website', s.biller_website);
+    },
   });
-  const update = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
-  const [smartLoading, setSmartLoading] = useState(false);
-  const smartTimerRef = useRef(null);
-
-  const smartCategorize = useCallback(async (name) => {
-    if (!name || name.length < 3 || isEdit) return;
-    clearTimeout(smartTimerRef.current);
-    smartTimerRef.current = setTimeout(async () => {
-      setSmartLoading(true);
-      try {
-        const res = await axios.post(`${API_URL}/financial/smart-categorize`, { bill_name: name, module: 'accounts' }, getAuthHeaders());
-        const s = res.data;
-        if (s.category && s.category !== 'other') update('category', s.category);
-        if (s.biller_phone && !form.institution_phone) update('institution_phone', s.biller_phone);
-        if (s.biller_website && !form.institution_website) update('institution_website', s.biller_website);
-        toast.success('AI auto-filled details');
-      } catch { /* silent */ }
-      setSmartLoading(false);
-    }, 800);
-  }, [isEdit, getAuthHeaders]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleSubmit = async () => {
-    const errs = [];
-    if (!form.name.trim()) errs.push('Account Name');
-    const bal = parseMoney(form.approximate_balance);
-    if (!String(form.approximate_balance ?? '').trim()) errs.push('Approx. Balance');
-    else if (!bal.ok) errs.push('Approx. Balance (must be a number)');
-    if (errs.length) { toast.error(`Please fill in: ${errs.join(', ')}`); return; }
-    setSaving(true);
-    try {
-      const ir = parseMoney(form.interest_rate);
-      const payload = {
-        ...form, estate_id: estateId,
-        approximate_balance: bal.value,
-        interest_rate: ir.value,
-        dav_entry_id: form.dav_entry_id || null,
-      };
-      const { mutateWithOutbox } = await import('../../utils/offlineMutation');
-      const r = await mutateWithOutbox({
-        entity_type: 'financial_account',
-        entity_id: isEdit ? account.id : `local-account-${Date.now()}`,
-        method: isEdit ? 'PUT' : 'POST',
-        url: isEdit ? `/financial/accounts/${account.id}` : '/financial/accounts',
-        body: payload,
-        authHeaders: getAuthHeaders(),
-      });
-      if (!r.ok) throw r.error || new Error('Save failed');
-      if (r.queued) toast.success(`Account ${isEdit ? 'change' : 'saved'} offline — will sync when you reconnect.`);
-      onSaved();
-    } catch (err) { toast.error(formatPydanticError(err, 'Failed to save account')); }
-    setSaving(false);
-  };
-
-  const handleAddCategory = async () => {
-    if (!newCatName.trim()) return;
-    const success = await onAddCategory(newCatName.trim());
-    if (success) { update('category', newCatName.trim()); setNewCatName(''); setShowNewCat(false); }
-  };
 
   return (
     <div className="space-y-4 py-4">

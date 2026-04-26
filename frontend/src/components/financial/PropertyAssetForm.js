@@ -1,14 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { toast } from '../../utils/toast';
-import axios from 'axios';
-import { API_URL } from '../../config';
-import { parseMoney, formatPydanticError } from '../../utils/financialFormHelpers';
+import { useFinancialForm } from '../../hooks/useFinancialForm';
 import { PassdownNotes } from './PassdownNotes';
 import { VisibilityTimingPills } from './VisibilityTimingPills';
 
@@ -42,69 +39,48 @@ const OWNERSHIP_TYPES = [
 ];
 
 const PropertyAssetForm = ({ estateId, asset, davEntries, onSaved, getAuthHeaders }) => {
-  const isEdit = !!asset;
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    name: asset?.name || '',
-    category: asset?.category || 'real_estate',
-    estimated_value: asset?.estimated_value ?? '',
-    value_last_updated: asset?.value_last_updated || '',
-    location_address: asset?.location_address || '',
-    acquisition_date: asset?.acquisition_date || '',
-    ownership_type: asset?.ownership_type || 'individual',
-    joint_owner: asset?.joint_owner || '',
-    entity_type: asset?.entity_type || 'none',
-    entity_state: asset?.entity_state || '',
-    entity_ein: asset?.entity_ein || '',
-    appraised_by: asset?.appraised_by || '',
-    appraisal_date: asset?.appraisal_date || '',
-    insurance_policy: asset?.insurance_policy || '',
-    serial_or_vin: asset?.serial_or_vin || '',
-    description: asset?.description || '',
-    dav_entry_id: asset?.dav_entry_id || '',
-    priority: asset?.priority || 'important',
-    notes: asset?.notes || '',
-    notes_first_action: asset?.notes_first_action || '',
-    notes_gotchas: asset?.notes_gotchas || '',
-    notes_who_to_call: asset?.notes_who_to_call || '',
-    status: asset?.status || 'active',
-    visibility_timing: asset?.visibility_timing || { pre: false, post: true },
+  const {
+    form, update, saving, handleSubmit, isEdit,
+  } = useFinancialForm({
+    entityType: 'financial_property',
+    module: 'property',
+    urlBase: '/financial/property',
+    entityLabel: 'Asset',
+    existing: asset,
+    estateId,
+    getAuthHeaders,
+    onSaved,
+    // PropertyAssetForm has no custom-category creation flow — pass a
+    // no-op so the hook's handleAddCategory just resolves false.
+    onAddCategory: async () => false,
+    buildDefaults: () => ({
+      name: '', category: 'real_estate', estimated_value: '', value_last_updated: '',
+      location_address: '', acquisition_date: '', ownership_type: 'individual',
+      joint_owner: '', entity_type: 'none', entity_state: '', entity_ein: '',
+      appraised_by: '', appraisal_date: '', insurance_policy: '', serial_or_vin: '',
+      description: '', dav_entry_id: '', priority: 'important',
+      notes: '', notes_first_action: '', notes_gotchas: '', notes_who_to_call: '',
+      status: 'active', visibility_timing: { pre: false, post: true },
+    }),
+    validate: (f, { parseMoney }) => {
+      const errs = [];
+      if (!f.name.trim()) errs.push('Asset Name');
+      const val = parseMoney(f.estimated_value);
+      if (!String(f.estimated_value ?? '').trim()) errs.push('Estimated Value');
+      else if (!val.ok) errs.push('Estimated Value (must be a number)');
+      return errs;
+    },
+    buildPayload: (f, { parseMoney }) => ({
+      ...f,
+      estimated_value: parseMoney(f.estimated_value).value,
+      dav_entry_id: f.dav_entry_id || null,
+      entity_type: f.entity_type && f.entity_type !== 'none' ? f.entity_type : null,
+      entity_state: f.entity_state || null,
+      entity_ein: f.entity_ein || null,
+    }),
+    applyAiSuggestion: () => { /* no AI auto-fill for property/assets */ },
   });
-  const update = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
   const isBusiness = form.category === 'business_entity';
-
-  const handleSubmit = async () => {
-    const errs = [];
-    if (!form.name.trim()) errs.push('Asset Name');
-    const val = parseMoney(form.estimated_value);
-    if (!String(form.estimated_value ?? '').trim()) errs.push('Estimated Value');
-    else if (!val.ok) errs.push('Estimated Value (must be a number)');
-    if (errs.length) { toast.error(`Please fill in: ${errs.join(', ')}`); return; }
-    setSaving(true);
-    try {
-      const payload = {
-        ...form, estate_id: estateId,
-        estimated_value: val.value,
-        dav_entry_id: form.dav_entry_id || null,
-        entity_type: form.entity_type && form.entity_type !== 'none' ? form.entity_type : null,
-        entity_state: form.entity_state || null,
-        entity_ein: form.entity_ein || null,
-      };
-      const { mutateWithOutbox } = await import('../../utils/offlineMutation');
-      const r = await mutateWithOutbox({
-        entity_type: 'financial_property',
-        entity_id: isEdit ? asset.id : `local-property-${Date.now()}`,
-        method: isEdit ? 'PUT' : 'POST',
-        url: isEdit ? `/financial/property/${asset.id}` : '/financial/property',
-        body: payload,
-        authHeaders: getAuthHeaders(),
-      });
-      if (!r.ok) throw r.error || new Error('Save failed');
-      if (r.queued) toast.success(`Asset ${isEdit ? 'change' : 'saved'} offline — will sync when you reconnect.`);
-      onSaved();
-    } catch (err) { toast.error(formatPydanticError(err, 'Failed to save asset')); }
-    setSaving(false);
-  };
 
   return (
     <div className="space-y-4 py-4">

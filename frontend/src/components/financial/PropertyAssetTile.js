@@ -64,7 +64,11 @@ const PropertyAssetTile = ({ asset, beneficiaries, onEdit, onDelete, onDesignati
   };
 
   return (
-    <Card className="glass-card relative overflow-hidden group" data-testid={`property-tile-${asset.id}`}>
+    <Card
+      className="glass-card relative overflow-hidden group"
+      data-testid={`property-tile-${asset.id}`}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: '200px' }}
+    >
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex items-start gap-2.5 flex-1 min-w-0">

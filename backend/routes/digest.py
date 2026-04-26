@@ -1121,6 +1121,26 @@ async def send_enhanced_digest_for_user(user: dict, dashboard_url: str) -> bool:
         actions=actions,
         dashboard_url=dashboard_url,
     )
+    # Inject "Your CarryOn this week" — what changed across every collection
+    # the benefactor (and their beneficiaries) edited in the past 7 days.
+    # The block is appended right before the CTA button so it lands at the
+    # narrative climax of the email without disrupting the existing layout.
+    try:
+        from services.changelog_helper import build_changes_email_html, gather_changes_since
+
+        week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        owned_estate_ids = [e["id"] for e in estates]
+        changes = await gather_changes_since(owned_estate_ids, week_ago, limit=12)
+        changes_block = build_changes_email_html(changes)
+        if changes_block:
+            # Splice the block immediately before the CTA section.
+            html = html.replace(
+                "<!-- CTA Button -->",
+                changes_block + "\n<!-- CTA Button -->",
+                1,
+            )
+    except Exception as e:
+        logger.warning(f"Failed to attach changelog block to digest: {e}")
     try:
         prefs = await db.digest_preferences.find_one({"user_id": user["id"]}, {"_id": 0})
         recipients = [user["email"]]

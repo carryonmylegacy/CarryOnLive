@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React from 'react';
 import { Loader2, Plus, Link2, Sparkles, Lock } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -6,150 +6,72 @@ import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Switch } from '../ui/switch';
-import { toast } from '../../utils/toast';
-import axios from 'axios';
-import { API_URL } from '../../config';
-import { parseMoney, formatPydanticError } from '../../utils/financialFormHelpers';
+import { useFinancialForm } from '../../hooks/useFinancialForm';
 import { PassdownNotes } from './PassdownNotes';
 import { VisibilityTimingPills } from './VisibilityTimingPills';
 
 const REMINDER_OPTIONS = [10, 7, 5, 3, 1, 0];
 
 const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, beneficiaries, onSaved, onAddCategory, getAuthHeaders }) => {
-  const isEdit = !!bill;
-  const [saving, setSaving] = useState(false);
-  const [showNewCat, setShowNewCat] = useState(false);
-  const [newCatName, setNewCatName] = useState('');
-  const [form, setForm] = useState({
-    name: bill?.name || '',
-    category: bill?.category || 'other',
-    amount: bill?.amount || '',
-    is_recurring: bill?.is_recurring ?? true,
-    frequency: bill?.frequency || 'monthly',
-    due_day: bill?.due_day || '',
-    due_date: bill?.due_date || '',
-    grace_period_days: bill?.grace_period_days || '',
-    late_fee: bill?.late_fee || '',
-    payment_method: bill?.payment_method || 'manual_online',
-    payment_account: bill?.payment_account || '',
-    is_auto_pay: bill?.is_auto_pay ?? false,
-    account_number_masked: bill?.account_number_masked || '',
-    biller_phone: bill?.biller_phone || '',
-    biller_website: bill?.biller_website || '',
-    biller_address: bill?.biller_address || '',
-    reminder_days: bill?.reminder_days || [10, 7, 5, 1],
-    priority: bill?.priority || 'important',
-    dav_entry_id: bill?.dav_entry_id || '',
-    // DAV-credential auto-link fields. Backend strips these out of the
-    // bill doc and routes them into a linked Digital Access Vault row.
-    dav_login_username: bill?.dav_login_username || '',
-    dav_login_password: bill?.dav_login_password || '',
-    notes: bill?.notes || '',
-    notes_first_action: bill?.notes_first_action || '',
-    notes_gotchas: bill?.notes_gotchas || '',
-    notes_who_to_call: bill?.notes_who_to_call || '',
-    status: bill?.status || 'active',
-    visibility_timing: bill?.visibility_timing || { pre: false, post: true },
+  const {
+    form, update, saving, smartLoading, smartCategorize,
+    handleSubmit, showNewCat, setShowNewCat, newCatName, setNewCatName,
+    handleAddCategory, isEdit,
+  } = useFinancialForm({
+    entityType: 'financial_bill',
+    module: 'bills',
+    urlBase: '/financial/bills',
+    entityLabel: 'Bill',
+    existing: bill,
+    estateId,
+    getAuthHeaders,
+    onSaved,
+    onAddCategory,
+    buildDefaults: () => ({
+      name: '', category: 'other', amount: '', is_recurring: true, frequency: 'monthly',
+      due_day: '', due_date: '', grace_period_days: '', late_fee: '',
+      payment_method: 'manual_online', payment_account: '', is_auto_pay: false,
+      account_number_masked: '', biller_phone: '', biller_website: '', biller_address: '',
+      reminder_days: [10, 7, 5, 1], priority: 'important', dav_entry_id: '',
+      // DAV-credential auto-link fields. Backend strips these out of the
+      // bill doc and routes them into a linked Digital Access Vault row.
+      dav_login_username: '', dav_login_password: '',
+      notes: '', notes_first_action: '', notes_gotchas: '', notes_who_to_call: '',
+      status: 'active', visibility_timing: { pre: false, post: true },
+    }),
+    validate: (f, { parseMoney }) => {
+      const errs = [];
+      if (!f.name.trim()) errs.push('Bill Name');
+      const amt = parseMoney(f.amount);
+      if (!String(f.amount ?? '').trim()) errs.push('Amount');
+      else if (!amt.ok) errs.push('Amount (must be a number)');
+      if (f.is_recurring) {
+        if (!String(f.due_day ?? '').trim()) errs.push('Due Day of Month');
+        else {
+          const d = parseInt(f.due_day, 10);
+          if (Number.isNaN(d) || d < 1 || d > 31) errs.push('Due Day of Month (1–31)');
+        }
+      } else if (!f.due_date) {
+        errs.push('Due Date');
+      }
+      return errs;
+    },
+    buildPayload: (f, { parseMoney }) => ({
+      ...f,
+      amount: parseMoney(f.amount).value,
+      due_day: f.due_day ? parseInt(f.due_day, 10) : null,
+      grace_period_days: f.grace_period_days ? parseInt(f.grace_period_days, 10) : null,
+      dav_entry_id: f.dav_entry_id || null,
+    }),
+    applyAiSuggestion: (s, f, set) => {
+      if (s.category && s.category !== 'other') set('category', s.category);
+      if (s.biller_phone && !f.biller_phone) set('biller_phone', s.biller_phone);
+      if (s.biller_website && !f.biller_website) set('biller_website', s.biller_website);
+      if (s.payment_method) set('payment_method', s.payment_method);
+      if (s.is_auto_pay != null) set('is_auto_pay', s.is_auto_pay);
+      if (s.frequency) set('frequency', s.frequency);
+    },
   });
-
-  const update = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
-  const [smartLoading, setSmartLoading] = useState(false);
-  const smartTimerRef = useRef(null);
-
-  const smartCategorize = useCallback(async (name) => {
-    if (!name || name.length < 3 || isEdit) return;
-    clearTimeout(smartTimerRef.current);
-    smartTimerRef.current = setTimeout(async () => {
-      // sessionStorage LRU cache: avoid re-firing the LLM for the same
-      // bill name during the same session (e.g. user edits & retypes).
-      const key = 'cfp:smartcat:' + name.trim().toLowerCase();
-      let cached = null;
-      try {
-        const raw = sessionStorage.getItem(key);
-        if (raw) cached = JSON.parse(raw);
-      } catch { /* sessionStorage blocked */ }
-      let s = cached;
-      if (!s) {
-        setSmartLoading(true);
-        try {
-          const res = await axios.post(`${API_URL}/financial/smart-categorize`, { bill_name: name, module: 'bills' }, getAuthHeaders());
-          s = res.data;
-          try { sessionStorage.setItem(key, JSON.stringify(s)); } catch { /* quota */ }
-        } catch { /* silent */ }
-        setSmartLoading(false);
-      }
-      if (s) {
-        if (s.category && s.category !== 'other') update('category', s.category);
-        if (s.biller_phone && !form.biller_phone) update('biller_phone', s.biller_phone);
-        if (s.biller_website && !form.biller_website) update('biller_website', s.biller_website);
-        if (s.payment_method) update('payment_method', s.payment_method);
-        if (s.is_auto_pay != null) update('is_auto_pay', s.is_auto_pay);
-        if (s.frequency) update('frequency', s.frequency);
-        if (!cached) toast.success('AI auto-filled details');
-      }
-    }, 800);
-  }, [isEdit, getAuthHeaders]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleSubmit = async () => {
-    // Friendly client-side validation. The backend only strictly requires
-    // `name`, but a bill with no amount + no due day/date is functionally
-    // broken (no reminders, no payment row), so we surface those as
-    // mandatory at the form level too — and mark them with `*` in the UI.
-    const errs = [];
-    if (!form.name.trim()) errs.push('Bill Name');
-    const amt = parseMoney(form.amount);
-    if (!String(form.amount ?? '').trim()) errs.push('Amount');
-    else if (!amt.ok) errs.push('Amount (must be a number)');
-    if (form.is_recurring) {
-      if (!String(form.due_day ?? '').trim()) errs.push('Due Day of Month');
-      else {
-        const d = parseInt(form.due_day, 10);
-        if (Number.isNaN(d) || d < 1 || d > 31) errs.push('Due Day of Month (1–31)');
-      }
-    } else {
-      if (!form.due_date) errs.push('Due Date');
-    }
-    if (errs.length) {
-      toast.error(`Please fill in: ${errs.join(', ')}`);
-      return;
-    }
-    setSaving(true);
-    try {
-      const payload = {
-        ...form,
-        estate_id: estateId,
-        amount: amt.value,
-        due_day: form.due_day ? parseInt(form.due_day, 10) : null,
-        grace_period_days: form.grace_period_days ? parseInt(form.grace_period_days, 10) : null,
-        dav_entry_id: form.dav_entry_id || null,
-      };
-      const { mutateWithOutbox } = await import('../../utils/offlineMutation');
-      const r = await mutateWithOutbox({
-        entity_type: 'financial_bill',
-        entity_id: isEdit ? bill.id : `local-bill-${Date.now()}`,
-        method: isEdit ? 'PUT' : 'POST',
-        url: isEdit ? `/financial/bills/${bill.id}` : '/financial/bills',
-        body: payload,
-        authHeaders: getAuthHeaders(),
-      });
-      if (!r.ok) throw r.error || new Error('Save failed');
-      if (r.queued) toast.success(`Bill ${isEdit ? 'change' : 'saved'} offline — will sync when you reconnect.`);
-      onSaved();
-    } catch (err) {
-      toast.error(formatPydanticError(err, 'Failed to save bill'));
-    }
-    setSaving(false);
-  };
-
-  const handleAddCategory = async () => {
-    if (!newCatName.trim()) return;
-    const success = await onAddCategory(newCatName.trim());
-    if (success) {
-      update('category', newCatName.trim());
-      setNewCatName('');
-      setShowNewCat(false);
-    }
-  };
 
   const toggleReminder = (day) => {
     const current = form.reminder_days || [];

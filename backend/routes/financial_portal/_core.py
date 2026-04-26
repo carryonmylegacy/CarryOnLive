@@ -3,7 +3,7 @@ Sub-modules: categories, bills, debts, accounts, property, designations, summary
 No route handlers in this file.
 """
 
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -11,6 +11,29 @@ from pydantic import BaseModel
 from config import db
 
 router = APIRouter()
+
+
+# ===================== STRICT ENUMS =====================
+# Only fields that are NOT user-extensible. `category` is intentionally
+# left as a free `str` because users can define custom categories via
+# /financial/categories — a Literal there would lock users out of their
+# own data.
+
+BillFrequency = Literal["monthly", "quarterly", "semi_annual", "annual", "custom", "one_time"]
+BillPaymentMethod = Literal["auto_pay", "manual_online", "check", "phone", "in_person"]
+BillPriority = Literal["critical", "important", "optional"]
+BillStatus = Literal["active", "paused", "cancelled"]
+
+DebtPriority = Literal["critical", "important", "low"]
+DebtStatus = Literal["active", "paid_off", "forbearance", "collections"]
+
+AccountPriority = Literal["critical", "important", "low"]
+AccountStatus = Literal["active", "closed", "frozen"]
+AccountOwnership = Literal["individual", "joint_jtwros", "joint_tic", "trust", "pod_tod", "community_property"]
+
+AssetPriority = Literal["critical", "important", "low"]
+AssetStatus = Literal["active", "sold", "transferred", "pending"]
+AssetOwnership = Literal["individual", "joint", "trust", "community_property", "llc_owned", "corporate"]
 
 
 # ===================== PYDANTIC MODELS =====================
@@ -27,12 +50,12 @@ class BillCreate(BaseModel):
     category: str = "other"
     amount: Optional[float] = None
     is_recurring: bool = True
-    frequency: str = "monthly"  # monthly, quarterly, semi_annual, annual, custom, one_time
+    frequency: BillFrequency = "monthly"
     due_day: Optional[int] = None  # 1-31 for recurring
     due_date: Optional[str] = None  # ISO date for one-time
     grace_period_days: Optional[int] = None
     late_fee: Optional[str] = None
-    payment_method: str = "manual_online"  # auto_pay, manual_online, check, phone, in_person
+    payment_method: BillPaymentMethod = "manual_online"
     payment_account: Optional[str] = None
     is_auto_pay: bool = False
     account_number_masked: Optional[str] = None  # last 4 only
@@ -40,7 +63,7 @@ class BillCreate(BaseModel):
     biller_website: Optional[str] = None
     biller_address: Optional[str] = None
     reminder_days: List[int] = [10, 7, 5, 1]
-    priority: str = "important"  # critical, important, optional
+    priority: BillPriority = "important"
     dav_entry_id: Optional[str] = None  # deep-link to Digital Access Vault
     # Auto-DAV: when CFP adds a bill, the beneficiary needs to know how to
     # log in and pay it. These fields, if provided, materialise a linked
@@ -53,7 +76,7 @@ class BillCreate(BaseModel):
     notes_first_action: Optional[str] = None  # "What does my beneficiary do FIRST?"
     notes_gotchas: Optional[str] = None  # "What's tricky / non-obvious?"
     notes_who_to_call: Optional[str] = None  # "Who else can help / co-signs?"
-    status: str = "active"  # active, paused, cancelled
+    status: BillStatus = "active"
     designated_beneficiaries: List[str] = ["all"]
     visibility_timing: dict = {}
 
@@ -63,12 +86,12 @@ class BillUpdate(BaseModel):
     category: Optional[str] = None
     amount: Optional[float] = None
     is_recurring: Optional[bool] = None
-    frequency: Optional[str] = None
+    frequency: Optional[BillFrequency] = None
     due_day: Optional[int] = None
     due_date: Optional[str] = None
     grace_period_days: Optional[int] = None
     late_fee: Optional[str] = None
-    payment_method: Optional[str] = None
+    payment_method: Optional[BillPaymentMethod] = None
     payment_account: Optional[str] = None
     is_auto_pay: Optional[bool] = None
     account_number_masked: Optional[str] = None
@@ -76,7 +99,7 @@ class BillUpdate(BaseModel):
     biller_website: Optional[str] = None
     biller_address: Optional[str] = None
     reminder_days: Optional[List[int]] = None
-    priority: Optional[str] = None
+    priority: Optional[BillPriority] = None
     dav_entry_id: Optional[str] = None
     dav_login_username: Optional[str] = None
     dav_login_password: Optional[str] = None
@@ -84,7 +107,7 @@ class BillUpdate(BaseModel):
     notes_first_action: Optional[str] = None
     notes_gotchas: Optional[str] = None
     notes_who_to_call: Optional[str] = None
-    status: Optional[str] = None
+    status: Optional[BillStatus] = None
     designated_beneficiaries: Optional[List[str]] = None
     visibility_timing: Optional[dict] = None
 
@@ -111,12 +134,12 @@ class DebtCreate(BaseModel):
     has_life_insurance: bool = False
     life_insurance_policy: Optional[str] = None
     dav_entry_id: Optional[str] = None
-    priority: str = "important"  # critical, important, low
+    priority: DebtPriority = "important"
     notes: Optional[str] = None
     notes_first_action: Optional[str] = None
     notes_gotchas: Optional[str] = None
     notes_who_to_call: Optional[str] = None
-    status: str = "active"  # active, paid_off, forbearance, collections
+    status: DebtStatus = "active"
     designated_beneficiaries: List[str] = ["all"]
     visibility_timing: dict = {}
 
@@ -142,12 +165,12 @@ class DebtUpdate(BaseModel):
     has_life_insurance: Optional[bool] = None
     life_insurance_policy: Optional[str] = None
     dav_entry_id: Optional[str] = None
-    priority: Optional[str] = None
+    priority: Optional[DebtPriority] = None
     notes: Optional[str] = None
     notes_first_action: Optional[str] = None
     notes_gotchas: Optional[str] = None
     notes_who_to_call: Optional[str] = None
-    status: Optional[str] = None
+    status: Optional[DebtStatus] = None
     designated_beneficiaries: Optional[List[str]] = None
     visibility_timing: Optional[dict] = None
 
@@ -165,18 +188,18 @@ class AccountCreate(BaseModel):
     institution_phone: Optional[str] = None
     institution_website: Optional[str] = None
     branch_address: Optional[str] = None
-    ownership_type: str = "individual"  # individual, joint_jtwros, joint_tic, trust, pod_tod, community_property
+    ownership_type: AccountOwnership = "individual"
     joint_owner: Optional[str] = None
     named_beneficiary_at_institution: Optional[str] = None
     beneficiary_on_account: Optional[str] = None
     dav_entry_id: Optional[str] = None
     linked_bill_ids: List[str] = []
-    priority: str = "important"  # critical, important, low
+    priority: AccountPriority = "important"
     notes: Optional[str] = None
     notes_first_action: Optional[str] = None
     notes_gotchas: Optional[str] = None
     notes_who_to_call: Optional[str] = None
-    status: str = "active"  # active, closed, frozen
+    status: AccountStatus = "active"
     designated_beneficiaries: List[str] = ["all"]
     visibility_timing: dict = {}
 
@@ -193,18 +216,18 @@ class AccountUpdate(BaseModel):
     institution_phone: Optional[str] = None
     institution_website: Optional[str] = None
     branch_address: Optional[str] = None
-    ownership_type: Optional[str] = None
+    ownership_type: Optional[AccountOwnership] = None
     joint_owner: Optional[str] = None
     named_beneficiary_at_institution: Optional[str] = None
     beneficiary_on_account: Optional[str] = None
     dav_entry_id: Optional[str] = None
     linked_bill_ids: Optional[List[str]] = None
-    priority: Optional[str] = None
+    priority: Optional[AccountPriority] = None
     notes: Optional[str] = None
     notes_first_action: Optional[str] = None
     notes_gotchas: Optional[str] = None
     notes_who_to_call: Optional[str] = None
-    status: Optional[str] = None
+    status: Optional[AccountStatus] = None
     designated_beneficiaries: Optional[List[str]] = None
     visibility_timing: Optional[dict] = None
 
@@ -217,7 +240,7 @@ class PropertyAssetCreate(BaseModel):
     value_last_updated: Optional[str] = None
     location_address: Optional[str] = None
     acquisition_date: Optional[str] = None
-    ownership_type: str = "individual"  # individual, joint, trust, community_property, llc_owned, corporate
+    ownership_type: AssetOwnership = "individual"
     joint_owner: Optional[str] = None
     entity_type: Optional[str] = None  # llc, corporation, s_corp, partnership, sole_prop, trust
     entity_state: Optional[str] = None  # state of incorporation/formation
@@ -228,12 +251,12 @@ class PropertyAssetCreate(BaseModel):
     serial_or_vin: Optional[str] = None  # vehicle VIN, serial number, etc.
     description: Optional[str] = None
     dav_entry_id: Optional[str] = None
-    priority: str = "important"  # critical, important, low
+    priority: AssetPriority = "important"
     notes: Optional[str] = None
     notes_first_action: Optional[str] = None
     notes_gotchas: Optional[str] = None
     notes_who_to_call: Optional[str] = None
-    status: str = "active"  # active, sold, transferred, pending
+    status: AssetStatus = "active"
     designated_beneficiaries: List[str] = ["all"]
     visibility_timing: dict = {}
 
@@ -245,7 +268,7 @@ class PropertyAssetUpdate(BaseModel):
     value_last_updated: Optional[str] = None
     location_address: Optional[str] = None
     acquisition_date: Optional[str] = None
-    ownership_type: Optional[str] = None
+    ownership_type: Optional[AssetOwnership] = None
     joint_owner: Optional[str] = None
     entity_type: Optional[str] = None
     entity_state: Optional[str] = None
@@ -256,12 +279,12 @@ class PropertyAssetUpdate(BaseModel):
     serial_or_vin: Optional[str] = None
     description: Optional[str] = None
     dav_entry_id: Optional[str] = None
-    priority: Optional[str] = None
+    priority: Optional[AssetPriority] = None
     notes: Optional[str] = None
     notes_first_action: Optional[str] = None
     notes_gotchas: Optional[str] = None
     notes_who_to_call: Optional[str] = None
-    status: Optional[str] = None
+    status: Optional[AssetStatus] = None
     designated_beneficiaries: Optional[List[str]] = None
     visibility_timing: Optional[dict] = None
 

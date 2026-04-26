@@ -20,20 +20,28 @@ export const SupportTab = ({ getAuthHeaders }) => {
   const [masterKeyInput, setMasterKeyInput] = useState('');
   const [unlockingDocs, setUnlockingDocs] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
+  // Group conversations by topic-thread instead of by user. Saved
+  // per-session so the founder doesn't have to re-toggle on every visit.
+  const [groupByThread, setGroupByThread] = useState(() => {
+    try { return localStorage.getItem('cy:supportGroupByThread') === '1'; }
+    catch { return false; }
+  });
 
   const fetchConversations = async () => {
     try {
-      const url = isFounder && showDeleted
-        ? `${API_URL}/support/conversations?include_deleted=true`
-        : `${API_URL}/support/conversations`;
-      const res = await axios.get(url, getAuthHeaders());
+      const params = isFounder && showDeleted ? '?include_deleted=true' : '';
+      const base = groupByThread ? '/support/conversations-by-thread' : '/support/conversations';
+      const res = await axios.get(`${API_URL}${base}${params}`, getAuthHeaders());
       setConversations(res.data);
     } catch (err) { console.error('Error fetching conversations:', err); }
   };
 
-  const fetchConversationMessages = async (convId) => {
+  const fetchConversationMessages = async (convId, threadId) => {
     try {
-      const res = await axios.get(`${API_URL}/support/messages/${convId}`, getAuthHeaders());
+      const url = threadId
+        ? `${API_URL}/support/messages/${convId}?thread_id=${encodeURIComponent(threadId)}`
+        : `${API_URL}/support/messages/${convId}`;
+      const res = await axios.get(url, getAuthHeaders());
       setConvMessages(res.data);
     } catch (err) { console.error('Error fetching messages:', err); }
   };
@@ -42,10 +50,15 @@ export const SupportTab = ({ getAuthHeaders }) => {
     if (!newMessage.trim() || !selectedConv) return;
     setSendingMessage(true);
     try {
-      const res = await axios.post(`${API_URL}/support/messages`, {
+      const payload = {
         content: newMessage.trim(),
-        conversation_id: selectedConv.conversation_id
-      }, getAuthHeaders());
+        conversation_id: selectedConv.conversation_id,
+      };
+      // Preserve thread context when replying inside a topic-thread row.
+      if (selectedConv.thread_id && selectedConv.thread_id !== 'default') {
+        payload.thread_id = selectedConv.thread_id;
+      }
+      const res = await axios.post(`${API_URL}/support/messages`, payload, getAuthHeaders());
       setConvMessages(prev => [...prev, res.data]);
       setNewMessage('');
       fetchConversations();
@@ -60,12 +73,15 @@ export const SupportTab = ({ getAuthHeaders }) => {
     fetchConversations();
     const interval = setInterval(fetchConversations, 15000);
     return () => clearInterval(interval);
-  }, [showDeleted]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showDeleted, groupByThread]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (selectedConv) {
-      fetchConversationMessages(selectedConv.conversation_id);
-      const interval = setInterval(() => fetchConversationMessages(selectedConv.conversation_id), 10000);
+      fetchConversationMessages(selectedConv.conversation_id, selectedConv.thread_id);
+      const interval = setInterval(
+        () => fetchConversationMessages(selectedConv.conversation_id, selectedConv.thread_id),
+        10000,
+      );
       return () => clearInterval(interval);
     }
   }, [selectedConv]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -88,22 +104,41 @@ export const SupportTab = ({ getAuthHeaders }) => {
             <MessageCircle className="w-5 h-5 text-[var(--gn2)]" />
             Conversations
           </h3>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <p className="text-xs text-[var(--t5)]">{filteredConversations.length} {searchQuery ? 'matching' : 'active'}</p>
-            {isFounder && (
+            <div className="flex items-center gap-1.5">
               <button
-                onClick={() => setShowDeleted(!showDeleted)}
+                onClick={() => {
+                  const next = !groupByThread;
+                  setGroupByThread(next);
+                  setSelectedConv(null);
+                  try { localStorage.setItem('cy:supportGroupByThread', next ? '1' : '0'); } catch { /* quota */ }
+                }}
                 className="text-[11px] font-bold px-2 py-0.5 rounded"
                 style={{
-                  background: showDeleted ? 'rgba(239,68,68,0.1)' : 'var(--s)',
-                  color: showDeleted ? '#ef4444' : 'var(--t5)',
-                  border: `1px solid ${showDeleted ? 'rgba(239,68,68,0.2)' : 'var(--b)'}`
+                  background: groupByThread ? 'rgba(212,175,55,0.12)' : 'var(--s)',
+                  color: groupByThread ? 'var(--gold)' : 'var(--t5)',
+                  border: `1px solid ${groupByThread ? 'rgba(212,175,55,0.3)' : 'var(--b)'}`,
                 }}
-                data-testid="support-show-deleted-toggle"
+                data-testid="support-group-by-thread-toggle"
               >
-                {showDeleted ? 'Showing Deleted' : 'Show Deleted'}
+                {groupByThread ? 'By Thread' : 'By User'}
               </button>
-            )}
+              {isFounder && (
+                <button
+                  onClick={() => setShowDeleted(!showDeleted)}
+                  className="text-[11px] font-bold px-2 py-0.5 rounded"
+                  style={{
+                    background: showDeleted ? 'rgba(239,68,68,0.1)' : 'var(--s)',
+                    color: showDeleted ? '#ef4444' : 'var(--t5)',
+                    border: `1px solid ${showDeleted ? 'rgba(239,68,68,0.2)' : 'var(--b)'}`
+                  }}
+                  data-testid="support-show-deleted-toggle"
+                >
+                  {showDeleted ? 'Showing Deleted' : 'Show Deleted'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
         <div className="p-3 border-b border-[var(--b)]">
@@ -121,18 +156,27 @@ export const SupportTab = ({ getAuthHeaders }) => {
           ) : (
             filteredConversations.map(conv => (
               <div
-                key={conv.conversation_id}
+                key={`${conv.conversation_id}::${conv.thread_id || 'all'}`}
                 onClick={() => !conv.soft_deleted && setSelectedConv(conv)}
                 className={`p-4 border-b border-[var(--b)] cursor-pointer hover:bg-[var(--s)] transition-colors ${
-                  selectedConv?.conversation_id === conv.conversation_id ? 'bg-[var(--s)]' : ''
+                  selectedConv?.conversation_id === conv.conversation_id && (selectedConv?.thread_id || null) === (conv.thread_id || null) ? 'bg-[var(--s)]' : ''
                 } ${conv.soft_deleted ? 'opacity-50' : ''}`}
                 style={conv.soft_deleted ? { background: 'rgba(239,68,68,0.04)' } : {}}
-                data-testid={`conv-${conv.conversation_id}`}
+                data-testid={`conv-${conv.conversation_id}${conv.thread_id ? '-' + conv.thread_id : ''}`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-[var(--t)] truncate">{conv.user_name || 'Unknown'}</span>
+                      {groupByThread && conv.thread_title && conv.thread_id !== 'default' && (
+                        <span
+                          className="text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                          style={{ background: 'rgba(212,175,55,0.12)', color: 'var(--gold)' }}
+                          data-testid="conv-thread-title"
+                        >
+                          {conv.thread_title}
+                        </span>
+                      )}
                       {conv.soft_deleted && (
                         <span className="text-[11px] px-1.5 py-0.5 rounded bg-[var(--rdbg)] text-[var(--rd)] font-bold">DELETED</span>
                       )}
