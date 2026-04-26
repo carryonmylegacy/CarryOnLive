@@ -1,5 +1,51 @@
 # CarryOn — Changelog
 
+## Apr 28, 2026 (later still) — Deferred-items batch 1: efficiency, dedup, type safety
+
+User said "implement that and start to move forward on the rest of the
+deferred items in order. Carefully!!!". Shipped 5 of 8 deferred items
+(the low-to-medium-risk ones); the remaining 3 (late_fee schema split,
+EstateChat/Messages monolith refactor, Phase 10 FFmpeg, Phase 9a
+pin-offline) are each their own focused PR with non-trivial regression
+surface and are deferred to follow-up sessions.
+
+**Result:** iter 84 testing — 48/48 backend pytest (16 prior P2 + 16
+CFP/DAV + 16 NEW Literal/support/changelog regression), 0 critical / 0
+minor issues, 0 frontend regressions, housekeeping 0 WARN / 0 FAIL.
+
+**1. Weekly "What changed this week" digest email**
+- Extracted `WATCHED_COLLECTIONS` and `gather_changes_since` from `routes/changelog.py` into shared `services/changelog_helper.py` so the API endpoint and the Resend weekly digest pipeline share one source of truth.
+- `send_enhanced_digest_for_user` now splices an Outlook-safe HTML block listing the last 7 days of changes (up to 12 items) immediately before the dashboard CTA — no new scheduler, no new email template, just one extra row.
+- The block is silently skipped when the estate has zero changes that week (no awkward empty section).
+
+**2. Admin Support → group by topic-thread**
+- Added `By Thread / By User` toggle (`support-group-by-thread-toggle`, persisted in `localStorage`) at the top of the Customer Support panel.
+- When in thread mode, conversation rows show a gold thread-title chip (`conv-thread-title`) and the row key composes `conversation_id::thread_id` so React can render multiple rows per user.
+- Selecting a row passes `thread_id` to `GET /api/support/messages/{conv_id}?thread_id=...` (additive query param — `default` matches messages where `thread_id` is null/missing/`'default'`).
+- Replies posted from a thread row carry the thread context, so admin staff stay inside the user's chosen topic instead of bleeding into other threads.
+
+**3. Tile virtualization via `content-visibility: auto`**
+- Applied `style={{ contentVisibility: 'auto', containIntrinsicSize: '200px' }}` to BillTile, DebtTile, AccountTile, PropertyAssetTile.
+- Browser-native, supported by 91%+ of clients, no layout disruption, no scroll-glitch risk, no new dependency. Same off-screen-skip benefit as `react-window` for our use case (typical user has < 30 tiles per category).
+- `react-window` was installed and immediately removed once we confirmed the CSS approach was sufficient.
+
+**4. Pydantic `Literal`/Enum migration on financial models**
+- Applied to **closed-enum** fields only: `priority` (per entity), `status` (per entity), `frequency`, `payment_method`, `ownership_type`.
+- **NOT** applied to `category` — users can extend it via `/api/financial/categories`, and a `Literal` would lock them out of their own data. This was caught by a deliberate audit before the migration.
+- Self-verified: `priority='nonsense'` now correctly returns 422; `category='Streaming Services'` (free-form custom) still accepts.
+
+**5. `useFinancialForm` hook — boilerplate dedup**
+- New `hooks/useFinancialForm.js` consolidates form state, debounced AI smart-categorize with sessionStorage LRU cache, validation, payload building, mutate-with-outbox, and custom-category creation across all 4 financial forms.
+- Each form now passes a config: `{ entityType, module, urlBase, entityLabel, buildDefaults, validate, buildPayload, applyAiSuggestion }`. Future bug fixes (parseMoney, payload shaping, toast copy) happen in ONE place instead of four.
+- Net line count: 1234 → 1031 (-203, -16%) across the four forms; +146 in the hook = -57 net, with the structural win being single-source-of-truth.
+
+**Deferred to follow-up sessions (each its own focused PR):**
+- Split `late_fee` → amount + percent decimals (DB migration required)
+- `EstateChatPage.js` + `MessagesPage.js` monolith refactor (>3,000 lines, real-time chat regression risk)
+- Phase 10 FFmpeg-wasm video re-compression
+- Phase 9a "Pin doc for offline access"
+- S3 photo CORS for the preview origin (pre-existing infra issue surfaced during iter 84 review — separate ticket)
+
 ## Apr 28, 2026 (later) — P2 efficiency batch (additive, zero-migration)
 
 User asked to "wire it all up right" before launch. Shipped the additive,

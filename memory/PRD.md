@@ -17,24 +17,23 @@
 
 ---
 
-## 📌 Current Launch Status (Apr 28, 2026 — late session)
+## 📌 Current Launch Status (Apr 28, 2026 — late session, batch 3)
 
-**Two batches shipped this session:**
-1. CFP Pass-down stabilization (DAV auto-creation, PassdownNotes, etc.) — verified iter 81: 16/16 pytest.
-2. P2 efficiency batch (additive endpoints + UI surfaces) — verified iter 83: 32/32 pytest, 4/4 frontend testids, 0 critical/minor issues.
+**Three batches shipped this session:**
+1. CFP Pass-down stabilization — verified iter 81: 16/16 pytest.
+2. P2 efficiency batch (6 endpoints + 4 UI surfaces) — verified iter 83: 32/32 pytest.
+3. **Deferred-items batch 1** (5 items: weekly digest, support thread UI, content-visibility, Pydantic Literals, useFinancialForm hook) — verified iter 84: **48/48 pytest, 0 critical, 0 minor.**
 
-✅ housekeeping 0 WARN/0 FAIL · backend pytest 32/32 · 5 new endpoints respond 200 · 4 new UI surfaces verified · handoff-PDF hardened against FPDFException.
+✅ housekeeping 0/0 · backend pytest **48/48** · all UI surfaces verified · zero regressions across 3 sequential batches.
 
-**New this session:**
-- `GET /api/financial/portal/{estate_id}` aggregator
-- `POST /api/financial/bills/bulk-pay`
-- `GET /api/financial/cashflow/{estate_id}` — 30-day rolling
-- `GET /api/financial/handoff-package/{estate_id}` — owner-only PDF
-- `GET /api/changelog/since` — what-changed digest
-- `GET /api/support/conversations-by-thread` — admin support thread grouping
-- BillForm "Auto-secured" pill + DAV `source_type` top-level + Sentry-log encryption failures
-- FinancialPortalPage Hand-off PDF button + CashflowTimeline component
-- DashboardPage ChangedSinceWidget
+### Remaining deferred items (post-launch — each its own focused PR)
+- Split `late_fee` → amount + percent decimals (DB migration required)
+- `EstateChatPage.js` + `MessagesPage.js` monolith refactor (>3,000 lines, real-time chat regression risk)
+- Phase 10 FFmpeg-wasm video re-compression
+- Phase 9a "Pin doc for offline access"
+
+### Newly surfaced (from iter 84 code review — out of scope)
+- S3 photo CORS for the preview origin (`carryon-vault.s3.amazonaws.com`) — pre-existing infra config issue, not a regression. File as separate infra ticket.
 
 ### Launch blockers (user action required, NOT code)
 - 🔴 Apple IAP — awaiting Apple Developer Agreement approval
@@ -44,17 +43,6 @@
 - Server 301 redirect: `carryon.us` → `www.carryon.us` (Safari Push origin fix)
 - Reactivate iOS Live Updates (Capgo) after App Store build
 - iOS Share Extension after App Store build
-
-### Deferred high-risk refactors (P2, post-launch — each is its own focused PR)
-- `useFinancialForm` hook (~2,000 line dedup across 4 forms)
-- Pydantic Literal/Enum migration for category/priority/status (data normalization first)
-- Split `late_fee` → amount + percent decimals (DB migration)
-- `EstateChatPage.js` + `MessagesPage.js` monolith refactor (>3,000 lines, real-time chat regression risk)
-- `react-window` virtualization on tile grids
-- Phase 10 FFmpeg-wasm video re-compression
-- Phase 9a "Pin doc for offline access"
-- Admin Ops/Support UI to consume `/support/conversations-by-thread`
-- Doc fix: code references `/financial-portal` but actual React route is `/financial`
 
 ---
 
