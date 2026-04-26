@@ -66,15 +66,37 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
   }, [isEdit, getAuthHeaders]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async () => {
-    if (!form.name.trim()) { toast.error('Bill name is required'); return; }
+    // Friendly client-side validation. The backend only strictly requires
+    // `name`, but a bill with no amount + no due day/date is functionally
+    // broken (no reminders, no payment row), so we surface those as
+    // mandatory at the form level too — and mark them with `*` in the UI.
+    const errs = [];
+    if (!form.name.trim()) errs.push('Bill Name');
+    const cleanAmount = String(form.amount ?? '').replace(/[$,\s]/g, '');
+    if (!cleanAmount) errs.push('Amount');
+    else if (Number.isNaN(parseFloat(cleanAmount))) errs.push('Amount (must be a number)');
+    if (form.is_recurring) {
+      if (!String(form.due_day ?? '').trim()) errs.push('Due Day of Month');
+      else {
+        const d = parseInt(form.due_day, 10);
+        if (Number.isNaN(d) || d < 1 || d > 31) errs.push('Due Day of Month (1–31)');
+      }
+    } else {
+      if (!form.due_date) errs.push('Due Date');
+    }
+    if (errs.length) {
+      toast.error(`Please fill in: ${errs.join(', ')}`);
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
         ...form,
         estate_id: estateId,
-        amount: form.amount ? parseFloat(form.amount) : null,
-        due_day: form.due_day ? parseInt(form.due_day) : null,
-        grace_period_days: form.grace_period_days ? parseInt(form.grace_period_days) : null,
+        // Sanitize: strip $ , and whitespace so users can paste "$142.50"
+        amount: cleanAmount ? parseFloat(cleanAmount) : null,
+        due_day: form.due_day ? parseInt(form.due_day, 10) : null,
+        grace_period_days: form.grace_period_days ? parseInt(form.grace_period_days, 10) : null,
         dav_entry_id: form.dav_entry_id || null,
       };
       const { mutateWithOutbox } = await import('../../utils/offlineMutation');
@@ -90,7 +112,19 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
       if (r.queued) toast.success(`Bill ${isEdit ? 'change' : 'saved'} offline — will sync when you reconnect.`);
       onSaved();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to save bill');
+      // Pydantic 422 returns `detail` as an array of {loc, msg} objects.
+      // Surface the FIRST field error to the user instead of letting the
+      // toast fall through to a generic "Failed to save bill".
+      const detail = err.response?.data?.detail;
+      let msg = 'Failed to save bill';
+      if (Array.isArray(detail) && detail.length) {
+        const first = detail[0];
+        const field = Array.isArray(first.loc) ? first.loc.slice(-1)[0] : '';
+        msg = field ? `${field}: ${first.msg}` : first.msg || msg;
+      } else if (typeof detail === 'string') {
+        msg = detail;
+      }
+      toast.error(msg);
     }
     setSaving(false);
   };
@@ -166,8 +200,8 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label className="text-[#94a3b8]">Amount ($)</Label>
-          <Input type="number" step="0.01" value={form.amount} onChange={e => update('amount', e.target.value)} placeholder="142.50" className="input-field" data-testid="bill-amount-input" />
+          <Label className="text-[#94a3b8]">Amount ($) <span className="text-red-400">*</span></Label>
+          <Input type="text" inputMode="decimal" value={form.amount} onChange={e => update('amount', e.target.value)} placeholder="142.50" className="input-field" data-testid="bill-amount-input" />
         </div>
         <div className="space-y-2">
           <Label className="text-[#94a3b8]">Status</Label>
@@ -202,13 +236,13 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
             </Select>
           </div>
           <div className="space-y-2">
-            <Label className="text-[#94a3b8]">Due Day of Month</Label>
+            <Label className="text-[#94a3b8]">Due Day of Month <span className="text-red-400">*</span></Label>
             <Input type="number" min="1" max="31" value={form.due_day} onChange={e => update('due_day', e.target.value)} placeholder="15" className="input-field" data-testid="bill-due-day-input" />
           </div>
         </div>
       ) : (
         <div className="space-y-2">
-          <Label className="text-[#94a3b8]">Due Date</Label>
+          <Label className="text-[#94a3b8]">Due Date <span className="text-red-400">*</span></Label>
           <Input type="date" value={form.due_date} onChange={e => update('due_date', e.target.value)} className="input-field" data-testid="bill-due-date-input" />
         </div>
       )}
