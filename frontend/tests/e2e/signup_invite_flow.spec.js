@@ -20,7 +20,7 @@ import { test, expect } from '@playwright/test';
 // preview URL which routes /api → backend:8001.
 const API_URL = process.env.E2E_API_URL
   || process.env.REACT_APP_BACKEND_URL
-  || 'https://readiness-top.preview.emergentagent.com';
+  || 'https://chat-monolith-fix.preview.emergentagent.com';
 
 const runId = `e2e-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 

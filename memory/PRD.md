@@ -50,7 +50,7 @@
 
 > **Preview URL rotation (GitHub Actions E2E secrets)** — the `E2E_BASE_URL`
 > and `E2E_API_URL` repository secrets both point at the current preview
-> URL (today: `https://readiness-top.preview.emergentagent.com`). If the
+> URL (today: `https://chat-monolith-fix.preview.emergentagent.com`). If the
 > preview URL ever changes (e.g. Emergent re-provisions the pod, rename,
 > staging migration), **the `e2e-smoke` job will start failing with
 > `net::ERR_CONNECTION_REFUSED` or 502**. Fix:
