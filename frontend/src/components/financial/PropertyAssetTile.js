@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Edit2, Trash2, Users, ChevronDown, ChevronUp, Home, Car, Gem, Palette, Building2, Package } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
+import { computePassdownScore, passdownColor, passdownLabel } from '../../utils/passdownScore';
 
 const CATEGORY_ICONS = {
   real_estate: Home,
@@ -113,6 +114,22 @@ const PropertyAssetTile = ({ asset, beneficiaries, onEdit, onDelete, onDesignati
             <div className="pt-1"><span className="text-[var(--t5)]">Notes: </span><span className="text-[var(--t)] italic">{asset.notes}</span></div>
           )}
         </div>
+
+        {(() => {
+          const pdScore = computePassdownScore(asset, 'asset');
+          const pdColor = passdownColor(pdScore);
+          return (
+            <div className="mb-3" data-testid={`passdown-bar-${asset.id}`} title={`${passdownLabel(pdScore)} — ${pdScore}% of pass-down details captured`}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--t5)]">Pass-down readiness</span>
+                <span className="text-[10px] font-bold" style={{ color: pdColor }}>{pdScore}%</span>
+              </div>
+              <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div className="h-full transition-all duration-500" style={{ width: `${pdScore}%`, background: pdColor }} />
+              </div>
+            </div>
+          );
+        })()}
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">

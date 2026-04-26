@@ -14,6 +14,97 @@ from config import db
 from datetime import datetime, timezone
 import uuid
 
+# Encryption helpers shared with the Digital Wallet route — passwords on
+# DAV are estate-scoped and must round-trip through the same encrypt_field
+# fence so the owner-decrypt path keeps working.
+try:
+    from services.encryption import encrypt_field, get_estate_salt
+except Exception:  # pragma: no cover
+    encrypt_field = None
+    get_estate_salt = None
+
+
+async def _upsert_dav_for_bill(
+    estate_id: str,
+    bill_id: str,
+    bill_name: str,
+    biller_website: str | None,
+    account_mask: str | None,
+    login_username: str | None,
+    login_password: str | None,
+    existing_dav_id: str | None,
+    user_id: str,
+) -> str | None:
+    """
+    Materialise (or refresh) a Digital Access Vault entry that mirrors
+    the credentials/website attached to a bill.
+
+    Mission: when the benefactor adds Duke Energy with biller_website +
+    account-mask + (optionally) the username they use to log in, the
+    beneficiary should NOT have to hunt through the DAV looking for the
+    matching credential row. We pre-create / pre-link it here.
+
+    Triggered when ANY of {website, username, password, account-mask} is
+    set on the bill. If a linked DAV row already exists we update it in
+    place; otherwise we create a new one and store its id back on the
+    bill via `dav_entry_id`.
+    """
+    has_payload = any([biller_website, login_username, login_password, account_mask])
+    if not has_payload:
+        return existing_dav_id  # nothing to materialise
+
+    notes_lines = [f"Auto-linked from CarryOn Financial Picture bill: {bill_name}"]
+    if biller_website:
+        notes_lines.append(f"Pay at: {biller_website}")
+    if account_mask:
+        notes_lines.append(f"Account ending: {account_mask}")
+    notes_blob = "\n".join(notes_lines)
+
+    # Encrypt password using the same estate-scoped fence DAV uses, so the
+    # owner-decrypt path on /digital-wallet/{estate_id} works unchanged.
+    enc_password = None
+    if login_password and encrypt_field and get_estate_salt:
+        try:
+            salt = await get_estate_salt(estate_id)
+            enc_password = encrypt_field(login_password, salt)
+        except Exception:
+            enc_password = None  # never block the bill save on encryption issues
+
+    if existing_dav_id:
+        existing = await db.digital_wallet.find_one({"id": existing_dav_id}, {"_id": 0})
+        if existing:
+            update_doc = {
+                "account_name": bill_name,
+                "category": "banking",
+                "notes": notes_blob,
+            }
+            if login_username:
+                update_doc["login_username"] = login_username
+            if enc_password is not None:
+                update_doc["encrypted_password"] = enc_password
+            await db.digital_wallet.update_one({"id": existing_dav_id}, {"$set": update_doc})
+            return existing_dav_id
+        # if the previously-linked row was deleted, fall through and recreate
+
+    new_id = str(uuid.uuid4())
+    dav_doc = {
+        "id": new_id,
+        "estate_id": estate_id,
+        "account_name": bill_name,
+        "login_username": login_username or "",
+        "encrypted_password": enc_password,
+        "additional_access": None,
+        "notes": notes_blob,
+        "assigned_beneficiary_id": None,
+        "assigned_beneficiary_name": None,
+        "category": "banking",
+        "auto_created_from": {"source": "cfp_bill", "bill_id": bill_id},
+        "created_by": user_id,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.digital_wallet.insert_one(dav_doc)
+    return new_id
+
 
 @router.get("/financial/bills/{estate_id}")
 async def get_bills(estate_id: str, current_user: dict = Depends(get_current_user)):
@@ -28,11 +119,28 @@ async def get_bills(estate_id: str, current_user: dict = Depends(get_current_use
 
 @router.post("/financial/bills")
 async def create_bill(data: BillCreate, current_user: dict = Depends(get_current_user)):
-    """Create a new bill."""
+    """Create a new bill (and optionally materialise a linked DAV row)."""
     await _verify_estate_access(data.estate_id, current_user, require_owner=True)
+    bill_id = str(uuid.uuid4())
+    payload = data.model_dump()
+    # Pull DAV credential bits OUT of the bill doc — they live in the DAV.
+    dav_login_username = payload.pop("dav_login_username", None)
+    dav_login_password = payload.pop("dav_login_password", None)
+    dav_id = await _upsert_dav_for_bill(
+        estate_id=data.estate_id,
+        bill_id=bill_id,
+        bill_name=data.name,
+        biller_website=data.biller_website,
+        account_mask=data.account_number_masked,
+        login_username=dav_login_username,
+        login_password=dav_login_password,
+        existing_dav_id=data.dav_entry_id,
+        user_id=current_user["id"],
+    )
     bill = {
-        "id": str(uuid.uuid4()),
-        **data.model_dump(),
+        "id": bill_id,
+        **payload,
+        "dav_entry_id": dav_id,
         "created_by": current_user["id"],
         "deleted_at": None,
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -45,12 +153,33 @@ async def create_bill(data: BillCreate, current_user: dict = Depends(get_current
 
 @router.put("/financial/bills/{bill_id}")
 async def update_bill(bill_id: str, data: BillUpdate, current_user: dict = Depends(get_current_user)):
-    """Update a bill."""
+    """Update a bill (and refresh its linked DAV row if relevant fields changed)."""
     bill = await db.bills.find_one({"id": bill_id, "deleted_at": None}, {"_id": 0})
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
     await _verify_estate_access(bill["estate_id"], current_user, require_owner=True)
     updates = {k: v for k, v in data.model_dump(exclude_unset=True).items()}
+    # Strip DAV-only fields out of the bill update; route them through
+    # the auto-DAV upsert helper instead.
+    dav_username = updates.pop("dav_login_username", None)
+    dav_password = updates.pop("dav_login_password", None)
+    if any(k in updates for k in ("biller_website", "account_number_masked", "name")) or dav_username or dav_password:
+        merged_name = updates.get("name", bill.get("name", ""))
+        merged_site = updates.get("biller_website", bill.get("biller_website"))
+        merged_mask = updates.get("account_number_masked", bill.get("account_number_masked"))
+        new_dav_id = await _upsert_dav_for_bill(
+            estate_id=bill["estate_id"],
+            bill_id=bill_id,
+            bill_name=merged_name,
+            biller_website=merged_site,
+            account_mask=merged_mask,
+            login_username=dav_username,
+            login_password=dav_password,
+            existing_dav_id=updates.get("dav_entry_id", bill.get("dav_entry_id")),
+            user_id=current_user["id"],
+        )
+        if new_dav_id:
+            updates["dav_entry_id"] = new_dav_id
     updates["updated_at"] = datetime.now(timezone.utc).isoformat()
     await db.bills.update_one({"id": bill_id}, {"$set": updates})
     updated = await db.bills.find_one({"id": bill_id}, {"_id": 0})

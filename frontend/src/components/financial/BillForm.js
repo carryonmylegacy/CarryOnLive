@@ -10,6 +10,8 @@ import { toast } from '../../utils/toast';
 import axios from 'axios';
 import { API_URL } from '../../config';
 import { parseMoney, formatPydanticError } from '../../utils/financialFormHelpers';
+import { PassdownNotes } from './PassdownNotes';
+import { VisibilityTimingPills } from './VisibilityTimingPills';
 
 const REMINDER_OPTIONS = [10, 7, 5, 3, 1, 0];
 
@@ -38,8 +40,16 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
     reminder_days: bill?.reminder_days || [10, 7, 5, 1],
     priority: bill?.priority || 'important',
     dav_entry_id: bill?.dav_entry_id || '',
+    // DAV-credential auto-link fields. Backend strips these out of the
+    // bill doc and routes them into a linked Digital Access Vault row.
+    dav_login_username: bill?.dav_login_username || '',
+    dav_login_password: bill?.dav_login_password || '',
     notes: bill?.notes || '',
+    notes_first_action: bill?.notes_first_action || '',
+    notes_gotchas: bill?.notes_gotchas || '',
+    notes_who_to_call: bill?.notes_who_to_call || '',
     status: bill?.status || 'active',
+    visibility_timing: bill?.visibility_timing || { pre: false, post: true },
   });
 
   const update = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
@@ -50,19 +60,33 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
     if (!name || name.length < 3 || isEdit) return;
     clearTimeout(smartTimerRef.current);
     smartTimerRef.current = setTimeout(async () => {
-      setSmartLoading(true);
+      // sessionStorage LRU cache: avoid re-firing the LLM for the same
+      // bill name during the same session (e.g. user edits & retypes).
+      const key = 'cfp:smartcat:' + name.trim().toLowerCase();
+      let cached = null;
       try {
-        const res = await axios.post(`${API_URL}/financial/smart-categorize`, { bill_name: name, module: 'bills' }, getAuthHeaders());
-        const s = res.data;
+        const raw = sessionStorage.getItem(key);
+        if (raw) cached = JSON.parse(raw);
+      } catch { /* sessionStorage blocked */ }
+      let s = cached;
+      if (!s) {
+        setSmartLoading(true);
+        try {
+          const res = await axios.post(`${API_URL}/financial/smart-categorize`, { bill_name: name, module: 'bills' }, getAuthHeaders());
+          s = res.data;
+          try { sessionStorage.setItem(key, JSON.stringify(s)); } catch { /* quota */ }
+        } catch { /* silent */ }
+        setSmartLoading(false);
+      }
+      if (s) {
         if (s.category && s.category !== 'other') update('category', s.category);
         if (s.biller_phone && !form.biller_phone) update('biller_phone', s.biller_phone);
         if (s.biller_website && !form.biller_website) update('biller_website', s.biller_website);
         if (s.payment_method) update('payment_method', s.payment_method);
         if (s.is_auto_pay != null) update('is_auto_pay', s.is_auto_pay);
         if (s.frequency) update('frequency', s.frequency);
-        toast.success('AI auto-filled details');
-      } catch { /* silent */ }
-      setSmartLoading(false);
+        if (!cached) toast.success('AI auto-filled details');
+      }
     }, 800);
   }, [isEdit, getAuthHeaders]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -138,6 +162,11 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
 
   return (
     <div className="space-y-4 py-4">
+      <VisibilityTimingPills
+        timing={form.visibility_timing}
+        onChange={(t) => update('visibility_timing', t)}
+        recordKind="bill"
+      />
       <div className="space-y-2">
         <Label className="text-[#94a3b8]">Bill Name <span className="text-red-400">*</span></Label>
         <div className="relative">
@@ -290,6 +319,47 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
         <Input value={form.biller_address} onChange={e => update('biller_address', e.target.value)} placeholder="P.O. Box 1234, Charlotte, NC" className="input-field" />
       </div>
 
+      {/*
+        DAV auto-link block. Anything entered here is materialised on save
+        as a Digital Access Vault row linked to this bill — beneficiaries
+        get the credentials in the right place, no manual DAV step.
+      */}
+      <div className="rounded-xl p-3" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.18)' }}>
+        <div className="text-[11px] font-bold text-[var(--gold)] uppercase tracking-wider mb-2">
+          Beneficiary login (auto-saved to Digital Access Vault)
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-[#94a3b8] text-xs">Login username / email</Label>
+            <Input
+              value={form.dav_login_username}
+              onChange={e => update('dav_login_username', e.target.value)}
+              placeholder="user@example.com"
+              autoComplete="off"
+              className="input-field text-sm"
+              data-testid="bill-dav-username-input"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-[#94a3b8] text-xs">Login password</Label>
+            <Input
+              type="password"
+              value={form.dav_login_password}
+              onChange={e => update('dav_login_password', e.target.value)}
+              placeholder="•••••••••"
+              autoComplete="new-password"
+              className="input-field text-sm"
+              data-testid="bill-dav-password-input"
+            />
+          </div>
+        </div>
+        <p className="text-[11px] text-[var(--t4)] mt-2 leading-snug">
+          Password is encrypted at rest and only ever shown to you. On save,
+          a linked DAV credential row is created/updated using the biller
+          website above.
+        </p>
+      </div>
+
       <div className="space-y-2">
         <Label className="text-[#94a3b8]">Reminder Schedule</Label>
         <div className="flex flex-wrap gap-2">
@@ -336,12 +406,7 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
         </div>
       )}
 
-      <div className="space-y-2">
-        <Label className="text-[#94a3b8]">Notes / Instructions for Beneficiary</Label>
-        <Textarea value={form.notes} onChange={e => update('notes', e.target.value)}
-          placeholder="e.g., Call to transfer account after transition. Ask for Dept. of Estate Services."
-          className="input-field min-h-[100px]" data-testid="bill-notes-input" />
-      </div>
+      <PassdownNotes form={form} update={update} />
 
       <Button className="gold-button w-full mt-4" onClick={handleSubmit} disabled={saving} data-testid="save-bill-button">
         {saving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : null}

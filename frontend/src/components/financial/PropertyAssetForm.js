@@ -9,6 +9,8 @@ import { toast } from '../../utils/toast';
 import axios from 'axios';
 import { API_URL } from '../../config';
 import { parseMoney, formatPydanticError } from '../../utils/financialFormHelpers';
+import { PassdownNotes } from './PassdownNotes';
+import { VisibilityTimingPills } from './VisibilityTimingPills';
 
 const CATEGORIES = [
   { value: 'real_estate', label: 'Real Estate' },
@@ -62,7 +64,11 @@ const PropertyAssetForm = ({ estateId, asset, davEntries, onSaved, getAuthHeader
     dav_entry_id: asset?.dav_entry_id || '',
     priority: asset?.priority || 'important',
     notes: asset?.notes || '',
+    notes_first_action: asset?.notes_first_action || '',
+    notes_gotchas: asset?.notes_gotchas || '',
+    notes_who_to_call: asset?.notes_who_to_call || '',
     status: asset?.status || 'active',
+    visibility_timing: asset?.visibility_timing || { pre: false, post: true },
   });
   const update = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
   const isBusiness = form.category === 'business_entity';
@@ -102,6 +108,11 @@ const PropertyAssetForm = ({ estateId, asset, davEntries, onSaved, getAuthHeader
 
   return (
     <div className="space-y-4 py-4">
+      <VisibilityTimingPills
+        timing={form.visibility_timing}
+        onChange={(t) => update('visibility_timing', t)}
+        recordKind="asset"
+      />
       <div className="space-y-2">
         <Label className="text-[#94a3b8]">Asset Name <span className="text-red-400">*</span></Label>
         <Input value={form.name} onChange={e => update('name', e.target.value)}
@@ -243,12 +254,9 @@ const PropertyAssetForm = ({ estateId, asset, davEntries, onSaved, getAuthHeader
         </div>
       </div>
 
-      {/* Notes for Beneficiaries */}
-      <div className="space-y-2">
-        <Label className="text-[#94a3b8]">Notes for Beneficiaries</Label>
-        <Textarea value={form.notes} onChange={e => update('notes', e.target.value)}
-          placeholder="Instructions or context for your beneficiaries" className="input-field min-h-[60px]" />
-      </div>
+      {/* Pass-down notes — three structured prompts (replaces single
+          "Notes for Beneficiaries" textarea). */}
+      <PassdownNotes form={form} update={update} />
 
       <Button onClick={handleSubmit} disabled={saving || !form.name.trim()} className="w-full gold-btn" data-testid="save-property-btn">
         {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}

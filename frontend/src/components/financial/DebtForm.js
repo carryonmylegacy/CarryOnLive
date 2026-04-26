@@ -10,6 +10,8 @@ import { toast } from '../../utils/toast';
 import axios from 'axios';
 import { API_URL } from '../../config';
 import { parseMoney, parseInteger, formatPydanticError } from '../../utils/financialFormHelpers';
+import { PassdownNotes } from './PassdownNotes';
+import { VisibilityTimingPills } from './VisibilityTimingPills';
 
 const DebtForm = ({ estateId, debt, categories, categoryLabels, davEntries, beneficiaries, onSaved, onAddCategory, getAuthHeaders }) => {
   const isEdit = !!debt;
@@ -39,7 +41,11 @@ const DebtForm = ({ estateId, debt, categories, categoryLabels, davEntries, bene
     dav_entry_id: debt?.dav_entry_id || '',
     priority: debt?.priority || 'important',
     notes: debt?.notes || '',
+    notes_first_action: debt?.notes_first_action || '',
+    notes_gotchas: debt?.notes_gotchas || '',
+    notes_who_to_call: debt?.notes_who_to_call || '',
     status: debt?.status || 'active',
+    visibility_timing: debt?.visibility_timing || { pre: false, post: true },
   });
   const update = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
   const [smartLoading, setSmartLoading] = useState(false);
@@ -109,6 +115,11 @@ const DebtForm = ({ estateId, debt, categories, categoryLabels, davEntries, bene
 
   return (
     <div className="space-y-4 py-4">
+      <VisibilityTimingPills
+        timing={form.visibility_timing}
+        onChange={(t) => update('visibility_timing', t)}
+        recordKind="debt"
+      />
       <div className="space-y-2">
         <Label className="text-[#94a3b8]">Debt Name <span className="text-red-400">*</span></Label>
         <div className="relative">
@@ -253,10 +264,7 @@ const DebtForm = ({ estateId, debt, categories, categoryLabels, davEntries, bene
           </Select>
         </div>
       )}
-      <div className="space-y-2">
-        <Label className="text-[#94a3b8]">Notes / Instructions for Beneficiary</Label>
-        <Textarea value={form.notes} onChange={e => update('notes', e.target.value)} placeholder="Instructions for beneficiary..." className="input-field min-h-[100px]" />
-      </div>
+      <PassdownNotes form={form} update={update} />
       <Button className="gold-button w-full mt-4" onClick={handleSubmit} disabled={saving} data-testid="save-debt-button">
         {saving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : null}
         {isEdit ? 'Save Changes' : 'Add Debt'}

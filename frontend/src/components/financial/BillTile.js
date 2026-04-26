@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Edit2, Trash2, Users, ChevronDown, ChevronUp, Zap, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
+import { computePassdownScore, passdownColor, passdownLabel } from '../../utils/passdownScore';
 
 const CATEGORY_COLORS = {
   mortgage_rent: '#ef4444', utilities: '#f59e0b', insurance: '#8b5cf6',
@@ -80,11 +81,29 @@ const BillTile = ({ bill, categoryLabels, beneficiaries, onEdit, onDelete, onDes
           )}
         </div>
 
-        <div className="flex items-center gap-3 text-xs mb-3" style={{ borderTop: '1px solid var(--b)', paddingTop: '8px' }}>
+        <div className="flex items-center gap-3 text-xs mb-2" style={{ borderTop: '1px solid var(--b)', paddingTop: '8px' }}>
           <span style={{ color: due.color }} className="font-bold">{due.text}</span>
           <span className="text-[var(--t5)]">|</span>
           <span className="text-[var(--t4)]">{bill.due_day ? `${bill.due_day}th monthly` : 'No schedule'}</span>
         </div>
+
+        {/* Pass-down readiness — at-a-glance signal of how much
+            beneficiary-facing context is captured on this record. */}
+        {(() => {
+          const pdScore = computePassdownScore(bill, 'bill');
+          const pdColor = passdownColor(pdScore);
+          return (
+            <div className="mb-3" data-testid={`passdown-bar-${bill.id}`} title={`${passdownLabel(pdScore)} — ${pdScore}% of pass-down details captured`}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--t5)]">Pass-down readiness</span>
+                <span className="text-[10px] font-bold" style={{ color: pdColor }}>{pdScore}%</span>
+              </div>
+              <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div className="h-full transition-all duration-500" style={{ width: `${pdScore}%`, background: pdColor }} />
+              </div>
+            </div>
+          );
+        })()}
 
         <div className="flex items-center gap-2 mb-2">
           {bill.is_auto_pay && (

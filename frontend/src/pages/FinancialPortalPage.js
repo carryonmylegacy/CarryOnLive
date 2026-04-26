@@ -111,7 +111,15 @@ const FinancialPortalPage = () => {
         } else {
           setEstate({ id: savedEid });
         }
+        // Hydrate from the consolidated `financial:portal:<eid>` blob
+        // written by fetchAll. Falls back to the legacy per-list keys
+        // so existing user caches still load on first deploy.
+        const portal = readList(`financial:portal:${savedEid}`);
         const hydrate = (name, setter) => {
+          if (portal && typeof portal === 'object' && Array.isArray(portal[name]) && portal[name].length > 0) {
+            setter(portal[name]);
+            return;
+          }
           const v = readList(`financial:${name}:${savedEid}`);
           if (Array.isArray(v) && v.length > 0) setter(v);
         };
@@ -121,9 +129,9 @@ const FinancialPortalPage = () => {
         hydrate('property', setPropertyAssets);
         hydrate('beneficiaries', setBeneficiaries);
         hydrate('dav', setDavEntries);
-        const cachedSummary = readList(`financial:summary:${savedEid}`);
+        const cachedSummary = (portal && portal.summary) || readList(`financial:summary:${savedEid}`);
         if (cachedSummary && !Array.isArray(cachedSummary)) setSummary(cachedSummary);
-        const cachedCats = readList(`financial:categories:${savedEid}`);
+        const cachedCats = (portal && portal.categories) || readList(`financial:categories:${savedEid}`);
         if (cachedCats && typeof cachedCats === 'object' && !Array.isArray(cachedCats)) {
           setCustomCategories(cachedCats);
         }
@@ -177,15 +185,19 @@ const FinancialPortalPage = () => {
         accounts: Array.isArray(catAccts.data) ? catAccts.data : [],
       };
       setCustomCategories(nextCats);
-      // Persist every list for offline rehydration on the next visit.
-      saveList(`financial:bills:${eid}`, nextBills);
-      saveList(`financial:debts:${eid}`, nextDebts);
-      saveList(`financial:accounts:${eid}`, nextAccts);
-      saveList(`financial:property:${eid}`, nextProps);
-      saveList(`financial:beneficiaries:${eid}`, nextBens);
-      saveList(`financial:dav:${eid}`, nextDav);
-      if (summaryRes.data) saveList(`financial:summary:${eid}`, summaryRes.data);
-      saveList(`financial:categories:${eid}`, nextCats);
+      // Single batched localStorage write — one JSON encode + one
+      // synchronous write rather than 8 separate ones, which previously
+      // showed up as a perceptible jank on every refresh.
+      saveList(`financial:portal:${eid}`, {
+        bills: nextBills,
+        debts: nextDebts,
+        accounts: nextAccts,
+        property: nextProps,
+        beneficiaries: nextBens,
+        dav: nextDav,
+        summary: summaryRes.data || null,
+        categories: nextCats,
+      });
     } catch (err) { console.error('Financial portal fetch error:', err); }
     setLoading(false);
   };

@@ -9,6 +9,8 @@ import { toast } from '../../utils/toast';
 import axios from 'axios';
 import { API_URL } from '../../config';
 import { parseMoney, formatPydanticError } from '../../utils/financialFormHelpers';
+import { PassdownNotes } from './PassdownNotes';
+import { VisibilityTimingPills } from './VisibilityTimingPills';
 
 const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries, beneficiaries, bills, onSaved, onAddCategory, getAuthHeaders }) => {
   const isEdit = !!account;
@@ -35,7 +37,11 @@ const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries
     linked_bill_ids: account?.linked_bill_ids || [],
     priority: account?.priority || 'important',
     notes: account?.notes || '',
+    notes_first_action: account?.notes_first_action || '',
+    notes_gotchas: account?.notes_gotchas || '',
+    notes_who_to_call: account?.notes_who_to_call || '',
     status: account?.status || 'active',
+    visibility_timing: account?.visibility_timing || { pre: false, post: true },
   });
   const update = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
   const [smartLoading, setSmartLoading] = useState(false);
@@ -98,6 +104,11 @@ const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries
 
   return (
     <div className="space-y-4 py-4">
+      <VisibilityTimingPills
+        timing={form.visibility_timing}
+        onChange={(t) => update('visibility_timing', t)}
+        recordKind="account"
+      />
       <div className="space-y-2">
         <Label className="text-[#94a3b8]">Account Name <span className="text-red-400">*</span></Label>
         <div className="relative">
@@ -233,10 +244,7 @@ const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries
           </Select>
         </div>
       )}
-      <div className="space-y-2">
-        <Label className="text-[#94a3b8]">Notes / Instructions for Beneficiary</Label>
-        <Textarea value={form.notes} onChange={e => update('notes', e.target.value)} placeholder="e.g., This is the primary bill-pay account. Do NOT close until all auto-pay bills are transferred." className="input-field min-h-[100px]" />
-      </div>
+      <PassdownNotes form={form} update={update} />
       <Button className="gold-button w-full mt-4" onClick={handleSubmit} disabled={saving} data-testid="save-account-button">
         {saving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : null}
         {isEdit ? 'Save Changes' : 'Add Account'}

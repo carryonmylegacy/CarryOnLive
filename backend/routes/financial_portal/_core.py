@@ -42,7 +42,17 @@ class BillCreate(BaseModel):
     reminder_days: List[int] = [10, 7, 5, 1]
     priority: str = "important"  # critical, important, optional
     dav_entry_id: Optional[str] = None  # deep-link to Digital Access Vault
+    # Auto-DAV: when CFP adds a bill, the beneficiary needs to know how to
+    # log in and pay it. These fields, if provided, materialise a linked
+    # DAV credential row so the data lives in exactly one place.
+    dav_login_username: Optional[str] = None
+    dav_login_password: Optional[str] = None
     notes: Optional[str] = None
+    # Mission-aligned hand-off prompts (replacing free-form `notes` in UI).
+    # Stored alongside `notes` so existing data is preserved.
+    notes_first_action: Optional[str] = None  # "What does my beneficiary do FIRST?"
+    notes_gotchas: Optional[str] = None  # "What's tricky / non-obvious?"
+    notes_who_to_call: Optional[str] = None  # "Who else can help / co-signs?"
     status: str = "active"  # active, paused, cancelled
     designated_beneficiaries: List[str] = ["all"]
     visibility_timing: dict = {}
@@ -68,7 +78,12 @@ class BillUpdate(BaseModel):
     reminder_days: Optional[List[int]] = None
     priority: Optional[str] = None
     dav_entry_id: Optional[str] = None
+    dav_login_username: Optional[str] = None
+    dav_login_password: Optional[str] = None
     notes: Optional[str] = None
+    notes_first_action: Optional[str] = None
+    notes_gotchas: Optional[str] = None
+    notes_who_to_call: Optional[str] = None
     status: Optional[str] = None
     designated_beneficiaries: Optional[List[str]] = None
     visibility_timing: Optional[dict] = None
@@ -98,6 +113,9 @@ class DebtCreate(BaseModel):
     dav_entry_id: Optional[str] = None
     priority: str = "important"  # critical, important, low
     notes: Optional[str] = None
+    notes_first_action: Optional[str] = None
+    notes_gotchas: Optional[str] = None
+    notes_who_to_call: Optional[str] = None
     status: str = "active"  # active, paid_off, forbearance, collections
     designated_beneficiaries: List[str] = ["all"]
     visibility_timing: dict = {}
@@ -126,6 +144,9 @@ class DebtUpdate(BaseModel):
     dav_entry_id: Optional[str] = None
     priority: Optional[str] = None
     notes: Optional[str] = None
+    notes_first_action: Optional[str] = None
+    notes_gotchas: Optional[str] = None
+    notes_who_to_call: Optional[str] = None
     status: Optional[str] = None
     designated_beneficiaries: Optional[List[str]] = None
     visibility_timing: Optional[dict] = None
@@ -152,6 +173,9 @@ class AccountCreate(BaseModel):
     linked_bill_ids: List[str] = []
     priority: str = "important"  # critical, important, low
     notes: Optional[str] = None
+    notes_first_action: Optional[str] = None
+    notes_gotchas: Optional[str] = None
+    notes_who_to_call: Optional[str] = None
     status: str = "active"  # active, closed, frozen
     designated_beneficiaries: List[str] = ["all"]
     visibility_timing: dict = {}
@@ -177,6 +201,9 @@ class AccountUpdate(BaseModel):
     linked_bill_ids: Optional[List[str]] = None
     priority: Optional[str] = None
     notes: Optional[str] = None
+    notes_first_action: Optional[str] = None
+    notes_gotchas: Optional[str] = None
+    notes_who_to_call: Optional[str] = None
     status: Optional[str] = None
     designated_beneficiaries: Optional[List[str]] = None
     visibility_timing: Optional[dict] = None
@@ -203,6 +230,9 @@ class PropertyAssetCreate(BaseModel):
     dav_entry_id: Optional[str] = None
     priority: str = "important"  # critical, important, low
     notes: Optional[str] = None
+    notes_first_action: Optional[str] = None
+    notes_gotchas: Optional[str] = None
+    notes_who_to_call: Optional[str] = None
     status: str = "active"  # active, sold, transferred, pending
     designated_beneficiaries: List[str] = ["all"]
     visibility_timing: dict = {}
@@ -228,6 +258,9 @@ class PropertyAssetUpdate(BaseModel):
     dav_entry_id: Optional[str] = None
     priority: Optional[str] = None
     notes: Optional[str] = None
+    notes_first_action: Optional[str] = None
+    notes_gotchas: Optional[str] = None
+    notes_who_to_call: Optional[str] = None
     status: Optional[str] = None
     designated_beneficiaries: Optional[List[str]] = None
     visibility_timing: Optional[dict] = None
