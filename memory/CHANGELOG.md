@@ -1,5 +1,29 @@
 # CarryOn — Changelog
 
+## Apr 28, 2026 — Pre-launch CFP Pass-down Efficiency batch verified (zero-WARN, 100% test pass)
+
+Stabilized and tested the large CFP (Connected Financial Portal) refactor injected at the end of the previous session.
+
+**Fixes in this session:**
+- Raised pass-down readiness chip font on BillTile / DebtTile / AccountTile / PropertyAssetTile from `text-[10px]` to `text-[11px]` to clear Apple accessibility minimum (was the lone WARN in housekeeping.sh).
+- Removed 29 stale `TEST_`-prefixed accounts left in MongoDB by an earlier test run so they don't appear in launch UI.
+
+**Verified end-to-end (testing_agent_v3_fork iter 81 — 16/16 pytest pass, 0 critical, 0 minor):**
+- POST /api/financial/bills with website + login_username + login_password auto-creates a `digital_wallet` row with `auto_created_from={source:'cfp_bill', bill_id}` and round-trips through the same `encrypt_field` path as a manually-created DAV.
+- PUT /api/financial/bills updates the linked DAV instead of duplicating it.
+- POST/PUT bills WITHOUT credentials do not create DAV rows.
+- New `notes_first_action`, `notes_gotchas`, `notes_who_to_call` fields persist on bills/debts/accounts/property and round-trip via GET.
+- 422 responses preserve the Pydantic `detail[].loc/msg` shape the frontend relies on for human-readable toasts.
+- `parseMoney` strips `$` and `,` on the client; raw `'$1,234.56'` strings posted directly to the API correctly 422.
+- FinancialPortalPage renders cleanly with summary cards (monthly bills, debt, assets, net) and tile pass-down readiness chips at 11px.
+- BillForm shows required-field asterisks (`Bill Name *`, `Amount ($) *`, `Due Day of Month *`) and the pre/post visibility pills.
+- Dashboard 3-layout (Tiles Left / Tiles Right / Readiness Top) regression-clean.
+
+**Code review notes (non-blocking) carried forward:**
+- `_upsert_dav_for_bill` (bills.py L52-71) silently swallows encryption failures and writes `encrypted_password=None`. By design (never block bill save), but should log to Sentry so a misconfigured encryption fence is observable.
+- If `existing_dav_id` is null on a bill that historically had creds, PUT will spawn a new DAV row instead of looking up an orphan by `source_id`. Acceptable for v1.
+- Suggestion: surface `source_type='financial_bill'` at the top level of the wallet doc (currently only nested in `auto_created_from`) so the frontend can later filter the DAV list by origin.
+
 ## Apr 25, 2026 (later) — Side-by-side dashboard: 3×2 tiles, larger title + key
 
 User feedback: the side-by-side layouts (Tiles Left / Tiles Right) wasted space with 2-col × 3-row tiles, and the right-side Estate Readiness card had a too-small title and tiny key chips.

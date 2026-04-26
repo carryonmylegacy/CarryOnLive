@@ -17,7 +17,43 @@
 
 ---
 
-## 🔁 Operational Playbook — Things That Rotate
+## 📌 Current Launch Status (Apr 28, 2026)
+
+**Pre-launch CFP stabilization complete.** The Mission-Critical CFP Pass-down Efficiency Batch (DAV auto-creation from Bills, 3-prompt PassdownNotes, VisibilityTimingPills, per-tile pass-down readiness scoring, parseMoney sanitization, 422 toast translation) was injected at end of previous session and has now been verified end-to-end:
+- ✅ housekeeping.sh: 0 WARN, 0 FAIL
+- ✅ Backend pytest: 16/16 pass on `/app/backend/tests/test_cfp_passdown_dav.py`
+- ✅ Frontend smoke: FinancialPortalPage + dashboard 3-layout clean
+- ✅ 29 stale TEST_-prefixed seed accounts removed from production DB
+
+### Launch blockers (user action required, NOT code)
+- 🔴 Apple IAP — awaiting Apple Developer Agreement approval
+- 🔴 Twilio SMS OTP — awaiting A2P 10DLC campaign approval
+
+### Next prioritized backlog (P1, post-launch)
+- Server 301 redirect: `carryon.us` → `www.carryon.us` (Safari Push Notifications origin fix)
+- Reactivate iOS Live Updates (Capgo) after App Store build
+- iOS Share Extension after App Store build
+
+### Deferred CFP polish (P2, post-launch)
+- `useFinancialForm` hook to dedupe ~2,000 lines across 4 form components
+- `GET /api/financial/portal/{estate_id}` aggregator (replace 10 parallel fetches)
+- `POST /api/financial/handoff-package/{estate_id}` PDF generator
+- 30-day rolling cashflow timeline on Beneficiary Financial Page
+- Bulk operations (select / mark paid / reassign) on financial tiles
+- Pydantic Enums/Literals for category/priority/status
+- `react-window` virtualization on tile grids
+- Split `late_fee` into `amount` + `percent` decimals
+- "What changed since last login?" digest for beneficiaries
+- Surface `source_type='financial_bill'` at top level of `digital_wallet` doc (currently nested in `auto_created_from`) for DAV-by-origin filtering
+- Sentry-log `_upsert_dav_for_bill` encryption failures (currently silently writes `encrypted_password=None`)
+- Phase 10 FFmpeg-wasm video re-compression
+- Phase 9a "Pin doc for offline access"
+- Refactor `EstateChatPage.js` and `MessagesPage.js` (>1,500 lines each)
+- Admin Ops/Support — group Customer Support messages by `thread_id`
+
+---
+
+
 
 > **Preview URL rotation (GitHub Actions E2E secrets)** — the `E2E_BASE_URL`
 > and `E2E_API_URL` repository secrets both point at the current preview
