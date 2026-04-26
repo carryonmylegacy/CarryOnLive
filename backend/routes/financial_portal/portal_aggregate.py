@@ -214,6 +214,73 @@ def _safe(text: str) -> str:
     return str(text).encode("latin-1", errors="replace").decode("latin-1")
 
 
+def _shorten_token(token: str, max_len: int = 40) -> str:
+    """FPDF multi_cell raises 'Not enough horizontal space to render a single
+    character' when an unbroken token (e.g. a long signed-URL) is wider than
+    the page. Truncate any oversized token with an ellipsis."""
+    if len(token) <= max_len:
+        return token
+    return token[: max_len - 3] + "..."
+
+
+def _safe_line(parts: list[str], max_token: int = 40) -> str:
+    """Build a ' | '-joined detail line where every token is bounded.
+    Each input string is itself split on whitespace and every word is
+    individually capped so no single token can overflow the page."""
+    out = []
+    for p in parts:
+        if not p:
+            continue
+        safe = _safe(p)
+        # Cap each whitespace-separated word individually.
+        capped = " ".join(_shorten_token(w, max_token) for w in safe.split())
+        out.append(capped)
+    return " | ".join(out)
+
+
+def _safe_pdf_write(pdf, text: str, line_height: int = 5):
+    """multi_cell wrapper that NEVER raises — falls back to ever-shorter
+    truncations if FPDF's line-break engine still can't fit a token.
+    Resets cursor X to the left margin between attempts because a failed
+    multi_cell can leave the X position at the right edge of the page,
+    which then makes EVERY subsequent multi_cell raise the same error."""
+    from fpdf.errors import FPDFException
+
+    safe = _safe(text)
+    # Pre-cap any obviously-too-long unbroken tokens so the line break
+    # engine has somewhere to wrap.
+    capped = " ".join(_shorten_token(w, 40) for w in safe.split())
+
+    def _reset_x():
+        try:
+            pdf.set_x(pdf.l_margin)
+        except Exception:
+            pass
+
+    try:
+        pdf.multi_cell(0, line_height, capped)
+        return
+    except FPDFException:
+        _reset_x()
+    try:
+        more = " ".join(_shorten_token(w, 20) for w in safe.split())
+        pdf.multi_cell(0, line_height, more)
+        return
+    except FPDFException:
+        _reset_x()
+    try:
+        pdf.multi_cell(0, line_height, "(line omitted - too long)")
+    except FPDFException:
+        # Absolute last resort — silently swallow, page integrity > content.
+        _reset_x()
+
+
+def _fmt_today() -> str:
+    """Cross-platform 'Month D, YYYY' (avoid Linux-only %-d)."""
+    now = datetime.now(timezone.utc)
+    return f"{now.strftime('%B')} {now.day}, {now.year}"
+
+
 @router.get("/financial/handoff-package/{estate_id}")
 async def export_handoff_package(estate_id: str, current_user: dict = Depends(get_current_user)):
     """One-shot printable PDF dossier containing every bill, debt,
@@ -246,7 +313,7 @@ async def export_handoff_package(estate_id: str, current_user: dict = Depends(ge
     pdf.cell(
         0,
         6,
-        _safe(f"Generated {datetime.now(timezone.utc).strftime('%B %d, %Y')}"),
+        _safe(f"Generated {_fmt_today()}"),
         new_x="LMARGIN",
         new_y="NEXT",
         align="C",
@@ -268,12 +335,10 @@ async def export_handoff_package(estate_id: str, current_user: dict = Depends(ge
             return
         pdf.set_font("Helvetica", "I", 9)
         pdf.set_text_color(80, 80, 80)
-        if first:
-            pdf.multi_cell(0, 5, _safe(f"  > FIRST: {first}"))
-        if gotchas:
-            pdf.multi_cell(0, 5, _safe(f"  > GOTCHAS: {gotchas}"))
-        if who:
-            pdf.multi_cell(0, 5, _safe(f"  > WHO TO CALL: {who}"))
+        for label, val in (("FIRST", first), ("GOTCHAS", gotchas), ("WHO TO CALL", who)):
+            if not val:
+                continue
+            _safe_pdf_write(pdf, f"  > {label}: {val}")
         pdf.set_text_color(0, 0, 0)
         pdf.ln(1)
 
@@ -282,7 +347,7 @@ async def export_handoff_package(estate_id: str, current_user: dict = Depends(ge
         amt = b.get("amount") or 0
         due = b.get("due_day")
         due_txt = f"Day {due}" if due else "see notes"
-        pdf.multi_cell(0, 6, _safe(f"{b.get('name', '?')}  -  ${amt:,.2f}  ({due_txt})"))
+        _safe_pdf_write(pdf, f"{b.get('name', '?')}  -  ${amt:,.2f}  ({due_txt})", 6)
         pdf.set_font("Helvetica", "", 10)
         details = []
         if b.get("biller_phone"):
@@ -294,7 +359,7 @@ async def export_handoff_package(estate_id: str, current_user: dict = Depends(ge
         if b.get("payment_method"):
             details.append(f"Pays via: {b['payment_method']}")
         if details:
-            pdf.multi_cell(0, 5, _safe("  " + " | ".join(details)))
+            _safe_pdf_write(pdf, "  " + _safe_line(details))
         passdown_block(b)
         pdf.ln(1)
 
@@ -303,7 +368,7 @@ async def export_handoff_package(estate_id: str, current_user: dict = Depends(ge
         bal = d.get("outstanding_balance") or 0
         rate = d.get("interest_rate")
         rate_txt = f" @ {rate}%" if rate else ""
-        pdf.multi_cell(0, 6, _safe(f"{d.get('name', '?')}  -  ${bal:,.2f}{rate_txt}"))
+        _safe_pdf_write(pdf, f"{d.get('name', '?')}  -  ${bal:,.2f}{rate_txt}", 6)
         pdf.set_font("Helvetica", "", 10)
         details = []
         if d.get("lender_name"):
@@ -313,14 +378,14 @@ async def export_handoff_package(estate_id: str, current_user: dict = Depends(ge
         if d.get("monthly_payment"):
             details.append(f"Monthly: ${d['monthly_payment']:,.2f}")
         if details:
-            pdf.multi_cell(0, 5, _safe("  " + " | ".join(details)))
+            _safe_pdf_write(pdf, "  " + _safe_line(details))
         passdown_block(d)
         pdf.ln(1)
 
     def account_row(a: dict):
         pdf.set_font("Helvetica", "B", 11)
         bal = a.get("approximate_balance") or 0
-        pdf.multi_cell(0, 6, _safe(f"{a.get('name', '?')}  -  ${bal:,.2f}"))
+        _safe_pdf_write(pdf, f"{a.get('name', '?')}  -  ${bal:,.2f}", 6)
         pdf.set_font("Helvetica", "", 10)
         details = []
         if a.get("institution_name"):
@@ -330,14 +395,14 @@ async def export_handoff_package(estate_id: str, current_user: dict = Depends(ge
         if a.get("ownership_type"):
             details.append(f"Ownership: {a['ownership_type']}")
         if details:
-            pdf.multi_cell(0, 5, _safe("  " + " | ".join(details)))
+            _safe_pdf_write(pdf, "  " + _safe_line(details))
         passdown_block(a)
         pdf.ln(1)
 
     def asset_row(p: dict):
         pdf.set_font("Helvetica", "B", 11)
         val = p.get("estimated_value") or 0
-        pdf.multi_cell(0, 6, _safe(f"{p.get('name', '?')}  -  ${val:,.2f}"))
+        _safe_pdf_write(pdf, f"{p.get('name', '?')}  -  ${val:,.2f}", 6)
         pdf.set_font("Helvetica", "", 10)
         details = []
         if p.get("location_address"):
@@ -347,7 +412,7 @@ async def export_handoff_package(estate_id: str, current_user: dict = Depends(ge
         if p.get("serial_or_vin"):
             details.append(f"Serial/VIN: {p['serial_or_vin']}")
         if details:
-            pdf.multi_cell(0, 5, _safe("  " + " | ".join(details)))
+            _safe_pdf_write(pdf, "  " + _safe_line(details))
         passdown_block(p)
         pdf.ln(1)
 
