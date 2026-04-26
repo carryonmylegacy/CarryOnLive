@@ -1,5 +1,43 @@
 # CarryOn — Changelog
 
+## Apr 29, 2026 (later×3) — PDM menu shortcut: multi-estate picker (iter 91)
+
+User-requested refinement to the Public Device Mode menu button:
+when the user has more than one estate, tapping the button should
+present a dropdown to choose which estate to apply PDM to (or
+disarm), rather than blindly flipping the first one found.
+
+### Behavior
+- **Zero estates** → button hidden (existing self-gate).
+- **One estate**  → tap toggles PDM on that estate (60s idle when arming).
+- **Multi-estate** → tap opens an "Choose estate" popover anchored
+  above the trigger button. Each row shows the estate's name + current
+  state ("OFF" or "ON · 60s idle"). Tapping a row flips just that
+  estate. Multiple estates can be armed independently.
+- The trigger button shows "Device Mode: ON" (gold-armed pill) if ANY
+  of the user's estates is currently armed.
+
+### Files
+- `components/layout/PublicDeviceModeMenuButton.js` — rewritten with
+  `editableEstates` filter (admin/operator → all, others → owned),
+  conditional single-toggle vs popover paths, and an inline
+  `EstatePicker` component that renders absolutely-positioned above
+  the trigger.
+
+### Verified
+- Live Playwright (admin with 100 visible estates):
+  - Picker opens with 100 estate rows.
+  - Click first row → estate row updates to "ON · 60s idle" with gold
+    border + checkmark, trigger button flips to "Device Mode: ON",
+    toast names the specific estate ("…ON for Phase9c Owner-Renamed
+    4bab8d…"), token preserved (357 chars).
+  - Click same row → estate disarms, picker reflects "OFF", token
+    preserved.
+  - Final /auth/me state confirms clean.
+- Housekeeping ALL CLEAR. ESLint 0 errors.
+
+---
+
 ## Apr 29, 2026 (later×2) — Public Device Mode menu shortcut (iter 90)
 
 User-requested follow-up to the Public Device Mode feature: surface
