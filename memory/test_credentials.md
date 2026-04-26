@@ -14,6 +14,28 @@
   (b) use the admin's "My Benefactor Portal" switch in the logo menu (this swaps the token to a real benefactor user via `/api/auth/dev-switch`), OR
   (c) seed a persistent non-staff benefactor here and list creds below.
 
+### ✅ Verified path for testing agents (Apr 2026)
+The auth token is stored in `localStorage` under the key **`carryon_token`** (NOT `token`).
+Admin/founder accounts CAN navigate directly to `/dashboard`, `/estate-chat`, and `/messages`
+after login — they are not redirected away. If the agent sees a redirect, it's likely because
+the login response landed on `/admin` (Founder Portal) and the agent didn't perform a fresh
+`page.goto('/estate-chat')` after login.
+
+Working sequence for E2E testing of /estate-chat and /messages:
+```python
+# 1. Login (lands on /admin for the founder account)
+await page.goto(f'{URL}/login')
+await page.fill('input[type="text"]', 'info@carryon.us')
+await page.fill('input[type="password"]', 'Demo1234!')
+await page.click('button[type="submit"]')
+await page.wait_for_timeout(4000)
+# 2. Now navigate directly — ECT/Messages WILL render for the admin
+await page.goto(f'{URL}/estate-chat')
+await page.wait_for_timeout(4000)
+# data-testid='ect-back-to-dashboard' will be present
+```
+Confirmed working via local Playwright run on iter 86.
+
 ## Auth System Notes
 - Username is the primary login identifier (unique, not an email)
 - Email is a communication channel (non-unique, shared families supported)

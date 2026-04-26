@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   MessageCircle, Plus, ArrowLeft, Trash2, Loader2, X, Check,
-  Pin, Search, Shield, ChevronDown, CheckSquare2,
+  Search, Shield, ChevronDown, CheckSquare2,
 } from 'lucide-react';
 
 /**
