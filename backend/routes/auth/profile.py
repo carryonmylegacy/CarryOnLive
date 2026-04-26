@@ -38,6 +38,31 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
     owns_estate = await db.estates.find_one({"owner_id": current_user["id"]}, {"_id": 0, "id": 1})
 
+    # Public Device Mode — derive an effective flag from EVERY estate the
+    # user can see (owned + beneficiary memberships). If ANY of those
+    # estates has it on, the user's session inherits it. Idle timeout
+    # uses the MIN across enabling estates so the strictest setting wins.
+    pdm_active = False
+    pdm_idle_seconds = None  # set on first match; resolved to 90 default below
+    pdm_estate_ids: list[str] = []
+    owned_cursor = db.estates.find({"owner_id": current_user["id"]}, {"_id": 0, "id": 1})
+    async for est in owned_cursor:
+        pdm_estate_ids.append(est["id"])
+    ben_links = await db.beneficiaries.find({"user_id": current_user["id"]}, {"_id": 0, "estate_id": 1}).to_list(100)
+    pdm_estate_ids.extend(b["estate_id"] for b in ben_links if b.get("estate_id"))
+    if pdm_estate_ids:
+        cursor = db.estates.find(
+            {"id": {"$in": list(set(pdm_estate_ids))}, "public_device_mode": True},
+            {"_id": 0, "id": 1, "public_device_idle_seconds": 1},
+        )
+        async for est in cursor:
+            pdm_active = True
+            secs = est.get("public_device_idle_seconds") or 90
+            if pdm_idle_seconds is None or secs < pdm_idle_seconds:
+                pdm_idle_seconds = secs
+    if pdm_idle_seconds is None:
+        pdm_idle_seconds = 90
+
     session_timeout = None
     if current_user.get("role") in ("admin", "operator"):
         from routes.admin.session_policy import get_session_timeout_for_user
@@ -79,6 +104,8 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "otp_enabled": user_doc.get("otp_enabled", True),
         "primary_estate_id": user_doc.get("primary_estate_id", ""),
         "session_timeout_minutes": session_timeout,
+        "public_device_mode": pdm_active,
+        "public_device_idle_seconds": pdm_idle_seconds if pdm_active else 0,
     }
 
 

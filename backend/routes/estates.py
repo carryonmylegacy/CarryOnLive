@@ -903,6 +903,12 @@ async def update_estate(estate_id: str, data: EstateUpdate, current_user: dict =
         update_data["description"] = data.description
     if data.state is not None:
         update_data["state"] = data.state
+    if data.public_device_mode is not None:
+        update_data["public_device_mode"] = bool(data.public_device_mode)
+    if data.public_device_idle_seconds is not None:
+        # Clamp to a sane range — 30s minimum (avoid logging out mid-typing),
+        # 600s maximum (10 min, beyond which it isn't really "public-device" mode).
+        update_data["public_device_idle_seconds"] = max(30, min(600, int(data.public_device_idle_seconds)))
 
     if update_data:
         await db.estates.update_one({"id": estate_id}, {"$set": update_data})

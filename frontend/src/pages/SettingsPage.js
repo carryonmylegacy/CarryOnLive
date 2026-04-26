@@ -13,6 +13,7 @@ import { NotificationPrefsCard } from '../components/settings/NotificationPrefsC
 import ProfileCard from '../components/settings/ProfileCard';
 import PersonalInfoCard from '../components/settings/PersonalInfoCard';
 import EstatePhotoCard from '../components/settings/EstatePhotoCard';
+import PublicDeviceModeCard from '../components/settings/PublicDeviceModeCard';
 import OfflineBehaviorCard from '../components/settings/OfflineBehaviorCard';
 import AppearanceCard from '../components/settings/AppearanceCard';
 import DashboardViewCard from '../components/settings/DashboardViewCard';
@@ -148,6 +149,12 @@ const SettingsPage = () => {
 
       {/* ── Section: Security ── */}
       <SectionHeader title="Security" hint="2FA, passkeys, auto-logout, vault locks." />
+      {/* Public Device Mode — estate-level setting. The card self-gates
+          to users who actually own an estate (returns null otherwise),
+          so we don't add an `isStaff` check here: the founder/admin
+          account that owns the demo estate also needs to be able to
+          flip it on for that estate. */}
+      <PublicDeviceModeCard />
       <Card className="glass-card cursor-pointer hover:border-[var(--gold)]/30 transition-colors" onClick={() => navigate('/security-settings')} data-testid="settings-security-link">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">

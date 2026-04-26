@@ -335,10 +335,26 @@ function ShareHandler() {
   );
 }
 
+// Public Device Mode — wires the wipe-on-pagehide + wipe-on-idle handlers
+// when the user's effective `public_device_mode` flag is true. Mounted at
+// the AppRoutes scope so it has access to the auth context but doesn't
+// re-create on every route change.
+function PublicDeviceModeMount() {
+  const { user, token } = useAuth();
+  const usePDM = require('./hooks/usePublicDeviceMode').default;
+  usePDM({
+    enabled: !!user?.public_device_mode,
+    idleSeconds: user?.public_device_idle_seconds || 90,
+    token,
+  });
+  return null;
+}
+
 function AppRoutes() {
   return (
     <RouteErrorBoundary>
     <Suspense fallback={<PageLoader />}>
+    <PublicDeviceModeMount />
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={

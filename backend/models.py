@@ -364,6 +364,14 @@ class EstateUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     state: Optional[str] = None
+    # Public Device Mode — disaster-comms scenario. When ON, every member's
+    # session on this estate aggressively wipes localStorage, sessionStorage,
+    # the offline Dexie cache, and SW caches on `pagehide` (browser close /
+    # tab close / navigate-away) AND after `public_device_idle_seconds` of
+    # inactivity. Default OFF preserves the offline-first cache benefits
+    # for the family's own devices.
+    public_device_mode: Optional[bool] = None
+    public_device_idle_seconds: Optional[int] = None  # 30..600; default 90 client-side
 
 
 class ChatMessage(BaseModel):
