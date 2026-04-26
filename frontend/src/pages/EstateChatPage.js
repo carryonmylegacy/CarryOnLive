@@ -5,11 +5,11 @@ import { API_URL } from '../config';
 import { toast } from '../utils/toast';
 import NewChatModal from '../components/chat/NewChatModal';
 import {
-  MessageCircle, Send, Plus, Users, Hash, User, ArrowLeft, Trash2,
-  Circle, Loader2, X, Check, CheckCheck, ChevronDown, ChevronRight,
-  Pin, Paperclip, FileText, Image, Download, Search, Shield, Lock,
-  Mic, Square, Play, Pause, CheckSquare2, UserPlus, Pencil, Copy,
-  TextSelect, MapPin, Delete,
+  MessageCircle, User, Hash, Circle,
+  Loader2, Check, CheckCheck,
+  Pin, FileText, Image, Download,
+  Play, Pause, UserPlus, Pencil, Copy,
+  TextSelect, MapPin,
 } from 'lucide-react';
 import { platformDownload } from '../utils/downloadFile';
 import useVoiceRecorder from '../components/estate-chat/useVoiceRecorder';
@@ -46,6 +46,9 @@ import useECTSearch from '../components/estate-chat/useECTSearch';
 import useECTMessageActions from '../components/estate-chat/useECTMessageActions';
 import useECTMedia from '../components/estate-chat/useECTMedia';
 import { ECTDeleteConfirmDialog, ECTBulkDeleteConfirmDialog } from '../components/estate-chat/ECTConfirmDialogs';
+import ECTChannelList from '../components/estate-chat/ECTChannelList';
+import ECTMessageHeader from '../components/estate-chat/ECTMessageHeader';
+import ECTMessageInput from '../components/estate-chat/ECTMessageInput';
 import { getOfflineMode } from '../offline/featureFlag';
 import {
   getLocalMessages,
@@ -904,366 +907,66 @@ export default function EstateChatPage() {
   );
 
   // ── Channel List Panel ─────────────────────────────────────────────────────
+  // Pure presentational extract; all state/refs/handlers stay in this file
+  // and are passed in explicitly. See ECTChannelList.js for the rendering.
   const channelPanel = (
-    <div
-      className={`${showChannelList || !activeChannel ? 'flex' : 'hidden'} lg:flex flex-col h-full`}
-      style={{ width: '100%', maxWidth: '100%', borderRight: '1px solid var(--b)' }}
-    >
-      {/* Desktop-only back-to-app bar — invisible on mobile (platform header handles that) */}
-      <div className="hidden lg:flex items-center px-4 pt-3 pb-1">
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="flex items-center gap-1.5 text-xs font-semibold transition-colors hover:opacity-80"
-          data-testid="ect-back-to-dashboard"
-          style={{ color: 'var(--t4)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-          aria-label="Back to Dashboard"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Dashboard
-        </button>
-      </div>
-
-      {/* ECT-own header. Explicit `order-*` classes ensure the title stays
-          LEFT and action buttons stay RIGHT regardless of any ambient CSS
-          (e.g., an RTL wrapper or flex-direction override somewhere up the
-          tree). Defensive because a user reported the two halves swapped. */}
-      <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--b)' }}>
-        <div className="flex items-center gap-3 order-1">
-          {selectMode ? (
-            <button onClick={exitSelectMode} className="w-9 h-9 rounded-full flex items-center justify-center" data-testid="ect-select-cancel" style={{ background: 'rgba(255,255,255,0.06)' }}>
-              <X className="w-4 h-4" style={{ color: 'var(--t4)' }} />
-            </button>
-          ) : (
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(59,123,247,0.12)', boxShadow: '0 0 12px rgba(59,123,247,0.25)' }}>
-              <MessageCircle className="w-5 h-5" style={{ color: '#3B7BF7' }} />
-            </div>
-          )}
-          <h2 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>
-            {selectMode ? `${selectedChannels.size} Selected` : 'Estate Comms Tool (ECT)'}
-          </h2>
-        </div>
-        <div className="flex gap-2 order-2">
-          {selectMode ? (
-            <>
-              <button onClick={toggleSelectAll} className="h-10 px-3 rounded-full flex items-center justify-center gap-1.5 transition-all" data-testid="ect-select-all-btn"
-                style={{ background: selectedChannels.size === channels.length ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${selectedChannels.size === channels.length ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.08)'}` }}>
-                <span className="text-xs font-semibold" style={{ color: selectedChannels.size === channels.length ? '#d4af37' : 'var(--t4)' }}>
-                  {selectedChannels.size === channels.length ? 'Deselect All' : 'Select All'}
-                </span>
-              </button>
-              <button onClick={() => { if (selectedChannels.size > 0) setBulkDeleteConfirm(true); }} disabled={selectedChannels.size === 0}
-                className="w-10 h-10 rounded-full flex items-center justify-center transition-all" data-testid="ect-bulk-delete-btn"
-                style={{ background: selectedChannels.size > 0 ? 'rgba(220,38,38,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${selectedChannels.size > 0 ? 'rgba(220,38,38,0.3)' : 'rgba(255,255,255,0.06)'}`, cursor: selectedChannels.size > 0 ? 'pointer' : 'not-allowed' }}>
-                <Trash2 className="w-5 h-5" style={{ color: selectedChannels.size > 0 ? '#dc2626' : 'var(--t5)' }} />
-              </button>
-            </>
-          ) : (
-            <>
-              {channels.length > 0 && (
-                <button onClick={() => { setSelectMode(true); setSwipedChannel(null); }} className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105" data-testid="ect-select-mode-btn" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                  <CheckSquare2 className="w-5 h-5" style={{ color: 'var(--t4)' }} />
-                </button>
-              )}
-              <button onClick={() => search.setShowSearch(!showSearch)} className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105" data-testid="ect-search-btn" style={{ background: showSearch ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.06)' }}>
-                <Search className="w-5 h-5" style={{ color: showSearch ? '#d4af37' : 'var(--t4)' }} />
-              </button>
-              <button onClick={() => setShowNewChat(true)} className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105" data-testid="ect-new-chat-btn" style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}>
-                <Plus className="w-5 h-5" style={{ color: '#080e1a' }} />
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-      {showSearch && (
-        <div className="px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <input value={searchQuery} onChange={(e) => handleSearch(e.target.value)} placeholder="Search messages..." autoFocus
-            className="w-full rounded-xl px-3 py-2.5 text-base" data-testid="ect-search-input"
-            style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px', outline: 'none' }} />
-        </div>
-      )}
-      <div className="flex-1 overflow-y-auto p-2">
-        <button onClick={() => setShowSecurityInfo(!showSecurityInfo)} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl mb-2 transition-all" data-testid="ect-security-info-toggle"
-          style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
-          <Shield className="w-4 h-4" style={{ color: '#d4af37' }} />
-          <span className="text-xs font-bold" style={{ color: '#d4af37' }}>Why ECT is different</span>
-          <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform ${showSecurityInfo ? 'rotate-180' : ''}`} style={{ color: '#d4af37' }} />
-        </button>
-        {showSecurityInfo && (
-          <div className="mb-3 rounded-xl p-3 space-y-2" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.1)' }}>
-            {[
-              ['Closed Network', 'Only estate members can message you'],
-              ['No Phone Required', 'No numbers exposed, no contact scanning'],
-              ['Owner Controls Access', 'Benefactor decides who is in and out'],
-              ['Zero Data Mining', 'No ads, no tracking, no metadata sold'],
-              ['Trusted Contacts', 'FFN contacts receive via email/SMS'],
-            ].map(([t, d], i) => (
-              <div key={i} className="flex items-start gap-2">
-                <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#22C993' }} />
-                <div><span className="text-xs font-bold" style={{ color: 'var(--t)' }}>{t}</span><span className="text-xs" style={{ color: 'var(--t4)' }}> — {d}</span></div>
-              </div>
-            ))}
-            <button onClick={() => setShowSecurityIntro(true)} className="w-full py-2 mt-2 rounded-xl text-xs font-bold transition-all active:scale-[0.97]" data-testid="ect-show-full-security"
-              style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}>Learn More</button>
-          </div>
-        )}
-        {showSearch && searchQuery.trim() ? (
-          <div>
-            {searching && <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /></div>}
-            {!searching && searchResults.length === 0 && searchQuery.trim() && (
-              <div className="text-center py-8"><Search className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--t5)' }} /><p className="text-sm" style={{ color: 'var(--t4)' }}>No messages found</p></div>
-            )}
-            {searchResults.map(sr => (
-              <button key={sr.id} onClick={() => jumpToMessage(sr)} className="w-full text-left p-3 rounded-xl mb-1 transition-all" data-testid={`search-result-${sr.id}`}
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <div className="flex items-center gap-1.5 mb-1">
-                  {getChannelIcon(sr.channel_type)}
-                  <span className="text-[11px] font-semibold" style={{ color: '#d4af37' }}>{sr.channel_name || 'Chat'}</span>
-                  <span className="text-[11px] ml-auto" style={{ color: 'var(--t5)' }}>{new Date(sr.created_at).toLocaleDateString()}</span>
-                </div>
-                <div className="text-xs font-semibold mb-0.5" style={{ color: 'var(--t4)' }}>{sr.sender_name}</div>
-                <p className="text-sm truncate" style={{ color: 'var(--t)' }}>{sr.content}</p>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <>
-            {channels.length === 0 && (
-              <div className="text-center py-12 px-4">
-                <MessageCircle className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--t5)' }} />
-                <p className="text-sm" style={{ color: 'var(--t4)' }}>No conversations yet</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--t5)' }}>Tap + to start chatting</p>
-              </div>
-            )}
-            {channels.map(ch => (
-              <div key={ch.id} className={`relative rounded-xl mb-1 ${showListMembersId === ch.id ? '' : 'overflow-hidden'}`}
-                onTouchStart={(e) => !selectMode && handleTouchStart(e, ch.id)}
-                onTouchMove={(e) => !selectMode && handleTouchMove(e)}
-                onTouchEnd={(e) => !selectMode && handleTouchEnd(e, ch.id)}>
-                {!selectMode && (
-                  <div className="absolute inset-y-0 right-0 flex items-center" style={{ width: '72px', background: '#dc2626', justifyContent: 'center', borderRadius: '12px', opacity: swipedChannel === ch.id ? 1 : 0, transition: 'opacity 0.15s ease' }}>
-                    <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(ch); }} data-testid={`ect-channel-delete-${ch.id}`} className="w-full h-full flex items-center justify-center">
-                      <Trash2 className="w-5 h-5" style={{ color: '#fff' }} />
-                    </button>
-                  </div>
-                )}
-                <button onClick={() => { if (selectMode) { toggleChannelSelection(ch.id); } else if (swipedChannel === ch.id) { setSwipedChannel(null); } else { openChannel(ch); } }}
-                  className="w-full flex items-center gap-3 p-3 transition-transform text-left relative" data-testid={`ect-channel-${ch.id}`}
-                  style={{ background: selectMode && selectedChannels.has(ch.id) ? 'rgba(220,38,38,0.08)' : activeChannel?.id === ch.id ? 'rgba(212,175,55,0.1)' : 'var(--bg, #0B1120)', border: selectMode && selectedChannels.has(ch.id) ? '1px solid rgba(220,38,38,0.25)' : activeChannel?.id === ch.id ? '1px solid rgba(212,175,55,0.2)' : '1px solid transparent', borderRadius: '12px', transform: !selectMode && swipedChannel === ch.id ? 'translateX(-72px)' : 'translateX(0)', transition: 'transform 0.2s ease' }}>
-                  {selectMode && (
-                    <div className="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center transition-all" style={{ background: selectedChannels.has(ch.id) ? '#dc2626' : 'rgba(255,255,255,0.06)', border: `2px solid ${selectedChannels.has(ch.id) ? '#dc2626' : 'rgba(255,255,255,0.15)'}` }}>
-                      {selectedChannels.has(ch.id) && <Check className="w-3.5 h-3.5" style={{ color: '#fff' }} />}
-                    </div>
-                  )}
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}>
-                    {ch.type === 'direct' && ch.photo_url ? <img src={ch.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = ch.name?.charAt(0)?.toUpperCase() || '?'; }} />
-                      : ch.estate_photo_url ? <img src={ch.estate_photo_url} alt="" className="w-10 h-10 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = (ch.estate_name || ch.name)?.charAt(0)?.toUpperCase() || '?'; }} />
-                      : ch.type === 'direct' ? (ch.name?.charAt(0)?.toUpperCase() || '?') : getChannelIcon(ch.type)}
-                  </div>
-                  <div className="flex-1 min-w-0 relative" style={{ zIndex: showListMembersId === ch.id ? 50 : 'auto' }}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold truncate" style={{ color: 'var(--t)' }}>{ch.type === 'direct' ? ch.name : `${ch.estate_name || ch.name} Members`}</span>
-                      {ch.unread_count > 0 && <span className="ml-2 min-w-[20px] h-5 rounded-full flex items-center justify-center text-[11px] font-bold px-1.5" style={{ background: '#d4af37', color: '#080e1a' }}>{ch.unread_count}</span>}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-0.5 overflow-hidden">
-                      <span className="text-[11px] font-medium px-1.5 py-0.5 rounded cursor-pointer flex-shrink-0 whitespace-nowrap" data-testid={`ect-list-members-link-${ch.id}`}
-                        onClick={(e) => { e.stopPropagation(); if (showListMembersId === ch.id) { setShowListMembersId(null); } else { const rect = e.currentTarget.getBoundingClientRect(); listMembersPosRef.current = { top: rect.bottom + 4, left: rect.left }; setShowListMembersId(ch.id); } }}
-                        style={{ background: 'rgba(212,175,55,0.08)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.15)' }}>{ch.estate_name}</span>
-                      {ch.last_message && <span className="text-xs truncate flex-1 min-w-0" style={{ color: 'var(--t5)' }}>{ch.last_message.content}</span>}
-                    </div>
-                  </div>
-                </button>
-              </div>
-            ))}
-          </>
-        )}
-      </div>
-    </div>
+    <ECTChannelList
+      showChannelList={showChannelList}
+      activeChannel={activeChannel}
+      onBackToDashboard={() => navigate('/dashboard')}
+      selectMode={selectMode}
+      exitSelectMode={exitSelectMode}
+      selectedChannels={selectedChannels}
+      toggleSelectAll={toggleSelectAll}
+      setBulkDeleteConfirm={setBulkDeleteConfirm}
+      setSelectMode={setSelectMode}
+      toggleChannelSelection={toggleChannelSelection}
+      setShowNewChat={setShowNewChat}
+      showSearch={showSearch}
+      setShowSearch={setShowSearch}
+      searchQuery={searchQuery}
+      handleSearch={handleSearch}
+      searching={searching}
+      searchResults={searchResults}
+      jumpToMessage={jumpToMessage}
+      showSecurityInfo={showSecurityInfo}
+      setShowSecurityInfo={setShowSecurityInfo}
+      setShowSecurityIntro={setShowSecurityIntro}
+      channels={channels}
+      openChannel={openChannel}
+      swipedChannel={swipedChannel}
+      setSwipedChannel={setSwipedChannel}
+      handleTouchStart={handleTouchStart}
+      handleTouchMove={handleTouchMove}
+      handleTouchEnd={handleTouchEnd}
+      setDeleteConfirm={setDeleteConfirm}
+      showListMembersId={showListMembersId}
+      setShowListMembersId={setShowListMembersId}
+      listMembersPosRef={listMembersPosRef}
+      getChannelIcon={getChannelIcon}
+    />
   );
 
   // ── Message Area ───────────────────────────────────────────────────────────
   const messageArea = activeChannel && (
     <div className={`${!showChannelList || activeChannel ? 'flex' : 'hidden'} lg:flex flex-col flex-1`} style={{ minHeight: 0 }}>
-      {/* Header */}
-      <div className="flex items-center gap-3 p-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', position: 'relative' }}>
-        <button onClick={handleBackOut} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" data-testid="ect-back-btn" style={{ background: 'rgba(255,255,255,0.06)' }} aria-label="Back to conversations">
-          <ArrowLeft className="w-4 h-4" style={{ color: 'var(--t4)' }} />
-        </button>
-        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}>
-          {activeChannel.type === 'direct' && activeChannel.photo_url ? <img src={activeChannel.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = activeChannel.name?.charAt(0)?.toUpperCase() || '?'; }} />
-            : activeChannel.estate_photo_url ? <img src={activeChannel.estate_photo_url} alt="" className="w-9 h-9 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = (activeChannel.estate_name || activeChannel.name)?.charAt(0)?.toUpperCase() || '?'; }} />
-            : activeChannel.type === 'direct' ? (activeChannel.name?.charAt(0)?.toUpperCase() || '?') : getChannelIcon(activeChannel.type)}
-        </div>
-        <div className="flex-1 min-w-0 relative">
-          <div className="text-sm font-bold truncate" style={{ color: 'var(--t)' }}>{activeChannel.type === 'direct' ? activeChannel.name : `${activeChannel.estate_name || activeChannel.name} Members`}</div>
-          <button onClick={(e) => { e.stopPropagation(); setShowHeaderMembers(!showHeaderMembers); }} className="text-[11px] cursor-pointer" data-testid="ect-header-members-link"
-            style={{ color: '#d4af37', background: 'none', border: 'none', padding: 0, font: 'inherit', textDecoration: 'none' }}>
-            {activeChannel.type === 'circle' ? 'All estate members' : activeChannel.type === 'group' ? `${activeChannel.members?.length || 0} members` : 'Direct message'}
-          </button>
-          {showHeaderMembers && (
-            <div className="absolute left-0 top-full mt-1 rounded-xl overflow-hidden z-50" data-testid="ect-header-members-dropdown"
-              style={{ background: '#1A2238', border: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', minWidth: '220px', maxWidth: '280px', maxHeight: '300px', overflowY: 'auto' }}>
-              <div className="px-3 py-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}><span className="text-[11px] font-semibold" style={{ color: 'var(--t4)' }}>Members</span></div>
-              {resolveChannelMembers(activeChannel.members || [], activeChannel.estate_id).map(m => {
-                const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
-                const isYou = m.id === user?.id;
-                return (
-                  <div key={m.id} className="flex items-center gap-2.5 px-3 py-2" data-testid={`header-member-${m.id}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-xs font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
-                      {m.photo_url ? <img src={m.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = initials; }} /> : initials}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-semibold truncate" style={{ color: 'var(--t)' }}>{m.name}{isYou ? ' (You)' : ''}</div>
-                      {(m.relation || m.role_in_estate) && <div className="text-[11px] truncate" style={{ color: 'var(--t4)' }}>{m.relation || m.role_in_estate}</div>}
-                    </div>
-                  </div>
-                );
-              })}
-              {activeChannel.type === 'group' && (() => {
-                const available = getNonChannelMembers(activeChannel.members, activeChannel.estate_id);
-                if (!available.length) return null;
-                return (
-                  <>
-                    <div className="px-3 py-1.5" style={{ borderTop: '1px solid rgba(212,175,55,0.15)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}><span className="text-[11px] font-semibold" style={{ color: '#d4af37' }}>Add to Chat</span></div>
-                    {available.map(m => {
-                      const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
-                      return (
-                        <button key={m.id} onClick={(e) => { e.stopPropagation(); addMemberToChannel(activeChannel.id, m.id, activeChannel.estate_id); }} className="flex items-center gap-2.5 px-3 py-2 w-full text-left hover:bg-white/5 transition-colors" data-testid={`header-add-member-${m.id}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-xs font-bold" style={{ background: 'rgba(76,175,80,0.15)', color: '#4CAF50' }}>
-                            {m.photo_url ? <img src={m.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = initials; }} /> : initials}
-                          </div>
-                          <div className="flex-1 min-w-0"><div className="text-xs font-semibold truncate" style={{ color: 'var(--t)' }}>{m.name}</div>{(m.relation || m.role_in_estate) && <div className="text-[11px] truncate" style={{ color: 'var(--t4)' }}>{m.relation || m.role_in_estate}</div>}</div>
-                          <UserPlus className="w-4 h-4 flex-shrink-0" style={{ color: '#4CAF50' }} />
-                        </button>
-                      );
-                    })}
-                  </>
-                );
-              })()}
-            </div>
-          )}
-        </div>
-        {pinnedMsgs.length > 0 && (
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => setShowPinned(!showPinned)}
-              className="h-8 px-2.5 rounded-full flex items-center gap-1.5"
-              data-testid="ect-header-pinned-btn"
-              style={{
-                background: showPinned ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)',
-                border: showPinned ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent',
-              }}
-            >
-              <Pin className="w-3.5 h-3.5" style={{ color: '#d4af37' }} />
-              <span className="text-xs font-bold" style={{ color: '#d4af37' }}>{pinnedMsgs.length}</span>
-            </button>
-
-            {/* Pinned messages dropdown — anchored to this button */}
-            {showPinned && (
-              <>
-                {/* Backdrop to close on outside tap */}
-                <div
-                  className="fixed inset-0 z-[55]"
-                  onClick={() => setShowPinned(false)}
-                />
-                <div
-                  className="absolute z-[56] rounded-2xl overflow-hidden"
-                  data-testid="ect-pinned-dropdown"
-                  style={{
-                    top: 'calc(100% + 8px)',
-                    right: 0,
-                    width: 'min(320px, calc(100vw - 32px))',
-                    background: 'var(--bg2)',
-                    border: '1px solid rgba(212,175,55,0.3)',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                    maxHeight: 'calc(100dvh - 64px - 80px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))',
-                  }}
-                >
-                  {/* Dropdown header */}
-                  <div
-                    className="flex items-center gap-2 px-4 py-3 flex-shrink-0"
-                    style={{ borderBottom: '1px solid rgba(212,175,55,0.15)' }}
-                  >
-                    <Pin className="w-4 h-4 flex-shrink-0" style={{ color: '#d4af37' }} />
-                    <span className="text-xs font-bold flex-1" style={{ color: '#d4af37' }}>
-                      {pinnedMsgs.length} Pinned Message{pinnedMsgs.length !== 1 ? 's' : ''}
-                    </span>
-                    <button
-                      onClick={() => setShowPinned(false)}
-                      className="p-1 rounded-full"
-                      style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  {/* Scrollable list */}
-                  <div style={{ overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                    {pinnedMsgs.map((pm, idx) => {
-                      const ts = pm.created_at
-                        ? new Date(pm.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                        : '';
-                      return (
-                        <button
-                          key={pm.id}
-                          onClick={() => {
-                            setShowPinned(false);
-                            // Jump to the message in the chat
-                            setTimeout(() => {
-                              const el = scrollContainerRef.current?.querySelector(
-                                `[data-testid="msg-bubble-${pm.id}"]`
-                              );
-                              if (el) {
-                                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                el.style.transition = 'background 300ms ease';
-                                el.style.background = 'rgba(212,175,55,0.18)';
-                                setTimeout(() => { el.style.background = ''; }, 1500);
-                              }
-                            }, 100);
-                          }}
-                          className="w-full text-left px-4 py-3 transition-colors active:opacity-70"
-                          data-testid={`pinned-item-${pm.id}`}
-                          style={{
-                            borderBottom: idx < pinnedMsgs.length - 1
-                              ? '1px solid rgba(255,255,255,0.06)'
-                              : 'none',
-                            background: 'transparent',
-                          }}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[11px] font-bold" style={{ color: '#d4af37' }}>
-                              {pm.sender_name || 'Unknown'}
-                            </span>
-                            {ts && (
-                              <span className="text-[11px]" style={{ color: 'var(--t5)' }}>{ts}</span>
-                            )}
-                          </div>
-                          <p
-                            className="text-sm leading-snug"
-                            style={{
-                              color: 'var(--t)',
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                            }}
-                          >
-                            {pm.content || (pm.attachment ? '📎 Attachment' : '—')}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-        {activeChannel.type === 'group' && isBenefactor && (
-          <button onClick={() => deleteChannel(activeChannel.id)} className="w-8 h-8 rounded-full flex items-center justify-center" data-testid="ect-delete-channel" style={{ background: 'rgba(240,82,82,0.1)' }}>
-            <Trash2 className="w-4 h-4" style={{ color: '#F05252' }} />
-          </button>
-        )}
-      </div>
+      <ECTMessageHeader
+        activeChannel={activeChannel}
+        user={user}
+        handleBackOut={handleBackOut}
+        getChannelIcon={getChannelIcon}
+        showHeaderMembers={showHeaderMembers}
+        setShowHeaderMembers={setShowHeaderMembers}
+        resolveChannelMembers={resolveChannelMembers}
+        getNonChannelMembers={getNonChannelMembers}
+        addMemberToChannel={addMemberToChannel}
+        pinnedMsgs={pinnedMsgs}
+        showPinned={showPinned}
+        setShowPinned={setShowPinned}
+        scrollContainerRef={scrollContainerRef}
+        isBenefactor={isBenefactor}
+        deleteChannel={deleteChannel}
+      />
 
       {/* Messages scroll container */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', touchAction: 'pan-y', opacity: ectMsgsVisible ? 1 : 0, transition: 'opacity 120ms ease-out' }}>
@@ -1445,212 +1148,35 @@ export default function EstateChatPage() {
         </div>
       </div>
 
-      {/* ── Input Bar — keyboard-critical section: DO NOT REORGANIZE ── */}
-      <div className="flex-shrink-0" style={{ background: 'var(--bg)', borderTop: '1px solid var(--bg)', paddingBottom: '4px', position: 'relative', zIndex: 10 }}
-        onTouchStart={(e) => { e.currentTarget._touchY = e.touches[0].clientY; }}
-        onTouchMove={(e) => { const dy = e.touches[0].clientY - (e.currentTarget._touchY || 0); if (dy > 30) { inputRef.current?.blur(); } }}>
-        {typers.length > 0 && (
-          <div className="px-4 pt-2 pb-1 flex items-center gap-1.5" data-testid="typing-indicator">
-            <div className="flex gap-0.5">
-              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#d4af37', animationDelay: '0ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#d4af37', animationDelay: '150ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#d4af37', animationDelay: '300ms' }} />
-            </div>
-            <span className="text-xs" style={{ color: 'var(--t4)' }}>{typers.length === 1 ? `${typers[0].user_name} is typing...` : `${typers.map(t => t.user_name).join(', ')} are typing...`}</span>
-          </div>
-        )}
-        {replyTo && (
-          <div className="flex items-center gap-2 px-3 py-2 mx-3 mb-1 rounded-xl" style={{ background: 'rgba(212,175,55,0.08)', borderLeft: '3px solid #d4af37' }}>
-            <div className="flex-1 min-w-0">
-              <div className="text-[11px] font-semibold" style={{ color: '#d4af37' }}>{replyTo.sender_name}</div>
-              <div className="text-xs truncate" style={{ color: 'var(--t4)' }}>{replyTo.content}</div>
-            </div>
-            <button onClick={() => setReplyTo(null)} className="flex-shrink-0 p-1" data-testid="cancel-reply-btn"><X className="w-4 h-4" style={{ color: 'var(--t4)' }} /></button>
-          </div>
-        )}
-        {pendingFiles.length > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2 mx-3 mb-1 rounded-xl" style={{ background: 'var(--s)', border: '1px solid rgba(212,175,55,0.3)' }}>
-            <div className="flex gap-2 flex-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-              {pendingFiles.map((pf, idx) => (
-                <div key={idx} className="relative flex-shrink-0">
-                  {pf.previewUrl && pf.file.type.startsWith('video/') ? (
-                    <div className="w-14 h-14 rounded-lg overflow-hidden relative" style={{ background: '#000' }}>
-                      <video src={pf.previewUrl} className="w-full h-full object-cover" muted playsInline />
-                      <div className="absolute inset-0 flex items-center justify-center"><Play className="w-5 h-5 text-white/80" /></div>
-                    </div>
-                  ) : pf.previewUrl ? (
-                    <img src={pf.previewUrl} alt="Preview" className="w-14 h-14 rounded-lg object-cover" />
-                  ) : (
-                    <div className="w-14 h-14 rounded-lg flex flex-col items-center justify-center" style={{ background: 'rgba(212,175,55,0.1)' }}>
-                      <FileText className="w-4 h-4 text-[var(--gold)]" />
-                      <span className="text-[11px] text-[var(--t5)] mt-0.5 truncate max-w-[50px]">{pf.file.name.split('.').pop()}</span>
-                    </div>
-                  )}
-                  <button onClick={() => { if (pf.previewUrl) URL.revokeObjectURL(pf.previewUrl); setPendingFiles(prev => prev.filter((_, i) => i !== idx)); }}
-                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: '#ef4444' }}>
-                    <X className="w-3 h-3 text-white" />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="flex flex-col items-center gap-1 flex-shrink-0 ml-1">
-              <button onClick={() => { pendingFiles.forEach(pf => { if (pf.previewUrl) URL.revokeObjectURL(pf.previewUrl); }); setPendingFiles([]); }}
-                className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.15)' }} data-testid="ect-attach-cancel" aria-label="Cancel attachments">
-                <X className="w-4 h-4 text-red-400" />
-              </button>
-              <button onClick={() => { uploadMultipleFiles(pendingFiles); pendingFiles.forEach(pf => { if (pf.previewUrl) URL.revokeObjectURL(pf.previewUrl); }); setPendingFiles([]); }}
-                disabled={uploading} className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: '#d4af37' }} data-testid="ect-attach-send" aria-label="Send attachments">
-                {uploading ? <Loader2 className="w-5 h-5 animate-spin text-[#0F1629]" /> : <Send className="w-5 h-5 text-[#0F1629]" />}
-              </button>
-            </div>
-          </div>
-        )}
-        <div className="flex items-end gap-2 px-3 py-1">
-          <input type="file" ref={fileInputRef} className="hidden" multiple accept="image/*,video/*,.pdf,.doc,.docx,.txt"
-            onChange={(e) => {
-              const selected = Array.from(e.target.files || []);
-              if (!selected.length) return;
-              const maxTotal = 5;
-              const currentCount = pendingFiles.length;
-              const allowed = selected.slice(0, maxTotal - currentCount);
-              if (selected.length > allowed.length) toast.error(`Maximum ${maxTotal} files. ${selected.length - allowed.length} file(s) skipped.`);
-              const videoSizeLimit = 25 * 1024 * 1024;
-              const fileSizeLimit = 10 * 1024 * 1024;
-              const validated = [];
-              for (const file of allowed) {
-                const isVideo = file.type.startsWith('video/');
-                const limit = isVideo ? videoSizeLimit : fileSizeLimit;
-                if (file.size > limit) { const mb = Math.round(limit / (1024 * 1024)); toast.error(`${file.name} exceeds ${mb}MB limit`); continue; }
-                const previewUrl = (file.type.startsWith('image/') || file.type.startsWith('video/')) ? URL.createObjectURL(file) : null;
-                validated.push({ file, previewUrl });
-              }
-              if (validated.length) setPendingFiles(prev => [...prev, ...validated]);
-              e.target.value = '';
-            }} />
-          <button onClick={() => fileInputRef.current?.click()} disabled={uploading || voiceRecorder.recording}
-            className="w-9 h-9 rounded-full flex items-center justify-center transition-all flex-shrink-0 mb-[3px]" data-testid="ect-attach-btn" style={{ background: 'var(--ect-btn-bg)' }} aria-label="Attach file">
-            {uploading ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /> : <Paperclip className="w-5 h-5" style={{ color: 'var(--ect-btn-icon)' }} />}
-          </button>
-
-          {/* Input area — keyboard-critical: DO NOT REORGANIZE THESE HANDLERS */}
-          <div className="flex-1 relative" style={{ minWidth: 0, overflow: 'hidden' }}>
-            {inputFocused && (
-              <button type="button" onMouseDown={(e) => e.preventDefault()}
-                onClick={() => { if (inputRef.current) inputRef.current.blur(); setInputFocused(false); }}
-                className="lg:hidden absolute top-1 right-1 z-10 w-7 h-7 rounded-full flex items-center justify-center"
-                style={{ background: 'rgba(212,175,55,0.18)', border: '1px solid rgba(212,175,55,0.35)' }}
-                data-testid="ect-dismiss-keyboard-btn" aria-label="Dismiss keyboard">
-                <ChevronDown className="w-3.5 h-3.5" style={{ color: '#d4af37' }} strokeWidth={3} />
-              </button>
-            )}
-            <textarea ref={inputRef} value={draft} onChange={handleDraftChange}
-              onPaste={(e) => {
-                const items = e.clipboardData?.items;
-                if (!items) return;
-                const imageFiles = [];
-                for (let i = 0; i < items.length; i++) { if (items[i].type.startsWith('image/')) { const blob = items[i].getAsFile(); if (blob) imageFiles.push(blob); } }
-                if (!imageFiles.length) return;
-                e.preventDefault();
-                const maxTotal = 5;
-                const currentCount = pendingFiles.length;
-                const allowed = imageFiles.slice(0, maxTotal - currentCount);
-                if (imageFiles.length > allowed.length) toast.error(`Maximum ${maxTotal} files. ${imageFiles.length - allowed.length} file(s) skipped.`);
-                const validated = allowed.map(file => ({ file, previewUrl: URL.createObjectURL(file) }));
-                if (validated.length) setPendingFiles(prev => [...prev, ...validated]);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  if (window.innerWidth > 1024) { e.preventDefault(); sendMessage(); }
-                  else { e.preventDefault(); if (inputRef.current) inputRef.current.blur(); setInputFocused(false); }
-                }
-              }}
-              onInput={(e) => {
-                if (window.innerWidth <= 1024) {
-                  const v = e.target.value;
-                  if (v.includes('\n')) { e.target.value = v.replace(/\n+$/g, ''); setDraft(v.replace(/\n+$/g, '')); if (inputRef.current) inputRef.current.blur(); setInputFocused(false); }
-                }
-              }}
-              onFocus={() => {
-                setInputFocused(true);
-                const scrollInput = () => { try { inputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {} };
-                setTimeout(scrollInput, 100); setTimeout(scrollInput, 300); setTimeout(scrollInput, 600);
-                const doScroll = () => { const sc = _scrollEl(scrollContainerRef); if (sc) sc.scrollTop = sc.scrollHeight; };
-                requestAnimationFrame(doScroll); setTimeout(doScroll, 150); setTimeout(doScroll, 400); setTimeout(doScroll, 700);
-              }}
-              onTouchStart={() => {
-                if (document.activeElement === inputRef.current) {
-                  setTimeout(() => { try { inputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {} }, 300);
-                }
-              }}
-              onBlur={() => {
-                setInputFocused(false);
-                const doScroll = () => { const sc = _scrollEl(scrollContainerRef); if (sc) sc.scrollTop = sc.scrollHeight; };
-                setTimeout(doScroll, 100); setTimeout(doScroll, 350);
-              }}
-              enterKeyHint="done" rows={1} placeholder="Type a message..." className="w-full rounded-2xl px-4 py-2 text-base"
-              data-testid="ect-message-input" aria-label="Type a message"
-              style={{ background: 'var(--ect-input-bg)', border: 'none', outline: 'none', resize: 'none', overflowY: 'auto', maxHeight: '120px', minHeight: '40px', color: (voiceRecorder.recording || voicePreview) ? 'transparent' : 'var(--ect-input-text)', fontSize: '16px', caretColor: (voiceRecorder.recording || voicePreview) ? 'transparent' : 'var(--ect-input-text)', lineHeight: '1.4' }} />
-            {voiceRecorder.recording && (
-              <div className="absolute inset-0 flex items-center gap-3 rounded-2xl px-4" style={{ background: '#2A1519', border: '1px solid #5C2A2A' }}>
-                <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: '#ef4444' }} />
-                <span className="text-sm font-semibold" style={{ color: 'var(--t)' }}>{Math.floor(voiceRecorder.duration / 60)}:{(voiceRecorder.duration % 60).toString().padStart(2, '0')}</span>
-                <span className="text-xs" style={{ color: 'var(--t4)' }}>Recording...</span>
-                <button onMouseDown={(e) => e.preventDefault()} onClick={stopAndPreview} className="ml-auto p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-stop" aria-label="Stop recording"><Square className="w-4 h-4" style={{ color: 'var(--t)' }} /></button>
-                <button onMouseDown={(e) => e.preventDefault()} onClick={() => { voiceRecorder.cancel(); inputRef.current?.focus(); }} className="p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-cancel" aria-label="Cancel recording"><X className="w-4 h-4" style={{ color: '#ef4444' }} /></button>
-              </div>
-            )}
-            {!voiceRecorder.recording && voicePreview && (
-              <div className="absolute inset-0 flex items-center gap-2 rounded-2xl px-3" style={{ background: '#1A2235', border: '1px solid #3A4560' }}>
-                <audio src={voicePreview.url} controls className="h-8 flex-1" style={{ maxWidth: '100%', filter: 'invert(1) hue-rotate(180deg)', opacity: 0.8 }} />
-                <button onMouseDown={(e) => e.preventDefault()} onClick={() => { discardPreview(); inputRef.current?.focus(); }} className="p-2 rounded-full flex-shrink-0" style={{ background: '#1A1F2E' }} data-testid="ect-voice-discard" aria-label="Discard recording"><X className="w-4 h-4" style={{ color: '#ef4444' }} /></button>
-              </div>
-            )}
-          </div>
-
-          {draft.trim() ? (
-            <button onMouseDown={(e) => e.preventDefault()} onClick={sendMessage} disabled={sending}
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-all flex-shrink-0 mb-[3px]" data-testid="ect-send-btn" style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }} aria-label="Send message">
-              {sending ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#080e1a' }} /> : <Send className="w-5 h-5" style={{ color: '#080e1a' }} />}
-            </button>
-          ) : voiceRecorder.recording ? (
-            <button onMouseDown={(e) => e.preventDefault()} onClick={() => sendVoiceMessage()}
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-all flex-shrink-0 mb-[3px]" data-testid="ect-voice-send" aria-label="Send voice message" style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}>
-              <Send className="w-5 h-5" style={{ color: '#080e1a' }} />
-            </button>
-          ) : voicePreview ? (
-            <button onMouseDown={(e) => e.preventDefault()} onClick={() => sendVoiceMessage(voicePreview.blob)} disabled={uploading}
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-all flex-shrink-0 mb-[3px]" data-testid="ect-voice-preview-send" aria-label="Send voice message" style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}>
-              {uploading ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#080e1a' }} /> : <Send className="w-5 h-5" style={{ color: '#080e1a' }} />}
-            </button>
-          ) : (
-            <button onClick={() => { if (inputRef.current) inputRef.current.blur(); setInputFocused(false); voiceRecorder.start(); }}
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-all flex-shrink-0 mb-[3px]" data-testid="ect-voice-btn" style={{ background: 'var(--ect-btn-bg)' }} aria-label="Record voice message">
-              <Mic className="w-5 h-5" style={{ color: 'var(--ect-btn-icon)' }} />
-            </button>
-          )}
-        </div>
-        {!inputFocused && (
-          <div className="flex items-center justify-center gap-1 px-2 pt-0.5 pb-0.5" style={{ background: 'transparent', touchAction: 'none', paddingBottom: 'max(2px, env(safe-area-inset-bottom, 2px))' }}>
-            {recentEmojis.map(emoji => (
-              <button key={emoji} onMouseDown={(e) => e.preventDefault()} onClick={() => setDraft(prev => prev + emoji)}
-                className="flex-1 h-9 rounded-full flex items-center justify-center text-lg active:scale-90 transition-transform" style={{ background: 'var(--s)', maxWidth: '40px' }} data-testid={`quick-emoji-${emoji}`}>{emoji}</button>
-            ))}
-            <button onMouseDown={(e) => e.preventDefault()} onClick={() => setDraft(prev => prev.length > 0 ? [...prev].slice(0, -1).join('') : '')}
-              className="flex-1 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform" style={{ background: 'rgba(255,255,255,0.06)', maxWidth: '40px' }} data-testid="quick-backspace-btn">
-              <Delete className="w-5 h-5" style={{ color: 'var(--t4)' }} />
-            </button>
-            <EmojiPickerButton onClick={() => setShowDraftEmojiPicker(v => !v)} />
-          </div>
-        )}
-        {!inputFocused && showDraftEmojiPicker && (
-          <>
-            <div className="fixed inset-0 z-[15]" onClick={() => setShowDraftEmojiPicker(false)} onTouchEnd={(e) => { e.preventDefault(); setShowDraftEmojiPicker(false); }} />
-            <div className="fixed z-[16]" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)', right: '12px' }}>
-              <EmojiPickerGrid onSelect={(emoji) => { setDraft(prev => prev + emoji); setRecentEmojis(addRecentEmoji(emoji)); }} onClose={() => setShowDraftEmojiPicker(false)} searchPosition="bottom" />
-            </div>
-          </>
-        )}
-      </div>
+      <ECTMessageInput
+        typers={typers}
+        replyTo={replyTo}
+        setReplyTo={setReplyTo}
+        pendingFiles={pendingFiles}
+        setPendingFiles={setPendingFiles}
+        uploadMultipleFiles={uploadMultipleFiles}
+        uploading={uploading}
+        fileInputRef={fileInputRef}
+        inputRef={inputRef}
+        voiceRecorder={voiceRecorder}
+        voicePreview={voicePreview}
+        stopAndPreview={stopAndPreview}
+        discardPreview={discardPreview}
+        sendVoiceMessage={sendVoiceMessage}
+        draft={draft}
+        setDraft={setDraft}
+        handleDraftChange={handleDraftChange}
+        inputFocused={inputFocused}
+        setInputFocused={setInputFocused}
+        sending={sending}
+        sendMessage={sendMessage}
+        scrollEl={_scrollEl}
+        scrollContainerRef={scrollContainerRef}
+        recentEmojis={recentEmojis}
+        setRecentEmojis={setRecentEmojis}
+        showDraftEmojiPicker={showDraftEmojiPicker}
+        setShowDraftEmojiPicker={setShowDraftEmojiPicker}
+      />
     </div>
   );
 
@@ -1753,7 +1279,7 @@ export default function EstateChatPage() {
         recentEmojis={recentEmojis} showActionEmojiPicker={showActionEmojiPicker}
         setShowActionEmojiPicker={setShowActionEmojiPicker}
         toggleReaction={toggleReaction} togglePin={togglePin}
-        isBenefactor={isBenefactor} canPin={canPin}
+        canPin={canPin}
         handleDeleteMessage={handleDeleteMessage} closeMsgAction={closeMsgAction}
         setReplyTo={setReplyTo} setEditingMsg={setEditingMsg} inputRef={inputRef}
         token={token} activeChannel={activeChannel} fetchMessages={fetchMessages}
