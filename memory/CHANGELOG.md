@@ -1,5 +1,41 @@
 # CarryOn — Changelog
 
+## Apr 28, 2026 (later) — P2 efficiency batch (additive, zero-migration)
+
+User asked to "wire it all up right" before launch. Shipped the additive,
+zero-schema-migration items from the P2 backlog and tested every one of
+them end-to-end. **Result:** 32/32 backend pytest pass (16 P2 efficiency
++ 16 CFP regression), 4/4 frontend testids verified, 0 critical / 0 minor
+issues, 0 WARN / 0 FAIL housekeeping.
+
+**New backend endpoints:**
+- `GET /api/financial/portal/{estate_id}` — single-shot aggregator returning `{bills, debts, accounts, property, custom_categories, dav_entries, is_owner, fetched_at}`. Replaces 10 parallel fetches the frontend used to fan out.
+- `POST /api/financial/bills/bulk-pay` — atomic mark-many-bills-paid with per-bill payment rows. 400 on empty list / cross-estate ids.
+- `GET /api/financial/cashflow/{estate_id}` — 30-day forward-looking timeline with `{date, day_label, items[], total}` per day plus `grand_total_30d`. Used by Beneficiary Financial Page so heirs see what's due before next paycheck.
+- `GET /api/financial/handoff-package/{estate_id}` — owner-only printable PDF dossier of every bill / debt / account / asset with the 3-prompt pass-down notes inlined. Login credentials are deliberately NOT printed (still gated behind the DAV master key). Hardened against FPDFException by capping unbroken tokens at 40 chars and resetting cursor X between fallback attempts.
+- `GET /api/changelog/since?since=<iso>&limit=N` — flat, time-sorted "what changed since last login" digest across bills/debts/accounts/property/documents/checklists/messages/ccp_records/dts_tasks. 400 on invalid ISO.
+- `GET /api/support/conversations-by-thread` — admin variant of `/support/conversations` that groups by `(conversation_id, thread_id)` so the Customer Support panel shows one row per topic instead of per user.
+
+**New frontend surfaces:**
+- `BillForm` — live "AUTO-SECURED" green pill (`data-testid=dav-auto-secured-pill`) appears inside the gold credential block whenever the user types into Login username / password / biller website. Visible trust-builder for the silent DAV integration.
+- `FinancialPortalPage` — "Hand-off PDF" download button (`data-testid=handoff-pdf-btn`) in the page header.
+- `FinancialPortalPage` — `CashflowTimeline` component (`data-testid=cashflow-timeline`) embedded below the financial summary cards. Defaults to 7 days, expands to 30 via `cashflow-expand-btn`.
+- `DashboardPage` — `ChangedSinceWidget` (`data-testid=changed-since-widget`) renders below the BillingStatusBanner only when there ARE recent events. Cursor `cy:lastSeen:<userId>` rolls forward to "now" the moment the widget mounts.
+
+**Backend reliability fixes:**
+- `_upsert_dav_for_bill` now Sentry-logs encryption failures (was silently writing `encrypted_password=None` which produced unrecoverable rows).
+- Auto-created DAV docs now carry `source_type='financial_bill'` and `source_id=<bill_id>` at the top level (not only nested in `auto_created_from`) so the frontend can filter the DAV list by origin.
+
+**Deferred to a follow-up batch (each is its own focused PR with non-trivial regression surface):**
+- `useFinancialForm` hook to dedupe ~2,000 lines across 4 form components
+- Pydantic Literal/Enum migration for category/priority/status (needs data normalization first)
+- Split `late_fee` → amount + percent decimal fields (DB migration)
+- `EstateChatPage.js` + `MessagesPage.js` monolith refactor (>3,000 lines, real-time chat regression risk)
+- `react-window` virtualization on tile grids (low value while typical user has <20 tiles per category)
+- Phase 10 FFmpeg-wasm aggressive video re-compression
+- Phase 9a "Pin doc for offline access"
+- Admin Ops/Support UI to consume the new `/support/conversations-by-thread` endpoint
+
 ## Apr 28, 2026 — Pre-launch CFP Pass-down Efficiency batch verified (zero-WARN, 100% test pass)
 
 Stabilized and tested the large CFP (Connected Financial Portal) refactor injected at the end of the previous session.
