@@ -1,5 +1,38 @@
 # CarryOn — Changelog
 
+## Apr 29, 2026 (later) — Public Device Mode shipped (iter 88/89)
+
+User-requested feature for the disaster-comms scenario: a borrowed
+phone or library kiosk should leave NO trace of the family's data
+when the user walks away. Estate-level setting flipped by the
+benefactor; propagates to every member's session via /auth/me.
+
+**Result:** iter 89 — backend 6/6 pytest pass, frontend 100% pass,
+zero UI bugs. Toggle ON/OFF preserves the auth token across clicks.
+Final state clean (PDM=OFF on all estates).
+
+### Backend
+- `models.py` — `EstateUpdate` extended with `public_device_mode: Optional[bool]` and `public_device_idle_seconds: Optional[int]`.
+- `routes/estates.py` — `PATCH /estates/{estate_id}` accepts the new fields, clamps idle seconds to 30..600.
+- `routes/auth/profile.py` — `/auth/me` computes effective `public_device_mode` (OR across all estates user is member of) and `public_device_idle_seconds` (MIN-wins for strictness, default 90).
+
+### Frontend
+- `utils/wipePublicDeviceSession.js` (new) — async + sync variants of the full wipe: `Dexie.delete(DB_NAME)`, `localStorage.clear()`, `sessionStorage.clear()`, SW cache clear via postMessage, beacon-based POST /auth/logout (survives `pagehide`).
+- `hooks/usePublicDeviceMode.js` (new) — registers `pagehide` (with `e.persisted` skip to avoid wiping on bfcache/visibility transitions), `beforeunload` (desktop close), and idle-timer wipe-and-redirect.
+- `components/settings/PublicDeviceModeCard.js` (new) — Settings UI with toggle + 4 idle-timeout pills (1 min / 90s / 3 min / 5 min).
+- `pages/SettingsPage.js` — renders `<PublicDeviceModeCard/>` in the Security section. Self-gates via the component (returns null if user owns no estate).
+- `App.js` — `<PublicDeviceModeMount/>` mounted inside `AppRoutes` so the hook activates for all authenticated users.
+
+### Bug fixed mid-session
+- iter 88 found: toggling PDM OFF surfaced an error toast and the estate stayed ON. Root cause: `pagehide` fires not only on tab close but also on bfcache transitions and (in headless Playwright) on visibility shifts during a single page session — the wipe handler was nuking localStorage mid-test, removing the auth token, and the next PATCH 401'd. Fix: early-return when `event.persisted === true`, plus a separate `beforeunload` handler for desktop close-detection.
+
+### Verified
+- 6/6 backend tests in `tests/test_iter88_public_device_mode.py`: enable propagation, MIN-wins idle aggregation, clamp-low (5→30), clamp-high (99999→600), disable propagation, 404 for unknown estate.
+- Live Playwright: login → toggle ON (token preserved, toast fires) → idle pill click (token preserved) → toggle OFF (idle pills removed, no error, token preserved) → /auth/me reflects clean state.
+- ESLint 0 errors, ruff 0 errors, housekeeping ALL CLEAR.
+
+---
+
 ## Apr 29, 2026 — Chat monolith refactor + Phase 9a closer (iter 86/87)
 
 User-flagged P0 reliability concern from prior fork: "code base is

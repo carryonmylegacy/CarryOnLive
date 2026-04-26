@@ -17,20 +17,23 @@
 
 ---
 
-## 📌 Current Launch Status (Apr 29, 2026 — chat monolith refactor shipped)
+## 📌 Current Launch Status (Apr 29, 2026 — Public Device Mode shipped)
 
-**Five batches shipped this session series:**
-1. CFP Pass-down stabilization — verified iter 81: 16/16.
-2. P2 efficiency batch (6 endpoints + 4 UI surfaces) — verified iter 83: 32/32.
-3. Deferred-items batch 1 (5 items: weekly digest, support thread UI, content-visibility, Pydantic Literals, useFinancialForm hook) — verified iter 84: 48/48.
-4. Deferred-items batch 2 (3 items: late_fee schema split, Phase 9a pin-offline, monolith size guard) — verified iter 85: **55/55 pytest pass.**
-5. **Chat monolith refactor + Phase 9a closer** (4 extracted components + offline storage widget) — verified iter 87: **100% frontend pass, zero undefined-prop errors.**
+**Six batches shipped this session series:**
+1. CFP Pass-down stabilization — iter 81: 16/16.
+2. P2 efficiency batch (6 endpoints + 4 UI surfaces) — iter 83: 32/32.
+3. Deferred-items batch 1 (5 items: weekly digest, support thread UI, content-visibility, Pydantic Literals, useFinancialForm hook) — iter 84: 48/48.
+4. Deferred-items batch 2 (3 items: late_fee schema split, Phase 9a pin-offline, monolith size guard) — iter 85: **55/55 pytest pass.**
+5. **Chat monolith refactor + Phase 9a closer** (4 extracted components + offline storage widget) — iter 87: **100% frontend pass.**
+6. **Public Device Mode** (disaster-comms borrowed-device protection — benefactor-activated estate flag, full client wipe on tab close + idle) — iter 89: **backend 6/6 + frontend 100% pass.**
 
-✅ housekeeping 0 WARN/0 FAIL · backend pytest **55/55** · zero regressions · housekeeping rule #51 (React monolith size guard) flipped CYAN NOTE → **PASS** as both files dropped under 1500 LOC.
+✅ housekeeping 0 WARN/0 FAIL · backend pytest **61/61** (55 prior + 6 new) · zero regressions across 6 sequential batches · monolith size guard now PASS.
 
 ### Remaining deferred items (post-launch — high regression surface, each its own focused session)
 - Phase 10 FFmpeg-wasm video re-compression
 - (Optional) Further extraction of the per-message bubble rendering loop in `EstateChatPage.js` (~340 LOC remaining; weaves through reactions, action menu, edit form, attachment grid)
+- Server 301 redirect `carryon.us` → `www.carryon.us` (Safari Push origin fix)
+- Admin warmup 403 spam fix in `warmup.js`
 
 ### Newly surfaced (out of scope, separate ticket)
 - Admin-context offline warmup fires DAV requests for estates the admin doesn't own → ~50 console-spam 403s. Functional impact zero, slows Playwright `networkidle` testing. 5-line fix in `warmup.js`.
