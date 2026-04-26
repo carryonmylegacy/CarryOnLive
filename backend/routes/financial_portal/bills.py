@@ -146,6 +146,13 @@ async def create_bill(data: BillCreate, current_user: dict = Depends(get_current
     # Pull DAV credential bits OUT of the bill doc — they live in the DAV.
     dav_login_username = payload.pop("dav_login_username", None)
     dav_login_password = payload.pop("dav_login_password", None)
+    # Defense-in-depth: when the structured late_fee_amount or
+    # late_fee_percent is set, clear the legacy free-form `late_fee`
+    # string so non-frontend callers (mobile / API clients / migration
+    # scripts) can't desync canonical truth. Frontend already does this
+    # but we don't trust callers.
+    if payload.get("late_fee_amount") is not None or payload.get("late_fee_percent") is not None:
+        payload["late_fee"] = None
     dav_id = await _upsert_dav_for_bill(
         estate_id=data.estate_id,
         bill_id=bill_id,
@@ -183,6 +190,11 @@ async def update_bill(bill_id: str, data: BillUpdate, current_user: dict = Depen
     # the auto-DAV upsert helper instead.
     dav_username = updates.pop("dav_login_username", None)
     dav_password = updates.pop("dav_login_password", None)
+    # Defense-in-depth (mirrors create_bill): if the caller is supplying
+    # structured late_fee_* fields, clear the legacy string so they
+    # can't drift apart.
+    if updates.get("late_fee_amount") is not None or updates.get("late_fee_percent") is not None:
+        updates["late_fee"] = None
     if any(k in updates for k in ("biller_website", "account_number_masked", "name")) or dav_username or dav_password:
         merged_name = updates.get("name", bill.get("name", ""))
         merged_site = updates.get("biller_website", bill.get("biller_website"))

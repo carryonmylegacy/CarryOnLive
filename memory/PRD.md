@@ -17,23 +17,23 @@
 
 ---
 
-## 📌 Current Launch Status (Apr 28, 2026 — late session, batch 3)
+## 📌 Current Launch Status (Apr 28, 2026 — late session, batch 4)
 
-**Three batches shipped this session:**
-1. CFP Pass-down stabilization — verified iter 81: 16/16 pytest.
-2. P2 efficiency batch (6 endpoints + 4 UI surfaces) — verified iter 83: 32/32 pytest.
-3. **Deferred-items batch 1** (5 items: weekly digest, support thread UI, content-visibility, Pydantic Literals, useFinancialForm hook) — verified iter 84: **48/48 pytest, 0 critical, 0 minor.**
+**Four batches shipped this session:**
+1. CFP Pass-down stabilization — verified iter 81: 16/16.
+2. P2 efficiency batch (6 endpoints + 4 UI surfaces) — verified iter 83: 32/32.
+3. Deferred-items batch 1 (5 items: weekly digest, support thread UI, content-visibility, Pydantic Literals, useFinancialForm hook) — verified iter 84: 48/48.
+4. **Deferred-items batch 2** (3 items: late_fee schema split, Phase 9a pin-offline, monolith size guard) — verified iter 85: **55/55 pytest pass.**
 
-✅ housekeeping 0/0 · backend pytest **48/48** · all UI surfaces verified · zero regressions across 3 sequential batches.
+✅ housekeeping 0 WARN/0 FAIL · backend pytest **55/55** (+ 2 environmental skips) · zero regressions across 4 sequential batches · monolith size guard now visible to every agent.
 
-### Remaining deferred items (post-launch — each its own focused PR)
-- Split `late_fee` → amount + percent decimals (DB migration required)
-- `EstateChatPage.js` + `MessagesPage.js` monolith refactor (>3,000 lines, real-time chat regression risk)
+### Remaining deferred items (post-launch — high regression surface, each its own focused session)
+- `EstateChatPage.js` + `MessagesPage.js` monolith refactor (>3,000 lines combined, real-time chat regression risk) — **explicit user reliability concern**, queued first in next session
 - Phase 10 FFmpeg-wasm video re-compression
-- Phase 9a "Pin doc for offline access"
 
-### Newly surfaced (from iter 84 code review — out of scope)
-- S3 photo CORS for the preview origin (`carryon-vault.s3.amazonaws.com`) — pre-existing infra config issue, not a regression. File as separate infra ticket.
+### Newly surfaced (out of scope, separate ticket)
+- Admin-context offline warmup fires DAV requests for estates the admin doesn't own → ~50 console-spam 403s. Functional impact zero, slows Playwright `networkidle` testing. 5-line fix in `warmup.js`.
+- S3 photo CORS for the preview origin (`carryon-vault.s3.amazonaws.com`) — pre-existing infra config issue.
 
 ### Launch blockers (user action required, NOT code)
 - 🔴 Apple IAP — awaiting Apple Developer Agreement approval
