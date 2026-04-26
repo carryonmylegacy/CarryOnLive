@@ -17,19 +17,20 @@
 
 ---
 
-## 📌 Current Launch Status (Apr 28, 2026 — late session, batch 4)
+## 📌 Current Launch Status (Apr 29, 2026 — chat monolith refactor shipped)
 
-**Four batches shipped this session:**
+**Five batches shipped this session series:**
 1. CFP Pass-down stabilization — verified iter 81: 16/16.
 2. P2 efficiency batch (6 endpoints + 4 UI surfaces) — verified iter 83: 32/32.
 3. Deferred-items batch 1 (5 items: weekly digest, support thread UI, content-visibility, Pydantic Literals, useFinancialForm hook) — verified iter 84: 48/48.
-4. **Deferred-items batch 2** (3 items: late_fee schema split, Phase 9a pin-offline, monolith size guard) — verified iter 85: **55/55 pytest pass.**
+4. Deferred-items batch 2 (3 items: late_fee schema split, Phase 9a pin-offline, monolith size guard) — verified iter 85: **55/55 pytest pass.**
+5. **Chat monolith refactor + Phase 9a closer** (4 extracted components + offline storage widget) — verified iter 87: **100% frontend pass, zero undefined-prop errors.**
 
-✅ housekeeping 0 WARN/0 FAIL · backend pytest **55/55** (+ 2 environmental skips) · zero regressions across 4 sequential batches · monolith size guard now visible to every agent.
+✅ housekeeping 0 WARN/0 FAIL · backend pytest **55/55** · zero regressions · housekeeping rule #51 (React monolith size guard) flipped CYAN NOTE → **PASS** as both files dropped under 1500 LOC.
 
 ### Remaining deferred items (post-launch — high regression surface, each its own focused session)
-- `EstateChatPage.js` + `MessagesPage.js` monolith refactor (>3,000 lines combined, real-time chat regression risk) — **explicit user reliability concern**, queued first in next session
 - Phase 10 FFmpeg-wasm video re-compression
+- (Optional) Further extraction of the per-message bubble rendering loop in `EstateChatPage.js` (~340 LOC remaining; weaves through reactions, action menu, edit form, attachment grid)
 
 ### Newly surfaced (out of scope, separate ticket)
 - Admin-context offline warmup fires DAV requests for estates the admin doesn't own → ~50 console-spam 403s. Functional impact zero, slows Playwright `networkidle` testing. 5-line fix in `warmup.js`.

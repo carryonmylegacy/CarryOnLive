@@ -1,6 +1,47 @@
 # CarryOn — Changelog
 
-## Apr 28, 2026 (latest) — Deferred-items batch 2: schema split, pin-offline, monolith guard
+## Apr 29, 2026 — Chat monolith refactor + Phase 9a closer (iter 86/87)
+
+User-flagged P0 reliability concern from prior fork: "code base is
+getting so large, I am really concerned about reliability tied to the
+length of some of these monoliths." Both target monoliths were shrunk
+below the 1500-LOC housekeeping threshold via pure-presentational JSX
+extraction — zero state moved, zero effects relocated, zero data
+fetching touched. Real-time chat behavior preserved.
+
+**Result:** iter 87 frontend testing — 100% pass, zero `cannot read
+properties of undefined` errors across all three pages, zero UI bugs.
+Housekeeping rule #51 (React monolith size guard) flipped CYAN NOTE → green PASS.
+
+### Files refactored
+- `EstateChatPage.js` 1791 → 1317 LOC (-474, -27%)
+- `MessagesPage.js` 1611 → 1447 LOC (-164, -10%)
+
+### New presentational components (each pure JSX, no state)
+- `components/estate-chat/ECTChannelList.js` — sidebar, search, security accordion, channel rows w/ swipe-to-delete
+- `components/estate-chat/ECTMessageHeader.js` — back, avatar, members popover, pinned-messages dropdown, group delete
+- `components/estate-chat/ECTMessageInput.js` — composer + emoji bar, voice recorder overlay, attach tray, keyboard-critical handlers preserved verbatim
+- `components/messages/MMGuidedWizard.js` — 3-step Getting-Started wizard (title → content → review) for first-time message creation
+- `components/dashboard/OfflineStorageWidget.js` — Phase 9a closer: lists pinned offline docs with per-row unpin and total-bytes summary; hides cleanly when no pins
+
+### Refactor invariants enforced
+- Each new component has a header comment calling out "no state here, no effects, no fetches" so future agents don't drift.
+- Every prop bag is enumerated explicitly at the call site (no spread, no implicit context).
+- Fixed pre-existing duplicate `isBenefactor` prop on `<ECTActionMenu/>` that the lint pass surfaced.
+- Fixed unused `Pin` lucide-react import in `ECTChannelList.js` flagged by iter 86 code review.
+
+### Verified
+- `bash /app/scripts/check.sh` → ALL CHECKS PASSED, 0 WARN / 0 FAIL.
+- Backend untouched; iter 85's 55/55 pytest still authoritative.
+- Frontend ESLint: 0 errors (warnings unchanged from prior baseline — no new ones introduced).
+
+### Deferred (next focused session)
+- Phase 10 FFmpeg-wasm video re-compression (high regression surface, requires its own context budget).
+- Further extraction of the per-message bubble rendering loop in `EstateChatPage.js` (~340 LOC remaining) — leaving this for a follow-up because it weaves through reactions, action menu, edit form, and attachment grid.
+
+---
+
+## Apr 28, 2026 — Deferred-items batch 2: schema split, pin-offline, monolith guard
 
 User flagged reliability concern: "code base is getting so large, I am
 really concerned about reliability tied to the length of some of these
