@@ -6,6 +6,7 @@ import {
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import DocThumbnail from '../DocThumbnail';
+import PinForOfflineButton from './PinForOfflineButton';
 
 const VaultDocumentCard = ({
   doc,
@@ -96,6 +97,7 @@ const VaultDocumentCard = ({
               <Download className="w-4 h-4" />
             )}
           </Button>
+          <PinForOfflineButton doc={doc} getAuthHeaders={getAuthHeaders} />
           {(user?.role === 'benefactor' || user?.is_also_benefactor) && (
             <>
               <Button

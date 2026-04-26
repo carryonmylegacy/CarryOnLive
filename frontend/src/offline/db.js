@@ -36,7 +36,7 @@
 import Dexie from 'dexie';
 
 export const DB_NAME = 'carryon-offline';
-export const DB_VERSION = 4;
+export const DB_VERSION = 5;
 
 class CarryOnDB extends Dexie {
   constructor() {
@@ -122,6 +122,16 @@ class CarryOnDB extends Dexie {
       // not by URL, so the same beneficiary photo survives URL rotation.
       // Stores up to ~5MB per row; Dexie/IndexedDB handles that fine.
       imageBlob: 'cache_key, fetched_at, kind',
+
+      // ── Pinned Documents (v5 — Phase 9a) ─────────────────────────────
+      // User-explicit "pin this document for offline access" — separate
+      // from the imageBlob row used by avatars because (a) doc blobs
+      // can be large (PDFs/images, often 1–10MB) and (b) we want to
+      // persist a server-side flag so the warmup re-primes them on
+      // every fresh device. The blob lives here; the server sets
+      // `documents.pinned_offline=true` in Mongo. cache_key is always
+      // `doc:<doc_id>`.
+      pinnedDoc: 'cache_key, doc_id, fetched_at, size_bytes',
     });
   }
 }

@@ -1160,3 +1160,59 @@ async def designate_beneficiaries(
         "designated_beneficiaries": data.beneficiary_ids,
         "visibility_timing": data.visibility_timing,
     }
+
+
+# ===================== PIN FOR OFFLINE (Phase 9a) =====================
+@router.put("/documents/{document_id}/pin-offline")
+async def set_document_pinned_offline(
+    document_id: str,
+    pinned: bool,
+    current_user: dict = Depends(get_current_user),
+):
+    """Mark a document as pinned for offline access. The actual blob
+    caching happens on the device (frontend pinnedDocsRepo); this flag
+    just persists the user's intent so the next device they sign in on
+    will re-prime the blob during warmup.
+
+    Beneficiaries can pin documents they can read; benefactors can pin
+    any document they own. Locked documents cannot be pinned (they
+    require a per-session unlock and the blob would be unusable
+    offline)."""
+    doc = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    # Access check: owner OR designated beneficiary.
+    estate = await db.estates.find_one({"id": doc["estate_id"]}, {"_id": 0, "id": 1, "owner_id": 1, "beneficiaries": 1})
+    is_owner = estate and estate.get("owner_id") == current_user["id"]
+    is_beneficiary = estate and current_user["id"] in (estate.get("beneficiaries") or [])
+    if not (is_owner or is_beneficiary):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    if pinned and doc.get("is_locked"):
+        raise HTTPException(
+            status_code=400,
+            detail="Locked documents cannot be pinned for offline access",
+        )
+
+    await db.documents.update_one(
+        {"id": document_id},
+        {
+            "$set": {
+                "pinned_offline": bool(pinned),
+                "pinned_offline_at": datetime.now(timezone.utc).isoformat() if pinned else None,
+                "pinned_offline_by": current_user["id"] if pinned else None,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
+    )
+
+    await audit_log(
+        action="document.pin_offline" if pinned else "document.unpin_offline",
+        user_id=current_user["id"],
+        resource_type="document",
+        resource_id=document_id,
+        estate_id=doc["estate_id"],
+    )
+
+    return {"document_id": document_id, "pinned_offline": bool(pinned)}

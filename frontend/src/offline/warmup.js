@@ -123,6 +123,23 @@ function taskDashboard(estateId, headers) {
       };
       await upsertLocalDashboardTile(estateId, tile);
       if (readiness?.data) await upsertLocalReadiness(estateId, readiness.data);
+      // Phase 9a — prime pinned-document blobs so they're viewable on
+      // a fresh device the moment warmup finishes. Fire-and-forget;
+      // failures are non-fatal (the blob will be re-attempted next
+      // warmup, and the server flag still surfaces the pin to the UI).
+      if (docs?.data && Array.isArray(docs.data)) {
+        try {
+          const { isPinnedLocally, pinDocument } = await import('./pinnedDocsRepo');
+          const headerObj = headers?.headers || {};
+          for (const d of docs.data) {
+            if (d?.pinned_offline && d?.id && d?.file_url) {
+              isPinnedLocally(d.id).then((already) => {
+                if (!already) pinDocument(d, headerObj).catch(() => {});
+              }).catch(() => {});
+            }
+          }
+        } catch { /* dynamic import / quota issues — skip */ }
+      }
       if (bens?.data) {
         await upsertLocalBeneficiaries(estateId, bens.data);
         // Pre-warm every beneficiary photo into the SW IMAGE_CACHE so

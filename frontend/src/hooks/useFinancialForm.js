@@ -42,6 +42,7 @@ export const useFinancialForm = ({
   buildPayload,
   validate,
   applyAiSuggestion,
+  migrateExisting, // optional: post-merge transform for legacy fields
   getAuthHeaders,
   onSaved,
   onAddCategory,
@@ -51,7 +52,10 @@ export const useFinancialForm = ({
   const [saving, setSaving] = useState(false);
   const [showNewCat, setShowNewCat] = useState(false);
   const [newCatName, setNewCatName] = useState('');
-  const [form, setForm] = useState(() => ({ ...buildDefaults(), ...(existing || {}) }));
+  const [form, setForm] = useState(() => {
+    const merged = { ...buildDefaults(), ...(existing || {}) };
+    return migrateExisting ? migrateExisting(merged) : merged;
+  });
   const update = useCallback((key, val) => setForm((prev) => ({ ...prev, [key]: val })), []);
 
   const [smartLoading, setSmartLoading] = useState(false);

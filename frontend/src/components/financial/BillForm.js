@@ -30,6 +30,7 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
     buildDefaults: () => ({
       name: '', category: 'other', amount: '', is_recurring: true, frequency: 'monthly',
       due_day: '', due_date: '', grace_period_days: '', late_fee: '',
+      late_fee_amount: '', late_fee_percent: '',
       payment_method: 'manual_online', payment_account: '', is_auto_pay: false,
       account_number_masked: '', biller_phone: '', biller_website: '', biller_address: '',
       reminder_days: [10, 7, 5, 1], priority: 'important', dav_entry_id: '',
@@ -61,6 +62,11 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
       amount: parseMoney(f.amount).value,
       due_day: f.due_day ? parseInt(f.due_day, 10) : null,
       grace_period_days: f.grace_period_days ? parseInt(f.grace_period_days, 10) : null,
+      late_fee_amount: parseMoney(f.late_fee_amount).value,
+      late_fee_percent: parseMoney(f.late_fee_percent).value,
+      // Clear legacy free-form string when the user has populated the
+      // structured fields, so we don't ship contradicting data.
+      late_fee: (f.late_fee_amount || f.late_fee_percent) ? null : (f.late_fee || null),
       dav_entry_id: f.dav_entry_id || null,
     }),
     applyAiSuggestion: (s, f, set) => {
@@ -70,6 +76,27 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
       if (s.payment_method) set('payment_method', s.payment_method);
       if (s.is_auto_pay != null) set('is_auto_pay', s.is_auto_pay);
       if (s.frequency) set('frequency', s.frequency);
+    },
+    migrateExisting: (f) => {
+      // Parse legacy free-form `late_fee` strings ("$25", "5%", "$25 + 5%")
+      // into the new structured fields when the user opens an old bill.
+      // We only auto-fill blanks — never overwrite explicit numeric input.
+      if (f.late_fee && typeof f.late_fee === 'string') {
+        const dollarMatch = f.late_fee.match(/\$?\s*([0-9]+(?:\.[0-9]+)?)/);
+        const percentMatch = f.late_fee.match(/([0-9]+(?:\.[0-9]+)?)\s*%/);
+        if (dollarMatch && (f.late_fee_amount === '' || f.late_fee_amount == null)) {
+          // The dollar capture also matches a leading number in "5%", so
+          // only adopt it if the original string actually contained a $
+          // OR there's no % token at all.
+          if (f.late_fee.includes('$') || !percentMatch) {
+            f.late_fee_amount = parseFloat(dollarMatch[1]);
+          }
+        }
+        if (percentMatch && (f.late_fee_percent === '' || f.late_fee_percent == null)) {
+          f.late_fee_percent = parseFloat(percentMatch[1]);
+        }
+      }
+      return f;
     },
   });
 
@@ -186,14 +213,34 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div className="space-y-2">
           <Label className="text-[#94a3b8]">Grace Period (days)</Label>
           <Input type="text" inputMode="numeric" value={form.grace_period_days} onChange={e => update('grace_period_days', e.target.value.replace(/\D/g, '').slice(0, 2))} placeholder="5" className="input-field" />
         </div>
         <div className="space-y-2">
-          <Label className="text-[#94a3b8]">Late Fee</Label>
-          <Input value={form.late_fee} onChange={e => update('late_fee', e.target.value)} placeholder="$25 or 5%" className="input-field" />
+          <Label className="text-[#94a3b8]">Late Fee ($)</Label>
+          <Input
+            type="text"
+            inputMode="decimal"
+            value={form.late_fee_amount ?? ''}
+            onChange={e => update('late_fee_amount', e.target.value)}
+            placeholder="25"
+            className="input-field"
+            data-testid="bill-late-fee-amount-input"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-[#94a3b8]">Late Fee (%)</Label>
+          <Input
+            type="text"
+            inputMode="decimal"
+            value={form.late_fee_percent ?? ''}
+            onChange={e => update('late_fee_percent', e.target.value)}
+            placeholder="5"
+            className="input-field"
+            data-testid="bill-late-fee-percent-input"
+          />
         </div>
       </div>
 

@@ -54,7 +54,12 @@ class BillCreate(BaseModel):
     due_day: Optional[int] = None  # 1-31 for recurring
     due_date: Optional[str] = None  # ISO date for one-time
     grace_period_days: Optional[int] = None
-    late_fee: Optional[str] = None
+    late_fee: Optional[str] = None  # legacy free-form string, kept for backwards compatibility
+    # Structured replacements introduced in batch 2 of deferred items.
+    # Either or both may be set: a $25 flat penalty + 5% APR penalty is
+    # not unusual on commercial leases. Always store both as decimals.
+    late_fee_amount: Optional[float] = None  # flat $ penalty
+    late_fee_percent: Optional[float] = None  # % of unpaid balance
     payment_method: BillPaymentMethod = "manual_online"
     payment_account: Optional[str] = None
     is_auto_pay: bool = False
@@ -90,7 +95,9 @@ class BillUpdate(BaseModel):
     due_day: Optional[int] = None
     due_date: Optional[str] = None
     grace_period_days: Optional[int] = None
-    late_fee: Optional[str] = None
+    late_fee: Optional[str] = None  # legacy
+    late_fee_amount: Optional[float] = None
+    late_fee_percent: Optional[float] = None
     payment_method: Optional[BillPaymentMethod] = None
     payment_account: Optional[str] = None
     is_auto_pay: Optional[bool] = None

@@ -866,8 +866,26 @@ fi
 
 echo ""
 
-# ══════════════════════════════════════════════════════════════
-# SECTION E: MOBILE / PWA / iOS UX COMPLIANCE
+# ── C12. React monolith size guard ──────────────────────────────────
+# Reliability concern: oversized React files concentrate state/effects,
+# obscure dependency arrays from ESLint, and make merge conflicts
+# painful. Logged as a NOTE (informational) rather than a WARN so it
+# doesn't break the 0/0 mandate while a planned refactor is in flight,
+# but stays visible to every agent that runs housekeeping.
+echo -n "51. [React] Monolith size guard .... "
+HK_OVERSIZED=$(find /app/frontend/src -name "*.js" -not -path "*/node_modules/*" 2>/dev/null \
+  | xargs wc -l 2>/dev/null \
+  | awk '$1 > 1500 && $2 != "total" { print $1, $2 }')
+HK_OVERSIZED_COUNT=$(echo -n "$HK_OVERSIZED" | grep -c "^" || true)
+if [ -z "$HK_OVERSIZED" ]; then
+  echo -e "$PASS (no React files > 1500 lines)"
+else
+  # Cyan NOTE — visible but doesn't increment WARN/FAIL counters.
+  echo -e "${CYAN}NOTE${NC} ($HK_OVERSIZED_COUNT file(s) over 1500 lines — refactor planned, see PRD)"
+  echo "$HK_OVERSIZED" | head -5 | sed 's|^|    |'
+fi
+
+
 # Catches common rendering, safe-area, zoom, and touch issues
 # that break the experience on iPhones, iPads, and PWA mode.
 # ══════════════════════════════════════════════════════════════
@@ -876,7 +894,7 @@ echo "------------------------------------------"
 MOBILE_ISSUES=0
 
 # ── E1. viewport-fit=cover in index.html ─────────────────────────────
-echo -n "51. [PWA]   viewport-fit=cover ..... "
+echo -n "52. [PWA]   viewport-fit=cover ..... "
 if grep -q "viewport-fit=cover" /app/frontend/public/index.html 2>/dev/null; then
   echo -e "$PASS"
 else
@@ -886,7 +904,7 @@ else
 fi
 
 # ── E2. Fixed top-0 navs must have safe-area-inset-top ───────────────
-echo -n "52. [PWA]   Fixed nav safe-area .... "
+echo -n "53. [PWA]   Fixed nav safe-area .... "
 FIXED_NAV_ISSUES=0
 FIXED_NAV_DETAILS=""
 cd /app/frontend/src
@@ -911,7 +929,7 @@ else
 fi
 
 # ── E3. Full-screen page containers need safe-area padding ───────────
-echo -n "53. [PWA]   Page safe-area insets .. "
+echo -n "54. [PWA]   Page safe-area insets .. "
 PAGE_SA_ISSUES=0
 PAGE_SA_DETAILS=""
 for f in /app/frontend/src/pages/*.js; do
@@ -936,7 +954,7 @@ else
 fi
 
 # ── E4. Input fields need fontSize >= 16px to prevent iOS zoom ───────
-echo -n "54. [iOS]   Input font-size zoom ... "
+echo -n "55. [iOS]   Input font-size zoom ... "
 INPUT_ZOOM_ISSUES=0
 INPUT_ZOOM_DETAILS=""
 cd /app/frontend/src
@@ -977,7 +995,7 @@ else
 fi
 
 # ── E5. Modals need scroll safety for small screens ──────────────────
-echo -n "55. [PWA]   Modal scroll safety .... "
+echo -n "56. [PWA]   Modal scroll safety .... "
 MODAL_SCROLL_ISSUES=0
 MODAL_SCROLL_DETAILS=""
 cd /app/frontend/src
@@ -1001,7 +1019,7 @@ else
 fi
 
 # ── E6. Touch targets minimum 44px ──────────────────────────────────
-echo -n "56. [iOS]   Touch target size ...... "
+echo -n "57. [iOS]   Touch target size ...... "
 TOUCH_ISSUES=0
 cd /app/frontend/src
 # Find dangerously small interactive elements: buttons/links with only p-1 or p-0.5 and no other padding
@@ -1015,7 +1033,7 @@ else
 fi
 
 # ── E7. Horizontal overflow prevention ───────────────────────────────
-echo -n "57. [PWA]   Horizontal overflow .... "
+echo -n "58. [PWA]   Horizontal overflow .... "
 cd /app/frontend/src
 # Check for common overflow-x culprits: fixed width > 100vw, w-screen without overflow-hidden
 OVERFLOW_X_ISSUES=0
@@ -1035,7 +1053,7 @@ else
 fi
 
 # ── E8. Fixed bottom elements need safe-area-inset-bottom ────────────
-echo -n "58. [PWA]   Fixed bottom safe-area . "
+echo -n "59. [PWA]   Fixed bottom safe-area . "
 FIXED_BOT_ISSUES=0
 FIXED_BOT_DETAILS=""
 cd /app/frontend/src
@@ -1058,7 +1076,7 @@ else
 fi
 
 # ── E9. Responsive padding on page containers ────────────────────────
-echo -n "59. [PWA]   Responsive padding ..... "
+echo -n "60. [PWA]   Responsive padding ..... "
 # Check pages for hardcoded large padding that doesn't scale
 PADDING_ISSUES=0
 cd /app/frontend/src/pages
@@ -1081,7 +1099,7 @@ else
 fi
 
 # ── E10. PWA manifest & theme color ──────────────────────────────────
-echo -n "60. [PWA]   Manifest & theme ....... "
+echo -n "61. [PWA]   Manifest & theme ....... "
 PWA_OK=1
 PWA_DETAILS=""
 if [ ! -f "/app/frontend/public/manifest.json" ]; then
@@ -1116,7 +1134,7 @@ echo "------------------------------------------"
 VERCEL_ISSUES=0
 
 # ── F1. Unresolved Package Imports ───────────────────────────────────
-echo -n "61. [VCL]   Unresolved imports ..... "
+echo -n "62. [VCL]   Unresolved imports ..... "
 cd /app/frontend
 MISSING_PKGS=""
 MISSING_COUNT=0
@@ -1148,7 +1166,7 @@ else
 fi
 
 # ── F2. Source Map Suppression ───────────────────────────────────────
-echo -n "62. [VCL]   Source map suppression .. "
+echo -n "63. [VCL]   Source map suppression .. "
 SM_OK=1
 SM_DETAILS=""
 if ! grep -q "GENERATE_SOURCEMAP=false" /app/frontend/.env 2>/dev/null; then
@@ -1165,7 +1183,7 @@ else
 fi
 
 # ── F3. Capacitor Core/Plugin Version Alignment ─────────────────────
-echo -n "63. [VCL]   Capacitor version sync .. "
+echo -n "64. [VCL]   Capacitor version sync .. "
 cd /app/frontend
 CAP_CORE_VER=$(node -e "try{console.log(require('@capacitor/core/package.json').version.split('.')[0])}catch(e){console.log('0')}" 2>/dev/null)
 CAP_MISMATCHES=0
@@ -1186,7 +1204,7 @@ else
 fi
 
 # ── F4. Engine Compatibility (.yarnrc) ───────────────────────────────
-echo -n "64. [VCL]   Engine ignore flag ..... "
+echo -n "65. [VCL]   Engine ignore flag ..... "
 if grep -q "ignore-engines" /app/frontend/.yarnrc 2>/dev/null; then
   echo -e "$PASS (.yarnrc has --ignore-engines)"
 else
@@ -1196,7 +1214,7 @@ else
 fi
 
 # ── F5. Key Peer Dependencies Satisfied ──────────────────────────────
-echo -n "65. [VCL]   Key peer deps .......... "
+echo -n "66. [VCL]   Key peer deps .......... "
 PEER_ISSUES=0
 PEER_DETAILS=""
 # Check critical peer deps that have caused build failures
