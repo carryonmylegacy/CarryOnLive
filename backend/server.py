@@ -42,6 +42,7 @@ from routes.security import router as security_router
 from routes.share_cards import router as share_cards_router
 from routes.subscriptions import router as subscriptions_router
 from routes.platform_rules import router as platform_rules_router
+from routes.changelog import router as changelog_router
 from routes.support import router as support_router
 from routes.timeline import router as timeline_router
 from routes.transition import router as transition_router
@@ -258,6 +259,7 @@ api_router.include_router(financial_portal_router)
 api_router.include_router(guardian_exports_router)
 api_router.include_router(staff_ops_router)
 api_router.include_router(platform_rules_router)
+api_router.include_router(changelog_router)
 
 
 BUILD_HASH = "2026-04-28T00:00:00Z-pre-launch-refactor"

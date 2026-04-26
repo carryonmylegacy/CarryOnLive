@@ -23,6 +23,12 @@ except Exception:  # pragma: no cover
     encrypt_field = None
     get_estate_salt = None
 
+# Sentry is best-effort — if it isn't configured we still want bills to save.
+try:  # pragma: no cover - optional dependency
+    import sentry_sdk
+except Exception:  # pragma: no cover
+    sentry_sdk = None
+
 
 async def _upsert_dav_for_bill(
     estate_id: str,
@@ -67,8 +73,17 @@ async def _upsert_dav_for_bill(
         try:
             salt = await get_estate_salt(estate_id)
             enc_password = encrypt_field(login_password, salt)
-        except Exception:
-            enc_password = None  # never block the bill save on encryption issues
+        except Exception as enc_err:
+            # Never block the bill save on encryption issues, but make the
+            # silent failure observable so a misconfigured encryption
+            # fence is caught in Sentry instead of producing DAV rows the
+            # owner can never decrypt.
+            enc_password = None
+            if sentry_sdk:
+                try:
+                    sentry_sdk.capture_exception(enc_err)
+                except Exception:
+                    pass
 
     if existing_dav_id:
         existing = await db.digital_wallet.find_one({"id": existing_dav_id}, {"_id": 0})
@@ -98,6 +113,11 @@ async def _upsert_dav_for_bill(
         "assigned_beneficiary_id": None,
         "assigned_beneficiary_name": None,
         "category": "banking",
+        # Top-level origin tag so the frontend can filter the DAV list
+        # by where the row came from. The `auto_created_from` blob stays
+        # for backwards compatibility / per-row breadcrumb context.
+        "source_type": "financial_bill",
+        "source_id": bill_id,
         "auto_created_from": {"source": "cfp_bill", "bill_id": bill_id},
         "created_by": user_id,
         "created_at": datetime.now(timezone.utc).isoformat(),

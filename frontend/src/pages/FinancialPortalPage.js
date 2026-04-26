@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
 import {
   DollarSign, Plus, Loader2, ArrowLeft, Search, Sparkles,
-  ChevronRight, ChevronLeft, Receipt, Landmark, PiggyBank, TrendingUp, Building2
+  ChevronRight, ChevronLeft, Receipt, Landmark, PiggyBank, TrendingUp, Building2, FileDown
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -25,6 +25,7 @@ import BillTile from '../components/financial/BillTile';
 import DebtTile from '../components/financial/DebtTile';
 import AccountTile from '../components/financial/AccountTile';
 import BillCalendar from '../components/financial/BillCalendar';
+import CashflowTimeline from '../components/financial/CashflowTimeline';
 import FinancialSummary from '../components/financial/FinancialSummary';
 import QuickAdd from '../components/financial/QuickAdd';
 
@@ -222,6 +223,34 @@ const FinancialPortalPage = () => {
     fetchAll();
   };
 
+  const handleHandoffExport = async () => {
+    if (!estate?.id) return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      toast.error('Hand-off PDF requires an internet connection.');
+      return;
+    }
+    try {
+      toast.info('Generating hand-off PDF…');
+      const headers = getAuthHeaders()?.headers;
+      const res = await axios.get(`${API_URL}/financial/handoff-package/${estate.id}`, {
+        headers,
+        responseType: 'blob',
+      });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `carryon-handoff-${estate.id.slice(0, 8)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success('Hand-off PDF downloaded.');
+    } catch (err) {
+      toast.error('Failed to generate hand-off PDF.');
+    }
+  };
+
   const handleDelete = async (type, id) => {
     if (!window.confirm('Delete this entry? This cannot be undone.')) return;
     try {
@@ -394,7 +423,7 @@ const FinancialPortalPage = () => {
             </p>
           </div>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex gap-2 w-full sm:w-auto flex-wrap">
           <Button className="gold-button flex-1 sm:flex-initial" onClick={handleAddClick} data-testid="add-item-button">
             <Plus className="w-5 h-5 mr-2" />
             {addButtonLabel}
@@ -403,11 +432,25 @@ const FinancialPortalPage = () => {
             onClick={() => setShowQuickAdd(true)} data-testid="quick-add-button">
             <Sparkles className="w-4 h-4 mr-1.5 text-[var(--gold)]" /> Quick Add
           </Button>
+          {estate?.id && (
+            <Button
+              variant="outline"
+              className="flex-shrink-0 border-[var(--b)] text-[var(--t3)] hover:bg-[var(--s)]"
+              onClick={() => handleHandoffExport()}
+              data-testid="handoff-pdf-btn"
+              title="Download a printable hand-off PDF for your beneficiaries"
+            >
+              <FileDown className="w-4 h-4 mr-1.5 text-[var(--gold)]" /> Hand-off PDF
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Financial Summary Cards */}
       <FinancialSummary summary={summary} onNavigate={(tab) => setActiveTab(tab)} />
+
+      {/* 30-day rolling cashflow timeline — beneficiaries see what's due before next paycheck */}
+      {estate?.id && <CashflowTimeline estateId={estate.id} />}
 
       {/* Sub-Tab Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>

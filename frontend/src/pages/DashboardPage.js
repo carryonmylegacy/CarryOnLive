@@ -30,6 +30,7 @@ import TrialBanner from '../components/TrialBanner';
 import BillingStatusBanner from '../components/BillingStatusBanner';
 import OnboardingWizard from '../components/OnboardingWizard';
 import ShareYourCarryOn from '../components/ShareYourCarryOn';
+import ChangedSinceWidget from '../components/dashboard/ChangedSinceWidget';
 import TileErrorBoundary from '../components/TileErrorBoundary';
 import { API_URL } from '../config';
 import { getOfflineMode } from '../offline/featureFlag';
@@ -665,6 +666,11 @@ const DashboardPage = () => {
       </div>
       {/* Billing Status Banner — Grace Period or Dormant */}
       <BillingStatusBanner onUpdatePayment={() => navigate('/settings')} />
+
+      {/* "What changed since last login" digest — only renders when there ARE changes */}
+      <div className="mb-5">
+        <ChangedSinceWidget />
+      </div>
 
       {/* Header + Estate Selector */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">

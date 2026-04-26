@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Loader2, Plus, Link2, Sparkles } from 'lucide-react';
+import { Loader2, Plus, Link2, Sparkles, Lock } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
@@ -325,8 +325,22 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
         get the credentials in the right place, no manual DAV step.
       */}
       <div className="rounded-xl p-3" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.18)' }}>
-        <div className="text-[11px] font-bold text-[var(--gold)] uppercase tracking-wider mb-2">
-          Beneficiary login (auto-saved to Digital Access Vault)
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-[11px] font-bold text-[var(--gold)] uppercase tracking-wider">
+            Beneficiary login (auto-saved to Digital Access Vault)
+          </div>
+          {(form.dav_login_username || form.dav_login_password || form.biller_website) && (
+            <div
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full"
+              style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.35)' }}
+              data-testid="dav-auto-secured-pill"
+            >
+              <Lock className="w-3 h-3" style={{ color: '#10b981' }} />
+              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#10b981' }}>
+                Auto-secured
+              </span>
+            </div>
+          )}
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">

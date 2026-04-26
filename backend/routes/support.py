@@ -319,6 +319,101 @@ async def get_all_conversations(include_deleted: bool = False, current_user: dic
     return result
 
 
+@router.get("/support/conversations-by-thread")
+async def get_conversations_by_thread(
+    include_deleted: bool = False,
+    current_user: dict = Depends(require_staff),
+):
+    """Admin variant of /support/conversations that groups by
+    (conversation_id, thread_id) so the Customer Support panel can
+    show one row per topic-thread instead of a single flattened row
+    per user. Each row carries the latest message + unread count for
+    that specific thread.
+    """
+    match_stage: dict = {}
+    if not (include_deleted and current_user["role"] == "admin"):
+        match_stage["soft_deleted"] = {"$ne": True}
+
+    pipeline = [
+        {"$match": match_stage},
+        {"$sort": {"created_at": -1}},
+        {
+            "$group": {
+                "_id": {
+                    "conversation_id": "$conversation_id",
+                    "thread_id": {"$ifNull": ["$thread_id", "default"]},
+                },
+                "latest_message": {"$first": "$content"},
+                "latest_time": {"$first": "$created_at"},
+                "sender_name": {"$first": "$sender_name"},
+                "sender_role": {"$first": "$sender_role"},
+                "soft_deleted": {"$first": {"$ifNull": ["$soft_deleted", False]}},
+                "deleted_at": {"$first": "$deleted_at"},
+                "unread_count": {
+                    "$sum": {
+                        "$cond": [
+                            {
+                                "$and": [
+                                    {"$eq": ["$read", False]},
+                                    {"$ne": ["$sender_role", "admin"]},
+                                ]
+                            },
+                            1,
+                            0,
+                        ]
+                    }
+                },
+                "message_count": {"$sum": 1},
+            }
+        },
+        {"$sort": {"latest_time": -1}},
+    ]
+
+    rows = await db.support_messages.aggregate(pipeline).to_list(500)
+
+    # Look up thread titles in bulk to avoid N user lookups.
+    thread_keys = {(r["_id"]["conversation_id"], r["_id"]["thread_id"]) for r in rows}
+    titles = {}
+    if thread_keys:
+        thread_docs = await db.support_threads.find(
+            {"$or": [{"conversation_id": c, "thread_id": t} for c, t in thread_keys]},
+            {"_id": 0, "id": 1, "conversation_id": 1, "thread_id": 1, "title": 1},
+        ).to_list(1000)
+        for d in thread_docs:
+            titles[(d["conversation_id"], d["thread_id"])] = d.get("title", "")
+
+    user_ids = list({r["_id"]["conversation_id"] for r in rows})
+    users = await db.users.find(
+        {"id": {"$in": user_ids}}, {"_id": 0, "id": 1, "name": 1, "email": 1, "role": 1}
+    ).to_list(500)
+    user_by_id = {u["id"]: u for u in users}
+
+    result = []
+    for r in rows:
+        cid = r["_id"]["conversation_id"]
+        tid = r["_id"]["thread_id"]
+        u = user_by_id.get(cid, {})
+        msg = r["latest_message"] or ""
+        result.append(
+            {
+                "conversation_id": cid,
+                "thread_id": tid,
+                "thread_title": titles.get((cid, tid), "" if tid == "default" else "(untitled thread)"),
+                "user_name": u.get("name", "Unknown"),
+                "user_email": u.get("email", ""),
+                "user_role": u.get("role", "benefactor"),
+                "latest_message": msg[:100] + ("..." if len(msg) > 100 else ""),
+                "latest_time": r["latest_time"],
+                "sender_role": r["sender_role"],
+                "unread_count": r["unread_count"],
+                "message_count": r["message_count"],
+                "soft_deleted": r.get("soft_deleted", False),
+                "deleted_at": r.get("deleted_at"),
+            }
+        )
+    return result
+
+
 @router.get("/support/unread-count")
 async def get_unread_support_count(current_user: dict = Depends(get_current_user)):
     """Get count of unread support messages"""
