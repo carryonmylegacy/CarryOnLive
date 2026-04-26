@@ -37,10 +37,8 @@ const PublicDeviceModeMenuButton = ({ flavor = 'sidebar', collapsed = false, onA
   const wrapperRef = useRef(null);
 
   const enabled = !!user?.public_device_mode;
-  // Admin/operator roles can PATCH any estate (per backend rules), so
-  // they see the full list. Regular users only see estates they own.
-  const isStaff = user?.role === 'admin' || user?.role === 'operator';
-  const editableEstates = isStaff ? estates : estates.filter(e => e.owner_id === user?.id);
+  // Regular users only see estates they own.
+  const editableEstates = estates.filter(e => e.owner_id === user?.id);
 
   // Fetch estates once when the component mounts. We need this to know
   // whether to render the dropdown or the direct-toggle path. The list
@@ -135,6 +133,9 @@ const PublicDeviceModeMenuButton = ({ flavor = 'sidebar', collapsed = false, onA
   // Self-gating. Hide for users who have no editable estate (admins
   // who don't own anything, beneficiaries-only roles, etc.).
   if (!user || !token) return null;
+  // Hide entirely for staff/admin/operator portals — this is a
+  // benefactor-facing feature, not a Founder ADMIN tool.
+  if (user.role === 'admin' || user.role === 'operator') return null;
   if (loaded && editableEstates.length === 0) return null;
 
   const multi = editableEstates.length > 1;

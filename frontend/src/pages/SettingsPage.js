@@ -149,12 +149,10 @@ const SettingsPage = () => {
 
       {/* ── Section: Security ── */}
       <SectionHeader title="Security" hint="2FA, passkeys, auto-logout, vault locks." />
-      {/* Public Device Mode — estate-level setting. The card self-gates
-          to users who actually own an estate (returns null otherwise),
-          so we don't add an `isStaff` check here: the founder/admin
-          account that owns the demo estate also needs to be able to
-          flip it on for that estate. */}
-      <PublicDeviceModeCard />
+      {/* Public Device Mode — benefactor-only. Hidden in the Founder
+          ADMIN portal (admin/operator roles) since it's an estate-level
+          setting that doesn't apply to staff accounts. */}
+      {!isStaff && <PublicDeviceModeCard />}
       <Card className="glass-card cursor-pointer hover:border-[var(--gold)]/30 transition-colors" onClick={() => navigate('/security-settings')} data-testid="settings-security-link">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
