@@ -40,16 +40,33 @@ async def check_and_increment(key: str, limit: int, window_seconds: int) -> bool
 
     try:
         await _ensure_index()
-        # Atomic: remove expired timestamps, push new one, read back count.
+        # Atomic: drop expired timestamps, append the new one, set TTL.
+        # We use an aggregation-pipeline update so we can mutate the same
+        # `hits` array twice in one operation — a classic ($pull + $push)
+        # pair would be rejected by the server with `ConflictingUpdateOperators`.
         expires_at = datetime.now(timezone.utc) + timedelta(seconds=window_seconds * 2)
         result = await db.rate_limits.find_one_and_update(
             {"key": key},
-            {
-                "$pull": {"hits": {"$lt": cutoff_ts}},
-                "$push": {"hits": now_ts},
-                "$set": {"expires_at": expires_at},
-                "$setOnInsert": {"key": key},
-            },
+            [
+                {
+                    "$set": {
+                        "key": key,
+                        "expires_at": expires_at,
+                        "hits": {
+                            "$concatArrays": [
+                                {
+                                    "$filter": {
+                                        "input": {"$ifNull": ["$hits", []]},
+                                        "as": "h",
+                                        "cond": {"$gte": ["$$h", cutoff_ts]},
+                                    }
+                                },
+                                [now_ts],
+                            ]
+                        },
+                    }
+                }
+            ],
             upsert=True,
             return_document=True,
         )

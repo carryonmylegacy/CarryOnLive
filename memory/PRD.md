@@ -744,6 +744,47 @@ When DUNS number is obtained and Apple Developer enrollment is complete:
 ## Recent Session Work Summary
 See `CHANGELOG.md` for full chronological history if this file exceeds 700 lines.
 
+## Rate Limiter Fixes (Apr 27, 2026)
+
+User report: clicking **Save & Publish** on the Founder Portal Subscriptions tab
+(`/admin/feature-gates`) returned `429 Too many requests`. Reproduced on the
+preview pod by hammering the endpoint: ~900 rapid GETs → 200 OK, then 429 kicks
+in. The 900/min general bucket was being shared by admin work + War Room polling
++ image fetches + customer-facing /api/* traffic, all coming from the same
+admin token.
+
+### B — Admin path tier carve-out (`backend/middleware.py`)
+- Added a new path tier: any `/api/admin/*` request now lives in its own
+  `rl:admin:<bucket>` bucket with a **3000/min ceiling** instead of competing
+  with the 900/min general bucket. Strict (auth) and moderate (register/check)
+  tiers untouched. `require_admin` still gates the endpoints; the rate limit
+  is just a runaway-loop safety belt.
+
+### D — MongoDB sliding-window rate limiter actually works (`backend/services/rate_limiter.py`)
+- The previous implementation issued `$pull` and `$push` on the same `hits`
+  array in one update — MongoDB rejects that with `ConflictingUpdateOperators`,
+  so every request was silently falling back to per-pod in-memory buckets.
+  Multi-pod state was never shared.
+- Replaced with an aggregation-pipeline update (`[{$set: {hits: {$concatArrays:
+  [{$filter: {…cond: $gte cutoff}}, [now]]}}}]`) which evicts expired
+  timestamps and appends the new one in a single atomic operation. Doc-level
+  TTL via `expires_at` index unchanged.
+
+### Tests
+- `backend/tests/test_rate_limiter_fix.py` — 4 cases (under-limit Mongo
+  persistence, over-limit blocking, sliding-window eviction, middleware tier
+  routing). All passing.
+- Live curl: 1500 rapid GETs against `/api/admin/feature-gates` → 1500/1500
+  return 200 OK (was 900 OK + 600 mixed before). Single PUT round-trip
+  succeeds. Non-admin token traffic on a separate bucket unaffected.
+
+### Pre-existing housekeeping WARN surfaced (NOT auto-fixed per Rule -1)
+- Section 7c reports 4 hardcoded dark backgrounds in
+  `frontend/src/components/estate-chat/ECTMessageInput.js` (lines 188, 192,
+  193 — voice-recording bar). Introduced in the previous fork's monolith
+  refactor, unrelated to rate-limit work. Awaiting user direction before
+  touching the chat UI.
+
 ## Offline-First Architecture (Feb 2026 — in progress)
 
 **Goal**: Instant cold-boot paint + full offline read/write/create so the app is usable on cellular dead zones, flights, and spotty WiFi.

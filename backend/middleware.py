@@ -225,6 +225,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             limit = 120  # Auth endpoints: generous limit, account lockout handles brute force
         elif path in moderate_paths:
             limit = 60  # Moderate: 60/min
+        elif path.startswith("/api/admin/"):
+            # Admin endpoints: 3000/min (50/sec). Founder admin work
+            # piles up bursts (Subscriptions tab + War Room polling +
+            # Voices counts + tab switches) on top of normal customer-
+            # facing traffic. `require_admin` already gates these; the
+            # rate limit is purely belt-and-suspenders against runaway
+            # client loops. Kept on its own bucket so it never competes
+            # with customer-facing /api traffic from the same token.
+            limit = 3000
         elif path.startswith("/api/") and path != "/api/health":
             # General: 900/min (15/sec). Dashboard bursts + background polling +
             # Sentry/analytics + image requests easily reach 10+/sec during
@@ -256,7 +265,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     bucket_id = "u:" + hashlib.sha256(token.encode("utf-8")).hexdigest()[:16]
             # Key includes path-tier so one user hitting many endpoints
             # doesn't count against a stricter endpoint's quota.
-            tier = "strict" if path in strict_paths else "moderate" if path in moderate_paths else "general"
+            if path in strict_paths:
+                tier = "strict"
+            elif path in moderate_paths:
+                tier = "moderate"
+            elif path.startswith("/api/admin/"):
+                tier = "admin"
+            else:
+                tier = "general"
             key = f"rl:{tier}:{bucket_id}"
             try:
                 from services.rate_limiter import check_and_increment
