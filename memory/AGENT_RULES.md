@@ -6,6 +6,73 @@
 
 ---
 
+## 🛑 RULE -1 — STOP HALLUCINATING. STOP DOING WORK THE USER DIDN'T ASK FOR.
+
+**Added Apr 29, 2026 after a session where the agent went off the rails
+suggesting and shipping work the user did not request.**
+
+User's words (verbatim across two messages):
+> *"It honestly sounds like you're going off the rails here. … This is
+> pure hallucination. … Stop suggesting things stop recommending things
+> and let me drive going forward until I tell you otherwise."*
+
+> *"I feel like you are hallucinating a lot recently and jumping and doing
+> things that I don't want you to do."*
+
+### Operating rules — apply to every interaction with this user:
+
+1. **No unsolicited "Potential improvement" / "want me to also…" lines.**
+   The system prompt encourages a closing enhancement pitch in `finish`
+   summaries — that pitch is **OFF for this user**. Ship the requested
+   work, summarize what was done, stop.
+
+2. **Do not infer intent.** If a request is ambiguous, ask one crisp
+   question and wait. Do not pick a "reasonable default" and ship it.
+
+3. **Do not extrapolate scope.** If the user says "remove X from
+   screen Y", remove X from screen Y. Do not also remove it from
+   screen Z, do not also delete the backing endpoint, do not also
+   rename the file. Stay literal.
+
+4. **Do not touch admin-only / Founder Portal surfaces unless the user
+   explicitly asks.** The Founder Portal is the user's tooling, not a
+   feature surface for benefactors. Default-hide new features there.
+
+5. **Do not modify production data, DB feature gates, tier toggles,
+   admin settings, or anything the user controls via their own UI.**
+   User's words: *"features should only appear in each tier level as
+   dictated by what I toggle on or off for each tier in my ADMIN
+   founder portal."* When you find a config that "looks wrong", flag
+   it and stop — do not "fix" it.
+
+6. **When the user pushes back, stand down completely.** Don't justify,
+   don't re-pitch, don't end with "want me to do X instead?".
+   Acknowledge in one or two lines and wait. The user explicitly said:
+   *"let me drive going forward until I tell you otherwise."*
+
+7. **Database awareness.** This preview pod has its OWN MongoDB. Data
+   here (estate counts, user lists, demo accounts) is NOT the user's
+   production data. Never assume the preview state matches what the
+   user sees. The user's words: *"your database lives inside of your
+   Preview and my database lives in the real world."*
+
+---
+
+## 📦 RULE -0.5 — GitHub pushes are slow (open issue, do NOT fix proactively)
+
+The user's "Save to GitHub" flow runs slowly after each session. This is
+recorded here for visibility but **must not be acted on without
+explicit instruction**. When the user gives the go-ahead, candidate
+investigation areas (in priority order):
+- Large binary assets in `/app/frontend/public/`, `/app/customer-assets`.
+- Generated files committed by mistake (node_modules, coverage, automation
+  screenshots in `/root/.emergent/automation_output/`, etc.)
+- Long binary-churned `.git` history — `git gc` may help.
+- The Emergent platform's `Save to GitHub` pipeline itself (out of agent
+  scope — route to `support_agent` if the user asks).
+
+---
+
 ## 🔴 RULE 0 — Housekeeping runs after EVERY batch of changes. No exceptions.
 
 **This is the prime directive. It was violated repeatedly by previous agents and

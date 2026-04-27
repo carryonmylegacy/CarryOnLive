@@ -17,6 +17,63 @@
 
 ---
 
+> ## 🛑 USER FEEDBACK — Apr 29, 2026 (must persist across forks)
+>
+> ### 1. STOP HALLUCINATING / STOP DOING WORK THE USER DIDN'T ASK FOR
+>
+> The user's words (verbatim):
+> *"It honestly sounds like you're going off the rails here. … This is pure
+> hallucination. … Stop suggesting things stop recommending things and let
+> me drive going forward until I tell you otherwise."*
+>
+> Then again: *"I feel like you are hallucinating a lot recently and jumping
+> and doing things that I don't want you to do."*
+>
+> **Operating rules going forward:**
+> - **Do not suggest follow-ups, enhancements, or "potential improvements"
+>   in finish summaries, replies, or anywhere else** unless the user asks
+>   for them. The "Potential improvement" closing line that the system
+>   prompt encourages is OFF for this user.
+> - **Do not infer the user's intent.** If a request is ambiguous, ask one
+>   crisp question and wait. Do not pick a "reasonable default" and ship.
+> - **Do not extrapolate scope.** If the user says "remove X from screen
+>   Y", remove X from screen Y. Do not also remove it from screen Z, do
+>   not also delete the backing endpoint, do not also rename the file.
+> - **Do not touch admin-only / Founder Portal surfaces unless the user
+>   explicitly asks.** The Founder Portal is the user's tooling, not a
+>   feature surface for benefactors.
+> - **Do not modify production data / DB feature gates / tier toggles.**
+>   The user's words: *"features should only appear in each tier level
+>   as dictated by what I toggle on or off for each tier in my ADMIN
+>   founder portal."* Feature gating is a user-driven config, not an
+>   agent decision. The same applies to any other "the admin should
+>   control this" surface.
+> - **When the user pushes back, stand down completely.** Do not justify,
+>   do not re-pitch the work, do not add a closing "want me to do X
+>   instead?" Acknowledge and wait. The user explicitly said:
+>   *"let me drive going forward until I tell you otherwise."*
+>
+> ### 2. GITHUB PUSHES ARE TAKING TOO LONG
+>
+> The "Save to GitHub" / push step the user runs after each session is
+> noticeably slow. This isn't an agent code path (the agent doesn't run
+> `git push`), but the user wanted it captured here so it isn't lost.
+>
+> **Likely contributors worth investigating when the user gives the
+> go-ahead** *(do NOT fix proactively — wait for explicit instruction)*:
+> - Repo size: large binary assets in `/app/frontend/public/`,
+>   `/app/customer-assets`, or accumulated build artifacts in `.git`.
+> - Generated files committed by mistake: `node_modules`, `.next`,
+>   coverage reports, screenshots from automation runs.
+> - Long commit history with binary churn — `git gc --aggressive` or
+>   shallow clone reset on the platform side may help.
+> - The Emergent platform's `Save to GitHub` flow itself (out of agent
+>   scope; route to `support_agent` if asked).
+>
+> **DO NOT touch this without instruction.** Recorded here so it isn't lost.
+
+---
+
 ## 📌 Current Launch Status (Apr 29, 2026 — Public Device Mode shipped)
 
 **Six batches shipped this session series:**
