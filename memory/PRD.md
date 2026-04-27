@@ -744,6 +744,28 @@ When DUNS number is obtained and Apple Developer enrollment is complete:
 ## Recent Session Work Summary
 See `CHANGELOG.md` for full chronological history if this file exceeds 700 lines.
 
+## CFP Missing From Mobile Hamburger Menu (Apr 27, 2026)
+
+**User report**: After toggling CFP ON for the Premium tier in the Founder Portal Subscriptions tab, CFP shows on the dashboard correctly, but the **mobile hamburger menu** does NOT list it. Desktop sidebar was unaffected.
+
+**Root cause** (two missing pieces):
+1. `frontend/src/components/layout/MobileNav.js` — the source nav lists for the mobile hamburger (`myLegacyItems` for benefactors, `beneficiaryLegacyItems` for beneficiaries) **never included the CFP entry at all**. The desktop `Sidebar.js` had `{ to: '/financial', label: 'CarryOn Financial Picture (CFP)' }` (line 419) but the mobile lists were missed when CFP was added platform-wide.
+2. `frontend/src/utils/featureGates.js` — the `ROUTE_TO_FEATURE` map was missing `/financial` → `cfp` and `/beneficiary/financial` → `cfp`. Without these, even after the menu entry was added, `filterNavByFeatures` would treat `/financial` as a "routes without a feature key" item (always enabled), which means the admin's toggle could never gate it on or off.
+
+**Fix shipped** (both pieces required for the toggle to actually control mobile menu visibility):
+- Added CFP entry to `myLegacyItems` in `MobileNav.js` (between EGA and FFN, matching desktop sidebar order).
+- Added CFP entry to `beneficiaryLegacyItems` in `MobileNav.js` (after CCP).
+- Added `'/financial': 'cfp'` and `'/beneficiary/financial': 'cfp'` to the `ROUTE_TO_FEATURE` map.
+
+**Behavior after fix**:
+- CFP=premium=ON → CFP appears in mobile hamburger for premium-tier benefactor users.
+- CFP=premium=OFF → CFP hides from mobile hamburger.
+- Same toggle behavior on desktop sidebar (which already had the entry; the gate-map fix now correctly gates desktop too — previously desktop also always rendered CFP regardless of toggle, masked because nobody noticed since the dashboard tile shows it via a separate `isFeatureKeyEnabled('cfp')` gate).
+
+**Verified**:
+- Lint clean on both files.
+- Backend gate flow already verified end-to-end on preview pod — `/api/subscriptions/enabled-features` correctly returns `['…, 'cfp']` for premium users when toggled ON, and excludes it when OFF.
+
 ## Rate Limiter Fixes (Apr 27, 2026)
 
 User report: clicking **Save & Publish** on the Founder Portal Subscriptions tab

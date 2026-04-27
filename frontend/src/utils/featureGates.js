@@ -19,8 +19,10 @@ const ROUTE_TO_FEATURE = {
   '/timeline': 'timeline',
   '/estate-chat': 'ect',
   '/connected-protocol': 'ccp',
+  '/financial': 'cfp',
   '/beneficiary/estate-chat': 'ect',
   '/beneficiary/connected-protocol': 'ccp',
+  '/beneficiary/financial': 'cfp',
 };
 
 /**
