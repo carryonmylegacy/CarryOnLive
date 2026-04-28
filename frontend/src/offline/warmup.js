@@ -273,7 +273,18 @@ async function runTasksWithProgress(tasks) {
     while (cursor < tasks.length) {
       const t = tasks[cursor++];
       try { await t.run(); } catch (err) {
-        console.warn(`[offline] task ${t.label} failed:`, err);
+        // Warmup is best-effort — a 4xx from a single task just means
+        // the current user can't see that resource (e.g. a stale
+        // estate id, a feature gated off for their tier). Log loudly
+        // only for 5xx and network errors; quiet for expected denials
+        // so we don't flood the console with the same 403 every time
+        // the user navigates and AuthContext re-warms.
+        const status = err?.response?.status;
+        if (status && status >= 400 && status < 500) {
+          // Expected: insufficient access / not-found / gated.
+        } else {
+          console.warn(`[offline] task ${t.label} failed:`, err);
+        }
       }
       done += 1;
       emit('carryon:sync:progress', { done, total, label: t.label });

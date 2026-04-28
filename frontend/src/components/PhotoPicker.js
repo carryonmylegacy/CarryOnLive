@@ -205,6 +205,7 @@ export function PhotoPicker({ onPhotoSelected, currentPhoto, onRemove }) {
       {/* Camera Dialog */}
       <Dialog open={showCamera} onOpenChange={(open) => { if (!open) cancelCamera(); }}>
         <DialogContent className="sm:max-w-md bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] p-0 overflow-hidden">
+          <DialogTitle className="sr-only">Take photo</DialogTitle>
           <div className="relative">
             <video
               ref={videoRef}

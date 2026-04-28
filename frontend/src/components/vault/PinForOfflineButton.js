@@ -100,6 +100,8 @@ const PinForOfflineButton = ({ doc, getAuthHeaders }) => {
             'Pin for offline access'
       }
       aria-label={isPinned ? 'Unpin from offline' : 'Pin for offline'}
+      aria-pressed={isPinned}
+      data-pinned={isPinned ? 'true' : 'false'}
       data-testid={`pin-offline-${doc.id}`}
     >
       {pinning ? (

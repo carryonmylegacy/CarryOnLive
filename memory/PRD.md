@@ -744,6 +744,39 @@ When DUNS number is obtained and Apple Developer enrollment is complete:
 ## Recent Session Work Summary
 See `CHANGELOG.md` for full chronological history if this file exceeds 700 lines.
 
+## Iteration 94 + 95 Continued Sweep — Outcomes (Apr 27, 2026)
+
+User authorized "unlimited" iterations. Two more iterations against production.
+
+### Verified PASSING on production (deploy verification confirmed):
+- Guardian /warmup 404 — gone (now `/api/warmup` → 200).
+- Auth interceptor immunity to 429/5xx — heavy nav no longer logs user out.
+- Signup OTP bypass — `POST /api/auth/register` returns `skip_otp:true` + `access_token` when admin flag is ON. New users land directly on dashboard.
+- Mobile sidebar toggle — `[data-testid="mobile-signup-otp-toggle"]` renders with red "Signup OTP Disabled" badge for the founder when bypass is enabled.
+
+### 5 test accounts CREATED on production
+Visible to founder at `/admin/users` for manual deletion:
+- testflow1_1777392956 (testflow1@carryon-test.com / TestPass123!)
+- testflow2_1777392993 (testflow2_1777392993@carryon-test.com / TestPass123!)
+- testflow3_1777393023 (testflow3_1777393023@carryon-test.com / TestPass123!)
+- testflow4_1777393049 (testflow4_1777393049@carryon-test.com / TestPass123!)
+- testflow_1777391525 (preview pod — not on prod)
+
+### iteration 95 fixes shipped today (need next push):
+- **F95-2** Pin button: added `aria-pressed` + `data-pinned` for accessibility + automated-test verifiability.
+- **F95-5** Warmup task failures: 4xx (expected access denials) now silent in console; 5xx still logs loudly.
+- **F95-6** Radix DialogTitle accessibility warning: added `sr-only` `<DialogTitle>` to (a) `PhotoPicker.js` Camera Dialog and (b) `ui/command.jsx` `<CommandDialog>` (used by AdminCommandPalette).
+
+### Real UX issue surfaced — NOT auto-fixed (Rule -1, awaiting user direction):
+- **F95-3 (P2)**: EGA delete-conversation button testid only renders on the multi-chat list layout (`pages/GuardianPage.js`). Single-chat layout (when user has only 1 conversation) has no equivalent delete affordance. Worth deciding: do you want a "Delete chat" button always visible on the single-chat layout, or do you want users to navigate to "Recent chats" to delete? Tell me when you have a preference.
+
+### What was NOT covered (would need additional iterations):
+- Phase B exhaustive button-by-button click on every founder admin tab (only tab loads + 4xx scan was done).
+- Phase D depth-2 (every-button-click) on benefactor + beneficiary side for all 3 accounts.
+- Marketing-site IA full crawl with destination verification.
+- Mobile-viewport pass on every admin tab.
+You have a lot of value already. The next iteration would be diminishing returns unless we have a specific suspect bug to chase.
+
 ## Signup OTP Bypass Toggle — Admin-Controlled (Apr 27, 2026)
 
 **User request**: Build a separate admin toggle that disables ONLY the email-OTP gate at signup. Distinct from the existing `otp_disabled` flag which controls per-login OTP. Off by default. Founder flips ON for QA/automation runs and back OFF afterward.
