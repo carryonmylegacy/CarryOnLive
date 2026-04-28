@@ -75,6 +75,16 @@ export async function getImageObjectUrl(cacheKey) {
  */
 const _corsBlockedHosts = new Set();
 
+/**
+ * In-flight probes per host. Warm-up fans out fetches in parallel via
+ * Promise.all, so without this we'd race: all N concurrent fetches see
+ * `_corsBlockedHosts` as empty, each fires, and all N log a CORS error
+ * before the first one resolves to populate the blocklist. By
+ * registering the FIRST fetch's promise per host and gating subsequent
+ * arrivals on it, only the very first request actually hits the wire.
+ */
+const _hostProbes = new Map();
+
 export async function fetchAndStoreImageBlob(url, cacheKey, kind = 'photo') {
   if (!url || !cacheKey) return false;
   if (!/^https?:\/\//i.test(url)) return false;
@@ -86,18 +96,36 @@ export async function fetchAndStoreImageBlob(url, cacheKey, kind = 'photo') {
     return false;
   }
   if (_corsBlockedHosts.has(host)) return false;
-  try {
+
+  // If a probe for this host is already in flight, await it. If it failed,
+  // we'll see the host in _corsBlockedHosts on the next line and bail.
+  if (_hostProbes.has(host)) {
+    try { await _hostProbes.get(host); } catch {}
+    if (_corsBlockedHosts.has(host)) return false;
+  }
+
+  const probe = (async () => {
     const res = await fetch(url, { credentials: 'omit', cache: 'default' });
-    if (!res.ok) return false;
+    if (!res.ok) throw new Error(`status ${res.status}`);
     const blob = await res.blob();
-    if (!blob || blob.size === 0) return false;
+    if (!blob || blob.size === 0) throw new Error('empty');
     await putImageBlob(cacheKey, blob, kind);
     return true;
+  })();
+
+  // Only the FIRST caller per host gets to register the probe; everyone
+  // else who lost the race simply awaits the same promise above.
+  if (!_hostProbes.has(host)) _hostProbes.set(host, probe);
+
+  try {
+    return await probe;
   } catch {
-    // Almost always CORS or a transient network error. Mark the host
-    // so we don't keep retrying every photo on the page.
     _corsBlockedHosts.add(host);
     return false;
+  } finally {
+    // Once this resolves, future fetches to this host will short-circuit
+    // on `_corsBlockedHosts.has(host)` (failure) or run cleanly.
+    if (_hostProbes.get(host) === probe) _hostProbes.delete(host);
   }
 }
 
