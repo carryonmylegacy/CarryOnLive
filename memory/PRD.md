@@ -744,6 +744,32 @@ When DUNS number is obtained and Apple Developer enrollment is complete:
 ## Recent Session Work Summary
 See `CHANGELOG.md` for full chronological history if this file exceeds 700 lines.
 
+## Pre-Launch Production Sweep — Findings & Fixes (Apr 27, 2026)
+
+User requested an exhaustive button-by-button sweep of production before launch. Testing agent ran iteration 91 against `https://app.carryon.us` (frontend) → `https://carryon-api-production.up.railway.app` (backend). 8 findings. Disposition:
+
+### Fixed (code change shipped)
+
+| ID | Issue | File | Fix |
+|----|-------|------|-----|
+| F4 | `/guardian` fires `POST /api/guardian/warmup` on mount → 404 | `pages/GuardianPage.js` | Frontend now calls `/api/warmup` (the actual backend route). Eliminates 404 on every Guardian open. |
+| F6 | Auth interceptor logs user out on **any** error from `/api/auth/me`, including 429 (rate limit) and 5xx | `contexts/AuthContext.js` | Only treat 401/403 as a genuine sign-out. For 429 and 5xx, hydrate from JWT and keep the user in the shell — focus/5-min refresh will retry. Stops phantom logouts during traffic bursts. |
+| F3/F7 | S3 presigned-URL fetches for offline-photo warmup spam the console with `net::ERR_FAILED` (CORS) — ~134 errors per page load on /timeline et al. | `offline/imageBlobsRepo.js` | Added a per-host circuit breaker: once a host returns a CORS/network error, skip every subsequent fetch to it for the rest of the session. Photos still render fine via `<img src>` (not CORS-bound); only the offline-blob warmup is gated. **True fix is infra**: configure CORS on `carryon-vault.s3.amazonaws.com`. |
+
+### Reclassified — not a code bug
+
+| ID | Reported as | Actual reality |
+|----|-------------|----------------|
+| F1 | "Founder Portal unreachable on production" | `info@carryon.us` on **production** is a benefactor user named Pete (`role=benefactor`, `admin_scope=[]`), NOT the founder admin. Different user_id from preview. Reproduced via `/api/auth/me`. The redirect to `/dashboard` on `/admin/*` is **correct behavior** for a non-admin user. **Need real production founder admin credentials** to retest the actual admin surfaces. |
+| F2 | "/timeline fans out 17 unrelated API calls" | The 17 calls are the standard app-shell polling (AuthContext, sidebar, dashboard tiles) that fires on every page mount. Not timeline-specific. **Mitigated** by today's earlier rate-limiter fix (general bucket 900/min, admin bucket 3000/min, Mongo path repaired) once pushed to prod. |
+| F5 | "/trustee silently redirects to /dashboard" | Correctly feature-gated by `dts`. The benefactor account used by the testing agent has `dts: false` for its tier, so App.js `if (!isFeatureEnabled(currentPath, enabledFeatures)) navigate('/dashboard')` fires as designed. |
+
+### Could not be tested (blocked on credentials)
+
+| ID | Blocker |
+|----|---------|
+| F8 | No beneficiary test account discoverable on production; `/admin/dev-switcher` requires admin role which we don't have on prod with this email. Need either a beneficiary email or production founder admin creds. |
+
 ## Vault Pin-For-Offline Button Stuck On (Apr 27, 2026)
 
 **User report**: In the Secure Document Vault (SDV), tapping the pin icon on a document turns it gold (pinned) as expected, but tapping it again to unpin leaves the button stuck gold. The unpin visually never happens.

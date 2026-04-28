@@ -153,8 +153,31 @@ export const AuthProvider = ({ children }) => {
               return; // skip the rest of the online-only warmup
             }
 
-            // Online but server returned an error (401 etc.) OR expired JWT —
-            // treat as genuinely signed out.
+            // Online but server returned an error.
+            // Only treat as a genuine sign-out for 401/403 (expired/invalid
+            // token, signed in elsewhere). For 429 (rate limit) and 5xx
+            // (server hiccup), keep the user logged in — they didn't lose
+            // their session, they just got a transient hand-off. The
+            // dashboard will retry on next focus / 5-min poll.
+            const errStatus = meRes.reason?.response?.status;
+            if (errStatus === 429 || (errStatus >= 500 && errStatus < 600)) {
+              // Hydrate from JWT only so the shell can render. Real /me
+              // will be retried by the existing focus/interval refresh
+              // logic later in this file.
+              if (jwtPayload && notExpired) {
+                setUser({
+                  id: jwtPayload.user_id || jwtPayload.sub,
+                  email: jwtPayload.email,
+                  role: jwtPayload.role || 'benefactor',
+                  _transientAuthError: errStatus,
+                });
+                setLoading(false);
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new Event('carryon:app-ready'));
+                }
+                return;
+              }
+            }
             throw meRes.reason;
           }
           const userData = meRes.value.data;

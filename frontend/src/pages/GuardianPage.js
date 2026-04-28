@@ -164,7 +164,7 @@ const GuardianPage = () => {
     fetchSessions();
     fetchEstate();
     // Warm up xAI connection in background (prevents timeout on first EGA use)
-    axios.post(`${API_URL}/guardian/warmup`, {}, getAuthHeaders()).catch(() => {});
+    axios.post(`${API_URL}/warmup`, {}, getAuthHeaders()).catch(() => {});
     // Check if user has address on file
     axios.get(`${API_URL}/auth/profile`, getAuthHeaders())
       .then(res => {

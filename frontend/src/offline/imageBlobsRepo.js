@@ -63,10 +63,29 @@ export async function getImageObjectUrl(cacheKey) {
  * if a future asset host doesn't allow CORS, this will silently no-op
  * and the SW's URL-cache fallback continues to work as before.
  */
+/**
+ * Hosts that have already returned a CORS / network failure during this
+ * session. Once a host fails, we skip subsequent fetches to it to avoid
+ * spamming the browser console with red `net::ERR_FAILED` entries that
+ * the user cannot suppress with try/catch.
+ *
+ * The page still renders these images correctly via `<img src>` (which
+ * is not subject to CORS); we just can't pre-fetch them into IndexedDB
+ * for true offline use until the bucket's CORS policy is configured.
+ */
+const _corsBlockedHosts = new Set();
+
 export async function fetchAndStoreImageBlob(url, cacheKey, kind = 'photo') {
   if (!url || !cacheKey) return false;
   if (!/^https?:\/\//i.test(url)) return false;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return false;
+  let host;
+  try {
+    host = new URL(url).host;
+  } catch {
+    return false;
+  }
+  if (_corsBlockedHosts.has(host)) return false;
   try {
     const res = await fetch(url, { credentials: 'omit', cache: 'default' });
     if (!res.ok) return false;
@@ -75,6 +94,9 @@ export async function fetchAndStoreImageBlob(url, cacheKey, kind = 'photo') {
     await putImageBlob(cacheKey, blob, kind);
     return true;
   } catch {
+    // Almost always CORS or a transient network error. Mark the host
+    // so we don't keep retrying every photo on the page.
+    _corsBlockedHosts.add(host);
     return false;
   }
 }
