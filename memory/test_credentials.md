@@ -1,11 +1,42 @@
 # CarryOn Test Credentials
 
-## Admin/Founder Account
+## 🟢 PRODUCTION ACCOUNTS (Apr 27, 2026 — provided by user for launch sweep)
+
+### Production Founder/Admin (the real one)
+- URL: `https://app.carryon.us`
+- Login: `founder@carryon.us`
+- Password: `CarryOntheWisdom!`
+- Role: admin / founder (full admin scope)
+- **PRIMARY admin used for all admin-portal sweeps on production.**
+
+### Production Benefactor — Barnet (real test benefactor)
+- URL: `https://app.carryon.us`
+- Login (username): `barnetharris`
+- Password: `Blh9170873`
+- Role: **beneficiary** (verified via `/api/auth/login`. Email: `barnetharris@mac.com`. `id=1adc6380-...`)
+- Primary surface: beneficiary portal (`/beneficiary/*`)
+
+### Production Benefactor — Megumi
+- URL: `https://app.carryon.us`
+- Login (email): `megumiharris@gmail.com`
+- Password: `Question2711`
+- Role: benefactor (also has beneficiary side per user's instruction — must test both)
+
+### Note on `info@carryon.us` on production
+- On production, this email is bound to a benefactor named "Pete" (`role=benefactor`, `id=6425f12a-...`), NOT to the founder admin. Do NOT use it for admin testing on prod. (On the **preview pod** it IS the admin — see section below.)
+
+---
+
+## 🟡 PREVIEW POD ACCOUNTS (preview-only, not production)
+
+### Preview Admin/Founder
+- URL: `https://react-refactor-24.preview.emergentagent.com`
 - Email: info@carryon.us
 - Password: Demo1234!
 - Username: admin_5dfa64
-- Role: admin (founder) — `isStaff=true` in the frontend. Hides non-staff-only UI (MenuOrderCustomizer, ChatAutoscrollCard, etc.) and the Founder Portal sidebar does not surface the ECT.
-- Note: Login works with either email or username.
+- Role: admin (founder) — `isStaff=true` in the frontend.
+
+---
 
 ## Gap: No non-staff benefactor test account seeded
 - `dev_switcher_active_role=benefactor` in localStorage does NOT flip `isStaff` to false (driven by user.role on the backend).
