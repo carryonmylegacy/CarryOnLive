@@ -26,16 +26,29 @@ import {
  */
 const PinForOfflineButton = ({ doc, getAuthHeaders }) => {
   const [pinning, setPinning] = useState(false);
-  const [localPinned, setLocalPinned] = useState(false);
+  // `isPinned` is the single source of truth for what the button shows.
+  // It's seeded from BOTH the server flag (doc.pinned_offline) and the
+  // local Dexie blob on mount, then driven by the user's toggle actions.
+  // Previously the render used `doc.pinned_offline || localPinned`, which
+  // stayed truthy after an unpin because the parent never refetched the
+  // doc prop — so the button appeared stuck gold on tap-to-unpin.
+  const [isPinned, setIsPinned] = useState(!!doc.pinned_offline);
 
   useEffect(() => {
     let alive = true;
-    isPinnedLocally(doc.id).then((p) => alive && setLocalPinned(p)).catch(() => {});
-    return () => { alive = false; };
-  }, [doc.id]);
+    // Merge the server flag (from the prop we were rendered with) with
+    // whatever Dexie actually has locally. Either being true means the
+    // user intended this doc to be pinned.
+    isPinnedLocally(doc.id)
+      .then((p) => {
+        if (alive) setIsPinned(!!doc.pinned_offline || p);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [doc.id, doc.pinned_offline]);
 
-  const isPinnedServer = !!doc.pinned_offline;
-  const isPinned = isPinnedServer || localPinned;
   const disabled = !!doc.is_locked;
 
   const handleToggle = async (e) => {
@@ -50,7 +63,7 @@ const PinForOfflineButton = ({ doc, getAuthHeaders }) => {
         // Unpin: server flag first (cheap), then evict local blob.
         await axios.put(`${API_URL}/documents/${doc.id}/pin-offline?pinned=false`, null, getAuthHeaders());
         await unpinDocument(doc.id);
-        setLocalPinned(false);
+        setIsPinned(false);
         toast.success('Removed from offline pins');
       } else {
         // Pin: server flag first so the user's intent survives even if
@@ -58,10 +71,11 @@ const PinForOfflineButton = ({ doc, getAuthHeaders }) => {
         await axios.put(`${API_URL}/documents/${doc.id}/pin-offline?pinned=true`, null, getAuthHeaders());
         try {
           const bytes = await pinDocument(doc, getAuthHeaders()?.headers);
-          setLocalPinned(true);
+          setIsPinned(true);
           toast.success(`Pinned for offline (${(bytes / 1024).toFixed(0)} KB)`);
         } catch (blobErr) {
           // Server flag is set; blob will be primed by warmup later.
+          setIsPinned(true);
           toast.info('Marked for offline. Will download on next sync.');
         }
       }

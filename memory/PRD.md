@@ -744,6 +744,18 @@ When DUNS number is obtained and Apple Developer enrollment is complete:
 ## Recent Session Work Summary
 See `CHANGELOG.md` for full chronological history if this file exceeds 700 lines.
 
+## Vault Pin-For-Offline Button Stuck On (Apr 27, 2026)
+
+**User report**: In the Secure Document Vault (SDV), tapping the pin icon on a document turns it gold (pinned) as expected, but tapping it again to unpin leaves the button stuck gold. The unpin visually never happens.
+
+**Root cause** (`frontend/src/components/vault/PinForOfflineButton.js`): The component was computing `isPinned = !!doc.pinned_offline || localPinned` — an OR of a stale prop and local state. The parent `VaultPage` never refetches the doc list after a pin/unpin PUT, so `doc.pinned_offline` stays whatever it was when the page was initially loaded. For any document that was already pinned on page load, the unpin PUT + `setLocalPinned(false)` had no effect because the stale `true` prop kept the OR evaluating to true.
+
+**Backend** was already correct (flips `pinned_offline` to False in DB and returns updated value), confirmed in `backend/routes/documents.py:1166-1218`.
+
+**Fix shipped**: Collapsed the two-source render into a single `isPinned` state, seeded on mount from BOTH `doc.pinned_offline` AND the local Dexie check (either truthy → pinned), then driven solely by user actions. Tap-to-pin sets it true, tap-to-unpin sets it false, regardless of whether the parent has refetched.
+
+**Verified**: Lint clean. Component logic traced through all 4 scenarios (pin fresh, unpin fresh, pin + reopen tab, unpin + reopen tab) — all produce the correct visual state.
+
 ## CFP Missing From Mobile Hamburger Menu (Apr 27, 2026)
 
 **User report**: After toggling CFP ON for the Premium tier in the Founder Portal Subscriptions tab, CFP shows on the dashboard correctly, but the **mobile hamburger menu** does NOT list it. Desktop sidebar was unaffected.
