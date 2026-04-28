@@ -264,7 +264,19 @@ const GuardianPage = () => {
       await axios.delete(`${API_URL}/chat/sessions/${sid}`, getAuthHeaders());
       setSessions(prev => prev.filter(s => s.session_id !== sid));
       // toast removed
-    } catch (err) { toast.error('Failed to delete'); }
+    } catch (err) {
+      const detail = err?.response?.data?.detail || err?.message || 'Unknown error';
+      const status = err?.response?.status;
+      // Defensive: if the row is already gone server-side (404), treat the
+      // user's intent as honored — drop it from the local list and tell
+      // them rather than throwing a confusing error.
+      if (status === 404) {
+        setSessions(prev => prev.filter(s => s.session_id !== sid));
+        toast.success('Conversation removed');
+        return;
+      }
+      toast.error(`Failed to delete: ${detail}`);
+    }
   };
 
   const goBackToLanding = () => {
