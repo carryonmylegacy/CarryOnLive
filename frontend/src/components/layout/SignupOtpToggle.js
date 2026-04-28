@@ -70,10 +70,20 @@ const SignupOtpToggle = () => {
     <button
       onClick={toggle}
       disabled={busy || !loaded}
-      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all disabled:opacity-60"
+      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl disabled:opacity-60"
       style={{
         background: signupOtpDisabled ? 'rgba(239,68,68,0.08)' : 'var(--b)',
         border: `1px solid ${signupOtpDisabled ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)'}`,
+        // iOS Safari sub-pixel RGB-fringe fix: transition only background +
+        // border-color (not text color or `all`). Switching color across the
+        // green→red palette via `transition-all` makes the font letters
+        // briefly chromatically separate during the tween. Bigsur+/iOS17 +
+        // -webkit-font-smoothing rendering paths show RGB sub-pixel
+        // misalignment when the parent's color is mid-tween.
+        transition: 'background-color 160ms ease, border-color 160ms ease',
+        // Snap text color and icon color instantly so the eye doesn't see a
+        // chromatic-fringe artifact along the edges of the glyphs.
+        WebkitTransitionProperty: 'background-color, border-color',
       }}
       data-testid="mobile-signup-otp-toggle"
     >
