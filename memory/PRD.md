@@ -768,7 +768,7 @@ Visible to founder at `/admin/users` for manual deletion:
 - **F95-6** Radix DialogTitle accessibility warning: added `sr-only` `<DialogTitle>` to (a) `PhotoPicker.js` Camera Dialog and (b) `ui/command.jsx` `<CommandDialog>` (used by AdminCommandPalette).
 
 ### Real UX issue surfaced — NOT auto-fixed (Rule -1, awaiting user direction):
-- **F95-3 (P2)**: EGA delete-conversation button testid only renders on the multi-chat list layout (`pages/GuardianPage.js`). Single-chat layout (when user has only 1 conversation) has no equivalent delete affordance. Worth deciding: do you want a "Delete chat" button always visible on the single-chat layout, or do you want users to navigate to "Recent chats" to delete? Tell me when you have a preference.
+- **F95-3 (P2)**: ✅ FIXED Apr 27, 2026 — added "Delete this conversation" button to the EGA chat header (right of the IAC export button), red Trash2 icon, disabled when no active sessionId, confirms before delete, on success resets the chat view to landing state and removes the row from the sessions list. New `deleteCurrentSession()` handler in `pages/GuardianPage.js` parallels the existing list-row `deleteSession()` but additionally clears in-page state (sessionId, messages, view, localStorage `ega_active_session`). Testid: `delete-current-chat-btn`.
 
 ### What was NOT covered (would need additional iterations):
 - Phase B exhaustive button-by-button click on every founder admin tab (only tab loads + 4xx scan was done).

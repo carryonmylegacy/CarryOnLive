@@ -279,6 +279,33 @@ const GuardianPage = () => {
     }
   };
 
+  // Delete the conversation the user is currently viewing AND reset the
+  // chat surface to a fresh "start a new chat" state. Surfaced as a
+  // header button on the chat layout (Apr 27, 2026) so users with a
+  // single conversation have an obvious way to clear it without having
+  // to detour through the Recent-chats list.
+  const deleteCurrentSession = async () => {
+    if (!sessionId) return;
+    if (!window.confirm('Delete this conversation? This cannot be undone.')) return;
+    try {
+      await axios.delete(`${API_URL}/chat/sessions/${sessionId}`, getAuthHeaders());
+    } catch (err) {
+      const status = err?.response?.status;
+      if (status !== 404) {
+        const detail = err?.response?.data?.detail || err?.message || 'Unknown error';
+        toast.error(`Failed to delete: ${detail}`);
+        return;
+      }
+      // 404 = already gone server-side; fall through to local cleanup.
+    }
+    setSessions(prev => prev.filter(s => s.session_id !== sessionId));
+    setSessionId(null);
+    setMessages([]);
+    setView('landing');
+    try { localStorage.removeItem('ega_active_session'); } catch {}
+    toast.success('Conversation deleted');
+  };
+
   const goBackToLanding = () => {
     setView('landing');
     setSessionId(null);
@@ -758,6 +785,13 @@ const GuardianPage = () => {
             style={{ color: '#22C993' }}
             data-testid="export-checklist-pdf-btn">
             {checklistExporting ? <PieProgress size={18} color="#22C993" duration={4} /> : <ListChecks className="w-4.5 h-4.5" />}
+          </button>
+          <button onClick={deleteCurrentSession} disabled={!sessionId} title="Delete this conversation"
+            className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)] disabled:opacity-40"
+            style={{ color: '#ef4444' }}
+            data-testid="delete-current-chat-btn"
+            aria-label="Delete this conversation">
+            <Trash2 className="w-4.5 h-4.5" />
           </button>
         </div>
       </div>
