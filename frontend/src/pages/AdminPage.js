@@ -237,6 +237,15 @@ const PATH_TO_TAB = {
   '/admin/marketing-members': 'marketing-members',
   '/admin/compliance-members': 'compliance-members',
   '/admin/platform-members': 'platform-members',
+  // Apr 27, 2026 — friendly URL aliases. The user-visible tab labels in
+  // the bottom nav say "Invites", "Templates", "Members" but the
+  // canonical internal paths are the verbose forms above. When a user
+  // pastes the friendly form into the URL bar it used to fall through
+  // to the `users` default tab, which made it look like the admin tabs
+  // were broken. These aliases make the URL paste do the obvious thing.
+  '/admin/invites': 'founder-invites',
+  '/admin/templates': 'canned-responses',
+  '/admin/members': 'ops-members',
   // Operations portal paths
   '/ops/transition': 'transition',
   '/ops/dts': 'dts',
