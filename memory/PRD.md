@@ -1039,3 +1039,36 @@ Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint clean.
 
 **Feature flag is default OFF** — the offline subsystem is bit-for-bit inert for all users until we flip a user or cohort to `shadow`/`on` via the admin `/debug/offline` page.
 
+
+
+## Iter 99 Hot-fix — FeatureGate Direct-URL Redirect (Apr 28, 2026)
+
+Iter 99 testing agent verified iter 98 fixes against production. **Signup race-condition fix verified WORKING** (taken username `megumiharris` typed without blur → inline error displayed correctly + toast fired + did not proceed past Step 3). Step 3 heading layout fix also verified live. **However, the FeatureGate panel was not rendering** — Megumi's direct-URL nav to `/trustee` and `/timeline` silently redirected to `/dashboard` instead of showing the gate.
+
+**Root cause** (verified by code review): `App.js`'s `ProtectedRoute` (lines 270-275) had a pre-existing feature-gate redirect block from a previous session:
+```js
+if (user?.role !== 'admin' && user?.role !== 'operator') {
+  if (!isFeatureEnabled(currentPath, enabledFeatures)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+}
+```
+This block fired BEFORE the per-route `<FeatureGate>` element got a chance to render its panel. Result: silent redirect, no upgrade UX.
+
+**Fix shipped**: Removed the redirect block from `ProtectedRoute`. Cleaned up the now-unused `isFeatureEnabled` import and `enabledFeatures` destructure. The route-level `<FeatureGate>` wrapper (added in iter 98 follow-up) now handles the user-facing UX uniformly — friendly "isn't on your plan" panel with gold "See Plans" CTA and ← Go back link.
+
+**Verified on preview pod after fix**:
+- `/estate-chat` (feature `ect` NOT in admin's enabled list) → URL stays at `/estate-chat`, FeatureGate panel renders with serif h1 "Estate Chat *isn't on your plan.*", gold lock icon, See Plans CTA → `/subscription` ✅
+- `/vault` (feature `sdv` IS enabled) → Renders the actual Secure Document Vault page with documents (no false-positive gate trigger) ✅
+
+**Recharts -1 dimension warning**: Reverted the `width="99%"` workaround (didn't help per iter 99 console capture) and tried Recharts' documented `minWidth={1} minHeight={1}` props on all 4 `<ResponsiveContainer>` instances in `AnalyticsTab.js`. To be re-validated on production after deploy.
+
+**Files touched**:
+- `/app/frontend/src/App.js` — removed ProtectedRoute redirect block, cleaned unused imports
+- `/app/frontend/src/components/admin/AnalyticsTab.js` — `minWidth={1} minHeight={1}` on ResponsiveContainers
+
+**Pending iter 99 findings awaiting user judgment**:
+- Barnet Switch View flow: testing agent reports it's a UI-skin-only toggle (no `/api/auth/dev-switch` fires, no JWT swap, sidebar relabels but identity unchanged). Possibly intentional design for users with `is_also_benefactor=true` since they're the same user, just viewing different role-specific surfaces. Needs user direction.
+- Founder Portal Switcher PS1-PS3: testing agent reports it's a "Dev-Switch Config" form (select user + password + toggle + Save button) — different mechanism than a one-click switcher. Needs user direction on intended design.
+
+Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint clean. PRD.md updated.

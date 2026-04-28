@@ -18,7 +18,6 @@ import PendingSyncChip from './components/PendingSyncChip';
 import { AmberAlertProvider } from './components/AmberAlert';
 import { initErrorReporter, reportError } from './utils/errorReporter';
 import { checkForUpdates } from './utils/versionCheck';
-import { isFeatureEnabled } from './utils/featureGates';
 import { Loader2 } from 'lucide-react';
 
 const CARRYON_BUILD = '2026-04-28T00:00:00Z-pre-launch-refactor';
@@ -218,7 +217,7 @@ class RouteErrorBoundary extends React.Component {
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, loading, isAuthenticated, subscriptionStatus, enabledFeatures } = useAuth();
+  const { user, loading, isAuthenticated, subscriptionStatus } = useAuth();
   const [showPaywall, setShowPaywall] = useState(() => sessionStorage.getItem('paywall_dismissed') === 'true');
 
   if (loading) {
@@ -267,12 +266,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   //   - /create-estate → no paywall (onboarding must complete first)
   const currentPath = window.location.pathname;
 
-  // Feature gate enforcement — redirect to dashboard if the route's feature is gated
-  if (user?.role !== 'admin' && user?.role !== 'operator') {
-    if (!isFeatureEnabled(currentPath, enabledFeatures)) {
-      return <Navigate to="/dashboard" replace />;
-    }
-  }
+  // Feature-gate UX is now handled by the per-route <FeatureGate> wrapper —
+  // it renders a friendly "isn't on your plan" panel with an upgrade CTA
+  // instead of silently redirecting. (See components/FeatureGate.js)
 
   const isOnBeneficiaryRoute = currentPath.startsWith('/beneficiary');
   const isOnCreateEstate = currentPath === '/create-estate';
