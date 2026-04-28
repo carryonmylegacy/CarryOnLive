@@ -96,7 +96,7 @@
     --sidebar-width: 260px;
 
     /* Guided overlay / frosted glass */
-    --guided-overlay-bg: rgba(13,21,36,0.75);
+    --guided-overlay-bg: rgba(8,14,26,0.92);
     --guided-title: #ffffff;
     --guided-desc: #94a3b8;
     --guided-muted: rgba(255,255,255,0.4);
@@ -233,7 +233,7 @@
     --ring: 43 74% 45%;
 
     /* Guided overlay / frosted glass — light mode */
-    --guided-overlay-bg: rgba(228,239,249,0.82);
+    --guided-overlay-bg: rgba(228,239,249,0.94);
     --guided-title: #0F172A;
     --guided-desc: #475569;
     --guided-muted: rgba(15,23,42,0.35);

@@ -431,15 +431,6 @@ const SignupPage = () => {
                     Create your account in seconds. Your family's readiness starts here.
                   </p>
 
-                  <div className="p-4 rounded-xl mb-6 max-w-sm" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="w-4 h-4 text-[#d4af37] flex-shrink-0 mt-0.5" />
-                      <p className="text-[#d4af37] text-xs leading-relaxed">
-                        Please enter your name exactly as it appears on your legal documents for identity verification.
-                      </p>
-                    </div>
-                  </div>
-
                   <div className="flex items-center gap-4">
                     {['AES-256 Encrypted', 'Zero-Knowledge', '2FA Protected'].map(badge => (
                       <div key={badge} className="flex items-center gap-1.5">
@@ -515,7 +506,7 @@ const SignupPage = () => {
                       <div className="space-y-4 sm:space-y-5">
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>What's your full legal name?</h2>
-                          <p className="text-[#6b7a90] text-sm">This must match your legal documents exactly.</p>
+                          <p className="text-[#6b7a90] text-sm">Use the name your family knows you by.</p>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
@@ -650,8 +641,8 @@ const SignupPage = () => {
                           </div>
                         )}
 
-                        {!specialStatus.includes('enterprise') && (
-                          <p className="text-[#64748b] text-xs text-center pt-2">Skip if none apply.</p>
+                        {!specialStatus.includes('enterprise') && specialStatus.length > 0 && (
+                          <p className="text-[#64748b] text-xs text-center pt-2">Selections are optional.</p>
                         )}
                       </div>
                     )}
@@ -742,6 +733,29 @@ const SignupPage = () => {
                           </div>
                         </div>
 
+                        {/* Password strength rule checklist — informational only */}
+                        {password.length > 0 && (
+                          <div className="flex flex-wrap gap-x-4 gap-y-1.5 -mt-1" data-testid="password-strength-meter">
+                            {[
+                              { id: 'len', label: '8+ characters', ok: password.length >= 8 },
+                              { id: 'upper', label: 'Uppercase', ok: /[A-Z]/.test(password) },
+                              { id: 'num', label: 'Number', ok: /[0-9]/.test(password) },
+                              { id: 'sym', label: 'Symbol', ok: /[^A-Za-z0-9]/.test(password) },
+                            ].map(rule => (
+                              <div key={rule.id} className="flex items-center gap-1.5 text-[11px]"
+                                data-testid={`password-rule-${rule.id}`}
+                                style={{ color: rule.ok ? '#22C993' : '#525c72' }}>
+                                {rule.ok ? (
+                                  <Check className="w-3 h-3" strokeWidth={3} />
+                                ) : (
+                                  <span className="w-3 h-3 rounded-full border border-[#525c72] flex-shrink-0" />
+                                )}
+                                <span>{rule.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
                         {/* Consent */}
                         <div className="flex items-start gap-3">
                           <button type="button" onClick={() => setSmsConsent(!smsConsent)}
@@ -792,6 +806,8 @@ const SignupPage = () => {
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Checking username...</>
                       ) : currentStep?.id === 'credentials' ? (
                         <>Create Account <ChevronRight className="w-4 h-4 ml-1" /></>
+                      ) : currentStep?.id === 'eligibility' && specialStatus.length === 0 ? (
+                        <>Skip — None Apply <ArrowRight className="w-4 h-4 ml-1" /></>
                       ) : (
                         <>Continue <ArrowRight className="w-4 h-4 ml-1" /></>
                       )}

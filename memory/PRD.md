@@ -912,6 +912,50 @@ admin token.
   refactor, unrelated to rate-limit work. Awaiting user direction before
   touching the chat UI.
 
+## Iter 97 Signup UX Polish (Apr 28, 2026)
+
+User-prioritized UX fixes shipped on top of iter 97 testing report findings.
+Strictly objective + user-approved subjective fixes only — no scope creep.
+
+**Objective (auto-shipped):**
+- **UX-NS-3** a11y: `htmlFor`/`id` pairs added to all 7 signup inputs (firstname, middlename, lastname, username, email, password, confirm). Verified via `input.labels.length === 1` on `signup-firstname`.
+- **UX-NS-4** browser autofill: `autoComplete` attrs added — `given-name`, `additional-name`, `family-name`, `username`, `email`, `new-password` (×2). Improves iOS/1Password/Chrome autofill UX dramatically.
+- **UX-NS-7** dedup `[CarryOn] Build` console log via `window.__CARRYON_BUILD_LOGGED` flag in `App.js` so it fires exactly once.
+- **STAB-97-2** `canAdvance()` for credentials step now requires `!usernameChecking`. Fixes race where Create Account click during in-flight `/auth/check-username` probe would silently no-op. Button visually shows the disabled gold-pill + "Checking username..." spinner during the check.
+
+**Subjective (user-approved on Apr 28):**
+- **UX-NS-5** Step 2 (eligibility) Continue button text is contextual — reads **"Skip — None Apply"** when no tile is selected, **"Continue"** otherwise. Removed the thin grey hint copy that previously tried to signal optionality.
+- **UX-NS-9** Removed orange "Please enter your name exactly as it appears on your legal documents for identity verification" helper card from the desktop left column AND the matching "This must match your legal documents exactly." subhead on Step 1. Per user: *"early assumption artifact. The name doesn't need to match legal documents."* New subhead reads "Use the name your family knows you by."
+- **UX-NS-11** Password strength rule checklist below the password input — informational only, does NOT enforce in `canAdvance` (preserves backward compat with existing 8-char-min accounts). Shows 4 rules: 8+ chars / Uppercase / Number / Symbol. Each item flips grey → emerald (`#22C993`) with a check icon as the rule is met. Hidden until user starts typing. data-testids: `password-strength-meter`, `password-rule-{len|upper|num|sym}`.
+- **UX-NS-12** Strengthened `--guided-overlay-bg` CSS var: `rgba(13,21,36,0.75)` → `rgba(8,14,26,0.92)` (dark mode) and `rgba(228,239,249,0.82)` → `rgba(228,239,249,0.94)` (light mode). Applies to all 5 guided-overlay surfaces (DashboardPage tour, celebration, OnboardingWizard dismiss confirm/info, GuardianPage, GuidedActivation) — fixes "Add Someone You Love" overlapping the cards behind it.
+
+**Subjective (user-declined this iteration):**
+- UX-NS-1 Marketing landing redesign — leave alone
+- UX-NS-2 Pricing CTA on landing — no
+- UX-NS-6 Mobile bottom-nav "Benefic." truncation — leave alone
+- UX-NS-10 Username placeholder — keep current (auto-derived from firstname+lastname)
+
+**Pending P0 reminders (NOT shipped — awaiting user instruction):**
+- 🔴 **Disable Signup OTP Bypass** before public launch — flip the toggle in Founder Portal → Platform → Signup OTP. Test accounts created via `testflow*` username pattern under the bypass should be deleted from `/admin/users`.
+
+**Verified end-to-end via Playwright on preview pod**:
+- Step 1 → Step 2 navigation: ✅
+- Step 2 button text "Skip — None Apply" with empty `specialStatus`: ✅
+- Step 2 → Step 3 navigation: ✅
+- Password strength meter visibility on `password.length > 0`: ✅
+- Rule colors: all grey on weak password (`abc`), all green on strong (`StrongPass1!`): ✅
+- a11y: `signup-firstname.labels.length === 1`, `autocomplete === "given-name"`: ✅
+
+**Phase B/D stability re-sweep**: deferred — user is pushing this batch first and will tell agent when to launch the testing agent.
+
+**Files touched:**
+- `/app/frontend/src/App.js` — build banner dedup
+- `/app/frontend/src/pages/SignupPage.js` — a11y, autocomplete, race fix, contextual button, strength meter, copy cleanup
+- `/app/frontend/src/index.css` — guided overlay backdrop opacity bump (both themes)
+
+Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint clean.
+
+
 ## Offline-First Architecture (Feb 2026 — in progress)
 
 **Goal**: Instant cold-boot paint + full offline read/write/create so the app is usable on cellular dead zones, flights, and spotty WiFi.
