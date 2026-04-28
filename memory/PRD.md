@@ -1103,3 +1103,22 @@ Backend: new admin-only endpoint at `/app/backend/routes/admin/users.py`. Sets `
 - `/app/frontend/src/components/admin/UsersTab.js` — `Clock` import, `resettingTrial` state, `handleResetTrial`, new button + neutral hover override on 5 ghost buttons
 
 Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint + ruff clean.
+
+
+## Iter 101 — CFP Hand-off PDF Toast Fix (Apr 28, 2026)
+
+User reported (with iPhone PWA screenshot): tapping **Hand-off PDF** in CFP triggered TWO stacked toasts — Info "Generating hand-off PDF…" and Success "Hand-off PDF downloaded." — but they only **viewed** the PDF inline and never saved it. The success toast was lying.
+
+**Root cause** (`FinancialPortalPage.js:226-252`): iOS Safari / WKWebView silently ignores `<a download>` for `blob:` URLs — it opens the PDF inline instead of saving. There's no JS hook to know whether the user actually tapped Share → Save to Files. Our toast assumed `a.click() = saved`, which is true on desktop but false on iOS.
+
+**Fix shipped:**
+1. **Dropped the Info toast.** Replaced with a button-level spinner: button shows `<Loader2>` + "Generating…" while export is in flight. Kills the stacked-toast clutter at the source.
+2. **iOS detection branch.** On iOS (iPad/iPhone/iPod + iPad-on-Mac via `MacIntel + ontouchend`), opens the PDF via `window.open(url, '_blank')` and shows an honest toast: *"Hand-off PDF opened — tap Share to save it."* On non-iOS, keeps the existing `<a download>` flow with the legit "Hand-off PDF downloaded." copy.
+3. Blob URL revocation deferred 60s on iOS so the inline viewer doesn't lose its source while the user reads. Desktop revokes immediately as before.
+4. Popup-blocker fallback: if `window.open` returns null, falls back to `<a target="_blank">` click.
+
+**Files touched:** `/app/frontend/src/pages/FinancialPortalPage.js`.
+
+**Note for future scope** (NOT shipped this round per scope discipline): the same anti-pattern exists in 9 other surfaces (`GuardianPage` 4× / `BeneficiaryGuardianPage` IAC / `MessagesPage` / `BeneficiaryVaultPage` / `AuditTrailTab` / `IntegrationsTab` / `VoicesTab` / `SocialShareSheet` / `PrivacyCard`). Each has the same `a.click()` + immediate "downloaded" toast pair that lies on iOS. User has not requested a global refactor; flagged here for future direction only.
+
+Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint clean.

@@ -90,6 +90,7 @@ const FinancialPortalPage = () => {
   const [showPropertyForm, setShowPropertyForm] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [exportingHandoff, setExportingHandoff] = useState(false);
   const [selectedCalendarDay, setSelectedCalendarDay] = useState(null);
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const searchTimerRef = useRef(null);
@@ -229,8 +230,15 @@ const FinancialPortalPage = () => {
       toast.error('Hand-off PDF requires an internet connection.');
       return;
     }
+    // iOS Safari/WKWebView ignores the <a download> attribute for blob: URLs —
+    // it opens the PDF inline instead of saving. We branch UX accordingly so
+    // the success toast doesn't lie about a "download" that didn't happen.
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+    const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+      (ua.includes('Macintosh') && typeof document !== 'undefined' && 'ontouchend' in document);
+
+    setExportingHandoff(true);
     try {
-      toast.info('Generating hand-off PDF…');
       const headers = getAuthHeaders()?.headers;
       const res = await axios.get(`${API_URL}/financial/handoff-package/${estate.id}`, {
         headers,
@@ -238,17 +246,39 @@ const FinancialPortalPage = () => {
       });
       const blob = new Blob([res.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `carryon-handoff-${estate.id.slice(0, 8)}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      toast.success('Hand-off PDF downloaded.');
-    } catch (err) {
+
+      if (isIOS) {
+        // Open inline — user taps Share → Save to Files / Print / etc.
+        const w = window.open(url, '_blank');
+        if (!w) {
+          // Popup blocked — fall back to anchor click which opens the same viewer
+          const a = document.createElement('a');
+          a.href = url;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        }
+        // Don't revoke immediately — iOS viewer needs the URL to stay alive.
+        // Revoke after 60s; if the user is still reading by then, the viewer
+        // has its own cached copy.
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        toast.success('Hand-off PDF opened — tap Share to save it.');
+      } else {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `carryon-handoff-${estate.id.slice(0, 8)}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast.success('Hand-off PDF downloaded.');
+      }
+    } catch {
       toast.error('Failed to generate hand-off PDF.');
     }
+    setExportingHandoff(false);
   };
 
   const handleDelete = async (type, id) => {
@@ -437,10 +467,16 @@ const FinancialPortalPage = () => {
               variant="outline"
               className="flex-shrink-0 border-[var(--b)] text-[var(--t3)] hover:bg-[var(--s)]"
               onClick={() => handleHandoffExport()}
+              disabled={exportingHandoff}
               data-testid="handoff-pdf-btn"
-              title="Download a printable hand-off PDF for your beneficiaries"
+              title="Hand-off PDF for your beneficiaries"
             >
-              <FileDown className="w-4 h-4 mr-1.5 text-[var(--gold)]" /> Hand-off PDF
+              {exportingHandoff ? (
+                <Loader2 className="w-4 h-4 mr-1.5 animate-spin text-[var(--gold)]" />
+              ) : (
+                <FileDown className="w-4 h-4 mr-1.5 text-[var(--gold)]" />
+              )}
+              {exportingHandoff ? 'Generating…' : 'Hand-off PDF'}
             </Button>
           )}
         </div>
