@@ -230,6 +230,24 @@ const SignupPage = () => {
 
   const handleSignup = async () => {
     setLoading(true);
+    // Defensive username availability re-check — covers the race where the user
+    // typed a username and clicked Create Account WITHOUT blurring the field
+    // first (so the onBlur /auth/check-username probe never fired). Without this
+    // a taken username would only surface as an opaque /auth/register 400.
+    if (username.trim().length >= 3) {
+      try {
+        const res = await axios.post(`${API_URL}/auth/check-username`, { username });
+        if (!res.data.available) {
+          const msg = res.data.message || 'Username is already taken';
+          setUsernameError(msg);
+          toast.error(msg);
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // fail open — backend will reject duplicate usernames at register time
+      }
+    }
     try {
       const response = await axios.post(`${API_URL}/auth/register`, {
         first_name: firstName,
@@ -495,12 +513,12 @@ const SignupPage = () => {
                       </div>
                     ))}
                   </div>
-                  <p className="text-[#525c72] text-xs mb-1">Step {step + 1} of {STEPS.length}</p>
+                  <p className="text-[#525c72] text-xs mb-3">Step {step + 1} of {STEPS.length}</p>
                 </div>
 
                 {/* Step Content */}
                 <div className="px-4 sm:px-6 pb-5 sm:pb-7 flex flex-col" style={{ height: 540 }}>
-                  <div ref={scrollRef} className="flex-1 overflow-auto scrollbar-hide px-3" style={getSlideStyle()}>
+                  <div ref={scrollRef} className="flex-1 overflow-auto scrollbar-hide px-3 pt-2" style={getSlideStyle()}>
                     {/* STEP 0: Name */}
                     {currentStep?.id === 'name' && (
                       <div className="space-y-4 sm:space-y-5">

@@ -99,7 +99,7 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
               Signups — Last 30 Days
             </h3>
             <div style={{ width: '100%', height: 220 }}>
-              <ResponsiveContainer>
+              <ResponsiveContainer width="99%">
                 <LineChart data={stats.signup_trend}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--b)" />
                   <XAxis dataKey="date" tick={{ fill: '#525C72', fontSize: 11 }} interval="preserveStartEnd" />
@@ -121,7 +121,7 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
             </h3>
             {trialPieData.length > 0 ? (
               <div style={{ width: '100%', height: 220 }}>
-                <ResponsiveContainer>
+                <ResponsiveContainer width="99%">
                   <PieChart>
                     <Pie data={trialPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                       {trialPieData.map((entry, i) => (
@@ -151,7 +151,7 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
               Tier Distribution
             </h3>
             <div style={{ width: '100%', height: 220 }}>
-              <ResponsiveContainer>
+              <ResponsiveContainer width="99%">
                 <BarChart data={tierBarData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--b)" />
                   <XAxis dataKey="tier" tick={{ fill: '#525C72', fontSize: 11 }} />
@@ -176,7 +176,7 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
               Monthly Revenue by Tier
             </h3>
             <div style={{ width: '100%', height: 220 }}>
-              <ResponsiveContainer>
+              <ResponsiveContainer width="99%">
                 <BarChart data={stats.revenue_by_tier.filter(r => r.revenue > 0 || r.subscribers > 0)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--b)" />
                   <XAxis dataKey="tier" tick={{ fill: '#525C72', fontSize: 11 }} />
