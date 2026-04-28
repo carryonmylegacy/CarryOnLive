@@ -1068,7 +1068,9 @@ This block fired BEFORE the per-route `<FeatureGate>` element got a chance to re
 - `/app/frontend/src/components/admin/AnalyticsTab.js` — `minWidth={1} minHeight={1}` on ResponsiveContainers
 
 **Pending iter 99 findings awaiting user judgment**:
-- Barnet Switch View flow: testing agent reports it's a UI-skin-only toggle (no `/api/auth/dev-switch` fires, no JWT swap, sidebar relabels but identity unchanged). Possibly intentional design for users with `is_also_benefactor=true` since they're the same user, just viewing different role-specific surfaces. Needs user direction.
-- Founder Portal Switcher PS1-PS3: testing agent reports it's a "Dev-Switch Config" form (select user + password + toggle + Save button) — different mechanism than a one-click switcher. Needs user direction on intended design.
+- ~~Barnet Switch View flow: testing agent reports it's a UI-skin-only toggle~~ — **CONFIRMED INTENTIONAL by user (Apr 28)**. Multi-role users (e.g., Barnet has both `beneficiary` and `is_also_benefactor=true`) see the toggle as a UI-skin that relabels the menu / dashboard surfaces but does NOT swap JWT identity. Same authenticated user, different role-flavored UI. Working as designed. No code change.
+- ~~Founder Portal Switcher PS1-PS3~~ — **CONFIRMED INTENTIONAL by user (Apr 28)**. The "Dev-Switch Config" form (select user + password + toggle + Save) is the founder admin debugging tool by design — requires explicit config + password to impersonate a specific user. Not a one-click switcher. Working as designed. No code change.
+
+**Iter 99 RESOLVED.** All three categories of findings (false positives, hot-fixes, intentional design) are accounted for. Build is ready to push. After deploy, only verification remaining is the Recharts -1 warning silence on `/admin/analytics` — to be confirmed by user via console open on prod, or via a future testing-agent micro-sweep if needed.
 
 Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint clean. PRD.md updated.
