@@ -185,18 +185,18 @@ const ECTMessageInput = ({
           data-testid="ect-message-input" aria-label="Type a message"
           style={{ background: 'var(--ect-input-bg)', border: 'none', outline: 'none', resize: 'none', overflowY: 'auto', maxHeight: '120px', minHeight: '40px', color: (voiceRecorder.recording || voicePreview) ? 'transparent' : 'var(--ect-input-text)', fontSize: '16px', caretColor: (voiceRecorder.recording || voicePreview) ? 'transparent' : 'var(--ect-input-text)', lineHeight: '1.4' }} />
         {voiceRecorder.recording && (
-          <div className="absolute inset-0 flex items-center gap-3 rounded-2xl px-4" style={{ background: '#2A1519', border: '1px solid #5C2A2A' }}>
+          <div className="absolute inset-0 flex items-center gap-3 rounded-2xl px-4" style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.35)' }}>
             <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: '#ef4444' }} />
             <span className="text-sm font-semibold" style={{ color: 'var(--t)' }}>{Math.floor(voiceRecorder.duration / 60)}:{(voiceRecorder.duration % 60).toString().padStart(2, '0')}</span>
             <span className="text-xs" style={{ color: 'var(--t4)' }}>Recording...</span>
-            <button onMouseDown={(e) => e.preventDefault()} onClick={stopAndPreview} className="ml-auto p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-stop" aria-label="Stop recording"><Square className="w-4 h-4" style={{ color: 'var(--t)' }} /></button>
-            <button onMouseDown={(e) => e.preventDefault()} onClick={() => { voiceRecorder.cancel(); inputRef.current?.focus(); }} className="p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-cancel" aria-label="Cancel recording"><X className="w-4 h-4" style={{ color: '#ef4444' }} /></button>
+            <button onMouseDown={(e) => e.preventDefault()} onClick={stopAndPreview} className="ml-auto p-2 rounded-full" style={{ background: 'var(--bg3)' }} data-testid="ect-voice-stop" aria-label="Stop recording"><Square className="w-4 h-4" style={{ color: 'var(--t)' }} /></button>
+            <button onMouseDown={(e) => e.preventDefault()} onClick={() => { voiceRecorder.cancel(); inputRef.current?.focus(); }} className="p-2 rounded-full" style={{ background: 'var(--bg3)' }} data-testid="ect-voice-cancel" aria-label="Cancel recording"><X className="w-4 h-4" style={{ color: '#ef4444' }} /></button>
           </div>
         )}
         {!voiceRecorder.recording && voicePreview && (
-          <div className="absolute inset-0 flex items-center gap-2 rounded-2xl px-3" style={{ background: '#1A2235', border: '1px solid #3A4560' }}>
+          <div className="absolute inset-0 flex items-center gap-2 rounded-2xl px-3" style={{ background: 'var(--bg2)', border: '1px solid var(--bg3)' }}>
             <audio src={voicePreview.url} controls className="h-8 flex-1" style={{ maxWidth: '100%', filter: 'invert(1) hue-rotate(180deg)', opacity: 0.8 }} />
-            <button onMouseDown={(e) => e.preventDefault()} onClick={() => { discardPreview(); inputRef.current?.focus(); }} className="p-2 rounded-full flex-shrink-0" style={{ background: '#1A1F2E' }} data-testid="ect-voice-discard" aria-label="Discard recording"><X className="w-4 h-4" style={{ color: '#ef4444' }} /></button>
+            <button onMouseDown={(e) => e.preventDefault()} onClick={() => { discardPreview(); inputRef.current?.focus(); }} className="p-2 rounded-full flex-shrink-0" style={{ background: 'var(--bg3)' }} data-testid="ect-voice-discard" aria-label="Discard recording"><X className="w-4 h-4" style={{ color: '#ef4444' }} /></button>
           </div>
         )}
       </div>
