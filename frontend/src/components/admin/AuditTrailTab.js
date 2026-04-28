@@ -5,6 +5,7 @@ import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { API_URL } from '../../config';
+import { iosSafeDownload } from '../../utils/iosSafeDownload';
 
 const SEVERITY_STYLE = {
   info: { bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)', color: '#60A5FA' },
@@ -46,12 +47,7 @@ export const AuditTrailTab = ({ getAuthHeaders }) => {
         ...getAuthHeaders(),
         responseType: 'blob',
       });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `carryon_audit_trail_${days}d.csv`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      await iosSafeDownload(new Blob([res.data]), `carryon_audit_trail_${days}d.csv`, 'Audit Trail CSV');
     } catch {}
     finally { setExporting(false); }
   };

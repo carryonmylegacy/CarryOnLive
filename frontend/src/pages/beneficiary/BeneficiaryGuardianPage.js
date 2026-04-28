@@ -52,7 +52,7 @@ const BeneficiaryGuardianPage = () => {
     try {
       const dateStr = new Date().toISOString().slice(0, 10);
       const filename = `CarryOn_IAC_${dateStr}.pdf`;
-      await platformDownload({
+      const result = await platformDownload({
         action: 'beneficiary_iac',
         params: {},
         filename,
@@ -63,7 +63,7 @@ const BeneficiaryGuardianPage = () => {
           downloadFile(res.data, filename);
         },
       });
-      toast.success('IAC downloaded');
+      if (result !== 'cancelled') toast.success('IAC saved');
     } catch {
       toast.error('Failed to download IAC');
     }

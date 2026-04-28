@@ -11,6 +11,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from '../utils/toast';
+import { iosSafeDownload } from '../utils/iosSafeDownload';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import SlidePanel from '../components/SlidePanel';
@@ -230,13 +231,6 @@ const FinancialPortalPage = () => {
       toast.error('Hand-off PDF requires an internet connection.');
       return;
     }
-    // iOS Safari/WKWebView ignores the <a download> attribute for blob: URLs —
-    // it opens the PDF inline instead of saving. We branch UX accordingly so
-    // the success toast doesn't lie about a "download" that didn't happen.
-    const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
-    const isIOS = /iPad|iPhone|iPod/.test(ua) ||
-      (ua.includes('Macintosh') && typeof document !== 'undefined' && 'ontouchend' in document);
-
     setExportingHandoff(true);
     try {
       const headers = getAuthHeaders()?.headers;
@@ -245,36 +239,8 @@ const FinancialPortalPage = () => {
         responseType: 'blob',
       });
       const blob = new Blob([res.data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-
-      if (isIOS) {
-        // Open inline — user taps Share → Save to Files / Print / etc.
-        const w = window.open(url, '_blank');
-        if (!w) {
-          // Popup blocked — fall back to anchor click which opens the same viewer
-          const a = document.createElement('a');
-          a.href = url;
-          a.target = '_blank';
-          a.rel = 'noopener';
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-        }
-        // Don't revoke immediately — iOS viewer needs the URL to stay alive.
-        // Revoke after 60s; if the user is still reading by then, the viewer
-        // has its own cached copy.
-        setTimeout(() => URL.revokeObjectURL(url), 60000);
-        toast.success('Hand-off PDF opened — tap Share to save it.');
-      } else {
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `carryon-handoff-${estate.id.slice(0, 8)}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-        toast.success('Hand-off PDF downloaded.');
-      }
+      const filename = `carryon-handoff-${estate.id.slice(0, 8)}.pdf`;
+      await iosSafeDownload(blob, filename, 'Hand-off PDF');
     } catch {
       toast.error('Failed to generate hand-off PDF.');
     }

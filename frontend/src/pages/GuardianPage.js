@@ -341,7 +341,7 @@ const GuardianPage = () => {
     try {
       const dateStr = new Date().toISOString().split('T')[0];
       const filename = `CarryOn_ToDo_${dateStr}.pdf`;
-      await platformDownload({
+      const result = await platformDownload({
         action: 'ega_todo',
         params: { content },
         filename,
@@ -351,7 +351,7 @@ const GuardianPage = () => {
           await downloadFile(new Blob([res.data], { type: 'application/pdf' }), filename);
         },
       });
-      toast.success('To-Do List downloaded');
+      if (result !== 'cancelled') toast.success('To-Do List saved');
     } catch (err) {
       toast.error('Failed to generate PDF');
     }
@@ -361,7 +361,7 @@ const GuardianPage = () => {
     try {
       const dateStr = new Date().toISOString().split('T')[0];
       const filename = `CarryOn_IAC_Report_${dateStr}.pdf`;
-      await platformDownload({
+      const result = await platformDownload({
         action: 'ega_iac_report',
         params: { content },
         filename,
@@ -371,7 +371,7 @@ const GuardianPage = () => {
           await downloadFile(new Blob([res.data], { type: 'application/pdf' }), filename);
         },
       });
-      toast.success('IAC Report downloaded');
+      if (result !== 'cancelled') toast.success('IAC Report saved');
     } catch (err) {
       toast.error('Failed to generate IAC Report PDF');
     }
@@ -383,7 +383,7 @@ const GuardianPage = () => {
     try {
       const dateStr = new Date().toISOString().split('T')[0];
       const filename = `CarryOn_Transcript_${dateStr}.pdf`;
-      await platformDownload({
+      const result = await platformDownload({
         action: 'ega_transcript',
         params: { session_id: sessionId },
         filename,
@@ -393,7 +393,7 @@ const GuardianPage = () => {
           await downloadFile(new Blob([res.data], { type: 'application/pdf' }), filename);
         },
       });
-      toast.success('Transcript downloaded');
+      if (result !== 'cancelled') toast.success('Transcript saved');
     } catch (err) { toast.error('Failed to export transcript'); }
     setExporting(false);
   };
@@ -405,7 +405,7 @@ const GuardianPage = () => {
     try {
       const dateStr = new Date().toISOString().split('T')[0];
       const filename = `CarryOn_Plan_of_Action_${dateStr}.pdf`;
-      await platformDownload({
+      const result = await platformDownload({
         action: 'ega_plan',
         params: { session_id: sessionId },
         filename,
@@ -415,7 +415,7 @@ const GuardianPage = () => {
           await downloadFile(new Blob([res.data], { type: 'application/pdf' }), filename);
         },
       });
-      toast.success('Plan of Action downloaded');
+      if (result !== 'cancelled') toast.success('Plan of Action saved');
     } catch (err) { toast.error('Failed to generate Plan of Action'); }
     setPlanExporting(false);
   };

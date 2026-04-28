@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from '../../utils/toast';
+import { iosSafeDownload } from '../../utils/iosSafeDownload';
 import { useAuth } from '../../contexts/AuthContext';
 import { Shield, Download, FileText, AlertTriangle, Trash2, ChevronRight, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -53,12 +54,8 @@ const PrivacyCard = () => {
     try {
       const res = await axios.get(`${API_URL}/compliance/export`, getAuthHeaders());
       const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `carryon-data-export-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast.success('Data exported successfully');
+      const filename = `carryon-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      await iosSafeDownload(blob, filename, 'Data export');
     } catch { toast.error('Failed to export data'); }
     finally { setExportLoading(false); }
   }, [getAuthHeaders]);

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { API_URL } from '../../config';
 import { toast } from '../../utils/toast';
+import { iosSafeDownload } from '../../utils/iosSafeDownload';
 
 /**
  * Voices Tab — user-submitted, publicly-consented quotes pulled from the
@@ -98,14 +99,8 @@ export function VoicesTab({ getAuthHeaders }) {
         ...getAuthHeaders(),
         responseType: 'blob',
       });
-      const url = URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `carryon-voices-${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const filename = `carryon-voices-${new Date().toISOString().slice(0, 10)}.csv`;
+      await iosSafeDownload(new Blob([res.data], { type: 'text/csv' }), filename, 'Voices CSV');
     } catch {
       toast.error('Export failed');
     }

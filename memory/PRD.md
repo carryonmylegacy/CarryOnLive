@@ -1122,3 +1122,53 @@ User reported (with iPhone PWA screenshot): tapping **Hand-off PDF** in CFP trig
 **Note for future scope** (NOT shipped this round per scope discipline): the same anti-pattern exists in 9 other surfaces (`GuardianPage` 4× / `BeneficiaryGuardianPage` IAC / `MessagesPage` / `BeneficiaryVaultPage` / `AuditTrailTab` / `IntegrationsTab` / `VoicesTab` / `SocialShareSheet` / `PrivacyCard`). Each has the same `a.click()` + immediate "downloaded" toast pair that lies on iOS. User has not requested a global refactor; flagged here for future direction only.
 
 Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint clean.
+
+
+## Iter 102 — Global iOS Download Toast Honesty Pass (Apr 28, 2026)
+
+User asked to fix all download surfaces with the iOS toast-lie pattern (Iter 101 had only fixed CFP). New util + 9 files updated.
+
+**New utility** `frontend/src/utils/iosSafeDownload.js` — single function `iosSafeDownload(blob, filename, label)`:
+- iOS with Web Share API + `canShare(files)` → `navigator.share` (Save to Files / AirDrop / Mail). Cancellation = no toast.
+- iOS without Web Share → `window.open` inline viewer, toast: *"{Label} opened — tap Share to save it."*
+- Non-iOS → standard `<a download>`, toast: *"{Label} downloaded."*
+
+**Sites that lied on iOS (hard-coded "downloaded" toast after `a.click()`):**
+- `IntegrationsTab.handleSOC2Download` ✅ via helper
+- `PrivacyCard.handleDataExport` ✅ via helper
+
+**Sites that silently failed on iOS (no toast, but tapping Download did nothing visible):**
+- `MessagesPage.downloadAttachment` ✅ via helper
+- `BeneficiaryVaultPage.handleDownload` ✅ via helper
+- `AuditTrailTab.exportCsv` ✅ via helper
+- `VoicesTab.exportCsv` ✅ via helper
+
+**Sites already iOS-correct via `platformDownload` BUT toasted "downloaded" even when user cancelled the iOS share sheet:**
+- `GuardianPage.handleTodoDownload` ✅ result-gated, copy: "saved"
+- `GuardianPage.handleIacDownload` ✅
+- `GuardianPage.handleExportTranscript` ✅
+- `GuardianPage.handleExportPlan` ✅
+- `BeneficiaryGuardianPage.handleIacDownload` ✅
+
+**Sites already correct, NOT touched (verified by code review, not assumed):**
+- `AuthMedia.AuthFileLink.handleDownload` — `platformDownload` + no unconditional toast
+- `ECTActionMenu` "Save to Device" — inline `navigator.share` first
+- `ImagePreviewModal.handleSave` — inline `navigator.share` first
+- `SocialShareSheet.downloadImage` — `target="_blank"` viewer open, no toast
+
+**Refactored from inline iOS branch → shared helper for consistency:**
+- `FinancialPortalPage.handleHandoffExport` — now uses `iosSafeDownload`.
+
+**Files touched:**
+- `frontend/src/utils/iosSafeDownload.js` (new)
+- `frontend/src/pages/FinancialPortalPage.js`
+- `frontend/src/pages/MessagesPage.js`
+- `frontend/src/pages/beneficiary/BeneficiaryVaultPage.js`
+- `frontend/src/pages/GuardianPage.js`
+- `frontend/src/pages/beneficiary/BeneficiaryGuardianPage.js`
+- `frontend/src/components/admin/AuditTrailTab.js`
+- `frontend/src/components/admin/IntegrationsTab.js`
+- `frontend/src/components/admin/VoicesTab.js`
+- `frontend/src/components/settings/PrivacyCard.js`
+
+Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint clean across all 10 files.

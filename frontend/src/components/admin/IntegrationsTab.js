@@ -7,6 +7,7 @@ import { Lock, ExternalLink, Eye, EyeOff, Shield, Database, CreditCard, Mail, Bo
   Activity, HardDrive, TrendingUp, Pencil, X, BarChart3, Crosshair } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
+import { iosSafeDownload } from '../../utils/iosSafeDownload';
 import { API_URL } from '../../config';
 
 const iconMap = {
@@ -432,11 +433,8 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
       const res = await axios.post(`${API_URL}/admin/integrations/soc2-report`, { pin: pin || sessionPin }, {
         ...getAuthHeaders(), responseType: 'blob',
       });
-      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const a = document.createElement('a');
-      a.href = url; a.download = `CarryOn_SOC2_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
-      a.click(); URL.revokeObjectURL(url);
-      toast.success('SOC 2 report downloaded');
+      const filename = `CarryOn_SOC2_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
+      await iosSafeDownload(new Blob([res.data], { type: 'application/pdf' }), filename, 'SOC 2 report');
     } catch { toast.error('Failed to generate report'); }
     finally { setPdfLoading(false); }
   };

@@ -37,6 +37,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from '../utils/toast';
+import { iosSafeDownload } from '../utils/iosSafeDownload';
 import { platformDownload, downloadFile } from '../utils/downloadFile';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
@@ -788,12 +789,7 @@ const MessagesPage = () => {
       const res = await axios.get(`${API_URL}/messages/${msg.id}/attachment`, {
         ...getAuthHeaders(), responseType: 'blob',
       });
-      const url = URL.createObjectURL(res.data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = msg.attachment_name || 'attachment';
-      a.click();
-      URL.revokeObjectURL(url);
+      await iosSafeDownload(res.data, msg.attachment_name || 'attachment', 'Attachment');
     } catch { toast.error('Failed to download attachment'); }
   };
 

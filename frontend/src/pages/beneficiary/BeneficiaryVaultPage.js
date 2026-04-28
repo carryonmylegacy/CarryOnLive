@@ -6,6 +6,7 @@ import { FolderLock, Lock, FileText, Search, ChevronLeft, Download, Eye, Loader2
 import { Skeleton } from '../../components/ui/skeleton';
 import PDFViewerModal from '../../components/PDFViewerModal';
 import { API_URL } from '../../config';
+import { iosSafeDownload } from '../../utils/iosSafeDownload';
 
 const BeneficiaryVaultPage = () => {
   const { getAuthHeaders } = useAuth();
@@ -70,12 +71,7 @@ const BeneficiaryVaultPage = () => {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('carryon_token')}` },
         responseType: 'blob',
       });
-      const url = URL.createObjectURL(res.data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = doc.name || 'document';
-      a.click();
-      URL.revokeObjectURL(url);
+      await iosSafeDownload(res.data, doc.name || 'document', doc.name || 'Document');
     } catch (err) {
       console.error('Download failed:', err);
     } finally {
