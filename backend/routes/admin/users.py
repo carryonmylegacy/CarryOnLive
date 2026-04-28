@@ -1,6 +1,6 @@
 """CarryOn™ Backend — Admin: User Management & Activity Log"""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import bcrypt
@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from config import db
 from guards import require_admin, require_staff
+from routes.subscriptions.plans import TRIAL_DURATION_DAYS
 
 router = APIRouter()
 
@@ -201,6 +202,55 @@ async def toggle_session_exempt(user_id: str, current_user: dict = Depends(requi
         }
     )
     return {"session_exempt": new_val}
+
+
+@router.post("/admin/users/{user_id}/reset-trial")
+async def reset_user_trial(user_id: str, current_user: dict = Depends(require_admin)):
+    """Reset a user's free trial — sets trial_ends_at to now + TRIAL_DURATION_DAYS,
+    flips subscription_status back to 'trialing'. Admin-only. Logged to activity_log."""
+    user = await db.users.find_one(
+        {"id": user_id},
+        {"_id": 0, "id": 1, "name": 1, "email": 1, "trial_ends_at": 1, "subscription_status": 1},
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    now = datetime.now(timezone.utc)
+    new_trial_ends_at = (now + timedelta(days=TRIAL_DURATION_DAYS)).isoformat()
+    prev_trial_ends_at = user.get("trial_ends_at")
+
+    await db.users.update_one(
+        {"id": user_id},
+        {
+            "$set": {
+                "trial_ends_at": new_trial_ends_at,
+                "subscription_status": "trialing",
+                "trial_reset_at": now.isoformat(),
+                "trial_reset_by": current_user["id"],
+            }
+        },
+    )
+
+    await db.activity_log.insert_one(
+        {
+            "id": str(uuid4()),
+            "action": "trial_reset",
+            "actor_id": current_user["id"],
+            "actor_name": current_user.get("name", "Admin"),
+            "target_id": user_id,
+            "details": (
+                f"Reset {TRIAL_DURATION_DAYS}-day trial for {user.get('name', user_id)} "
+                f"(previously ended {prev_trial_ends_at or 'never set'})"
+            ),
+            "created_at": now.isoformat(),
+        }
+    )
+    return {
+        "ok": True,
+        "trial_ends_at": new_trial_ends_at,
+        "subscription_status": "trialing",
+        "trial_days": TRIAL_DURATION_DAYS,
+    }
 
 
 @router.get("/admin/activity")

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Search, Users, Trash2, Loader2, ChevronDown, ChevronRight, KeyRound, Unlock, GitBranch, User, AlertTriangle, Zap, ArrowUpDown, ShieldOff, Link2 } from 'lucide-react';
+import { Search, Users, Trash2, Loader2, ChevronDown, ChevronRight, KeyRound, Unlock, GitBranch, User, AlertTriangle, Zap, ArrowUpDown, ShieldOff, Link2, Clock } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
@@ -34,6 +34,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   const [deleting, setDeleting] = useState(false);
   const [togglingBeta, setTogglingBeta] = useState(null);
   const [togglingExempt, setTogglingExempt] = useState(null);
+  const [resettingTrial, setResettingTrial] = useState(null);
   const [settingTier, setSettingTier] = useState(null);
   const [sortBy, setSortBy] = useState('default');
 
@@ -59,6 +60,23 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
       toast.error(err.response?.data?.detail || 'Failed to toggle session exemption');
     }
     setTogglingExempt(null);
+  };
+
+  const handleResetTrial = async (userId, userName) => {
+    if (!window.confirm(`Reset the free trial for ${userName}?\n\nThis will give them a fresh 30-day trial starting now and set their subscription status to 'trialing'.`)) return;
+    setResettingTrial(userId);
+    try {
+      const res = await axios.post(`${API_URL}/admin/users/${userId}/reset-trial`, {}, getAuthHeaders());
+      setUsers(prev => prev.map(u => u.id === userId ? {
+        ...u,
+        trial_ends_at: res.data.trial_ends_at,
+        subscription_status: 'trialing',
+      } : u));
+      toast.success(`Trial reset — ${res.data.trial_days} days from today`);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to reset trial');
+    }
+    setResettingTrial(null);
   };
 
   const handleSetEstateTier = async (estateId, tier, ownerUserId) => {
@@ -306,7 +324,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
             <div className="flex items-center gap-0.5 flex-shrink-0">
               {(u.role === 'benefactor' || u.role === 'beneficiary') && !operatorMode && (
                 <Button variant="ghost" size="sm"
-                  className={`h-8 w-8 p-0 ${u.is_beta_tester ? 'text-[#fbbf24]' : 'text-[var(--t5)]'}`}
+                  className={`h-8 w-8 p-0 hover:bg-[var(--s)] hover:text-current ${u.is_beta_tester ? 'text-[#fbbf24]' : 'text-[var(--t5)]'}`}
                   onClick={() => handleToggleBeta(u.id, u.is_beta_tester)}
                   disabled={togglingBeta === u.id}
                   title={u.is_beta_tester ? 'Remove from Beta' : 'Add to Beta'}
@@ -316,7 +334,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
               )}
               {!operatorMode && (
                 <Button variant="ghost" size="sm"
-                  className={`h-8 w-8 p-0 ${u.session_exempt ? 'text-[#22d3ee]' : 'text-[var(--t5)]'}`}
+                  className={`h-8 w-8 p-0 hover:bg-[var(--s)] hover:text-current ${u.session_exempt ? 'text-[#22d3ee]' : 'text-[var(--t5)]'}`}
                   onClick={() => handleToggleSessionExempt(u.id, u.session_exempt)}
                   disabled={togglingExempt === u.id}
                   title={u.session_exempt ? 'Disable multi-session (restore lockout + single-session)' : 'Enable multi-session (no lockout, simultaneous logins allowed)'}
@@ -325,14 +343,22 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                 </Button>
               )}
               {(u.role === 'benefactor' || u.role === 'beneficiary') && (
-                <Button variant="ghost" size="sm" className="text-[var(--t5)] h-8 w-8 p-0"
+                <Button variant="ghost" size="sm" className="text-[var(--t5)] h-8 w-8 p-0 hover:bg-[var(--s)] hover:text-current"
                   onClick={() => { setUnlockUserId(unlockUserId === u.id ? null : u.id); setMasterKeyInput(''); }}
                   title="Vault Unlock" data-testid={`vault-unlock-${u.id}`}>
                   <KeyRound className="w-4 h-4" />
                 </Button>
               )}
+              {(u.role === 'benefactor' || u.role === 'beneficiary') && !operatorMode && (
+                <Button variant="ghost" size="sm" className="text-[var(--t5)] h-8 w-8 p-0 hover:bg-[var(--s)] hover:text-current"
+                  onClick={() => handleResetTrial(u.id, u.name)}
+                  disabled={resettingTrial === u.id}
+                  title="Reset 30-day free trial" data-testid={`admin-reset-trial-${u.id}`}>
+                  {resettingTrial === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
+                </Button>
+              )}
               {!operatorMode && (
-              <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)] h-8 w-8 p-0" onClick={() => { setDeleteTarget({ id: u.id, name: u.name, role: u.role }); setDeletePassword(''); setShowDeletePw(false); }} data-testid={`admin-delete-user-${u.id}`}>
+              <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)] hover:text-[var(--rd)] h-8 w-8 p-0" onClick={() => { setDeleteTarget({ id: u.id, name: u.name, role: u.role }); setDeletePassword(''); setShowDeletePw(false); }} data-testid={`admin-delete-user-${u.id}`}>
                 <Trash2 className="w-4 h-4" />
               </Button>
               )}
@@ -754,7 +780,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                                 </button>
                               )}
                               {bu.id !== currentUserId && !operatorMode && (
-                                <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)] h-6 w-6 p-0" onClick={() => { setDeleteTarget({ id: bu.id, name: bu.name, role: bu.role }); setDeletePassword(''); setShowDeletePw(false); }}>
+                                <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)] hover:text-[var(--rd)] h-6 w-6 p-0" onClick={() => { setDeleteTarget({ id: bu.id, name: bu.name, role: bu.role }); setDeletePassword(''); setShowDeletePw(false); }}>
                                   <Trash2 className="w-3 h-3" />
                                 </Button>
                               )}

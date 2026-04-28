@@ -1074,3 +1074,32 @@ This block fired BEFORE the per-route `<FeatureGate>` element got a chance to re
 **Iter 99 RESOLVED.** All three categories of findings (false positives, hot-fixes, intentional design) are accounted for. Build is ready to push. After deploy, only verification remaining is the Recharts -1 warning silence on `/admin/analytics` — to be confirmed by user via console open on prod, or via a future testing-agent micro-sweep if needed.
 
 Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint clean. PRD.md updated.
+
+
+## Iter 100 — Admin User-List Polish (Apr 28, 2026)
+
+**Bug fix — random gold-highlight on user-row buttons during scroll** (user-reported on `/admin/users`).
+
+Root cause: shadcn's `<Button variant="ghost">` ships with `hover:bg-accent hover:text-accent-foreground`. CarryOn's theme maps `--accent: 43 74% 52%` (gold, `index.css:127`). On touch devices, iOS briefly fires `:hover` on whatever button is under the finger when the user touch-and-drags to scroll, before recognizing the gesture. On desktop, as the page scrolls under a stationary cursor, different rows pass under it → each ghost button hits `:hover` for one frame → gold flash. Result: users saw "various buttons highlight gold randomly as I scroll down".
+
+Fix: added `hover:bg-[var(--s)] hover:text-current` neutral override to every `<Button variant="ghost">` in the user-row action cluster (Beta toggle, Session-Exempt toggle, Vault Unlock, Delete in both flat + tree views). Verified post-fix: hover bg = `rgba(255,255,255,0.055)` (neutral surface), no longer gold.
+
+**Feature — Per-user "Reset Trial" button** (user-requested).
+
+New per-row button on the `/admin/users` list with a `Clock` icon, only visible for benefactors and beneficiaries (not admins / operator-mode), positioned between Vault Unlock and Delete. Click → `window.confirm` → POST `/api/admin/users/{user_id}/reset-trial`. On success: local state updates with new `trial_ends_at`, toast confirms.
+
+Backend: new admin-only endpoint at `/app/backend/routes/admin/users.py`. Sets `trial_ends_at = now + TRIAL_DURATION_DAYS` (currently 30 days, imported from `subscriptions/plans.py`), `subscription_status = "trialing"`, plus audit fields `trial_reset_at` + `trial_reset_by`. Logged to `activity_log` with action `trial_reset`. Returns `{ ok, trial_ends_at, subscription_status, trial_days }`.
+
+**Verified end-to-end on preview pod**:
+- Backend curl: `POST /api/admin/users/{benefactor_id}/reset-trial` → 200 OK with new `trial_ends_at`, `subscription_status: "trialing"`, `trial_days: 30` ✅
+- Frontend DOM: 284 reset-trial buttons rendered (one per eligible user), title="Reset 30-day free trial" ✅
+- Hover bg on Beta button: `rgba(255,255,255,0.055)` (neutral) — gold flash gone ✅
+- Scoping: Reset Trial does NOT render for the founder's own row, admins, or operators ✅
+
+**data-testids**: `admin-reset-trial-{user_id}`
+
+**Files touched**:
+- `/app/backend/routes/admin/users.py` — new `POST /admin/users/{user_id}/reset-trial` endpoint + `timedelta` + `TRIAL_DURATION_DAYS` import
+- `/app/frontend/src/components/admin/UsersTab.js` — `Clock` import, `resettingTrial` state, `handleResetTrial`, new button + neutral hover override on 5 ghost buttons
+
+Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint + ruff clean.
