@@ -200,7 +200,7 @@ const SignupPage = () => {
       if (specialStatus.includes('enterprise') && !b2bCodeSignup.trim()) return false;
       return true;
     }
-    if (sid === 'credentials') return email.trim() && username.trim() && !usernameError && password.length >= 8 && password === confirmPassword && smsConsent;
+    if (sid === 'credentials') return email.trim() && username.trim() && !usernameError && !usernameChecking && password.length >= 8 && password === confirmPassword && smsConsent;
     return false;
   };
 
@@ -519,20 +519,23 @@ const SignupPage = () => {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label className="text-[#7b879e] text-sm font-medium">First Name <span className="text-red-400">*</span></Label>
-                            <Input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)}
+                            <Label htmlFor="signup-firstname" className="text-[#7b879e] text-sm font-medium">First Name <span className="text-red-400">*</span></Label>
+                            <Input id="signup-firstname" type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)}
+                              autoComplete="given-name"
                               placeholder="John" className={inputClass} data-testid="signup-firstname-input" autoFocus />
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-[#7b879e] text-sm font-medium">Middle Name</Label>
-                            <Input type="text" value={middleName} onChange={(e) => setMiddleName(e.target.value)}
+                            <Label htmlFor="signup-middlename" className="text-[#7b879e] text-sm font-medium">Middle Name</Label>
+                            <Input id="signup-middlename" type="text" value={middleName} onChange={(e) => setMiddleName(e.target.value)}
+                              autoComplete="additional-name"
                               placeholder="William" className={inputClass} data-testid="signup-middlename-input" />
                           </div>
                         </div>
                         <div className="grid grid-cols-3 gap-4">
                           <div className="col-span-2 space-y-2">
-                            <Label className="text-[#7b879e] text-sm font-medium">Last Name <span className="text-red-400">*</span></Label>
-                            <Input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)}
+                            <Label htmlFor="signup-lastname" className="text-[#7b879e] text-sm font-medium">Last Name <span className="text-red-400">*</span></Label>
+                            <Input id="signup-lastname" type="text" value={lastName} onChange={(e) => setLastName(e.target.value)}
+                              autoComplete="family-name"
                               placeholder="Mitchell" className={inputClass} data-testid="signup-lastname-input" />
                           </div>
                           <div className="space-y-2">
@@ -661,10 +664,11 @@ const SignupPage = () => {
                           <p className="text-[#6b7a90] text-sm">Choose a unique username and strong password to protect your family&apos;s data.</p>
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-[#7b879e] text-sm font-medium">Username <span className="text-red-400">*</span></Label>
+                          <Label htmlFor="signup-username" className="text-[#7b879e] text-sm font-medium">Username <span className="text-red-400">*</span></Label>
                           <div className="relative">
                             <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
-                            <Input type="text" value={username}
+                            <Input id="signup-username" type="text" value={username}
+                              autoComplete="username"
                               onChange={(e) => {
                                 const val = e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
                                 setUsername(val);
@@ -696,10 +700,11 @@ const SignupPage = () => {
                           )}
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-[#7b879e] text-sm font-medium">Email <span className="text-red-400">*</span></Label>
+                          <Label htmlFor="signup-email" className="text-[#7b879e] text-sm font-medium">Email <span className="text-red-400">*</span></Label>
                           <div className="relative">
                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
-                            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                            <Input id="signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                              autoComplete="email"
                               placeholder="john@example.com" className={`${inputClass} pl-12`}
                               data-testid="signup-email-input" />
                           </div>
@@ -707,10 +712,11 @@ const SignupPage = () => {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label className="text-[#7b879e] text-sm font-medium">Password <span className="text-red-400">*</span></Label>
+                            <Label htmlFor="signup-password" className="text-[#7b879e] text-sm font-medium">Password <span className="text-red-400">*</span></Label>
                             <div className="relative">
                               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
-                              <Input type={showPassword ? 'text' : 'password'} value={password}
+                              <Input id="signup-password" type={showPassword ? 'text' : 'password'} value={password}
+                                autoComplete="new-password"
                                 onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 characters"
                                 className={`${inputClass} pl-12 pr-12`} data-testid="signup-password-input" />
                               <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPassword(!showPassword)}
@@ -720,10 +726,11 @@ const SignupPage = () => {
                             </div>
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-[#7b879e] text-sm font-medium">Confirm <span className="text-red-400">*</span></Label>
+                            <Label htmlFor="signup-confirm-password" className="text-[#7b879e] text-sm font-medium">Confirm <span className="text-red-400">*</span></Label>
                             <div className="relative">
                               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
-                              <Input type={showPassword ? 'text' : 'password'} value={confirmPassword}
+                              <Input id="signup-confirm-password" type={showPassword ? 'text' : 'password'} value={confirmPassword}
+                                autoComplete="new-password"
                                 onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter"
                                 className={`${inputClass} pl-12 ${confirmPassword && password !== confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : ''}`} data-testid="signup-confirm-password-input" />
                             </div>

@@ -22,8 +22,9 @@ import { isFeatureEnabled } from './utils/featureGates';
 import { Loader2 } from 'lucide-react';
 
 const CARRYON_BUILD = '2026-04-28T00:00:00Z-pre-launch-refactor';
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && !window.__CARRYON_BUILD_LOGGED) {
   window.__CARRYON_BUILD = CARRYON_BUILD;
+  window.__CARRYON_BUILD_LOGGED = true;
   console.log(`%c[CarryOn] Build: ${CARRYON_BUILD}`, 'color: #d4af37; font-weight: bold');
 }
 
