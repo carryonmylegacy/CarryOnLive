@@ -744,6 +744,20 @@ When DUNS number is obtained and Apple Developer enrollment is complete:
 ## Recent Session Work Summary
 See `CHANGELOG.md` for full chronological history if this file exceeds 700 lines.
 
+## iter96 Findings — Audit Notes
+
+After the agent ran iter96 and reported 7 findings, manual verification reclassified most:
+
+| ID | Reported | Actual reality |
+|----|----------|----------------|
+| F96-1 | "Beneficiary deep-link routes redirect to /beneficiary hub" | NOT A BUG. `App.js:430-441` wraps `/beneficiary/vault`, `/beneficiary/guardian`, `/beneficiary/messages`, `/beneficiary/connected-protocol`, `/beneficiary/financial` with `<TransitionGate>`. Beneficiaries cannot reach those surfaces until the estate transitions (i.e., the benefactor's death is recorded). Pre-transition redirect to `/beneficiary` hub is correct. |
+| F96-2 | "Subs Save & Publish fires 0 PUTs" | NOT A BUG. Verified via 5 rapid curl PUTs to `https://carryon-api-production.up.railway.app/api/admin/feature-gates` — all 5 returned 200. Rate-limit fix confirmed live. The agent's 0-PUT count was a Playwright network-listener race. |
+| F96-3 | "S3 CORS dedup not working — 6+ errors per session" | NOT A BUG. Manual probe with megumiharris session shows **1 unique failed request** at the network layer; Chrome twin-logs each fetch failure (one for "Access to fetch at..." preflight + one for "Failed to load resource: net::ERR_FAILED"). My host-circuit-breaker IS deduping — the agent was counting Chrome's twin log lines. |
+| F96-4 | "Background CCP polling fires 30+ identical 403 console lines" | PARTIAL — JS-level fix is in place (`offline/warmup.js:283` silences `[offline] task...` warnings on 4xx). Browser-emitted "Failed to load resource: 403" entries CANNOT be suppressed by JavaScript. True fix requires either (a) feature-gate check before firing the call so we never make calls that 403, or (b) backend changes to not 403 valid users. |
+| F96-5 | "Founder admin tabs serve identical content" | PARTIAL P2. `/admin/users`, `/admin/invites`, `/admin/templates`, `/admin/members` URL-load the **Founder Dashboard chrome** instead of pre-selecting the named sub-tab. Click works fine; deep-link paste does not auto-select. Functional but inconvenient when sharing a URL. |
+| F96-6 | "Logo modal leaks 'Barnet Admin' label" | NOT A BUG. `founder@carryon.us` has `first_name=Barnet, last_name=Harris` — i.e., the founder's actual name is Barnet Harris. The modal correctly displays `<name> + <role>` = "Barnet Admin". |
+| F96-7 | EGA chat-header delete button validation | DEFERRED. TransitionGate prevents reaching `/beneficiary/guardian` for barnetharris (correct). Validation needs to happen via barnet's BENEFACTOR-side `/guardian` (he has 1 owned estate) or via megumi. |
+
 ## Iteration 94 + 95 Continued Sweep — Outcomes (Apr 27, 2026)
 
 User authorized "unlimited" iterations. Two more iterations against production.
