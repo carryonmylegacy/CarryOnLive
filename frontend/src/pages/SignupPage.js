@@ -769,7 +769,7 @@ const SignupPage = () => {
                       </Link>
                     )}
 
-                    <Button onClick={handleNext} disabled={loading}
+                    <Button onClick={handleNext} disabled={loading || usernameChecking}
                       className="h-11 sm:h-12 px-6 sm:px-8 rounded-xl font-semibold text-sm"
                       style={{
                         background: canAdvance() ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(212,175,55,0.15)',
@@ -781,6 +781,8 @@ const SignupPage = () => {
                     >
                       {loading ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating...</>
+                      ) : usernameChecking && currentStep?.id === 'credentials' ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Checking username...</>
                       ) : currentStep?.id === 'credentials' ? (
                         <>Create Account <ChevronRight className="w-4 h-4 ml-1" /></>
                       ) : (
