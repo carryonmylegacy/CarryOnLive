@@ -98,6 +98,7 @@ const SpeakWithUsPage = lazy(() => import('./pages/SpeakWithUsPage'));
 const SharePage = lazy(() => import('./pages/SharePage'));
 
 import UsernameReviewModal from './components/UsernameReviewModal';
+import FeatureGate from './components/FeatureGate';
 
 // Loading fallback — only visible after 180ms to avoid flashing on cache hits.
 // This eliminates the sub-100ms "white-out" that feels JV during navigation.
@@ -402,21 +403,21 @@ function AppRoutes() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/share" element={<SharePage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route path="/vault" element={<VaultPage />} />
-        <Route path="/messages" element={<MessagesPage />} />
-        <Route path="/messages/:messageId/edit" element={<EditMilestoneMessagePage />} />
-        <Route path="/beneficiaries" element={<BeneficiariesPage />} />
+        <Route path="/vault" element={<FeatureGate><VaultPage /></FeatureGate>} />
+        <Route path="/messages" element={<FeatureGate><MessagesPage /></FeatureGate>} />
+        <Route path="/messages/:messageId/edit" element={<FeatureGate><EditMilestoneMessagePage /></FeatureGate>} />
+        <Route path="/beneficiaries" element={<FeatureGate><BeneficiariesPage /></FeatureGate>} />
         {/* Beneficiary edit now handled by SlidePanel */}
         <Route path="/guardian" element={null} />
-        <Route path="/checklist" element={<ChecklistPage />} />
-        <Route path="/trustee" element={<TrusteePage />} />
-        <Route path="/ffn" element={<FFNPage />} />
+        <Route path="/checklist" element={<FeatureGate><ChecklistPage /></FeatureGate>} />
+        <Route path="/trustee" element={<FeatureGate><TrusteePage /></FeatureGate>} />
+        <Route path="/ffn" element={<FeatureGate><FFNPage /></FeatureGate>} />
         <Route path="/transition" element={<TransitionPage />} />
-        <Route path="/digital-wallet" element={<DigitalWalletPage />} />
-        <Route path="/financial" element={<FinancialPortalPage />} />
-        <Route path="/timeline" element={<LegacyTimelinePage />} />
-        <Route path="/estate-chat" element={<EstateChatPage />} />
-        <Route path="/connected-protocol" element={<ConnectedProtocolPage />} />
+        <Route path="/digital-wallet" element={<FeatureGate><DigitalWalletPage /></FeatureGate>} />
+        <Route path="/financial" element={<FeatureGate><FinancialPortalPage /></FeatureGate>} />
+        <Route path="/timeline" element={<FeatureGate><LegacyTimelinePage /></FeatureGate>} />
+        <Route path="/estate-chat" element={<FeatureGate><EstateChatPage /></FeatureGate>} />
+        <Route path="/connected-protocol" element={<FeatureGate><ConnectedProtocolPage /></FeatureGate>} />
       </Route>
 
       {/* Beneficiary Routes */}
@@ -437,9 +438,9 @@ function AppRoutes() {
         <Route path="/beneficiary/subscription" element={<SubscriptionPage />} />
         <Route path="/beneficiary/upload-certificate" element={<UploadCertificatePage />} />
         <Route path="/beneficiary/condolence" element={<CondolencePage />} />
-        <Route path="/beneficiary/estate-chat" element={<EstateChatPage />} />
-        <Route path="/beneficiary/connected-protocol" element={<BeneficiaryCCPPage />} />
-        <Route path="/beneficiary/financial" element={<BeneficiaryFinancialPage />} />
+        <Route path="/beneficiary/estate-chat" element={<FeatureGate><EstateChatPage /></FeatureGate>} />
+        <Route path="/beneficiary/connected-protocol" element={<FeatureGate><BeneficiaryCCPPage /></FeatureGate>} />
+        <Route path="/beneficiary/financial" element={<FeatureGate><BeneficiaryFinancialPage /></FeatureGate>} />
       </Route>
 
       {/* Admin Routes */}

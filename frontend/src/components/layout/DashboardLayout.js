@@ -13,6 +13,7 @@ import { haptics } from '../../utils/haptics';
 import BetaFeedbackButton from '../BetaFeedbackButton';
 import BetaWelcomeModal from '../BetaWelcomeModal';
 import { useLocalStorageBoolean } from '../../hooks/useLocalStorageBoolean';
+import FeatureGate from '../FeatureGate';
 
 const GuardianPage = lazy(() => import('../../pages/GuardianPage'));
 
@@ -218,7 +219,11 @@ const DashboardLayout = () => {
       {guardianMounted && (
         <div style={{ display: isOnGuardian ? 'block' : 'none' }}>
           <Suspense fallback={null}>
-            <GuardianPage />
+            {isOnGuardian ? (
+              <FeatureGate><GuardianPage /></FeatureGate>
+            ) : (
+              <GuardianPage />
+            )}
           </Suspense>
         </div>
       )}

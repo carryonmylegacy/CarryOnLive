@@ -912,6 +912,56 @@ admin token.
   refactor, unrelated to rate-limit work. Awaiting user direction before
   touching the chat UI.
 
+## Iter 98 Production Sweep — Follow-up Fixes (Apr 28, 2026)
+
+Iter 98 testing agent ran a production sweep and surfaced 7 issues. After triage, three were false positives or required user judgment, four were actionable. Findings shipped:
+
+**Verified false positive (no fix needed):**
+- **S1.1 Admin alias deep-links** — testing agent claimed `/admin/invites`, `/admin/templates`, `/admin/members` rendered the `/admin` root. **Visually confirmed on production**: aliases work correctly. The testing agent measured by `<h1>` only, which is *always* "Founder Dashboard" (the persistent page header that sits above the tab bar). The actual tab body content rendered correctly below — verified via direct screenshot of `https://app.carryon.us/admin/invites` showing Invites tab highlighted in gold and real invite codes in the body. **No code change needed.**
+
+**Shipped fixes:**
+
+- **#2 Signup race-condition gap** (`SignupPage.js`). The previous race fix only worked if the user blurred the username field before clicking Create Account. If they typed and clicked immediately without blurring, the in-flight `/auth/check-username` probe never started and a taken username surfaced as an opaque `/auth/register` 400 instead of the inline "Username is already taken" message. Fix: `handleSignup` now does a defensive availability re-check at the start. If taken → set inline error + toast + abort. If available (or check fails) → proceed to register.
+
+- **#3 Route-level feature gating gap** (new `components/FeatureGate.js` + `App.js` + `DashboardLayout.js`). Menu hiding was already enforced via `filterNavByFeatures(items, enabledFeatures)` in Sidebar / MobileNav, but **direct URL navigation** (typed URL, stale bookmark, deep link, copy-paste) bypassed the gate — pages would load even when the user's tier didn't have the feature. New `FeatureGate` wrapper consults `isFeatureEnabled(location.pathname, enabledFeatures)` from the existing `featureGates.js` registry. If the route's feature key is not in the user's `enabledFeatures`:
+  - Renders a clean "**{Feature} *isn't on your plan.*"** panel (Cormorant serif, italic gold accent on the gated phrase, gold lock icon).
+  - Subcopy: *"Upgrade your subscription to unlock {feature} for you and your family."*
+  - Primary CTA: gold "See Plans" button → `/subscription` (or `/beneficiary/subscription` for beneficiaries) using the `btn-gold-cta` primitive.
+  - Secondary "← Go back" link calls `navigate(-1)`.
+  - Backdrop & spacing respect Rule 8 (fits between header & dock on iPhone 13 Mini → 17 Pro Max).
+  - data-testids: `feature-not-on-plan`, `feature-not-on-plan-upgrade-btn`, `feature-not-on-plan-back-btn`.
+
+  Routes wrapped in `App.js`: `/vault`, `/messages`, `/messages/:messageId/edit`, `/beneficiaries`, `/checklist`, `/trustee`, `/ffn`, `/digital-wallet`, `/financial`, `/timeline`, `/estate-chat`, `/connected-protocol`, `/beneficiary/estate-chat`, `/beneficiary/connected-protocol`, `/beneficiary/financial`. `/guardian` is wrapped at the persistent-mount site in `DashboardLayout.js` (since it's mounted once and toggled by display:none, not via React Router element). No admin bypass — admins inherit `premium` tier per existing backend logic and see the gate just like a real premium user (matches user's principle: "users should only see what's designated for their tier"). To debug, admin can flip the feature ON for premium in Founder Portal → Feature Gates.
+
+- **#4 Signup Step 3 heading vertical collision** (`SignupPage.js`). "Step 3 of 3" counter visually overlapped "Secure your account" h2 on desktop 1440x900. Bumped step counter `mb-1 → mb-3` and added `pt-2` to the inner scroll content area. Resolves the collision without changing the wizard flow.
+
+- **#5 Recharts -1 dimension warning** (`components/admin/AnalyticsTab.js`). Initial-mount console warning *"width(-1) and height(-1) of chart should be greater than 0"* on `/admin/analytics`. Applied the documented `width="99%"` workaround to all 4 `<ResponsiveContainer>` instances (Signups trend / Trial pie / Tier bar / Revenue bar). Forces a re-measure once the parent layout resolves. Cosmetic noise eliminated.
+
+**Verified end-to-end on preview pod:**
+- `/estate-chat` (feature key `ect`, NOT in admin's enabled_features) → FeatureGate panel renders with serif headline "Estate Chat *isn't on your plan.*", lock icon, gold "See Plans" CTA, ← Go back link.
+- "See Plans" button click → navigates to `/subscription` ✅
+- `/trustee` (feature key `dts`, IS in admin's enabled_features on preview) → renders TrusteePage normally, gate does NOT trigger ✅
+- `/vault` and `/timeline` (both enabled for admin on preview) → render their pages normally ✅
+
+Note: Production is the test target with Megumi (Premium tier, DTS + Timeline OFF per user). After this build is pushed, Megumi visiting `/trustee` or `/timeline` directly will see the FeatureGate panel.
+
+**Files touched:**
+- `/app/frontend/src/components/FeatureGate.js` (new)
+- `/app/frontend/src/App.js` — import FeatureGate, wrap 15 benefactor + beneficiary feature routes
+- `/app/frontend/src/components/layout/DashboardLayout.js` — wrap persistent GuardianPage mount
+- `/app/frontend/src/pages/SignupPage.js` — defensive username check + heading layout
+- `/app/frontend/src/components/admin/AnalyticsTab.js` — Recharts width="99%"
+
+**Pending re-test (deferred from iter 98 due to budget):**
+- PHASE S3 — Barnet beneficiary↔benefactor switcher round-trip
+- PHASE PS1–PS3 — Founder portal switcher round-trip
+- (h) Onboarding tour overlay opacity verification
+- Verify FeatureGate triggers for Megumi on prod after she navigates to `/trustee` and `/timeline`
+- Verify race-condition fix catches a taken username inline
+
+Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint clean.
+
+
 ## Iter 97 Signup UX Polish (Apr 28, 2026)
 
 User-prioritized UX fixes shipped on top of iter 97 testing report findings.
