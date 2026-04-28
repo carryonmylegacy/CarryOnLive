@@ -325,18 +325,38 @@ export async function warmUpAfterLogin(token) {
     }
   }
 
+  // Apr 27, 2026 — scope warm-up to the CURRENTLY-SELECTED estate only.
+  // Previously we fanned out 7 task families × 5 calls = ~35 GETs per owned
+  // estate; for a multi-estate user (e.g. our founder admin with 97 estates)
+  // that produced 3,000+ parallel requests on every login and tripped the
+  // server-side rate limiter, then cascaded a 429 storm into every page
+  // mount. We now warm just the active estate; other estates are warmed
+  // lazily the first time the user actually navigates into them via the
+  // estate-switcher, which is the only time they need offline survival
+  // for THAT estate's data anyway.
+  let activeEstateId = null;
+  try {
+    activeEstateId = (typeof localStorage !== 'undefined' && localStorage.getItem('selected_estate_id')) || null;
+  } catch {}
+  if (!activeEstateId && ownedEstateIds.length > 0) {
+    activeEstateId = ownedEstateIds[0];
+  }
+  const warmEstateIds = activeEstateId && ownedEstateIds.includes(activeEstateId)
+    ? [activeEstateId]
+    : ownedEstateIds.slice(0, 1);
+
   const tasks = [
     taskProfile(headers),
     taskSubscription(headers),
     taskChat(headers),
     taskVoices(),
-    ...ownedEstateIds.map((id) => taskDashboard(id, headers)),
-    ...ownedEstateIds.map((id) => taskFFN(id, headers)),
-    ...ownedEstateIds.map((id) => taskFinancial(id, headers)),
-    ...ownedEstateIds.map((id) => taskDTS(id, headers)),
-    ...ownedEstateIds.map((id) => taskChecklist(id, headers)),
-    ...ownedEstateIds.map((id) => taskCCP(id, headers)),
-    ...ownedEstateIds.map((id) => taskDAVBeneficiaries(id, headers)),
+    ...warmEstateIds.map((id) => taskDashboard(id, headers)),
+    ...warmEstateIds.map((id) => taskFFN(id, headers)),
+    ...warmEstateIds.map((id) => taskFinancial(id, headers)),
+    ...warmEstateIds.map((id) => taskDTS(id, headers)),
+    ...warmEstateIds.map((id) => taskChecklist(id, headers)),
+    ...warmEstateIds.map((id) => taskCCP(id, headers)),
+    ...warmEstateIds.map((id) => taskDAVBeneficiaries(id, headers)),
   ];
 
   await runTasksWithProgress(tasks);
