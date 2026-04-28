@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
 import { DeleteUserModal } from './DeleteUserModal';
+import { ResetTrialModal } from './ResetTrialModal';
 import { API_URL } from '../../config';
 
 const roleColors = {
@@ -35,6 +36,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   const [togglingBeta, setTogglingBeta] = useState(null);
   const [togglingExempt, setTogglingExempt] = useState(null);
   const [resettingTrial, setResettingTrial] = useState(null);
+  const [resetTrialTarget, setResetTrialTarget] = useState(null); // { id, name, role, trial_ends_at }
   const [settingTier, setSettingTier] = useState(null);
   const [sortBy, setSortBy] = useState('default');
 
@@ -62,8 +64,9 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     setTogglingExempt(null);
   };
 
-  const handleResetTrial = async (userId, userName) => {
-    if (!window.confirm(`Reset the free trial for ${userName}?\n\nThis will give them a fresh 30-day trial starting now and set their subscription status to 'trialing'.`)) return;
+  const handleResetTrial = async () => {
+    if (!resetTrialTarget) return;
+    const userId = resetTrialTarget.id;
     setResettingTrial(userId);
     try {
       const res = await axios.post(`${API_URL}/admin/users/${userId}/reset-trial`, {}, getAuthHeaders());
@@ -73,6 +76,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
         subscription_status: 'trialing',
       } : u));
       toast.success(`Trial reset — ${res.data.trial_days} days from today`);
+      setResetTrialTarget(null);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to reset trial');
     }
@@ -351,7 +355,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
               )}
               {(u.role === 'benefactor' || u.role === 'beneficiary') && !operatorMode && (
                 <Button variant="ghost" size="sm" className="text-[var(--t5)] h-8 w-8 p-0 hover:bg-[var(--s)] hover:text-current"
-                  onClick={() => handleResetTrial(u.id, u.name)}
+                  onClick={() => setResetTrialTarget({ id: u.id, name: u.name, role: u.role, trial_ends_at: u.trial_ends_at })}
                   disabled={resettingTrial === u.id}
                   title="Reset 30-day free trial" data-testid={`admin-reset-trial-${u.id}`}>
                   {resettingTrial === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
@@ -1196,6 +1200,16 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
           handleDeleteUser={handleDeleteUser}
           deleting={deleting}
           onCancel={() => { setDeleteTarget(null); setDeletePassword(''); }}
+        />
+      )}
+
+      {/* Reset Trial Confirmation Modal — Founder only */}
+      {!operatorMode && (
+        <ResetTrialModal
+          resetTarget={resetTrialTarget}
+          handleResetTrial={handleResetTrial}
+          resetting={resettingTrial === resetTrialTarget?.id}
+          onCancel={() => setResetTrialTarget(null)}
         />
       )}
     </div>
