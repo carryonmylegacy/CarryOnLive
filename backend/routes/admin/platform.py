@@ -40,6 +40,7 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
     all users' otp_enabled is reset to True."""
     allowed_keys = {
         "otp_disabled",
+        "signup_otp_disabled",
         "homepage_video_id",
         "homepage_video_id_vertical",
         "footer_address_line1",

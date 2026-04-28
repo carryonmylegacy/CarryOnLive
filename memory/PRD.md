@@ -744,6 +744,26 @@ When DUNS number is obtained and Apple Developer enrollment is complete:
 ## Recent Session Work Summary
 See `CHANGELOG.md` for full chronological history if this file exceeds 700 lines.
 
+## Signup OTP Bypass Toggle — Admin-Controlled (Apr 27, 2026)
+
+**User request**: Build a separate admin toggle that disables ONLY the email-OTP gate at signup. Distinct from the existing `otp_disabled` flag which controls per-login OTP. Off by default. Founder flips ON for QA/automation runs and back OFF afterward.
+
+**Backend** (`/app/backend/`)
+- `routes/admin/platform.py` — added `signup_otp_disabled` to `allowed_keys` for `PUT /api/admin/platform-settings`. Persists to the `platform_settings` doc same as the existing flag.
+- `routes/auth/register.py` — when `signup_otp_disabled=true`, the user row is still created (so it shows up in the founder admin portal at /admin/users for cleanup), and an `access_token` + `user` payload is returned alongside `skip_otp: true`. Frontend uses this to drop the user straight onto their dashboard. When OFF, existing OTP-modal flow is unchanged.
+
+**Frontend**
+- `pages/SignupPage.js` — `handleSignup` now checks `response.data.skip_otp`. If present, stash the token in `localStorage`, navigate to dashboard, force a hydrate via `window.location.reload()`. Otherwise existing OTP-modal flow.
+- `components/layout/Sidebar.js` — added a parallel inline `<SignupOtpToggle />` that mirrors the existing `<OtpToggle />`. Shown on the founder sidebar, immediately below the main OTP toggle. Testid: `sidebar-signup-otp-toggle`.
+- `components/layout/MobileNav.js` + `components/layout/SignupOtpToggle.js` (new file) — same toggle for the mobile menu, immediately below the existing `<MobileOtpToggle />`. Testid: `mobile-signup-otp-toggle`.
+
+**Verified**
+- Lint clean, housekeeping 0 WARN / 0 FAIL.
+- End-to-end on preview pod: PUT `signup_otp_disabled=true` → POST `/auth/register` returns `skip_otp: true` + `access_token`. Then PUT back to false → returns to existing OTP-modal flow. Both paths confirmed via curl.
+- Reset preview pod's flag to false to avoid leaving a security hole on a shared sandbox.
+
+**Awaiting user push** — toggle code is on preview only. User must `Save to GitHub` so Railway redeploys before they can flip the toggle in their production admin portal.
+
 ## Pre-Launch Production Sweep — Findings & Fixes (Apr 27, 2026)
 
 User requested an exhaustive button-by-button sweep of production before launch. Testing agent ran iteration 91 against `https://app.carryon.us` (frontend) → `https://carryon-api-production.up.railway.app` (backend). 8 findings. Disposition:

@@ -264,6 +264,18 @@ const SignupPage = () => {
         special_status: specialStatus.length > 0 ? specialStatus : null,
         b2b_code: specialStatus.includes('enterprise') ? b2bCodeSignup : null,
       });
+      // Apr 27, 2026 — when admin has flipped `signup_otp_disabled` ON in the
+      // founder portal, /auth/register returns an access_token + user object
+      // directly. We skip the OTP modal and drop the user straight onto their
+      // dashboard, mirroring the post-OTP-verify path.
+      if (response.data?.skip_otp && response.data?.access_token) {
+        localStorage.setItem('carryon_token', response.data.access_token);
+        const u = response.data.user || {};
+        navigate(u.role === 'beneficiary' ? '/beneficiary' : '/dashboard');
+        // Force a hydrate so AuthContext picks up the new token.
+        window.location.reload();
+        return;
+      }
       setRegisteredEmail(email);
       setOtpHint(response.data.otp_hint);
       setShowOtpModal(true);

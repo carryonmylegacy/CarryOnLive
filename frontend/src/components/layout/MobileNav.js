@@ -48,6 +48,7 @@ import { applyUserMenuOrder } from '../../config/menuRegistry';
 import { usePendingSyncCounts } from '../PendingSyncChip';
 import { DOCK_REGISTRY, ADMIN_PORTALS, scopeArr, hasScope } from './navConfig';
 import MobileOtpToggle from './MobileOtpToggle';
+import SignupOtpToggle from './SignupOtpToggle';
 import MobileOfflineToggle from './MobileOfflineToggle';
 import DebugValues from './DebugValues';
 
@@ -878,6 +879,7 @@ const MobileNav = () => {
               {user?.role === 'admin' && !window.location.pathname.startsWith('/ops') && (
                 <div className="px-4 pb-2 space-y-2">
                   <MobileOtpToggle />
+                  <SignupOtpToggle />
                   {/* Offline master switch — placed directly below OTP per PM request. */}
                   <MobileOfflineToggle />
                 </div>

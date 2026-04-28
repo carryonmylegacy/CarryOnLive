@@ -102,7 +102,66 @@ const OtpToggle = ({ collapsed }) => {
         <ShieldCheck className="w-4 h-4" style={{ color: otpDisabled ? '#ef4444' : '#10b981' }} />
         <span className="text-xs font-bold text-[var(--t)]">OTP</span>
       </div>
-      <Switch checked={!otpDisabled} onCheckedChange={toggle} />
+      <Switch checked={!otpDisabled} onCheckedChange={toggle} data-testid="sidebar-otp-toggle" />
+    </div>
+  );
+};
+
+// Apr 27, 2026 — distinct toggle for the signup-OTP gate. Same look-and-feel
+// as OtpToggle but flips `signup_otp_disabled`. Lets the founder skip email
+// verification for new signups during QA / automation runs.
+const SignupOtpToggle = ({ collapsed }) => {
+  const [signupOtpDisabled, setSignupOtpDisabled] = useState(false);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    const token = localStorage.getItem('carryon_token');
+    if (token) {
+      axios.get(`${API_URL}/admin/platform-settings`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => setSignupOtpDisabled(!!res.data?.signup_otp_disabled))
+        .catch((err) => {
+          if (err?.response?.status && err.response.status !== 401) {
+            try { toast.error("Couldn't read signup-OTP state — tap to retry."); } catch {}
+          }
+        });
+    }
+  }, []);
+  const toggle = async () => {
+    if (busy) return;
+    const newVal = !signupOtpDisabled;
+    setSignupOtpDisabled(newVal);
+    setBusy(true);
+    const token = localStorage.getItem('carryon_token');
+    try {
+      const res = await axios.put(
+        `${API_URL}/admin/platform-settings`,
+        { signup_otp_disabled: newVal },
+        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } },
+      );
+      const authoritative = !!res.data?.signup_otp_disabled;
+      setSignupOtpDisabled(authoritative);
+      try { toast.success(authoritative ? 'Signup OTP gate DISABLED' : 'Signup OTP gate ENABLED'); } catch {}
+    } catch (err) {
+      setSignupOtpDisabled(!newVal);
+      const detail = err?.response?.data?.detail || err?.message || 'request failed';
+      try { toast.error(`Could not update signup-OTP setting — ${detail}`); } catch {}
+    } finally {
+      setBusy(false);
+    }
+  };
+  if (collapsed) {
+    return (
+      <div className="mx-1 my-2 flex items-center justify-center px-2 py-2 rounded-lg cursor-pointer" onClick={toggle} title={`Signup OTP ${signupOtpDisabled ? 'Disabled' : 'Enabled'}`} style={{ background: signupOtpDisabled ? 'rgba(239,68,68,0.06)' : 'var(--s)', border: `1px solid ${signupOtpDisabled ? 'rgba(239,68,68,0.2)' : 'var(--b)'}` }}>
+        <ShieldCheck className="w-5 h-5" style={{ color: signupOtpDisabled ? '#ef4444' : '#10b981' }} />
+      </div>
+    );
+  }
+  return (
+    <div className="mx-3 my-2 flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: signupOtpDisabled ? 'rgba(239,68,68,0.06)' : 'var(--s)', border: `1px solid ${signupOtpDisabled ? 'rgba(239,68,68,0.2)' : 'var(--b)'}` }}>
+      <div className="flex items-center gap-2">
+        <ShieldCheck className="w-4 h-4" style={{ color: signupOtpDisabled ? '#ef4444' : '#10b981' }} />
+        <span className="text-xs font-bold text-[var(--t)]">Signup OTP</span>
+      </div>
+      <Switch checked={!signupOtpDisabled} onCheckedChange={toggle} data-testid="sidebar-signup-otp-toggle" />
     </div>
   );
 };
@@ -757,6 +816,7 @@ const Sidebar = () => {
       {user?.role === 'admin' && !window.location.pathname.startsWith('/ops') && (
         <>
           <OtpToggle collapsed={collapsed} />
+          <SignupOtpToggle collapsed={collapsed} />
           {/* Offline mode master switch — founder-only. Placed directly
               below the OTP toggle per PM request. Single knob engages
               IndexedDB sync, outbox drain, pending uploads, and at-rest

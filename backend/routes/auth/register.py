@@ -13,6 +13,8 @@ from utils import generate_otp, hash_password, send_otp_email
 
 from ._core import (
     TRIAL_DURATION_DAYS,
+    _user_response,
+    create_session_token,
     generate_unique_username,
     router,
     validate_username,
@@ -326,8 +328,32 @@ async def register(data: UserCreate):
         {"$set": {"user_id": user_id, "otp": otp, "created_at": datetime.now(timezone.utc).isoformat()}},
         upsert=True,
     )
-    await send_otp_email(data.email, otp, data.first_name)
-    logger.info(f"Registration OTP sent for {data.email} (username: {username})")
+
+    # Apr 27, 2026 — admin platform toggle to skip the signup-email-OTP gate.
+    # Distinct from the per-login `otp_disabled` toggle. When ON, we still
+    # create the user row + OTP row (so /auth/verify-otp continues to work
+    # for users who DO get prompted), but we additionally issue a session
+    # token in the response so the frontend can drop the user straight into
+    # the dashboard. Off by default; flipped on by the founder for QA /
+    # automation runs and turned back off afterwards.
+    platform_settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0}) or {}
+    skip_signup_otp = bool(platform_settings.get("signup_otp_disabled", False))
+
+    if skip_signup_otp:
+        # Mark the user as already email-verified and hand back a token,
+        # mirroring the login.py shape so the frontend can reuse its
+        # post-login navigation logic.
+        await db.users.update_one(
+            {"id": user_id},
+            {"$set": {"email_verified": True, "last_login_at": datetime.now(timezone.utc).isoformat()}},
+        )
+        token = await create_session_token(user_id, data.email, user["role"])
+        # Re-read to pick up the email_verified flag we just set.
+        fresh_user = await db.users.find_one({"id": user_id}, {"_id": 0}) or user
+        logger.info(f"Signup OTP bypass active — issued direct session token for {data.email} (@{username})")
+    else:
+        await send_otp_email(data.email, otp, data.first_name)
+        logger.info(f"Registration OTP sent for {data.email} (username: {username})")
 
     from services.notifications import notify
 
@@ -339,6 +365,20 @@ async def register(data: UserCreate):
             priority="normal",
         )
     )
+
+    if skip_signup_otp:
+        # Brand-new account — hasn't built any estate state yet. Match the
+        # login.py shape so the frontend can navigate straight into the
+        # benefactor dashboard without an OTP modal.
+        return {
+            "message": "Account created — signup OTP gate is currently disabled by admin.",
+            "email": data.email,
+            "username": username,
+            "user_id": user_id,
+            "access_token": token,
+            "user": _user_response(fresh_user, owns_estate=(user["role"] == "benefactor")),
+            "skip_otp": True,
+        }
 
     return {
         "message": "Account created. Please verify with OTP.",
