@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Save, ExternalLink, Play, Loader2, MapPin, Monitor, Smartphone } from 'lucide-react';
+import { Save, ExternalLink, Play, Loader2, MapPin, Monitor, Smartphone, Gift } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
@@ -38,6 +38,7 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
         setFooterLine2(l2);
         setFooterPhone(ph);
         setSavedFooter({ line1: l1, line2: l2, phone: ph });
+        setReferralEnabled(Boolean(res.data?.referral_program_enabled));
       } catch { /* ignore */ }
       setLoading(false);
     };
@@ -93,6 +94,22 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
       toast.success('Footer contact info updated');
     } catch { toast.error('Failed to save footer info'); }
     setSavingFooter(false);
+  };
+
+  const handleToggleReferral = async (next) => {
+    setReferralBusy(true);
+    try {
+      await axios.put(
+        `${API_URL}/admin/platform-settings`,
+        { referral_program_enabled: next },
+        getAuthHeaders()
+      );
+      setReferralEnabled(next);
+      toast.success(next ? 'Referral program enabled' : 'Referral program disabled');
+    } catch {
+      toast.error('Failed to update referral program');
+    }
+    setReferralBusy(false);
   };
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[var(--t4)]" /></div>;
@@ -250,6 +267,46 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
             {savingFooter ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save Footer Info
           </button>
+        </CardContent>
+      </Card>
+
+      {/* Referral Program Toggle */}
+      <Card className="border-[var(--b)] bg-[var(--s)]">
+        <CardContent className="p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Gift className="w-4 h-4 text-[var(--gold)]" />
+            <h3 className="text-base font-bold text-[var(--t)]">Referral Program</h3>
+          </div>
+          <p className="text-sm text-[var(--t4)]">
+            When enabled, every signed-in user gets a personal referral code. Successful referrals
+            grant <strong>7 bonus trial days</strong> to both the referrer and the new member.
+            Default: <strong>OFF</strong>. While off, all referral endpoints are inert and the
+            in-app Referral tile in Settings is hidden.
+          </p>
+          <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--b)', border: '1px solid var(--b2)' }}>
+            <div>
+              <p className="text-sm font-bold text-[var(--t)]">
+                Referral program is currently {referralEnabled ? 'ENABLED' : 'DISABLED'}
+              </p>
+              <p className="text-xs text-[var(--t4)] mt-1">
+                Toggle to {referralEnabled ? 'turn off' : 'turn on'} the platform-wide referral system.
+              </p>
+            </div>
+            <button
+              onClick={() => handleToggleReferral(!referralEnabled)}
+              disabled={referralBusy}
+              role="switch"
+              aria-checked={referralEnabled}
+              data-testid="referral-program-toggle"
+              className="relative inline-flex h-7 w-12 items-center rounded-full transition-colors disabled:opacity-50"
+              style={{ background: referralEnabled ? 'var(--gold)' : 'var(--b2)' }}
+            >
+              <span
+                className="inline-block h-5 w-5 transform rounded-full bg-white transition-transform"
+                style={{ transform: referralEnabled ? 'translateX(22px)' : 'translateX(4px)' }}
+              />
+            </button>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -13,10 +13,10 @@
  * routes to /signup. Once signed in, the in-app SubscriptionPaywall takes
  * over with the same data + Stripe / Apple-IAP rails.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { Check, Loader2, Crown, Star, Shield, Award, Heart, Sparkles } from 'lucide-react';
+import { Check, Loader2, Crown, Star, Shield, Award, Heart, Sparkles, ChevronDown } from 'lucide-react';
 import { API_URL } from '../../config';
 import { recordFunnelEvent } from '../../utils/funnelTelemetry';
 
@@ -46,6 +46,18 @@ const TIER_ACCENT = {
 // landing focused on the three any-visitor tiers + Founders Circle.
 const PUBLIC_TIERS = ['base', 'standard', 'premium'];
 
+// Eligibility-gated discount tiers, revealed when the visitor opens the
+// "Eligible for a discount?" button. Pricing and features come from the
+// same /api/subscriptions/plans response the in-app paywall uses.
+const ELIGIBILITY_TIERS = ['new_adult', 'military', 'veteran', 'hospice'];
+
+const ELIGIBILITY_BLURB = {
+  new_adult: 'Ages 18–25 — verified at signup.',
+  military: 'Active military / first responders — verified at signup.',
+  veteran: 'Veterans — verified at signup.',
+  hospice: 'Hospice patients & immediate family — verified at signup.',
+};
+
 const fmt = (n) => {
   const v = Number(n);
   if (!isFinite(v)) return '—';
@@ -54,10 +66,13 @@ const fmt = (n) => {
 
 export default function LandingPricing() {
   const [plans, setPlans] = useState([]);
+  const [eligibilityPlans, setEligibilityPlans] = useState([]);
   const [tierFeatures, setTierFeatures] = useState({});
   const [fc, setFc] = useState(null);
   const [billing, setBilling] = useState('annual'); // monthly | quarterly | annual
   const [loading, setLoading] = useState(true);
+  const [discountOpen, setDiscountOpen] = useState(false);
+  const discountRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,10 +82,14 @@ export default function LandingPricing() {
     ])
       .then(([plansRes, fcRes]) => {
         if (cancelled) return;
-        const visible = (plansRes.data.plans || []).filter((p) => PUBLIC_TIERS.includes(p.id));
+        const all = plansRes.data.plans || [];
+        const visible = all.filter((p) => PUBLIC_TIERS.includes(p.id));
         // Order: base → standard → premium
         visible.sort((a, b) => PUBLIC_TIERS.indexOf(a.id) - PUBLIC_TIERS.indexOf(b.id));
         setPlans(visible);
+        const eligible = all.filter((p) => ELIGIBILITY_TIERS.includes(p.id));
+        eligible.sort((a, b) => ELIGIBILITY_TIERS.indexOf(a.id) - ELIGIBILITY_TIERS.indexOf(b.id));
+        setEligibilityPlans(eligible);
         setTierFeatures(plansRes.data.tier_features || {});
         setFc(fcRes.data?.active ? fcRes.data : null);
       })
@@ -78,6 +97,16 @@ export default function LandingPricing() {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
+
+  // Smooth scroll the discount section into view when it opens.
+  useEffect(() => {
+    if (discountOpen && discountRef.current) {
+      const t = setTimeout(() => {
+        discountRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 240);
+      return () => clearTimeout(t);
+    }
+  }, [discountOpen]);
 
   if (loading) {
     return (
@@ -109,6 +138,80 @@ export default function LandingPricing() {
 
   const fcPremium = fc?.plans?.find((p) => p.tier === 'premium');
 
+  // Renders a single tier card (used by both the main 3 public tiers and
+  // the 4 eligibility-gated discount tiers). Pulls features straight from
+  // the founder admin's per-tier feature_gates config so prices AND the
+  // checked-feature list stay in sync with the in-app paywall.
+  const renderTierCard = (p, opts = {}) => {
+    const { highlightId = 'premium', source = 'pricing', showBilling = true } = opts;
+    const Icon = TIER_ICON[p.id] || Shield;
+    const accent = TIER_ACCENT[p.id] || 'var(--gold)';
+    const highlighted = p.id === highlightId;
+    const price = p[billingPriceField] ?? p.price;
+    const features = (tierFeatures[p.id] || []).filter((f) => f.enabled).slice(0, 7);
+    const fallbackFeatures = p.features || [];
+    const blurb = ELIGIBILITY_BLURB[p.id];
+
+    return (
+      <div
+        key={p.id}
+        className="rounded-2xl p-6 flex flex-col"
+        style={{
+          background: highlighted
+            ? 'linear-gradient(180deg, rgba(212,175,55,0.08), var(--card))'
+            : 'var(--card)',
+          border: highlighted ? '1.5px solid rgba(212,175,55,0.4)' : '1px solid var(--b)',
+          boxShadow: highlighted ? '0 0 32px -16px rgba(212,175,55,0.3)' : 'none',
+        }}
+        data-testid={`landing-tier-${p.id}`}
+      >
+        {highlighted && (
+          <div className="text-[24px] font-semibold mb-3 uppercase tracking-wider" style={{ color: 'var(--gold)' }}>
+            Most popular
+          </div>
+        )}
+        <div className="flex items-center gap-2 mb-1">
+          <Icon className="w-4 h-4" style={{ color: accent }} />
+          <h3 className="text-white font-semibold text-[36px]" style={{ fontFamily: 'var(--sans)' }}>{p.name}</h3>
+        </div>
+        <div className="mb-3 flex items-baseline gap-1">
+          <span className="text-[56px] font-bold text-white" style={{ fontFamily: 'var(--serif)' }}>
+            {fmt(price)}
+          </span>
+          {showBilling && (
+            <span className="text-[24px]" style={{ color: 'var(--t5)' }}>{billingCadenceLabel}</span>
+          )}
+        </div>
+        {blurb && (
+          <p className="text-[24px] mb-3" style={{ color: 'var(--t5)' }}>{blurb}</p>
+        )}
+        {p.note && !blurb && (
+          <p className="text-[24px] mb-3 italic" style={{ color: 'var(--t5)' }}>{p.note}</p>
+        )}
+        <ul className="space-y-2.5 mb-6 flex-1" data-testid={`landing-tier-${p.id}-features`}>
+          {(features.length ? features.map((f) => f.label) : fallbackFeatures).map((label) => (
+            <li key={label} className="flex items-start gap-2 text-[28px]" style={{ color: 'var(--t3)' }}>
+              <Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: accent }} /> {label}
+            </li>
+          ))}
+        </ul>
+        <Link
+          to="/signup"
+          onClick={() => recordFunnelEvent({ event: 'landing_cta_click', meta: { source: `${source}-${p.id}`, billing } })}
+          className={
+            highlighted
+              ? 'w-full py-3 text-[28px] font-semibold rounded-xl btn-gold-cta text-center'
+              : 'w-full py-3 text-[28px] font-semibold rounded-xl text-center transition-colors'
+          }
+          style={highlighted ? {} : { background: 'transparent', border: '1px solid var(--b)', color: 'var(--t2)', display: 'block' }}
+          data-testid={`landing-tier-${p.id}-cta`}
+        >
+          Start 30-day free trial
+        </Link>
+      </div>
+    );
+  };
+
   return (
     <div data-testid="landing-pricing-live">
       {/* Billing cadence toggle */}
@@ -139,90 +242,79 @@ export default function LandingPricing() {
 
       {/* Tier cards (live data) */}
       <div className="grid sm:grid-cols-3 gap-4">
-        {plans.map((p) => {
-          const Icon = TIER_ICON[p.id] || Shield;
-          const accent = TIER_ACCENT[p.id] || 'var(--gold)';
-          const highlighted = p.id === 'premium';
-          const price = p[billingPriceField] ?? p.price;
-          const features = (tierFeatures[p.id] || []).filter((f) => f.enabled).slice(0, 7);
-          const fallbackFeatures = p.features || [];
-
-          return (
-            <div
-              key={p.id}
-              className="rounded-2xl p-6 flex flex-col"
-              style={{
-                background: highlighted
-                  ? 'linear-gradient(180deg, rgba(212,175,55,0.08), var(--card))'
-                  : 'var(--card)',
-                border: highlighted ? '1.5px solid rgba(212,175,55,0.4)' : '1px solid var(--b)',
-                boxShadow: highlighted ? '0 0 32px -16px rgba(212,175,55,0.3)' : 'none',
-              }}
-              data-testid={`landing-tier-${p.id}`}
-            >
-              {highlighted && (
-                <div className="text-[24px] font-semibold mb-3 uppercase tracking-wider" style={{ color: 'var(--gold)' }}>
-                  Most popular
-                </div>
-              )}
-              <div className="flex items-center gap-2 mb-1">
-                <Icon className="w-4 h-4" style={{ color: accent }} />
-                <h3 className="text-white font-semibold text-[36px]" style={{ fontFamily: 'var(--sans)' }}>{p.name}</h3>
-              </div>
-              <div className="mb-3 flex items-baseline gap-1">
-                <span className="text-[56px] font-bold text-white" style={{ fontFamily: 'var(--serif)' }}>
-                  {fmt(price)}
-                </span>
-                <span className="text-[24px]" style={{ color: 'var(--t5)' }}>{billingCadenceLabel}</span>
-              </div>
-              {p.note && (
-                <p className="text-[24px] mb-3 italic" style={{ color: 'var(--t5)' }}>{p.note}</p>
-              )}
-              <ul className="space-y-2.5 mb-6 flex-1" data-testid={`landing-tier-${p.id}-features`}>
-                {(features.length ? features.map((f) => f.label) : fallbackFeatures).map((label) => (
-                  <li key={label} className="flex items-start gap-2 text-[28px]" style={{ color: 'var(--t3)' }}>
-                    <Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: accent }} /> {label}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                to="/signup"
-                onClick={() => recordFunnelEvent({ event: 'landing_cta_click', meta: { source: `pricing-${p.id}`, billing } })}
-                className={
-                  highlighted
-                    ? 'w-full py-3 text-[28px] font-semibold rounded-xl btn-gold-cta text-center'
-                    : 'w-full py-3 text-[28px] font-semibold rounded-xl text-center transition-colors'
-                }
-                style={highlighted ? {} : { background: 'transparent', border: '1px solid var(--b)', color: 'var(--t2)', display: 'block' }}
-                data-testid={`landing-tier-${p.id}-cta`}
-              >
-                Start 30-day free trial
-              </Link>
-            </div>
-          );
-        })}
+        {plans.map((p) => renderTierCard(p, { source: 'pricing' }))}
       </div>
 
-      {/* Eligibility callout — gold pill, bold, prominent */}
-      <div className="flex justify-center mt-10 mb-2 px-2" data-testid="landing-eligibility-pill">
-        <div
-          className="rounded-full px-6 py-5 sm:px-8 sm:py-6 text-center max-w-3xl"
+      {/* Eligibility discount button — clickable; slides down 4 dedicated tier cards */}
+      <div className="flex justify-center mt-10 mb-2 px-2">
+        <button
+          type="button"
+          onClick={() => {
+            const next = !discountOpen;
+            setDiscountOpen(next);
+            recordFunnelEvent({
+              event: next ? 'landing_discount_open' : 'landing_discount_close',
+              meta: { source: 'eligibility-pill' },
+            });
+          }}
+          aria-expanded={discountOpen}
+          aria-controls="landing-discount-tiers"
+          data-testid="landing-eligibility-button"
+          className="rounded-full px-6 py-5 sm:px-8 sm:py-6 text-center max-w-3xl transition-transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
           style={{
             background: 'var(--gold)',
             border: '2px solid #b89220',
             boxShadow: '0 0 48px -16px rgba(212,175,55,0.45)',
           }}
         >
-          <p
-            className="font-semibold leading-snug"
+          <span
+            className="font-semibold leading-snug inline-flex items-center justify-center gap-3"
             style={{
               color: '#0b1120',
               fontSize: 'clamp(20px, 2.6vw, 32px)',
               fontFamily: 'var(--serif)',
             }}
           >
-            Eligible for a discount? New adults (18–25), military / first responders, veterans, and hospice patients have dedicated tiers — visible after you create your account.
-          </p>
+            Eligible for a discount? New adults (18–25), military / first responders, veterans, and hospice patients have dedicated tiers — {discountOpen ? 'hide' : 'see'} pricing.
+            <ChevronDown
+              className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 transition-transform"
+              style={{ transform: discountOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            />
+          </span>
+        </button>
+      </div>
+
+      {/* Discount tiers — collapsible, smooth height transition */}
+      <div
+        id="landing-discount-tiers"
+        ref={discountRef}
+        data-testid="landing-discount-tiers"
+        className="overflow-hidden transition-[max-height,opacity] duration-500 ease-in-out"
+        style={{
+          maxHeight: discountOpen ? '4000px' : '0px',
+          opacity: discountOpen ? 1 : 0,
+        }}
+        aria-hidden={!discountOpen}
+      >
+        <div className="pt-8 pb-2">
+          {eligibilityPlans.length === 0 ? (
+            <p className="text-center text-[24px]" style={{ color: 'var(--t5)' }} data-testid="landing-discount-empty">
+              Discount tiers temporarily unavailable. Please <Link to="/signup" className="underline" style={{ color: 'var(--gold)' }}>create your account</Link> — eligibility is verified inside the app.
+            </p>
+          ) : (
+            <>
+              <p className="text-center text-[24px] uppercase tracking-[0.18em] mb-4" style={{ color: 'var(--gold)' }}>
+                Dedicated tiers · same pricing engine · same features
+              </p>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {eligibilityPlans.map((p) => renderTierCard(p, { source: 'discount', highlightId: null }))}
+              </div>
+              <p className="text-center text-[22px] italic mt-5 max-w-2xl mx-auto" style={{ color: 'var(--t5)' }}>
+                Eligibility is verified after signup (DOD ID, hospice attestation, government ID).
+                You'll see the matching discounted plan automatically.
+              </p>
+            </>
+          )}
         </div>
       </div>
 

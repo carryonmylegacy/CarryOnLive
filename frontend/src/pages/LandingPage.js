@@ -233,7 +233,6 @@ const LandingPage = () => {
       <section id="features" className="py-20 sm:py-28 px-5 sm:px-8" data-testid="landing-features">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mb-14">
-            <p className="text-[24px] uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>What's inside</p>
             <p className="text-[24px] uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>Nine Pillars of Family Readiness</p>
             <h2 className="text-[56px] sm:text-6xl font-semibold leading-tight mb-4 text-white" style={{ fontFamily: 'var(--serif)' }}>
               Nine pillars. <span className="italic" style={{ color: 'var(--gold)' }}>One family</span>. Ready for any week of the year.

@@ -1348,3 +1348,21 @@ User requested a pre-launch sanity-check dashboard so the new iOS-aware download
 - `frontend/src/components/settings/PrivacyCard.js` — pass `privacy_data_export` action
 
 Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint + ruff clean.
+
+## Punchlist Verification + Discount Tier Slide-Down (Apr 29, 2026 — iter 100 follow-up)
+
+Verified the prior fork's punchlist (font 2x scale, scroll-to-top on trust pages, FAQs default closed, /signup link on "One click changes who can see what", `app.carryon.us` → `www.carryon.us` in marketing strings). All present and correct.
+
+**Two issues caught and fixed**:
+- `SiteContentTab.js` declared `referralEnabled` state but never rendered the toggle UI nor wired GET/PUT. Added a full Referral Program card with title, description, status line, and gold/grey switch. Wired to the existing `referral_program_enabled` field on `/api/admin/platform-settings`. Default OFF preserved. End-to-end verified via curl: toggle ON → `/api/referrals/me` returns `enabled: True, code: TEST-ARDQ`; toggle OFF → `enabled: False, code: None`.
+- `LandingPage.js` Features section had two stacked uppercase pre-headers (`"What's inside"` + `"Nine Pillars of Family Readiness"`) — removed the redundant first one.
+
+**New feature — Eligibility discount slide-down**:
+- The gold "Eligible for a discount?" oval is now a clickable button with chevron rotation + funnel-event telemetry.
+- Tap/click slides down a row of 4 dedicated tier cards: New Adult, Military / First Responder, Veteran, Hospice.
+- All pricing AND features pull from `/api/subscriptions/plans` + `tier_features` — same source the in-app paywall uses, same source the founder admin controls. Zero hardcoding.
+- Each card carries a per-tier eligibility blurb ("Ages 18–25 — verified at signup", "Active military / first responders — verified at signup", etc.) and the same Start 30-day free trial CTA wired to `/signup`.
+- Smooth `max-height` + opacity transition (500ms ease), `aria-expanded` / `aria-hidden` on the trigger and panel for a11y.
+- Auto-scrolls the discount section into view when opened (`scrollIntoView({behavior: 'smooth'})`).
+
+Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint + ruff clean. Visually verified on preview pod at 1920×1080 (closed and open states).
