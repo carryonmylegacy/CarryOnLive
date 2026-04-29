@@ -134,7 +134,7 @@ const LandingPage = () => {
             <img src="/carryon-logo.png" alt="CarryOn" className="w-7 h-7 rounded-md" />
             <span className="text-white font-semibold tracking-tight" style={{ fontFamily: 'var(--sans)' }}>CarryOn</span>
           </Link>
-          <nav className="hidden md:flex items-center gap-7 text-[28px]" style={{ color: 'var(--t3)' }}>
+          <nav className="hidden md:flex items-center gap-7 text-sm" style={{ color: 'var(--t3)' }}>
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
             <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
@@ -142,7 +142,7 @@ const LandingPage = () => {
           <div className="flex items-center gap-2">
             <Link
               to="/login"
-              className="hidden sm:inline-flex items-center px-4 py-2 text-[28px] rounded-lg transition-colors hover:bg-[var(--s)]"
+              className="hidden sm:inline-flex items-center px-4 py-2 text-sm rounded-lg transition-colors hover:bg-[var(--s)]"
               style={{ color: 'var(--t3)' }}
               data-testid="landing-signin-link"
             >
@@ -150,7 +150,7 @@ const LandingPage = () => {
             </Link>
             <button
               onClick={() => handleCTA('header')}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-[28px] font-semibold rounded-lg btn-gold-cta"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg btn-gold-cta"
               data-testid="landing-cta-header"
             >
               Start Free <ArrowRight className="w-3.5 h-3.5" />
@@ -163,12 +163,12 @@ const LandingPage = () => {
       <section className="relative pt-32 pb-20 sm:pt-40 sm:pb-28 px-5 sm:px-8" data-testid="landing-hero">
         <div className="absolute inset-0 -z-10" style={{ background: 'radial-gradient(ellipse 1100px 700px at 50% 0%, rgba(212,175,55,0.10), transparent 60%)' }} />
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-[64px] sm:text-6xl lg:text-6xl font-semibold leading-[1.05] tracking-tight mb-6 text-white"
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-[1.05] tracking-tight mb-6 text-white"
               style={{ fontFamily: 'var(--serif)' }}>
             Every American family.{' '}
             <span className="italic" style={{ color: 'var(--gold)' }}>Ready</span>.
           </h1>
-          <p className="text-[32px] sm:text-[36px] max-w-2xl mx-auto mb-9 leading-relaxed" style={{ color: 'var(--t4)' }}>
+          <p className="text-base sm:text-lg max-w-2xl mx-auto mb-9 leading-relaxed" style={{ color: 'var(--t4)' }}>
             CarryOn is the family preparedness platform that ensures your family is ready for whatever
             comes its way, from the next hurricane, to an extended period of absence of a key bread
             winner, to the final day of a loved one. Wishes, passwords, recurring bills, beneficiary
@@ -179,14 +179,14 @@ const LandingPage = () => {
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
             <button
               onClick={() => handleCTA('hero')}
-              className="inline-flex items-center justify-center gap-2 px-7 py-4 text-[32px] font-semibold rounded-xl btn-gold-cta"
+              className="inline-flex items-center justify-center gap-2 px-7 py-4 text-base font-semibold rounded-xl btn-gold-cta"
               data-testid="landing-cta-hero"
             >
               Start Your Free 30-Day Trial <ArrowRight className="w-4 h-4" />
             </button>
             <a
               href="#features"
-              className="inline-flex items-center justify-center gap-2 px-7 py-4 text-[32px] font-semibold rounded-xl transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-7 py-4 text-base font-semibold rounded-xl transition-colors"
               style={{ background: 'transparent', border: '1px solid var(--b)', color: 'var(--t2)' }}
               data-testid="landing-secondary-cta"
             >
@@ -194,7 +194,7 @@ const LandingPage = () => {
             </a>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[24px]" style={{ color: 'var(--t5)' }}>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs" style={{ color: 'var(--t5)' }}>
             {TRUST_BADGES.map(b => (
               <div key={b.label} className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" /> {b.label}
@@ -207,11 +207,11 @@ const LandingPage = () => {
       {/* Why CarryOn — emotional anchor */}
       <section className="py-16 sm:py-24 px-5 sm:px-8" style={{ background: 'rgba(255,255,255,0.015)', borderTop: '1px solid var(--b)', borderBottom: '1px solid var(--b)' }}>
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-[24px] uppercase tracking-[0.18em] mb-4" style={{ color: 'var(--gold)' }}>Why CarryOn exists</p>
-          <h2 className="text-[48px] sm:text-[56px] font-semibold leading-tight mb-6 text-white" style={{ fontFamily: 'var(--serif)' }}>
+          <p className="text-xs uppercase tracking-[0.18em] mb-4" style={{ color: 'var(--gold)' }}>Why CarryOn exists</p>
+          <h2 className="text-2xl sm:text-3xl font-semibold leading-tight mb-6 text-white" style={{ fontFamily: 'var(--serif)' }}>
             Your family shouldn't need a crisis to realize they don't know how the household runs.
           </h2>
-          <p className="text-[32px] sm:text-[36px] leading-relaxed" style={{ color: 'var(--t4)' }}>
+          <p className="text-base sm:text-lg leading-relaxed" style={{ color: 'var(--t4)' }}>
             Most "estate planning" tools wake up only after someone dies. CarryOn is the layer
             underpinning the lawyer paperwork — the practical, password-and-bill-paying,
             where-are-the-medical-records, who-feeds-the-dog layer your family needs every ordinary
@@ -233,11 +233,11 @@ const LandingPage = () => {
       <section id="features" className="py-20 sm:py-28 px-5 sm:px-8" data-testid="landing-features">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mb-14">
-            <p className="text-[24px] uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>Nine Pillars of Family Readiness</p>
-            <h2 className="text-[56px] sm:text-6xl font-semibold leading-tight mb-4 text-white" style={{ fontFamily: 'var(--serif)' }}>
+            <p className="text-xs uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>Nine Pillars of Family Readiness</p>
+            <h2 className="text-3xl sm:text-4xl font-semibold leading-tight mb-4 text-white" style={{ fontFamily: 'var(--serif)' }}>
               Nine pillars. <span className="italic" style={{ color: 'var(--gold)' }}>One family</span>. Ready for any week of the year.
             </h2>
-            <p className="text-[32px]" style={{ color: 'var(--t4)' }}>
+            <p className="text-base" style={{ color: 'var(--t4)' }}>
               Most estate tools stop at the legal documents and only matter once. CarryOn matters every
               week — every trip, every hospital visit, every house-sitting weekend, every transition,
               especially the final one.
@@ -265,14 +265,14 @@ const LandingPage = () => {
                       {f.num}
                     </span>
                   </div>
-                  <h3 className="text-white font-semibold text-[32px] mb-1" style={{ fontFamily: 'var(--sans)' }}>
+                  <h3 className="text-white font-semibold text-base mb-1" style={{ fontFamily: 'var(--sans)' }}>
                     {f.title}{' '}
-                    <span className="text-[24px] font-mono" style={{ color: 'var(--gold)' }}>({f.abbr})</span>
+                    <span className="text-xs font-mono" style={{ color: 'var(--gold)' }}>({f.abbr})</span>
                   </h3>
-                  <p className="text-[28px] italic leading-snug mb-2" style={{ color: 'var(--t2)', fontFamily: 'var(--serif)' }}>
+                  <p className="text-sm italic leading-snug mb-2" style={{ color: 'var(--t2)', fontFamily: 'var(--serif)' }}>
                     {f.bold}
                   </p>
-                  <p className="text-[28px] leading-relaxed" style={{ color: 'var(--t4)' }}>{f.body}</p>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--t4)' }}>{f.body}</p>
                 </div>
               );
             })}
@@ -284,11 +284,11 @@ const LandingPage = () => {
       <section id="pricing" className="py-20 sm:py-28 px-5 sm:px-8" style={{ background: 'rgba(255,255,255,0.015)', borderTop: '1px solid var(--b)', borderBottom: '1px solid var(--b)' }} data-testid="landing-pricing">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
-            <p className="text-[24px] uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>Pricing</p>
-            <h2 className="text-[56px] sm:text-6xl font-semibold leading-tight mb-3 text-white" style={{ fontFamily: 'var(--serif)' }}>
+            <p className="text-xs uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>Pricing</p>
+            <h2 className="text-3xl sm:text-4xl font-semibold leading-tight mb-3 text-white" style={{ fontFamily: 'var(--serif)' }}>
               Plans that <span className="italic" style={{ color: 'var(--gold)' }}>scale with your family</span>.
             </h2>
-            <p className="text-[32px] max-w-xl mx-auto" style={{ color: 'var(--t4)' }}>
+            <p className="text-base max-w-xl mx-auto" style={{ color: 'var(--t4)' }}>
               30-day free trial on every paid plan. No credit card up-front. Cancel anytime — your data is always yours.
             </p>
           </div>
@@ -300,8 +300,8 @@ const LandingPage = () => {
       {/* Trust band */}
       <section className="py-16 px-5 sm:px-8" data-testid="landing-trust">
         <div className="max-w-4xl mx-auto text-center">
-          <p className="text-[24px] uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>Built for what matters most</p>
-          <h2 className="text-[48px] sm:text-[56px] font-semibold leading-tight mb-10 text-white" style={{ fontFamily: 'var(--serif)' }}>
+          <p className="text-xs uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>Built for what matters most</p>
+          <h2 className="text-2xl sm:text-3xl font-semibold leading-tight mb-10 text-white" style={{ fontFamily: 'var(--serif)' }}>
             Bank-grade encryption. <span className="italic" style={{ color: 'var(--gold)' }}>Family-grade care</span>.
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
@@ -317,8 +317,8 @@ const LandingPage = () => {
                   <div className="w-10 h-10 mx-auto mb-3 rounded-lg flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.18)' }}>
                     <Icon className="w-5 h-5" style={{ color: 'var(--gold)' }} />
                   </div>
-                  <div className="text-[28px] font-semibold text-white mb-1">{t.label}</div>
-                  <div className="text-[24px]" style={{ color: 'var(--t5)' }}>{t.sub}</div>
+                  <div className="text-sm font-semibold text-white mb-1">{t.label}</div>
+                  <div className="text-xs" style={{ color: 'var(--t5)' }}>{t.sub}</div>
                 </div>
               );
             })}
@@ -330,8 +330,8 @@ const LandingPage = () => {
       <section id="faq" className="py-20 sm:py-28 px-5 sm:px-8" style={{ borderTop: '1px solid var(--b)' }} data-testid="landing-faq">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <p className="text-[24px] uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>Frequently asked</p>
-            <h2 className="text-[56px] sm:text-6xl font-semibold leading-tight text-white" style={{ fontFamily: 'var(--serif)' }}>
+            <p className="text-xs uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>Frequently asked</p>
+            <h2 className="text-3xl sm:text-4xl font-semibold leading-tight text-white" style={{ fontFamily: 'var(--serif)' }}>
               The <span className="italic" style={{ color: 'var(--gold)' }}>honest</span> answers.
             </h2>
           </div>
@@ -348,14 +348,14 @@ const LandingPage = () => {
                   className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left"
                   data-testid={`landing-faq-toggle-${i}`}
                 >
-                  <span className="text-white font-medium text-[28px] sm:text-[32px]">{f.q}</span>
+                  <span className="text-white font-medium text-sm sm:text-base">{f.q}</span>
                   <ChevronDown
                     className="w-5 h-5 flex-shrink-0 transition-transform"
                     style={{ color: 'var(--t5)', transform: openFaq === i ? 'rotate(180deg)' : 'rotate(0)' }}
                   />
                 </button>
                 {openFaq === i && (
-                  <div className="px-5 pb-5 text-[28px] leading-relaxed" style={{ color: 'var(--t4)' }}>
+                  <div className="px-5 pb-5 text-sm leading-relaxed" style={{ color: 'var(--t4)' }}>
                     {f.a}
                   </div>
                 )}
@@ -368,23 +368,23 @@ const LandingPage = () => {
       {/* Final CTA */}
       <section className="py-24 sm:py-32 px-5 sm:px-8" data-testid="landing-final-cta">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-[28px] sm:text-[32px] italic mb-4 max-w-xl mx-auto leading-relaxed" style={{ color: 'var(--gold)', fontFamily: 'var(--serif)' }}>
+          <p className="text-sm sm:text-base italic mb-4 max-w-xl mx-auto leading-relaxed" style={{ color: 'var(--gold)', fontFamily: 'var(--serif)' }}>
             "The one platform your family needs every week — and the one week they'll need it most."
           </p>
-          <h2 className="text-[56px] sm:text-6xl lg:text-6xl font-semibold leading-tight mb-5 text-white" style={{ fontFamily: 'var(--serif)' }}>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold leading-tight mb-5 text-white" style={{ fontFamily: 'var(--serif)' }}>
             Relied on while you're <span className="italic" style={{ color: 'var(--gold)' }}>living</span>. Ready when you're gone.
           </h2>
-          <p className="text-[32px] sm:text-[36px] mb-9 max-w-xl mx-auto leading-relaxed" style={{ color: 'var(--t4)' }}>
+          <p className="text-base sm:text-lg mb-9 max-w-xl mx-auto leading-relaxed" style={{ color: 'var(--t4)' }}>
             30 days free. No credit card. Encrypt your first document in under 4 minutes.
           </p>
           <button
             onClick={() => handleCTA('final')}
-            className="inline-flex items-center gap-2 px-8 py-4 text-[32px] font-semibold rounded-xl btn-gold-cta"
+            className="inline-flex items-center gap-2 px-8 py-4 text-base font-semibold rounded-xl btn-gold-cta"
             data-testid="landing-cta-final"
           >
             Start Your Free Trial <ArrowRight className="w-4 h-4" />
           </button>
-          <p className="text-[24px] mt-5" style={{ color: 'var(--t5)' }}>
+          <p className="text-xs mt-5" style={{ color: 'var(--t5)' }}>
             Already have an account?{' '}
             <Link to="/login" className="underline hover:text-white transition-colors" data-testid="landing-final-signin">Sign in</Link>
           </p>
@@ -393,7 +393,7 @@ const LandingPage = () => {
 
       {/* Footer */}
       <footer className="py-10 px-5 sm:px-8 border-t" style={{ borderColor: 'var(--b)' }}>
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[24px]" style={{ color: 'var(--t5)' }}>
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs" style={{ color: 'var(--t5)' }}>
           <div className="flex items-center gap-2">
             <img src="/carryon-logo.png" alt="CarryOn" className="w-5 h-5 rounded-sm opacity-80" />
             <span>© {new Date().getFullYear()} CarryOn. All rights reserved.</span>
