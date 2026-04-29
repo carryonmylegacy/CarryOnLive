@@ -283,9 +283,11 @@ const AboutPage = () => {
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <a href="/login"><img src="/carryon-logo.png" alt="CarryOn" className="h-8 opacity-60" /></a>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
               <a href="/privacy" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors">Privacy Policy</a>
               <a href="/terms" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors">Terms of Service</a>
+              <a href="/security" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors">Security</a>
+              <a href="/wind-down-promise" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors">Wind-Down Promise</a>
               <span className="text-[#3a4a63] text-xs">Accessibility</span>
             </div>
             <div className="text-right text-[#3a4a63] text-xs leading-relaxed">

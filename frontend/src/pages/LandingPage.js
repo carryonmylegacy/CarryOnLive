@@ -458,10 +458,11 @@ const LandingPage = () => {
             <img src="/carryon-logo.png" alt="CarryOn" className="w-5 h-5 rounded-sm opacity-80" />
             <span>© {new Date().getFullYear()} CarryOn. All rights reserved.</span>
           </div>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
             <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
             <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
             <Link to="/security" className="hover:text-white transition-colors">Security</Link>
+            <Link to="/wind-down-promise" className="hover:text-white transition-colors">Wind-Down Promise</Link>
             <a href="mailto:hello@carryon.us" className="hover:text-white transition-colors">Contact</a>
           </div>
         </div>
