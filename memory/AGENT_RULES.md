@@ -6,6 +6,70 @@
 
 ---
 
+## 🚨 RULE -2 — DO NOT RENAME OR PARAPHRASE PLATFORM FEATURES.
+
+**Added Apr 29, 2026 after the agent fabricated cute marketing names like
+"Family Forever Network" and "Connected Care + Financial Portals" on the
+public landing page instead of using the actual feature names.**
+
+The user's response (verbatim):
+> *"It looks like you allowed yourself to have some hallucinations and fun
+> naming each feature in my platform! In the landing page, you just created,
+> you need to immediately both change the names and make sure the narrative
+> for each feature is perfectly aligned with what the feature actually does!"*
+
+### The Nine Pillars of Family Readiness — canonical names
+
+This is the source-of-truth taxonomy. Every public-facing surface (landing
+page, marketing site, og tags, schema.org, app store listings, press kit,
+investor deck, support docs) MUST use these EXACT names — including the
+parenthetical abbreviations and the `™` on Estate Guardian — in this
+exact order.
+
+| # | Canonical Name | Abbr | Notes |
+|---|---|---|---|
+| 01 | Milestone Messages | MM | CORE |
+| 02 | Secure Document Vault | SDV | CORE |
+| 03 | Estate Guardian™ AI | EGA | (TM mark required) |
+| 04 | Immediate Action Checklist | IAC | CORE |
+| 05 | CarryOn Contingency Protocols | CCP | |
+| 06 | Estate Communications Tool | ECT | (sometimes "Estate Comms" in compact UI; full name on marketing) |
+| 07 | Digital Access Vault | DAV | |
+| 08 | Family & Friends Notification | FFN | |
+| 09 | CarryOn Financial Picture | CFP | |
+
+Foundational element (NOT a pillar — do not list as a feature):
+- **Beneficiaries** — the platform's foundational primitive, not a feature.
+
+Out-of-scope for launch (per user, Apr 29, 2026):
+- Designated Trustee Services (DTS) — exists in product, NOT to be advertised on launch landing.
+- Estate Plan Timeline — exists in product, NOT to be advertised on launch landing.
+
+### Source-of-truth file
+
+`/app/frontend/src/components/landing/LandingContent.js` — `PILLARS` array.
+
+If marketing copy needs to change, change it in `LandingContent.js`
+FIRST, then mirror to `LandingPage.js` (the SEO landing). Do NOT
+paraphrase, summarize, or "improve" the descriptions when copying.
+
+### Hard rules
+
+1. **Never rename a feature.** Not "Estate Guardian Assistant," not
+   "Family Forever Network," not "Important Account Checklist," not
+   "Connected Care + Financial Portals." If you see a name that doesn't
+   match the table above, it's wrong.
+2. **Never invent marketing blurbs.** If the user asks for landing copy,
+   pull the `bold` + `desc` fields from `LandingContent.js` verbatim. If
+   they don't exist, ASK the user — don't write your own.
+3. **Never list "Beneficiaries" as a feature.** It's the platform's
+   foundational concept.
+4. **Never list DTS or Estate Plan Timeline on launch-facing surfaces**
+   without explicit user approval — they exist in the product but are
+   intentionally omitted from the launch story.
+
+---
+
 ## 🛑 RULE -1 — STOP HALLUCINATING. STOP DOING WORK THE USER DIDN'T ASK FOR.
 
 **Added Apr 29, 2026 after a session where the agent went off the rails

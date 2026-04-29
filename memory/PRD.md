@@ -797,8 +797,31 @@ The 4 "failures" are all known/expected:
 64-char rotated value documented in `test_credentials.md` was never
 applied to Railway env. Must rotate before launch (one-line fix).
 
-## Pre-Launch Polish Batch — Apr 29, 2026 (iter 100, post-PHC)
+## 🚨 Canonical Feature Taxonomy (DO NOT PARAPHRASE)
 
+**The Nine Pillars of Family Readiness** — exact source-of-truth names
+copied from `/app/frontend/src/components/landing/LandingContent.js`
+`PILLARS` array. Every public surface uses these names verbatim.
+
+01. Milestone Messages (MM) — CORE
+02. Secure Document Vault (SDV) — CORE
+03. Estate Guardian™ AI (EGA)  *[trademark mark required]*
+04. Immediate Action Checklist (IAC) — CORE
+05. CarryOn Contingency Protocols (CCP)
+06. Estate Communications Tool (ECT)
+07. Digital Access Vault (DAV)
+08. Family & Friends Notification (FFN)
+09. CarryOn Financial Picture (CFP)
+
+Foundational primitive (NOT a feature card on marketing): **Beneficiaries**.
+
+Out-of-scope for the launch landing page (per user, Apr 29, 2026):
+- Designated Trustee Services (DTS)
+- Estate Plan Timeline
+
+See `/app/memory/AGENT_RULES.md` Rule -2 for the binding policy.
+
+## Pre-Launch Polish Batch — Apr 29, 2026 (iter 100, post-PHC)
 User commissioned a final pre-launch sweep covering SEO, public trust
 pages, performance, and operational hygiene. All landed clean.
 

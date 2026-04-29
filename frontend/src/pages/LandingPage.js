@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Lock, Shield, ArrowRight, Check, Heart, Users, FileText, Sparkles,
-  MessageCircle, Calendar, KeyRound, ChevronDown, HeartHandshake,
+  Lock, Shield, ArrowRight, Check, Users, FileText, Sparkles,
+  MessageCircle, KeyRound, ChevronDown, DollarSign,
 } from 'lucide-react';
 import { recordFunnelEvent } from '../utils/funnelTelemetry';
 import { API_URL } from '../config';
@@ -15,47 +15,40 @@ const TRUST_BADGES = [
   { label: 'SOC 2 In Progress' },
 ];
 
+// Source-of-truth feature catalog. These are the canonical "Nine Pillars
+// of Family Readiness" — names, abbreviations, bold lines, and full
+// descriptions copied verbatim from /app/frontend/src/components/landing/
+// LandingContent.js (HomePage). Do NOT rename, paraphrase, or invent
+// alternative blurbs. If a description needs to change, change it in
+// LandingContent.js first and mirror here.
 const FEATURES = [
-  {
-    icon: HeartHandshake,
-    title: 'Estate Guardian Assistant',
-    body: 'A private AI companion who walks your family through every decision, document, and difficult question — at their pace, in their words.',
-  },
-  {
-    icon: FileText,
-    title: 'Important Account Checklist',
-    body: 'A living list of every account, password, subscription, and obligation your loved ones will need — guided, generated, and updated for them.',
-  },
-  {
-    icon: MessageCircle,
-    title: 'Milestone Messages',
-    body: 'Record video and voice notes today that arrive on the birthdays, weddings, and quiet Tuesdays your family will need them most.',
-  },
-  {
-    icon: Lock,
-    title: 'Secure Document Vault',
-    body: 'AES-256 encrypted storage for wills, deeds, insurance, medical directives. Time-locked release to the right people, only when it matters.',
-  },
-  {
-    icon: Calendar,
-    title: 'Estate Plan Timeline',
-    body: 'A clear chronology of what you\'ve completed, what\'s pending, and what your beneficiaries should expect — from first signature to final hand-off.',
-  },
-  {
-    icon: Heart,
-    title: 'Family Forever Network',
-    body: 'A private family channel for the photos, the milestones, the running jokes, and the hard updates. Yours while you\'re here, theirs forever — same room.',
-  },
-  {
-    icon: KeyRound,
-    title: 'Digital Access Vault',
-    body: 'Password-protected handoff for online accounts, subscriptions, two-factor codes, and recovery phrases your beneficiaries will otherwise lose forever.',
-  },
-  {
-    icon: Sparkles,
-    title: 'Connected Care + Financial Portals',
-    body: 'Open bills, recurring obligations, care decisions — visible to whoever needs to handle them, exactly when they need to. Hospitalized for a week? Toggle the Connected Financial Portal on for your spouse or partner to ensure life continues to run smoothly. Estate transition? One platform, all the data, no scramble. The ultimate peace of mind for the entire family.',
-  },
+  { num: '01', icon: MessageCircle, title: 'Milestone Messages', abbr: 'MM',
+    bold: 'Your words at their wedding. Your voice on their birthday. Your love — delivered exactly when it matters.',
+    body: 'Record written, audio, or video messages for the milestones you want to be part of — even if you can\'t be there. Graduations, births, first homes, or any moment you choose. Create them infinitely over time, and they\'re delivered exactly as you envision.' },
+  { num: '02', icon: Lock, title: 'Secure Document Vault', abbr: 'SDV',
+    bold: 'Every will, trust, policy, and deed — encrypted, organized, and accessible to the right people at the right time.',
+    body: 'Upload your most critical family documents into a per-estate encrypted vault with AES-256 encryption and Triple Lock protection. Your beneficiaries access exactly what you authorize — and your documents become the foundation that powers everything else.' },
+  { num: '03', icon: Sparkles, title: 'Estate Guardian\u2122 AI', abbr: 'EGA',
+    bold: 'An AI analyst trained on U.S. law across all 50 states — working inside your encrypted vault to find what you missed.',
+    body: 'EGA analyzes your uploaded documents for contradictions, gaps, outdated provisions, and missing pieces. It identifies critical details — claim phone numbers, executor contacts, filing deadlines — and auto-populates the beginnings of your personalized action plan. No team reads your documents. The AI works entirely within your encryption.' },
+  { num: '04', icon: FileText, title: 'Immediate Action Checklist', abbr: 'IAC',
+    bold: 'A step-by-step guide your family can follow on the hardest days of their lives.',
+    body: 'Partially auto-created by EGA from your documents and fully customizable by you. When a crisis hits, your family opens the IAC and knows exactly what to do, who to call, where to find every document, and what deadlines matter. No guessing. No searching. No overwhelm.' },
+  { num: '05', icon: Shield, title: 'CarryOn Contingency Protocols', abbr: 'CCP',
+    bold: 'Response plans your family can build now for the scenarios they might face — ready to activate at a moment\u2019s notice.',
+    body: 'Build contingency protocols for any situation: medical emergencies, natural disasters, financial disruptions, or the passing of a family member. The Tap-to-Create Wizard walks you through building a protocol in minutes — connecting your people, your documents, your checklists, and your communication channels into one coordinated plan your family can execute together.' },
+  { num: '06', icon: MessageCircle, title: 'Estate Communications Tool', abbr: 'ECT',
+    bold: 'Secure, private family messaging that doesn\u2019t depend on a phone number — so your family stays connected no matter what.',
+    body: 'Unlike every mainstream chat app, ECT doesn\u2019t rely on your phone number or a specific device. Log in from a friend\u2019s phone, a library computer, or a FEMA trailer after a disaster — and pick up exactly where you left off, in perfect sync with your family. End-to-end encrypted group and direct messaging with voice messages, image sharing, emoji reactions, location sharing, and message pinning. When a contingency protocol activates, ECT is how your family coordinates — privately, securely, and from anywhere.' },
+  { num: '07', icon: KeyRound, title: 'Digital Access Vault', abbr: 'DAV',
+    bold: 'Passwords, accounts, crypto keys, and digital credentials — saved, encrypted, and assigned to the right people.',
+    body: 'The modern family has dozens of digital accounts, subscriptions, financial platforms, and access credentials that need to be passed down and organized. DAV stores them all in your encrypted vault, assigned to specific beneficiaries, so nothing is lost and nothing is forgotten.' },
+  { num: '08', icon: Users, title: 'Family & Friends Notification', abbr: 'FFN',
+    bold: 'The people who matter most should never hear important news through the grapevine.',
+    body: 'Build a personalized notification list of family, friends, colleagues, and anyone your beneficiaries should contact during a transition or emergency. Names, phone numbers, relationships, and special notes — all organized and ready so your family can coordinate outreach without scrambling.' },
+  { num: '09', icon: DollarSign, title: 'CarryOn Financial Picture', abbr: 'CFP',
+    bold: 'Your family\u2019s complete financial picture — linked, monitored, and ready for the people who\u2019ll need it most.',
+    body: 'Link your bank accounts, investment portfolios, insurance policies, and financial assets into one secure, encrypted view. Track balances, flag anomalies, and ensure your beneficiaries know exactly where every dollar is and who to contact — without having to search through file cabinets, email threads, or scattered logins. When the time comes, your family sees the full financial picture instantly.' },
 ];
 
 const FAQS = [
@@ -238,8 +231,9 @@ const LandingPage = () => {
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mb-14">
             <p className="text-xs uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>What's inside</p>
+            <p className="text-xs uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>Nine Pillars of Family Readiness</p>
             <h2 className="text-3xl sm:text-4xl font-semibold leading-tight mb-4 text-white" style={{ fontFamily: 'var(--serif)' }}>
-              Eight surfaces. <span className="italic" style={{ color: 'var(--gold)' }}>One family</span>. Ready for any week of the year.
+              Nine pillars. <span className="italic" style={{ color: 'var(--gold)' }}>One family</span>. Ready for any week of the year.
             </h2>
             <p className="text-base" style={{ color: 'var(--t4)' }}>
               Most estate tools stop at the legal documents and only matter once. CarryOn matters every
@@ -248,23 +242,34 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {FEATURES.map((f, i) => {
               const Icon = f.icon;
               return (
                 <div
                   key={f.title}
-                  className="rounded-2xl p-5 transition-transform hover:-translate-y-0.5"
+                  className="rounded-2xl p-5 transition-transform hover:-translate-y-0.5 flex flex-col"
                   style={{ background: 'var(--card)', border: '1px solid var(--b)' }}
                   data-testid={`landing-feature-${i}`}
                 >
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
-                    style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}
-                  >
-                    <Icon className="w-5 h-5" style={{ color: 'var(--gold)' }} />
+                  <div className="flex items-start justify-between mb-3">
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}
+                    >
+                      <Icon className="w-5 h-5" style={{ color: 'var(--gold)' }} />
+                    </div>
+                    <span className="text-[11px] font-mono tracking-wider" style={{ color: 'var(--t5)' }}>
+                      {f.num}
+                    </span>
                   </div>
-                  <h3 className="text-white font-semibold text-base mb-2" style={{ fontFamily: 'var(--sans)' }}>{f.title}</h3>
+                  <h3 className="text-white font-semibold text-base mb-1" style={{ fontFamily: 'var(--sans)' }}>
+                    {f.title}{' '}
+                    <span className="text-xs font-mono" style={{ color: 'var(--gold)' }}>({f.abbr})</span>
+                  </h3>
+                  <p className="text-sm italic leading-snug mb-2" style={{ color: 'var(--t2)', fontFamily: 'var(--serif)' }}>
+                    {f.bold}
+                  </p>
                   <p className="text-sm leading-relaxed" style={{ color: 'var(--t4)' }}>{f.body}</p>
                 </div>
               );
