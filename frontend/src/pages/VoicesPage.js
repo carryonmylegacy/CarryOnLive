@@ -7,27 +7,34 @@ import { getOfflineMode } from '../offline/featureFlag';
 import { getLocalVoices, upsertLocalVoices } from '../offline/repos/voicesRepo';
 
 /**
- * Public "Voices" page — displays quotes the founder has explicitly
- * featured. Unauthenticated; feeds from GET /api/share-cards/voices/public.
+ * Public "Voices" page — feeds from GET /api/share-cards/voices/public,
+ * which returns every quote the founder has approved (consent_public=true,
+ * approval_status="approved"). Featured quotes float to the top.
  *
- * Serves two purposes:
- *  1. Social proof for prospective members (a wall of real, first-person
- *     testimonials with varsity-serif typography).
- *  2. A public thank-you to the members who opted in.
+ * Layout, header, and footer match LandingPage.js so /voices reads as a
+ * native section of www.carryon.us — same nav links, same gold CTA, same
+ * fonts. Minimum body font-size on this page is 22px (per 40+ audience
+ * accessibility request).
  */
 export default function VoicesPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Scroll to top on mount so navigating from the footer doesn't land mid-page.
+  useEffect(() => { window.scrollTo(0, 0); }, []);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const mode = getOfflineMode();
       const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
-      // Offline-first paint: seed from local cache so the wall appears
-      // instantly on repeat visits. Public data → safe to cache.
-      // Rescue fires whenever offline mode is enabled OR the device is
-      // reported offline, so airplane mode never blanks the list.
       if (mode !== 'off' || isOffline) {
         try {
           const local = await getLocalVoices();
@@ -52,17 +59,12 @@ export default function VoicesPage() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   const formatDate = (iso) => {
     try {
-      return new Date(iso).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-      });
+      return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
     } catch {
       return '';
     }
@@ -70,195 +72,190 @@ export default function VoicesPage() {
 
   return (
     <div
-      className="min-h-screen"
-      style={{
-        background:
-          'radial-gradient(ellipse 90% 60% at 50% 0%, rgba(212,175,55,0.10) 0%, #0b1221 55%, #0b1221 100%)',
-        color: '#fff',
-      }}
+      className="min-h-screen overflow-x-hidden"
+      style={{ background: 'var(--bg)', color: 'var(--t)' }}
       data-testid="public-voices-page"
     >
-      {/* Simple nav */}
-      <div className="max-w-6xl mx-auto px-6 pt-8 pb-4 flex items-center justify-between">
-        <Link
-          to="/"
-          className="flex items-center gap-2"
-          style={{ fontFamily: 'var(--serif)', fontSize: '22px', fontWeight: 600, color: '#d4af37' }}
-        >
-          CarryOn
-        </Link>
-        <Link
-          to="/signup"
-          className="text-sm font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5"
-          style={{
-            background: 'linear-gradient(135deg, #d4af37, #b8962e)',
-            color: '#080e1a',
-          }}
-          data-testid="voices-cta-signup"
-        >
-          Join CarryOn
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-      </div>
+      {/* Top nav — mirrors LandingPage.js */}
+      <header
+        className="fixed top-0 inset-x-0 z-40 transition-all duration-200"
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          background: scrolled ? 'rgba(11,18,32,0.85)' : 'transparent',
+          backdropFilter: scrolled ? 'blur(16px) saturate(140%)' : 'none',
+          borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : '1px solid transparent',
+        }}
+        data-testid="voices-header"
+      >
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2.5" data-testid="voices-logo">
+            <img src="/carryon-logo.png" alt="CarryOn" className="w-7 h-7 rounded-md" />
+            <span className="text-white font-semibold tracking-tight" style={{ fontFamily: 'var(--sans)' }}>CarryOn</span>
+          </Link>
+          <nav className="hidden md:flex items-center gap-7 text-[22px]" style={{ color: 'var(--t3)' }}>
+            <a href="/#features" className="hover:text-white transition-colors">Features</a>
+            <a href="/#pricing" className="hover:text-white transition-colors">Pricing</a>
+            <Link to="/voices" className="hover:text-white transition-colors" style={{ color: 'var(--gold)' }}>Voices</Link>
+            <a href="/#faq" className="hover:text-white transition-colors">FAQ</a>
+          </nav>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/login"
+              className="hidden sm:inline-flex items-center px-4 py-2 text-[22px] rounded-lg transition-colors hover:bg-[var(--s)]"
+              style={{ color: 'var(--t3)' }}
+              data-testid="voices-signin-link"
+            >
+              Sign in
+            </Link>
+            <Link
+              to="/signup"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-[22px] font-semibold rounded-lg btn-gold-cta"
+              data-testid="voices-cta-header"
+            >
+              Start Free <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </header>
 
       {/* Hero */}
-      <div className="max-w-4xl mx-auto px-6 pt-10 sm:pt-16 pb-10 text-center">
-        <div
-          className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-6"
-          style={{
-            background: 'rgba(212,175,55,0.12)',
-            border: '1px solid rgba(212,175,55,0.32)',
-          }}
-        >
-          <Quote className="w-3.5 h-3.5" style={{ color: '#d4af37' }} />
-          <span
-            className="text-[11px] font-bold uppercase tracking-[0.18em]"
-            style={{ color: '#d4af37' }}
+      <section className="relative pt-32 pb-12 sm:pt-40 sm:pb-16 px-5 sm:px-8" data-testid="voices-hero">
+        <div className="absolute inset-0 -z-10" style={{ background: 'radial-gradient(ellipse 1100px 700px at 50% 0%, rgba(212,175,55,0.10), transparent 60%)' }} />
+        <div className="max-w-4xl mx-auto text-center">
+          <div
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-7 text-[22px] font-semibold uppercase tracking-[0.18em]"
+            style={{ background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.32)', color: 'var(--gold)' }}
           >
-            Voices
-          </span>
+            <Quote className="w-4 h-4" /> Voices
+          </div>
+          <h1
+            className="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-[1.05] tracking-tight mb-6 text-white"
+            style={{ fontFamily: 'var(--serif)' }}
+          >
+            The words our members{' '}
+            <span className="italic" style={{ color: 'var(--gold)' }}>chose for themselves</span>.
+          </h1>
+          <p className="text-[22px] sm:text-2xl leading-relaxed max-w-2xl mx-auto" style={{ color: 'var(--t4)' }}>
+            Real quotes from CarryOn members who opted to share publicly why they prepared.
+            Not marketing copy. Not a testimonial request. Just their answer to a single question:{' '}
+            <em style={{ color: 'var(--t2)' }}>what does CarryOn mean to you?</em>
+          </p>
         </div>
-        <h1
-          className="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-[1.1] tracking-tight mb-5"
-          style={{ fontFamily: 'var(--serif)' }}
-        >
-          The words our members
-          <span className="block italic mt-1" style={{ color: '#d4af37' }}>
-            chose for themselves.
-          </span>
-        </h1>
-        <p
-          className="text-base sm:text-lg leading-relaxed max-w-2xl mx-auto"
-          style={{ color: 'rgba(255,255,255,0.72)' }}
-        >
-          These are real quotes from CarryOn members who opted to share publicly
-          why they prepared. Not marketing copy. Not a testimonial request. Just
-          their answer to a single question: <em>what does CarryOn mean to you?</em>
-        </p>
-      </div>
+      </section>
 
-      {/* Grid */}
-      <div className="max-w-6xl mx-auto px-6 pb-20">
-        {loading ? (
-          <div
-            className="text-center py-16"
-            style={{ color: 'rgba(255,255,255,0.5)' }}
-          >
-            Loading voices…
-          </div>
-        ) : items.length === 0 ? (
-          <div
-            className="max-w-xl mx-auto text-center rounded-2xl p-10"
-            style={{
-              background: 'var(--s)',
-              border: '1px dashed rgba(212,175,55,0.3)',
-            }}
-          >
-            <Quote
-              className="w-10 h-10 mx-auto mb-3"
-              style={{ color: 'rgba(212,175,55,0.6)' }}
-            />
-            <p
-              className="text-lg italic mb-1"
-              style={{ fontFamily: 'var(--serif)', color: '#fff' }}
+      {/* Quote grid */}
+      <section className="px-5 sm:px-8 pb-20" data-testid="voices-grid">
+        <div className="max-w-6xl mx-auto">
+          {loading ? (
+            <div
+              className="text-center py-16 text-[22px]"
+              style={{ color: 'var(--t5)' }}
+              data-testid="voices-loading"
             >
-              The first voice will land here soon.
-            </p>
-            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>
-              Members get the option to share publicly as they personalize their
-              CarryOn share card.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {items.map((it, idx) => {
-              const isFC = it.variant === 'fc';
-              return (
-                <figure
-                  key={it.id}
-                  className="rounded-2xl p-6 flex flex-col"
-                  style={{
-                    background:
-                      'linear-gradient(160deg, rgba(26,45,77,0.55), rgba(14,30,50,0.7))',
-                    border: `1px solid ${isFC ? 'rgba(212,175,55,0.35)' : 'rgba(52,211,153,0.28)'}`,
-                    boxShadow: '0 10px 40px rgba(0,0,0,0.28)',
-                    animation: `voiceFadeUp 520ms ease-out both`,
-                    animationDelay: `${Math.min(idx * 60, 480)}ms`,
-                  }}
-                  data-testid={`public-voice-${it.id}`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div
-                      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full"
-                      style={{
-                        background: isFC
-                          ? 'rgba(212,175,55,0.14)'
-                          : 'rgba(52,211,153,0.14)',
-                        border: `1px solid ${isFC ? 'rgba(212,175,55,0.28)' : 'rgba(52,211,153,0.28)'}`,
-                      }}
-                    >
-                      {isFC ? (
-                        <Crown className="w-3 h-3" style={{ color: '#d4af37' }} />
-                      ) : (
-                        <Sparkles className="w-3 h-3" style={{ color: '#34d399' }} />
-                      )}
-                      <span
-                        className="text-[11px] font-semibold uppercase tracking-wider"
-                        style={{ color: isFC ? '#d4af37' : '#34d399' }}
+              Loading voices…
+            </div>
+          ) : items.length === 0 ? (
+            <div
+              className="max-w-xl mx-auto text-center rounded-2xl p-10"
+              style={{ background: 'var(--card)', border: '1px dashed rgba(212,175,55,0.3)' }}
+              data-testid="voices-empty"
+            >
+              <Quote className="w-12 h-12 mx-auto mb-4" style={{ color: 'rgba(212,175,55,0.6)' }} />
+              <p className="text-2xl italic mb-2" style={{ fontFamily: 'var(--serif)', color: 'var(--t)' }}>
+                The first voice will land here soon.
+              </p>
+              <p className="text-[22px]" style={{ color: 'var(--t5)' }}>
+                Members get the option to share publicly as they personalize their CarryOn share card.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+              {items.map((it, idx) => {
+                const isFC = it.variant === 'fc';
+                return (
+                  <figure
+                    key={it.id}
+                    className="rounded-2xl p-7 flex flex-col"
+                    style={{
+                      background: 'var(--card)',
+                      border: `1px solid ${isFC ? 'rgba(212,175,55,0.35)' : 'rgba(52,211,153,0.28)'}`,
+                      boxShadow: '0 10px 40px rgba(0,0,0,0.28)',
+                      animation: 'voiceFadeUp 520ms ease-out both',
+                      animationDelay: `${Math.min(idx * 60, 480)}ms`,
+                    }}
+                    data-testid={`public-voice-${it.id}`}
+                  >
+                    <div className="flex items-center justify-between mb-4 gap-3">
+                      <div
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[22px] font-semibold uppercase tracking-wider"
+                        style={{
+                          background: isFC ? 'rgba(212,175,55,0.14)' : 'rgba(52,211,153,0.14)',
+                          border: `1px solid ${isFC ? 'rgba(212,175,55,0.28)' : 'rgba(52,211,153,0.28)'}`,
+                          color: isFC ? 'var(--gold)' : '#34d399',
+                        }}
                       >
+                        {isFC ? <Crown className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
                         {isFC ? 'Founding Member' : 'Member'}
+                      </div>
+                      <span className="text-[22px] flex-shrink-0" style={{ color: 'var(--t5)' }}>
+                        {formatDate(it.created_at)}
                       </span>
                     </div>
-                    <span
-                      className="text-[11px]"
-                      style={{ color: 'rgba(255,255,255,0.42)' }}
+                    <blockquote
+                      className="text-2xl sm:text-[26px] leading-snug italic mb-5 flex-1"
+                      style={{ fontFamily: 'var(--serif)', color: 'var(--t)' }}
                     >
-                      {formatDate(it.created_at)}
-                    </span>
-                  </div>
-                  <blockquote
-                    className="text-lg leading-snug italic mb-4 flex-1"
-                    style={{ fontFamily: 'var(--serif)', color: '#fff' }}
-                  >
-                    &ldquo;{it.quote}&rdquo;
-                  </blockquote>
-                  <figcaption
-                    className="text-sm font-semibold"
-                    style={{ color: isFC ? '#d4af37' : '#34d399' }}
-                  >
-                    — {it.first_name}
-                  </figcaption>
-                </figure>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                      &ldquo;{it.quote}&rdquo;
+                    </blockquote>
+                    <figcaption
+                      className="text-[22px] font-semibold"
+                      style={{ color: isFC ? 'var(--gold)' : '#34d399' }}
+                    >
+                      &mdash; {it.first_name}
+                    </figcaption>
+                  </figure>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Closing CTA */}
-      <div
-        className="max-w-3xl mx-auto px-6 pb-20 text-center"
-      >
-        <p
-          className="text-xl sm:text-2xl italic mb-5"
-          style={{ fontFamily: 'var(--serif)', color: 'rgba(255,255,255,0.8)' }}
-        >
-          Your family deserves a plan, not a panic.
-        </p>
-        <Link
-          to="/signup"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold"
-          style={{
-            background: 'linear-gradient(135deg, #d4af37, #b8962e)',
-            color: '#080e1a',
-            boxShadow: '0 10px 30px rgba(212,175,55,0.28)',
-          }}
-          data-testid="voices-footer-cta"
-        >
-          Start your CarryOn
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-      </div>
+      <section className="py-20 px-5 sm:px-8" data-testid="voices-final-cta">
+        <div className="max-w-3xl mx-auto text-center">
+          <p
+            className="text-3xl sm:text-4xl italic mb-6"
+            style={{ fontFamily: 'var(--serif)', color: 'var(--gold)' }}
+          >
+            Your family deserves a plan, not a panic.
+          </p>
+          <Link
+            to="/signup"
+            className="inline-flex items-center gap-2 px-8 py-4 text-[22px] font-semibold rounded-xl btn-gold-cta"
+            data-testid="voices-footer-cta"
+          >
+            Start your CarryOn <ArrowRight className="w-5 h-5" />
+          </Link>
+        </div>
+      </section>
+
+      {/* Footer — mirrors LandingPage.js */}
+      <footer className="py-10 px-5 sm:px-8 border-t" style={{ borderColor: 'var(--b)' }}>
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[22px]" style={{ color: 'var(--t5)' }}>
+          <div className="flex items-center gap-2">
+            <img src="/carryon-logo.png" alt="CarryOn" className="w-5 h-5 rounded-sm opacity-80" />
+            <span>&copy; {new Date().getFullYear()} CarryOn. All rights reserved.</span>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+            <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
+            <Link to="/security" className="hover:text-white transition-colors">Security</Link>
+            <Link to="/wind-down-promise" className="hover:text-white transition-colors">Wind-Down Promise</Link>
+            <a href="mailto:hello@carryon.us" className="hover:text-white transition-colors">Contact</a>
+          </div>
+        </div>
+      </footer>
 
       <style>{`
         @keyframes voiceFadeUp {

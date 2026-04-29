@@ -137,6 +137,7 @@ const LandingPage = () => {
           <nav className="hidden md:flex items-center gap-7 text-sm" style={{ color: 'var(--t3)' }}>
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+            <Link to="/voices" className="hover:text-white transition-colors" data-testid="landing-voices-link">Voices</Link>
             <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
           </nav>
           <div className="flex items-center gap-2">

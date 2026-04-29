@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field
 
 from config import JWT_SECRET, db
 from services.email import send_email
+from services.notifications import notify
 
 # ── Router ──────────────────────────────────────────────────────────────────
 
@@ -341,6 +342,21 @@ async def _notify_founder_of_pending(submission_id: str, first_name: str, quote:
           <p style="font-size:11px; color:#94a3b8; margin:18px 0 0;">Nothing appears on /voices until you approve it. Links expire in 7 days.</p>
         </div>"""
         await send_email(founder["email"], "New CarryOn voice awaiting your review", html)
+        # In-app notification (bell icon + push) for the founder admin so the
+        # pending queue is visible without checking email.
+        try:
+            preview = (quote or "").strip()
+            if len(preview) > 80:
+                preview = preview[:77].rstrip() + "…"
+            await notify.founder(
+                title="New voice awaiting your review",
+                body=f"{first_name}: \u201c{preview}\u201d",
+                url="/admin/voices",
+                priority="normal",
+                metadata={"submission_id": submission_id, "variant": variant},
+            )
+        except Exception:
+            pass
     except Exception:
         pass
 
