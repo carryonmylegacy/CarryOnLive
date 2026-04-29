@@ -1,0 +1,307 @@
+/**
+ * LandingPricing — live pricing block for the public marketing landing.
+ *
+ * Pulls plan data from the same endpoints the in-app paywall uses:
+ *   GET /api/subscriptions/plans         (tiered monthly/quarterly/annual)
+ *   GET /api/founders-circle/plans       (lifetime + installments)
+ *
+ * Whatever you adjust in the Founder Admin → Subscriptions tab is reflected
+ * here immediately. No more hardcoded marketing prices that drift from the
+ * source of truth.
+ *
+ * Public visitors can't checkout (Stripe needs an account), so every CTA
+ * routes to /signup. Once signed in, the in-app SubscriptionPaywall takes
+ * over with the same data + Stripe / Apple-IAP rails.
+ */
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Link } from 'react-router-dom';
+import { Check, Loader2, Crown, Star, Shield, Award, Heart, Sparkles } from 'lucide-react';
+import { API_URL } from '../../config';
+import { recordFunnelEvent } from '../../utils/funnelTelemetry';
+
+const TIER_ICON = {
+  premium: Crown,
+  standard: Star,
+  base: Shield,
+  new_adult: Award,
+  military: Shield,
+  veteran: Shield,
+  hospice: Heart,
+};
+
+const TIER_ACCENT = {
+  premium: '#d4af37',
+  standard: '#60A5FA',
+  base: '#22C993',
+  new_adult: '#B794F6',
+  military: '#F59E0B',
+  veteran: '#F59E0B',
+  hospice: '#ec4899',
+};
+
+// Tiers we show on the public landing page. Eligibility-gated tiers
+// (new_adult age-verified, military, hospice, veteran) live behind their
+// own qualification flow inside the paywall, so we keep the public
+// landing focused on the three any-visitor tiers + Founders Circle.
+const PUBLIC_TIERS = ['base', 'standard', 'premium'];
+
+const fmt = (n) => {
+  const v = Number(n);
+  if (!isFinite(v)) return '—';
+  return v % 1 === 0 ? `$${v.toFixed(0)}` : `$${v.toFixed(2)}`;
+};
+
+export default function LandingPricing() {
+  const [plans, setPlans] = useState([]);
+  const [tierFeatures, setTierFeatures] = useState({});
+  const [fc, setFc] = useState(null);
+  const [billing, setBilling] = useState('annual'); // monthly | quarterly | annual
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      axios.get(`${API_URL}/subscriptions/plans`),
+      axios.get(`${API_URL}/founders-circle/plans`).catch(() => ({ data: { active: false, plans: [] } })),
+    ])
+      .then(([plansRes, fcRes]) => {
+        if (cancelled) return;
+        const visible = (plansRes.data.plans || []).filter((p) => PUBLIC_TIERS.includes(p.id));
+        // Order: base → standard → premium
+        visible.sort((a, b) => PUBLIC_TIERS.indexOf(a.id) - PUBLIC_TIERS.indexOf(b.id));
+        setPlans(visible);
+        setTierFeatures(plansRes.data.tier_features || {});
+        setFc(fcRes.data?.active ? fcRes.data : null);
+      })
+      .catch(() => { /* show fallback empty state */ })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16" data-testid="landing-pricing-loading">
+        <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--gold)' }} />
+        <span className="ml-3 text-sm" style={{ color: 'var(--t4)' }}>Loading current pricing…</span>
+      </div>
+    );
+  }
+
+  if (!plans.length) {
+    return (
+      <div className="text-center py-16 text-sm" style={{ color: 'var(--t4)' }} data-testid="landing-pricing-empty">
+        Pricing temporarily unavailable. Please <Link to="/signup" className="underline" style={{ color: 'var(--gold)' }}>create your account</Link> and we'll show full plan details inside.
+      </div>
+    );
+  }
+
+  const billingPriceField = {
+    monthly: 'price',
+    quarterly: 'quarterly_price',
+    annual: 'annual_price',
+  }[billing];
+  const billingCadenceLabel = {
+    monthly: '/ mo',
+    quarterly: '/ mo · billed quarterly',
+    annual: '/ mo · billed annually',
+  }[billing];
+
+  const fcPremium = fc?.plans?.find((p) => p.tier === 'premium');
+
+  return (
+    <div data-testid="landing-pricing-live">
+      {/* Billing cadence toggle */}
+      <div className="flex justify-center mb-10">
+        <div
+          className="inline-flex p-1 rounded-full"
+          style={{ background: 'var(--card)', border: '1px solid var(--b)' }}
+          role="tablist"
+          aria-label="Billing cadence"
+        >
+          {['monthly', 'quarterly', 'annual'].map((opt) => (
+            <button
+              key={opt}
+              onClick={() => setBilling(opt)}
+              className="px-4 sm:px-5 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors"
+              style={{
+                background: billing === opt ? 'var(--gold)' : 'transparent',
+                color: billing === opt ? '#0b1120' : 'var(--t3)',
+              }}
+              data-testid={`landing-billing-${opt}`}
+            >
+              {opt}
+              {opt === 'annual' && <span className="ml-1 text-[11px] opacity-80">save</span>}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tier cards (live data) */}
+      <div className="grid sm:grid-cols-3 gap-4">
+        {plans.map((p) => {
+          const Icon = TIER_ICON[p.id] || Shield;
+          const accent = TIER_ACCENT[p.id] || 'var(--gold)';
+          const highlighted = p.id === 'premium';
+          const price = p[billingPriceField] ?? p.price;
+          const features = (tierFeatures[p.id] || []).filter((f) => f.enabled).slice(0, 7);
+          const fallbackFeatures = p.features || [];
+
+          return (
+            <div
+              key={p.id}
+              className="rounded-2xl p-6 flex flex-col"
+              style={{
+                background: highlighted
+                  ? 'linear-gradient(180deg, rgba(212,175,55,0.08), var(--card))'
+                  : 'var(--card)',
+                border: highlighted ? '1.5px solid rgba(212,175,55,0.4)' : '1px solid var(--b)',
+                boxShadow: highlighted ? '0 0 32px -16px rgba(212,175,55,0.3)' : 'none',
+              }}
+              data-testid={`landing-tier-${p.id}`}
+            >
+              {highlighted && (
+                <div className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: 'var(--gold)' }}>
+                  Most popular
+                </div>
+              )}
+              <div className="flex items-center gap-2 mb-1">
+                <Icon className="w-4 h-4" style={{ color: accent }} />
+                <h3 className="text-white font-semibold text-lg" style={{ fontFamily: 'var(--sans)' }}>{p.name}</h3>
+              </div>
+              <div className="mb-3 flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-white" style={{ fontFamily: 'var(--serif)' }}>
+                  {fmt(price)}
+                </span>
+                <span className="text-xs" style={{ color: 'var(--t5)' }}>{billingCadenceLabel}</span>
+              </div>
+              {p.note && (
+                <p className="text-xs mb-3 italic" style={{ color: 'var(--t5)' }}>{p.note}</p>
+              )}
+              <ul className="space-y-2.5 mb-6 flex-1" data-testid={`landing-tier-${p.id}-features`}>
+                {(features.length ? features.map((f) => f.label) : fallbackFeatures).map((label) => (
+                  <li key={label} className="flex items-start gap-2 text-sm" style={{ color: 'var(--t3)' }}>
+                    <Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: accent }} /> {label}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                to="/signup"
+                onClick={() => recordFunnelEvent({ event: 'landing_cta_click', meta: { source: `pricing-${p.id}`, billing } })}
+                className={
+                  highlighted
+                    ? 'w-full py-3 text-sm font-semibold rounded-xl btn-gold-cta text-center'
+                    : 'w-full py-3 text-sm font-semibold rounded-xl text-center transition-colors'
+                }
+                style={highlighted ? {} : { background: 'transparent', border: '1px solid var(--b)', color: 'var(--t2)', display: 'block' }}
+                data-testid={`landing-tier-${p.id}-cta`}
+              >
+                Start 30-day free trial
+              </Link>
+            </div>
+          );
+        })}
+      </div>
+
+      <p className="text-center text-xs mt-6" style={{ color: 'var(--t5)' }}>
+        Eligible for a discount? New adults (18–25), military / first responders, veterans, and hospice patients have dedicated tiers — visible after you create your account.
+      </p>
+
+      {/* Founders Circle — Lifetime */}
+      {fc && fcPremium && (
+        <div className="mt-14" data-testid="landing-founders-circle">
+          <div
+            className="rounded-3xl p-7 sm:p-10 relative overflow-hidden"
+            style={{
+              background:
+                'radial-gradient(ellipse at top left, rgba(212,175,55,0.18), transparent 60%), radial-gradient(ellipse at bottom right, rgba(96,165,250,0.10), transparent 60%), var(--card)',
+              border: '1.5px solid rgba(212,175,55,0.35)',
+              boxShadow: '0 0 64px -32px rgba(212,175,55,0.4)',
+            }}
+          >
+            <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 items-center relative">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs mb-4" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)', color: 'var(--gold)' }}>
+                  <Sparkles className="w-3 h-3" /> Founders Circle · Lifetime
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-semibold leading-tight mb-3 text-white" style={{ fontFamily: 'var(--serif)' }}>
+                  Pay once. Carry on <span className="italic" style={{ color: 'var(--gold)' }}>forever</span>.
+                </h3>
+                <p className="text-sm mb-5 max-w-md" style={{ color: 'var(--t3)' }}>
+                  A small thank-you to the families who join us at the start. Lifetime Premium access, every feature we ever ship, no recurring fees ever. Limited campaign — when the seats run out, the door closes.
+                </p>
+                <ul className="space-y-2 mb-6 text-sm" style={{ color: 'var(--t3)' }}>
+                  <li className="flex items-start gap-2"><Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--gold)' }} /> Lifetime access to Premium — every current + future feature.</li>
+                  <li className="flex items-start gap-2"><Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--gold)' }} /> Pay in full or split into installments. Discounts for shorter terms.</li>
+                  <li className="flex items-start gap-2"><Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--gold)' }} /> Listed in our Founders Circle — your name carried with the platform.</li>
+                  <li className="flex items-start gap-2"><Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--gold)' }} /> If you pass during an active installment plan, the lifetime is honored.</li>
+                </ul>
+              </div>
+
+              <div
+                className="rounded-2xl p-6"
+                style={{ background: 'rgba(11,18,32,0.6)', border: '1px solid rgba(212,175,55,0.25)', backdropFilter: 'blur(12px)' }}
+              >
+                <p className="text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--gold)' }}>Premium · One-time</p>
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-4xl font-bold text-white" style={{ fontFamily: 'var(--serif)' }}>
+                    {fmt(fcPremium.installments?.['1']?.total ?? fcPremium.lifetime_price)}
+                  </span>
+                  <span className="text-sm line-through" style={{ color: 'var(--t5)' }}>
+                    {fmt(fcPremium.lifetime_price)}
+                  </span>
+                </div>
+                <p className="text-xs mb-4" style={{ color: 'var(--t4)' }}>
+                  {fcPremium.installments?.['1']?.discount_percent
+                    ? `Pay-in-full saves ${fcPremium.installments['1'].discount_percent}%.`
+                    : 'Pay-in-full.'}
+                </p>
+                <div className="space-y-1 text-sm mb-5" style={{ color: 'var(--t3)' }}>
+                  {[3, 6, 12].map((n) => {
+                    const inst = fcPremium.installments?.[String(n)];
+                    if (!inst) return null;
+                    return (
+                      <div key={n} className="flex items-center justify-between" data-testid={`fc-installment-${n}`}>
+                        <span>{n} payments</span>
+                        <span style={{ color: 'var(--t)' }}>
+                          <strong>{fmt(inst.per_payment)}</strong>
+                          <span className="text-xs ml-1" style={{ color: 'var(--t5)' }}>/ mo</span>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <Link
+                  to="/signup"
+                  onClick={() => recordFunnelEvent({ event: 'landing_cta_click', meta: { source: 'founders-circle' } })}
+                  className="block w-full py-3 text-sm font-semibold rounded-xl btn-gold-cta text-center"
+                  data-testid="landing-fc-cta"
+                >
+                  Claim my Founders Circle seat
+                </Link>
+                <p className="text-[11px] text-center mt-3" style={{ color: 'var(--t5)' }}>
+                  Activated after account creation. Visible inside Subscriptions.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Other tiers' lifetime prices, compact */}
+          {fc.plans.length > 1 && (
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs" style={{ color: 'var(--t4)' }}>
+              <span style={{ color: 'var(--t5)' }}>Founders Circle also available for:</span>
+              {fc.plans
+                .filter((p) => p.tier !== 'premium')
+                .map((p) => (
+                  <span key={p.tier} data-testid={`fc-other-${p.tier}`}>
+                    <span style={{ color: 'var(--t3)' }}>{p.name}</span>{' '}
+                    <span style={{ color: 'var(--gold)' }}>{fmt(p.lifetime_price)}</span>
+                  </span>
+                ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

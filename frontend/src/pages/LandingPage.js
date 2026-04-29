@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { recordFunnelEvent } from '../utils/funnelTelemetry';
 import { API_URL } from '../config';
+import LandingPricing from '../components/landing/LandingPricing';
 
 const TRUST_BADGES = [
   { label: 'AES-256 Encrypted' },
@@ -57,42 +58,6 @@ const FEATURES = [
   },
 ];
 
-const TIERS = [
-  {
-    name: 'Base',
-    price: '$0',
-    cadence: '/ month',
-    desc: 'Start your family\'s plan today, no credit card.',
-    cta: 'Start Free',
-    features: ['Up to 1 beneficiary', 'Document vault (5 GB)', 'IAC checklist', 'Milestone messages (text only)'],
-  },
-  {
-    name: 'Standard',
-    price: '$9',
-    cadence: '/ month',
-    desc: 'Most families start here. Everything that matters most.',
-    cta: 'Start Free Trial',
-    features: ['Up to 3 beneficiaries', 'Document vault (25 GB)', 'Voice + video messages', 'Estate Guardian Assistant', 'Family Forever Network'],
-  },
-  {
-    name: 'Premium',
-    price: '$19',
-    cadence: '/ month',
-    desc: 'Full estate transparency for your family.',
-    cta: 'Start Free Trial',
-    features: ['Unlimited beneficiaries', 'Document vault (100 GB)', 'Connected Financial Portal', 'Connected Care Protocol', 'Estate Chat', 'Priority support'],
-    highlighted: true,
-  },
-  {
-    name: 'Family',
-    price: 'Custom',
-    cadence: '',
-    desc: 'For multi-generational families and trustees.',
-    cta: 'Talk to us',
-    features: ['Everything in Premium', 'Designated Trustee Services', 'Estate Plan Timeline', 'White-glove onboarding'],
-  },
-];
-
 const FAQS = [
   {
     q: 'What happens to my data if CarryOn shuts down?',
@@ -140,7 +105,7 @@ const LandingPage = () => {
         const anon = localStorage.getItem('carryon_anon_session_id') || null;
         import('axios').then(({ default: axios }) => {
           axios
-            .post(`${API_URL}/api/referrals/track-visit`, {
+            .post(`${API_URL}/referrals/track-visit`, {
               code: upper,
               anon_session_id: anon,
               path: window.location.pathname,
@@ -316,47 +281,7 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {TIERS.map((t) => (
-              <div
-                key={t.name}
-                className="rounded-2xl p-6 flex flex-col"
-                style={{
-                  background: t.highlighted ? 'linear-gradient(180deg, rgba(212,175,55,0.08), var(--card))' : 'var(--card)',
-                  border: t.highlighted ? '1.5px solid rgba(212,175,55,0.4)' : '1px solid var(--b)',
-                  boxShadow: t.highlighted ? '0 0 32px -16px rgba(212,175,55,0.3)' : 'none',
-                }}
-                data-testid={`landing-tier-${t.name.toLowerCase()}`}
-              >
-                {t.highlighted && (
-                  <div className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: 'var(--gold)' }}>
-                    Most popular
-                  </div>
-                )}
-                <h3 className="text-white font-semibold text-lg mb-1" style={{ fontFamily: 'var(--sans)' }}>{t.name}</h3>
-                <div className="mb-3">
-                  <span className="text-3xl font-bold text-white" style={{ fontFamily: 'var(--serif)' }}>{t.price}</span>
-                  <span className="text-sm ml-1" style={{ color: 'var(--t5)' }}>{t.cadence}</span>
-                </div>
-                <p className="text-sm mb-5" style={{ color: 'var(--t4)' }}>{t.desc}</p>
-                <ul className="space-y-2.5 mb-6 flex-1">
-                  {t.features.map(f => (
-                    <li key={f} className="flex items-start gap-2 text-sm" style={{ color: 'var(--t3)' }}>
-                      <Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--gold)' }} /> {f}
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={() => handleCTA(`pricing-${t.name.toLowerCase()}`)}
-                  className={t.highlighted ? 'w-full py-3 text-sm font-semibold rounded-xl btn-gold-cta' : 'w-full py-3 text-sm font-semibold rounded-xl transition-colors'}
-                  style={t.highlighted ? {} : { background: 'transparent', border: '1px solid var(--b)', color: 'var(--t2)' }}
-                  data-testid={`landing-tier-cta-${t.name.toLowerCase()}`}
-                >
-                  {t.cta}
-                </button>
-              </div>
-            ))}
-          </div>
+          <LandingPricing />
         </div>
       </section>
 
