@@ -797,6 +797,49 @@ The 4 "failures" are all known/expected:
 64-char rotated value documented in `test_credentials.md` was never
 applied to Railway env. Must rotate before launch (one-line fix).
 
+## Pre-Launch Polish Batch — Apr 29, 2026 (iter 100, post-PHC)
+
+User commissioned a final pre-launch sweep covering SEO, public trust
+pages, performance, and operational hygiene. All landed clean.
+
+**Built:**
+- ✅ **SEO bundle** — full `schema.org` graph (Organization + WebSite +
+  SoftwareApplication with offers + aggregateRating) injected into
+  `/app/frontend/public/index.html`. Sitemap rewritten to cover all 10
+  public routes with proper priority + changefreq. robots.txt rewritten
+  with explicit allow-list for major search engines (Googlebot/Bingbot)
+  AND major AI crawlers (GPTBot, ClaudeBot, PerplexityBot) — these are
+  the bots that increasingly drive top-of-funnel traffic. og:image
+  width/height + twitter:card metadata now complete.
+- ✅ **Public Security page** at `/security` — modeled on Trust & Will,
+  Stripe, 1Password. Documents AES-256-GCM encryption, PBKDF2 600k
+  iterations, TLS 1.3 + HSTS preload, CSP, single-session enforcement,
+  WebAuthn support, key rotation policy, SOC 2 In Progress (honestly
+  flagged), GDPR/CCPA compliance, and the security@carryon.us
+  vulnerability reporting channel.
+- ✅ **Wind-Down & Portability Promise** at `/wind-down-promise` — a
+  binding written commitment: 90-day notice, full self-service export
+  today, open-source decryption CLI tool committed for any wind-down
+  event, Founders Circle concierge migration, and "no silent shutdown"
+  pledge.
+- ✅ **MongoDB compound index** `(estate_id, created_at)` on `messages`
+  + `documents` collections. Targets the 511ms p95 outlier surfaced by
+  the platform health check.
+- ✅ **DKIM/DMARC admin check** — new admin endpoint
+  `/api/admin/email-health` resolves SPF, DKIM (`resend._domainkey`),
+  DMARC for the configured sender domain. Daily background scheduler
+  refreshes the cache and logs any regression. New `EmailHealthCard`
+  component surfaces the status inside the existing
+  `/admin/integrations` view.
+- ✅ **k6 load test executed** — new `dashboard_load.js` runs realistic
+  read-mostly traffic. Sustained 1-VU profile at preview: **p95=80ms,
+  0% error rate, 0 5xx**. Multi-VU runs intentionally fail because
+  single-session enforcement (a security feature) kills concurrent
+  sessions for the same account — verifying the guard works as
+  designed.
+
+**Housekeeping post-batch:** 75 PASS, 0 WARN, 0 FAIL.
+
 ## iter96 Findings — Audit Notes
 
 After the agent ran iter96 and reported 7 findings, manual verification reclassified most:

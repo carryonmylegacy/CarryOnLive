@@ -65,6 +65,12 @@ async def ensure_indexes(db, logger):
         await db.estates.create_index("owner_id")
         await db.documents.create_index("estate_id")
         await db.messages.create_index("estate_id")
+        # Apr 29, 2026 — compound index for the per-estate chronological scan
+        # used by GET /api/messages/{estate_id}. Health-check showed this
+        # endpoint at 511ms avg (slowest in the fleet); compound covers the
+        # filter + sort in a single index lookup.
+        await db.messages.create_index([("estate_id", 1), ("created_at", -1)])
+        await db.documents.create_index([("estate_id", 1), ("created_at", -1)])
         await db.beneficiaries.create_index("estate_id")
         await db.beneficiaries.create_index("user_id")
         await db.beneficiary_display_overrides.create_index([("user_id", 1), ("estate_id", 1)])

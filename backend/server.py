@@ -74,6 +74,7 @@ from routes.guardian_exports import router as guardian_exports_router
 from routes.staff_ops import router as staff_ops_router
 from routes.referrals import router as referrals_router
 from routes.referrals import ensure_indexes as ensure_referral_indexes
+from routes.admin import email_health_scheduler
 from services.onboarding_drip import onboarding_drip_scheduler
 from schedulers import (
     daily_dob_check_scheduler,
@@ -149,11 +150,13 @@ async def lifespan(app):
         from routes.admin import (
             ensure_download_diagnostics_indexes,
             ensure_funnel_analytics_indexes,
+            ensure_email_health_indexes,
         )
 
         await ensure_download_diagnostics_indexes()
         await ensure_funnel_analytics_indexes()
         await ensure_referral_indexes()
+        await ensure_email_health_indexes()
     except Exception as e:
         logger.warning(f"diagnostics index init failed: {e}")
 
@@ -180,6 +183,7 @@ async def lifespan(app):
         asyncio.create_task(_supervise("bill_reminder", bill_reminder_scheduler)),
         asyncio.create_task(_supervise("drill_reminder", drill_reminder_scheduler)),
         asyncio.create_task(_supervise("onboarding_drip", onboarding_drip_scheduler, ttl=600)),
+        asyncio.create_task(_supervise("email_health", email_health_scheduler, ttl=600)),
     ]
 
     # Warm up xAI connection + start periodic keepalive (local per-pod, no lock needed)

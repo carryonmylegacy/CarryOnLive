@@ -19,7 +19,7 @@ import { Rate, Trend } from 'k6/metrics';
 import { randomString } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 
 const BASE_URL = __ENV.BASE_URL || 'https://app.carryon.us';
-const DOMAIN = __ENV.SIGNUP_EMAIL_DOMAIN || 'loadtest.carryon.local';
+const DOMAIN = __ENV.SIGNUP_EMAIL_DOMAIN || 'loadtest.carryontest.dev';
 
 export const options = {
   scenarios: {
@@ -77,7 +77,7 @@ export default function () {
     try {
       const body = r.json();
       token = body.token || body.access_token;
-    } catch { /* no-op */ }
+    } catch (_e) { /* no-op */ }
   });
 
   if (!token) {
@@ -87,7 +87,7 @@ export default function () {
       tags: { name: 'login' },
     });
     if (r.status === 200) {
-      try { token = r.json().token || r.json().access_token; } catch {}
+      try { token = r.json().token || r.json().access_token; } catch (_e) { /* no-op */ }
     }
   }
 
@@ -95,19 +95,20 @@ export default function () {
   const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
 
   group('dashboard', () => {
-    const r1 = http.get(`${BASE_URL}/api/estates`, { ...authHeaders, tags: { name: 'dashboard' } });
+    const dashOpts = { headers: authHeaders.headers, tags: { name: 'dashboard' } };
+    const r1 = http.get(`${BASE_URL}/api/estates`, dashOpts);
     dashTrend.add(r1.timings.duration);
     check(r1, { 'estates 200': (res) => res.status === 200 });
 
-    const r2 = http.get(`${BASE_URL}/api/onboarding/progress`, { ...authHeaders, tags: { name: 'dashboard' } });
+    const r2 = http.get(`${BASE_URL}/api/onboarding/progress`, dashOpts);
     check(r2, { 'onboarding 200': (res) => res.status === 200 });
 
-    const r3 = http.get(`${BASE_URL}/api/notifications/unread-count`, { ...authHeaders, tags: { name: 'dashboard' } });
+    const r3 = http.get(`${BASE_URL}/api/notifications/unread-count`, dashOpts);
     check(r3, { 'notifications 200': (res) => res.status === 200 });
   });
 
   group('logout', () => {
-    const r = http.post(`${BASE_URL}/api/auth/logout`, null, { ...authHeaders, tags: { name: 'logout' } });
+    const r = http.post(`${BASE_URL}/api/auth/logout`, null, { headers: authHeaders.headers, tags: { name: 'logout' } });
     check(r, { 'logout 200/204': (res) => [200, 204].includes(res.status) });
   });
 

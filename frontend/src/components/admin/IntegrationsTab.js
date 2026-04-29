@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { iosSafeDownload } from '../../utils/iosSafeDownload';
 import { API_URL } from '../../config';
+import { EmailHealthCard } from './EmailHealthCard';
 
 const iconMap = {
   railway: Server, vercel: Globe, mongodb: Database, s3: Cloud,
@@ -768,6 +769,13 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
 
       {/* COGS Summary (All tab only) */}
       {activeFilter === 'all' && <COGSSummary cogs={cogs} integrations={integrations} />}
+
+      {/* Email deliverability (SPF / DKIM / DMARC) — shown on All + AI/Comms */}
+      {(activeFilter === 'all' || activeFilter === 'ai_communication') && (
+        <div className="my-3">
+          <EmailHealthCard />
+        </div>
+      )}
 
       {/* Integration cards — single column, sorted by limiting rank first */}
       <div className="space-y-3">

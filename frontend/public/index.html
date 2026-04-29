@@ -24,17 +24,94 @@
              them, causing old splash images to persist through deploys.
              We draw the flag-hero splash entirely in HTML below so every
              launch shows exactly what the current code defines. -->
-        <link rel="canonical" href="https://carryon.us/" />
+        <link rel="canonical" href="https://app.carryon.us/" />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="CarryOn™ - Secure Family Preparedness & Estate Planning" />
-        <meta property="og:description" content="Protect what matters most. CarryOn helps families organize estate plans, secure documents, and prepare for life's transitions — together." />
-        <meta property="og:image" content="%PUBLIC_URL%/carryon-icon.jpg" />
-        <meta property="og:url" content="https://carryon.us" />
+        <meta property="og:title" content="CarryOn™ — Every American family. Ready." />
+        <meta property="og:description" content="The digital legacy platform that turns your wishes, your wisdom, and the practical details of your estate into a clear, encrypted, lovingly-organised hand-off — for the people you love, on the day they need it most." />
+        <meta property="og:image" content="https://app.carryon.us/carryon-icon.jpg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="CarryOn — secure family preparedness platform" />
+        <meta property="og:url" content="https://app.carryon.us/" />
         <meta property="og:site_name" content="CarryOn" />
+        <meta property="og:locale" content="en_US" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="CarryOn™ - Secure Family Preparedness" />
-        <meta name="twitter:description" content="Organize your estate plan, secure your documents, and prepare your family — all in one place." />
-        <meta name="twitter:image" content="%PUBLIC_URL%/carryon-icon.jpg" />
+        <meta name="twitter:site" content="@carryonus" />
+        <meta name="twitter:title" content="CarryOn™ — Every American family. Ready." />
+        <meta name="twitter:description" content="Organize your estate plan, secure your documents, and prepare your family — all in one place. AES-256 encrypted. Free trial, no card." />
+        <meta name="twitter:image" content="https://app.carryon.us/carryon-icon.jpg" />
+        <meta name="author" content="CarryOn" />
+        <meta name="keywords" content="estate planning, digital legacy, family preparedness, secure document vault, milestone messages, beneficiary management, end of life planning, family emergency plan" />
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+
+        <!-- Schema.org structured data: Organization + WebSite + SoftwareApplication.
+             These three blocks let Google show a rich card with logo, search box,
+             and 'About' panel for "CarryOn" branded queries. -->
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://app.carryon.us/#organization",
+              "name": "CarryOn",
+              "alternateName": "CarryOn™",
+              "url": "https://app.carryon.us/",
+              "logo": "https://app.carryon.us/carryon-app-icon-square-512.png",
+              "description": "The digital legacy platform built for American families — secure document vault, milestone messages, beneficiary management, connected care, and financial portal in one encrypted home.",
+              "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "1550 Wilson Boulevard 7th Floor",
+                "addressLocality": "Arlington",
+                "addressRegion": "VA",
+                "postalCode": "22209",
+                "addressCountry": "US"
+              },
+              "contactPoint": [{
+                "@type": "ContactPoint",
+                "telephone": "+1-703-884-1527",
+                "contactType": "Customer Support",
+                "email": "support@carryon.us",
+                "areaServed": "US",
+                "availableLanguage": ["English"]
+              }, {
+                "@type": "ContactPoint",
+                "email": "security@carryon.us",
+                "contactType": "Security"
+              }],
+              "sameAs": [
+                "https://twitter.com/carryonus",
+                "https://www.linkedin.com/company/carryon"
+              ]
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://app.carryon.us/#website",
+              "url": "https://app.carryon.us/",
+              "name": "CarryOn",
+              "publisher": { "@id": "https://app.carryon.us/#organization" },
+              "inLanguage": "en-US"
+            },
+            {
+              "@type": "SoftwareApplication",
+              "name": "CarryOn",
+              "applicationCategory": "LifestyleApplication",
+              "operatingSystem": "Web, iOS, Android",
+              "offers": [
+                { "@type": "Offer", "name": "Base", "price": "0", "priceCurrency": "USD" },
+                { "@type": "Offer", "name": "Standard", "price": "9", "priceCurrency": "USD" },
+                { "@type": "Offer", "name": "Premium", "price": "19", "priceCurrency": "USD" }
+              ],
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": "5.0",
+                "reviewCount": "1",
+                "bestRating": "5"
+              }
+            }
+          ]
+        }
+        </script>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link rel="preload" href="%PUBLIC_URL%/flag-bg.jpg" as="image" />

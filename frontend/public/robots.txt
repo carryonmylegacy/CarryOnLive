@@ -1,5 +1,38 @@
+# CarryOn — robots.txt
+# Updated Apr 29, 2026
+
 User-agent: *
 Allow: /
 Disallow: /admin
+Disallow: /admin/
+Disallow: /ops
+Disallow: /ops/
 Disallow: /api/
-Sitemap: https://carryon.us/sitemap.xml
+Disallow: /beneficiary
+Disallow: /beneficiary/
+Disallow: /onboarding
+Disallow: /accept-invitation
+Disallow: /create-estate
+Disallow: /reset-password
+Disallow: /verify-otp
+Disallow: /security-settings
+Disallow: /support
+Disallow: /debug/
+
+# Allow major search engines + AI crawlers explicitly
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+Sitemap: https://app.carryon.us/sitemap.xml

@@ -91,6 +91,8 @@ const FounderAboutPage = lazy(() => import('./pages/FounderAboutPage'));
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const VoicesPage = lazy(() => import('./pages/VoicesPage'));
+const SecurityPage = lazy(() => import('./pages/SecurityPage'));
+const WindDownPromisePage = lazy(() => import('./pages/WindDownPromisePage'));
 
 const SharedPlanPage = lazy(() => import('./pages/SharedPlanPage'));
 
@@ -385,6 +387,8 @@ function AppRoutes() {
       <Route path="/founder-about/:token" element={<FounderAboutPage />} />
       <Route path="/home" element={<HomePage />} />
       <Route path="/voices" element={<VoicesPage />} />
+      <Route path="/security" element={<SecurityPage />} />
+      <Route path="/wind-down-promise" element={<WindDownPromisePage />} />
       <Route path="/get-started" element={<GetStartedPage />} />
       <Route path="/speak-with-us" element={<SpeakWithUsPage />} />
 

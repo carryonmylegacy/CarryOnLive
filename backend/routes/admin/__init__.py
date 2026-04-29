@@ -13,6 +13,9 @@ from .download_diagnostics import router as download_diagnostics_router
 from .download_diagnostics import ensure_indexes as ensure_download_diagnostics_indexes
 from .funnel_analytics import router as funnel_analytics_router
 from .funnel_analytics import ensure_indexes as ensure_funnel_analytics_indexes
+from .email_health import router as email_health_router
+from .email_health import ensure_indexes as ensure_email_health_indexes
+from .email_health import email_health_scheduler
 from .estate_health import router as estate_health_router
 from .grace_periods import router as grace_periods_router
 from .ip_whitelist import router as ip_whitelist_router
@@ -44,9 +47,12 @@ router.include_router(task_management_router)
 router.include_router(launch_war_room_router)
 router.include_router(download_diagnostics_router)
 router.include_router(funnel_analytics_router)
+router.include_router(email_health_router)
 
 __all__ = [
     "router",
     "ensure_download_diagnostics_indexes",
     "ensure_funnel_analytics_indexes",
+    "ensure_email_health_indexes",
+    "email_health_scheduler",
 ]
