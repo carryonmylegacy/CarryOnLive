@@ -8,7 +8,7 @@
  * Source-of-truth facts only. If a control isn't actually in place, it
  * isn't claimed here.
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Shield, Lock, KeyRound, FileCheck, Server, AlertTriangle,
@@ -48,7 +48,10 @@ const Bullet = ({ children }) => (
   </li>
 );
 
-const SecurityPage = () => (
+const SecurityPage = () => {
+  // Land at the top regardless of where the previous page's scroll was.
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+  return (
   <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--t)' }} data-testid="security-page">
     <div className="max-w-3xl mx-auto px-5 sm:px-8 pt-12 pb-24" style={{ paddingTop: 'calc(48px + env(safe-area-inset-top, 0px))' }}>
       {/* Back link */}
@@ -173,7 +176,7 @@ const SecurityPage = () => (
           </Bullet>
           <Bullet>
             <strong>RFC 9116 security.txt:</strong>{' '}
-            <a href="/.well-known/security.txt" className="underline" style={{ color: 'var(--gold)' }}>app.carryon.us/.well-known/security.txt</a>
+            <a href="/.well-known/security.txt" className="underline" style={{ color: 'var(--gold)' }}>www.carryon.us/.well-known/security.txt</a>
           </Bullet>
           <Bullet>Please don't run brute-force, denial-of-service, or social-engineering tests against live accounts.</Bullet>
         </ul>
@@ -201,6 +204,7 @@ const SecurityPage = () => (
       </p>
     </div>
   </div>
-);
+  );
+};
 
 export default SecurityPage;

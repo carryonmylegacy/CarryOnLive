@@ -102,17 +102,32 @@ class ClaimPayload(BaseModel):
     code: str = Field(..., max_length=24)
 
 
+async def _referral_program_enabled() -> bool:
+    """Apr 30, 2026 — referral program is OFF by default platform-wide.
+    Founder admin flips it on via /admin/platform-settings (key:
+    `referral_program_enabled`). When OFF, all referral endpoints behave
+    as inert no-ops (200 responses with `enabled: false`) so no codes are
+    minted, no visits are attributed, no trial extensions are granted."""
+    settings = await db.platform_settings.find_one(
+        {"_id": "global"}, {"_id": 0, "id": 1, "referral_program_enabled": 1}
+    )
+    return bool((settings or {}).get("referral_program_enabled", False))
+
+
 @router.get("/referrals/me")
 async def my_referral(user=Depends(get_current_user)):
     """Return the caller's referral code + share copy + stats."""
+    if not await _referral_program_enabled():
+        return {"enabled": False}
     record = await _get_or_create_code(user)
     return {
+        "enabled": True,
         "code": record["code"],
-        "share_url": f"https://app.carryon.us/?ref={record['code']}",
+        "share_url": f"https://www.carryon.us/?ref={record['code']}",
         "share_text": (
             f"I just put my family's plan in order with CarryOn. "
             f"Use my code {record['code']} for 7 extra days on me. "
-            "https://app.carryon.us/?ref=" + record["code"]
+            "https://www.carryon.us/?ref=" + record["code"]
         ),
         "stats": {
             "visits": int(record.get("visits", 0)),
@@ -130,6 +145,8 @@ async def track_visit(
 ):
     """Record an anonymous landing visit attributed to a referral code.
     Idempotent per (code, anon_session_id) within 24h to avoid count spam."""
+    if not await _referral_program_enabled():
+        return {"ok": True, "skipped": "program_disabled"}
     code = _normalize_code(payload.code)
     if not code:
         return {"ok": True, "skipped": "invalid_code"}
@@ -178,6 +195,8 @@ async def claim_referral(payload: ClaimPayload, user=Depends(get_current_user)):
     """Bind a referral code to the authenticated user (called once after signup).
     Grants 7-day trial extensions to BOTH parties (matches the existing
     email-referral bonus in routes/funnel.py). Idempotent — first claim wins."""
+    if not await _referral_program_enabled():
+        return {"ok": False, "reason": "program_disabled"}
     code = _normalize_code(payload.code)
     if not code:
         return {"ok": False, "reason": "invalid_code"}
@@ -258,6 +277,8 @@ async def admin_referrals(
     _user: dict = Depends(require_admin),
 ):
     """Founder-only aggregate view of the referral program."""
+    if not await _referral_program_enabled():
+        return {"enabled": False, "totals": {"codes_issued": 0}, "leaderboard": []}
     days = max(1, min(180, int(days)))
     since = datetime.now(timezone.utc) - timedelta(days=days)
     since_iso = since.isoformat()

@@ -39,7 +39,9 @@ const ReferralCard = () => {
       </div>
     );
   }
-  if (!data) return null;
+  // Founder admin can globally disable the referral program. When OFF the
+  // backend returns {enabled: false} and we render nothing.
+  if (!data || data.enabled === false) return null;
 
   const { code, share_url, share_text, stats } = data;
 

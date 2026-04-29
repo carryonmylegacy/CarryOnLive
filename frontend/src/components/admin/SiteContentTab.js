@@ -15,6 +15,8 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
   const [footerLine2, setFooterLine2] = useState('');
   const [footerPhone, setFooterPhone] = useState('');
   const [savedFooter, setSavedFooter] = useState({ line1: '', line2: '', phone: '' });
+  const [referralEnabled, setReferralEnabled] = useState(false);
+  const [referralBusy, setReferralBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingFooter, setSavingFooter] = useState(false);

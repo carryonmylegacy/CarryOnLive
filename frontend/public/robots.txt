@@ -35,4 +35,4 @@ Allow: /
 User-agent: PerplexityBot
 Allow: /
 
-Sitemap: https://app.carryon.us/sitemap.xml
+Sitemap: https://www.carryon.us/sitemap.xml

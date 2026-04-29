@@ -83,14 +83,14 @@ export default function LandingPricing() {
     return (
       <div className="flex items-center justify-center py-16" data-testid="landing-pricing-loading">
         <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--gold)' }} />
-        <span className="ml-3 text-sm" style={{ color: 'var(--t4)' }}>Loading current pricing…</span>
+        <span className="ml-3 text-[28px]" style={{ color: 'var(--t4)' }}>Loading current pricing…</span>
       </div>
     );
   }
 
   if (!plans.length) {
     return (
-      <div className="text-center py-16 text-sm" style={{ color: 'var(--t4)' }} data-testid="landing-pricing-empty">
+      <div className="text-center py-16 text-[28px]" style={{ color: 'var(--t4)' }} data-testid="landing-pricing-empty">
         Pricing temporarily unavailable. Please <Link to="/signup" className="underline" style={{ color: 'var(--gold)' }}>create your account</Link> and we'll show full plan details inside.
       </div>
     );
@@ -123,7 +123,7 @@ export default function LandingPricing() {
             <button
               key={opt}
               onClick={() => setBilling(opt)}
-              className="px-4 sm:px-5 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors"
+              className="px-4 sm:px-5 py-1.5 rounded-full text-[24px] font-semibold capitalize transition-colors"
               style={{
                 background: billing === opt ? 'var(--gold)' : 'transparent',
                 color: billing === opt ? '#0b1120' : 'var(--t3)',
@@ -131,7 +131,7 @@ export default function LandingPricing() {
               data-testid={`landing-billing-${opt}`}
             >
               {opt}
-              {opt === 'annual' && <span className="ml-1 text-[11px] opacity-80">save</span>}
+              {opt === 'annual' && <span className="ml-1 text-[22px] opacity-80">save</span>}
             </button>
           ))}
         </div>
@@ -161,26 +161,26 @@ export default function LandingPricing() {
               data-testid={`landing-tier-${p.id}`}
             >
               {highlighted && (
-                <div className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: 'var(--gold)' }}>
+                <div className="text-[24px] font-semibold mb-3 uppercase tracking-wider" style={{ color: 'var(--gold)' }}>
                   Most popular
                 </div>
               )}
               <div className="flex items-center gap-2 mb-1">
                 <Icon className="w-4 h-4" style={{ color: accent }} />
-                <h3 className="text-white font-semibold text-lg" style={{ fontFamily: 'var(--sans)' }}>{p.name}</h3>
+                <h3 className="text-white font-semibold text-[36px]" style={{ fontFamily: 'var(--sans)' }}>{p.name}</h3>
               </div>
               <div className="mb-3 flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-white" style={{ fontFamily: 'var(--serif)' }}>
+                <span className="text-[56px] font-bold text-white" style={{ fontFamily: 'var(--serif)' }}>
                   {fmt(price)}
                 </span>
-                <span className="text-xs" style={{ color: 'var(--t5)' }}>{billingCadenceLabel}</span>
+                <span className="text-[24px]" style={{ color: 'var(--t5)' }}>{billingCadenceLabel}</span>
               </div>
               {p.note && (
-                <p className="text-xs mb-3 italic" style={{ color: 'var(--t5)' }}>{p.note}</p>
+                <p className="text-[24px] mb-3 italic" style={{ color: 'var(--t5)' }}>{p.note}</p>
               )}
               <ul className="space-y-2.5 mb-6 flex-1" data-testid={`landing-tier-${p.id}-features`}>
                 {(features.length ? features.map((f) => f.label) : fallbackFeatures).map((label) => (
-                  <li key={label} className="flex items-start gap-2 text-sm" style={{ color: 'var(--t3)' }}>
+                  <li key={label} className="flex items-start gap-2 text-[28px]" style={{ color: 'var(--t3)' }}>
                     <Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: accent }} /> {label}
                   </li>
                 ))}
@@ -190,8 +190,8 @@ export default function LandingPricing() {
                 onClick={() => recordFunnelEvent({ event: 'landing_cta_click', meta: { source: `pricing-${p.id}`, billing } })}
                 className={
                   highlighted
-                    ? 'w-full py-3 text-sm font-semibold rounded-xl btn-gold-cta text-center'
-                    : 'w-full py-3 text-sm font-semibold rounded-xl text-center transition-colors'
+                    ? 'w-full py-3 text-[28px] font-semibold rounded-xl btn-gold-cta text-center'
+                    : 'w-full py-3 text-[28px] font-semibold rounded-xl text-center transition-colors'
                 }
                 style={highlighted ? {} : { background: 'transparent', border: '1px solid var(--b)', color: 'var(--t2)', display: 'block' }}
                 data-testid={`landing-tier-${p.id}-cta`}
@@ -203,9 +203,28 @@ export default function LandingPricing() {
         })}
       </div>
 
-      <p className="text-center text-xs mt-6" style={{ color: 'var(--t5)' }}>
-        Eligible for a discount? New adults (18–25), military / first responders, veterans, and hospice patients have dedicated tiers — visible after you create your account.
-      </p>
+      {/* Eligibility callout — gold pill, bold, prominent */}
+      <div className="flex justify-center mt-10 mb-2 px-2" data-testid="landing-eligibility-pill">
+        <div
+          className="rounded-full px-6 py-5 sm:px-8 sm:py-6 text-center max-w-3xl"
+          style={{
+            background: 'var(--gold)',
+            border: '2px solid #b89220',
+            boxShadow: '0 0 48px -16px rgba(212,175,55,0.45)',
+          }}
+        >
+          <p
+            className="font-semibold leading-snug"
+            style={{
+              color: '#0b1120',
+              fontSize: 'clamp(20px, 2.6vw, 32px)',
+              fontFamily: 'var(--serif)',
+            }}
+          >
+            Eligible for a discount? New adults (18–25), military / first responders, veterans, and hospice patients have dedicated tiers — visible after you create your account.
+          </p>
+        </div>
+      </div>
 
       {/* Founders Circle — Lifetime */}
       {fc && fcPremium && (
@@ -221,16 +240,16 @@ export default function LandingPricing() {
           >
             <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 items-center relative">
               <div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs mb-4" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)', color: 'var(--gold)' }}>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[24px] mb-4" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)', color: 'var(--gold)' }}>
                   <Sparkles className="w-3 h-3" /> Founders Circle · Lifetime
                 </div>
-                <h3 className="text-2xl sm:text-3xl font-semibold leading-tight mb-3 text-white" style={{ fontFamily: 'var(--serif)' }}>
+                <h3 className="text-[48px] sm:text-[56px] font-semibold leading-tight mb-3 text-white" style={{ fontFamily: 'var(--serif)' }}>
                   Pay once. Carry on <span className="italic" style={{ color: 'var(--gold)' }}>forever</span>.
                 </h3>
-                <p className="text-sm mb-5 max-w-md" style={{ color: 'var(--t3)' }}>
+                <p className="text-[28px] mb-5 max-w-md" style={{ color: 'var(--t3)' }}>
                   A small thank-you to the families who join us at the start. Lifetime Premium access, every feature we ever ship, no recurring fees ever. Limited campaign — when the seats run out, the door closes.
                 </p>
-                <ul className="space-y-2 mb-6 text-sm" style={{ color: 'var(--t3)' }}>
+                <ul className="space-y-2 mb-6 text-[28px]" style={{ color: 'var(--t3)' }}>
                   <li className="flex items-start gap-2"><Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--gold)' }} /> Lifetime access to Premium — every current + future feature.</li>
                   <li className="flex items-start gap-2"><Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--gold)' }} /> Pay in full or split into installments. Discounts for shorter terms.</li>
                   <li className="flex items-start gap-2"><Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--gold)' }} /> Listed in our Founders Circle — your name carried with the platform.</li>
@@ -242,21 +261,21 @@ export default function LandingPricing() {
                 className="rounded-2xl p-6"
                 style={{ background: 'rgba(11,18,32,0.6)', border: '1px solid rgba(212,175,55,0.25)', backdropFilter: 'blur(12px)' }}
               >
-                <p className="text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--gold)' }}>Premium · One-time</p>
+                <p className="text-[24px] uppercase tracking-wider mb-2" style={{ color: 'var(--gold)' }}>Premium · One-time</p>
                 <div className="flex items-baseline gap-2 mb-1">
-                  <span className="text-4xl font-bold text-white" style={{ fontFamily: 'var(--serif)' }}>
+                  <span className="text-6xl font-bold text-white" style={{ fontFamily: 'var(--serif)' }}>
                     {fmt(fcPremium.installments?.['1']?.total ?? fcPremium.lifetime_price)}
                   </span>
-                  <span className="text-sm line-through" style={{ color: 'var(--t5)' }}>
+                  <span className="text-[28px] line-through" style={{ color: 'var(--t5)' }}>
                     {fmt(fcPremium.lifetime_price)}
                   </span>
                 </div>
-                <p className="text-xs mb-4" style={{ color: 'var(--t4)' }}>
+                <p className="text-[24px] mb-4" style={{ color: 'var(--t4)' }}>
                   {fcPremium.installments?.['1']?.discount_percent
                     ? `Pay-in-full saves ${fcPremium.installments['1'].discount_percent}%.`
                     : 'Pay-in-full.'}
                 </p>
-                <div className="space-y-1 text-sm mb-5" style={{ color: 'var(--t3)' }}>
+                <div className="space-y-1 text-[28px] mb-5" style={{ color: 'var(--t3)' }}>
                   {[3, 6, 12].map((n) => {
                     const inst = fcPremium.installments?.[String(n)];
                     if (!inst) return null;
@@ -265,7 +284,7 @@ export default function LandingPricing() {
                         <span>{n} payments</span>
                         <span style={{ color: 'var(--t)' }}>
                           <strong>{fmt(inst.per_payment)}</strong>
-                          <span className="text-xs ml-1" style={{ color: 'var(--t5)' }}>/ mo</span>
+                          <span className="text-[24px] ml-1" style={{ color: 'var(--t5)' }}>/ mo</span>
                         </span>
                       </div>
                     );
@@ -274,12 +293,12 @@ export default function LandingPricing() {
                 <Link
                   to="/signup"
                   onClick={() => recordFunnelEvent({ event: 'landing_cta_click', meta: { source: 'founders-circle' } })}
-                  className="block w-full py-3 text-sm font-semibold rounded-xl btn-gold-cta text-center"
+                  className="block w-full py-3 text-[28px] font-semibold rounded-xl btn-gold-cta text-center"
                   data-testid="landing-fc-cta"
                 >
                   Claim my Founders Circle seat
                 </Link>
-                <p className="text-[11px] text-center mt-3" style={{ color: 'var(--t5)' }}>
+                <p className="text-[22px] text-center mt-3" style={{ color: 'var(--t5)' }}>
                   Activated after account creation. Visible inside Subscriptions.
                 </p>
               </div>
@@ -288,7 +307,7 @@ export default function LandingPricing() {
 
           {/* Other tiers' lifetime prices, compact */}
           {fc.plans.length > 1 && (
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs" style={{ color: 'var(--t4)' }}>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[24px]" style={{ color: 'var(--t4)' }}>
               <span style={{ color: 'var(--t5)' }}>Founders Circle also available for:</span>
               {fc.plans
                 .filter((p) => p.tier !== 'premium')

@@ -8,7 +8,7 @@
  * binding promise document — change it ONLY with an explicit founder
  * decision, and date the change.
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   HeartHandshake, Download, Calendar, Code2, Mail, ArrowLeft, CheckCircle2,
@@ -47,7 +47,9 @@ const Bullet = ({ children }) => (
   </li>
 );
 
-const WindDownPromisePage = () => (
+const WindDownPromisePage = () => {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+  return (
   <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--t)' }} data-testid="wind-down-page">
     <div className="max-w-3xl mx-auto px-5 sm:px-8 pt-12 pb-24" style={{ paddingTop: 'calc(48px + env(safe-area-inset-top, 0px))' }}>
       <Link
@@ -167,6 +169,7 @@ const WindDownPromisePage = () => (
       </p>
     </div>
   </div>
-);
+  );
+};
 
 export default WindDownPromisePage;
