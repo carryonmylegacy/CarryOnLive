@@ -73,9 +73,10 @@ const WindDownPromisePage = () => (
           If we ever shut down, your family's data <span className="italic" style={{ color: 'var(--gold)' }}>comes home with you</span>.
         </h1>
         <p className="text-base leading-relaxed" style={{ color: 'var(--t3)' }}>
-          We've spent ~$60,000 of our own money building CarryOn because we believe
-          this work matters. We also know nothing in tech lasts forever. So we want
-          you to know exactly what would happen — long before anything ever needs to.
+          CarryOn's founder, a retired 24-year military veteran, "boot-strapped" CarryOn
+          from inception to what it is today because he believes this work matters. We
+          also know nothing in tech lasts forever. So we want you to know exactly what
+          would happen — long before anything ever needs to.
         </p>
         <p className="text-base leading-relaxed mt-3" style={{ color: 'var(--t3)' }}>
           This is a binding written promise. We commit to every line below.
