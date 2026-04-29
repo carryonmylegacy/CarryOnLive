@@ -48,6 +48,8 @@ import { TrialUsersTab } from '../components/admin/TrialUsersTab';
 import { EstateHealthTab } from '../components/admin/EstateHealthTab';
 import { IntegrationsTab } from '../components/admin/IntegrationsTab';
 import { DownloadDiagnosticsTab } from '../components/admin/DownloadDiagnosticsTab';
+import { ProductAnalyticsTab } from '../components/admin/ProductAnalyticsTab';
+import { AdminReferralsTab } from '../components/admin/AdminReferralsTab';
 import { FunnelAnalyticsTab } from '../components/admin/FunnelAnalyticsTab';
 import { BetaTestingTab } from '../components/admin/BetaTestingTab';
 import { FounderEmailsTab } from '../components/admin/FounderEmailsTab';
@@ -137,6 +139,8 @@ const FOUNDER_SECTIONS = [
       { key: 'operators', label: 'Operators', icon: Users, path: '/admin/operators' },
       { key: 'integrations', label: 'Integrations', icon: Puzzle, path: '/admin/integrations' },
       { key: 'download-diagnostics', label: 'Downloads', icon: Download, path: '/admin/download-diagnostics' },
+      { key: 'product-analytics', label: 'Product', icon: TrendingUp, path: '/admin/product-analytics' },
+      { key: 'referrals', label: 'Referrals', icon: Gift, path: '/admin/referrals' },
       { key: 'p1-settings', label: 'P1 Contact', icon: AlertTriangle, path: '/admin/p1-settings' },
       { key: 'knowledge-base', label: 'Knowledge Base', icon: BookOpen, path: '/admin/knowledge-base' },
       { key: 'performance', label: 'Performance', icon: BarChart3, path: '/admin/performance' },
@@ -212,6 +216,8 @@ const PATH_TO_TAB = {
   '/admin/estate-health': 'estate-health',
   '/admin/integrations': 'integrations',
   '/admin/download-diagnostics': 'download-diagnostics',
+  '/admin/product-analytics': 'product-analytics',
+  '/admin/referrals': 'referrals',
   '/admin/funnel': 'funnel',
   '/admin/beta-testing': 'beta-testing',
   '/admin/founder-emails': 'founder-emails',
@@ -568,6 +574,8 @@ const AdminPage = ({ operatorMode = false }) => {
         {effectiveTab === 'estate-health' && <EstateHealthTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'integrations' && <IntegrationsTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'download-diagnostics' && <DownloadDiagnosticsTab />}
+        {effectiveTab === 'product-analytics' && <ProductAnalyticsTab />}
+        {effectiveTab === 'referrals' && <AdminReferralsTab />}
         {effectiveTab === 'funnel' && <FunnelAnalyticsTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'beta-testing' && <BetaTestingTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'founder-emails' && <FounderEmailsTab getAuthHeaders={getAuthHeaders} />}

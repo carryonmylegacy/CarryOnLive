@@ -336,8 +336,47 @@ async def register(data: UserCreate):
     # token in the response so the frontend can drop the user straight into
     # the dashboard. Off by default; flipped on by the founder for QA /
     # automation runs and turned back off afterwards.
+    #
+    # Apr 29, 2026 — LAUNCH SAFETY NET: when env LAUNCH_MODE=true the bypass
+    # is force-disabled at the code level regardless of the DB toggle. This
+    # guarantees the production launch cannot accidentally ship with the
+    # bypass left on (it has been left on by mistake during prior QA sweeps).
+    # The DB toggle is also auto-expiring — see _signup_otp_bypass_active().
+    import os as _os
+
     platform_settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0}) or {}
     skip_signup_otp = bool(platform_settings.get("signup_otp_disabled", False))
+
+    # Hard launch override
+    if _os.environ.get("LAUNCH_MODE", "").lower() in ("true", "1", "yes"):
+        if skip_signup_otp:
+            logger.warning("LAUNCH_MODE=true — ignoring signup_otp_disabled DB toggle. OTP gate ENFORCED.")
+        skip_signup_otp = False
+
+    # Auto-expire the bypass after 24 hours unless the admin re-enables it.
+    # The toggle row carries `signup_otp_disabled_at` so we know when it was
+    # flipped on; if more than `signup_otp_bypass_ttl_hours` (default 24) have
+    # elapsed, treat as disabled and atomically clean up the flag.
+    if skip_signup_otp:
+        bypass_at = platform_settings.get("signup_otp_disabled_at")
+        ttl_hours = int(platform_settings.get("signup_otp_bypass_ttl_hours", 24) or 24)
+        if bypass_at:
+            try:
+                set_at = datetime.fromisoformat(bypass_at.replace("Z", "+00:00"))
+                if (datetime.now(timezone.utc) - set_at) > timedelta(hours=ttl_hours):
+                    await db.platform_settings.update_one(
+                        {"_id": "global"},
+                        {
+                            "$set": {
+                                "signup_otp_disabled": False,
+                                "signup_otp_auto_expired_at": datetime.now(timezone.utc).isoformat(),
+                            }
+                        },
+                    )
+                    logger.warning(f"signup_otp_disabled auto-expired after {ttl_hours}h — OTP gate restored.")
+                    skip_signup_otp = False
+            except (ValueError, TypeError):
+                pass
 
     if skip_signup_otp:
         # Mark the user as already email-verified and hand back a token,

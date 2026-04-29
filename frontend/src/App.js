@@ -30,6 +30,7 @@ if (typeof window !== 'undefined' && !window.__CARRYON_BUILD_LOGGED) {
 // Eagerly loaded (needed immediately)
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
+import LandingPage from './pages/LandingPage';
 
 // Core pages — eagerly loaded for fast navigation
 import DashboardPage from './pages/DashboardPage';
@@ -348,6 +349,16 @@ function PublicDeviceModeMount() {
   return null;
 }
 
+// Decides whether `/` shows the marketing landing or redirects authenticated
+// users straight into their dashboard. Extracted so we can call useAuth().
+function RootRoute() {
+  const { user, isAuthenticated } = useAuth();
+  if (isAuthenticated) {
+    return <Navigate to={user?.role === 'beneficiary' ? '/beneficiary' : '/dashboard'} replace />;
+  }
+  return <LandingPage />;
+}
+
 function AppRoutes() {
   return (
     <RouteErrorBoundary>
@@ -474,7 +485,7 @@ function AppRoutes() {
       </Route>
 
       {/* Default Redirect */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<RootRoute />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
     </Suspense>

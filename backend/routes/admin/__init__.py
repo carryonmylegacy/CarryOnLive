@@ -11,6 +11,8 @@ from .canned_responses import router as canned_responses_router
 from .dev_switcher import router as dev_switcher_router
 from .download_diagnostics import router as download_diagnostics_router
 from .download_diagnostics import ensure_indexes as ensure_download_diagnostics_indexes
+from .funnel_analytics import router as funnel_analytics_router
+from .funnel_analytics import ensure_indexes as ensure_funnel_analytics_indexes
 from .estate_health import router as estate_health_router
 from .grace_periods import router as grace_periods_router
 from .ip_whitelist import router as ip_whitelist_router
@@ -41,5 +43,10 @@ router.include_router(session_policy_router)
 router.include_router(task_management_router)
 router.include_router(launch_war_room_router)
 router.include_router(download_diagnostics_router)
+router.include_router(funnel_analytics_router)
 
-__all__ = ["router", "ensure_download_diagnostics_indexes"]
+__all__ = [
+    "router",
+    "ensure_download_diagnostics_indexes",
+    "ensure_funnel_analytics_indexes",
+]

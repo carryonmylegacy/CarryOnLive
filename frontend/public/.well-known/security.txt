@@ -1,0 +1,15 @@
+Contact: mailto:security@carryon.us
+Contact: https://carryon.us/security
+Expires: 2027-12-31T23:59:59Z
+Encryption: https://carryon.us/.well-known/pgp-key.txt
+Preferred-Languages: en
+Canonical: https://carryon.us/.well-known/security.txt
+Policy: https://carryon.us/security
+Acknowledgments: https://carryon.us/security/hall-of-fame
+
+# Responsible disclosure
+# We take vulnerability reports seriously. If you discover a security issue,
+# please email security@carryon.us with a clear description and steps to
+# reproduce. We commit to acknowledging your report within 72 hours and
+# providing a fix-or-status update within 14 days. Coordinated disclosure
+# preferred. Do not test against production accounts that aren't yours.

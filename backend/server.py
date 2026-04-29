@@ -72,6 +72,9 @@ from routes.user_preferences import router as user_preferences_router
 from routes.financial_portal import router as financial_portal_router
 from routes.guardian_exports import router as guardian_exports_router
 from routes.staff_ops import router as staff_ops_router
+from routes.referrals import router as referrals_router
+from routes.referrals import ensure_indexes as ensure_referral_indexes
+from services.onboarding_drip import onboarding_drip_scheduler
 from schedulers import (
     daily_dob_check_scheduler,
     data_retention_scheduler,
@@ -141,13 +144,18 @@ async def lifespan(app):
     await run_migrations(db, logger)
     await ensure_indexes(db, logger)
 
-    # Best-effort: download-diagnostics TTL + compound index
+    # Best-effort: download-diagnostics + funnel-analytics indexes
     try:
-        from routes.admin import ensure_download_diagnostics_indexes
+        from routes.admin import (
+            ensure_download_diagnostics_indexes,
+            ensure_funnel_analytics_indexes,
+        )
 
         await ensure_download_diagnostics_indexes()
+        await ensure_funnel_analytics_indexes()
+        await ensure_referral_indexes()
     except Exception as e:
-        logger.warning(f"download-diagnostics index init failed: {e}")
+        logger.warning(f"diagnostics index init failed: {e}")
 
     # Each scheduler is wrapped with a distributed lock. `_locked()` is itself
     # infinite so we restart the scheduler if it ever returns/crashes.
@@ -171,6 +179,7 @@ async def lifespan(app):
         asyncio.create_task(_supervise("grace_period", grace_period_scheduler)),
         asyncio.create_task(_supervise("bill_reminder", bill_reminder_scheduler)),
         asyncio.create_task(_supervise("drill_reminder", drill_reminder_scheduler)),
+        asyncio.create_task(_supervise("onboarding_drip", onboarding_drip_scheduler, ttl=600)),
     ]
 
     # Warm up xAI connection + start periodic keepalive (local per-pod, no lock needed)
@@ -268,6 +277,7 @@ api_router.include_router(guardian_exports_router)
 api_router.include_router(staff_ops_router)
 api_router.include_router(platform_rules_router)
 api_router.include_router(changelog_router)
+api_router.include_router(referrals_router)
 
 
 BUILD_HASH = "2026-04-28T00:00:00Z-pre-launch-refactor"

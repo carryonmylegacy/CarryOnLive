@@ -14,7 +14,11 @@ from datetime import datetime, timezone
 from fastapi import Depends, HTTPException
 
 from config import db
-from utils import get_current_user
+from utils import get_current_user, get_current_user_optional
+
+# Re-exported for convenience: optional auth helper for endpoints that
+# meaningfully serve both anonymous and authenticated callers.
+__all__ = ["get_current_user_optional"]
 
 
 async def get_subscription_access(current_user: dict = Depends(get_current_user)):

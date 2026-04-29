@@ -744,6 +744,33 @@ When DUNS number is obtained and Apple Developer enrollment is complete:
 ## Recent Session Work Summary
 See `CHANGELOG.md` for full chronological history if this file exceeds 700 lines.
 
+## 8/10 Launch-Readiness Sweep — Apr 29, 2026 (iter 100)
+
+User mandate: *"I want to bring every single category up to an eight or greater. I don't care what it costs in tokens or how long it takes."* Forked context after the previous agent left mid-batch. New agent finished items 1–5 of the sweep.
+
+**Completed in this iteration:**
+- ✅ **Marketing Landing Page** wired to `/` route (auth-aware via new `RootRoute` component in `App.js`). Authenticated users still bounce to `/dashboard` or `/beneficiary`. `LandingPage.js` populated with hero, 8 features grid, 4-tier pricing, FAQs, trust badges, two CTAs and funnel telemetry hooks.
+- ✅ **Product Analytics admin tab** registered at `/admin/product-analytics` (`ProductAnalyticsTab.js` + backend aggregation in `routes/admin/funnel_analytics.py`). Lifetime + windowed event counts, platform breakdown, daily timeseries, conversion funnel.
+- ✅ **Referral Program** — full code-based flow (lifetime, not just email-coupled).
+  - Backend: `routes/referrals.py` with `/referrals/me`, `/referrals/track-visit`, `/referrals/claim`, `/admin/referrals`. Auto-issues stable codes (e.g. `BARNET-3X7Q`), 7-day trial extension to BOTH parties on claim, idempotent attribution, anonymous visit dedup (24h window, hashed IP).
+  - Frontend: `ReferralCard.js` (Settings tile with native share + copy + stats), `AdminReferralsTab.js` (founder-only leaderboard at `/admin/referrals`), `?ref=CODE` capture + visit beacon on `LandingPage.js`, post-signup auto-claim in `SignupPage.js` (both OTP-bypass and OTP-verify paths).
+- ✅ **Onboarding Email Drip** — multi-touch nurture sequence via Resend.
+  - 5 steps at days {0, 2, 7, 14, 28}: Welcome / IAC checklist / Milestone Messages / Beneficiaries ready / Trial ending.
+  - `services/onboarding_drip.py` ticked every 6h via distributed-locked scheduler; per-user atomic guard prevents double-sends across pods; respects `user_preferences.onboarding_emails=false` opt-out; one-tap unsubscribe link routes to `/api/user-preferences/onboarding-emails`.
+  - Brand-styled HTML (Cormorant headlines, Inter body, gold CTA buttons).
+- ✅ **OTP-Bypass Auto-Off Safety Net** (P0 launch-day safety):
+  1. `LAUNCH_MODE=true` env var hard-overrides the DB toggle — bypass becomes physically impossible regardless of admin state.
+  2. **Auto-expiring DB toggle** — when admin flips `signup_otp_disabled` ON, server stamps `signup_otp_disabled_at`; after `signup_otp_bypass_ttl_hours` (default 24h) the next signup atomically clears the flag and logs a warning.
+  3. Admin platform-settings PUT now logs the actor email + auto-expiry timer whenever bypass is enabled.
+- ✅ **Security headers (CSP)** — already in place (`SecurityHeadersMiddleware` in `middleware.py`). No change needed.
+- ✅ **security.txt** — `/app/frontend/public/.well-known/security.txt` shipped (created in previous fork).
+
+**Tests added:** `backend/tests/test_iter100_launch_sweep.py` — 6/6 passing (referrals/me, track-visit dedup, self-referral block, admin aggregate, onboarding-emails opt-out roundtrip, funnel-event ingest).
+
+**Housekeeping:** 75 PASS, 0 WARN, 0 FAIL. ESLint clean.
+
+**Still launch-blocked (user action):** Apple IAP agreement, Twilio A2P 10DLC. **Pre-launch checklist:** flip `signup_otp_disabled` OFF in `/admin/platform-settings` (or set `LAUNCH_MODE=true` in Railway env to physically disable it).
+
 ## iter96 Findings — Audit Notes
 
 After the agent ran iter96 and reported 7 findings, manual verification reclassified most:

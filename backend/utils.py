@@ -14,7 +14,7 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from fastapi import Depends, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from py_vapid import Vapid
 from pywebpush import WebPushException, webpush
 
@@ -133,6 +133,22 @@ async def get_current_user(
             )
 
     return user
+
+
+async def get_current_user_optional(
+    credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False)),
+):
+    """Like `get_current_user` but returns None if no/invalid token instead of 401.
+    Use for endpoints that meaningfully serve both anonymous and authenticated
+    callers (e.g. funnel telemetry from the marketing landing)."""
+    if credentials is None or not getattr(credentials, "credentials", None):
+        return None
+    try:
+        payload = decode_token(credentials.credentials)
+        user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
+        return user
+    except Exception:
+        return None
 
 
 def generate_otp() -> str:

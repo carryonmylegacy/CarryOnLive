@@ -132,3 +132,36 @@ async def save_chat_autoscroll_preferences(
         upsert=True,
     )
     return {"threshold_minutes": minutes}
+
+
+# --- Onboarding email drip opt-out -------------------------------------------------
+
+
+class OnboardingEmailsPreferences(BaseModel):
+    enabled: bool = True
+
+
+@router.get("/user-preferences/onboarding-emails")
+async def get_onboarding_emails_pref(
+    current_user: dict = Depends(get_current_user),
+):
+    """Whether the user is opted-in to the onboarding email drip (default: True)."""
+    doc = await db.user_preferences.find_one(
+        {"user_id": current_user["id"]}, {"_id": 0, "id": 1, "onboarding_emails": 1}
+    )
+    val = (doc or {}).get("onboarding_emails")
+    return {"enabled": True if val is None else bool(val)}
+
+
+@router.put("/user-preferences/onboarding-emails")
+async def set_onboarding_emails_pref(
+    data: OnboardingEmailsPreferences,
+    current_user: dict = Depends(get_current_user),
+):
+    """Persist the user's onboarding-email opt-in/opt-out."""
+    await db.user_preferences.update_one(
+        {"user_id": current_user["id"]},
+        {"$set": {"onboarding_emails": bool(data.enabled)}},
+        upsert=True,
+    )
+    return {"enabled": bool(data.enabled)}

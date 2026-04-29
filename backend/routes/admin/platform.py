@@ -41,6 +41,7 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
     allowed_keys = {
         "otp_disabled",
         "signup_otp_disabled",
+        "signup_otp_bypass_ttl_hours",
         "homepage_video_id",
         "homepage_video_id_vertical",
         "footer_address_line1",
@@ -49,6 +50,8 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
     }
     update = {k: v for k, v in data.items() if k in allowed_keys}
     if update:
+        from datetime import datetime, timezone
+
         # Check if we're turning 2FA ON (otp_disabled going from True to False)
         if "otp_disabled" in update and not update["otp_disabled"]:
             old_settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0})
@@ -56,6 +59,19 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
             if was_disabled:
                 # Turning 2FA ON globally — reset all users to otp_enabled: true
                 await db.users.update_many({}, {"$set": {"otp_enabled": True}})
+
+        # Apr 29, 2026 — Stamp signup_otp_disabled_at whenever the bypass flips
+        # ON, so the safety net in routes/auth/register.py can auto-expire it
+        # after `signup_otp_bypass_ttl_hours` (default 24h).
+        if "signup_otp_disabled" in update and update["signup_otp_disabled"]:
+            old = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0}) or {}
+            if not old.get("signup_otp_disabled"):
+                update["signup_otp_disabled_at"] = datetime.now(timezone.utc).isoformat()
+                update.pop("signup_otp_auto_expired_at", None)
+                logger.warning(
+                    f"signup_otp_disabled enabled by admin {current_user.get('email')} — auto-expires in "
+                    f"{update.get('signup_otp_bypass_ttl_hours', 24)}h."
+                )
         await db.platform_settings.update_one({"_id": "global"}, {"$set": update}, upsert=True)
     settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0})
     return settings or {"otp_disabled": False}

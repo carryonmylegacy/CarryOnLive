@@ -288,6 +288,18 @@ const SignupPage = () => {
       // dashboard, mirroring the post-OTP-verify path.
       if (response.data?.skip_otp && response.data?.access_token) {
         localStorage.setItem('carryon_token', response.data.access_token);
+        // Claim referral if a code is in storage from the landing page
+        try {
+          const ref = localStorage.getItem('carryon_referral_code');
+          if (ref) {
+            await axios.post(
+              `${API_URL}/referrals/claim`,
+              { code: ref },
+              { headers: { Authorization: `Bearer ${response.data.access_token}` } }
+            ).catch(() => {});
+            localStorage.removeItem('carryon_referral_code');
+          }
+        } catch {}
         const u = response.data.user || {};
         navigate(u.role === 'beneficiary' ? '/beneficiary' : '/dashboard');
         // Force a hydrate so AuthContext picks up the new token.
@@ -309,7 +321,19 @@ const SignupPage = () => {
     setLoading(true);
     try {
       const user = await verifyOtp(registeredEmail, otp);
-      // toast removed
+      // Claim referral if a code is stashed from the landing page
+      try {
+        const ref = localStorage.getItem('carryon_referral_code');
+        const tk = localStorage.getItem('carryon_token');
+        if (ref && tk) {
+          await axios.post(
+            `${API_URL}/referrals/claim`,
+            { code: ref },
+            { headers: { Authorization: `Bearer ${tk}` } }
+          ).catch(() => {});
+          localStorage.removeItem('carryon_referral_code');
+        }
+      } catch {}
       navigate(user.role === 'beneficiary' ? '/beneficiary' : '/dashboard');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Invalid OTP');

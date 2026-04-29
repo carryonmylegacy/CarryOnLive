@@ -21,6 +21,7 @@ import DigestCard from '../components/settings/DigestCard';
 import PrivacyCard from '../components/settings/PrivacyCard';
 import DockCustomizer from '../components/DockCustomizer';
 import MenuOrderCustomizer from '../components/MenuOrderCustomizer';
+import ReferralCard from '../components/ReferralCard';
 import ChatAutoscrollCard from '../components/settings/ChatAutoscrollCard';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
@@ -142,6 +143,9 @@ const SettingsPage = () => {
 
       {/* Estate Photo — benefactors only */}
       {!isStaff && <EstatePhotoCard />}
+
+      {/* Referral program — benefactors only (staff don't refer) */}
+      {!isStaff && <ReferralCard />}
 
       {/* ── Section: Offline ── */}
       <SectionHeader title="Offline" hint="Control how CarryOn behaves when you lose signal." />
