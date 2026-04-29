@@ -50,10 +50,15 @@ async def get_financial_portal(estate_id: str, current_user: dict = Depends(get_
 
     if not is_owner:
         is_transitioned = estate.get("status") == "transitioned"
-        bills = _filter_for_beneficiary(bills, current_user["id"], is_transitioned)
-        debts = _filter_for_beneficiary(debts, current_user["id"], is_transitioned)
-        accounts = _filter_for_beneficiary(accounts, current_user["id"], is_transitioned)
-        property_assets = _filter_for_beneficiary(property_assets, current_user["id"], is_transitioned)
+        cfp_pre = estate.get("cfp_pre_transition_visible", False)
+        bills = _filter_for_beneficiary(bills, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre)
+        debts = _filter_for_beneficiary(debts, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre)
+        accounts = _filter_for_beneficiary(
+            accounts, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre
+        )
+        property_assets = _filter_for_beneficiary(
+            property_assets, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre
+        )
 
     return {
         "bills": bills,
@@ -141,8 +146,9 @@ async def get_thirty_day_cashflow(estate_id: str, current_user: dict = Depends(g
     )
     if not is_owner:
         is_transitioned = estate.get("status") == "transitioned"
-        bills = _filter_for_beneficiary(bills, current_user["id"], is_transitioned)
-        debts = _filter_for_beneficiary(debts, current_user["id"], is_transitioned)
+        cfp_pre = estate.get("cfp_pre_transition_visible", False)
+        bills = _filter_for_beneficiary(bills, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre)
+        debts = _filter_for_beneficiary(debts, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre)
 
     today = datetime.now(timezone.utc)
     timeline = []

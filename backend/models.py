@@ -372,6 +372,15 @@ class EstateUpdate(BaseModel):
     # for the family's own devices.
     public_device_mode: Optional[bool] = None
     public_device_idle_seconds: Optional[int] = None  # 30..600; default 90 client-side
+    # CFP global pre-transition visibility. False (default) = the entire
+    # CarryOn Financial Picture module is hidden from beneficiaries until
+    # the estate transitions. True = the module is exposed pre-transition,
+    # in which case each item's per-beneficiary `visibility_timing.pre`
+    # still gates which specific bills/accounts/debts/property show up.
+    # Use case: benefactor going on a Eurotrip / scheduled hospital stay
+    # flips this on for a week, then back off. Per-item pre/post settings
+    # are preserved across toggles.
+    cfp_pre_transition_visible: Optional[bool] = None
 
 
 class ChatMessage(BaseModel):

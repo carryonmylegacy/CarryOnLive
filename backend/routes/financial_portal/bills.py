@@ -133,7 +133,12 @@ async def get_bills(estate_id: str, current_user: dict = Depends(get_current_use
     bills = await db.bills.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
     if not is_owner:
         is_transitioned = estate.get("status") == "transitioned"
-        bills = _filter_for_beneficiary(bills, current_user["id"], is_transitioned)
+        bills = _filter_for_beneficiary(
+            bills,
+            current_user["id"],
+            is_transitioned,
+            cfp_pre_transition_visible=estate.get("cfp_pre_transition_visible", False),
+        )
     return bills
 
 

@@ -44,7 +44,7 @@ const FEATURES = [
   {
     icon: Heart,
     title: 'Family Forever Network',
-    body: 'A private space for everyone you love to gather, message, and remember — the digital living room your family keeps long after you\'re gone.',
+    body: 'A private family channel for the photos, the milestones, the running jokes, and the hard updates. Yours while you\'re here, theirs forever — same room.',
   },
   {
     icon: KeyRound,
@@ -54,7 +54,7 @@ const FEATURES = [
   {
     icon: Sparkles,
     title: 'Connected Care + Financial Portals',
-    body: 'Real-time visibility for your designated trustee into open bills, recurring obligations, and care decisions — when they need it, not before.',
+    body: 'Open bills, recurring obligations, care decisions — visible to whoever needs to handle them, exactly when they need to. Hospitalized for a week? Toggle the Connected Financial Portal on for your spouse or partner to ensure life continues to run smoothly. Estate transition? One platform, all the data, no scramble. The ultimate peace of mind for the entire family.',
   },
 ];
 
@@ -65,7 +65,7 @@ const FAQS = [
   },
   {
     q: 'How is this different from a will or LegalZoom?',
-    a: 'A will tells lawyers what to do with your estate. CarryOn tells your family how to actually live the days after — the passwords, the recurring bills, the family stories, the final messages, the medical wishes. We complement legal documents; we don\'t replace them.',
+    a: 'A will is a document for lawyers, after you\'re gone. CarryOn is a living platform for your family, every day you\'re alive and every day after. The passwords, the recurring bills, the milestone messages, the medical wishes, the "who knows where the safe deposit box is" — organized once, accessible whenever it actually matters.',
   },
   {
     q: 'When do my beneficiaries actually see anything?',
@@ -176,13 +176,15 @@ const LandingPage = () => {
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-[1.1] tracking-tight mb-6 text-white"
               style={{ fontFamily: 'var(--serif)' }}>
-            Your family's hardest conversation,{' '}
-            <span className="italic" style={{ color: 'var(--gold)' }}>finally captured</span>.
+            Every American family.{' '}
+            <span className="italic" style={{ color: 'var(--gold)' }}>Ready</span>.
           </h1>
           <p className="text-base sm:text-lg max-w-2xl mx-auto mb-9 leading-relaxed" style={{ color: 'var(--t4)' }}>
-            CarryOn is the digital legacy platform that turns your wishes, your wisdom, and the practical
-            details of your estate into a clear, encrypted, lovingly-organised hand-off — for the people
-            you love, on the day they need it most.
+            CarryOn is the family preparedness platform that ensures your family is ready for whatever
+            comes its way, from the next hurricane, to an extended period of absence of a key bread
+            winner, to the final day of a loved one. Wishes, passwords, recurring bills, beneficiary
+            contacts, video messages — organized while you're well, available the moment your family
+            needs them. Today. Tomorrow. Whenever.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
@@ -218,13 +220,15 @@ const LandingPage = () => {
         <div className="max-w-3xl mx-auto text-center">
           <p className="text-xs uppercase tracking-[0.18em] mb-4" style={{ color: 'var(--gold)' }}>Why CarryOn exists</p>
           <h2 className="text-2xl sm:text-3xl font-semibold leading-tight mb-6 text-white" style={{ fontFamily: 'var(--serif)' }}>
-            On the worst day of their lives, your family will spend their grief hunting for passwords.
+            Your family shouldn't need a crisis to realize they don't know how the household runs.
           </h2>
           <p className="text-base sm:text-lg leading-relaxed" style={{ color: 'var(--t4)' }}>
-            Every estate planning tool helps you tell <em>lawyers</em> what to do. None of them help you tell
-            your <em>family</em> what they need to know. CarryOn is the missing layer: the practical,
-            emotional, password-and-video-and-bill-paying handoff, organized while you're well, delivered
-            when they need it. So they can actually grieve — instead of guessing.
+            Most "estate planning" tools wake up only after someone dies. CarryOn is the layer
+            underpinning the lawyer paperwork — the practical, password-and-bill-paying,
+            where-are-the-medical-records, who-feeds-the-dog layer your family needs every ordinary
+            week, not just the worst one. Ready when you're on a Eurotrip. Ready when you're in the
+            hospital. Ready when you're gone. Same platform. Same family.{' '}
+            <span style={{ color: 'var(--t2)' }}>One click changes who can see what.</span>
           </p>
         </div>
       </section>
@@ -235,11 +239,12 @@ const LandingPage = () => {
           <div className="max-w-2xl mb-14">
             <p className="text-xs uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>What's inside</p>
             <h2 className="text-3xl sm:text-4xl font-semibold leading-tight mb-4 text-white" style={{ fontFamily: 'var(--serif)' }}>
-              Eight surfaces that <span className="italic" style={{ color: 'var(--gold)' }}>actually</span> hold a family together.
+              Eight surfaces. <span className="italic" style={{ color: 'var(--gold)' }}>One family</span>. Ready for any week of the year.
             </h2>
             <p className="text-base" style={{ color: 'var(--t4)' }}>
-              Most estate tools stop at the legal documents. CarryOn keeps going — into the practical,
-              the emotional, and the everyday.
+              Most estate tools stop at the legal documents and only matter once. CarryOn matters every
+              week — every trip, every hospital visit, every house-sitting weekend, every transition,
+              especially the final one.
             </p>
           </div>
 
@@ -356,8 +361,11 @@ const LandingPage = () => {
       {/* Final CTA */}
       <section className="py-24 sm:py-32 px-5 sm:px-8" data-testid="landing-final-cta">
         <div className="max-w-3xl mx-auto text-center">
+          <p className="text-sm sm:text-base italic mb-4 max-w-xl mx-auto leading-relaxed" style={{ color: 'var(--gold)', fontFamily: 'var(--serif)' }}>
+            "The one platform your family needs every week — and the one week they'll need it most."
+          </p>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold leading-tight mb-5 text-white" style={{ fontFamily: 'var(--serif)' }}>
-            Start the hand-off your family <span className="italic" style={{ color: 'var(--gold)' }}>actually deserves</span>.
+            Relied on while you're <span className="italic" style={{ color: 'var(--gold)' }}>living</span>. Ready when you're gone.
           </h2>
           <p className="text-base sm:text-lg mb-9 max-w-xl mx-auto leading-relaxed" style={{ color: 'var(--t4)' }}>
             30 days free. No credit card. Encrypt your first document in under 4 minutes.

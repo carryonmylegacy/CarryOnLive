@@ -28,6 +28,7 @@ import AccountTile from '../components/financial/AccountTile';
 import BillCalendar from '../components/financial/BillCalendar';
 import CashflowTimeline from '../components/financial/CashflowTimeline';
 import FinancialSummary from '../components/financial/FinancialSummary';
+import CfpVisibilityToggle from '../components/CfpVisibilityToggle';
 import QuickAdd from '../components/financial/QuickAdd';
 
 const DEFAULT_BILL_CATEGORIES = [
@@ -420,6 +421,7 @@ const FinancialPortalPage = () => {
           </div>
         </div>
         <div className="flex gap-2 w-full sm:w-auto flex-wrap">
+          <CfpVisibilityToggle estate={estate} onUpdate={setEstate} />
           <Button className="gold-button flex-1 sm:flex-initial" onClick={handleAddClick} data-testid="add-item-button">
             <Plus className="w-5 h-5 mr-2" />
             {addButtonLabel}

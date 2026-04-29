@@ -334,8 +334,29 @@ async def _verify_estate_access(estate_id: str, user: dict, require_owner: bool 
     return estate, is_owner or is_admin
 
 
-def _filter_for_beneficiary(items: list, user_id: str, is_transitioned: bool) -> list:
-    """Filter items to those visible to a specific beneficiary based on designation + timing."""
+def _filter_for_beneficiary(
+    items: list, user_id: str, is_transitioned: bool, *, cfp_pre_transition_visible: bool = False
+) -> list:
+    """Filter items to those visible to a specific beneficiary based on
+    designation + timing.
+
+    Layered gates (most-restrictive wins, in order):
+      1. Estate-level CFP global toggle (`cfp_pre_transition_visible`).
+         When False AND the estate has not transitioned, the entire CFP is
+         hidden from this beneficiary — return [].
+      2. Per-item beneficiary designation (`designated_beneficiaries`).
+         Item is invisible to anyone not in the list (or "all").
+      3. Per-item timing (`visibility_timing[user_id]` = {pre, post}).
+         The benefactor's per-item pre/post preference is preserved EVEN
+         when the global toggle is on — so a bill marked "post only" stays
+         hidden during a Eurotrip.
+    """
+    # Gate 1: estate-level global. If the estate has transitioned we don't
+    # apply this gate — death-time visibility is governed solely by the
+    # per-item `post` flag.
+    if not is_transitioned and not cfp_pre_transition_visible:
+        return []
+
     visible = []
     for item in items:
         designated = item.get("designated_beneficiaries", ["all"])

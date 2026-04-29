@@ -909,6 +909,8 @@ async def update_estate(estate_id: str, data: EstateUpdate, current_user: dict =
         # Clamp to a sane range — 30s minimum (avoid logging out mid-typing),
         # 600s maximum (10 min, beyond which it isn't really "public-device" mode).
         update_data["public_device_idle_seconds"] = max(30, min(600, int(data.public_device_idle_seconds)))
+    if data.cfp_pre_transition_visible is not None:
+        update_data["cfp_pre_transition_visible"] = bool(data.cfp_pre_transition_visible)
 
     if update_data:
         await db.estates.update_one({"id": estate_id}, {"$set": update_data})

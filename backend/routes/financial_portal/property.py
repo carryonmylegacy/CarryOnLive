@@ -21,7 +21,12 @@ async def get_property_assets(estate_id: str, current_user: dict = Depends(get_c
     items = await db.property_assets.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
     if not is_owner:
         is_transitioned = estate.get("status") == "transitioned"
-        items = _filter_for_beneficiary(items, current_user["id"], is_transitioned)
+        items = _filter_for_beneficiary(
+            items,
+            current_user["id"],
+            is_transitioned,
+            cfp_pre_transition_visible=estate.get("cfp_pre_transition_visible", False),
+        )
     return items
 
 

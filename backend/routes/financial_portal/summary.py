@@ -33,10 +33,15 @@ async def get_financial_summary(estate_id: str, current_user: dict = Depends(get
     # Filter for beneficiary visibility if not owner
     if not is_owner:
         is_transitioned = estate.get("status") == "transitioned"
-        bills = _filter_for_beneficiary(bills, current_user["id"], is_transitioned)
-        debts = _filter_for_beneficiary(debts, current_user["id"], is_transitioned)
-        accounts = _filter_for_beneficiary(accounts, current_user["id"], is_transitioned)
-        property_assets = _filter_for_beneficiary(property_assets, current_user["id"], is_transitioned)
+        cfp_pre = estate.get("cfp_pre_transition_visible", False)
+        bills = _filter_for_beneficiary(bills, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre)
+        debts = _filter_for_beneficiary(debts, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre)
+        accounts = _filter_for_beneficiary(
+            accounts, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre
+        )
+        property_assets = _filter_for_beneficiary(
+            property_assets, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre
+        )
 
     # Calculate monthly bills total
     monthly_total = 0.0
