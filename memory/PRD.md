@@ -767,9 +767,35 @@ User mandate: *"I want to bring every single category up to an eight or greater.
 
 **Tests added:** `backend/tests/test_iter100_launch_sweep.py` — 6/6 passing (referrals/me, track-visit dedup, self-referral block, admin aggregate, onboarding-emails opt-out roundtrip, funnel-event ingest).
 
-**Housekeeping:** 75 PASS, 0 WARN, 0 FAIL. ESLint clean.
+**Housekeeping:** 66/66 PASS, 0 WARN, 0 FAIL. ESLint clean.
 
 **Still launch-blocked (user action):** Apple IAP agreement, Twilio A2P 10DLC. **Pre-launch checklist:** flip `signup_otp_disabled` OFF in `/admin/platform-settings` (or set `LAUNCH_MODE=true` in Railway env to physically disable it).
+
+## Platform Health Check — Apr 29, 2026 (iter 100, prod sweep)
+
+New script `/app/scripts/platform_health_check.py` runs end-to-end against
+`https://app.carryon.us` + Railway API. Read-only on production. Tests
+8 sections × 138 checks across 4 real credentials.
+
+**Results: 134/138 pass (97%).**
+
+The 4 "failures" are all known/expected:
+1. `signup_otp_disabled = ON` (must flip OFF before launch)
+2. Global `otp_disabled = ON` (must enable 2FA before launch)
+3. Apple IAP — blocked on Apple agreement
+4. Twilio SMS — blocked on A2P 10DLC
+
+**Production telemetry (39m uptime sample, 707 requests):**
+- Code health grade: **A** (score 100/100)
+- 5xx error rate: **0.0%**
+- p50 / p95 / p99 latency: **49.9ms / 106ms / 379ms**
+- Slowest endpoint: `/api/messages/{eid}` at 511ms avg
+- Security scan grade: **A** (40 PASS / 1 WARN / 0 FAIL across 11 categories)
+- 33 users on prod, 1 signup last 24h
+
+**P0 finding:** prod `JWT_SECRET` is still **34 chars** (legacy) — the
+64-char rotated value documented in `test_credentials.md` was never
+applied to Railway env. Must rotate before launch (one-line fix).
 
 ## iter96 Findings — Audit Notes
 
