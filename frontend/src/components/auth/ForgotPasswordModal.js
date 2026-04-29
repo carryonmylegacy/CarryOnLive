@@ -38,11 +38,11 @@ const ForgotPasswordModal = ({
         <h2 className="text-lg font-bold text-white mb-1" style={{ fontFamily: 'var(--sans)' }}>Reset Password</h2>
         {forgotStep === 1 ? (
           <>
-            <p className="text-xs text-[#94A3B8] mb-4">Enter your username and we'll send a reset code to the email on file.</p>
+            <p className="text-xs text-[#94A3B8] mb-4">Enter your username or email and we'll send a reset code to the email on file.</p>
             <input type="text" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
-              placeholder="Username" className="w-full px-4 py-3 rounded-xl text-base mb-3 bg-[#0a1128] border border-[#1e293b] text-white"
+              placeholder="Username or email" className="w-full px-4 py-3 rounded-xl text-base mb-3 bg-[#0a1128] border border-[#1e293b] text-white"
               style={{ fontSize: '16px' }}
-              data-testid="forgot-username-input" aria-label="Username" />
+              data-testid="forgot-username-input" aria-label="Username or email" />
             {forgotMsg && <p className={`text-xs mb-3 ${forgotError ? 'text-red-400' : 'text-[#22C993]'}`}>{forgotMsg}</p>}
             <button disabled={!forgotEmail || forgotLoading} onClick={async () => {
               setForgotLoading(true);

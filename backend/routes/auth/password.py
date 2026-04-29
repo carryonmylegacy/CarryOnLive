@@ -81,11 +81,13 @@ class ResetPasswordRequest(BaseModel):
 
 @router.post("/auth/forgot-password")
 async def forgot_password(data: ForgotPasswordRequest):
-    """Send a password reset OTP. User enters their username."""
-    username_lower = data.username.strip().lower()
-    user = await db.users.find_one({"username_lower": username_lower}, {"_id": 0, "id": 1, "name": 1, "email": 1})
+    """Send a password reset OTP. User can enter their username OR email
+    (auto-generated usernames like ``admin_5dfa64`` are easy to forget, so
+    we resolve by either identifier)."""
+    identifier = data.username.strip()
+    user = await resolve_user_by_identifier(identifier)
     if not user:
-        return {"message": "If that username exists, a reset code has been sent."}
+        return {"message": "If that account exists, a reset code has been sent."}
 
     otp = f"{random.randint(0, 999999):06d}"
     await db.otp_codes.insert_one(
@@ -99,17 +101,17 @@ async def forgot_password(data: ForgotPasswordRequest):
     )
     first_name = (user.get("name") or "").split()[0] or "there"
     await send_otp_email(user["email"], otp, first_name)
-    return {"message": "If that username exists, a reset code has been sent."}
+    return {"message": "If that account exists, a reset code has been sent."}
 
 
 @router.post("/auth/reset-password")
 async def reset_password(data: ResetPasswordRequest):
-    """Verify OTP and set new password."""
-    username_lower = data.username.strip().lower()
+    """Verify OTP and set new password. Accepts username OR email as the
+    identifier so the request matches whatever the user entered in step 1."""
     if len(data.new_password) < 8:
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
 
-    user = await db.users.find_one({"username_lower": username_lower}, {"_id": 0, "id": 1})
+    user = await resolve_user_by_identifier(data.username)
     if not user:
         raise HTTPException(status_code=404, detail="Account not found")
 
