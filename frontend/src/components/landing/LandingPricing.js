@@ -166,7 +166,7 @@ export default function LandingPricing() {
         data-testid={`landing-tier-${p.id}`}
       >
         {highlighted && (
-          <div className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: 'var(--gold)' }}>
+          <div className="text-sm font-semibold mb-3 uppercase tracking-wider" style={{ color: 'var(--gold)' }}>
             Most popular
           </div>
         )}
@@ -179,14 +179,14 @@ export default function LandingPricing() {
             {fmt(price)}
           </span>
           {showBilling && (
-            <span className="text-xs" style={{ color: 'var(--t5)' }}>{billingCadenceLabel}</span>
+            <span className="text-sm" style={{ color: 'var(--t5)' }}>{billingCadenceLabel}</span>
           )}
         </div>
         {blurb && (
-          <p className="text-xs mb-3" style={{ color: 'var(--t5)' }}>{blurb}</p>
+          <p className="text-sm mb-3" style={{ color: 'var(--t5)' }}>{blurb}</p>
         )}
         {p.note && !blurb && (
-          <p className="text-xs mb-3 italic" style={{ color: 'var(--t5)' }}>{p.note}</p>
+          <p className="text-sm mb-3 italic" style={{ color: 'var(--t5)' }}>{p.note}</p>
         )}
         <ul className="space-y-2.5 mb-6 flex-1" data-testid={`landing-tier-${p.id}-features`}>
           {(features.length ? features.map((f) => f.label) : fallbackFeatures).map((label) => (
@@ -226,7 +226,7 @@ export default function LandingPricing() {
             <button
               key={opt}
               onClick={() => setBilling(opt)}
-              className="px-4 sm:px-5 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors"
+              className="px-4 sm:px-5 py-1.5 rounded-full text-sm font-semibold capitalize transition-colors"
               style={{
                 background: billing === opt ? 'var(--gold)' : 'transparent',
                 color: billing === opt ? '#0b1120' : 'var(--t3)',
@@ -271,7 +271,7 @@ export default function LandingPricing() {
             className="font-semibold leading-snug inline-flex items-center justify-center gap-2"
             style={{
               color: '#0b1120',
-              fontSize: 'clamp(13px, 1.3vw, 16px)',
+              fontSize: 'clamp(14px, 1.3vw, 16px)',
               fontFamily: 'var(--serif)',
             }}
           >
@@ -298,12 +298,12 @@ export default function LandingPricing() {
       >
         <div className="pt-8 pb-2">
           {eligibilityPlans.length === 0 ? (
-            <p className="text-center text-xs" style={{ color: 'var(--t5)' }} data-testid="landing-discount-empty">
+            <p className="text-center text-sm" style={{ color: 'var(--t5)' }} data-testid="landing-discount-empty">
               Discount tiers temporarily unavailable. Please <Link to="/signup" className="underline" style={{ color: 'var(--gold)' }}>create your account</Link> — eligibility is verified inside the app.
             </p>
           ) : (
             <>
-              <p className="text-center text-xs uppercase tracking-[0.18em] mb-4" style={{ color: 'var(--gold)' }}>
+              <p className="text-center text-sm uppercase tracking-[0.18em] mb-4" style={{ color: 'var(--gold)' }}>
                 Dedicated tiers · same pricing engine · same features
               </p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -332,7 +332,7 @@ export default function LandingPricing() {
           >
             <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 items-center relative">
               <div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs mb-4" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)', color: 'var(--gold)' }}>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm mb-4" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)', color: 'var(--gold)' }}>
                   <Sparkles className="w-3 h-3" /> Founders Circle · Lifetime
                 </div>
                 <h3 className="text-2xl sm:text-3xl font-semibold leading-tight mb-3 text-white" style={{ fontFamily: 'var(--serif)' }}>
@@ -353,7 +353,7 @@ export default function LandingPricing() {
                 className="rounded-2xl p-6"
                 style={{ background: 'rgba(11,18,32,0.6)', border: '1px solid rgba(212,175,55,0.25)', backdropFilter: 'blur(12px)' }}
               >
-                <p className="text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--gold)' }}>Premium · One-time</p>
+                <p className="text-sm uppercase tracking-wider mb-2" style={{ color: 'var(--gold)' }}>Premium · One-time</p>
                 <div className="flex items-baseline gap-2 mb-1">
                   <span className="text-4xl font-bold text-white" style={{ fontFamily: 'var(--serif)' }}>
                     {fmt(fcPremium.installments?.['1']?.total ?? fcPremium.lifetime_price)}
@@ -362,7 +362,7 @@ export default function LandingPricing() {
                     {fmt(fcPremium.lifetime_price)}
                   </span>
                 </div>
-                <p className="text-xs mb-4" style={{ color: 'var(--t4)' }}>
+                <p className="text-sm mb-4" style={{ color: 'var(--t4)' }}>
                   {fcPremium.installments?.['1']?.discount_percent
                     ? `Pay-in-full saves ${fcPremium.installments['1'].discount_percent}%.`
                     : 'Pay-in-full.'}
@@ -376,7 +376,7 @@ export default function LandingPricing() {
                         <span>{n} payments</span>
                         <span style={{ color: 'var(--t)' }}>
                           <strong>{fmt(inst.per_payment)}</strong>
-                          <span className="text-xs ml-1" style={{ color: 'var(--t5)' }}>/ mo</span>
+                          <span className="text-sm ml-1" style={{ color: 'var(--t5)' }}>/ mo</span>
                         </span>
                       </div>
                     );
@@ -399,7 +399,7 @@ export default function LandingPricing() {
 
           {/* Other tiers' lifetime prices, compact */}
           {fc.plans.length > 1 && (
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs" style={{ color: 'var(--t4)' }}>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm" style={{ color: 'var(--t4)' }}>
               <span style={{ color: 'var(--t5)' }}>Founders Circle also available for:</span>
               {fc.plans
                 .filter((p) => p.tier !== 'premium')
