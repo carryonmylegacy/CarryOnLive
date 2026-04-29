@@ -55,7 +55,7 @@ const PrivacyCard = () => {
       const res = await axios.get(`${API_URL}/compliance/export`, getAuthHeaders());
       const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
       const filename = `carryon-data-export-${new Date().toISOString().split('T')[0]}.json`;
-      await iosSafeDownload(blob, filename, 'Data export');
+      await iosSafeDownload(blob, filename, 'Data export', 'privacy_data_export');
     } catch { toast.error('Failed to export data'); }
     finally { setExportLoading(false); }
   }, [getAuthHeaders]);

@@ -141,6 +141,14 @@ async def lifespan(app):
     await run_migrations(db, logger)
     await ensure_indexes(db, logger)
 
+    # Best-effort: download-diagnostics TTL + compound index
+    try:
+        from routes.admin import ensure_download_diagnostics_indexes
+
+        await ensure_download_diagnostics_indexes()
+    except Exception as e:
+        logger.warning(f"download-diagnostics index init failed: {e}")
+
     # Each scheduler is wrapped with a distributed lock. `_locked()` is itself
     # infinite so we restart the scheduler if it ever returns/crashes.
     async def _supervise(name, factory, ttl=900):

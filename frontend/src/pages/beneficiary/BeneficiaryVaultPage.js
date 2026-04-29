@@ -71,7 +71,7 @@ const BeneficiaryVaultPage = () => {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('carryon_token')}` },
         responseType: 'blob',
       });
-      await iosSafeDownload(res.data, doc.name || 'document', doc.name || 'Document');
+      await iosSafeDownload(res.data, doc.name || 'document', doc.name || 'Document', 'beneficiary_vault_doc');
     } catch (err) {
       console.error('Download failed:', err);
     } finally {

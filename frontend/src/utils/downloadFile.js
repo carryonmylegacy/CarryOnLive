@@ -13,6 +13,7 @@
  */
 
 import { API_URL } from '../config';
+import { recordDownloadEvent } from './downloadTelemetry';
 
 /** Detect iOS (Safari, PWA, or WebView). */
 export function isIOS() {
@@ -88,6 +89,7 @@ export async function platformDownload({ action, params = {}, filename = 'downlo
       const { Capacitor } = await import('@capacitor/core');
       if (Capacitor.isNativePlatform()) {
         if (onFallback) await onFallback();
+        recordDownloadEvent({ action, outcome: 'shared', filename });
         return 'shared';
       }
     } catch {
@@ -97,6 +99,7 @@ export async function platformDownload({ action, params = {}, filename = 'downlo
     if (!isIOS()) {
       // Non-iOS: use provided fallback (existing blob download logic)
       if (onFallback) await onFallback();
+      recordDownloadEvent({ action, outcome: 'downloaded', filename });
       return 'shared';
     }
 
@@ -172,8 +175,17 @@ export async function platformDownload({ action, params = {}, filename = 'downlo
     const file = new File([blob], finalFilename, { type: contentType });
 
     const handled = await promptToSave(file);
+    recordDownloadEvent({
+      action,
+      outcome: handled ? 'saved' : 'cancelled',
+      filename: finalFilename,
+      bytes: blob.size,
+    });
     return handled ? 'saved' : 'cancelled';
 
+  } catch (err) {
+    recordDownloadEvent({ action, outcome: 'failed', filename, errorMessage: err?.message });
+    throw err;
   } finally {
     _downloadInProgress = false;
   }

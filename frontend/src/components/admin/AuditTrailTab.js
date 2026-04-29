@@ -47,7 +47,7 @@ export const AuditTrailTab = ({ getAuthHeaders }) => {
         ...getAuthHeaders(),
         responseType: 'blob',
       });
-      await iosSafeDownload(new Blob([res.data]), `carryon_audit_trail_${days}d.csv`, 'Audit Trail CSV');
+      await iosSafeDownload(new Blob([res.data]), `carryon_audit_trail_${days}d.csv`, 'Audit Trail CSV', 'audit_csv');
     } catch {}
     finally { setExporting(false); }
   };

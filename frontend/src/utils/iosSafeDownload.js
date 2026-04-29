@@ -27,6 +27,7 @@
  */
 
 import { toast } from './toast';
+import { recordDownloadEvent } from './downloadTelemetry';
 
 /** Detect iOS Safari/PWA, including iPadOS-on-Mac. */
 export const isIOS = () => {
@@ -42,15 +43,19 @@ export const isIOS = () => {
  * @param {Blob} blob - the binary content to deliver
  * @param {string} filename - desired filename (used on non-iOS download + as Share title)
  * @param {string} label - human label for the toast, e.g. "IAC Report", "Hand-off PDF"
+ * @param {string} [action] - stable telemetry key, e.g. 'cfp_handoff'. Defaults to a slug of label.
  * @returns {Promise<'saved'|'opened'|'downloaded'|'cancelled'>}
  */
-export async function iosSafeDownload(blob, filename, label) {
+export async function iosSafeDownload(blob, filename, label, action) {
   if (!blob || !(blob instanceof Blob)) {
     toast.error(`Failed to prepare ${label}`);
+    recordDownloadEvent({ action: action || _slug(label), outcome: 'failed', filename, errorMessage: 'invalid_blob' });
     return 'cancelled';
   }
 
   const safeLabel = label || 'File';
+  const tAction = action || _slug(label);
+  const bytes = blob.size;
 
   if (isIOS()) {
     // Try Web Share API first — gives the user the proper Save to Files action.
@@ -59,11 +64,15 @@ export async function iosSafeDownload(blob, filename, label) {
       if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: filename });
         toast.success(`${safeLabel} ready — saved via Share.`);
+        recordDownloadEvent({ action: tAction, outcome: 'saved', filename, bytes });
         return 'saved';
       }
     } catch (err) {
       // User cancelled the share sheet — don't lie about saving, just bail quietly.
-      if (err && err.name === 'AbortError') return 'cancelled';
+      if (err && err.name === 'AbortError') {
+        recordDownloadEvent({ action: tAction, outcome: 'cancelled', filename, bytes });
+        return 'cancelled';
+      }
       // Other share failures fall through to inline viewer.
     }
 
@@ -82,6 +91,7 @@ export async function iosSafeDownload(blob, filename, label) {
     // iOS viewers need the URL alive for a while.
     setTimeout(() => URL.revokeObjectURL(url), 60000);
     toast.success(`${safeLabel} opened — tap Share to save it.`);
+    recordDownloadEvent({ action: tAction, outcome: 'opened', filename, bytes });
     return 'opened';
   }
 
@@ -95,7 +105,10 @@ export async function iosSafeDownload(blob, filename, label) {
   a.remove();
   URL.revokeObjectURL(url);
   toast.success(`${safeLabel} downloaded.`);
+  recordDownloadEvent({ action: tAction, outcome: 'downloaded', filename, bytes });
   return 'downloaded';
 }
+
+const _slug = (s) => (s || 'download').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40);
 
 export default iosSafeDownload;

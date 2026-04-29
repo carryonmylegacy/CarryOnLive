@@ -240,7 +240,7 @@ const FinancialPortalPage = () => {
       });
       const blob = new Blob([res.data], { type: 'application/pdf' });
       const filename = `carryon-handoff-${estate.id.slice(0, 8)}.pdf`;
-      await iosSafeDownload(blob, filename, 'Hand-off PDF');
+      await iosSafeDownload(blob, filename, 'Hand-off PDF', 'cfp_handoff');
     } catch {
       toast.error('Failed to generate hand-off PDF.');
     }

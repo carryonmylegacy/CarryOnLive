@@ -1172,3 +1172,60 @@ User asked to fix all download surfaces with the iOS toast-lie pattern (Iter 101
 - `frontend/src/components/settings/PrivacyCard.js`
 
 Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint clean across all 10 files.
+
+
+## Iter 103 — Download Diagnostics Founder-Portal View (Apr 28, 2026)
+
+User requested a pre-launch sanity-check dashboard so the new iOS-aware download paths can be observed against real traffic. New telemetry pipeline + admin tab.
+
+**Backend** (`/app/backend/routes/admin/download_diagnostics.py`):
+- `POST /api/diagnostics/download-event` — auth-gated fire-and-forget sink. Validates outcome ∈ {saved, opened, downloaded, shared, cancelled, failed} and platform ∈ {ios, ios-pwa, android, android-pwa, web, capacitor, unknown}. Stores in `download_events` collection with user_id + ua_snippet + bytes + filename + error_message + created_at.
+- `GET /api/admin/download-diagnostics?days=30` — admin-only. Aggregates events by `action × platform × outcome` over the last N days (clamped 1-180). Returns totals, success_rate (saved+downloaded+shared / events), and per-action grid sorted by event volume.
+- TTL index on `created_at` (90 days) + compound `(action, platform, outcome)` index — auto-created on server startup via `ensure_download_diagnostics_indexes()`.
+- Wired into `routes/admin/__init__.py` + `server.py` startup hook.
+
+**Frontend telemetry** (`/app/frontend/src/utils/downloadTelemetry.js`):
+- `recordDownloadEvent({ action, outcome, filename, bytes, errorMessage })` — fire-and-forget POST. Detects platform from `Capacitor.isNativePlatform()` / `display-mode: standalone` / userAgent. Swallows network errors so a failing telemetry beacon never breaks a download flow.
+
+**Instrumentation**:
+- `iosSafeDownload` — fires telemetry at every return path (saved, opened, downloaded, cancelled, failed). Now accepts an optional 4th `action` parameter; defaults to a slug of the human label.
+- `platformDownload` — fires telemetry at every return path (capacitor=shared, non-iOS=downloaded, iOS-PWA=saved/cancelled, error=failed).
+- All 7 `iosSafeDownload` callers updated to pass stable action keys: `cfp_handoff`, `mm_attachment`, `beneficiary_vault_doc`, `audit_csv`, `soc2_report`, `voices_csv`, `privacy_data_export`.
+- The 5 `platformDownload` action keys (already passed by callers) flow through unchanged: `ega_todo`, `ega_iac_report`, `ega_transcript`, `ega_plan`, `beneficiary_iac`, `ect_file`.
+
+**Admin tab** (`/app/frontend/src/components/admin/DownloadDiagnosticsTab.js`):
+- Mounted at `/admin/download-diagnostics` under the Platform section (next to Integrations). Icon: `Download`. Tab key: `download-diagnostics`.
+- Header: "Download Diagnostics" + 1-line subhead explaining the beacon.
+- Day-range selector pills: 7d / 30d / 90d (gold pill on active).
+- Refresh button (Loader2 spinner while loading).
+- 4 summary cards: Total events / Success rate (% green) / Cancelled (grey) / Failed (red if non-zero).
+- "By platform" chip strip showing event count + percentage per detected platform (Apple icon for iOS / iOS-PWA, Smartphone for Android, Monitor for Desktop Web, Tablet for Capacitor native).
+- Per-action breakdown card: each row shows the human label + raw action key (mono) + total events + a stacked outcome bar (saved/downloaded/shared green / opened amber / cancelled grey / failed red). Actions used on multiple platforms expand to show per-platform mini-bars beneath the aggregate. Zero-event platforms listed as a hint.
+- Empty state: friendly "No download events recorded yet" panel for fresh installs.
+- All data-testids: `download-diagnostics-tab`, `dd-summary-cards`, `dd-platform-breakdown`, `dd-platform-{key}`, `dd-action-row-{action}`, `dd-days-{7|30|90}`, `dd-refresh`.
+
+**Verified end-to-end on preview pod**:
+- POST telemetry sink → 200 OK, event persisted ✅
+- GET aggregation with mixed outcomes → returns correct success_rate (50% from 1 saved + 1 cancelled) ✅
+- Founder portal `/admin/download-diagnostics` renders summary cards, day selector, platform chip strip, per-action breakdown row for `cfp_handoff` with stacked outcome bar ✅
+- Day-range pills toggle correctly with gold accent ✅
+- TTL + compound index auto-created on backend startup ✅
+
+**Files touched:**
+- `backend/routes/admin/download_diagnostics.py` (new)
+- `backend/routes/admin/__init__.py` — wire router + export ensure_indexes
+- `backend/server.py` — call ensure_download_diagnostics_indexes() in startup hook
+- `frontend/src/utils/downloadTelemetry.js` (new)
+- `frontend/src/utils/iosSafeDownload.js` — add action arg + telemetry on every path
+- `frontend/src/utils/downloadFile.js` — telemetry on every platformDownload return
+- `frontend/src/components/admin/DownloadDiagnosticsTab.js` (new)
+- `frontend/src/pages/AdminPage.js` — register tab + route alias + render
+- `frontend/src/pages/FinancialPortalPage.js` — pass `cfp_handoff` action
+- `frontend/src/pages/MessagesPage.js` — pass `mm_attachment` action
+- `frontend/src/pages/beneficiary/BeneficiaryVaultPage.js` — pass `beneficiary_vault_doc` action
+- `frontend/src/components/admin/AuditTrailTab.js` — pass `audit_csv` action
+- `frontend/src/components/admin/IntegrationsTab.js` — pass `soc2_report` action
+- `frontend/src/components/admin/VoicesTab.js` — pass `voices_csv` action
+- `frontend/src/components/settings/PrivacyCard.js` — pass `privacy_data_export` action
+
+Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint + ruff clean.

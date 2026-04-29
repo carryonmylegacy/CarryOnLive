@@ -100,7 +100,7 @@ export function VoicesTab({ getAuthHeaders }) {
         responseType: 'blob',
       });
       const filename = `carryon-voices-${new Date().toISOString().slice(0, 10)}.csv`;
-      await iosSafeDownload(new Blob([res.data], { type: 'text/csv' }), filename, 'Voices CSV');
+      await iosSafeDownload(new Blob([res.data], { type: 'text/csv' }), filename, 'Voices CSV', 'voices_csv');
     } catch {
       toast.error('Export failed');
     }

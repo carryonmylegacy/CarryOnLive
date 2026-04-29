@@ -434,7 +434,7 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
         ...getAuthHeaders(), responseType: 'blob',
       });
       const filename = `CarryOn_SOC2_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
-      await iosSafeDownload(new Blob([res.data], { type: 'application/pdf' }), filename, 'SOC 2 report');
+      await iosSafeDownload(new Blob([res.data], { type: 'application/pdf' }), filename, 'SOC 2 report', 'soc2_report');
     } catch { toast.error('Failed to generate report'); }
     finally { setPdfLoading(false); }
   };

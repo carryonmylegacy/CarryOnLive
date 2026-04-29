@@ -789,7 +789,7 @@ const MessagesPage = () => {
       const res = await axios.get(`${API_URL}/messages/${msg.id}/attachment`, {
         ...getAuthHeaders(), responseType: 'blob',
       });
-      await iosSafeDownload(res.data, msg.attachment_name || 'attachment', 'Attachment');
+      await iosSafeDownload(res.data, msg.attachment_name || 'attachment', 'Attachment', 'mm_attachment');
     } catch { toast.error('Failed to download attachment'); }
   };
 
