@@ -68,6 +68,10 @@ async def upload_photo(
 ) -> str:
     """Process and upload a photo. Returns the storage key.
 
+    Also retains the original pre-crop bytes at a `.original` sibling
+    key so the admin "Reprocess avatars" tool can re-derive the display
+    image if the crop logic ever changes (Feb 2026 face-aware crop).
+
     Args:
         raw_bytes: Raw image bytes
         category: "users", "beneficiaries", or "estates"
@@ -78,28 +82,57 @@ async def upload_photo(
         Storage key like "photos/users/{id}/{uuid}.jpg"
     """
     processed = _process_image(raw_bytes, max_size=max_size)
-    filename = f"{uuid.uuid4().hex[:12]}.jpg"
+    file_id = uuid.uuid4().hex[:12]
+    filename = f"{file_id}.jpg"
     key = f"photos/{category}/{entity_id}/{filename}"
+    original_key = f"photos/{category}/{entity_id}/{file_id}.original"
 
     await storage.upload_raw(processed, key, content_type="image/jpeg")
-    logger.info(f"Photo uploaded: {key} ({len(processed)} bytes)")
+    # Retain untouched source bytes for re-cropping. Failures here are
+    # non-fatal — the display image has already uploaded successfully.
+    try:
+        await storage.upload_raw(raw_bytes, original_key, content_type="application/octet-stream")
+    except Exception as e:
+        logger.warning(f"Original retention failed for {original_key}: {e}")
+    logger.info(f"Photo uploaded: {key} ({len(processed)} bytes, original retained)")
     # Return the served URL path (not the storage key)
     return f"/api/photos/{category}/{entity_id}/{filename}"
 
 
 async def delete_photo(photo_url: str) -> bool:
-    """Delete a photo from storage. Accepts a stored photo URL or storage key."""
+    """Delete a photo from storage (both display and retained original).
+
+    Accepts a stored photo URL or storage key.
+    """
     if not photo_url or photo_url.startswith("data:"):
         return False
     # Convert URL path back to storage key
     key = photo_url
     if key.startswith("/api/photos/"):
         key = "photos/" + key[len("/api/photos/") :]
+    ok = False
     try:
-        return await storage.delete(key)
+        ok = await storage.delete(key)
     except Exception as e:
         logger.warning(f"Failed to delete photo {key}: {e}")
-        return False
+    # Also clean up the retained `.original` sibling (best-effort).
+    original_key = _original_key_for(key)
+    if original_key:
+        try:
+            await storage.delete(original_key)
+        except Exception as e:
+            logger.warning(f"Failed to delete original {original_key}: {e}")
+    return ok
+
+
+def _original_key_for(display_key: str) -> str:
+    """Given a display-image storage key, return the retained-original key.
+
+    Example: "photos/beneficiaries/abc/xyz.jpg" → "photos/beneficiaries/abc/xyz.original"
+    """
+    if not display_key or not display_key.endswith(".jpg"):
+        return ""
+    return display_key[: -len(".jpg")] + ".original"
 
 
 async def download_photo(photo_key: str) -> bytes:

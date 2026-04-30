@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { AlertTriangle, Loader2, Power } from 'lucide-react';
+import { AlertTriangle, Loader2, Power, ImagePlus } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -117,6 +117,97 @@ export const MaintenanceModeTab = ({ getAuthHeaders }) => {
           </div>
         </CardContent>
       </Card>
+
+      <ReprocessAvatarsCard headers={headers} />
     </div>
+  );
+};
+
+// ────────────────────────────────────────────────────────────────
+// One-off tool: re-crop every stored avatar using the face-aware
+// pipeline in backend/services/photo_storage.py::_process_image.
+// Scans first (counts reprocessable vs. needs_reupload), then
+// confirms before overwriting the display images in object storage.
+// Audit-logged. Founder-only on the backend.
+// ────────────────────────────────────────────────────────────────
+const ReprocessAvatarsCard = ({ headers }) => {
+  const [scanning, setScanning] = useState(false);
+  const [scan, setScan] = useState(null);
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState(null);
+
+  const doScan = async () => {
+    setScanning(true); setResult(null);
+    try {
+      const res = await axios.get(`${API_URL}/admin/maintenance/reprocess-avatars/scan`, { headers });
+      setScan(res.data);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Scan failed');
+    } finally { setScanning(false); }
+  };
+
+  const doRun = async () => {
+    if (!scan || scan.reprocessable === 0) return;
+    if (!window.confirm(
+      `Re-crop ${scan.reprocessable} avatar${scan.reprocessable === 1 ? '' : 's'}? ` +
+      `This overwrites the display image with a new face-aware crop. ` +
+      `Original source bytes are preserved. ${scan.needs_reupload > 0 ? `\n\n${scan.needs_reupload} older avatars lack a retained source and must be re-uploaded manually.` : ''}`
+    )) return;
+    setRunning(true);
+    try {
+      const res = await axios.post(`${API_URL}/admin/maintenance/reprocess-avatars`, {}, { headers });
+      setResult(res.data);
+      toast.success(`Reprocessed ${res.data.processed} avatars`);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Reprocess failed');
+    } finally { setRunning(false); }
+  };
+
+  return (
+    <Card className="bg-[var(--bg2)] border-[var(--b)]" data-testid="reprocess-avatars-card">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-start gap-3">
+          <ImagePlus className="w-5 h-5 text-[var(--gold)] mt-0.5" />
+          <div>
+            <h3 className="text-sm font-bold text-[var(--t)]">Reprocess all avatars</h3>
+            <p className="text-xs text-[var(--t4)] mt-0.5">
+              Re-runs every stored avatar through the face-aware crop pipeline.
+              Only avatars uploaded after Feb 2026 (which retain source bytes)
+              can be reprocessed — older ones will be listed as needing a manual
+              re-upload.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <Button onClick={doScan} disabled={scanning || running} variant="outline" className="text-sm font-bold" data-testid="reprocess-avatars-scan-btn">
+            {scanning ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Scan
+          </Button>
+          {scan && scan.reprocessable > 0 && (
+            <Button onClick={doRun} disabled={running || scanning} className="text-sm font-bold gold-button" data-testid="reprocess-avatars-run-btn">
+              {running ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Reprocess {scan.reprocessable}
+            </Button>
+          )}
+        </div>
+
+        {scan && (
+          <div className="text-xs text-[var(--t3)] space-y-1" data-testid="reprocess-avatars-scan-result">
+            <div><span className="font-bold text-[var(--t)]">{scan.total}</span> total avatars in storage</div>
+            <div><span className="font-bold text-green-400">{scan.reprocessable}</span> reprocessable (source bytes retained)</div>
+            <div><span className="font-bold text-amber-400">{scan.needs_reupload}</span> need manual re-upload (uploaded pre-backfill-patch)</div>
+          </div>
+        )}
+
+        {result && (
+          <div className="text-xs text-[var(--t3)] space-y-1 pt-2 border-t border-[var(--b)]" data-testid="reprocess-avatars-run-result">
+            <div>Processed: <span className="font-bold text-green-400">{result.processed}</span></div>
+            <div>Skipped (no original): <span className="font-bold text-amber-400">{result.skipped_no_original}</span></div>
+            <div>Failed: <span className="font-bold text-red-400">{result.failed}</span></div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
