@@ -27,11 +27,28 @@ def _process_image(raw_bytes: bytes, max_size: int = 400, quality: int = 85) -> 
     elif img.mode != "RGB":
         img = img.convert("RGB")
 
-    # Center-crop to square
+    # Square-crop with face-aware bias.
+    # ─ For landscape (w >= h): center-crop horizontally, take full height.
+    # ─ For portrait (h > w): take a square from the TOP of the image
+    #   (faces are almost always in the upper half of a portrait photo).
+    #   A pure center-crop on a tall portrait routinely cuts the face off
+    #   and leaves only the chin/torso inside the avatar — flagged by the
+    #   founder during a B2B pitch (Lanna Mitchell's avatar rendered as
+    #   a near-empty white circle because her face was above the
+    #   center-crop rectangle).
     w, h = img.size
     side = min(w, h)
-    left = (w - side) // 2
-    top = (h - side) // 2
+    if w >= h:
+        # Landscape — center-crop horizontally
+        left = (w - side) // 2
+        top = 0
+    else:
+        # Portrait — bias top so the face is preserved. Drop ~10% of
+        # the very top to avoid cropping eyebrows when the photographer
+        # left a tiny strip of headroom; this matches what social-media
+        # avatar pipelines (LinkedIn, Slack) do.
+        left = 0
+        top = max(0, int((h - side) * 0.1))
     img = img.crop((left, top, left + side, top + side))
 
     # Resize

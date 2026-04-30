@@ -84,6 +84,11 @@ export function AvatarCircle({
             cacheKey={cacheKey}
             alt=""
             className="w-full h-full object-cover"
+            // Bias the visible crop slightly upward — most face-pose
+            // photos place the face in the upper third. Prevents
+            // "white circle with hair at the bottom" rendering when an
+            // older avatar predates the backend's top-biased crop.
+            style={{ objectPosition: 'center 30%' }}
             fallback={initialsBlock}
           />
         ) : initialsBlock}

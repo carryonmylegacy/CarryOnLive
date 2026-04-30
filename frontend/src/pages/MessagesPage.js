@@ -1267,6 +1267,12 @@ const MessagesPage = () => {
                             src={resolvePhotoUrl(ben.photo_url)}
                             alt={ben.name}
                             className="w-full h-full object-cover"
+                            // Bias slightly upward — most face-pose photos have
+                            // the face in the upper third of the frame. Keeps
+                            // Lanna-Mitchell-style "white circle" away from
+                            // demos when the upload predates the top-biased
+                            // backend crop.
+                            style={{ objectPosition: 'center 30%' }}
                             onError={(e) => {
                               // If the avatar image 404s, expires (S3 presigned),
                               // or stalls mid-decode, swap to the colored
