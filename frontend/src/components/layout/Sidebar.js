@@ -846,7 +846,7 @@ const Sidebar = () => {
                   <item.icon />
                   {!collapsed && <span>{item.label}</span>}
                   {item.badge > 0 && (
-                    <span className="ml-auto min-w-[20px] h-5 rounded-full flex items-center justify-center text-[11px] font-bold px-1.5" style={{ background: '#d4af37', color: '#080e1a' }} data-testid={`ect-unread-badge`}>
+                    <span className="ml-auto min-w-[20px] h-5 rounded-full flex items-center justify-center text-[12px] font-bold px-1.5" style={{ background: '#d4af37', color: '#080e1a' }} data-testid={`ect-unread-badge`}>
                       {item.badge > 99 ? '99+' : item.badge}
                     </span>
                   )}
@@ -993,7 +993,7 @@ const Sidebar = () => {
                     ) : (
                       <>
                         <span style={{ fontWeight: 600, fontSize: 14 }}>My Benefactor Portal</span>
-                        <span style={{ fontSize: 11, opacity: 0.5 }}>{ownedEstates.length} estate{ownedEstates.length !== 1 ? 's' : ''}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, opacity: 0.5 }}>{ownedEstates.length} estate{ownedEstates.length !== 1 ? 's' : ''}</span>
                       </>
                     )}
                   </button>
@@ -1178,7 +1178,7 @@ const BetaBanner = ({ collapsed }) => {
 
   return (
     <div className="mx-3 mb-2 px-2.5 py-1.5 rounded-lg text-center" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }} data-testid="beta-banner">
-      <span className="text-[11px] font-bold text-[var(--gn2)] tracking-wider">BETA = FREE</span>
+      <span className="text-[12px] font-bold text-[var(--gn2)] tracking-wider">BETA = FREE</span>
     </div>
   );
 };

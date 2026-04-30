@@ -103,7 +103,9 @@
 ### Demographic / readability constraint (must persist)
 > Primary target audience is **users over 40**. Most wear glasses. If copy
 > is hard to read, conversion drops. Anywhere user-facing in the app:
-- **No font smaller than `text-sm` (14px)** — this is the global floor.
+- **12px is the floor.** Nothing user-facing renders below 12px.
+- **If text is 12px, it MUST be bold** (`font-bold` minimum). Numerical
+  badges and pill chips can be 12px-bold; reading copy should be 13px+.
 - Pricing / discount-eligibility / CTA-adjacent copy must be **clearly
   legible without magnification**.
 - The archived consumer landing page (`/landing-consumer`) currently

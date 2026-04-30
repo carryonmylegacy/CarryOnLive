@@ -110,7 +110,7 @@ const NotificationBell = ({ collapsed }) => {
         {!collapsed && <span>Notifications</span>}
         {unreadCount > 0 && (
           <span
-            className="absolute flex items-center justify-center text-[11px] font-bold text-white rounded-full"
+            className="absolute flex items-center justify-center text-[12px] font-bold text-white rounded-full"
             style={{
               background: '#EF4444',
               width: 18, height: 18,
