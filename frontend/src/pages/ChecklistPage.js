@@ -156,6 +156,13 @@ const ChecklistPage = () => {
         const savedId = localStorage.getItem('selected_estate_id');
         const selected = (savedId && estatesRes.data.find(e => e.id === savedId)) || estatesRes.data[0];
         setEstate(selected);
+        // Persist the selected estate id so the catch-block rescue can
+        // locate the cached items if a future fetch fails (e.g. tab
+        // returned from background, transient 5xx). Without this, a
+        // user who landed on /checklist as their first authenticated
+        // page would have an empty `selected_estate_id` in localStorage
+        // and the rescue would no-op.
+        try { localStorage.setItem('selected_estate_id', selected.id); } catch {}
         saveList(`checklist:estate:${selected.id}`, selected);
         const checklistRes = await axios.get(`${API_URL}/checklists/${selected.id}`, getAuthHeaders());
         const next = Array.isArray(checklistRes.data) ? checklistRes.data : [];
@@ -170,7 +177,19 @@ const ChecklistPage = () => {
       // 401/5xx would otherwise blank the page and render the empty-state
       // CTA — a credibility-killer in front of B2B clients. Previously
       // this rescue only fired when navigator.onLine === false.
-      const savedEid = localStorage.getItem('selected_estate_id');
+      let savedEid = localStorage.getItem('selected_estate_id');
+      // Fallback: if no selected_estate_id was ever written, scan for
+      // any cached checklist:items:* key from a prior session.
+      if (!savedEid) {
+        const PREFIX = 'carryon_list_cache:checklist:items:';
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i) || '';
+          if (k.startsWith(PREFIX)) {
+            savedEid = k.slice(PREFIX.length);
+            break;
+          }
+        }
+      }
       if (savedEid) {
         const cachedEstate = readList(`checklist:estate:${savedEid}`);
         if (cachedEstate && typeof cachedEstate === 'object' && !Array.isArray(cachedEstate)) {

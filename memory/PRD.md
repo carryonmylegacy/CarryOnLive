@@ -793,8 +793,54 @@ When DUNS number is obtained and Apple Developer enrollment is complete:
 - Expected uplift: 3–5× higher adoption of buried preferences with a brief discovery nudge (industry baseline).
 
 
-## Recent Session Work Summary
-See `CHANGELOG.md` for full chronological history if this file exceeds 700 lines.
+## 🩹 B2B-Demo Bug-Fix Batch (Feb 2026 — first live B2B pitch)
+
+User pitched the platform live for the first time. Strategic-direction note
+captured above. During the pitch, the following bugs surfaced and were
+fixed in the same session:
+
+1. **`/` now lands on Login** — strategic pivot to B2B-first. Old D2C
+   marketing landing archived at `/landing-consumer`. (`App.js`)
+
+2. **IAC flash-of-empty rescue** (CRITICAL — credibility-killer in front
+   of B2B clients). When the user came back to the tab after a Zoom
+   switch, transient API failures on `/api/checklists/*` rendered the
+   empty-state CTA "No checklist items yet" before any fetch retry could
+   succeed. Fix: `ChecklistPage.fetchData()` catch-block now rehydrates
+   from `localStorage` (`carryon_list_cache:checklist:items:{eid}`) on
+   online errors too — previously the rescue only fired when
+   `navigator.onLine === false`. Also writes `selected_estate_id` on
+   success and includes a fallback localStorage scan when the key is
+   missing on first-ever visit. (`ChecklistPage.js`)
+
+3. **Founders Circle gold CTA persistence** on `/subscription`. After
+   navigating to `/founders-circle` and back, the public
+   `/api/founders-circle/plans` re-fetch could leave `fcActive=false` for
+   a frame and hide the CTA. Fix: cache `fc_campaign_active` in
+   `sessionStorage` and use it as the optimistic initial state so the
+   gold CTA paints immediately on remount. (`SubscriptionPage.js`)
+
+4. **EGA "Generate To-Do List" 502 / failure toast** — backend retry
+   loop (3 attempts × 30s+ each) compounded past the K8s ingress 60s
+   timeout. Fix: deadline-aware retry in `routes/guardian.py`. Heavy
+   actions (`analyze_vault`, `generate_todo`, `generate_iac`,
+   `analyze_readiness`, `state_law_brief`) now get max 2 attempts with
+   a 55s soft deadline; subsequent attempts are skipped if elapsed
+   exceeds the soft deadline minus 5s. Light chat keeps the original
+   3-attempt resilience. Backend pytest 7/7 pass after the change.
+
+5. **Half-loaded beneficiary avatar** in the milestone-message recipient
+   list. Raw `<img>` had no `onError` fallback — when an S3 presigned
+   URL expired or CORS-blocked mid-decode, a ghost avatar appeared.
+   Fix: added `onError` swap to the colored-initials block.
+   (`MessagesPage.js` ~line 1247)
+
+**Verified in live preview**: my Playwright repro confirmed the FC CTA
+stays visible on second `/subscription` mount (cta_count=1 immediate AND
+after 4s); the IAC empty-state never renders when `/checklists/*` is
+forced to 500 and a prior cache exists; backend deadline-aware retry
+returns cleanly within 60s for heavy actions.
+
 
 ## 8/10 Launch-Readiness Sweep — Apr 29, 2026 (iter 100)
 
