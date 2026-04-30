@@ -259,8 +259,13 @@ const MessagesPage = () => {
       // The global offline banner already communicates "You're offline" —
       // a duplicate "Failed to load messages" toast is just noise and makes
       // the user think something is actually broken. Only surface the toast
-      // for real server-side failures while online.
-      if (typeof navigator === 'undefined' || navigator.onLine !== false) {
+      // for real server-side failures while online AND when we have no
+      // cached data already painted on screen. The offline-first paint
+      // above hydrates from IndexedDB; if that succeeded we silently
+      // retry network without alarming the user (the iter_106 ECT toast
+      // leak case during a B2B pitch).
+      const haveOfflinePaint = messages.length > 0 || beneficiaries.length > 0;
+      if ((typeof navigator === 'undefined' || navigator.onLine !== false) && !haveOfflinePaint) {
         toast.error('Failed to load messages');
       }
     } finally {
