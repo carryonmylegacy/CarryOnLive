@@ -351,14 +351,26 @@ function PublicDeviceModeMount() {
   return null;
 }
 
-// Decides whether `/` shows the marketing landing or redirects authenticated
-// users straight into their dashboard. Extracted so we can call useAuth().
+// `/` and `/login` both land on the Login screen as part of the B2B-first
+// strategic pivot (Feb 2026). The consumer-facing marketing landing page is
+// preserved (archived) at `/landing-consumer` so it can be re-enabled when
+// B2C funnels spin up. Authenticated users are still routed straight into
+// their portal so existing bookmarks of `/` keep working.
 function RootRoute() {
   const { user, isAuthenticated } = useAuth();
   if (isAuthenticated) {
-    return <Navigate to={user?.role === 'beneficiary' ? '/beneficiary' : '/dashboard'} replace />;
+    if (user?.role === 'beneficiary' && user?.is_also_benefactor) {
+      return <Navigate to="/dashboard" replace />;
+    }
+    if (user?.role === 'beneficiary') {
+      return <Navigate to="/beneficiary" replace />;
+    }
+    if (user?.role === 'admin') {
+      return <Navigate to="/admin" replace />;
+    }
+    return <Navigate to="/dashboard" replace />;
   }
-  return <LandingPage />;
+  return <LoginPage />;
 }
 
 function AppRoutes() {
@@ -387,6 +399,10 @@ function AppRoutes() {
       <Route path="/founder-about/:token" element={<FounderAboutPage />} />
       <Route path="/home" element={<HomePage />} />
       <Route path="/voices" element={<VoicesPage />} />
+      {/* Archived D2C consumer marketing landing page — preserved so it can
+          be re-enabled at `/` when consumer funnels are spun up. Per the
+          B2B-first strategic pivot (Feb 2026), `/` now lands on Login. */}
+      <Route path="/landing-consumer" element={<LandingPage />} />
       <Route path="/security" element={<SecurityPage />} />
       <Route path="/wind-down-promise" element={<WindDownPromisePage />} />
       <Route path="/get-started" element={<GetStartedPage />} />

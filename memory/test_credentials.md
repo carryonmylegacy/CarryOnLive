@@ -30,7 +30,7 @@
 ## 🟡 PREVIEW POD ACCOUNTS (preview-only, not production)
 
 ### Preview Admin/Founder
-- URL: `https://react-refactor-24.preview.emergentagent.com`
+- URL: `https://preflight-sweep.preview.emergentagent.com`
 - Email: info@carryon.us
 - Password: Demo1234!
 - Username: admin_5dfa64

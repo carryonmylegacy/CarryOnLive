@@ -20,7 +20,7 @@ import { test, expect } from '@playwright/test';
 // preview URL which routes /api → backend:8001.
 const API_URL = process.env.E2E_API_URL
   || process.env.REACT_APP_BACKEND_URL
-  || 'https://react-refactor-24.preview.emergentagent.com';
+  || 'https://preflight-sweep.preview.emergentagent.com';
 
 const runId = `e2e-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 

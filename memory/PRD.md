@@ -74,6 +74,58 @@
 
 ---
 
+## 🎯 STRATEGIC DIRECTION — B2B-First (Feb 2026, persisted across forks)
+
+**User mandate (verbatim, Feb 2026):**
+> *"Pursue business to business partnerships as a priority above business to
+> consumer partnerships. The majority of my initial marketing campaign is
+> focused on creating leads whom I then have a video teleconference with
+> where I can learn about what it is they are trying to solve and how this
+> platform can help solve it for them. I then take them through a
+> demonstration of the live platform using my demo account which exists
+> again on the live platform."*
+
+### Go-to-market priority order
+1. **B2B partnerships** — primary. Lead-gen → video teleconference discovery
+   call → live demo using the founder's demo account on production →
+   proposal / contract.
+2. **B2C** — deferred. Consumer funnels and the SEO-optimized D2C landing
+   page are paused until B2B traction is established.
+
+### Routing implications (live in `App.js` — DO NOT REVERT WITHOUT INSTRUCTION)
+- `https://www.carryon.us/` → renders the **Login page** (auth-aware: signed-in
+  users still bounce to their portal so existing bookmarks keep working).
+- `https://www.carryon.us/login` → renders the same **Login page**.
+- The previous consumer marketing landing page is **archived, not deleted**.
+  It lives at `/landing-consumer` and can be reinstated at `/` with a single
+  line change in `RootRoute()` when consumer funnels are ready.
+
+### Demographic / readability constraint (must persist)
+> Primary target audience is **users over 40**. Most wear glasses. If copy
+> is hard to read, conversion drops. Anywhere user-facing in the app:
+- **No font smaller than `text-sm` (14px)** — this is the global floor.
+- Pricing / discount-eligibility / CTA-adjacent copy must be **clearly
+  legible without magnification**.
+- The archived consumer landing page (`/landing-consumer`) currently
+  violates this in places (tiny discount-eligibility font under the
+  subscription tiles, mismatched logo size in upper-left, spacing). These
+  must be fixed BEFORE the page is re-enabled at `/`. Tracked in the
+  "Archived consumer landing — fix before re-enabling" backlog below.
+
+### Backlog — archived consumer landing (fix before re-enabling)
+- Logo in upper-left renders at a different size vs. the rest of the site
+  (Login / dashboard / etc.). Make it match the canonical header logo
+  exactly.
+- Spacing inconsistencies vs. other public pages.
+- Discount-eligibility font under the subscription tiles is far below the
+  `text-sm` floor. Bump to at least `text-sm` (14px); ideally `text-base`
+  (16px) given the 40+ audience.
+- Re-audit the page top-to-bottom against the readability floor before
+  flipping `RootRoute()` back to `LandingPage`.
+
+---
+
+
 ## 📌 Current Launch Status (Apr 29, 2026 — Public Device Mode shipped)
 
 **Six batches shipped this session series:**
@@ -112,7 +164,7 @@
 
 > **Preview URL rotation (GitHub Actions E2E secrets)** — the `E2E_BASE_URL`
 > and `E2E_API_URL` repository secrets both point at the current preview
-> URL (today: `https://react-refactor-24.preview.emergentagent.com`). If the
+> URL (today: `https://preflight-sweep.preview.emergentagent.com`). If the
 > preview URL ever changes (e.g. Emergent re-provisions the pod, rename,
 > staging migration), **the `e2e-smoke` job will start failing with
 > `net::ERR_CONNECTION_REFUSED` or 502**. Fix:

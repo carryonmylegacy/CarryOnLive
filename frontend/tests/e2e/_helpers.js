@@ -7,7 +7,7 @@
 
 const { expect } = require('@playwright/test');
 
-const BASE = process.env.BASE_URL || process.env.REACT_APP_BACKEND_URL || 'https://react-refactor-24.preview.emergentagent.com';
+const BASE = process.env.BASE_URL || process.env.REACT_APP_BACKEND_URL || 'https://preflight-sweep.preview.emergentagent.com';
 
 /**
  * Wait out a Cloudflare "Performing security verification" interstitial if

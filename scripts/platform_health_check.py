@@ -53,8 +53,8 @@ TARGETS = {
         "api": "https://carryon-api-production.up.railway.app",
     },
     "preview": {
-        "frontend": "https://react-refactor-24.preview.emergentagent.com",
-        "api": "https://react-refactor-24.preview.emergentagent.com",
+        "frontend": "https://preflight-sweep.preview.emergentagent.com",
+        "api": "https://preflight-sweep.preview.emergentagent.com",
     },
 }
 
