@@ -111,15 +111,15 @@ export const StatCard = ({ icon: Icon, value, label, cardClass, onClick, classNa
         compact
           ? { fontSize: 'clamp(0.75rem, 5cqi, 1rem)' }
           : {
-              // Label — `clamp(0.75rem, 6.5cqi, 1.5rem)` =
-              //   ~140px tile  → 9.1cqi → floor 12px (12px-bold per
-              //                            global readability rule)
-              //   ~280px tile  → ~18px (iPad Pro sweet spot)
-              //   ~360px tile  → ~23px → caps at 24px
+              // Label — `clamp(0.8125rem, 6.5cqi, 1.5rem)`. Floor was
+              // 12px, bumped to 13px on founder feedback that titles
+              // looked a tick small on iPhone/iPad relative to the
+              // tile's visual weight. Now:
+              //   ~140px tile  → floor 13px (mobile feature tile)
+              //   ~259px tile  → ~17px (iPad Pro 11" sweet spot)
+              //   ~360px tile  → ~23px → caps at 24px (desktop)
               //   ~500px tile  → 32cqi → caps at 24px
-              // Fits "Beneficiaries" (longest label) on one line
-              // across the full range with comfortable padding.
-              fontSize: 'clamp(0.75rem, 6.5cqi, 1.5rem)',
+              fontSize: 'clamp(0.8125rem, 6.5cqi, 1.5rem)',
             }
       }
     >

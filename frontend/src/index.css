@@ -1223,13 +1223,20 @@
   height: 0;
 }
 
-/* Desktop only: restore a subtle gold scrollbar for mouse users */
-@media (min-width: 1024px) {
-  * { scrollbar-width: thin; scrollbar-color: rgba(212,175,55,0.35) transparent; }
-  *::-webkit-scrollbar { display: block; width: 4px; height: 4px; }
+/* Tablet & desktop: visible gold scrollbar for any pointer-device user.
+   Founder feedback (Feb 2026): iPad Pro portrait (834px) sat below the
+   prior 1024px gate so long-scroll pages had no right-edge cue. The 4px
+   width was also too thin to read against the dark theme on the 40+
+   audience. Trigger now starts at 600px (covers iPad portrait, mini,
+   foldables) and the bar is 10px wide with stronger contrast. iPhone
+   (≤599px) keeps the gesture-only iOS-native flash bar to maximize
+   horizontal real estate on small screens. */
+@media (min-width: 600px) {
+  * { scrollbar-width: thin; scrollbar-color: rgba(212,175,55,0.55) transparent; }
+  *::-webkit-scrollbar { display: block; width: 10px; height: 10px; }
   *::-webkit-scrollbar-track { background: transparent; }
-  *::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.35); border-radius: 999px; }
-  *::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,0.65); }
+  *::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.55); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+  *::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,0.85); background-clip: padding-box; }
 }
 
 /* Mobile Styles */
