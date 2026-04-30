@@ -127,6 +127,10 @@ const BeneficiariesPage = () => {
   const [showPrimaryPopup, setShowPrimaryPopup] = useState(false);
   const [showBenAddedPopup, setShowBenAddedPopup] = useState(false);
   const [adding, setAdding] = useState(false);
+  // Synchronous double-submit guard — see handleAddOrEdit. iter_105
+  // pattern fix; React's setAdding async state propagation lets a rapid
+  // second tap slip past disabled={adding} on the gold button.
+  const addInFlightRef = useRef(false);
   const [sendingInvite, setSendingInvite] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null);
   const [editingBeneficiary, setEditingBeneficiary] = useState(null);
@@ -366,12 +370,14 @@ const BeneficiariesPage = () => {
   };
 
   const handleAddOrEdit = async () => {
-    if (!firstName) { toast.error('First Name is required'); return; }
-    if (!lastName) { toast.error('Last Name is required'); return; }
-    if (!email) { toast.error('Email Address is required'); return; }
-    if (email && !/\S+@\S+\.\S+/.test(email)) { toast.error('Please enter a valid email address'); return; }
-    if (!relation) { toast.error('Relationship is required'); return; }
-    
+    if (addInFlightRef.current) return;
+    addInFlightRef.current = true;
+    if (!firstName) { toast.error('First Name is required'); addInFlightRef.current = false; return; }
+    if (!lastName) { toast.error('Last Name is required'); addInFlightRef.current = false; return; }
+    if (!email) { toast.error('Email Address is required'); addInFlightRef.current = false; return; }
+    if (email && !/\S+@\S+\.\S+/.test(email)) { toast.error('Please enter a valid email address'); addInFlightRef.current = false; return; }
+    if (!relation) { toast.error('Relationship is required'); addInFlightRef.current = false; return; }
+
     setAdding(true);
     try {
       const payload = {
@@ -465,6 +471,7 @@ const BeneficiariesPage = () => {
           resetForm();
           await fetchData();
           setAdding(false);
+          addInFlightRef.current = false;
           return;
         }
         const res = await axios.post(`${API_URL}/beneficiaries`, payload, getAuthHeaders());
@@ -480,6 +487,7 @@ const BeneficiariesPage = () => {
           await fetchData();
           setShowBenAddedPopup(true);
           setAdding(false);
+          addInFlightRef.current = false;
           return;
         }
       }
@@ -493,6 +501,7 @@ const BeneficiariesPage = () => {
       toast.error(error.response?.data?.detail || 'Failed to save beneficiary');
     } finally {
       setAdding(false);
+      addInFlightRef.current = false;
     }
   };
 

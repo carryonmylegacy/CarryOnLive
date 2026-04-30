@@ -21,21 +21,30 @@ export default function FoundersCirclePage() {
 
   useEffect(() => {
     const load = async () => {
+      // Decoupled fetches — a transient failure on one endpoint must NOT
+      // hide the other. Previously a Promise.all rejection (e.g. /estates
+      // 401 during background-tab return) would skip setActive/setPlans
+      // AND surface a 'Could not load Founders Circle plans' toast even
+      // when the plans endpoint itself was healthy. A B2B-demo
+      // credibility-killer flagged in iter_105.
       try {
-        const [plansRes, estatesRes] = await Promise.all([
-          axios.get(`${API_URL}/founders-circle/plans`),
-          axios.get(`${API_URL}/estates`, getAuthHeaders()),
-        ]);
-        setActive(plansRes.data.active);
+        const plansRes = await axios.get(`${API_URL}/founders-circle/plans`);
+        setActive(!!plansRes.data.active);
         setPlans(plansRes.data.plans || []);
+      } catch (err) {
+        // Silent: the page's `!active` empty state will render the
+        // graceful "not currently available" message, no toast leak.
+        console.warn('FoundersCircle: plans fetch failed', err);
+      }
+      try {
+        const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
         const userEstates = (estatesRes.data || []).filter(e => e.owner_id === user?.id || user?.role === 'admin');
         setEstates(userEstates);
         if (userEstates.length === 1) setSelectedEstate(userEstates[0].id);
-      } catch {
-        toast.error('Could not load Founders Circle plans');
-      } finally {
-        setLoading(false);
+      } catch (err) {
+        console.warn('FoundersCircle: estates fetch failed', err);
       }
+      setLoading(false);
     };
     load();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

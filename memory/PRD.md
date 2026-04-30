@@ -950,6 +950,70 @@ captured a real backend bug). All test data deleted at end of run.
 - Vault file upload (multipart not exercised; vault loads cleanly per
   iter_103)
 
+## 🩹 B2B Pre-Pitch Polish Batch #4 (Feb 2026 — iter_105 follow-up)
+
+User unblocked Path C testing by clarifying that info@carryon.us has
+both benefactor (admin) AND beneficiary (Pete) surfaces accessible via
+portal switcher. Iter_105 sweep covered Path C, vault upload, 500-
+intercepts, and double-click POST-dedup. Findings + fixes:
+
+**Verified passing**:
+- Vault end-to-end upload (POST /api/documents/upload?estate_id=...) ✅
+- /messages render + create modal with all data-testids ✅
+- /founders-circle plans render from sessionStorage cache fallback ✅
+
+**Shipped this batch**:
+1. **FoundersCirclePage error toast leak fix**
+   (`pages/FoundersCirclePage.js`): the loader used `Promise.all` so a
+   transient `/estates` failure (e.g. 401 during background-tab return)
+   would skip `setActive`/`setPlans` AND surface a "Could not load
+   Founders Circle plans" toast even when the plans endpoint itself
+   succeeded. Decoupled into two independent try blocks; toast no
+   longer leaks. Plans render or graceful empty state. Verified via
+   playwright probe with `/estates` forced to 500 — toast leaked: false,
+   hero still visible: true.
+
+2. **Double-submit POST-dedup on Milestone Message create**
+   (`pages/MessagesPage.js`): rapid 2x click within ~50ms previously
+   fired two `POST /api/messages` requests because `setCreating(true)`
+   is async and `disabled={creating}` propagation lagged. Added a
+   synchronous `useRef` (`createInFlightRef`) that returns true the
+   instant the handler runs and rejects the second call before the
+   network ever fires. Same canonical pattern applied to:
+
+3. **Beneficiary create/edit submit**
+   (`pages/BeneficiariesPage.js`) — `addInFlightRef`.
+4. **Checklist item create/edit submit**
+   (`pages/ChecklistPage.js`) — `saveInFlightRef`.
+
+**False positive caught**:
+- iter_105 P1 "Path C does not show GuidedActivation" — testing agent
+  only navigated to `/create-estate` and didn't actually complete the
+  estate-creation flow. The user's Path C directive is satisfied AFTER
+  the estate is created and the user lands on `/dashboard`, where
+  GuidedActivation is correctly gated on `/api/onboarding/progress`
+  with the per-user `celebration_shown` flag. This means:
+  - Path A (new user) → `progress.completed_steps={}` →
+    GuidedActivation shows ✅
+  - Path B (existing benefactor adding 2nd estate) →
+    `progress.celebration_shown=true` from estate #1 →
+    GuidedActivation hidden ✅ (matches user directive)
+  - Path C (beneficiary adding their FIRST own estate) → no prior
+    benefactor onboarding row → `progress.completed_steps={}` →
+    GuidedActivation shows ✅
+  No fix needed; current logic is correct.
+
+**Cleanup completed**:
+- 4 stranded TEST_AGENT_* messages, 4 beneficiaries, 2 checklist items
+  purged from the preview MongoDB at end of session.
+
+**Endpoint canon update**:
+- Vault upload: `POST /api/documents/upload?estate_id=...&name=...&category=...`
+  (multipart `file` field; query-string params for metadata)
+- Vault list: `GET /api/documents/{estate_id}`
+- Messages list: `GET /api/messages/{estate_id}` (per-estate; bare path
+  returns 405 — known and out-of-scope; minor P2)
+
 
 ## 8/10 Launch-Readiness Sweep — Apr 29, 2026 (iter 100)
 

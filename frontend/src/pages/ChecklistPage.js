@@ -73,6 +73,9 @@ const ChecklistPage = () => {
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
+  // Synchronous double-submit guard for handleSave — disabled={saving}
+  // alone leaks rapid double-taps because React state is async.
+  const saveInFlightRef = useRef(false);
   const [deleting, setDeleting] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [suggestingAI, setSuggestingAI] = useState(false);
@@ -212,7 +215,9 @@ const ChecklistPage = () => {
   };
 
   const handleSave = async () => {
-    if (!form.title.trim()) { toast.error('Title is required'); return; }
+    if (saveInFlightRef.current) return;
+    saveInFlightRef.current = true;
+    if (!form.title.trim()) { toast.error('Title is required'); saveInFlightRef.current = false; return; }
     setSaving(true);
     try {
       const { mutateWithOutbox } = await import('../utils/offlineMutation');
@@ -243,6 +248,7 @@ const ChecklistPage = () => {
       toast.error('Failed to save item');
     } finally {
       setSaving(false);
+      saveInFlightRef.current = false;
     }
   };
 

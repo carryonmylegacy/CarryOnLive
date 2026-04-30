@@ -79,6 +79,9 @@ const MessagesPage = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  // Synchronous guard against double-submit (see handleCreate) — useState
+  // updates are async, so disabled={creating} alone leaks rapid taps.
+  const createInFlightRef = useRef(false);
   const [editingMessage, setEditingMessage] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
   // Guided mode — simplified wizard for onboarding
@@ -447,13 +450,23 @@ const MessagesPage = () => {
   };
 
   const handleCreate = async () => {
-    if (!title) { toast.error('Message Title is required'); return; }
-    if (!content) { toast.error('Message Content is required'); return; }
+    // Synchronous in-flight guard — React's setCreating(true) is async, so
+    // a rapid double-click within ~50ms can fire two handleCreate calls
+    // before disabled state propagates. iter_105 caught two POSTs hitting
+    // /api/messages on a B2B-demo-style double-tap; the useRef below
+    // returns true synchronously and rejects the second call before the
+    // network ever fires.
+    if (createInFlightRef.current) return;
+    createInFlightRef.current = true;
+
+    if (!title) { toast.error('Message Title is required'); createInFlightRef.current = false; return; }
+    if (!content) { toast.error('Message Content is required'); createInFlightRef.current = false; return; }
     if (selectedRecipients.length === 0) {
       toast.error('Please select at least one recipient');
+      createInFlightRef.current = false;
       return;
     }
-    
+
     setCreating(true);
     try {
       let videoThumbnail = videoThumbnailRef.current || null;
@@ -641,6 +654,7 @@ const MessagesPage = () => {
       toast.error(`Failed to ${editingMessage ? 'update' : 'create'} message: ${detail}`);
     } finally {
       setCreating(false);
+      createInFlightRef.current = false;
     }
   };
 
