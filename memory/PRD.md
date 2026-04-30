@@ -797,9 +797,9 @@ When DUNS number is obtained and Apple Developer enrollment is complete:
 
 ## 🩹 B2B-Demo Bug-Fix Batch (Feb 2026 — first live B2B pitch)
 
-User pitched the platform live for the first time. Strategic-direction note
-captured above. During the pitch, the following bugs surfaced and were
-fixed in the same session:
+User pitched the platform live for the first time. Strategic-direction
+note captured above. During the pitch, the following bugs surfaced and
+were fixed in the same session:
 
 1. **`/` now lands on Login** — strategic pivot to B2B-first. Old D2C
    marketing landing archived at `/landing-consumer`. (`App.js`)
@@ -842,6 +842,55 @@ stays visible on second `/subscription` mount (cta_count=1 immediate AND
 after 4s); the IAC empty-state never renders when `/checklists/*` is
 forced to 500 and a prior cache exists; backend deadline-aware retry
 returns cleanly within 60s for heavy actions.
+
+## 🩹 B2B Pre-Pitch Polish Batch #2 (Feb 2026)
+
+After the first live pitch, three iterations of testing-subagent sweeps
+(iter_101 / iter_102 / iter_103) were run on production + preview to
+shake out remaining glitch surface. Findings + fixes:
+
+**Shipped in this batch**:
+1. **Readability floor** — changed from `text-sm` (14px) to **12px with
+   bold required at 12px**. Surgical bumps applied:
+   - "BETA = FREE" pill: 11px → 12px bold (`Sidebar.js`)
+   - "{N} estate{s}" subtitle in benefactor switcher: 11px → 12px bold
+   - ECT unread badges (sidebar + mobile): 11px → 12px
+   - Mobile bottom-dock labels: 12px semibold → 12px bold
+   - Mobile dock notification badges: 11px → 12px
+   - "9+" notification bell badge: 11px → 12px (`NotificationBell.js`)
+   - Re-scanned chrome → 0 violations.
+
+2. **Sidebar utility actions relocated** (`Sidebar.js`) — Notifications,
+   Light/Dark Mode, Collapse moved from the pinned `<div class='sb-user'>`
+   footer INTO the scrollable `<nav>`, beneath the ACCOUNT section. The
+   pinned footer now only holds: portal switcher (admin scopes), public
+   device mode toggle, Sign Out. This restores ~120px of scrollable real
+   estate to the feature menu, which was the founder's actual ask. DOM
+   probe confirmed: `notification-bell`, `theme-toggle`,
+   `sidebar-collapse-toggle` are all descendants of `<aside><nav>` post-fix.
+
+**Verified passing on production (iter_103)**:
+- All 25 admin tabs render, no /login bounces, no FastAPI `detail` leaks
+- Mobile viewport 375×667: zero horizontal scroll on /dashboard, /beneficiaries, /messages, /checklist, /guardian, /subscription
+- 9 of 11 benefactor modules load with primary CTAs visible
+
+**Already-known and out-of-scope** (do NOT re-flag in future sweeps
+unless explicitly asked):
+- S3 photo CORS errors on every authenticated page (infra)
+- Admin warmup 403 on /api/ccp/plans/{eid} (functional but cosmetic
+  console noise)
+- Barnet (dual-role beneficiary) landing on /dashboard not /beneficiary
+  (intentional — he owns an estate)
+- Preview pod chunk-serving 403 (not present on production)
+
+**Deferred — could not run on production safely**:
+- Full add/edit/delete CRUD cycles on real benefactor records
+- Form validation pass (empty / 5000-char / emoji / XSS)
+- 500-intercept failure-mode probing on every demo page
+- Double-click POST-dedup
+- Vault file upload
+These require either a disposable test benefactor account on prod OR a
+staging environment.
 
 
 ## 8/10 Launch-Readiness Sweep — Apr 29, 2026 (iter 100)
