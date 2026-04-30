@@ -88,7 +88,8 @@ async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depen
     full_name = " ".join(name_parts)
 
     # Generate initials
-    initials = (data.first_name[0] + data.last_name[0]).upper()
+    # Generate initials — slice-safe (defense-in-depth alongside Pydantic min_length=1).
+    initials = ((data.first_name[:1] or "?") + (data.last_name[:1] or "?")).upper()
 
     # Generate invitation token
     invitation_token = str(uuid.uuid4())
@@ -343,7 +344,8 @@ async def update_beneficiary(
     full_name = " ".join(name_parts)
 
     # Generate initials
-    initials = (data.first_name[0] + data.last_name[0]).upper()
+    # Generate initials — slice-safe (defense-in-depth alongside Pydantic min_length=1).
+    initials = ((data.first_name[:1] or "?") + (data.last_name[:1] or "?")).upper()
 
     update_data = {
         "first_name": data.first_name,

@@ -140,9 +140,9 @@ class Beneficiary(BaseModel):
 
 class BeneficiaryCreate(BaseModel):
     estate_id: str
-    first_name: str
+    first_name: str = Field(..., min_length=1)
     middle_name: Optional[str] = None
-    last_name: str
+    last_name: str = Field(..., min_length=1)
     suffix: Optional[str] = None
     relation: str
     email: EmailStr

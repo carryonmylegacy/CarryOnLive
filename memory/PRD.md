@@ -892,6 +892,64 @@ unless explicitly asked):
 These require either a disposable test benefactor account on prod OR a
 staging environment.
 
+## 🩹 B2B Pre-Pitch Polish Batch #3 (Feb 2026 — exhaustive sweep on info@carryon.us)
+
+User cleared full mutation on `info@carryon.us` for an exhaustive sweep
+(iter_104). Account resolved to `preview pod` — admin/founder role.
+22-test pytest suite shipped at
+`/app/backend/tests/test_iter104_sweep.py` (21 pass / 3 skipped / 1 xfail
+captured a real backend bug). All test data deleted at end of run.
+
+**Verified passing (no regressions)**:
+- Beneficiary CRUD (POST → GET → PUT → DELETE), all assertions against
+  persisted data
+- Milestone Messages CRUD (POST /api/messages)
+- Checklist CRUD (POST /api/checklists)
+- Form validation: 5000-char input → handled cleanly (no 500); emoji +
+  unicode '🚀 Te$t é 中文 🌍' → exact round-trip with no character
+  corruption; XSS literal `<script>alert(1)</script>` → stored as raw
+  text, not executed
+- Admin announcement create → delete (POST/DELETE /api/admin/announcements)
+- Concurrent double-POST → both 200 with no 500 (server-side idempotent)
+- Mobile iPhone 13 mini (375×667): zero horizontal scroll on /dashboard,
+  /beneficiaries, /messages
+- Path B `/create-estate` form loads with the directive-compliant copy:
+  "Your existing beneficiary access will remain intact"
+- The 4 live-pitch fixes still in place (iter_101 regression-confirmed)
+
+**Shipped this batch**:
+1. **POST /api/beneficiaries 500 → 422 fix**
+   (`backend/models.py` + `backend/routes/beneficiaries/management.py`):
+   `BeneficiaryCreate.first_name` and `.last_name` now have
+   `Field(..., min_length=1)`. Initials calc made slice-safe
+   (`first_name[:1] or '?'`) as defense-in-depth. Curl verified: empty
+   name now returns 422 with a clean Pydantic detail string instead of
+   500 IndexError. Frontend client-side validation already prevents this
+   path, but a savvy demo viewer running curl/Postman would have seen
+   the 500 — now it's clean.
+
+**False positives caught**:
+- iter_104 P1 "/signup splash never resolves" — my fresh-incognito
+  re-test loaded the form correctly. Testing agent was authenticated;
+  `PublicRoute` redirected to `/admin`. No fix needed.
+- iter_103 P1 "/digital-vault and /care redirect" — wrong URLs. Real
+  paths are `/digital-wallet` (DAV) and `/connected-protocol` (CCP).
+
+**Endpoint canon (documented for next sweep)**:
+- Beneficiaries list: `GET /api/beneficiaries/{estate_id}` (NOT bare
+  `/api/beneficiaries`)
+- Checklist plural: `/api/checklists` (NOT `/api/checklist`)
+- DAV: `/digital-wallet`
+- CCP: `/connected-protocol`
+
+**Skipped (info@carryon.us is admin-only on preview, no beneficiary surface)**:
+- Path C beneficiary→benefactor "Become a Benefactor" CTA — requires a
+  beneficiary account
+- Some page.route() 500 intercepts on 7 routes (token-budget skip;
+  ChecklistPage and SubscriptionPage are already verified earlier)
+- Vault file upload (multipart not exercised; vault loads cleanly per
+  iter_103)
+
 
 ## 8/10 Launch-Readiness Sweep — Apr 29, 2026 (iter 100)
 
