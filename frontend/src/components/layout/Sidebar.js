@@ -859,32 +859,33 @@ const Sidebar = () => {
           </div>
           );
         })}
+        {/* Utility actions — Notifications, Theme, Collapse — placed
+            inside the scrollable area beneath the ACCOUNT section so the
+            scrollable feature list above gets back the vertical room it
+            was losing to a bloated pinned footer. (Per founder directive,
+            Apr 2026.) */}
+        <div className="nav-section" data-testid="nav-utility-actions">
+          <NotificationBell collapsed={collapsed} />
+          <SidebarPillButton
+            collapsed={collapsed}
+            onClick={toggleTheme}
+            data-testid="theme-toggle"
+            icon={theme === 'dark' ? <Sun /> : <Moon />}
+            label={`${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+          />
+          <SidebarPillButton
+            collapsed={collapsed}
+            onClick={toggleCollapsed}
+            data-testid="sidebar-collapse-toggle"
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            icon={collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
+            label="Collapse"
+          />
+        </div>
       </nav>
 
       {/* Bottom Pinned Section */}
       <div className="sb-user">
-        {/* Notifications */}
-        <NotificationBell collapsed={collapsed} />
-
-        {/* Light/Dark Mode — pill button */}
-        <SidebarPillButton
-          collapsed={collapsed}
-          onClick={toggleTheme}
-          data-testid="theme-toggle"
-          icon={theme === 'dark' ? <Sun /> : <Moon />}
-          label={`${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-        />
-
-        {/* Collapse — pill button */}
-        <SidebarPillButton
-          collapsed={collapsed}
-          onClick={toggleCollapsed}
-          data-testid="sidebar-collapse-toggle"
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          icon={collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
-          label="Collapse"
-        />
-
         {/* ── Separator ── */}
         <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.08)', margin: '2px 0' }} />
 
