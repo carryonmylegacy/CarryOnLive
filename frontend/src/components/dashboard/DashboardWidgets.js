@@ -76,22 +76,50 @@ export const StatCard = ({ icon: Icon, value, label, cardClass, onClick, classNa
     data-testid={`stat-card-${label.toLowerCase().replace(/\s+/g, '-')}`}
     aria-label={`${label}: ${value}`}
     role="button"
+    // Establish a CSS containment context so children (the big number
+    // AND the label) can size themselves with `cqi` (1% of THIS tile's
+    // inline width) instead of `vw`. Viewport-based scaling left a
+    // dead-zone between Tailwind's md/lg breakpoints — most painful on
+    // iPad Pro 11" (1024×1366) where tiles get noticeably wider but
+    // labels stayed pinned at the 18px ceiling and looked cramped near
+    // the tile edge. Container queries make the text grow continuously
+    // with the tile from iPhone 13 mini all the way up to a 27" 4K
+    // monitor in fullscreen.
+    style={{ containerType: 'inline-size' }}
   >
     <Icon className={`stat-icon ${compact ? 'w-5 h-5 lg:w-5 lg:h-5 mb-1 lg:mb-1' : 'w-6 h-6 lg:w-8 lg:h-8 mb-2 lg:mb-3'} opacity-70 flex-shrink-0`} />
-    <div className={`${compact ? 'text-2xl lg:text-3xl mb-1' : 'text-3xl lg:text-5xl mb-2'} font-bold text-center leading-none flex-shrink-0`}>
+    <div
+      className={`${compact ? 'mb-1' : 'mb-2'} font-bold text-center leading-none flex-shrink-0`}
+      style={
+        compact
+          ? { fontSize: 'clamp(1.25rem, 14cqi, 1.875rem)' }
+          : {
+              // Big stat number — 18cqi keeps it bold and readable from
+              // ~140px tile (mobile) to ~360px tile (desktop) while
+              // never overflowing. Floor 1.5rem (24px) so it's always
+              // legible; ceiling 3rem (48px) so it doesn't dwarf the
+              // tile on a 27" monitor.
+              fontSize: 'clamp(1.5rem, 18cqi, 3rem)',
+            }
+      }
+    >
       {value}
     </div>
     <div
-      className={`opacity-80 ${compact ? 'text-xs lg:text-sm' : ''} font-bold leading-tight text-center min-w-0`}
+      className="opacity-80 font-bold leading-tight text-center min-w-0"
       style={
         compact
-          ? undefined
+          ? { fontSize: 'clamp(0.75rem, 5cqi, 1rem)' }
           : {
-              // Auto-scale label so single long words like "Beneficiaries"
-              // fit on one line across all phone widths (iPhone 13 mini
-              // 375px → ~10.5px ; iPhone 17 Pro Max 430px → ~12.0px) and
-              // top out at the desktop `text-lg` (18px) on >= ~640px.
-              fontSize: 'clamp(0.66rem, 2.8vw, 1.125rem)',
+              // Label — `clamp(0.75rem, 6.5cqi, 1.5rem)` =
+              //   ~140px tile  → 9.1cqi → floor 12px (12px-bold per
+              //                            global readability rule)
+              //   ~280px tile  → ~18px (iPad Pro sweet spot)
+              //   ~360px tile  → ~23px → caps at 24px
+              //   ~500px tile  → 32cqi → caps at 24px
+              // Fits "Beneficiaries" (longest label) on one line
+              // across the full range with comfortable padding.
+              fontSize: 'clamp(0.75rem, 6.5cqi, 1.5rem)',
             }
       }
     >

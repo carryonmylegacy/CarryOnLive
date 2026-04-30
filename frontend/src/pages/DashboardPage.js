@@ -863,7 +863,14 @@ const DashboardPage = () => {
               {ENTRIES.map((e) => (
                 <div key={e.key} className="flex items-center gap-2">
                   <span className="rounded-full flex-shrink-0" style={{ background: e.chipColor, width: cfg.dot, height: cfg.dot }} />
-                  <span className="text-[var(--t4)] font-medium whitespace-nowrap" style={{ fontSize: cfg.font }}>
+                  <span
+                    className="text-[var(--t4)] font-bold whitespace-nowrap"
+                    // Fluid: scales between the static cfg.font floor
+                    // and a viewport-proportional ceiling so the key
+                    // grows with iPad-and-above viewports instead of
+                    // staying pinned at the discrete sm/md/lg jump.
+                    style={{ fontSize: `clamp(${cfg.font}px, 1.1vw, ${cfg.font + 8}px)` }}
+                  >
                     {e.chipPercent}% {e.chipLabel}
                   </span>
                 </div>
@@ -901,7 +908,7 @@ const DashboardPage = () => {
                 {ENTRIES.slice(0, 3).map((e) => (
                   <div key={e.key} className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: e.chipColor }} />
-                    <span className="text-[var(--t4)] text-[11px] font-medium">{e.chipPercent}% {e.chipLabel}</span>
+                    <span className="text-[var(--t4)] font-bold" style={{ fontSize: 'clamp(12px, 3.2vw, 14px)' }}>{e.chipPercent}% {e.chipLabel}</span>
                   </div>
                 ))}
               </div>
@@ -909,7 +916,7 @@ const DashboardPage = () => {
                 {ENTRIES.slice(3, 6).map((e) => (
                   <div key={e.key} className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: e.chipColor }} />
-                    <span className="text-[var(--t4)] text-[11px] font-medium">{e.chipPercent}% {e.chipLabel}</span>
+                    <span className="text-[var(--t4)] font-bold" style={{ fontSize: 'clamp(12px, 3.2vw, 14px)' }}>{e.chipPercent}% {e.chipLabel}</span>
                   </div>
                 ))}
               </div>
