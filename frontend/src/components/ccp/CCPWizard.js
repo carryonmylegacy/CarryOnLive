@@ -74,20 +74,54 @@ const sectionBorder = (editing) =>
 
 export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-  const [step, setStep] = useState(1);
-  const [household, setHousehold] = useState([]);
-  const [selectedConcern, setSelectedConcern] = useState('');
-  const [location, setLocation] = useState('');
-  const [followUpAnswers, setFollowUpAnswers] = useState({});
+
+  // ─── Draft persistence ─────────────────────────────────────────
+  // Founder report (Apr 2026): tapping into another section mid-wizard
+  // and coming back resets the form. Now we mirror the in-progress
+  // wizard state to sessionStorage scoped to estate so an accidental
+  // navigation doesn't lose 5 minutes of input. Cleared on successful
+  // finalize or explicit cancel.
+  const DRAFT_KEY = `ccp_wizard_draft:${estateId}`;
+  const loadDraft = () => {
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch { return null; }
+  };
+  const draft = loadDraft();
+
+  const [step, setStep] = useState(draft?.step || 1);
+  const [household, setHousehold] = useState(draft?.household || []);
+  const [selectedConcern, setSelectedConcern] = useState(draft?.selectedConcern || '');
+  const [location, setLocation] = useState(draft?.location || '');
+  const [followUpAnswers, setFollowUpAnswers] = useState(draft?.followUpAnswers || {});
   const [generating, setGenerating] = useState(false);
-  const [generatedPlan, setGeneratedPlan] = useState(null);
-  const [drillSchedule, setDrillSchedule] = useState(null);
+  const [generatedPlan, setGeneratedPlan] = useState(draft?.generatedPlan || null);
+  const [drillSchedule, setDrillSchedule] = useState(draft?.drillSchedule || null);
   const [warnings, setWarnings] = useState([]);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [editingSections, setEditingSections] = useState({});
   const [detectingLocation, setDetectingLocation] = useState(false);
+
+  // Mirror persistable wizard state to sessionStorage on every change.
+  useEffect(() => {
+    // Don't persist after the plan is saved — the wizard transitions to
+    // the post-finalize "Done" screen and the draft becomes stale.
+    if (saved) return;
+    try {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
+        step, household, selectedConcern, location, followUpAnswers,
+        generatedPlan, drillSchedule,
+      }));
+    } catch { /* quota or disabled — non-fatal */ }
+  }, [DRAFT_KEY, step, household, selectedConcern, location, followUpAnswers, generatedPlan, drillSchedule, saved]);
+
+  const clearDraft = () => {
+    try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* non-fatal */ }
+  };
 
   // Detect location on user request (button tap)
   const detectLocation = () => {
@@ -461,23 +495,35 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                   }}
                 />
               ) : q.type === 'select' ? (
-                <select
-                  value={followUpAnswers[q.key] || ''}
-                  onChange={(e) => updateFollowUp(q.key, e.target.value)}
-                  className="w-full rounded-xl px-4 py-3.5 text-base"
-                  data-testid={`ccp-wizard-followup-${q.key}`}
-                  style={{
-                    background: 'var(--s)',
-                    border: inputBorder((followUpAnswers[q.key] || '').trim()),
-                    color: 'var(--t)',
-                    fontSize: '16px',
-                  }}
-                >
-                  <option value="" disabled>{q.placeholder || 'Select…'}</option>
-                  {(q.options || []).map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
+                <>
+                  <select
+                    value={followUpAnswers[q.key] || ''}
+                    onChange={(e) => updateFollowUp(q.key, e.target.value)}
+                    className="w-full rounded-xl px-4 py-3.5 text-base"
+                    data-testid={`ccp-wizard-followup-${q.key}`}
+                    style={{
+                      background: 'var(--s)',
+                      border: inputBorder((followUpAnswers[q.key] || '').trim()),
+                      color: (followUpAnswers[q.key] || '').trim() ? 'var(--t)' : 'var(--t4)',
+                      fontSize: '16px',
+                    }}
+                  >
+                    {/* Generic prompt — reads as "I haven't picked yet"
+                        instead of looking like a real selectable answer.
+                        The detailed q.placeholder (often a coaching
+                        sentence) renders BELOW as helper text so it
+                        doesn't compete with real options. */}
+                    <option value="" disabled>Tap to choose…</option>
+                    {(q.options || []).map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                  {q.placeholder && (
+                    <p className="text-xs text-[var(--t4)] mt-1.5 px-1" data-testid={`ccp-wizard-followup-${q.key}-help`}>
+                      {q.placeholder}
+                    </p>
+                  )}
+                </>
               ) : (
                 <input
                   value={followUpAnswers[q.key] || ''}
