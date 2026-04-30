@@ -102,7 +102,7 @@ const PreTransitionPage = () => {
             These documents are available before transition verification for emergency medical and legal decision-making.
           </p>
 
-          {/* Connected Contingency Plans */}
+          {/* CarryOn Contingency Protocols */}
           <div
             className="flex items-center gap-3 p-4 rounded-xl mb-2 cursor-pointer transition-transform duration-150 active:scale-[0.98]"
             style={{ background: 'rgba(16,185,129,0.04)', border: '1px solid rgba(16,185,129,0.12)' }}

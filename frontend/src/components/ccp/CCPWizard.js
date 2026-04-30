@@ -460,6 +460,24 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                     fontSize: '16px',
                   }}
                 />
+              ) : q.type === 'select' ? (
+                <select
+                  value={followUpAnswers[q.key] || ''}
+                  onChange={(e) => updateFollowUp(q.key, e.target.value)}
+                  className="w-full rounded-xl px-4 py-3.5 text-base"
+                  data-testid={`ccp-wizard-followup-${q.key}`}
+                  style={{
+                    background: 'var(--s)',
+                    border: inputBorder((followUpAnswers[q.key] || '').trim()),
+                    color: 'var(--t)',
+                    fontSize: '16px',
+                  }}
+                >
+                  <option value="" disabled>{q.placeholder || 'Select…'}</option>
+                  {(q.options || []).map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
               ) : (
                 <input
                   value={followUpAnswers[q.key] || ''}
@@ -678,9 +696,14 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                     <Plus className="w-5 h-5" />Create Another Plan
                   </button>
                   <button onClick={onComplete}
-                    className="w-full py-3 rounded-2xl text-sm font-semibold transition-all active:scale-[0.97]"
+                    className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] hover:brightness-110"
                     data-testid="ccp-wizard-done"
-                    style={{ background: 'rgba(120,120,140,0.1)', border: '1px solid rgba(120,120,140,0.2)', color: 'var(--t4)' }}>
+                    // Bright active blue — was a grayed disabled-looking
+                    // pill that founders read as "not clickable" during
+                    // a B2B pitch. Per founder directive, post-finalize
+                    // CTAs must look ACTIVE so demo viewers see the
+                    // gold→blue progression as a clear next action.
+                    style={{ background: 'linear-gradient(135deg, #2563EB, #3B82F6)', color: '#FFFFFF', boxShadow: '0 8px 24px rgba(37,99,235,0.35)' }}>
                     Done — Back to Plans
                   </button>
                 </div>

@@ -72,7 +72,7 @@ export default function CCPPlanEditor({
       <button onClick={() => { setEditPlan(null); setView('plans'); }} className="flex items-center gap-2 text-sm font-semibold mb-2" style={{ color: 'var(--t4)' }}>
         <ArrowLeft className="w-4 h-4" />Back to Plans
       </button>
-      <h2 className="text-lg font-bold" style={{ color: 'var(--t)' }}>{editPlan.id ? 'Edit Plan' : 'New Emergency Plan'}</h2>
+      <h2 className="text-lg font-bold" style={{ color: 'var(--t)' }}>{editPlan.id ? 'Edit Plan' : 'New Contingency Protocol'}</h2>
 
       {/* Plan Name */}
       <div>

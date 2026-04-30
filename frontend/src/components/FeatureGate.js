@@ -26,10 +26,10 @@ const FEATURE_LABELS = {
   '/trustee': 'Designated Trustee Services',
   '/timeline': 'Estate Plan Timeline',
   '/estate-chat': 'Estate Chat',
-  '/connected-protocol': 'Connected Care Protocol',
+  '/connected-protocol': 'CarryOn Contingency Protocols',
   '/financial': 'Connected Financial Portal',
   '/beneficiary/estate-chat': 'Estate Chat',
-  '/beneficiary/connected-protocol': 'Connected Care Protocol',
+  '/beneficiary/connected-protocol': 'CarryOn Contingency Protocols',
   '/beneficiary/financial': 'Connected Financial Portal',
 };
 

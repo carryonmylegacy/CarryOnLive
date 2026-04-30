@@ -171,7 +171,7 @@ const BeneficiaryCCPPage = () => {
         <h1 className="text-2xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>
           Emergency Plans
         </h1>
-        <p className="text-sm text-[var(--t4)]">Connected Contingency Plans assigned to you</p>
+        <p className="text-sm text-[var(--t4)]">CarryOn Contingency Protocols assigned to you</p>
       </div>
 
       {plans.length === 0 ? (

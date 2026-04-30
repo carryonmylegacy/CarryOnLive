@@ -25,7 +25,7 @@ const ENTITY_LABELS = {
   profile: 'Profile',
   estate: 'Estate',
   ffn: 'Family Financial Network',
-  ccp_plan: 'Connected Care Protocol',
+  ccp_plan: 'CarryOn Contingency Protocols',
   checklist: 'Checklist item',
   milestone_message: 'Milestone message',
   chat_message: 'Chat message',

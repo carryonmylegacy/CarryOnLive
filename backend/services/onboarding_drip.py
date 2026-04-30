@@ -128,7 +128,7 @@ def _render_step(step_key: str, user: dict, *, base_url: str) -> Optional[tuple[
         body = f"""
             <p>Your 30-day Premium trial wraps up shortly, {name}. Two paths:</p>
             <ul style="padding-left:18px;line-height:1.8;">
-              <li><strong>Continue on Premium</strong> — everything you've built stays, including Connected Care Protocol, Estate Chat, and your full vault.</li>
+              <li><strong>Continue on Premium</strong> — everything you've built stays, including CarryOn Contingency Protocols, Estate Chat, and your full vault.</li>
               <li><strong>Drop to Base (free)</strong> — your data stays. You keep your beneficiary, your IAC, and document vault. Premium-only features pause until you upgrade.</li>
             </ul>
             <p>No surprise charges. We'll never auto-charge a card you haven't entered.</p>

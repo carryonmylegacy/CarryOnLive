@@ -818,12 +818,12 @@ const DashboardPage = () => {
             key: 'ccp',
             chipColor: '#ef4444',
             chipPercent: ccpPercent,
-            chipLabel: 'Emergency Plans',
+            chipLabel: 'CCP',
             tile: (
               <StatCard
                 icon={ShieldAlert}
                 value={stats.ccp_plans}
-                label="Connected Protocol (CCP)"
+                label="Contingency Protocols (CCP)"
                 cardClass="stat-card-ccp"
                 onClick={() => navigate('/connected-protocol')}
                 sectionKey="connected_protocol"

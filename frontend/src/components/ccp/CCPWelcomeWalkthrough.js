@@ -101,7 +101,7 @@ const CCPWelcomeWalkthrough = ({ welcomeStep, setWelcomeStep, onDismiss }) => {
             </div>
 
             <div className="space-y-2.5 mb-5">
-              <FeatureRow icon={FileText}  title="Create Emergency Plans"     desc="Set up rendezvous points, communication steps, and supply locations." />
+              <FeatureRow icon={FileText}  title="Create Contingency Protocols"     desc="Set up rendezvous points, communication steps, and supply locations." />
               <FeatureRow icon={UserCheck} title="Check In During Emergencies" desc="Everyone marks themselves safe so the family instantly knows who needs help." />
               <FeatureRow icon={Play}      title="Practice with Drills"        desc="Run practice drills so everyone knows what to do before a real emergency hits." />
             </div>

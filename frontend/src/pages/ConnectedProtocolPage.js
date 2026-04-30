@@ -414,7 +414,7 @@ export default function ConnectedProtocolPage() {
   const nativeShare = async () => {
     if (!shareModal?.url || !navigator.share) return;
     try {
-      await navigator.share({ title: `Emergency Plan: ${shareModal.planName}`, text: `View our family emergency plan: ${shareModal.planName}`, url: shareModal.url });
+      await navigator.share({ title: `Contingency Protocol: ${shareModal.planName}`, text: `View our family contingency protocol: ${shareModal.planName}`, url: shareModal.url });
     } catch {}
   };
 
@@ -913,7 +913,7 @@ export default function ConnectedProtocolPage() {
         style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)', color: '#d4af37' }}>
         <FileText className="w-6 h-6 flex-shrink-0" />
         <div className="text-left flex-1">
-          <div style={{ fontFamily: 'var(--sans)' }}>Emergency Plans</div>
+          <div style={{ fontFamily: 'var(--sans)' }}>Contingency Protocols</div>
           <div className="text-xs font-normal" style={{ color: 'var(--t4)' }}>{plans.length} plan{plans.length !== 1 ? 's' : ''} created</div>
         </div>
         <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />

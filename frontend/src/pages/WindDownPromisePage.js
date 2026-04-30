@@ -105,7 +105,7 @@ const WindDownPromisePage = () => {
           <Bullet>Export every uploaded document in its original file format (PDF, JPG, MP4, WAV, etc.).</Bullet>
           <Bullet>Export every milestone message in original audio/video format with delivery metadata.</Bullet>
           <Bullet>Export your Important Account Checklist as CSV and PDF.</Bullet>
-          <Bullet>Export your Connected Care Protocol and Estate Plan Timeline as PDF.</Bullet>
+          <Bullet>Export your CarryOn Contingency Protocols and Estate Plan Timeline as PDF.</Bullet>
           <Bullet>Export your full beneficiary roster, including invitation status and contact info.</Bullet>
           <Bullet>Request a single ZIP of <em>everything</em> via the in-app data-portability tool, or by writing to <a href="mailto:privacy@carryon.us" className="underline" style={{ color: 'var(--gold)' }}>privacy@carryon.us</a>.</Bullet>
         </ul>
