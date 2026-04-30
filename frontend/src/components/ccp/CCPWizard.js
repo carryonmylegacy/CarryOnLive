@@ -257,6 +257,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
       });
       if (res.ok) {
         setSaved(true);
+        clearDraft();
       } else {
         const err = await res.json().catch(() => ({}));
         setError(err.detail || 'Failed to save plan');
@@ -277,6 +278,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
     } else if (step > 1) {
       setStep(step - 1);
     } else {
+      clearDraft();
       onCancel();
     }
   };
@@ -519,7 +521,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                     ))}
                   </select>
                   {q.placeholder && (
-                    <p className="text-xs text-[var(--t4)] mt-1.5 px-1" data-testid={`ccp-wizard-followup-${q.key}-help`}>
+                    <p className="text-xs font-semibold text-[var(--t4)] mt-1.5 px-1" data-testid={`ccp-wizard-followup-${q.key}-help`}>
                       {q.placeholder}
                     </p>
                   )}
@@ -540,7 +542,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                 />
               )}
               {q.hint && (
-                <p className="text-xs mt-1" style={{ color: 'var(--t5)' }}>{q.hint}</p>
+                <p className="text-xs font-semibold mt-1" style={{ color: 'var(--t5)' }}>{q.hint}</p>
               )}
             </div>
           ))}

@@ -764,6 +764,14 @@ When DUNS number is obtained and Apple Developer enrollment is complete:
 4. **iOS Share Extension** — See `/app/memory/SHARE_EXTENSION_SETUP.md`
 5. **Capgo Live Updates** — Configure production channel (see `/app/memory/CAPACITOR_LIVE_UPDATES.md`)
 
+## CCP Wizard — Draft Persistence + Placeholder Fix Completion (Feb 2026)
+Closes the Apr-29 fork's unverified fix. `clearDraft()` was defined but never called — now wired:
+- `CCPWizard.js:260` — invoked after `setSaved(true)` in the `handleSave` success branch so finalize clears the session draft.
+- `CCPWizard.js:282` — invoked in the cancel branch of `handleBack` before `onCancel()` so explicit cancel clears it too.
+- `CCPWizard.js:524, 545` — followup helper text + `q.hint` paragraph bumped from `text-xs` (400 weight) to `text-xs font-semibold` to honor the hard 12px-must-be-bold readability floor.
+
+Verification note: UI-level verification on preview pod is blocked because CCP (`ccp` feature key) is `default_off` for every tier including premium. Founder must flip CCP on for at least one tier in Admin → Feature Gates before re-running the frontend wizard test.
+
 ## Known Refactor Targets (Post-Launch, Low Urgency)
 
 **Apr 28, 2026 — ALL major monoliths refactored this session:**
