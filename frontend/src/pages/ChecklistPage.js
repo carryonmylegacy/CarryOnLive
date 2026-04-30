@@ -164,7 +164,27 @@ const ChecklistPage = () => {
       }
     } catch (error) {
       console.error('Fetch error:', error);
-      if (typeof navigator === 'undefined' || navigator.onLine !== false) {
+      // Online-error rescue: rehydrate from localStorage so the user keeps
+      // seeing their last-known IAC items. Critical during background-tab
+      // returns (e.g. switching to a Zoom call mid-demo) where transient
+      // 401/5xx would otherwise blank the page and render the empty-state
+      // CTA — a credibility-killer in front of B2B clients. Previously
+      // this rescue only fired when navigator.onLine === false.
+      const savedEid = localStorage.getItem('selected_estate_id');
+      if (savedEid) {
+        const cachedEstate = readList(`checklist:estate:${savedEid}`);
+        if (cachedEstate && typeof cachedEstate === 'object' && !Array.isArray(cachedEstate)) {
+          setEstate(cachedEstate);
+        }
+        const cachedItems = readList(`checklist:items:${savedEid}`);
+        if (Array.isArray(cachedItems) && cachedItems.length > 0) {
+          setChecklists(cachedItems);
+        } else {
+          // Only surface the failure toast if we have nothing to fall
+          // back on — otherwise the user shouldn't even know it failed.
+          toast.error('Failed to load checklist');
+        }
+      } else {
         toast.error('Failed to load checklist');
       }
     } finally {

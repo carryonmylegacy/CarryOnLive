@@ -1249,7 +1249,23 @@ const MessagesPage = () => {
                         style={{ backgroundColor: ben.photo_url ? 'transparent' : ben.avatar_color + '30', color: ben.avatar_color }}
                       >
                         {ben.photo_url ? (
-                          <img src={resolvePhotoUrl(ben.photo_url)} alt={ben.name} className="w-full h-full object-cover" />
+                          <img
+                            src={resolvePhotoUrl(ben.photo_url)}
+                            alt={ben.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // If the avatar image 404s, expires (S3 presigned),
+                              // or stalls mid-decode, swap to the colored
+                              // initials block so we never render a half-loaded
+                              // ghost avatar in front of clients.
+                              const wrap = e.currentTarget.parentElement;
+                              if (wrap) {
+                                wrap.style.backgroundColor = (ben.avatar_color || '#60A5FA') + '30';
+                                wrap.style.color = ben.avatar_color || '#60A5FA';
+                                wrap.textContent = ben.initials || '';
+                              }
+                            }}
+                          />
                         ) : ben.initials}
                       </div>
                       <div>

@@ -584,16 +584,39 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
                 upsert=True,
             )
 
-        # Auto-retry with escalating backoff (3 attempts).
-        # After an idle period the httpx pool may hold dead sockets;
-        # the first attempt flushes them and subsequent ones succeed.
+        # Auto-retry with escalating backoff. Deadline-aware so heavy
+        # actions (generate_todo / generate_iac / analyze_vault) stay
+        # within the K8s ingress 60s timeout — three sequential attempts
+        # at 30s+ each used to compound past 60s and produce a hard 502
+        # in front of B2B demo clients. For heavy actions we now allow
+        # at most ONE retry and only if we still have headroom; for
+        # light chat we keep the original 3-attempt resilience pattern.
         completion = None
         last_error = None
-        _RETRY_DELAYS = [0, 1.5, 3]  # seconds to wait before each attempt
-        for attempt in range(3):
+        _IS_HEAVY = data.action in (
+            "analyze_vault",
+            "generate_todo",
+            "generate_iac",
+            "analyze_readiness",
+            "state_law_brief",
+        )
+        _MAX_ATTEMPTS = 2 if _IS_HEAVY else 3
+        _RETRY_DELAYS = [0, 1.5, 3][:_MAX_ATTEMPTS]
+        # 55s soft deadline keeps us under the 60s ingress hard cut-off.
+        _SOFT_DEADLINE_S = 55
+        _started_at = asyncio.get_event_loop().time()
+        for attempt in range(_MAX_ATTEMPTS):
             try:
                 if _RETRY_DELAYS[attempt]:
                     await asyncio.sleep(_RETRY_DELAYS[attempt])
+                # Skip subsequent attempts if we'd blow the ingress window.
+                elapsed = asyncio.get_event_loop().time() - _started_at
+                if attempt > 0 and elapsed > _SOFT_DEADLINE_S - 5:
+                    logger.warning(
+                        f"xAI deadline guard: skipping attempt {attempt + 1}/{_MAX_ATTEMPTS} "
+                        f"(elapsed {elapsed:.1f}s exceeds soft deadline)"
+                    )
+                    break
                 completion = await asyncio.to_thread(
                     xai_client.chat.completions.create,
                     model=selected_model,
@@ -604,7 +627,7 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
                 break
             except Exception as e:
                 last_error = e
-                logger.warning(f"xAI attempt {attempt + 1}/3 failed ({type(e).__name__}: {e})")
+                logger.warning(f"xAI attempt {attempt + 1}/{_MAX_ATTEMPTS} failed ({type(e).__name__}: {e})")
 
         if completion is None:
             raise last_error

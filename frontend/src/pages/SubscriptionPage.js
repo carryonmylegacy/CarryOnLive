@@ -18,7 +18,15 @@ const SubscriptionPage = () => {
   const [showPaywall, setShowPaywall] = useState(false);
   const [confirmingPayment, setConfirmingPayment] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [fcActive, setFcActive] = useState(false);
+  const [fcActive, setFcActive] = useState(() => {
+    // Hydrate from sessionStorage so navigating away to /founders-circle
+    // and back doesn't briefly hide the gold CTA while the public
+    // /founders-circle/plans request is in flight. Also keeps the CTA
+    // visible across transient API failures (catch handler is silent
+    // by design for this public endpoint). Defaults to false on a
+    // first-ever visit, which is unchanged behaviour.
+    try { return sessionStorage.getItem('fc_campaign_active') === '1'; } catch { return false; }
+  });
   const [fcSubs, setFcSubs] = useState([]);
   const [fcCelebration, setFcCelebration] = useState(null); // { tierName, estateName } or null
   const [subCelebration, setSubCelebration] = useState(null); // { tierName } or null
@@ -71,8 +79,16 @@ const SubscriptionPage = () => {
   useEffect(() => {
     if (!token) return;
     const headers = { Authorization: `Bearer ${token}` };
-    // Check if FC campaign is active
-    axios.get(`${API_URL}/founders-circle/plans`).then(r => setFcActive(r.data.active)).catch(() => {});
+    // Check if FC campaign is active — cache the result in sessionStorage
+    // so subsequent mounts paint the gold CTA immediately instead of
+    // hiding it for a frame while the request is in flight. Failures
+    // are silent by design (public endpoint, infra blip shouldn't kill
+    // a paywall demo).
+    axios.get(`${API_URL}/founders-circle/plans`).then(r => {
+      const active = !!r.data.active;
+      setFcActive(active);
+      try { sessionStorage.setItem('fc_campaign_active', active ? '1' : '0'); } catch {}
+    }).catch(() => {});
     // Check user's FC subscriptions
     axios.get(`${API_URL}/founders-circle/status`, { headers }).then(r => setFcSubs(r.data.subscriptions || [])).catch(() => {});
 
