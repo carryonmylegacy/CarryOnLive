@@ -67,7 +67,34 @@ const TreeNode = ({ initials, photo, color, label, sublabel, size = 60, badge, i
           }}
         >
           {hasPhoto ? (
-            <img src={resolvePhotoUrl(photo)} alt="" className="w-full h-full object-cover" />
+            <img
+              src={resolvePhotoUrl(photo)}
+              alt=""
+              className="w-full h-full object-cover"
+              // Top-biased crop matches the AvatarCircle + messages
+              // recipient avatar so portrait-framed photos display the
+              // face inside the circle instead of white space.
+              style={{ objectPosition: 'center 30%' }}
+              onError={(e) => {
+                // Photo load failed (S3 expired presigned URL, CORS
+                // blip, 404). Replace with the initials fallback
+                // inline so we never render an empty ring — observed
+                // Emma's node showing as a blank circle during the
+                // B2B pitch screenshot.
+                const host = e.currentTarget.parentElement;
+                if (host) {
+                  host.style.background = color + '25';
+                  e.currentTarget.remove();
+                  if (typeof initials === 'string' && initials) {
+                    const span = document.createElement('span');
+                    span.className = 'relative z-10';
+                    span.style.fontWeight = '700';
+                    span.textContent = initials;
+                    host.appendChild(span);
+                  }
+                }
+              }}
+            />
           ) : (
             <>
               {onUpload && (
