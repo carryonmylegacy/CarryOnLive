@@ -78,7 +78,7 @@ jobs:
       # ── Alerting ─────────────────────────────────────────────────────────
       - name: Open or update GitHub issue on failure
         if: failure()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const title = `🚨 Uptime sentinel: production E2E failed at ${new Date().toISOString()}`;
@@ -126,7 +126,7 @@ jobs:
 
       - name: Close the open uptime-alert on recovery
         if: success()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const { data: existing } = await github.rest.issues.listForRepo({
