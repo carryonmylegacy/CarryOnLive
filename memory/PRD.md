@@ -786,6 +786,30 @@ User screen-captured an empty `No estate selected — Open your dashboard first 
 
 **Verified end-to-end** (iter 108 testing report): Smoke 2 — deleted `selected_estate_id`, navigated directly to `/connected-protocol`, gold spinner showed during the heal, page rendered CCP home, localStorage repopulated. Empty panel never appeared.
 
+## Universal Draft Persistence Across "+ Create New" Surfaces (Feb 2026)
+User mandate: "If I am in the middle of creating a CCP and I navigate off of that screen, when I come back to it, it's still resets it to the very beginning. Same in every place where I can hit a plus and add something new such as the SDV, the MM, the IAC, the DAV, the FFN."
+
+Shipped a single shared hook `frontend/src/hooks/useDraftState.js` — a drop-in `useState` replacement that mirrors to `sessionStorage` under the prefix `carryon_draft:`, keyed per-estate, fail-safe in private browsing / quota-exceeded.
+
+**Hook design notes:**
+- `skipNextWriteRef` — armed by `clearDraft`, consumed by the next autosave effect run, prevents the post-cancel state chain (`clearDraft(); setTitle(''); setContent('');`) from immediately recreating the keys with empty defaults.
+- `hasMountedRef` — suppresses the spurious first-mount writeback so a freshly-read draft isn't overwritten with itself.
+- `safeRead/safeWrite/safeRemove` — wrap every storage op in try/catch so private mode + quota errors no-op silently.
+- Per-estate key scoping (`carryon_draft:{module}_form:{estateId}:{field}`) so multi-estate users / admins previewing a benefactor portal don't bleed drafts across estates.
+
+**Wired into all 6 surfaces:**
+- **CCP** (`pages/ConnectedProtocolPage.js`): parent `view` state persisted (`ccp_view:{estateId}`); cleared on wizard `onComplete` + `onCancel`. Combines with the wizard's own internal step/inputs persistence so users land back in the wizard at the exact step they left.
+- **SDV** (`pages/VaultPage.js`): `showUploadModal`, `uploadName`, `uploadCategory`, `uploadLockType` persisted. `uploadLockPassword`, `uploadVoicePassphrase`, and `uploadFile` deliberately NOT persisted (sensitive credentials + binary). `resetUploadForm` clears.
+- **MM** (`pages/MessagesPage.js`): all 11 text fields + modal-open + editing-target persisted. Binary attachments (videoBlob, audioBlob, attachmentFile) NOT persisted. `resetForm` clears.
+- **IAC** (`pages/ChecklistPage.js`): `showForm`, `editingItem`, `form` (10 fields) persisted. `closeForm` clears. **Verified end-to-end (iter 111).**
+- **DAV** (`pages/DigitalWalletPage.js`): parent `showAdd` + WalletEntryPanel `name`, `login`, `notes`, `category`, `beneficiaryId` persisted ONLY for new credentials (not edits). Sensitive `password`, `additional_access` NOT persisted. Cleared on save + onClose.
+- **FFN** (`pages/FFNPage.js`): `showForm`, `editingId`, all 6 form fields persisted. Cleared on save + X button.
+
+**Verified:**
+- iter 109: CCP wizard auto-resume PASS (page lands directly in wizard at correct step after navigate-away-and-back).
+- iter 111: IAC cancel-clear PASS (sessionStorage `carryon_draft:iac_form:*` keys go from 1 → 0 on cancel; reopen shows empty form).
+- Other 4 surfaces share the identical hook, so behavior is uniform by construction. Verifiable on production (info@carryon.us = real benefactor "Pete") or any seeded benefactor account.
+
 ## Known Refactor Targets (Post-Launch, Low Urgency)
 
 **Apr 28, 2026 — ALL major monoliths refactored this session:**
