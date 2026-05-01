@@ -72,7 +72,57 @@ export default function ConnectedProtocolPage() {
   const { user } = useAuth();
   const token = localStorage.getItem('carryon_token');
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-  const estateId = localStorage.getItem('selected_estate_id');
+
+  // Pitch-killer fix (Feb 2026): the page used to read selected_estate_id
+  // exactly once at mount as a const. If the user navigated here before
+  // the dashboard had a chance to seed that key (or after a sidebar
+  // action cleared it), CCP rendered a dead "No estate selected" panel
+  // until the user force-quit and relaunched. Now we keep estateId in
+  // state and self-heal: if localStorage has it, use it immediately;
+  // otherwise pull /api/estates and adopt the first owned estate, the
+  // same fallback Beneficiaries / MM / SDV / Vault all use.
+  const [estateId, setEstateId] = useState(() => localStorage.getItem('selected_estate_id') || '');
+  const [estateResolving, setEstateResolving] = useState(!estateId);
+
+  useEffect(() => {
+    if (estateId) return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      // Offline: don't flash empty. Try the local estates mirror; if it
+      // has anything owned, adopt it. Otherwise stay in resolving state
+      // until reconnect (an `online` listener below retriggers).
+      (async () => {
+        try {
+          const m = await import('../offline/repos/estatesRepo');
+          const localEstates = await m.getLocalEstates().catch(() => []);
+          const owned = (localEstates || []).filter(e => e.user_role_in_estate === 'owner' || (!e.user_role_in_estate && !e.is_beneficiary_estate));
+          if (owned[0]?.id) {
+            try { localStorage.setItem('selected_estate_id', owned[0].id); } catch {}
+            setEstateId(owned[0].id);
+          }
+        } catch { /* non-fatal */ }
+        setEstateResolving(false);
+      })();
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/estates`, { headers });
+        if (!res.ok) throw new Error('estates fetch failed');
+        const all = await res.json();
+        if (cancelled) return;
+        const owned = (all || []).filter(e => e.user_role_in_estate === 'owner' || (!e.user_role_in_estate && !e.is_beneficiary_estate));
+        if (owned[0]?.id) {
+          try { localStorage.setItem('selected_estate_id', owned[0].id); } catch {}
+          setEstateId(owned[0].id);
+        }
+      } catch { /* show no-estate panel below */ }
+      finally {
+        if (!cancelled) setEstateResolving(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [estateId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [view, setView] = useState('home'); // home, plans, plan-edit, active, checkin, history, wizard, debrief
   const [plans, setPlans] = useState([]);
@@ -174,12 +224,13 @@ export default function ConnectedProtocolPage() {
   }, [estateId]);
 
   useEffect(() => {
+    if (!estateId) { setLoading(false); return; }
     (async () => {
       setLoading(true);
       await Promise.all([fetchPlans(), fetchActive()]);
       setLoading(false);
     })();
-  }, []);
+  }, [estateId, fetchPlans, fetchActive]);
 
   // Auto-refresh when the offline outbox drains on reconnect — swaps
   // optimistic `_local_pending` CCP plans for the server-authoritative ones.
@@ -442,7 +493,7 @@ export default function ConnectedProtocolPage() {
 
 
 
-  if (loading) {
+  if (loading || estateResolving) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#d4af37' }} />
