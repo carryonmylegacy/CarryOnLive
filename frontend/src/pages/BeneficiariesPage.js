@@ -9,6 +9,7 @@ import { getLocalBeneficiaries, upsertLocalBeneficiaries, updateLocalBeneficiary
 import { prefetchPhotosFrom } from '../offline/prefetchPhotos';
 import { enqueue as enqueueOutbox } from '../offline/outbox';
 import { ReturnPopup } from '../components/GuidedActivation';
+import { useDraftState } from '../hooks/useDraftState';
 import {
   DndContext,
   closestCenter,
@@ -123,7 +124,13 @@ const BeneficiariesPage = () => {
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [estate, setEstate] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
+  // Draft persistence — Beneficiaries Add/Edit modal. Per-estate keyed.
+  // Sensitive (ssnLastFour) and binary (photoFile, photoPreview) fields
+  // are NOT persisted — see exclusions below. Read estate id sync from
+  // localStorage so the draft key is stable on first render.
+  const benEstateId = (typeof localStorage !== 'undefined' && localStorage.getItem('selected_estate_id')) || null;
+  const benDraftBase = benEstateId ? `ben_form:${benEstateId}` : null;
+  const [showAddModal, setShowAddModal] = useDraftState(benDraftBase ? `${benDraftBase}:open` : null, false);
   const [showPrimaryPopup, setShowPrimaryPopup] = useState(false);
   const [showBenAddedPopup, setShowBenAddedPopup] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -133,27 +140,52 @@ const BeneficiariesPage = () => {
   const addInFlightRef = useRef(false);
   const [sendingInvite, setSendingInvite] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null);
-  const [editingBeneficiary, setEditingBeneficiary] = useState(null);
+  const [editingBeneficiary, setEditingBeneficiary, clearEditingBenDraft] = useDraftState(benDraftBase ? `${benDraftBase}:editing` : null, null);
   const [copiedLink, setCopiedLink] = useState(null);
   const [treeAnimKey, setTreeAnimKey] = useState(0);
   
-  // Form state - enhanced demographics
-  const [firstName, setFirstName] = useState('');
-  const [middleName, setMiddleName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [suffix, setSuffix] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [relation, setRelation] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
-  const [gender, setGender] = useState('');
-  const [addressStreet, setAddressStreet] = useState('');
-  const [addressCity, setAddressCity] = useState('');
-  const [addressState, setAddressState] = useState('');
-  const [addressZip, setAddressZip] = useState('');
-  const [addressLine2, setAddressLine2] = useState('');
+  // Form state - enhanced demographics. Persisted per-estate; clears on
+  // save success and explicit cancel via clearBenDraft().
+  const [firstName, setFirstName, clearFirstNameDraft] = useDraftState(benDraftBase ? `${benDraftBase}:firstName` : null, '');
+  const [middleName, setMiddleName, clearMiddleNameDraft] = useDraftState(benDraftBase ? `${benDraftBase}:middleName` : null, '');
+  const [lastName, setLastName, clearLastNameDraft] = useDraftState(benDraftBase ? `${benDraftBase}:lastName` : null, '');
+  const [suffix, setSuffix, clearSuffixDraft] = useDraftState(benDraftBase ? `${benDraftBase}:suffix` : null, '');
+  const [email, setEmail, clearEmailDraft] = useDraftState(benDraftBase ? `${benDraftBase}:email` : null, '');
+  const [phone, setPhone, clearPhoneDraft] = useDraftState(benDraftBase ? `${benDraftBase}:phone` : null, '');
+  const [relation, setRelation, clearRelationDraft] = useDraftState(benDraftBase ? `${benDraftBase}:relation` : null, '');
+  const [dateOfBirth, setDateOfBirth, clearDOBDraft] = useDraftState(benDraftBase ? `${benDraftBase}:dob` : null, '');
+  const [gender, setGender, clearGenderDraft] = useDraftState(benDraftBase ? `${benDraftBase}:gender` : null, '');
+  const [addressStreet, setAddressStreet, clearStreetDraft] = useDraftState(benDraftBase ? `${benDraftBase}:street` : null, '');
+  const [addressCity, setAddressCity, clearCityDraft] = useDraftState(benDraftBase ? `${benDraftBase}:city` : null, '');
+  const [addressState, setAddressState, clearStateDraft] = useDraftState(benDraftBase ? `${benDraftBase}:state` : null, '');
+  const [addressZip, setAddressZip, clearZipDraft] = useDraftState(benDraftBase ? `${benDraftBase}:zip` : null, '');
+  const [addressLine2, setAddressLine2, clearLine2Draft] = useDraftState(benDraftBase ? `${benDraftBase}:line2` : null, '');
+  // ssnLastFour is intentionally NOT persisted — sensitive PII. The
+  // user has to re-enter the last 4 of SSN on resume. avatarColor is
+  // cosmetic and re-randomizes; photo file is binary and not eligible
+  // for sessionStorage.
   const [ssnLastFour, setSsnLastFour] = useState('');
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes, clearNotesDraft] = useDraftState(benDraftBase ? `${benDraftBase}:notes` : null, '');
+  // Aggregator: clears all persisted draft fields. Called on save
+  // success and the X / Cancel paths in the Add/Edit modal.
+  const clearBenDraft = () => {
+    clearEditingBenDraft();
+    clearFirstNameDraft();
+    clearMiddleNameDraft();
+    clearLastNameDraft();
+    clearSuffixDraft();
+    clearEmailDraft();
+    clearPhoneDraft();
+    clearRelationDraft();
+    clearDOBDraft();
+    clearGenderDraft();
+    clearStreetDraft();
+    clearCityDraft();
+    clearStateDraft();
+    clearZipDraft();
+    clearLine2Draft();
+    clearNotesDraft();
+  };
   const [avatarColor, setAvatarColor] = useState(avatarColors[0]);
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -627,6 +659,7 @@ const BeneficiariesPage = () => {
   };
 
   const resetForm = () => {
+    clearBenDraft();
     setFirstName('');
     setMiddleName('');
     setLastName('');

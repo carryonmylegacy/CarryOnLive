@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
+import { useDraftState } from '../hooks/useDraftState';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import {
@@ -236,10 +237,25 @@ const PaymentForm = ({ task, onPaymentSaved, getAuthHeaders }) => {
 const TrusteePage = () => {
   const { getAuthHeaders, subscriptionStatus } = useAuth();
   const [tasks, setTasks] = useState([]);
-  const [view, setView] = useState('list');
+  // Draft persistence — DTS create flow is multi-step (createStep) over a
+  // 11-field newTask object. If user navigates away mid-creation, restore
+  // them at the same step with all fields populated. Per-estate keyed.
+  // Read estate id sync from localStorage so the key is stable on first
+  // render; the component re-resolves estate later via fetchData.
+  const dtsEstateId = (typeof localStorage !== 'undefined' && localStorage.getItem('selected_estate_id')) || null;
+  const dtsBase = dtsEstateId ? `dts_form:${dtsEstateId}` : null;
+  const [view, setView, clearViewDraft] = useDraftState(dtsBase ? `${dtsBase}:view` : null, 'list');
   const [selectedId, setSelectedId] = useState(null);
-  const [createStep, setCreateStep] = useState(0);
-  const [newTask, setNewTask] = useState({ type: '', title: '', desc: '', confidential: 'full', discloseTo: '', timedRelease: '', beneficiary: '', notifyName: '', notifyPhone: '', notifyEmail: '', notifyAddress: '' });
+  const [createStep, setCreateStep, clearCreateStepDraft] = useDraftState(dtsBase ? `${dtsBase}:step` : null, 0);
+  const EMPTY_NEW_TASK = { type: '', title: '', desc: '', confidential: 'full', discloseTo: '', timedRelease: '', beneficiary: '', notifyName: '', notifyPhone: '', notifyEmail: '', notifyAddress: '' };
+  const [newTask, setNewTask, clearNewTaskDraft] = useDraftState(dtsBase ? `${dtsBase}:newTask` : null, EMPTY_NEW_TASK);
+  // Aggregator for save-success and explicit cancel. Does NOT clear :view
+  // because the cancel flow explicitly setView('list') and we want that
+  // 'list' value to persist as the resting state.
+  const clearDTSDraft = () => {
+    clearCreateStepDraft();
+    clearNewTaskDraft();
+  };
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [estateId, setEstateId] = useState(null);
   const [showTrialGate, setShowTrialGate] = useState(false);
@@ -349,6 +365,8 @@ const TrusteePage = () => {
         timed_release: newTask.timedRelease || null,
         beneficiary: newTask.beneficiary || null,
       }, getAuthHeaders());
+      clearDTSDraft();
+      clearViewDraft();
       setView('submitted');
     } catch (err) {
       console.error(err);
@@ -471,7 +489,7 @@ const TrusteePage = () => {
           <h2 className="text-2xl font-bold text-[var(--t)] mb-3" style={{ fontFamily: 'Cormorant Garamond, serif' }}>Request Submitted</h2>
           <p className="text-[var(--t3)] mb-3 leading-relaxed">Your DTS request has been encrypted and submitted to the CarryOn DTS team.</p>
           <p className="text-[var(--t4)] mb-8 text-sm leading-relaxed">You will receive a detailed itemized quote within 2-3 business days. You can then approve or reject each line item individually.</p>
-          <Button className="gold-button" onClick={() => { setView('list'); setCreateStep(0); setNewTask({ type: '', title: '', desc: '', confidential: 'full', discloseTo: '', timedRelease: '', beneficiary: '', notifyName: '', notifyPhone: '', notifyEmail: '', notifyAddress: '' }); }}>
+          <Button className="gold-button" onClick={() => { clearDTSDraft(); clearViewDraft(); setView('list'); setCreateStep(0); setNewTask(EMPTY_NEW_TASK); }}>
             Back to Trustee Services
           </Button>
         </div>
@@ -839,7 +857,7 @@ const TrusteePage = () => {
     const steps = ['Beneficiary', 'Task Type', 'Instructions', 'Confidentiality', 'Submit'];
     return (
       <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="dts-create">
-        <Button variant="outline" size="sm" className="border-[var(--b)] text-[var(--t3)]" onClick={() => { setView('list'); setCreateStep(0); }}>
+        <Button variant="outline" size="sm" className="border-[var(--b)] text-[var(--t3)]" onClick={() => { clearDTSDraft(); clearViewDraft(); setView('list'); setCreateStep(0); }}>
           <ChevronLeft className="w-4 h-4 mr-1" /> Cancel
         </Button>
         <div>

@@ -4,6 +4,7 @@ import axios from 'axios';
 import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
 import { PieProgress, MarkdownText, timeAgo, ThinkingIndicator } from '../components/guardian/GuardianWidgets';
+import { useDraftState } from '../hooks/useDraftState';
 
 import {
   User,
@@ -86,11 +87,23 @@ const GuardianPage = () => {
   // Landing state
   const [sessions, setSessions] = useState([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
-  const [landingInput, setLandingInput] = useState('');
+  // Draft persistence — if the user types a question on the EGA
+  // landing screen but navigates away before submitting, restore it
+  // when they come back. Keyed per-user (the chat is user-scoped, not
+  // estate-scoped, since EGA conversations follow the user across
+  // benefactor / beneficiary contexts).
+  const draftUserId = user?.id || null;
+  const [landingInput, setLandingInput, clearLandingInputDraft] = useDraftState(
+    draftUserId ? `ega_landing_input:${draftUserId}` : null,
+    '',
+  );
 
   // Chat state
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
+  const [input, setInput, clearInputDraft] = useDraftState(
+    draftUserId ? `ega_chat_input:${draftUserId}` : null,
+    '',
+  );
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [estateId, setEstateId] = useState(null);
@@ -210,6 +223,7 @@ const GuardianPage = () => {
       content: `Hey ${user?.name?.split(' ')[0] || 'there'}! I'm EGA — your AI estate planning specialist working inside your encrypted vault.\n\nI've got eyes on your documents, your beneficiary setup, and your overall readiness. I can **analyze your Vault**, **generate a personalized IAC**, or **break down your Readiness Score**.\n\nWhat's on your mind?`
     }]);
     setView('chat');
+    clearLandingInputDraft();
     setLandingInput('');
     try { localStorage.setItem('ega_active_session', newId); } catch (e) { /* silent */ }
     if (initialMessage) {
@@ -443,6 +457,7 @@ const GuardianPage = () => {
       : messageText;
 
     setMessages(prev => [...prev, { role: 'user', content: displayText }]);
+    clearInputDraft();
     setInput('');
     if (action) setActionLoading(action);
     setLoading(true);

@@ -28,8 +28,23 @@ import axios from 'axios';
 import { API_URL } from '../config';
 import { toast } from '../utils/toast';
 import { parseMoney, parseInteger, formatPydanticError } from '../utils/financialFormHelpers';
+import { useDraftState } from './useDraftState';
 
 const PARSERS = { parseMoney, parseInteger };
+
+// Fields that must NEVER be persisted to sessionStorage drafts. Login
+// passwords for biller/lender portals (BillForm.dav_login_password,
+// AccountForm.dav_login_password) are credentials; PII like SSNs would
+// also belong here if/when they're added to a CFP form.
+const SENSITIVE_FIELDS = new Set(['dav_login_password']);
+const sanitizeFinancialDraft = (formObj) => {
+  if (!formObj || typeof formObj !== 'object') return formObj;
+  const safe = { ...formObj };
+  for (const k of SENSITIVE_FIELDS) {
+    if (k in safe) safe[k] = '';
+  }
+  return safe;
+};
 
 export const useFinancialForm = ({
   entityType,
@@ -52,11 +67,22 @@ export const useFinancialForm = ({
   const [saving, setSaving] = useState(false);
   const [showNewCat, setShowNewCat] = useState(false);
   const [newCatName, setNewCatName] = useState('');
-  const [form, setForm] = useState(() => {
-    const merged = { ...buildDefaults(), ...(existing || {}) };
-    return migrateExisting ? migrateExisting(merged) : merged;
-  });
-  const update = useCallback((key, val) => setForm((prev) => ({ ...prev, [key]: val })), []);
+  // Draft persistence — for NEW entity creation only (not edits).
+  // Per-estate keyed by module so the user can have one draft each
+  // for bills/debts/accounts/property in flight at once. Sensitive
+  // fields (dav_login_password) sanitized before write.
+  const draftKey = (!isEdit && estateId)
+    ? `cfp_form:${estateId}:${module}`
+    : null;
+  const [form, setForm, clearFormDraft] = useDraftState(
+    draftKey,
+    () => {
+      const merged = { ...buildDefaults(), ...(existing || {}) };
+      return migrateExisting ? migrateExisting(merged) : merged;
+    },
+    { sanitize: sanitizeFinancialDraft },
+  );
+  const update = useCallback((key, val) => setForm((prev) => ({ ...prev, [key]: val })), [setForm]);
 
   const [smartLoading, setSmartLoading] = useState(false);
   const smartTimerRef = useRef(null);
@@ -116,6 +142,7 @@ export const useFinancialForm = ({
       if (r.queued) {
         toast.success(`${entityLabel} ${isEdit ? 'change' : 'saved'} offline — will sync when you reconnect.`);
       }
+      clearFormDraft();
       onSaved();
     } catch (err) {
       toast.error(formatPydanticError(err, `Failed to save ${entityLabel.toLowerCase()}`));

@@ -17,6 +17,7 @@ import { Skeleton } from '../components/ui/skeleton';
 import SlidePanel from '../components/SlidePanel';
 import { API_URL } from '../config';
 import { saveList, readList } from '../utils/localListCache';
+import { useDraftState } from '../hooks/useDraftState';
 import BillForm from '../components/financial/BillForm';
 import DebtForm from '../components/financial/DebtForm';
 import AccountForm from '../components/financial/AccountForm';
@@ -86,11 +87,17 @@ const FinancialPortalPage = () => {
   const [debtFilter, setDebtFilter] = useState('all');
   const [accountFilter, setAccountFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showBillForm, setShowBillForm] = useState(false);
-  const [showDebtForm, setShowDebtForm] = useState(false);
-  const [showAccountForm, setShowAccountForm] = useState(false);
-  const [showPropertyForm, setShowPropertyForm] = useState(false);
-  const [editItem, setEditItem] = useState(null);
+  // Draft persistence — the 4 slide-out create panels (Bill / Debt /
+  // Account / Property) and the editItem context auto-resume when the
+  // user navigates away and returns. The form fields inside each panel
+  // are persisted via useFinancialForm (sensitive fields sanitized).
+  const cfpEstateId = (typeof localStorage !== 'undefined' && localStorage.getItem('selected_estate_id')) || null;
+  const cfpDraftBase = cfpEstateId ? `cfp_form:${cfpEstateId}` : null;
+  const [showBillForm, setShowBillForm] = useDraftState(cfpDraftBase ? `${cfpDraftBase}:billOpen` : null, false);
+  const [showDebtForm, setShowDebtForm] = useDraftState(cfpDraftBase ? `${cfpDraftBase}:debtOpen` : null, false);
+  const [showAccountForm, setShowAccountForm] = useDraftState(cfpDraftBase ? `${cfpDraftBase}:acctOpen` : null, false);
+  const [showPropertyForm, setShowPropertyForm] = useDraftState(cfpDraftBase ? `${cfpDraftBase}:propOpen` : null, false);
+  const [editItem, setEditItem] = useDraftState(cfpDraftBase ? `${cfpDraftBase}:editItem` : null, null);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [exportingHandoff, setExportingHandoff] = useState(false);
   const [selectedCalendarDay, setSelectedCalendarDay] = useState(null);

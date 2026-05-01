@@ -66,9 +66,17 @@ const safeRemove = (key) => {
  *   null to disable persistence (e.g. while estate is still resolving)
  *   — the hook then behaves like vanilla useState.
  * @param {*} initial — initial value used when no draft exists.
+ * @param {object} [options]
+ * @param {(value: any) => any} [options.sanitize] — optional pre-write
+ *   transformer. Called with the current value; should return a copy
+ *   safe to persist (e.g. with sensitive fields stripped). Useful for
+ *   forms that contain passwords or other PII we don't want sitting in
+ *   sessionStorage. The in-memory state is unchanged; only the
+ *   persisted snapshot is filtered.
  * @returns {[value, setValue, clearDraft]}
  */
-export function useDraftState(storageKey, initial) {
+export function useDraftState(storageKey, initial, options) {
+  const sanitize = options?.sanitize;
   // Resolve the seed value once, on first render. If the storageKey
   // is null we skip the read entirely so the hook stays cheap when
   // disabled.
@@ -107,8 +115,9 @@ export function useDraftState(storageKey, initial) {
       skipNextWriteRef.current = false;
       return;
     }
-    safeWrite(keyRef.current, value);
-  }, [value]);
+    const valueToWrite = sanitize ? sanitize(value) : value;
+    safeWrite(keyRef.current, valueToWrite);
+  }, [value, sanitize]);
 
   const clearDraft = useCallback(() => {
     if (keyRef.current) safeRemove(keyRef.current);
