@@ -87,7 +87,7 @@ const MessagesPage = () => {
   // would be confusing on resume.
   const draftEstateId = (typeof localStorage !== 'undefined' && localStorage.getItem('selected_estate_id')) || null;
   const draftBase = draftEstateId ? `mm_form:${draftEstateId}` : null;
-  const [showCreateModal, setShowCreateModal, clearShowCreateDraft] = useDraftState(draftBase ? `${draftBase}:open` : null, false);
+  const [showCreateModal, setShowCreateModal] = useDraftState(draftBase ? `${draftBase}:open` : null, false);
   const [creating, setCreating] = useState(false);
   // Synchronous guard against double-submit (see handleCreate) — useState
   // updates are async, so disabled={creating} alone leaks rapid taps.
@@ -109,11 +109,14 @@ const MessagesPage = () => {
   const [triggerAge, setTriggerAge, clearTriggerAgeDraft] = useDraftState(draftBase ? `${draftBase}:triggerAge` : null, '');
   const [triggerDate, setTriggerDate, clearTriggerDateDraft] = useDraftState(draftBase ? `${draftBase}:triggerDate` : null, '');
   const [customEventLabel, setCustomEventLabel, clearCustomEventDraft] = useDraftState(draftBase ? `${draftBase}:customEvent` : null, '');
-  // Aggregator that wipes every persisted MM form key in one shot.
-  // Called from resetForm so save-success and explicit cancel both
-  // leave a clean slate.
+  // Aggregator that wipes persisted MM form FIELD keys in one shot.
+  // Intentionally does NOT clear `:open` — the modal-open flag is
+  // managed by setShowCreateModal itself (true on open, false on
+  // close). Bundling :open into the bulk-clear caused the "+ Create
+  // Message" click handler to arm a skip flag that swallowed the
+  // subsequent setShowCreateModal(true) write — so the modal never
+  // re-opened on a later navigate-away-and-back.
   const clearMMDraft = () => {
-    clearShowCreateDraft();
     clearEditingDraft();
     clearTitleDraft();
     clearContentDraft();
