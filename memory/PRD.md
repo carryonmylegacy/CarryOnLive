@@ -772,6 +772,20 @@ Closes the Apr-29 fork's unverified fix. `clearDraft()` was defined but never ca
 
 Verification note: UI-level verification on preview pod is blocked because CCP (`ccp` feature key) is `default_off` for every tier including premium. Founder must flip CCP on for at least one tier in Admin → Feature Gates before re-running the frontend wizard test.
 
+## CCP Pitch-Killer Bug Fix (Feb 2026 — user reported during live B2B pitch)
+User screen-captured an empty `No estate selected — Open your dashboard first to connect to your estate.` state on `/connected-protocol` after clicking around the app. Force-quit + relaunch made the data come back. Same flash happened during a live Zoom pitch.
+
+**Root cause** (`pages/ConnectedProtocolPage.js:75`): `const estateId = localStorage.getItem('selected_estate_id')` was a one-shot synchronous read at component mount. If the user landed here before `/dashboard` had seeded the key — or after a Sidebar action (portal switch, sign-out path) cleared it — the page rendered the dead empty panel until force-quit.
+
+**Fix**: estateId now lives in component state with a self-heal fallback (mirrors the pattern in `BeneficiariesPage.js`, `MessagesPage.js`, `VaultPage.js`):
+- Initial state reads `localStorage.selected_estate_id`. If present, render normally.
+- If absent, set `estateResolving=true`, fetch `/api/estates`, adopt the first owned estate, persist back to localStorage, set state.
+- Offline branch falls back to the local Dexie estates mirror.
+- Loading guard now ANDs in `estateResolving` so the gold spinner shows during the resolve window — the empty panel ONLY renders when the user genuinely has zero owned estates.
+- The two `fetchPlans`/`fetchActive` initial useEffects now depend on `[estateId, fetchPlans, fetchActive]` so they re-run when the heal completes.
+
+**Verified end-to-end** (iter 108 testing report): Smoke 2 — deleted `selected_estate_id`, navigated directly to `/connected-protocol`, gold spinner showed during the heal, page rendered CCP home, localStorage repopulated. Empty panel never appeared.
+
 ## Known Refactor Targets (Post-Launch, Low Urgency)
 
 **Apr 28, 2026 — ALL major monoliths refactored this session:**
