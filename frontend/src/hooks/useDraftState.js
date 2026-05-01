@@ -84,14 +84,35 @@ export function useDraftState(storageKey, initial) {
   const keyRef = useRef(storageKey);
   useEffect(() => { keyRef.current = storageKey; }, [storageKey]);
 
-  // Mirror to sessionStorage on every value change.
+  // After clearDraft is called, suppress the next autosave writeback so
+  // a synchronous setState chain in a Cancel handler (clearDraft();
+  // setTitle(''); setContent('')) doesn't immediately recreate the
+  // key with default values. The flag is consumed by the next [value]
+  // effect run, then restored to false so subsequent edits autosave
+  // normally.
+  const skipNextWriteRef = useRef(false);
+  // Skip the very first autosave too: useEffect always fires once on
+  // mount, and we don't want that initial run to overwrite a freshly-
+  // read draft with the same value (harmless) OR to write a default
+  // before the user has actually typed anything (chatty noise).
+  const hasMountedRef = useRef(false);
+
   useEffect(() => {
     if (!keyRef.current) return;
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+    if (skipNextWriteRef.current) {
+      skipNextWriteRef.current = false;
+      return;
+    }
     safeWrite(keyRef.current, value);
   }, [value]);
 
   const clearDraft = useCallback(() => {
     if (keyRef.current) safeRemove(keyRef.current);
+    skipNextWriteRef.current = true;
   }, []);
 
   return [value, setValue, clearDraft];
