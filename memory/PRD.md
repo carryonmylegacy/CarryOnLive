@@ -819,6 +819,23 @@ User reported: draft persistence works everywhere except MM. "I would hate for s
 
 **Verified end-to-end (iter 112)**: typed long title + content, navigated `/messages → /dashboard → /messages`, modal re-opened with all fields fully restored. Cancel cleared all field drafts (only `:open=false` remained). Re-open after cancel showed empty fields (no stale data).
 
+## Draft Persistence — Phase 2 (Feb 2026)
+User extended the feature to **4 more surfaces**: Beneficiaries, EGA (chat input), CFP (4 SlidePanels via `useFinancialForm`), DTS (multi-step `newTask`). Total now **10 surfaces** covered.
+
+### New surfaces wired
+- **Beneficiaries** (`pages/BeneficiariesPage.js`): `showAddModal` + 15 form fields + editing target. **Excluded by design**: `ssnLastFour` (sensitive PII), `photoFile`/`photoPreview` (binary), `avatarColor` (cosmetic). Cleared in `resetForm`.
+- **EGA** (`pages/GuardianPage.js`): `landingInput` + `input` (in-chat). User-scoped key (not estate-scoped — chat follows the user across portals). Cleared after `sendMessage` success.
+- **CFP** (`pages/FinancialPortalPage.js` + `hooks/useFinancialForm.js`): 4 `showXxxForm` SlidePanel flags + `editItem` at parent; form fields persisted via `useFinancialForm` for new entities only (not edits). **Excluded**: `dav_login_password` (sensitive — sanitized before write via new `sanitize` option on `useDraftState`).
+- **DTS** (`pages/TrusteePage.js`): `view` + `createStep` + 11-field `newTask`. Cleared on submit success and Cancel paths.
+
+### Hook upgrade
+- `useDraftState` now accepts `options.sanitize` — a pre-write transformer for stripping sensitive fields from the persisted snapshot without touching the in-memory state.
+
+### Verified (iter 113)
+- Beneficiaries draft → restore → cancel-clears (1 of 17 keys had a lingering `:open` race; **fixed in follow-up by adding `clearShowAddModalDraft` to `clearBenDraft` aggregator**).
+- EGA landing-input draft → restore → clear-on-send.
+- CFP and DTS could not exercise on preview pod (admin shell takes over `/financial`; transient chunk 403s on `/trustee`). Both are environment-only — the user will verify them on production where `info@carryon.us` is the real benefactor "Pete".
+
 ## Known Refactor Targets (Post-Launch, Low Urgency)
 
 **Apr 28, 2026 — ALL major monoliths refactored this session:**

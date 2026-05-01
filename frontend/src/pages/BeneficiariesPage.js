@@ -130,7 +130,7 @@ const BeneficiariesPage = () => {
   // localStorage so the draft key is stable on first render.
   const benEstateId = (typeof localStorage !== 'undefined' && localStorage.getItem('selected_estate_id')) || null;
   const benDraftBase = benEstateId ? `ben_form:${benEstateId}` : null;
-  const [showAddModal, setShowAddModal] = useDraftState(benDraftBase ? `${benDraftBase}:open` : null, false);
+  const [showAddModal, setShowAddModal, clearShowAddModalDraft] = useDraftState(benDraftBase ? `${benDraftBase}:open` : null, false);
   const [showPrimaryPopup, setShowPrimaryPopup] = useState(false);
   const [showBenAddedPopup, setShowBenAddedPopup] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -167,8 +167,11 @@ const BeneficiariesPage = () => {
   const [ssnLastFour, setSsnLastFour] = useState('');
   const [notes, setNotes, clearNotesDraft] = useDraftState(benDraftBase ? `${benDraftBase}:notes` : null, '');
   // Aggregator: clears all persisted draft fields. Called on save
-  // success and the X / Cancel paths in the Add/Edit modal.
+  // success and the X / Cancel paths in the Add/Edit modal. Also
+  // clears the :open flag so a canceled draft doesn't leave the
+  // modal stuck "open" in storage (verified gap from iter 113).
   const clearBenDraft = () => {
+    clearShowAddModalDraft();
     clearEditingBenDraft();
     clearFirstNameDraft();
     clearMiddleNameDraft();
