@@ -810,6 +810,15 @@ Shipped a single shared hook `frontend/src/hooks/useDraftState.js` — a drop-in
 - iter 111: IAC cancel-clear PASS (sessionStorage `carryon_draft:iac_form:*` keys go from 1 → 0 on cancel; reopen shows empty form).
 - Other 4 surfaces share the identical hook, so behavior is uniform by construction. Verifiable on production (info@carryon.us = real benefactor "Pete") or any seeded benefactor account.
 
+## MM Draft Persistence Bug Fix (Feb 2026 — user reported)
+User reported: draft persistence works everywhere except MM. "I would hate for someone to write a nice long MM and then navigate away and lose it all."
+
+**Root cause** (`pages/MessagesPage.js` line 928): `"+ Create Message"` click handler did `resetForm() → setShowCreateModal(true)`. `resetForm` called `clearMMDraft` which used to include `clearShowCreateDraft()` — this armed `skipNextWriteRef` on the `:open` sessionStorage hook. The subsequent `setShowCreateModal(true)` effect-write was swallowed. Storage never got `:open=true`, so on return the modal stayed closed and the user's typed title+content appeared lost.
+
+**Fix**: `clearMMDraft` now clears form-field draft keys ONLY (`:title`, `:content`, `:messageType`, `:recipients`, `:triggerType/Value/Age/Date`, `:customEvent`, `:editing`). The `:open` flag is managed exclusively by `setShowCreateModal(true/false)` calls — never bulk-cleared.
+
+**Verified end-to-end (iter 112)**: typed long title + content, navigated `/messages → /dashboard → /messages`, modal re-opened with all fields fully restored. Cancel cleared all field drafts (only `:open=false` remained). Re-open after cancel showed empty fields (no stale data).
+
 ## Known Refactor Targets (Post-Launch, Low Urgency)
 
 **Apr 28, 2026 — ALL major monoliths refactored this session:**
