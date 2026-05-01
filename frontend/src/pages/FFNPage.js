@@ -14,6 +14,7 @@ import { SectionLockBanner, SectionLockedOverlay } from '../components/security/
 import { API_URL } from '../config';
 import { formatPhoneUS } from '../utils/phoneFormat';
 import { saveList, readList } from '../utils/localListCache';
+import { useDraftState } from '../hooks/useDraftState';
 
 const EMPTY_FORM = { name: '', phone: '', email: '', address: '', relationship: '', notes: '' };
 
@@ -22,9 +23,18 @@ export default function FFNPage() {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [estateId, setEstateId] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState(EMPTY_FORM);
+  // Draft persistence: navigating away mid-add must restore the open
+  // form + filled fields when the user returns. Keyed per estate so
+  // multi-estate users don't bleed drafts.
+  const draftKey = estateId ? `ffn_form:${estateId}` : null;
+  const [showForm, setShowForm, clearShowFormDraft] = useDraftState(draftKey ? `${draftKey}:open` : null, false);
+  const [editingId, setEditingId, clearEditingDraft] = useDraftState(draftKey ? `${draftKey}:editing` : null, null);
+  const [form, setForm, clearFormDraft] = useDraftState(draftKey ? `${draftKey}:fields` : null, EMPTY_FORM);
+  const clearDraft = useCallback(() => {
+    clearShowFormDraft();
+    clearEditingDraft();
+    clearFormDraft();
+  }, [clearShowFormDraft, clearEditingDraft, clearFormDraft]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(null);
 
@@ -107,6 +117,7 @@ export default function FFNPage() {
       } else {
         fetchData();
       }
+      clearDraft();
       setShowForm(false);
       setEditingId(null);
       setForm(EMPTY_FORM);
@@ -275,7 +286,7 @@ export default function FFNPage() {
               <h2 className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
                 {editingId ? 'Edit Contact' : 'Add Contact'}
               </h2>
-              <button onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); }}
+              <button onClick={() => { clearDraft(); setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); }}
                 className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)]">
                 <X className="w-4 h-4" />
               </button>

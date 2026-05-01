@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { cachedGet } from '../utils/apiCache';
@@ -59,6 +59,7 @@ const EMPTY_FORM = {
 };
 
 import { formatPhoneUS } from '../utils/phoneFormat';
+import { useDraftState } from '../hooks/useDraftState';
 
 const ChecklistPage = () => {
   const { getAuthHeaders } = useAuth();
@@ -69,9 +70,18 @@ const ChecklistPage = () => {
   const [checklists, setChecklists] = useState([]);
   const [estate, setEstate] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [form, setForm] = useState({ ...EMPTY_FORM });
+  // Draft persistence — keep the open form + filled fields across
+  // navigation. Keyed per estate so multi-estate users don't bleed
+  // drafts. Clear on save success and explicit cancel.
+  const draftBase = estate?.id ? `iac_form:${estate.id}` : null;
+  const [showForm, setShowForm, clearShowFormDraft] = useDraftState(draftBase ? `${draftBase}:open` : null, false);
+  const [editingItem, setEditingItem, clearEditingDraft] = useDraftState(draftBase ? `${draftBase}:editing` : null, null);
+  const [form, setForm, clearFormFieldsDraft] = useDraftState(draftBase ? `${draftBase}:fields` : null, { ...EMPTY_FORM });
+  const clearDraft = useCallback(() => {
+    clearShowFormDraft();
+    clearEditingDraft();
+    clearFormFieldsDraft();
+  }, [clearShowFormDraft, clearEditingDraft, clearFormFieldsDraft]);
   const [saving, setSaving] = useState(false);
   // Synchronous double-submit guard for handleSave — disabled={saving}
   // alone leaks rapid double-taps because React state is async.
@@ -281,6 +291,7 @@ const ChecklistPage = () => {
   };
 
   const closeForm = () => {
+    clearDraft();
     setShowForm(false);
     setEditingItem(null);
     setForm({ ...EMPTY_FORM });

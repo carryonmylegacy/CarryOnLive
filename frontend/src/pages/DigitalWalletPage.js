@@ -15,6 +15,7 @@ import axios from 'axios';
 import { cachedGet } from '../utils/apiCache';
 import { API_URL } from '../config';
 import { saveList, readList } from '../utils/localListCache';
+import { useDraftState } from '../hooks/useDraftState';
 
 const CATEGORIES = [
   { value: 'crypto', label: 'Cryptocurrency', icon: Wallet },
@@ -34,7 +35,11 @@ const DigitalWalletPage = () => {
   const [entries, setEntries] = useState([]);
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
+  // Draft persistence — keep the add panel open if the user navigates
+  // away mid-creation. Per-estate so multi-estate users don't bleed.
+  const draftEstateId = (typeof localStorage !== 'undefined' && localStorage.getItem('selected_estate_id')) || null;
+  const draftKey = draftEstateId ? `dav_form:${draftEstateId}:open` : null;
+  const [showAdd, setShowAdd, clearShowAddDraft] = useDraftState(draftKey, false);
   const [editEntry, setEditEntry] = useState(null);
   const [visiblePasswords, setVisiblePasswords] = useState({});
   const [showReturnPopup, setShowReturnPopup] = useState(false);
@@ -104,6 +109,7 @@ const DigitalWalletPage = () => {
 
   const handleCredentialSaved = async () => {
     const wasFirstEntry = entries.length === 0;
+    clearShowAddDraft();
     setShowAdd(false);
     setEditEntry(null);
     await fetchData();
@@ -286,7 +292,7 @@ const DigitalWalletPage = () => {
         <WalletEntryPanel
           entry={editEntry}
           beneficiaries={beneficiaries}
-          onClose={() => { setShowAdd(false); setEditEntry(null); }}
+          onClose={() => { clearShowAddDraft(); setShowAdd(false); setEditEntry(null); }}
           onSaved={handleCredentialSaved}
           getAuthHeaders={getAuthHeaders}
         />
@@ -308,15 +314,29 @@ const DigitalWalletPage = () => {
 };
 
 const WalletEntryPanel = ({ entry, beneficiaries, onClose, onSaved, getAuthHeaders }) => {
-  const [name, setName] = useState(entry?.account_name || '');
-  const [login, setLogin] = useState(entry?.login_username || '');
+  // Draft persistence for NEW credential creation only. Sensitive
+  // fields (password, additional_access) are intentionally NOT
+  // persisted — they're re-entered on resume. Per-estate keyed so
+  // multi-estate users don't bleed drafts.
+  const draftEstateId = (typeof localStorage !== 'undefined' && localStorage.getItem('selected_estate_id')) || null;
+  const isNew = !entry;
+  const dKey = (isNew && draftEstateId) ? `dav_form:${draftEstateId}` : null;
+  const [name, setName, clearNameDraft] = useDraftState(dKey ? `${dKey}:name` : null, entry?.account_name || '');
+  const [login, setLogin, clearLoginDraft] = useDraftState(dKey ? `${dKey}:login` : null, entry?.login_username || '');
   const [password, setPassword] = useState(entry?.password || '');
   const [access, setAccess] = useState(entry?.additional_access || '');
-  const [notes, setNotes] = useState(entry?.notes || '');
-  const [category, setCategory] = useState(entry?.category || 'other');
-  const [beneficiaryId, setBeneficiaryId] = useState(entry?.assigned_beneficiary_id || '');
+  const [notes, setNotes, clearNotesDraft] = useDraftState(dKey ? `${dKey}:notes` : null, entry?.notes || '');
+  const [category, setCategory, clearCategoryDraft] = useDraftState(dKey ? `${dKey}:category` : null, entry?.category || 'other');
+  const [beneficiaryId, setBeneficiaryId, clearBenIdDraft] = useDraftState(dKey ? `${dKey}:benId` : null, entry?.assigned_beneficiary_id || '');
   const [saving, setSaving] = useState(false);
   const [showPw, setShowPw] = useState(false);
+  const clearPanelDrafts = () => {
+    clearNameDraft();
+    clearLoginDraft();
+    clearNotesDraft();
+    clearCategoryDraft();
+    clearBenIdDraft();
+  };
 
   const handleSave = async () => {
     if (!name) { toast.error('Account Name is required'); return; }
@@ -341,6 +361,7 @@ const WalletEntryPanel = ({ entry, beneficiaries, onClose, onSaved, getAuthHeade
       });
       if (!r.ok) throw r.error || new Error('Save failed');
       if (r.queued) toast.success(`Account ${entry ? 'change' : 'saved'} offline — will sync when you reconnect.`);
+      clearPanelDrafts();
       onSaved();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to save'); }
     setSaving(false);

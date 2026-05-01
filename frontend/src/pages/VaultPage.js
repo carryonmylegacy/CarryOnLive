@@ -36,6 +36,7 @@ import VaultUnlockModal from '../components/vault/VaultUnlockModal';
 import VaultEditPanel from '../components/vault/VaultEditPanel';
 import { VaultSetLockModal, VaultRemoveLockModal, VaultBackupCodeModal } from '../components/vault/VaultLockModals';
 const PDFViewerModal = lazy(() => import('../components/PDFViewerModal'));
+import { useDraftState } from '../hooks/useDraftState';
 
 const categories = [
   { id: 'all', label: 'All', icon: FolderOpen },
@@ -64,7 +65,13 @@ const VaultPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const searchTimerRef = useRef(null);
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [showUploadModal, setShowUploadModal] = useState(false);
+  // Draft persistence — read estateId synchronously from localStorage
+  // so the per-estate draft key is stable from first render. Files
+  // (uploadFile) are NOT persisted — sessionStorage can't hold them
+  // and a stale file reference would be misleading on resume.
+  const draftEstateId = (typeof localStorage !== 'undefined' && localStorage.getItem('selected_estate_id')) || null;
+  const draftBase = draftEstateId ? `sdv_form:${draftEstateId}` : null;
+  const [showUploadModal, setShowUploadModal, clearShowUploadDraft] = useDraftState(draftBase ? `${draftBase}:open` : null, false);
   const [showLockModal, setShowLockModal] = useState(false);
   const [showBackupCodeModal, setShowBackupCodeModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -92,13 +99,19 @@ const VaultPage = () => {
   const [voiceHint, setVoiceHint] = useState('');
   const recognitionRef = useRef(null);
   
-  // Upload form state
-  const [uploadName, setUploadName] = useState('');
-  const [uploadCategory, setUploadCategory] = useState('legal');
-  const [uploadLockType, setUploadLockType] = useState('none');
+  // Upload form state (text fields persisted; file ref is NOT persisted)
+  const [uploadName, setUploadName, clearUploadNameDraft] = useDraftState(draftBase ? `${draftBase}:name` : null, '');
+  const [uploadCategory, setUploadCategory, clearUploadCategoryDraft] = useDraftState(draftBase ? `${draftBase}:category` : null, 'legal');
+  const [uploadLockType, setUploadLockType, clearUploadLockTypeDraft] = useDraftState(draftBase ? `${draftBase}:lockType` : null, 'none');
   const [uploadLockPassword, setUploadLockPassword] = useState('');
   const [uploadVoicePassphrase, setUploadVoicePassphrase] = useState('');
   const [uploadFile, setUploadFile] = useState(null);
+  const clearSDVDraft = () => {
+    clearShowUploadDraft();
+    clearUploadNameDraft();
+    clearUploadCategoryDraft();
+    clearUploadLockTypeDraft();
+  };
   
   // Edit form state
   const [showEditModal, setShowEditModal] = useState(false);
@@ -655,6 +668,7 @@ const VaultPage = () => {
   };
 
   const resetUploadForm = () => {
+    clearSDVDraft();
     setUploadName('');
     setUploadCategory('legal');
     setUploadLockType('none');

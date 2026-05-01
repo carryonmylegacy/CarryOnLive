@@ -48,6 +48,7 @@ import { API_URL } from '../config';
 import VideoPlaybackModal from '../components/messages/VideoPlaybackModal';
 import MessageCard from '../components/messages/MessageCard';
 import MMGuidedWizard from '../components/messages/MMGuidedWizard';
+import { useDraftState } from '../hooks/useDraftState';
 import VideoRecordingOverlay from '../components/messages/VideoRecordingOverlay';
 import { getOfflineMode } from '../offline/featureFlag';
 import { getLocalEstates } from '../offline/repos/estatesRepo';
@@ -77,28 +78,53 @@ const MessagesPage = () => {
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [estate, setEstate] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  // Draft persistence — read estateId synchronously from localStorage
+  // so the per-estate draft key is stable from first render. If the
+  // user is mid-creating a message and navigates away, returning to
+  // /messages reopens the modal with all text fields restored.
+  // Binary attachments (video/audio/files) are intentionally NOT
+  // persisted — sessionStorage can't hold blobs and stale recordings
+  // would be confusing on resume.
+  const draftEstateId = (typeof localStorage !== 'undefined' && localStorage.getItem('selected_estate_id')) || null;
+  const draftBase = draftEstateId ? `mm_form:${draftEstateId}` : null;
+  const [showCreateModal, setShowCreateModal, clearShowCreateDraft] = useDraftState(draftBase ? `${draftBase}:open` : null, false);
   const [creating, setCreating] = useState(false);
   // Synchronous guard against double-submit (see handleCreate) — useState
   // updates are async, so disabled={creating} alone leaks rapid taps.
   const createInFlightRef = useRef(false);
-  const [editingMessage, setEditingMessage] = useState(null);
+  const [editingMessage, setEditingMessage, clearEditingDraft] = useDraftState(draftBase ? `${draftBase}:editing` : null, null);
   const [activeTab, setActiveTab] = useState('all');
   // Guided mode — simplified wizard for onboarding
   const [guidedMode, setGuidedMode] = useState(false);
   const [guidedStep, setGuidedStep] = useState(1);
   const autoOpenedRef = useRef(false);
   
-  // Form state
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [messageType, setMessageType] = useState('text');
-  const [selectedRecipients, setSelectedRecipients] = useState([]);
-  const [triggerType, setTriggerType] = useState('immediate');
-  const [triggerValue, setTriggerValue] = useState('');
-  const [triggerAge, setTriggerAge] = useState('');
-  const [triggerDate, setTriggerDate] = useState('');
-  const [customEventLabel, setCustomEventLabel] = useState('');
+  // Form state (text fields persisted; binary attachments are not)
+  const [title, setTitle, clearTitleDraft] = useDraftState(draftBase ? `${draftBase}:title` : null, '');
+  const [content, setContent, clearContentDraft] = useDraftState(draftBase ? `${draftBase}:content` : null, '');
+  const [messageType, setMessageType, clearMessageTypeDraft] = useDraftState(draftBase ? `${draftBase}:type` : null, 'text');
+  const [selectedRecipients, setSelectedRecipients, clearRecipientsDraft] = useDraftState(draftBase ? `${draftBase}:recipients` : null, []);
+  const [triggerType, setTriggerType, clearTriggerTypeDraft] = useDraftState(draftBase ? `${draftBase}:triggerType` : null, 'immediate');
+  const [triggerValue, setTriggerValue, clearTriggerValueDraft] = useDraftState(draftBase ? `${draftBase}:triggerValue` : null, '');
+  const [triggerAge, setTriggerAge, clearTriggerAgeDraft] = useDraftState(draftBase ? `${draftBase}:triggerAge` : null, '');
+  const [triggerDate, setTriggerDate, clearTriggerDateDraft] = useDraftState(draftBase ? `${draftBase}:triggerDate` : null, '');
+  const [customEventLabel, setCustomEventLabel, clearCustomEventDraft] = useDraftState(draftBase ? `${draftBase}:customEvent` : null, '');
+  // Aggregator that wipes every persisted MM form key in one shot.
+  // Called from resetForm so save-success and explicit cancel both
+  // leave a clean slate.
+  const clearMMDraft = () => {
+    clearShowCreateDraft();
+    clearEditingDraft();
+    clearTitleDraft();
+    clearContentDraft();
+    clearMessageTypeDraft();
+    clearRecipientsDraft();
+    clearTriggerTypeDraft();
+    clearTriggerValueDraft();
+    clearTriggerAgeDraft();
+    clearTriggerDateDraft();
+    clearCustomEventDraft();
+  };
   const [playingVideoUrl, setPlayingVideoUrl] = useState(null);
   const [loadingPlayback, setLoadingPlayback] = useState(false);
   const [showReturnPopup, setShowReturnPopup] = useState(false);
@@ -756,6 +782,7 @@ const MessagesPage = () => {
 
 
   const resetForm = () => {
+    clearMMDraft();
     setTitle('');
     setContent('');
     setMessageType('text');

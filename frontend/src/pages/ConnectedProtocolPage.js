@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
 import { formatPhoneUS } from '../utils/phoneFormat';
 import { saveList, readList } from '../utils/localListCache';
+import { useDraftState } from '../hooks/useDraftState';
 import CCPPlanEditor from '../components/ccp/CCPPlanEditor';
 import CCPActiveView from '../components/ccp/CCPActiveView';
 import CCPWizard from '../components/ccp/CCPWizard';
@@ -124,7 +125,15 @@ export default function ConnectedProtocolPage() {
     return () => { cancelled = true; };
   }, [estateId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const [view, setView] = useState('home'); // home, plans, plan-edit, active, checkin, history, wizard, debrief
+  // Draft persistence for the parent view state — when a benefactor
+  // is mid-wizard and taps Dashboard / another sidebar item, returning
+  // to /connected-protocol must drop them back into the wizard at the
+  // same step rather than the home tile grid. The wizard's internal
+  // step/inputs are already persisted via its own sessionStorage key
+  // (see CCPWizard.js); this hook just keeps the parent route aware
+  // that the wizard is open.
+  const ccpViewKey = estateId ? `ccp_view:${estateId}` : null;
+  const [view, setView, clearViewDraft] = useDraftState(ccpViewKey, 'home'); // home, plans, plan-edit, active, checkin, history, wizard, debrief
   const [plans, setPlans] = useState([]);
   const [activeEmergency, setActiveEmergency] = useState(null);
   const [statusBoard, setStatusBoard] = useState([]);
@@ -613,8 +622,8 @@ export default function ConnectedProtocolPage() {
       <CCPWizard
         estateId={estateId}
         token={token}
-        onComplete={() => { setView('plans'); fetchPlans(); }}
-        onCancel={() => setView(plans.length > 0 ? 'plans' : 'home')}
+        onComplete={() => { clearViewDraft(); setView('plans'); fetchPlans(); }}
+        onCancel={() => { clearViewDraft(); setView(plans.length > 0 ? 'plans' : 'home'); }}
       />
     );
   }
