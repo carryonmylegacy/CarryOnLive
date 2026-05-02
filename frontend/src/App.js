@@ -126,10 +126,15 @@ class RouteErrorBoundary extends React.Component {
     // Detect "chunk failed to load" errors — these happen when the user
     // navigates to a lazy-loaded route whose JS bundle isn't in the SW
     // cache and the device is offline. They need a friendlier message.
+    // Patterns cover Chrome/Firefox/Edge ("Loading chunk N failed",
+    // "Failed to fetch dynamically imported module"), Safari/iOS PWA
+    // ("Importing a module script failed", "Module specifier"), and
+    // service-worker fetch failures triggered by a missing SW cache.
     const msg = String(error?.message || error || '');
     const name = String(error?.name || '');
-    const isChunk = /loading chunk \d+ failed|failed to fetch dynamically imported module|import.*(failed|error)|script error/i.test(msg)
-      || name === 'ChunkLoadError';
+    const isChunk = /loading chunk \d+ failed|failed to fetch dynamically imported module|importing a module script failed|module specifier|import.*(failed|error)|script error|failed to fetch/i.test(msg)
+      || name === 'ChunkLoadError'
+      || name === 'TypeError' && /fetch|import|module/i.test(msg);
     return { hasError: true, errorKind: isChunk ? 'chunk' : 'generic' };
   }
   componentDidCatch(error, info) {
@@ -173,41 +178,61 @@ class RouteErrorBoundary extends React.Component {
   handleRetry = () => {
     this.setState({ hasError: false, errorPath: null, errorKind: null });
   };
+  handleSignOut = () => {
+    // Hard escape hatch: clear every auth-related artifact so the user
+    // can never get stuck on this screen with no way out (which has
+    // happened on iPhone PWA where they had to uninstall the app).
+    // Listed keys mirror the AuthContext.logout() implementation; we
+    // duplicate them here because the boundary may render OUTSIDE the
+    // AuthContext provider tree depending on where the throw came from.
+    try {
+      ['carryon_token','carryon_user','selected_estate_id','beneficiary_estate_id','beneficiary_feature_access','carryon_last_portal','enabled_features']
+        .forEach(k => localStorage.removeItem(k));
+      sessionStorage.clear();
+    } catch { /* private mode etc. */ }
+    // Use location.href instead of router navigate — the boundary can't
+    // assume a working router context, and a hard nav rebuilds React
+    // state from scratch which is exactly what we want here.
+    window.location.href = '/login';
+  };
   render() {
     if (this.state.hasError) {
       const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
-      const isOfflineChunk = this.state.errorKind === 'chunk' && offline;
-      // The red "You're offline" banner at the top already communicates
-      // the state — so when this is clearly an offline-chunk issue, show
-      // an honest, reassuring message instead of the scary generic one.
+      // Any time we hit the boundary while truly offline, treat it as
+      // the same friendly "needs connection" path — the scary
+      // "Something went wrong" headline (which the user reported as a
+      // pitch-killer that forced an app reinstall) is reserved for
+      // genuine bugs that happen with a working network.
+      const isOfflineChunk = (this.state.errorKind === 'chunk' && offline) || offline;
       const title = isOfflineChunk ? 'This page needs a connection the first time' : 'Something went wrong';
       const subtitle = isOfflineChunk
         ? "We couldn't load this page offline because you haven't opened it before. Pick another page, or reconnect and try again — it'll work everywhere from then on."
-        : null;
+        : "If this keeps happening, sign out and back in. Your saved work is preserved and will sync when you reconnect.";
       return (
         <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg, #0F1629)' }}>
           <div className="text-center p-6 max-w-md">
             <p className="text-white text-lg font-bold mb-2" data-testid="error-boundary-title">{title}</p>
-            {subtitle && (
-              <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.7)' }} data-testid="error-boundary-offline-subtitle">{subtitle}</p>
-            )}
-            <div className="flex gap-2 justify-center">
-              <button onClick={this.handleRetry} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: '#d4af37', color: '#080e1a' }} data-testid="error-boundary-retry">
-                Try again
-              </button>
-              {/* Hide the Reload button when offline — reloading while
-                  disconnected re-mounts the whole app from the SW shell
-                  cache, which rebuilds auth/role context from scratch
-                  and can land the user on the default Beneficiary
-                  Portal ("Welcome back, there! 0 benefactor estates")
-                  even when they were signed in as the benefactor/owner.
-                  Try-again without reloading keeps the current session
-                  and avoids the ghost-portal jump. */}
-              {!offline && (
-                <button onClick={() => window.location.reload()} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff' }} data-testid="error-boundary-reload">
-                  Reload
+            <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.7)' }} data-testid="error-boundary-subtitle">{subtitle}</p>
+            <div className="flex flex-col gap-2 items-center">
+              <div className="flex gap-2 justify-center">
+                <button onClick={this.handleRetry} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: '#d4af37', color: '#080e1a' }} data-testid="error-boundary-retry">
+                  Try again
                 </button>
-              )}
+                {!offline && (
+                  <button onClick={() => window.location.reload()} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff' }} data-testid="error-boundary-reload">
+                    Reload
+                  </button>
+                )}
+              </div>
+              {/* Escape hatch — always rendered so a user trapped on
+                  this screen on a real device can recover without
+                  uninstalling the PWA. Clears local auth and lands on
+                  /login. Available offline (sign-out is a local
+                  operation; logout API gets called on the next online
+                  start). */}
+              <button onClick={this.handleSignOut} className="text-xs underline mt-2" style={{ color: 'rgba(255,255,255,0.55)' }} data-testid="error-boundary-signout">
+                Sign out and start over
+              </button>
             </div>
           </div>
         </div>

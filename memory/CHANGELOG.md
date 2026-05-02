@@ -1,5 +1,34 @@
 # CarryOn — Changelog
 
+## Feb 2026 — Two iPhone PWA Fixes (post-offline-login lockout + login jitter)
+
+### 1. ErrorBoundary lockout — user had to reinstall the PWA
+
+After offline login, `/dashboard` rendered the global "Something went wrong / Try again" screen with **no escape path**: tapping Try again just re-mounted the broken tree, force-quit didn't help, the only recovery was uninstalling the app. Two fixes:
+
+**Permanent escape hatch** (`App.js` `RouteErrorBoundary`):
+- Added a "Sign out and start over" button that always renders alongside Try again. Clears `carryon_token`, `carryon_user`, `selected_estate_id`, `beneficiary_estate_id`, `beneficiary_feature_access`, `carryon_last_portal`, `enabled_features` from localStorage + clears sessionStorage, then hard-navigates to `/login` via `window.location.href` (works even if the boundary rendered outside the router context).
+- Subtitle copy added to non-chunk errors: *"If this keeps happening, sign out and back in. Your saved work is preserved and will sync when you reconnect."*
+
+**Friendlier offline message** (same boundary):
+- Broadened `getDerivedStateFromError` regex to catch Safari/iOS PWA module-load wording: *"Importing a module script failed"*, *"Module specifier"*, plus generic `TypeError` whose message mentions fetch/import/module. iOS Safari uses different wording than Chrome; the original regex missed those, classifying real chunk-load failures as generic exceptions.
+- When `navigator.onLine === false`, the boundary now ALWAYS shows the friendly *"This page needs a connection the first time"* headline (regardless of error classification). The scary "Something went wrong" headline is reserved for genuine bugs with a working network.
+
+### 2. Login screen jitter when keyboard / autofill appears
+
+User report: "tap the username field, keyboard or autofill comes up, sometimes jitters for a second, sometimes constantly until I press Sign In." Two compounding causes:
+
+- `LoginPage.js` had a manual `onFocus={scrollInputIntoView}` that did `setTimeout(() => e.target.scrollIntoView({behavior: 'smooth', block: 'center'}), 350)` on the email + password inputs. iOS already scrolls focused inputs into view natively; running our smooth-scroll 350ms later fought the native scroll, which iOS then re-adjusted, producing a jitter loop.
+- The PWA login container used `minHeight: '100dvh'`. `dvh` (dynamic viewport height) shrinks every time the iOS keyboard slides in or the autofill bar appears, so the container resized mid-animation and the layout shifted, contributing to the jitter.
+
+**Fix (`LoginPage.js`):**
+- Removed `scrollInputIntoView` and both `onFocus={scrollInputIntoView}` props. iOS handles it natively.
+- Switched the PWA login container from `100dvh` to `100svh` (small viewport height — the smallest stable viewport, which doesn't change when the keyboard slides). Layout stays put.
+
+**Verification:** lint clean, housekeeping 0 WARN / 0 FAIL strict, production build green.
+
+
+
 ## Feb 2026 — Deleted BeneficiaryHubPage (Estate Plan Network) per user mandate
 
 User mandate: "There are only three portals really, all of the ADMIN ones, the benefactor user, and the beneficiary user. Delete it entirely. Make it like it never existed! If a user logs in, it should go to their primary benefactor account [...] If they do not have a benefactor account, then they log into their Beneficiary account. That will only ever have one. You can't have multiple Beneficiary accounts. You can be the beneficiary of an unlimited amount of estates."

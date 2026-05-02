@@ -621,15 +621,15 @@ const LoginPage = () => {
 
   // ─── PWA STANDALONE MODE — clean login, no marketing, no scroll ───
   if (isPWAMode) {
-    const scrollInputIntoView = (e) => {
-      setTimeout(() => {
-        e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 350);
-    };
-
     return (
       <div className="flex flex-col items-center justify-center px-5 relative overflow-y-auto" style={{
-        minHeight: '100dvh',
+        // Use 100svh (small-viewport-height) instead of 100dvh. dvh
+        // changes when the iOS keyboard / autofill bar slides in or
+        // out, which used to cause a visible jitter on every focus
+        // because the container kept resizing mid-animation. svh is
+        // the smallest stable viewport (keyboard-down), so the layout
+        // doesn't shift when the keyboard appears.
+        minHeight: '100svh',
         opacity: exiting ? 0 : 1,
         transition: 'opacity 0.45s ease',
         WebkitOverflowScrolling: 'touch',
@@ -663,7 +663,6 @@ const LoginPage = () => {
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
                   <Input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Username or Email" required autoComplete="username"
-                    onFocus={scrollInputIntoView}
                     name="email"
                     className="h-10 pl-10 bg-[#0B1627] border-[#1A2D48] text-white placeholder:text-[#2A3C55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg text-sm" data-testid="login-email-pwa" aria-label="Username or Email" />
               </div>
@@ -673,7 +672,6 @@ const LoginPage = () => {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
                 <Input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" required autoComplete="current-password"
-                  onFocus={scrollInputIntoView}
                   className="h-10 pl-10 pr-10 bg-[#0B1627] border-[#1A2D48] text-white placeholder:text-[#2A3C55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg text-sm" data-testid="login-password-pwa" aria-label="Password" />
                 <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#334155] hover:text-[#7b879e] transition-colors">
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
