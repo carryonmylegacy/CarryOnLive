@@ -892,6 +892,24 @@ User asked "what other silent killers are there?" Comprehensive audit results be
 - Frontend: bcrypt verify against IndexedDB-stored password hash; mint local JWT signed with device-bound HMAC; outbox upgrade.
 - Estimated: 2-3 sessions including security audit.
 
+## Passkey Toggle "error not found" — Fixed (Feb 2026)
+**User reported**: Security Settings → Passkey toggle shows "error not found" when toggled on. They suspected this was an App-Store-blocked feature, but it's actually plain WebAuthn (browser-native, works today on iOS Safari + macOS / Chrome) — different from Capacitor's native BiometricAuth plugin which IS App-Store-gated.
+
+**Root cause** (`pages/SecuritySettingsPage.js`): frontend was calling `/api/auth/passkey/register-options` and `/api/auth/passkey/register-verify`, but the backend routes are at `/api/auth/webauthn/register-options` and `/api/auth/webauthn/register`. Path-prefix and final-segment mismatch — the backend returned 404 which surfaced as "error not found" toast. Bonus: backend's `/auth/webauthn/register` expects `{credential: <obj>}` body shape, frontend was POSTing the credential blob bare.
+
+**Fix shipped**: aligned frontend paths to webauthn/* + wrapped credential body. Now Pete can tap the toggle, the platform authenticator (Face ID on a registered Mac/iPhone, Windows Hello, Touch ID on Mac) prompts, registration completes, toast shows "Passkey registered — saved." Future logins via `/auth/webauthn/login` (already wired correctly) work end-to-end.
+
+## Offline-Login Feature — Scoped (Awaiting Build)
+User answered the 3 design questions:
+1. **PWA-only gating** — yes, only when installed to home screen.
+2. **Opt-in** — toggle lives in Settings (not Security Settings). Getting Started will include a guided step.
+3. **Biometric** — Security Settings already has the toggle (just fixed above); native iOS biometrics gated on App Store approval.
+
+Estimated build: 2-3 sessions:
+- Backend: trusted-device flag on user_devices, offline-capable JWT issuance endpoint
+- Frontend: PWA detection helper, Settings toggle wiring, IndexedDB encrypted credential cache (bcrypt verify in browser), offline-aware LoginPage flow
+- Getting Started: new guided step that walks through enabling offline mode + biometrics
+
 ## Known Refactor Targets (Post-Launch, Low Urgency)
 
 **Apr 28, 2026 — ALL major monoliths refactored this session:**

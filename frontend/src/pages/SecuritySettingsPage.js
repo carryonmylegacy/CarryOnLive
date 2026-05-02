@@ -76,10 +76,14 @@ const SecuritySettingsPage = () => {
     setPasskeyLoading(true);
     try {
       if (checked) {
-        const optionsRes = await axios.post(`${API_URL}/auth/passkey/register-options`, {}, headers);
+        // Backend routes are mounted at /auth/webauthn/* (not /auth/passkey/*).
+        // Earlier code used the wrong prefix and the toggle returned 404
+        // "error not found" — fixed to align with backend/routes/webauthn.py.
+        const optionsRes = await axios.post(`${API_URL}/auth/webauthn/register-options`, {}, headers);
         const { startRegistration } = await import('@simplewebauthn/browser');
         const credential = await startRegistration(optionsRes.data);
-        await axios.post(`${API_URL}/auth/passkey/register-verify`, credential, headers);
+        // Backend expects { credential: <obj> }, not the credential blob directly.
+        await axios.post(`${API_URL}/auth/webauthn/register`, { credential }, headers);
         setPasskeyRegistered(true);
         toast.success('Passkey registered — saved.');
       } else {
