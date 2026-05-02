@@ -152,9 +152,21 @@ export default function ConnectedProtocolPage() {
   const [debriefStats, setDebriefStats] = useState(null);
   const [shareModal, setShareModal] = useState(null); // { planId, planName, token }
   const [shareCopied, setShareCopied] = useState(false);
-  // First-visit welcome intro
+  // First-visit welcome intro. Auto-skipped if EITHER the local
+  // "intro seen" flag is set OR the user already has plans on this
+  // estate (returning user signal that survives a fresh browser /
+  // cleared cache, since plans live server-side). The flag is also
+  // persisted when plans are detected, so the next visit on the same
+  // device skips even if the plans list is briefly empty during
+  // refetch.
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('carryon_ccp_intro_seen'));
   const [welcomeStep, setWelcomeStep] = useState(1);
+  useEffect(() => {
+    if (showWelcome && plans.length > 0) {
+      try { localStorage.setItem('carryon_ccp_intro_seen', '1'); } catch { /* private mode */ }
+      setShowWelcome(false);
+    }
+  }, [plans.length, showWelcome]);
 
   const isBenefactor = user?.role === 'benefactor' || user?.is_also_benefactor;
 

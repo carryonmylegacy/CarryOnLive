@@ -849,6 +849,16 @@ User extended the feature to **4 more surfaces**: Beneficiaries, EGA (chat input
 
 **Verified**: code review against iter_115's RCA — the bug pattern can no longer manifest. Awaiting user re-deploy → re-test on production.
 
+## Pitch-Polish Round (Feb 2026 — post-iter 116)
+
+Three console/UX cleanups requested by user as "optional polish" after iter 116 returned a GO verdict:
+
+1. **S3 CORS console silence** (`offline/imageBlobsRepo.js`): the `carryon-vault.s3.amazonaws.com` and `carryon-vault.s3.us-east-2.amazonaws.com` hostnames are now seeded into `_corsBlockedHosts` at module init, so the very first photo prefetch short-circuits before hitting the wire. Eliminates the 90+ red `net::ERR_FAILED` console entries that were visible during DevTools demos. Trade-off: IndexedDB photo caching is disabled for the bucket until S3 CORS is configured for `https://carryon.us`. Photos still render normally via `<img src>` (CORS-exempt). Re-enable by removing the seed once the bucket policy allows GET from carryon.us.
+
+2. **CCP welcome auto-skip for returning users** (`pages/ConnectedProtocolPage.js`): the welcome overlay's first-visit suppression was previously gated only on `localStorage.carryon_ccp_intro_seen`, which resets on a fresh browser / cleared cache. Now also auto-dismissed (and the localStorage flag persisted) the moment the user's plans list resolves with at least one plan — a returning-user signal that survives across devices and private-mode sessions.
+
+3. **Login email `name="email"`** (`pages/LoginPage.js` x3 layouts): added the standard HTML `name` attribute to all three login email inputs (mobile / PWA / desktop). Helps password managers, autofill, and gives test frameworks a stable native selector beyond the existing testids.
+
 ## Known Refactor Targets (Post-Launch, Low Urgency)
 
 **Apr 28, 2026 — ALL major monoliths refactored this session:**
