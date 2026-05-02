@@ -122,11 +122,24 @@ async def get_current_user(
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
 
-    # Single-session enforcement — admin, session_exempt, and dev sessions exempt
+    # Single-session enforcement — admin, session_exempt, and dev sessions exempt.
+    # Offline credentials (session_id starts with 'offline_') are also accepted
+    # if their credential_id is currently enrolled on the user document. This
+    # lets a PWA-installed device that opted into offline access stay
+    # authenticated even when the regular session_id has rotated to a different
+    # browser tab.
     if user.get("role") != "admin" and not user.get("session_exempt") and not payload.get("dev_session"):
-        token_session = payload.get("session_id")
+        token_session = payload.get("session_id") or ""
         active_session = user.get("active_session_id")
-        if token_session and active_session and token_session != active_session:
+        if token_session.startswith("offline_"):
+            credential_id = token_session.removeprefix("offline_")
+            enrolled = any((c.get("credential_id") == credential_id) for c in (user.get("offline_credentials") or []))
+            if not enrolled:
+                raise HTTPException(
+                    status_code=401,
+                    detail="offline_credential_revoked",
+                )
+        elif token_session and active_session and token_session != active_session:
             raise HTTPException(
                 status_code=401,
                 detail="signed_in_elsewhere",

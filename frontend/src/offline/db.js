@@ -36,7 +36,7 @@
 import Dexie from 'dexie';
 
 export const DB_NAME = 'carryon-offline';
-export const DB_VERSION = 5;
+export const DB_VERSION = 6;
 
 class CarryOnDB extends Dexie {
   constructor() {
@@ -132,6 +132,14 @@ class CarryOnDB extends Dexie {
       // `documents.pinned_offline=true` in Mongo. cache_key is always
       // `doc:<doc_id>`.
       pinnedDoc: 'cache_key, doc_id, fetched_at, size_bytes',
+
+      // ── Offline Credential (v6) ──────────────────────────────────────
+      // PWA-only: a per-identifier (lowercased email/username) record
+      // holding the AES-GCM-encrypted long-lived JWT for offline login.
+      // Key = identifier so a single record per user-on-this-device.
+      // Plaintext password is NEVER stored — only the password-derived
+      // ciphertext + salt + iv. See offlineCredentialCache.js.
+      offlineCredential: 'identifier, credential_id, enrolled_at',
     });
   }
 }

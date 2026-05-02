@@ -26,6 +26,7 @@ from . import password  # noqa: F401
 from . import sessions  # noqa: F401
 from . import sms  # noqa: F401
 from . import dev  # noqa: F401
+from . import offline  # noqa: F401
 
 __all__ = [
     "router",
