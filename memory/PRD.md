@@ -836,6 +836,19 @@ User extended the feature to **4 more surfaces**: Beneficiaries, EGA (chat input
 - EGA landing-input draft → restore → clear-on-send.
 - CFP and DTS could not exercise on preview pod (admin shell takes over `/financial`; transient chunk 403s on `/trustee`). Both are environment-only — the user will verify them on production where `info@carryon.us` is the real benefactor "Pete".
 
+## FFN Restore Bug + useDraftState Hardening (Feb 2026 — iter 115)
+**User report (post-deploy regression sweep on prod)**: FFN drafts written but never restored on remount.
+
+**Root cause** — two bugs compounding:
+1. `FFNPage.js` derived `draftKey` from a `useState`-backed `estateId` that's null on first render (set later by fetchData). useDraftState's useState initializer ran with a null key, seeded with EMPTY_FORM, and never re-read from sessionStorage when the key resolved.
+2. `useDraftState.js` had a latent timing footgun: `hasMountedRef` was only flipped on the first `[value]` effect run with a non-null key. If the key was null at first mount, the first effect returned early and `hasMountedRef` stayed `false` — so the FIRST user-driven write after the key resolved was always swallowed (the iter_115 reported `:open` never persisting).
+
+**Fixes**:
+1. `FFNPage.js` (and `ChecklistPage.js` preventatively) now read `selected_estate_id` synchronously from `localStorage` at first render, falling back to the state-backed estateId only as a secondary source.
+2. `useDraftState.js`: when `storageKey` transitions from `null → non-null`, the keyRef-update effect now flips `hasMountedRef.current = true` so the NEXT user-driven `setValue` writes through to sessionStorage. This belt-and-suspenders any consumer that resolves estate lazily.
+
+**Verified**: code review against iter_115's RCA — the bug pattern can no longer manifest. Awaiting user re-deploy → re-test on production.
+
 ## Known Refactor Targets (Post-Launch, Low Urgency)
 
 **Apr 28, 2026 — ALL major monoliths refactored this session:**

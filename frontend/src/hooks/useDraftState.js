@@ -90,7 +90,6 @@ export function useDraftState(storageKey, initial, options) {
   // Keep a ref to the active key so the autosave effect can react to
   // key changes (e.g. estate switch) without losing the current value.
   const keyRef = useRef(storageKey);
-  useEffect(() => { keyRef.current = storageKey; }, [storageKey]);
 
   // After clearDraft is called, suppress the next autosave writeback so
   // a synchronous setState chain in a Cancel handler (clearDraft();
@@ -104,6 +103,21 @@ export function useDraftState(storageKey, initial, options) {
   // read draft with the same value (harmless) OR to write a default
   // before the user has actually typed anything (chatty noise).
   const hasMountedRef = useRef(false);
+
+  // Track key changes. CRITICAL: when the key transitions from null to
+  // a real value (a common pattern for forms whose estate id resolves
+  // asynchronously via fetchData), set hasMountedRef so the NEXT
+  // user-driven write is allowed to persist. Without this, the first
+  // effect run with a freshly-resolved key would flip hasMountedRef
+  // and return early, silently swallowing the first write — iter_115
+  // reproduced this with FFN's :open key never persisting.
+  useEffect(() => {
+    const previousKey = keyRef.current;
+    keyRef.current = storageKey;
+    if (previousKey !== storageKey && storageKey) {
+      hasMountedRef.current = true;
+    }
+  }, [storageKey]);
 
   useEffect(() => {
     if (!keyRef.current) return;
