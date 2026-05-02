@@ -1,5 +1,34 @@
 # CarryOn — Changelog
 
+## Feb 2026 — Production Pressure Test + 2 Bug Fixes (iter 121 → 122: 100% PASS)
+
+User-requested e2e pressure test of `https://app.carryon.us` ahead of B2B Zoom pitches. Tested all 9 public routes, all 16 founder admin tabs (founder@carryon.us), all 14 benefactor surfaces (megumiharris@gmail.com), all 7 beneficiary surfaces (barnetharris) on desktop 1440x900 + mobile 390x844.
+
+**Clean baseline observations:**
+- ZERO `Failed to load X` toasts surfaced anywhere — confirms the iter-120 toast audit holds on production.
+- ZERO `pageerror` events. ZERO 500s.
+- Portal switcher works both directions for the multi-role Megumi account.
+- Public `/voices` renders correctly. `/accept-invitation/<bad>` shows the proper "Invalid Invitation" card.
+- Root `/` correctly serves Login (B2B-first mandate respected).
+- ECT regression target ("No estate selected" empty panel) is GONE on production for Megumi.
+
+**Bugs found and fixed in preview:**
+
+1. **P0 — Admin section-level deep-link fall-through.** Pasting `/admin/finance`, `/admin/marketing`, `/admin/compliance`, `/admin/operations`, `/admin/platform-health`, `/admin/launch-war-room`, or `/admin/feature-gates` into the URL bar resolved to the generic Users tab instead of the section's canonical first tab. Pitch risk: founder shares a deep link during a board call → recipient lands on the wrong tab.
+   - Fix: added 7 entries to `PATH_TO_TAB` in `frontend/src/pages/AdminPage.js` mapping each section-level URL to its canonical default tab (mirrors `SCOPE_DEFAULT_TAB` so `?scope=finance` and `/admin/finance` produce identical views).
+
+2. **P1 — `/financial-portal` silent-redirect.** Production silently dropped benefactors from `/financial-portal` to `/dashboard` (the canonical CFP route is `/financial`). Confused the demo flow when the documented test plan / marketing copy referenced `/financial-portal`.
+   - Fix: added `<Route path="/financial-portal" element={<Navigate to="/financial" replace />} />` to `frontend/src/App.js` so the legacy path now redirects to the canonical route.
+
+**Validation (`/app/test_reports/iteration_122.json`):**
+- All 7 new admin aliases resolve to the correct tab (active button data-testid match): subscriptions / funnel / audit / ops-dashboard / system-health / war-room / subscriptions.
+- All 7 tabs render their expected content beneath the persistent Founder Dashboard header.
+- `/financial-portal` → `/financial` redirect verified.
+- 8/8 regression check: pre-existing aliases (voices, analytics, announcements, integrations, scoped-admins, subscriptions, prototypes, founder-emails) untouched.
+- Housekeeping: 0 WARN / 0 FAIL strict.
+
+
+
 ## Feb 2026 — Global Toast Audit (iter 120: 16/16 regex + 9-page live e2e PASS)
 
 User mandate: live B2B Zoom pitches were getting interrupted by generic
