@@ -73,7 +73,14 @@ const ChecklistPage = () => {
   // Draft persistence — keep the open form + filled fields across
   // navigation. Keyed per estate so multi-estate users don't bleed
   // drafts. Clear on save success and explicit cancel.
-  const draftBase = estate?.id ? `iac_form:${estate.id}` : null;
+  //
+  // Critical: read selected_estate_id SYNCHRONOUSLY from localStorage
+  // at first render — the `estate` state hook is null until fetchData
+  // resolves, so reading `estate?.id` here would leave the draft hook
+  // seeded with defaults (no restore on remount). Same fix as
+  // iter_114's FFN restore bug.
+  const checklistEstateId = (typeof localStorage !== 'undefined' && localStorage.getItem('selected_estate_id')) || estate?.id || null;
+  const draftBase = checklistEstateId ? `iac_form:${checklistEstateId}` : null;
   const [showForm, setShowForm, clearShowFormDraft] = useDraftState(draftBase ? `${draftBase}:open` : null, false);
   const [editingItem, setEditingItem, clearEditingDraft] = useDraftState(draftBase ? `${draftBase}:editing` : null, null);
   const [form, setForm, clearFormFieldsDraft] = useDraftState(draftBase ? `${draftBase}:fields` : null, { ...EMPTY_FORM });

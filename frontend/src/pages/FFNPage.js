@@ -26,7 +26,16 @@ export default function FFNPage() {
   // Draft persistence: navigating away mid-add must restore the open
   // form + filled fields when the user returns. Keyed per estate so
   // multi-estate users don't bleed drafts.
-  const draftKey = estateId ? `ffn_form:${estateId}` : null;
+  //
+  // Critical: read selected_estate_id SYNCHRONOUSLY from localStorage
+  // at first render (not from the estateId useState which is async-set
+  // by fetchData below). The useState initializer in useDraftState
+  // only runs once — if the key is null at first render, the hook
+  // seeds with the default and never re-reads from storage when the
+  // estateId arrives later. This was iter_114's reported FFN restore
+  // failure: drafts were written but never read back.
+  const draftEstateId = (typeof localStorage !== 'undefined' && localStorage.getItem('selected_estate_id')) || estateId || null;
+  const draftKey = draftEstateId ? `ffn_form:${draftEstateId}` : null;
   const [showForm, setShowForm, clearShowFormDraft] = useDraftState(draftKey ? `${draftKey}:open` : null, false);
   const [editingId, setEditingId, clearEditingDraft] = useDraftState(draftKey ? `${draftKey}:editing` : null, null);
   const [form, setForm, clearFormDraft] = useDraftState(draftKey ? `${draftKey}:fields` : null, EMPTY_FORM);
