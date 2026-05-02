@@ -45,7 +45,6 @@ const ROUTE_CHUNK_IMPORTERS = [
   () => import('../pages/OperationsPage'),
   () => import('../pages/PrivacyPolicyPage'),
   () => import('../pages/TermsPage'),
-  () => import('../pages/beneficiary/BeneficiaryHubPage'),
   () => import('../pages/beneficiary/PreTransitionPage'),
   () => import('../pages/beneficiary/BeneficiaryDashboardPage'),
   () => import('../pages/beneficiary/BeneficiaryVaultPage'),

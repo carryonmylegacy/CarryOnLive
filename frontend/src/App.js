@@ -69,7 +69,6 @@ const TermsPage = lazy(() => import('./pages/TermsPage'));
 import TransitionGate from './components/TransitionGate';
 
 // Beneficiary Pages
-const BeneficiaryHubPage = lazy(() => import('./pages/beneficiary/BeneficiaryHubPage'));
 const PreTransitionPage = lazy(() => import('./pages/beneficiary/PreTransitionPage'));
 const BeneficiaryDashboardPage = lazy(() => import('./pages/beneficiary/BeneficiaryDashboardPage'));
 const BeneficiaryVaultPage = lazy(() => import('./pages/beneficiary/BeneficiaryVaultPage'));
@@ -254,7 +253,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     }
     // Redirect based on role
     if (user?.role === 'beneficiary') {
-      return <Navigate to="/beneficiary" replace />;
+      return <Navigate to="/beneficiary/dashboard" replace />;
     }
     if (user?.role === 'operator') {
       return <Navigate to="/ops" replace />;
@@ -310,7 +309,7 @@ const PublicRoute = ({ children }) => {
       return <Navigate to="/dashboard" replace />;
     }
     if (user?.role === 'beneficiary') {
-      return <Navigate to="/beneficiary" replace />;
+      return <Navigate to="/beneficiary/dashboard" replace />;
     } else if (user?.role === 'admin') {
       return <Navigate to="/admin" replace />;
     }
@@ -363,7 +362,7 @@ function RootRoute() {
       return <Navigate to="/dashboard" replace />;
     }
     if (user?.role === 'beneficiary') {
-      return <Navigate to="/beneficiary" replace />;
+      return <Navigate to="/beneficiary/dashboard" replace />;
     }
     if (user?.role === 'admin') {
       return <Navigate to="/admin" replace />;
@@ -458,7 +457,12 @@ function AppRoutes() {
           <DashboardLayout />
         </ProtectedRoute>
       }>
-        <Route path="/beneficiary" element={<BeneficiaryHubPage />} />
+        {/* /beneficiary removed (Feb 2026) — the Estate Plan Network
+            multi-estate switcher hub no longer exists. Beneficiaries
+            land directly on their primary connected estate's dashboard.
+            Any existing in-app or external link still pointing here
+            redirects so nothing 404s. */}
+        <Route path="/beneficiary" element={<Navigate to="/beneficiary/dashboard" replace />} />
         <Route path="/beneficiary/pre" element={<PreTransitionPage />} />
         <Route path="/beneficiary/dashboard" element={<TransitionGate><BeneficiaryDashboardPage /></TransitionGate>} />
         <Route path="/beneficiary/vault" element={<TransitionGate section="vault" allowPreTransition><BeneficiaryVaultPage /></TransitionGate>} />

@@ -78,7 +78,7 @@ const AcceptInvitationPage = () => {
       });
       setAccepted(true);
       localStorage.removeItem('carryon_token');
-      setTimeout(() => { loginWithToken(response.data.access_token, response.data.user); navigate('/beneficiary'); }, 3000);
+      setTimeout(() => { loginWithToken(response.data.access_token, response.data.user); navigate('/beneficiary/dashboard'); }, 3000);
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to create account'); }
     finally { setSubmitting(false); }
   };

@@ -1073,7 +1073,7 @@ const MobileNav = () => {
           localStorage.removeItem('beneficiary_feature_access');
                             localStorage.setItem('carryon_last_portal', 'beneficiary');
                             clearCache();
-                            navigate('/beneficiary');
+                            navigate('/beneficiary/dashboard');
                             if (!isOnBeneficiary) window.location.reload();
                           }}
                           data-testid="mobile-switch-beneficiary"

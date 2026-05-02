@@ -288,7 +288,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                     onClick={() => {
                       localStorage.setItem('beneficiary_estate_id', est.id);
                       localStorage.removeItem('selected_estate_id');
-                      navigate('/beneficiary');
+                      navigate('/beneficiary/dashboard');
                       window.location.reload();
                     }}
                   />

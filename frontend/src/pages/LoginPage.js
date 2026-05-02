@@ -259,13 +259,13 @@ const LoginPage = () => {
     if (result.user?.role === 'admin') navigate('/admin');
     else if (result.user?.role === 'operator') navigate('/ops');
     else {
-      // For multi-role users, restore last-viewed portal
-      const lastPortal = localStorage.getItem('carryon_last_portal');
-      const isMultiRole = result.user?.is_also_benefactor || result.user?.is_also_beneficiary;
-      if (isMultiRole && lastPortal === 'beneficiary') navigate('/beneficiary');
-      else if (isMultiRole && lastPortal === 'benefactor') navigate('/dashboard');
-      else if (result.user?.role === 'beneficiary' && result.user?.is_also_benefactor) navigate('/dashboard');
-      else if (result.user?.role === 'beneficiary') navigate('/beneficiary');
+      // For multi-role users we no longer honor a stored last-portal
+      // hint. The user's explicit mandate (Feb 2026): if an account has
+      // a benefactor role at all, ALWAYS land on the Benefactor portal.
+      // The deleted Estate Plan Network hub was the symptom; this is
+      // the rule that prevents the regression.
+      if (result.user?.role === 'beneficiary' && result.user?.is_also_benefactor) navigate('/dashboard');
+      else if (result.user?.role === 'beneficiary') navigate('/beneficiary/dashboard');
       else navigate('/dashboard');
     }
   };
@@ -474,7 +474,7 @@ const LoginPage = () => {
       const result = await authenticateWithPasskey(email || '');
       if (result.access_token) {
         localStorage.setItem('carryon_token', result.access_token);
-        const dest = result.user?.role === 'admin' ? '/admin' : (result.user?.role === 'beneficiary' && result.user?.is_also_benefactor) ? '/dashboard' : result.user?.role === 'beneficiary' ? '/beneficiary' : '/dashboard';
+        const dest = result.user?.role === 'admin' ? '/admin' : (result.user?.role === 'beneficiary' && result.user?.is_also_benefactor) ? '/dashboard' : result.user?.role === 'beneficiary' ? '/beneficiary/dashboard' : '/dashboard';
         navigate(dest);
       }
     } catch (err) {

@@ -287,7 +287,7 @@ const CreateEstatePage = () => {
         }, getAuthHeaders());
 
         toast.success(res.data.message || 'You have been linked to the estate.');
-        navigate('/beneficiary');
+        navigate('/beneficiary/dashboard');
       }
     } catch (err) {
       const detail = err.response?.data?.detail;

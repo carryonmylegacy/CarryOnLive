@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft, Users, Settings, Sparkles, KeyRound, Bell, Scale, Info } from 'lucide-react';
+import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, Users, Settings, Sparkles, KeyRound, Bell, Scale, Info } from 'lucide-react';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Switch } from '../../components/ui/switch';
 import { API_URL } from '../../config';
@@ -39,12 +39,42 @@ const BeneficiaryDashboardPage = () => {
 
   const fetchData = async () => {
     try {
-      const estateId = localStorage.getItem('beneficiary_estate_id');
-      if (!estateId) { navigate('/beneficiary'); return; }
-
-      // Fetch all estates for the switcher
+      // Resolve which beneficiary-connected estate to land on. Order:
+      //   1. Whatever the user explicitly switched to (localStorage hint).
+      //   2. The user's `primary_estate_id` if it matches one of the
+      //      beneficiary connections (i.e. the user designated this
+      //      estate as their primary in the Sidebar/MobileNav switcher).
+      //   3. The first non-owned estate returned by the API
+      //      (server already orders newest first).
+      // If the user has no beneficiary connections at all, render an
+      // explicit "no estates yet" empty state — never the deleted
+      // network-hub limbo, never an upsell modal.
       const allEstatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders()).catch(() => ({ data: [] }));
-      setAllEstates(allEstatesRes.data);
+      const estatesList = allEstatesRes.data || [];
+      setAllEstates(estatesList);
+      const beneficiaryEstates = estatesList.filter(e => e.user_role_in_estate !== 'owner');
+
+      let estateId = localStorage.getItem('beneficiary_estate_id');
+      const stillConnected = estateId && beneficiaryEstates.some(e => e.id === estateId);
+      if (!stillConnected) estateId = null;
+      if (!estateId && user?.primary_estate_id) {
+        const match = beneficiaryEstates.find(e => e.id === user.primary_estate_id);
+        if (match) estateId = match.id;
+      }
+      if (!estateId && beneficiaryEstates.length > 0) {
+        estateId = beneficiaryEstates[0].id;
+      }
+      if (!estateId) {
+        // No beneficiary connections at all. Stop here with an empty
+        // state. The render below detects `estate === null && !loading`
+        // and shows the appropriate "waiting for an estate connection"
+        // message instead of the hub upsell.
+        setLoading(false);
+        return;
+      }
+      // Persist the resolved estate so subsequent pages
+      // (BeneficiaryVault, BeneficiaryMessages, etc.) can read it.
+      localStorage.setItem('beneficiary_estate_id', estateId);
 
       const [estateRes, permRes] = await Promise.all([
         axios.get(`${API_URL}/estates/${estateId}`, getAuthHeaders()),
@@ -92,9 +122,13 @@ const BeneficiaryDashboardPage = () => {
       }
     } catch (err) {
       if (err.response?.status === 404 || err.response?.status === 403) {
+        // The estate the user pointed at no longer exists or they were
+        // removed from it. Clear stale localStorage and re-run the
+        // resolver — useEffect will pick a different estate or show
+        // the empty state.
         localStorage.removeItem('beneficiary_estate_id');
         localStorage.removeItem('beneficiary_feature_access');
-        navigate('/beneficiary');
+        setLoading(false);
         return;
       }
     }
@@ -115,6 +149,44 @@ const BeneficiaryDashboardPage = () => {
       </div>
     );
   }
+
+  // No connected estates at all (e.g. brand-new beneficiary not yet
+  // invited, or one whose only estate connection was revoked). Render
+  // a clear, friendly empty state — never the deleted Estate Plan
+  // Network limbo, never the "Create your own estate" upsell modal.
+  // The user explicitly mandated: a beneficiary-only account has ONE
+  // beneficiary view; if there's no estate yet, say so plainly and
+  // offer the same Emergency Access path the public site does.
+  if (!estate) {
+    return (
+      <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="beneficiary-dashboard-empty">
+        <div className="glass-card p-6 lg:p-8 text-center max-w-xl mx-auto">
+          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'rgba(217,119,6,0.12)' }}>
+            <Lock className="w-7 h-7 text-[var(--gold)]" />
+          </div>
+          <h1 className="text-2xl font-bold text-[var(--t)] mb-2">No estate connection yet</h1>
+          <p className="text-sm font-semibold text-[var(--t4)] leading-relaxed mb-5">
+            You&rsquo;re not currently listed as a beneficiary on any active estate plan.
+            When a benefactor adds you and the estate transitions, you&rsquo;ll see their
+            milestone messages, secure documents, and immediate-action checklist here.
+          </p>
+          <button
+            onClick={() => navigate('/beneficiary/emergency-access')}
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all"
+            style={{ background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.4)', color: '#fca5a5' }}
+            data-testid="empty-emergency-access"
+          >
+            Report a Loved One&rsquo;s Passing
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Number of estates the user is a beneficiary of (excluding any they
+  // own). Drives whether to render the in-page switcher or hide it
+  // entirely when there's only one connection.
+  const beneficiaryEstateCount = (allEstates || []).filter(e => e.user_role_in_estate !== 'owner').length;
 
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="beneficiary-dashboard">
@@ -141,14 +213,30 @@ const BeneficiaryDashboardPage = () => {
             {benefactorFirst} prepared these resources to help guide you.
           </p>
         </div>
-        <button
-          onClick={() => { localStorage.removeItem('beneficiary_estate_id'); localStorage.removeItem('beneficiary_feature_access'); navigate('/beneficiary'); }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shrink-0"
-          style={{ background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.35)', color: '#60A5FA' }}
-          data-testid="back-to-all-estates"
-        >
-          <ChevronLeft className="w-4 h-4" /> All Estates
-        </button>
+        {beneficiaryEstateCount > 1 && (
+          <select
+            value={estate?.id || ''}
+            onChange={(e) => {
+              const newId = e.target.value;
+              if (!newId || newId === estate?.id) return;
+              localStorage.setItem('beneficiary_estate_id', newId);
+              localStorage.removeItem('beneficiary_feature_access');
+              setLoading(true);
+              fetchData();
+            }}
+            className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all shrink-0"
+            style={{ background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.35)', color: '#60A5FA' }}
+            data-testid="beneficiary-estate-switcher"
+          >
+            {(allEstates || [])
+              .filter(e => e.user_role_in_estate !== 'owner')
+              .map(e => (
+                <option key={e.id} value={e.id} style={{ color: '#0f172a', background: '#fff' }}>
+                  {e.name || 'Estate'}
+                </option>
+              ))}
+          </select>
+        )}
       </div>
 
       {/* Stat Cards */}

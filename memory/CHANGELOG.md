@@ -1,5 +1,42 @@
 # CarryOn — Changelog
 
+## Feb 2026 — Deleted BeneficiaryHubPage (Estate Plan Network) per user mandate
+
+User mandate: "There are only three portals really, all of the ADMIN ones, the benefactor user, and the beneficiary user. Delete it entirely. Make it like it never existed! If a user logs in, it should go to their primary benefactor account [...] If they do not have a benefactor account, then they log into their Beneficiary account. That will only ever have one. You can't have multiple Beneficiary accounts. You can be the beneficiary of an unlimited amount of estates."
+
+**The "Estate Plan Network" multi-estate switcher hub page (`BeneficiaryHubPage`) is gone:**
+
+- Deleted `/app/frontend/src/pages/beneficiary/BeneficiaryHubPage.js`.
+- Removed lazy import + service-worker prewarm chunk reference.
+- `<Route path="/beneficiary">` now redirects to `/beneficiary/dashboard` so any in-app or external link still pointing at the old hub URL never 404s.
+
+**`BeneficiaryDashboardPage` now resolves the active estate itself** (no more redirect-to-hub on missing localStorage):
+- Resolution order: explicit localStorage hint → `user.primary_estate_id` if it matches a beneficiary connection → first non-owned estate from `/api/estates`.
+- Zero connections → friendly empty-state card ("No estate connection yet" + Report a Loved One's Passing CTA). **Never the "Welcome back, there!" / "0 connected benefactor estates" / "Create My Estate Plan" upsell modal**, which was what the user called the "limbo".
+- 2+ beneficiary connections → in-page `<select>` switcher in the dashboard header (`data-testid="beneficiary-estate-switcher"`).
+- 0/1 connections → no switcher rendered.
+
+**Login routing tightened to honor the mandate:**
+- `LoginPage.navigateToHome` and the passkey login both now route any account with `role === 'benefactor'` OR `is_also_benefactor === true` straight to `/dashboard`, regardless of `localStorage.carryon_last_portal`. The previous "restore last-viewed portal" branch is removed for multi-role users.
+- Solo beneficiary (`role === 'beneficiary'`, no benefactor flag) → `/beneficiary/dashboard`.
+- Admin → `/admin`.
+
+**All in-app `navigate('/beneficiary')` callers updated to `'/beneficiary/dashboard'`** (LoginPage, CreateEstatePage, AcceptInvitationPage, Sidebar, MobileNav, FamilyTree). All `<Navigate to="/beneficiary">` redirects in App.js (ProtectedRoute, RootRoute) similarly updated.
+
+**Primary-estate designation already exists** (no new feature work needed):
+- Backend: `PUT /api/estates/set-primary/{estate_id}` writes `users.primary_estate_id`.
+- Backend: `/api/auth/me` returns `primary_estate_id` on the user object.
+- Frontend: `Sidebar` and `MobileNav` already expose a "Make Primary" affordance on the per-estate switcher menu — confirmed at `Sidebar.js:1054` and `MobileNav.js:1037`.
+- `DashboardPage` already auto-selects the primary estate for benefactors with multiple owned estates.
+- `BeneficiaryDashboardPage` now uses the same field for beneficiary connections.
+
+**Verified on preview pod (1440×900):**
+- `/beneficiary` no longer renders the deleted hub. Body markup contains zero references to "Estate Plan Network" / "Tap a benefactor to view their estate" / `BeneficiaryHubPage`.
+- Login as admin → routed to `/admin`. `/dashboard` renders the Founder Portal with "Welcome back, Test" header, Core Pillars, Estate Readiness gauge.
+- Frontend production build succeeds (30s). Housekeeping 0 WARN / 0 FAIL strict.
+
+
+
 ## Feb 2026 — Offline Login Routes to "Limbo" Portal
 
 User report: after enabling offline access on the iPhone PWA, signing out, going airplane-mode, and signing back in, the app landed on a multi-estate "Estate Plan Network" empty state ("0 connected benefactor estates" / "Tap yourself to return to your Benefactor Portal" / "Create My Estate Plan" upsell modal) instead of the user's canonical Benefactor portal.
