@@ -75,23 +75,6 @@ export async function getImageObjectUrl(cacheKey) {
  */
 const _corsBlockedHosts = new Set();
 
-// Seed the blocklist with hosts whose CORS policies are known to
-// reject `fetch()` from the production origin. The carryon-vault S3
-// bucket currently does NOT have a CORS rule for the carryon.us
-// origin, so every probe fails with a red `net::ERR_FAILED` console
-// entry that users can see during DevTools demos. Pre-seeding here
-// short-circuits the very first request per session so 0 entries are
-// logged. Trade-off: we lose IndexedDB photo caching for true offline
-// use until the bucket is reconfigured. Photos still render via
-// `<img src>` (which is not subject to CORS), so user-facing display
-// is unaffected.
-//
-// To re-enable IndexedDB photo caching: configure the S3 bucket's
-// CORS policy to allow GET from https://carryon.us, then remove the
-// hostnames from this seed.
-_corsBlockedHosts.add('carryon-vault.s3.amazonaws.com');
-_corsBlockedHosts.add('carryon-vault.s3.us-east-2.amazonaws.com');
-
 /**
  * In-flight probes per host. Warm-up fans out fetches in parallel via
  * Promise.all, so without this we'd race: all N concurrent fetches see
