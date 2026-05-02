@@ -1,5 +1,17 @@
 # CarryOn — Changelog
 
+## Feb 2026 — Offline Mode Coaching Tile (Getting Started)
+
+User-requested follow-up: add a single dismissible coaching tile inside the Getting Started wizard that explains how Offline Mode works in plain bullets so users understand the rules before turning the Settings switch on.
+
+**`frontend/src/components/OnboardingWizard.js`**
+- New state `offlineCoachDismissed` backed by `localStorage['carryon_offline_coach_dismissed']`.
+- New tile rendered above the active step (sits between the Welcome tile and the step list). Blue→gold gradient with `WifiOff` icon, dismissible via close button (`onboarding-offline-coach-dismiss`).
+- Bullets cover the seven concrete rules: PWA-only, sign in once online first, allow ~30s for the first sync, enable in Settings → Offline, password is never stored (only encrypted credential), 90-day expiry, cached pages return to full functionality on reconnect.
+- Lint clean. `bash /app/scripts/check.sh` → ALL CLEAR — SAFE TO PUSH.
+
+
+
 ## Feb 2026 — PWA-only Offline Login + Onboarding Step 8 (iter 119: 14/14 PASS)
 
 **PWA Offline Login (P0 — completed):** Picked up from prior fork that had laid file groundwork but hadn't wired the UI. Three changes finished the loop:

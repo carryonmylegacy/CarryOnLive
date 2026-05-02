@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   Users, FileUp, MessageSquare, CheckSquare,
   ChevronRight, X, Sparkles, Check, KeyRound, ArrowLeftRight,
-  AlertTriangle, Settings
+  AlertTriangle, Settings, WifiOff
 } from 'lucide-react';
 import { Progress } from '../components/ui/progress';
 import { API_URL } from '../config';
@@ -32,6 +32,11 @@ const OnboardingWizard = ({ onAllComplete }) => {
   });
   const [welcomeDismissed, setWelcomeDismissed] = useState(() => {
     return localStorage.getItem('carryon_welcome_tile_dismissed') === 'true';
+  });
+  // Single coaching tile that explains how Offline Mode works in a few
+  // bullet points. Dismissed permanently once the user closes it.
+  const [offlineCoachDismissed, setOfflineCoachDismissed] = useState(() => {
+    return localStorage.getItem('carryon_offline_coach_dismissed') === 'true';
   });
   const [showAll, setShowAll] = useState(false);
   const [popping, setPopping] = useState({});
@@ -344,6 +349,37 @@ const OnboardingWizard = ({ onAllComplete }) => {
             <button onClick={() => { localStorage.setItem('carryon_welcome_tile_dismissed', 'true'); setWelcomeDismissed(true); }}
               className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform flex-shrink-0"
               data-testid="welcome-tile-dismiss">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+        {/* Offline Mode coaching tile — single info card that explains
+            the rules of offline access in plain bullets. Dismissible
+            once. Sits above the active step so users see it before
+            walking through the checklist. */}
+        {!offlineCoachDismissed && (
+          <div className="rounded-2xl p-5 flex items-start gap-4 text-left"
+            style={{ background: 'linear-gradient(135deg, rgba(96,165,250,0.08), rgba(212,175,55,0.06))', border: '1px solid rgba(96,165,250,0.2)' }}
+            data-testid="onboarding-offline-coach">
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.25)' }}>
+              <WifiOff className="w-7 h-7 text-[#60A5FA]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-lg font-bold text-[var(--t)] mb-2">How Offline Mode Works</p>
+              <ul className="text-sm font-semibold text-[var(--t4)] space-y-1.5 leading-relaxed list-disc pl-5">
+                <li>Available only when CarryOn is <strong style={{ color: '#60A5FA' }}>installed as a PWA</strong> (added to your home screen or dock).</li>
+                <li>You must <strong style={{ color: '#60A5FA' }}>sign in once while online</strong> from that installed app before offline access can work.</li>
+                <li>After that first login, give the app <strong style={{ color: '#60A5FA' }}>~30 seconds</strong> on a stable connection so it can sync your estate to this device.</li>
+                <li>Then turn it on in <strong style={{ color: '#d4af37' }}>Settings &rarr; Offline &rarr; &ldquo;Offline access on this device&rdquo;</strong> and re-enter your password to encrypt the credential locally.</li>
+                <li>Your password is <strong style={{ color: '#60A5FA' }}>never stored</strong> &mdash; only the encrypted sign-in credential lives on this device.</li>
+                <li>Stays active for <strong style={{ color: '#60A5FA' }}>90 days</strong>; you can revoke it anytime from the same Settings switch.</li>
+                <li>When you sign in offline some pages may show cached data only &mdash; full functionality returns the moment you reconnect.</li>
+              </ul>
+            </div>
+            <button onClick={() => { localStorage.setItem('carryon_offline_coach_dismissed', 'true'); setOfflineCoachDismissed(true); }}
+              className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform flex-shrink-0"
+              data-testid="onboarding-offline-coach-dismiss">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
