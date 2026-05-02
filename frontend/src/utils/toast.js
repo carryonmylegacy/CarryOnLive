@@ -25,25 +25,32 @@ const normalize = (message, options = {}) => {
 };
 
 /**
- * When the device is offline the global red "You're offline" banner already
- * communicates the root cause. Individual pages' "Failed to load X" toasts
- * become noise that makes the user think something is actually broken.
+ * Page-level data fetches that fail produce a "Failed to load X" toast on
+ * almost every screen in the app. During a live B2B pitch (the founder
+ * demos the platform on Zoom), the page already has cached data painted
+ * from IndexedDB — the toast is pure noise that makes the platform look
+ * broken even though the data is sitting right there on screen.
  *
- * This filter silently drops `toast.error` calls whose message matches a
- * generic load/fetch/network failure pattern WHILE we're offline. Real
- * action-failure toasts (e.g. "Please enter a recipient", "Invalid file
- * size", server 500s while online) still render.
+ * Strategy: always drop generic load/fetch/refresh failure toasts
+ * regardless of online state. The two paths a user actually cares about
+ * still surface fully:
+ *   1. ACTION failures ("Failed to save", "Could not delete", "Send
+ *      failed") — different verbs, keep firing.
+ *   2. Critical load failures the caller really wants visible — opt back
+ *      in with `{ force: true }`.
+ *
+ * The regex is intentionally narrow: only patterns that begin with a
+ * load/fetch verb match. "Failed to save", "Could not send",
+ * "Invalid file", server validation errors, etc. all keep firing.
  *
  * Callers can opt out with `{ force: true }` if they absolutely need the
- * toast to surface even when offline.
+ * toast to surface even when offline / when cached data is already
+ * painted.
  */
-const NETWORK_ERROR_RE = /^(failed to (load|fetch|connect|get|retrieve|refresh)|network error|load failed|unable to (load|connect|reach)|couldn'?t (load|reach|connect))/i;
-
-const isOffline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
+const NETWORK_ERROR_RE = /^(failed to (load|fetch|connect|get|retrieve|refresh)|network error|load failed|unable to (load|connect|reach|fetch|retrieve)|couldn'?t (load|reach|connect|fetch|refresh)|could not (load|fetch|retrieve|reach|connect)|error loading)/i;
 
 const shouldSuppressError = (message, options) => {
   if (options && options.force) return false;
-  if (!isOffline()) return false;
   const text = typeof message === 'string' ? message : String(message || '');
   return NETWORK_ERROR_RE.test(text.trim());
 };
