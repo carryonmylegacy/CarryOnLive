@@ -1,5 +1,26 @@
 # CarryOn — Changelog
 
+## Feb 2026 — Offline Login Routes to "Limbo" Portal
+
+User report: after enabling offline access on the iPhone PWA, signing out, going airplane-mode, and signing back in, the app landed on a multi-estate "Estate Plan Network" empty state ("0 connected benefactor estates" / "Tap yourself to return to your Benefactor Portal" / "Create My Estate Plan" upsell modal) instead of the user's canonical Benefactor portal.
+
+**Root cause:** the offline login synthesized a stub user object from the JWT alone. JWT only carries `{user_id, email, role, session_id}` — the portal-routing logic (`navigateToHome`) relies on additional user fields (`is_also_benefactor`, `is_also_beneficiary`, `default_portal`, `current_portal`, `admin_scope`, `name`, etc.). With those fields hardcoded to `false`/empty, multi-role users couldn't be routed to their correct portal and fell into the network-switcher view.
+
+**Fix (`offlineCredentialCache.js` + `OfflineAccessCard.js` + `LoginPage.js`):**
+- `saveOfflineCredential(...)` now also encrypts a snapshot of the **full user object** captured at enroll time using a fresh AES-GCM IV (never reuse an IV with the same key) and stores it alongside the JWT ciphertext as `user_iv` + `user_ciphertext`.
+- `unlockOfflineCredential(...)` decrypts both ciphertexts in one shot and returns `{ token, user, credential_id }`. If the user snapshot is missing (legacy enrollments) it returns `user: null` so the caller can fall back to the JWT-stub path without breaking.
+- `OfflineAccessCard.handleEnroll` passes the current `user` object from `useAuth()` to `saveOfflineCredential`.
+- `LoginPage` offline-unlock branch prefers the cached user snapshot over the JWT stub. Also clears `localStorage.carryon_last_portal` before navigating so the user's stated mandate is honored: any account with a benefactor role lands on the Benefactor portal regardless of last-viewed-portal hints.
+
+**Verified on preview pod (390×844 iPhone viewport, isPWA forced true):**
+- Enroll → IndexedDB record contains `ciphertext` + `user_ciphertext` + `user_iv` ✓
+- Logout, set offline, sign in → URL routes to `/admin` for the admin account (not the network limbo) ✓
+- Routing logic (already correct): admin → /admin · benefactor → /dashboard · multi-role with benefactor flag → /dashboard · solo beneficiary → /beneficiary.
+
+**One-time user step:** existing offline enrollments made before this fix do NOT have the user snapshot. Users must toggle Offline access OFF then back ON in Settings to re-enroll under the new schema. The unlock path handles legacy records gracefully (falls back to JWT-stub) so it does not error.
+
+
+
 ## Feb 2026 — Offline Enrollment Modal Invisible on iPhone PWA
 
 User reported: tapping Settings → "Offline access on this device" toggle on the installed PWA showed an indefinite dimmed/blurred screen with no visible password modal — page froze.

@@ -340,30 +340,49 @@ const LoginPage = () => {
           } else {
             toast.loading('Unlocking offline sign-in…', { duration: 4000 });
             try {
-              const { token: offlineToken } = await unlockOfflineCredential({
+              const { token: offlineToken, user: cachedFromVault } = await unlockOfflineCredential({
                 identifier: rec.identifier,
                 password,
               });
-              let payload = {};
-              try {
-                const seg = offlineToken.split('.')[1];
-                const json = atob(seg.replace(/-/g, '+').replace(/_/g, '/'));
-                payload = JSON.parse(json);
-              } catch { /* empty */ }
-              const cachedUser = {
-                id: payload.user_id || '',
-                email: payload.email || rec.identifier,
-                role: payload.role || 'benefactor',
-                name: payload.name || rec.identifier,
-                username: rec.identifier,
-                admin_scope: [],
-                is_also_benefactor: false,
-                is_also_beneficiary: false,
-              };
-              authLoginWithToken(offlineToken, cachedUser);
+              // Prefer the encrypted user snapshot captured at enroll
+              // time — it carries the real portal-routing flags
+              // (is_also_benefactor, is_also_beneficiary, default_portal,
+              // current_portal, admin_scope, role) so navigateToHome()
+              // sends multi-role users to the right portal instead of
+              // the empty "Estate Plan Network" limbo. Fall back to a
+              // JWT-derived stub only if the snapshot is missing
+              // (legacy enrollments).
+              let resolvedUser = cachedFromVault;
+              if (!resolvedUser) {
+                let payload = {};
+                try {
+                  const seg = offlineToken.split('.')[1];
+                  const json = atob(seg.replace(/-/g, '+').replace(/_/g, '/'));
+                  payload = JSON.parse(json);
+                } catch { /* empty */ }
+                resolvedUser = {
+                  id: payload.user_id || '',
+                  email: payload.email || rec.identifier,
+                  role: payload.role || 'benefactor',
+                  name: payload.name || rec.identifier,
+                  username: rec.identifier,
+                  admin_scope: [],
+                  is_also_benefactor: false,
+                  is_also_beneficiary: false,
+                };
+              }
+              authLoginWithToken(offlineToken, resolvedUser);
               haptics.success();
               toast.success('Signed in offline. Some pages may be limited until you reconnect.', { force: true });
-              navigateToHome({ user: cachedUser });
+              // Honor the explicit user mandate: if this account has a
+              // benefactor role at all, land on the Benefactor portal —
+              // never the multi-estate network/limbo. Clearing the
+              // stored last-portal hint forces navigateToHome to use
+              // role-defaults (admin → /admin, benefactor or
+              // multi-role-with-benefactor → /dashboard, solo
+              // beneficiary → /beneficiary).
+              try { localStorage.removeItem('carryon_last_portal'); } catch { /* empty */ }
+              navigateToHome({ user: resolvedUser });
               return;
             } catch (unlockErr) {
               if (unlockErr?.message === 'wrong_password') {

@@ -74,7 +74,7 @@ export default function OfflineAccessCard() {
       const res = await axios.post(`${API_URL}/auth/offline/enroll`, {}, getAuthHeaders());
       const { credential_id: credentialId, token, salt } = res.data;
       const identifier = (user?.email || user?.username || '').toLowerCase();
-      await saveOfflineCredential({ identifier, password, credentialId, token, salt });
+      await saveOfflineCredential({ identifier, password, credentialId, token, salt, user });
       setEnrolled(true);
       setShowEnrollModal(false);
       setPassword('');

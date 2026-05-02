@@ -69,9 +69,19 @@ async function deriveKey(password, saltStr) {
 }
 
 /**
- * Save an enrolled offline credential. Encrypts `token` with
- * (password + salt) then writes to IndexedDB. Identifier is the
- * lowercased email or username the user logs in with.
+ * Save an enrolled offline credential. Encrypts `token` AND a snapshot
+ * of the full user object with (password + salt) then writes to
+ * IndexedDB. Identifier is the lowercased email or username the user
+ * logs in with.
+ *
+ * Why also encrypt the user snapshot? Without it, offline unlock can
+ * only synthesize a stub user from JWT claims (`{user_id, email, role,
+ * session_id}`) — which loses critical portal-routing flags like
+ * `is_also_benefactor`, `is_also_beneficiary`, `default_portal`,
+ * `current_portal`, `admin_scope`, etc. The result is a "limbo" landing
+ * (e.g. multi-role users land on the Estate Plan Network empty state
+ * instead of their canonical Benefactor portal). Caching the snapshot
+ * captured at enroll time fixes that.
  */
 export async function saveOfflineCredential({
   identifier,
@@ -79,6 +89,7 @@ export async function saveOfflineCredential({
   credentialId,
   token,
   salt,
+  user,
 }) {
   const key = await deriveKey(password, salt);
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -87,12 +98,23 @@ export async function saveOfflineCredential({
     key,
     enc.encode(token),
   );
+  // Encrypt the user snapshot under a fresh IV (NEVER reuse an IV with
+  // the same key — breaks AES-GCM security guarantees). The user JSON
+  // is small (a few KB at most) so this is cheap.
+  const userIv = crypto.getRandomValues(new Uint8Array(12));
+  const userCipher = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: userIv },
+    key,
+    enc.encode(JSON.stringify(user || {})),
+  );
   const record = {
     identifier: (identifier || '').trim().toLowerCase(),
     credential_id: credentialId,
     salt,
     iv: b64encode(iv),
     ciphertext: b64encode(ciphertext),
+    user_iv: b64encode(userIv),
+    user_ciphertext: b64encode(userCipher),
     enrolled_at: new Date().toISOString(),
   };
   await getDB().offlineCredential.put(record);
@@ -130,9 +152,14 @@ export async function getOfflineCredential(identifier) {
 
 /**
  * Try to decrypt a stored credential with the supplied password.
- * Returns the recovered JWT string on success, throws on wrong
- * password (AES-GCM auth tag failure) — caller should surface a
- * "Wrong password" message.
+ * Returns the recovered JWT string AND the cached user snapshot on
+ * success, throws on wrong password (AES-GCM auth tag failure) — caller
+ * should surface a "Wrong password" message.
+ *
+ * `user` is null for older records enrolled before the user-snapshot
+ * was added; in that case the LoginPage falls back to the JWT-derived
+ * stub (and shows the "first-visit limbo" state until the user
+ * reconnects and the auth context refetches the real user).
  */
 export async function unlockOfflineCredential({ identifier, password }) {
   const rec = await getOfflineCredential(identifier);
@@ -150,7 +177,29 @@ export async function unlockOfflineCredential({ identifier, password }) {
   } catch {
     throw new Error('wrong_password');
   }
-  return { token: dec.decode(plaintextBuf), credential_id: rec.credential_id };
+  let cachedUser = null;
+  if (rec.user_iv && rec.user_ciphertext) {
+    try {
+      const userIvBuf = b64decode(rec.user_iv);
+      const userCtBuf = b64decode(rec.user_ciphertext);
+      const userPlain = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: new Uint8Array(userIvBuf) },
+        key,
+        userCtBuf,
+      );
+      cachedUser = JSON.parse(dec.decode(userPlain));
+    } catch {
+      // User snapshot decrypt failed — keep token, return null user so
+      // the caller falls back to JWT-stub behavior. Don't throw; the
+      // login should still succeed even if the snapshot is corrupt.
+      cachedUser = null;
+    }
+  }
+  return {
+    token: dec.decode(plaintextBuf),
+    credential_id: rec.credential_id,
+    user: cachedUser,
+  };
 }
 
 /**
