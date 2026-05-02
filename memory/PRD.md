@@ -873,6 +873,25 @@ Three console/UX cleanups requested by user as "optional polish" after iter 116 
 
 **Residual cleanup** (low-priority, non-blocking): 18 "blocked by CORS policy" console.error messages remain — likely a single fetch() call site still adding a header (Authorization, custom Cache-Control) that triggers preflight. Audit + remove the header to get to a fully clean console.
 
+## CORS Cache-Bust + Offline-Mode Audit (Feb 2026)
+**Iter 118 RCA correction**: my initial diagnosis of the 18 residual "blocked by CORS policy" errors was wrong. They're NOT from `pinnedDocsRepo` (Pete has 0 pinned-offline docs, so that path doesn't fire). The actual source is `imageBlobsRepo.fetchAndStoreImageBlob` for beneficiary/estate/user photos. The bucket CORS is correctly configured — but **the Service Worker's `IMAGE_CACHE` was holding opaque pre-CORS responses for 8 specific photos, served forever via cacheFirst**. New requests for new photos succeed; the 8 stale cached entries never refresh.
+
+**Fix shipped** (`public/sw-push.js`): bumped `SHELL_VERSION` from `v25-...` to `v26-2026-02-22-cors-cache-bust`. The SW activate handler purges any `carryon-*` cache that doesn't end with the current version, so on next deploy + activation, all stale pre-CORS cached responses get dropped. New fetches go through with the fresh CORS rule and the imageBlob store fully populates.
+
+**Defensive change retained** (`offline/pinnedDocsRepo.js`): cross-origin URL detection + `credentials: 'omit'` fallback. Doesn't fix the present symptom (path not exercised) but eliminates a future-failure mode if any user gains a `pinned_offline=true` document.
+
+## Offline-Mode Capability Honest Audit (Feb 2026)
+User asked "what other silent killers are there?" Comprehensive audit results below. Reported back to user transparently rather than promising fixes that aren't built.
+
+**Works today:** App load offline (SW shell cache), stay logged in across network drop (JWT in localStorage), read all data offline (IndexedDB warmup covers profile/subscription/beneficiaries/estates/messages/vault/financial/DTS/checklist/CCP/DAV), pre-viewed photos (SW image cache), all photos including never-viewed (the iter 117/118 fix), pinned docs (path defensive-coded; needs server seed for verification), submit-while-offline (outbox).
+
+**Doesn't work today:** Log out + log back in OFFLINE (no local credential store), PWA-vs-browser-tab gating (warmup runs in both modes equally — not actually wrong, just not optimized).
+
+**Proposed offline-login feature** (deferred pending user decisions on PWA-only gating, opt-in vs default-on, biometric requirement):
+- Backend: `is_trusted_device` flag on user_devices table; long-lived offline-capable JWT.
+- Frontend: bcrypt verify against IndexedDB-stored password hash; mint local JWT signed with device-bound HMAC; outbox upgrade.
+- Estimated: 2-3 sessions including security audit.
+
 ## Known Refactor Targets (Post-Launch, Low Urgency)
 
 **Apr 28, 2026 — ALL major monoliths refactored this session:**
