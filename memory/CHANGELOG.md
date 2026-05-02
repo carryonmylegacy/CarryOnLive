@@ -1,5 +1,49 @@
 # CarryOn — Changelog
 
+## Feb 2026 — Global Toast Audit (iter 120: 16/16 regex + 9-page live e2e PASS)
+
+User mandate: live B2B Zoom pitches were getting interrupted by generic
+"Failed to load X" / "Could not load Y" / "Failed to fetch" toasts firing
+during transient network blips, even when cached data was already painted
+on the screen. Pattern requested: silent-when-cached-paint, loud-on-action.
+
+**Audit (live on `https://app.carryon.us` as `founder@carryon.us`):**
+- Sweep across `/app/frontend/src` found **350 total `toast.error()` literal
+  call sites**. Categorized: **51 load/fetch/refresh patterns** (pitch
+  killers) vs. **299 action/validation/auth toasts** (Save / Send /
+  Delete / payment / wrong-password etc. — must stay loud).
+- Production live capture across 9 founder/admin pages (`/admin`,
+  `/admin/voices`, `/admin/analytics`, `/admin/announcements`,
+  `/admin/integrations`, `/admin/scoped-admins`, `/admin/feature-gates`,
+  `/settings`, `/security-settings`) → 0 load-failure toasts in steady
+  state. Risk surface lives in the brief-blip / 5xx-during-refresh /
+  stale-tab-rehydrate paths that the existing
+  `if (navigator.onLine === false)` gate didn't cover.
+
+**Fix (single file: `/app/frontend/src/utils/toast.js`):**
+- Removed the `isOffline()` gate from `shouldSuppressError()` — global
+  suppression is now **always-on** for any message matching the load
+  pattern, regardless of online state.
+- Extended regex to also catch `unable to (fetch|retrieve)`,
+  `couldn't (fetch|refresh)`, `could not (load|fetch|retrieve|reach|
+  connect)`, `error loading`.
+- `{ force: true }` still bypasses suppression for callers that really
+  need a load-failure toast.
+
+**Verification (`/app/test_reports/iteration_120.json`):**
+- Regex assertions: 16/16 PASS (8 suppress inputs matched, 8 keep
+  inputs cleanly bypassed, 1 force-bypass on a load-pattern works).
+- E2E preview pod via Playwright with MutationObserver toast recorder:
+  9 pages × {steady-state, offline→online blip, reload} → **0**
+  load-failure toasts captured.
+- Auth regression: wrong password still surfaces `Invalid credentials`
+  (action-toast path provably intact).
+- Housekeeping: 0 WARN / 0 FAIL. ESLint clean.
+
+**Audit report saved at `/app/memory/TOAST_AUDIT_FEB_2026.md`.**
+
+
+
 ## Feb 2026 — Offline Mode Coaching Tile (Getting Started)
 
 User-requested follow-up: add a single dismissible coaching tile inside the Getting Started wizard that explains how Offline Mode works in plain bullets so users understand the rules before turning the Settings switch on.
