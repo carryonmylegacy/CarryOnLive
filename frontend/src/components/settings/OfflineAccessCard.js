@@ -18,6 +18,7 @@
 //     /api/auth/offline/revoke, clears the local IndexedDB record.
 
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
@@ -129,9 +130,33 @@ export default function OfflineAccessCard() {
         </CardContent>
       </Card>
 
-      {showEnrollModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" data-testid="offline-enroll-modal">
-          <div className="glass-card max-w-md w-full p-6 rounded-2xl overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 32px)' }}>
+      {showEnrollModal && createPortal((
+        // Render the password modal directly under document.body so it
+        // can't be trapped by an ancestor's transform/filter/will-change
+        // rule (which silently turns position:fixed into
+        // position-relative-to-that-ancestor — that's why the modal
+        // appeared invisible / off-screen on iPhone PWA before).
+        <div
+          className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          style={{
+            paddingTop: 'max(env(safe-area-inset-top), 16px)',
+            paddingBottom: 'max(env(safe-area-inset-bottom), 16px)',
+          }}
+          data-testid="offline-enroll-modal"
+          onClick={(e) => {
+            // Tap outside the card → cancel (matches the rest of the
+            // app's modal pattern). Inner card stops propagation.
+            if (e.target === e.currentTarget && !enrolling) {
+              setShowEnrollModal(false);
+              setPassword('');
+            }
+          }}
+        >
+          <div
+            className="glass-card max-w-md w-full p-6 rounded-2xl overflow-y-auto"
+            style={{ maxHeight: 'calc(100dvh - 32px)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-lg font-bold text-[var(--t)] mb-2">Enable offline access</h3>
             <p className="text-sm font-semibold text-[var(--t4)] mb-5 leading-relaxed">
               Re-enter your password. We&rsquo;ll use it to encrypt a sign-in credential that stays only on this device &mdash; never sent to our servers in plain text.
@@ -165,7 +190,7 @@ export default function OfflineAccessCard() {
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
     </>
   );
 }

@@ -1,5 +1,24 @@
 # CarryOn — Changelog
 
+## Feb 2026 — Offline Enrollment Modal Invisible on iPhone PWA
+
+User reported: tapping Settings → "Offline access on this device" toggle on the installed PWA showed an indefinite dimmed/blurred screen with no visible password modal — page froze.
+
+**Root cause:** classic `position: fixed` containment trap. The modal was a child of `<OfflineAccessCard>` → `<SettingsPage>` → `<DashboardLayout>`. One of those ancestors has a `transform`, `filter`, or `will-change` rule, which silently turns `position: fixed` into "fixed relative to that ancestor" (CSS containing-block rule). On iPhone PWA the modal rendered far below the viewport, hence the dimmed backdrop with no visible card.
+
+**Fix (`frontend/src/components/settings/OfflineAccessCard.js`):**
+- Wrapped the modal JSX in `createPortal(..., document.body)` so it always lives directly under `<body>`, immune to any ancestor's transform/filter rule.
+- Bumped z-index to `2147483647` (max int) to outrank any other floating UI.
+- Added safe-area padding (`env(safe-area-inset-top/bottom)`) so the card never gets clipped by the iOS notch / home indicator.
+- Added tap-outside-to-cancel (consistent with the rest of the app's modal pattern).
+
+**Verified on preview pod (390×844 iPhone viewport, isPWA forced true):**
+- `backdropParent: BODY` ✓ (portal worked)
+- Card centered at `top: 257, width: 358 × 329` ✓
+- Password input + Cancel + Enable buttons all visible and interactive ✓
+
+
+
 ## Feb 2026 — Offline Login Bug Fix (user-reported on installed PWA)
 
 User enrolled offline access from the Settings switch, logged out, turned
