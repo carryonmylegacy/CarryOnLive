@@ -29,8 +29,34 @@ import {
  * confusing "why is everything broken?" moment when a traveling user
  * lands here in airplane mode.
  */
-const LoginOfflineBanner = ({ isOffline }) => {
+const LoginOfflineBanner = ({ isOffline, hasOfflineCredential }) => {
   if (!isOffline) return null;
+  // If the user has already enrolled an offline credential on this
+  // device, the banner is purely informational and confirms they're
+  // about to use it. The "you have to be logged in before losing
+  // signal" caveat does NOT apply once enrolled — the encrypted
+  // credential lives on this device.
+  if (hasOfflineCredential) {
+    return (
+      <div
+        data-testid="login-offline-banner"
+        className="rounded-xl px-4 py-3 mb-4 flex gap-3 items-start"
+        style={{
+          background: 'rgba(34, 201, 147, 0.12)',
+          border: '1px solid rgba(34, 201, 147, 0.4)',
+        }}
+      >
+        <WifiOff className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#34d399' }} />
+        <div className="text-[13px] leading-snug" style={{ color: 'rgba(255,255,255,0.92)' }}>
+          <div className="font-semibold mb-1" style={{ color: '#34d399' }}>You&apos;re offline &mdash; offline sign-in is enabled on this device.</div>
+          <p>
+            Enter the password for the account you enrolled in <span className="font-semibold" style={{ color: '#fcd34d' }}>Settings &rarr; Offline</span>.
+            We&apos;ll unlock your encrypted credential locally and sign you in. Some pages may show cached data only until you reconnect.
+          </p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div
       data-testid="login-offline-banner"
@@ -42,17 +68,16 @@ const LoginOfflineBanner = ({ isOffline }) => {
     >
       <WifiOff className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#fca5a5' }} />
       <div className="text-[13px] leading-snug" style={{ color: 'rgba(255,255,255,0.92)' }}>
-        <div className="font-semibold mb-1" style={{ color: '#fca5a5' }}>You&apos;re offline — sign-in needs a connection.</div>
+        <div className="font-semibold mb-1" style={{ color: '#fca5a5' }}>You&apos;re offline &mdash; sign-in needs a connection.</div>
         <p className="mb-2">
-          Once you&apos;re signed in and the app finishes its first sync, CarryOn keeps working offline:
-          you can record milestones, upload documents, send messages, and create or edit anything —
-          we&apos;ll sync it all when you reconnect. The catch is you have to be logged in <em>before</em> losing signal.
+          Sign in once while online and CarryOn will keep working offline after that:
+          record milestones, upload documents, send messages, and edit anything &mdash;
+          we&apos;ll sync it all when you reconnect.
         </p>
         <p style={{ color: 'rgba(255,255,255,0.78)' }}>
-          Travel a lot or work in spotty coverage? After signing in, head to{' '}
-          <span className="font-semibold" style={{ color: '#fcd34d' }}>Settings → Security</span>{' '}
-          and extend your session timeout so you stay logged in longer and don&apos;t get
-          locked out the next time you lose signal.
+          Want to sign in even with no signal? After signing in, head to{' '}
+          <span className="font-semibold" style={{ color: '#fcd34d' }}>Settings &rarr; Offline</span>{' '}
+          and turn on &ldquo;Offline access on this device.&rdquo; You&apos;ll be able to sign back in on this device without a connection from then on.
         </p>
       </div>
     </div>
@@ -100,6 +125,21 @@ const LoginPage = () => {
   const [isOffline, setIsOffline] = useState(
     () => typeof navigator !== 'undefined' && navigator.onLine === false
   );
+  // Whether this device has a previously-enrolled offline credential.
+  // Drives the banner copy: with a credential the user CAN sign in
+  // offline; without one the page is honest about the limitation.
+  const [hasOfflineCredential, setHasOfflineCredential] = useState(false);
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      try {
+        const { hasAnyOfflineCredential } = await import('../offline/offlineCredentialCache');
+        const has = await hasAnyOfflineCredential();
+        if (live) setHasOfflineCredential(has);
+      } catch { /* IndexedDB unavailable — leave as false */ }
+    })();
+    return () => { live = false; };
+  }, []);
   useEffect(() => {
     const onOff = () => setIsOffline(true);
     const onOn = () => setIsOffline(false);
@@ -465,7 +505,7 @@ const LoginPage = () => {
           <div className="absolute top-0 left-7 right-7 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
           <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Sign In</h2>
           <p className="text-[#475569] text-sm mb-6">Access your CarryOn account</p>
-          <LoginOfflineBanner isOffline={isOffline} />
+          <LoginOfflineBanner isOffline={isOffline} hasOfflineCredential={hasOfflineCredential} />
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
@@ -597,7 +637,7 @@ const LoginPage = () => {
             <div className="absolute top-0 left-6 right-6 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
             <h2 className="text-white text-lg font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Sign In</h2>
             <p className="text-white/70 text-sm font-semibold mb-4">Access your CarryOn account</p>
-            <LoginOfflineBanner isOffline={isOffline} />
+            <LoginOfflineBanner isOffline={isOffline} hasOfflineCredential={hasOfflineCredential} />
             <form onSubmit={handleLogin} className="space-y-3">
               <div>
                 <label className="text-white/80 text-sm font-bold mb-1 block">Username or Email</label>
