@@ -19,6 +19,7 @@ const STEP_CONFIG = {
   customize_checklist: { icon: CheckSquare, color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', route: '/checklist', label: 'Review Your Checklist', desc: 'See the steps your loved ones will follow' },
   designate_primary: { icon: ArrowLeftRight, color: '#06b6d4', bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.2)', route: '/beneficiaries', label: 'Set Succession Order', desc: 'Arrange your beneficiary order (optional)' },
   add_credential: { icon: KeyRound, color: '#ec4899', bg: 'rgba(236,72,153,0.08)', border: 'rgba(236,72,153,0.2)', route: '/digital-wallet', label: 'Save a Digital Login', desc: 'Store an account login for your loved ones (optional)' },
+  review_settings: { icon: Settings, color: '#64748b', bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.2)', route: '/settings', label: 'Review Your Settings', desc: 'Open Settings and Security Settings to customize your portal' },
 };
 
 const OnboardingWizard = ({ onAllComplete }) => {
@@ -117,6 +118,12 @@ const OnboardingWizard = ({ onAllComplete }) => {
     if (!config) return;
     if (step.key === 'review_readiness' && !step.completed) {
       try { await axios.post(`${API_URL}/onboarding/complete-step/review_readiness`, {}, getAuthHeaders()); }
+      catch (err) { console.error(err); }
+    }
+    if (step.key === 'review_settings' && !step.completed) {
+      // Mark complete the moment the user clicks through. Visiting the
+      // Settings page is the goal — exhaustive interaction is up to them.
+      try { await axios.post(`${API_URL}/onboarding/complete-step/review_settings`, {}, getAuthHeaders()); }
       catch (err) { console.error(err); }
     }
     navigate(config.route, { state: config.route === '/checklist' ? { fromGettingStarted: true } : undefined });

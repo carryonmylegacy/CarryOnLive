@@ -15,6 +15,7 @@ import PersonalInfoCard from '../components/settings/PersonalInfoCard';
 import EstatePhotoCard from '../components/settings/EstatePhotoCard';
 import PublicDeviceModeCard from '../components/settings/PublicDeviceModeCard';
 import OfflineBehaviorCard from '../components/settings/OfflineBehaviorCard';
+import OfflineAccessCard from '../components/settings/OfflineAccessCard';
 import AppearanceCard from '../components/settings/AppearanceCard';
 import DashboardViewCard from '../components/settings/DashboardViewCard';
 import DigestCard from '../components/settings/DigestCard';
@@ -150,6 +151,11 @@ const SettingsPage = () => {
       {/* ── Section: Offline ── */}
       <SectionHeader title="Offline" hint="Control how CarryOn behaves when you lose signal." />
       <OfflineBehaviorCard />
+      {/* PWA-only opt-in: cache an encrypted credential on this device so
+          the user can sign back in even with no internet. Renders nothing
+          in a regular browser tab (the use case requires the home-screen
+          install). */}
+      <OfflineAccessCard />
 
       {/* ── Section: Security ── */}
       <SectionHeader title="Security" hint="2FA, passkeys, auto-logout, vault locks." />

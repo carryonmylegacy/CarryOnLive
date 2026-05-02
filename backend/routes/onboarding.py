@@ -56,6 +56,12 @@ ONBOARDING_STEPS = [
         "description": "Add a login and password to your Digital Access Vault",
         "optional": True,
     },
+    {
+        "key": "review_settings",
+        "label": "Review Your Settings",
+        "description": "Open Settings and Security Settings to customize your portal",
+        "optional": False,
+    },
 ]
 
 
@@ -94,6 +100,9 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
     # review_readiness is manual — preserve from stored progress
     if progress.get("completed_steps", {}).get("review_readiness"):
         completed["review_readiness"] = True
+    # review_settings is manual — preserve from stored progress
+    if progress.get("completed_steps", {}).get("review_settings"):
+        completed["review_settings"] = True
     # Optional steps that were skipped are marked complete
     stored_completed = progress.get("completed_steps", {})
     for step in ONBOARDING_STEPS:

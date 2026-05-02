@@ -86,7 +86,7 @@ export default function OfflineAccessCard() {
   };
 
   const handleDisable = async () => {
-    if (!window.confirm('Turn off offline access? You\u2019ll need an internet connection to sign in on this device.')) return;
+    if (!window.confirm('Turn off offline access? You will need an internet connection to sign in on this device.')) return;
     try {
       await axios.post(`${API_URL}/auth/offline/revoke`, {}, getAuthHeaders());
       const identifier = (user?.email || user?.username || '').toLowerCase();
@@ -115,7 +115,7 @@ export default function OfflineAccessCard() {
               <div className="min-w-0">
                 <p className="text-sm font-bold text-[var(--t)]">Offline access on this device</p>
                 <p className="text-xs font-semibold text-[var(--t4)] mt-1 leading-relaxed">
-                  Sign in without internet. Your estate stays available even when you\u2019re offline. Only enable this on devices you trust.
+                  Sign in without internet. Your estate stays available even when you&rsquo;re offline. Only enable this on devices you trust.
                 </p>
               </div>
             </div>
@@ -135,7 +135,7 @@ export default function OfflineAccessCard() {
           <div className="glass-card max-w-md w-full p-6 rounded-2xl">
             <h3 className="text-lg font-bold text-[var(--t)] mb-2">Enable offline access</h3>
             <p className="text-sm font-semibold text-[var(--t4)] mb-5 leading-relaxed">
-              Re-enter your password. We\u2019ll use it to encrypt a sign-in credential that stays only on this device — never sent to our servers in plain text.
+              Re-enter your password. We&rsquo;ll use it to encrypt a sign-in credential that stays only on this device &mdash; never sent to our servers in plain text.
             </p>
             <div className="space-y-3">
               <Label htmlFor="offline-pwd" className="text-xs font-bold text-[var(--t3)]">Current password</Label>

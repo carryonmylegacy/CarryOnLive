@@ -15,6 +15,11 @@ import { API_URL } from '../config';
 import { RevealSection } from '../components/landing/RevealSection';
 import LandingContent from '../components/landing/LandingContent';
 import ForgotPasswordModal from '../components/auth/ForgotPasswordModal';
+import { isPWA as isStandalonePWA } from '../utils/isPWA';
+import {
+  getOfflineCredential,
+  unlockOfflineCredential,
+} from '../offline/offlineCredentialCache';
 
 /**
  * Offline notice + recovery tip rendered above the sign-in form when
@@ -68,7 +73,7 @@ const useIsMobileViewport = (breakpoint = 768) => {
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login, verifyOtp, resendOtp } = useAuth();
+  const { login, verifyOtp, resendOtp, loginWithToken: authLoginWithToken } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -255,21 +260,74 @@ const LoginPage = () => {
         setShowOtpModal(true);
       }
     } catch (error) {
+      const looksOffline = !error.response && (
+        error.code === 'ERR_OFFLINE' ||
+        error.code === 'ECONNABORTED' ||
+        error.code === 'ERR_NETWORK' ||
+        error.message === 'Network Error' ||
+        error.message === 'offline' ||
+        (typeof navigator !== 'undefined' && navigator.onLine === false)
+      );
+
+      // PWA-only offline-credential fallback. Attempted ONLY when:
+      //   1. The network is genuinely down (server never saw the request).
+      //   2. The user is in an installed PWA (browser tabs don't expose
+      //      this affordance — the use case requires a home-screen app
+      //      that boots offline).
+      //   3. A previously-enrolled offline credential exists for the
+      //      identifier the user just typed. AES-GCM decryption with
+      //      the typed password recovers the long-lived JWT.
+      // If any step fails, we fall through to the normal error UX so the
+      // user gets the standard "you're offline" / "invalid credentials"
+      // message they expect.
+      if (looksOffline && isStandalonePWA() && email && password) {
+        try {
+          const identifier = email.trim().toLowerCase();
+          const rec = await getOfflineCredential(identifier);
+          if (rec) {
+            const { token: offlineToken } = await unlockOfflineCredential({ identifier, password });
+            // Decode the JWT payload to recover minimal user shape.
+            // We cannot verify it here (no backend); the server will
+            // re-validate on the next online API call.
+            let payload = {};
+            try {
+              const seg = offlineToken.split('.')[1];
+              const json = atob(seg.replace(/-/g, '+').replace(/_/g, '/'));
+              payload = JSON.parse(json);
+            } catch { /* leave payload empty — navigateToHome falls back to /dashboard */ }
+
+            const cachedUser = {
+              id: payload.user_id || '',
+              email: payload.email || identifier,
+              role: payload.role || 'benefactor',
+              name: payload.name || identifier,
+              username: identifier,
+              admin_scope: [],
+              is_also_benefactor: false,
+              is_also_beneficiary: false,
+            };
+            authLoginWithToken(offlineToken, cachedUser);
+            haptics.success();
+            toast.success('Signed in offline. Some pages may be limited until you reconnect.');
+            navigateToHome({ user: cachedUser });
+            return;
+          }
+        } catch (offlineErr) {
+          if (offlineErr?.message === 'wrong_password') {
+            toast.error('Wrong password for offline sign-in. Please try again.', { force: true });
+            return;
+          }
+          // Any other unexpected error → fall through to the existing
+          // offline toast below so behavior is unchanged.
+        }
+      }
+
       if (error.response?.status === 429) {
         const detail = error.response?.data?.detail || '';
         const match = detail.match(/(\d+)\s*seconds/);
         const secs = match ? parseInt(match[1], 10) : 180;
         setLockoutSeconds(secs);
-      } else if (
-        !error.response && (
-          error.code === 'ERR_OFFLINE' ||
-          error.code === 'ECONNABORTED' ||
-          error.code === 'ERR_NETWORK' ||
-          error.message === 'Network Error' ||
-          error.message === 'offline' ||
-          (typeof navigator !== 'undefined' && navigator.onLine === false)
-        )
-      ) {
+      } else if (looksOffline) {
         // Honest offline message — the server never saw the request,
         // so we shouldn't blame the credentials. iOS Safari's
         // `navigator.onLine` can return true even in airplane mode, so
