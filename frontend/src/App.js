@@ -442,6 +442,11 @@ function AppRoutes() {
         <Route path="/transition" element={<TransitionPage />} />
         <Route path="/digital-wallet" element={<FeatureGate><DigitalWalletPage /></FeatureGate>} />
         <Route path="/financial" element={<FeatureGate><FinancialPortalPage /></FeatureGate>} />
+        {/* Friendly alias — old marketing/email links and the documented
+            test plan reference /financial-portal; canonical path is
+            /financial. Redirect rather than 404 so historical links keep
+            working without a silent fall-through to /dashboard. */}
+        <Route path="/financial-portal" element={<Navigate to="/financial" replace />} />
         <Route path="/timeline" element={<FeatureGate><LegacyTimelinePage /></FeatureGate>} />
         <Route path="/estate-chat" element={<FeatureGate><EstateChatPage /></FeatureGate>} />
         <Route path="/connected-protocol" element={<FeatureGate><ConnectedProtocolPage /></FeatureGate>} />

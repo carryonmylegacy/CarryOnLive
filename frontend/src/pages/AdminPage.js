@@ -255,6 +255,20 @@ const PATH_TO_TAB = {
   '/admin/invites': 'founder-invites',
   '/admin/templates': 'canned-responses',
   '/admin/members': 'ops-members',
+  // Section-level URL aliases — when the founder pastes a deep link
+  // like /admin/finance during a Zoom pitch, land them on the canonical
+  // first tab inside that section instead of falling through to the
+  // generic Users overview. Mirrors SCOPE_DEFAULT_TAB so the manual
+  // ?scope= URL and the section-level path produce the same view.
+  '/admin/finance': 'subscriptions',
+  '/admin/compliance': 'audit',
+  '/admin/marketing': 'funnel',
+  '/admin/operations': 'ops-dashboard',
+  '/admin/platform-health': 'system-health',
+  '/admin/launch-war-room': 'war-room',
+  // FeatureGatesCard lives inside SubscriptionsTab, so the deep link
+  // lands on the same tab and scrolls the gates table into view.
+  '/admin/feature-gates': 'subscriptions',
   // Operations portal paths
   '/ops/transition': 'transition',
   '/ops/dts': 'dts',
