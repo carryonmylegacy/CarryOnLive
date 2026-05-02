@@ -1,5 +1,28 @@
 # CarryOn — Changelog
 
+## Feb 2026 — PWA-only Offline Login + Onboarding Step 8 (iter 119: 14/14 PASS)
+
+**PWA Offline Login (P0 — completed):** Picked up from prior fork that had laid file groundwork but hadn't wired the UI. Three changes finished the loop:
+
+- `frontend/src/pages/SettingsPage.js` — wired `OfflineAccessCard` into Settings → Offline section directly under `OfflineBehaviorCard`. Card auto-hides itself when `isPWA() === false`, so plain browser tabs see no change.
+- `frontend/src/pages/LoginPage.js` — added an offline-credential decrypt fallback in `handleLogin()`'s catch-block. Triggers ONLY when (a) the network is genuinely down (`navigator.onLine === false` OR `Network Error` axios code), (b) `isPWA() === true`, AND (c) a previously-enrolled offline credential exists in IndexedDB for the typed identifier. AES-GCM decrypt with the typed password recovers the long-lived JWT, hydrates `loginWithToken(...)` with a JWT-decoded user shape, surfaces a "Signed in offline. Some pages may be limited until you reconnect." toast, and routes to the role's home. Wrong password → "Wrong password for offline sign-in." toast (AES-GCM auth-tag failure surfaced cleanly).
+- `backend/utils.py` `get_current_user()` — moved the offline-credential revocation check OUTSIDE the admin-exempt block so toggling Settings → Offline access OFF truly invalidates the credential for every role (admin previously bypassed). Regular online admin tokens remain unaffected (multi-session admin behavior preserved).
+
+**Onboarding Step 8 (P0 — completed):**
+- `backend/routes/onboarding.py` — `ONBOARDING_STEPS` extended with new entry `{key: 'review_settings', label: 'Review Your Settings', description: 'Open Settings and Security Settings to customize your portal', optional: False}`. Manual completion preservation block extended to honor `review_settings` (parallel to `review_readiness`).
+- `frontend/src/components/OnboardingWizard.js` — `STEP_CONFIG` extended with the `Settings` lucide icon, slate accent, and `route: '/settings'`. `handleStepClick` auto-marks `review_settings` complete on first click (visiting Settings is the goal).
+
+**Backend regression (iter 119, 14/14 PASS):**
+- Enroll → JWT carries `session_id=offline_<credential_id>` and `offline=true`; works against `/api/auth/me`.
+- Revoke (no body and targeted `credential_id`) → DB `offline_credentials` array updates correctly; subsequent use of the offline token returns HTTP 401 `detail='offline_credential_revoked'` even for admin role.
+- Online admin token unaffected by enroll+revoke cycles.
+- `/onboarding/progress` returns `total_steps: 8` with the new step present; `/complete-step/review_settings` now 200 (was 400 invalid-step).
+- All 7 legacy onboarding keys still validate; invalid keys still 400.
+
+**Housekeeping:** All ESLint + ruff clean. `bash /app/scripts/check.sh` → ALL CLEAR — SAFE TO PUSH. `/app/housekeeping.sh` 0 WARN / 0 FAIL.
+
+
+
 ## Apr 29, 2026 (later×3) — PDM menu shortcut: multi-estate picker (iter 91)
 
 User-requested refinement to the Public Device Mode menu button:
