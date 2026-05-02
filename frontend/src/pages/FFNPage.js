@@ -296,7 +296,9 @@ export default function FFNPage() {
                 {editingId ? 'Edit Contact' : 'Add Contact'}
               </h2>
               <button onClick={() => { clearDraft(); setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); }}
-                className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)]">
+                className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)]"
+                aria-label="Close"
+                data-testid="ffn-modal-close">
                 <X className="w-4 h-4" />
               </button>
             </div>
