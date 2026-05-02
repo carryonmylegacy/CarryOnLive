@@ -269,56 +269,76 @@ const LoginPage = () => {
         (typeof navigator !== 'undefined' && navigator.onLine === false)
       );
 
-      // PWA-only offline-credential fallback. Attempted ONLY when:
-      //   1. The network is genuinely down (server never saw the request).
-      //   2. The user is in an installed PWA (browser tabs don't expose
-      //      this affordance — the use case requires a home-screen app
-      //      that boots offline).
-      //   3. A previously-enrolled offline credential exists for the
-      //      identifier the user just typed. AES-GCM decryption with
-      //      the typed password recovers the long-lived JWT.
-      // If any step fails, we fall through to the normal error UX so the
-      // user gets the standard "you're offline" / "invalid credentials"
-      // message they expect.
-      if (looksOffline && isStandalonePWA() && email && password) {
+      // PWA-only offline-credential fallback. Attempted whenever:
+      //   1. The device is an installed PWA (home-screen app — the whole
+      //      point of offline login).
+      //   2. The server login didn't return a real HTTP response
+      //      (network failed OR navigator.onLine is false). Includes
+      //      the tricky transitional-airplane-mode-just-toggled-off
+      //      case where the OS thinks we're online but the radio hasn't
+      //      reattached yet.
+      //   3. The user provided a password (without one there's nothing
+      //      to decrypt).
+      // We do NOT require the typed identifier to match the enroll
+      // identifier — getOfflineCredential() falls back to the single
+      // stored credential on the device when exact match fails. The
+      // AES-GCM auth tag is the real gate.
+      if (!error.response && isStandalonePWA() && password) {
         try {
-          const identifier = email.trim().toLowerCase();
-          const rec = await getOfflineCredential(identifier);
-          if (rec) {
-            const { token: offlineToken } = await unlockOfflineCredential({ identifier, password });
-            // Decode the JWT payload to recover minimal user shape.
-            // We cannot verify it here (no backend); the server will
-            // re-validate on the next online API call.
-            let payload = {};
+          const rec = await getOfflineCredential(email);
+          if (!rec) {
+            // Truly no credential on this device → fall through to
+            // standard error UX.  Emit a clear toast here so the
+            // screen doesn't look hung.
+            if (looksOffline) {
+              toast.error(
+                "You're offline and no offline sign-in is enabled on this device. Reconnect, sign in once, then enable offline access in Settings.",
+                { force: true, duration: 7000 },
+              );
+              return;
+            }
+          } else {
+            toast.loading('Unlocking offline sign-in…', { duration: 4000 });
             try {
-              const seg = offlineToken.split('.')[1];
-              const json = atob(seg.replace(/-/g, '+').replace(/_/g, '/'));
-              payload = JSON.parse(json);
-            } catch { /* leave payload empty — navigateToHome falls back to /dashboard */ }
-
-            const cachedUser = {
-              id: payload.user_id || '',
-              email: payload.email || identifier,
-              role: payload.role || 'benefactor',
-              name: payload.name || identifier,
-              username: identifier,
-              admin_scope: [],
-              is_also_benefactor: false,
-              is_also_beneficiary: false,
-            };
-            authLoginWithToken(offlineToken, cachedUser);
-            haptics.success();
-            toast.success('Signed in offline. Some pages may be limited until you reconnect.');
-            navigateToHome({ user: cachedUser });
-            return;
+              const { token: offlineToken } = await unlockOfflineCredential({
+                identifier: rec.identifier,
+                password,
+              });
+              let payload = {};
+              try {
+                const seg = offlineToken.split('.')[1];
+                const json = atob(seg.replace(/-/g, '+').replace(/_/g, '/'));
+                payload = JSON.parse(json);
+              } catch { /* empty */ }
+              const cachedUser = {
+                id: payload.user_id || '',
+                email: payload.email || rec.identifier,
+                role: payload.role || 'benefactor',
+                name: payload.name || rec.identifier,
+                username: rec.identifier,
+                admin_scope: [],
+                is_also_benefactor: false,
+                is_also_beneficiary: false,
+              };
+              authLoginWithToken(offlineToken, cachedUser);
+              haptics.success();
+              toast.success('Signed in offline. Some pages may be limited until you reconnect.', { force: true });
+              navigateToHome({ user: cachedUser });
+              return;
+            } catch (unlockErr) {
+              if (unlockErr?.message === 'wrong_password') {
+                toast.error('Wrong password for offline sign-in. Please try again.', { force: true });
+                return;
+              }
+              toast.error("Offline sign-in failed. Reconnect and try again.", { force: true });
+              return;
+            }
           }
         } catch (offlineErr) {
-          if (offlineErr?.message === 'wrong_password') {
-            toast.error('Wrong password for offline sign-in. Please try again.', { force: true });
-            return;
-          }
-          // Any other unexpected error → fall through to the existing
-          // offline toast below so behavior is unchanged.
+          // IndexedDB open failure or similar — surface something, don't
+          // silently fall through to a "sign in requires a connection"
+          // toast when the user enrolled offline access.
+          console.error('Offline login path errored:', offlineErr);
         }
       }
 

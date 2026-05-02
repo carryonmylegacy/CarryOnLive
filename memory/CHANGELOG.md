@@ -1,5 +1,67 @@
 # CarryOn — Changelog
 
+## Feb 2026 — Offline Login Bug Fix (user-reported on installed PWA)
+
+User enrolled offline access from the Settings switch, logged out, turned
+on airplane mode, tried to sign in — screen **hung with no feedback**. On
+turning airplane mode off and retrying, got the toast *"You're offline.
+Sign in requires a connection — reconnect and try again."* Force-quit
+then reopen worked fine.
+
+**Root cause:** three compounding issues:
+
+1. **Identifier mismatch.** `OfflineAccessCard` enrolled the credential
+   under `user.email` (e.g. `info@carryon.us`) but on the login form the
+   user often types their **username** (e.g. `admin_5dfa64`). The lookup
+   `getOfflineCredential(typedIdentifier)` returned null → the offline
+   path was abandoned silently.
+2. **Silent fallthrough.** When the credential lookup returned null the
+   catch-block fell through to the standard-error branch with no user
+   feedback — the screen looked frozen.
+3. **Over-narrow trigger gate.** The offline-unlock path only fired when
+   `looksOffline` was true, which relied on `navigator.onLine` / axios
+   error codes. In the airplane-off-but-radio-not-reattached race these
+   can flicker back to "online" for a moment while the server is still
+   unreachable, so a legitimate offline attempt was treated as a normal
+   online failure.
+
+**Fixes (`frontend/src/pages/LoginPage.js` + `frontend/src/offline/offlineCredentialCache.js`):**
+
+- `getOfflineCredential(id)` now falls back to the single stored
+  credential on the device when an exact identifier match fails. AES-GCM
+  auth tag still validates the password so there is no security
+  downgrade — a wrong identifier with the right password still proves
+  physical + password possession on a trusted device.
+- `LoginPage.handleLogin` now triggers the offline-unlock path whenever
+  the server call failed to return an HTTP response AND the device is an
+  installed PWA AND a password was typed. This covers
+  airplane-mode-on, flaky-network, server-unreachable, and
+  transitional-online cases in a single branch.
+- Every failure mode now produces a clear toast: "Wrong password for
+  offline sign-in" · "Offline sign-in failed. Reconnect and try again" ·
+  "You're offline and no offline sign-in is enabled on this device.
+  Reconnect, sign in once, then enable offline access in Settings." All
+  three carry `force: true` so the global toast suppression doesn't eat
+  them. A `toast.loading('Unlocking offline sign-in…')` surfaces during
+  PBKDF2 derivation (≈2–3 s on mobile) so it no longer looks hung.
+- New `clearAllOfflineCredentials()` wired into the Settings toggle-off
+  so any leftover mismatched row is wiped on revoke (not just the one
+  keyed by the current `user.email`).
+
+**Verification (preview pod Playwright):**
+
+- Enrolled while signed in as `info@carryon.us` (stored under email key).
+- Went offline via `context.set_offline(true)`.
+- Typed the username `admin_5dfa64` (different from enrolled identifier)
+  plus the correct password.
+- Login succeeded → token persisted in localStorage → routed to /admin.
+- No spurious toasts. Standard "You're offline — you can still record
+  milestones…" banner surfaced on the landed page as expected.
+
+Housekeeping 0 WARN / 0 FAIL strict. ESLint clean.
+
+
+
 ## Feb 2026 — Production Pressure Test + 2 Bug Fixes (iter 121 → 122: 100% PASS)
 
 User-requested e2e pressure test of `https://app.carryon.us` ahead of B2B Zoom pitches. Tested all 9 public routes, all 16 founder admin tabs (founder@carryon.us), all 14 benefactor surfaces (megumiharris@gmail.com), all 7 beneficiary surfaces (barnetharris) on desktop 1440x900 + mobile 390x844.

@@ -102,12 +102,30 @@ export async function saveOfflineCredential({
 /**
  * Look up a stored offline credential by identifier (email/username).
  * Returns the raw record (no decryption attempted) or null.
+ *
+ * Matching is deliberately lenient because the identifier on enroll
+ * (usually the user's email from their account) can differ from what
+ * the user types on the offline login form (often their username).
+ * Resolution order:
+ *   1. Exact match on the typed, trimmed, lower-cased identifier.
+ *   2. If exactly ONE credential exists on this device, return it.
+ *      The AES-GCM auth tag will still validate the password, so
+ *      there's no security downgrade — a wrong identifier but right
+ *      password is still a legitimate login on a trusted device.
  */
 export async function getOfflineCredential(identifier) {
-  if (!identifier) return null;
-  const id = identifier.trim().toLowerCase();
-  const rec = await getDB().offlineCredential.get(id);
-  return rec || null;
+  const db = getDB();
+  const id = (identifier || '').trim().toLowerCase();
+  if (id) {
+    const rec = await db.offlineCredential.get(id);
+    if (rec) return rec;
+  }
+  const count = await db.offlineCredential.count();
+  if (count === 1) {
+    const all = await db.offlineCredential.toArray();
+    return all[0] || null;
+  }
+  return null;
 }
 
 /**
@@ -143,6 +161,15 @@ export async function unlockOfflineCredential({ identifier, password }) {
 export async function clearOfflineCredential(identifier) {
   if (!identifier) return;
   await getDB().offlineCredential.delete(identifier.trim().toLowerCase());
+}
+
+/**
+ * Wipe EVERY offline credential record on this device. Used when the
+ * user toggles Settings → Offline access OFF so we don't leak a
+ * mismatched row if the enroll identifier differs from the typed one.
+ */
+export async function clearAllOfflineCredentials() {
+  await getDB().offlineCredential.clear();
 }
 
 /**

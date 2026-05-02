@@ -31,7 +31,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { isPWA } from '../../utils/isPWA';
 import {
   saveOfflineCredential,
-  clearOfflineCredential,
+  clearAllOfflineCredentials,
   hasAnyOfflineCredential,
 } from '../../offline/offlineCredentialCache';
 
@@ -89,8 +89,7 @@ export default function OfflineAccessCard() {
     if (!window.confirm('Turn off offline access? You will need an internet connection to sign in on this device.')) return;
     try {
       await axios.post(`${API_URL}/auth/offline/revoke`, {}, getAuthHeaders());
-      const identifier = (user?.email || user?.username || '').toLowerCase();
-      await clearOfflineCredential(identifier);
+      await clearAllOfflineCredentials();
       setEnrolled(false);
       toast.success('Offline access disabled.');
     } catch (err) {
