@@ -859,6 +859,20 @@ Three console/UX cleanups requested by user as "optional polish" after iter 116 
 
 3. **Login email `name="email"`** (`pages/LoginPage.js` x3 layouts): added the standard HTML `name` attribute to all three login email inputs (mobile / PWA / desktop). Helps password managers, autofill, and gives test frameworks a stable native selector beyond the existing testids.
 
+## Offline Photo Cache — Actually Working Now (Feb 2026)
+**User-reported gap**: "The configure-CORS job is recommended? This isn't already done to support offline mode?!" — confirmed honest diagnosis: the bucket-level CORS rule had never been applied, so every `fetch()` against signed S3 URLs failed with `net::ERR_FAILED`, which silently broke `imageBlobsRepo.fetchAndStoreImageBlob` for the entire history of the project. Photos rendered fine online via `<img src>` (CORS-exempt) but the IndexedDB cache layer never populated, meaning beneficiaries opening the app cold in airplane mode would have seen broken avatars.
+
+**Fix shipped**:
+1. `backend/scripts/configure_s3_cors.py` — one-time boto3 `put_bucket_cors` script that applies the AllowedOrigins list (`https://carryon.us`, `https://www.carryon.us`, `https://*.preview.emergentagent.com`, `capacitor://localhost`, `ionic://localhost`) + GET method + standard expose headers. Idempotent, safe to re-run. Already executed on production.
+2. `frontend/src/offline/imageBlobsRepo.js` — removed the host-blocklist seed that was masking the symptom (no longer needed now that the bucket actually allows the fetches).
+
+**Verified on prod (iter 117):**
+- Direct cross-origin fetch returns `200 OK` with image bytes (28590 bytes for the test image)
+- IndexedDB `carryon-offline.imageBlob` store now contains **19 cached photo blobs** after a single warmup run
+- Zero `net::ERR_FAILED` errors (was 90+ per session before)
+
+**Residual cleanup** (low-priority, non-blocking): 18 "blocked by CORS policy" console.error messages remain — likely a single fetch() call site still adding a header (Authorization, custom Cache-Control) that triggers preflight. Audit + remove the header to get to a fully clean console.
+
 ## Known Refactor Targets (Post-Launch, Low Urgency)
 
 **Apr 28, 2026 — ALL major monoliths refactored this session:**
