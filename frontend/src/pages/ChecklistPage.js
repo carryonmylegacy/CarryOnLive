@@ -612,6 +612,7 @@ const ChecklistPage = () => {
           onClick={() => { setEditingItem(null); setForm({ ...EMPTY_FORM }); setShowForm(true); }}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
           style={{ background: 'linear-gradient(135deg, #d4af37, #b8941f)', color: '#0b1120' }}
+          data-testid="iac-add-btn"
         >
           <Plus className="w-4 h-4" /> Add Item
         </button>
@@ -793,6 +794,7 @@ const ChecklistPage = () => {
             onClick={() => setShowForm(true)}
             className="px-5 py-2.5 rounded-xl text-sm font-bold"
             style={{ background: 'linear-gradient(135deg, #d4af37, #b8941f)', color: '#0b1120' }}
+            data-testid="iac-empty-add-btn"
           >
             <Plus className="w-4 h-4 inline mr-1" /> Create First Item
           </button>
