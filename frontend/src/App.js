@@ -180,30 +180,36 @@ class RouteErrorBoundary extends React.Component {
   };
   handleSignOut = () => {
     // Hard escape hatch: clear every auth-related artifact so the user
-    // can never get stuck on this screen with no way out (which has
-    // happened on iPhone PWA where they had to uninstall the app).
-    // Listed keys mirror the AuthContext.logout() implementation; we
-    // duplicate them here because the boundary may render OUTSIDE the
-    // AuthContext provider tree depending on where the throw came from.
+    // can never get stuck on this screen with no way out. Listed keys
+    // mirror the AuthContext.logout() implementation; we duplicate them
+    // here because the boundary may render OUTSIDE the AuthContext
+    // provider tree depending on where the throw came from.
     try {
       ['carryon_token','carryon_user','selected_estate_id','beneficiary_estate_id','beneficiary_feature_access','carryon_last_portal','enabled_features']
         .forEach(k => localStorage.removeItem(k));
-      sessionStorage.clear();
     } catch { /* private mode etc. */ }
-    // Use location.href instead of router navigate — the boundary can't
-    // assume a working router context, and a hard nav rebuilds React
-    // state from scratch which is exactly what we want here.
-    window.location.href = '/login';
+    // Soft reset — replace history + reset the boundary state so React
+    // re-mounts the route tree against the now-empty auth context. We
+    // intentionally do NOT call window.location.reload() or
+    // location.href: a hard nav while offline races the service-worker
+    // shell cache and can serve a stale or partially-styled /login
+    // (user reported logo missing + layout shifted). Clearing
+    // sessionStorage is also avoided — sessionStorage holds active
+    // form drafts that the user may want to recover next time.
+    try { window.history.replaceState({}, '', '/login'); } catch { /* iOS quirky */ }
+    this.setState({ hasError: false, errorPath: null, errorKind: null });
   };
   render() {
     if (this.state.hasError) {
       const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
-      // Any time we hit the boundary while truly offline, treat it as
-      // the same friendly "needs connection" path — the scary
-      // "Something went wrong" headline (which the user reported as a
-      // pitch-killer that forced an app reinstall) is reserved for
-      // genuine bugs that happen with a working network.
-      const isOfflineChunk = (this.state.errorKind === 'chunk' && offline) || offline;
+      // Only show the friendly "needs connection first time" copy for
+      // genuine chunk-load failures while offline — those are the
+      // case where the JS bundle truly wasn't cached. For any other
+      // error (real exception in a component on a page the user has
+      // visited before), keep the honest "Something went wrong"
+      // headline so we don't lie to the user. The Sign-out button
+      // below is the universal escape hatch either way.
+      const isOfflineChunk = this.state.errorKind === 'chunk' && offline;
       const title = isOfflineChunk ? 'This page needs a connection the first time' : 'Something went wrong';
       const subtitle = isOfflineChunk
         ? "We couldn't load this page offline because you haven't opened it before. Pick another page, or reconnect and try again — it'll work everywhere from then on."

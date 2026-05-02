@@ -1,5 +1,24 @@
 # CarryOn — Changelog
 
+## Feb 2026 — ErrorBoundary + Login Form Fixes (round 2)
+
+User reported the previous round caused a worse experience: the "needs a connection the first time" copy showed up after a successful offline login (misleading, because they HAD visited the page), and the sign-out hard-reload landed on a broken `/login` (logo missing, layout shifted up, autofill mis-mapping password into the username field, only force-quit recovered).
+
+**Reverted the over-aggressive offline copy.** `RouteErrorBoundary` now only shows *"This page needs a connection the first time"* when both `errorKind === 'chunk'` AND `navigator.onLine === false`. Any other error (real component exception on a previously-visited page) shows the honest *"Something went wrong"* headline with the Sign-out button as the universal escape hatch. We don't lie to the user about the cause anymore.
+
+**Soft sign-out (no hard reload).** `handleSignOut` no longer calls `window.location.href = '/login'`. Hard navigation while offline races the service worker shell cache and can serve a partially-styled / stale `/login`. The new path:
+1. Clear auth keys from localStorage (token, user, last_portal, enabled_features, beneficiary_estate_id, beneficiary_feature_access).
+2. `window.history.replaceState({}, '', '/login')` so the URL bar matches.
+3. `setState({ hasError: false })` so React re-mounts the route tree against the now-empty AuthContext — which redirects to `/login` cleanly without a network round trip.
+
+`sessionStorage.clear()` also removed from the sign-out path — that store holds active form drafts (CCP wizard, MM compose, IAC, CFP, etc.) that the user may want to recover.
+
+**iOS autofill mis-mapping fix.** The three password inputs in LoginPage (PWA layout, marketing layout, OTP modal layout) all had `autoComplete="current-password"` but no `name` attribute. iOS WebKit's autofill heuristics fall back to position-based matching when `name` is missing and can put the password in the wrong field — exactly what the user reported. Added `name="password"` to all three. The username/email input already had `name="email"` so it was fine.
+
+Lint clean. Housekeeping 0 WARN / 0 FAIL strict.
+
+
+
 ## Feb 2026 — Two iPhone PWA Fixes (post-offline-login lockout + login jitter)
 
 ### 1. ErrorBoundary lockout — user had to reinstall the PWA
