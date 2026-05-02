@@ -132,7 +132,7 @@ export default function OfflineAccessCard() {
 
       {showEnrollModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" data-testid="offline-enroll-modal">
-          <div className="glass-card max-w-md w-full p-6 rounded-2xl">
+          <div className="glass-card max-w-md w-full p-6 rounded-2xl overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 32px)' }}>
             <h3 className="text-lg font-bold text-[var(--t)] mb-2">Enable offline access</h3>
             <p className="text-sm font-semibold text-[var(--t4)] mb-5 leading-relaxed">
               Re-enter your password. We&rsquo;ll use it to encrypt a sign-in credential that stays only on this device &mdash; never sent to our servers in plain text.
