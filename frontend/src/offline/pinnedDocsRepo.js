@@ -26,9 +26,24 @@ export async function pinDocument(doc, fetchHeaders) {
   if (!doc?.id || !doc?.file_url) {
     throw new Error('pinDocument: doc.id and doc.file_url are required');
   }
-  // Fetch the actual file bytes. Use the same headers the foreground
-  // page uses so presigned URLs / auth cookies resolve correctly.
-  const res = await fetch(doc.file_url, { credentials: 'include', headers: fetchHeaders || {} });
+  // S3 presigned URLs encode auth in the query string; sending
+  // `credentials: 'include'` or an `Authorization` header to S3 forces
+  // a CORS preflight that S3 doesn't satisfy (it can't echo back
+  // `Access-Control-Allow-Credentials: true`), so the fetch fails with
+  // "Access to fetch ... blocked by CORS policy" — which was iter_117's
+  // 18 residual console errors. Detect cross-origin URLs and drop
+  // both the cookies AND the auth header for them; backend-relative
+  // URLs keep the original behavior since the same-origin case never
+  // triggers preflight.
+  let isCrossOrigin = false;
+  try {
+    const u = new URL(doc.file_url, window.location.origin);
+    isCrossOrigin = u.origin !== window.location.origin;
+  } catch { /* malformed URL — let fetch fail naturally */ }
+  const init = isCrossOrigin
+    ? { credentials: 'omit' }
+    : { credentials: 'include', headers: fetchHeaders || {} };
+  const res = await fetch(doc.file_url, init);
   if (!res.ok) throw new Error(`pinDocument: HTTP ${res.status}`);
   const blob = await res.blob();
   await db[TABLE].put({
