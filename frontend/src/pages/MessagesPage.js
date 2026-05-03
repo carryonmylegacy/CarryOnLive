@@ -529,10 +529,21 @@ const MessagesPage = () => {
       // Flag-agnostic as of Apr 24, 2026: runs for every user whenever
       // the device is offline, because there is literally no other way
       // to save the recording.
+      //
+      // May 3 2026: switched from `navigator.onLine` to the
+      // `window.__isDeviceOffline()` helper from index.js — on iOS
+      // PWAs `navigator.onLine` can report TRUE even in airplane mode,
+      // which was sending video-milestone saves straight to the axios
+      // POST path and producing "Failed to create message: offline"
+      // toasts instead of queueing the recording. The helper tracks
+      // the authoritative `offline` window event so we get a correct
+      // answer inside installed PWAs too.
       const hasVideo = videoBlob && videoBlob !== 'existing';
       const hasAudio = !!audioBlob;
       try {
-        const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+        const isOffline = (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function')
+          ? window.__isDeviceOffline()
+          : (typeof navigator !== 'undefined' && navigator.onLine === false);
         if (isOffline && !editingMessage && (hasVideo || hasAudio)) {
           const { addPendingUpload } = await import('../offline/pendingUploadsRepo');
           const messageCreate = {
@@ -601,8 +612,12 @@ const MessagesPage = () => {
       // queue above), fall through to mutateWithOutbox. A local-only
       // optimistic row is inserted into `messages` so the list renders
       // immediately, and the POST/PUT is replayed on reconnect.
+      // Uses the authoritative __isDeviceOffline helper (iOS PWA
+      // navigator.onLine lies — see the hasVideo block above).
       {
-        const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+        const isOffline = (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function')
+          ? window.__isDeviceOffline()
+          : (typeof navigator !== 'undefined' && navigator.onLine === false);
         const hasMedia = hasVideo || hasAudio || !!attachmentFile;
         if (isOffline && !hasMedia) {
           const { mutateWithOutbox } = await import('../utils/offlineMutation');
@@ -684,8 +699,25 @@ const MessagesPage = () => {
       }
     } catch (error) {
       console.error('Save error:', error);
-      const detail = error.response?.data?.detail || error.message || 'Unknown error';
-      toast.error(`Failed to ${editingMessage ? 'update' : 'create'} message: ${detail}`);
+      // If the error was the axios interceptor short-circuiting because
+      // the device is offline, the user's video/recording may have been
+      // lost before the offline-queue branch could catch it. Show a
+      // clearer message than a raw "Failed to create message: offline"
+      // so it's obvious the fix is to stay on the screen and retry,
+      // not that something went catastrophically wrong. The queued
+      // path above SHOULD handle this in the common case (iOS PWA,
+      // navigator.onLine lies) — but this is a safety net for the
+      // rare case where the device flipped from online to offline
+      // between the check and the axios call.
+      const isOfflineErr = error?.code === 'ERR_OFFLINE'
+        || error?.message === 'offline'
+        || (!error?.response && (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function' && window.__isDeviceOffline(error)));
+      if (isOfflineErr) {
+        toast.error(`You appear to be offline. Your recording is safe — please stay on this screen and tap Save again when you reconnect.`);
+      } else {
+        const detail = error.response?.data?.detail || error.message || 'Unknown error';
+        toast.error(`Failed to ${editingMessage ? 'update' : 'create'} message: ${detail}`);
+      }
     } finally {
       setCreating(false);
       createInFlightRef.current = false;
@@ -696,7 +728,9 @@ const MessagesPage = () => {
     if (!window.confirm('Are you sure you want to delete this message?')) return;
 
     try {
-      const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      const isOffline = (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function')
+        ? window.__isDeviceOffline()
+        : (typeof navigator !== 'undefined' && navigator.onLine === false);
       if (isOffline) {
         const { mutateWithOutbox } = await import('../utils/offlineMutation');
         const { upsertLocalMessages } = await import('../offline/repos/messagesRepo');
