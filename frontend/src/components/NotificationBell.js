@@ -131,7 +131,7 @@ const NotificationBell = ({ collapsed }) => {
           {/* Mobile backdrop */}
           <div className="fixed inset-0 z-[199] bg-black/30 lg:hidden" onClick={() => setOpen(false)} />
           <div
-            className="fixed z-[200] rounded-xl overflow-hidden inset-x-4 lg:inset-x-auto"
+            className="fixed z-[200] rounded-xl overflow-hidden inset-x-4 lg:inset-x-auto flex flex-col"
             style={{
               // Mobile: fixed within safe areas
               top: 'calc(env(safe-area-inset-top, 0px) + 8px)',
@@ -154,7 +154,7 @@ const NotificationBell = ({ collapsed }) => {
             data-testid="notification-panel"
           >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--b)' }}>
+          <div className="flex items-center justify-between px-4 py-3 flex-shrink-0" style={{ borderBottom: '1px solid var(--b)' }}>
             <span className="text-xs font-bold text-[var(--t)] uppercase tracking-wider">Notifications</span>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
@@ -172,8 +172,16 @@ const NotificationBell = ({ collapsed }) => {
             </div>
           </div>
 
-          {/* List */}
-          <div className="overflow-y-auto" style={{ maxHeight: 'calc(100% - 48px)' }}>
+          {/* List — flex-1 + min-h-0 lets the list fill remaining height
+              under the parent's max-height cap so overflow-y-auto can
+              actually scroll. The previous `maxHeight: calc(100% - 48px)`
+              measured against the parent's CONTENT box, but the parent
+              only had `max-height` (no determinate height), so the
+              percentage collapsed to the inner content's natural size
+              and the list never scrolled on desktop. Mobile worked only
+              because there `top` and `bottom` are both fixed, giving
+              the parent a determinate height. */}
+          <div className="overflow-y-auto flex-1 min-h-0">
             {loading ? (
               <div className="flex justify-center py-6">
                 <div className="w-5 h-5 border-2 border-[var(--gold)] border-t-transparent rounded-full animate-spin" />
