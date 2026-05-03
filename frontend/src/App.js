@@ -176,27 +176,40 @@ class RouteErrorBoundary extends React.Component {
     window.removeEventListener('online', this._onOnline);
   }
   handleRetry = () => {
+    // When offline, retrying the same route re-mounts the same broken
+    // component which immediately throws again — user sees a flash and
+    // nothing changes. Send them to /login instead (the one route
+    // guaranteed to render even when offline) so they can escape.
+    // When online, just reset the boundary so the current route can
+    // attempt to fetch its data again.
+    const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    if (offline) {
+      try { window.history.replaceState({}, '', '/login'); } catch { /* empty */ }
+      try { window.dispatchEvent(new PopStateEvent('popstate')); } catch { /* empty */ }
+    }
     this.setState({ hasError: false, errorPath: null, errorKind: null });
   };
   handleSignOut = () => {
-    // Hard escape hatch: clear every auth-related artifact so the user
-    // can never get stuck on this screen with no way out. Listed keys
-    // mirror the AuthContext.logout() implementation; we duplicate them
-    // here because the boundary may render OUTSIDE the AuthContext
-    // provider tree depending on where the throw came from.
+    // Escape hatch: clear every auth-related artifact so the user
+    // can never get stuck on this screen. Listed keys mirror the
+    // AuthContext.logout() implementation; duplicated here because
+    // the boundary may render OUTSIDE the AuthContext provider tree
+    // depending on where the throw came from.
     try {
       ['carryon_token','carryon_user','selected_estate_id','beneficiary_estate_id','beneficiary_feature_access','carryon_last_portal','enabled_features']
         .forEach(k => localStorage.removeItem(k));
     } catch { /* private mode etc. */ }
-    // Soft reset — replace history + reset the boundary state so React
-    // re-mounts the route tree against the now-empty auth context. We
-    // intentionally do NOT call window.location.reload() or
-    // location.href: a hard nav while offline races the service-worker
-    // shell cache and can serve a stale or partially-styled /login
-    // (user reported logo missing + layout shifted). Clearing
-    // sessionStorage is also avoided — sessionStorage holds active
-    // form drafts that the user may want to recover next time.
+    // CRITICAL: replaceState alone does NOT make React Router v6
+    // re-render — RR only listens for popstate events natively. So the
+    // previous version of this handler caused the "flash and nothing
+    // changes" symptom (URL bar changed, but RR kept rendering the
+    // broken /dashboard route → component re-threw immediately →
+    // boundary flipped back to hasError:true). We now dispatch an
+    // explicit popstate event after replaceState so RR picks up the
+    // URL change and re-renders against /login. No hard nav, no SW
+    // shell race, no layout/CSS touched.
     try { window.history.replaceState({}, '', '/login'); } catch { /* iOS quirky */ }
+    try { window.dispatchEvent(new PopStateEvent('popstate')); } catch { /* very old browsers */ }
     this.setState({ hasError: false, errorPath: null, errorKind: null });
   };
   render() {
