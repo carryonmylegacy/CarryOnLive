@@ -65,6 +65,7 @@ const BeneficiarySettingsPage = () => {
           <div className="flex items-center gap-4 mb-4">
             <PhotoPicker
               currentPhoto={profilePhoto}
+              cacheKey={user?.id ? `user:${user.id}:photo` : undefined}
               onPhotoSelected={async (file, previewUrl) => {
                 setProfilePhoto(previewUrl);
                 const reader = new FileReader();

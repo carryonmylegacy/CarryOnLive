@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Camera, Upload, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
 import { resolvePhotoUrl } from '../utils/photoUrl';
+import OfflineImage from './OfflineImage';
 
 /**
  * Crop a circular area from an image and return a Blob.
@@ -31,7 +32,7 @@ async function getCroppedBlob(imageSrc, crop) {
   });
 }
 
-export function PhotoPicker({ onPhotoSelected, currentPhoto, onRemove }) {
+export function PhotoPicker({ onPhotoSelected, currentPhoto, onRemove, cacheKey }) {
   const [showSourcePicker, setShowSourcePicker] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
   const [rawImage, setRawImage] = useState(null);
@@ -151,7 +152,17 @@ export function PhotoPicker({ onPhotoSelected, currentPhoto, onRemove }) {
       >
         {currentPhoto ? (
           <>
-            <img src={resolvePhotoUrl(currentPhoto)} alt="Profile" className="w-20 h-20 rounded-full object-cover" />
+            <OfflineImage
+              src={resolvePhotoUrl(currentPhoto)}
+              cacheKey={cacheKey}
+              alt="Profile"
+              className="w-20 h-20 rounded-full object-cover"
+              fallback={
+                <div className="w-20 h-20 rounded-full bg-[var(--bg3)] flex items-center justify-center">
+                  <Camera className="w-8 h-8 text-[#64748b]" />
+                </div>
+              }
+            />
             {onRemove && (
               <button
                 type="button"

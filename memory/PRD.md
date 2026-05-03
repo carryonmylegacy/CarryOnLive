@@ -1,5 +1,14 @@
 # CarryOn - Family Preparedness Platform PRD
 
+> ## 🚨 USER TESTING ENVIRONMENT — READ BEFORE ANY VERIFICATION STEP
+>
+> **THIS USER NEVER TESTS IN THE PREVIEW ENVIRONMENT.**
+> **HE ONLY EVER PUSHES TO GITHUB, WAITS FOR IT TO FULLY DEPLOY, THEN ONLY EVER TESTS EVERYTHING ON THE LIVE PLATFORM.**
+>
+> When the user reports "it worked" / "it's broken" / "I just tested" — they mean **production** at `https://app.carryon.us` (and the iPhone PWA installed from that origin), NOT the preview pod URL. Do NOT assume preview-pod testing reproduces what they see. Do NOT ask them to verify on preview. When you ship a fix, they push to GitHub, wait for deploy, then test on the live platform. Plan your work and your follow-up questions around that workflow.
+>
+> Stated explicitly by the user (May 3, 2026), pin to top permanently.
+
 > ## 🔴 AGENT PROTOCOL — READ FIRST, EVERY FORK
 >
 > **Before doing ANYTHING, read `/app/memory/AGENT_RULES.md`.**

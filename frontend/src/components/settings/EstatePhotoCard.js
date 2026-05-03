@@ -49,6 +49,7 @@ const EstatePhotoCard = () => {
         <div className="flex items-center gap-4">
           <PhotoPicker
             currentPhoto={estatePhoto}
+            cacheKey={estateId ? `estate:${estateId}:cover` : undefined}
             onPhotoSelected={async (file, previewUrl) => {
               setEstatePhoto(previewUrl);
               try {

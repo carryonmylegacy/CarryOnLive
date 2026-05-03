@@ -1139,6 +1139,7 @@ const BeneficiariesPage = () => {
             <div className="flex justify-center">
               <PhotoPicker
                 currentPhoto={photoPreview}
+                cacheKey={editingBeneficiary?.id ? `beneficiary:${editingBeneficiary.id}:photo` : undefined}
                 onPhotoSelected={(file, previewUrl) => {
                   setPhotoFile(file);
                   setPhotoPreview(previewUrl);

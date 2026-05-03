@@ -8,6 +8,8 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
 import { PhotoPicker } from '../PhotoPicker';
+import { getLocalProfile, upsertLocalProfile } from '../../offline/repos/profileRepo';
+import { getOfflineMode } from '../../offline/featureFlag';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
@@ -34,11 +36,41 @@ const ProfileCard = () => {
   useEffect(() => {
     if (!user) return;
     setDisplayName(user.name || '');
-    axios.get(`${API_URL}/auth/me`, getAuthHeaders()).then(res => {
-      setProfilePhoto(res.data.photo_url || null);
-      setDisplayName(res.data.name || user.name || '');
-      setUsername(res.data.username || '');
-    }).catch(() => {});
+    let cancelled = false;
+    const mode = getOfflineMode();
+    // Offline-first paint: seed from IndexedDB cache (populated by
+    // warmUpAfterLogin → taskProfile) so the user's photo, display
+    // name, and username paint INSTANTLY — even when fully offline.
+    // PersonalInfoCard already does this; ProfileCard previously did
+    // not, which is why the founder reported "the benefactor avatar
+    // and personal info don't load offline" while every other
+    // beneficiary photo cached fine.
+    (async () => {
+      if (mode === 'on') {
+        try {
+          const local = await getLocalProfile();
+          if (local && !cancelled) {
+            if (local.photo_url) setProfilePhoto(local.photo_url);
+            if (local.name) setDisplayName(local.name);
+            if (local.username) setUsername(local.username);
+          }
+        } catch { /* ignore */ }
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+      }
+      try {
+        const res = await axios.get(`${API_URL}/auth/me`, getAuthHeaders());
+        if (cancelled) return;
+        setProfilePhoto(res.data.photo_url || null);
+        setDisplayName(res.data.name || user.name || '');
+        setUsername(res.data.username || '');
+        if (mode !== 'off') {
+          // Refresh the cache so the next offline relaunch has the
+          // newest photo URL + name. Fire-and-forget, never throws.
+          upsertLocalProfile(res.data || {}).catch(() => {});
+        }
+      } catch { /* swallow — keep local paint if any */ }
+    })();
+    return () => { cancelled = true; };
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
@@ -53,6 +85,7 @@ const ProfileCard = () => {
         <div className="flex items-center gap-4">
           <PhotoPicker
             currentPhoto={profilePhoto}
+            cacheKey={user?.id ? `user:${user.id}:photo` : undefined}
             onPhotoSelected={async (file, previewUrl) => {
               setProfilePhoto(previewUrl);
               try {
