@@ -3,6 +3,14 @@ import ReactDOM from "react-dom/client";
 import axios from "axios";
 import "./index.css";
 import App from "./App";
+import installHistoryRateLimit from "./utils/historyRateLimit";
+
+// Install the history.replaceState / pushState rate limiter FIRST —
+// before any library (React Router, Sentry, Capacitor, etc.) patches
+// history. This caps call rate below iOS Safari's hard 100-per-10-seconds
+// ceiling so we never throw the `SecurityError` that otherwise crashes
+// the PWA at boot. See utils/historyRateLimit.js for the full story.
+installHistoryRateLimit();
 
 // ── Global axios defaults — MUST run before any page mounts ────────────────
 // Two problems we fix here:
