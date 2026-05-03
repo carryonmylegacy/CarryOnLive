@@ -1,5 +1,31 @@
 # CarryOn — Changelog
 
+## Feb 2026 — Offline Avatar Caching Fix (FamilyTree, host-blocklist, SW-cache fallback)
+
+User reported on the desktop PWA: after going offline, **only some avatars retained their photo while others fell back to initials**. Root cause turned out to be three layered bugs, all in the offline image path.
+
+**1. FamilyTree.js was using raw `<img>` tags, bypassing the offline blob cache entirely.** AvatarCircle (used in BeneficiariesPage) already routed through `<OfflineImage>` with a `cacheKey`, but FamilyTree's `TreeNode` rendered photos through plain `<img src={resolvePhotoUrl(photo)}>`. When an S3 presigned URL expired between sessions, the `<img>` 403'd, the `onError` handler nuked the element, and we fell straight to initials — never consulting the IndexedDB blob the warmup had already stored. Replaced with `<OfflineImage cacheKey={...}>` and propagated the appropriate stable cache key from each call site:
+- Root benefactor node → `user:{user.id}:photo`
+- Beneficiary nodes → `beneficiary:{ben.id}:photo`
+- Beneficiary-estate nodes → `estate:{est.id}:cover` (preferred) or `estate:{est.id}:owner` (fallback)
+
+**2. The user's own profile photo was never persisted to IndexedDB blob storage.** `warmup.js#taskProfile` only called `prefetchPhotosFrom(res.data)` (which warms the SW IMAGE_CACHE via `new Image()`), not `fetchAndStoreImageBlob`. So even after my FamilyTree fix above, the root tree node still had no blob to fall back to. Added a single `fetchAndStoreImageBlob(res.data.photo_url, 'user:{id}:photo', 'photo')` call inside `taskProfile`. Fire-and-forget, properly guarded.
+
+**3. The per-host CORS blocklist was poisoning legitimate photos.** `imageBlobsRepo.fetchAndStoreImageBlob` wrapped its fetch in a single try/catch and added the host to `_corsBlockedHosts` on ANY exception — including `!res.ok` (a per-URL 403 for an expired presigned signature). One stale URL would knock out every other photo from the same S3 bucket for the rest of the session. Split the failure paths: a true `fetch()` throw (CORS preflight, network unreachable) still poisons the host blocklist; a non-OK HTTP status throws but does NOT poison. This restores fan-out fetching for the common "one URL is stale, the rest are fresh" case.
+
+**4. `_hostProbes` dedup was aspirational, not actual.** Comment claimed "only the first request hits the wire", but the implementation always constructed a fresh IIFE-style probe synchronously, regardless of whether one was already registered. With 9 parallel beneficiary fetches, all 9 fired before the first CORS failure could populate the blocklist — producing a thundering herd of 48+ red CORS errors per session. Restructured so the first caller per host registers its fetch as the probe; subsequent same-tick callers `await` that probe before deciding whether to fire their own (and bail if the host got blocklisted in the meantime).
+
+**5. `<OfflineImage>` offline path now falls through to the SW IMAGE_CACHE.** When offline AND the IndexedDB blob lookup misses, instead of immediately rendering the `fallback` (initials), we still set `resolvedSrc = src` so the `<img>` request fires — and the Service Worker's `IMAGE_CACHE` (which can store cross-origin OPAQUE responses without CORS, populated via `prefetchPhotosFrom`'s `<img>` warmup) gets a chance to serve the bytes. If the SW also misses, the natural `onError` handler downstream still renders the initials fallback.
+
+### What this does NOT solve
+Testing agent (iteration_123) confirmed the underlying S3 bucket `carryon-vault.s3.amazonaws.com` is missing CORS headers. `fetch()`-based blob storage will continue to fail until the bucket policy is updated server-side (allow GET + HEAD with `Access-Control-Allow-Origin: *` or a whitelist of preview/prod origins). The fixes above are the JS-side mitigations that maximize what we CAN cache without the bucket change — chiefly the SW IMAGE_CACHE fallback path which works on opaque cross-origin responses.
+
+Files touched: `components/FamilyTree.js`, `components/OfflineImage.js`, `offline/imageBlobsRepo.js`, `offline/warmup.js`. No CSS / layout changes.
+
+Lint clean. Housekeeping 0 WARN / 0 FAIL strict.
+
+
+
 ## Feb 2026 — ErrorBoundary + Login Form Fixes (round 2)
 
 User reported the previous round caused a worse experience: the "needs a connection the first time" copy showed up after a successful offline login (misleading, because they HAD visited the page), and the sign-out hard-reload landed on a broken `/login` (logo missing, layout shifted up, autofill mis-mapping password into the username field, only force-quit recovered).

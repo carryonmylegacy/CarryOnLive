@@ -107,23 +107,37 @@ export async function fetchAndStoreImageBlob(url, cacheKey, kind = 'photo') {
   }
   if (_corsBlockedHosts.has(host)) return false;
 
-  // If a probe for this host is already in flight, await it. If it failed,
-  // we'll see the host in _corsBlockedHosts on the next line and bail.
-  if (_hostProbes.has(host)) {
-    try { await _hostProbes.get(host); } catch {}
-    if (_corsBlockedHosts.has(host)) return false;
-  }
+  // True dedup: synchronously decide whether this caller is the FIRST
+  // for the host. If yes, this caller's fetch becomes the host-test
+  // probe and registers itself in `_hostProbes` BEFORE any awaits run
+  // so subsequent synchronous callers see it. If not, await the in-flight
+  // probe — and if it failed (CORS), bail without firing another fetch.
+  //
+  // Why this matters: warmup fans out via `for (const b of bens.data)
+  // fetchAndStoreImageBlob(...)` which is synchronous in scheduling.
+  // Without this guard, all N callers see `_hostProbes` empty, each
+  // fires their own fetch, and CORS errors land N times in the
+  // console for what is fundamentally a single bucket-wide failure.
+  const isFirstForHost = !_hostProbes.has(host);
 
-  const probe = (async () => {
+  const myFetch = (async () => {
+    if (!isFirstForHost) {
+      // Lost the race — wait for the first caller's CORS probe to
+      // resolve. If it failed, the host is now blocklisted, so bail.
+      try { await _hostProbes.get(host); } catch {}
+      if (_corsBlockedHosts.has(host)) return false;
+    }
+
     let res;
     try {
       res = await fetch(url, { credentials: 'omit', cache: 'default' });
     } catch (corsOrNetwork) {
       // True fetch() rejection — CORS preflight failure or network
-      // unreachable. Mark host as blocked so we don't keep banging on
-      // it for the rest of the session; the per-URL <img> render path
-      // still works because `<img>` doesn't enforce CORS.
-      _corsBlockedHosts.add(host);
+      // unreachable. Only the FIRST caller poisons the host blocklist;
+      // followers would otherwise stomp the flag too which is harmless
+      // but redundant. The per-URL <img> render path still works
+      // because `<img>` doesn't enforce CORS.
+      if (isFirstForHost) _corsBlockedHosts.add(host);
       throw corsOrNetwork;
     }
     if (!res.ok) {
@@ -139,18 +153,18 @@ export async function fetchAndStoreImageBlob(url, cacheKey, kind = 'photo') {
     return true;
   })();
 
-  // Only the FIRST caller per host gets to register the probe; everyone
-  // else who lost the race simply awaits the same promise above.
-  if (!_hostProbes.has(host)) _hostProbes.set(host, probe);
+  // Register the FIRST caller's promise synchronously (before any
+  // awaits below) so subsequent same-tick callers find it in the map.
+  if (isFirstForHost) _hostProbes.set(host, myFetch);
 
   try {
-    return await probe;
+    return await myFetch;
   } catch {
     return false;
   } finally {
-    // Once this resolves, future fetches to this host will short-circuit
-    // on `_corsBlockedHosts.has(host)` (CORS failure only) or run cleanly.
-    if (_hostProbes.get(host) === probe) _hostProbes.delete(host);
+    if (isFirstForHost && _hostProbes.get(host) === myFetch) {
+      _hostProbes.delete(host);
+    }
   }
 }
 

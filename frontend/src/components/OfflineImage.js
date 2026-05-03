@@ -68,7 +68,8 @@ export default function OfflineImage({
     const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
 
     if (isOffline) {
-      // Offline: try the blob cache first.
+      // Offline: try the IndexedDB blob cache first (stable cache key,
+      // survives S3 presigned-URL rotation across sessions).
       if (cacheKey) {
         getImageObjectUrl(cacheKey).then((url) => {
           if (myGen !== generationRef.current) {
@@ -79,12 +80,30 @@ export default function OfflineImage({
           if (url) {
             objectUrlRef.current = url;
             setResolvedSrc(url);
+          } else if (src) {
+            // No IndexedDB blob, but we still have a `src`. Try the
+            // live URL anyway — the Service Worker's IMAGE_CACHE
+            // (cross-origin opaque responses, populated via
+            // <img>-based prefetchPhotosFrom on prior visits) may
+            // intercept and serve it. The SW lookup is the ONLY way
+            // we can rescue cross-origin photos when CORS is missing
+            // on the upstream bucket (since fetch() can't store the
+            // bytes to IndexedDB without CORS, but <img> can still
+            // be served from CacheStorage opaque entries).
+            //
+            // If the SW also misses, the natural <img> onError
+            // handler downstream will fall back to `fallback` (the
+            // initials block).
+            setResolvedSrc(src);
           } else {
-            // No cached blob — show caller's fallback.
             setResolvedSrc(null);
             setErrored(true);
           }
         });
+      } else if (src) {
+        // No stable cacheKey but still have a src: same SW-cache
+        // rescue path as above.
+        setResolvedSrc(src);
       } else {
         setResolvedSrc(null);
         setErrored(true);
