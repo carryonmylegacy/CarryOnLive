@@ -289,21 +289,19 @@ class RouteErrorBoundary extends React.Component {
         }
       }
       const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
-      // Diagnostic: when ?debug=1 is in the URL OR
-      // localStorage.carryon_debug_errors is '1', surface the captured
-      // error message + first stack frame so the founder can read it
-      // back to us from a phone screenshot. Off by default — no
-      // change to the production UX.
+      // Show the captured error inline on the boundary so the founder
+      // can screenshot it directly from the iPhone PWA (no URL bar
+      // available on home-screen PWAs, can't paste javascript: tricks).
+      // The text is plain English + first stack frame; a one-line nudge
+      // is friendlier than a generic "Something went wrong" alone.
       let debugLine = null;
       try {
-        const debugOn = (typeof window !== 'undefined' && window.location.search.indexOf('debug=1') >= 0)
-          || (typeof localStorage !== 'undefined' && localStorage.getItem('carryon_debug_errors') === '1');
-        if (debugOn) {
-          const raw = localStorage.getItem('carryon_last_render_error');
-          if (raw) {
-            const e = JSON.parse(raw);
-            debugLine = `${e.name || 'Error'}: ${e.msg || ''} @ ${e.path || ''} (online=${e.online})`;
-          }
+        const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('carryon_last_render_error') : null;
+        if (raw) {
+          const e = JSON.parse(raw);
+          // First stack frame only — keeps it short on a phone screen.
+          const firstFrame = String(e.stack || '').split('\n').find(l => /\.js|\.tsx|\.jsx/.test(l)) || '';
+          debugLine = `${e.name || 'Error'}: ${e.msg || '(no message)'}${firstFrame ? '\n' + firstFrame.trim() : ''}`;
         }
       } catch { /* ignore */ }
       // Only show the friendly "needs connection first time" copy for
