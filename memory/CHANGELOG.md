@@ -1,6 +1,22 @@
 # CarryOn — Changelog
 
-## Feb 2026 — Offline Avatar Caching Fix (FamilyTree, host-blocklist, SW-cache fallback)
+## Feb 2026 — Offline Avatar Caching: Final Fix (S3 Regional URLs)
+
+iteration_123 testing-agent run identified that the JS-side fixes alone weren't enough — the S3 presigned URLs were 307-redirecting from the legacy global hostname to the regional one, and the redirect response was dropping CORS headers. The bucket CORS policy itself was correctly configured all along (`https://*.preview.emergentagent.com`, `https://carryon.us`, `https://www.carryon.us` — verified live via `s3.get_bucket_cors`).
+
+**Root cause:** `services/photo_urls.py` was instantiating boto3 without forcing SigV4 + virtual-hosted-style addressing. Default behaviour for non-`us-east-1` regions is to emit `<bucket>.s3.amazonaws.com` (the legacy global host). For an actual us-east-2 bucket, AWS responds with HTTP 307 → `<bucket>.s3.us-east-2.amazonaws.com`. The 307 carries no CORS headers, so browser-side `fetch()` rejects with a CORS preflight failure even though the destination would have served correctly.
+
+**Fix:** Pass `botocore.config.Config(signature_version='s3v4', s3={'addressing_style': 'virtual'})` when constructing the boto3 client. Verified the new presigned URLs hit `https://carryon-vault.s3.us-east-2.amazonaws.com/...` directly with no redirect, and the existing CORS policy on the bucket (which already allows the preview wildcard origin) now applies cleanly.
+
+Backend restarted; live `resolve_photo_url('photos/test.jpg')` returns a regional URL.
+
+Single file touched: `backend/services/photo_urls.py`. No CSS/UI changes.
+
+Lint clean. Housekeeping 0 WARN / 0 FAIL strict.
+
+
+
+## Feb 2026 — Offline Avatar Caching: JS-Side Fixes (FamilyTree, host-blocklist, SW-cache fallback)
 
 User reported on the desktop PWA: after going offline, **only some avatars retained their photo while others fell back to initials**. Root cause turned out to be three layered bugs, all in the offline image path.
 

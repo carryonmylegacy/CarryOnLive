@@ -16,14 +16,30 @@ _s3_bucket = os.environ.get("S3_BUCKET_NAME", "")
 if _s3_bucket and os.environ.get("AWS_ACCESS_KEY_ID"):
     try:
         import boto3
+        from botocore.config import Config
+
+        # Force regional virtual-hosted-style URLs with SigV4. Without
+        # this, boto3 emits LEGACY global hostnames (`<bucket>.s3.amazonaws.com`)
+        # for non-us-east-1 buckets, and AWS responds with a 307
+        # redirect to the regional host. The redirect response does NOT
+        # carry our bucket's CORS headers, so browsers raise a CORS
+        # failure on the redirect — which is exactly the symptom that
+        # broke offline avatar caching (Feb 2026 iteration_123 RCA).
+        # Generating regional URLs directly avoids the redirect and
+        # preserves CORS end-to-end.
+        _s3_config = Config(
+            signature_version="s3v4",
+            s3={"addressing_style": "virtual"},
+        )
 
         _s3_client = boto3.client(
             "s3",
             region_name=os.environ.get("S3_REGION", "us-east-1"),
             aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
             aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
+            config=_s3_config,
         )
-        logger.info("Photo URL resolver: using S3 presigned URLs")
+        logger.info("Photo URL resolver: using S3 presigned URLs (regional, SigV4)")
     except Exception as e:
         logger.warning(f"Photo URL resolver: S3 client init failed ({e}), using fallback")
 
