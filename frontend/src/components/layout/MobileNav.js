@@ -123,18 +123,36 @@ const MobileNav = () => {
     return 'benefactor';
   }, [user, location.pathname]);
 
-  // Fetch custom dock preferences
+  // Fetch custom dock preferences (offline-aware: seed from localStorage
+  // first, then refresh from the server when online, writing through so
+  // the next offline boot has the founder's customized dock instead of
+  // reverting to the hardcoded per-role default).
   React.useEffect(() => {
     setCustomDockItems(null); // Reset immediately on role change to avoid stale items
     const tk = localStorage.getItem('carryon_token');
     if (!tk) return;
+    const availRoutes = new Set((DOCK_REGISTRY[dockRole] || []).map(i => i.to));
+    // Offline-first seed from localStorage.
+    try {
+      const cached = localStorage.getItem(`carryon_dock_pref:${dockRole}`);
+      if (cached) {
+        const items = JSON.parse(cached);
+        if (Array.isArray(items) && items.length > 0) {
+          const valid = items.filter(route => availRoutes.has(route));
+          if (valid.length > 0) setCustomDockItems(valid);
+        }
+      }
+    } catch { /* ignore */ }
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
     fetch(`${BASE_URL}/api/user-preferences/dock?role=${dockRole}`, { headers: { Authorization: `Bearer ${tk}` } })
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (d && d.items && d.items.length > 0) {
-          const availRoutes = new Set((DOCK_REGISTRY[dockRole] || []).map(i => i.to));
           const valid = d.items.filter(route => availRoutes.has(route));
-          if (valid.length > 0) setCustomDockItems(valid);
+          if (valid.length > 0) {
+            setCustomDockItems(valid);
+            try { localStorage.setItem(`carryon_dock_pref:${dockRole}`, JSON.stringify(d.items)); } catch {}
+          }
         }
       })
       .catch(() => {});
@@ -142,18 +160,33 @@ const MobileNav = () => {
 
   // Fetch custom menu-order preferences. The hamburger menu (feature section
   // above ACCOUNT) applies this reorder on top of the tier-gated list.
+  // Same offline-first pattern as dock preferences above.
   React.useEffect(() => {
     if (user?.role === 'admin' || user?.role === 'operator') return;
     const tk = localStorage.getItem('carryon_token');
     if (!tk) return;
     const roles = ['benefactor', 'beneficiary'];
+    // Seed from cache immediately.
+    try {
+      const benCached = localStorage.getItem('carryon_menu_order:benefactor');
+      const bnyCached = localStorage.getItem('carryon_menu_order:beneficiary');
+      if (benCached) setMenuOrderBenefactor(JSON.parse(benCached));
+      if (bnyCached) setMenuOrderBeneficiary(JSON.parse(bnyCached));
+    } catch { /* ignore */ }
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
     Promise.all(roles.map((role) =>
       fetch(`${BASE_URL}/api/user-preferences/menu-order?role=${role}`, { headers: { Authorization: `Bearer ${tk}` } })
         .then((r) => (r.ok ? r.json() : { items: [] }))
         .catch(() => ({ items: [] }))
     )).then(([ben, bny]) => {
-      setMenuOrderBenefactor(Array.isArray(ben?.items) ? ben.items : []);
-      setMenuOrderBeneficiary(Array.isArray(bny?.items) ? bny.items : []);
+      const benItems = Array.isArray(ben?.items) ? ben.items : [];
+      const bnyItems = Array.isArray(bny?.items) ? bny.items : [];
+      setMenuOrderBenefactor(benItems);
+      setMenuOrderBeneficiary(bnyItems);
+      try {
+        localStorage.setItem('carryon_menu_order:benefactor', JSON.stringify(benItems));
+        localStorage.setItem('carryon_menu_order:beneficiary', JSON.stringify(bnyItems));
+      } catch { /* ignore */ }
     });
   }, [user]);
 

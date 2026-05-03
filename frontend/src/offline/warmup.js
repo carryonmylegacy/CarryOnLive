@@ -79,6 +79,40 @@ function taskSubscription(headers) {
   };
 }
 
+/**
+ * Admin-only: pull the platform-settings doc from the server and, if
+ * `offline_mode === 'on'`, automatically flip the DEVICE's offline flag
+ * to 'on' as well. This is the missing link that lets the founder
+ * survive a PWA reinstall / new deployment without having to manually
+ * re-toggle Offline in the admin portal every single time. Non-admins
+ * get a 403 which we swallow.
+ *
+ * NOTE: only ever sets 'on' → the founder opts out manually if they
+ * want it off on a specific device, and we must respect that. Server
+ * is the source of truth for the "should this account use offline"
+ * intent; the device is the source of truth for its own behaviour.
+ */
+function taskAdminPlatformSettings(headers) {
+  return {
+    label: 'admin-platform-settings',
+    run: async () => {
+      try {
+        const res = await axios.get(`${API_URL}/admin/platform-settings`, headers);
+        const serverMode = res?.data?.offline_mode;
+        if (serverMode === 'on') {
+          try {
+            if (typeof localStorage !== 'undefined'
+                && localStorage.getItem('carryon_offline_v1') !== 'on') {
+              localStorage.setItem('carryon_offline_v1', 'on');
+              window.dispatchEvent(new CustomEvent('carryon:offline-flag-changed', { detail: { mode: 'on' } }));
+            }
+          } catch { /* private mode etc. */ }
+        }
+      } catch { /* non-admin 403 — silent */ }
+    },
+  };
+}
+
 function taskChat(headers) {
   return {
     label: 'chat',
@@ -369,6 +403,7 @@ export async function warmUpAfterLogin(token) {
 
   const tasks = [
     taskProfile(headers),
+    taskAdminPlatformSettings(headers),
     taskSubscription(headers),
     taskChat(headers),
     taskVoices(),

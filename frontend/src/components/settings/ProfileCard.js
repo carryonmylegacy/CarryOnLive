@@ -37,37 +37,35 @@ const ProfileCard = () => {
     if (!user) return;
     setDisplayName(user.name || '');
     let cancelled = false;
-    const mode = getOfflineMode();
-    // Offline-first paint: seed from IndexedDB cache (populated by
-    // warmUpAfterLogin → taskProfile) so the user's photo, display
-    // name, and username paint INSTANTLY — even when fully offline.
-    // PersonalInfoCard already does this; ProfileCard previously did
-    // not, which is why the founder reported "the benefactor avatar
-    // and personal info don't load offline" while every other
-    // beneficiary photo cached fine.
+    // Always try the offline cache first, regardless of the flag.
+    // warmUpAfterLogin writes the profile to IndexedDB on every login
+    // whether or not the offline flag is on, so the cache is always
+    // the FASTEST and MOST RELIABLE first paint — especially on an
+    // offline relaunch where the `/api/auth/me` call will time out.
+    // Previously this was gated on `getOfflineMode() === 'on'`, which
+    // meant that after a PWA reinstall (which wipes localStorage, so
+    // the flag defaults to 'off') the founder's profile fields all
+    // rendered as dashes even though the warmup row was sitting in
+    // IndexedDB the whole time.
     (async () => {
-      if (mode === 'on') {
-        try {
-          const local = await getLocalProfile();
-          if (local && !cancelled) {
-            if (local.photo_url) setProfilePhoto(local.photo_url);
-            if (local.name) setDisplayName(local.name);
-            if (local.username) setUsername(local.username);
-          }
-        } catch { /* ignore */ }
-        if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
-      }
+      try {
+        const local = await getLocalProfile();
+        if (local && !cancelled) {
+          if (local.photo_url) setProfilePhoto(local.photo_url);
+          if (local.name) setDisplayName(local.name);
+          if (local.username) setUsername(local.username);
+        }
+      } catch { /* ignore */ }
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
       try {
         const res = await axios.get(`${API_URL}/auth/me`, getAuthHeaders());
         if (cancelled) return;
         setProfilePhoto(res.data.photo_url || null);
         setDisplayName(res.data.name || user.name || '');
         setUsername(res.data.username || '');
-        if (mode !== 'off') {
-          // Refresh the cache so the next offline relaunch has the
-          // newest photo URL + name. Fire-and-forget, never throws.
-          upsertLocalProfile(res.data || {}).catch(() => {});
-        }
+        // Refresh the cache so the next offline relaunch has the
+        // newest photo URL + name. Fire-and-forget, never throws.
+        upsertLocalProfile(res.data || {}).catch(() => {});
       } catch { /* swallow — keep local paint if any */ }
     })();
     return () => { cancelled = true; };

@@ -127,6 +127,11 @@ const DockCustomizer = () => {
         body: JSON.stringify({ items: selected, role: roleKey }),
       });
       if (!res.ok) throw new Error('Save failed');
+      // Write-through to localStorage so MobileNav picks it up on the
+      // very next paint AND so the choice survives an offline
+      // relaunch (the server is the canonical store; this is the
+      // offline mirror).
+      try { localStorage.setItem(`carryon_dock_pref:${roleKey}`, JSON.stringify(selected)); } catch {}
       toast.success('Dock updated! Changes will appear on next refresh.');
     } catch {
       toast.error('Could not save dock preferences.');

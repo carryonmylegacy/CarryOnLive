@@ -27,23 +27,27 @@ const PersonalInfoCard = ({ initialEditAddress = false }) => {
 
   useEffect(() => {
     if (!user) return;
-    const mode = getOfflineMode();
     let cancelled = false;
-    // Offline-first paint: seed from local cache first, then refresh from
-    // server. On a totally offline boot we stop at the local cache.
+    // Offline-first paint: seed from local cache first, regardless of
+    // the offline-mode flag. warmUpAfterLogin always writes the
+    // profile row to IndexedDB on every login, so the cache is the
+    // fastest + most reliable first paint. Previously gated on
+    // `getOfflineMode() === 'on'`, which meant fields rendered as
+    // dashes after a PWA reinstall (flag defaults to 'off' until the
+    // founder re-flips the admin toggle, which itself needs to have
+    // hydrated from the server — a chicken-and-egg that stranded
+    // every cached field).
     (async () => {
-      if (mode === 'on') {
+      try {
         const local = await getLocalProfile();
         if (local && !cancelled) setProfileData(local);
-        if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
-      }
+      } catch { /* ignore */ }
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
       try {
         const res = await axios.get(`${API_URL}/auth/profile`, getAuthHeaders());
         if (cancelled) return;
         setProfileData(res.data || {});
-        if (mode !== 'off') {
-          upsertLocalProfile(res.data || {}).catch(() => {});
-        }
+        upsertLocalProfile(res.data || {}).catch(() => {});
       } catch { /* swallow — keep local paint if any */ }
     })();
     return () => { cancelled = true; };
