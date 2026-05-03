@@ -121,7 +121,7 @@ const PageLoader = () => {
 // auto-recovers on route changes so a transient error on one page
 // doesn't lock the user on a "Something went wrong" screen until reload.
 class RouteErrorBoundary extends React.Component {
-  state = { hasError: false, errorPath: null, errorKind: null };
+  state = { hasError: false, errorPath: null, errorKind: null, autoRetried: false, gracePending: false };
   static getDerivedStateFromError(error) {
     // Detect "chunk failed to load" errors — these happen when the user
     // navigates to a lazy-loaded route whose JS bundle isn't in the SW
@@ -139,11 +139,49 @@ class RouteErrorBoundary extends React.Component {
   }
   componentDidCatch(error, info) {
     this.setState({ errorPath: typeof window !== 'undefined' ? window.location.pathname : null });
+    // Diagnostic breadcrumb (Feb 2026): persist the most recent boundary
+    // catch into localStorage so the founder can read it back to us via
+    // a Settings → Diagnostics surface or via DevTools after the iPhone
+    // PWA crashes offline (Sentry needs network; Safari devtools is a
+    // pain to attach). Capped at 5 KB total. Strictly client-side, no
+    // PII beyond what the stack frame strings reveal.
+    try {
+      const entry = {
+        t: new Date().toISOString(),
+        path: typeof window !== 'undefined' ? window.location.pathname : '',
+        online: typeof navigator !== 'undefined' ? !!navigator.onLine : null,
+        msg: String(error?.message || error || '').slice(0, 500),
+        name: String(error?.name || '').slice(0, 80),
+        stack: String(error?.stack || '').split('\n').slice(0, 8).join('\n').slice(0, 1500),
+        comp: String(info?.componentStack || '').split('\n').slice(0, 6).join('\n').slice(0, 1200),
+      };
+      localStorage.setItem('carryon_last_render_error', JSON.stringify(entry));
+    } catch { /* private mode etc. */ }
     // Don't spam Sentry with offline chunk-load failures — those are
     // an environmental condition, not a real bug.
     const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
     if (!(offline && this.state.errorKind === 'chunk')) {
       reportError(error, info?.componentStack ? `ErrorBoundary:${info.componentStack.split('\n')[1]?.trim()}` : 'ErrorBoundary');
+    }
+    // First-render auto-recovery (Feb 2026): when a render throws
+    // immediately after an offline login (the stored JWT was hydrated
+    // from IndexedDB but the page raced an in-flight `/api/auth/me`
+    // refresh that returned undefined data), give the tree exactly
+    // ONE silent retry on a short timer. The vast majority of these
+    // are transient state-not-yet-populated races, and a re-mount
+    // 250ms later usually paints cleanly. This keeps the founder
+    // from seeing the "Something went wrong" page after every offline
+    // PWA cold start. Guarded by `autoRetried` so we never retry-loop.
+    if (!this.state.autoRetried && this.state.errorKind !== 'chunk') {
+      const isPostAuthLanding = /^\/(admin|dashboard|beneficiary)/.test(
+        typeof window !== 'undefined' ? window.location.pathname : ''
+      );
+      if (isPostAuthLanding) {
+        this.setState({ autoRetried: true, gracePending: true });
+        setTimeout(() => {
+          this.setState({ hasError: false, errorPath: null, errorKind: null, gracePending: false });
+        }, 250);
+      }
     }
   }
   componentDidMount() {
@@ -218,7 +256,56 @@ class RouteErrorBoundary extends React.Component {
   };
   render() {
     if (this.state.hasError) {
+      // Silent first-error grace window (Feb 2026): on a post-auth
+      // landing route, when we've scheduled an auto-retry inside
+      // componentDidCatch, render NOTHING for ~250ms instead of the
+      // "Something went wrong" panel. That covers the common offline
+      // race where AuthContext is still hydrating user/sub state when
+      // the landing page first mounts and dereferences something
+      // undefined. If the retry succeeds, the user never sees a flash;
+      // if it fails again, this branch is skipped (autoRetried=true is
+      // already set when the second crash arrives) and the regular
+      // boundary UI renders.
+      const isPostAuthLanding = /^\/(admin|dashboard|beneficiary)/.test(
+        typeof window !== 'undefined' ? window.location.pathname : ''
+      );
+      if (this.state.autoRetried && this.state.errorKind !== 'chunk' && isPostAuthLanding) {
+        // Note: autoRetried is set BEFORE the 250ms timer in
+        // componentDidCatch fires. So during the grace window
+        // hasError is still true and autoRetried is also true — that
+        // is the signal to render an empty placeholder rather than
+        // the boundary UI. The timer then flips hasError to false
+        // and the children re-render normally.
+        // We track which retry we're in by checking a sibling flag
+        // (gracePending) so subsequent crashes (post-retry) DO show
+        // the boundary instead of looping silently.
+        if (!this.state.gracePending) {
+          // The retry has already fired and the second crash arrived
+          // — fall through to the regular boundary UI below.
+        } else {
+          return (
+            <div className="min-h-screen" style={{ background: 'var(--bg, #0F1629)' }} data-testid="error-boundary-grace" />
+          );
+        }
+      }
       const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      // Diagnostic: when ?debug=1 is in the URL OR
+      // localStorage.carryon_debug_errors is '1', surface the captured
+      // error message + first stack frame so the founder can read it
+      // back to us from a phone screenshot. Off by default — no
+      // change to the production UX.
+      let debugLine = null;
+      try {
+        const debugOn = (typeof window !== 'undefined' && window.location.search.indexOf('debug=1') >= 0)
+          || (typeof localStorage !== 'undefined' && localStorage.getItem('carryon_debug_errors') === '1');
+        if (debugOn) {
+          const raw = localStorage.getItem('carryon_last_render_error');
+          if (raw) {
+            const e = JSON.parse(raw);
+            debugLine = `${e.name || 'Error'}: ${e.msg || ''} @ ${e.path || ''} (online=${e.online})`;
+          }
+        }
+      } catch { /* ignore */ }
       // Only show the friendly "needs connection first time" copy for
       // genuine chunk-load failures while offline — those are the
       // case where the JS bundle truly wasn't cached. For any other
@@ -236,6 +323,11 @@ class RouteErrorBoundary extends React.Component {
           <div className="text-center p-6 max-w-md">
             <p className="text-white text-lg font-bold mb-2" data-testid="error-boundary-title">{title}</p>
             <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.7)' }} data-testid="error-boundary-subtitle">{subtitle}</p>
+            {debugLine && (
+              <pre className="text-[11px] text-left p-2 mb-4 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: '#fca5a5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} data-testid="error-boundary-debug">
+                {debugLine}
+              </pre>
+            )}
             <div className="flex flex-col gap-2 items-center">
               <div className="flex gap-2 justify-center">
                 <button onClick={this.handleRetry} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: '#d4af37', color: '#080e1a' }} data-testid="error-boundary-retry">
