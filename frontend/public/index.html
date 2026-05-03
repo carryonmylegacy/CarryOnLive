@@ -140,17 +140,46 @@
             }
         </script>
         <!-- Meta Pixel Code -->
+        <!--
+          Guarded: Meta Pixel's fbevents.js hooks into
+          history.replaceState() to auto-track SPA navigations. On
+          iOS Safari when running as an installed PWA (home-screen
+          launch), React Router + our warm-up flows fire enough
+          replaceState calls in the first 10s to trip the browser's
+          hard-coded 100-per-10-seconds SecurityError limit. That
+          SecurityError then bubbles up into our RouteErrorBoundary
+          and the founder sees "Something went wrong" right after
+          offline login.
+
+          Loading the pixel from regular browser tabs (where paid ads
+          actually land) is unaffected — ONLY the installed PWA
+          (navigator.standalone === true on iOS, or display-mode
+          standalone elsewhere) skips the loader. Zero marketing
+          impact, full crash fix.
+        -->
         <script>
-            !function(f,b,e,v,n,t,s)
-            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-            n.queue=[];t=b.createElement(e);t.async=!0;
-            t.src=v;s=b.getElementsByTagName(e)[0];
-            s.parentNode.insertBefore(t,s)}(window, document,'script',
-            'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '%REACT_APP_META_PIXEL_ID%');
-            fbq('track', 'PageView');
+            (function () {
+              try {
+                var isIosPWA = (typeof navigator !== 'undefined') && navigator.standalone === true;
+                var isStandalone = (typeof window !== 'undefined') && window.matchMedia
+                  && window.matchMedia('(display-mode: standalone)').matches;
+                if (isIosPWA || isStandalone) {
+                  // Installed PWA — DON'T load fbevents.js. No tracker,
+                  // no replaceState storm, no boundary crash.
+                  return;
+                }
+                !function(f,b,e,v,n,t,s)
+                {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+                n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+                if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+                n.queue=[];t=b.createElement(e);t.async=!0;
+                t.src=v;s=b.getElementsByTagName(e)[0];
+                s.parentNode.insertBefore(t,s)}(window, document,'script',
+                'https://connect.facebook.net/en_US/fbevents.js');
+                fbq('init', '%REACT_APP_META_PIXEL_ID%');
+                fbq('track', 'PageView');
+              } catch (e) { /* pixel never breaks the app */ }
+            })();
         </script>
         <noscript><img height="1" width="1" style="display:none"
         src="https://www.facebook.com/tr?id=%REACT_APP_META_PIXEL_ID%&ev=PageView&noscript=1"

@@ -121,7 +121,7 @@ const PageLoader = () => {
 // auto-recovers on route changes so a transient error on one page
 // doesn't lock the user on a "Something went wrong" screen until reload.
 class RouteErrorBoundary extends React.Component {
-  state = { hasError: false, errorPath: null, errorKind: null, autoRetried: false, gracePending: false };
+  state = { hasError: false, errorPath: null, errorKind: null, autoRetried: false, gracePending: false, errorMsg: null, errorName: null, errorFrame: null };
   static getDerivedStateFromError(error) {
     // Detect "chunk failed to load" errors — these happen when the user
     // navigates to a lazy-loaded route whose JS bundle isn't in the SW
@@ -135,7 +135,19 @@ class RouteErrorBoundary extends React.Component {
     const isChunk = /loading chunk \d+ failed|failed to fetch dynamically imported module|importing a module script failed|module specifier|import.*(failed|error)|script error|failed to fetch/i.test(msg)
       || name === 'ChunkLoadError'
       || name === 'TypeError' && /fetch|import|module/i.test(msg);
-    return { hasError: true, errorKind: isChunk ? 'chunk' : 'generic' };
+    // Capture the error name + message + first identifiable stack frame
+    // directly into state so the boundary UI can render them inline
+    // without any localStorage roundtrip. This is what appears under
+    // the "Something went wrong" headline so the founder can screenshot
+    // the exact failure from the iPhone PWA.
+    const firstFrame = String(error?.stack || '').split('\n').slice(1).find(l => /\.js|\.tsx|\.jsx/.test(l)) || '';
+    return {
+      hasError: true,
+      errorKind: isChunk ? 'chunk' : 'generic',
+      errorName: name.slice(0, 80),
+      errorMsg: msg.slice(0, 500),
+      errorFrame: firstFrame.trim().slice(0, 300),
+    };
   }
   componentDidCatch(error, info) {
     this.setState({ errorPath: typeof window !== 'undefined' ? window.location.pathname : null });
@@ -289,21 +301,11 @@ class RouteErrorBoundary extends React.Component {
         }
       }
       const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
-      // Show the captured error inline on the boundary so the founder
-      // can screenshot it directly from the iPhone PWA (no URL bar
-      // available on home-screen PWAs, can't paste javascript: tricks).
-      // The text is plain English + first stack frame; a one-line nudge
-      // is friendlier than a generic "Something went wrong" alone.
-      let debugLine = null;
-      try {
-        const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('carryon_last_render_error') : null;
-        if (raw) {
-          const e = JSON.parse(raw);
-          // First stack frame only — keeps it short on a phone screen.
-          const firstFrame = String(e.stack || '').split('\n').find(l => /\.js|\.tsx|\.jsx/.test(l)) || '';
-          debugLine = `${e.name || 'Error'}: ${e.msg || '(no message)'}${firstFrame ? '\n' + firstFrame.trim() : ''}`;
-        }
-      } catch { /* ignore */ }
+      // Pull directly from state (getDerivedStateFromError captures
+      // name/msg/firstFrame synchronously). No localStorage roundtrip.
+      const debugLine = this.state.errorName
+        ? `${this.state.errorName}: ${this.state.errorMsg || '(no message)'}${this.state.errorFrame ? '\n' + this.state.errorFrame : ''}`
+        : null;
       // Only show the friendly "needs connection first time" copy for
       // genuine chunk-load failures while offline — those are the
       // case where the JS bundle truly wasn't cached. For any other
