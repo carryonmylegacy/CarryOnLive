@@ -469,6 +469,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Escape-hatch listener — the global RouteErrorBoundary fires this
+  // event when the user taps "Sign out and start over" or, while
+  // offline, "Try again". The boundary lives outside the AuthContext
+  // tree (it's a class component, can't use hooks), so it can't call
+  // logout() directly. The event lets us reach across that boundary
+  // and clear the in-memory user/token state. Without this the user
+  // got stuck in a loop: localStorage cleared, but React state still
+  // had user/token → ProtectedRoute kept rendering /dashboard → throw
+  // → boundary → tap → flash → repeat.
+  useEffect(() => {
+    const handler = () => { logout(); };
+    window.addEventListener('carryon-force-logout', handler);
+    return () => window.removeEventListener('carryon-force-logout', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
   // ── Keep enabledFeatures fresh without requiring logout/login ──
   // The feature-gate config lives in the DB and can be changed by an
   // admin at any time (Founder Portal → Subscriptions → Feature Gates).

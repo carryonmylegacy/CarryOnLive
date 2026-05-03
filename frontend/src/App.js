@@ -176,14 +176,16 @@ class RouteErrorBoundary extends React.Component {
     window.removeEventListener('online', this._onOnline);
   }
   handleRetry = () => {
-    // When offline, retrying the same route re-mounts the same broken
-    // component which immediately throws again — user sees a flash and
-    // nothing changes. Send them to /login instead (the one route
-    // guaranteed to render even when offline) so they can escape.
-    // When online, just reset the boundary so the current route can
-    // attempt to fetch its data again.
+    // When offline, retrying the same broken route just re-throws —
+    // the user sees a flash and stays on the error screen. Send them
+    // to /login as the safe escape and force-clear AuthContext state
+    // (otherwise /login auto-redirects them back to the broken route
+    // because they're still "authenticated" in React state).
+    // When online, just reset the boundary so the route can fetch
+    // again — keeps the existing well-tested behavior intact.
     const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
     if (offline) {
+      try { window.dispatchEvent(new Event('carryon-force-logout')); } catch { /* empty */ }
       try { window.history.replaceState({}, '', '/login'); } catch { /* empty */ }
       try { window.dispatchEvent(new PopStateEvent('popstate')); } catch { /* empty */ }
     }
@@ -191,23 +193,25 @@ class RouteErrorBoundary extends React.Component {
   };
   handleSignOut = () => {
     // Escape hatch: clear every auth-related artifact so the user
-    // can never get stuck on this screen. Listed keys mirror the
-    // AuthContext.logout() implementation; duplicated here because
-    // the boundary may render OUTSIDE the AuthContext provider tree
-    // depending on where the throw came from.
+    // can never get stuck on this screen. Two layers:
+    //
+    //   1. localStorage keys — cleared here for resilience in case
+    //      AuthContext isn't mounted (extremely rare but possible if
+    //      the throw came from inside AuthProvider itself).
+    //   2. AuthContext in-memory state — cleared by dispatching a
+    //      custom event that AuthProvider listens for. Without this
+    //      step the user got stuck in a flash-loop: localStorage was
+    //      empty but React state still had token+user, so /login
+    //      auto-redirected them straight back to /dashboard which
+    //      threw again.
     try {
       ['carryon_token','carryon_user','selected_estate_id','beneficiary_estate_id','beneficiary_feature_access','carryon_last_portal','enabled_features']
         .forEach(k => localStorage.removeItem(k));
     } catch { /* private mode etc. */ }
-    // CRITICAL: replaceState alone does NOT make React Router v6
-    // re-render — RR only listens for popstate events natively. So the
-    // previous version of this handler caused the "flash and nothing
-    // changes" symptom (URL bar changed, but RR kept rendering the
-    // broken /dashboard route → component re-threw immediately →
-    // boundary flipped back to hasError:true). We now dispatch an
-    // explicit popstate event after replaceState so RR picks up the
-    // URL change and re-renders against /login. No hard nav, no SW
-    // shell race, no layout/CSS touched.
+    try { window.dispatchEvent(new Event('carryon-force-logout')); } catch { /* very old browsers */ }
+    // Drive React Router to /login. replaceState alone doesn't trigger
+    // RR v6 (it only listens for popstate), so we explicitly dispatch
+    // popstate after replaceState. No hard nav, no SW shell race.
     try { window.history.replaceState({}, '', '/login'); } catch { /* iOS quirky */ }
     try { window.dispatchEvent(new PopStateEvent('popstate')); } catch { /* very old browsers */ }
     this.setState({ hasError: false, errorPath: null, errorKind: null });
