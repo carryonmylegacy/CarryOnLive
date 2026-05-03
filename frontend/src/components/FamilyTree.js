@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Camera, Users } from 'lucide-react';
 import { resolvePhotoUrl } from '../utils/photoUrl';
 import { useTheme } from '../contexts/ThemeContext';
+import OfflineImage from './OfflineImage';
 
 /**
  * Static family tree — HTML/CSS based for reliable rendering.
@@ -40,7 +41,7 @@ const SUCC_COLORS = {
   2: { bg: 'rgba(139,92,246,0.15)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.3)' },
 };
 
-const TreeNode = ({ initials, photo, color, label, sublabel, size = 60, badge, isPrimary, succRank, onClick, onUpload, testId }) => {
+const TreeNode = ({ initials, photo, cacheKey, color, label, sublabel, size = 60, badge, isPrimary, succRank, onClick, onUpload, testId }) => {
   const hasPhoto = !!photo;
   const succStyle = (succRank !== null && succRank !== undefined) ? SUCC_COLORS[succRank] : null;
   const handleClick = () => {
@@ -67,33 +68,23 @@ const TreeNode = ({ initials, photo, color, label, sublabel, size = 60, badge, i
           }}
         >
           {hasPhoto ? (
-            <img
+            <OfflineImage
               src={resolvePhotoUrl(photo)}
+              cacheKey={cacheKey}
               alt=""
               className="w-full h-full object-cover"
               // Top-biased crop matches the AvatarCircle + messages
               // recipient avatar so portrait-framed photos display the
               // face inside the circle instead of white space.
               style={{ objectPosition: 'center 30%' }}
-              onError={(e) => {
-                // Photo load failed (S3 expired presigned URL, CORS
-                // blip, 404). Replace with the initials fallback
-                // inline so we never render an empty ring — observed
-                // Emma's node showing as a blank circle during the
-                // B2B pitch screenshot.
-                const host = e.currentTarget.parentElement;
-                if (host) {
-                  host.style.background = color + '25';
-                  e.currentTarget.remove();
-                  if (typeof initials === 'string' && initials) {
-                    const span = document.createElement('span');
-                    span.className = 'relative z-10';
-                    span.style.fontWeight = '700';
-                    span.textContent = initials;
-                    host.appendChild(span);
-                  }
-                }
-              }}
+              fallback={
+                <>
+                  {onUpload && (
+                    <Camera className="absolute" style={{ width: size * 0.45, height: size * 0.45, color: color, opacity: 0.15 }} />
+                  )}
+                  <span className="relative z-10" style={{ fontWeight: 700 }}>{initials}</span>
+                </>
+              }
             />
           ) : (
             <>
@@ -280,6 +271,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   <TreeNode
                     initials={<Users className="w-3.5 h-3.5" />}
                     photo={est.estate_photo_url || est.owner_photo_url}
+                    cacheKey={est.id ? (est.estate_photo_url ? `estate:${est.id}:cover` : `estate:${est.id}:owner`) : undefined}
                     color="#60A5FA"
                     size={50}
                     label={labelTop}
@@ -308,6 +300,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
             <TreeNode
               initials={getInitials(user?.name, user?.first_name, user?.last_name)}
               photo={user?.photo_url}
+              cacheKey={user?.id ? `user:${user.id}:photo` : undefined}
               color="#d4af37"
               size={60}
               label={user?.first_name || user?.name?.split(' ')[0] || 'You'}
@@ -419,6 +412,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                     <TreeNode
                       initials={getInitials(ben.name, ben.first_name, ben.last_name)}
                       photo={ben.photo_url}
+                      cacheKey={ben.id ? `beneficiary:${ben.id}:photo` : undefined}
                       color={benColor}
                       size={50}
                       label={ben.first_name || ben.name?.split(' ')[0] || ''}

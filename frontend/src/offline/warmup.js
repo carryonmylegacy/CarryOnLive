@@ -54,6 +54,17 @@ function taskProfile(headers) {
       const res = await axios.get(`${API_URL}/auth/profile`, headers);
       await upsertLocalProfile(res.data || {});
       prefetchPhotosFrom(res.data);
+      // Phase 9b — persist the user's own profile photo BYTES under a
+      // stable cache key so it survives S3 presigned-URL rotation
+      // across sessions. Without this, the FamilyTree root node + the
+      // top-bar avatar fall back to initials on offline relaunch even
+      // though every beneficiary photo cached fine.
+      try {
+        if (res.data?.photo_url && res.data?.id) {
+          fetchAndStoreImageBlob(res.data.photo_url, `user:${res.data.id}:photo`, 'photo')
+            .catch(() => {});
+        }
+      } catch {}
     },
   };
 }

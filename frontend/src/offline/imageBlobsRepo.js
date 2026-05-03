@@ -64,10 +64,20 @@ export async function getImageObjectUrl(cacheKey) {
  * and the SW's URL-cache fallback continues to work as before.
  */
 /**
- * Hosts that have already returned a CORS / network failure during this
- * session. Once a host fails, we skip subsequent fetches to it to avoid
- * spamming the browser console with red `net::ERR_FAILED` entries that
- * the user cannot suppress with try/catch.
+ * Hosts that have already returned a hard CORS / network failure during
+ * this session. Once a host fails CORS, we skip subsequent fetches to it
+ * to avoid spamming the browser console with red `net::ERR_FAILED`
+ * entries that the user cannot suppress with try/catch.
+ *
+ * IMPORTANT: this set is reserved for genuine **CORS / network**
+ * failures only — i.e. cases where `fetch()` itself throws. A 403/404
+ * response from the server is per-URL (a single expired presigned
+ * signature) and does NOT mean the entire host is unreachable, so we
+ * must NOT poison the blocklist on those. Previous behaviour ("any
+ * non-OK status pollutes the host blocklist") meant the very first
+ * stale URL in a warmup batch would knock out every subsequent photo
+ * sharing the same S3 bucket — exactly the "some avatars cached, some
+ * fell back to initials" bug reported on Feb 22, 2026.
  *
  * The page still renders these images correctly via `<img src>` (which
  * is not subject to CORS); we just can't pre-fetch them into IndexedDB
@@ -105,8 +115,24 @@ export async function fetchAndStoreImageBlob(url, cacheKey, kind = 'photo') {
   }
 
   const probe = (async () => {
-    const res = await fetch(url, { credentials: 'omit', cache: 'default' });
-    if (!res.ok) throw new Error(`status ${res.status}`);
+    let res;
+    try {
+      res = await fetch(url, { credentials: 'omit', cache: 'default' });
+    } catch (corsOrNetwork) {
+      // True fetch() rejection — CORS preflight failure or network
+      // unreachable. Mark host as blocked so we don't keep banging on
+      // it for the rest of the session; the per-URL <img> render path
+      // still works because `<img>` doesn't enforce CORS.
+      _corsBlockedHosts.add(host);
+      throw corsOrNetwork;
+    }
+    if (!res.ok) {
+      // Per-URL failure (e.g. 403 expired presigned signature, 404
+      // missing object). DO NOT poison the host blocklist — the next
+      // photo from the same bucket has its own fresh signed URL and
+      // deserves its own attempt.
+      throw new Error(`status ${res.status}`);
+    }
     const blob = await res.blob();
     if (!blob || blob.size === 0) throw new Error('empty');
     await putImageBlob(cacheKey, blob, kind);
@@ -120,11 +146,10 @@ export async function fetchAndStoreImageBlob(url, cacheKey, kind = 'photo') {
   try {
     return await probe;
   } catch {
-    _corsBlockedHosts.add(host);
     return false;
   } finally {
     // Once this resolves, future fetches to this host will short-circuit
-    // on `_corsBlockedHosts.has(host)` (failure) or run cleanly.
+    // on `_corsBlockedHosts.has(host)` (CORS failure only) or run cleanly.
     if (_hostProbes.get(host) === probe) _hostProbes.delete(host);
   }
 }
