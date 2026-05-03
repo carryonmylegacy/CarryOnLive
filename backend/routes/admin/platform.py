@@ -43,6 +43,7 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
         "signup_otp_disabled",
         "signup_otp_bypass_ttl_hours",
         "referral_program_enabled",
+        "offline_mode",
         "homepage_video_id",
         "homepage_video_id_vertical",
         "footer_address_line1",

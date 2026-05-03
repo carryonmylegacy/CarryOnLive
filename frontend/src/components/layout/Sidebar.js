@@ -168,24 +168,88 @@ const SignupOtpToggle = ({ collapsed }) => {
 
 /**
  * OfflineModeToggle — founder-only switch to flip the platform-wide offline
- * feature on/off. Single source of truth lives in `localStorage.carryon_offline_v1`.
- * When ON, every offline feature engages: IndexedDB sync, outbox + drain,
- * pending chunked uploads, AES-GCM at-rest encryption, conflict resolver.
+ * feature on/off.
  *
- * Styled to sit directly below the OTP toggle in the admin sidebar so founders
- * have one-tap control over both platform kill-switches from any page.
+ * Persistence model (Feb 2026 update): the AUTHORITATIVE store is the
+ * MongoDB `platform_settings.offline_mode` document, exposed via the
+ * existing `/api/admin/platform-settings` GET/PUT pair (same surface
+ * SignupOtpToggle and OtpToggle use). On mount we hydrate from the
+ * server, fall back to whatever localStorage already had if the
+ * request fails (so a fresh PWA install / new deploy resumes the
+ * founder's last-set value automatically), and on toggle we PUT to
+ * the server BEFORE touching localStorage.
+ *
+ * Why this matters: deleting the PWA from the home screen and pushing
+ * a new deployment both wipe the per-device localStorage on iOS, so
+ * the previous "localStorage-only" persistence reset to 'off' on
+ * every reinstall — forcing the founder to re-flip the toggle before
+ * every user-side regression check. The server flag means one-time
+ * flip, sticks forever.
+ *
+ * The localStorage key (`carryon_offline_v1`) is still the runtime
+ * truth for synchronous reads inside `featureFlag.js` — we keep both
+ * in sync so the rest of the offline subsystem doesn't have to await
+ * a network round-trip on every isOfflineEnabled() call.
  */
 const OfflineModeToggle = ({ collapsed }) => {
   const [on, setOn] = useState(() => {
     try { return localStorage.getItem('carryon_offline_v1') === 'on'; }
     catch { return false; }
   });
-  const toggle = () => {
+
+  // On mount, hydrate from the authoritative server flag so a fresh
+  // PWA install / new deploy automatically restores the founder's last
+  // chosen value instead of resetting to 'off'.
+  useEffect(() => {
+    const token = (() => { try { return localStorage.getItem('carryon_token'); } catch { return null; } })();
+    if (!token) return;
+    let cancelled = false;
+    axios.get(`${API_URL}/admin/platform-settings`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then((res) => {
+      if (cancelled) return;
+      const serverMode = res?.data?.offline_mode;
+      if (serverMode !== 'on' && serverMode !== 'off') return; // never set yet
+      const serverOn = serverMode === 'on';
+      try {
+        const localVal = localStorage.getItem('carryon_offline_v1');
+        const localOn = localVal === 'on';
+        if (serverOn !== localOn) {
+          // Server disagrees with this device — server wins. Hydrate
+          // localStorage and the toggle UI to match. We deliberately
+          // do NOT reload here: that would surprise the founder mid-
+          // session every time they open the sidebar. The next page
+          // load (or an explicit toggle click) will pick up the new
+          // value via the existing reload path.
+          localStorage.setItem('carryon_offline_v1', serverOn ? 'on' : 'off');
+          setOn(serverOn);
+          try { window.dispatchEvent(new CustomEvent('carryon:offline-flag-changed', { detail: { mode: serverOn ? 'on' : 'off' } })); } catch {}
+        }
+      } catch {}
+    }).catch(() => { /* offline / 401 — keep local default */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  const toggle = async () => {
     const next = !on;
     setOn(next);
+    const token = (() => { try { return localStorage.getItem('carryon_token'); } catch { return null; } })();
+    // Persist to the server FIRST so the choice survives PWA reinstalls
+    // and new deployments. Best-effort: a 4xx/5xx still updates the
+    // local toggle so the founder's current session isn't blocked, but
+    // the value won't survive the next reload — that's a strictly
+    // better failure mode than silently dropping the click.
+    if (token) {
+      try {
+        await axios.put(
+          `${API_URL}/admin/platform-settings`,
+          { offline_mode: next ? 'on' : 'off' },
+          { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } },
+        );
+      } catch { /* non-fatal — local flag still toggles below */ }
+    }
     try {
-      if (next) localStorage.setItem('carryon_offline_v1', 'on');
-      else localStorage.setItem('carryon_offline_v1', 'off');
+      localStorage.setItem('carryon_offline_v1', next ? 'on' : 'off');
     } catch {}
     // Broadcast so any listening components update without a reload.
     try { window.dispatchEvent(new CustomEvent('carryon:offline-flag-changed', { detail: { mode: next ? 'on' : 'off' } })); } catch {}
