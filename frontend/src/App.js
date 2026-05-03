@@ -158,21 +158,21 @@ class RouteErrorBoundary extends React.Component {
       }
     };
     window.addEventListener('popstate', this._onPop);
-    window.addEventListener('pushstate', this._onPop);
     window.addEventListener('online', this._onOnline);
-    // Patch history.pushState/replaceState once so React Router navigations also clear.
-    if (!window.__carryon_history_patched) {
-      const fire = () => window.dispatchEvent(new Event('pushstate'));
-      const push = window.history.pushState;
-      const replace = window.history.replaceState;
-      window.history.pushState = function (...args) { push.apply(this, args); fire(); };
-      window.history.replaceState = function (...args) { replace.apply(this, args); fire(); };
-      window.__carryon_history_patched = true;
-    }
+    // NOTE: we used to also patch window.history.pushState/replaceState
+    // here to dispatch a synthetic 'pushstate' event so the boundary
+    // would clear on every React Router navigation. That patch combined
+    // with versionCheck.js's identical patch caused iOS Safari to hit
+    // its 100-replaceState-per-10-seconds rate limit and throw a
+    // SecurityError, which then triggered THIS boundary — exactly the
+    // "Something went wrong" loop the user reported. The popstate
+    // listener above is sufficient: handleSignOut and handleRetry
+    // dispatch popstate explicitly, and React Router naturally fires
+    // popstate for browser back/forward. No history monkey-patching
+    // is needed and removing it is the actual fix for the loop.
   }
   componentWillUnmount() {
     window.removeEventListener('popstate', this._onPop);
-    window.removeEventListener('pushstate', this._onPop);
     window.removeEventListener('online', this._onOnline);
   }
   handleRetry = () => {

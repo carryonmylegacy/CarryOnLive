@@ -58,23 +58,12 @@ function scheduleReloadOnNavigation() {
     sessionStorage.setItem(REFRESH_GUARD, '1');
     window.location.reload();
   };
-  // Listen for SPA navigation
+  // Listen for SPA navigation (back/forward only — patching pushState
+  // and replaceState used to multiply the call rate of those APIs and
+  // eventually triggered iOS Safari's 100-replaceState-per-10-seconds
+  // SecurityError. popstate alone covers user-initiated nav; the
+  // visibilitychange listener below covers the rest.
   window.addEventListener('popstate', tryReload);
-  // Patch pushState/replaceState to trigger tryReload after call
-  try {
-    const origPush = window.history.pushState;
-    const origReplace = window.history.replaceState;
-    window.history.pushState = function (...args) {
-      const r = origPush.apply(this, args);
-      setTimeout(tryReload, 0);
-      return r;
-    };
-    window.history.replaceState = function (...args) {
-      const r = origReplace.apply(this, args);
-      setTimeout(tryReload, 0);
-      return r;
-    };
-  } catch {}
   // Also check on visibility change (tab regains focus)
   window.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') tryReload();
