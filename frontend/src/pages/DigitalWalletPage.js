@@ -107,12 +107,26 @@ const DigitalWalletPage = () => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleCredentialSaved = async () => {
+  const handleCredentialSaved = async (saved, opts = {}) => {
     const wasFirstEntry = entries.length === 0;
     clearShowAddDraft();
     setShowAdd(false);
     setEditEntry(null);
-    await fetchData();
+    // Optimistic UI: insert/update the entry into the list immediately
+    // so it shows up whether we're online or queued offline.
+    if (saved && saved.id) {
+      setEntries(prev => {
+        const next = opts.isEdit
+          ? prev.map(e => (e.id === saved.id ? { ...e, ...saved } : e))
+          : (prev.some(e => e.id === saved.id) ? prev : [...prev, saved]);
+        const savedEid = localStorage.getItem('selected_estate_id');
+        if (savedEid) saveList(`financial:dav:${savedEid}`, next);
+        return next;
+      });
+    }
+    if (!opts.queued) {
+      await fetchData();
+    }
     // Show return popup only for the very first credential added and if not already graduated
     if (wasFirstEntry && !sessionStorage.getItem('carryon_dav_popup_shown')) {
       sessionStorage.setItem('carryon_dav_popup_shown', 'true');
@@ -126,6 +140,14 @@ const DigitalWalletPage = () => {
 
   const handleDelete = async (entryId) => {
     if (!window.confirm('Delete this entry? This cannot be undone.')) return;
+    // Optimistic remove — drop the row from the UI immediately so the
+    // user sees their action take effect, both online and offline.
+    const prevEntries = entries;
+    setEntries(prev => prev.filter(e => e.id !== entryId));
+    const savedEid = localStorage.getItem('selected_estate_id');
+    if (savedEid) {
+      saveList(`financial:dav:${savedEid}`, prevEntries.filter(e => e.id !== entryId));
+    }
     try {
       const { mutateWithOutbox } = await import('../utils/offlineMutation');
       const r = await mutateWithOutbox({
@@ -136,9 +158,14 @@ const DigitalWalletPage = () => {
         authHeaders: getAuthHeaders(),
       });
       if (!r.ok) throw r.error || new Error('Delete failed');
-      if (r.queued) toast.success('Deletion queued — will sync when you reconnect.');
+      if (r.queued) {
+        toast.success('Deletion queued — will sync when you reconnect.');
+        return;
+      }
       fetchData();
     } catch (err) {
+      // Roll back optimistic remove on hard failure.
+      setEntries(prevEntries);
       toast.error('Failed to delete');
     }
   };
@@ -350,10 +377,11 @@ const WalletEntryPanel = ({ entry, beneficiaries, onClose, onSaved, getAuthHeade
         assigned_beneficiary_id: beneficiaryId || undefined,
       };
       const headers = getAuthHeaders();
+      const tempId = entry ? entry.id : `local-wallet-${(crypto?.randomUUID?.() || Date.now())}`;
       const { mutateWithOutbox } = await import('../utils/offlineMutation');
       const r = await mutateWithOutbox({
         entity_type: 'digital_wallet_entry',
-        entity_id: entry ? entry.id : `local-wallet-${Date.now()}`,
+        entity_id: tempId,
         method: entry ? 'PUT' : 'POST',
         url: entry ? `/digital-wallet/${entry.id}` : '/digital-wallet',
         body: data,
@@ -361,8 +389,33 @@ const WalletEntryPanel = ({ entry, beneficiaries, onClose, onSaved, getAuthHeade
       });
       if (!r.ok) throw r.error || new Error('Save failed');
       if (r.queued) toast.success(`Account ${entry ? 'change' : 'saved'} offline — will sync when you reconnect.`);
+      // Build optimistic entity in server-shape so the parent can
+      // show it instantly without waiting for a refetch.
+      let saved;
+      if (!r.queued && r.data && typeof r.data === 'object' && r.data.id) {
+        saved = r.data;
+      } else if (entry) {
+        saved = { ...entry, ...data, id: entry.id, ...(r.queued ? { _local_pending: true } : {}) };
+      } else {
+        // Find the assigned beneficiary's display name from the list
+        // so the optimistic row renders the same chip as a server row.
+        const ben = (beneficiaries || []).find(b => b.id === beneficiaryId);
+        saved = {
+          id: tempId,
+          account_name: name,
+          login_username: login,
+          password: password || null,
+          additional_access: access || null,
+          notes: notes || null,
+          category,
+          assigned_beneficiary_id: beneficiaryId || null,
+          assigned_beneficiary_name: ben ? `${ben.first_name || ''} ${ben.last_name || ''}`.trim() || ben.name || '' : null,
+          created_at: new Date().toISOString(),
+          ...(r.queued ? { _local_pending: true } : {}),
+        };
+      }
       clearPanelDrafts();
-      onSaved();
+      onSaved(saved, { queued: !!r.queued, isEdit: !!entry });
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to save'); }
     setSaving(false);
   };

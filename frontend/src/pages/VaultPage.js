@@ -659,14 +659,37 @@ const VaultPage = () => {
       toast.error('Document name is required');
       return;
     }
-    
+
     setSaving(true);
     try {
+      // Optimistic patch — apply to the in-memory list immediately so
+      // the user sees their rename / recategorize / notes edit even
+      // before the network round-trip (and even when offline).
+      const docPatch = { name: editName, category: editCategory, notes: editNotes || '' };
+      setDocuments(prev => prev.map(d => d.id === editingDoc.id ? { ...d, ...docPatch } : d));
+
+      // Offline path — queue a JSON PUT in the outbox; the legacy
+      // multipart edit endpoint also accepts JSON for metadata-only
+      // edits, so the same payload replays cleanly on reconnect.
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        await enqueueOutbox({
+          entity_type: 'document',
+          entity_id: editingDoc.id,
+          method: 'PUT',
+          url: `/documents/${editingDoc.id}`,
+          body: docPatch,
+        });
+        toast.success('Document change queued — will sync when you reconnect.');
+        setShowEditModal(false);
+        setEditingDoc(null);
+        return;
+      }
+
       const formData = new FormData();
       formData.append('name', editName);
       formData.append('category', editCategory);
       formData.append('notes', editNotes || '');
-      
+
       await axios.put(`${API_URL}/documents/${editingDoc.id}`, formData, {
         ...getAuthHeaders(),
         headers: {
@@ -674,7 +697,7 @@ const VaultPage = () => {
           'Content-Type': 'multipart/form-data'
         }
       });
-      
+
       // toast removed
       setShowEditModal(false);
       setEditingDoc(null);

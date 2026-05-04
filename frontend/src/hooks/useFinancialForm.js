@@ -26,6 +26,7 @@
 import { useCallback, useRef, useState } from 'react';
 import axios from 'axios';
 import { API_URL } from '../config';
+import { mutateWithOutbox } from '../utils/offlineMutation';
 import { toast } from '../utils/toast';
 import { parseMoney, parseInteger, formatPydanticError } from '../utils/financialFormHelpers';
 import { useDraftState } from './useDraftState';
@@ -130,10 +131,10 @@ export const useFinancialForm = ({
     setSaving(true);
     try {
       const payload = { ...buildPayload(form, PARSERS), estate_id: estateId };
-      const { mutateWithOutbox } = await import('../utils/offlineMutation');
+      const tempId = isEdit ? existing.id : `local-${entityType}-${(crypto?.randomUUID?.() || Date.now())}`;
       const r = await mutateWithOutbox({
         entity_type: entityType,
-        entity_id: isEdit ? existing.id : `local-${entityType}-${Date.now()}`,
+        entity_id: tempId,
         method: isEdit ? 'PUT' : 'POST',
         url: isEdit ? `${urlBase}/${existing.id}` : urlBase,
         body: payload,
@@ -143,8 +144,27 @@ export const useFinancialForm = ({
       if (r.queued) {
         toast.success(`${entityLabel} ${isEdit ? 'change' : 'saved'} offline — will sync when you reconnect.`);
       }
+      // Build the optimistic entity in server-shape so the parent list
+      // can update instantly without waiting for a refetch. When online
+      // we prefer the server's authoritative response; when queued we
+      // synthesize the row with a `local-…` id and `_local_pending: true`
+      // so the UI can mark it as syncing.
+      let saved;
+      if (!r.queued && r.data && typeof r.data === 'object' && r.data.id) {
+        saved = r.data;
+      } else if (isEdit) {
+        saved = { ...existing, ...payload, id: existing.id, ...(r.queued ? { _local_pending: true } : {}) };
+      } else {
+        saved = {
+          ...payload,
+          id: tempId,
+          estate_id: estateId,
+          created_at: new Date().toISOString(),
+          ...(r.queued ? { _local_pending: true } : {}),
+        };
+      }
       clearFormDraft();
-      onSaved();
+      onSaved(saved, { queued: !!r.queued, isEdit, module, entityType });
     } catch (err) {
       toast.error(formatPydanticError(err, `Failed to save ${entityLabel.toLowerCase()}`));
     }

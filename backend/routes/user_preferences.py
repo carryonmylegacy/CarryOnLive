@@ -191,7 +191,7 @@ async def get_scroll_restoration_pref(
     """
     doc = await db.user_preferences.find_one(
         {"user_id": current_user["id"], "key": "scroll_restoration"},
-        {"_id": 0, "enabled": 1, "positions": 1},
+        {"_id": 0, "id": 1, "enabled": 1, "positions": 1},
     )
     return {
         "enabled": bool((doc or {}).get("enabled", False)),

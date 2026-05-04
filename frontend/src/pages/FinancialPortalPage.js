@@ -11,9 +11,10 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from '../utils/toast';
-// STATIC import — chunks fail when first edit/delete happens offline.
-import { enqueue as enqueueOutbox } from '../offline/outbox';
 import { iosSafeDownload } from '../utils/iosSafeDownload';
+// STATIC import — dynamic await import() chunks fail to fetch when
+// the user is offline, breaking delete/designation/category mutations.
+import { mutateWithOutbox } from '../utils/offlineMutation';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import SlidePanel from '../components/SlidePanel';
@@ -226,12 +227,52 @@ const FinancialPortalPage = () => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSaved = () => {
+  // Maps useFinancialForm config → which list this entity belongs to.
+  // Drives optimistic insert/replace/delete on the in-memory list so the
+  // user sees their offline (or online) action reflected instantly,
+  // without waiting for a refetch round-trip.
+  const LIST_BY_MODULE = {
+    bills: { state: bills, set: setBills, cacheKey: 'bills' },
+    debts: { state: debts, set: setDebts, cacheKey: 'debts' },
+    accounts: { state: accounts, set: setAccounts, cacheKey: 'accounts' },
+    property: { state: propertyAssets, set: setPropertyAssets, cacheKey: 'property' },
+  };
+
+  const persistPortalCache = (overrides = {}) => {
+    if (!estate?.id) return;
+    saveList(`financial:portal:${estate.id}`, {
+      bills, debts, accounts, property: propertyAssets,
+      beneficiaries, dav: davEntries, summary, categories: customCategories,
+      ...overrides,
+    });
+  };
+
+  const handleSaved = (saved, opts = {}) => {
     setShowBillForm(false);
     setShowDebtForm(false);
     setShowAccountForm(false);
     setShowPropertyForm(false);
     setEditItem(null);
+    // Optimistic UI: when the form returns its saved/queued payload,
+    // patch it into the right list immediately so users see it on the
+    // page even when offline. Online creates already get a refetch on
+    // top, so we still call fetchAll() for server reconciliation.
+    if (saved && opts.module && LIST_BY_MODULE[opts.module]) {
+      const { state, set, cacheKey } = LIST_BY_MODULE[opts.module];
+      let next;
+      if (opts.isEdit) {
+        next = state.map(it => (it.id === saved.id ? { ...it, ...saved } : it));
+      } else {
+        // Avoid duplicate inserts if the row was somehow already present.
+        next = state.some(it => it.id === saved.id) ? state : [saved, ...state];
+      }
+      set(next);
+      if (estate?.id) {
+        saveList(`financial:${cacheKey}:${estate.id}`, next);
+        persistPortalCache({ [cacheKey]: next });
+      }
+    }
+    if (opts.queued) return; // skip refetch when offline — it would clobber the optimistic row
     fetchAll();
   };
 
@@ -257,57 +298,121 @@ const FinancialPortalPage = () => {
     setExportingHandoff(false);
   };
 
+  // Module key used by the list state mapping. Matches LIST_BY_MODULE keys.
+  const moduleForType = (type) => (type === 'bills' || type === 'debts' || type === 'accounts' || type === 'property' ? type : null);
+
   const handleDelete = async (type, id) => {
     if (!window.confirm('Delete this entry? This cannot be undone.')) return;
+    const mod = moduleForType(type);
+    // Optimistic remove: drop the row immediately so the UI never shows
+    // "I deleted this but it's still there waiting for the network".
+    if (mod && LIST_BY_MODULE[mod]) {
+      const { state, set, cacheKey } = LIST_BY_MODULE[mod];
+      const next = state.filter(it => it.id !== id);
+      set(next);
+      if (estate?.id) {
+        saveList(`financial:${cacheKey}:${estate.id}`, next);
+        persistPortalCache({ [cacheKey]: next });
+      }
+    }
     try {
-      await axios.delete(`${API_URL}/financial/${type}/${id}`, getAuthHeaders());
+
+      const r = await mutateWithOutbox({
+        entity_type: `financial_${type === 'property' ? 'property' : type.replace(/s$/, '')}`,
+        entity_id: id,
+        method: 'DELETE',
+        url: `/financial/${type}/${id}`,
+        authHeaders: getAuthHeaders(),
+      });
+      if (!r.ok) throw r.error || new Error('Delete failed');
+      if (r.queued) {
+        toast.success('Deletion queued — will sync when you reconnect.');
+        return;
+      }
       fetchAll();
-    } catch { toast.error('Failed to delete'); }
+    } catch {
+      toast.error('Failed to delete');
+      // Roll back optimistic remove on hard failure.
+      fetchAll();
+    }
   };
 
   const handleDesignationUpdate = async (type, itemId, designatedBeneficiaries, visibilityTiming) => {
+    const mod = moduleForType(type);
+    const designationBody = {
+      designated_beneficiaries: designatedBeneficiaries,
+      visibility_timing: visibilityTiming,
+    };
+    // Optimistic patch into the matching list so the UI reflects the
+    // designation immediately whether online or offline.
+    if (mod && LIST_BY_MODULE[mod]) {
+      const { state, set, cacheKey } = LIST_BY_MODULE[mod];
+      const next = state.map(it => (it.id === itemId ? { ...it, ...designationBody } : it));
+      set(next);
+      if (estate?.id) {
+        saveList(`financial:${cacheKey}:${estate.id}`, next);
+        persistPortalCache({ [cacheKey]: next });
+      }
+    }
     try {
-      const designationBody = {
-        designated_beneficiaries: designatedBeneficiaries,
-        visibility_timing: visibilityTiming,
-      };
-      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-        await enqueueOutbox({
-          entity_type: `financial_${type}`,
-          entity_id: itemId,
-          method: 'PUT',
-          url: `/financial/${type}/${itemId}/designation`,
-          body: designationBody,
-        });
+
+      const r = await mutateWithOutbox({
+        entity_type: `financial_${type === 'property' ? 'property' : type.replace(/s$/, '')}`,
+        entity_id: itemId,
+        method: 'PUT',
+        url: `/financial/${type}/${itemId}/designation`,
+        body: designationBody,
+        authHeaders: getAuthHeaders(),
+      });
+      if (!r.ok) throw r.error || new Error('Update failed');
+      if (r.queued) {
         toast.success('Designation queued — will sync when you reconnect.');
         return;
       }
-      await axios.put(`${API_URL}/financial/${type}/${itemId}/designation`, designationBody, getAuthHeaders());
       fetchAll();
-    } catch { toast.error('Failed to update designation'); }
+    } catch {
+      toast.error('Failed to update designation');
+      fetchAll();
+    }
   };
 
   const handleAddCategory = async (module, name) => {
     if (!estate) return;
+    const trimmed = String(name || '').trim();
+    if (!trimmed) return false;
+    const tempId = `local-fincat-${(crypto?.randomUUID?.() || Date.now())}`;
+    const optimisticCat = { id: tempId, estate_id: estate.id, module, name: trimmed, _local_pending: true };
+    // Optimistic insert into customCategories so the new category shows
+    // up in the dropdown right away (offline or online).
+    const nextCats = {
+      ...customCategories,
+      [module]: [...(customCategories[module] || []), optimisticCat],
+    };
+    setCustomCategories(nextCats);
+    if (estate?.id) {
+      persistPortalCache({ categories: nextCats });
+    }
     try {
-      const categoryBody = { estate_id: estate.id, module, name };
-      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-        const tempId = `local-fincat-${Date.now()}`;
-        await enqueueOutbox({
-          entity_type: 'financial_category',
-          entity_id: tempId,
-          method: 'POST',
-          url: '/financial/categories',
-          body: categoryBody,
-        });
+
+      const r = await mutateWithOutbox({
+        entity_type: 'financial_category',
+        entity_id: tempId,
+        method: 'POST',
+        url: '/financial/categories',
+        body: { estate_id: estate.id, module, name: trimmed },
+        authHeaders: getAuthHeaders(),
+      });
+      if (!r.ok) throw r.error || new Error('Save failed');
+      if (r.queued) {
         toast.success('Category queued — will sync when you reconnect.');
         return true;
       }
-      await axios.post(`${API_URL}/financial/categories`, categoryBody, getAuthHeaders());
       fetchAll();
       return true;
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to create category');
+      // Roll back optimistic add on hard failure.
+      setCustomCategories(customCategories);
       return false;
     }
   };
