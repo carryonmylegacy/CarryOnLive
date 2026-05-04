@@ -17,17 +17,26 @@ async def get_financial_summary(estate_id: str, current_user: dict = Depends(get
     """Get aggregated financial summary for the dashboard tile."""
     estate, is_owner = await _verify_estate_access(estate_id, current_user)
 
-    bills = await db.bills.find({"estate_id": estate_id, "deleted_at": None, "status": "active"}, {"_id": 0}).to_list(
-        500
-    )
-    debts = await db.debts.find({"estate_id": estate_id, "deleted_at": None, "status": "active"}, {"_id": 0}).to_list(
-        500
-    )
+    # Match the CFP page's own list filter: a bill/debt/account/property
+    # is "active for counting purposes" unless it was explicitly cancelled
+    # or deleted. Older rows may have a missing/null `status` field
+    # (legacy data, offline-queued inserts that didn't carry `status`),
+    # so a strict `status == "active"` filter under-counts them and the
+    # dashboard showed 0 bills while the CFP itself showed 3. Use a
+    # not-equal-to-cancelled filter instead so the dashboard tile and
+    # the CFP page always agree.
+    not_cancelled = {"$nin": ["cancelled", "paused"]}
+    bills = await db.bills.find(
+        {"estate_id": estate_id, "deleted_at": None, "status": not_cancelled}, {"_id": 0}
+    ).to_list(500)
+    debts = await db.debts.find(
+        {"estate_id": estate_id, "deleted_at": None, "status": not_cancelled}, {"_id": 0}
+    ).to_list(500)
     accounts = await db.financial_accounts.find(
-        {"estate_id": estate_id, "deleted_at": None, "status": "active"}, {"_id": 0}
+        {"estate_id": estate_id, "deleted_at": None, "status": not_cancelled}, {"_id": 0}
     ).to_list(500)
     property_assets = await db.property_assets.find(
-        {"estate_id": estate_id, "deleted_at": None, "status": "active"}, {"_id": 0}
+        {"estate_id": estate_id, "deleted_at": None, "status": not_cancelled}, {"_id": 0}
     ).to_list(500)
 
     # Filter for beneficiary visibility if not owner
@@ -128,9 +137,13 @@ async def get_financial_coverage_score(estate_id: str, current_user: dict = Depe
     of documentation on the platform."""
     await _verify_estate_access(estate_id, current_user)
 
-    bills = await db.bills.find({"estate_id": estate_id, "deleted_at": None, "status": "active"}, {"_id": 0}).to_list(
-        500
-    )
+    # Same not-cancelled-not-paused inclusion rule as
+    # get_financial_summary — keeps the score and the dashboard tile
+    # counting from the same set of items.
+    not_cancelled = {"$nin": ["cancelled", "paused"]}
+    bills = await db.bills.find(
+        {"estate_id": estate_id, "deleted_at": None, "status": not_cancelled}, {"_id": 0}
+    ).to_list(500)
     debts = await db.debts.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
     accounts = await db.financial_accounts.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
     property_assets = await db.property_assets.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(
