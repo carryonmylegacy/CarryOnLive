@@ -187,46 +187,70 @@ async function _offlineDbExists() {
   }
 }
 
+// Module-level lock so concurrent triggers (login + online event firing
+// within the same second) don't double-drain the same row and flood the
+// server with duplicate chunk PUTs.
+let _drainInFlight = false;
+
 export async function drainPendingUploads(token) {
   if (typeof navigator === 'undefined' || !navigator.onLine) return { processed: 0 };
+  if (_drainInFlight) return { processed: 0, skipped: 'already_running' };
   // Phase 0 invariant: don't instantiate IndexedDB on cold boot when flag=off.
   const { isOfflineEnabled } = await import('./featureFlag');
   if (!isOfflineEnabled() && !(await _offlineDbExists())) return { processed: 0 };
   const { listPendingUploads, getPendingUpload, updatePendingUpload, deletePendingUpload }
     = await import('./pendingUploadsRepo');
-  const rows = await listPendingUploads();
+  _drainInFlight = true;
   let processed = 0;
-  for (const row of rows) {
-    if (row.status === 'complete') continue;
-    const full = await getPendingUpload(row.id);
-    if (!full?.blob) {
-      await deletePendingUpload(row.id);
-      continue;
+  try {
+    const rows = await listPendingUploads();
+    for (const row of rows) {
+      if (row.status === 'complete') continue;
+      const full = await getPendingUpload(row.id);
+      if (!full?.blob) {
+        await deletePendingUpload(row.id);
+        continue;
+      }
+      await updatePendingUpload(row.id, { status: 'uploading', last_error: null });
+      emit('carryon:upload:start', { id: row.id, filename: full.filename, kind: full.kind, total: full.size_bytes });
+      try {
+        const uploader = new ChunkedUploader({
+          token,
+          blob: full.blob,
+          filename: full.filename,
+          mime_type: full.mime_type,
+          kind: full.kind,
+          metadata: full.metadata,
+          pendingId: full.id,
+          existingUploadId: full.upload_id,
+        });
+        await uploader.run();
+        await deletePendingUpload(row.id); // success: drop from queue
+        processed++;
+        emit('carryon:upload:complete', { id: row.id, filename: full.filename, kind: full.kind });
+      } catch (err) {
+        const retry = (full.retry_count || 0) + 1;
+        const message = err?.response?.status
+          ? `HTTP ${err.response.status}${err.response.data?.detail ? ` — ${err.response.data.detail}` : ''}`
+          : (err?.code || err?.message || 'upload failed');
+        // Emit so the indicator can show "Sync stalled — tap to retry"
+        // instead of leaving the user staring at a frozen 0%.
+        emit('carryon:upload:failed', {
+          id: row.id,
+          filename: full.filename,
+          kind: full.kind,
+          error: message,
+          retry_count: retry,
+        });
+        await updatePendingUpload(row.id, {
+          status: retry >= 10 ? 'failed' : 'queued',
+          retry_count: retry,
+          last_error: message,
+        });
+      }
     }
-    await updatePendingUpload(row.id, { status: 'uploading' });
-    try {
-      const uploader = new ChunkedUploader({
-        token,
-        blob: full.blob,
-        filename: full.filename,
-        mime_type: full.mime_type,
-        kind: full.kind,
-        metadata: full.metadata,
-        pendingId: full.id,
-        existingUploadId: full.upload_id,
-      });
-      await uploader.run();
-      await deletePendingUpload(row.id); // success: drop from queue
-      processed++;
-      emit('carryon:upload:complete', { id: row.id, filename: full.filename, kind: full.kind });
-    } catch (err) {
-      const retry = (full.retry_count || 0) + 1;
-      await updatePendingUpload(row.id, {
-        status: retry >= 10 ? 'failed' : 'queued',
-        retry_count: retry,
-        last_error: err?.message || 'upload failed',
-      });
-    }
+  } finally {
+    _drainInFlight = false;
   }
   return { processed };
 }

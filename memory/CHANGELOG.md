@@ -2078,3 +2078,56 @@ Two interacting bugs:
 
 ### Housekeeping
 - 74 PASS, 0 WARN, 0 FAIL.
+
+---
+
+## Feb 4, 2026 (later still) — Visible, Tappable, Self-Healing Sync
+
+### Symptom
+User reports the offline-recorded milestone never reaches the cloud after
+reconnect. The "Uploading 0%" toast sits frozen for 10+ minutes, and the
+home-screen PWA gives no signal of *why* — just a stuck pill. There is no
+URL bar, no DevTools, no way for the user to introspect.
+
+### Diagnosis
+The drainer in `chunkedUploader.drainPendingUploads` was *silent* on
+failure: it caught the exception, bumped `retry_count`, marked the row
+back to `queued`, and exited. No event fired. The previously-emitted
+`carryon:upload:progress { pct: 0 }` stayed pinned in
+`PendingUploadsIndicator` state, leaving a frozen 0% pill that lied to
+the user about what was happening.
+
+The PWA also offered the user no manual lever — the indicator had
+`pointerEvents: 'none'`, so even when the sync clearly stalled, the
+only path forward was to force-quit the PWA.
+
+### Fix
+- `offline/chunkedUploader.js`:
+  - Added a module-level `_drainInFlight` lock so concurrent triggers
+    (login + `online` event firing within the same second) don't double-
+    queue the same row.
+  - Drainer now emits `carryon:upload:start { id, filename, kind, total }`
+    when a row begins, and on failure emits
+    `carryon:upload:failed { id, filename, error, retry_count }` with a
+    user-readable error (HTTP status + detail when present, else the JS
+    error message). The catch-block also clears `last_error` to `null`
+    when starting a fresh attempt so the indicator never shows a stale
+    error during a retry.
+
+- `components/PendingUploadsIndicator.js`:
+  - Now subscribes to `carryon:upload:start` and
+    `carryon:upload:failed` in addition to progress/complete.
+  - **Stall watchdog**: if 30 s pass without a progress tick during an
+    upload, the indicator reads `pendingUpload.last_error` from
+    IndexedDB and surfaces a red "Sync stalled — tap to retry" pill.
+  - **Tappable retry**: the pill is now `pointerEvents: 'auto'` whenever
+    it's in a stalled, queued-while-online, or error state. Tapping
+    invokes `drainPendingUploads(token)` directly.
+  - **Honest "Connecting…" copy**: while pct === 0, the label says
+    "Connecting…" instead of "Uploading" so the user no longer reads a
+    frozen "Uploading 0%" as proof that bytes are flowing.
+  - The pill now respects `useAuth().token` so the retry path is fully
+    authenticated.
+
+### Housekeeping
+- 74 PASS, 0 WARN, 0 FAIL.
