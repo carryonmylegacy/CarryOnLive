@@ -263,8 +263,21 @@ async function _uploadMilestoneViaLegacy({ token, full, onProgress }) {
   // Step 2 (video only): stream the media via FormData / multipart. iOS
   // WKWebView handles FormData uploads reliably (this is the same code
   // online milestones run through every day).
+  //
+  // Blob materialization: iOS WKWebView has a long-standing class of
+  // bugs where a Blob retrieved from IndexedDB is sent as zero-byte
+  // through XHR/fetch. We force-materialize the bytes via
+  // `arrayBuffer()` and rebuild a fresh Blob from those bytes so the
+  // body the network layer sees is unambiguous.
+  let videoBytes;
+  try {
+    videoBytes = await full.blob.arrayBuffer();
+  } catch (e) {
+    throw new Error(`could not read queued recording: ${e?.message || e}`);
+  }
+  const safeBlob = new Blob([videoBytes], { type: full.mime_type || 'video/webm' });
   const formData = new FormData();
-  formData.append('video', full.blob, full.filename || 'video.webm');
+  formData.append('video', safeBlob, full.filename || 'video.webm');
   await axios.post(`${API_URL}/messages/${messageId}/upload-video`, formData, {
     headers: { ...headers, 'Content-Type': 'multipart/form-data' },
     timeout: 600000, // 10 min for very slow uplinks

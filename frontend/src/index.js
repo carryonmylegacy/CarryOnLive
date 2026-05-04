@@ -101,6 +101,14 @@ if (typeof window !== 'undefined') {
 axios.interceptors.request.use(
   (config) => {
     try {
+      // Upload paths are allowed through even if __deviceOffline is set —
+      // a stale flag from an earlier transient hiccup must not strand a
+      // user's queued recording forever. The actual fetch will surface
+      // a real Network Error if the device truly is offline; in that
+      // case the response interceptor (above) intentionally does NOT
+      // flip __deviceOffline for these URLs, so retries stay possible.
+      const url = config?.url || '';
+      if (_isUploadUrl(url)) return config;
       // Accept EITHER signal: the tracked event-based flag OR the
       // standard API. Either being true is enough to short-circuit.
       const isOffline = __deviceOffline ||
@@ -135,16 +143,31 @@ axios.interceptors.request.use(
 // ERR_OFFLINE even though the user was demonstrably online (Wi-Fi, LTE,
 // 5G — the whole reason they reconnected). Only treat genuine routing
 // failures (Network Error / ERR_NETWORK / ERR_OFFLINE) as offline proof.
+//
+// SECOND IMPORTANT EXCLUSION: large uploads (the chunked-upload PUT path
+// AND the legacy /messages/{id}/upload-video FormData POST). When a
+// 30-second video upload hits a transient cellular drop on iOS Safari it
+// errors with `Network Error` even though the device immediately
+// reconnects. Letting that single failure flip __deviceOffline poisoned
+// every later axios call in the session with ERR_OFFLINE — which is
+// exactly the regression the user just reported. Skip uploads here.
+function _isUploadUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  if (url.includes('/uploads/chunked/')) return true;
+  if (/\/messages\/[^/]+\/upload-(video|attachment)/.test(url)) return true;
+  return false;
+}
 axios.interceptors.response.use(
   (res) => res,
   (err) => {
     try {
+      const url = err?.config?.url || '';
       const networkish = !err?.response && (
         err?.code === 'ERR_NETWORK' ||
         err?.message === 'Network Error' ||
         err?.code === 'ERR_OFFLINE'
       );
-      if (networkish) __deviceOffline = true;
+      if (networkish && !_isUploadUrl(url)) __deviceOffline = true;
     } catch { /* swallow */ }
     return Promise.reject(err);
   },

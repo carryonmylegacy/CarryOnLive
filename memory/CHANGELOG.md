@@ -2177,3 +2177,49 @@ online milestone upload on the platform every day.
 
 ### Housekeeping
 - 74 PASS, 0 WARN, 0 FAIL.
+
+---
+
+## Feb 4, 2026 (still grinding) — Stop the Offline Flag Self-Poisoning
+
+### Diagnosis (from screenshot showing "ERR_OFFLINE" on the red pill)
+The user came online, our own axios response interceptor saw a transient
+`Network Error` on the upload, and flipped the in-memory
+`__deviceOffline = true`. From that moment forward, the patched
+`navigator.onLine` reported false and the request interceptor
+short-circuited every retry with `ERR_OFFLINE` — locally generated, not
+from the network. The user's queued recording also vanished from
+`/messages` because the page never merged in the `_pending` row from
+IndexedDB.
+
+### Fix
+1. **`index.js` — upload URLs are excluded from the offline flag flip.**
+   `_isUploadUrl(url)` matches `/uploads/chunked/...` and
+   `/messages/{id}/upload-(video|attachment)`. The response interceptor
+   no longer sets `__deviceOffline = true` when the failing request
+   targets one of those URLs. A transient cellular drop on a 30 s video
+   upload is no longer treated as proof the device is offline.
+
+2. **`index.js` — upload requests bypass the offline short-circuit.**
+   The request interceptor lets upload URLs through even if
+   `__deviceOffline` is true (stale flag from an earlier hiccup must
+   not strand a recording).
+
+3. **`contexts/AuthContext.js` — drain on `window.online`, not just
+   on login.** Toggling airplane mode off without logout/login now
+   triggers `drainPendingUploads(token, { forceRetry: true })`.
+
+4. **`pages/MessagesPage.js` — merge local `_pending` rows into the
+   list.** `fetchData` now reads `getLocalMessages(estate_id)` and
+   stitches any rows whose ids the server hasn't confirmed yet onto
+   the head of the displayed list. The offline-recorded milestone
+   stays visible after reconnect until the upload actually drains.
+
+5. **`offline/chunkedUploader.js` — materialize Blob → ArrayBuffer →
+   Blob before FormData POST.** iOS WKWebView has long-standing bugs
+   where a Blob handed to it directly out of IndexedDB sends as zero
+   bytes through XHR. Reading the bytes into an `ArrayBuffer` and
+   rebuilding a fresh Blob from them removes the indirection.
+
+### Housekeeping
+- 74 PASS, 0 WARN, 0 FAIL.

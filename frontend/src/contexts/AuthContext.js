@@ -252,6 +252,25 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── On reconnect WITHOUT a logout/login cycle, drain queued uploads.
+  // Without this, a user who recorded offline, then merely toggled
+  // airplane mode off (no logout), would stay queued forever — the
+  // drain only fired from initAuth on a token change. SyncClient's
+  // online handler also drains, but only when the offline-mode flag is
+  // toggled on; we want the safety net regardless of the flag because
+  // pendingUpload rows are flag-agnostic by design.
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const onOnline = () => {
+      if (!token) return;
+      import('../offline/chunkedUploader')
+        .then((m) => m.drainPendingUploads(token, { forceRetry: true }))
+        .catch(() => {});
+    };
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, [token]);
+
   const login = async (email, password, otpMethod = 'email', phone = null, forceLogin = false) => {
     // Clear dev switcher session on normal login
     localStorage.removeItem('dev_switcher_admin_session');

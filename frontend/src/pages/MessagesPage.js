@@ -281,7 +281,23 @@ const MessagesPage = () => {
           axios.get(`${API_URL}/messages/${selected.id}`, getAuthHeaders()),
           axios.get(`${API_URL}/beneficiaries/${selected.id}`, getAuthHeaders())
         ]);
-        setMessages(msgsRes.data);
+        // Merge in any locally-`_pending` rows that the server hasn't
+        // confirmed yet. Without this, an offline-recorded milestone
+        // disappears from the list the moment the user reconnects (the
+        // server-side row doesn't exist yet, the upload is still
+        // draining, and the page state was being overwritten with
+        // server-only data). We keep showing the optimistic row until
+        // the upload drains and the next refresh contains it for real.
+        let combined = msgsRes.data || [];
+        try {
+          const localAll = await getLocalMessages(selected.id);
+          const serverIds = new Set(combined.map((m) => m.id));
+          const survivingPending = (localAll || []).filter(
+            (m) => m && m._pending === true && !serverIds.has(m.id),
+          );
+          if (survivingPending.length) combined = [...survivingPending, ...combined];
+        } catch { /* fall back to server-only */ }
+        setMessages(combined);
         setBeneficiaries(bensRes.data);
         // Always mirror the canonical server list into IndexedDB so the
         // airplane-mode short-circuit (above) has data to rehydrate from
