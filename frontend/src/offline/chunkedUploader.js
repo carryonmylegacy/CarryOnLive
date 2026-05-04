@@ -192,14 +192,119 @@ async function _offlineDbExists() {
 // server with duplicate chunk PUTs.
 let _drainInFlight = false;
 
-export async function drainPendingUploads(token) {
+// Files at or below this size bypass the chunked pipeline entirely and
+// use the legacy two-step direct upload (POST /messages + POST
+// /messages/{id}/upload-video). The legacy path is the same code path
+// that handles every online milestone create on the platform — it's
+// proven, FormData-based (which iOS WKWebView handles reliably), and
+// avoids axios.put-with-Blob behaviours that have surfaced as 0%-stall
+// regressions in the field. Anything bigger still goes through chunked
+// because a 75 MB single POST is brittle on cellular.
+const LEGACY_FALLBACK_MAX_BYTES = 50 * 1024 * 1024;
+
+/**
+ * Direct (non-chunked) upload for a queued milestone using the legacy
+ * `POST /messages` + `POST /messages/{id}/upload-video|attachment` path.
+ * Returns true on success, false when the row isn't a milestone (caller
+ * should fall through to chunked). Throws on hard failure.
+ */
+async function _uploadMilestoneViaLegacy({ token, full, onProgress }) {
+  const isVideo = full.kind === 'milestone_video';
+  const isAudio = full.kind === 'milestone_audio';
+  if (!isVideo && !isAudio) return false;
+  const create = full?.metadata?.message_create;
+  if (!create) return false; // not the offline-create-and-attach shape
+
+  const headers = { Authorization: `Bearer ${token}` };
+  const total = full.size_bytes || full.blob?.size || 0;
+
+  // Voice messages: backend has no separate upload endpoint. The legacy
+  // online path POSTs voice_data inline as base64 in /messages itself.
+  // Replicate that here so audio drains in a single round-trip.
+  let voiceDataB64 = null;
+  if (isAudio && full.blob) {
+    voiceDataB64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        try { resolve(String(reader.result).split(',')[1] || null); }
+        catch (e) { reject(e); }
+      };
+      reader.onerror = () => reject(new Error('blob read failed'));
+      reader.readAsDataURL(full.blob);
+    });
+  }
+
+  // Step 1: create the Message row. For video, video bytes follow in
+  // step 2; for voice, the bytes ride inline as base64 here.
+  const createRes = await axios.post(`${API_URL}/messages`, {
+    estate_id: create.estate_id,
+    title: create.title || 'Milestone Message',
+    content: create.content || '',
+    message_type: create.message_type || (isVideo ? 'video' : 'voice'),
+    video_data: null,
+    video_thumbnail: create.video_thumbnail || null,
+    voice_data: voiceDataB64,
+    recipients: create.recipients || [],
+    trigger_type: create.trigger_type || 'immediate',
+    trigger_value: create.trigger_value || null,
+    trigger_age: create.trigger_age || null,
+    trigger_date: create.trigger_date || null,
+    custom_event_label: create.custom_event_label || null,
+  }, { headers, timeout: 60000 });
+  const messageId = createRes?.data?.id;
+  if (!messageId) throw new Error('legacy create returned no message id');
+
+  // Voice upload completes with the create POST.
+  if (isAudio) {
+    try { onProgress && onProgress({ loaded: total, total, pct: 100 }); } catch { /* ignore */ }
+    return true;
+  }
+
+  // Step 2 (video only): stream the media via FormData / multipart. iOS
+  // WKWebView handles FormData uploads reliably (this is the same code
+  // online milestones run through every day).
+  const formData = new FormData();
+  formData.append('video', full.blob, full.filename || 'video.webm');
+  await axios.post(`${API_URL}/messages/${messageId}/upload-video`, formData, {
+    headers: { ...headers, 'Content-Type': 'multipart/form-data' },
+    timeout: 600000, // 10 min for very slow uplinks
+    maxBodyLength: Infinity,
+    maxContentLength: Infinity,
+    onUploadProgress: (evt) => {
+      if (!evt) return;
+      const loaded = Math.min(evt.loaded || 0, total || evt.total || 0);
+      const denom = total || evt.total || 0;
+      const pct = denom ? Math.round((loaded / denom) * 100) : 0;
+      try { onProgress && onProgress({ loaded, total: denom, pct }); } catch { /* ignore */ }
+    },
+  });
+  return true;
+}
+
+export async function drainPendingUploads(token, opts = {}) {
+  const { forceRetry = false } = opts;
   if (typeof navigator === 'undefined' || !navigator.onLine) return { processed: 0 };
-  if (_drainInFlight) return { processed: 0, skipped: 'already_running' };
+  if (_drainInFlight && !forceRetry) return { processed: 0, skipped: 'already_running' };
   // Phase 0 invariant: don't instantiate IndexedDB on cold boot when flag=off.
   const { isOfflineEnabled } = await import('./featureFlag');
   if (!isOfflineEnabled() && !(await _offlineDbExists())) return { processed: 0 };
   const { listPendingUploads, getPendingUpload, updatePendingUpload, deletePendingUpload }
     = await import('./pendingUploadsRepo');
+  // forceRetry: user tapped "Retry" on the stalled-pill. The previous
+  // drain attempt may still be hung in a never-resolving axios PUT —
+  // we drop the lock, mark any 'uploading' rows back to 'queued' so
+  // they're picked up again, and proceed.
+  if (forceRetry) {
+    _drainInFlight = false;
+    try {
+      const stuck = await listPendingUploads();
+      for (const r of stuck) {
+        if (r.status === 'uploading') {
+          await updatePendingUpload(r.id, { status: 'queued' }).catch(() => {});
+        }
+      }
+    } catch { /* ignore */ }
+  }
   _drainInFlight = true;
   let processed = 0;
   try {
@@ -214,17 +319,50 @@ export async function drainPendingUploads(token) {
       await updatePendingUpload(row.id, { status: 'uploading', last_error: null });
       emit('carryon:upload:start', { id: row.id, filename: full.filename, kind: full.kind, total: full.size_bytes });
       try {
-        const uploader = new ChunkedUploader({
-          token,
-          blob: full.blob,
-          filename: full.filename,
-          mime_type: full.mime_type,
-          kind: full.kind,
-          metadata: full.metadata,
-          pendingId: full.id,
-          existingUploadId: full.upload_id,
-        });
-        await uploader.run();
+        // Prefer the legacy direct-upload path for small milestone
+        // media — it uses the same online-milestone code path that
+        // handles every day-to-day upload on the platform, and avoids
+        // a class of iOS-WKWebView Blob/PUT regressions that left the
+        // chunked uploader stalled at 0%.
+        let usedLegacy = false;
+        const sizeOK = (full.size_bytes || full.blob?.size || 0) <= LEGACY_FALLBACK_MAX_BYTES;
+        const isMilestone = full.kind === 'milestone_video' || full.kind === 'milestone_audio';
+        if (isMilestone && sizeOK) {
+          try {
+            const total = full.size_bytes || full.blob?.size || 0;
+            usedLegacy = await _uploadMilestoneViaLegacy({
+              token,
+              full,
+              onProgress: ({ loaded, pct }) => emit('carryon:upload:progress', {
+                id: row.id,
+                bytes_sent: loaded,
+                total,
+                pct,
+                filename: full.filename,
+              }),
+            });
+          } catch (legacyErr) {
+            // If legacy fails for a transient reason, fall through to
+            // chunked. We log the error in last_error so the user can
+            // see it on the Sync Panel even if chunked also stalls.
+            console.warn('[upload] legacy path failed, falling back to chunked:', legacyErr?.message || legacyErr);
+            await updatePendingUpload(row.id, { last_error: `legacy: ${legacyErr?.response?.status ? `HTTP ${legacyErr.response.status}` : (legacyErr?.message || 'failed')}` }).catch(() => {});
+            usedLegacy = false;
+          }
+        }
+        if (!usedLegacy) {
+          const uploader = new ChunkedUploader({
+            token,
+            blob: full.blob,
+            filename: full.filename,
+            mime_type: full.mime_type,
+            kind: full.kind,
+            metadata: full.metadata,
+            pendingId: full.id,
+            existingUploadId: full.upload_id,
+          });
+          await uploader.run();
+        }
         await deletePendingUpload(row.id); // success: drop from queue
         processed++;
         emit('carryon:upload:complete', { id: row.id, filename: full.filename, kind: full.kind });

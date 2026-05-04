@@ -43,7 +43,11 @@ export default function PendingUploadsIndicator() {
     setStalled(null);
     try {
       const m = await import('../offline/chunkedUploader');
-      await m.drainPendingUploads(token);
+      // forceRetry: tells the drainer to break the in-flight lock and
+      // reset any 'uploading' rows back to 'queued' before starting.
+      // Without this, a previous drain hung in a never-resolving axios
+      // PUT keeps the lock indefinitely and the user's tap is a no-op.
+      await m.drainPendingUploads(token, { forceRetry: true });
     } catch { /* errors surface via the failed event */ }
     finally {
       setRetrying(false);

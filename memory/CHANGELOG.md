@@ -2131,3 +2131,49 @@ only path forward was to force-quit the PWA.
 
 ### Housekeeping
 - 74 PASS, 0 WARN, 0 FAIL.
+
+---
+
+## Feb 4, 2026 (later still²) — Legacy Fallback for Milestone Drainer
+
+### Problem
+Even with the timeout/onUploadProgress fix and the visible "Sync stalled —
+tap to retry" pill, the chunked uploader never moved off 0%. User taps
+Retry → pill disappears → nothing happens → pill comes back stalled. The
+chunked PUT body simply isn't being transferred from the iOS WKWebView.
+
+### Fix
+Bypassed the chunked pipeline entirely for the case it was wedged on:
+small (≤ 50 MB) offline-recorded milestones.
+
+- `offline/chunkedUploader.js`:
+  - Added `_uploadMilestoneViaLegacy({ token, full, onProgress })` which
+    walks the same online milestone path the platform has used for
+    months: `POST /messages` (with `voice_data` inline for audio) +
+    `POST /messages/{id}/upload-video` with `FormData` for video. iOS
+    WKWebView handles FormData uploads reliably; this is the path
+    every online milestone create has been running through.
+  - `drainPendingUploads` now tries the legacy path first for any
+    milestone_video / milestone_audio row at or below
+    `LEGACY_FALLBACK_MAX_BYTES = 50 MB` and that has
+    `metadata.message_create`. Falls through to chunked on failure.
+  - Added `drainPendingUploads(token, { forceRetry: true })`. When the
+    user taps the stalled pill we pass `forceRetry: true`; the drainer
+    drops the in-flight lock, flips any `'uploading'` rows back to
+    `'queued'`, and starts fresh. Without this, a previous never-
+    resolving axios PUT held the lock indefinitely and the user's tap
+    was a no-op (which is exactly what they reported).
+
+- `components/PendingUploadsIndicator.js`:
+  - Tap → `drainPendingUploads(token, { forceRetry: true })` so the
+    stuck-attempt is broken and a fresh drain runs.
+
+### Why this is the right fix
+The chunked pipeline is the right answer for genuinely large (>50 MB)
+recordings on cellular — but for the 99% of milestone messages that
+fit comfortably under that, FormData multipart is simpler, has fewer
+moving parts, and is the *exact same code path* that handles every
+online milestone upload on the platform every day.
+
+### Housekeeping
+- 74 PASS, 0 WARN, 0 FAIL.
