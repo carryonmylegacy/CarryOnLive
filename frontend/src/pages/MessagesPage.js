@@ -53,7 +53,7 @@ import VideoRecordingOverlay from '../components/messages/VideoRecordingOverlay'
 import { getOfflineMode } from '../offline/featureFlag';
 import { getLocalEstates } from '../offline/repos/estatesRepo';
 import { getLocalBeneficiaries, upsertLocalBeneficiaries } from '../offline/repos/beneficiariesRepo';
-import { getLocalMessages, upsertLocalMessages } from '../offline/repos/messagesRepo';
+import { getLocalMessages, upsertLocalMessages, upsertLocalMessagesPreservingPending } from '../offline/repos/messagesRepo';
 
 const triggerIcons = {
   immediate: Send,
@@ -280,7 +280,10 @@ const MessagesPage = () => {
         // Always mirror the canonical server list into IndexedDB so the
         // airplane-mode short-circuit (above) has data to rehydrate from
         // even on iOS installed PWAs that hard-remount on airplane toggle.
-        upsertLocalMessages(selected.id, msgsRes.data).catch(() => {});
+        // Use the preserving variant so locally-queued offline messages
+        // (with `_pending: true`) aren't blown away while their video
+        // is still in-flight via the chunked upload queue.
+        upsertLocalMessagesPreservingPending(selected.id, msgsRes.data).catch(() => {});
         upsertLocalBeneficiaries(selected.id, bensRes.data).catch(() => {});
       }
     } catch (error) {
@@ -546,6 +549,12 @@ const MessagesPage = () => {
           : (typeof navigator !== 'undefined' && navigator.onLine === false);
         if (isOffline && !editingMessage && (hasVideo || hasAudio)) {
           const { addPendingUpload } = await import('../offline/pendingUploadsRepo');
+          const { insertLocalMessage } = await import('../offline/repos/messagesRepo');
+          // Synthesize a stable client-side id so the optimistic row
+          // and the queued upload reference the same logical message.
+          // The drainer's finalizer will reuse this id when it confirms
+          // the server-side row, so the UI swap is seamless.
+          const pendingId = `pending_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
           const messageCreate = {
             estate_id: estate.id,
             title,
@@ -565,8 +574,20 @@ const MessagesPage = () => {
               filename: `milestone-${Date.now()}.webm`,
               mime_type: videoBlob.type || 'video/webm',
               blob: videoBlob,
-              metadata: { message_create: messageCreate },
+              metadata: { message_create: messageCreate, pending_id: pendingId },
             });
+            // Optimistic local row so the MM list paints this message
+            // INSTANTLY rather than dropping back to the empty state.
+            await insertLocalMessage({
+              id: pendingId,
+              ...messageCreate,
+              has_video: true,
+              has_audio: false,
+              created_at: new Date().toISOString(),
+            });
+            // Tell any open MessagesPage view to refetch from the
+            // local cache — same event the drainer fires on success.
+            try { window.dispatchEvent(new CustomEvent('carryon:outbox:drained', { detail: { source: 'optimistic_milestone' } })); } catch {}
             toast.success('Video queued — we\'ll send your milestone when you reconnect.');
           } else if (hasAudio) {
             await addPendingUpload({
@@ -574,8 +595,16 @@ const MessagesPage = () => {
               filename: `milestone-${Date.now()}.webm`,
               mime_type: audioBlob.type || 'audio/webm',
               blob: audioBlob,
-              metadata: { message_create: messageCreate },
+              metadata: { message_create: messageCreate, pending_id: pendingId },
             });
+            await insertLocalMessage({
+              id: pendingId,
+              ...messageCreate,
+              has_video: false,
+              has_audio: true,
+              created_at: new Date().toISOString(),
+            });
+            try { window.dispatchEvent(new CustomEvent('carryon:outbox:drained', { detail: { source: 'optimistic_milestone' } })); } catch {}
             toast.success('Voice message queued — we\'ll send it when you reconnect.');
           }
           setShowCreateModal(false);
