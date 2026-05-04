@@ -15,6 +15,7 @@ import NotificationContainer from './components/AppNotification';
 import OfflineSyncProgress from './components/OfflineSyncProgress';
 import PendingUploadsIndicator from './components/PendingUploadsIndicator';
 import PendingSyncChip from './components/PendingSyncChip';
+import ScrollRestorationProvider from './components/ScrollRestorationProvider';
 import { AmberAlertProvider } from './components/AmberAlert';
 import { initErrorReporter, reportError } from './utils/errorReporter';
 import { checkForUpdates } from './utils/versionCheck';
@@ -517,6 +518,10 @@ function AppRoutes() {
     <RouteErrorBoundary>
     <Suspense fallback={<PageLoader />}>
     <PublicDeviceModeMount />
+    {/* Restores per-pathname scroll offset when the user has the
+        "Remember scroll position" preference enabled. No-op when
+        the pref is OFF. */}
+    <ScrollRestorationProvider />
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={

@@ -2499,3 +2499,51 @@ update to the card.
 
 ### Housekeeping
 - 75 PASS, 0 WARN, 0 FAIL.
+
+---
+
+## Feb 5, 2026 — "Remember Scroll Position" Preference
+
+### Feature
+A simple toggle in Settings → Appearance & Navigation that, when ON,
+restores the user's scroll offset on every page they revisit.
+
+### Implementation
+- `hooks/useScrollRestoration.js` (new):
+  - Pref stored in `localStorage[carryon_remember_scroll]` (persists
+    across PWA cold-launches AND while offline — same model as theme
+    / dashboard layout).
+  - Saved offsets stored in `localStorage[carryon_scroll_positions]`
+    as `{ "/path": offsetY }`, capped at 60 entries (FIFO eviction).
+  - Knows about TWO scroll containers: window (marketing routes) and
+    the OverlayScrollbars viewport (the actual scroll element inside
+    DashboardLayout). Reads/writes the appropriate one per route.
+  - Two-RAF restore so the saved offset lands AFTER React commit AND
+    browser layout — avoids the "lands at 0 because the route hasn't
+    rendered yet" race.
+- `components/ScrollRestorationProvider.js` (new):
+  - Mounted once inside `<AppRoutes />` after `<PublicDeviceModeMount />`.
+  - Watches `useLocation()` — saves outgoing pathname's offset, then
+    restores incoming pathname's offset on every navigation.
+  - Debounces a save (180 ms) on each scroll, plus a final save on
+    `pagehide` and `visibilitychange` so iOS PWA suspends capture the
+    most recent position.
+  - Polls for the OverlayScrollbars viewport up to 5 s after mount
+    (lazy routes load the viewport asynchronously).
+  - Sets `window.history.scrollRestoration = 'manual'` while the
+    pref is on so the browser doesn't race us.
+- `components/settings/ScrollRestorationCard.js` (new) — simple
+  toggle card with a "Forget saved positions" reset button.
+- `pages/SettingsPage.js` — renders the card right after
+  `DashboardViewCard` in Appearance & Navigation.
+- `components/layout/DashboardLayout.js` — its existing per-route
+  `scrollTo(top)` effect now SKIPS when the pref is ON, so our
+  restore wins.
+
+### Honors offline pref policy
+The toggle reads/writes purely on the device (localStorage). No
+server round-trip. The pref a user sets while online is identical to
+what's read while offline — no divergence possible.
+
+### Housekeeping
+- 75 PASS, 0 WARN, 0 FAIL.

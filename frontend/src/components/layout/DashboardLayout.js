@@ -119,7 +119,14 @@ const DashboardLayout = () => {
   // OverlayScrollbars viewport (the real scroll container on mobile) and
   // falls back to window scroll on desktop. `smooth` ensures it feels
   // natural instead of a hard jump.
+  // Scroll to top on every route change inside DashboardLayout —
+  // unless the user has opted into the "Remember scroll position"
+  // preference, in which case <ScrollRestorationProvider /> takes
+  // over and restores the saved offset for the new route.
   useEffect(() => {
+    let pref = false;
+    try { pref = localStorage.getItem('carryon_remember_scroll') === '1'; } catch { /* ignore */ }
+    if (pref) return undefined;
     const scrollToTop = () => {
       const viewport = document.querySelector('.main-content [data-overlayscrollbars-viewport]');
       if (viewport) {

@@ -18,6 +18,7 @@ import OfflineBehaviorCard from '../components/settings/OfflineBehaviorCard';
 import OfflineAccessCard from '../components/settings/OfflineAccessCard';
 import OfflineCapabilitiesCard from '../components/settings/OfflineCapabilitiesCard';
 import SyncStatusCard from '../components/settings/SyncStatusCard';
+import ScrollRestorationCard from '../components/settings/ScrollRestorationCard';
 import AppearanceCard from '../components/settings/AppearanceCard';
 import DashboardViewCard from '../components/settings/DashboardViewCard';
 import DigestCard from '../components/settings/DigestCard';
@@ -228,6 +229,11 @@ const SettingsPage = () => {
       {/* Dashboard View — layout + readiness gauge graphic.
           Hidden for staff since they don't see the benefactor dashboard. */}
       {!isStaff && <DashboardViewCard />}
+
+      {/* Remember-scroll-position toggle. Pref is stored in
+          localStorage so it persists across PWA cold-launches AND
+          while offline (no server round-trip). */}
+      <ScrollRestorationCard />
 
       {/* Dock Customizer */}
       <Card className="glass-card" data-testid="settings-dock-card">
