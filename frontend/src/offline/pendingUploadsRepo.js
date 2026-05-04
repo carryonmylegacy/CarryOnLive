@@ -23,7 +23,19 @@ import { getDB } from './db';
 import { isOfflineEnabled } from './featureFlag';
 
 export async function addPendingUpload({ kind, filename, mime_type, blob, metadata = {} }) {
-  if (!isOfflineEnabled()) throw new Error('offline disabled');
+  // Allow queueing whenever the offline flag is on OR when the device
+  // is CURRENTLY offline. The flag means "the user opted into offline
+  // mode and wants stuff persisted in IndexedDB". But if they're
+  // actually offline RIGHT NOW with a 5-minute video recording in
+  // hand, refusing the queue means losing the recording — the worst
+  // possible UX. So treat real-time offline as an automatic override:
+  // we MUST accept the upload because there is no other path. The
+  // drainer below already runs flag-agnostic for exactly this reason.
+  const flagOn = isOfflineEnabled();
+  const deviceOffline = (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function')
+    ? window.__isDeviceOffline()
+    : (typeof navigator !== 'undefined' && navigator.onLine === false);
+  if (!flagOn && !deviceOffline) throw new Error('offline disabled');
   if (!blob) throw new Error('blob required');
   const db = getDB();
   const now = Date.now();
