@@ -120,23 +120,32 @@ axios.interceptors.request.use(
   (err) => Promise.reject(err),
 );
 
-// Response interceptor — promote any no-response / timeout failure into
-// the tracked `__deviceOffline` flag. This is what catches iOS Safari's
+// Response interceptor — promote any no-response / network-layer failure
+// into the tracked `__deviceOffline` flag. This is what catches iOS Safari's
 // `navigator.onLine` lie: the very first request to fail proves the
 // device is offline, and every subsequent request short-circuits
 // instantly instead of waiting 8s each.
+//
+// IMPORTANT: ECONNABORTED is intentionally NOT included here. It fires on
+// any axios `timeout` — including legitimately slow chunked-video uploads
+// over cellular (10 MB at 200 KB/s = 50 s). Treating "this single request
+// timed out" as "the device is offline" was bricking the upload drainer:
+// the first chunk would time out at 8 s, the flag would flip to true, and
+// every retry + every other axios call would short-circuit with
+// ERR_OFFLINE even though the user was demonstrably online (Wi-Fi, LTE,
+// 5G — the whole reason they reconnected). Only treat genuine routing
+// failures (Network Error / ERR_NETWORK / ERR_OFFLINE) as offline proof.
 axios.interceptors.response.use(
   (res) => res,
   (err) => {
     try {
       const networkish = !err?.response && (
         err?.code === 'ERR_NETWORK' ||
-        err?.code === 'ECONNABORTED' ||
         err?.message === 'Network Error' ||
         err?.code === 'ERR_OFFLINE'
       );
       if (networkish) __deviceOffline = true;
-    } catch {}
+    } catch { /* swallow */ }
     return Promise.reject(err);
   },
 );

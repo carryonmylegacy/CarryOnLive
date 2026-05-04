@@ -2033,3 +2033,48 @@ made it look like the recording had been lost.
 
 ### Housekeeping
 - 0 WARN, 0 FAIL.
+
+---
+
+## Feb 4, 2026 (later) — Chunked Upload Stuck at 0% on Reconnect
+
+### Bug
+After editing a pending offline milestone and going back online, the
+PendingSync toast showed "Uploading 0%" and hung for 10+ minutes. The
+drainer started, the /init succeeded, but the very first 10 MB chunk PUT
+never made progress and never errored cleanly.
+
+### Root cause
+Two interacting bugs:
+
+1. **`chunkedUploader._sendChunk`** never overrode the global
+   `axios.defaults.timeout = 8000`. Uploading a 10 MB chunk over cellular
+   (typical 200-500 KB/s) takes 20-50+ s, so every chunk PUT aborted at
+   8 s with `ECONNABORTED`.
+
+2. **`index.js` axios response interceptor** was promoting *any*
+   `ECONNABORTED` into `__deviceOffline = true`. So the moment the first
+   chunk timed out, the patched `navigator.onLine` started reporting
+   false, and every subsequent retry — including the chunk uploader's
+   own backoff attempts — got short-circuited at the request interceptor
+   with `ERR_OFFLINE`. The drainer thought the device was offline; the
+   device was actually online with a slow uplink.
+
+### Fix
+- `offline/chunkedUploader.js`:
+  - `_sendChunk` PUT timeout now 5 minutes per chunk (matches the legacy
+    `/messages/{id}/upload-video` direct path).
+  - `_init` / `_complete` / `_fetchReceivedChunks` get explicit 60-120 s
+    timeouts so a slow first request doesn't trip the global default.
+  - Added `onUploadProgress` to the chunk PUT so progress moves smoothly
+    inside a chunk, not just at chunk boundaries — the user sees the
+    upload actually crawling forward on cellular instead of frozen 0%.
+
+- `index.js`:
+  - Response interceptor no longer treats `ECONNABORTED` as proof of
+    offline. Only `ERR_NETWORK` / `Network Error` / `ERR_OFFLINE` flip
+    the tracked flag. A timeout is just a slow request, not a routing
+    failure.
+
+### Housekeeping
+- 74 PASS, 0 WARN, 0 FAIL.

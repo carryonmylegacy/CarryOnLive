@@ -71,7 +71,7 @@ export class ChunkedUploader {
       total_bytes: this.blob.size,
       mime_type: this.mime_type,
       kind: this.kind,
-    }, { headers: this._headers() });
+    }, { headers: this._headers(), timeout: 60000 });
     this.uploadId = res.data.upload_id;
     return this.uploadId;
   }
@@ -79,7 +79,7 @@ export class ChunkedUploader {
   async _fetchReceivedChunks() {
     if (!this.uploadId) return [];
     try {
-      const res = await axios.get(`${API_URL}/uploads/chunked/${this.uploadId}/status`, { headers: this._headers() });
+      const res = await axios.get(`${API_URL}/uploads/chunked/${this.uploadId}/status`, { headers: this._headers(), timeout: 60000 });
       return res.data.chunks_received || [];
     } catch { return []; }
   }
@@ -94,10 +94,12 @@ export class ChunkedUploader {
     const start = index * CHUNK_SIZE;
     const end = Math.min(start + CHUNK_SIZE, this.blob.size) - 1;
     const slice = this.blob.slice(start, end + 1);
+    const chunkBytes = end - start + 1;
     let attempt = 0;
     while (attempt < MAX_RETRIES_PER_CHUNK) {
       if (this.abortSignal?.aborted) throw new Error('aborted');
       try {
+        const baseSent = this.bytesSent;
         await axios.put(
           `${API_URL}/uploads/chunked/${this.uploadId}/chunk`,
           slice,
@@ -106,11 +108,24 @@ export class ChunkedUploader {
               'Content-Range': `bytes ${start}-${end}/${this.blob.size}`,
               'Content-Type': 'application/octet-stream',
             }),
+            // Five minutes per 10 MB chunk — comfortably handles slow
+            // cellular uplinks (a few hundred KB/s). The global 8-second
+            // axios default was killing every chunk on poor signal,
+            // making the drainer hang at 0% until it gave up.
+            timeout: 300000,
             maxBodyLength: Infinity,
             maxContentLength: Infinity,
+            // Surface intra-chunk progress so the UI moves smoothly even
+            // for a 10 MB chunk that takes 30+ seconds on cellular.
+            onUploadProgress: (evt) => {
+              if (!evt) return;
+              const loaded = Math.min(evt.loaded || 0, chunkBytes);
+              this.bytesSent = Math.min(baseSent + loaded, this.blob.size);
+              this._reportProgress();
+            },
           }
         );
-        this.bytesSent = Math.min(this.bytesSent + (end - start + 1), this.blob.size);
+        this.bytesSent = Math.min(baseSent + chunkBytes, this.blob.size);
         this._reportProgress();
         return;
       } catch (err) {
@@ -126,7 +141,7 @@ export class ChunkedUploader {
     const res = await axios.post(
       `${API_URL}/uploads/chunked/${this.uploadId}/complete`,
       { kind: this.kind, metadata: this.metadata },
-      { headers: this._headers() },
+      { headers: this._headers(), timeout: 120000 },
     );
     return res.data;
   }
