@@ -373,6 +373,19 @@ const LoginPage = () => {
               }
               authLoginWithToken(offlineToken, resolvedUser);
               haptics.success();
+              // Force the global offline flag to TRUE before the dashboard
+              // mounts. iOS PWA's `navigator.onLine` lies in airplane
+              // mode (returns true), and the `offline` window event may
+              // not have fired yet on a cold-launch + airplane-mode-
+              // already-engaged sequence. Without this, DashboardPage's
+              // `isOffline` check returns false, the offline-first
+              // estate hydration branch is skipped, and the page paints
+              // empty because the network call also fails. Setting the
+              // flag here — at the moment we have ABSOLUTE PROOF the
+              // device is offline (we just unlocked an offline
+              // credential) — guarantees every consumer that reads
+              // `navigator.onLine` from this point onward gets `false`.
+              try { window.dispatchEvent(new Event('offline')); } catch { /* ignore */ }
               toast.success('Signed in offline. Some pages may be limited until you reconnect.', { force: true });
               // Honor the explicit user mandate: if this account has a
               // benefactor role at all, land on the Benefactor portal —

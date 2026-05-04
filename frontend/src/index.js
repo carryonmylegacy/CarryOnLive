@@ -37,6 +37,45 @@ if (typeof window !== 'undefined') {
   window.addEventListener('online', () => { __deviceOffline = false; });
 }
 
+// PATCH `navigator.onLine` itself so every consumer in the codebase (and
+// every third-party library) gets the truth without each having to know
+// about our event-tracked flag. There are ~80 direct `navigator.onLine`
+// reads across the frontend and untold more inside libraries; chasing
+// them one-by-one is whack-a-mole.
+//
+// Strategy: install a getter on `Navigator.prototype` that returns
+// `false` whenever our event-tracked flag says we're offline (overriding
+// the native iOS lie), but preserves the original behaviour otherwise.
+// We never report `false → true` upgrades; the native value flips back
+// to `true` reliably when iOS regains connectivity, so the original
+// getter handles "online" reporting correctly. We only need to override
+// the FALSE case that iOS misses.
+//
+// Safe-by-design: if Object.defineProperty fails (some locked-down
+// browsers refuse), the helper above + per-page checks still work as
+// a fallback.
+try {
+  if (typeof Navigator !== 'undefined') {
+    const proto = Navigator.prototype;
+    const desc = Object.getOwnPropertyDescriptor(proto, 'onLine');
+    if (desc && desc.configurable) {
+      const nativeGetter = desc.get;
+      Object.defineProperty(proto, 'onLine', {
+        configurable: true,
+        enumerable: desc.enumerable,
+        get: function () {
+          // If our tracked flag says offline, override iOS's lie.
+          if (__deviceOffline) return false;
+          // Otherwise defer to the native value — accurate for "true"
+          // reports and accurate when no event-tracked override exists.
+          try { return nativeGetter ? nativeGetter.call(this) : true; }
+          catch { return true; }
+        },
+      });
+    }
+  }
+} catch { /* best-effort patch; helper above remains the safety net */ }
+
 // Exposed on window so any module (AuthContext, page guards, etc.) can ask
 // the authoritative question "is the device offline right now?" without
 // duplicating the event-listener boilerplate or falling for iOS Safari's
