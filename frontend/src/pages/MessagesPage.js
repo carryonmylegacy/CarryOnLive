@@ -907,7 +907,31 @@ const MessagesPage = () => {
 
 
   const playVideo = async (msg) => {
-    if (!msg.video_url) return;
+    // Offline-pending row playback: if this message was queued offline
+    // (no server `video_url` yet) AND we have its blob in the
+    // pendingUploads store, play directly from the local bytes. That's
+    // the whole point of the founder being able to "recall it offline
+    // without any issue" — the recording lives on this device until
+    // the upload drains, and we should let them watch it back.
+    if (!msg.video_url) {
+      try {
+        const { getDB } = await import('../offline/db');
+        const db = getDB();
+        const id = msg.id;
+        // The pending upload row's metadata.pending_id matches the
+        // optimistic message row's id (set in the offline-queue branch
+        // of handleSave above).
+        const pending = await db.pendingUpload
+          .filter((r) => r?.metadata?.pending_id === id)
+          .first();
+        if (pending?.blob) {
+          setPlayingVideoUrl(URL.createObjectURL(pending.blob));
+          return;
+        }
+      } catch { /* fall through to error toast below */ }
+      toast.error('This recording is still queued — it will sync when you reconnect.');
+      return;
+    }
     setLoadingPlayback(true);
     try {
       const res = await axios.get(`${API_URL}/messages/video/${msg.video_url}`, {
