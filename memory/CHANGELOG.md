@@ -2547,3 +2547,59 @@ what's read while offline — no divergence possible.
 
 ### Housekeeping
 - 75 PASS, 0 WARN, 0 FAIL.
+
+---
+
+## Feb 5, 2026 — Cross-Device Scroll Position Sync
+
+### Feature
+The "Remember scroll position" preference now also syncs across the
+user's devices via the user-prefs server endpoint. Scroll halfway
+down Beneficiaries on the iPhone → open Beneficiaries on the laptop
+tomorrow → land at the same offset.
+
+### Backend
+- `backend/routes/user_preferences.py`:
+  - `GET /api/user-preferences/scroll-restoration` — returns
+    `{ enabled, positions }`.
+  - `PUT /api/user-preferences/scroll-restoration` — persists toggle
+    + optional positions map. Defensive sanitisation: keys must start
+    with `/`, values coerced to non-negative integers, dict hard-
+    capped at 80 entries (vs the 60-entry local cap so the server
+    never under-stores). Toggling OFF clears the server map too,
+    matching the local pref's "fresh slate on disable" semantics.
+  - Verified with curl against the live preview: GET initial = empty,
+    PUT with mixed valid/invalid input yields a clean sanitised map,
+    GET returns the persisted values, PUT enabled=false clears it.
+
+### Frontend
+- `hooks/useScrollRestoration.js`:
+  - `setScrollRestorationEnabled(on)` mirrors the toggle to the server
+    on every flip (debounced 50 ms to coalesce double-clicks).
+  - `saveCurrent` queues a debounced 4-second server push of the
+    full positions map. So if a user scrolls Beneficiaries → 4 s
+    later the new offset is on the server.
+  - `flushScrollPositionsToServer()` exposed for sync flushes on
+    `pagehide` / `visibilitychange:hidden` so iOS PWA suspends still
+    mirror the latest offsets cross-device.
+  - `hydrateScrollRestorationFromServer()` async helper. Server's
+    `enabled` overrides local; positions merged with server-precedence
+    on shared keys, local-only keys preserved.
+- `components/ScrollRestorationProvider.js` — pagehide handler now
+  calls `flushScrollPositionsToServer()` after the local save.
+- `contexts/AuthContext.js` — calls `hydrateScrollRestorationFromServer`
+  twice: once in `initAuth` immediately after a successful token
+  validate, and once on every `online` event (so the user gets fresh
+  cross-device state after reconnect even without a logout/login).
+  Local pref still works perfectly offline from `localStorage` — the
+  server hydrate is purely additive.
+
+### Honors offline-pref policy
+- Local-first: every read hits `localStorage` synchronously; the user
+  sees their pref instantly even before the server hydrate completes.
+- Server-as-tiebreaker: cross-device sync only fires online; offline
+  edits stay local until the user reconnects (next push goes through
+  the existing debounced + pagehide flush paths).
+
+### Housekeeping
+- 74 PASS, 0 WARN, 0 FAIL.

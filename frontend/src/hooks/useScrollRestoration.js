@@ -13,6 +13,18 @@
  *     JSON map of `{ "/path": offsetY }`. Capped at 60 entries (FIFO eviction)
  *     so the storage budget can't grow unbounded as the user navigates.
  *
+ * Cross-device sync:
+ *   The pref AND the positions map are also mirrored to
+ *   `/api/user-preferences/scroll-restoration` (PUT/GET) so a user who
+ *   scrolls halfway down Beneficiaries on their phone lands at the same
+ *   offset when they open Beneficiaries on their laptop later. The server
+ *   is the source of truth for cross-device; localStorage is the source
+ *   of truth for offline. On reconnect / login the hook fetches the
+ *   server copy and merges via "newer-write-wins" (server only sends
+ *   what it has, and we replace local entries that exist server-side
+ *   while keeping any that are local-only). Server pushes are
+ *   debounced 4 s + 1 final push on `pagehide`.
+ *
  * Both reads/writes are wrapped in try/catch — Safari Private mode throws
  * on quota writes; the feature degrades gracefully to "no-op" rather than
  * crashing the page.
@@ -29,12 +41,15 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import axios from 'axios';
 
+const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const PREF_KEY = 'carryon_remember_scroll';
 const POSITIONS_KEY = 'carryon_scroll_positions';
 const PREF_EVENT = 'carryon:scroll-pref:change';
 const MAX_ENTRIES = 60;
 const SAVE_DEBOUNCE_MS = 180;
+const SERVER_PUSH_DEBOUNCE_MS = 4000;
 
 // ── Pref helpers ────────────────────────────────────────────────
 
@@ -54,6 +69,87 @@ export function setScrollRestorationEnabled(on) {
   if (!on) {
     try { localStorage.removeItem(POSITIONS_KEY); } catch { /* ignore */ }
   }
+  // Mirror to server so the toggle (and cleared positions on OFF)
+  // syncs across this user's devices. Fire-and-forget — local is
+  // always the source of truth for the current device.
+  pushPrefToServer(on, on ? readPositions() : {});
+}
+
+// ── Server sync helpers ─────────────────────────────────────────
+
+function authHeaders() {
+  try {
+    const token = localStorage.getItem('carryon_token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch { return {}; }
+}
+
+let serverPushTimer = null;
+function pushPrefToServer(enabled, positions) {
+  // Coalesce rapid changes into one PUT.
+  if (serverPushTimer) clearTimeout(serverPushTimer);
+  serverPushTimer = setTimeout(() => {
+    serverPushTimer = null;
+    const headers = authHeaders();
+    if (!headers.Authorization) return; // not logged in yet
+    axios.put(`${API_URL}/user-preferences/scroll-restoration`, {
+      enabled,
+      positions: enabled ? positions : {},
+    }, { headers }).catch(() => { /* best-effort cross-device sync */ });
+  }, 50);
+}
+
+function pushPositionsToServerDebounced() {
+  if (positionsPushTimer) clearTimeout(positionsPushTimer);
+  positionsPushTimer = setTimeout(() => {
+    positionsPushTimer = null;
+    if (!isScrollRestorationEnabled()) return;
+    pushPrefToServer(true, readPositions());
+  }, SERVER_PUSH_DEBOUNCE_MS);
+}
+let positionsPushTimer = null;
+
+/** Force a synchronous-feel push of the current positions map. Called
+ * on `pagehide` / `visibilitychange:hidden` so iOS PWA suspends still
+ * mirror the latest scroll offsets to the server. */
+export function flushScrollPositionsToServer() {
+  if (positionsPushTimer) { clearTimeout(positionsPushTimer); positionsPushTimer = null; }
+  if (!isScrollRestorationEnabled()) return;
+  pushPrefToServer(true, readPositions());
+}
+
+/**
+ * Hydrate local pref + positions from the server once on login or
+ * reconnect. Server values are merged via "server has authority for
+ * keys it sends; local-only keys remain". The toggle itself is taken
+ * verbatim from the server to keep cross-device parity.
+ *
+ * Idempotent — safe to call repeatedly. Returns the resolved pref so
+ * callers (like AuthContext) can chain UI updates if they want.
+ */
+export async function hydrateScrollRestorationFromServer() {
+  const headers = authHeaders();
+  if (!headers.Authorization) return null;
+  try {
+    const res = await axios.get(`${API_URL}/user-preferences/scroll-restoration`, { headers });
+    const enabled = !!res?.data?.enabled;
+    const serverPositions = (res?.data?.positions && typeof res.data.positions === 'object') ? res.data.positions : {};
+    // Toggle: server wins.
+    try {
+      if (enabled) localStorage.setItem(PREF_KEY, '1');
+      else localStorage.removeItem(PREF_KEY);
+    } catch { /* ignore */ }
+    // Positions: union with server-precedence on shared keys.
+    if (enabled) {
+      const local = readPositions();
+      const merged = { ...local, ...serverPositions };
+      writePositions(merged);
+    } else {
+      try { localStorage.removeItem(POSITIONS_KEY); } catch { /* ignore */ }
+    }
+    try { window.dispatchEvent(new CustomEvent(PREF_EVENT)); } catch { /* SSR */ }
+    return enabled;
+  } catch { return null; }
 }
 
 export function useScrollRestorationPref() {
@@ -142,6 +238,10 @@ export function useScrollRestoration() {
     delete positions[pathname];
     positions[pathname] = y;
     writePositions(positions);
+    // Mirror to server (debounced 4 s) so cross-device sync stays
+    // current without flooding the API. Final flush also fires on
+    // pagehide via the provider component.
+    pushPositionsToServerDebounced();
   }, []);
 
   const restore = useCallback((pathname, hash) => {

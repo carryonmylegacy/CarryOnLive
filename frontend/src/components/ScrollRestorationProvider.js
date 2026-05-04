@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useScrollRestoration } from '../hooks/useScrollRestoration';
+import { useScrollRestoration, flushScrollPositionsToServer } from '../hooks/useScrollRestoration';
 
 /**
  * <ScrollRestorationProvider />
@@ -93,8 +93,12 @@ export default function ScrollRestorationProvider() {
       }, 250);
     }
     // Also save on visibility change / pagehide so iOS PWA suspends
-    // capture the most recent offset.
-    const onHide = () => saveCurrent(location.pathname);
+    // capture the most recent offset locally AND flush a server push
+    // immediately so cross-device sync doesn't lose the last 4 s.
+    const onHide = () => {
+      saveCurrent(location.pathname);
+      flushScrollPositionsToServer();
+    };
     window.addEventListener('pagehide', onHide);
     document.addEventListener('visibilitychange', onHide);
     return () => {

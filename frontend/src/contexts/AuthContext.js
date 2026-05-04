@@ -228,6 +228,16 @@ export const AuthProvider = ({ children }) => {
           if (typeof navigator !== 'undefined' && navigator.onLine) {
             import('../offline/chunkedUploader').then((m) => m.drainPendingUploads(token)).catch(() => {});
           }
+          // Cross-device scroll-restoration hydrate. Pulls the
+          // server's copy of the toggle + saved positions so a user
+          // who flipped the toggle on their phone sees it on (and
+          // resumes positions from) their laptop. Online-only —
+          // local pref still works offline from localStorage.
+          if (typeof navigator !== 'undefined' && navigator.onLine) {
+            import('../hooks/useScrollRestoration')
+              .then((m) => m.hydrateScrollRestorationFromServer())
+              .catch(() => {});
+          }
           // Pre-warm every lazy-loaded page chunk in the background so that
           // offline navigation to an unvisited page paints from SW cache
           // instead of crashing the ErrorBoundary. Fires only once per
@@ -272,6 +282,12 @@ export const AuthProvider = ({ children }) => {
       // sit forever even though the device just reconnected.
       import('../offline/outbox')
         .then((m) => m.drain())
+        .catch(() => {});
+      // Pull any cross-device scroll-restoration state from the
+      // server so a user who flipped the toggle on their phone sees
+      // it on (and can resume scroll positions on) their laptop.
+      import('../hooks/useScrollRestoration')
+        .then((m) => m.hydrateScrollRestorationFromServer())
         .catch(() => {});
     };
     window.addEventListener('online', onOnline);

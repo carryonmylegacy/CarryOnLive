@@ -165,3 +165,74 @@ async def set_onboarding_emails_pref(
         upsert=True,
     )
     return {"enabled": bool(data.enabled)}
+
+
+# --- Scroll position restoration (cross-device) ------------------------------------
+
+
+class ScrollRestorationPref(BaseModel):
+    enabled: bool = False
+    # Optional: caller may also push the local positions map at the
+    # same time so the toggle flip + positions land in one round-trip.
+    positions: dict | None = None
+
+
+@router.get("/user-preferences/scroll-restoration")
+async def get_scroll_restoration_pref(
+    current_user: dict = Depends(get_current_user),
+):
+    """Return the user's scroll-restoration toggle + saved positions.
+
+    Frontend uses this to seed local state on a fresh device so that
+    "scroll halfway down Beneficiaries on phone, switch to laptop,
+    open Beneficiaries → land at the same spot" works end-to-end.
+    Positions are stored as `{ "/path": offsetY }` and capped at 80
+    server-side to bound storage per user.
+    """
+    doc = await db.user_preferences.find_one(
+        {"user_id": current_user["id"], "key": "scroll_restoration"},
+        {"_id": 0, "enabled": 1, "positions": 1},
+    )
+    return {
+        "enabled": bool((doc or {}).get("enabled", False)),
+        "positions": (doc or {}).get("positions") or {},
+    }
+
+
+@router.put("/user-preferences/scroll-restoration")
+async def set_scroll_restoration_pref(
+    data: ScrollRestorationPref,
+    current_user: dict = Depends(get_current_user),
+):
+    """Persist the toggle, and optionally the latest positions map.
+
+    When `enabled` flips to False, the server-side positions map is
+    cleared too — same semantics as the local pref. Positions are
+    coerced to integer Y offsets (defensive against malformed clients)
+    and the dict is hard-capped at 80 entries (oldest dropped first
+    via insertion order).
+    """
+    update = {"enabled": bool(data.enabled)}
+    if not data.enabled:
+        update["positions"] = {}
+    elif isinstance(data.positions, dict):
+        clean: dict[str, int] = {}
+        for k, v in data.positions.items():
+            if not isinstance(k, str) or not k.startswith("/"):
+                continue
+            try:
+                clean[k] = max(0, int(v))
+            except (TypeError, ValueError):
+                continue
+            if len(clean) >= 80:
+                break
+        update["positions"] = clean
+    await db.user_preferences.update_one(
+        {"user_id": current_user["id"], "key": "scroll_restoration"},
+        {"$set": update},
+        upsert=True,
+    )
+    return {
+        "enabled": update["enabled"],
+        "positions": update.get("positions", {}),
+    }
