@@ -2223,3 +2223,44 @@ IndexedDB.
 
 ### Housekeeping
 - 74 PASS, 0 WARN, 0 FAIL.
+
+---
+
+## Feb 5, 2026 — Duplicate Synced Row + Offline Mutation Outbox Fix
+
+### Bugs from user report
+1. **Duplicate milestone row after sync.** Offline-recorded milestone
+   uploads, but ends up rendered TWICE: once as the new server-
+   authoritative row (with real video preview) and once as a phantom
+   "Play Video" row that was the original optimistic _pending entry.
+2. **Offline delete throws an error toast.** Deleting an existing
+   milestone while offline failed instead of queuing.
+
+### Root cause
+1. After the legacy upload path created the new server message, the
+   drainer deleted the `pendingUpload` row but left the optimistic
+   `milestoneMessage` row (id starts with `pending_`) sitting in
+   IndexedDB. The MessagesPage merge — which keeps any local pending
+   row whose id isn't in the server's id set — happily preserved it,
+   producing a duplicate.
+2. `outbox.enqueue` and `outbox.drain` were both gated on the
+   user-facing offline-mode flag (`isOfflineEnabled()`). When the flag
+   was off but the device was genuinely offline (which is the common
+   case — most users don't toggle the flag explicitly), `enqueue`
+   returned `null` silently and the user's mutation vanished.
+   `mutateWithOutbox` then reported success while the queue was empty.
+
+### Fix
+- `offline/chunkedUploader.js` — after a successful drain, look up
+  `metadata.pending_id` and call `deleteLocalMessage(pending_id)` so
+  the optimistic row is gone before the next refresh.
+- `offline/outbox.js` — `enqueue()` is now flag-agnostic when the
+  device is genuinely offline (matching `pendingUploadsRepo.addPendingUpload`
+  policy). `drain()` is now flag-agnostic when there's anything queued
+  (so a flag-off user's reconnect still drains).
+- `contexts/AuthContext.js` — the `online` listener now also calls
+  `outbox.drain()`, not just the chunked-upload drainer. Reconnect-
+  without-logout flushes both pipelines.
+
+### Housekeeping
+- 73 PASS, 0 WARN, 0 FAIL.

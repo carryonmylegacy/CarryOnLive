@@ -266,6 +266,13 @@ export const AuthProvider = ({ children }) => {
       import('../offline/chunkedUploader')
         .then((m) => m.drainPendingUploads(token, { forceRetry: true }))
         .catch(() => {});
+      // Also drain the text-write outbox (deletes / edits / etc.) so
+      // the user's offline mutations land. Without this, a Delete that
+      // got queued offline (now flag-agnostic in outbox.enqueue) would
+      // sit forever even though the device just reconnected.
+      import('../offline/outbox')
+        .then((m) => m.drain())
+        .catch(() => {});
     };
     window.addEventListener('online', onOnline);
     return () => window.removeEventListener('online', onOnline);

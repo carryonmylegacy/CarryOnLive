@@ -43,7 +43,17 @@ const MAX_RETRIES = 3;
 
 /** Add a new job to the outbox. Returns the new row's id, or null if gated off. */
 export async function enqueue({ entity_type, entity_id, method, url, body }) {
-  if (!isOfflineEnabled()) return null;
+  // Flag-agnostic if the device is genuinely offline right now: a user
+  // who toggles airplane mode without ever opting into "offline mode"
+  // still expects their delete/edit to land when they reconnect.
+  // Refusing the queue silently was making offline mutations vanish
+  // (the user would tap Delete, the toast would say "queued", and on
+  // reconnect nothing happened because the row was never written).
+  const flagOn = isOfflineEnabled();
+  const deviceOffline = (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function')
+    ? window.__isDeviceOffline()
+    : (typeof navigator !== 'undefined' && navigator.onLine === false);
+  if (!flagOn && !deviceOffline) return null;
   const db = getDB();
   const row = {
     entity_type,
@@ -75,7 +85,16 @@ export async function pendingCount() {
  */
 let _drainLock = null;
 export async function drain() {
-  if (!isOfflineEnabled()) return { sent: 0, failed: 0, skipped: true };
+  // Flag-agnostic when there's anything to send: matching enqueue's
+  // policy. A user who toggled airplane on/off without ever turning on
+  // offline mode can still have outbox rows (the new "deviceOffline"
+  // path in enqueue), and they need them drained on reconnect.
+  if (!isOfflineEnabled()) {
+    try {
+      const have = await getDB().outbox.where('status').equals('pending').count();
+      if (!have) return { sent: 0, failed: 0, skipped: true };
+    } catch { return { sent: 0, failed: 0, skipped: true }; }
+  }
   if (getOfflineMode() === 'shadow') {
     // Shadow mode: we enqueued, but the authoritative write already
     // happened via the old UI path — so replaying would duplicate.

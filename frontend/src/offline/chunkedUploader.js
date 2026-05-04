@@ -377,6 +377,21 @@ export async function drainPendingUploads(token, opts = {}) {
           await uploader.run();
         }
         await deletePendingUpload(row.id); // success: drop from queue
+        // Clean up the local optimistic milestone row so the next
+        // refresh doesn't double-render it alongside the new
+        // server-authoritative row. The optimistic row's id is
+        // `pending_*` and lives in IndexedDB's `milestoneMessage`
+        // table; without this delete the merge in
+        // MessagesPage.fetchData keeps it (its id isn't in
+        // serverIds), producing the duplicate-row regression the
+        // user reported.
+        try {
+          const pendingId = full?.metadata?.pending_id;
+          if (pendingId && (full.kind === 'milestone_video' || full.kind === 'milestone_audio')) {
+            const { deleteLocalMessage } = await import('./repos/messagesRepo');
+            await deleteLocalMessage(pendingId).catch(() => {});
+          }
+        } catch { /* non-fatal cleanup */ }
         processed++;
         emit('carryon:upload:complete', { id: row.id, filename: full.filename, kind: full.kind });
       } catch (err) {
