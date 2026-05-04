@@ -13,6 +13,7 @@ import {
 } from '../../utils/beneficiaryOfflineCache';
 
 import PushPrompt from '../../components/PushPrompt';
+import BeneficiaryPreTransitionPanel from '../../components/beneficiary/BeneficiaryPreTransitionPanel';
 
 const BeneficiaryDashboardPage = () => {
   const { user, getAuthHeaders } = useAuth();
@@ -29,6 +30,11 @@ const BeneficiaryDashboardPage = () => {
   const [otherBens, setOtherBens] = useState([]);
   const [showPermPanel, setShowPermPanel] = useState(false);
   const [savingPerm, setSavingPerm] = useState(null);
+  // Pre-transition flag: when true, the dashboard renders the inline
+  // BeneficiaryPreTransitionPanel instead of the post-transition tiles.
+  // hasExtraDocs decides whether the optional "Additional Documents"
+  // shortcut renders in the panel.
+  const [hasExtraDocs, setHasExtraDocs] = useState(false);
 
   const SECTION_LABELS = {
     vault: 'Secure Document Vault',
@@ -39,7 +45,15 @@ const BeneficiaryDashboardPage = () => {
     timeline: 'Estate Plan Timeline',
   };
 
-  useEffect(() => { fetchData();
+  useEffect(() => {
+    fetchData();
+    // Listen for in-portal estate switches (e.g. from FamilyTree's
+    // "view this benefactor" tap). Without this, the SPA navigate
+    // back to /beneficiary/dashboard wouldn't re-fire fetchData and
+    // the user would see stale data from the prior estate.
+    const onSwitch = () => fetchData();
+    window.addEventListener('beneficiary-estate-changed', onSwitch);
+    return () => window.removeEventListener('beneficiary-estate-changed', onSwitch);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
@@ -60,12 +74,16 @@ const BeneficiaryDashboardPage = () => {
       if (!estateId) { setLoading(false); return; }
       const cachedEstate = readBenSection(estateId, 'estate');
       const cachedPerms = readBenSection(estateId, 'permissions');
-      if (cachedPerms && !cachedPerms.is_transitioned) {
-        navigate('/beneficiary/pre');
-        return;
-      }
       if (cachedEstate) setEstate(cachedEstate);
       if (cachedPerms) setMyPerms(cachedPerms);
+      // Pre-transition path offline: render the inline lock + EAD
+      // panel instead of bailing to the empty state. The user's
+      // beneficiary dock + estate switcher stay live so they can
+      // hop between estates without leaving the dashboard.
+      if (cachedPerms && !cachedPerms.is_transitioned) {
+        setLoading(false);
+        return;
+      }
       const cachedDocs = readBenSection(estateId, 'documents') || [];
       const cachedMsgs = readBenSection(estateId, 'messages') || [];
       const cachedCl = readBenSection(estateId, 'checklist') || [];
@@ -125,17 +143,42 @@ const BeneficiaryDashboardPage = () => {
         axios.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, getAuthHeaders()),
       ]);
 
-      // Authoritative check via death certificate (not estate.status)
-      if (!permRes.data.is_transitioned) { navigate('/beneficiary/pre'); return; }
-      setEstate(estateRes.data);
-      setMyPerms(permRes.data);
-      // Cache estate + perms for offline rehydration.
+      // Persist permissions for offline rehydration regardless of
+      // transition status — the dashboard now renders pre-transition
+      // content INLINE (lock banner + EAD shortcuts) instead of
+      // redirecting to a separate single-estate page. This keeps the
+      // estate switcher and beneficiary dock visible at all times,
+      // matches the user's mental model of the beneficiary portal,
+      // and works correctly offline (the previous redirect-then-
+      // reload flow could break on iOS PWA when the new route's
+      // chunks weren't cached).
       cacheBenSection(estateId, 'estate', estateRes.data);
       cacheBenSection(estateId, 'permissions', permRes.data);
+      setEstate(estateRes.data);
+      setMyPerms(permRes.data);
 
       // Store feature access for navigation components
       if (permRes.data.feature_access) {
         localStorage.setItem('beneficiary_feature_access', JSON.stringify(permRes.data.feature_access));
+      }
+
+      // Pre-transition path: skip the post-transition data fetches
+      // (full doc list, messages, checklist) and render the inline
+      // pre-transition panel instead. We still detect whether the
+      // benefactor shared any extra non-essential docs so the
+      // "View Additional Documents" card can show or hide.
+      if (!permRes.data.is_transitioned) {
+        try {
+          const docsRes = await axios.get(
+            `${API_URL}/documents/${estateId}/pre-transition`,
+            getAuthHeaders(),
+          );
+          const ESSENTIAL = new Set(['living_will', 'healthcare_directive', 'general_poa', 'financial_poa', 'poa']);
+          const extra = (docsRes.data || []).filter((d) => !ESSENTIAL.has(d.category));
+          setHasExtraDocs(extra.length > 0);
+        } catch { /* non-fatal */ }
+        setLoading(false);
+        return;
       }
 
       const fa = permRes.data.feature_access || {};
@@ -238,10 +281,18 @@ const BeneficiaryDashboardPage = () => {
   // own). Drives whether to render the in-page switcher or hide it
   // entirely when there's only one connection.
   const beneficiaryEstateCount = (allEstates || []).filter(e => e.user_role_in_estate !== 'owner').length;
+  // Pre-transition mode toggles the dashboard between the inline EAD
+  // panel (lock + Living Will/POA shortcuts) and the post-transition
+  // tile grid. Either way the estate switcher + beneficiary dock stay
+  // visible — no more redirect-to-/beneficiary/pre that collapsed the
+  // multi-estate context.
+  const isPreTransition = myPerms ? !myPerms.is_transitioned : false;
 
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="beneficiary-dashboard">
-      {/* Sealed Banner */}
+      {/* Sealed Banner — only shown post-transition (the legacy banner
+          incorrectly said "verified and sealed" even pre-transition). */}
+      {!isPreTransition && (
       <div className="glass-card p-4 mb-5 flex items-start gap-3" style={{ borderLeft: '3px solid var(--gold)', boxShadow: '0 8px 32px -4px rgba(0,0,0,0.5), 0 1px 0 var(--b) inset, -4px 0 20px -4px rgba(217,119,6,0.15)' }}>
         <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--seal-bg, rgba(217,119,6,0.12))' }}>
           <Lock className="w-5 h-5 text-[var(--gold)]" />
@@ -253,6 +304,7 @@ const BeneficiaryDashboardPage = () => {
           </p>
         </div>
       </div>
+      )}
 
       {/* Header with Estate Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
@@ -290,6 +342,14 @@ const BeneficiaryDashboardPage = () => {
         )}
       </div>
 
+      {/* Pre-transition: render the inline EAD panel (lock banner +
+          Living Will/POA shortcuts + upload-cert/contact-support
+          actions). The estate switcher above stays visible so the
+          user can hop between estates. */}
+      {isPreTransition ? (
+        <BeneficiaryPreTransitionPanel estate={estate} hasExtraDocs={hasExtraDocs} />
+      ) : (
+      <>
       {/* Stat Cards */}
       <div className="grid grid-cols-3 gap-3 lg:gap-4 mb-5">
         {(myPerms?.feature_access?.iac_access !== false) && (
@@ -499,6 +559,8 @@ const BeneficiaryDashboardPage = () => {
             </div>
           )}
         </div>
+      )}
+      </>
       )}
 
       {/* Beneficiary → Create Estate / Join Another Estate */}

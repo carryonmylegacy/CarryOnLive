@@ -1,5 +1,25 @@
 # CarryOn — Changelog
 
+## May 4, 2026 — Beneficiary Routing Fix: Stop Auto-Redirect to Single-Estate Pre-Transition
+**Bug fix**: Tapping a benefactor in the FamilyTree (from the benefactor's "Beneficiaries" page) was supposed to land on the **multi-estate beneficiary portal dashboard** but instead drilled directly to a single-estate `/beneficiary/pre` lock screen — losing the estate switcher, beneficiary dock, and dashboard chrome. Offline, the same flow could break into a blank page with the wrong dock.
+
+**Root causes**
+1. `BeneficiaryDashboardPage.fetchData` auto-redirected to `/beneficiary/pre` whenever the selected estate's `is_transitioned=false`. The redirect collapsed the multi-estate context to a single estate's lock screen.
+2. `FamilyTree` did `navigate(...) + window.location.reload()` on estate switch. The `window.location.reload()` is offline-hostile on iOS PWA — when the next route's chunks aren't cached, the reload renders blank.
+
+**Fixes**
+- `BeneficiaryDashboardPage`: removed the redirect. When `is_transitioned=false`, the dashboard now renders the new `BeneficiaryPreTransitionPanel` inline. Estate switcher + beneficiary dock + dashboard chrome stay visible. Pre-transition extra-docs detection added (toggles the optional "View Additional Documents" link).
+- New component `BeneficiaryPreTransitionPanel.js` extracted from `PreTransitionPage` — lock banner + Emergency Access Documents (CCP, Living Will/Healthcare Directive, General POA, Financial POA) + upload-cert + contact-support actions.
+- The legacy "Benefactor Account Sealed" banner is now hidden pre-transition (the copy was incorrect for non-sealed estates).
+- Offline rescue path also stops auto-redirecting; renders the inline panel from cached perms instead.
+- `FamilyTree`: removed `window.location.reload()`. Now does a clean SPA navigate + dispatches a `beneficiary-estate-changed` window event so the dashboard refetches when already mounted on the route.
+- `BeneficiaryDashboardPage` listens for that custom event and re-runs `fetchData()` so estate switches work without a remount.
+
+**Verified**:
+- ESLint clean across all changed files ✅
+- `bash /app/housekeeping.sh` → 0 WARN, 0 FAIL ✅
+- Code structure verified; full E2E requires a real beneficiary account on a non-transitioned estate (preview pod admin can't simulate this)
+
 ## May 4, 2026 — Essential Offline Documents (4 Gold Slots) + CCP Offline
 **Feature**: 4 gold-outlined "essential offline" placeholder slots in the benefactor's SDV (Living Will, Healthcare Directive, General POA, Financial POA). Each, when populated, can be **explicitly designated** by the benefactor for specific beneficiaries who then see the doc with a per-doc "Make available offline" toggle (25 MB cap) on their side. Beneficiary CCP plans now also work offline.
 
