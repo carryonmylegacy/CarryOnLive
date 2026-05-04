@@ -29,6 +29,7 @@ import { API_URL } from '../config';
 import { toast } from '../utils/toast';
 import { parseMoney, parseInteger, formatPydanticError } from '../utils/financialFormHelpers';
 import { useDraftState } from './useDraftState';
+import { saveList, readList } from '../utils/localListCache';
 
 const PARSERS = { parseMoney, parseInteger };
 
