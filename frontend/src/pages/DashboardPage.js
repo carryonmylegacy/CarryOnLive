@@ -168,6 +168,15 @@ const DashboardPage = () => {
       return;
     }
     try {
+      // Read the prior cached ccp_plans count BEFORE we touch the
+      // network. Used as a fallback when /ccp/plans fails — guarantees
+      // we don't overwrite a previously-known real count (e.g. 1) with
+      // 0 just because the request hiccuped.
+      let priorCcpCount = 0;
+      try {
+        const prior = await getLocalDashboardTile(estateId);
+        if (typeof prior?.stats?.ccp_plans === 'number') priorCcpCount = prior.stats.ccp_plans;
+      } catch { /* non-fatal */ }
       // Always fetch estate data AND onboarding progress in parallel
       const [docsRes, msgsRes, bensRes, checklistRes, readinessRes, progressRes, ccpRes] = await Promise.all([
         axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()),
@@ -178,20 +187,17 @@ const DashboardPage = () => {
         axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders()).catch(() => null),
         axios.get(`${API_URL}/ccp/plans/${estateId}`, getAuthHeaders()).catch((err) => {
           // Surface the failure so we can debug "ccp tile stuck at 0"
-          // bugs without silent log loss. The catch returns null, which
-          // ccpCount below reads as "unknown — preserve the prior count"
-          // (NEVER overwrite a real number with 0 from a transient
-          // network blip).
+          // bugs without silent log loss. Returning null lets ccpCount
+          // below fall back to the cached count instead of 0.
           console.warn('[dashboard] /ccp/plans fetch failed:', err?.response?.status || err?.message);
           return null;
         }),
       ]);
       // Preserve the previously-known count when the request failed.
-      // This prevents a single transient 5xx/timeout from clobbering
-      // the cached ccp_plans value with 0 — which previously caused
-      // the dashboard to permanently display 0 plans even after a
-      // successful plan creation.
-      const ccpCount = Array.isArray(ccpRes?.data) ? ccpRes.data.length : (stats.ccp_plans || 0);
+      // Reading from the cache (priorCcpCount) is the right fallback —
+      // the React-state closure is stale (initial useState default of
+      // 0) at this point in fetchEstateData.
+      const ccpCount = Array.isArray(ccpRes?.data) ? ccpRes.data.length : priorCcpCount;
       const statsPayload = {
         documents: docsRes.data.length,
         messages: msgsRes.data.length,
