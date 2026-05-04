@@ -329,9 +329,16 @@ export default function EditMilestoneMessagePage() {
 
       try {
         if (videoRef.current) {
+          // Honor the camera's actual aspect ratio (portrait vs landscape)
+          // instead of force-cropping to 320x180. See MessagesPage.js
+          // for the same fix in the new-message recording path.
+          const vw = videoRef.current.videoWidth || 320;
+          const vh = videoRef.current.videoHeight || 180;
+          const MAX = 320;
+          const scale = Math.min(MAX / vw, MAX / vh, 1);
           const canvas = document.createElement('canvas');
-          canvas.width = 320;
-          canvas.height = 180;
+          canvas.width = Math.round(vw * scale) || 320;
+          canvas.height = Math.round(vh * scale) || 180;
           const context = canvas.getContext('2d');
           context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
           videoThumbnailRef.current = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];

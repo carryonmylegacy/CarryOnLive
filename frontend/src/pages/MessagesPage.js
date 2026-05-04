@@ -423,12 +423,22 @@ const MessagesPage = () => {
       mediaRecorderRef.current.start();
       setIsRecording(true);
 
-      // Capture thumbnail from live video feed
+      // Capture thumbnail from live video feed.
+      // The thumbnail's aspect ratio MUST match the recording's actual
+      // orientation — using a hardcoded 320x180 (16:9 landscape) here
+      // squashed iPhone front-camera portrait recordings into a wide
+      // strip on the message card (founder report May 3 2026). Now we
+      // sample the camera's real videoWidth/videoHeight and downscale
+      // to a 320px max edge while preserving the natural ratio.
       try {
         if (videoRef.current) {
+          const vw = videoRef.current.videoWidth || 320;
+          const vh = videoRef.current.videoHeight || 180;
+          const MAX = 320;
+          const scale = Math.min(MAX / vw, MAX / vh, 1);
           const canvas = document.createElement('canvas');
-          canvas.width = 320;
-          canvas.height = 180;
+          canvas.width = Math.round(vw * scale) || 320;
+          canvas.height = Math.round(vh * scale) || 180;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
           videoThumbnailRef.current = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];

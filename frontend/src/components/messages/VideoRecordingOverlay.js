@@ -17,12 +17,33 @@ const VideoRecordingOverlay = ({
   // a stricter cap so the user never records a 20-minute epic they
   // can't save.
   const [offline, setOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false);
+  // Track viewport orientation so we can reflow the controls when
+  // the user rotates to landscape — the platform's primary mode is
+  // portrait but the recorder needs to stay usable when filming
+  // wide subjects (founder report May 3 2026: "everything gets
+  // skewed off when I rotate to landscape"). We listen on both
+  // resize and the orientation matchMedia change so this stays in
+  // sync no matter how iOS reports the rotation.
+  const [isLandscape, setIsLandscape] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth > window.innerHeight;
+  });
   useEffect(() => {
     const on = () => setOffline(false);
     const off = () => setOffline(true);
+    const onResize = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight);
+    };
     window.addEventListener('online', on);
     window.addEventListener('offline', off);
-    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    return () => {
+      window.removeEventListener('online', on);
+      window.removeEventListener('offline', off);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+    };
   }, []);
 
   if (!showRecordingOverlay) return null;
@@ -34,11 +55,11 @@ const VideoRecordingOverlay = ({
   // the dock (z-50) and below the offline banner (z-[9999]), and
   // (c) reshape the record button into an oval pill that fits inside
   // a tighter vertical band while still staying clear of the dock.
-  const DOCK_CLEARANCE = 96; // mobile dock is ~80px tall + bottom safe-area slack
+  const DOCK_CLEARANCE = isLandscape ? 0 : 96; // mobile dock only sits below in portrait
 
   const overlay = (
     <div
-      className="fixed inset-0 bg-black flex flex-col overflow-y-auto"
+      className={`fixed inset-0 bg-black overflow-y-auto ${isLandscape ? 'flex flex-row' : 'flex flex-col'}`}
       style={{ zIndex: 9998 }}
       data-testid="video-recording-overlay"
     >
@@ -126,14 +147,21 @@ const VideoRecordingOverlay = ({
         </div>
       </div>
 
-      {/* Bottom controls — oval pill record button so it stays fully
-          visible even when the offline banner pushes content down and
-          the mobile dock sits right above the system home-indicator. */}
+      {/* Controls bar — bottom in portrait, right side in landscape so
+          the record/stop button stays large and tappable without
+          covering the camera feed when the device is rotated. */}
       <div
-        className="flex-shrink-0 flex items-center justify-center py-5 px-6"
+        className={`flex-shrink-0 flex items-center justify-center ${isLandscape ? 'flex-col py-6 px-5' : 'py-5 px-6'}`}
         style={{
           background: 'rgba(0,0,0,0.88)',
-          paddingBottom: `calc(1.25rem + env(safe-area-inset-bottom, 0px) + ${DOCK_CLEARANCE}px)`,
+          ...(isLandscape ? {
+            // Landscape: bar on the right, full-height column.
+            paddingRight: `calc(1.25rem + env(safe-area-inset-right, 0px))`,
+            paddingLeft: '1.25rem',
+            minWidth: 132,
+          } : {
+            paddingBottom: `calc(1.25rem + env(safe-area-inset-bottom, 0px) + ${DOCK_CLEARANCE}px)`,
+          }),
         }}
       >
         {!isRecording && countdown === null ? (
