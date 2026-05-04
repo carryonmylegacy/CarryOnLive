@@ -2466,3 +2466,36 @@ The audit also flags **16 mutations as still online-only — by design**:
 
 ### Housekeeping
 - 75 PASS, 0 WARN, 0 FAIL.
+
+---
+
+## Feb 5, 2026 — In-UX "What Works Offline" Reference Card
+
+### Request
+User asked for a clear, in-app list of features that work offline vs
+features that require internet — to set expectations explicitly.
+
+### Implementation
+- `components/settings/OfflineCapabilitiesCard.js` (new) — clean list
+  with two sections, colour-coded:
+    ✅ Fully available offline — Beneficiaries, Milestone Messages,
+       Checklist, Trustee Tasks, Financial Portal, Digital Wallet,
+       Vault (view + delete), Profile changes.
+    ⚠️ Requires connection — file uploads, AI Guardian chat, email
+       invitations, vault lock/unlock, payment setup, account
+       creation/login.
+  Each row is one bold feature + plain-English detail. The card lives
+  at the top of the Offline section, above Behaviour / Access / Sync
+  cards (which give live state). Friendly closing tip explains the
+  status pill behaviour.
+- `pages/SettingsPage.js` — imports and renders the new card before
+  `OfflineBehaviorCard` in the Offline section.
+
+### Source of truth
+The list is anchored to `scripts/audit_offline_mutations.sh` (check
+#75 in housekeeping). Any future regression where a "fully offline"
+feature loses its outbox guard surfaces as a WARN, prompting an
+update to the card.
+
+### Housekeeping
+- 75 PASS, 0 WARN, 0 FAIL.
