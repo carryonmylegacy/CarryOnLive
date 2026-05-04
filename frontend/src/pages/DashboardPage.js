@@ -176,9 +176,22 @@ const DashboardPage = () => {
         axios.get(`${API_URL}/checklists/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/estate/${estateId}/readiness`, getAuthHeaders()).catch(() => null),
         axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders()).catch(() => null),
-        axios.get(`${API_URL}/ccp/plans/${estateId}`, getAuthHeaders()).catch(() => null),
+        axios.get(`${API_URL}/ccp/plans/${estateId}`, getAuthHeaders()).catch((err) => {
+          // Surface the failure so we can debug "ccp tile stuck at 0"
+          // bugs without silent log loss. The catch returns null, which
+          // ccpCount below reads as "unknown — preserve the prior count"
+          // (NEVER overwrite a real number with 0 from a transient
+          // network blip).
+          console.warn('[dashboard] /ccp/plans fetch failed:', err?.response?.status || err?.message);
+          return null;
+        }),
       ]);
-      const ccpCount = Array.isArray(ccpRes?.data) ? ccpRes.data.length : 0;
+      // Preserve the previously-known count when the request failed.
+      // This prevents a single transient 5xx/timeout from clobbering
+      // the cached ccp_plans value with 0 — which previously caused
+      // the dashboard to permanently display 0 plans even after a
+      // successful plan creation.
+      const ccpCount = Array.isArray(ccpRes?.data) ? ccpRes.data.length : (stats.ccp_plans || 0);
       const statsPayload = {
         documents: docsRes.data.length,
         messages: msgsRes.data.length,
@@ -191,24 +204,38 @@ const DashboardPage = () => {
         setReadiness(readinessRes.data);
         setEstate(prev => prev ? { ...prev, readiness_score: readinessRes.data.overall_score } : prev);
       }
-      // Fetch financial summary (non-blocking)
+      // Fetch financial summary (non-blocking). On success we update
+      // both the in-memory state and the local tile snapshot. On
+      // failure we deliberately DO NOT touch the cache — overwriting
+      // a real summary with `null` previously caused the CFP tile to
+      // render `0` after a single transient blip and stay there until
+      // the next successful fetch happened to coincide with a cache
+      // write. Same root cause as the CCP `ccp_plans` regression.
       axios.get(`${API_URL}/financial/summary/${estateId}`, getAuthHeaders())
         .then(res => {
           setFinancialSummary(res.data);
-          // Always mirror the completed tile snapshot so next cold boot
-          // has full data — regardless of the offline flag state.
           upsertLocalDashboardTile(estateId, {
             stats: statsPayload,
             readiness: readinessRes ? readinessRes.data : null,
             checklists: checklistRes.data,
             financialSummary: res.data,
           }).catch(() => {});
-        }).catch(() => {
+        }).catch(async (err) => {
+          console.warn('[dashboard] /financial/summary fetch failed:', err?.response?.status || err?.message);
+          // Preserve the prior cached financialSummary so a transient
+          // failure doesn't blank out the CFP tile on the next cold
+          // boot. upsertLocalDashboardTile is a put (replaces the row),
+          // so we must explicitly forward the prior value.
+          let priorSummary = null;
+          try {
+            const prior = await getLocalDashboardTile(estateId);
+            priorSummary = prior?.financialSummary ?? null;
+          } catch { /* non-fatal */ }
           upsertLocalDashboardTile(estateId, {
             stats: statsPayload,
             readiness: readinessRes ? readinessRes.data : null,
             checklists: checklistRes.data,
-            financialSummary: null,
+            financialSummary: priorSummary,
           }).catch(() => {});
         });
       // Also mirror the readiness scorecard into its own singleton table.
