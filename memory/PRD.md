@@ -9,6 +9,22 @@
 >
 > Stated explicitly by the user (May 3, 2026), pin to top permanently.
 
+> ## 🚨 PWA TESTING SURFACE — NO URL BAR EXISTS
+>
+> **THE USER TESTS EXCLUSIVELY ON A HOME-SCREEN PWA SAVED AS AN ICON ON THEIR iPhone.**
+> **THERE IS NO URL BAR. THERE IS NO ADDRESS BAR. THERE IS NO `javascript:` PASTE TARGET. THERE ARE NO SAFARI DEVTOOLS ATTACHED.**
+>
+> NEVER propose:
+> - "Paste this in the address bar..."
+> - "Open DevTools and run..."
+> - "Add `?debug=1` to the URL..."
+> - "Check the browser console..."
+> - Any solution that assumes a URL bar, address bar, dev tools, or query-string editing is available to the user
+>
+> The PWA is a fully isolated standalone surface — that isolation IS the point of the offline feature. The only way to surface diagnostic information to the user is to render it **inside the app's UI** (e.g., a debug section in Settings, a long-press gesture on a logo, a hidden tile gated on a localStorage flag the app sets via a button click). All diagnostics must be reachable through tapping inside the rendered app.
+>
+> Stated explicitly by the user (May 3, 2026, after multiple URL-bar suggestions), pin to top permanently.
+
 > ## 🔴 AGENT PROTOCOL — READ FIRST, EVERY FORK
 >
 > **Before doing ANYTHING, read `/app/memory/AGENT_RULES.md`.**

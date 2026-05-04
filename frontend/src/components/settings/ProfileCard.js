@@ -9,6 +9,7 @@ import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
 import { PhotoPicker } from '../PhotoPicker';
 import { getLocalProfile, upsertLocalProfile } from '../../offline/repos/profileRepo';
+import { fetchAndStoreImageBlob } from '../../offline/imageBlobsRepo';
 import { getOfflineMode } from '../../offline/featureFlag';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
@@ -67,6 +68,19 @@ const ProfileCard = () => {
         // Refresh the cache so the next offline relaunch has the
         // newest photo URL + name. Fire-and-forget, never throws.
         upsertLocalProfile(res.data || {}).catch(() => {});
+        // Aggressive write-through of the photo BYTES to the
+        // IndexedDB blob store — covers the case where warmup didn't
+        // complete (user went offline immediately after login) AND
+        // the case where the user just changed their photo and we
+        // want the new bytes available offline ASAP. Fire-and-forget;
+        // CORS/403 failures swallow silently.
+        if (res.data?.photo_url && res.data?.id) {
+          fetchAndStoreImageBlob(
+            res.data.photo_url,
+            `user:${res.data.id}:photo`,
+            'photo',
+          ).catch(() => {});
+        }
       } catch { /* swallow — keep local paint if any */ }
     })();
     return () => { cancelled = true; };

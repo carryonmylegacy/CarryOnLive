@@ -59,12 +59,23 @@ function taskProfile(headers) {
       // across sessions. Without this, the FamilyTree root node + the
       // top-bar avatar fall back to initials on offline relaunch even
       // though every beneficiary photo cached fine.
+      //
+      // May 3 2026 — AWAIT instead of fire-and-forget so the warmup
+      // task doesn't resolve before the photo bytes are actually
+      // stored in IndexedDB. Previously a user who went offline very
+      // shortly after login could complete `taskProfile` (because the
+      // /auth/profile fetch returned in <1s) while the photo blob
+      // fetch was still in flight — and then the offline relaunch
+      // had no blob to display. Awaiting it forces the warmup
+      // progress signal to wait for the bytes too.
+      //
+      // Wrapped in its own try/catch so a CORS / 403 on the photo
+      // doesn't fail the entire profile task.
       try {
         if (res.data?.photo_url && res.data?.id) {
-          fetchAndStoreImageBlob(res.data.photo_url, `user:${res.data.id}:photo`, 'photo')
-            .catch(() => {});
+          await fetchAndStoreImageBlob(res.data.photo_url, `user:${res.data.id}:photo`, 'photo');
         }
-      } catch {}
+      } catch { /* photo blob is best-effort */ }
     },
   };
 }
