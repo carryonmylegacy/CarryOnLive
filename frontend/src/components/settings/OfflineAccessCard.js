@@ -48,13 +48,39 @@ export default function OfflineAccessCard() {
   const refreshStatus = useCallback(async () => {
     setStatusLoading(true);
     try {
-      // Server-side enrollment count (this device may be one of several)
-      const res = await axios.get(`${API_URL}/auth/offline/status`, getAuthHeaders());
+      // Always check the LOCAL IndexedDB first — that's the source of
+      // truth for "can this device sign in offline right now" and it
+      // works even when there's no network (which is exactly the
+      // situation this toggle is meant to surface).
       const local = await hasAnyOfflineCredential();
-      // Only show "on" if BOTH the server has at least one credential AND
-      // the local IndexedDB has it. If they're out of sync (e.g. user
-      // revoked from another device) the local clears on next login.
-      setEnrolled(Boolean(res.data?.enrolled && local));
+      // If we're offline OR the server is unreachable, the local state
+      // IS the answer. The toggle reflects what the device can
+      // actually do — refusing to trust IndexedDB when offline was
+      // showing OFF on a device that had just successfully used the
+      // feature to sign in (May 3 2026 founder report: "the toggle for
+      // off-line mode in my settings was off, which is oddly ironic
+      // since I was in the off-line mode using it").
+      const deviceOffline = (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function')
+        ? window.__isDeviceOffline()
+        : (typeof navigator !== 'undefined' && navigator.onLine === false);
+      if (deviceOffline) {
+        setEnrolled(local);
+        return;
+      }
+      // Online: cross-check the server-side enrollment count (this
+      // device may be one of several). Only show "on" when BOTH agree,
+      // so a credential that was revoked from another device drops to
+      // OFF here even if the local row is stale.
+      try {
+        const res = await axios.get(`${API_URL}/auth/offline/status`, getAuthHeaders());
+        setEnrolled(Boolean(res.data?.enrolled && local));
+      } catch {
+        // Server unreachable despite navigator saying we're online
+        // (transient blip, captive portal, etc.). Trust the local
+        // record — the user is better served by an accurate "ON"
+        // than by a misleading "OFF" they can't act on.
+        setEnrolled(local);
+      }
     } catch {
       setEnrolled(false);
     } finally {

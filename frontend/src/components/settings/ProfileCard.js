@@ -36,17 +36,18 @@ const ProfileCard = () => {
   useEffect(() => {
     if (!user) return;
     setDisplayName(user.name || '');
+    // Seed photo + name + username synchronously from the user object —
+    // AuthContext's offline hydrate path already merges the cached
+    // profile into user via { ...cachedProfile, _offlineHydrated }, so
+    // user.photo_url / user.username are present on offline relaunch.
+    // Painting from `user` first means the avatar shows in <1ms instead
+    // of waiting on an IndexedDB round-trip that might not have data.
+    if (user.photo_url) setProfilePhoto(user.photo_url);
+    if (user.username) setUsername(user.username);
     let cancelled = false;
-    // Always try the offline cache first, regardless of the flag.
-    // warmUpAfterLogin writes the profile to IndexedDB on every login
-    // whether or not the offline flag is on, so the cache is always
-    // the FASTEST and MOST RELIABLE first paint — especially on an
-    // offline relaunch where the `/api/auth/me` call will time out.
-    // Previously this was gated on `getOfflineMode() === 'on'`, which
-    // meant that after a PWA reinstall (which wipes localStorage, so
-    // the flag defaults to 'off') the founder's profile fields all
-    // rendered as dashes even though the warmup row was sitting in
-    // IndexedDB the whole time.
+    // Then fall back to the explicit cache read for fields user may
+    // not include (extended profile data), and finally refresh from
+    // the network when online.
     (async () => {
       try {
         const local = await getLocalProfile();
