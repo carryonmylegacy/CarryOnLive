@@ -1396,6 +1396,24 @@ if [ "$REPAIRS" -gt 0 ]; then
 fi
 echo "=========================================="
 echo ""
+
+# ══════════════════════════════════════════════════════════════
+# Offline mutation audit — ensures every user-data CRUD page
+# queues writes to the outbox when offline.
+# ══════════════════════════════════════════════════════════════
+if [ -x /app/scripts/audit_offline_mutations.sh ]; then
+  AUDIT_OUT=$(bash /app/scripts/audit_offline_mutations.sh 2>/dev/null)
+  AUDIT_GAP=$(echo "$AUDIT_OUT" | grep -E "User-data ONLINE-ONLY \(gap\):" | grep -oE "[0-9]+" | head -1)
+  AUDIT_GAP=${AUDIT_GAP:-0}
+  if [ "$AUDIT_GAP" -eq 0 ]; then
+    echo -e "OF. Offline mutation audit ...... ${GREEN}PASS${NC} (every user-data page queues writes offline)"
+  else
+    echo -e "OF. Offline mutation audit ...... ${YELLOW}WARN${NC} ($AUDIT_GAP user-data page(s) lack outbox guarding)"
+    WARNS=$((WARNS + 1))
+  fi
+  echo ""
+fi
+
 echo "Safety reminder: Do NOT run yarn add/remove."
 echo "To fix ruff format: cd /app/backend && ruff format ."
 echo ""

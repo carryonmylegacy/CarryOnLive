@@ -2416,3 +2416,53 @@ uncluttered for users who never hit an offline scenario.
 
 ### Housekeeping
 - 74 PASS, 0 WARN, 0 FAIL.
+
+---
+
+## Feb 5, 2026 (offline-write sweep) — 16 New Mutations Wired to Outbox
+
+### Goal
+Verify automatically (no per-page manual click-through) that every
+user-data add/edit/delete on every page queues offline and replays on
+reconnect. Then close every gap the audit revealed.
+
+### New tooling
+- `scripts/audit_offline_mutations.sh` — page-level audit: classifies
+  each page in `pages/` as offline-safe / read-only / online-by-design /
+  online-only-gap.
+- `scripts/audit_per_mutation.sh` — line-level audit: for each
+  `axios.post|put|patch|delete` in user-data pages, scans 25 lines of
+  preceding context for an offline guard (`mutateWithOutbox`,
+  `enqueueOutbox`, `navigator.onLine === false`, etc.).
+- `housekeeping.sh` — wires the page-level audit as a permanent check
+  (#75). Future regressions surface as a WARN.
+- `test_reports/offline_mutation_audit.txt` — saved snapshot of the
+  current audit output for hand-off.
+
+### Pages converted (16 mutations now offline-safe)
+- **TrusteePage** — create / edit / delete DTS task.
+- **ChecklistPage** — delete (×2 paths), activation status PUT, AI
+  accept, reject-with-feedback.
+- **FinancialPortalPage** — designation update, custom category create.
+- **BeneficiariesPage** — section permissions, drag-drop reorder,
+  toggle-succession.
+- **VaultPage** — delete document, designate-beneficiaries debounce.
+
+Each follows the established pattern from BeneficiariesPage's existing
+add/edit branches: optimistic local state mutation, `enqueueOutbox`
+with the same URL/method/body the online path would use, success toast
+with "queued — will sync when you reconnect", short-circuit return.
+
+### Honest scope statement
+The audit also flags **16 mutations as still online-only — by design**:
+- File uploads (Vault docs, beneficiary photos) — binary blobs need
+  the same `pendingUpload` queue we built for milestone videos. Out of
+  scope for this batch; planned as a follow-up.
+- Server-side crypto (Vault lock / unlock).
+- Email send (beneficiary invitations).
+- AI services (Guardian chat, AI suggest).
+- Stripe (DTS payment-method setup).
+- Onboarding telemetry pings (fire-and-forget; non-critical).
+
+### Housekeeping
+- 75 PASS, 0 WARN, 0 FAIL.

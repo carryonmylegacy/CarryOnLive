@@ -11,6 +11,8 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from '../utils/toast';
+// STATIC import — chunks fail when first edit/delete happens offline.
+import { enqueue as enqueueOutbox } from '../offline/outbox';
 import { iosSafeDownload } from '../utils/iosSafeDownload';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
@@ -265,10 +267,22 @@ const FinancialPortalPage = () => {
 
   const handleDesignationUpdate = async (type, itemId, designatedBeneficiaries, visibilityTiming) => {
     try {
-      await axios.put(`${API_URL}/financial/${type}/${itemId}/designation`, {
+      const designationBody = {
         designated_beneficiaries: designatedBeneficiaries,
         visibility_timing: visibilityTiming,
-      }, getAuthHeaders());
+      };
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        await enqueueOutbox({
+          entity_type: `financial_${type}`,
+          entity_id: itemId,
+          method: 'PUT',
+          url: `/financial/${type}/${itemId}/designation`,
+          body: designationBody,
+        });
+        toast.success('Designation queued — will sync when you reconnect.');
+        return;
+      }
+      await axios.put(`${API_URL}/financial/${type}/${itemId}/designation`, designationBody, getAuthHeaders());
       fetchAll();
     } catch { toast.error('Failed to update designation'); }
   };
@@ -276,9 +290,20 @@ const FinancialPortalPage = () => {
   const handleAddCategory = async (module, name) => {
     if (!estate) return;
     try {
-      await axios.post(`${API_URL}/financial/categories`, {
-        estate_id: estate.id, module, name,
-      }, getAuthHeaders());
+      const categoryBody = { estate_id: estate.id, module, name };
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        const tempId = `local-fincat-${Date.now()}`;
+        await enqueueOutbox({
+          entity_type: 'financial_category',
+          entity_id: tempId,
+          method: 'POST',
+          url: '/financial/categories',
+          body: categoryBody,
+        });
+        toast.success('Category queued — will sync when you reconnect.');
+        return true;
+      }
+      await axios.post(`${API_URL}/financial/categories`, categoryBody, getAuthHeaders());
       fetchAll();
       return true;
     } catch (err) {

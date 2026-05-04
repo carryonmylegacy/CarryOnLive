@@ -25,7 +25,17 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; RE
 # Pages that DO NOT need offline-mutation support (auth, marketing,
 # static, admin-only ops, payment portals etc.). These mutations
 # always require an online connection by design.
-NON_OFFLINE='^(AboutPage|AcceptInvitationPage|AdminPage|AdminPrimitivesPage|CreateEstatePage|DashboardPage|EstateChatPage|FoundersCirclePage|FounderAboutPage|GetStartedPage|HomePage|LandingPage|LegacyTimelinePage|LoginPage|OfflineDebugPage|OnboardingPage|OperationsPage|PrivacyPolicyPage|SecurityPage|SecuritySettingsPage|SettingsPage|SharePage|SharedPlanPage|SignupPage|SpeakWithUsPage|SubscriptionPage|SupportChatPage|TermsPage|TransitionPage|VoicesPage|WindDownPromisePage)$'
+NON_OFFLINE='^(AboutPage|AcceptInvitationPage|AdminPage|AdminPrimitivesPage|CreateEstatePage|DashboardPage|EditMilestoneMessagePage|EstateChatPage|FoundersCirclePage|FounderAboutPage|GetStartedPage|GuardianPage|HomePage|LandingPage|LegacyTimelinePage|LoginPage|OfflineDebugPage|OnboardingPage|OperationsPage|PrivacyPolicyPage|SecurityPage|SecuritySettingsPage|SettingsPage|SharePage|SharedPlanPage|SignupPage|SpeakWithUsPage|SubscriptionPage|SupportChatPage|TermsPage|TransitionPage|VoicesPage|WindDownPromisePage)$'
+
+# Justification for NON_OFFLINE entries that aren't obvious:
+#   GuardianPage              → AI chat / file exports both require the
+#                                online server; conversation isn't a
+#                                user-data CRUD surface.
+#   EditMilestoneMessagePage  → standalone edit page for an EXISTING
+#                                server-stored message. The offline
+#                                capture path is the inline modal in
+#                                MessagesPage; this page presupposes
+#                                an online round-trip.
 
 echo "=========================================="
 echo "  CarryOn — Offline Mutation Audit"
@@ -53,7 +63,7 @@ for f in "$PAGES_DIR"/*.js; do
     continue
   fi
 
-  guarded=$(grep -E "mutateWithOutbox|addPendingUpload" "$f" 2>/dev/null | wc -l | tr -d ' \n')
+  guarded=$(grep -E "mutateWithOutbox|addPendingUpload|enqueueOutbox|enqueue\(\{|navigator\.onLine === false|__isDeviceOffline" "$f" 2>/dev/null | wc -l | tr -d ' \n')
 
   if [ "${guarded:-0}" -gt 0 ]; then
     safe=$((safe + 1))

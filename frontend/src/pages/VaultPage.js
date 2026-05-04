@@ -22,6 +22,8 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from '../utils/toast';
+// STATIC import — chunks fail when first edit/delete happens offline.
+import { enqueue as enqueueOutbox } from '../offline/outbox';
 import { platformDownload, downloadFile as legacyDownloadFile } from '../utils/downloadFile';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
@@ -447,6 +449,17 @@ const VaultPage = () => {
       try {
         const payload = { beneficiary_ids: beneficiaryIds };
         if (visibilityTiming) payload.visibility_timing = visibilityTiming;
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          await enqueueOutbox({
+            entity_type: 'document_designation',
+            entity_id: docId,
+            method: 'PUT',
+            url: `/documents/${docId}/designate-beneficiaries`,
+            body: payload,
+          });
+          toast.success('Designation queued — will sync when you reconnect.');
+          return;
+        }
         await axios.put(`${API_URL}/documents/${docId}/designate-beneficiaries`,
           payload,
           { ...getAuthHeaders(), headers: { ...getAuthHeaders().headers, 'Content-Type': 'application/json' } }
@@ -610,8 +623,20 @@ const VaultPage = () => {
 
   const handleDelete = async (docId) => {
     if (!window.confirm('Are you sure you want to delete this document?')) return;
-    
+
     try {
+      // Offline delete: optimistic removal + queue DELETE in outbox.
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        await enqueueOutbox({
+          entity_type: 'document',
+          entity_id: docId,
+          method: 'DELETE',
+          url: `/documents/${docId}`,
+        });
+        setDocuments(documents.filter(d => d.id !== docId));
+        toast.success('Deletion queued — will sync when you reconnect.');
+        return;
+      }
       await axios.delete(`${API_URL}/documents/${docId}`, getAuthHeaders());
       // toast removed
       setDocuments(documents.filter(d => d.id !== docId));

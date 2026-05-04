@@ -14,6 +14,8 @@ import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import { saveList, readList } from '../utils/localListCache';
+// STATIC import — dynamic chunks fail when first edit/delete is offline.
+import { enqueue as enqueueOutbox } from '../offline/outbox';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import { API_URL } from '../config';
 
@@ -272,6 +274,19 @@ const ChecklistPage = () => {
   const handleDelete = async (itemId) => {
     setDeleting(itemId);
     try {
+      // Offline delete: optimistic removal + queue DELETE in outbox.
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        await enqueueOutbox({
+          entity_type: 'checklist_item',
+          entity_id: itemId,
+          method: 'DELETE',
+          url: `/checklists/${itemId}`,
+        });
+        setChecklists(prev => prev.filter(c => c.id !== itemId));
+        toast.success('Deletion queued — will sync when you reconnect.');
+        setDeleting(null);
+        return;
+      }
       await axios.delete(`${API_URL}/checklists/${itemId}`, getAuthHeaders());
       setChecklists(prev => prev.filter(c => c.id !== itemId));
       // toast removed
@@ -335,6 +350,29 @@ const ChecklistPage = () => {
 
   const handleActivationAction = async (itemId, action) => {
     try {
+      // Offline-safe — queue the right method; optimistic local update.
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        if (action === 'remove') {
+          await enqueueOutbox({
+            entity_type: 'checklist_item',
+            entity_id: itemId,
+            method: 'DELETE',
+            url: `/checklists/${itemId}`,
+          });
+          setChecklists(prev => prev.filter(c => c.id !== itemId));
+        } else {
+          await enqueueOutbox({
+            entity_type: 'checklist_item',
+            entity_id: itemId,
+            method: 'PUT',
+            url: `/checklists/${itemId}`,
+            body: { activation_status: action },
+          });
+          setChecklists(prev => prev.map(c => c.id === itemId ? { ...c, activation_status: action, _pending: true } : c));
+        }
+        toast.success('Change queued — will sync when you reconnect.');
+        return;
+      }
       if (action === 'remove') {
         await axios.delete(`${API_URL}/checklists/${itemId}`, getAuthHeaders());
         setChecklists(prev => prev.filter(c => c.id !== itemId));
@@ -358,6 +396,17 @@ const ChecklistPage = () => {
 
   const handleAcceptItem = async (itemId) => {
     try {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        await enqueueOutbox({
+          entity_type: 'checklist_item',
+          entity_id: itemId,
+          method: 'POST',
+          url: `/checklists/${itemId}/accept`,
+        });
+        setChecklists(prev => prev.map(c => c.id === itemId ? { ...c, ai_accepted: true, _pending: true } : c));
+        toast.success('Acceptance queued — will sync when you reconnect.');
+        return;
+      }
       await axios.post(`${API_URL}/checklists/${itemId}/accept`, {}, getAuthHeaders());
       setChecklists(prev => prev.map(c => c.id === itemId ? { ...c, ai_accepted: true } : c));
     } catch { toast.error('Failed to accept'); }
@@ -371,6 +420,20 @@ const ChecklistPage = () => {
   const submitRejection = async () => {
     if (!feedbackItem) return;
     try {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        await enqueueOutbox({
+          entity_type: 'checklist_item',
+          entity_id: feedbackItem,
+          method: 'POST',
+          url: `/checklists/${feedbackItem}/reject-with-feedback`,
+          body: { feedback: feedbackText },
+        });
+        setChecklists(prev => prev.filter(c => c.id !== feedbackItem));
+        setFeedbackItem(null);
+        setFeedbackText('');
+        toast.success('Rejection queued — will sync when you reconnect.');
+        return;
+      }
       await axios.post(`${API_URL}/checklists/${feedbackItem}/reject-with-feedback`, { feedback: feedbackText }, getAuthHeaders());
       setChecklists(prev => prev.filter(c => c.id !== feedbackItem));
       setFeedbackItem(null);

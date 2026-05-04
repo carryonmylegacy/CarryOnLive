@@ -32,6 +32,10 @@ import { Label } from '../components/ui/label';
 import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { saveList, readList } from '../utils/localListCache';
+// Offline-write support: queue create/edit/delete when offline,
+// drainer replays on reconnect. STATIC import — dynamic imports fail
+// in iOS PWA when the chunk hasn't been pre-fetched online.
+import { enqueue as enqueueOutbox } from '../offline/outbox';
 import {
   Dialog,
   DialogContent,
@@ -355,7 +359,7 @@ const TrusteePage = () => {
           ? `TRANSITION NOTIFICATION\n\n${contactLines.join('\n')}${finalDesc ? `\n\nAdditional Notes:\n${finalDesc}` : ''}`
           : finalDesc;
       }
-      await axios.post(`${API_URL}/dts/tasks`, {
+      const taskPayload = {
         estate_id: estateId,
         title: newTask.title,
         description: finalDesc,
@@ -364,7 +368,41 @@ const TrusteePage = () => {
         disclose_to: newTask.discloseTo ? newTask.discloseTo.split(',').map(s => s.trim()).filter(Boolean) : [],
         timed_release: newTask.timedRelease || null,
         beneficiary: newTask.beneficiary || null,
-      }, getAuthHeaders());
+      };
+      // Offline write-through: optimistically add to local list, queue
+      // POST in outbox, short-circuit. Drainer replays on reconnect.
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        const tempId = `local-dts-${Date.now()}`;
+        const optimisticTask = {
+          id: tempId,
+          title: newTask.title,
+          desc: finalDesc,
+          type: newTask.type,
+          confidential: newTask.confidential,
+          discloseTo: taskPayload.disclose_to,
+          timedRelease: newTask.timedRelease || null,
+          beneficiary: newTask.beneficiary || null,
+          status: 'submitted',
+          lineItems: [],
+          paymentMethod: null,
+          _pending: true,
+        };
+        setTasks(prev => [...prev, optimisticTask]);
+        if (estateId) saveList(`dts:${estateId}`, [...tasks, optimisticTask]);
+        await enqueueOutbox({
+          entity_type: 'dts_task',
+          entity_id: tempId,
+          method: 'POST',
+          url: '/dts/tasks',
+          body: taskPayload,
+        });
+        toast.success('Trustee task queued — will sync when you reconnect.');
+        clearDTSDraft();
+        clearViewDraft();
+        setView('submitted');
+        return;
+      }
+      await axios.post(`${API_URL}/dts/tasks`, taskPayload, getAuthHeaders());
       clearDTSDraft();
       clearViewDraft();
       setView('submitted');
@@ -394,7 +432,7 @@ const TrusteePage = () => {
     if (!editTask) return;
     setSaving(true);
     try {
-      await axios.put(`${API_URL}/dts/tasks/${editTask.id}`, {
+      const editPayload = {
         title: editTask.title,
         description: editTask.desc,
         task_type: editTask.type,
@@ -402,7 +440,34 @@ const TrusteePage = () => {
         disclose_to: editTask.discloseTo ? editTask.discloseTo.split(',').map(s => s.trim()).filter(Boolean) : [],
         timed_release: editTask.timedRelease || null,
         beneficiary: editTask.beneficiary || null,
-      }, getAuthHeaders());
+      };
+      // Offline edit: optimistic local update + queue PUT in outbox.
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        await enqueueOutbox({
+          entity_type: 'dts_task',
+          entity_id: editTask.id,
+          method: 'PUT',
+          url: `/dts/tasks/${editTask.id}`,
+          body: editPayload,
+        });
+        setTasks(prev => prev.map(t => t.id === editTask.id ? {
+          ...t,
+          title: editTask.title,
+          desc: editTask.desc,
+          type: editTask.type,
+          confidential: editTask.confidential,
+          discloseTo: editPayload.disclose_to,
+          timedRelease: editTask.timedRelease,
+          beneficiary: editTask.beneficiary,
+          _pending: true,
+        } : t));
+        toast.success('Trustee task change queued — will sync when you reconnect.');
+        setShowEditModal(false);
+        setEditTask(null);
+        setSaving(false);
+        return;
+      }
+      await axios.put(`${API_URL}/dts/tasks/${editTask.id}`, editPayload, getAuthHeaders());
       
       // toast removed
       setShowEditModal(false);
@@ -435,6 +500,22 @@ const TrusteePage = () => {
   const handleDeleteTask = async (taskId) => {
     setDeleting(true);
     try {
+      // Offline delete: queue DELETE in outbox + optimistic removal.
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        await enqueueOutbox({
+          entity_type: 'dts_task',
+          entity_id: taskId,
+          method: 'DELETE',
+          url: `/dts/tasks/${taskId}`,
+        });
+        setShowDeleteDialog(false);
+        setTasks(prev => prev.filter(t => t.id !== taskId));
+        setView('list');
+        setSelectedId(null);
+        setDeleting(false);
+        toast.success('Trustee task deletion queued — will sync when you reconnect.');
+        return;
+      }
       await axios.delete(`${API_URL}/dts/tasks/${taskId}`, getAuthHeaders());
       // toast removed
       setShowDeleteDialog(false);

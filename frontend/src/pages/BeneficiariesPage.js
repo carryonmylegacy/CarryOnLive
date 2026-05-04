@@ -635,10 +635,21 @@ const BeneficiariesPage = () => {
     const current = sectionPerms[beneficiaryId] || Object.fromEntries(Object.keys(SECTION_LABELS).map(s => [s, true]));
     const updated = { ...current, [section]: !currentValue };
     try {
-      await axios.put(`${API_URL}/estate/${estate.id}/section-permissions`, {
-        beneficiary_id: beneficiaryId,
-        sections: updated,
-      }, getAuthHeaders());
+      const permBody = { beneficiary_id: beneficiaryId, sections: updated };
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        await enqueueOutbox({
+          entity_type: 'section_permissions',
+          entity_id: `${estate.id}:${beneficiaryId}`,
+          method: 'PUT',
+          url: `/estate/${estate.id}/section-permissions`,
+          body: permBody,
+        });
+        setSectionPerms(prev => ({ ...prev, [beneficiaryId]: updated }));
+        toast.success('Permission queued — will sync when you reconnect.');
+        setSavingPerms(null);
+        return;
+      }
+      await axios.put(`${API_URL}/estate/${estate.id}/section-permissions`, permBody, getAuthHeaders());
       setSectionPerms(prev => ({ ...prev, [beneficiaryId]: updated }));
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to update permissions');
@@ -732,14 +743,35 @@ const BeneficiariesPage = () => {
       toast.success(`${nowPrimary.name} is now your Primary Beneficiary`);
     }
     try {
-      await axios.put(`${API_URL}/beneficiaries/reorder/${estate?.id}`, {
-        ordered_ids: reordered.map(b => b.id),
-      }, getAuthHeaders());
+      const reorderBody = { ordered_ids: reordered.map(b => b.id) };
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        await enqueueOutbox({
+          entity_type: 'beneficiary_order',
+          entity_id: estate?.id || 'unknown',
+          method: 'PUT',
+          url: `/beneficiaries/reorder/${estate?.id}`,
+          body: reorderBody,
+        });
+        toast.success('Order queued — will sync when you reconnect.');
+        return;
+      }
+      await axios.put(`${API_URL}/beneficiaries/reorder/${estate?.id}`, reorderBody, getAuthHeaders());
     } catch { toast.error('Failed to save order'); }
   }, [beneficiaries, estate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleToggleSuccession = useCallback(async (benId, benName) => {
     try {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        await enqueueOutbox({
+          entity_type: 'beneficiary_succession',
+          entity_id: benId,
+          method: 'PUT',
+          url: `/beneficiaries/${benId}/toggle-succession`,
+          body: {},
+        });
+        toast.success(`Succession change queued for ${benName} — will sync when you reconnect.`);
+        return;
+      }
       const res = await axios.put(`${API_URL}/beneficiaries/${benId}/toggle-succession`, {}, getAuthHeaders());
       if (res.data.in_succession) {
         toast.success(`${benName} added to succession hierarchy`);
