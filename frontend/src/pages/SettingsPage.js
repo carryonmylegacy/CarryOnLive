@@ -16,6 +16,7 @@ import EstatePhotoCard from '../components/settings/EstatePhotoCard';
 import PublicDeviceModeCard from '../components/settings/PublicDeviceModeCard';
 import OfflineBehaviorCard from '../components/settings/OfflineBehaviorCard';
 import OfflineAccessCard from '../components/settings/OfflineAccessCard';
+import SyncStatusCard from '../components/settings/SyncStatusCard';
 import AppearanceCard from '../components/settings/AppearanceCard';
 import DashboardViewCard from '../components/settings/DashboardViewCard';
 import DigestCard from '../components/settings/DigestCard';
@@ -156,6 +157,11 @@ const SettingsPage = () => {
           in a regular browser tab (the use case requires the home-screen
           install). */}
       <OfflineAccessCard />
+      {/* Permanent in-app diagnostics for the offline sync queue.
+          Renders nothing when the queue is empty and no error has
+          ever been recorded, so the page stays uncluttered for users
+          who don't hit offline scenarios. */}
+      <SyncStatusCard />
 
       {/* ── Section: Security ── */}
       <SectionHeader title="Security" hint="2FA, passkeys, auto-logout, vault locks." />

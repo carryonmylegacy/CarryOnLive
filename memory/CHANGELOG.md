@@ -2375,3 +2375,44 @@ Portrait layout is unchanged.
 
 ### Housekeeping
 - 74 PASS, 0 WARN, 0 FAIL.
+
+---
+
+## Feb 5, 2026 — Sync Status Card in Settings → Offline
+
+### Feature
+Permanent in-app diagnostics for the offline sync queue, plus a one-tap
+"Sync now" button. Lives at the bottom of the Offline section in
+`/settings`.
+
+### What it shows
+- **Status icon + label**: "All synced" / "N queued" / "Uploading N…"
+  / "N failed", each with a colour-coded icon (green / amber / blue
+  spinner / red).
+- **Counters grid**: in-flight, queued, failed, and outbox edits
+  pending — only visible when non-zero.
+- **Last error card**: surfaces the most recent failure message from
+  any queued upload (HTTP status + detail when present, else the
+  underlying JS error). No more guessing what's wrong.
+- **Last successful sync timestamp**: relative ("just now", "5 min
+  ago", "2 h ago") so the user always knows when the queue last
+  reached zero.
+- **Sync now button**: passes `forceRetry: true` to the chunked-upload
+  drainer (breaks any wedged in-flight) AND drains the outbox — both
+  pipelines flushed in one tap.
+
+### Auto-hide
+The card renders `null` when there's literally nothing to report
+(empty queues, no errors, no recorded prior sync) so the page stays
+uncluttered for users who never hit an offline scenario.
+
+### Implementation
+- `components/settings/SyncStatusCard.js` (new)
+- Subscribes to: `carryon:upload:start | progress | failed | complete`,
+  `carryon:pending:changed`, `carryon:outbox:enqueued | drained`.
+  10 s polling backstop.
+- `pages/SettingsPage.js` imports and renders the card after
+  `OfflineAccessCard` in the Offline section.
+
+### Housekeeping
+- 74 PASS, 0 WARN, 0 FAIL.
