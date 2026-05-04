@@ -154,6 +154,12 @@ const MessagesPage = () => {
   const videoThumbnailRef = useRef(null);
   const speechRecognitionRef = useRef(null);
   const [isSpeechListening, setIsSpeechListening] = useState(false);
+  // When the user edits a still-queued offline milestone, we hydrate
+  // its blob from IndexedDB and remember the row's pendingUpload PK
+  // here so handleCreate can patch the queue entry in-place rather
+  // than firing an axios PUT against a `pending_*` id (which 404s).
+  const editingPendingUploadIdRef = useRef(null);
+  const editingPendingOriginalBlobRef = useRef(null);
 
   const toggleSpeechToText = () => {
     if (isSpeechListening) {
@@ -534,6 +540,121 @@ const MessagesPage = () => {
         custom_event_label: triggerValue === 'custom' ? customEventLabel : null,
       };
 
+      // Pending-row edit short-circuit: if the row being edited is a
+      // still-queued offline milestone (id starts with `pending_` or
+      // `_pending: true`), it has NO server id — an axios PUT here
+      // would 404. Instead, patch the local optimistic message + the
+      // pendingUpload row's metadata in IndexedDB. The drainer reads
+      // the latest metadata.message_create when it finalizes the
+      // upload, so the edit naturally rides out with the original
+      // recording. If the user re-recorded, swap the blob too. If
+      // they Removed (videoBlob/audioBlob === null) cancel the
+      // pending milestone entirely.
+      const isPendingEdit = !!editingMessage && (
+        editingMessage._pending === true
+        || (typeof editingMessage.id === 'string' && editingMessage.id.startsWith('pending_'))
+      );
+      if (isPendingEdit) {
+        try {
+          const { getPendingUpload, updatePendingUpload, deletePendingUpload } = await import('../offline/pendingUploadsRepo');
+          const { updateLocalMessage, deleteLocalMessage } = await import('../offline/repos/messagesRepo');
+          const pendingUploadId = editingPendingUploadIdRef.current;
+
+          // User wiped the recording — abandon the queued milestone.
+          if (!videoBlob && !audioBlob) {
+            if (pendingUploadId) await deletePendingUpload(pendingUploadId).catch(() => {});
+            await deleteLocalMessage(editingMessage.id).catch(() => {});
+            setMessages(prev => prev.filter(m => m.id !== editingMessage.id));
+            try { window.dispatchEvent(new CustomEvent('carryon:outbox:drained', { detail: { source: 'pending_milestone_removed' } })); } catch { /* SSR */ }
+            toast.success('Pending milestone removed.');
+            setShowCreateModal(false);
+            setEditingMessage(null);
+            resetForm();
+            return;
+          }
+
+          // Patch the pending upload's metadata.message_create so the
+          // drainer sees the edited fields when it finalizes.
+          if (pendingUploadId) {
+            const existing = await getPendingUpload(pendingUploadId);
+            if (existing) {
+              const nextMetadata = {
+                ...(existing.metadata || {}),
+                message_create: {
+                  ...(existing.metadata?.message_create || {}),
+                  title,
+                  content,
+                  message_type: messageType,
+                  recipients: selectedRecipients,
+                  trigger_type: triggerType,
+                  trigger_value: triggerValue || null,
+                  trigger_age: triggerAge ? parseInt(triggerAge) : null,
+                  trigger_date: triggerDate || null,
+                  custom_event_label: triggerValue === 'custom' ? customEventLabel : null,
+                  video_thumbnail: videoThumbnail || existing.metadata?.message_create?.video_thumbnail || null,
+                },
+              };
+              const newBlob = (videoBlob && videoBlob !== 'existing' && videoBlob !== editingPendingOriginalBlobRef.current)
+                ? videoBlob
+                : (audioBlob && audioBlob !== editingPendingOriginalBlobRef.current ? audioBlob : null);
+              const patch = { metadata: nextMetadata };
+              if (newBlob) {
+                patch.blob = newBlob;
+                patch.size_bytes = newBlob.size;
+                patch.mime_type = newBlob.type || existing.mime_type;
+                patch.bytes_sent = 0;
+                patch.upload_id = null;
+                patch.status = 'queued';
+              }
+              await updatePendingUpload(pendingUploadId, patch);
+            }
+          }
+
+          // Mirror the edits onto the optimistic local row so the
+          // Messages list reflects them immediately.
+          await updateLocalMessage(editingMessage.id, {
+            title,
+            content,
+            message_type: messageType,
+            recipients: selectedRecipients,
+            trigger_type: triggerType,
+            trigger_value: triggerValue || null,
+            trigger_age: triggerAge ? parseInt(triggerAge) : null,
+            trigger_date: triggerDate || null,
+            custom_event_label: triggerValue === 'custom' ? customEventLabel : null,
+            video_thumbnail: videoThumbnail || editingMessage.video_thumbnail || null,
+          }).catch(() => {});
+          setMessages(prev => prev.map(m => (
+            m.id === editingMessage.id
+              ? {
+                  ...m,
+                  title,
+                  content,
+                  message_type: messageType,
+                  recipients: selectedRecipients,
+                  trigger_type: triggerType,
+                  trigger_value: triggerValue || null,
+                  trigger_age: triggerAge ? parseInt(triggerAge) : null,
+                  trigger_date: triggerDate || null,
+                  custom_event_label: triggerValue === 'custom' ? customEventLabel : null,
+                  video_thumbnail: videoThumbnail || m.video_thumbnail || null,
+                }
+              : m
+          )));
+
+          try { window.dispatchEvent(new CustomEvent('carryon:outbox:drained', { detail: { source: 'pending_milestone_edited' } })); } catch { /* SSR */ }
+          toast.success('Pending milestone updated — will send when you reconnect.');
+          setShowCreateModal(false);
+          setEditingMessage(null);
+          resetForm();
+          return;
+        } catch (perr) {
+          console.warn('[offline] pending edit save failed:', perr);
+          toast.error('Could not update pending milestone. Please try again.');
+          return;
+        }
+      }
+
       // Tier B wiring — if we're offline AND the user recorded a video,
       // short-circuit to the chunked-upload queue. The backend's
       // milestone finalizer will create the Message row AND attach the
@@ -881,10 +1002,12 @@ const MessagesPage = () => {
     setCountdown(null);
     setGuidedMode(false);
     setGuidedStep(1);
+    editingPendingUploadIdRef.current = null;
+    editingPendingOriginalBlobRef.current = null;
     releaseCamera();
   };
 
-  const openEdit = (msg) => {
+  const openEdit = async (msg) => {
     setEditingMessage(msg);
     setTitle(msg.title || '');
     setContent(msg.content || '');
@@ -896,6 +1019,48 @@ const MessagesPage = () => {
     setTriggerDate(msg.trigger_date || '');
     setCustomEventLabel(msg.custom_event_label || '');
     setShowCreateModal(true);
+
+    // Reset edit-context refs from any prior edit before we (maybe)
+    // re-populate them below for a still-queued offline row.
+    editingPendingUploadIdRef.current = null;
+    editingPendingOriginalBlobRef.current = null;
+    setVideoBlob(null);
+    setVideoUrl(null);
+    setVideoPosterUrl(null);
+    setAudioBlob(null);
+    setAudioUrl(null);
+
+    // If this is a locally-queued, not-yet-uploaded offline milestone,
+    // its video/audio bytes live in the `pendingUpload` IndexedDB
+    // table — keyed by `metadata.pending_id === msg.id`. Hydrate the
+    // form's media state from there so the existing recording is
+    // visible in the modal and we can patch it in-place on save
+    // without losing the original.
+    const isPending = msg?._pending === true || (typeof msg?.id === 'string' && msg.id.startsWith('pending_'));
+    if (!isPending) return;
+    try {
+      const { getDB } = await import('../offline/db');
+      const db = getDB();
+      const pending = await db.pendingUpload
+        .filter((r) => r?.metadata?.pending_id === msg.id)
+        .first();
+      if (!pending?.blob) return;
+      editingPendingUploadIdRef.current = pending.id;
+      editingPendingOriginalBlobRef.current = pending.blob;
+      const blobUrl = URL.createObjectURL(pending.blob);
+      if (pending.kind === 'milestone_video') {
+        setVideoBlob(pending.blob);
+        setVideoUrl(blobUrl);
+        if (msg.video_thumbnail) {
+          setVideoPosterUrl(`data:image/jpeg;base64,${msg.video_thumbnail}`);
+        }
+      } else if (pending.kind === 'milestone_audio') {
+        setAudioBlob(pending.blob);
+        setAudioUrl(blobUrl);
+      }
+    } catch (err) {
+      console.warn('[offline] hydrate pending edit failed:', err);
+    }
   };
 
   const toggleRecipient = (beneficiaryId) => {

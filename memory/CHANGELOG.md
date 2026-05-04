@@ -1997,3 +1997,39 @@ Future optimization items that are NOT wiring and NOT required to flip the flag:
 
 ### Single source of truth
 Everything reads `localStorage.carryon_offline_v1`. Toggling from the new sidebar switch, the mobile nav switch, or the legacy `/debug/offline` page all write to the same key. There is one switch.
+
+---
+
+## Feb 4, 2026 — Editable Pending Offline Milestone Messages
+
+### Bug
+A user tapped Edit on a milestone they had just recorded while offline (an
+optimistic `_pending: true` row whose video lives in IndexedDB
+`pendingUpload`, not on the server). The edit modal opened but with no
+video preview, and Save fired an axios PUT against the `pending_*` id —
+which 404'd, surfaced a "Failed to update message" toast, and effectively
+made it look like the recording had been lost.
+
+### Fix
+`MessagesPage.js` + `offline/repos/messagesRepo.js`:
+- `openEdit(msg)` is now async. When the row is pending (id starts with
+  `pending_` or `_pending: true`), it resolves the matching
+  `pendingUpload` row (by `metadata.pending_id === msg.id`), sets
+  `videoBlob`/`videoUrl` (or audio equivalents) from the local Blob, and
+  paints the existing `video_thumbnail` as the poster. The original blob
+  ref is captured so we can detect re-records.
+- `handleCreate` now branches to a pending-edit path BEFORE the offline
+  POST queue. It patches `pendingUpload.metadata.message_create` with the
+  new title / content / recipients / triggers, swaps the blob if the user
+  re-recorded, and mirrors the edits onto the local optimistic
+  `milestoneMessage` row via the new `updateLocalMessage` helper. No
+  network call. If the user wiped the recording (Remove + Save), the
+  pending upload AND the local optimistic row are deleted via the new
+  `deleteLocalMessage` helper.
+
+### New helpers
+- `updateLocalMessage(id, patch)` — patches a single Dexie milestone row.
+- `deleteLocalMessage(id)` — removes a single Dexie milestone row.
+
+### Housekeeping
+- 0 WARN, 0 FAIL.

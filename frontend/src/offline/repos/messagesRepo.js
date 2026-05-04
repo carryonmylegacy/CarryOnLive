@@ -87,6 +87,41 @@ export async function insertLocalMessage(message) {
 }
 
 /**
+ * Patch fields on a single locally-cached MM row (pending or synced).
+ * Used when the user edits a still-queued offline milestone so the
+ * messages list reflects new title/content/recipients/triggers
+ * BEFORE the upload drains. Returns the patched row, or null on miss.
+ */
+export async function updateLocalMessage(id, patch) {
+  if (!id || !patch) return null;
+  try {
+    const db = getDB();
+    const existing = await db.milestoneMessage.get(id);
+    if (!existing) return null;
+    const next = { ...existing, ...patch, _updatedAt: Date.now() };
+    await db.milestoneMessage.put(next);
+    return next;
+  } catch (err) {
+    console.warn('[offline] updateLocalMessage failed:', err);
+    return null;
+  }
+}
+
+/**
+ * Delete a single locally-cached MM row by id. Used when the user
+ * removes a still-queued offline milestone (e.g. they edit the
+ * pending video and choose Remove instead of saving).
+ */
+export async function deleteLocalMessage(id) {
+  if (!id) return;
+  try {
+    await getDB().milestoneMessage.delete(id);
+  } catch (err) {
+    console.warn('[offline] deleteLocalMessage failed:', err);
+  }
+}
+
+/**
  * Replace the cached list with the server's canonical list while
  * preserving any locally-`_pending` rows that haven't been sent yet.
  * Use this from the online-refresh path so we never wipe a queued
