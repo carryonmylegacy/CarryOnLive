@@ -111,10 +111,46 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
 @router.get("/auth/profile")
 async def get_profile(current_user: dict = Depends(get_current_user)):
-    """Get the current user's full profile."""
+    """Get the current user's full profile.
+
+    For beneficiary users, mirrors `/auth/me`'s fallback semantics by
+    backfilling fields that live on the `beneficiaries` record but not
+    the `users` record — chiefly `photo_url`, plus DOB / address /
+    gender / marital_status. Without this, warm-up's `taskProfile`
+    (which hits this endpoint) returns an empty `photo_url` for
+    beneficiaries and never persists the photo bytes to IndexedDB,
+    so offline relaunches show a Camera placeholder where the
+    avatar should be (founder report May 3 2026).
+    """
     user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    if current_user.get("role") == "beneficiary":
+        ben_rec = await db.beneficiaries.find_one({"user_id": current_user["id"]}, {"_id": 0})
+        if ben_rec:
+            if not user.get("photo_url") and ben_rec.get("photo_url"):
+                user["photo_url"] = ben_rec["photo_url"]
+            for field in [
+                "date_of_birth",
+                "address_street",
+                "address_city",
+                "address_state",
+                "address_zip",
+                "gender",
+                "marital_status",
+            ]:
+                if not user.get(field) and ben_rec.get(field):
+                    user[field] = ben_rec[field]
+
+    # Resolve the photo URL through our presigning helper so warmup
+    # can fetch the bytes for offline use.
+    if user.get("photo_url"):
+        try:
+            user["photo_url"] = resolve_photo_url(user["photo_url"])
+        except Exception:
+            pass
+
     return user
 
 

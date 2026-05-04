@@ -59,11 +59,26 @@ const MessageCard = ({
         <p className="text-[#94a3b8] text-sm line-clamp-3 mb-4">{msg.content}</p>
         
         {msg.message_type === 'video' && msg.video_thumbnail && (
-          <div className="mb-4 rounded-xl overflow-hidden relative cursor-pointer active:scale-[0.98] transition-transform" style={{ aspectRatio: '16/9' }}
+          <div
+            className="mb-4 rounded-xl overflow-hidden relative cursor-pointer active:scale-[0.98] transition-transform flex items-center justify-center"
+            style={{
+              // No fixed aspect — let the recorded video's natural
+              // orientation drive the frame so portrait selfies don't
+              // get center-cropped into a landscape strip and look
+              // squashed (founder report May 3 2026). Caps at a
+              // reasonable height so a tall portrait clip doesn't
+              // dominate the card.
+              maxHeight: 360,
+              background: 'rgba(0,0,0,0.4)',
+            }}
             onClick={(e) => { e.stopPropagation(); playVideo(msg); }}>
-            <img src={`data:image/jpeg;base64,${msg.video_thumbnail}`} alt="Video thumbnail"
-              className="w-full h-full object-cover" />
-            <div className="absolute inset-0 flex items-center justify-center">
+            <img
+              src={`data:image/jpeg;base64,${msg.video_thumbnail}`}
+              alt="Video thumbnail"
+              className="w-auto h-auto object-contain rounded-xl"
+              style={{ maxHeight: 360, maxWidth: '100%' }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.65)' }}>
                 {loadingPlayback ? <Loader2 className="w-6 h-6 text-white animate-spin" /> : <Play className="w-6 h-6 text-white ml-0.5" />}
               </div>
