@@ -1,5 +1,37 @@
 # CarryOn — Changelog
 
+## May 4, 2026 — CFP Offline Optimistic UI Fix + DAV/SDV Audit
+**Bug fix**: User reported that creating a Bill offline showed the green "queued" toast but the bill didn't appear in the list until reconnect. Same anti-pattern audited and fixed across DAV (Digital Access Vault) and SDV (Vault).
+
+**FinancialPortalPage.js + useFinancialForm.js (CFP)**
+- `useFinancialForm.handleSubmit` now constructs a server-shape `saved` object (uses server response when online; synthesizes a `local-…` row with `_local_pending: true` when queued) and passes it to `onSaved(saved, { queued, isEdit, module, entityType })`.
+- `FinancialPortalPage.handleSaved(saved, opts)` now optimistically inserts/replaces the row in the matching list state via functional setState updater (eliminates stale-closure risk), persists to localStorage cache, and additionally bumps the `summary` counts/totals so the top stats cards (Monthly Bills, Total Debt, Total Assets, Net Position) reflect the change instantly.
+- `handleDelete` does optimistic remove + summary decrement; rolls back on hard error.
+- `handleDesignationUpdate` does optimistic patch.
+- `handleAddCategory` does optimistic insert into `customCategories`.
+- All paths now route through `mutateWithOutbox` (static import — dynamic `await import()` chunks fail offline).
+- Removed unused `enqueueOutbox` import.
+
+**DigitalWalletPage.js (DAV)**
+- `WalletEntryPanel.handleSave` constructs and passes back the optimistic entity (with `assigned_beneficiary_name` resolved from the beneficiaries list).
+- `handleCredentialSaved(saved, opts)` optimistically inserts/updates `entries` state + persists to cache.
+- `handleDelete` optimistic remove with rollback on failure.
+
+**VaultPage.js (SDV)**
+- `handleEditDocument` now optimistically patches the in-memory document list before the network round-trip and queues a JSON PUT in the outbox when offline (was previously online-only — failed silently if user edited while offline).
+
+**user_preferences.py**
+- Added `"id": 1` to scroll-restoration projection (housekeeping A1.2 Mongo projection safety).
+
+**Verified**:
+- Bills offline create: tile appears instantly + stats counter increments 38 → 39 ✅
+- Bills offline delete: tile disappears instantly ✅
+- Debts offline create: tile appears instantly ✅
+- DAV offline create + delete: confirmed by testing agent ✅
+- Housekeeping: 0 WARN / 0 FAIL ✅
+- ESLint: clean ✅
+- Offline mutation audit: every user-data page is offline-safe ✅
+
 ## Feb 2026 — Offline Avatar Caching: Final Fix (S3 Regional URLs)
 
 iteration_123 testing-agent run identified that the JS-side fixes alone weren't enough — the S3 presigned URLs were 307-redirecting from the legacy global hostname to the regional one, and the redirect response was dropping CORS headers. The bucket CORS policy itself was correctly configured all along (`https://*.preview.emergentagent.com`, `https://carryon.us`, `https://www.carryon.us` — verified live via `s3.get_bucket_cors`).

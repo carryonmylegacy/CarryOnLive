@@ -231,11 +231,15 @@ const FinancialPortalPage = () => {
   // Drives optimistic insert/replace/delete on the in-memory list so the
   // user sees their offline (or online) action reflected instantly,
   // without waiting for a refetch round-trip.
-  const LIST_BY_MODULE = {
-    bills: { state: bills, set: setBills, cacheKey: 'bills' },
-    debts: { state: debts, set: setDebts, cacheKey: 'debts' },
-    accounts: { state: accounts, set: setAccounts, cacheKey: 'accounts' },
-    property: { state: propertyAssets, set: setPropertyAssets, cacheKey: 'property' },
+  //
+  // We resolve the setter and cache key (NOT the state itself) here —
+  // the state is read via the functional setState updater so we always
+  // operate on the freshest list, never a stale closure value.
+  const SETTER_BY_MODULE = {
+    bills: { set: setBills, cacheKey: 'bills' },
+    debts: { set: setDebts, cacheKey: 'debts' },
+    accounts: { set: setAccounts, cacheKey: 'accounts' },
+    property: { set: setPropertyAssets, cacheKey: 'property' },
   };
 
   const persistPortalCache = (overrides = {}) => {
@@ -255,21 +259,64 @@ const FinancialPortalPage = () => {
     setEditItem(null);
     // Optimistic UI: when the form returns its saved/queued payload,
     // patch it into the right list immediately so users see it on the
-    // page even when offline. Online creates already get a refetch on
-    // top, so we still call fetchAll() for server reconciliation.
-    if (saved && opts.module && LIST_BY_MODULE[opts.module]) {
-      const { state, set, cacheKey } = LIST_BY_MODULE[opts.module];
-      let next;
-      if (opts.isEdit) {
-        next = state.map(it => (it.id === saved.id ? { ...it, ...saved } : it));
-      } else {
-        // Avoid duplicate inserts if the row was somehow already present.
-        next = state.some(it => it.id === saved.id) ? state : [saved, ...state];
-      }
-      set(next);
-      if (estate?.id) {
-        saveList(`financial:${cacheKey}:${estate.id}`, next);
-        persistPortalCache({ [cacheKey]: next });
+    // page even when offline. Online creates ALSO get instant feedback
+    // (no waiting on the refetch) — fetchAll() runs after for server
+    // reconciliation.
+    if (saved && opts.module && SETTER_BY_MODULE[opts.module]) {
+      const { set, cacheKey } = SETTER_BY_MODULE[opts.module];
+      set(prev => {
+        const list = Array.isArray(prev) ? prev : [];
+        let next;
+        if (opts.isEdit) {
+          // If the edited row isn't in the list (rare — e.g. fetchAll
+          // wiped it), fall through to a prepend so the user still
+          // sees their change.
+          const found = list.some(it => it.id === saved.id);
+          next = found
+            ? list.map(it => (it.id === saved.id ? { ...it, ...saved } : it))
+            : [saved, ...list];
+        } else {
+          // Dedup ONLY against an exact id collision. Guards against
+          // double-clicks, never against legitimately-new rows.
+          next = list.some(it => it.id === saved.id) ? list : [saved, ...list];
+        }
+        if (estate?.id) {
+          try {
+            saveList(`financial:${cacheKey}:${estate.id}`, next);
+            persistPortalCache({ [cacheKey]: next });
+          } catch { /* localStorage quota — non-fatal */ }
+        }
+        return next;
+      });
+      // Optimistic summary patch — bump the relevant count + total so
+      // the top stats cards reflect the change instantly. fetchAll()
+      // overwrites this with the server's authoritative summary on the
+      // online path; offline keeps the optimistic delta until reconnect.
+      if (!opts.isEdit) {
+        setSummary(prev => {
+          const s = prev && typeof prev === 'object' ? { ...prev } : {};
+          if (opts.module === 'bills') {
+            s.bills_count = (s.bills_count || 0) + 1;
+            const amt = Number(saved.amount) || 0;
+            s.monthly_total = Math.round(((s.monthly_total || 0) + amt) * 100) / 100;
+          } else if (opts.module === 'debts') {
+            s.debts_count = (s.debts_count || 0) + 1;
+            const bal = Number(saved.current_balance ?? saved.balance ?? saved.amount) || 0;
+            s.total_debt = Math.round(((s.total_debt || 0) + bal) * 100) / 100;
+          } else if (opts.module === 'accounts') {
+            s.accounts_count = (s.accounts_count || 0) + 1;
+            const bal = Number(saved.balance) || 0;
+            s.total_assets = Math.round(((s.total_assets || 0) + bal) * 100) / 100;
+          } else if (opts.module === 'property') {
+            s.property_count = (s.property_count || 0) + 1;
+            const val = Number(saved.estimated_value ?? saved.value) || 0;
+            s.total_assets = Math.round(((s.total_assets || 0) + val) * 100) / 100;
+          }
+          if (s.total_assets != null && s.total_debt != null) {
+            s.net_position = Math.round((s.total_assets - s.total_debt) * 100) / 100;
+          }
+          return s;
+        });
       }
     }
     if (opts.queued) return; // skip refetch when offline — it would clobber the optimistic row
@@ -304,15 +351,51 @@ const FinancialPortalPage = () => {
   const handleDelete = async (type, id) => {
     if (!window.confirm('Delete this entry? This cannot be undone.')) return;
     const mod = moduleForType(type);
+    let prevList = null;
+    let removedItem = null;
     // Optimistic remove: drop the row immediately so the UI never shows
     // "I deleted this but it's still there waiting for the network".
-    if (mod && LIST_BY_MODULE[mod]) {
-      const { state, set, cacheKey } = LIST_BY_MODULE[mod];
-      const next = state.filter(it => it.id !== id);
-      set(next);
-      if (estate?.id) {
-        saveList(`financial:${cacheKey}:${estate.id}`, next);
-        persistPortalCache({ [cacheKey]: next });
+    if (mod && SETTER_BY_MODULE[mod]) {
+      const { set, cacheKey } = SETTER_BY_MODULE[mod];
+      set(prev => {
+        const list = Array.isArray(prev) ? prev : [];
+        prevList = list;
+        removedItem = list.find(it => it.id === id) || null;
+        const next = list.filter(it => it.id !== id);
+        if (estate?.id) {
+          try {
+            saveList(`financial:${cacheKey}:${estate.id}`, next);
+            persistPortalCache({ [cacheKey]: next });
+          } catch { /* localStorage quota — non-fatal */ }
+        }
+        return next;
+      });
+      // Optimistic summary patch (mirror of handleSaved).
+      if (removedItem) {
+        setSummary(prev => {
+          const s = prev && typeof prev === 'object' ? { ...prev } : {};
+          if (mod === 'bills') {
+            s.bills_count = Math.max(0, (s.bills_count || 0) - 1);
+            const amt = Number(removedItem.amount) || 0;
+            s.monthly_total = Math.max(0, Math.round(((s.monthly_total || 0) - amt) * 100) / 100);
+          } else if (mod === 'debts') {
+            s.debts_count = Math.max(0, (s.debts_count || 0) - 1);
+            const bal = Number(removedItem.current_balance ?? removedItem.balance ?? removedItem.amount) || 0;
+            s.total_debt = Math.max(0, Math.round(((s.total_debt || 0) - bal) * 100) / 100);
+          } else if (mod === 'accounts') {
+            s.accounts_count = Math.max(0, (s.accounts_count || 0) - 1);
+            const bal = Number(removedItem.balance) || 0;
+            s.total_assets = Math.max(0, Math.round(((s.total_assets || 0) - bal) * 100) / 100);
+          } else if (mod === 'property') {
+            s.property_count = Math.max(0, (s.property_count || 0) - 1);
+            const val = Number(removedItem.estimated_value ?? removedItem.value) || 0;
+            s.total_assets = Math.max(0, Math.round(((s.total_assets || 0) - val) * 100) / 100);
+          }
+          if (s.total_assets != null && s.total_debt != null) {
+            s.net_position = Math.round((s.total_assets - s.total_debt) * 100) / 100;
+          }
+          return s;
+        });
       }
     }
     try {
@@ -333,6 +416,9 @@ const FinancialPortalPage = () => {
     } catch {
       toast.error('Failed to delete');
       // Roll back optimistic remove on hard failure.
+      if (mod && SETTER_BY_MODULE[mod] && prevList) {
+        SETTER_BY_MODULE[mod].set(prevList);
+      }
       fetchAll();
     }
   };
@@ -345,14 +431,19 @@ const FinancialPortalPage = () => {
     };
     // Optimistic patch into the matching list so the UI reflects the
     // designation immediately whether online or offline.
-    if (mod && LIST_BY_MODULE[mod]) {
-      const { state, set, cacheKey } = LIST_BY_MODULE[mod];
-      const next = state.map(it => (it.id === itemId ? { ...it, ...designationBody } : it));
-      set(next);
-      if (estate?.id) {
-        saveList(`financial:${cacheKey}:${estate.id}`, next);
-        persistPortalCache({ [cacheKey]: next });
-      }
+    if (mod && SETTER_BY_MODULE[mod]) {
+      const { set, cacheKey } = SETTER_BY_MODULE[mod];
+      set(prev => {
+        const list = Array.isArray(prev) ? prev : [];
+        const next = list.map(it => (it.id === itemId ? { ...it, ...designationBody } : it));
+        if (estate?.id) {
+          try {
+            saveList(`financial:${cacheKey}:${estate.id}`, next);
+            persistPortalCache({ [cacheKey]: next });
+          } catch { /* localStorage quota — non-fatal */ }
+        }
+        return next;
+      });
     }
     try {
 
