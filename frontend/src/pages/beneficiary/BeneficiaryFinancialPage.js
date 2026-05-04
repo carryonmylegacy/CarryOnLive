@@ -14,6 +14,10 @@ import { Skeleton } from '../../components/ui/skeleton';
 import { toast } from '../../utils/toast';
 import BillCalendar from '../../components/financial/BillCalendar';
 import { API_URL } from '../../config';
+import {
+  cacheBenSection, readBenSection,
+  isOffline as isBenOffline,
+} from '../../utils/beneficiaryOfflineCache';
 
 const BILL_LABELS = {
   mortgage_rent: 'Mortgage/Rent', utilities: 'Utilities', insurance: 'Insurance',
@@ -81,9 +85,28 @@ const BeneficiaryFinancialPage = () => {
   useEffect(() => { fetchAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchAll = async () => {
+    const estateId = localStorage.getItem('beneficiary_estate_id');
+    if (!estateId) { navigate('/beneficiary'); return; }
+    // Airplane-mode rescue — render the cached financial designations
+    // for this estate so the beneficiary keeps seeing bills, debts,
+    // accounts and the summary card without any network round-trip.
+    if (isBenOffline()) {
+      const cachedBills = readBenSection(estateId, 'financial_bills') || [];
+      const cachedDebts = readBenSection(estateId, 'financial_debts') || [];
+      const cachedAccts = readBenSection(estateId, 'financial_accounts') || [];
+      const cachedSummary = readBenSection(estateId, 'financial_summary');
+      const cachedPerms = readBenSection(estateId, 'permissions');
+      const cachedPayments = readBenSection(estateId, 'financial_payments') || {};
+      setIsTransitioned(Boolean(cachedPerms?.is_transitioned));
+      setBills(cachedBills);
+      setDebts(cachedDebts);
+      setAccounts(cachedAccts);
+      if (cachedSummary && typeof cachedSummary === 'object' && !Array.isArray(cachedSummary)) setSummary(cachedSummary);
+      setPayments(cachedPayments);
+      setLoading(false);
+      return;
+    }
     try {
-      const estateId = localStorage.getItem('beneficiary_estate_id');
-      if (!estateId) { navigate('/beneficiary'); return; }
       const headers = getAuthHeaders()?.headers;
       if (!headers) { setLoading(false); return; }
 
@@ -91,6 +114,7 @@ const BeneficiaryFinancialPage = () => {
       const permsRes = await axios.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, { headers }).catch(() => null);
       const transitioned = permsRes?.data?.is_transitioned || false;
       setIsTransitioned(transitioned);
+      if (permsRes?.data) cacheBenSection(estateId, 'permissions', permsRes.data);
 
       const [billsRes, debtsRes, acctsRes, summaryRes] = await Promise.all([
         axios.get(`${API_URL}/financial/bills/${estateId}`, { headers }).catch(() => ({ data: [] })),
@@ -99,10 +123,17 @@ const BeneficiaryFinancialPage = () => {
         axios.get(`${API_URL}/financial/summary/${estateId}`, { headers }).catch(() => ({ data: null })),
       ]);
       const billsData = Array.isArray(billsRes.data) ? billsRes.data : [];
+      const debtsData = Array.isArray(debtsRes.data) ? debtsRes.data : [];
+      const acctsData = Array.isArray(acctsRes.data) ? acctsRes.data : [];
       setBills(billsData);
-      setDebts(Array.isArray(debtsRes.data) ? debtsRes.data : []);
-      setAccounts(Array.isArray(acctsRes.data) ? acctsRes.data : []);
+      setDebts(debtsData);
+      setAccounts(acctsData);
       setSummary(summaryRes.data);
+      // Cache for offline rehydration.
+      cacheBenSection(estateId, 'financial_bills', billsData);
+      cacheBenSection(estateId, 'financial_debts', debtsData);
+      cacheBenSection(estateId, 'financial_accounts', acctsData);
+      if (summaryRes.data) cacheBenSection(estateId, 'financial_summary', summaryRes.data);
 
       // Fetch payments for each bill
       const payMap = {};
@@ -113,11 +144,16 @@ const BeneficiaryFinancialPage = () => {
         } catch { payMap[bill.id] = []; }
       }
       setPayments(payMap);
+      cacheBenSection(estateId, 'financial_payments', payMap);
     } catch (err) { console.error('Beneficiary financial fetch error:', err); }
     setLoading(false);
   };
 
   const handleMarkPaid = async (billId) => {
+    if (isBenOffline()) {
+      toast.error('Marking a bill paid requires an internet connection.');
+      return;
+    }
     setMarkingPaid(billId);
     try {
       await axios.post(`${API_URL}/financial/bills/${billId}/pay`, { bill_id: billId }, getAuthHeaders());

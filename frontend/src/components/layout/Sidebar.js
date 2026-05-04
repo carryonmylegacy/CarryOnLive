@@ -476,11 +476,27 @@ const Sidebar = () => {
   // Fetch estates for sidebar switcher (beneficiary view + multi-role users)
   useEffect(() => {
     if (user?.role === 'beneficiary' || user?.is_also_beneficiary || user?.is_also_benefactor) {
-      
+      // Offline rescue first — show every cached estate the user is
+      // connected to so the switcher works without a connection.
+      try {
+        const cached = JSON.parse(localStorage.getItem('carryon_list_cache:beneficiary:estates') || 'null');
+        if (Array.isArray(cached?.value)) setBenEstates(cached.value);
+      } catch { /* ignore */ }
+
       const token = localStorage.getItem('carryon_token');
-      if (token) {
+      if (token && (typeof navigator === 'undefined' || navigator.onLine !== false)) {
         axios.get(`${API_URL}/estates`, { headers: { Authorization: `Bearer ${token}` } })
-          .then(res => setBenEstates(res.data))
+          .then(res => {
+            setBenEstates(res.data);
+            // Persist for offline use under the same key
+            // beneficiaryOfflineCache writes to.
+            try {
+              localStorage.setItem(
+                'carryon_list_cache:beneficiary:estates',
+                JSON.stringify({ value: res.data || [], ts: Date.now() })
+              );
+            } catch { /* quota — non-fatal */ }
+          })
           .catch(() => {});
       }
     }

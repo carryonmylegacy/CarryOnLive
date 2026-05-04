@@ -10,6 +10,10 @@ import { Progress } from '../../components/ui/progress';
 import { toast } from '../../utils/toast';
 import { Skeleton } from '../../components/ui/skeleton';
 import { API_URL } from '../../config';
+import {
+  cacheBenSection, readBenSection,
+  isOffline as isBenOffline,
+} from '../../utils/beneficiaryOfflineCache';
 
 const priColors = { critical: '#ef4444', high: '#f97316', medium: '#eab308', low: '#22c55e' };
 
@@ -24,20 +28,39 @@ const BeneficiaryChecklistPage = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
+    const estateId = localStorage.getItem('beneficiary_estate_id');
+    if (!estateId) { navigate('/beneficiary'); return; }
+    if (isBenOffline()) {
+      const cached = readBenSection(estateId, 'checklist') || [];
+      setChecklists(cached);
+      setLoading(false);
+      return;
+    }
     try {
-      const estateId = localStorage.getItem('beneficiary_estate_id');
-      if (!estateId) { navigate('/beneficiary'); return; }
       const res = await axios.get(`${API_URL}/checklists/${estateId}`, getAuthHeaders());
       setChecklists(res.data);
+      cacheBenSection(estateId, 'checklist', res.data || []);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
 
   const toggleItem = async (itemId) => {
+    if (isBenOffline()) {
+      // Beneficiary writes are intentionally blocked offline per
+      // explicit user direction. Show a clear "requires connection"
+      // toast instead of silently queueing.
+      toast.error('Marking items complete requires an internet connection.');
+      return;
+    }
     setToggling(itemId);
     try {
       const res = await axios.patch(`${API_URL}/checklists/${itemId}/toggle`, {}, getAuthHeaders());
-      setChecklists(prev => prev.map(c => c.id === itemId ? { ...c, is_completed: res.data.is_completed } : c));
+      setChecklists(prev => {
+        const next = prev.map(c => c.id === itemId ? { ...c, is_completed: res.data.is_completed } : c);
+        const estateId = localStorage.getItem('beneficiary_estate_id');
+        if (estateId) cacheBenSection(estateId, 'checklist', next);
+        return next;
+      });
     } catch (err) { toast.error('Failed to update'); }
     finally { setToggling(null); }
   };

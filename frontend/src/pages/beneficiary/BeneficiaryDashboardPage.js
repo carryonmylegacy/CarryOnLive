@@ -6,6 +6,11 @@ import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, Users, Sett
 import { Skeleton } from '../../components/ui/skeleton';
 import { Switch } from '../../components/ui/switch';
 import { API_URL } from '../../config';
+import {
+  cacheBenEstates, readBenEstates,
+  cacheBenSection, readBenSection,
+  isOffline as isBenOffline,
+} from '../../utils/beneficiaryOfflineCache';
 
 import PushPrompt from '../../components/PushPrompt';
 
@@ -38,6 +43,44 @@ const BeneficiaryDashboardPage = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
+    // Airplane-mode rescue — rehydrate every list from the
+    // last-known-good localStorage cache so the beneficiary keeps
+    // seeing all estates they're connected to and every section they
+    // already loaded once. The transition-status check is permissive
+    // here: if we have cached perms saying we passed it before, trust
+    // them. Otherwise, gate to /beneficiary/pre as before.
+    if (isBenOffline()) {
+      const cachedEstates = readBenEstates();
+      setAllEstates(cachedEstates);
+      const beneficiaryEstates = cachedEstates.filter(e => e.user_role_in_estate !== 'owner');
+      let estateId = localStorage.getItem('beneficiary_estate_id');
+      const stillConnected = estateId && beneficiaryEstates.some(e => e.id === estateId);
+      if (!stillConnected) estateId = null;
+      if (!estateId && beneficiaryEstates.length > 0) estateId = beneficiaryEstates[0].id;
+      if (!estateId) { setLoading(false); return; }
+      const cachedEstate = readBenSection(estateId, 'estate');
+      const cachedPerms = readBenSection(estateId, 'permissions');
+      if (cachedPerms && !cachedPerms.is_transitioned) {
+        navigate('/beneficiary/pre');
+        return;
+      }
+      if (cachedEstate) setEstate(cachedEstate);
+      if (cachedPerms) setMyPerms(cachedPerms);
+      const cachedDocs = readBenSection(estateId, 'documents') || [];
+      const cachedMsgs = readBenSection(estateId, 'messages') || [];
+      const cachedCl = readBenSection(estateId, 'checklist') || [];
+      setDocuments(cachedDocs);
+      setMessages(cachedMsgs);
+      setChecklists(cachedCl);
+      setStats({
+        documents: cachedDocs.length,
+        messages: cachedMsgs.length,
+        checklists: cachedCl.length,
+        checklistsDone: (cachedCl || []).filter(c => c.is_completed).length,
+      });
+      setLoading(false);
+      return;
+    }
     try {
       // Resolve which beneficiary-connected estate to land on. Order:
       //   1. Whatever the user explicitly switched to (localStorage hint).
@@ -52,6 +95,7 @@ const BeneficiaryDashboardPage = () => {
       const allEstatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders()).catch(() => ({ data: [] }));
       const estatesList = allEstatesRes.data || [];
       setAllEstates(estatesList);
+      cacheBenEstates(estatesList);
       const beneficiaryEstates = estatesList.filter(e => e.user_role_in_estate !== 'owner');
 
       let estateId = localStorage.getItem('beneficiary_estate_id');
@@ -85,6 +129,9 @@ const BeneficiaryDashboardPage = () => {
       if (!permRes.data.is_transitioned) { navigate('/beneficiary/pre'); return; }
       setEstate(estateRes.data);
       setMyPerms(permRes.data);
+      // Cache estate + perms for offline rehydration.
+      cacheBenSection(estateId, 'estate', estateRes.data);
+      cacheBenSection(estateId, 'permissions', permRes.data);
 
       // Store feature access for navigation components
       if (permRes.data.feature_access) {
@@ -102,6 +149,10 @@ const BeneficiaryDashboardPage = () => {
       setDocuments(docsRes.data);
       setMessages(msgsRes.data);
       setChecklists(clRes.data);
+      // Cache for airplane-mode rehydration.
+      cacheBenSection(estateId, 'documents', docsRes.data);
+      cacheBenSection(estateId, 'messages', msgsRes.data);
+      cacheBenSection(estateId, 'checklist', clRes.data);
       setStats({
         documents: docsRes.data.length,
         messages: msgsRes.data.length,

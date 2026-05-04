@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { User, Lock, LogOut, Shield, Moon, Sun, Crown } from 'lucide-react';
+import { User, Lock, LogOut, Shield, Moon, Sun, Crown, WifiOff } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Switch } from '../../components/ui/switch';
@@ -13,6 +13,10 @@ import { NotificationPrefsCard } from '../../components/settings/NotificationPre
 import { PhotoPicker } from '../../components/PhotoPicker';
 import { API_URL } from '../../config';
 import DockCustomizer from '../../components/DockCustomizer';
+import OfflineAccessCard from '../../components/settings/OfflineAccessCard';
+import BeneficiaryOfflineCapabilitiesCard from '../../components/settings/BeneficiaryOfflineCapabilitiesCard';
+import SyncStatusCard from '../../components/settings/SyncStatusCard';
+import PublicDeviceModeCard from '../../components/settings/PublicDeviceModeCard';
 
 const BeneficiarySettingsPage = () => {
   const { user, logout, getAuthHeaders } = useAuth();
@@ -153,6 +157,24 @@ const BeneficiarySettingsPage = () => {
 
       {/* Notification Preferences (granular category controls) */}
       <NotificationPrefsCard />
+
+      {/* Offline section — parity with benefactor Settings. Lets a
+          beneficiary enroll this device for offline login + see what
+          works without a connection + monitor sync state. Public Device
+          Mode lives here too for shared-iPad scenarios. */}
+      <Card className="glass-card">
+        <CardHeader>
+          <CardTitle className="text-[var(--t)] flex items-center gap-2">
+            <WifiOff className="w-5 h-5 text-[var(--gold)]" /> Offline access
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <BeneficiaryOfflineCapabilitiesCard />
+          <OfflineAccessCard />
+          <SyncStatusCard />
+          <PublicDeviceModeCard />
+        </CardContent>
+      </Card>
 
       {/* Appearance */}
       <Card className="glass-card">

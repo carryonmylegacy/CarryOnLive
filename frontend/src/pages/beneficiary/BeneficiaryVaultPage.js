@@ -7,6 +7,11 @@ import { Skeleton } from '../../components/ui/skeleton';
 import PDFViewerModal from '../../components/PDFViewerModal';
 import { API_URL } from '../../config';
 import { iosSafeDownload } from '../../utils/iosSafeDownload';
+import { toast } from '../../utils/toast';
+import {
+  cacheBenSection, readBenSection,
+  isOffline as isBenOffline,
+} from '../../utils/beneficiaryOfflineCache';
 
 const BeneficiaryVaultPage = () => {
   const { getAuthHeaders } = useAuth();
@@ -27,27 +32,43 @@ const BeneficiaryVaultPage = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchDocs = async () => {
+    const estateId = localStorage.getItem('beneficiary_estate_id');
+    if (!estateId) { navigate('/beneficiary'); return; }
+    // Airplane-mode rescue — render the cached document directory
+    // (metadata only; file blobs are NEVER cached and download below
+    // will toast a "needs internet" message).
+    if (isBenOffline()) {
+      const cached = readBenSection(estateId, 'documents') || [];
+      setDocuments(cached);
+      setLoading(false);
+      return;
+    }
     try {
-      const estateId = localStorage.getItem('beneficiary_estate_id');
-      if (!estateId) { navigate('/beneficiary'); return; }
-
       // Check transition status
       const estateRes = await axios.get(`${API_URL}/estates/${estateId}`, getAuthHeaders());
       const transitioned = estateRes.data?.status === 'transitioned';
+      cacheBenSection(estateId, 'estate', estateRes.data);
 
+      let docs = [];
       if (transitioned) {
         const res = await axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders());
-        setDocuments(res.data);
+        docs = res.data || [];
       } else {
         // Pre-transition: use the dedicated endpoint that respects visibility_timing
         const res = await axios.get(`${API_URL}/documents/${estateId}/pre-transition`, getAuthHeaders());
-        setDocuments(res.data);
+        docs = res.data || [];
       }
+      setDocuments(docs);
+      cacheBenSection(estateId, 'documents', docs);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
 
   const handlePreview = async (doc) => {
+    if (isBenOffline()) {
+      toast.error('Document preview requires an internet connection.');
+      return;
+    }
     setPreviewDoc(doc);
     setPreviewLoading(true);
     try {
@@ -65,6 +86,10 @@ const BeneficiaryVaultPage = () => {
   };
 
   const handleDownload = async (doc) => {
+    if (isBenOffline()) {
+      toast.error('Document download requires an internet connection.');
+      return;
+    }
     setDownloading(doc.id);
     try {
       const res = await axios.get(`${API_URL}/documents/${doc.id}/preview`, {

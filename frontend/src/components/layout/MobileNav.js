@@ -84,11 +84,29 @@ const MobileNav = () => {
   // Fetch estates for portal switching
   React.useEffect(() => {
     if (user && user.role !== 'admin' && user.role !== 'operator') {
+      // Offline rescue first — show every cached estate so the
+      // mobile portal switcher works without a connection.
+      try {
+        const cached = JSON.parse(localStorage.getItem('carryon_list_cache:beneficiary:estates') || 'null');
+        if (Array.isArray(cached?.value)) setMobileEstates(cached.value);
+      } catch { /* ignore */ }
+
       const token = localStorage.getItem('carryon_token');
-      if (token) {
+      if (token && (typeof navigator === 'undefined' || navigator.onLine !== false)) {
+        // STATIC import would be preferred, but we keep this dynamic
+        // import behind an online-only gate so it never fails offline.
         import('axios').then(({ default: ax }) => {
           ax.get(`${BASE_URL}/api/estates`, { headers: { Authorization: `Bearer ${token}` } })
-            .then(res => setMobileEstates(res.data || []))
+            .then(res => {
+              const list = res.data || [];
+              setMobileEstates(list);
+              try {
+                localStorage.setItem(
+                  'carryon_list_cache:beneficiary:estates',
+                  JSON.stringify({ value: list, ts: Date.now() })
+                );
+              } catch { /* quota — non-fatal */ }
+            })
             .catch(() => {});
         });
       }

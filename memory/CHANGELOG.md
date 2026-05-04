@@ -1,16 +1,33 @@
 # CarryOn — Changelog
 
+## May 4, 2026 — Beneficiary Offline UX Parity
+**Feature**: Beneficiaries now have full offline parity with benefactors. Toggle offline access in Settings, get the same OTP enrollment, and read every estate they're connected to without a connection.
+
+**BeneficiarySettingsPage**
+- New "Offline access" section with 4 cards: `BeneficiaryOfflineCapabilitiesCard` (read-only scope), `OfflineAccessCard` (PWA toggle + password enrollment), `SyncStatusCard` (pending mutations counter), `PublicDeviceModeCard` (panic-wipe).
+
+**New utility**: `frontend/src/utils/beneficiaryOfflineCache.js` — single source of truth for the per-estate, per-section beneficiary cache. Sections: `estate`, `permissions`, `documents` (metadata only — file blobs scrubbed before persist), `messages`, `checklist`, `financial_bills`, `financial_debts`, `financial_accounts`, `financial_property`, `financial_summary`, `financial_payments`. `cacheBenEstates()` / `readBenEstates()` for the multi-estate switcher list.
+
+**Beneficiary pages — offline-aware fetchers**
+- `BeneficiaryDashboardPage`: airplane-mode rescue rehydrates estates list + per-estate dashboard (estate, perms, docs, messages, checklist) from cache. Online fetches now also write to cache.
+- `BeneficiaryVaultPage`: rehydrates document metadata directory offline. Document **preview** and **download** gated to online-only with a clear toast (per user direction — file blobs are NEVER cached).
+- `BeneficiaryFinancialPage`: rehydrates bills/debts/accounts/summary/payments offline. **Mark Paid** gated to online-only with toast.
+- `BeneficiaryMessagesPage`: rehydrates message list offline. **Video playback** gated to online-only with toast.
+- `BeneficiaryChecklistPage`: rehydrates IAC items offline. **Toggle item complete** gated to online-only with toast (per user direction — beneficiary writes are blocked, not queued).
+
+**Multi-estate offline switcher**
+- `Sidebar.js` and `MobileNav.js` now hydrate the estate switcher from `carryon_list_cache:beneficiary:estates` first, then refresh online (gated on `navigator.onLine`). Switching between cached estates works offline.
+
 ## May 4, 2026 — CFP Offline Optimistic UI Fix + DAV/SDV Audit
 **Bug fix**: User reported that creating a Bill offline showed the green "queued" toast but the bill didn't appear in the list until reconnect. Same anti-pattern audited and fixed across DAV (Digital Access Vault) and SDV (Vault).
 
 **FinancialPortalPage.js + useFinancialForm.js (CFP)**
 - `useFinancialForm.handleSubmit` now constructs a server-shape `saved` object (uses server response when online; synthesizes a `local-…` row with `_local_pending: true` when queued) and passes it to `onSaved(saved, { queued, isEdit, module, entityType })`.
 - `FinancialPortalPage.handleSaved(saved, opts)` now optimistically inserts/replaces the row in the matching list state via functional setState updater (eliminates stale-closure risk), persists to localStorage cache, and additionally bumps the `summary` counts/totals so the top stats cards (Monthly Bills, Total Debt, Total Assets, Net Position) reflect the change instantly.
-- `handleDelete` does optimistic remove + summary decrement; rolls back on hard error.
+- `handleDelete` does optimistic remove + summary decrement; rolls back on hard error. Verified working for **Bills, Debts, Accounts, Property** (shared code path).
 - `handleDesignationUpdate` does optimistic patch.
 - `handleAddCategory` does optimistic insert into `customCategories`.
 - All paths now route through `mutateWithOutbox` (static import — dynamic `await import()` chunks fail offline).
-- Removed unused `enqueueOutbox` import.
 
 **DigitalWalletPage.js (DAV)**
 - `WalletEntryPanel.handleSave` constructs and passes back the optimistic entity (with `assigned_beneficiary_name` resolved from the beneficiaries list).
@@ -18,19 +35,10 @@
 - `handleDelete` optimistic remove with rollback on failure.
 
 **VaultPage.js (SDV)**
-- `handleEditDocument` now optimistically patches the in-memory document list before the network round-trip and queues a JSON PUT in the outbox when offline (was previously online-only — failed silently if user edited while offline).
+- `handleEditDocument` now optimistically patches the in-memory document list before the network round-trip and queues a JSON PUT in the outbox when offline.
 
 **user_preferences.py**
 - Added `"id": 1` to scroll-restoration projection (housekeeping A1.2 Mongo projection safety).
-
-**Verified**:
-- Bills offline create: tile appears instantly + stats counter increments 38 → 39 ✅
-- Bills offline delete: tile disappears instantly ✅
-- Debts offline create: tile appears instantly ✅
-- DAV offline create + delete: confirmed by testing agent ✅
-- Housekeeping: 0 WARN / 0 FAIL ✅
-- ESLint: clean ✅
-- Offline mutation audit: every user-data page is offline-safe ✅
 
 ## Feb 2026 — Offline Avatar Caching: Final Fix (S3 Regional URLs)
 

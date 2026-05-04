@@ -6,6 +6,11 @@ import { MessageSquare, ChevronLeft, Heart, Play } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
 import { API_URL } from '../../config';
+import { toast } from '../../utils/toast';
+import {
+  cacheBenSection, readBenSection,
+  isOffline as isBenOffline,
+} from '../../utils/beneficiaryOfflineCache';
 
 const BeneficiaryMessagesPage = () => {
   const { getAuthHeaders } = useAuth();
@@ -20,11 +25,18 @@ const BeneficiaryMessagesPage = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchMessages = async () => {
+    const estateId = localStorage.getItem('beneficiary_estate_id');
+    if (!estateId) { navigate('/beneficiary'); return; }
+    if (isBenOffline()) {
+      const cached = readBenSection(estateId, 'messages') || [];
+      setMessages(cached);
+      setLoading(false);
+      return;
+    }
     try {
-      const estateId = localStorage.getItem('beneficiary_estate_id');
-      if (!estateId) { navigate('/beneficiary'); return; }
       const res = await axios.get(`${API_URL}/messages/${estateId}`, getAuthHeaders());
       setMessages(res.data);
+      cacheBenSection(estateId, 'messages', res.data || []);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -103,6 +115,10 @@ const BeneficiaryMessagesPage = () => {
                     className="rounded-xl flex items-center justify-center mb-4 cursor-pointer transition-all active:scale-[0.98]"
                     style={{ background: 'rgba(37,99,235,0.05)', border: '2px dashed rgba(37,99,235,0.2)', aspectRatio: '16/9' }}
                     onClick={async () => {
+                      if (isBenOffline()) {
+                        toast.error('Video playback requires an internet connection.');
+                        return;
+                      }
                       setVideoLoading(true);
                       try {
                         const res = await axios.get(`${API_URL}/messages/video/${m.video_url}`, { ...getAuthHeaders(), responseType: 'blob' });
