@@ -2344,3 +2344,34 @@ optimistic.
 
 ### Housekeeping
 - 74 PASS, 0 WARN, 0 FAIL.
+
+---
+
+## Feb 5, 2026 — Landscape Recording Overlay Polish
+
+### Request
+Landscape video recording had: an X close button + flip-camera button
+overlaying the camera feed (clipped under the offline status banner),
+a wide recording-limits banner stretching across the camera area, and
+a tall right column with the Record button vertically centered amid
+huge empty bands of black.
+
+### Fix — `components/messages/VideoRecordingOverlay.js`
+In landscape only:
+- Top controls (X close + flip camera) were moved OUT of an absolute
+  overlay on the camera feed and INTO the top of the right control
+  column. Camera feed is now unobstructed, and the buttons no longer
+  collide with the offline banner.
+- The recording-limits info card was moved into the middle of the
+  right control column too, replacing the wide camera-overlay banner
+  with a compact card sized for the column width.
+- The right column is now `justify-between`: top cluster (close +
+  flip), middle (limits info), bottom (Record / Stop). The huge empty
+  vertical bands are gone and the layout reads top-to-bottom naturally.
+- Column width tightened to `min 148 / max 200` and inset padding
+  trimmed so the camera feed gets more screen real estate.
+
+Portrait layout is unchanged.
+
+### Housekeeping
+- 74 PASS, 0 WARN, 0 FAIL.

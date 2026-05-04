@@ -92,8 +92,10 @@ const VideoRecordingOverlay = ({
           </div>
         )}
 
-        {/* Tier C — Recording limits banner, always visible pre-record. */}
-        {!isRecording && countdown === null && (
+        {/* Tier C — Recording limits banner, always visible pre-record.
+            Portrait only — in landscape we render the same info inside
+            the right control bar where it doesn't overlap the camera. */}
+        {!isRecording && countdown === null && !isLandscape && (
           <div
             className="absolute left-4 right-4"
             style={{ top: 'calc(env(safe-area-inset-top, 0px) + 72px)' }}
@@ -128,54 +130,118 @@ const VideoRecordingOverlay = ({
           </div>
         )}
 
-        {/* Top controls — close & flip */}
-        <div className="absolute top-4 left-4 right-4 flex items-center justify-between" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-          <button
-            onClick={() => { if (isRecording) stopRecording(); releaseCamera(); }}
-            className="w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: 'rgba(0,0,0,0.7)' }}
-            data-testid="recording-close-btn"
-          >
-            <X className="w-5 h-5 text-white" />
-          </button>
-          {!isRecording && (
+        {/* Top controls — close & flip. Portrait only — in landscape
+            these live inside the right control bar so they don't crowd
+            the camera feed under the offline status banner. */}
+        {!isLandscape && (
+          <div className="absolute top-4 left-4 right-4 flex items-center justify-between" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
             <button
-              onClick={flipCamera}
-              className="w-14 h-14 rounded-full flex items-center justify-center"
+              onClick={() => { if (isRecording) stopRecording(); releaseCamera(); }}
+              className="w-10 h-10 rounded-full flex items-center justify-center"
               style={{ background: 'rgba(0,0,0,0.7)' }}
-              data-testid="camera-flip-btn"
+              data-testid="recording-close-btn"
             >
-              <SwitchCamera className="w-7 h-7 text-white" />
+              <X className="w-5 h-5 text-white" />
             </button>
-          )}
-        </div>
+            {!isRecording && (
+              <button
+                onClick={flipCamera}
+                className="w-14 h-14 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(0,0,0,0.7)' }}
+                data-testid="camera-flip-btn"
+              >
+                <SwitchCamera className="w-7 h-7 text-white" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Controls bar — bottom in portrait, right side in landscape so
           the record/stop button stays large and tappable without
-          covering the camera feed when the device is rotated. */}
+          covering the camera feed when the device is rotated. In
+          landscape we use `justify-between` so close/flip sit at the
+          top, the recording-limits info sits in the middle, and the
+          Record button anchors at the bottom — eliminates the big
+          empty band the user reported on the right side. */}
       <div
-        className={`flex-shrink-0 flex items-center justify-center ${isLandscape ? 'flex-col py-6 px-5' : 'py-5 px-6'}`}
+        className={`flex-shrink-0 flex ${isLandscape ? 'flex-col py-4 px-3 items-center justify-between' : 'py-5 px-6 items-center justify-center'}`}
         style={{
           background: 'rgba(0,0,0,0.88)',
           ...(isLandscape ? {
-            // Landscape: bar on the right, full-height column.
-            paddingRight: `calc(1.25rem + env(safe-area-inset-right, 0px))`,
-            paddingLeft: '1.25rem',
-            minWidth: 132,
+            paddingRight: `calc(0.75rem + env(safe-area-inset-right, 0px))`,
+            paddingTop: `calc(0.75rem + env(safe-area-inset-top, 0px))`,
+            paddingBottom: `calc(0.75rem + env(safe-area-inset-bottom, 0px))`,
+            minWidth: 148,
+            maxWidth: 200,
           } : {
             paddingBottom: `calc(1.25rem + env(safe-area-inset-bottom, 0px) + ${DOCK_CLEARANCE}px)`,
           }),
         }}
       >
+        {/* Landscape: top cluster — close + flip */}
+        {isLandscape && (
+          <div className="flex flex-col items-center gap-3">
+            <button
+              onClick={() => { if (isRecording) stopRecording(); releaseCamera(); }}
+              className="w-11 h-11 rounded-full flex items-center justify-center"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
+              data-testid="recording-close-btn"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
+            {!isRecording && (
+              <button
+                onClick={flipCamera}
+                className="w-11 h-11 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
+                data-testid="camera-flip-btn"
+              >
+                <SwitchCamera className="w-5 h-5 text-white" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Landscape: middle — recording-limits info card */}
+        {isLandscape && !isRecording && countdown === null && (
+          <div
+            className="rounded-xl px-3 py-2 text-[11px] w-full"
+            style={{
+              background: offline ? 'rgba(124,29,29,0.92)' : 'rgba(255,255,255,0.06)',
+              color: '#FFF6E8',
+              border: offline ? '1px solid rgba(255,160,160,0.25)' : '1px solid rgba(255,255,255,0.08)',
+              lineHeight: 1.35,
+            }}
+            data-testid="recording-limits-banner"
+          >
+            {offline ? (
+              <>
+                <div className="flex items-center gap-1.5 font-bold mb-0.5">
+                  <WifiOff className="w-3 h-3" />
+                  <span>Offline · 5 min limit</span>
+                </div>
+                <div style={{ opacity: 0.9 }}>
+                  Saves to your device, uploads on reconnect.
+                </div>
+              </>
+            ) : (
+              <div className="text-center">
+                <div className="font-bold mb-0.5">Limits</div>
+                <div style={{ opacity: 0.85 }}>30 min online · 5 min offline</div>
+              </div>
+            )}
+          </div>
+        )}
+
         {!isRecording && countdown === null ? (
           <button
             onClick={startRecording}
             className="rounded-full flex items-center justify-center gap-2 transition-transform active:scale-95"
             style={{
-              minWidth: 160,
+              minWidth: isLandscape ? 132 : 160,
               height: 56,
-              padding: '0 28px',
+              padding: '0 24px',
               background: 'linear-gradient(135deg, #d4af37, #b8962e)',
               boxShadow: '0 4px 24px rgba(212,175,55,0.4)',
             }}
@@ -189,9 +255,9 @@ const VideoRecordingOverlay = ({
             onClick={stopRecording}
             className="rounded-full flex items-center justify-center gap-2 transition-transform active:scale-95"
             style={{
-              minWidth: 160,
+              minWidth: isLandscape ? 132 : 160,
               height: 56,
-              padding: '0 28px',
+              padding: '0 24px',
               background: '#ef4444',
               boxShadow: '0 4px 24px rgba(239,68,68,0.4)',
             }}
@@ -203,7 +269,7 @@ const VideoRecordingOverlay = ({
         ) : (
           <div
             className="rounded-full flex items-center justify-center"
-            style={{ minWidth: 160, height: 56, background: 'var(--b)' }}
+            style={{ minWidth: isLandscape ? 132 : 160, height: 56, background: 'var(--b)' }}
           >
             <span className="text-3xl font-bold text-white">{countdown}</span>
           </div>
