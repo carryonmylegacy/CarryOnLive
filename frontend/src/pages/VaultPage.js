@@ -34,6 +34,7 @@ import { getOfflineMode } from '../offline/featureFlag';
 import { getLocalVaultItems, upsertLocalVaultItems } from '../offline/repos/vaultRepo';
 import VaultDocumentCard from '../components/vault/VaultDocumentCard';
 import VaultUploadPanel from '../components/vault/VaultUploadPanel';
+import EssentialOfflineSlots from '../components/vault/EssentialOfflineSlots';
 import VaultUnlockModal from '../components/vault/VaultUnlockModal';
 import VaultEditPanel from '../components/vault/VaultEditPanel';
 import { VaultSetLockModal, VaultRemoveLockModal, VaultBackupCodeModal } from '../components/vault/VaultLockModals';
@@ -44,10 +45,20 @@ const categories = [
   { id: 'all', label: 'All', icon: FolderOpen },
   { id: 'will', label: 'Will', icon: FileText },
   { id: 'trust', label: 'Trust', icon: FileText },
+  // ── 4 essential offline slots (these get gold-outlined placeholder
+  //    cards at the top of the SDV — see EssentialOfflineSlots.js) ───
   { id: 'living_will', label: 'Living Will', icon: Heart },
+  { id: 'healthcare_directive', label: 'Healthcare Directive', icon: Heart },
+  { id: 'general_poa', label: 'General POA', icon: FileText },
+  { id: 'financial_poa', label: 'Financial POA', icon: FileText },
+  // ── Other POA variants (regular categories — not gold slots) ──────
+  { id: 'durable_poa', label: 'Durable POA', icon: FileText },
+  { id: 'springing_poa', label: 'Springing POA', icon: FileText },
+  { id: 'limited_poa', label: 'Limited POA', icon: FileText },
+  // ── Generic / other categories ────────────────────────────────────
   { id: 'life_insurance', label: 'Life Insurance', icon: Shield },
   { id: 'deed', label: 'Deed', icon: File },
-  { id: 'poa', label: 'Power of Attorney', icon: FileText },
+  { id: 'poa', label: 'Power of Attorney (legacy)', icon: FileText },
   { id: 'financial', label: 'Financial', icon: File },
   { id: 'medical', label: 'Medical', icon: FileArchive },
   { id: 'legal', label: 'Legal (Other)', icon: FileText },
@@ -67,6 +78,9 @@ const VaultPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const searchTimerRef = useRef(null);
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  // EssentialOfflineSlots refresh trigger — bumped after each upload /
+  // designation change / delete so the gold-slot cards re-fetch.
+  const [essentialSlotsRefreshKey, setEssentialSlotsRefreshKey] = useState(0);
   // Draft persistence — read estateId synchronously from localStorage
   // so the per-estate draft key is stable from first render. Files
   // (uploadFile) are NOT persisted — sessionStorage can't hold them
@@ -292,6 +306,10 @@ const VaultPage = () => {
       console.error('Fetch error:', error);
     } finally {
       setLoading(false);
+      // Bump the gold-slot refresh key so EssentialOfflineSlots
+      // re-fetches whenever the doc list refreshes (covers upload,
+      // delete, rename, designation).
+      setEssentialSlotsRefreshKey((k) => k + 1);
     }
   };
 
@@ -998,6 +1016,31 @@ const VaultPage = () => {
         </TabsList>
         </div>
         <TabsContent value={activeCategory} className="mt-6">
+          {/* 4 gold-outlined essential offline slots — only visible on
+              the 'all' tab so they don't clutter category-filtered views.
+              Tap-to-upload pre-fills the upload panel's category. Tap-to-
+              manage scrolls to the doc and expands its designation row. */}
+          {activeCategory === 'all' && (
+            <EssentialOfflineSlots
+              estateId={estate?.id}
+              beneficiaries={beneficiaries}
+              getAuthHeaders={getAuthHeaders}
+              refreshKey={essentialSlotsRefreshKey}
+              onUploadClick={(slotCategory) => {
+                setUploadCategory(slotCategory);
+                setShowUploadModal(true);
+              }}
+              onManageDesignation={(doc) => {
+                setExpandedDesignation(doc.id);
+                // Scroll the matching doc tile into view so the user
+                // sees the designation row open below the slot card.
+                setTimeout(() => {
+                  const tile = document.querySelector(`[data-testid="vault-doc-${doc.id}"]`);
+                  if (tile) tile.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+              }}
+            />
+          )}
           {filteredDocs.length === 0 ? (
             <Card className="glass-card">
               <CardContent className="p-12 text-center">

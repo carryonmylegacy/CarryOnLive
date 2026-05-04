@@ -21,13 +21,14 @@ const WORKS_OFFLINE = [
   { feature: 'Milestone Messages', detail: 'Read text + watch any messages already cached from a prior online visit' },
   { feature: 'Checklist (read-only)', detail: 'View your immediate-action checklist items, contact info, and notes' },
   { feature: 'Vault directory', detail: 'See the list of documents designated for you, with names and categories' },
+  { feature: 'Essential documents (pinned)', detail: 'Open the gold-outlined Living Will, Healthcare Directive, and POAs you tapped "Make available offline" — full file, no connection needed (25 MB cap each)' },
   { feature: 'Financial designations', detail: 'View bills, debts, accounts, and property assigned to you' },
   { feature: 'Profile & contact info', detail: 'View your account details, primary-beneficiary status, and family connections' },
 ];
 
 const ONLINE_ONLY = [
   { feature: 'Transition notification', detail: 'Live transition alerts and any newly-released content require a connection' },
-  { feature: 'Document downloads', detail: 'Opening / downloading the actual file behind a vault entry needs the network' },
+  { feature: 'Non-pinned document downloads', detail: 'Documents you have not tapped "Make available offline" still require the network to open' },
   { feature: 'Checklist updates', detail: 'Toggling items complete or accepting AI suggestions queues only when online' },
   { feature: 'AI Guardian chat', detail: 'Conversations with the AI assistant require the AI service' },
   { feature: 'Account creation & login', detail: 'First-time login on a new device requires the server' },

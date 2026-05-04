@@ -163,7 +163,16 @@ async def get_pre_transition_documents(estate_id: str, current_user: dict = Depe
         {"_id": 0, "file_data": 0, "lock_password_hash": 0, "backup_code": 0},
     ).to_list(200)
 
-    emergency_categories = {"living_will", "poa"}
+    # The 4 "essential offline" slots that get gold-outlined placeholders
+    # in the benefactor's SDV. These are the documents a beneficiary
+    # absolutely must be able to read offline if a transition (or a
+    # medical emergency) happens out of cell range. The pre-transition
+    # endpoint surfaces them automatically; the benefactor controls
+    # WHICH beneficiaries each one is shared with via
+    # `designated_beneficiaries` per doc.
+    ESSENTIAL_OFFLINE_CATEGORIES = {"living_will", "healthcare_directive", "general_poa", "financial_poa"}
+    # Legacy `poa` rolls into "general_poa" for the pre-transition gate.
+    emergency_categories = ESSENTIAL_OFFLINE_CATEGORIES | {"poa"}
     result = []
     for doc in documents:
         designation = doc.get("designated_beneficiaries", ["all"])
@@ -190,6 +199,161 @@ async def get_pre_transition_documents(estate_id: str, current_user: dict = Depe
         doc["storage_type"] = "cloud" if doc.get("storage_key") else "legacy"
 
     return result
+
+
+# The 4 "essential" slots are surfaced as gold-outlined placeholder
+# cards in the benefactor's SDV. Each placeholder either holds a
+# document (and its per-beneficiary designation) or is empty and
+# ready for upload. Beneficiaries see only the slots they were
+# explicitly designated for.
+ESSENTIAL_SLOT_DEFINITIONS = [
+    {
+        "category": "living_will",
+        "label": "Living Will",
+        "description": "End-of-life medical wishes (DNR, life support, organ donation).",
+    },
+    {
+        "category": "healthcare_directive",
+        "label": "Healthcare Directive",
+        "description": "Advance directive appointing a healthcare agent.",
+    },
+    {
+        "category": "general_poa",
+        "label": "General Power of Attorney",
+        "description": "Broad authority to act on legal/business matters.",
+    },
+    {
+        "category": "financial_poa",
+        "label": "Financial Power of Attorney",
+        "description": "Authority over financial accounts, taxes, and assets.",
+    },
+]
+ESSENTIAL_OFFLINE_CATEGORIES = {s["category"] for s in ESSENTIAL_SLOT_DEFINITIONS}
+
+
+@router.get("/documents/{estate_id}/essential-slots")
+async def get_essential_slots(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """Return the 4 essential offline slots for the BENEFACTOR's SDV.
+
+    Each slot is either occupied (returns the doc + its designation
+    metadata) or empty (returns null for `document`). Used by the
+    benefactor's vault page to render the gold-outlined placeholder
+    cards.
+
+    Legacy `poa`-category docs surface in the `general_poa` slot so
+    we don't lose them after the categorical split.
+    """
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
+    is_owner = estate.get("user_id") == current_user["id"]
+    is_admin = current_user["role"] == "admin"
+    if not (is_owner or is_admin):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    docs = (
+        await db.documents.find(
+            {
+                "estate_id": estate_id,
+                "deleted_at": None,
+                "category": {"$in": list(ESSENTIAL_OFFLINE_CATEGORIES) + ["poa"]},
+            },
+            {"_id": 0, "file_data": 0, "lock_password_hash": 0, "backup_code": 0},
+        )
+        .sort("created_at", -1)
+        .to_list(50)
+    )
+
+    by_cat = {}
+    for d in docs:
+        cat = d.get("category", "")
+        # Legacy `poa` shows up in the general_poa slot.
+        slot_cat = "general_poa" if cat == "poa" else cat
+        # Only the most recent doc per slot is the "occupant".
+        if slot_cat not in by_cat:
+            by_cat[slot_cat] = d
+
+    out = []
+    for slot in ESSENTIAL_SLOT_DEFINITIONS:
+        d = by_cat.get(slot["category"])
+        if d:
+            d["encryption_version"] = d.get("encryption_version", "aes-256-gcm")
+            d["storage_type"] = "cloud" if d.get("storage_key") else "legacy"
+        out.append(
+            {
+                "slot": slot["category"],
+                "label": slot["label"],
+                "description": slot["description"],
+                "document": d,
+                # Convenience surface so the UI can render "Available offline
+                # to: <names>" without an extra round-trip.
+                "designated_beneficiaries": (d or {}).get("designated_beneficiaries", []) or [],
+            }
+        )
+    return out
+
+
+@router.get("/beneficiary/essential-docs/{estate_id}")
+async def get_beneficiary_essential_docs(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """Return the 4 essential docs the CURRENT BENEFICIARY has access to.
+
+    Drives the beneficiary's "Essential Documents" panel — each row
+    shows the doc + a "Make available offline" toggle. The toggle is
+    server-aware (writes `pinned_offline=True` per the existing
+    pin-offline endpoint) and local-aware (the client also persists
+    the binary to Dexie via pinnedDocsRepo).
+    """
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
+    is_beneficiary = current_user["id"] in estate.get("beneficiaries", [])
+    is_admin = current_user["role"] == "admin"
+    if not (is_beneficiary or is_admin):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    ben_record = await db.beneficiaries.find_one(
+        {"estate_id": estate_id, "user_id": current_user["id"]}, {"_id": 0, "id": 1}
+    )
+    ben_id = ben_record["id"] if ben_record else None
+
+    docs = (
+        await db.documents.find(
+            {
+                "estate_id": estate_id,
+                "deleted_at": None,
+                "category": {"$in": list(ESSENTIAL_OFFLINE_CATEGORIES) + ["poa"]},
+            },
+            {"_id": 0, "file_data": 0, "lock_password_hash": 0, "backup_code": 0},
+        )
+        .sort("created_at", -1)
+        .to_list(50)
+    )
+
+    by_cat = {}
+    for d in docs:
+        cat = d.get("category", "")
+        slot_cat = "general_poa" if cat == "poa" else cat
+        # Only include docs the current beneficiary is designated for.
+        designation = d.get("designated_beneficiaries", []) or []
+        if not ("all" in designation or (ben_id and ben_id in designation)):
+            continue
+        if slot_cat not in by_cat:
+            d["encryption_version"] = d.get("encryption_version", "aes-256-gcm")
+            d["storage_type"] = "cloud" if d.get("storage_key") else "legacy"
+            by_cat[slot_cat] = d
+
+    out = []
+    for slot in ESSENTIAL_SLOT_DEFINITIONS:
+        d = by_cat.get(slot["category"])
+        out.append(
+            {
+                "slot": slot["category"],
+                "label": slot["label"],
+                "description": slot["description"],
+                "document": d,  # null if the benefactor hasn't designated this beneficiary for this slot
+            }
+        )
+    return out
 
 
 @router.post("/documents/upload")
@@ -318,6 +482,12 @@ async def upload_document(
     doc_dict = document.model_dump()
     doc_dict["storage_key"] = storage_key
     doc_dict["encryption_version"] = "aes-256-gcm"
+    # Privacy default for the 4 gold-outlined "essential offline"
+    # slots: NOBODY can see this doc until the benefactor explicitly
+    # designates beneficiaries via the designation modal. Prevents a
+    # 2-year-old child from auto-receiving a Power of Attorney.
+    if category in ESSENTIAL_OFFLINE_CATEGORIES:
+        doc_dict["designated_beneficiaries"] = []
     await db.documents.insert_one(doc_dict)
 
     # Update estate readiness

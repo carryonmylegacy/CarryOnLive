@@ -61,12 +61,23 @@ const VaultUploadPanel = ({
               <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                 <SelectItem value="will">Will</SelectItem>
                 <SelectItem value="trust">Trust</SelectItem>
-                <SelectItem value="living_will">Living Will / Healthcare Directive</SelectItem>
+                {/* 4 essential offline slots — these are the gold-outlined
+                    placeholders in the SDV. Keep their labels in sync with
+                    EssentialOfflineSlots.js. */}
+                <SelectItem value="living_will">Living Will</SelectItem>
+                <SelectItem value="healthcare_directive">Healthcare Directive</SelectItem>
+                <SelectItem value="general_poa">General Power of Attorney</SelectItem>
+                <SelectItem value="financial_poa">Financial Power of Attorney</SelectItem>
+                {/* Other POA variants — regular categories. */}
+                <SelectItem value="durable_poa">Durable Power of Attorney</SelectItem>
+                <SelectItem value="springing_poa">Springing Power of Attorney</SelectItem>
+                <SelectItem value="limited_poa">Limited / Special Power of Attorney</SelectItem>
+                {/* Generic / other categories. */}
                 <SelectItem value="life_insurance">Life Insurance</SelectItem>
                 <SelectItem value="deed">Deed / Title</SelectItem>
-                <SelectItem value="poa">Power of Attorney</SelectItem>
+                <SelectItem value="poa">Power of Attorney (uncategorized)</SelectItem>
                 <SelectItem value="financial">Financial</SelectItem>
-                <SelectItem value="medical">Medical / Healthcare Directive</SelectItem>
+                <SelectItem value="medical">Medical</SelectItem>
                 <SelectItem value="legal">Legal (Other)</SelectItem>
                 <SelectItem value="personal">Personal</SelectItem>
               </SelectContent>

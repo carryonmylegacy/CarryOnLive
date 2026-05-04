@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { FolderLock, Lock, FileText, Search, ChevronLeft, Download, Eye, Loader2 } from 'lucide-react';
 import { Skeleton } from '../../components/ui/skeleton';
 import PDFViewerModal from '../../components/PDFViewerModal';
+import BeneficiaryEssentialDocsPanel from '../../components/vault/BeneficiaryEssentialDocsPanel';
 import { API_URL } from '../../config';
 import { iosSafeDownload } from '../../utils/iosSafeDownload';
 import { toast } from '../../utils/toast';
@@ -65,13 +66,23 @@ const BeneficiaryVaultPage = () => {
   };
 
   const handlePreview = async (doc) => {
-    if (isBenOffline()) {
-      toast.error('Document preview requires an internet connection.');
-      return;
-    }
     setPreviewDoc(doc);
     setPreviewLoading(true);
     try {
+      // Offline path — try the local pinned blob first. If the
+      // beneficiary explicitly pinned this doc for offline access,
+      // they expect to view it without a connection.
+      if (isBenOffline()) {
+        const { getPinnedBlob } = await import('../../offline/pinnedDocsRepo');
+        const blob = await getPinnedBlob(doc.id);
+        if (blob) {
+          setPreviewUrl(URL.createObjectURL(blob));
+          return;
+        }
+        toast.error('This document is not available offline. Pin it from the Essential panel while online.');
+        setPreviewDoc(null);
+        return;
+      }
       const res = await axios.get(`${API_URL}/documents/${doc.id}/preview`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('carryon_token')}` },
         responseType: 'blob',
@@ -86,12 +97,19 @@ const BeneficiaryVaultPage = () => {
   };
 
   const handleDownload = async (doc) => {
-    if (isBenOffline()) {
-      toast.error('Document download requires an internet connection.');
-      return;
-    }
     setDownloading(doc.id);
     try {
+      // Offline path — try local pinned blob.
+      if (isBenOffline()) {
+        const { getPinnedBlob } = await import('../../offline/pinnedDocsRepo');
+        const blob = await getPinnedBlob(doc.id);
+        if (blob) {
+          await iosSafeDownload(blob, doc.name || 'document', doc.name || 'Document', 'beneficiary_vault_doc');
+          return;
+        }
+        toast.error('This document is not available offline. Pin it while online to download offline.');
+        return;
+      }
       const res = await axios.get(`${API_URL}/documents/${doc.id}/preview`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('carryon_token')}` },
         responseType: 'blob',
@@ -140,6 +158,15 @@ const BeneficiaryVaultPage = () => {
         <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search documents..."
           className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]" />
       </div>
+
+      {/* Essential Offline Documents — 4 gold-outlined slots with
+          per-doc "Make available offline" toggle (25 MB cap). Always
+          rendered (even when empty) so the beneficiary understands
+          the scope. */}
+      <BeneficiaryEssentialDocsPanel
+        estateId={localStorage.getItem('beneficiary_estate_id')}
+        getAuthHeaders={getAuthHeaders}
+      />
 
       {/* Categories */}
       <div className="flex flex-wrap gap-1.5 mb-5">

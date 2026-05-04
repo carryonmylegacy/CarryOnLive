@@ -1,5 +1,38 @@
 # CarryOn — Changelog
 
+## May 4, 2026 — Essential Offline Documents (4 Gold Slots) + CCP Offline
+**Feature**: 4 gold-outlined "essential offline" placeholder slots in the benefactor's SDV (Living Will, Healthcare Directive, General POA, Financial POA). Each, when populated, can be **explicitly designated** by the benefactor for specific beneficiaries who then see the doc with a per-doc "Make available offline" toggle (25 MB cap) on their side. Beneficiary CCP plans now also work offline.
+
+**Backend (`/app/backend/routes/documents.py`)**
+- `ESSENTIAL_SLOT_DEFINITIONS` (single source of truth for the 4 slots) + `ESSENTIAL_OFFLINE_CATEGORIES` derived set.
+- Pre-transition gate now treats all 4 essential categories as auto-visible to designated beneficiaries (was previously just `living_will` + legacy `poa`).
+- New endpoint `GET /api/documents/{estate_id}/essential-slots` — returns the 4 slots with their occupant document (or `null`) + designation list. Used by the benefactor's gold-slot card row.
+- New endpoint `GET /api/beneficiary/essential-docs/{estate_id}` — returns only the slots the current beneficiary is designated for. Drives the beneficiary's gold panel.
+- **Privacy default**: when a doc is uploaded into one of the 4 essential categories, `designated_beneficiaries` is set to `[]` (nobody) instead of the legacy `["all"]`. Benefactor must explicitly designate via the existing per-doc designation row.
+
+**Frontend benefactor (`VaultPage.js` + `EssentialOfflineSlots.js`)**
+- New `EssentialOfflineSlots` component renders 4 gold cards above the regular doc grid (only on the "All" tab so category filters stay clean).
+- Empty slot → gold dashed outline + "Tap to upload" → opens the upload panel with the slot category pre-filled.
+- Populated slot → gold solid outline + doc name + "Available offline to: <names>" or "No beneficiaries yet — tap to designate" + "Manage offline access →" button that scrolls the matching doc tile into view and expands its designation row.
+- Category list expanded: living_will, healthcare_directive, general_poa, financial_poa, durable_poa, springing_poa, limited_poa (+ legacy `poa` retained).
+
+**Frontend beneficiary (`BeneficiaryVaultPage.js` + `BeneficiaryEssentialDocsPanel.js`)**
+- New `BeneficiaryEssentialDocsPanel` renders 4 gold cards at the top of `/beneficiary/vault` showing every essential slot the user has access to (even empty ones, so they understand scope).
+- Per-doc "Make available offline" toggle:
+  - ON → fetches binary, persists to Dexie via `pinnedDocsRepo.pinDocument()`. Hard 25 MB cap; toasts and aborts on larger files.
+  - OFF → evicts the local blob.
+- `handlePreview` and `handleDownload` now check the pinned-blob cache **first** when offline. Pinned docs work fully offline; non-pinned docs still toast "needs internet".
+- Updated `BeneficiaryOfflineCapabilitiesCard` to reflect the new "Essential documents (pinned)" and "Non-pinned document downloads" rows.
+
+**CCP offline-readability (`BeneficiaryCCPPage.js`)**
+- Plan list cached to `localStorage` under `beneficiary:ccp_plans` on each successful online load; rehydrated on offline mount. Pure JSON (steps, checklists, rendezvous points), so storage is trivial.
+
+**Verified**:
+- Backend `/api/documents/{estate_id}/essential-slots` returns all 4 slots correctly ✅
+- Frontend renders all 4 gold-outlined empty placeholder cards on the "All" tab ✅
+- ESLint clean across all changed files ✅
+- `bash /app/housekeeping.sh` → ALL CHECKS PASSED, 0 WARN, 0 FAIL ✅
+
 ## May 4, 2026 — Beneficiary Offline UX Parity
 **Feature**: Beneficiaries now have full offline parity with benefactors. Toggle offline access in Settings, get the same OTP enrollment, and read every estate they're connected to without a connection.
 

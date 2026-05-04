@@ -6,6 +6,7 @@ import {
   AlertTriangle, Loader2,
 } from 'lucide-react';
 import { API_URL } from '../../config';
+import { saveList, readList } from '../../utils/localListCache';
 
 const PLAN_TYPE_LABELS = {
   natural_disaster: 'Natural Disaster',
@@ -24,15 +25,31 @@ const BeneficiaryCCPPage = () => {
 
   useEffect(() => {
     const fetchPlans = async () => {
+      // Offline rescue — render the cached CCP plans so a beneficiary
+      // can read every active contingency plan their benefactors built
+      // even without a connection. The plans are pure JSON (steps,
+      // checklists, rendezvous notes) so they fit easily in
+      // localStorage; no binary blobs involved.
+      const cacheKey = 'beneficiary:ccp_plans';
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        const cached = readList(cacheKey);
+        if (Array.isArray(cached)) setPlans(cached);
+        setLoading(false);
+        return;
+      }
       try {
         const headers = getAuthHeaders()?.headers || {};
         const res = await fetch(`${API_URL}/ccp/my-plans`, { headers });
         if (res.ok) {
           const data = await res.json();
           setPlans(data);
+          if (Array.isArray(data)) saveList(cacheKey, data);
         }
       } catch (err) {
         console.error('Failed to fetch CCP plans:', err);
+        // Fall back to the cache on any network error.
+        const cached = readList(cacheKey);
+        if (Array.isArray(cached)) setPlans(cached);
       } finally {
         setLoading(false);
       }
