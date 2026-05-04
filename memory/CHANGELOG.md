@@ -2264,3 +2264,41 @@ IndexedDB.
 
 ### Housekeeping
 - 73 PASS, 0 WARN, 0 FAIL.
+
+---
+
+## Feb 5, 2026 (later) — Offline Delete Worked Online But Not Offline + Recording Overlay Padding
+
+### Bug 1 — "Failed to delete message" when offline
+Root cause: handleDelete (and several other offline-critical paths)
+used `await import('../utils/offlineMutation')` etc. webpack splits
+those into separate chunks. On a fresh PWA install whose user's
+**first** edit/delete happened **offline**, the chunks weren't in the
+service worker's cache yet (cache-first only caches things after
+they've been requested at least once). The dynamic import threw, the
+catch block fired, and the toast read "Failed to delete message"
+even though the offline branch had clearly chosen to queue the write.
+
+### Fix
+- `pages/MessagesPage.js` — converted every offline-critical dynamic
+  import to a STATIC import at the top of the file. Specifically:
+  `mutateWithOutbox`, `canOpenCloudFile`,
+  `addPendingUpload` / `getPendingUpload` / `updatePendingUpload` /
+  `deletePendingUpload`, `insertLocalMessage` / `updateLocalMessage` /
+  `deleteLocalMessage`, and `getDB` (re-exported as `getOfflineDB` to
+  avoid name collisions). All these now live in the precached main
+  bundle and are guaranteed available offline.
+
+### Bug 2 — Big empty band below the Record button
+Root cause: the overlay reserved 96 px of clearance for the mobile
+bottom dock, but the recording overlay is fixed full-screen and
+visually covers the dock anyway. The reservation produced an obvious
+empty stripe beneath the Record pill.
+
+### Fix
+- `components/messages/VideoRecordingOverlay.js` — `DOCK_CLEARANCE` is
+  now `0` in portrait (already 0 in landscape). The Record button now
+  sits naturally above the safe-area inset, with no superfluous gap.
+
+### Housekeeping
+- 74 PASS, 0 WARN, 0 FAIL.

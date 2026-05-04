@@ -55,7 +55,11 @@ const VideoRecordingOverlay = ({
   // the dock (z-50) and below the offline banner (z-[9999]), and
   // (c) reshape the record button into an oval pill that fits inside
   // a tighter vertical band while still staying clear of the dock.
-  const DOCK_CLEARANCE = isLandscape ? 0 : 96; // mobile dock only sits below in portrait
+  // The recording overlay is fixed full-screen and visually covers the
+  // mobile bottom dock, so we no longer reserve dock clearance below
+  // the Record button. (Was 96px in portrait — produced a large empty
+  // band beneath the button.)
+  const DOCK_CLEARANCE = 0;
 
   const overlay = (
     <div

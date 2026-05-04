@@ -53,7 +53,31 @@ import VideoRecordingOverlay from '../components/messages/VideoRecordingOverlay'
 import { getOfflineMode } from '../offline/featureFlag';
 import { getLocalEstates } from '../offline/repos/estatesRepo';
 import { getLocalBeneficiaries, upsertLocalBeneficiaries } from '../offline/repos/beneficiariesRepo';
-import { getLocalMessages, upsertLocalMessages, upsertLocalMessagesPreservingPending } from '../offline/repos/messagesRepo';
+import {
+  getLocalMessages,
+  upsertLocalMessages,
+  upsertLocalMessagesPreservingPending,
+  insertLocalMessage,
+  updateLocalMessage,
+  deleteLocalMessage,
+} from '../offline/repos/messagesRepo';
+// Offline-path utilities — STATIC imports so the bundle is precached
+// by the service worker on first online load. Dynamic `await import()`
+// for these used to fail silently on iOS PWA when the user's first
+// edit/delete happened OFFLINE: webpack-split chunks aren't in the
+// SW's cache until they've been requested at least once, and a fresh
+// PWA install that goes offline before performing any mutation has
+// no chunk on disk to import. Result: handleDelete threw at
+// `await import(...)`, surfacing as "Failed to delete message".
+import { mutateWithOutbox } from '../utils/offlineMutation';
+import { canOpenCloudFile } from '../utils/offlineGuard';
+import {
+  addPendingUpload,
+  getPendingUpload,
+  updatePendingUpload,
+  deletePendingUpload,
+} from '../offline/pendingUploadsRepo';
+import { getDB as getOfflineDB } from '../offline/db';
 
 const triggerIcons = {
   immediate: Send,
@@ -572,8 +596,6 @@ const MessagesPage = () => {
       );
       if (isPendingEdit) {
         try {
-          const { getPendingUpload, updatePendingUpload, deletePendingUpload } = await import('../offline/pendingUploadsRepo');
-          const { updateLocalMessage, deleteLocalMessage } = await import('../offline/repos/messagesRepo');
           const pendingUploadId = editingPendingUploadIdRef.current;
 
           // User wiped the recording — abandon the queued milestone.
@@ -695,8 +717,6 @@ const MessagesPage = () => {
           ? window.__isDeviceOffline()
           : (typeof navigator !== 'undefined' && navigator.onLine === false);
         if (isOffline && !editingMessage && (hasVideo || hasAudio)) {
-          const { addPendingUpload } = await import('../offline/pendingUploadsRepo');
-          const { insertLocalMessage } = await import('../offline/repos/messagesRepo');
           // Synthesize a stable client-side id so the optimistic row
           // and the queued upload reference the same logical message.
           // The drainer's finalizer will reuse this id when it confirms
@@ -796,8 +816,6 @@ const MessagesPage = () => {
           : (typeof navigator !== 'undefined' && navigator.onLine === false);
         const hasMedia = hasVideo || hasAudio || !!attachmentFile;
         if (isOffline && !hasMedia) {
-          const { mutateWithOutbox } = await import('../utils/offlineMutation');
-          const { upsertLocalMessages } = await import('../offline/repos/messagesRepo');
           if (editingMessage) {
             await mutateWithOutbox({
               entity_type: 'milestone_message',
@@ -908,8 +926,6 @@ const MessagesPage = () => {
         ? window.__isDeviceOffline()
         : (typeof navigator !== 'undefined' && navigator.onLine === false);
       if (isOffline) {
-        const { mutateWithOutbox } = await import('../utils/offlineMutation');
-        const { upsertLocalMessages } = await import('../offline/repos/messagesRepo');
         await mutateWithOutbox({
           entity_type: 'milestone_message',
           entity_id: messageId,
@@ -934,7 +950,6 @@ const MessagesPage = () => {
 
   const handleDownload = async (msg) => {
     try {
-      const { canOpenCloudFile } = await import('../utils/offlineGuard');
       if (!canOpenCloudFile({ kind: 'milestone' })) return;
     } catch { /* non-fatal */ }
     setDownloadingId(msg.id);
@@ -1055,8 +1070,7 @@ const MessagesPage = () => {
     const isPending = msg?._pending === true || (typeof msg?.id === 'string' && msg.id.startsWith('pending_'));
     if (!isPending) return;
     try {
-      const { getDB } = await import('../offline/db');
-      const db = getDB();
+      const db = getOfflineDB();
       const pending = await db.pendingUpload
         .filter((r) => r?.metadata?.pending_id === msg.id)
         .first();
@@ -1106,8 +1120,7 @@ const MessagesPage = () => {
     // the upload drains, and we should let them watch it back.
     if (!msg.video_url) {
       try {
-        const { getDB } = await import('../offline/db');
-        const db = getDB();
+        const db = getOfflineDB();
         const id = msg.id;
         // The pending upload row's metadata.pending_id matches the
         // optimistic message row's id (set in the offline-queue branch
