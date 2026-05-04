@@ -312,14 +312,36 @@ const MessagesPage = () => {
         // draining, and the page state was being overwritten with
         // server-only data). We keep showing the optimistic row until
         // the upload drains and the next refresh contains it for real.
+        //
+        // ALSO: garbage-collect orphaned _pending rows. An optimistic
+        // row whose corresponding pendingUpload row no longer exists
+        // is "ghost data" from a prior failed session — delete it now
+        // so the user doesn't see a phantom duplicate alongside the
+        // real synced row. Live uploads (status uploading/queued) are
+        // preserved.
         let combined = msgsRes.data || [];
         try {
           const localAll = await getLocalMessages(selected.id);
           const serverIds = new Set(combined.map((m) => m.id));
-          const survivingPending = (localAll || []).filter(
+          const candidatePending = (localAll || []).filter(
             (m) => m && m._pending === true && !serverIds.has(m.id),
           );
-          if (survivingPending.length) combined = [...survivingPending, ...combined];
+          if (candidatePending.length) {
+            const db = getOfflineDB();
+            const allUploads = await db.pendingUpload.toArray().catch(() => []);
+            const livePendingIds = new Set(
+              allUploads.map((r) => r?.metadata?.pending_id).filter(Boolean),
+            );
+            const surviving = [];
+            for (const m of candidatePending) {
+              if (livePendingIds.has(m.id)) {
+                surviving.push(m); // active queue → keep visible
+              } else {
+                deleteLocalMessage(m.id).catch(() => {}); // ghost → reap
+              }
+            }
+            if (surviving.length) combined = [...surviving, ...combined];
+          }
         } catch { /* fall back to server-only */ }
         setMessages(combined);
         setBeneficiaries(bensRes.data);
@@ -1071,9 +1093,15 @@ const MessagesPage = () => {
     if (!isPending) return;
     try {
       const db = getOfflineDB();
-      const pending = await db.pendingUpload
+      // Find the pendingUpload row id whose metadata.pending_id
+      // matches this milestone, then route through getPendingUpload
+      // which materializes the Blob bytes detached from the IDB
+      // transaction (iOS WKWebView "object can not be found" cure).
+      const lookup = await db.pendingUpload
         .filter((r) => r?.metadata?.pending_id === msg.id)
         .first();
+      if (!lookup) return;
+      const pending = await getPendingUpload(lookup.id);
       if (!pending?.blob) return;
       editingPendingUploadIdRef.current = pending.id;
       editingPendingOriginalBlobRef.current = pending.blob;
@@ -1124,10 +1152,14 @@ const MessagesPage = () => {
         const id = msg.id;
         // The pending upload row's metadata.pending_id matches the
         // optimistic message row's id (set in the offline-queue branch
-        // of handleSave above).
-        const pending = await db.pendingUpload
+        // of handleSave above). Route through getPendingUpload so the
+        // Blob is materialized off the IDB transaction (iOS Safari
+        // bug: a Blob sitting on the row goes "object can not be found"
+        // the moment its source transaction closes).
+        const lookup = await db.pendingUpload
           .filter((r) => r?.metadata?.pending_id === id)
           .first();
+        const pending = lookup ? await getPendingUpload(lookup.id) : null;
         if (pending?.blob) {
           setPlayingVideoUrl(URL.createObjectURL(pending.blob));
           return;

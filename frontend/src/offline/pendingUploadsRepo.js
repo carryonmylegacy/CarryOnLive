@@ -68,7 +68,28 @@ export async function listPendingUploads() {
 }
 
 export async function getPendingUpload(id) {
-  return getDB().pendingUpload.get(id);
+  const row = await getDB().pendingUpload.get(id);
+  if (!row || !row.blob) return row;
+  // Materialize the Blob bytes IMMEDIATELY into an ArrayBuffer-backed
+  // Blob detached from the IndexedDB transaction. iOS Safari WKWebView
+  // (and Firefox to a lesser extent) keeps Blobs read out of IDB tied
+  // to their source transaction; once the transaction closes (which
+  // happens the instant this function returns), reading the Blob via
+  // `arrayBuffer()` / FormData / XHR fails with `InvalidStateError:
+  // The object can not be found here.` or sends zero bytes. We've
+  // chased this in three forms now (chunked PUT 0% stalls, FormData
+  // multipart zero-byte uploads, and the user's most recent
+  // "could not read queued recording" error). Materializing once at
+  // the read boundary is the only reliable cure.
+  try {
+    const bytes = await row.blob.arrayBuffer();
+    const detached = new Blob([bytes], { type: row.mime_type || row.blob.type || 'application/octet-stream' });
+    return { ...row, blob: detached };
+  } catch (err) {
+    // Surface the failure to the caller so the drainer can mark the
+    // row failed instead of silently uploading nothing.
+    return { ...row, blob: null, _blob_read_error: err?.message || String(err) };
+  }
 }
 
 export async function updatePendingUpload(id, patch) {

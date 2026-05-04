@@ -2302,3 +2302,45 @@ empty stripe beneath the Record pill.
 
 ### Housekeeping
 - 74 PASS, 0 WARN, 0 FAIL.
+
+---
+
+## Feb 5, 2026 (final round) — iOS Blob/IDB Lifecycle + Ghost Row GC
+
+### Bug — "could not read queued recording" + ghost duplicate row
+The user's red pill spelled it out exactly: `legacy: could not read queued
+recording: The object can not be found here.` This is the iOS Safari
+WKWebView (and Firefox-to-some-degree) IndexedDB Blob-lifecycle bug:
+a Blob handed back from a Dexie/IDB read becomes invalid the moment
+its source transaction closes. When the drainer later called
+`blob.arrayBuffer()` outside the transaction, the read failed.
+
+The "ghost double" was the same root cause — every time the upload
+threw before deleting the optimistic `_pending` row, that row stayed
+in IndexedDB. After the user later created the milestone successfully
+(by another path), they ended up with a server row AND the orphaned
+optimistic.
+
+### Fix
+- `offline/pendingUploadsRepo.js — getPendingUpload`: on read,
+  immediately materializes the Blob via `arrayBuffer()` and rebuilds a
+  fresh ArrayBuffer-backed Blob detached from the IDB transaction.
+  Every consumer (drainer, openEdit hydrate, playVideo) gets a Blob
+  that's safe to read at any later tick. Returns
+  `_blob_read_error` when materialization fails so the drainer can
+  surface the actual reason instead of pretending success.
+- `offline/chunkedUploader.js — drainPendingUploads`: when the read
+  fails, mark the row `failed` and emit a real `upload:failed` event
+  with a precise message (no more silent deletes that lose forensics).
+  Removed the now-redundant ArrayBuffer dance in
+  `_uploadMilestoneViaLegacy`.
+- `pages/MessagesPage.js — openEdit / playVideo`: routed through
+  `getPendingUpload(lookup.id)` so the same materialization applies.
+- `pages/MessagesPage.js — fetchData`: garbage-collect any orphaned
+  optimistic `_pending` row whose corresponding `pendingUpload` no
+  longer exists. Live uploads (queue / uploading) are still preserved
+  visually. Resolves the "ghost double" for users who carried legacy
+  orphans in from before the deleteLocalMessage cleanup landed.
+
+### Housekeeping
+- 74 PASS, 0 WARN, 0 FAIL.
