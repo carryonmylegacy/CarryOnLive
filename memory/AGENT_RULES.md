@@ -6,6 +6,66 @@
 
 ---
 
+## 🛑 RULE -3 — CRITICAL PATHWAYS ARE INVIOLATE.
+
+**Added Feb 5, 2026 after an agent silently deleted the Beneficiary Hub
+("Estate Plan Network" orbit view) — a CENTRAL platform pathway —
+based on a misread user mandate. Required emergency restoration.
+Founder's verbatim response: *"THIS CAN NEVER HAPPEN AGAIN!!!! THIS IS
+A CRITICAL PATHWAY THAT IS CENTRAL TO THE PLATFORM!!!"***
+
+### What is a critical pathway?
+
+A pathway whose disappearance breaks a core user flow. They are
+enumerated in `housekeeping.sh` under the `CP. Critical Pathway
+Invariants` section as `cp_check` lines. Every check in that section
+is a **FAIL** (not a warning). Any push that breaks one is blocked.
+
+### Current critical pathways
+
+1. **Beneficiary Hub (Estate Plan Network orbit)** — `BeneficiaryHubPage`
+   at `/beneficiary`. User-in-center, benefactors arrayed on rings 0–3
+   keyed to family relation via `getOrbitLevel`. Reachable from:
+   - Sidebar **"My Beneficiary Portal"** button (`switch-beneficiary-portal`)
+   - MobileNav **"My Beneficiary Portal"** button (`mobile-switch-beneficiary`)
+   - FamilyTree estate-node click on the Benefactor Dashboard
+   - Direct URL `/beneficiary`
+   - **"All Estates"** back button (`back-to-all-estates`) on any specific
+     estate's `/beneficiary/dashboard`
+   The hub uses the `OrbitVisualization` component and the
+   `/api/beneficiary/family-connections` endpoint. Tapping any benefactor
+   avatar OR estate tile → `openEstate(id)` → `/beneficiary/dashboard`
+   → `BeneficiaryDashboardPage` renders pre or post-transition content
+   inline via `BeneficiaryPreTransitionPanel`.
+
+### Hard rules
+
+- **Do not delete**, rename, or "consolidate" any critical-pathway
+  component, route, button, or back-affordance without an EXPLICIT,
+  unambiguous user instruction naming the specific pathway.
+- A user complaint about *behaviour* on a pathway (e.g. "the back button
+  doesn't work", "this page is empty when I have no data") is **NEVER**
+  a license to delete the pathway. Fix the behaviour. The pathway stays.
+- Before *any* edit to `App.js` route definitions, `Sidebar.js`,
+  `MobileNav.js`, `FamilyTree.js`, or any file under
+  `pages/beneficiary/`, **run `bash /app/housekeeping.sh`** first AND
+  again after the edit. The CP block must report 0 FAIL both times.
+- If you genuinely believe a pathway needs to be removed: ask the user
+  explicitly with the pathway's full name, wait for a verbatim
+  confirmation, then update both `housekeeping.sh` (remove the
+  cp_check) and this file (remove the entry) in the same commit.
+
+### Adding a new critical pathway
+
+When the user designates another pathway as critical, append:
+1. A new `cp_check` line in `housekeeping.sh` (under the `CP.`
+   section), pointing at a stable identifier in the source code
+   (e.g. a `data-testid`, route path, or component import).
+2. A bullet in the "Current critical pathways" list above with the
+   reachable entry points and key components.
+
+---
+
 ## 🚨 RULE -2 — DO NOT RENAME OR PARAPHRASE PLATFORM FEATURES.
 
 **Added Apr 29, 2026 after the agent fabricated cute marketing names like

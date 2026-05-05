@@ -1419,6 +1419,76 @@ echo "To fix ruff format: cd /app/backend && ruff format ."
 echo ""
 
 # ══════════════════════════════════════════════════════════════
+# CP. CRITICAL PATHWAYS — DO-NOT-DELETE invariants
+# ══════════════════════════════════════════════════════════════
+# These are pathways the founder has explicitly designated as central
+# to the platform. Each one had been silently deleted by an agent in
+# the past and required emergency restoration. ANY check that fails
+# here is a FAIL (not a WARN) — block the push.
+#
+# To add a new critical pathway: append a line to CRITICAL_PATHWAYS
+# with the form "human-name|grep-target-file|grep-pattern".
+# ══════════════════════════════════════════════════════════════
+echo -e "${BOLD}Critical Pathway Invariants (DO NOT DELETE)${NC}"
+echo "----------------------------------------------"
+
+CP_FAIL=0
+cp_check() {
+  local name="$1"; local file="$2"; local pattern="$3"
+  if [ ! -f "$file" ]; then
+    echo -e "CP. ${name} ......... ${RED}FAIL${NC} (file missing: $file)"
+    CP_FAIL=$((CP_FAIL + 1))
+    return
+  fi
+  if ! grep -q "$pattern" "$file"; then
+    echo -e "CP. ${name} ......... ${RED}FAIL${NC} (pattern '$pattern' missing in $file)"
+    CP_FAIL=$((CP_FAIL + 1))
+    return
+  fi
+  echo -e "CP. ${name} ......... ${GREEN}PASS${NC}"
+}
+
+# CP1 — Beneficiary Hub (Estate Plan Network orbit view)
+# Founder mandate, Feb 2026: "THIS IS A CRITICAL PATHWAY THAT IS
+# CENTRAL TO THE PLATFORM!!! THIS CAN NEVER HAPPEN AGAIN!!!" Hub was
+# previously deleted; required emergency restore. Component, route,
+# all 3 entry points, and back-affordance are now invariants.
+cp_check "CP1a Hub component file exists" \
+  "/app/frontend/src/pages/beneficiary/BeneficiaryHubPage.js" \
+  "data-testid=\"beneficiary-hub\""
+cp_check "CP1b OrbitVisualization consumed by hub" \
+  "/app/frontend/src/pages/beneficiary/BeneficiaryHubPage.js" \
+  "OrbitVisualization"
+cp_check "CP1c /beneficiary route renders hub" \
+  "/app/frontend/src/App.js" \
+  "path=\"/beneficiary\" element={<BeneficiaryHubPage"
+cp_check "CP1d Sidebar 'Beneficiary Portal' button → /beneficiary" \
+  "/app/frontend/src/components/layout/Sidebar.js" \
+  "switch-beneficiary-portal"
+cp_check "CP1e MobileNav 'Beneficiary Portal' button exists" \
+  "/app/frontend/src/components/layout/MobileNav.js" \
+  "mobile-switch-beneficiary"
+cp_check "CP1f FamilyTree estate-node click reachable" \
+  "/app/frontend/src/components/FamilyTree.js" \
+  "navigate('/beneficiary')"
+cp_check "CP1g 'All Estates' back button on dashboard" \
+  "/app/frontend/src/pages/beneficiary/BeneficiaryDashboardPage.js" \
+  "back-to-all-estates"
+cp_check "CP1h Inline pre-transition panel in dashboard" \
+  "/app/frontend/src/pages/beneficiary/BeneficiaryDashboardPage.js" \
+  "BeneficiaryPreTransitionPanel"
+cp_check "CP1i Pre-transition panel component exists" \
+  "/app/frontend/src/components/beneficiary/BeneficiaryPreTransitionPanel.js" \
+  "beneficiary-pre-transition-panel"
+
+if [ "$CP_FAIL" -gt 0 ]; then
+  FAILS=$((FAILS + CP_FAIL))
+  echo -e "${RED}CRITICAL PATHWAY FAILURE${NC}: $CP_FAIL invariant(s) broken."
+  echo "Read /app/memory/AGENT_RULES.md → Critical Pathways before changing routing."
+fi
+echo ""
+
+# ══════════════════════════════════════════════════════════════
 # OPTIONAL: Backend pytest suite (HK_RUN_TESTS=1)
 # ══════════════════════════════════════════════════════════════
 if [ "$HK_RUN_TESTS" = "1" ]; then

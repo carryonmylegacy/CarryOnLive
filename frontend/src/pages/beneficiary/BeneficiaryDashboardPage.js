@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, Users, Settings, Sparkles, KeyRound, Bell, Scale, Info } from 'lucide-react';
+import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft, Users, Settings, Sparkles, KeyRound, Bell, Scale, Info } from 'lucide-react';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Switch } from '../../components/ui/switch';
 import { API_URL } from '../../config';
@@ -306,7 +306,13 @@ const BeneficiaryDashboardPage = () => {
       </div>
       )}
 
-      {/* Header with Estate Switcher */}
+      {/* Header with Estate Switcher + "All Estates" back-to-hub button.
+          The orbit hub at /beneficiary is the canonical multi-estate
+          surface — this button is the back-affordance from any specific
+          estate's dashboard back to that hub. Always rendered when the
+          user has at least one beneficiary connection so the path is
+          discoverable; the select-switcher provides quick swap without
+          leaving the dashboard. Both must remain. */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>
@@ -316,30 +322,44 @@ const BeneficiaryDashboardPage = () => {
             {benefactorFirst} prepared these resources to help guide you.
           </p>
         </div>
-        {beneficiaryEstateCount > 1 && (
-          <select
-            value={estate?.id || ''}
-            onChange={(e) => {
-              const newId = e.target.value;
-              if (!newId || newId === estate?.id) return;
-              localStorage.setItem('beneficiary_estate_id', newId);
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => {
+              localStorage.removeItem('beneficiary_estate_id');
               localStorage.removeItem('beneficiary_feature_access');
-              setLoading(true);
-              fetchData();
+              navigate('/beneficiary');
             }}
-            className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all shrink-0"
-            style={{ background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.35)', color: '#60A5FA' }}
-            data-testid="beneficiary-estate-switcher"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
+            style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.35)', color: 'var(--gold)' }}
+            data-testid="back-to-all-estates"
           >
-            {(allEstates || [])
-              .filter(e => e.user_role_in_estate !== 'owner')
-              .map(e => (
-                <option key={e.id} value={e.id} style={{ color: '#0f172a', background: '#fff' }}>
-                  {e.name || 'Estate'}
-                </option>
-              ))}
-          </select>
-        )}
+            <ChevronLeft className="w-4 h-4" /> All Estates
+          </button>
+          {beneficiaryEstateCount > 1 && (
+            <select
+              value={estate?.id || ''}
+              onChange={(e) => {
+                const newId = e.target.value;
+                if (!newId || newId === estate?.id) return;
+                localStorage.setItem('beneficiary_estate_id', newId);
+                localStorage.removeItem('beneficiary_feature_access');
+                setLoading(true);
+                fetchData();
+              }}
+              className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
+              style={{ background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.35)', color: '#60A5FA' }}
+              data-testid="beneficiary-estate-switcher"
+            >
+              {(allEstates || [])
+                .filter(e => e.user_role_in_estate !== 'owner')
+                .map(e => (
+                  <option key={e.id} value={e.id} style={{ color: '#0f172a', background: '#fff' }}>
+                    {e.name || 'Estate'}
+                  </option>
+                ))}
+            </select>
+          )}
+        </div>
       </div>
 
       {/* Pre-transition: render the inline EAD panel (lock banner +
