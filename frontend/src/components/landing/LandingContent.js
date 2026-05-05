@@ -1,9 +1,9 @@
 import React from 'react';
-import { Shield, Users, ChevronRight, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Radio, MessageCircle, DollarSign } from 'lucide-react';
+import { Shield, Users, ChevronRight, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Radio, MessageCircle, DollarSign, BookOpen } from 'lucide-react';
 import { RevealSection } from './RevealSection';
 import HomeVoicesStrip from '../HomeVoicesStrip';
 
-/* ── data: 8 pillars ── */
+/* ── data: 10 pillars ── */
 const PILLARS = [
   { num: '01', icon: MessageSquare, title: 'Milestone Messages', abbr: 'MM',
     bold: 'Your words at their wedding. Your voice on their birthday. Your love \u2014 delivered exactly when it matters.',
@@ -32,6 +32,9 @@ const PILLARS = [
   { num: '09', icon: DollarSign, title: 'CarryOn Financial Picture', abbr: 'CFP',
     bold: 'Your family\u2019s complete financial picture \u2014 linked, monitored, and ready for the people who\u2019ll need it most.',
     desc: 'Link your bank accounts, investment portfolios, insurance policies, and financial assets into one secure, encrypted view. Track balances, flag anomalies, and ensure your beneficiaries know exactly where every dollar is and who to contact \u2014 without having to search through file cabinets, email threads, or scattered logins. When the time comes, your family sees the full financial picture instantly.' },
+  { num: '10', icon: BookOpen, title: 'Beneficiary Estate Concierge', abbr: 'BEC',
+    bold: 'After you\u2019re gone, your family doesn\u2019t have to wonder \u2014 they can ask. The Concierge answers in plain English, grounded only in the documents you chose to share.',
+    desc: 'When transition is verified, your beneficiaries gain access to a private AI concierge that lives inside the documents you specifically released to each of them. They can ask anything \u2014 \u201cWhere is the life insurance?\u201d \u201cWho\u2019s the executor?\u201d \u201cWhat did Dad want for the cabin?\u201d \u2014 and get clear answers with inline citations back to the exact document, paragraph, and page. Every answer is grounded in what you shared. Nothing is invented. The Concierge works only inside your encrypted vault and only with the documents you authorized for that beneficiary.' },
 ];
 
 /* ── data: platform features ── */
@@ -140,7 +143,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="max-w-[900px] mx-auto px-6 relative z-10">
           <RevealSection>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white text-center mb-4 tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
-              Nine Pillars of Family Readiness.
+              Ten Pillars of Family Readiness.
             </h2>
             <p className="text-[#a0aec0] text-base text-center max-w-[650px] mx-auto mb-16 leading-relaxed">
               Each pillar builds on the last &mdash; creating a complete family preparedness architecture, one step at a time.
@@ -222,7 +225,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                     Comprehensive Family Preparedness.
                   </h3>
                   <p className="text-[#a0aec0] text-sm lg:text-base leading-relaxed mb-4">
-                    Nine pillars. One family. A living system that grows with you, protects what matters most, and ensures that no matter what life brings &mdash; your family is never left searching, wondering, or scrambling.
+                    Ten pillars. One family. A living system that grows with you, protects what matters most, and ensures that no matter what life brings &mdash; your family is never left searching, wondering, or scrambling.
                   </p>
                   <p className="text-white text-2xl font-medium italic" style={{ fontFamily: 'var(--serif)' }}>
                     They&apos;re ready. Because you prepared.

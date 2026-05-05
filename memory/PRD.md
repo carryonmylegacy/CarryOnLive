@@ -1911,3 +1911,37 @@ Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint + ruff clean. Visually verified
 
 Health: `bash /app/scripts/check.sh` → ALL CLEAR (housekeeping 0 WARN/0 FAIL, ruff PASS, ESLint PASS).
 
+
+---
+
+## Iteration 128 — Pillars Aligned + BEC Promoted to 10th Pillar (May 5, 2026)
+
+**User request**: "Match the 9 pillars that already exist on the homepage as your foundation for how you describe each of the features in the Sales Brief. You are a little off in the nuances in several of the features. Also, the new BEC feature isn't even listed as one of the pillars. It needs to get included as the 10th pillar, everywhere the pillars are listed, which is the home page, the sales brief, and I think an archived webpage that we created as a funnel for direct to consumer landing off of an SEO."
+
+**Source-of-truth fixed**: Homepage `LandingContent.js` `PILLARS` array is the canonical voice. The Partner Brief had previously been written in its own slightly-off paraphrase. Aligned now.
+
+**Files updated**:
+- `frontend/src/components/landing/LandingContent.js` — added pillar #10 (BEC), `BookOpen` icon import, "Nine Pillars" → "Ten Pillars" headline, "Nine pillars. One family." closer line → "Ten pillars."
+- `frontend/src/pages/LandingPage.js` (archived `/landing-consumer` SEO funnel) — added pillar #10 (BEC), `BookOpen` icon import, "Nine Pillars" → "Ten Pillars" eyebrow + headline, source-of-truth comment updated.
+- `backend/routes/partner_brief.py` (B2B Partner Brief defaults) — rewrote the `desc` field for all 9 existing pillars to align with homepage nuances (Triple-Lock, EGA auto-populates the IAC, Tap-to-Create Wizard, ECT phone-number-free, etc.); added pillar #10 BEC; updated the elevator quick-reference one-liners (10/10); updated section title "Nine Pillars" → "Ten Pillars" + intro "the nine pillars" → "the ten pillars"; updated foundational note "not one of the nine" → "not one of the ten"; updated the four vertical pillar refs (life-insurance, financial-planners, funeral-homes, estate-attorneys) to include BEC parentheticals; updated the three "full nine" frame strings (worker-benefits, military-orgs, senior-living) → "full ten".
+- `frontend/src/components/admin/SalesBriefTab.js` — admin editor accordion title "2. The Nine Pillars" → "2. The Ten Pillars".
+
+**DB hygiene**: confirmed `db.partner_brief_content` had no customized override (`is_customized: False`), so the new defaults are served immediately. No reset needed.
+
+**Verified live** (Playwright on `https://preflight-sweep.preview.emergentagent.com`):
+- `/home` body contains "Ten Pillars" ✓ and "Beneficiary Estate Concierge" ✓; does NOT contain "Nine Pillars" ✓.
+- `/partner-brief` body contains "Ten Pillars" ✓, "BEC" ✓, "Beneficiary Estate Concierge" ✓, "full ten" ✓; does NOT contain "Nine Pillars" or "full nine" ✓. BEC vertical references render (e.g., Financial Planners section shows "BEC (after transition, the surviving spouse / heirs can ask the AI Concierge plain-English questions about the plan and get cited answers...)").
+- `/landing-consumer` body contains "Beneficiary Estate Concierge" + the 10 numbered grid card with `10 / Beneficiary Estate Concierge (BEC)`.
+- `GET /api/partner-brief` → `is_customized: false`, `pillars.title: "2. The Ten Pillars of Family Readiness"`, `pillars.items` length **10**, abbrs `[MM, SDV, EGA, IAC, CCP, ECT, DAV, FFN, CFP, BEC]`, elevator length **10** with BEC line.
+
+**Nuance corrections** (homepage canonical applied to brief, examples):
+- MM: now mentions "created infinitely over time and delivered exactly as the benefactor envisioned" (was missing).
+- SDV: now mentions "AES-256 encryption" + "Triple-Lock protected" + "the foundation that powers Estate Guardian™, IAC, and the rest of the platform" (was missing).
+- EGA: now mentions "auto-populating the beginnings of the family's Immediate Action Checklist" + "No human team reads the documents" (was missing).
+- IAC: now mentions "Partially auto-created by Estate Guardian™" + "fully customizable" (was missing).
+- CCP: now mentions the "Tap-to-Create Wizard" + connecting "people, documents, checklists, and communication channels" (was missing).
+- ECT: now mentions "doesn't depend on a phone number or a specific device" + "library computer or FEMA trailer" (was previously buried).
+- CFP: now leads with "bank accounts, investment portfolios, insurance policies" alongside the household bills/debts/properties (was previously CFP-only).
+
+**Health**: `bash /app/scripts/check.sh` → ALL CLEAR (housekeeping 0 WARN/0 FAIL, ruff PASS, ESLint PASS).
+

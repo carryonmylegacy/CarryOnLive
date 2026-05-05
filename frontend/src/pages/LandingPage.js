@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Lock, Shield, ArrowRight, Check, Users, FileText, Sparkles,
-  MessageCircle, KeyRound, ChevronDown, DollarSign,
+  MessageCircle, KeyRound, ChevronDown, DollarSign, BookOpen,
 } from 'lucide-react';
 import { recordFunnelEvent } from '../utils/funnelTelemetry';
 import { API_URL } from '../config';
@@ -15,7 +15,7 @@ const TRUST_BADGES = [
   { label: 'SOC 2 In Progress' },
 ];
 
-// Source-of-truth feature catalog. These are the canonical "Nine Pillars
+// Source-of-truth feature catalog. These are the canonical "Ten Pillars
 // of Family Readiness" — names, abbreviations, bold lines, and full
 // descriptions copied verbatim from /app/frontend/src/components/landing/
 // LandingContent.js (HomePage). Do NOT rename, paraphrase, or invent
@@ -49,6 +49,9 @@ const FEATURES = [
   { num: '09', icon: DollarSign, title: 'CarryOn Financial Picture', abbr: 'CFP',
     bold: 'Your family\u2019s complete financial picture — linked, monitored, and ready for the people who\u2019ll need it most.',
     body: 'Link your bank accounts, investment portfolios, insurance policies, and financial assets into one secure, encrypted view. Track balances, flag anomalies, and ensure your beneficiaries know exactly where every dollar is and who to contact — without having to search through file cabinets, email threads, or scattered logins. When the time comes, your family sees the full financial picture instantly.' },
+  { num: '10', icon: BookOpen, title: 'Beneficiary Estate Concierge', abbr: 'BEC',
+    bold: 'After you\u2019re gone, your family doesn\u2019t have to wonder — they can ask. The Concierge answers in plain English, grounded only in the documents you chose to share.',
+    body: 'When transition is verified, your beneficiaries gain access to a private AI concierge that lives inside the documents you specifically released to each of them. They can ask anything — \u201cWhere is the life insurance?\u201d \u201cWho\u2019s the executor?\u201d \u201cWhat did Dad want for the cabin?\u201d — and get clear answers with inline citations back to the exact document, paragraph, and page. Every answer is grounded in what you shared. Nothing is invented. The Concierge works only inside your encrypted vault and only with the documents you authorized for that beneficiary.' },
 ];
 
 const FAQS = [
@@ -234,9 +237,9 @@ const LandingPage = () => {
       <section id="features" className="py-20 sm:py-28 px-5 sm:px-8" data-testid="landing-features">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mb-14">
-            <p className="text-sm uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>Nine Pillars of Family Readiness</p>
+            <p className="text-sm uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>Ten Pillars of Family Readiness</p>
             <h2 className="text-3xl sm:text-4xl font-semibold leading-tight mb-4 text-white" style={{ fontFamily: 'var(--serif)' }}>
-              Nine pillars. <span className="italic" style={{ color: 'var(--gold)' }}>One family</span>. Ready for any week of the year.
+              Ten pillars. <span className="italic" style={{ color: 'var(--gold)' }}>One family</span>. Ready for any week of the year.
             </h2>
             <p className="text-base" style={{ color: 'var(--t4)' }}>
               Most estate tools stop at the legal documents and only matter once. CarryOn matters every

@@ -38,7 +38,7 @@ DEFAULTS: dict[str, Any] = {
         "eyebrow": "For partners thinking about working with CarryOn",
         "title": "CarryOn™ Partner Brief",
         "intro": (
-            "A short overview of the platform, the nine pillars, and how each one "
+            "A short overview of the platform, the ten pillars, and how each one "
             "fits the kinds of businesses we partner with — life insurance, "
             "financial planning, funeral homes, estate planning attorneys, and "
             "other related industries. Our team uses this brief to screen "
@@ -62,7 +62,7 @@ DEFAULTS: dict[str, Any] = {
         ),
     },
     "pillars": {
-        "title": "2. The Nine Pillars of Family Readiness",
+        "title": "2. The Ten Pillars of Family Readiness",
         "intro": (
             "These are the official names we use everywhere in CarryOn. Always include the ™ on Estate Guardian."
         ),
@@ -71,59 +71,126 @@ DEFAULTS: dict[str, Any] = {
                 "n": "01",
                 "name": "Milestone Messages",
                 "abbr": "MM",
-                "desc": "Recorded video, audio, or written messages a person leaves to be delivered to specific loved ones at specific future moments — a wedding, a graduation, a 30th birthday, the day after they pass.",
+                "desc": (
+                    "Recorded video, audio, or written messages a benefactor leaves for the milestones "
+                    "they want to be part of — graduations, weddings, births, birthdays, or any moment "
+                    "they choose. Created infinitely over time and delivered exactly as the benefactor "
+                    "envisioned, even if they can't be there."
+                ),
             },
             {
                 "n": "02",
                 "name": "Secure Document Vault",
                 "abbr": "SDV",
-                "desc": "Encrypted storage for the documents a family will actually need — wills, trusts, deeds, insurance policies, medical directives — locked and released to the right people at the right time.",
+                "desc": (
+                    "An AES-256 encrypted, per-estate vault for the documents a family will actually "
+                    "need — wills, trusts, deeds, insurance policies, medical directives. Triple-Lock "
+                    "protected; the benefactor decides who sees what and when. The vault is also the "
+                    "foundation that powers Estate Guardian™, the Immediate Action Checklist, and "
+                    "the rest of the platform."
+                ),
             },
             {
                 "n": "03",
                 "name": "Estate Guardian™ AI",
                 "abbr": "EGA",
-                "desc": "A digital assistant that lives inside the benefactor’s vault, trained on the estate law of all 50 U.S. states. Its only job: review the documents in the vault and tell the benefactor where their estate plan has gaps, seams, or contradictions — so they can make it air-tight while they’re still alive to fix it.",
+                "desc": (
+                    "An AI estate-law analyst trained on U.S. law across all 50 states, working "
+                    "entirely inside the benefactor's encrypted vault. EGA reviews their documents "
+                    "for gaps, contradictions, outdated provisions, and missing pieces — surfacing "
+                    "details like claim phone numbers, executor contacts, and filing deadlines, and "
+                    "auto-populating the beginnings of the family's Immediate Action Checklist. No "
+                    "human team reads the documents."
+                ),
             },
             {
                 "n": "04",
                 "name": "Immediate Action Checklist",
                 "abbr": "IAC",
-                "desc": "A step-by-step playbook of what to do in the first hours, days, and weeks after someone passes — personalized to that family’s situation.",
+                "desc": (
+                    "A step-by-step playbook for what the family needs to do on the hardest days of "
+                    "their lives. Partially auto-created by Estate Guardian™ from the documents in "
+                    "the vault and fully customizable — so when a crisis hits, the family knows "
+                    "exactly what to do, who to call, where every document lives, and what deadlines "
+                    "matter."
+                ),
             },
             {
                 "n": "05",
                 "name": "CarryOn Contingency Protocols",
                 "abbr": "CCP",
-                "desc": "Pre-written emergency plans the person sets up while healthy — what to do if they’re in an accident, hospitalized, declared incapacitated, or pass — with the right people pre-notified and the right documents ready to go.",
+                "desc": (
+                    "Pre-built response plans for the scenarios a family might face — medical "
+                    "emergencies, natural disasters, financial disruptions, incapacity, or the "
+                    "passing of a loved one. A Tap-to-Create Wizard walks the benefactor through "
+                    "building a protocol in minutes, connecting people, documents, checklists, and "
+                    "communication channels into one coordinated plan the family can execute together."
+                ),
             },
             {
                 "n": "06",
                 "name": "Estate Communications Tool",
                 "abbr": "ECT",
-                "desc": "A private, family-only secure messaging space — so coordination during a hard time happens inside the platform, not on group texts that get forwarded or screenshotted.",
+                "desc": (
+                    "Secure, end-to-end encrypted family messaging that doesn't depend on a phone "
+                    "number or a specific device — so a beneficiary can log in from a friend's phone, "
+                    "a library computer, or a FEMA trailer after a disaster and pick up exactly where "
+                    "the family left off. Group and direct messaging, voice notes, image sharing, "
+                    "location sharing, and message pinning. When a contingency protocol activates, "
+                    "ECT is how the family coordinates."
+                ),
             },
             {
                 "n": "07",
                 "name": "Digital Access Vault",
                 "abbr": "DAV",
-                "desc": "Encrypted storage for digital account logins — banking, email, social, password manager, crypto wallet keys — so the family can actually GET INTO the accounts the will mentions.",
+                "desc": (
+                    "Encrypted storage for the modern family's digital credentials — banking and "
+                    "brokerage logins, email, social, subscription accounts, password-manager seeds, "
+                    "and crypto wallet keys — assigned to specific beneficiaries so nothing is lost "
+                    "and nothing is forgotten."
+                ),
             },
             {
                 "n": "08",
                 "name": "Family & Friends Notification",
                 "abbr": "FFN",
-                "desc": "Organized, dignified notification of everyone who needs to know — in the order and through the channel the person chose, while they were the one writing the message.",
+                "desc": (
+                    "A personalized notification list of family, friends, colleagues, and anyone the "
+                    "beneficiaries should reach during a transition or emergency. Names, phone "
+                    "numbers, relationships, and special notes — organized so the people who matter "
+                    "most never hear the news through the grapevine."
+                ),
             },
             {
                 "n": "09",
                 "name": "CarryOn Financial Picture",
                 "abbr": "CFP",
-                "desc": "A complete, living picture of the household’s bills, debts, accounts, and properties — so the family knows what’s owed, what’s owned, and what to do with all of it.",
+                "desc": (
+                    "A complete, encrypted picture of the household's financial life — bank accounts, "
+                    "investment portfolios, insurance policies, bills, debts, and properties — with "
+                    "balances tracked, anomalies flagged, and the right contact info attached to "
+                    "every entry. When transition happens, the family sees the full financial "
+                    "picture instantly instead of hunting through file cabinets and scattered logins."
+                ),
+            },
+            {
+                "n": "10",
+                "name": "Beneficiary Estate Concierge",
+                "abbr": "BEC",
+                "desc": (
+                    "An AI concierge that activates for beneficiaries after transition. Beneficiaries "
+                    "can ask plain-English questions — \u201cWhere is the life insurance?\u201d "
+                    "\u201cWho's the executor?\u201d \u201cWhat did Dad want for the cabin?\u201d — "
+                    "and the Concierge answers using only the documents the benefactor specifically "
+                    "released to them, with inline citations linking each answer back to the exact "
+                    "source document. Clarity on the worst day of their life, without hunting through "
+                    "a folder of PDFs."
+                ),
             },
         ],
         "foundational": (
-            "Building block (not one of the nine pillars): Beneficiaries — every "
+            "Building block (not one of the ten pillars): Beneficiaries — every "
             "pillar is built around the people the user has named as their "
             "beneficiaries, with separate permissions for each person. The "
             "benefactor decides who sees what, and when."
@@ -142,7 +209,7 @@ DEFAULTS: dict[str, Any] = {
                     "Standing out in a crowded market — they want to be the agent who also helped the family get organized.",
                     "Peace of mind on compliance: nothing in CarryOn changes or replaces the policy itself.",
                 ],
-                "pillars": "SDV (where the policy lives), EGA (analyzes the benefactor’s estate plan for gaps so the policy is properly named in the right documents), FFN (the agent gets notified when something happens), IAC (claims-filing step lives in the checklist), CFP (the policy shows up in the household financial picture).",
+                "pillars": "SDV (where the policy lives), EGA (analyzes the benefactor’s estate plan for gaps so the policy is properly named in the right documents), FFN (the agent gets notified when something happens), IAC (claims-filing step lives in the checklist), CFP (the policy shows up in the household financial picture), BEC (after the benefactor passes, beneficiaries can ask the AI Concierge \u201cwhere is the policy?\u201d and get a cited answer pulled from the documents the benefactor released to them).",
                 "questions": [
                     "Are you looking for a tool to offer to the clients you already have, or a way to get referrals and earn on new clients you bring in?",
                     "Roughly how many policies do you have under management?",
@@ -160,7 +227,7 @@ DEFAULTS: dict[str, Any] = {
                     "Keeping the family relationship: when the primary client passes, the surviving spouse often leaves the advisor within 2 years. CarryOn keeps the family inside an organized hand-off.",
                     "Peace of mind for compliance: CarryOn doesn’t give financial advice — it just organizes what the advisor and client have already decided.",
                 ],
-                "pillars": "CFP (full household picture), SDV (estate documents in one place), EGA (an estate-law AI that spots gaps in the client’s plan and gives the advisor a clean punch-list to address), MM (the personal-legacy piece advisors can’t deliver themselves), CCP (plans for accident or incapacity), DAV (the digital-access gap most advisors quietly worry about).",
+                "pillars": "CFP (full household picture), SDV (estate documents in one place), EGA (an estate-law AI that spots gaps in the client’s plan and gives the advisor a clean punch-list to address), MM (the personal-legacy piece advisors can’t deliver themselves), CCP (plans for accident or incapacity), DAV (the digital-access gap most advisors quietly worry about), BEC (after transition, the surviving spouse / heirs can ask the AI Concierge plain-English questions about the plan and get cited answers from the documents the benefactor designated — keeps the family from feeling lost on day one).",
                 "questions": [
                     "What does your current family hand-off look like today when a client passes or becomes incapacitated?",
                     "Are you AUM-based, fee-only, hybrid? (Just for context — affects how a partnership would feel for them.)",
@@ -179,7 +246,7 @@ DEFAULTS: dict[str, Any] = {
                     "Standing out from the big corporate chains — independents need a digital story.",
                     "Their families are often older and not comfortable with new tech — they need something a 70-year-old will actually use.",
                 ],
-                "pillars": 'IAC (the "first 30 days after death" page), FFN (notifying the right people, in the right order, in the family’s voice), MM (the legacy piece — funeral homes are more and more being asked for video tribute services), SDV (death certificate, obituary draft, service plan).',
+                "pillars": 'IAC (the "first 30 days after death" page), FFN (notifying the right people, in the right order, in the family\u2019s voice), MM (the legacy piece — funeral homes are more and more being asked for video tribute services), SDV (death certificate, obituary draft, service plan), BEC (the AI Concierge gives the grieving family answers from the benefactor\u2019s actual documents — exactly what funeral homes wish they could give every family but can\u2019t deliver themselves).',
                 "questions": [
                     "Do you offer pre-need / pre-arrangement today, and what does that intake look like?",
                     "Are you independent, part of a regional chain, or part of a bigger company?",
@@ -198,7 +265,7 @@ DEFAULTS: dict[str, Any] = {
                     "Legal-risk comfort: nothing the family does inside CarryOn replaces or contradicts the actual legal document.",
                     "They want to look modern to younger clients without having to learn new software themselves.",
                 ],
-                "pillars": "SDV (their documents live there, locked and released correctly), EGA (an estate-law AI that flags gaps and contradictions in the client’s plan — gives the attorney a clean punch-list), IAC (the action checklist their POA / executor will actually use), DAV (the digital-account access the will references but the family can never find), CCP (separate plans for incapacity vs death).",
+                "pillars": "SDV (their documents live there, locked and released correctly), EGA (an estate-law AI that flags gaps and contradictions in the client’s plan — gives the attorney a clean punch-list), IAC (the action checklist their POA / executor will actually use), DAV (the digital-account access the will references but the family can never find), CCP (separate plans for incapacity vs death), BEC (after death, the heirs can ask the AI Concierge plain-English questions grounded in the documents the attorney drafted — fewer panicked calls back to the firm).",
                 "questions": [
                     "How does your firm currently hand the signed plan off to the client family today — paper copy, secure portal, document vault?",
                     "Do you offer plan-review or update services after the will is signed, or is it mostly one-time per client?",
@@ -215,7 +282,7 @@ DEFAULTS: dict[str, Any] = {
         "items": [
             {
                 "name": "Employee-benefits brokers / HR-tech",
-                "frame": "Selling CarryOn as a workplace benefit. Pillars: full nine, presented as financial-wellness + family-preparedness. Screen on plan-sponsor count, age skew, current EAP / financial-wellness offering.",
+                "frame": "Selling CarryOn as a workplace benefit. Pillars: full ten, presented as financial-wellness + family-preparedness. Screen on plan-sponsor count, age skew, current EAP / financial-wellness offering.",
             },
             {
                 "name": "Hospice / palliative care providers",
@@ -227,11 +294,11 @@ DEFAULTS: dict[str, Any] = {
             },
             {
                 "name": "Military / veteran service organizations",
-                "frame": 'CarryOn has Military and Veteran tier discounts. Pillars: full nine, presented as "leave nothing for your family to figure out." Screen on org type, member count, and how often members deploy if active-duty.',
+                "frame": 'CarryOn has Military and Veteran tier discounts. Pillars: full ten, presented as "leave nothing for your family to figure out." Screen on org type, member count, and how often members deploy if active-duty.',
             },
             {
                 "name": "Senior-living operators / CCRCs",
-                "frame": "Resident move-in and family-coordination angle. Pillars: full nine. Screen on resident count, independent vs assisted vs memory-care mix.",
+                "frame": "Resident move-in and family-coordination angle. Pillars: full ten. Screen on resident count, independent vs assisted vs memory-care mix.",
             },
         ],
     },
@@ -266,39 +333,43 @@ DEFAULTS: dict[str, Any] = {
         "items": [
             {
                 "abbr": "MM",
-                "line": "Pre-recorded video, audio, or written messages a person leaves to be delivered to specific loved ones at specific future moments.",
+                "line": "Pre-recorded video, audio, or written messages, delivered to specific loved ones at the milestones the benefactor chose — created infinitely over time and delivered exactly as the benefactor envisioned.",
             },
             {
                 "abbr": "SDV",
-                "line": "Encrypted document storage — the documents the family will actually need, released at the right time to the right person.",
+                "line": "AES-256 encrypted, per-estate document vault for wills, trusts, policies, deeds — Triple-Lock protected and released to the right person at the right time.",
             },
             {
                 "abbr": "EGA",
-                "line": "An estate-law AI that lives inside the benefactor’s vault and reviews their documents to find gaps, seams, or contradictions — so the plan is air-tight before anything happens.",
+                "line": "An estate-law AI inside the benefactor\u2019s vault that finds gaps and contradictions across all 50 states\u2019 laws, surfaces critical details, and auto-starts the family\u2019s action plan. No human team reads the documents.",
             },
             {
                 "abbr": "IAC",
-                "line": "A personalized step-by-step playbook for what to do in the hours, days, and weeks after someone passes.",
+                "line": "Personalized step-by-step playbook for the first hours, days, and weeks after transition. Partially auto-created by Estate Guardian\u2122; fully customizable by the benefactor.",
             },
             {
                 "abbr": "CCP",
-                "line": "Pre-written emergency plans for accident, incapacity, hospitalization, or death — set up while the person is healthy, ready to go when needed.",
+                "line": "Tap-to-Create response plans for accident, incapacity, disaster, or death — with people, documents, checklists, and channels pre-wired into one coordinated plan.",
             },
             {
                 "abbr": "ECT",
-                "line": "A private, family-only secure messaging space — so the hard conversations don’t happen on text threads or social media.",
+                "line": "Family-only end-to-end encrypted messaging that works from any device — no phone number required, so a beneficiary can log in from a friend\u2019s phone or a library computer and stay in sync.",
             },
             {
                 "abbr": "DAV",
-                "line": "Encrypted login storage so the family can actually access the digital accounts the will mentions.",
+                "line": "Encrypted storage for logins, password-manager seeds, and crypto keys, assigned to specific beneficiaries so nothing is lost.",
             },
             {
                 "abbr": "FFN",
-                "line": "Organized, dignified notification of everyone who needs to know, in the order and tone the person chose.",
+                "line": "Personalized contact list so the family can notify the right people in the right order — and nobody who matters most hears the news through the grapevine.",
             },
             {
                 "abbr": "CFP",
-                "line": "A complete, up-to-date picture of the household’s bills, debts, accounts, and properties — so the family knows what’s owed, owned, and what to do with it.",
+                "line": "Living, encrypted picture of bank accounts, portfolios, policies, bills, debts, and properties — so the family knows what\u2019s owed, owned, and who to call.",
+            },
+            {
+                "abbr": "BEC",
+                "line": "An AI concierge for beneficiaries — answers post-transition questions in plain English, grounded only in the documents the benefactor designated for them, with inline citations to the exact source.",
             },
         ],
     },

@@ -316,7 +316,7 @@ function BriefEditor({ draft, upd, listAdd, listRemove }) {
         <Field label="Body paragraph" value={draft.one_breath?.paragraph || ''} onChange={(v) => upd(['one_breath', 'paragraph'], v)} multiline rows={5} testid="f-ob-paragraph" />
       </Accordion>
 
-      <Accordion title="2. The Nine Pillars" testid="acc-pillars">
+      <Accordion title="2. The Ten Pillars" testid="acc-pillars">
         <Field label="Section title" value={draft.pillars?.title || ''} onChange={(v) => upd(['pillars', 'title'], v)} testid="f-p-title" />
         <Field label="Section intro" value={draft.pillars?.intro || ''} onChange={(v) => upd(['pillars', 'intro'], v)} multiline rows={2} testid="f-p-intro" />
         <Field label="Foundational note (under the pillar list)" value={draft.pillars?.foundational || ''} onChange={(v) => upd(['pillars', 'foundational'], v)} multiline rows={3} testid="f-p-foundational" />
