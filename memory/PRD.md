@@ -1855,3 +1855,32 @@ Verified the prior fork's punchlist (font 2x scale, scroll-to-top on trust pages
 - Auto-scrolls the discount section into view when opened (`scrollIntoView({behavior: 'smooth'})`).
 
 Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint + ruff clean. Visually verified on preview pod at 1920×1080 (closed and open states).
+
+
+---
+
+## Iteration 128 — BEC Citation-Click Modal + CFP Bug Verification (May 5, 2026)
+
+**Feature: Clickable BEC Citation Chips** (resumed from prior fork's failed `search_replace`)
+- Added `GET /api/beneficiary/concierge/document/{doc_id}?estate_id=...` endpoint in `/app/backend/routes/beneficiary_concierge.py`.
+  - Reuses `_resolve_concierge_access` → identical gating as `/ask` (post-transition + `bec` feature gate + beneficiary-on-estate + designated-document scope).
+  - Returns `{id, name, category, description, snippet, truncated}`. Snippet capped at 1800 chars; falls back to description, then placeholder, so it's never empty.
+  - Returns 404 for both "doc doesn't exist" and "doc not designated to caller" — no enumeration leak.
+- `BeneficiaryConciergePage.js` enhancements:
+  - Inline `[#N]` chips and Sources-footer chips are now `<button>` elements that fire `openDocPreview(doc_id)`.
+  - "What I shared" panel rows are also clickable; same handoff to the modal.
+  - New `DocPreviewModal` component renders the snippet inside a centered glass-bordered dialog, closes on Escape / backdrop click / X button. Loading + error states wired.
+- Backend tested via testing agent (iter 128): **9/9 new tests PASS + 7/7 iter127 regression PASS** (gating, 404 vs 403, OpenAPI spec lists path, no 500s).
+- Frontend modal flow not E2E-tested in iter128 (no transitioned-estate fixture in pod) — backend gating verified on 25 real seeded estates.
+
+**P0 Investigation: CFP Bills offline-insert dedup-drop bug** (handoff flagged this as missed by prior fork)
+- **Bug NOT REPRODUCIBLE on current codebase.** Verified end-to-end via Playwright + curl:
+  - ONLINE add bill: 38 → 39 bills, $2.8K → $2.9K monthly, new bill renders at top of list AND in calendar's "Mon May 11" cell.
+  - OFFLINE add bill: 39 → 40 bills, "Bill saved offline — will sync when you reconnect" toast, optimistic insert visible immediately.
+  - All 4 modules (Bills/Debts/Accounts/Property) create+delete cleanly via API in one batch.
+- Root cause of the false positive: the prior fork's optimistic-insert refactor in `handleSaved` (lines 260–330 of `FinancialPortalPage.js`) — functional-setter dedup against `id`-collision only, optimistic summary patch by module, and `opts.queued` skip-fetchAll — already addresses the original symptom.
+- No code change required. Closing as **resolved by prior refactor**.
+
+**Health check**:
+- `bash /app/scripts/check.sh` → ALL CLEAR (housekeeping 0 WARN/0 FAIL, ruff PASS, ESLint PASS).
+- No regressions in BEC `/status`, `/ask`, `/history`. No regressions in CFP CRUD.
