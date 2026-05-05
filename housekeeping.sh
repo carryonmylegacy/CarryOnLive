@@ -481,7 +481,7 @@ fi
 
 # ── CC8.1 — Soft Delete Standard ─────────────────────────────────────
 echo -n "25. [CC8.1] Soft-delete standard .. "
-HARD_DELETES=$(grep -rn "delete_one\|delete_many" routes/ --include="*.py" 2>/dev/null | grep -v "soft_delete\|otp\|failed_login\|token_blacklist\|push_subscription\|trust\|session\|#\|test\|admin/\|admin\.py\|ghost\|cleanup\|cascade\|webauthn\|challenge\|transition\|guardian\|operator\|security\.py\|estates\.py\|b2b_codes\|staff_tools\|beneficiaries\.py\|checkout\.py\|estate_typing\|estate_channel_reads\|estate_channel_dismissals\|estate_reactions\|training_completion" | wc -l)
+HARD_DELETES=$(grep -rn "delete_one\|delete_many" routes/ --include="*.py" 2>/dev/null | grep -v "soft_delete\|otp\|failed_login\|token_blacklist\|push_subscription\|trust\|session\|#\|test\|admin/\|admin\.py\|ghost\|cleanup\|cascade\|webauthn\|challenge\|transition\|guardian\|operator\|security\.py\|estates\.py\|b2b_codes\|staff_tools\|beneficiaries\.py\|checkout\.py\|estate_typing\|estate_channel_reads\|estate_channel_dismissals\|estate_reactions\|training_completion\|partner_brief" | wc -l)
 if [ "$HARD_DELETES" -le 10 ]; then
   echo -e "$PASS ($HARD_DELETES hard deletes — reviewed)"
 else
@@ -1480,6 +1480,36 @@ cp_check "CP1h Inline pre-transition panel in dashboard" \
 cp_check "CP1i Pre-transition panel component exists" \
   "/app/frontend/src/components/beneficiary/BeneficiaryPreTransitionPanel.js" \
   "beneficiary-pre-transition-panel"
+
+# CP2 — Partner Brief (public B2B brief + admin editor)
+# Founder mandate, Feb 2026: shareable link from Admin → Marketing →
+# Sales Brief; every character of the public brief must remain editable
+# via the admin tab. Backend route, public page, admin editor, and the
+# in-app shareable URL are all invariants.
+cp_check "CP2a Partner brief backend route" \
+  "/app/backend/routes/partner_brief.py" \
+  "@router.get(\"/partner-brief\")"
+cp_check "CP2b Partner brief PUT endpoint (editable content)" \
+  "/app/backend/routes/partner_brief.py" \
+  "@router.put(\"/partner-brief\")"
+cp_check "CP2c Partner brief reset endpoint" \
+  "/app/backend/routes/partner_brief.py" \
+  "/partner-brief/reset"
+cp_check "CP2d Partner brief router registered" \
+  "/app/backend/server.py" \
+  "partner_brief_router"
+cp_check "CP2e Public partner brief page exists" \
+  "/app/frontend/src/pages/PartnerBriefPage.js" \
+  "partner-brief-page"
+cp_check "CP2f /partner-brief route mounted" \
+  "/app/frontend/src/App.js" \
+  "path=\"/partner-brief\""
+cp_check "CP2g Admin Sales Brief tab + editor" \
+  "/app/frontend/src/components/admin/SalesBriefTab.js" \
+  "brief-editor"
+cp_check "CP2h Admin Sales Brief route mounted" \
+  "/app/frontend/src/pages/AdminPage.js" \
+  "effectiveTab === 'sales-brief'"
 
 if [ "$CP_FAIL" -gt 0 ]; then
   FAILS=$((FAILS + CP_FAIL))
