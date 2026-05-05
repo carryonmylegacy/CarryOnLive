@@ -155,7 +155,30 @@
 
 ## 📌 Current Launch Status (Apr 29, 2026 — Public Device Mode shipped)
 
-### Feb 5, 2026 — P0 Beneficiary Portal Routing Crash (FIXED, iter 125)
+### Feb 5, 2026 — P0 Beneficiary Portal Hub RESTORATION (FIXED, iter 126)
+
+**Reported by user** (after first iter 125 fix was insufficient): *"Clicking on any estate or clicking on the beneficiary portal in the sidebar menu, should take me to the beneficiary dashboard which has the beneficiary user in the center of an orbit of benefactors, all in rings corresponding to a 'who made who' type hierarchy. From there, you can either click on any of those benefactor avatars, or their tiles below and get taken to that specific estate. This already fully exists but is now hidden by something."*
+
+**Root cause:** A previous Feb 2026 agent had **deleted** `BeneficiaryHubPage.js` (the orbit-network hub) and converted the `/beneficiary` route to a hard redirect to `/beneficiary/dashboard`, on the false assumption that "beneficiaries can land directly on their primary estate's dashboard." This broke the multi-estate beneficiary experience: there was no longer any UI to surface the network of benefactors, and users with multiple connected estates lost the orbit/ring-hierarchy view that was core to the product.
+
+**Fix applied:**
+- **Restored** `/app/frontend/src/pages/beneficiary/BeneficiaryHubPage.js` from git history (commit `e5e3b822^`). Uses the existing-but-orphaned `OrbitVisualization` component and `EmergencyAccessPanel`.
+- Hub renders: Cormorant header → orbit (user in green center, benefactors on rings 0-3 keyed to relation via `getOrbitLevel`) → "Change Benefactor Photos" affordance → estate-tile grid below → EmergencyAccessPanel → CTA.
+- Wired `/beneficiary` route in `App.js` to render `BeneficiaryHubPage` (was a redirect).
+- Sidebar "My Beneficiary Portal" button → now navigates to `/beneficiary` (hub), removed the harmful `window.location.reload()`.
+- MobileNav "My Beneficiary Portal" button → same fix.
+- FamilyTree estate-node click → now navigates to `/beneficiary` (hub) instead of jumping past it.
+- Tapping any orbit avatar OR estate tile in the hub → `openEstate(id)` → sets `localStorage.beneficiary_estate_id` → SPA-navigates to `/beneficiary/dashboard` → dashboard renders that estate's pre/post-transition content inline (per the iter 125 fix).
+
+**Files changed:** `App.js`, `pages/beneficiary/BeneficiaryHubPage.js` (created), `components/layout/Sidebar.js`, `components/layout/MobileNav.js`, `components/FamilyTree.js`.
+
+**Verified** (iter 126): testing agent — 5/5 testable cases pass. `/beneficiary` renders the hub with orbit + 100 estate tiles for the seeded admin (matches the manual screenshot exactly: "Welcome back, Test! · This Is Your Estate Plan Network · 100 benefactor estates" with green-center user + BT/JD avatars on rings + tiles in "Pre-transition" status). Clicking any estate tile routes cleanly to `/beneficiary/dashboard`. `/beneficiary/pre` and `/beneficiary/dashboard` direct URLs still work. Housekeeping: 0 WARN / 0 FAIL.
+
+**Known pre-existing gap (NOT a regression, flagged separately):** Sidebar's gating on whether to render the "My Beneficiary Portal" button reads from `/api/estates` (which can return empty `user_role_in_estate` for admins) instead of `/api/family-connections`. Admin/founder users may not see the switcher button despite having connected estates. End-users with `role='beneficiary'` see the button correctly. Recommend fixing in a separate ticket.
+
+---
+
+## 📌 Current Launch Status (Apr 29, 2026 — Public Device Mode shipped)
 
 **Reported by user (verbatim):** *"P0!!! When I click on a benefactor of the benefactor user, it should take me to the beneficiary dashboard for that user. Instead it takes me to one of the benefactor estate pages and the button to go back to all the estate doesn't do anything. Worse yet, when I click on Beneficiary Portal it takes me to a blank blue page with nothing on it. I can't click back to the Benefactor Portal. This is a platform ending error."*
 
