@@ -188,10 +188,34 @@ try {
         replaysSessionSampleRate: 0,
         replaysOnErrorSampleRate: 0,
         sendDefaultPii: false,
+        // Drop noisy errors that originate inside Android in-app browsers
+        // (Facebook / Instagram / TikTok / LinkedIn embedded webviews).
+        // These fire when a user closes the host app mid-load and have
+        // nothing to do with our React/PWA code. Match by message
+        // substring so any future variant from the same bridge is also
+        // filtered out.
+        ignoreErrors: [
+          'Java object is gone',
+          'Error invoking postMessage',
+          'navigation_performance_logger_android',
+        ],
+        // Also drop events whose entire stack is inside iabjs:// — that
+        // protocol is exclusively the in-app browser JS bridge.
+        denyUrls: [
+          /iabjs:\/\//i,
+        ],
         beforeSend(event) {
           // Strip potentially sensitive form data before sending.
           try {
             if (event.request?.cookies) delete event.request.cookies;
+          } catch {}
+          // Belt-and-suspenders: if all stack frames are from the IAB
+          // bridge, drop the event even if the message didn't match.
+          try {
+            const frames = event?.exception?.values?.[0]?.stacktrace?.frames || [];
+            if (frames.length > 0 && frames.every((f) => (f.filename || '').startsWith('iabjs://'))) {
+              return null;
+            }
           } catch {}
           return event;
         },

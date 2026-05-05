@@ -51,7 +51,7 @@ export const DOCK_REGISTRY = {
   beneficiary: [
     { to: '/beneficiary', icon: Home, label: 'Dashboard' },
     { to: '/beneficiary/vault', icon: FolderLock, label: 'SDV' },
-    { to: '/beneficiary/guardian', icon: Sparkles, label: 'EGA' },
+    { to: '/beneficiary/concierge', icon: BookOpen, label: 'BEC' },
     { to: '/beneficiary/checklist', icon: CheckSquare, label: 'IAC' },
     { to: '/beneficiary/messages', icon: MessageSquare, label: 'MM' },
     { to: '/beneficiary/milestone', icon: Gift, label: 'Milestone' },

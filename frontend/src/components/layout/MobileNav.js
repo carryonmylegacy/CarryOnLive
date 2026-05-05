@@ -423,7 +423,7 @@ const MobileNav = () => {
   // Map nav routes to feature access flags
   const NAV_FEATURE_MAP = {
     '/beneficiary/vault': 'sdv_access',
-    '/beneficiary/guardian': 'ega_access',
+    '/beneficiary/concierge': 'bec_access',
     '/beneficiary/checklist': 'iac_access',
     '/beneficiary/messages': 'mm_access',
   };
@@ -437,7 +437,7 @@ const MobileNav = () => {
   const beneficiaryLegacyItems = applyUserMenuOrder(filterNavByFeatures(filterByFeatureAccess([
     { to: '/beneficiary', icon: Home, label: 'Dashboard' },
     { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
-    { to: '/beneficiary/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
+    { to: '/beneficiary/concierge', icon: BookOpen, label: 'Beneficiary Estate Concierge (BEC)' },
     { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
     { to: '/beneficiary/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
     { to: '/beneficiary/milestone', icon: Gift, label: 'Report Milestone' },

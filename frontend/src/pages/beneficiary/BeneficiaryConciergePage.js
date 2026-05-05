@@ -127,6 +127,15 @@ export default function BeneficiaryConciergePage() {
   }
 
   const benefactorFirst = status?.benefactor_first_name || 'your loved one';
+  // Pre-transition with nothing yet shared = empty-state message
+  // instead of a chat the user can't actually use. Per founder
+  // directive (May 5, 2026): if the tier-gate is on but the
+  // benefactor hasn't designated any documents to flow into the
+  // Concierge yet, surface the "your benefactor hasn't shared any
+  // documents with you yet — once they do, the Concierge will
+  // activate here" copy. Once docs are shared, the chat unlocks
+  // automatically on next visit.
+  const isPreTransitionEmpty = !status?.is_transitioned && (status?.accessible_doc_count || 0) === 0;
 
   return (
     <div className="p-4 lg:p-6 pb-24 lg:pb-6 animate-fade-in" data-testid="beneficiary-concierge-page">
@@ -143,7 +152,9 @@ export default function BeneficiaryConciergePage() {
             <h1 className="text-2xl lg:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
               Estate Concierge
             </h1>
-            <p className="text-xs text-[var(--t4)]">An AI guide grounded only in the documents {benefactorFirst} shared with you.</p>
+            <p className="text-xs text-[var(--t4)]">{status?.is_transitioned
+              ? `An AI guide grounded only in the documents ${benefactorFirst} shared with you.`
+              : `An AI guide grounded only in the documents ${benefactorFirst} has chosen to share with you so far.`}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 text-xs text-[var(--t5)]">
@@ -202,7 +213,28 @@ export default function BeneficiaryConciergePage() {
         </div>
       )}
 
-      {/* Chat surface */}
+      {/* Chat surface — or pre-transition empty-state if nothing
+          has been shared yet. The empty-state still sits inside the
+          regular page chrome so the beneficiary can see what BEC will
+          look like once the benefactor designates a document. */}
+      {isPreTransitionEmpty ? (
+        <Card className="glass-card" data-testid="concierge-pre-empty">
+          <CardContent className="p-8 lg:p-10 text-center">
+            <div className="w-14 h-14 rounded-full mx-auto flex items-center justify-center mb-4" style={{ background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.35)' }}>
+              <BookOpen className="w-6 h-6 text-[var(--gold)]" />
+            </div>
+            <h2 className="text-base lg:text-lg font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>
+              Your Concierge is ready and waiting
+            </h2>
+            <p className="text-sm text-[var(--t3)] leading-relaxed max-w-md mx-auto mb-3">
+              {benefactorFirst} hasn't shared any documents with you yet — once they do, the Concierge will activate here and you can ask anything about them.
+            </p>
+            <p className="text-xs text-[var(--t5)] italic max-w-md mx-auto">
+              Common pre-transition documents include the healthcare directive, living will, and general or financial Powers of Attorney. Your Concierge can help you understand them the moment {benefactorFirst} releases them to you.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
       <Card className="glass-card">
         <CardContent className="p-0">
           <div ref={scrollerRef} className="overflow-y-auto px-4 lg:px-6 py-5 space-y-4" style={{ maxHeight: '60vh', minHeight: '40vh' }} data-testid="concierge-scroller">
@@ -243,6 +275,7 @@ export default function BeneficiaryConciergePage() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {previewDoc && <DocPreviewModal doc={previewDoc} onClose={closeDocPreview} />}
     </div>

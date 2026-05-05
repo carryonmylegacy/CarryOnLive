@@ -76,7 +76,10 @@ const BeneficiaryConciergePage = lazy(() => import('./pages/beneficiary/Benefici
 const BeneficiaryVaultPage = lazy(() => import('./pages/beneficiary/BeneficiaryVaultPage'));
 const BeneficiaryMessagesPage = lazy(() => import('./pages/beneficiary/BeneficiaryMessagesPage'));
 const BeneficiaryChecklistPage = lazy(() => import('./pages/beneficiary/BeneficiaryChecklistPage'));
-const BeneficiaryGuardianPage = lazy(() => import('./pages/beneficiary/BeneficiaryGuardianPage'));
+// BeneficiaryGuardianPage is no longer mounted directly — the
+// /beneficiary/guardian route redirects to /beneficiary/concierge as
+// of May 5, 2026. Keeping the page file around in the repo but no
+// longer lazy-importing it here keeps the bundle smaller.
 const MilestoneReportPage = lazy(() => import('./pages/beneficiary/MilestoneReportPage'));
 const UploadCertificatePage = lazy(() => import('./pages/beneficiary/UploadCertificatePage'));
 const CondolencePage = lazy(() => import('./pages/beneficiary/CondolencePage'));
@@ -644,7 +647,14 @@ function AppRoutes() {
         <Route path="/beneficiary/vault" element={<TransitionGate section="vault" allowPreTransition><BeneficiaryVaultPage /></TransitionGate>} />
         <Route path="/beneficiary/messages" element={<TransitionGate section="messages"><BeneficiaryMessagesPage /></TransitionGate>} />
         <Route path="/beneficiary/checklist" element={<TransitionGate section="checklist"><BeneficiaryChecklistPage /></TransitionGate>} />
-        <Route path="/beneficiary/guardian" element={<TransitionGate section="guardian"><BeneficiaryGuardianPage /></TransitionGate>} />
+        {/* Legacy /beneficiary/guardian route — Estate Guardian (EGA)
+            was the benefactor-side AI; pointing beneficiaries to it was
+            an artifact of an earlier build. As of May 5, 2026 the
+            beneficiary AI experience is the Beneficiary Estate
+            Concierge (BEC) at /beneficiary/concierge. Redirect any
+            stale bookmark / nav cache here so beneficiaries land on
+            the right surface. */}
+        <Route path="/beneficiary/guardian" element={<Navigate to="/beneficiary/concierge" replace />} />
         <Route path="/beneficiary/milestone" element={<TransitionGate><MilestoneReportPage /></TransitionGate>} />
         <Route path="/beneficiary/settings" element={<BeneficiarySettingsPage />} />
         <Route path="/beneficiary/subscription" element={<SubscriptionPage />} />

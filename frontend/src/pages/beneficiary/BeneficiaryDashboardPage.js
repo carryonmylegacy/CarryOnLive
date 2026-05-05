@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft, Users, Settings, Sparkles, KeyRound, Bell, Scale, Info } from 'lucide-react';
+import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft, Users, Settings, Sparkles, KeyRound, Bell, Scale, Info, BookOpen } from 'lucide-react';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Switch } from '../../components/ui/switch';
 import { API_URL } from '../../config';
@@ -40,7 +40,6 @@ const BeneficiaryDashboardPage = () => {
     vault: 'Secure Document Vault',
     messages: 'Milestone Messages',
     checklist: 'Immediate Action Checklist',
-    guardian: 'Estate Guardian AI',
     digital_wallet: 'Digital Access Vault',
     timeline: 'Estate Plan Timeline',
   };
@@ -510,7 +509,7 @@ const BeneficiaryDashboardPage = () => {
           { key: 'mm_access', icon: MessageSquare, label: 'Milestone Messages', desc: 'Personal messages left for you at meaningful life moments', color: '#7C3AED' },
           { key: 'sdv_access', icon: FolderLock, label: 'Secure Document Vault', desc: 'Important documents sealed and preserved for you', color: '#2563EB' },
           { key: 'iac_access', icon: CheckSquare, label: 'Immediate Action Checklist', desc: 'Step-by-step guidance for actions to take during this time', color: '#D97706' },
-          { key: 'ega_access', icon: Sparkles, label: 'Estate Guardian AI', desc: 'AI assistant with knowledge of this estate plan', color: '#10B981' },
+          { key: 'bec_access', icon: BookOpen, label: 'Beneficiary Estate Concierge', desc: 'AI guide that answers questions grounded only in the documents shared with you', color: '#10B981' },
           { key: 'dav_access', icon: KeyRound, label: 'Digital Access Vault', desc: 'Digital account credentials and access information', color: '#EC4899' },
           { key: 'ffn_access', icon: Bell, label: 'Family & Friends Notification', desc: 'Coordinated notifications to family and friends', color: '#F59E0B' },
           { key: 'dts_access', icon: Scale, label: 'Designated Trustee Services', desc: 'Trustee coordination and legal service referrals', color: '#6366F1' },

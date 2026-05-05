@@ -98,8 +98,13 @@ async def get_my_section_permissions(estate_id: str, current_user: dict = Depend
         "cfp_access": ben.get("cfp_access", True),
     }
     # Resolve BEC availability via the global feature_gates matrix.
-    # Only show the tile post-transition AND when the benefactor's tier
-    # has BEC enabled. Failures fall back to "hide tile" — never crash.
+    # The tile shows whenever the benefactor's tier has BEC enabled —
+    # both pre- AND post-transition (per founder's May 5, 2026
+    # directive). Pre-transition the page renders an empty-state if
+    # no documents have been shared yet; post-transition it renders
+    # the full chat. Tier-disabled = tile fully hidden in nav.
+    # The hard gate still runs server-side in
+    # routes/beneficiary_concierge.py.
     try:
         from routes.feature_gates import get_feature_gates
 
@@ -112,7 +117,7 @@ async def get_my_section_permissions(estate_id: str, current_user: dict = Depend
         )
         tier = (owner or {}).get("subscription_tier") or (owner or {}).get("plan") or "base"
         gates = await get_feature_gates()
-        feature_access["bec_access"] = bool(is_transitioned and (gates.get("bec") or {}).get(tier, False))
+        feature_access["bec_access"] = bool((gates.get("bec") or {}).get(tier, False))
     except Exception:
         feature_access["bec_access"] = False
 

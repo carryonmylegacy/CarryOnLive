@@ -80,6 +80,12 @@ class StatusResponse(BaseModel):
     reason: Optional[str] = None
     accessible_doc_count: int = 0
     benefactor_first_name: Optional[str] = None
+    # True once the estate has been verified as transitioned. False
+    # while pre-transition; the page uses this to switch between the
+    # "your benefactor passed — here's what they shared" frame and
+    # the "your benefactor is alive — here's what they're sharing
+    # with you so far" frame.
+    is_transitioned: bool = False
     # Lightweight metadata for the "What I shared" panel on the
     # beneficiary's Concierge page. Just id / name / category — never
     # raw document text. Empty list when BEC is unavailable.
@@ -92,7 +98,20 @@ class StatusResponse(BaseModel):
 async def _resolve_concierge_access(user_id: str, estate_id: str) -> dict[str, Any]:
     """Return a dict describing whether BEC is available for this caller
     on this estate, plus the resolved benefactor name and accessible
-    document set if so. Never raises — callers branch on `available`."""
+    document set if so. Never raises — callers branch on `available`.
+
+    Pre-transition behavior (added May 5, 2026 at user's explicit
+    request): BEC is now ALSO active before transition, but only for
+    the documents the benefactor has explicitly designated as
+    pre-transition-visible to the caller — mirroring the rule used by
+    GET /api/documents/{estate_id}/pre-transition. The pages
+    rendered around this still gate the "available" UX on tier-level
+    BEC enablement (admin-controlled). When BEC is on but the
+    benefactor hasn't shared anything yet, we return available=True
+    with an empty document list and is_transitioned=False so the page
+    can render the "your benefactor hasn't shared documents yet"
+    empty state rather than a hard block.
+    """
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     if not estate:
         return {"available": False, "reason": "estate_not_found"}
@@ -105,11 +124,9 @@ async def _resolve_concierge_access(user_id: str, estate_id: str) -> dict[str, A
     if not beneficiary_link:
         return {"available": False, "reason": "not_a_beneficiary"}
 
-    # Post-transition only
-    if estate.get("status") != "transitioned":
-        return {"available": False, "reason": "pre_transition"}
-
-    # Benefactor's plan must have BEC enabled
+    # Benefactor's plan must have BEC enabled (founder/admin-controlled
+    # in Admin → Subs → Feature Gates). This single tier gate decides
+    # both pre- and post-transition visibility of the BEC nav item.
     benefactor = await db.users.find_one({"id": estate.get("owner_id")}, {"_id": 0})
     if not benefactor:
         return {"available": False, "reason": "benefactor_missing"}
@@ -118,9 +135,15 @@ async def _resolve_concierge_access(user_id: str, estate_id: str) -> dict[str, A
     if not (gates.get("bec") or {}).get(tier, False):
         return {"available": False, "reason": "feature_disabled_for_tier"}
 
-    # Documents the caller is allowed to see, post-transition.
-    # Mirror the rule documents.py uses: designation contains user_id
-    # or "all"; we trust the post-transition timing default.
+    is_transitioned = estate.get("status") == "transitioned"
+
+    # Documents the caller is allowed to see. Post-transition uses the
+    # legacy designation-by-user_id rule already in production. Pre-
+    # transition mirrors GET /api/documents/{estate_id}/pre-transition
+    # exactly: designation by ben_record_id, plus the essential-offline
+    # categories (living will, healthcare directive, general POA,
+    # financial POA, legacy `poa`) OR explicit visibility_timing
+    # opt-in for that beneficiary.
     docs_cursor = db.documents.find(
         {"estate_id": estate_id},
         {
@@ -134,18 +157,43 @@ async def _resolve_concierge_access(user_id: str, estate_id: str) -> dict[str, A
             "file_data": 1,
             "file_type": 1,
             "file_size": 1,
+            "visibility_timing": 1,
         },
     )
     accessible: list[dict[str, Any]] = []
-    async for doc in docs_cursor:
-        designation = doc.get("designated_beneficiaries") or ["all"]
-        if "all" in designation or user_id in designation:
-            accessible.append(doc)
+
+    if is_transitioned:
+        async for doc in docs_cursor:
+            designation = doc.get("designated_beneficiaries") or ["all"]
+            if "all" in designation or user_id in designation:
+                accessible.append(doc)
+    else:
+        ben_record_id = beneficiary_link.get("id")
+        ESSENTIAL_OFFLINE = {
+            "living_will",
+            "healthcare_directive",
+            "general_poa",
+            "financial_poa",
+            "poa",
+        }
+        async for doc in docs_cursor:
+            designation = doc.get("designated_beneficiaries") or ["all"]
+            is_designated = "all" in designation or (ben_record_id and ben_record_id in designation)
+            if not is_designated:
+                continue
+            cat = doc.get("category") or ""
+            if cat in ESSENTIAL_OFFLINE:
+                accessible.append(doc)
+                continue
+            timing = doc.get("visibility_timing") or {}
+            if ben_record_id and ben_record_id in timing and timing[ben_record_id].get("pre", False):
+                accessible.append(doc)
 
     benefactor_first = (benefactor.get("name") or estate.get("name") or "your loved one").split()[0]
 
     return {
         "available": True,
+        "is_transitioned": is_transitioned,
         "estate": estate,
         "benefactor": benefactor,
         "benefactor_first_name": benefactor_first,
@@ -178,6 +226,7 @@ async def concierge_status(
         available=True,
         accessible_doc_count=len(docs),
         benefactor_first_name=info["benefactor_first_name"],
+        is_transitioned=bool(info.get("is_transitioned")),
         documents=doc_summaries,
     )
 
