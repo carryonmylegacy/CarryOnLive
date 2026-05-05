@@ -123,10 +123,24 @@ const DashboardLayout = () => {
   // unless the user has opted into the "Remember scroll position"
   // preference, in which case <ScrollRestorationProvider /> takes
   // over and restores the saved offset for the new route.
+  //
+  // EXCEPTION: tab navigation inside the same admin/ops portal
+  // section (e.g. /admin/users → /admin/transition) is logically
+  // a sub-tab change, not a new page. The user explicitly asked
+  // (May 5, 2026) for the scroll position to be preserved when
+  // tapping between tabs in the Founder Portal so the view
+  // doesn't slam back to the top. We detect "same section"
+  // navigation here and skip the auto-reset; useScrollLock then
+  // handles freezing the position during the React render swap.
+  const prevPathRef = useRef(location.pathname);
   useEffect(() => {
     let pref = false;
     try { pref = localStorage.getItem('carryon_remember_scroll') === '1'; } catch { /* ignore */ }
-    if (pref) return undefined;
+    const prev = prevPathRef.current;
+    prevPathRef.current = location.pathname;
+    const isSameAdminSection = (prev.startsWith('/admin/') && location.pathname.startsWith('/admin/'))
+      || (prev.startsWith('/ops/') && location.pathname.startsWith('/ops/'));
+    if (pref || isSameAdminSection) return undefined;
     const scrollToTop = () => {
       const viewport = document.querySelector('.main-content [data-overlayscrollbars-viewport]');
       if (viewport) {

@@ -1884,3 +1884,30 @@ Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint + ruff clean. Visually verified
 **Health check**:
 - `bash /app/scripts/check.sh` → ALL CLEAR (housekeeping 0 WARN/0 FAIL, ruff PASS, ESLint PASS).
 - No regressions in BEC `/status`, `/ask`, `/history`. No regressions in CFP CRUD.
+
+---
+
+## Iteration 128 — Tab Scroll-Position Preservation Restored (May 5, 2026)
+
+**User report**: "When I tap between different tabs in my founder portal, please make it so that it stays where I last scrolled to and doesn't always return to the top of the page. This was definitely built into the code previously and somewhere along the way in the past few days it got either erased or overwritten."
+
+**Root cause** (two compounding issues):
+1. `useScrollLock` hook was reading/writing `scrollTop` on `.main-content`, but the actual scroller on this layout is `<html>` (`document.scrollingElement`) — `.main-content` and the OverlayScrollbars viewport both have `scrollHeight === clientHeight`. So the hook's lock writes were no-ops; nothing was preventing the post-tab-change scroll jump.
+2. `DashboardLayout`'s route-change `useEffect` explicitly scrolls the viewport AND `window` to top on every `location.pathname` change, including admin sub-tab navigation (`/admin/users` → `/admin/transition`).
+3. `FinancialPortalPage` (Bills/Debts/Accounts/Property tabs) wasn't calling `useScrollLock` at all.
+
+**Fix**:
+- `hooks/useScrollLock.js` — `findScroller()` now picks the element that actually overflows (`scrollHeight > clientHeight`), with a fallback chain: OverlayScrollbars viewport → `.main-content` → `document.scrollingElement`. The lock-and-restore pass now writes both `window.scrollTo(...)` for the document scroller and `el.scrollTop` for inner-element scrollers, across `requestAnimationFrame` + `setTimeout(0/30/60/100/160ms)` belts to defeat any stray reset writes that fire on tab swap.
+- `components/layout/DashboardLayout.js` — route-change `scrollToTop` effect now skips when the previous and next pathnames are both within `/admin/*` or both within `/ops/*`. Sub-tab navigation in the admin portal is logically a tab change, not a new page; preserving scroll matches user intent.
+- `pages/FinancialPortalPage.js` — wired `useScrollLock(activeTab)` so Bills/Debts/Accounts/Property switches benefit from the same preservation.
+
+**Verified live** (Playwright on `https://preflight-sweep.preview.emergentagent.com`, 1440×900):
+- BEFORE tab tap (deep-scrolled in Bills): `windowY = 3960`.
+- Tap **Accounts** (empty content, ~1100px): clamps to `11` — browser physics, can't scroll past content end.
+- Tap **Debts** (4 items, ~1170px): clamps to `146`.
+- Tap **back to Bills** (~4800px): **`windowY = 3960`** — fully restored to original deep-scroll position. ✓
+
+**Net effect**: page no longer slams to top on tab tap. When the new tab has enough content, the exact prior offset is preserved; when it's shorter, the browser clamps (unavoidable), but switching back fully restores. Same fix applies to admin/ops sub-tab navigation.
+
+Health: `bash /app/scripts/check.sh` → ALL CLEAR (housekeeping 0 WARN/0 FAIL, ruff PASS, ESLint PASS).
+

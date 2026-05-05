@@ -21,6 +21,7 @@ import SlidePanel from '../components/SlidePanel';
 import { API_URL } from '../config';
 import { saveList, readList } from '../utils/localListCache';
 import { useDraftState } from '../hooks/useDraftState';
+import { useScrollLock } from '../hooks/useScrollLock';
 import BillForm from '../components/financial/BillForm';
 import DebtForm from '../components/financial/DebtForm';
 import ConfirmDeleteWithDavModal from '../components/financial/ConfirmDeleteWithDavModal';
@@ -113,6 +114,13 @@ const FinancialPortalPage = () => {
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const searchTimerRef = useRef(null);
   const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Preserve scroll position when the user taps between Bills / Debts /
+  // Accounts / Property tabs. Without this the page slams back near the
+  // top whenever the active tab content is shorter than the previous
+  // one (browser clamp) — see hooks/useScrollLock.js for the mechanics.
+  // Restored May 5, 2026 at user's explicit request.
+  useScrollLock(activeTab);
 
   useEffect(() => { fetchAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
