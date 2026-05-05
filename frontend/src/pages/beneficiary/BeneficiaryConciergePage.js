@@ -49,7 +49,7 @@ export default function BeneficiaryConciergePage() {
       const turns = [];
       for (const m of (historyRes.data?.messages || [])) {
         turns.push({ role: 'user', content: m.question, ts: m.created_at });
-        turns.push({ role: 'assistant', content: m.answer, ts: m.created_at });
+        turns.push({ role: 'assistant', content: m.answer, citations: m.citations || {}, ts: m.created_at });
       }
       setMessages(turns);
     } catch {
@@ -73,7 +73,12 @@ export default function BeneficiaryConciergePage() {
     setSending(true);
     try {
       const res = await axios.post(`${API_URL}/beneficiary/concierge/ask`, { estate_id: estateId, question: q }, getAuthHeaders());
-      setMessages((prev) => [...prev, { role: 'assistant', content: res.data?.answer || '', ts: new Date().toISOString() }]);
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: res.data?.answer || '',
+        citations: res.data?.citations || {},
+        ts: new Date().toISOString(),
+      }]);
     } catch (e) {
       const detail = e?.response?.data?.detail || 'I’m having trouble right now. Please try again in a moment.';
       setMessages((prev) => [...prev, { role: 'assistant', content: `(${detail})`, ts: new Date().toISOString(), error: true }]);
@@ -186,7 +191,7 @@ export default function BeneficiaryConciergePage() {
               </div>
             )}
             {messages.map((m, i) => (
-              <Bubble key={i} role={m.role} content={m.content} error={m.error} />
+              <Bubble key={i} role={m.role} content={m.content} citations={m.citations} error={m.error} />
             ))}
             {sending && (
               <Bubble role="assistant" content={<span className="inline-flex items-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</span>} />
@@ -220,8 +225,60 @@ export default function BeneficiaryConciergePage() {
   );
 }
 
-function Bubble({ role, content, error }) {
+function Bubble({ role, content, citations, error }) {
   const isUser = role === 'user';
+  // Inline-cite renderer: convert [#N] markers in the assistant's
+  // answer into small clickable gold chips that show the source
+  // document's name. Hallucinated markers (any [#N] not in the
+  // citations map) are stripped server-side, so we don't have to
+  // defensively hide them here — but if for any reason one slips
+  // through, we render it as plain text rather than a chip.
+  const renderContent = () => {
+    if (typeof content !== 'string') return content;
+    if (!citations || Object.keys(citations).length === 0) return content;
+    const parts = [];
+    const regex = /\[(#\d+)\]/g;
+    let lastIndex = 0;
+    let match;
+    let chipIdx = 0;
+    while ((match = regex.exec(content)) !== null) {
+      if (match.index > lastIndex) parts.push(content.slice(lastIndex, match.index));
+      const marker = match[1];
+      const cite = citations[marker];
+      if (cite) {
+        parts.push(
+          <span
+            key={`c-${chipIdx++}`}
+            title={cite.name}
+            className="inline-flex items-center align-baseline mx-0.5 px-1.5 py-0.5 rounded text-[11px] font-bold leading-tight"
+            style={{ background: 'rgba(212,175,55,0.18)', border: '1px solid rgba(212,175,55,0.45)', color: '#FCD34D' }}
+            data-testid={`concierge-citation-${marker}`}
+          >
+            {cite.name.length > 28 ? cite.name.slice(0, 25) + '…' : cite.name}
+          </span>
+        );
+      } else {
+        parts.push(match[0]); // unknown marker fallback (shouldn't happen)
+      }
+      lastIndex = regex.lastIndex;
+    }
+    if (lastIndex < content.length) parts.push(content.slice(lastIndex));
+    return <>{parts}</>;
+  };
+
+  // Sources footer — distinct list of cited documents under the
+  // assistant's reply. Clicking the bubble's chips inline tells the
+  // beneficiary WHICH doc supports each line; the footer summarizes
+  // every document referenced in this answer.
+  const citedMarkers = (() => {
+    if (typeof content !== 'string' || !citations) return [];
+    const found = new Set();
+    const regex = /\[(#\d+)\]/g;
+    let m;
+    while ((m = regex.exec(content)) !== null) found.add(m[1]);
+    return [...found];
+  })();
+
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`} data-testid={`concierge-bubble-${role}`}>
       <div
@@ -232,7 +289,22 @@ function Bubble({ role, content, error }) {
             : { background: error ? 'rgba(239,68,68,0.10)' : 'var(--s)', color: error ? '#FCA5A5' : 'var(--t2)', border: `1px solid ${error ? 'rgba(239,68,68,0.30)' : 'var(--b)'}` }
         }
       >
-        {content}
+        <div>{renderContent()}</div>
+        {!isUser && !error && citedMarkers.length > 0 && (
+          <div className="mt-3 pt-2 border-t border-[var(--b)] flex flex-wrap items-center gap-1.5" data-testid="concierge-sources">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--t5)] mr-1">Sources</span>
+            {citedMarkers.map((mk) => (
+              <span
+                key={mk}
+                className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold"
+                style={{ background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.30)', color: '#FCD34D' }}
+                data-testid={`concierge-source-${mk}`}
+              >
+                {citations[mk]?.name || mk}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

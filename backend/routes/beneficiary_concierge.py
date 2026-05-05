@@ -54,6 +54,15 @@ Strict ground rules:
 - Tone: warm, calm, brief, dignified. This person is grieving. Avoid jargon. No bullet-list dumps unless asked.
 - Never mention other beneficiaries, other documents, or any information that isn't in the context window.
 - Always close emotionally heavy answers with a gentle line acknowledging the moment, e.g., "I know this is hard. Take it one step at a time."
+
+CITATION RULES (very important):
+- Each document is labeled at the top of its block with a marker like [#1], [#2], [#3], …
+- After every factual claim in your answer, append the marker(s) of the document(s) that support it. Examples:
+    "She wanted the cabin to go to her brother. [#2]"
+    "The executor is named in two places. [#1][#3]"
+- Use ONLY the markers that exist in the context — never invent a marker.
+- If you can't support a sentence from the documents, don't make a claim — say it isn't covered.
+- Keep markers tight to the sentence they support; don't pile every marker at the end.
 """
 
 
@@ -203,22 +212,36 @@ async def concierge_ask(
     if len(question) > 1000:
         raise HTTPException(status_code=400, detail="question_too_long")
 
-    # Build the document context. Each doc gets a header + (possibly
-    # truncated) extracted text. We cap total context to keep
-    # latency / cost bounded while still feeling thorough.
+    # Build the document context with a stable citation marker for each
+    # doc ([#1], [#2], …). The system prompt instructs the model to
+    # append these markers after every factual claim. We return a
+    # `citations` map keyed by marker so the frontend can render
+    # readable chips ("[Last Will]") instead of raw "[#1]".
     benefactor_first = info["benefactor_first_name"]
     docs = info["documents"]
     context_blocks: list[str] = []
+    citations: dict[str, dict[str, Any]] = {}
     total_chars = 0
-    for doc in docs:
+    for idx, doc in enumerate(docs, start=1):
+        marker = f"#{idx}"
+        # Always register the citation entry, even if we end up
+        # truncating the doc's text — the LLM still has the header.
+        citations[marker] = {
+            "id": doc.get("id"),
+            "name": doc.get("name") or "Untitled",
+            "category": doc.get("category") or "other",
+        }
         if total_chars > 24000:
-            break
+            continue
         try:
             text = await extract_document_text(doc)
         except Exception as e:  # pragma: no cover — extraction is best-effort
             logger.warning(f"BEC: extraction failed for doc {doc.get('id')}: {e}")
             text = ""
-        header = f"\n=== DOCUMENT: {doc.get('name') or 'Untitled'} (category: {doc.get('category') or 'unknown'}) ===\n"
+        header = (
+            f"\n=== [{marker}] DOCUMENT: {doc.get('name') or 'Untitled'} "
+            f"(category: {doc.get('category') or 'unknown'}) ===\n"
+        )
         snippet = (text or "")[:6000]
         if not snippet and doc.get("description"):
             snippet = f"[No extracted text. Description: {doc['description']}]"
@@ -261,6 +284,21 @@ async def concierge_ask(
         logger.error(f"BEC ask failed: {e}")
         raise HTTPException(status_code=502, detail="ai_call_failed") from e
 
+    # Strip any hallucinated citation markers the model may have
+    # invented (e.g. [#7] when only [#1]–[#3] were provided). Only
+    # markers we actually registered survive into the final answer.
+    import re
+
+    valid_markers = set(citations.keys())
+
+    def _scrub(match: "re.Match[str]") -> str:
+        marker = match.group(1)
+        return match.group(0) if marker in valid_markers else ""
+
+    answer = re.sub(r"\[(#\d+)\]", _scrub, answer)
+    # Compact runs of whitespace introduced by scrubbing.
+    answer = re.sub(r" {2,}", " ", answer).strip()
+
     # Persist conversation turn so the beneficiary has a transcript later.
     now = datetime.now(timezone.utc).isoformat()
     session_id = payload.session_id or f"sess_{current_user['id']}_{payload.estate_id}"
@@ -271,6 +309,7 @@ async def concierge_ask(
             "user_id": current_user["id"],
             "question": question,
             "answer": answer,
+            "citations": citations,
             "doc_count": len(docs),
             "created_at": now,
         }
@@ -278,6 +317,7 @@ async def concierge_ask(
 
     return {
         "answer": answer,
+        "citations": citations,
         "session_id": session_id,
         "accessible_doc_count": len(docs),
         "benefactor_first_name": benefactor_first,
