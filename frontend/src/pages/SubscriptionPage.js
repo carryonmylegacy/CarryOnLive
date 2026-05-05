@@ -152,7 +152,22 @@ const SubscriptionPage = () => {
         </p>
         </div>
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            // Use a safe home route instead of navigate(-1). If the user
+            // just returned from Stripe (cancel or success), the previous
+            // history entry IS the Stripe checkout URL, so navigate(-1)
+            // would bounce them forward into Stripe. Going explicitly
+            // to the role-appropriate dashboard breaks the loop.
+            const ref = (typeof document !== 'undefined' && document.referrer) || '';
+            const cameFromStripe = /stripe\.com/i.test(ref) ||
+              new URLSearchParams(window.location.search).has('session_id') ||
+              new URLSearchParams(window.location.search).has('fc_session_id');
+            if (cameFromStripe) {
+              navigate(isInBeneficiaryPortal ? '/beneficiary/dashboard' : '/dashboard', { replace: true });
+            } else {
+              navigate(-1);
+            }
+          }}
           className="px-4 py-2 rounded-lg text-sm font-bold transition-transform hover:scale-105 flex-shrink-0"
           style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
           data-testid="subscription-back-button"

@@ -161,7 +161,12 @@ export default function SubscriptionPaywall({ onDismiss }) {
       if (res.data.free) {
         fetchData();
       } else if (res.data.url) {
-        window.location.href = res.data.url;
+        // Use replace() so the paywall is NOT left on the browser history
+        // stack before we hand off to Stripe. Without this, hitting the
+        // in-app "Back" button after returning from Stripe bounces the
+        // user straight back to Stripe (navigate(-1) lands on the
+        // prior history entry — which is the Stripe checkout URL).
+        window.location.replace(res.data.url);
       }
     } catch (err) {
       toast.error(err.response?.data?.detail || err.message || 'Failed to start checkout');

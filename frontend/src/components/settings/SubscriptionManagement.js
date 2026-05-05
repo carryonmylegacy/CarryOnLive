@@ -317,7 +317,10 @@ export const SubscriptionManagement = ({
         origin_url: window.location.origin,
       }, getAuthHeaders());
       if (res.data.url) {
-        window.location.href = res.data.url;
+        // replace() — keep the paywall OUT of browser history so
+        // clicking the in-app Back button after returning from Stripe
+        // goes to the user's prior page, not forward into Stripe.
+        window.location.replace(res.data.url);
       } else if (res.data.free) {
         if (refreshSubscription) await refreshSubscription();
       }
@@ -371,7 +374,8 @@ export const SubscriptionManagement = ({
         origin_url: window.location.origin,
       }, getAuthHeaders());
       if (res.data.url) {
-        window.location.href = res.data.url;
+        // replace() — see comment on handleSubscribe above.
+        window.location.replace(res.data.url);
       } else if (res.data.success) {
         // toast removed
         if (refreshSubscription) await refreshSubscription();
@@ -421,7 +425,8 @@ export const SubscriptionManagement = ({
         origin_url: window.location.origin,
       }, getAuthHeaders());
       if (res.data.url) {
-        window.location.href = res.data.url;
+        // replace() — see comment on handleSubscribe above.
+        window.location.replace(res.data.url);
       } else if (res.data.success) {
         // toast removed
         if (refreshSubscription) await refreshSubscription();

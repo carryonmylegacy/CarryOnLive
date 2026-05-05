@@ -63,12 +63,31 @@ export default function FoundersCirclePage() {
         origin_url: window.location.origin,
       }, getAuthHeaders());
       if (res.data.url) {
-        window.location.href = res.data.url;
+        // replace() — keep FoundersCircle page OUT of browser history
+        // before Stripe takes over. Without this, the in-app Back on
+        // return bounces to Stripe instead of the user's prior page.
+        window.location.replace(res.data.url);
       }
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Checkout failed');
     } finally {
       setPurchasing(null);
+    }
+  };
+
+  // Safe Back: if the user just returned from Stripe (via session id
+  // or stripe.com referrer), navigate(-1) would bounce them forward
+  // into Stripe. Route them to /subscription instead so the Back
+  // button always makes sense.
+  const handleBack = () => {
+    const ref = (typeof document !== 'undefined' && document.referrer) || '';
+    const cameFromStripe = /stripe\.com/i.test(ref) ||
+      new URLSearchParams(window.location.search).has('fc_session_id') ||
+      new URLSearchParams(window.location.search).has('session_id');
+    if (cameFromStripe) {
+      navigate('/subscription', { replace: true });
+    } else {
+      navigate(-1);
     }
   };
 
@@ -86,7 +105,7 @@ export default function FoundersCirclePage() {
         <Crown className="w-12 h-12 text-[var(--t4)] mb-4" />
         <h1 className="text-2xl font-semibold text-[var(--t)] tracking-tight" style={{ fontFamily: 'var(--serif)' }}>Founders Circle</h1>
         <p className="text-[var(--t4)] mt-2">This exclusive program is not currently available.</p>
-        <button onClick={() => navigate(-1)} className="mt-6 px-6 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--bg3)', color: 'var(--t)' }}>Go Back</button>
+        <button onClick={handleBack} className="mt-6 px-6 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--bg3)', color: 'var(--t)' }}>Go Back</button>
       </div>
     );
   }
@@ -94,7 +113,7 @@ export default function FoundersCirclePage() {
   return (
     <div className="p-4 lg:p-8 pb-24 lg:pb-8 max-w-5xl mx-auto animate-fade-in" data-testid="founders-circle-page">
       {/* Back button */}
-      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-[var(--t4)] mb-6 hover:text-[var(--t)]">
+      <button onClick={handleBack} className="flex items-center gap-1 text-sm text-[var(--t4)] mb-6 hover:text-[var(--t)]">
         <ChevronLeft className="w-4 h-4" /> Back
       </button>
 
