@@ -537,13 +537,22 @@ export const AuthProvider = ({ children }) => {
   //   1. Page focus (user tabs back in after making an admin change)
   //   2. 5-minute poll (long-lived tabs stay current)
   //   3. Explicit pushes via the exposed `refreshEnabledFeatures()`
+  // CRITICAL: every refresh must pass through the currently-selected
+  // estate id so a beneficiary's view inherits the BENEFACTOR's tier
+  // (not their own subscription) — see /subscriptions/enabled-features
+  // for the resolution rule. Dropping the estate id silently leaks
+  // own-tier features into a beneficiary view on the next focus event.
   useEffect(() => {
     if (!token) return;
-    const onFocus = () => { fetchEnabledFeatures(token); };
+    const currentEstateId = () => {
+      try { return localStorage.getItem('selected_estate_id') || localStorage.getItem('beneficiary_estate_id') || null; }
+      catch { return null; }
+    };
+    const onFocus = () => { fetchEnabledFeatures(token, currentEstateId()); };
     window.addEventListener('focus', onFocus);
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') {
-        fetchEnabledFeatures(token);
+        fetchEnabledFeatures(token, currentEstateId());
       }
     }, 5 * 60 * 1000);
     return () => {

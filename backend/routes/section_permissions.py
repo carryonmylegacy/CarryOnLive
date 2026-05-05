@@ -82,44 +82,56 @@ async def get_my_section_permissions(estate_id: str, current_user: dict = Depend
     perms = await db.section_permissions.find_one({"estate_id": estate_id, "beneficiary_id": ben["id"]}, {"_id": 0})
     sections = perms["sections"] if perms else {s: True for s in ALL_SECTIONS}
 
-    # Benefactor-set feature access flags (stored on the beneficiary record).
-    # `bec_access` is computed dynamically (Premium-tier-only AI feature)
-    # rather than per-beneficiary toggle: it gates the post-transition
-    # Beneficiary Estate Concierge tile in the dashboard. The hard gate
-    # still runs server-side in routes/beneficiary_concierge.py.
-    feature_access = {
-        "mm_access": ben.get("mm_access", True),
-        "ega_access": ben.get("ega_access", True),
-        "sdv_access": ben.get("sdv_access", True),
-        "iac_access": ben.get("iac_access", True),
-        "ffn_access": ben.get("ffn_access", True),
-        "dav_access": ben.get("dav_access", True),
-        "dts_access": ben.get("dts_access", True),
-        "cfp_access": ben.get("cfp_access", True),
-    }
-    # Resolve BEC availability via the global feature_gates matrix.
-    # The tile shows whenever the benefactor's tier has BEC enabled —
-    # both pre- AND post-transition (per founder's May 5, 2026
-    # directive). Pre-transition the page renders an empty-state if
-    # no documents have been shared yet; post-transition it renders
-    # the full chat. Tier-disabled = tile fully hidden in nav.
-    # The hard gate still runs server-side in
-    # routes/beneficiary_concierge.py.
+    # Tier inheritance rule (May 5, 2026, founder-mandated): the
+    # beneficiary's UX visibility is determined by the BENEFACTOR'S
+    # subscription tier — never the beneficiary's own tier (which
+    # they can't choose anyway). Each *_access flag here is the AND
+    # of (a) the per-beneficiary toggle the benefactor set, and
+    # (b) whether the benefactor's tier has that feature enabled
+    # in the global feature_gates matrix. This is the single
+    # filtration point read by Sidebar / MobileNav / Beneficiary
+    # Dashboard tiles, so getting it right here cleans up every
+    # surface in one shot.
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
+    owner_id = (estate or {}).get("owner_id")
+    owner = (
+        await db.users.find_one({"id": owner_id}, {"_id": 0, "id": 1, "subscription_tier": 1, "plan": 1})
+        if owner_id
+        else None
+    )
+    tier = (owner or {}).get("subscription_tier") or (owner or {}).get("plan") or "base"
+
     try:
         from routes.feature_gates import get_feature_gates
 
-        estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
-        owner_id = estate.get("owner_id") if estate else None
-        owner = (
-            await db.users.find_one({"id": owner_id}, {"_id": 0, "id": 1, "subscription_tier": 1, "plan": 1})
-            if owner_id
-            else None
-        )
-        tier = (owner or {}).get("subscription_tier") or (owner or {}).get("plan") or "base"
         gates = await get_feature_gates()
-        feature_access["bec_access"] = bool((gates.get("bec") or {}).get(tier, False))
     except Exception:
-        feature_access["bec_access"] = False
+        gates = {}
+
+    def _tier_has(feature_key: str) -> bool:
+        # If gates couldn't load or feature missing → fail closed.
+        return bool((gates.get(feature_key) or {}).get(tier, False))
+
+    # *_access keys map 1:1 to feature_keys in PLATFORM_FEATURES so the
+    # AND-with-tier just walks that map. New features added later
+    # only need a row in this dict to inherit the same rule.
+    PER_BEN_ACCESS_MAP = {
+        "mm_access": "mm",
+        "ega_access": "ega",
+        "sdv_access": "sdv",
+        "iac_access": "iac",
+        "ffn_access": "ffn",
+        "dav_access": "dav",
+        "dts_access": "dts",
+        "cfp_access": "cfp",
+    }
+    feature_access = {
+        access_key: bool(ben.get(access_key, True)) and _tier_has(feature_key)
+        for access_key, feature_key in PER_BEN_ACCESS_MAP.items()
+    }
+    # BEC has no per-beneficiary toggle — it's a tier-only AI feature.
+    # The hard server-side gate also runs in routes/beneficiary_concierge.py.
+    feature_access["bec_access"] = _tier_has("bec")
 
     return {
         "is_transitioned": is_transitioned,

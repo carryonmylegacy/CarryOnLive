@@ -16,7 +16,7 @@ import PushPrompt from '../../components/PushPrompt';
 import BeneficiaryPreTransitionPanel from '../../components/beneficiary/BeneficiaryPreTransitionPanel';
 
 const BeneficiaryDashboardPage = () => {
-  const { user, getAuthHeaders } = useAuth();
+  const { user, getAuthHeaders, refreshEnabledFeatures } = useAuth();
   const navigate = useNavigate();
   const [estate, setEstate] = useState(null);
   const [allEstates, setAllEstates] = useState([]);
@@ -136,6 +136,13 @@ const BeneficiaryDashboardPage = () => {
       // Persist the resolved estate so subsequent pages
       // (BeneficiaryVault, BeneficiaryMessages, etc.) can read it.
       localStorage.setItem('beneficiary_estate_id', estateId);
+      // Refresh enabled features against THIS estate so the global
+      // AuthContext.enabledFeatures map reflects the BENEFACTOR'S
+      // tier (not the beneficiary's own subscription). Without this,
+      // sidebar nav filtering for the next estate-scoped surface
+      // could briefly show items the benefactor's tier doesn't
+      // actually enable. (Tier inheritance, May 5, 2026.)
+      try { refreshEnabledFeatures && refreshEnabledFeatures(estateId); } catch {}
 
       const [estateRes, permRes] = await Promise.all([
         axios.get(`${API_URL}/estates/${estateId}`, getAuthHeaders()),
@@ -342,6 +349,9 @@ const BeneficiaryDashboardPage = () => {
                 if (!newId || newId === estate?.id) return;
                 localStorage.setItem('beneficiary_estate_id', newId);
                 localStorage.removeItem('beneficiary_feature_access');
+                // Refresh tier-derived enabled features against the
+                // new estate (benefactor's tier is authoritative).
+                try { refreshEnabledFeatures && refreshEnabledFeatures(newId); } catch {}
                 setLoading(true);
                 fetchData();
               }}

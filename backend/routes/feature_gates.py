@@ -208,10 +208,30 @@ async def get_user_enabled_features(
 
     effective_tier = None
 
-    # 1. Check active subscription
-    sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
-    if sub and sub.get("status") in ("active", "past_due"):
-        effective_tier = sub.get("plan_id")
+    # Tier inheritance rule (May 5, 2026, founder-mandated): when the
+    # caller is viewing the platform AS A BENEFICIARY of someone
+    # else's estate (estate_id supplied AND caller is not the owner
+    # of that estate), the benefactor's tier is authoritative — the
+    # caller's OWN subscription is irrelevant to what they see in
+    # that beneficiary view. Beneficiaries cannot choose their tier.
+    if estate_id:
+        viewing_estate = await db.estates.find_one(
+            {"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1, "verified_tier": 1}
+        )
+        if viewing_estate and viewing_estate.get("owner_id") and viewing_estate["owner_id"] != current_user["id"]:
+            ben_link = await db.beneficiaries.find_one(
+                {"estate_id": estate_id, "user_id": current_user["id"]},
+                {"_id": 0, "id": 1},
+            )
+            if ben_link:
+                effective_tier = await _get_benefactor_tier(current_user, estate_id)
+
+    # 1. Check active subscription (own tier, only if not in a
+    #    beneficiary-of-someone-else's-estate context)
+    if not effective_tier:
+        sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
+        if sub and sub.get("status") in ("active", "past_due"):
+            effective_tier = sub.get("plan_id")
 
     # 2. Check estate-level verified_tier
     if not effective_tier and estate_id:

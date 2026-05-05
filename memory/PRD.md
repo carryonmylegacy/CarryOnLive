@@ -2028,3 +2028,47 @@ Health: `bash /app/scripts/check.sh` → ALL CLEAR.
 - `GET /api/admin/system-health` returns the full notifications block; `delivery_rate_pct: null` correctly when no measurable denominator.
 
 Health: `bash /app/scripts/check.sh` → ALL CLEAR.
+
+---
+
+## Iteration 129 (cont.) — Sentry `notification_type` Tag + Tier Inheritance Audit (May 5, 2026)
+
+### Sentry tag on push delivery failures
+- `backend/utils.py` — added `_capture_push_failure(...)` helper. On every `WebPushException` or generic exception inside `send_push_notification`, forwards the exception to Sentry with tags: `notification_type`, `push_failure=true`, `user_id`, and `push_endpoint_host` (host only — strips device-specific suffix to avoid leaking subscription identifiers; FCM vs APNs vs Mozilla autopush is what you want when triaging).
+- Sentry SDK import is lazy + wrapped in `try/except Exception` so telemetry failures never break the real notification path.
+
+### Tier inheritance audit — TWO BUGS FOUND AND FIXED
+Founder rule: "Whatever tier the benefactor chooses is the tier that the beneficiary has. The beneficiary never has the ability to choose their tier."
+
+**Bug 1 — `section_permissions.py` `feature_access` map ignored the benefactor's tier gate.**
+The `*_access` flags (`mm_access`, `sdv_access`, `iac_access`, `cfp_access`, etc.) were built ONLY from the per-beneficiary toggles the benefactor sets — defaulting to `True` if not set. So a benefactor on the `base` tier could end up with `cfp_access: True` for their beneficiary even though the `base` tier has CFP off in the global feature_gates matrix. Sidebar/MobileNav/Dashboard tile would then offer routes the benefactor's tier doesn't actually unlock.
+Fix: every per-beneficiary `*_access` flag is now AND-ed with the benefactor's tier gate (`per_beneficiary_toggle AND gates[feature_key][benefactor_tier]`). Single chokepoint, eight features in lockstep. `bec_access` continues to be tier-only (no per-beneficiary toggle).
+
+**Bug 2 — `feature_gates.get_user_enabled_features` resolution order leaked the user's own subscription into beneficiary views.**
+The function checked the caller's own `user_subscriptions` row FIRST, before falling through to the estate's verified tier. A user who is a beneficiary on someone else's estate AND has their own (cheap) subscription would see THEIR tier's features when viewing the beneficiary portal — completely wrong.
+Fix: when `estate_id` is supplied AND the caller is not the owner of that estate AND the caller IS a beneficiary on it, the helper now jumps straight to `_get_benefactor_tier(current_user, estate_id)`. The own-subscription branch is skipped entirely. Outside of beneficiary-view contexts (no estate_id, or caller is owner), behavior is unchanged.
+
+**Bug 3 (related, frontend) — `AuthContext` focus-refresh dropped the estate id.**
+The 5-minute polling refresh and window-focus refresh of `enabledFeatures` called `fetchEnabledFeatures(token)` without passing the currently-selected estate id. Even if the boot fetch was correct (with estate_id), a single tab-focus event would silently overwrite `enabledFeatures` with the user's own-tier features. Sidebar nav would then briefly show items the benefactor's tier doesn't enable.
+Fix: focus / poll handlers now read `selected_estate_id` (benefactor) or `beneficiary_estate_id` (beneficiary) from localStorage and pass it through. Plus `BeneficiaryDashboardPage` now calls `refreshEnabledFeatures(estateId)` when an estate is first resolved AND when the user switches estates via the dropdown — so the global enabled-features map stays in lockstep with the selected estate.
+
+### Verified live (DB-seeded scenarios)
+
+**Per-beneficiary `feature_access` AND tier-gate**:
+- Same beneficiary user, two estates with different benefactor tiers.
+- `Estate(base)` → `mm/cfp/bec/dav/dts = False`, `sdv/iac/ega/ffn = True` ✓
+- `Estate(premium)` → all 9 features `True` ✓
+
+**`get_user_enabled_features` no own-subscription leak**:
+- Beneficiary user has own active `base` subscription. Benefactor estate is on `premium` tier.
+- Own context (no estate_id) → `enabled_features = []` (base tier features) ✓
+- Beneficiary view (estate_id=premium estate) → `enabled_features = ['bec','cfp','mm']` (benefactor's premium tier) ✓
+- Confirms the own-subscription branch is correctly skipped when in beneficiary-view context.
+
+Health: `bash /app/scripts/check.sh` → ALL CLEAR (housekeeping 0 WARN/0 FAIL, ruff PASS, ESLint PASS).
+
+### What this means for the founder
+- BEC tier-gate on/off Just Works™ across all surfaces — sidebar, mobile nav, dashboard tiles, settings — without any per-feature plumbing.
+- Same for any future feature you add to the `feature_gates` matrix. New features inherit the same tight wiring with zero additional code (one row in `PER_BEN_ACCESS_MAP` if you want a per-beneficiary toggle, otherwise tier-only is automatic).
+- A beneficiary who happens to have their own active subscription on a different tier no longer leaks features into the beneficiary view of someone else's estate.
+

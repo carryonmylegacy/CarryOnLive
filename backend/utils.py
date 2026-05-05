@@ -303,6 +303,35 @@ except Exception as e:
     logger.error(f"Failed to load VAPID keys: {e}")
 
 
+def _capture_push_failure(exc, *, user_id: str, notification_type: str, endpoint=None) -> None:
+    """Forward a push delivery failure to Sentry tagged with
+    notification_type so the Founder System Health 'delivery rate'
+    dip can be drilled straight into the failing stack traces.
+    Lazy Sentry import + broad exception swallow — telemetry must
+    never break the real notification path."""
+    try:
+        import sentry_sdk
+
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("notification_type", notification_type or "general")
+            scope.set_tag("push_failure", "true")
+            scope.set_tag("user_id", user_id)
+            if endpoint:
+                # Host only — stripping the device-specific suffix avoids
+                # leaking subscription identifiers. Host alone tells FCM
+                # vs APNs vs Mozilla autopush apart, which is what you
+                # want when triaging.
+                try:
+                    from urllib.parse import urlparse
+
+                    scope.set_tag("push_endpoint_host", urlparse(endpoint).netloc or "unknown")
+                except Exception:
+                    pass
+            sentry_sdk.capture_exception(exc)
+    except Exception:  # pragma: no cover — Sentry is best-effort
+        pass
+
+
 async def send_push_notification(
     user_id: str,
     title: str,
@@ -343,10 +372,12 @@ async def send_push_notification(
             success_count += 1
         except WebPushException as e:
             logger.warning(f"Push failed for user {user_id}: {e}")
+            _capture_push_failure(e, user_id=user_id, notification_type=notification_type, endpoint=sub.get("endpoint"))
             if e.response and e.response.status_code == 410:
                 await db.push_subscriptions.update_one({"endpoint": sub["endpoint"]}, {"$set": {"active": False}})
         except Exception as e:
             logger.warning(f"Push error for user {user_id}: {e}")
+            _capture_push_failure(e, user_id=user_id, notification_type=notification_type, endpoint=sub.get("endpoint"))
     if subscriptions:
         logger.info(f"Push sent to {success_count}/{len(subscriptions)} devices for user {user_id}")
     return {
