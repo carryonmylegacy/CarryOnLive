@@ -1982,3 +1982,28 @@ Health: `bash /app/scripts/check.sh` → ALL CLEAR (housekeeping 0 WARN/0 FAIL, 
 
 **Reminder for the founder before tomorrow's pitches**: BEC tier-gate defaults OFF for all tiers in `feature_gates`. To demo BEC live, go to **Admin → Subs → Feature Gates** and toggle the `bec` row ON for the demo benefactor's tier (e.g., `premium`, or whatever the demo account is on). Until that's done, BEC will appear hidden in the demo beneficiary nav.
 
+
+---
+
+## Iteration 129 (cont.) — Pre-Share Beneficiary Notification (May 5, 2026)
+
+**Founder approved**: when a benefactor designates a doc to a beneficiary AND that beneficiary newly gains pre-transition visibility on it (essential offline category like living-will / healthcare-directive / general-or-financial-POA, OR explicit `visibility_timing[ben_id].pre==true`), fire a gentle in-app push to the beneficiary.
+
+**Implementation**: `backend/routes/documents.py` — `designate_beneficiaries` endpoint now snapshots the pre-update designation+timing, applies the update, then calls a new `_notify_newly_pre_shared` helper that:
+- Walks every beneficiary record on the estate.
+- Computes `was_pre_visible` vs `is_pre_visible` using the same `_ben_has_pre_visibility` rule that BEC's gate uses (lockstep semantics — never notify on a state where the BEC gate disagrees).
+- Skips beneficiaries who already had visibility (idempotent on no-op designate calls) and beneficiaries with no claimed user account (anonymous links).
+- Adapts copy by tier-gate state:
+  - **BEC ON**: `"{Benefactor} shared {doc} with you. Your Beneficiary Estate Concierge can now answer questions about it."` → deep-links to `/beneficiary/concierge?estate_id={id}`. Metadata type: `bec_doc_shared`.
+  - **BEC OFF**: `"{Benefactor} shared {doc} with you. It's available in your Vault."` → deep-links to `/beneficiary/vault?estate_id={id}`. Metadata type: `vault_doc_shared`.
+- Notification failures are logged and never block the designate response.
+
+**Verified live** (direct DB-seeded scenarios on the preview pod):
+- BEC OFF + first share (essential-offline category, ben designation flips none → ben_id) → 1 notification with vault-path copy. ✓
+- BEC ON + first share → notification with BEC-path copy and `/beneficiary/concierge` deep-link. ✓
+- No-op repeat designate call (same designation, same timing) → 0 new notifications. ✓
+- Anonymous beneficiary links (no `user_id`) → silently skipped. ✓
+- All cleanup tags (`__test_tag: TEST_ITER129_*`) torn down post-test.
+
+Health: `bash /app/scripts/check.sh` → ALL CLEAR.
+
