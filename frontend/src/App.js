@@ -91,6 +91,7 @@ const FounderAboutPage = lazy(() => import('./pages/FounderAboutPage'));
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const VoicesPage = lazy(() => import('./pages/VoicesPage'));
+const PartnerBriefPage = lazy(() => import('./pages/PartnerBriefPage'));
 const SecurityPage = lazy(() => import('./pages/SecurityPage'));
 const WindDownPromisePage = lazy(() => import('./pages/WindDownPromisePage'));
 
@@ -543,6 +544,10 @@ function AppRoutes() {
       <Route path="/founder-about/:token" element={<FounderAboutPage />} />
       <Route path="/home" element={<HomePage />} />
       <Route path="/voices" element={<VoicesPage />} />
+      {/* Public B2B partner brief — shareable URL, no auth. Linked from
+          Admin → Marketing → Sales Brief. Used by the founder\u2019s assistant
+          and anyone the founder forwards the link to. */}
+      <Route path="/partner-brief" element={<PartnerBriefPage />} />
       {/* Archived D2C consumer marketing landing page — preserved so it can
           be re-enabled at `/` when consumer funnels are spun up. Per the
           B2B-first strategic pivot (Feb 2026), `/` now lands on Login. */}

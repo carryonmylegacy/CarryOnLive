@@ -9,7 +9,7 @@ import {
   CheckSquare, AlertTriangle, Clock, TrendingUp, Recycle,
   Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap, Puzzle, Mail, Film, Hourglass,
   Globe, UserCog, Power, MessageSquare, BarChart3, Download, Radio,
-  Calendar, GraduationCap, Bell, Sparkles, MessageSquareQuote
+  Calendar, GraduationCap, Bell, Sparkles, MessageSquareQuote, FileText
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { toast } from '../utils/toast';
@@ -71,6 +71,7 @@ import { NotificationCategoriesTab } from '../components/admin/NotificationCateg
 import { PlatformRulesTab } from '../components/admin/PlatformRulesTab';
 import { PrototypesTab } from '../components/admin/PrototypesTab';
 import { VoicesTab } from '../components/admin/VoicesTab';
+import SalesBriefTab from '../components/admin/SalesBriefTab';
 import AdminCommandPalette from '../components/admin/AdminCommandPalette';
 import AdminHeaderIconButton from '../components/admin/AdminHeaderIconButton';
 
@@ -113,6 +114,7 @@ const FOUNDER_SECTIONS = [
     scopes: ['founder', 'marketing'],
     tabs: [
       { key: 'funnel', label: 'Funnel', icon: TrendingUp, path: '/admin/funnel' },
+      { key: 'sales-brief', label: 'Sales Brief', icon: FileText, path: '/admin/sales-brief' },
       { key: 'beta-testing', label: 'Beta Testing', icon: Zap, path: '/admin/beta-testing' },
       { key: 'site-content', label: 'Site Content', icon: Film, path: '/admin/site-content' },
       { key: 'founder-emails', label: 'Emails', icon: Mail, path: '/admin/founder-emails' },
@@ -244,6 +246,7 @@ const PATH_TO_TAB = {
   '/admin/finance-members': 'finance-members',
   '/admin/platform-rules': 'platform-rules',
   '/admin/marketing-members': 'marketing-members',
+  '/admin/sales-brief': 'sales-brief',
   '/admin/compliance-members': 'compliance-members',
   '/admin/platform-members': 'platform-members',
   // Apr 27, 2026 — friendly URL aliases. The user-visible tab labels in
@@ -614,6 +617,7 @@ const AdminPage = ({ operatorMode = false }) => {
         {effectiveTab === 'finance-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['finance']} sectionLabel="Finance" />}
         {effectiveTab === 'platform-rules' && <PlatformRulesTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'marketing-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['marketing']} sectionLabel="Marketing" />}
+        {effectiveTab === 'sales-brief' && <SalesBriefTab />}
         {effectiveTab === 'compliance-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['compliance']} sectionLabel="Compliance" />}
         {effectiveTab === 'platform-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['platform_health']} sectionLabel="Platform" />}
         {/* Operator-specific tabs */}
