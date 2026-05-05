@@ -224,14 +224,34 @@ async def update_bill(bill_id: str, data: BillUpdate, current_user: dict = Depen
 
 
 @router.delete("/financial/bills/{bill_id}")
-async def delete_bill(bill_id: str, current_user: dict = Depends(get_current_user)):
-    """Soft-delete a bill."""
+async def delete_bill(
+    bill_id: str,
+    delete_dav: bool = False,
+    current_user: dict = Depends(get_current_user),
+):
+    """Soft-delete a bill.
+
+    When `delete_dav=true` and the bill has an auto-linked Digital
+    Access Vault credential (`dav_entry_id`), the matching DAV row is
+    soft-deleted in the same call. The frontend prompts the owner
+    with a 3-option modal (cancel / delete bill only / delete both)
+    so they explicitly opt in to losing the credential — defaulting
+    to false preserves the credential when callers omit the flag
+    (legacy clients, scripts, replayed offline mutations).
+    """
     bill = await db.bills.find_one({"id": bill_id, "deleted_at": None}, {"_id": 0})
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
     await _verify_estate_access(bill["estate_id"], current_user, require_owner=True)
-    await db.bills.update_one({"id": bill_id}, {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}})
-    return {"success": True}
+    now = datetime.now(timezone.utc).isoformat()
+    await db.bills.update_one({"id": bill_id}, {"$set": {"deleted_at": now}})
+    dav_id = bill.get("dav_entry_id")
+    if delete_dav and dav_id:
+        await db.digital_wallet.update_one(
+            {"id": dav_id, "estate_id": bill["estate_id"], "deleted_at": None},
+            {"$set": {"deleted_at": now}},
+        )
+    return {"success": True, "dav_deleted": bool(delete_dav and dav_id)}
 
 
 # ===================== DEBTS CRUD =====================

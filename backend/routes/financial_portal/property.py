@@ -63,16 +63,25 @@ async def update_property_asset(
 
 
 @router.delete("/financial/property/{property_id}")
-async def delete_property_asset(property_id: str, current_user: dict = Depends(get_current_user)):
-    """Soft-delete a property asset."""
+async def delete_property_asset(
+    property_id: str,
+    delete_dav: bool = False,
+    current_user: dict = Depends(get_current_user),
+):
+    """Soft-delete a property asset; optionally cascade the linked DAV entry."""
     prop = await db.property_assets.find_one({"id": property_id, "deleted_at": None}, {"_id": 0})
     if not prop:
         raise HTTPException(status_code=404, detail="Property asset not found")
     await _verify_estate_access(prop["estate_id"], current_user, require_owner=True)
-    await db.property_assets.update_one(
-        {"id": property_id}, {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}}
-    )
-    return {"success": True}
+    now = datetime.now(timezone.utc).isoformat()
+    await db.property_assets.update_one({"id": property_id}, {"$set": {"deleted_at": now}})
+    dav_id = prop.get("dav_entry_id")
+    if delete_dav and dav_id:
+        await db.digital_wallet.update_one(
+            {"id": dav_id, "estate_id": prop["estate_id"], "deleted_at": None},
+            {"$set": {"deleted_at": now}},
+        )
+    return {"success": True, "dav_deleted": bool(delete_dav and dav_id)}
 
 
 # ===================== BILL PAYMENTS (Mark as Paid) =====================

@@ -62,16 +62,25 @@ async def update_account(account_id: str, data: AccountUpdate, current_user: dic
 
 
 @router.delete("/financial/accounts/{account_id}")
-async def delete_account(account_id: str, current_user: dict = Depends(get_current_user)):
-    """Soft-delete a financial account."""
+async def delete_account(
+    account_id: str,
+    delete_dav: bool = False,
+    current_user: dict = Depends(get_current_user),
+):
+    """Soft-delete a financial account; optionally cascade the linked DAV entry."""
     acct = await db.financial_accounts.find_one({"id": account_id, "deleted_at": None}, {"_id": 0})
     if not acct:
         raise HTTPException(status_code=404, detail="Account not found")
     await _verify_estate_access(acct["estate_id"], current_user, require_owner=True)
-    await db.financial_accounts.update_one(
-        {"id": account_id}, {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}}
-    )
-    return {"success": True}
+    now = datetime.now(timezone.utc).isoformat()
+    await db.financial_accounts.update_one({"id": account_id}, {"$set": {"deleted_at": now}})
+    dav_id = acct.get("dav_entry_id")
+    if delete_dav and dav_id:
+        await db.digital_wallet.update_one(
+            {"id": dav_id, "estate_id": acct["estate_id"], "deleted_at": None},
+            {"$set": {"deleted_at": now}},
+        )
+    return {"success": True, "dav_deleted": bool(delete_dav and dav_id)}
 
 
 # ===================== PROPERTY & ASSETS =====================

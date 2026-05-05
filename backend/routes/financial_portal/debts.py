@@ -62,14 +62,25 @@ async def update_debt(debt_id: str, data: DebtUpdate, current_user: dict = Depen
 
 
 @router.delete("/financial/debts/{debt_id}")
-async def delete_debt(debt_id: str, current_user: dict = Depends(get_current_user)):
-    """Soft-delete a debt."""
+async def delete_debt(
+    debt_id: str,
+    delete_dav: bool = False,
+    current_user: dict = Depends(get_current_user),
+):
+    """Soft-delete a debt; optionally cascade the linked DAV entry."""
     debt = await db.debts.find_one({"id": debt_id, "deleted_at": None}, {"_id": 0})
     if not debt:
         raise HTTPException(status_code=404, detail="Debt not found")
     await _verify_estate_access(debt["estate_id"], current_user, require_owner=True)
-    await db.debts.update_one({"id": debt_id}, {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}})
-    return {"success": True}
+    now = datetime.now(timezone.utc).isoformat()
+    await db.debts.update_one({"id": debt_id}, {"$set": {"deleted_at": now}})
+    dav_id = debt.get("dav_entry_id")
+    if delete_dav and dav_id:
+        await db.digital_wallet.update_one(
+            {"id": dav_id, "estate_id": debt["estate_id"], "deleted_at": None},
+            {"$set": {"deleted_at": now}},
+        )
+    return {"success": True, "dav_deleted": bool(delete_dav and dav_id)}
 
 
 # ===================== ACCOUNTS CRUD =====================

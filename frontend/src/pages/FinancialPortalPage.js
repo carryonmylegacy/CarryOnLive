@@ -23,6 +23,7 @@ import { saveList, readList } from '../utils/localListCache';
 import { useDraftState } from '../hooks/useDraftState';
 import BillForm from '../components/financial/BillForm';
 import DebtForm from '../components/financial/DebtForm';
+import ConfirmDeleteWithDavModal from '../components/financial/ConfirmDeleteWithDavModal';
 import AccountForm from '../components/financial/AccountForm';
 import PropertyAssetForm from '../components/financial/PropertyAssetForm';
 import PropertyAssetTile from '../components/financial/PropertyAssetTile';
@@ -88,6 +89,11 @@ const FinancialPortalPage = () => {
   const [loading, setLoading] = useState(true);
   const [billFilter, setBillFilter] = useState('all');
   const [debtFilter, setDebtFilter] = useState('all');
+  // Confirm-delete modal state. Set when the user taps "delete" on
+  // any CFP item; the modal renders 3 options when the item has an
+  // auto-linked DAV credential, falls back to a simple Yes/No
+  // confirmation when it doesn't.
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [accountFilter, setAccountFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   // Draft persistence — the 4 slide-out create panels (Bill / Debt /
@@ -348,13 +354,31 @@ const FinancialPortalPage = () => {
   // Module key used by the list state mapping. Matches LIST_BY_MODULE keys.
   const moduleForType = (type) => (type === 'bills' || type === 'debts' || type === 'accounts' || type === 'property' ? type : null);
 
-  const handleDelete = async (type, id) => {
-    if (!window.confirm('Delete this entry? This cannot be undone.')) return;
+  // Delete entry-point — opens the confirm modal. The actual mutation
+  // happens in performDelete() below once the user picks an option.
+  // When the item has a `dav_entry_id`, the modal offers 3 choices:
+  // cancel / delete item only / delete item + linked DAV credential.
+  const handleDelete = (type, id) => {
+    const mod = moduleForType(type);
+    const list = mod && SETTER_BY_MODULE[mod] ? SETTER_BY_MODULE[mod].statePeek?.() : null;
+    // Read the most recent in-memory list to find the dav link.
+    let item = null;
+    if (mod === 'bills') item = bills.find(b => b.id === id);
+    else if (mod === 'debts') item = debts.find(b => b.id === id);
+    else if (mod === 'accounts') item = accounts.find(b => b.id === id);
+    else if (mod === 'property') item = propertyAssets.find(b => b.id === id);
+    const linkedDav = item?.dav_entry_id
+      ? (davEntries || []).find(d => d.id === item.dav_entry_id)
+      : null;
+    setConfirmDelete({ type, id, item, linkedDav });
+  };
+
+  const performDelete = async (type, id, deleteDav) => {
     const mod = moduleForType(type);
     let prevList = null;
+    let prevDav = null;
     let removedItem = null;
-    // Optimistic remove: drop the row immediately so the UI never shows
-    // "I deleted this but it's still there waiting for the network".
+    // Optimistic remove of the item itself.
     if (mod && SETTER_BY_MODULE[mod]) {
       const { set, cacheKey } = SETTER_BY_MODULE[mod];
       set(prev => {
@@ -398,27 +422,58 @@ const FinancialPortalPage = () => {
         });
       }
     }
+    // Optimistic remove of the linked DAV row when the user opts in.
+    const davIdToRemove = deleteDav && removedItem?.dav_entry_id ? removedItem.dav_entry_id : null;
+    if (davIdToRemove) {
+      prevDav = davEntries;
+      const nextDav = davEntries.filter(d => d.id !== davIdToRemove);
+      setDavEntries(nextDav);
+      if (estate?.id) {
+        try {
+          saveList(`financial:dav:${estate.id}`, nextDav);
+          persistPortalCache({ dav: nextDav });
+        } catch { /* non-fatal */ }
+      }
+    }
     try {
-
       const r = await mutateWithOutbox({
         entity_type: `financial_${type === 'property' ? 'property' : type.replace(/s$/, '')}`,
         entity_id: id,
         method: 'DELETE',
-        url: `/financial/${type}/${id}`,
+        // Append the cascade flag as a query param so it survives offline
+        // replay verbatim. The server defaults `delete_dav=false` when
+        // omitted — preserves the credential for legacy clients.
+        url: `/financial/${type}/${id}${deleteDav ? '?delete_dav=true' : ''}`,
         authHeaders: getAuthHeaders(),
       });
       if (!r.ok) throw r.error || new Error('Delete failed');
+      if (davIdToRemove) {
+        // Queue / fire the DAV delete separately so the credential is
+        // removed even on legacy server builds that don't honor the
+        // cascade query param. The server-side cascade above is the
+        // happy path; this is the safety net.
+        await mutateWithOutbox({
+          entity_type: 'digital_wallet_entry',
+          entity_id: davIdToRemove,
+          method: 'DELETE',
+          url: `/digital-wallet/${davIdToRemove}`,
+          authHeaders: getAuthHeaders(),
+        });
+      }
       if (r.queued) {
-        toast.success('Deletion queued — will sync when you reconnect.');
+        toast.success(davIdToRemove
+          ? 'Deletion + linked credential queued — will sync when you reconnect.'
+          : 'Deletion queued — will sync when you reconnect.');
         return;
       }
       fetchAll();
     } catch {
       toast.error('Failed to delete');
-      // Roll back optimistic remove on hard failure.
+      // Roll back both optimistic removes on hard failure.
       if (mod && SETTER_BY_MODULE[mod] && prevList) {
         SETTER_BY_MODULE[mod].set(prevList);
       }
+      if (prevDav) setDavEntries(prevDav);
       fetchAll();
     }
   };
@@ -949,6 +1004,31 @@ const FinancialPortalPage = () => {
           getAuthHeaders={getAuthHeaders}
         />
       </SlidePanel>
+
+      {/* Confirm-delete modal — surfaces the linked DAV credential and
+          gives the user explicit control over whether to cascade the
+          deletion to the credential. Works offline (the choice is
+          captured client-side and queued via mutateWithOutbox). */}
+      <ConfirmDeleteWithDavModal
+        open={!!confirmDelete}
+        itemLabel={confirmDelete?.type === 'bills' ? 'Bill'
+          : confirmDelete?.type === 'debts' ? 'Debt'
+          : confirmDelete?.type === 'accounts' ? 'Account'
+          : confirmDelete?.type === 'property' ? 'Property' : 'Entry'}
+        itemName={confirmDelete?.item?.name}
+        linkedDav={confirmDelete?.linkedDav}
+        onCancel={() => setConfirmDelete(null)}
+        onConfirmKeep={() => {
+          const { type, id } = confirmDelete;
+          setConfirmDelete(null);
+          performDelete(type, id, false);
+        }}
+        onConfirmCascade={() => {
+          const { type, id } = confirmDelete;
+          setConfirmDelete(null);
+          performDelete(type, id, true);
+        }}
+      />
     </div>
   );
 };
