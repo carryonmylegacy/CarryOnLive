@@ -261,7 +261,7 @@ export default function SalesBriefTab() {
       {/* Source-of-truth note */}
       <div className="rounded-xl p-4" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
         <p className="text-xs text-[var(--t5)] leading-relaxed">
-          <strong className="text-[var(--t3)]">Source of truth:</strong> the canonical pillar names are stored in
+          <strong className="text-[var(--t3)]">Source of truth:</strong> the official pillar names are stored in
           <code className="text-[var(--gold)] mx-1">memory/AGENT_RULES.md</code>. Live brief content is stored in MongoDB
           (<code className="text-[var(--gold)] mx-1">partner_brief_content</code>) and can always be reset to the seed defaults
           shipped in <code className="text-[var(--gold)] mx-1">backend/routes/partner_brief.py</code>. The page is a critical
@@ -282,9 +282,9 @@ function BriefSummary({ content }) {
       <SummaryRow label="Header intro" value={c.header?.intro} />
       <SummaryRow label="One-breath quote" value={c.one_breath?.quote} />
       <SummaryRow label="Pillars" value={`${(c.pillars?.items || []).length} pillars`} />
-      <SummaryRow label="Verticals" value={`${(c.verticals?.items || []).length} verticals: ${(c.verticals?.items || []).map(v => v.title?.split(' ').slice(1).join(' ').replace('/', '/').slice(0, 22)).join(', ')}`} />
-      <SummaryRow label="Adjacent verticals" value={`${(c.adjacent?.items || []).length} entries`} />
-      <SummaryRow label="Elevator one-liners" value={`${(c.elevator?.items || []).length} entries`} />
+      <SummaryRow label="Industries" value={`${(c.verticals?.items || []).length} industries: ${(c.verticals?.items || []).map(v => v.title?.split(' ').slice(1).join(' ').replace('/', '/').slice(0, 22)).join(', ')}`} />
+      <SummaryRow label="Other industries" value={`${(c.adjacent?.items || []).length} entries`} />
+      <SummaryRow label="Short answers" value={`${(c.elevator?.items || []).length} entries`} />
       <p className="text-xs text-[var(--t5)] mt-3 italic">Click <strong>Edit content</strong> above to change any character of the public brief.</p>
     </div>
   );
@@ -339,14 +339,14 @@ function BriefEditor({ draft, upd, listAdd, listRemove }) {
         ))}
       </Accordion>
 
-      <Accordion title="3. Verticals (life insurance, financial planners, etc.)" testid="acc-verticals">
+      <Accordion title="3. Industries (life insurance, financial planners, etc.)" testid="acc-verticals">
         <Field label="Section title" value={draft.verticals?.title || ''} onChange={(v) => upd(['verticals', 'title'], v)} testid="f-v-title" />
         <Field label="Section intro" value={draft.verticals?.intro || ''} onChange={(v) => upd(['verticals', 'intro'], v)} multiline rows={2} testid="f-v-intro" />
 
         <div className="mt-4 mb-2 flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-[var(--gold)]">Vertical entries</span>
-          <button onClick={() => listAdd(['verticals', 'items'], { id: `v-${Date.now()}`, title: 'New vertical', cares: [''], pillars: '', questions: [''], disqualify: '' })} className="text-xs px-2 py-1 rounded-md inline-flex items-center gap-1" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.30)', color: 'var(--gold)' }} data-testid="add-vertical">
-            <Plus className="w-3 h-3" /> Add vertical
+          <span className="text-xs font-bold uppercase tracking-wider text-[var(--gold)]">Industry entries</span>
+          <button onClick={() => listAdd(['verticals', 'items'], { id: `v-${Date.now()}`, title: 'New industry', cares: [''], pillars: '', questions: [''], disqualify: '' })} className="text-xs px-2 py-1 rounded-md inline-flex items-center gap-1" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.30)', color: 'var(--gold)' }} data-testid="add-vertical">
+            <Plus className="w-3 h-3" /> Add industry
           </button>
         </div>
         {(draft.verticals?.items || []).map((v, i) => (
@@ -360,7 +360,7 @@ function BriefEditor({ draft, upd, listAdd, listRemove }) {
         ))}
       </Accordion>
 
-      <Accordion title="4. Adjacent verticals" testid="acc-adjacent">
+      <Accordion title="4. Other related industries" testid="acc-adjacent">
         <Field label="Section title" value={draft.adjacent?.title || ''} onChange={(v) => upd(['adjacent', 'title'], v)} testid="f-a-title" />
         <div className="mt-3 mb-2 flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-[var(--gold)]">Entries</span>
@@ -376,16 +376,16 @@ function BriefEditor({ draft, upd, listAdd, listRemove }) {
         ))}
       </Accordion>
 
-      <Accordion title="5. Screening posture" testid="acc-screening">
+      <Accordion title="5. How to run the call" testid="acc-screening">
         <Field label="Section title" value={draft.screening?.title || ''} onChange={(v) => upd(['screening', 'title'], v)} testid="f-s-title" />
         <Field label="Section intro" value={draft.screening?.intro || ''} onChange={(v) => upd(['screening', 'intro'], v)} multiline rows={2} testid="f-s-intro" />
-        <Field label='"Always escalated" subhead' value={draft.screening?.escalated_label || ''} onChange={(v) => upd(['screening', 'escalated_label'], v)} testid="f-s-esclabel" />
-        <StringList label="Always-escalated items" items={draft.screening?.escalated || []} onAdd={() => listAdd(['screening', 'escalated'], '')} onRemove={(j) => listRemove(['screening', 'escalated'], j)} onChange={(j, x) => upd(['screening', 'escalated', j], x)} testid="esc" />
+        <Field label='"Send to founder" subhead' value={draft.screening?.escalated_label || ''} onChange={(v) => upd(['screening', 'escalated_label'], v)} testid="f-s-esclabel" />
+        <StringList label="Send-to-founder items" items={draft.screening?.escalated || []} onAdd={() => listAdd(['screening', 'escalated'], '')} onRemove={(j) => listRemove(['screening', 'escalated'], j)} onChange={(j, x) => upd(['screening', 'escalated', j], x)} testid="esc" />
         <Field label='"Captured" subhead' value={draft.screening?.captured_label || ''} onChange={(v) => upd(['screening', 'captured_label'], v)} testid="f-s-caplabel" />
         <StringList label="Captured items" items={draft.screening?.captured || []} onAdd={() => listAdd(['screening', 'captured'], '')} onRemove={(j) => listRemove(['screening', 'captured'], j)} onChange={(j, x) => upd(['screening', 'captured', j], x)} testid="cap" />
       </Accordion>
 
-      <Accordion title="6. Elevator one-liners" testid="acc-elevator">
+      <Accordion title="6. Quick reference — short answers" testid="acc-elevator">
         <Field label="Section title" value={draft.elevator?.title || ''} onChange={(v) => upd(['elevator', 'title'], v)} testid="f-e-title" />
         <Field label="Section intro" value={draft.elevator?.intro || ''} onChange={(v) => upd(['elevator', 'intro'], v)} multiline rows={2} testid="f-e-intro" />
         <div className="mt-3 mb-2 flex items-center justify-between">

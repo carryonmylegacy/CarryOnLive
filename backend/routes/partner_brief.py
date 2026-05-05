@@ -35,14 +35,14 @@ router = APIRouter()
 # shows the founder-approved version). Edit here to change the seed.
 DEFAULTS: dict[str, Any] = {
     "header": {
-        "eyebrow": "For partners considering a CarryOn relationship",
+        "eyebrow": "For partners thinking about working with CarryOn",
         "title": "CarryOn™ Partner Brief",
         "intro": (
-            "An overview of the platform, the nine pillars, and how each maps to "
-            "the businesses we partner with — life insurance, financial planning, "
-            "funeral homes, estate planning attorneys, and adjacent verticals. "
-            "Used by our team to qualify partner conversations before a discovery "
-            "call with the founder."
+            "A short overview of the platform, the nine pillars, and how each one "
+            "fits the kinds of businesses we partner with — life insurance, "
+            "financial planning, funeral homes, estate planning attorneys, and "
+            "other related industries. Our team uses this brief to screen "
+            "partner calls before a discovery call with the founder."
         ),
     },
     "one_breath": {
@@ -64,8 +64,7 @@ DEFAULTS: dict[str, Any] = {
     "pillars": {
         "title": "2. The Nine Pillars of Family Readiness",
         "intro": (
-            "These are the canonical names used across all CarryOn surfaces. "
-            "The TM mark on Estate Guardian is required."
+            "These are the official names we use everywhere in CarryOn. Always include the ™ on Estate Guardian."
         ),
         "items": [
             {
@@ -78,7 +77,7 @@ DEFAULTS: dict[str, Any] = {
                 "n": "02",
                 "name": "Secure Document Vault",
                 "abbr": "SDV",
-                "desc": "Encrypted storage for the documents a family will actually need — wills, trusts, deeds, insurance policies, medical directives — sealed and released to the right people at the right time.",
+                "desc": "Encrypted storage for the documents a family will actually need — wills, trusts, deeds, insurance policies, medical directives — locked and released to the right people at the right time.",
             },
             {
                 "n": "03",
@@ -96,7 +95,7 @@ DEFAULTS: dict[str, Any] = {
                 "n": "05",
                 "name": "CarryOn Contingency Protocols",
                 "abbr": "CCP",
-                "desc": "Pre-authored emergency plans the person sets up while healthy — what to do if they’re in an accident, hospitalized, declared incapacitated, or pass — with the right people pre-notified and the right documents pre-routed.",
+                "desc": "Pre-written emergency plans the person sets up while healthy — what to do if they’re in an accident, hospitalized, declared incapacitated, or pass — with the right people pre-notified and the right documents ready to go.",
             },
             {
                 "n": "06",
@@ -108,13 +107,13 @@ DEFAULTS: dict[str, Any] = {
                 "n": "07",
                 "name": "Digital Access Vault",
                 "abbr": "DAV",
-                "desc": "Encrypted storage for digital account credentials — banking, email, social, password manager, crypto wallet keys — so the family can actually GET INTO the accounts the will mentions.",
+                "desc": "Encrypted storage for digital account logins — banking, email, social, password manager, crypto wallet keys — so the family can actually GET INTO the accounts the will mentions.",
             },
             {
                 "n": "08",
                 "name": "Family & Friends Notification",
                 "abbr": "FFN",
-                "desc": "Coordinated, dignified notification of everyone who needs to know — in the order and through the channel the person chose, while they were the one writing the message.",
+                "desc": "Organized, dignified notification of everyone who needs to know — in the order and through the channel the person chose, while they were the one writing the message.",
             },
             {
                 "n": "09",
@@ -124,29 +123,30 @@ DEFAULTS: dict[str, Any] = {
             },
         ],
         "foundational": (
-            "Foundational element (not a pillar): Beneficiaries — every pillar is "
-            "built around designated beneficiaries with role-based, granular "
-            "access. The benefactor decides who sees what, when."
+            "Building block (not one of the nine pillars): Beneficiaries — every "
+            "pillar is built around the people the user has named as their "
+            "beneficiaries, with separate permissions for each person. The "
+            "benefactor decides who sees what, and when."
         ),
     },
     "verticals": {
-        "title": "3. Use cases by partner vertical",
-        "intro": "For each vertical: what they’re solving for, which pillars resonate first, and the qualifying questions our team will ask.",
+        "title": "3. How it fits each kind of partner",
+        "intro": "For each industry: what problem they want to solve, which pillars matter most to them, and the screening questions our team will ask.",
         "items": [
             {
                 "id": "life-insurance",
                 "title": "A. Life Insurance Agents / Brokers",
                 "cares": [
-                    'Higher policy retention (clients lapse less when they feel "set up").',
-                    "Better claims experience — beneficiaries know the policy exists, can find it, can act on it without a 6-month battle.",
-                    "Differentiation in a commoditized market — they want to be the agent who also helped the family get organized.",
-                    "Compliance comfort: nothing in CarryOn replaces or alters the policy itself.",
+                    'Higher policy retention — clients are less likely to cancel when they feel "set up."',
+                    "Better claims experience — beneficiaries know the policy exists, can find it, and can act on it without a 6-month battle.",
+                    "Standing out in a crowded market — they want to be the agent who also helped the family get organized.",
+                    "Peace of mind on compliance: nothing in CarryOn changes or replaces the policy itself.",
                 ],
-                "pillars": 'SDV (where the policy lives), EGA (so the family can ask "where’s dad’s policy"), FFN (the agent gets notified when a transition event occurs), IAC (claims-filing step lives in the checklist), CFP (policy shows up in the household financial picture).',
+                "pillars": 'SDV (where the policy lives), EGA (so the family can ask "where’s dad’s policy?"), FFN (the agent gets notified when something happens), IAC (claims-filing step lives in the checklist), CFP (the policy shows up in the household financial picture).',
                 "questions": [
-                    "Are you looking for a tool to offer your existing book of business, or are you exploring this as a referral / affiliate channel for new client acquisition?",
+                    "Are you looking for a tool to offer to the clients you already have, or a way to get referrals and earn on new clients you bring in?",
                     "Roughly how many policies do you have under management?",
-                    'Do you currently have any post-sale "family preparedness" or "legacy" service you offer clients today, even informally?',
+                    'Do you currently offer any kind of "family preparedness" or "legacy" service to clients today, even informally?',
                     "Are you part of a larger agency / IMO / FMO, or independent?",
                 ],
                 "disqualify": "They’re really looking for a CRM, a quoting engine, or a lead-generation service. We’re not those.",
@@ -155,18 +155,18 @@ DEFAULTS: dict[str, Any] = {
                 "id": "financial-planners",
                 "title": "B. Financial Planners / Wealth Advisors / RIAs",
                 "cares": [
-                    'Estate-planning gap: clients have wealth but no organized "go-time" plan for the family.',
-                    "Practice differentiation: high-net-worth clients increasingly expect holistic family-readiness support.",
-                    "Continuity: when the primary client passes, the surviving spouse often leaves the advisor within 2 years. CarryOn keeps the family inside an organized hand-off.",
-                    "Fiduciary comfort: CarryOn doesn’t give financial advice; it organizes what the advisor and client have already decided.",
+                    'Estate-planning gap: clients have wealth but no organized "when something happens" plan for the family.',
+                    "Standing out from other advisors: wealthy clients more and more expect a complete family-readiness plan, not just money advice.",
+                    "Keeping the family relationship: when the primary client passes, the surviving spouse often leaves the advisor within 2 years. CarryOn keeps the family inside an organized hand-off.",
+                    "Peace of mind for compliance: CarryOn doesn’t give financial advice — it just organizes what the advisor and client have already decided.",
                 ],
-                "pillars": "CFP (full household picture), SDV (estate documents in one place), EGA (family asks the AI, not the advisor at 11pm), MM (the human-legacy piece advisors can’t deliver themselves), CCP (incapacity protocols), DAV (the digital-access gap most advisors quietly worry about).",
+                "pillars": "CFP (full household picture), SDV (estate documents in one place), EGA (the family asks the AI, not the advisor at 11pm), MM (the personal-legacy piece advisors can’t deliver themselves), CCP (plans for accident or incapacity), DAV (the digital-access gap most advisors quietly worry about).",
                 "questions": [
-                    "What does your current estate-organization handoff look like for a client family today?",
+                    "What does your current family hand-off look like today when a client passes or becomes incapacitated?",
                     "Are you AUM-based, fee-only, hybrid? (Just for context — affects how a partnership would feel for them.)",
-                    "Roughly how many client households, and what’s the typical age range of the primary?",
+                    "Roughly how many client households, and what’s the typical age range of the primary client?",
                     "Do you work inside a broker-dealer / RIA umbrella, or independently?",
-                    "Have you had a client family go through a transition event in the last 18 months? (If yes, ask gently what that hand-off looked like.)",
+                    "Have you had a client family go through a death or major life event in the last 18 months? (If yes, gently ask what that hand-off looked like.)",
                 ],
                 "disqualify": "",
             },
@@ -175,17 +175,17 @@ DEFAULTS: dict[str, Any] = {
                 "title": "C. Funeral Homes / Cemetery Operators / Pre-Need Planners",
                 "cares": [
                     "Pre-need conversion: families who plan ahead spend more, dispute less, and refer more.",
-                    "After-care: the bereaved family doesn’t just need a service, they need help with the next 90 days.",
-                    "Differentiation from corporate consolidators — independents need a digital story.",
-                    "Their families are often older and tech-anxious — they need something a 70-year-old will actually use.",
+                    "After-care: the grieving family doesn’t just need a service — they need help with the next 90 days.",
+                    "Standing out from the big corporate chains — independents need a digital story.",
+                    "Their families are often older and not comfortable with new tech — they need something a 70-year-old will actually use.",
                 ],
-                "pillars": 'IAC (the "first 30 days after death" surface), FFN (notifying the right people, in the right order, in the family’s voice), MM (the legacy piece — funeral homes are increasingly asked for video tribute services), SDV (death certificate, obituary draft, service plan).',
+                "pillars": 'IAC (the "first 30 days after death" page), FFN (notifying the right people, in the right order, in the family’s voice), MM (the legacy piece — funeral homes are more and more being asked for video tribute services), SDV (death certificate, obituary draft, service plan).',
                 "questions": [
                     "Do you offer pre-need / pre-arrangement today, and what does that intake look like?",
-                    "Are you independent, part of a regional group, or under a larger umbrella?",
+                    "Are you independent, part of a regional chain, or part of a bigger company?",
                     "Do you have an after-care program — six-month follow-ups, grief resources?",
                     "Roughly how many services per year? (Sizing question — DON’T quote pricing.)",
-                    "Are you exploring this as something you’d offer at intake, give as part of pre-need, or refer to as an aftercare partner?",
+                    "Are you thinking about offering this to families at intake, including it in pre-need, or just referring to it as an after-care partner?",
                 ],
                 "disqualify": "",
             },
@@ -194,16 +194,16 @@ DEFAULTS: dict[str, Any] = {
                 "title": "D. Estate Planning Attorneys / Trust & Estate Firms",
                 "cares": [
                     "Their work product (the will, the trust, the POA) sits in a drawer until the day it’s needed — and on that day, the family can’t find it, doesn’t understand it, and calls the attorney in a panic.",
-                    "Document delivery + family education is the bottleneck of their practice — they want the document used correctly, not just filed.",
-                    "Liability comfort: anything the family does inside CarryOn must not contradict or substitute for the legal instrument.",
-                    "They want to look modern to younger clients without learning new software themselves.",
+                    "Getting the documents to the family and explaining them is the slowest part of their job — they want the document actually used right, not just filed away.",
+                    "Legal-risk comfort: nothing the family does inside CarryOn replaces or contradicts the actual legal document.",
+                    "They want to look modern to younger clients without having to learn new software themselves.",
                 ],
-                "pillars": "SDV (their documents live there, sealed and released correctly), EGA (the AI that explains the document to the family in plain English without giving legal advice), IAC (the action checklist their POA / executor will actually use), DAV (digital-asset access the will references but the family can never find), CCP (incapacity vs death protocols).",
+                "pillars": "SDV (their documents live there, sealed and released correctly), EGA (an AI that explains the document to the family in plain English without giving legal advice), IAC (the action checklist their POA / executor will actually use), DAV (the digital-account access the will references but the family can never find), CCP (separate plans for incapacity vs death).",
                 "questions": [
-                    "How does your firm currently hand off the executed plan to the client family — copy, secure portal, document vault?",
-                    "Do you offer plan-review or update services post-execution, or is it largely engagement-by-engagement?",
+                    "How does your firm currently hand the signed plan off to the client family today — paper copy, secure portal, document vault?",
+                    "Do you offer plan-review or update services after the will is signed, or is it mostly one-time per client?",
                     "Roughly how many active client families, and how many new plans per year?",
-                    "Are you a solo / boutique firm, or part of a larger T&E practice?",
+                    "Are you a solo / small specialty firm, or part of a larger Trust & Estate practice?",
                     "Do you already use a document portal vendor (Trust & Will, Wealth.com, Vanilla, EncoreEstate)? (Asking because that affects how a partnership would feel — NOT to compare features.)",
                 ],
                 "disqualify": "",
@@ -211,58 +211,58 @@ DEFAULTS: dict[str, Any] = {
         ],
     },
     "adjacent": {
-        "title": "4. Adjacent verticals",
+        "title": "4. Other related industries",
         "items": [
             {
                 "name": "Employee-benefits brokers / HR-tech",
-                "frame": "Selling CarryOn as a workplace benefit. Pillars: full nine, framed as financial-wellness + family-preparedness. Qualify on plan-sponsor count, age skew, current EAP / financial-wellness offering.",
+                "frame": "Selling CarryOn as a workplace benefit. Pillars: full nine, presented as financial-wellness + family-preparedness. Screen on plan-sponsor count, age skew, current EAP / financial-wellness offering.",
             },
             {
                 "name": "Hospice / palliative care providers",
-                "frame": "CarryOn is free for every American in hospice care — so this is a referral / awareness partnership, not a revenue partnership. Pillars: IAC, MM, SDV, FFN, CCP. Qualify on patient volume + service area.",
+                "frame": "CarryOn is free for every American in hospice care — so this is a referral / awareness partnership, not a paid one. Pillars: IAC, MM, SDV, FFN, CCP. Screen on patient volume + service area.",
             },
             {
-                "name": "Faith communities / clergy",
-                "frame": 'Same family-preparedness frame, often paired with a "blessing the plan" intake. Pillars: MM (legacy messages), FFN (community notification), IAC. Qualify on congregation size + member-benefit vs referral.',
+                "name": "Religious communities / clergy",
+                "frame": 'Same family-preparedness pitch, often paired with a "blessing the plan" intake. Pillars: MM (legacy messages), FFN (community notification), IAC. Screen on congregation size + member-benefit vs referral.',
             },
             {
                 "name": "Military / veteran service organizations",
-                "frame": 'CarryOn has Military and Veteran tier discounts. Pillars: full nine, framed as "leave nothing for your family to figure out." Qualify on org type, member count, deployment cadence if active-duty.',
+                "frame": 'CarryOn has Military and Veteran tier discounts. Pillars: full nine, presented as "leave nothing for your family to figure out." Screen on org type, member count, and how often members deploy if active-duty.',
             },
             {
                 "name": "Senior-living operators / CCRCs",
-                "frame": "Resident-onboarding and family-coordination angle. Pillars: full nine. Qualify on resident count, independent vs assisted vs memory-care mix.",
+                "frame": "Resident move-in and family-coordination angle. Pillars: full nine. Screen on resident count, independent vs assisted vs memory-care mix.",
             },
         ],
     },
     "screening": {
-        "title": "5. Screening posture",
-        "intro": "The team’s job on a first call is to listen, qualify, and book — not to demo, quote, or technically educate.",
-        "escalated_label": "Always escalated to the founder",
+        "title": "5. How to run the call",
+        "intro": "Your job on a first call is to listen, screen, and schedule — not to demo, give pricing, or explain the platform in detail.",
+        "escalated_label": "Always send to the founder",
         "escalated": [
             "White-label or co-branding requests.",
             "API access, SSO, data integrations.",
             "Pricing, revenue share, referral fees.",
             "HIPAA / SOC 2 / GDPR specifics, data residency, encryption-at-rest details.",
             "Roadmap or unreleased features.",
-            "Acquisition, investment, or M&A conversations.",
+            "Anyone wanting to buy, invest in, or merge with CarryOn.",
             "Specific integrations with named vendors.",
-            "Anything beginning with “Could CarryOn build…” or “Would you be willing to…”",
+            "Anything starting with “Could CarryOn build…” or “Would you be willing to…”",
         ],
-        "captured_label": "Captured on every screening call",
+        "captured_label": "Write down on every call",
         "captured": [
             "Full name, title, company, email, mobile.",
-            "Vertical and rough company size.",
-            "Independent vs. part of a larger entity.",
-            "Why now? — what prompted them to reach out this week.",
-            "Decision-maker or scoping for one.",
-            "The specific feature or use case they led with (verbatim).",
-            "Geography, source of referral, anything they want the founder to know up front.",
+            "Industry and rough company size.",
+            "Independent or part of a larger company.",
+            "Why now? — what made them reach out this week.",
+            "Are they the decision-maker, or just researching for someone else?",
+            "The specific feature or use case they led with — write it down word-for-word.",
+            "Location, who referred them, and anything they want the founder to know up front.",
         ],
     },
     "elevator": {
-        "title": "6. Quick reference — elevator answers",
-        "intro": "Ten-second confirmations, not demo scripts. Designed to keep the conversation moving toward a discovery call with the founder.",
+        "title": "6. Quick reference — short answers",
+        "intro": "Ten-second answers, not demos. The point is to keep the call moving toward a discovery call with the founder.",
         "items": [
             {
                 "abbr": "MM",
@@ -270,11 +270,11 @@ DEFAULTS: dict[str, Any] = {
             },
             {
                 "abbr": "SDV",
-                "line": "Encrypted, beneficiary-keyed storage for the documents the family will actually need, released at the right time to the right person.",
+                "line": "Encrypted document storage — the documents the family will actually need, released at the right time to the right person.",
             },
             {
                 "abbr": "EGA",
-                "line": "An AI guide trained on the family’s specific plan, so the family can ask questions and get answers grounded in this specific household — not generic advice.",
+                "line": "An AI guide trained on the family’s specific plan, so the family can ask questions and get answers about THIS household — not generic advice.",
             },
             {
                 "abbr": "IAC",
@@ -282,7 +282,7 @@ DEFAULTS: dict[str, Any] = {
             },
             {
                 "abbr": "CCP",
-                "line": "Pre-authored emergency plans for accident, incapacity, hospitalization, or death — set up while the person is healthy, ready to fire when needed.",
+                "line": "Pre-written emergency plans for accident, incapacity, hospitalization, or death — set up while the person is healthy, ready to go when needed.",
             },
             {
                 "abbr": "ECT",
@@ -290,21 +290,21 @@ DEFAULTS: dict[str, Any] = {
             },
             {
                 "abbr": "DAV",
-                "line": "Encrypted credential storage so the family can actually access the digital accounts the will references.",
+                "line": "Encrypted login storage so the family can actually access the digital accounts the will mentions.",
             },
             {
                 "abbr": "FFN",
-                "line": "Coordinated, dignified notification of everyone who needs to know, in the order and tone the person chose.",
+                "line": "Organized, dignified notification of everyone who needs to know, in the order and tone the person chose.",
             },
             {
                 "abbr": "CFP",
-                "line": "A complete, living picture of the household’s bills, debts, accounts, and properties — so the family knows what’s owed, owned, and what to do with it.",
+                "line": "A complete, up-to-date picture of the household’s bills, debts, accounts, and properties — so the family knows what’s owed, owned, and what to do with it.",
             },
         ],
     },
     "footer": {
-        "line1": "Discovery and demos are run personally by the founder on the live platform. To schedule, reply to the introduction that brought you here.",
-        "line2": "CarryOn™ · Confidential. For partner consideration only — not a public marketing document.",
+        "line1": "Discovery calls and demos are run personally by the founder on the live platform. To schedule, reply to the introduction that brought you here.",
+        "line2": "CarryOn™ · Confidential. For partners only — not a public marketing document.",
     },
 }
 
