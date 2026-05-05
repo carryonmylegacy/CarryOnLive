@@ -1945,3 +1945,40 @@ Health: `bash /app/scripts/check.sh` → ALL CLEAR (housekeeping 0 WARN/0 FAIL, 
 
 **Health**: `bash /app/scripts/check.sh` → ALL CLEAR (housekeeping 0 WARN/0 FAIL, ruff PASS, ESLint PASS).
 
+
+---
+
+## Iteration 129 — EGA → BEC Swap in Beneficiary Portal + Pre-Transition BEC + Sentry Filter (May 5, 2026)
+
+**User directives**:
+1. Atlas backup-cost optimization — provide a step-by-step walkthrough; user will execute in their Atlas console.
+2. Filter the noisy Sentry error `Error invoking postMessage: Java object is gone` from `iabjs://navigation_performance_logger_android` (Android in-app browser noise).
+3. Replace EGA with BEC in the Beneficiary Portal entirely; if BEC tier is OFF for the benefactor, hide the BEC nav tile completely. If BEC tier is ON but no docs are shared yet, render an empty-state ("Your benefactor hasn't shared any documents with you yet").
+
+**Files changed**:
+- `frontend/src/index.js` — Sentry init now has `ignoreErrors: ['Java object is gone', 'Error invoking postMessage', 'navigation_performance_logger_android']`, `denyUrls: [/iabjs:\/\//i]`, and a beforeSend belt-and-suspenders that drops events whose entire stacktrace is `iabjs://`.
+- `backend/routes/beneficiary_concierge.py` — `_resolve_concierge_access` rewritten to support pre-transition. Mirrors `documents.py` pre-transition rules: designation by `ben_record_id` + (essential offline category OR explicit `visibility_timing[ben_id].pre==true`). Returns `is_transitioned: bool`. `StatusResponse` model now exposes `is_transitioned`.
+- `backend/routes/section_permissions.py` — `feature_access.bec_access` now reflects only the benefactor's tier-gate (no longer requires `is_transitioned`).
+- `frontend/src/components/layout/Sidebar.js` + `MobileNav.js` + `navConfig.js` — beneficiary nav now lists `/beneficiary/concierge` (BEC, BookOpen icon) instead of `/beneficiary/guardian` (EGA, Sparkles icon). NAV_FEATURE_MAP updated accordingly.
+- `frontend/src/pages/beneficiary/BeneficiaryDashboardPage.js` — feature-access summary tile shows `bec_access` (Beneficiary Estate Concierge, BookOpen icon, green); `ega_access` removed. `SECTION_LABELS.guardian` removed.
+- `frontend/src/pages/beneficiary/BeneficiaryConciergePage.js` — when `!is_transitioned && accessible_doc_count === 0`, renders a friendly empty-state card instead of the chat. Subtitle copy adapts to pre vs post.
+- `frontend/src/App.js` — `/beneficiary/guardian` now `<Navigate replace to="/beneficiary/concierge" />` so any stale bookmark or cached nav resolves to BEC. Lazy import of `BeneficiaryGuardianPage` removed (page file kept on disk).
+
+**Files created**:
+- `/app/memory/MONGODB_ATLAS_BACKUP_GUIDE.md` — step-by-step walkthrough for the founder to execute in Atlas. Disables PITR, prunes retention to 7d/4w/6m, includes safety rules and rollback path.
+- `/app/backend/tests/test_bec_pretransition_iter129.py` (created by testing agent) — 10 new tests covering pre-transition gating + empty-state + doc filtering.
+
+**Backend verification (testing agent iter129)**: **26/26 PASS** (10 new + 7 iter127 regression + 9 iter128 regression). Housekeeping CP3a–CP3g all green. Specific paths validated:
+- Tier OFF → `available=false reason='feature_disabled_for_tier'` (nav tile hidden).
+- Tier ON pre-transition + 0 docs → `available=true is_transitioned=false accessible_doc_count=0`.
+- Tier ON pre-transition + designated essential-offline doc (e.g. living_will) → doc appears in `documents`.
+- Tier ON pre-transition + designated doc with `visibility_timing[ben_id].pre=true` → doc appears.
+- Non-designated doc never appears; `/document/{id}` returns 404 (no enumeration leak).
+- `/ask` pre-transition with empty docs returns 200 (LLM gracefully says "no docs designated yet"), never 5xxs.
+- `bec_access` in `feature_access` reflects benefactor's tier irrespective of transition status.
+- Post-transition flow unchanged.
+
+**Health**: `bash /app/scripts/check.sh` → ALL CLEAR (housekeeping 0 WARN/0 FAIL, ruff PASS, ESLint PASS).
+
+**Reminder for the founder before tomorrow's pitches**: BEC tier-gate defaults OFF for all tiers in `feature_gates`. To demo BEC live, go to **Admin → Subs → Feature Gates** and toggle the `bec` row ON for the demo benefactor's tier (e.g., `premium`, or whatever the demo account is on). Until that's done, BEC will appear hidden in the demo beneficiary nav.
+
