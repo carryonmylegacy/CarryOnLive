@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Sparkles, Send, ArrowLeft, Loader2, AlertTriangle, BookOpen } from 'lucide-react';
+import { Sparkles, Send, ArrowLeft, Loader2, AlertTriangle, BookOpen, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_URL } from '../../config';
 import { Card, CardContent } from '../../components/ui/card';
@@ -31,6 +31,7 @@ export default function BeneficiaryConciergePage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [showSharedPanel, setShowSharedPanel] = useState(false);
   const scrollerRef = useRef(null);
 
   const loadStatusAndHistory = useCallback(async () => {
@@ -123,8 +124,56 @@ export default function BeneficiaryConciergePage() {
         <div className="flex items-center gap-2 text-xs text-[var(--t5)]">
           <BookOpen className="w-3.5 h-3.5" />
           <span data-testid="concierge-doc-count">{status.accessible_doc_count} document{status.accessible_doc_count === 1 ? '' : 's'} available to you</span>
+          {status.accessible_doc_count > 0 && (
+            <button
+              onClick={() => setShowSharedPanel((s) => !s)}
+              className="ml-1 inline-flex items-center gap-1 text-[11px] font-bold text-[var(--gold)] hover:underline"
+              data-testid="concierge-shared-toggle"
+            >
+              {showSharedPanel ? <>Hide list <ChevronUp className="w-3 h-3" /></> : <>Show what I'm reading <ChevronDown className="w-3 h-3" /></>}
+            </button>
+          )}
         </div>
       </div>
+
+      {/* "What I shared" panel — lists the exact documents feeding the
+          Concierge's answers. Helps the beneficiary trust the source
+          and spot anything missing they might need to ask the executor
+          to designate. Server only sends id/name/category — never raw
+          document text. */}
+      {showSharedPanel && status.accessible_doc_count > 0 && (
+        <div
+          className="rounded-2xl p-4 lg:p-5 mb-4"
+          style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.25)' }}
+          data-testid="concierge-shared-panel"
+        >
+          <div className="flex items-baseline justify-between gap-3 mb-2">
+            <h2 className="text-sm font-bold text-[var(--gold)]" style={{ fontFamily: 'var(--sans)' }}>
+              Documents informing these answers
+            </h2>
+            <span className="text-[11px] text-[var(--t5)]">{status.documents?.length || 0} total</span>
+          </div>
+          <p className="text-xs text-[var(--t4)] mb-3 leading-relaxed">
+            The Concierge only sees these documents. If something you expect to be here is missing, ask the executor or family — only {benefactorFirst} (and now their executor) can change what's shared with you.
+          </p>
+          <div className="grid gap-2">
+            {(status.documents || []).map((d) => (
+              <div
+                key={d.id}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg"
+                style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+                data-testid={`concierge-shared-doc-${d.id}`}
+              >
+                <FileText className="w-4 h-4 text-[var(--gold)] shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[var(--t)] truncate">{d.name}</p>
+                  <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider">{d.category}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Chat surface */}
       <Card className="glass-card">

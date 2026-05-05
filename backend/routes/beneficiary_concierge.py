@@ -71,6 +71,10 @@ class StatusResponse(BaseModel):
     reason: Optional[str] = None
     accessible_doc_count: int = 0
     benefactor_first_name: Optional[str] = None
+    # Lightweight metadata for the "What I shared" panel on the
+    # beneficiary's Concierge page. Just id / name / category — never
+    # raw document text. Empty list when BEC is unavailable.
+    documents: list[dict[str, Any]] = []
 
 
 # ── Gating helper ─────────────────────────────────────────────────────
@@ -152,10 +156,20 @@ async def concierge_status(
     info = await _resolve_concierge_access(current_user["id"], estate_id)
     if not info["available"]:
         return StatusResponse(available=False, reason=info["reason"])
+    docs = info["documents"]
+    doc_summaries = [
+        {
+            "id": d.get("id"),
+            "name": d.get("name") or "Untitled",
+            "category": d.get("category") or "other",
+        }
+        for d in docs
+    ]
     return StatusResponse(
         available=True,
-        accessible_doc_count=len(info["documents"]),
+        accessible_doc_count=len(docs),
         benefactor_first_name=info["benefactor_first_name"],
+        documents=doc_summaries,
     )
 
 
