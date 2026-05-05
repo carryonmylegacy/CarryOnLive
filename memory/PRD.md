@@ -155,6 +155,30 @@
 
 ## 📌 Current Launch Status (Apr 29, 2026 — Public Device Mode shipped)
 
+### Feb 5, 2026 — P0 Beneficiary Portal Routing Crash (FIXED, iter 125)
+
+**Reported by user (verbatim):** *"P0!!! When I click on a benefactor of the benefactor user, it should take me to the beneficiary dashboard for that user. Instead it takes me to one of the benefactor estate pages and the button to go back to all the estate doesn't do anything. Worse yet, when I click on Beneficiary Portal it takes me to a blank blue page with nothing on it. I can't click back to the Benefactor Portal. This is a platform ending error."*
+
+**Root cause** (three interacting bugs):
+1. `<TransitionGate>` still wrapped `/beneficiary/dashboard` and redirected pre-transition users to legacy `/beneficiary/pre`, but the dashboard now renders pre-transition content INLINE via `BeneficiaryPreTransitionPanel`. The two surfaces fought each other.
+2. Sidebar "My Beneficiary Portal" button removed `beneficiary_estate_id` from localStorage, then navigated to `/beneficiary/dashboard`. TransitionGate (no estateId, no `allowPreTransition`) set `status={allowed:false, redirect:undefined}` → `<Navigate to='/beneficiary'/>` → `/beneficiary` route redirected back to `/beneficiary/dashboard` → infinite redirect loop = white screen.
+3. `PreTransitionPage`'s "Back to My Estates" button navigated to `/beneficiary` which redirected to dashboard which TransitionGate redirected right back → stuck loop = "back button does nothing".
+
+**Fix applied:**
+- Removed `<TransitionGate>` wrapper from `/beneficiary/dashboard` route. Dashboard self-handles pre-transition (inline panel), post-transition (tile grid), and empty state (no connections).
+- `/beneficiary/pre` is now a hard redirect to `/beneficiary/dashboard` (component file kept but unrouted).
+- `TransitionGate` redirect targets all converge on `/beneficiary/dashboard` (no more `/beneficiary` or `/beneficiary/pre` redirect targets).
+- `UploadCertificatePage` back buttons updated to `/beneficiary/dashboard`.
+- `prewarmChunks.js` no longer pre-imports `PreTransitionPage`.
+
+**Files changed:** `App.js`, `components/TransitionGate.js`, `pages/beneficiary/UploadCertificatePage.js`, `offline/prewarmChunks.js`.
+
+**Verified** (iter 125): testing agent ran 7 routing assertions — all passed. `/beneficiary/dashboard` renders cleanly, `/beneficiary/pre` and `/beneficiary` both hard-redirect to dashboard with no loops, pre-transition panel renders INLINE inside dashboard. Housekeeping 0 WARN / 0 FAIL.
+
+---
+
+## 📌 Current Launch Status (Apr 29, 2026 — Public Device Mode shipped)
+
 **Six batches shipped this session series:**
 1. CFP Pass-down stabilization — iter 81: 16/16.
 2. P2 efficiency batch (6 endpoints + 4 UI surfaces) — iter 83: 32/32.
