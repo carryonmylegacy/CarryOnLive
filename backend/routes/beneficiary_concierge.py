@@ -324,6 +324,60 @@ async def concierge_ask(
     }
 
 
+@router.get("/beneficiary/concierge/document/{doc_id}")
+async def concierge_document_snippet(
+    doc_id: str,
+    estate_id: str,
+    current_user: dict = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Return a short preview snippet for a document the beneficiary
+    has access to via BEC. Used by the citation-chip click modal so a
+    beneficiary can see what the AI's claim is grounded in. Reuses the
+    same gating as the ask endpoint — caller must be a beneficiary on a
+    transitioned estate, the benefactor's tier must include `bec`, and
+    the document must be in the caller's designated set."""
+    info = await _resolve_concierge_access(current_user["id"], estate_id)
+    if not info["available"]:
+        reason = info["reason"]
+        status_code = {
+            "estate_not_found": 404,
+            "not_a_beneficiary": 403,
+            "pre_transition": 403,
+            "feature_disabled_for_tier": 403,
+            "benefactor_missing": 404,
+        }.get(reason, 403)
+        raise HTTPException(status_code=status_code, detail=reason)
+
+    doc = next((d for d in info["documents"] if d.get("id") == doc_id), None)
+    if not doc:
+        # Either it doesn't exist or it isn't designated to this caller.
+        # Return 404 either way to avoid leaking which it is.
+        raise HTTPException(status_code=404, detail="document_not_accessible")
+
+    try:
+        text = await extract_document_text(doc)
+    except Exception as e:  # pragma: no cover — extraction is best-effort
+        logger.warning(f"BEC snippet: extraction failed for doc {doc_id}: {e}")
+        text = ""
+
+    snippet = (text or "").strip()
+    truncated = False
+    if len(snippet) > 1800:
+        snippet = snippet[:1800].rstrip() + "…"
+        truncated = True
+    if not snippet:
+        snippet = doc.get("description") or "[No readable text could be extracted from this document.]"
+
+    return {
+        "id": doc.get("id"),
+        "name": doc.get("name") or "Untitled",
+        "category": doc.get("category") or "other",
+        "description": doc.get("description") or "",
+        "snippet": snippet,
+        "truncated": truncated,
+    }
+
+
 @router.get("/beneficiary/concierge/history")
 async def concierge_history(
     estate_id: str,

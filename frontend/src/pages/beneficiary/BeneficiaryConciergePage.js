@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Sparkles, Send, ArrowLeft, Loader2, AlertTriangle, BookOpen, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { Sparkles, Send, ArrowLeft, Loader2, AlertTriangle, BookOpen, ChevronDown, ChevronUp, FileText, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_URL } from '../../config';
 import { Card, CardContent } from '../../components/ui/card';
@@ -32,7 +32,27 @@ export default function BeneficiaryConciergePage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showSharedPanel, setShowSharedPanel] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState(null); // { id, name, category, snippet, truncated, loading }
   const scrollerRef = useRef(null);
+
+  const openDocPreview = useCallback(async (docId) => {
+    if (!estateId || !docId) return;
+    setPreviewDoc({ id: docId, loading: true });
+    try {
+      const res = await axios.get(`${API_URL}/beneficiary/concierge/document/${docId}`, {
+        ...getAuthHeaders(),
+        params: { estate_id: estateId },
+      });
+      setPreviewDoc({ ...res.data, loading: false });
+    } catch (e) {
+      setPreviewDoc({
+        id: docId,
+        loading: false,
+        error: e?.response?.data?.detail || 'Could not load this document preview.',
+      });
+    }
+  }, [estateId, getAuthHeaders]);
+  const closeDocPreview = useCallback(() => setPreviewDoc(null), []);
 
   const loadStatusAndHistory = useCallback(async () => {
     if (!estateId) {
@@ -163,9 +183,11 @@ export default function BeneficiaryConciergePage() {
           </p>
           <div className="grid gap-2">
             {(status.documents || []).map((d) => (
-              <div
+              <button
                 key={d.id}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg"
+                type="button"
+                onClick={() => openDocPreview(d.id)}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:border-[var(--gold)] transition-colors cursor-pointer"
                 style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
                 data-testid={`concierge-shared-doc-${d.id}`}
               >
@@ -174,7 +196,7 @@ export default function BeneficiaryConciergePage() {
                   <p className="text-sm font-semibold text-[var(--t)] truncate">{d.name}</p>
                   <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider">{d.category}</p>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -191,7 +213,7 @@ export default function BeneficiaryConciergePage() {
               </div>
             )}
             {messages.map((m, i) => (
-              <Bubble key={i} role={m.role} content={m.content} citations={m.citations} error={m.error} />
+              <Bubble key={i} role={m.role} content={m.content} citations={m.citations} error={m.error} onCitationClick={openDocPreview} />
             ))}
             {sending && (
               <Bubble role="assistant" content={<span className="inline-flex items-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</span>} />
@@ -221,18 +243,93 @@ export default function BeneficiaryConciergePage() {
           </div>
         </CardContent>
       </Card>
+
+      {previewDoc && <DocPreviewModal doc={previewDoc} onClose={closeDocPreview} />}
     </div>
   );
 }
 
-function Bubble({ role, content, citations, error }) {
+function DocPreviewModal({ doc, onClose }) {
+  // Closes on Escape so a grieving beneficiary can dismiss without
+  // hunting for the X button.
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.65)' }}
+      onClick={onClose}
+      data-testid="concierge-doc-preview-backdrop"
+    >
+      <div
+        className="rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col"
+        style={{ background: 'var(--bg2)', border: '1px solid rgba(212,175,55,0.35)' }}
+        onClick={(e) => e.stopPropagation()}
+        data-testid="concierge-doc-preview-modal"
+      >
+        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[var(--b)]">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.35)' }}>
+              <FileText className="w-4 h-4 text-[var(--gold)]" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-base font-bold text-[var(--t)] truncate" data-testid="concierge-doc-preview-title">{doc.name || 'Document'}</h3>
+              {doc.category && (
+                <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider">{doc.category}</p>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-md hover:bg-[var(--s)] text-[var(--t4)]"
+            data-testid="concierge-doc-preview-close"
+            aria-label="Close preview"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto px-5 py-4 flex-1" data-testid="concierge-doc-preview-body">
+          {doc.loading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="w-5 h-5 animate-spin text-[var(--gold)]" />
+            </div>
+          ) : doc.error ? (
+            <div className="text-sm text-[#FCA5A5]" data-testid="concierge-doc-preview-error">{doc.error}</div>
+          ) : (
+            <>
+              {doc.description && (
+                <p className="text-xs italic text-[var(--t5)] mb-3 leading-relaxed">{doc.description}</p>
+              )}
+              <pre
+                className="text-sm leading-relaxed text-[var(--t2)] whitespace-pre-wrap break-words font-sans"
+                data-testid="concierge-doc-preview-snippet"
+              >{doc.snippet}</pre>
+              {doc.truncated && (
+                <p className="text-[11px] text-[var(--t5)] mt-3 italic">
+                  Showing the first portion of this document. Ask the Concierge for specifics if you need more.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Bubble({ role, content, citations, error, onCitationClick }) {
   const isUser = role === 'user';
   // Inline-cite renderer: convert [#N] markers in the assistant's
   // answer into small clickable gold chips that show the source
-  // document's name. Hallucinated markers (any [#N] not in the
-  // citations map) are stripped server-side, so we don't have to
-  // defensively hide them here — but if for any reason one slips
-  // through, we render it as plain text rather than a chip.
+  // document's name. Clicking opens a preview modal with a snippet
+  // of the underlying document. Hallucinated markers (any [#N] not
+  // in the citations map) are stripped server-side.
   const renderContent = () => {
     if (typeof content !== 'string') return content;
     if (!citations || Object.keys(citations).length === 0) return content;
@@ -246,16 +343,32 @@ function Bubble({ role, content, citations, error }) {
       const marker = match[1];
       const cite = citations[marker];
       if (cite) {
+        const clickable = !!onCitationClick && !!cite.id;
+        const label = cite.name && cite.name.length > 28 ? cite.name.slice(0, 25) + '…' : (cite.name || marker);
         parts.push(
-          <span
-            key={`c-${chipIdx++}`}
-            title={cite.name}
-            className="inline-flex items-center align-baseline mx-0.5 px-1.5 py-0.5 rounded text-[11px] font-bold leading-tight"
-            style={{ background: 'rgba(212,175,55,0.18)', border: '1px solid rgba(212,175,55,0.45)', color: '#FCD34D' }}
-            data-testid={`concierge-citation-${marker}`}
-          >
-            {cite.name.length > 28 ? cite.name.slice(0, 25) + '…' : cite.name}
-          </span>
+          clickable ? (
+            <button
+              key={`c-${chipIdx++}`}
+              type="button"
+              title={`View source: ${cite.name}`}
+              onClick={() => onCitationClick(cite.id)}
+              className="inline-flex items-center align-baseline mx-0.5 px-1.5 py-0.5 rounded text-[11px] font-bold leading-tight cursor-pointer hover:brightness-110 transition"
+              style={{ background: 'rgba(212,175,55,0.18)', border: '1px solid rgba(212,175,55,0.45)', color: '#FCD34D' }}
+              data-testid={`concierge-citation-${marker}`}
+            >
+              {label}
+            </button>
+          ) : (
+            <span
+              key={`c-${chipIdx++}`}
+              title={cite.name}
+              className="inline-flex items-center align-baseline mx-0.5 px-1.5 py-0.5 rounded text-[11px] font-bold leading-tight"
+              style={{ background: 'rgba(212,175,55,0.18)', border: '1px solid rgba(212,175,55,0.45)', color: '#FCD34D' }}
+              data-testid={`concierge-citation-${marker}`}
+            >
+              {label}
+            </span>
+          )
         );
       } else {
         parts.push(match[0]); // unknown marker fallback (shouldn't happen)
@@ -293,16 +406,33 @@ function Bubble({ role, content, citations, error }) {
         {!isUser && !error && citedMarkers.length > 0 && (
           <div className="mt-3 pt-2 border-t border-[var(--b)] flex flex-wrap items-center gap-1.5" data-testid="concierge-sources">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--t5)] mr-1">Sources</span>
-            {citedMarkers.map((mk) => (
-              <span
-                key={mk}
-                className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold"
-                style={{ background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.30)', color: '#FCD34D' }}
-                data-testid={`concierge-source-${mk}`}
-              >
-                {citations[mk]?.name || mk}
-              </span>
-            ))}
+            {citedMarkers.map((mk) => {
+              const cite = citations?.[mk];
+              const clickable = !!onCitationClick && !!cite?.id;
+              const label = cite?.name || mk;
+              return clickable ? (
+                <button
+                  key={mk}
+                  type="button"
+                  onClick={() => onCitationClick(cite.id)}
+                  className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer hover:brightness-110 transition"
+                  style={{ background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.30)', color: '#FCD34D' }}
+                  data-testid={`concierge-source-${mk}`}
+                  title={`View source: ${label}`}
+                >
+                  {label}
+                </button>
+              ) : (
+                <span
+                  key={mk}
+                  className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold"
+                  style={{ background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.30)', color: '#FCD34D' }}
+                  data-testid={`concierge-source-${mk}`}
+                >
+                  {label}
+                </span>
+              );
+            })}
           </div>
         )}
       </div>
