@@ -1115,7 +1115,7 @@ const MobileNav = () => {
                             )}
                           </>
                         )}
-                        {/* Beneficiary Portal — single button to hub */}
+                        {/* Beneficiary Portal — opens Estate Plan Network hub */}
                         {beneficiaryEstates.length > 0 && (
                           <button onClick={() => {
                             setOpen(false);
@@ -1124,8 +1124,7 @@ const MobileNav = () => {
           localStorage.removeItem('beneficiary_feature_access');
                             localStorage.setItem('carryon_last_portal', 'beneficiary');
                             clearCache();
-                            navigate('/beneficiary/dashboard');
-                            if (!isOnBeneficiary) window.location.reload();
+                            navigate('/beneficiary');
                           }}
                           data-testid="mobile-switch-beneficiary"
                           className="w-full flex flex-col items-center px-4 py-3 rounded-xl transition-all"

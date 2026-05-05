@@ -71,6 +71,7 @@ import TransitionGate from './components/TransitionGate';
 
 // Beneficiary Pages
 const BeneficiaryDashboardPage = lazy(() => import('./pages/beneficiary/BeneficiaryDashboardPage'));
+const BeneficiaryHubPage = lazy(() => import('./pages/beneficiary/BeneficiaryHubPage'));
 const BeneficiaryVaultPage = lazy(() => import('./pages/beneficiary/BeneficiaryVaultPage'));
 const BeneficiaryMessagesPage = lazy(() => import('./pages/beneficiary/BeneficiaryMessagesPage'));
 const BeneficiaryChecklistPage = lazy(() => import('./pages/beneficiary/BeneficiaryChecklistPage'));
@@ -601,12 +602,14 @@ function AppRoutes() {
           <DashboardLayout />
         </ProtectedRoute>
       }>
-        {/* /beneficiary removed (Feb 2026) — the Estate Plan Network
-            multi-estate switcher hub no longer exists. Beneficiaries
-            land directly on their primary connected estate's dashboard.
-            Any existing in-app or external link still pointing here
-            redirects so nothing 404s. */}
-        <Route path="/beneficiary" element={<Navigate to="/beneficiary/dashboard" replace />} />
+        {/* /beneficiary = Estate Plan Network HUB. The user-in-the-center
+            orbit view of all benefactors who've added them. Tapping any
+            benefactor avatar OR estate tile sets beneficiary_estate_id
+            and SPA-navigates to /beneficiary/dashboard, which renders
+            pre or post-transition content for that estate. The hub is
+            the canonical landing for the "My Beneficiary Portal"
+            sidebar / mobile nav button. */}
+        <Route path="/beneficiary" element={<BeneficiaryHubPage />} />
         {/* Legacy /beneficiary/pre redirects to /beneficiary/dashboard.
             The dashboard now renders pre-transition content INLINE
             (lock banner + EAD shortcuts + estate switcher), so the

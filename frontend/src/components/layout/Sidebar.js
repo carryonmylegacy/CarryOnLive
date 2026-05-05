@@ -1163,12 +1163,13 @@ const Sidebar = () => {
                   </>
                 )}
 
-                {/* Beneficiary Portal — single pill. The Estate Plan
-                    Network hub at /beneficiary was removed (Feb 2026);
-                    this now jumps directly to the user's primary
-                    connected estate dashboard. The dashboard auto-picks
-                    the estate (primary_estate_id → first connected →
-                    empty state) so we don't need a separate hub. */}
+                {/* Beneficiary Portal — opens the Estate Plan Network
+                    hub at /beneficiary (orbit view of all benefactors).
+                    The hub has the canonical "tap a benefactor → open
+                    that estate's dashboard" interaction. Previously
+                    this jumped straight to /beneficiary/dashboard
+                    (causing a redirect loop / white screen when the
+                    user had multiple connected estates). */}
                 {beneficiaryEstates.length > 0 && (
                   <button onClick={() => {
                     localStorage.removeItem('selected_estate_id');
@@ -1176,8 +1177,7 @@ const Sidebar = () => {
           localStorage.removeItem('beneficiary_feature_access');
                     localStorage.setItem('carryon_last_portal', 'beneficiary');
                     clearCache();
-                    navigate('/beneficiary/dashboard');
-                    window.location.reload();
+                    navigate('/beneficiary');
                   }}
                   data-testid="switch-beneficiary-portal"
                   className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}

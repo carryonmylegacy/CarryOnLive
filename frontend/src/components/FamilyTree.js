@@ -278,26 +278,17 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                     sublabel={labelBottom}
                     testId={`tree-estate-${est.id}`}
                     onClick={() => {
-                      // Switch to this benefactor's estate in the
-                      // beneficiary portal. We do NOT call
-                      // window.location.reload() — a full reload
-                      // breaks offline navigation on iOS PWA when the
-                      // new route's chunks aren't pre-cached, and
-                      // leaves the user staring at a blank page.
-                      // The dashboard's useEffect rebinds on the
-                      // beneficiary_estate_id change so a SPA navigate
-                      // is enough.
-                      localStorage.setItem('beneficiary_estate_id', est.id);
+                      // Take the user to the Estate Plan Network hub
+                      // (orbit view of all benefactors). The hub has
+                      // the canonical estate-picker UI; from there
+                      // they tap an avatar or tile to open the
+                      // specific estate's beneficiary dashboard.
+                      // Drop the prior cached selection so the hub
+                      // doesn't auto-deep-link past itself.
+                      localStorage.removeItem('beneficiary_estate_id');
                       localStorage.removeItem('selected_estate_id');
-                      // Drop the cached feature_access for the prior
-                      // estate so the new dashboard re-derives perms
-                      // for THIS estate's beneficiary record.
                       localStorage.removeItem('beneficiary_feature_access');
-                      navigate('/beneficiary/dashboard');
-                      // If the dashboard is already mounted (i.e. we're
-                      // already on /beneficiary/dashboard), fire a
-                      // custom event so it refetches for the new estate.
-                      window.dispatchEvent(new Event('beneficiary-estate-changed'));
+                      navigate('/beneficiary');
                     }}
                   />
                 </div>
