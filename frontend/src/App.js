@@ -70,7 +70,6 @@ const TermsPage = lazy(() => import('./pages/TermsPage'));
 import TransitionGate from './components/TransitionGate';
 
 // Beneficiary Pages
-const PreTransitionPage = lazy(() => import('./pages/beneficiary/PreTransitionPage'));
 const BeneficiaryDashboardPage = lazy(() => import('./pages/beneficiary/BeneficiaryDashboardPage'));
 const BeneficiaryVaultPage = lazy(() => import('./pages/beneficiary/BeneficiaryVaultPage'));
 const BeneficiaryMessagesPage = lazy(() => import('./pages/beneficiary/BeneficiaryMessagesPage'));
@@ -608,8 +607,22 @@ function AppRoutes() {
             Any existing in-app or external link still pointing here
             redirects so nothing 404s. */}
         <Route path="/beneficiary" element={<Navigate to="/beneficiary/dashboard" replace />} />
-        <Route path="/beneficiary/pre" element={<PreTransitionPage />} />
-        <Route path="/beneficiary/dashboard" element={<TransitionGate><BeneficiaryDashboardPage /></TransitionGate>} />
+        {/* Legacy /beneficiary/pre redirects to /beneficiary/dashboard.
+            The dashboard now renders pre-transition content INLINE
+            (lock banner + EAD shortcuts + estate switcher), so the
+            standalone PreTransitionPage is no longer reachable. Kept
+            as a redirect so any cached link / TransitionGate redirect
+            doesn't 404 or trap the user in a loop. */}
+        <Route path="/beneficiary/pre" element={<Navigate to="/beneficiary/dashboard" replace />} />
+        {/* Dashboard is NOT wrapped in TransitionGate — it self-handles
+            both pre and post transition states (inline panel vs tile
+            grid) AND handles missing/invalid estate ids via its own
+            empty-state. Wrapping it caused redirect loops:
+              - missing estate id → TransitionGate redirected to
+                /beneficiary → /beneficiary/dashboard → loop.
+              - pre-transition → redirected to /beneficiary/pre,
+                whose own back button looped back here. */}
+        <Route path="/beneficiary/dashboard" element={<BeneficiaryDashboardPage />} />
         <Route path="/beneficiary/vault" element={<TransitionGate section="vault" allowPreTransition><BeneficiaryVaultPage /></TransitionGate>} />
         <Route path="/beneficiary/messages" element={<TransitionGate section="messages"><BeneficiaryMessagesPage /></TransitionGate>} />
         <Route path="/beneficiary/checklist" element={<TransitionGate section="checklist"><BeneficiaryChecklistPage /></TransitionGate>} />

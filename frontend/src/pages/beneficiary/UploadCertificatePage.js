@@ -83,7 +83,7 @@ const UploadCertificatePage = () => {
     return (
       <div className="p-4 lg:p-8 pb-24 lg:pb-8 animate-fade-in max-w-md lg:max-w-3xl mx-auto"
         data-testid="certificate-status">
-          <button onClick={() => navigate('/beneficiary/pre')} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA] mb-4">
+          <button onClick={() => navigate('/beneficiary/dashboard')} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA] mb-4">
             <ChevronLeft className="w-4 h-4" /> Back
           </button>
 
@@ -196,7 +196,7 @@ const UploadCertificatePage = () => {
             </div>
 
             <div className="flex gap-3">
-              <Button variant="outline" className="border-[var(--b)] text-[var(--t4)] hover:text-[var(--t)]" onClick={() => navigate('/beneficiary/pre')}>
+              <Button variant="outline" className="border-[var(--b)] text-[var(--t4)] hover:text-[var(--t)]" onClick={() => navigate('/beneficiary/dashboard')}>
                 <ChevronLeft className="w-4 h-4 mr-1" /> Back
               </Button>
               <Button className="flex-1 justify-center text-sm font-bold" onClick={() => setStep(1)}

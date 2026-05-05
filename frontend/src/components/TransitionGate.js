@@ -6,10 +6,18 @@ import { Loader2 } from 'lucide-react';
 import { API_URL } from '../config';
 
 /**
- * Gates beneficiary routes behind estate transition status and feature access.
- * Pre-transition: redirects to /beneficiary (hub) or /beneficiary/pre.
- * Post-transition: renders children only if the beneficiary has permission for the section
- * AND the benefactor has granted feature access.
+ * Gates beneficiary section routes (vault / messages / checklist /
+ * guardian / milestone) behind estate transition status and feature
+ * access.
+ *
+ * IMPORTANT: This gate is NOT used on /beneficiary/dashboard anymore —
+ * the dashboard self-handles pre vs post transition inline. All
+ * "redirect home" paths therefore land on /beneficiary/dashboard,
+ * which has the canonical handlers for: missing estate id, no
+ * connected estates yet, pre-transition lock screen, and the
+ * post-transition tile grid. Routing anything to the deleted
+ * /beneficiary hub or the legacy /beneficiary/pre page caused
+ * infinite redirect loops (white screen) before this fix.
  */
 
 // Map route section names to benefactor feature access flags
@@ -33,7 +41,9 @@ const TransitionGate = ({ section, allowPreTransition, children }) => {
     // If no estate ID selected, try to auto-resolve for the beneficiary
     if (!estateId) {
       if (allowPreTransition) {
-        // Auto-resolve: fetch estates and pick the single estate (or redirect to hub)
+        // Auto-resolve: fetch estates and pick the single estate (or
+        // bounce to the dashboard, which will auto-resolve + render
+        // the empty state if there are 0 connections).
         axios.get(`${API_URL}/estates`, { headers: { Authorization: `Bearer ${token}` } })
           .then(res => {
             const beneficiaryEstates = (res.data || []).filter(e => e.user_role_in_estate !== 'owner');
@@ -41,12 +51,12 @@ const TransitionGate = ({ section, allowPreTransition, children }) => {
               localStorage.setItem('beneficiary_estate_id', beneficiaryEstates[0].id);
               setStatus({ allowed: true });
             } else {
-              setStatus({ allowed: false, redirect: '/beneficiary' });
+              setStatus({ allowed: false, redirect: '/beneficiary/dashboard' });
             }
           })
-          .catch(() => setStatus({ allowed: false, redirect: '/beneficiary' }));
+          .catch(() => setStatus({ allowed: false, redirect: '/beneficiary/dashboard' }));
       } else {
-        setStatus({ allowed: false });
+        setStatus({ allowed: false, redirect: '/beneficiary/dashboard' });
       }
       return;
     }
@@ -69,7 +79,11 @@ const TransitionGate = ({ section, allowPreTransition, children }) => {
         }
 
         if (!is_transitioned) {
-          setStatus({ allowed: false, redirect: '/beneficiary/pre' });
+          // Pre-transition section access — bounce to the dashboard,
+          // which renders the inline pre-transition panel. The
+          // legacy /beneficiary/pre route now redirects here too,
+          // so we never have two sources of truth.
+          setStatus({ allowed: false, redirect: '/beneficiary/dashboard' });
         } else if (section && sections && !sections[section]) {
           // Section permission denied by primary beneficiary
           setStatus({ allowed: false, redirect: '/beneficiary/dashboard' });
@@ -90,7 +104,7 @@ const TransitionGate = ({ section, allowPreTransition, children }) => {
           localStorage.removeItem('beneficiary_estate_id');
           localStorage.removeItem('beneficiary_feature_access');
         }
-        setStatus({ allowed: false, redirect: '/beneficiary' });
+        setStatus({ allowed: false, redirect: '/beneficiary/dashboard' });
       });
   }, [estateId, token, section, allowPreTransition]);
 
@@ -103,7 +117,7 @@ const TransitionGate = ({ section, allowPreTransition, children }) => {
   }
 
   if (!status.allowed) {
-    return <Navigate to={status.redirect || '/beneficiary'} replace />;
+    return <Navigate to={status.redirect || '/beneficiary/dashboard'} replace />;
   }
 
   return children;
