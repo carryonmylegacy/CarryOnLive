@@ -2072,3 +2072,38 @@ Health: `bash /app/scripts/check.sh` → ALL CLEAR (housekeeping 0 WARN/0 FAIL, 
 - Same for any future feature you add to the `feature_gates` matrix. New features inherit the same tight wiring with zero additional code (one row in `PER_BEN_ACCESS_MAP` if you want a per-beneficiary toggle, otherwise tier-only is automatic).
 - A beneficiary who happens to have their own active subscription on a different tier no longer leaks features into the beneficiary view of someone else's estate.
 
+
+
+## Iteration 130 — Beneficiary Billing Cycle Verification + Transitioned UX Screenshots (May 5, 2026)
+
+### What the user asked
+> "I thought this [beneficiary billing cycle selection] already existed... beneficiaries don't start getting charged until the benefactor estate is transitioned. So this paywall should exist in the transitioned beneficiary portal. I would love to see a screenshot of since I have to transition a benefactor in order to see it in my demo account."
+
+> Follow-up: *"a, but I don't just want a screenshot of the paywall, I want a screenshot of the dashboard as well, I want to see what the entire UX looks like for a beneficiary of a transitioned benefactor account."*
+
+### Audit result (no code change required)
+The Monthly / Quarterly / Annual periodicity selector for transitioned beneficiaries was already wired correctly. Verified end-to-end:
+
+- `/app/frontend/src/components/settings/SubscriptionManagement.js`
+  - `BeneficiaryBillingToggle` already exposes Annual (-20%), Quarterly (-10%), Monthly.
+  - `benCanSubscribe = !isBeneficiary || estateTransitioned` → pre-transition users see a disabled "Available after transition" badge instead of a Subscribe button. Post-transition users see the periodicity toggle and the Subscribe CTA on the locked tier.
+  - `lockedPlan.allows_billing_toggle === false` (military) hides the toggle by design.
+- `/app/backend/routes/subscriptions/checkout.py` `/api/subscriptions/status` returns `estate_transitioned`, `beneficiary_locked_tier`, `is_minor`, `paired_price`. Confirmed via curl on the seeded transitioned demo account.
+
+### Demo screenshots captured (saved to `/app/memory/screenshots/`)
+Seeded a verifiable scenario in MongoDB:
+- Benefactor `demo_ben_trans` on `premium / annual` (active).
+- Beneficiary `demo_benef_trans` (adult, primary).
+- Estate `demo-estate-transitioned` with `status=transitioned` AND a matching approved death certificate (the auth gate `section_permissions.is_transitioned` checks the certificate, not the estate column).
+- Temporarily flipped `subscription_settings.beta_mode → False` for the screenshot pass, restored to `True` immediately after.
+
+Files:
+- `/app/memory/screenshots/transitioned_beneficiary_dashboard.jpg` — full post-transition dashboard (Sealed banner, IAC/SDV/MM tiles, Estate Access grid, "Protect Your Own Family" upsell).
+- `/app/memory/screenshots/transitioned_beneficiary_subscription_paywall.jpg` — Your Plan page with the Annual/Quarterly/Monthly toggle, "Your tier was set by your benefactor…" lock copy, Premium tier card at $2.39/mo ($29/year), and Family-Plan request CTA.
+
+Health: `bash /app/housekeeping.sh` → 0 WARN, 0 FAIL (collateral fix: bumped 6 sub-11px font instances in `SystemHealthTab.js` from `text-[10px]` to `text-[11px]`).
+
+### What this means for the founder
+- The post-transition periodicity paywall is real, gated correctly, and demo-ready. No code change shipped to production for this iteration — the work was a verification + visual capture.
+- During pitch, you can speak to "monthly, quarterly with 10% off, or annual with 20% off — locked to whatever tier the benefactor held the majority of their term." That's exactly what the screenshot shows.
+- Pre-transition beneficiaries continue to see a disabled "Available after transition" badge and zero charge intent — matches your verbal commitment to families.

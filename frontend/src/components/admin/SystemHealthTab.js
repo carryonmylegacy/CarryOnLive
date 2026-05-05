@@ -243,26 +243,26 @@ export const SystemHealthTab = ({ getAuthHeaders }) => {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
                 <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
                   <div className="text-xl font-bold text-[var(--t)]" data-testid="notif-in-app-total">{n.totals.in_app_count}</div>
-                  <div className="text-[10px] text-[var(--t5)] uppercase tracking-wider">In-app sent</div>
+                  <div className="text-[11px] text-[var(--t5)] uppercase tracking-wider">In-app sent</div>
                 </div>
                 <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
                   <div className="text-xl font-bold text-[var(--t)]" data-testid="notif-push-attempts">{n.totals.push_attempts}</div>
-                  <div className="text-[10px] text-[var(--t5)] uppercase tracking-wider">Push attempts</div>
+                  <div className="text-[11px] text-[var(--t5)] uppercase tracking-wider">Push attempts</div>
                 </div>
                 <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
                   <div className="text-xl font-bold text-[var(--t)]" data-testid="notif-push-with-subs">{n.totals.push_with_subs}</div>
-                  <div className="text-[10px] text-[var(--t5)] uppercase tracking-wider">With subs</div>
+                  <div className="text-[11px] text-[var(--t5)] uppercase tracking-wider">With subs</div>
                 </div>
                 <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
                   <div className="text-xl font-bold" style={{ color: rateColor }} data-testid="notif-delivery-rate">
                     {rate === null ? '—' : `${rate}%`}
                   </div>
-                  <div className="text-[10px] text-[var(--t5)] uppercase tracking-wider">Delivery rate</div>
+                  <div className="text-[11px] text-[var(--t5)] uppercase tracking-wider">Delivery rate</div>
                 </div>
               </div>
               {types.length > 0 ? (
                 <div className="space-y-1" data-testid="notif-by-type">
-                  <div className="text-[10px] uppercase tracking-wider text-[var(--t5)] mb-1">By type</div>
+                  <div className="text-[11px] uppercase tracking-wider text-[var(--t5)] mb-1">By type</div>
                   {types.map(([t, agg]) => {
                     const subs = agg.push_with_subs || 0;
                     const delivered = agg.push_delivered || 0;
@@ -282,7 +282,7 @@ export const SystemHealthTab = ({ getAuthHeaders }) => {
               ) : (
                 <p className="text-xs text-[var(--t5)] italic">No notifications fired in the last {n.window_days} days.</p>
               )}
-              <p className="text-[10px] text-[var(--t5)] italic mt-3">
+              <p className="text-[11px] text-[var(--t5)] italic mt-3">
                 Delivery rate = pushes that reached at least one device ÷ pushes to users with ≥1 active subscription. Excludes users who never granted push permission.
               </p>
             </CardContent>
