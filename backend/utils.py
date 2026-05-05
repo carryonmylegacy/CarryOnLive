@@ -311,11 +311,16 @@ async def send_push_notification(
     tag: str = "carryon-notification",
     notification_type: str = "general",
 ):
+    # Returns a dict with delivery metadata so services/notifications.py
+    # can record per-type health metrics. Legacy callers that test the
+    # return value for truthiness keep working — a non-empty dict is
+    # truthy in Python, an empty dict (used for "no VAPID configured"
+    # / "no subscriptions") is falsy.
     if not vapid:
-        return False
+        return {}
     subscriptions = await db.push_subscriptions.find({"user_id": user_id, "active": True}, {"_id": 0}).to_list(100)
     if not subscriptions:
-        return False
+        return {}
     payload = json_module.dumps(
         {
             "title": title,
@@ -344,7 +349,12 @@ async def send_push_notification(
             logger.warning(f"Push error for user {user_id}: {e}")
     if subscriptions:
         logger.info(f"Push sent to {success_count}/{len(subscriptions)} devices for user {user_id}")
-    return success_count > 0
+    return {
+        "with_subs": True,
+        "delivered": success_count > 0,
+        "endpoints_attempted": len(subscriptions),
+        "endpoints_succeeded": success_count,
+    }
 
 
 async def send_push_to_all_admins(title: str, body: str, url: str = "/admin", tag: str = "admin-notification"):

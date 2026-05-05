@@ -2007,3 +2007,24 @@ Health: `bash /app/scripts/check.sh` → ALL CLEAR (housekeeping 0 WARN/0 FAIL, 
 
 Health: `bash /app/scripts/check.sh` → ALL CLEAR.
 
+
+
+---
+
+## Iteration 129 (cont.) — Generic Notification Health Tracking (May 5, 2026)
+
+**Founder challenge accepted**: "There are about a thousand other places where I need health trackers — if so, no, I don't want to prioritize one over another." Right call. Built ONCE at the generic chokepoint instead of per-feature.
+
+**Files changed**:
+- `backend/utils.py` — `send_push_notification` now returns a dict `{with_subs, delivered, endpoints_attempted, endpoints_succeeded}` instead of bool. Legacy callers using truthiness still work.
+- `backend/services/notifications.py` — added `_record_metric(...)` writing per-day, per-type counters to a new `notification_metrics` collection (`_id: "{YYYY-MM-DD}:{type}"`). `_store_notification` increments `in_app_count`; `_send_push` increments `push_attempts` always, plus `push_with_subs` and `push_delivered` based on the dict from utils.
+- `backend/routes/staff_tools.py` — `GET /api/admin/system-health` now returns a `notifications` block with `window_days=7`, totals, aggregate `delivery_rate_pct`, and a `by_type` breakdown.
+- `frontend/src/components/admin/SystemHealthTab.js` — new "Notifications — last 7d" panel: in-app sent / push attempts / with subs / delivery-rate cards (color-coded ≥90 green, ≥70 amber, else red) + per-type breakdown rows.
+
+**Why this is the right design**: the instrumentation lives at the single chokepoint every notification flows through. New `notify.*` call sites — for any future feature — automatically light up in the dashboard with zero per-feature work.
+
+**Verified live**:
+- 3 `notify.beneficiary` calls → metrics rolled up `in_app=+3`, `push_attempts=+3`, `push_with_subs=+0` (test user had no subscription — correctly excluded from rate denominator).
+- `GET /api/admin/system-health` returns the full notifications block; `delivery_rate_pct: null` correctly when no measurable denominator.
+
+Health: `bash /app/scripts/check.sh` → ALL CLEAR.

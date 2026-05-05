@@ -3,6 +3,10 @@
 Handles both:
   - In-app notifications (stored in MongoDB, fetched by frontend)
   - Web Push notifications (via VAPID/WebPush)
+  - Per-day delivery metrics (collection: notification_metrics) so the
+    Founder System Health tile can spot a silent push regression
+    across ALL notification types in one place — never per-feature
+    health checks (per founder directive, May 5, 2026).
 
 Usage:
     from services.notifications import notify
@@ -16,6 +20,51 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from config import db, logger
+
+
+async def _record_metric(
+    notification_type: str,
+    *,
+    in_app: int = 0,
+    push_attempts: int = 0,
+    push_with_subs: int = 0,
+    push_delivered: int = 0,
+) -> None:
+    """Increment per-day, per-type counters in `notification_metrics`.
+    Single source of truth for the System Health tile. Schema:
+        _id: f"{YYYY-MM-DD}:{notification_type}"
+        day, notification_type
+        in_app_count          — total in-app notifications stored
+        push_attempts         — total send_push calls
+        push_with_subs        — calls where the user had ≥1 active subscription
+        push_delivered        — calls where ≥1 webpush succeeded
+    Failures here are swallowed — a metrics failure must never break
+    a real notification.
+    """
+    try:
+        day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        ntype = notification_type or "general"
+        inc: dict = {}
+        if in_app:
+            inc["in_app_count"] = in_app
+        if push_attempts:
+            inc["push_attempts"] = push_attempts
+        if push_with_subs:
+            inc["push_with_subs"] = push_with_subs
+        if push_delivered:
+            inc["push_delivered"] = push_delivered
+        if not inc:
+            return
+        await db.notification_metrics.update_one(
+            {"_id": f"{day}:{ntype}"},
+            {
+                "$set": {"day": day, "notification_type": ntype},
+                "$inc": inc,
+            },
+            upsert=True,
+        )
+    except Exception as e:  # pragma: no cover — observability is best-effort
+        logger.warning(f"_record_metric failed: {e}")
 
 
 async def _store_notification(
@@ -41,6 +90,7 @@ async def _store_notification(
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.notifications.insert_one(notification)
+    await _record_metric(notification_type, in_app=1)
     return notification["id"]
 
 
@@ -52,13 +102,34 @@ async def _send_push(
     tag: str = "carryon",
     notification_type: str = "general",
 ):
-    """Send a web push notification (fire-and-forget)."""
+    """Send a web push notification (fire-and-forget). Records delivery
+    metrics on every call so the Founder System Health tile can show
+    delivery rate per type without per-feature instrumentation."""
     try:
         from utils import send_push_notification
 
-        await send_push_notification(user_id, title, body, url, tag, notification_type)
+        result = await send_push_notification(user_id, title, body, url, tag, notification_type)
+        # send_push_notification returns a dict {with_subs, delivered}.
+        # Older callers treat it as a bool — Python dict truthiness
+        # still works (non-empty dict == True).
+        with_subs = 0
+        delivered = 0
+        if isinstance(result, dict):
+            with_subs = 1 if result.get("with_subs") else 0
+            delivered = 1 if result.get("delivered") else 0
+        elif isinstance(result, bool):
+            # Legacy bool return: treat True as both with_subs + delivered.
+            with_subs = 1 if result else 0
+            delivered = 1 if result else 0
+        await _record_metric(
+            notification_type,
+            push_attempts=1,
+            push_with_subs=with_subs,
+            push_delivered=delivered,
+        )
     except Exception as e:
         logger.warning(f"Push notification failed for {user_id}: {e}")
+        await _record_metric(notification_type, push_attempts=1)
 
 
 async def send_notification(

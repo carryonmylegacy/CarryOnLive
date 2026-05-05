@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Activity, Database, Shield, CheckCircle2, Loader2, RefreshCw, Zap, AlertTriangle } from 'lucide-react';
+import { Activity, Database, Shield, CheckCircle2, Loader2, RefreshCw, Zap, AlertTriangle, Bell } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
@@ -223,6 +223,72 @@ export const SystemHealthTab = ({ getAuthHeaders }) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Notifications Health — generic across ALL notification types
+          (no per-feature trackers). Lights up automatically for any
+          new notify.* call site. */}
+      {health.notifications && (() => {
+        const n = health.notifications;
+        const rate = n.delivery_rate_pct;
+        const rateColor = rate === null ? 'var(--t)' : rate >= 90 ? '#10B981' : rate >= 70 ? '#F59E0B' : '#EF4444';
+        const types = Object.entries(n.by_type || {}).sort((a, b) => (b[1].in_app_count || 0) - (a[1].in_app_count || 0));
+        return (
+          <Card className="glass-card" data-testid="notifications-health-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-bold text-[var(--t)] flex items-center gap-2">
+                <Bell className="w-4 h-4 text-[#3B82F6]" /> Notifications &mdash; last {n.window_days}d
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
+                  <div className="text-xl font-bold text-[var(--t)]" data-testid="notif-in-app-total">{n.totals.in_app_count}</div>
+                  <div className="text-[10px] text-[var(--t5)] uppercase tracking-wider">In-app sent</div>
+                </div>
+                <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
+                  <div className="text-xl font-bold text-[var(--t)]" data-testid="notif-push-attempts">{n.totals.push_attempts}</div>
+                  <div className="text-[10px] text-[var(--t5)] uppercase tracking-wider">Push attempts</div>
+                </div>
+                <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
+                  <div className="text-xl font-bold text-[var(--t)]" data-testid="notif-push-with-subs">{n.totals.push_with_subs}</div>
+                  <div className="text-[10px] text-[var(--t5)] uppercase tracking-wider">With subs</div>
+                </div>
+                <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
+                  <div className="text-xl font-bold" style={{ color: rateColor }} data-testid="notif-delivery-rate">
+                    {rate === null ? '—' : `${rate}%`}
+                  </div>
+                  <div className="text-[10px] text-[var(--t5)] uppercase tracking-wider">Delivery rate</div>
+                </div>
+              </div>
+              {types.length > 0 ? (
+                <div className="space-y-1" data-testid="notif-by-type">
+                  <div className="text-[10px] uppercase tracking-wider text-[var(--t5)] mb-1">By type</div>
+                  {types.map(([t, agg]) => {
+                    const subs = agg.push_with_subs || 0;
+                    const delivered = agg.push_delivered || 0;
+                    const r = subs > 0 ? Math.round((100 * delivered) / subs) : null;
+                    return (
+                      <div key={t} className="flex items-center justify-between p-2 rounded text-xs" style={{ background: 'var(--s)', border: '1px solid var(--b)' }} data-testid={`notif-row-${t}`}>
+                        <span className="font-bold text-[var(--t)] truncate flex-1">{t}</span>
+                        <span className="text-[var(--t5)] mx-2">{agg.in_app_count} in-app</span>
+                        <span className="text-[var(--t5)] mx-2">{agg.push_attempts} push</span>
+                        <span className="font-bold" style={{ color: r === null ? 'var(--t5)' : r >= 90 ? '#10B981' : r >= 70 ? '#F59E0B' : '#EF4444' }}>
+                          {r === null ? '—' : `${r}%`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-[var(--t5)] italic">No notifications fired in the last {n.window_days} days.</p>
+              )}
+              <p className="text-[10px] text-[var(--t5)] italic mt-3">
+                Delivery rate = pushes that reached at least one device ÷ pushes to users with ≥1 active subscription. Excludes users who never granted push permission.
+              </p>
+            </CardContent>
+          </Card>
+        );
+      })()}
     </div>
   );
 };

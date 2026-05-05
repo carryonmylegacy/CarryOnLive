@@ -1333,6 +1333,39 @@ async def get_system_health(current_user: dict = Depends(get_current_user)):
         {"status": {"$ne": "resolved"}, "deleted_at": {"$exists": False}}
     )
 
+    # Notification delivery health (last 7 days, all notification types).
+    # Single, generic counter — never per-feature health checks. New
+    # notification types light up here automatically as soon as anyone
+    # in the codebase calls notify.* / send_notification.
+    week_ago = (now - timedelta(days=7)).strftime("%Y-%m-%d")
+    notif_metrics = await db.notification_metrics.find({"day": {"$gte": week_ago}}, {"_id": 0}).to_list(1000)
+    by_type: dict = {}
+    totals = {
+        "in_app_count": 0,
+        "push_attempts": 0,
+        "push_with_subs": 0,
+        "push_delivered": 0,
+    }
+    for row in notif_metrics:
+        ntype = row.get("notification_type") or "general"
+        agg = by_type.setdefault(
+            ntype,
+            {"in_app_count": 0, "push_attempts": 0, "push_with_subs": 0, "push_delivered": 0},
+        )
+        for k in totals.keys():
+            v = int(row.get(k) or 0)
+            agg[k] += v
+            totals[k] += v
+    delivery_rate = (
+        round(100.0 * totals["push_delivered"] / totals["push_with_subs"], 1) if totals["push_with_subs"] > 0 else None
+    )
+    notifications_block = {
+        "window_days": 7,
+        "totals": totals,
+        "delivery_rate_pct": delivery_rate,
+        "by_type": by_type,
+    }
+
     return {
         "timestamp": now.isoformat(),
         "database": {
@@ -1350,5 +1383,6 @@ async def get_system_health(current_user: dict = Depends(get_current_user)):
         "queues": {
             "open_support_tickets": open_tickets,
         },
+        "notifications": notifications_block,
         "status": "healthy",
     }
