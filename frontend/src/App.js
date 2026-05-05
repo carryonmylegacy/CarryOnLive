@@ -72,6 +72,7 @@ import TransitionGate from './components/TransitionGate';
 // Beneficiary Pages
 const BeneficiaryDashboardPage = lazy(() => import('./pages/beneficiary/BeneficiaryDashboardPage'));
 const BeneficiaryHubPage = lazy(() => import('./pages/beneficiary/BeneficiaryHubPage'));
+const BeneficiaryConciergePage = lazy(() => import('./pages/beneficiary/BeneficiaryConciergePage'));
 const BeneficiaryVaultPage = lazy(() => import('./pages/beneficiary/BeneficiaryVaultPage'));
 const BeneficiaryMessagesPage = lazy(() => import('./pages/beneficiary/BeneficiaryMessagesPage'));
 const BeneficiaryChecklistPage = lazy(() => import('./pages/beneficiary/BeneficiaryChecklistPage'));
@@ -631,6 +632,15 @@ function AppRoutes() {
               - pre-transition → redirected to /beneficiary/pre,
                 whose own back button looped back here. */}
         <Route path="/beneficiary/dashboard" element={<BeneficiaryDashboardPage />} />
+        {/* Beneficiary Estate Concierge AI — POST-transition feature
+            gated server-side on (1) post-transition estate, (2) caller
+            being a beneficiary, (3) benefactor's plan having the `bec`
+            feature flag enabled. The page itself fetches its own
+            status and renders a precise "why unavailable" panel for
+            each rejection reason; we deliberately do NOT wrap it in
+            TransitionGate because we want the user to LAND here and
+            see the explanation rather than be silently redirected. */}
+        <Route path="/beneficiary/concierge" element={<BeneficiaryConciergePage />} />
         <Route path="/beneficiary/vault" element={<TransitionGate section="vault" allowPreTransition><BeneficiaryVaultPage /></TransitionGate>} />
         <Route path="/beneficiary/messages" element={<TransitionGate section="messages"><BeneficiaryMessagesPage /></TransitionGate>} />
         <Route path="/beneficiary/checklist" element={<TransitionGate section="checklist"><BeneficiaryChecklistPage /></TransitionGate>} />

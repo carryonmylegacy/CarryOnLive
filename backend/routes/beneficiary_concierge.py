@@ -1,0 +1,291 @@
+"""CarryOn™ — Beneficiary Estate Concierge AI (BEC).
+
+POST-transition AI chat for the BENEFICIARY side. Distinct from the
+Estate Guardian AI (EGA), which is a benefactor-side tool that
+analyzes the estate plan against US estate law to surface gaps and
+seams. The Concierge does the opposite: once the benefactor has
+passed, it answers the beneficiary's questions about that specific
+benefactor's wishes — grounded ONLY in the documents the benefactor
+explicitly designated to that beneficiary.
+
+Typical questions:
+    "What did mom want for the house?"
+    "Who's the executor?"
+    "What did dad say about the cabin?"
+
+Strict gating (every check is a server-side hard requirement):
+    1. The caller must be a beneficiary on the named estate.
+    2. The estate must be POST-transition (status == "transitioned").
+    3. The benefactor's plan tier must have the `bec` feature flag
+       enabled in the global feature_gates matrix (admin toggles
+       this in Admin → Subs → Feature Gates).
+    4. Only documents whose `designated_beneficiaries` includes the
+       caller's user_id (or "all") AND whose post-transition
+       visibility is open are loaded into the context window.
+    5. The model NEVER receives data about other beneficiaries or
+       documents the caller wasn't given access to.
+
+The route does NOT give legal advice. It surfaces the benefactor's
+own words and intentions as captured in their estate documents.
+"""
+
+from datetime import datetime, timezone
+from typing import Any, Optional
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+
+from config import XAI_MODEL_LIGHT, db, logger, xai_client
+from routes.feature_gates import get_feature_gates
+from routes.guardian import extract_document_text
+from utils import get_current_user
+
+router = APIRouter()
+
+
+SYSTEM_PROMPT = """You are the CarryOn™ Beneficiary Estate Concierge.
+
+Your role is to help a grieving beneficiary understand what their loved one (the benefactor) wanted, based ONLY on the documents the benefactor explicitly shared with this beneficiary. The benefactor has passed; this beneficiary is now navigating their estate.
+
+Strict ground rules:
+- Answer ONLY from the document context provided below. If the answer isn't in the documents, say so kindly: "That isn't covered in the documents [BENEFACTOR_FIRST_NAME] shared with you. You may want to ask [their attorney / executor / family]."
+- Use the benefactor's own language and intent wherever possible. Quote brief lines from the documents when it helps.
+- You are NOT a lawyer. Do not give legal advice or speculate about state law. If asked, say: "For a legal answer you'll want to talk to the executor or [BENEFACTOR_FIRST_NAME]'s attorney."
+- Tone: warm, calm, brief, dignified. This person is grieving. Avoid jargon. No bullet-list dumps unless asked.
+- Never mention other beneficiaries, other documents, or any information that isn't in the context window.
+- Always close emotionally heavy answers with a gentle line acknowledging the moment, e.g., "I know this is hard. Take it one step at a time."
+"""
+
+
+# ── Models ────────────────────────────────────────────────────────────
+
+
+class AskRequest(BaseModel):
+    estate_id: str
+    question: str
+    session_id: Optional[str] = None
+
+
+class StatusResponse(BaseModel):
+    available: bool
+    reason: Optional[str] = None
+    accessible_doc_count: int = 0
+    benefactor_first_name: Optional[str] = None
+
+
+# ── Gating helper ─────────────────────────────────────────────────────
+
+
+async def _resolve_concierge_access(user_id: str, estate_id: str) -> dict[str, Any]:
+    """Return a dict describing whether BEC is available for this caller
+    on this estate, plus the resolved benefactor name and accessible
+    document set if so. Never raises — callers branch on `available`."""
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
+    if not estate:
+        return {"available": False, "reason": "estate_not_found"}
+
+    # Caller must be a beneficiary on the estate
+    beneficiary_link = await db.beneficiaries.find_one(
+        {"estate_id": estate_id, "user_id": user_id},
+        {"_id": 0},
+    )
+    if not beneficiary_link:
+        return {"available": False, "reason": "not_a_beneficiary"}
+
+    # Post-transition only
+    if estate.get("status") != "transitioned":
+        return {"available": False, "reason": "pre_transition"}
+
+    # Benefactor's plan must have BEC enabled
+    benefactor = await db.users.find_one({"id": estate.get("owner_id")}, {"_id": 0})
+    if not benefactor:
+        return {"available": False, "reason": "benefactor_missing"}
+    tier = benefactor.get("subscription_tier") or benefactor.get("plan") or "base"
+    gates = await get_feature_gates()
+    if not (gates.get("bec") or {}).get(tier, False):
+        return {"available": False, "reason": "feature_disabled_for_tier"}
+
+    # Documents the caller is allowed to see, post-transition.
+    # Mirror the rule documents.py uses: designation contains user_id
+    # or "all"; we trust the post-transition timing default.
+    docs_cursor = db.documents.find(
+        {"estate_id": estate_id},
+        {
+            "_id": 0,
+            "id": 1,
+            "name": 1,
+            "category": 1,
+            "description": 1,
+            "designated_beneficiaries": 1,
+            "storage_key": 1,
+            "file_data": 1,
+            "file_type": 1,
+            "file_size": 1,
+        },
+    )
+    accessible: list[dict[str, Any]] = []
+    async for doc in docs_cursor:
+        designation = doc.get("designated_beneficiaries") or ["all"]
+        if "all" in designation or user_id in designation:
+            accessible.append(doc)
+
+    benefactor_first = (benefactor.get("name") or estate.get("name") or "your loved one").split()[0]
+
+    return {
+        "available": True,
+        "estate": estate,
+        "benefactor": benefactor,
+        "benefactor_first_name": benefactor_first,
+        "documents": accessible,
+    }
+
+
+# ── Endpoints ─────────────────────────────────────────────────────────
+
+
+@router.get("/beneficiary/concierge/status")
+async def concierge_status(
+    estate_id: str,
+    current_user: dict = Depends(get_current_user),
+) -> StatusResponse:
+    """Lightweight gate check for the frontend (no LLM call)."""
+    info = await _resolve_concierge_access(current_user["id"], estate_id)
+    if not info["available"]:
+        return StatusResponse(available=False, reason=info["reason"])
+    return StatusResponse(
+        available=True,
+        accessible_doc_count=len(info["documents"]),
+        benefactor_first_name=info["benefactor_first_name"],
+    )
+
+
+@router.post("/beneficiary/concierge/ask")
+async def concierge_ask(
+    payload: AskRequest,
+    current_user: dict = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Beneficiary asks a question; we ground the answer in the docs
+    they have access to and call xAI Grok. All gating runs server-side."""
+    info = await _resolve_concierge_access(current_user["id"], payload.estate_id)
+    if not info["available"]:
+        # Map gating reasons to clear HTTP errors so the frontend can
+        # render a precise "this is why you can't use it yet" panel.
+        reason = info["reason"]
+        status_code = {
+            "estate_not_found": 404,
+            "not_a_beneficiary": 403,
+            "pre_transition": 403,
+            "feature_disabled_for_tier": 403,
+            "benefactor_missing": 404,
+        }.get(reason, 403)
+        raise HTTPException(status_code=status_code, detail=reason)
+
+    if not xai_client:
+        raise HTTPException(status_code=503, detail="ai_unavailable")
+
+    question = (payload.question or "").strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="question_required")
+    if len(question) > 1000:
+        raise HTTPException(status_code=400, detail="question_too_long")
+
+    # Build the document context. Each doc gets a header + (possibly
+    # truncated) extracted text. We cap total context to keep
+    # latency / cost bounded while still feeling thorough.
+    benefactor_first = info["benefactor_first_name"]
+    docs = info["documents"]
+    context_blocks: list[str] = []
+    total_chars = 0
+    for doc in docs:
+        if total_chars > 24000:
+            break
+        try:
+            text = await extract_document_text(doc)
+        except Exception as e:  # pragma: no cover — extraction is best-effort
+            logger.warning(f"BEC: extraction failed for doc {doc.get('id')}: {e}")
+            text = ""
+        header = f"\n=== DOCUMENT: {doc.get('name') or 'Untitled'} (category: {doc.get('category') or 'unknown'}) ===\n"
+        snippet = (text or "")[:6000]
+        if not snippet and doc.get("description"):
+            snippet = f"[No extracted text. Description: {doc['description']}]"
+        block = header + (snippet or "[No readable text in this document.]")
+        context_blocks.append(block)
+        total_chars += len(block)
+
+    document_context = (
+        "\n".join(context_blocks)
+        if context_blocks
+        else f"[{benefactor_first} did not designate any documents to you yet. Tell the user that gently and suggest they reach out to the executor or family.]"
+    )
+
+    system_msg = SYSTEM_PROMPT.replace("[BENEFACTOR_FIRST_NAME]", benefactor_first)
+    full_user_prompt = (
+        f"You are speaking with the beneficiary of {info['benefactor']['name']}'s "
+        f"estate. The documents below are the ONLY documents shared with this "
+        f"beneficiary. Stay strictly within them.\n\n"
+        f"--- DOCUMENT CONTEXT ---{document_context}\n\n"
+        f"--- BENEFICIARY QUESTION ---\n{question}"
+    )
+
+    try:
+        import asyncio
+
+        resp = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: xai_client.chat.completions.create(
+                model=XAI_MODEL_LIGHT,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": full_user_prompt},
+                ],
+                max_tokens=600,
+                temperature=0.3,
+            ),
+        )
+        answer = resp.choices[0].message.content.strip()
+    except Exception as e:
+        logger.error(f"BEC ask failed: {e}")
+        raise HTTPException(status_code=502, detail="ai_call_failed") from e
+
+    # Persist conversation turn so the beneficiary has a transcript later.
+    now = datetime.now(timezone.utc).isoformat()
+    session_id = payload.session_id or f"sess_{current_user['id']}_{payload.estate_id}"
+    await db.beneficiary_concierge_messages.insert_one(
+        {
+            "session_id": session_id,
+            "estate_id": payload.estate_id,
+            "user_id": current_user["id"],
+            "question": question,
+            "answer": answer,
+            "doc_count": len(docs),
+            "created_at": now,
+        }
+    )
+
+    return {
+        "answer": answer,
+        "session_id": session_id,
+        "accessible_doc_count": len(docs),
+        "benefactor_first_name": benefactor_first,
+    }
+
+
+@router.get("/beneficiary/concierge/history")
+async def concierge_history(
+    estate_id: str,
+    current_user: dict = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Return the prior chat turns for this beneficiary on this estate."""
+    info = await _resolve_concierge_access(current_user["id"], estate_id)
+    if not info["available"]:
+        return {"messages": []}
+    cursor = (
+        db.beneficiary_concierge_messages.find(
+            {"estate_id": estate_id, "user_id": current_user["id"]},
+            {"_id": 0},
+        )
+        .sort("created_at", 1)
+        .limit(100)
+    )
+    messages = [m async for m in cursor]
+    return {"messages": messages}

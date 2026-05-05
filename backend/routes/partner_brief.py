@@ -83,7 +83,7 @@ DEFAULTS: dict[str, Any] = {
                 "n": "03",
                 "name": "Estate Guardian™ AI",
                 "abbr": "EGA",
-                "desc": "An AI assistant trained on this specific family’s plan that can answer the family’s questions when the person isn’t there — “where is dad’s life insurance?”, “what did mom want for the house?”",
+                "desc": "A digital assistant that lives inside the benefactor’s vault, trained on the estate law of all 50 U.S. states. Its only job: review the documents in the vault and tell the benefactor where their estate plan has gaps, seams, or contradictions — so they can make it air-tight while they’re still alive to fix it.",
             },
             {
                 "n": "04",
@@ -142,7 +142,7 @@ DEFAULTS: dict[str, Any] = {
                     "Standing out in a crowded market — they want to be the agent who also helped the family get organized.",
                     "Peace of mind on compliance: nothing in CarryOn changes or replaces the policy itself.",
                 ],
-                "pillars": 'SDV (where the policy lives), EGA (so the family can ask "where’s dad’s policy?"), FFN (the agent gets notified when something happens), IAC (claims-filing step lives in the checklist), CFP (the policy shows up in the household financial picture).',
+                "pillars": "SDV (where the policy lives), EGA (analyzes the benefactor’s estate plan for gaps so the policy is properly named in the right documents), FFN (the agent gets notified when something happens), IAC (claims-filing step lives in the checklist), CFP (the policy shows up in the household financial picture).",
                 "questions": [
                     "Are you looking for a tool to offer to the clients you already have, or a way to get referrals and earn on new clients you bring in?",
                     "Roughly how many policies do you have under management?",
@@ -160,7 +160,7 @@ DEFAULTS: dict[str, Any] = {
                     "Keeping the family relationship: when the primary client passes, the surviving spouse often leaves the advisor within 2 years. CarryOn keeps the family inside an organized hand-off.",
                     "Peace of mind for compliance: CarryOn doesn’t give financial advice — it just organizes what the advisor and client have already decided.",
                 ],
-                "pillars": "CFP (full household picture), SDV (estate documents in one place), EGA (the family asks the AI, not the advisor at 11pm), MM (the personal-legacy piece advisors can’t deliver themselves), CCP (plans for accident or incapacity), DAV (the digital-access gap most advisors quietly worry about).",
+                "pillars": "CFP (full household picture), SDV (estate documents in one place), EGA (an estate-law AI that spots gaps in the client’s plan and gives the advisor a clean punch-list to address), MM (the personal-legacy piece advisors can’t deliver themselves), CCP (plans for accident or incapacity), DAV (the digital-access gap most advisors quietly worry about).",
                 "questions": [
                     "What does your current family hand-off look like today when a client passes or becomes incapacitated?",
                     "Are you AUM-based, fee-only, hybrid? (Just for context — affects how a partnership would feel for them.)",
@@ -198,7 +198,7 @@ DEFAULTS: dict[str, Any] = {
                     "Legal-risk comfort: nothing the family does inside CarryOn replaces or contradicts the actual legal document.",
                     "They want to look modern to younger clients without having to learn new software themselves.",
                 ],
-                "pillars": "SDV (their documents live there, sealed and released correctly), EGA (an AI that explains the document to the family in plain English without giving legal advice), IAC (the action checklist their POA / executor will actually use), DAV (the digital-account access the will references but the family can never find), CCP (separate plans for incapacity vs death).",
+                "pillars": "SDV (their documents live there, locked and released correctly), EGA (an estate-law AI that flags gaps and contradictions in the client’s plan — gives the attorney a clean punch-list), IAC (the action checklist their POA / executor will actually use), DAV (the digital-account access the will references but the family can never find), CCP (separate plans for incapacity vs death).",
                 "questions": [
                     "How does your firm currently hand the signed plan off to the client family today — paper copy, secure portal, document vault?",
                     "Do you offer plan-review or update services after the will is signed, or is it mostly one-time per client?",
@@ -274,7 +274,7 @@ DEFAULTS: dict[str, Any] = {
             },
             {
                 "abbr": "EGA",
-                "line": "An AI guide trained on the family’s specific plan, so the family can ask questions and get answers about THIS household — not generic advice.",
+                "line": "An estate-law AI that lives inside the benefactor’s vault and reviews their documents to find gaps, seams, or contradictions — so the plan is air-tight before anything happens.",
             },
             {
                 "abbr": "IAC",

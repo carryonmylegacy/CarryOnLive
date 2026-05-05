@@ -414,6 +414,28 @@ const BeneficiaryDashboardPage = () => {
           <div className="text-xs lg:text-sm opacity-85 text-center font-bold">Milestone<br />Messages</div>
         </div>
         )}
+        {/* Estate Concierge AI tile — POST-transition only, gated
+            server-side on the `bec` feature flag (founder enables for
+            Premium tier in Admin → Subs → Feature Gates). We render
+            the tile optimistically when the feature exposes itself
+            through the unified beneficiary feature_access map; the
+            page itself enforces the hard gate. */}
+        {(myPerms?.feature_access?.bec_access === true) && (
+        <div
+          className="rounded-2xl p-4 lg:p-6 cursor-pointer transition-all hover:scale-[1.02] flex flex-col items-center justify-center text-white col-span-3 lg:col-span-3"
+          style={{ background: 'linear-gradient(135deg, #78350F, #92400E, #D4AF37)', boxShadow: '0 12px 48px -4px rgba(212,175,55,0.45), 0 2px 0 0 rgba(255,224,138,0.25) inset, 0 -6px 16px rgba(0,0,0,0.3) inset', border: '1px solid rgba(251,191,36,0.25)' }}
+          onClick={() => navigate('/beneficiary/concierge')}
+          data-testid="stat-concierge"
+        >
+          <Sparkles className="w-6 h-6 lg:w-8 lg:h-8 opacity-80 mb-2" />
+          <div className="text-base lg:text-lg font-bold text-center" style={{ fontFamily: 'var(--sans)' }}>
+            Estate Concierge
+          </div>
+          <div className="text-[11px] lg:text-xs opacity-85 text-center mt-0.5">
+            Ask about {benefactorFirst}’s wishes
+          </div>
+        </div>
+        )}
       </div>
 
       {/* Preview Cards */}

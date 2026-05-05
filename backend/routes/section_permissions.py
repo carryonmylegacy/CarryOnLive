@@ -82,7 +82,11 @@ async def get_my_section_permissions(estate_id: str, current_user: dict = Depend
     perms = await db.section_permissions.find_one({"estate_id": estate_id, "beneficiary_id": ben["id"]}, {"_id": 0})
     sections = perms["sections"] if perms else {s: True for s in ALL_SECTIONS}
 
-    # Benefactor-set feature access flags (stored on the beneficiary record)
+    # Benefactor-set feature access flags (stored on the beneficiary record).
+    # `bec_access` is computed dynamically (Premium-tier-only AI feature)
+    # rather than per-beneficiary toggle: it gates the post-transition
+    # Beneficiary Estate Concierge tile in the dashboard. The hard gate
+    # still runs server-side in routes/beneficiary_concierge.py.
     feature_access = {
         "mm_access": ben.get("mm_access", True),
         "ega_access": ben.get("ega_access", True),
@@ -93,6 +97,24 @@ async def get_my_section_permissions(estate_id: str, current_user: dict = Depend
         "dts_access": ben.get("dts_access", True),
         "cfp_access": ben.get("cfp_access", True),
     }
+    # Resolve BEC availability via the global feature_gates matrix.
+    # Only show the tile post-transition AND when the benefactor's tier
+    # has BEC enabled. Failures fall back to "hide tile" — never crash.
+    try:
+        from routes.feature_gates import get_feature_gates
+
+        estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
+        owner_id = estate.get("owner_id") if estate else None
+        owner = (
+            await db.users.find_one({"id": owner_id}, {"_id": 0, "id": 1, "subscription_tier": 1, "plan": 1})
+            if owner_id
+            else None
+        )
+        tier = (owner or {}).get("subscription_tier") or (owner or {}).get("plan") or "base"
+        gates = await get_feature_gates()
+        feature_access["bec_access"] = bool(is_transitioned and (gates.get("bec") or {}).get(tier, False))
+    except Exception:
+        feature_access["bec_access"] = False
 
     return {
         "is_transitioned": is_transitioned,

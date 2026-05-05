@@ -1511,6 +1511,34 @@ cp_check "CP2h Admin Sales Brief route mounted" \
   "/app/frontend/src/pages/AdminPage.js" \
   "effectiveTab === 'sales-brief'"
 
+# CP3 — Beneficiary Estate Concierge AI (BEC)
+# POST-transition AI for the beneficiary side, gated server-side on
+# (post-transition) AND (benefactor-tier feature flag) AND (caller is
+# a beneficiary on the estate). Distinct from EGA (benefactor-side
+# estate-law gap analyzer). Founder enables per-tier in Admin → Subs
+# → Feature Gates. Required by founder, Feb 2026.
+cp_check "CP3a BEC backend route" \
+  "/app/backend/routes/beneficiary_concierge.py" \
+  "/beneficiary/concierge/ask"
+cp_check "CP3b BEC router registered" \
+  "/app/backend/server.py" \
+  "beneficiary_concierge_router"
+cp_check "CP3c BEC feature flag in registry" \
+  "/app/backend/routes/feature_gates.py" \
+  '"key": "bec"'
+cp_check "CP3d BEC frontend page" \
+  "/app/frontend/src/pages/beneficiary/BeneficiaryConciergePage.js" \
+  "beneficiary-concierge-page"
+cp_check "CP3e BEC route mounted" \
+  "/app/frontend/src/App.js" \
+  "path=\"/beneficiary/concierge\""
+cp_check "CP3f BEC dashboard tile" \
+  "/app/frontend/src/pages/beneficiary/BeneficiaryDashboardPage.js" \
+  "stat-concierge"
+cp_check "CP3g BEC distinct from EGA in section_permissions" \
+  "/app/backend/routes/section_permissions.py" \
+  "bec_access"
+
 if [ "$CP_FAIL" -gt 0 ]; then
   FAILS=$((FAILS + CP_FAIL))
   echo -e "${RED}CRITICAL PATHWAY FAILURE${NC}: $CP_FAIL invariant(s) broken."

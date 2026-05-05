@@ -51,6 +51,20 @@ PLATFORM_FEATURES = [
         "core": False,
         "default_off": True,
     },
+    {
+        # Beneficiary Estate Concierge AI — POST-transition AI for the
+        # beneficiary side. Reads ONLY the documents the beneficiary has
+        # been granted access to, and answers questions like "what did
+        # mom want for the house?" Distinct from EGA (which is a
+        # benefactor-side estate-law gap analyzer). Default OFF for
+        # every tier; founder enables it for Premium (and any other
+        # tier they choose) via Admin → Subs → Feature Gates.
+        "key": "bec",
+        "label": "Beneficiary Estate Concierge AI (BEC)",
+        "route": "/beneficiary/concierge",
+        "core": False,
+        "default_off": True,
+    },
 ]
 
 FEATURE_KEYS = [f["key"] for f in PLATFORM_FEATURES]
