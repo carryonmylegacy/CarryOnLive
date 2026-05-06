@@ -141,6 +141,8 @@ export const ThinkingIndicator = ({ actionLoading, onStop }) => {
     ? ['Reading your vault documents...', 'Extracting contacts and policy numbers...', 'Building beneficiary action items...', 'Prioritizing by urgency...']
     : actionLoading === 'analyze_readiness'
     ? ['Scoring your documents...', 'Evaluating messages...', 'Checking your checklist...', 'Calculating readiness...']
+    : actionLoading === 'concierge_ask'
+    ? ['Reading what they shared with you...', 'Looking for the answer in their words...', 'Cross-referencing the documents...', 'Composing a careful answer...']
     : ['Thinking...', 'Reviewing context...', 'Forming response...'];
 
   useEffect(() => {

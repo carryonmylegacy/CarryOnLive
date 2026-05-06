@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { API_URL } from '../../config';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
+import { ThinkingIndicator } from '../../components/guardian/GuardianWidgets';
 
 /**
  * BeneficiaryConciergePage — POST-transition AI for the beneficiary side.
@@ -44,6 +45,18 @@ export default function BeneficiaryConciergePage() {
   const [showSharedPanel, setShowSharedPanel] = useState(false);
   const [previewDoc, setPreviewDoc] = useState(null); // { id, name, category, snippet, truncated, loading }
   const scrollerRef = useRef(null);
+  // AbortController for the in-flight ask. Lets the user hit Stop on
+  // the ThinkingIndicator and bail out of a long xAI roundtrip without
+  // leaving the spinner orphaned. Cleared in send()'s finally block.
+  const abortRef = useRef(null);
+
+  const stopAsk = useCallback(() => {
+    if (abortRef.current) {
+      try { abortRef.current.abort(); } catch { /* noop */ }
+      abortRef.current = null;
+    }
+    setSending(false);
+  }, []);
 
   const openDocPreview = useCallback(async (docId) => {
     if (!estateId || !docId) return;
@@ -137,8 +150,14 @@ export default function BeneficiaryConciergePage() {
     setMessages((prev) => [...prev, { role: 'user', content: q, ts: new Date().toISOString() }]);
     setInput('');
     setSending(true);
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
-      const res = await axios.post(`${API_URL}/beneficiary/concierge/ask`, { estate_id: estateId, question: q }, getAuthHeaders());
+      const res = await axios.post(
+        `${API_URL}/beneficiary/concierge/ask`,
+        { estate_id: estateId, question: q },
+        { ...getAuthHeaders(), signal: controller.signal },
+      );
       setMessages((prev) => [...prev, {
         role: 'assistant',
         content: res.data?.answer || '',
@@ -146,9 +165,21 @@ export default function BeneficiaryConciergePage() {
         ts: new Date().toISOString(),
       }]);
     } catch (e) {
-      const detail = e?.response?.data?.detail || 'I’m having trouble right now. Please try again in a moment.';
-      setMessages((prev) => [...prev, { role: 'assistant', content: `(${detail})`, ts: new Date().toISOString(), error: true }]);
+      // User clicked Stop — render a quiet, dignified note instead of
+      // the red error bubble. Axios surfaces aborts as ERR_CANCELED.
+      if (axios.isCancel?.(e) || e?.code === 'ERR_CANCELED' || e?.name === 'CanceledError') {
+        setMessages((prev) => [...prev, {
+          role: 'assistant',
+          content: '(Stopped — ask again whenever you are ready.)',
+          ts: new Date().toISOString(),
+          stopped: true,
+        }]);
+      } else {
+        const detail = e?.response?.data?.detail || 'I’m having trouble right now. Please try again in a moment.';
+        setMessages((prev) => [...prev, { role: 'assistant', content: `(${detail})`, ts: new Date().toISOString(), error: true }]);
+      }
     } finally {
+      abortRef.current = null;
       setSending(false);
     }
   };
@@ -294,7 +325,7 @@ export default function BeneficiaryConciergePage() {
               <Bubble key={i} role={m.role} content={m.content} citations={m.citations} error={m.error} onCitationClick={openDocPreview} />
             ))}
             {sending && (
-              <Bubble role="assistant" content={<span className="inline-flex items-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</span>} />
+              <ThinkingIndicator actionLoading="concierge_ask" onStop={stopAsk} />
             )}
           </div>
 
