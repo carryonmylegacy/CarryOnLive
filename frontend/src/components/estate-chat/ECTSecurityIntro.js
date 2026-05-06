@@ -11,7 +11,7 @@ import {
 export default function ECTSecurityIntro({ introStep, setIntroStep, onDismiss, onBack }) {
   return (
     <div
-      className="fixed inset-0 z-[60] flex flex-col items-center justify-start lg:justify-center overflow-y-auto pt-[calc(72px+env(safe-area-inset-top,0px))] pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:!pt-8 lg:!pb-8"
+      className="fixed inset-0 z-[60] flex flex-col items-center justify-start lg:justify-center overflow-y-auto pt-[calc(72px+env(safe-area-inset-top,0px))] pb-[calc(140px+env(safe-area-inset-bottom,0px))] lg:!pt-8 lg:!pb-8"
       style={{
         background: 'rgba(0,0,0,0.82)',
         backdropFilter: 'blur(16px)',

@@ -1,5 +1,25 @@
 # CarryOn — Changelog
 
+## May 6, 2026 — ECT/CCP Walkthrough Bottom-CTA Clearance Fix
+**Bug fix**: User reported the gold "Got It — Start Chatting" button at the bottom of the ECT "How to Use" walkthrough tile was hidden behind the iPhone PWA bottom dock and could not be scrolled into view.
+
+**Root cause**: The full-screen scrollable overlay container in `ECTSecurityIntro.js` and the analogous `CCPWelcomeWalkthrough.js` only reserved `pb-[calc(96px+env(safe-area-inset-bottom,0px))]` of bottom padding. On iPhone PWA the bottom dock height (`min-h-[3.5rem]` + `py-2` + `mb-1` + `safe-area-inset-bottom`) plus the floating overlay artifacts can total ~110–120px, leaving the gold CTA partly under the dock with nothing to scroll past.
+
+**Fix**: Increased bottom padding to `pb-[calc(140px+env(safe-area-inset-bottom,0px))]` on both walkthrough overlays so the CTA sits comfortably above the dock at the bottom of the scroll. Desktop padding (`lg:!pb-8`) untouched.
+
+**Files changed**
+- `/app/frontend/src/components/estate-chat/ECTSecurityIntro.js`
+- `/app/frontend/src/components/ccp/CCPWelcomeWalkthrough.js`
+
+**Verified other walkthroughs**: Swept all other `fixed inset-0 + overflow-y-auto` overlays. Remaining ones are centered modals (`items-center justify-center`) with bounded heights — not affected by this scroll pattern.
+
+**Verified**:
+- ESLint clean ✅
+- `bash /app/housekeeping.sh` → 0 WARN, 0 FAIL ✅
+
+---
+
+
 ## May 6, 2026 — Dashboard Title Auto-Scaling (Pitch Polish)
 **UI**: Per user request, the two H2 dashboard titles now auto-scale up on large desktop formats so they better fill the cards during pitches.
 

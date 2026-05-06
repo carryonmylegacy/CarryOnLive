@@ -40,7 +40,7 @@ const CCPWelcomeWalkthrough = ({ welcomeStep, setWelcomeStep, onDismiss }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex flex-col items-center justify-start lg:justify-center overflow-y-auto pt-[calc(72px+env(safe-area-inset-top,0px))] pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:!pt-8 lg:!pb-8"
+      className="fixed inset-0 z-[60] flex flex-col items-center justify-start lg:justify-center overflow-y-auto pt-[calc(72px+env(safe-area-inset-top,0px))] pb-[calc(140px+env(safe-area-inset-bottom,0px))] lg:!pt-8 lg:!pb-8"
       data-testid="ccp-welcome-overlay"
       style={{
         background: 'rgba(0,0,0,0.85)',
