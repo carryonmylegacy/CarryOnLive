@@ -40,6 +40,23 @@ const BeneficiaryHubPage = () => {
   useEffect(() => { fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // On the multi-benefactor Hub the user is intentionally NOT inside
+  // any single estate's context — they're picking which one to enter.
+  // If we leave a stale `beneficiary_estate_id` from the prior visit
+  // here, the sidebar's IAC / MM / Vault / etc. pages will silently
+  // pull data from that estate (which can be the wrong one — e.g.
+  // the only transitioned estate among several pre-transition ones,
+  // exposing post-transition features the user shouldn't see in this
+  // context). Clearing it on Hub mount forces those pages into their
+  // "no estate selected" empty state until the user explicitly clicks
+  // a benefactor in the orbit.
+  useEffect(() => {
+    try {
+      localStorage.removeItem('beneficiary_estate_id');
+      localStorage.removeItem('beneficiary_feature_access');
+    } catch { /* SSR / private mode safe-noop */ }
+  }, []);
+
   // Show "Create Your Own Estate" prompt for beneficiary-only users
   useEffect(() => {
     if (!user || loading) return;
