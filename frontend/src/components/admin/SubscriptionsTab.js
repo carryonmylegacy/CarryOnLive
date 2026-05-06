@@ -698,12 +698,23 @@ function FCPricingCard({ headers }) {
           ))}
         </div>
 
-        {/* FC Subscribers list */}
-        {fcSubs.length > 0 && (
+        {/* FC Subscribers list — paid members only. `pending` rows are
+            click-throughs to Stripe that never converted; surfacing
+            them here was misleading the founder into thinking pending
+            users had subscribed. Conversion-funnel signal (clicked but
+            didn't pay) belongs in the Marketing analytics tab; that's
+            tracked as a follow-up so it doesn't drop. */}
+        {(() => {
+          const paidFcSubs = (fcSubs || []).filter(fc => {
+            const s = (fc?.status || '').toLowerCase();
+            return s && s !== 'pending' && s !== 'cancelled' && s !== 'failed';
+          });
+          if (paidFcSubs.length === 0) return null;
+          return (
           <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--b)' }}>
-            <p className="text-xs font-bold text-[var(--t4)] mb-2">Founders Circle Members ({fcSubs.length})</p>
+            <p className="text-xs font-bold text-[var(--t4)] mb-2">Founders Circle Members ({paidFcSubs.length})</p>
             <div className="space-y-1 max-h-40 overflow-y-auto">
-              {fcSubs.map(fc => (
+              {paidFcSubs.map(fc => (
                 <div key={fc.id} className="flex items-center justify-between text-xs p-2 rounded" style={{ background: 'var(--s)' }}>
                   <div>
                     <span className="text-[var(--t2)]">{fc.estate_name || fc.estate_id}</span>
@@ -716,7 +727,8 @@ function FCPricingCard({ headers }) {
               ))}
             </div>
           </div>
-        )}
+          );
+        })()}
       </CardContent>
     </Card>
   );

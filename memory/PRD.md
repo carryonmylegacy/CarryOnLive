@@ -2165,3 +2165,19 @@ Items the founder explicitly deferred so they don't carry pre-pitch risk. Each i
 - **Outcome**: zero hardcoded brand-gold hex literals, theme-aware gold everywhere, retired colour-drift inconsistency.
 - **Trigger to pick up:** any quiet day with no pitch / demo within 24 h.
 
+
+### FC abandoned-checkout funnel (move to Marketing tab)
+- **Why it's deferred**: a paid-only filter was applied to the admin Subscriptions tab so the founder no longer sees `pending` Stripe click-throughs as if they were members. The conversion-funnel signal (clicked → didn't pay) is genuinely valuable, just in the *Marketing* / *Product Analytics* surface, not the *did-they-pay-me* surface.
+- **What the work is**: surface a "FC checkout drop-off" card on `ProductAnalyticsTab.js` (or a new MarketingFunnelTab):
+  - Total `founders_circle` rows in `pending` status with `created_at >= window`.
+  - Drop-off rate: `pending / (pending + completed + active)` over the same window.
+  - List of email + tier they bounced from + days-since-click, sorted by recency.
+- **Backend**: new `/admin/marketing/fc-abandoned?days=N` endpoint that returns the above shape; reuses existing `db.founders_circle` collection — no schema change.
+- **Estimated effort**: 30 min backend + 30 min frontend tile.
+- **Trigger to pick up**: when the founder asks "okay where ARE the people who almost subscribed?" — that's when they want this report.
+
+### Shared `useBeneficiaryEstateId()` resolver hook
+- **Why it's deferred**: BEC was the only page hitting the misleading "no estate selected" empty state in production, and that one was fixed surgically. The other six beneficiary pages (Settings, Guardian, Checklist, MilestoneReport, Financial, Condolence) all share the same naive `localStorage.getItem('beneficiary_estate_id')` pattern at mount, but in practice the dashboard always populates the key first.
+- **What the work is**: extract `BeneficiaryConciergePage`'s auto-resolve `useEffect` into `frontend/src/hooks/useBeneficiaryEstateId.js`, then refactor the six pages to use it. Returns `{ estateId, isResolving }`. Belt-and-braces parity, zero behaviour change for the happy path.
+- **Estimated effort**: 1 hour.
+
