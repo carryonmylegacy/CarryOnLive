@@ -177,18 +177,36 @@ export default function FoundersCirclePage() {
         </p>
       </div>
 
-      {/* Estate selector */}
+      {/* Estate selector — only a prerequisite when the user has more
+          than one estate. Centered + gold-outlined + soft pulse so it
+          doesn't slip past a hurried eye on the way to the tier
+          tiles. Pulse stops the moment a real estate is selected so
+          we don't keep nagging once the action is done. */}
       {estates.length > 1 && (
-        <div className="mb-6">
-          <label className="block text-sm font-bold text-[var(--t2)] mb-2">Select Estate</label>
+        <div className="mb-6 flex flex-col items-center text-center">
+          <label
+            htmlFor="fc-estate-select"
+            className="block text-sm font-bold mb-2"
+            style={{ color: 'var(--gold)' }}
+          >
+            Select Estate <span className="opacity-70">(required)</span>
+          </label>
           <select
+            id="fc-estate-select"
             value={selectedEstate}
             onChange={(e) => setSelectedEstate(e.target.value)}
-            className="w-full max-w-sm px-4 py-2 rounded-lg text-sm"
-            style={{ background: 'var(--bg2)', border: '1px solid var(--b)', color: 'var(--t)' }}
+            className={`w-full max-w-sm px-4 py-2.5 rounded-lg text-sm text-center outline-none transition-shadow ${selectedEstate ? '' : 'animate-pulse-fast'}`}
+            style={{
+              background: 'var(--bg2)',
+              border: `2px solid ${GOLD}`,
+              color: 'var(--t)',
+              boxShadow: selectedEstate
+                ? 'none'
+                : `0 0 0 4px ${GOLD}26, 0 6px 20px -8px ${GOLD}80`,
+            }}
             data-testid="fc-estate-select"
           >
-            <option value="">Choose an estate...</option>
+            <option value="">Choose an estate…</option>
             {estates.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
           </select>
         </div>
