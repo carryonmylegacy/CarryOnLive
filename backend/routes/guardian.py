@@ -225,7 +225,14 @@ async def gather_estate_context(estate_id: str, include_doc_content: bool = Fals
         readiness,
     ) = await asyncio.gather(
         db.documents.find(
-            {"estate_id": estate_id},
+            # Always exclude soft-deleted documents — the frontend
+            # hides them from the Secure Document Vault, but without
+            # this filter EGA still loads them, references them by
+            # name in its analysis, and confuses users who can no
+            # longer see those documents in their vault. Reported
+            # May 6, 2026 ("Front:Back Side Cash Flow" surfaced
+            # against a demo benefactor where the doc didn't exist).
+            {"estate_id": estate_id, "deleted_at": None},
             {
                 "_id": 0,
                 "lock_password_hash": 0,
@@ -233,7 +240,7 @@ async def gather_estate_context(estate_id: str, include_doc_content: bool = Fals
                 "voice_passphrase_hash": 0,
             },
         ).to_list(100),
-        db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0}).to_list(100),
+        db.beneficiaries.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(100),
         db.checklists.find({"estate_id": estate_id}, {"_id": 0}).sort("order", 1).to_list(200),
         db.messages.find({"estate_id": estate_id}, {"_id": 0, "video_url": 0}).to_list(100),
         calculate_estate_readiness(estate_id),

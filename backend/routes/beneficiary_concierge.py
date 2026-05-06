@@ -205,7 +205,10 @@ async def _resolve_concierge_access(user_id: str, estate_id: str) -> dict[str, A
     # financial POA, legacy `poa`) OR explicit visibility_timing
     # opt-in for that beneficiary.
     docs_cursor = db.documents.find(
-        {"estate_id": estate_id},
+        # Soft-deleted docs are hidden from the SDV in the frontend; we
+        # mirror that here so BEC never references a document the
+        # benefactor's relatives can't actually see in their vault.
+        {"estate_id": estate_id, "deleted_at": None},
         {
             "_id": 0,
             "id": 1,
