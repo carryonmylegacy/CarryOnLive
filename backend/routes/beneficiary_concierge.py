@@ -440,10 +440,54 @@ async def concierge_ask(
             logger.warning(f"BEC xAI attempt {attempt + 1}/{_MAX_ATTEMPTS} failed ({type(e).__name__}: {e})")
 
     if completion is None:
-        logger.error(f"BEC ask failed after {_MAX_ATTEMPTS} attempts: {last_error}")
-        raise HTTPException(status_code=502, detail="ai_call_failed") from last_error
-
-    answer = (completion.choices[0].message.content or "").strip()
+        # ── GRACEFUL FALLBACK (May 6, 2026 — pre-pitch) ──
+        # When xAI is unreachable from this region (key revoked, billing
+        # issue, network egress block, model deprecated, rate-limit
+        # cliff), we previously raised 502 and the beneficiary saw a
+        # red "I'm having trouble right now" bubble — embarrassing in
+        # a live demo. Instead, synthesize a templated, document-aware
+        # answer locally so the user always gets something useful and
+        # dignified. The answer references the actual designated docs
+        # by name and directs them to the executor — matching the
+        # tone of the rest of BEC.
+        logger.error(
+            f"BEC ask: all {_MAX_ATTEMPTS} xAI attempts failed; serving template fallback. last_error={last_error!r}"
+        )
+        if docs:
+            doc_lines = []
+            for idx, doc in enumerate(docs, start=1):
+                nm = doc.get("name") or "Untitled"
+                cat = (doc.get("category") or "other").replace("_", " ")
+                doc_lines.append(f"  • {nm} [#{idx}] — {cat}")
+            doc_block = "\n".join(doc_lines[:8])
+            extra = "" if len(docs) <= 8 else f"\n  …and {len(docs) - 8} more."
+            answer = (
+                f"I'm here for you. Right now I'm having trouble reaching the AI "
+                f"engine I normally use to read through {benefactor_first}'s "
+                f"documents in detail, so I can't give you a custom answer to "
+                f'"{question}" this very second.\n\n'
+                f"What I CAN tell you is exactly what {benefactor_first} has "
+                f"designated to you so you know where the answer will come from "
+                f"once we're back online:\n"
+                f"{doc_block}{extra}\n\n"
+                f"For an immediate answer, please reach out to the executor or "
+                f"{benefactor_first}'s attorney — they have the executed copies "
+                f"of these documents and can walk you through what was left to "
+                f"you. I'll be back in a moment; please try the question again "
+                f"shortly. I know this is hard. Take it one step at a time."
+            )
+        else:
+            answer = (
+                f"I'm here for you. {benefactor_first} hasn't designated any "
+                f"documents to me yet, so I don't have anything specific to "
+                f"share. The best next step is to reach out to the executor or "
+                f"{benefactor_first}'s attorney for guidance. I know this is "
+                f"hard. Take it one step at a time."
+            )
+        is_fallback = True
+    else:
+        answer = (completion.choices[0].message.content or "").strip()
+        is_fallback = False
 
     # Strip any hallucinated citation markers the model may have
     # invented (e.g. [#7] when only [#1]–[#3] were provided). Only
@@ -472,6 +516,7 @@ async def concierge_ask(
             "answer": answer,
             "citations": citations,
             "doc_count": len(docs),
+            "is_fallback": is_fallback,
             "created_at": now,
         }
     )
@@ -482,6 +527,7 @@ async def concierge_ask(
         "session_id": session_id,
         "accessible_doc_count": len(docs),
         "benefactor_first_name": benefactor_first,
+        "is_fallback": is_fallback,
     }
 
 
