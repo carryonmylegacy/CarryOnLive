@@ -8,6 +8,11 @@ import { toast } from '../utils/toast';
 
 const INSTALLMENT_LABELS = { '1': 'Pay in Full', '3': '3 Payments', '6': '6 Payments', '12': '12 Payments' };
 
+// Canonical brand gold — used consistently for FC badging, ribbons,
+// hero accents, and pill glow. If the brand gold ever shifts, only
+// this constant needs to move.
+const GOLD = '#d4af37';
+
 // Tier groups for the lazy-collapse layout. Mirrors landing page +
 // main paywall — main tiers are always visible, discount/eligibility
 // tiers (FC has new_adult, military, veteran; no hospice / enterprise)
@@ -144,7 +149,7 @@ export default function FoundersCirclePage() {
 
       {/* Founding Member badge */}
       <div className="flex justify-center">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full" style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)' }}>
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full" style={{ background: `${GOLD}26`, border: `1px solid ${GOLD}4d` }}>
           <Crown className="w-4 h-4 text-[var(--gold)]" />
           <span className="text-xs font-bold text-[var(--gold)] tracking-wide uppercase">Founding Member — Limited Time</span>
         </div>
@@ -166,7 +171,7 @@ export default function FoundersCirclePage() {
       </div>
 
       {/* Savings example */}
-      <div className="rounded-xl p-4 mb-8 text-center" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)' }}>
+      <div className="rounded-xl p-4 mb-8 text-center" style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}33` }}>
         <p className="text-sm text-[var(--t3)]">
           <span className="font-bold text-[var(--gold)]">Example:</span> A 45-year-old Premium subscriber paying $24.99/mo would pay approximately <span className="font-bold text-[var(--t)]">$11,995 over 40 years</span>. A Founders Circle Premium membership paid in full today: <span className="font-bold text-[var(--gold)]">$424</span>. That's a savings of over <span className="font-bold text-[var(--gold)]">$11,500</span> — and your beneficiaries never pay a dime.
         </p>
@@ -234,15 +239,15 @@ export default function FoundersCirclePage() {
               className="rounded-2xl p-5 flex flex-col relative overflow-hidden"
               style={{
                 background: isPremium
-                  ? 'linear-gradient(135deg, rgba(212,175,55,0.18), rgba(212,175,55,0.04))'
+                  ? `linear-gradient(135deg, ${GOLD}2e, ${GOLD}0a)`
                   : `linear-gradient(168deg, ${accent}14, var(--bg2) 75%)`,
-                border: isPremium ? '2px solid rgba(212,175,55,0.4)' : `1px solid ${accent}30`,
+                border: isPremium ? `2px solid ${GOLD}66` : `1px solid ${accent}30`,
               }}
               data-testid={`fc-tier-${plan.tier}`}
             >
               {isPremium && (
                 <div className="absolute top-3 right-3">
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(212,175,55,0.2)', color: 'var(--gold)' }}>MOST POPULAR</span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${GOLD}33`, color: 'var(--gold)' }}>MOST POPULAR</span>
                 </div>
               )}
               <h3 className="text-lg font-bold text-[var(--t)]">{plan.name}</h3>
@@ -326,7 +331,7 @@ export default function FoundersCirclePage() {
                     style={{
                       background: 'var(--gold)',
                       border: '2px solid #b89220',
-                      boxShadow: '0 0 48px -16px rgba(212,175,55,0.45)',
+                      boxShadow: `0 0 48px -16px ${GOLD}73`,
                     }}
                   >
                     <span
