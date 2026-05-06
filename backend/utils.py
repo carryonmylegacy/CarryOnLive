@@ -371,10 +371,26 @@ async def send_push_notification(
             )
             success_count += 1
         except WebPushException as e:
-            logger.warning(f"Push failed for user {user_id}: {e}")
-            _capture_push_failure(e, user_id=user_id, notification_type=notification_type, endpoint=sub.get("endpoint"))
-            if e.response and e.response.status_code == 410:
-                await db.push_subscriptions.update_one({"endpoint": sub["endpoint"]}, {"$set": {"active": False}})
+            status = e.response.status_code if e.response is not None else None
+            # 410 Gone = the browser/OS purged the subscription (user
+            # uninstalled the PWA, denied notification permission after
+            # granting, switched browsers, or the subscription naturally
+            # expired). 404 Not Found behaves the same on some autopush
+            # servers. These are EXPECTED, not errors — silently
+            # deactivate the row and move on. We only report unexpected
+            # failures (5xx, auth errors, payload issues) to Sentry so
+            # the founder's alert channel stays signal, not noise.
+            if status in (404, 410):
+                await db.push_subscriptions.update_one(
+                    {"endpoint": sub["endpoint"]},
+                    {"$set": {"active": False, "deactivated_reason": f"status_{status}"}},
+                )
+                logger.info(f"Push subscription expired ({status}) for user {user_id} — deactivated.")
+            else:
+                logger.warning(f"Push failed for user {user_id}: {e}")
+                _capture_push_failure(
+                    e, user_id=user_id, notification_type=notification_type, endpoint=sub.get("endpoint")
+                )
         except Exception as e:
             logger.warning(f"Push error for user {user_id}: {e}")
             _capture_push_failure(e, user_id=user_id, notification_type=notification_type, endpoint=sub.get("endpoint"))

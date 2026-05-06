@@ -272,27 +272,21 @@ async def concierge_ask(
     # `citations` map keyed by marker so the frontend can render
     # readable chips ("[Last Will]") instead of raw "[#1]".
     #
-    # IMPORTANT — handle docs whose contents aren't extractable.
-    # Many designated documents are placeholder/example rows (no
-    # storage_key, no file_data) or files we can't decode (binary,
-    # corrupted). Previously the prompt fed "[No readable text]" for
-    # every such doc, and Grok dutifully replied "the details aren't
-    # available", making BEC look broken even though the docs were
-    # correctly designated. We now ALWAYS feed full metadata (name,
-    # category, type, size, description) AND explicitly mark each
-    # doc as READABLE / METADATA_ONLY / EXTRACTION_FAILED so the
-    # model can answer questions like "what was I willed?" with
-    # something like "{benefactor} designated a Last Will & Testament
-    # to you, but its contents aren't readable yet — please ask the
-    # executor for the actual file."
+    # CONTENT POLICY — show the model EVERYTHING the document actually
+    # contains, then make the model do the analysis. A document may
+    # be a placeholder, a partially-filled stub with only a description,
+    # or a fully-extracted file. In every case there is *some* content
+    # (at minimum the name + category + description). The model must
+    # read whatever IS there, demonstrate it looked, and explain
+    # specifically why the user's question isn't answered by what's
+    # there — never imply the file couldn't be read.
     benefactor_first = info["benefactor_first_name"]
     docs = info["documents"]
     context_blocks: list[str] = []
     citations: dict[str, dict[str, Any]] = {}
     total_chars = 0
-    readable_count = 0
-    metadata_only_count = 0
-    failed_count = 0
+    full_text_count = 0
+    stub_count = 0  # docs whose only content is metadata + description
     for idx, doc in enumerate(docs, start=1):
         marker = f"#{idx}"
         citations[marker] = {
@@ -301,36 +295,30 @@ async def concierge_ask(
             "category": doc.get("category") or "other",
         }
 
-        # Try extraction (best-effort). Returning "" means the doc has
-        # no blob to decrypt (placeholder); other strings starting with
-        # "[" are sentinel values from extract_document_text indicating
-        # extraction was attempted but failed.
-        text = ""
+        # Try extraction (best-effort). Returning "" or a "[…]" sentinel
+        # means we couldn't extract structured text. We treat both as
+        # "no full contents" and fall back to the description as the
+        # only readable content for that document.
+        extracted = ""
         if total_chars <= 24000:
             try:
-                text = await extract_document_text(doc) or ""
+                extracted = await extract_document_text(doc) or ""
             except Exception as e:
                 logger.warning(f"BEC: extraction raised for doc {doc.get('id')}: {e}")
-                text = ""
+                extracted = ""
+        is_sentinel = extracted.startswith("[") and extracted.endswith("]")
+        full_contents = extracted if (extracted and not is_sentinel) else ""
 
-        is_sentinel = text.startswith("[") and text.endswith("]")
-        has_blob = bool(doc.get("storage_key") or doc.get("file_data"))
-        if text and not is_sentinel:
-            status_tag = "READABLE"
-            readable_count += 1
-        elif has_blob:
-            status_tag = "EXTRACTION_FAILED"
-            failed_count += 1
+        if full_contents:
+            full_text_count += 1
         else:
-            status_tag = "METADATA_ONLY"
-            metadata_only_count += 1
+            stub_count += 1
 
-        # Build the per-doc block with full metadata so the model can
-        # always identify the document by name/category even when it
-        # can't quote the contents.
+        # Per-doc block. Always emit category + description as actual
+        # content the model can analyze. Mark the readable scope so the
+        # model knows precisely how thoroughly it can search.
         meta_lines = [
             f"=== [{marker}] DOCUMENT: {doc.get('name') or 'Untitled'} ===",
-            f"  status: {status_tag}",
             f"  category: {doc.get('category') or 'unknown'}",
         ]
         if doc.get("file_type"):
@@ -340,12 +328,22 @@ async def concierge_ask(
         if doc.get("description"):
             meta_lines.append(f"  description: {doc['description']}")
         block = "\n" + "\n".join(meta_lines) + "\n"
-        if status_tag == "READABLE":
-            block += text[:6000]
-        elif status_tag == "EXTRACTION_FAILED":
-            block += "  (Contents could not be extracted from the file. Acknowledge this document exists and was designated to the beneficiary, but state the contents aren't readable yet.)"
-        else:  # METADATA_ONLY
-            block += "  (No file contents stored — this is a designated document record without an attached file. Acknowledge it was designated to the beneficiary but explain the actual file isn't available yet.)"
+        if full_contents:
+            block += "READABLE_CONTENTS:\n" + full_contents[:6000]
+        else:
+            # No extractable file body. The description (if any) plus
+            # the title + category IS the full readable content. Tell
+            # the model exactly that, so when the answer isn't there
+            # the model can say "I read what's here — a [category] of
+            # [size] bytes titled '[name]', described as '[desc]' — and
+            # nothing in it specifies [the asked-for detail]."
+            block += (
+                "READABLE_CONTENTS:\n"
+                "  (The only content stored on this document record is "
+                "the metadata above — no extracted file body is available "
+                "for this entry. Treat the title, category, and description "
+                "as the complete readable scope of this document.)"
+            )
         context_blocks.append(block)
         total_chars += len(block)
 
@@ -353,9 +351,8 @@ async def concierge_ask(
         coverage_summary = (
             f"\n\n--- DOCUMENT COVERAGE ---\n"
             f"Total designated to this beneficiary: {len(docs)}\n"
-            f"  • Readable contents: {readable_count}\n"
-            f"  • Designated but no file contents (placeholder records): {metadata_only_count}\n"
-            f"  • File present but extraction failed: {failed_count}\n"
+            f"  • With extracted file contents: {full_text_count}\n"
+            f"  • Metadata + description only: {stub_count}\n"
         )
         document_context = "\n".join(context_blocks) + coverage_summary
     else:
@@ -365,24 +362,33 @@ async def concierge_ask(
         )
 
     system_msg = SYSTEM_PROMPT.replace("[BENEFACTOR_FIRST_NAME]", benefactor_first)
-    # Append a precise grounding rule that handles the no-contents case.
-    if metadata_only_count or failed_count:
-        system_msg += (
-            "\n\nADDITIONAL RULE — when the user asks about something a designated "
-            "document would normally contain (e.g. 'what was I willed?' against a "
-            "Last Will & Testament), and that document's status is METADATA_ONLY "
-            "or EXTRACTION_FAILED:\n"
-            "  • DO acknowledge the document exists by name and that it was "
-            "designated to them.\n"
-            "  • DO explain plainly that the file's contents aren't readable to "
-            "you yet (it may be a placeholder the executor still needs to "
-            "replace with the real file, or a file we couldn't open).\n"
-            "  • DO suggest they ask the executor for the actual file or "
-            "contact the attorney.\n"
-            "  • DO NOT say 'the documents don't cover that' — that misleads the "
-            "beneficiary into thinking nothing was shared with them. The "
-            "documents ARE shared; only their contents aren't readable yet.\n"
-        )
+    # Append precise reasoning rules. The user's complaint that drove
+    # this was BEC sounding like "I can't read the file yet" when the
+    # truth is "I read everything that's here and none of it answers
+    # your question." Demand the latter framing.
+    system_msg += (
+        "\n\nREASONING RULES (very important — the beneficiary needs to "
+        "feel that you actually examined the documents):\n"
+        "  1. ALWAYS demonstrate the search. Reference at least one "
+        "document by name and category before saying an answer isn't "
+        "there. e.g. 'I went through the Last Will & Testament [#1] and "
+        "the Irrevocable Trust [#2] …'\n"
+        "  2. When the readable scope is metadata + description only, "
+        "say so directly and accurately — e.g. 'This document is on file "
+        'as a Last Will & Testament and its description reads "Sample '
+        "will document\", but the executed text of the will isn't part "
+        "of the record I can see — so I can't tell you who was named to "
+        "receive the house, the cash assets, or any other specific "
+        "bequests.' Be specific about what KIND of detail you'd expect "
+        "to find but didn't.\n"
+        "  3. NEVER say 'I don't have the contents available yet' or "
+        "'the file couldn't be accessed' or 'the documents aren't "
+        "covered'. Those phrases sound like a system error to the user. "
+        "Instead say what you DID see and what's missing from it.\n"
+        "  4. End with a concrete next step (ask the executor for the "
+        "executed will / contact the attorney for the trust schedule / "
+        "etc.) — tailored to the document type and the question asked.\n"
+    )
     full_user_prompt = (
         f"You are speaking with the beneficiary of {info['benefactor']['name']}'s "
         f"estate. The documents below are the ONLY documents shared with this "
