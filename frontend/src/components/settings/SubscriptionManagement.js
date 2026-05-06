@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import {
-  CreditCard, Loader2, Clock, ChevronRight, Zap, Shield, X, Check,
+  CreditCard, Loader2, Clock, ChevronRight, ChevronDown, Zap, Shield, X, Check,
   Crown, Star, Heart, Award, ArrowRight, Users, Mail, Sparkles
 } from 'lucide-react';
 import { isNative } from '../../services/native';
@@ -182,6 +182,19 @@ export const SubscriptionManagement = ({
     ? (isMinorBeneficiary ? [] : (lockedTier ? beneficiaryPlans.filter(p => p.id === lockedTier) : []))
     : plans;
 
+  // ── Lazy-collapse layout ────────────────────────────────────────────
+  // Main paywall shows the three universal tiers prominently. The
+  // discount/eligibility tiers (New Adult, Military, Veteran, Hospice,
+  // Enterprise) are tucked behind a gold pill so the page feels
+  // focused on the 95% case. Beneficiaries always see only their
+  // locked tier — no pill needed.
+  const MAIN_TIER_IDS = ['premium', 'standard', 'base', 'ben_premium', 'ben_standard', 'ben_base'];
+  const isMainTier = (id) => MAIN_TIER_IDS.includes(id);
+  const mainPlans = isBeneficiary ? displayPlans : displayPlans.filter(p => isMainTier(p.id));
+  const discountPlans = isBeneficiary ? [] : displayPlans.filter(p => !isMainTier(p.id));
+  const [discountOpen, setDiscountOpen] = useState(false);
+  const discountSectionRef = useRef(null);
+
   // Determine auto-selected tier from eligible_tiers / special_status
   const eligibleTiers = subscriptionStatus?.eligible_tiers || [];
   const specialStatus = subscriptionStatus?.special_status || [];
@@ -190,6 +203,14 @@ export const SubscriptionManagement = ({
   const autoTier = hasSpecialStatus
     ? (specialStatus.includes('hospice') ? 'hospice' : specialStatus.includes('veteran') ? 'veteran' : specialStatus.includes('enterprise') ? 'enterprise' : 'military')
     : (isNewAdult ? 'new_adult' : null);
+
+  // Auto-open the discount section when the user has a verified
+  // discount tier (military / veteran / hospice / enterprise / new
+  // adult). This keeps a verified founder from staring at a hidden
+  // tier they qualify for — the pill is pre-expanded for them.
+  useEffect(() => {
+    if (autoTier && !isMainTier(autoTier)) setDiscountOpen(true);
+  }, [autoTier]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleVerifyB2bCode = async () => {
     if (!b2bCode.trim()) { toast.error('Please enter your partner code'); return; }
@@ -598,21 +619,22 @@ export const SubscriptionManagement = ({
           </div>
         )}
 
-        {/* Plan Cards — flex-wrap + justify-center so any orphan row
-            (e.g. 8 plans in a 3-col layout = 3+3+2) is naturally
-            centered instead of left-justified. Symmetry > convenience. */}
-        <div className={`gap-4 ${displayPlans.length === 1 ? 'grid grid-cols-1 max-w-sm mx-auto' : displayPlans.length <= 3 ? 'grid grid-cols-1 sm:grid-cols-3' : 'flex flex-wrap justify-center'}`} data-testid="plan-grid">
-          {displayPlans.map((plan) => {
+        {/* Plan Cards — main 3 tiers prominently, then a gold pill that
+            slides down the eligibility/discount tiers (New Adult,
+            Military, Veteran, Hospice, Enterprise) when tapped. The
+            inline `renderPlanCard` is reused by both grids so the card
+            markup stays single-source-of-truth and zero-regression. */}
+        {(() => {
+          const renderPlanCard = (plan, useFlexWidth) => {
             const style = TIER_STYLES[plan.id] || TIER_STYLES.base;
             const Icon = style.icon;
             const isCurrent = currentPlanId === plan.id;
             const isRecommended = plan.id === 'ben_premium' || plan.id === 'premium';
             const locked = isPlanLocked(plan.id);
             const isAutoSelected = autoTier === plan.id;
-            // When using flex-wrap (>3 plans), each card needs an
-            // explicit width so the grid still feels grid-like and the
-            // last row's orphans center cleanly.
-            const flexWidth = displayPlans.length > 3
+            // Flex-wrap rows need explicit per-card widths so any orphan
+            // row centers cleanly (gap-4 → 0.5rem / 0.667rem fudge).
+            const flexWidth = useFlexWidth
               ? 'w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]'
               : '';
 
@@ -836,8 +858,67 @@ export const SubscriptionManagement = ({
                 </div>
               </div>
             );
-          })}
-        </div>
+          };
+
+          return (
+            <>
+              {/* Main 3 tiers (Premium / Standard / Base) — symmetric
+                  3-up grid. Always visible. For beneficiaries this is
+                  also the only grid (their one locked tier renders
+                  here). */}
+              <div className={`gap-4 ${mainPlans.length === 1 ? 'grid grid-cols-1 max-w-sm mx-auto' : 'grid grid-cols-1 sm:grid-cols-3'}`} data-testid="plan-grid">
+                {mainPlans.map(p => renderPlanCard(p, false))}
+              </div>
+
+              {/* Eligibility pill + collapsible discount-tier grid. */}
+              {discountPlans.length > 0 && (
+                <div className="mt-8" data-testid="paywall-discount-section">
+                  <div className="flex justify-center px-2">
+                    <button
+                      type="button"
+                      onClick={() => setDiscountOpen(o => !o)}
+                      aria-expanded={discountOpen}
+                      aria-controls="paywall-discount-tiers"
+                      data-testid="paywall-eligibility-button"
+                      className="rounded-full px-5 py-3 sm:px-6 sm:py-3.5 text-center max-w-3xl transition-transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                      style={{
+                        background: 'var(--gold)',
+                        border: '2px solid #b89220',
+                        boxShadow: '0 0 48px -16px rgba(212,175,55,0.45)',
+                      }}
+                    >
+                      <span
+                        className="font-semibold leading-snug inline-flex items-center justify-center gap-2"
+                        style={{ color: '#0b1120', fontSize: 'clamp(13px, 1.2vw, 15px)' }}
+                      >
+                        Eligible for a discount? New adults (18–25), military / first responders, veterans, hospice patients, and B2B partners have dedicated tiers — {discountOpen ? 'hide' : 'see'} pricing.
+                        <ChevronDown
+                          className="w-4 h-4 flex-shrink-0 transition-transform"
+                          style={{ transform: discountOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                        />
+                      </span>
+                    </button>
+                  </div>
+
+                  <div
+                    id="paywall-discount-tiers"
+                    ref={discountSectionRef}
+                    className="overflow-hidden transition-[max-height,opacity] duration-500 ease-in-out"
+                    style={{ maxHeight: discountOpen ? '5000px' : '0px', opacity: discountOpen ? 1 : 0 }}
+                    aria-hidden={!discountOpen}
+                  >
+                    <p className="text-center text-[11px] uppercase tracking-[0.18em] mt-5 mb-4" style={{ color: 'var(--gold)' }}>
+                      Dedicated tiers · same features · eligibility verified after subscribe
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {discountPlans.map(p => renderPlanCard(p, true))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          );
+        })()}
 
         {/* Apple-required subscription disclosures */}
         <div className="mt-4 p-3 rounded-xl text-center space-y-1" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>

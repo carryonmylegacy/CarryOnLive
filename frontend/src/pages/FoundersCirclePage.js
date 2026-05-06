@@ -3,10 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
-import { Crown, Shield, Heart, Infinity, Check, Loader2 } from 'lucide-react';
+import { Crown, ChevronDown, Shield, Heart, Infinity, Check, Loader2 } from 'lucide-react';
 import { toast } from '../utils/toast';
 
 const INSTALLMENT_LABELS = { '1': 'Pay in Full', '3': '3 Payments', '6': '6 Payments', '12': '12 Payments' };
+
+// Tier groups for the lazy-collapse layout. Mirrors landing page +
+// main paywall — main tiers are always visible, discount/eligibility
+// tiers (FC has new_adult, military, veteran; no hospice / enterprise)
+// tuck behind a gold pill.
+const FC_MAIN_TIERS = ['premium', 'standard', 'base'];
 
 export default function FoundersCirclePage() {
   const { user, getAuthHeaders } = useAuth();
@@ -18,6 +24,7 @@ export default function FoundersCirclePage() {
   const [purchasing, setPurchasing] = useState(null);
   const [estates, setEstates] = useState([]);
   const [selectedEstate, setSelectedEstate] = useState('');
+  const [discountOpen, setDiscountOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -202,9 +209,15 @@ export default function FoundersCirclePage() {
         ))}
       </div>
 
-      {/* Tier cards */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {plans.map(plan => {
+      {/* Tier cards — main 3 (Premium / Standard / Base) visible by
+          default; eligibility/discount tiers (New Adult, Military,
+          Veteran) tuck behind a gold pill. Same renderer for both
+          grids → zero card-render regression. */}
+      {(() => {
+        const mainPlans = plans.filter(p => FC_MAIN_TIERS.includes(p.tier));
+        const discountPlans = plans.filter(p => !FC_MAIN_TIERS.includes(p.tier));
+
+        const renderFcCard = (plan) => {
           const inst = plan.installments[selectedSchedule];
           if (!inst) return null;
           const isPremium = plan.tier === 'premium';
@@ -281,8 +294,62 @@ export default function FoundersCirclePage() {
               </button>
             </div>
           );
-        })}
-      </div>
+        };
+
+        return (
+          <>
+            {/* Main 3 tiers — symmetric 3-up. */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              {mainPlans.map(renderFcCard)}
+            </div>
+
+            {/* Eligibility pill + collapsible discount tiers. */}
+            {discountPlans.length > 0 && (
+              <div className="mb-8" data-testid="fc-discount-section">
+                <div className="flex justify-center px-2">
+                  <button
+                    type="button"
+                    onClick={() => setDiscountOpen(o => !o)}
+                    aria-expanded={discountOpen}
+                    aria-controls="fc-discount-tiers"
+                    data-testid="fc-eligibility-button"
+                    className="rounded-full px-5 py-3 sm:px-6 sm:py-3.5 text-center max-w-3xl transition-transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                    style={{
+                      background: 'var(--gold)',
+                      border: '2px solid #b89220',
+                      boxShadow: '0 0 48px -16px rgba(212,175,55,0.45)',
+                    }}
+                  >
+                    <span
+                      className="font-semibold leading-snug inline-flex items-center justify-center gap-2"
+                      style={{ color: '#0b1120', fontSize: 'clamp(13px, 1.2vw, 15px)' }}
+                    >
+                      Eligible for a discount? New adults (18–25), military / first responders, and veterans have dedicated lifetime tiers — {discountOpen ? 'hide' : 'see'} pricing.
+                      <ChevronDown
+                        className="w-4 h-4 flex-shrink-0 transition-transform"
+                        style={{ transform: discountOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                      />
+                    </span>
+                  </button>
+                </div>
+                <div
+                  id="fc-discount-tiers"
+                  className="overflow-hidden transition-[max-height,opacity] duration-500 ease-in-out"
+                  style={{ maxHeight: discountOpen ? '5000px' : '0px', opacity: discountOpen ? 1 : 0 }}
+                  aria-hidden={!discountOpen}
+                >
+                  <p className="text-center text-[11px] uppercase tracking-[0.18em] mt-5 mb-4" style={{ color: 'var(--gold)' }}>
+                    Dedicated lifetime tiers · same Founders Circle benefits · eligibility verified after subscribe
+                  </p>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {discountPlans.map(renderFcCard)}
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {/* Fine print */}
       <div className="text-center text-xs text-[var(--t4)] max-w-2xl mx-auto space-y-1">

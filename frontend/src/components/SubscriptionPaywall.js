@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import {
-  Crown, Shield, Check, Star, ChevronRight, Loader2,
-  Upload, Clock, Users, X, Heart, Award, RotateCcw
+import { Crown, Shield, Check, Star, ChevronRight, ChevronDown, Loader2,
+  Upload, Clock, Users, X, Heart, Award, RotateCcw, Zap
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from '../utils/toast';
@@ -17,7 +16,9 @@ const TIER_ICONS = {
   base: Shield,
   new_adult: Award,
   military: Shield,
+  veteran: Award,
   hospice: Heart,
+  enterprise: Zap,
 };
 
 const TIER_COLORS = {
@@ -26,8 +27,15 @@ const TIER_COLORS = {
   base: { border: '#22C993', bg: 'rgba(34,201,147,0.08)', accent: '#22C993' },
   new_adult: { border: '#B794F6', bg: 'rgba(183,148,246,0.08)', accent: '#B794F6' },
   military: { border: '#F59E0B', bg: 'rgba(245,158,11,0.08)', accent: '#F59E0B' },
+  veteran: { border: '#059669', bg: 'rgba(5,150,105,0.08)', accent: '#059669' },
   hospice: { border: '#ec4899', bg: 'rgba(236,72,153,0.08)', accent: '#ec4899' },
+  enterprise: { border: '#8B5CF6', bg: 'rgba(139,92,246,0.08)', accent: '#8B5CF6' },
 };
+
+// Tier groups for the lazy-collapse layout (mirrors landing page +
+// SubscriptionManagement). Eligibility/discount tiers tuck behind a
+// gold pill; main tiers are always front-and-center.
+const MAIN_TIER_IDS_PAYWALL = ['premium', 'standard', 'base'];
 
 export default function SubscriptionPaywall({ onDismiss }) {
   const { token, refreshSubscription } = useAuth();
@@ -44,6 +52,10 @@ export default function SubscriptionPaywall({ onDismiss }) {
   const [uploadingVerification, setUploadingVerification] = useState(false);
   const [showFamilyInfo, setShowFamilyInfo] = useState(false);
   const [confirmingPayment, setConfirmingPayment] = useState(false);
+  // Lazy-collapse the discount tiers behind a gold pill — mirrors the
+  // landing page so first impression in-app is just as focused as
+  // first impression on the marketing site.
+  const [discountOpen, setDiscountOpen] = useState(false);
 
   const { useAppleIAP, restoringPurchases, purchaseWithIAP, restoreWithIAP } = useIAPPurchase();
 
@@ -409,11 +421,17 @@ export default function SubscriptionPaywall({ onDismiss }) {
           ))}
         </div>
 
-        {/* Plan Cards — flex-wrap + justify-center to keep the layout
-            symmetric (orphan rows centered, not left-aligned) regardless
-            of how many tiers the user is eligible to see. */}
-        <div className="flex flex-wrap justify-center gap-5 max-w-5xl w-full mb-8 animate-fade-in">
-          {visiblePlans.filter(p => !['hospice'].includes(p.id) || p.price === 0).map((plan) => {
+        {/* Plan Cards — main 3 tiers visible by default; eligibility/
+            discount tiers tuck behind a gold pill (lazy collapse,
+            mirroring the landing page). Same renderer is used for
+            both grids to guarantee zero card-render regression. */}
+        <div className="max-w-5xl w-full mb-8 animate-fade-in">
+        {(() => {
+          const filteredPlans = visiblePlans.filter(p => !['hospice'].includes(p.id) || p.price === 0);
+          const mainPlans = filteredPlans.filter(p => MAIN_TIER_IDS_PAYWALL.includes(p.id));
+          const discountPlans = filteredPlans.filter(p => !MAIN_TIER_IDS_PAYWALL.includes(p.id));
+
+          const renderPaywallCard = (plan, useFlexWidth) => {
             const Icon = TIER_ICONS[plan.id] || Shield;
             const colors = TIER_COLORS[plan.id] || TIER_COLORS.base;
             const isSelected = selectedPlan === plan.id;
@@ -431,12 +449,15 @@ export default function SubscriptionPaywall({ onDismiss }) {
             // Should show "Recommended" pulse: user is subscribed but NOT on premium annual
             const isPremiumAnnual = isPremium && billing === 'annual';
             const showRecommendedPulse = isPremiumAnnual && hasActiveSub && !(activePlanId === 'premium' && activeBilling === 'annual');
+            const flexWidth = useFlexWidth
+              ? 'w-full sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.834rem)]'
+              : '';
 
             return (
               <div
                 key={plan.id}
                 onClick={() => eligible && !isGreyedOut && setSelectedPlan(plan.id)}
-                className={`w-full sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.834rem)] relative rounded-2xl overflow-hidden transition-all duration-300 group ${
+                className={`${flexWidth} relative rounded-2xl overflow-hidden transition-all duration-300 group ${
                   !eligible || isGreyedOut ? 'opacity-40 cursor-default' : 'cursor-pointer'
                 } ${
                   eligible && !isGreyedOut && isPremium ? 'hover:-translate-y-2 sm:scale-[1.03]' : eligible && !isGreyedOut ? 'hover:-translate-y-1' : ''
@@ -604,9 +625,66 @@ export default function SubscriptionPaywall({ onDismiss }) {
                 </div>
               </div>
             );
-          })}
+          };
 
-          {/* Family Plan — special tile */}
+          return (
+            <>
+              {/* Main 3 tiers — symmetric 3-up grid, always visible. */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                {mainPlans.map(p => renderPaywallCard(p, false))}
+              </div>
+
+              {/* Eligibility pill + collapsible discount tiers. */}
+              {discountPlans.length > 0 && (
+                <div className="mt-8" data-testid="paywall-discount-section">
+                  <div className="flex justify-center px-2">
+                    <button
+                      type="button"
+                      onClick={() => setDiscountOpen(o => !o)}
+                      aria-expanded={discountOpen}
+                      aria-controls="paywall-modal-discount-tiers"
+                      data-testid="paywall-eligibility-button"
+                      className="rounded-full px-5 py-3 sm:px-6 sm:py-3.5 text-center max-w-3xl transition-transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                      style={{
+                        background: 'var(--gold)',
+                        border: '2px solid #b89220',
+                        boxShadow: '0 0 48px -16px rgba(212,175,55,0.45)',
+                      }}
+                    >
+                      <span
+                        className="font-semibold leading-snug inline-flex items-center justify-center gap-2"
+                        style={{ color: '#0b1120', fontSize: 'clamp(13px, 1.2vw, 15px)' }}
+                      >
+                        Eligible for a discount? New adults (18–25), military / first responders, veterans, hospice patients, and B2B partners have dedicated tiers — {discountOpen ? 'hide' : 'see'} pricing.
+                        <ChevronDown
+                          className="w-4 h-4 flex-shrink-0 transition-transform"
+                          style={{ transform: discountOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                        />
+                      </span>
+                    </button>
+                  </div>
+                  <div
+                    id="paywall-modal-discount-tiers"
+                    className="overflow-hidden transition-[max-height,opacity] duration-500 ease-in-out"
+                    style={{ maxHeight: discountOpen ? '5000px' : '0px', opacity: discountOpen ? 1 : 0 }}
+                    aria-hidden={!discountOpen}
+                  >
+                    <p className="text-center text-[11px] uppercase tracking-[0.18em] mt-5 mb-4" style={{ color: 'var(--gold)' }}>
+                      Dedicated tiers · same features · eligibility verified after subscribe
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-5">
+                      {discountPlans.map(p => renderPaywallCard(p, true))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          );
+        })()}
+
+          {/* Family Plan — centered tile under the paywall (sibling
+              to the main + discount sections). */}
+          <div className="mt-8 max-w-md mx-auto">
           <div
             className="relative rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 flex flex-col overflow-hidden group"
             style={{
@@ -661,6 +739,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                 Learn More <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
+          </div>
           </div>
         </div>
 
