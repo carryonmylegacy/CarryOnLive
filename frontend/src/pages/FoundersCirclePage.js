@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
+import { openStripeCheckout } from '../utils/stripeRedirect';
 import { Crown, ChevronDown, Shield, Heart, Infinity, Check, Loader2 } from 'lucide-react';
 import { toast } from '../utils/toast';
 
@@ -75,12 +76,10 @@ export default function FoundersCirclePage() {
         origin_url: window.location.origin,
       }, getAuthHeaders());
       if (res.data.url) {
-        // Push (not replace) — browser-back from Stripe must land
-        // BACK on Founders Circle, not on a blank "failed to open"
-        // page if /founders-circle was the user's first navigation.
-        // The in-app Back button hard-routes to /subscription so it
-        // cannot loop into Stripe even with Stripe in history.
-        window.location.href = res.data.url;
+        // Standalone PWA: opens in a new window so the in-app
+        // session/route stays put. Browser tab: legacy in-window
+        // redirect.
+        openStripeCheckout(res.data.url);
       }
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Checkout failed');

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { openStripeCheckout } from '../../utils/stripeRedirect';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -340,11 +341,11 @@ export const SubscriptionManagement = ({
         origin_url: window.location.origin,
       }, getAuthHeaders());
       if (res.data.url) {
-        // Push (not replace) — browser-back from Stripe lands back on
-        // the paywall, not a "failed to open page" blank screen. The
-        // in-app Back button is hard-routed to /dashboard, so the
-        // history loop is already structurally impossible.
-        window.location.href = res.data.url;
+        // In a standalone PWA / dock app this opens Stripe in a
+        // separate browser window so the in-app session is preserved
+        // when the user comes back; in a normal browser tab it falls
+        // back to the legacy in-window redirect.
+        openStripeCheckout(res.data.url);
       } else if (res.data.free) {
         if (refreshSubscription) await refreshSubscription();
       }
@@ -394,8 +395,7 @@ export const SubscriptionManagement = ({
         origin_url: window.location.origin,
       }, getAuthHeaders());
       if (res.data.url) {
-        // Push (not replace) — see handleSubscribe.
-        window.location.href = res.data.url;
+        openStripeCheckout(res.data.url);
       } else if (res.data.success) {
         // toast removed
         if (refreshSubscription) await refreshSubscription();
@@ -439,8 +439,7 @@ export const SubscriptionManagement = ({
         origin_url: window.location.origin,
       }, getAuthHeaders());
       if (res.data.url) {
-        // Push (not replace) — see handleSubscribe.
-        window.location.href = res.data.url;
+        openStripeCheckout(res.data.url);
       } else if (res.data.success) {
         // toast removed
         if (refreshSubscription) await refreshSubscription();

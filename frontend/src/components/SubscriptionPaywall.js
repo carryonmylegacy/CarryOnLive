@@ -9,6 +9,7 @@ import { toast } from '../utils/toast';
 import { isNative } from '../services/native';
 import { useIAPPurchase } from '../hooks/useIAPPurchase';
 import { API_URL } from '../config';
+import { openStripeCheckout } from '../utils/stripeRedirect';
 
 const TIER_ICONS = {
   premium: Crown,
@@ -175,12 +176,10 @@ export default function SubscriptionPaywall({ onDismiss }) {
       } else if (res.data.url) {
         // Push (not replace): we want a Stripe history entry between
         // the paywall and the user's prior page so browser-back from
-        // Stripe lands BACK on the paywall (not a "page unavailable"
-        // error if /subscription was the first page they opened). The
-        // in-app Back button is hard-routed to /dashboard, so even if
-        // Stripe ends up adjacent to the paywall in history, the back
-        // button can never loop into Stripe.
-        window.location.href = res.data.url;
+        // Standalone PWA: open in a new window so the in-app session
+        // is preserved when the user returns. Browser tab: legacy
+        // in-window redirect (Stripe's standard checkout flow).
+        openStripeCheckout(res.data.url);
       }
     } catch (err) {
       toast.error(err.response?.data?.detail || err.message || 'Failed to start checkout');
