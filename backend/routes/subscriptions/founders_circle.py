@@ -392,3 +392,39 @@ async def get_fc_subscriptions(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Admin access required")
     subs = await db.founders_circle.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
     return {"subscriptions": subs, "total": len(subs)}
+
+
+@router.delete("/admin/founders-circle/subscriptions/pending")
+async def clear_pending_fc_subscriptions(current_user: dict = Depends(get_current_user)):
+    """Delete `pending` Founders Circle rows older than 1 hour. Admin only.
+
+    Safety net: a Stripe checkout session is valid for ~24 hours; an
+    `pending` row in `db.founders_circle` is created the instant the
+    user clicks Subscribe, BEFORE Stripe redirects them. Deleting all
+    pending rows blindly would torpedo an in-flight payment, so we cap
+    the delete to rows whose `created_at` is older than 1h — which
+    safely excludes anyone currently mid-checkout while clearing every
+    abandoned-tab leftover. Returns the count deleted.
+    """
+    if current_user.get("role") not in ("admin", "operator"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    # 1-hour grace window — long enough to never race a real checkout,
+    # short enough that founders don't see day-old click-throughs as
+    # "members" in the admin panel.
+    from datetime import timedelta
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+
+    result = await db.founders_circle.delete_many(
+        {
+            "status": "pending",
+            "created_at": {"$lt": cutoff},
+        }
+    )
+    logger.info(
+        "fc admin clear-pending: user=%s deleted=%s",
+        current_user.get("id"),
+        result.deleted_count,
+    )
+    return {"deleted": result.deleted_count}

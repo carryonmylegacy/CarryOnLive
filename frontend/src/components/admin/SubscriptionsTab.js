@@ -641,6 +641,23 @@ function FCPricingCard({ headers }) {
   if (loading) return null;
 
   const activeSubs = fcSubs.filter(s => s.status === 'active' || s.status === 'completed');
+  const pendingSubs = fcSubs.filter(s => (s?.status || '').toLowerCase() === 'pending');
+
+  const handleClearPending = async () => {
+    if (!window.confirm(`Clear ${pendingSubs.length} pending Founders Circle row${pendingSubs.length === 1 ? '' : 's'}?\n\nOnly rows older than 1 hour are deleted, so no in-flight Stripe checkout will be interrupted.`)) {
+      return;
+    }
+    try {
+      const res = await axios.delete(`${API_URL}/admin/founders-circle/subscriptions/pending`, { headers });
+      const deleted = res?.data?.deleted ?? 0;
+      toast.success(`Cleared ${deleted} pending row${deleted === 1 ? '' : 's'}.`);
+      // Refresh in-place
+      const refreshed = await axios.get(`${API_URL}/admin/founders-circle/subscriptions`, { headers });
+      setFcSubs(refreshed.data.subscriptions || []);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to clear pending rows');
+    }
+  };
 
   return (
     <Card className="glass-card" data-testid="fc-pricing-admin">
@@ -655,9 +672,22 @@ function FCPricingCard({ headers }) {
               {active ? 'Campaign is ACTIVE' : 'Campaign is OFF'} · {activeSubs.length} active member{activeSubs.length !== 1 ? 's' : ''}
             </p>
           </div>
-          <span className={`text-xs font-bold px-2 py-1 rounded-full ${active ? 'text-[#10b981] bg-[rgba(16,185,129,0.1)]' : 'text-[var(--rd)] bg-[rgba(239,68,68,0.1)]'}`}>
-            {active ? 'LIVE' : 'OFF'}
-          </span>
+          <div className="flex items-center gap-2">
+            {pendingSubs.length > 0 && (
+              <button
+                onClick={handleClearPending}
+                className="text-xs font-bold px-3 py-1.5 rounded-full transition-transform hover:-translate-y-0.5 active:translate-y-0"
+                style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--rd)', border: '1px solid rgba(239,68,68,0.3)' }}
+                title="Delete pending Founders Circle rows older than 1 hour. Click-throughs to Stripe that never converted to a paid subscription. In-flight checkouts (created in the last hour) are preserved."
+                data-testid="fc-clear-pending-btn"
+              >
+                Clear Pending ({pendingSubs.length})
+              </button>
+            )}
+            <span className={`text-xs font-bold px-2 py-1 rounded-full ${active ? 'text-[#10b981] bg-[rgba(16,185,129,0.1)]' : 'text-[var(--rd)] bg-[rgba(239,68,68,0.1)]'}`}>
+              {active ? 'LIVE' : 'OFF'}
+            </span>
+          </div>
         </div>
 
         <div className="space-y-2">
