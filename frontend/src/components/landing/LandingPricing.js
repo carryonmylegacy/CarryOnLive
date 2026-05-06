@@ -99,14 +99,30 @@ export default function LandingPricing() {
     return () => { cancelled = true; };
   }, []);
 
-  // Smooth scroll the discount section into view when it opens.
+  // When the discount tiers slide open, only nudge the page IF the
+  // newly revealed content would actually be below the fold. The
+  // previous implementation called scrollIntoView({ block: 'start' })
+  // unconditionally, which yanked the page UP whenever the user had
+  // already scrolled past the trigger button — manifesting as a
+  // jarring "flash to top" instead of the smooth slide-down the
+  // user expects. We now wait for the height transition to finish,
+  // measure the section's bottom edge, and only call into view if
+  // any portion is off-screen — using `block: 'nearest'` so the
+  // scroll moves the minimum distance possible.
   useEffect(() => {
-    if (discountOpen && discountRef.current) {
-      const t = setTimeout(() => {
-        discountRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 240);
-      return () => clearTimeout(t);
-    }
+    if (!discountOpen || !discountRef.current) return;
+    const t = setTimeout(() => {
+      const el = discountRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const viewH = window.innerHeight || 0;
+      const offBottom = rect.bottom > viewH;
+      const offTop = rect.top < 0;
+      if (offBottom && !offTop) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }, 540); // a hair after the 500ms max-height transition completes
+    return () => clearTimeout(t);
   }, [discountOpen]);
 
   if (loading) {

@@ -360,13 +360,16 @@ export const SubscriptionManagement = ({
 
     // Downgrade → send to customer service
     if (isDowngrade(planId, billing)) {
+      setSubscribing(planId);
       try {
         await axios.post(`${API_URL}/support/messages`, {
           content: `I'd like to change my subscription from ${currentSub?.plan_name || currentPlanId} (${currentBilling}) to ${planId} (${billing}). Since this is a downgrade, please process the refund for the unused portion and switch my plan. Thank you.`,
         }, getAuthHeaders());
+        toast.success("Request sent to Customer Service. They'll be in touch shortly.");
       } catch (e) {
         toast.error('Failed to send request. Please go to Customer Service directly.');
       }
+      setSubscribing(null);
       return;
     }
 
@@ -411,10 +414,12 @@ export const SubscriptionManagement = ({
   const handleChangeBilling = async () => {
     // Downgrading billing cycle (e.g., annual → quarterly) → customer service
     if (isDowngrade(currentPlanId, billing)) {
+      setChangingBilling(true);
       try {
         await axios.post(`${API_URL}/support/messages`, {
           content: `I'd like to change my billing cycle from ${currentBilling} to ${billing} on my ${currentSub?.plan_name || currentPlanId} plan. Since this is a downgrade, please process the refund for the unused portion and update my billing. Thank you.`,
         }, getAuthHeaders());
+        toast.success("Request sent to Customer Service. They'll be in touch shortly.");
       } catch (e) {
         toast.error('Failed to send request. Please go to Customer Service directly.');
       }

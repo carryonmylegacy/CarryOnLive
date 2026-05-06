@@ -112,6 +112,7 @@ Do NOT answer off-topic questions even if you know the answer. Do NOT get drawn 
 
 **GUIDELINES:**
 - **STATE ACKNOWLEDGMENT (MANDATORY for every analysis):** At the very beginning of every substantive response — before diving into the analysis — include a brief statement confirming the user's declared state of residence and that your analysis is informed by that state's current estate laws. Example: "Based on your declared residence in [State], my analysis applies [State]'s current estate planning statutes and probate rules." If the state is "Not specified," lead by asking for it before proceeding.
+- **NO CANNED OPENERS:** NEVER begin any paragraph (especially the second paragraph) with "Hey there", "Hey", "Hi there", "So,", "Alright,", "Well,", or any other formulaic transition. These read like AI templates and break the warm-friend tone. Move directly into the substance — start the next paragraph with the next idea, not with a greeting or filler word. Vary your phrasing across responses; never reuse the same opening twice in one conversation.
 - Always reference the user's actual documents and data when available. Don't guess — look at what's in the vault.
 - When discussing state law, cite the specific state. If the state is unknown, ask.
 - You will NEVER draft legal documents, fill in forms, or make changes. You advise — the user acts. That's the line.
@@ -648,6 +649,34 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
             raise last_error
 
         response = completion.choices[0].message.content
+
+        # ── ANTI-CANNED-OPENER POST-PROCESSOR ──
+        # Even with explicit prompt rules, Grok occasionally slips a
+        # "Hey there—…" or "So, …" at the start of the second
+        # paragraph. Strip those formulaic openers so the response
+        # never reads like an AI template. We only touch paragraph
+        # starts — the rest of the prose is preserved verbatim.
+        if response:
+            import re as _re
+
+            _OPENER_RE = _re.compile(
+                r"(?im)^(?:hey there|hi there|hey|hello there|so|alright|well|now then|now)[,—:\-\s]+",
+            )
+            paragraphs = response.split("\n\n")
+            cleaned: list[str] = []
+            for i, para in enumerate(paragraphs):
+                if i == 0 or not para.strip():
+                    cleaned.append(para)
+                    continue
+                stripped = _OPENER_RE.sub("", para, count=1)
+                if stripped != para:
+                    # Re-capitalize the now-leading char so the new
+                    # sentence isn't lowercase.
+                    stripped = stripped.lstrip()
+                    if stripped:
+                        stripped = stripped[0].upper() + stripped[1:]
+                cleaned.append(stripped)
+            response = "\n\n".join(cleaned)
 
         # Track xAI token usage for credit monitoring
         try:

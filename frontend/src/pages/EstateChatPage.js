@@ -237,6 +237,7 @@ export default function EstateChatPage() {
     openMsgAction, closeMsgAction,
     togglePin, handleEditMessage, handleDeleteMessage: _handleDeleteMessage,
     onMsgTouchStart, onMsgTouchMove, onMsgTouchEnd,
+    onMsgMouseDown, onMsgMouseMove, onMsgMouseUp, onMsgMouseLeave,
   } = msgActions;
 
   // Wrap toggleReaction to update recentEmojis locally
@@ -1039,6 +1040,7 @@ export default function EstateChatPage() {
                         <div className="px-4 py-2.5 rounded-2xl text-sm cursor-pointer" data-testid={`msg-bubble-${msg.id}`}
                           onClick={() => { if (msgLongPressTriggered.current) { msgLongPressTriggered.current = false; return; } if (previewGuardRef.current) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); closeMsgAction(); }}
                           onTouchStart={(e) => onMsgTouchStart(e, msg.id)} onTouchMove={onMsgTouchMove} onTouchEnd={(e) => onMsgTouchEnd(e, msg.id)}
+                          onMouseDown={(e) => onMsgMouseDown(e, msg.id)} onMouseMove={onMsgMouseMove} onMouseUp={onMsgMouseUp} onMouseLeave={onMsgMouseLeave}
                           onContextMenu={(e) => { e.preventDefault(); if (previewGuardRef.current) return; openMsgAction(msg.id); setReactingMsgId(null); }}
                           style={{ background: isMe ? 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1))' : 'rgba(255,255,255,0.05)', border: `1px solid ${isMe ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`, color: 'var(--t)', borderTopRightRadius: isMe ? '6px' : '18px', borderTopLeftRadius: isMe ? '18px' : '6px', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none', marginTop: hasReactions ? '10px' : '0' }}>
                           {msg.reply_to && (

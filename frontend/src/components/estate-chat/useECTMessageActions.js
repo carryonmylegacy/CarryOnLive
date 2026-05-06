@@ -183,6 +183,49 @@ export default function useECTMessageActions({
     }, 500);
   };
 
+  // ── Mouse handlers for desktop tap-and-hold ───────────────────────────────
+  // Desktop / trackpad users get the same "press and hold" affordance the
+  // mobile long-press provides. We only arm on left-button (button === 0)
+  // and bail on movement >10px so click-drag selections still work. The
+  // separate `onContextMenu` handler in the page already covers right-
+  // click — this just adds the gesture parity for users who don't think
+  // to right-click on a chat bubble.
+  const onMsgMouseDown = (e, msgId) => {
+    if (e.button !== 0) return;
+    if (e.target.closest('a')) return;
+    if (previewGuardRef.current) return;
+    msgLongPressTriggered.current = false;
+    touchStartRef.current = { x: e.clientX, y: e.clientY };
+    msgLongPressTimer.current = setTimeout(() => {
+      msgLongPressTriggered.current = true;
+      window.getSelection()?.removeAllRanges();
+      setReactingMsgId(null);
+      openMsgAction(msgId);
+    }, 500);
+  };
+
+  const onMsgMouseMove = (e) => {
+    if (!msgLongPressTimer.current) return;
+    const dx = Math.abs(e.clientX - touchStartRef.current.x);
+    const dy = Math.abs(e.clientY - touchStartRef.current.y);
+    if (dx > 10 || dy > 10) {
+      clearTimeout(msgLongPressTimer.current);
+      msgLongPressTimer.current = null;
+    }
+  };
+
+  const onMsgMouseUp = () => {
+    clearTimeout(msgLongPressTimer.current);
+    msgLongPressTimer.current = null;
+  };
+
+  const onMsgMouseLeave = () => {
+    // Treat leaving the bubble while holding as cancelling the gesture
+    // — otherwise dragging off the chip would still fire the menu.
+    clearTimeout(msgLongPressTimer.current);
+    msgLongPressTimer.current = null;
+  };
+
   const onMsgTouchMove = (e) => {
     if (!msgLongPressTimer.current) return;
     const dx = Math.abs(e.touches[0].clientX - touchStartRef.current.x);
@@ -239,5 +282,9 @@ export default function useECTMessageActions({
     onMsgTouchStart,
     onMsgTouchMove,
     onMsgTouchEnd,
+    onMsgMouseDown,
+    onMsgMouseMove,
+    onMsgMouseUp,
+    onMsgMouseLeave,
   };
 }

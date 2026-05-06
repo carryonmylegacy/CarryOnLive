@@ -41,19 +41,27 @@ async def get_channels(current_user: dict = Depends(get_current_user)):
     for ch in channels:
         enriched.append(await _enrich_channel(ch, current_user["id"]))
 
-    # Sort: circles first, then by last_message date descending
-    def sort_key(c):
-        type_order = {"circle": 0, "group": 1, "direct": 2}
-        lm = c.get("last_message")
-        ts = lm["created_at"] if lm else ""
-        return (type_order.get(c["type"], 9), "" if ts else "z", ts)
+    # Sort: circles first, then groups, then directs; within each
+    # bucket, most-recently-active conversation on top. The previous
+    # implementation used `-len(created_at)` as the tiebreaker, which
+    # collapses to the same constant for every ISO timestamp (~26
+    # chars), so Python's stable sort fell back to insertion order
+    # and the list "flapped" depending on whoever's channel happened
+    # to be enumerated last by Mongo. Two-pass stable sort gets the
+    # ordering right deterministically.
+    def _last_at(c):
+        # Prefer last_message.created_at (real activity); fall back to
+        # the channel's own updated_at / created_at. ISO-8601 strings
+        # compare lexically the same way they compare chronologically,
+        # so we sort the raw string descending.
+        lm = c.get("last_message") or {}
+        return lm.get("created_at") or c.get("updated_at") or c.get("created_at") or ""
 
-    enriched.sort(
-        key=lambda c: (
-            {"circle": 0, "group": 1, "direct": 2}.get(c["type"], 9),
-            -(len((c.get("last_message") or {}).get("created_at", "") or "0")),
-        )
-    )
+    # 1) Most recent first within ties on type. (reverse=True so newer
+    #    timestamps come first.)
+    enriched.sort(key=_last_at, reverse=True)
+    # 2) Then by channel type so circles are always on top.
+    enriched.sort(key=lambda c: {"circle": 0, "group": 1, "direct": 2}.get(c.get("type"), 9))
     return enriched
 
 

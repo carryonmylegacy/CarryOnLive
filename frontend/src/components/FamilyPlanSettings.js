@@ -22,6 +22,13 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
   const [loadingSavings, setLoadingSavings] = useState(false);
   const [familyDiscounts, setFamilyDiscounts] = useState({ benefactor: 0, beneficiary: 0 });
   const [fpBilling, setFpBilling] = useState('annual');
+  // ── Beneficiary picker (May 2026) ──────────────────────────────
+  // Adding family members by typing an email is hostile UX. Most
+  // users have already designated their beneficiaries inside an
+  // estate; let them pick from that list with one tap and
+  // pre-populate the email + role automatically.
+  const [myBeneficiaries, setMyBeneficiaries] = useState([]);
+  const [selectedBenId, setSelectedBenId] = useState(''); // 'manual' = type-an-email mode
 
   const headers = getAuthHeaders()?.headers || {};
 
@@ -48,6 +55,38 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
         fetchSavingsPreview();
       }
     } catch (err) { /* silent */ }
+    // Pull every beneficiary across every estate the user owns so the
+    // picker can offer one-tap add. Best-effort: errors here just
+    // collapse the picker into an email-only form (the original UX),
+    // never block the rest of the family-plan page.
+    try {
+      const estatesRes = await axios.get(`${API_URL}/estates`, { headers });
+      const estates = estatesRes.data || [];
+      const all = [];
+      for (const est of estates) {
+        try {
+          const bens = await axios.get(`${API_URL}/beneficiaries/${est.id}`, { headers });
+          for (const b of (bens.data || [])) {
+            if (!b.email) continue; // can't invite without an email
+            all.push({
+              id: b.id,
+              email: b.email,
+              name: b.name || b.email,
+              estate_id: est.id,
+              estate_name: est.name,
+              photo_url: b.photo_url || '',
+              relationship: b.relationship || '',
+            });
+          }
+        } catch { /* skip this estate */ }
+      }
+      // Deduplicate by email — same person can be a beneficiary on multiple estates
+      const byEmail = new Map();
+      for (const b of all) {
+        if (!byEmail.has(b.email)) byEmail.set(b.email, b);
+      }
+      setMyBeneficiaries([...byEmail.values()]);
+    } catch { /* silent — picker just falls back to email-only */ }
     setLoading(false);
   };
 
@@ -82,8 +121,10 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
     setInviting(true);
     try {
       await axios.post(`${API_URL}/family-plan/${fp.id}/add-member`, { email: inviteEmail, role: inviteRole }, { headers: { ...headers, 'Content-Type': 'application/json' } });
-      // toast removed
+      const ben = myBeneficiaries.find(b => (b.email || '').toLowerCase() === inviteEmail.toLowerCase());
+      toast.success(ben ? `${ben.name} added — discount applied at next renewal.` : 'Family member invited.');
       setInviteEmail('');
+      setSelectedBenId('');
       fetchStatus();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to add member'); }
     setInviting(false);
@@ -412,28 +453,75 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
             <h4 className="text-sm font-bold text-[var(--t)] flex items-center gap-2 mb-3">
               <UserPlus className="w-4 h-4 text-[var(--gold)]" /> Add Family Member
             </h4>
-            <div className="flex gap-2">
-              <Input
-                value={inviteEmail}
-                onChange={e => setInviteEmail(e.target.value)}
-                placeholder="Member's email"
-                className="input-field flex-1 text-sm"
-                data-testid="family-invite-email"
-              />
-              <Select value={inviteRole} onValueChange={setInviteRole}>
-                <SelectTrigger className="input-field w-32 text-base"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]" style={{ zIndex: 99999 }}>
-                  <SelectItem value="benefactor" className="text-[var(--t2)]">Benefactor</SelectItem>
-                  <SelectItem value="beneficiary" className="text-[var(--t2)]">Beneficiary</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button className="gold-button text-sm" onClick={handleInvite} disabled={inviting || !inviteEmail} data-testid="family-invite-btn">
-                {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-              </Button>
-            </div>
-            <p className="text-[11px] text-[var(--t5)] mt-2">
-              Benefactors save {familyDiscounts.benefactor}% on their tier. Beneficiaries save {familyDiscounts.beneficiary}% on their tier.
-            </p>
+            {(() => {
+              const onPlanEmails = new Set((fp.members || []).map(m => (m.email || '').toLowerCase()));
+              const pickerOptions = myBeneficiaries.filter(b => !onPlanEmails.has((b.email || '').toLowerCase()));
+              const isManual = selectedBenId === 'manual';
+              return (
+                <>
+                  {/* One-tap picker — only render when we have at least one
+                      beneficiary that hasn't been added yet. Falls back to
+                      pure email entry if the user has no beneficiaries
+                      designated yet. */}
+                  {pickerOptions.length > 0 && (
+                    <div className="mb-3">
+                      <label className="block text-[11px] text-[var(--t5)] mb-1.5">Pick from your designated beneficiaries</label>
+                      <Select
+                        value={selectedBenId}
+                        onValueChange={(v) => {
+                          setSelectedBenId(v);
+                          if (v && v !== 'manual') {
+                            const ben = pickerOptions.find(b => b.id === v);
+                            if (ben) setInviteEmail(ben.email);
+                          } else if (v === 'manual') {
+                            setInviteEmail('');
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="input-field text-sm" data-testid="family-beneficiary-picker">
+                          <SelectValue placeholder="Tap a beneficiary to add them" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-72" style={{ zIndex: 99999 }}>
+                          {pickerOptions.map(b => (
+                            <SelectItem key={b.id} value={b.id} className="text-[var(--t2)]" data-testid={`family-pick-${b.id}`}>
+                              <span className="font-semibold">{b.name}</span>
+                              <span className="text-[var(--t5)] text-xs ml-2">· {b.email}</span>
+                              {b.relationship && <span className="text-[var(--t5)] text-xs ml-1">({b.relationship})</span>}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="manual" className="text-[var(--gold)] font-semibold" data-testid="family-pick-manual">
+                            + Add someone else by email
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <Input
+                      value={inviteEmail}
+                      onChange={e => setInviteEmail(e.target.value)}
+                      placeholder={pickerOptions.length === 0 || isManual ? "Member's email" : 'Selected from list above'}
+                      readOnly={pickerOptions.length > 0 && !isManual && !!selectedBenId && selectedBenId !== 'manual'}
+                      className="input-field flex-1 text-sm"
+                      data-testid="family-invite-email"
+                    />
+                    <Select value={inviteRole} onValueChange={setInviteRole}>
+                      <SelectTrigger className="input-field w-32 text-base"><SelectValue /></SelectTrigger>
+                      <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]" style={{ zIndex: 99999 }}>
+                        <SelectItem value="benefactor" className="text-[var(--t2)]">Benefactor</SelectItem>
+                        <SelectItem value="beneficiary" className="text-[var(--t2)]">Beneficiary</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button className="gold-button text-sm" onClick={handleInvite} disabled={inviting || !inviteEmail} data-testid="family-invite-btn">
+                      {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-[11px] text-[var(--t5)] mt-2">
+                    Benefactors save {familyDiscounts.benefactor}% on their tier. Beneficiaries save {familyDiscounts.beneficiary}% on their tier.
+                  </p>
+                </>
+              );
+            })()}
           </div>
         )}
 
