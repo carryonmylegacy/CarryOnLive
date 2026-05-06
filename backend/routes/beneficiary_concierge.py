@@ -125,12 +125,17 @@ async def _resolve_concierge_access(user_id: str, estate_id: str) -> dict[str, A
         return {"available": False, "reason": "not_a_beneficiary"}
 
     # Benefactor's plan must have BEC enabled (founder/admin-controlled
-    # in Admin → Subs → Feature Gates). This single tier gate decides
-    # both pre- and post-transition visibility of the BEC nav item.
+    # in Admin → Subs → Feature Gates). Use the canonical tier resolver
+    # which honours: estate.verified_tier (admin override) → live
+    # benefactor user_subscription → benefactor user.verified_tier
+    # (legacy). Reading just `users.subscription_tier` missed every
+    # admin-assigned override, which is exactly the bug the founder hit.
     benefactor = await db.users.find_one({"id": estate.get("owner_id")}, {"_id": 0})
     if not benefactor:
         return {"available": False, "reason": "benefactor_missing"}
-    tier = benefactor.get("subscription_tier") or benefactor.get("plan") or "base"
+    from .feature_gates import _get_benefactor_tier  # local import — avoids circular
+
+    tier = await _get_benefactor_tier(current_user={"id": user_id}, estate_id=estate_id) or "base"
     gates = await get_feature_gates()
     if not (gates.get("bec") or {}).get(tier, False):
         return {"available": False, "reason": "feature_disabled_for_tier"}

@@ -92,6 +92,38 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
     is_grace = sub and sub.get("status") == "past_due"
     is_dormant = sub and sub.get("status") == "dormant"
 
+    # ── Admin-assigned tier (founder-only override on the estate row) ──
+    # When a founder uses Admin → Users → Assign Tier, we write to
+    # `estates.verified_tier`. Without surfacing that here, the
+    # benefactor's own /subscription page kept saying "needs subscription"
+    # (they were sent to Stripe even though the founder had granted
+    # them the tier), AND the BEC gate kept reading `users.subscription_tier`
+    # which never gets populated by the override. Both were the same
+    # bug in two places. Now we synthesize a virtual "active" sub from
+    # the override and the rest of the response naturally lights up.
+    admin_assigned_tier = None
+    if not has_active_sub and current_user.get("role") in ("benefactor", "admin", "operator"):
+        admin_estate = await db.estates.find_one(
+            {"owner_id": current_user["id"], "verified_tier": {"$exists": True, "$ne": ""}},
+            {"_id": 0, "id": 1, "verified_tier": 1},
+        )
+        if admin_estate and admin_estate.get("verified_tier"):
+            admin_assigned_tier = admin_estate["verified_tier"]
+            # Synthesize a sub-shaped dict so every downstream code path
+            # (page render, plan-card highlight, BEC gate, etc.) treats
+            # this exactly like an active subscription.
+            sub = {
+                "id": f"admin-override-{admin_estate['id']}",
+                "user_id": current_user["id"],
+                "plan_id": admin_assigned_tier,
+                "billing_cycle": "annual",
+                "status": "active",
+                "source": "admin_override",
+                "current_period_start": datetime.now(timezone.utc).isoformat(),
+                "current_period_end": (datetime.now(timezone.utc) + timedelta(days=365)).isoformat(),
+            }
+            has_active_sub = True
+
     # User has access if: beta mode OR per-user beta OR free override OR active subscription OR trial active
     has_access = is_beta or is_beta_tester or has_free_access or has_active_sub or trial.get("trial_active", False)
 

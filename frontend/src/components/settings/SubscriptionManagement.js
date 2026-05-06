@@ -338,10 +338,11 @@ export const SubscriptionManagement = ({
         origin_url: window.location.origin,
       }, getAuthHeaders());
       if (res.data.url) {
-        // replace() — keep the paywall OUT of browser history so
-        // clicking the in-app Back button after returning from Stripe
-        // goes to the user's prior page, not forward into Stripe.
-        window.location.replace(res.data.url);
+        // Push (not replace) — browser-back from Stripe lands back on
+        // the paywall, not a "failed to open page" blank screen. The
+        // in-app Back button is hard-routed to /dashboard, so the
+        // history loop is already structurally impossible.
+        window.location.href = res.data.url;
       } else if (res.data.free) {
         if (refreshSubscription) await refreshSubscription();
       }
@@ -395,8 +396,8 @@ export const SubscriptionManagement = ({
         origin_url: window.location.origin,
       }, getAuthHeaders());
       if (res.data.url) {
-        // replace() — see comment on handleSubscribe above.
-        window.location.replace(res.data.url);
+        // Push (not replace) — see handleSubscribe.
+        window.location.href = res.data.url;
       } else if (res.data.success) {
         // toast removed
         if (refreshSubscription) await refreshSubscription();
@@ -446,8 +447,8 @@ export const SubscriptionManagement = ({
         origin_url: window.location.origin,
       }, getAuthHeaders());
       if (res.data.url) {
-        // replace() — see comment on handleSubscribe above.
-        window.location.replace(res.data.url);
+        // Push (not replace) — see handleSubscribe.
+        window.location.href = res.data.url;
       } else if (res.data.success) {
         // toast removed
         if (refreshSubscription) await refreshSubscription();

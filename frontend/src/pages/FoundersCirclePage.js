@@ -75,10 +75,12 @@ export default function FoundersCirclePage() {
         origin_url: window.location.origin,
       }, getAuthHeaders());
       if (res.data.url) {
-        // replace() — keep FoundersCircle page OUT of browser history
-        // before Stripe takes over. Without this, the in-app Back on
-        // return bounces to Stripe instead of the user's prior page.
-        window.location.replace(res.data.url);
+        // Push (not replace) — browser-back from Stripe must land
+        // BACK on Founders Circle, not on a blank "failed to open"
+        // page if /founders-circle was the user's first navigation.
+        // The in-app Back button hard-routes to /subscription so it
+        // cannot loop into Stripe even with Stripe in history.
+        window.location.href = res.data.url;
       }
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Checkout failed');
