@@ -2142,3 +2142,12 @@ Live in:
 
 Mobile (2 cols) is naturally symmetric for any even tier count and was left as a 2-up flex-wrap for free.
 
+### Brand colour tokens (use these, never hardcode)
+
+| Token | Where | Value |
+|---|---|---|
+| `var(--gold)` | Hex usage in `style={{ color: 'var(--gold)' }}` | `#D4A537` (dark) / `#B8860B` (light) |
+| `var(--gold-rgb)` | RGB triple for inline `rgba(var(--gold-rgb), 0.X)` | `212, 165, 55` (dark) / `184, 134, 11` (light) |
+
+Both are theme-aware — the same selector picks the right hue automatically. New code MUST use these instead of hardcoding `rgba(212,175,55,…)` (which is the legacy off-by-10 variant scattered across ~474 inline styles). The legacy refs can be migrated lazily; the new token is available for every PR going forward.
+

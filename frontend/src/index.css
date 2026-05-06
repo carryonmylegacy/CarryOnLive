@@ -55,6 +55,13 @@
     /* Gold Accent — warm legacy gold */
     --gold: #D4A537;
     --gold2: #E8C15D;
+    /* Brand-gold rgb triple — used for `rgba(var(--gold-rgb), <alpha>)`
+       inline styles. Matches `--gold` exactly so any new code can reuse
+       the canonical brand colour without hardcoding hex literals.
+       Note: a number of legacy inline styles still use rgba(212,175,55,*)
+       which is ~10 units off in the green channel; new code MUST use
+       `var(--gold-rgb)` and the legacy refs can be migrated lazily. */
+    --gold-rgb: 212, 165, 55;
     --seal-bg: rgba(212,165,55,0.12);
     
     /* Card backgrounds — richer gradients */
@@ -176,6 +183,10 @@
     /* Gold accent — richer for light */
     --gold: #B8860B;
     --gold2: #D4A537;
+    /* Theme-aware brand-gold rgb triple — matches `--gold` for the
+       light theme so `rgba(var(--gold-rgb), <alpha>)` automatically
+       picks the right hue for the active mode. */
+    --gold-rgb: 184, 134, 11;
     --seal-bg: rgba(184,134,11,0.12);
     
     /* Trial banner info tier — light mode: gold bg, dark blue text */
