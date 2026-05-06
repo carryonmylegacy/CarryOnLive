@@ -24,7 +24,17 @@ import { Button } from '../../components/ui/button';
 export default function BeneficiaryConciergePage() {
   const { getAuthHeaders } = useAuth();
   const navigate = useNavigate();
-  const estateId = typeof window !== 'undefined' ? localStorage.getItem('beneficiary_estate_id') : null;
+  // Estate id is resolved on mount: prefer the localStorage hint set by
+  // the Estate Plan Network / Dashboard, but if the user navigated
+  // straight to /beneficiary/concierge from a deep link / sidebar
+  // shortcut and we haven't cached an id yet, auto-resolve it from
+  // their connected estates. Without this fallback a beneficiary with
+  // exactly one benefactor saw a misleading "No estate selected —
+  // open the Estate Plan Network and pick one" empty state.
+  const [estateId, setEstateId] = useState(() => (
+    typeof window !== 'undefined' ? localStorage.getItem('beneficiary_estate_id') : null
+  ));
+  const [resolvingEstate, setResolvingEstate] = useState(!estateId);
 
   const [status, setStatus] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -56,8 +66,15 @@ export default function BeneficiaryConciergePage() {
 
   const loadStatusAndHistory = useCallback(async () => {
     if (!estateId) {
-      setStatus({ available: false, reason: 'no_estate_selected' });
-      setLoading(false);
+      // Keep the page in its loading state while the auto-resolve effect
+      // is still trying to fetch the user's estates. Only show the
+      // empty "no estate selected" state when we've finished resolving
+      // and still have nothing — i.e. the user is a beneficiary on
+      // zero estates today.
+      if (!resolvingEstate) {
+        setStatus({ available: false, reason: 'no_estate_selected' });
+        setLoading(false);
+      }
       return;
     }
     try {
@@ -77,9 +94,38 @@ export default function BeneficiaryConciergePage() {
     } finally {
       setLoading(false);
     }
-  }, [estateId, getAuthHeaders]);
+  }, [estateId, getAuthHeaders, resolvingEstate]);
 
   useEffect(() => { loadStatusAndHistory(); }, [loadStatusAndHistory]);
+
+  // Auto-resolve the beneficiary's estate when no localStorage hint is
+  // available — happens when the user navigates directly to
+  // /beneficiary/concierge from a deep link or the sidebar before
+  // visiting the Hub/Dashboard. We pick the first estate where the
+  // user is NOT the owner (i.e. an estate they're a beneficiary on).
+  // For a beneficiary in only one orbit this means a clean instant
+  // resolve; for multi-estate beneficiaries the dashboard / hub still
+  // owns the explicit selection UX and writes the same key.
+  useEffect(() => {
+    if (estateId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await axios.get(`${API_URL}/estates`, getAuthHeaders());
+        const list = res.data || [];
+        const ownedIds = new Set(list.filter(e => e.user_role_in_estate === 'owner').map(e => e.id));
+        const beneficiaryEstates = list.filter(e => !ownedIds.has(e.id));
+        if (cancelled) return;
+        if (beneficiaryEstates.length > 0) {
+          const resolved = beneficiaryEstates[0].id;
+          localStorage.setItem('beneficiary_estate_id', resolved);
+          setEstateId(resolved);
+        }
+      } catch { /* fall through — page renders the empty state */ }
+      if (!cancelled) setResolvingEstate(false);
+    })();
+    return () => { cancelled = true; };
+  }, [estateId, getAuthHeaders]);
 
   useEffect(() => {
     if (scrollerRef.current) scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
