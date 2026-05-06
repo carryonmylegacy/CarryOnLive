@@ -539,22 +539,104 @@ async def concierge_document_snippet(
     }
 
 
-@router.get("/beneficiary/concierge/history")
-async def concierge_history(
+@router.get("/beneficiary/concierge/sessions")
+async def concierge_sessions(
     estate_id: str,
     current_user: dict = Depends(get_current_user),
 ) -> dict[str, Any]:
-    """Return the prior chat turns for this beneficiary on this estate."""
+    """List the beneficiary's prior BEC chat sessions on this estate.
+
+    Returns one entry per distinct session_id with:
+      - session_id
+      - title (first user question, truncated)
+      - last_message_at
+      - message_count
+
+    Used by the new BEC landing page so the user can pick up an old
+    chat or start a new one — same UX as the Estate Guardian's
+    multi-conversation panel.
+    """
+    info = await _resolve_concierge_access(current_user["id"], estate_id)
+    if not info["available"]:
+        return {"sessions": []}
+
+    pipeline = [
+        {"$match": {"estate_id": estate_id, "user_id": current_user["id"]}},
+        {"$sort": {"created_at": 1}},
+        {
+            "$group": {
+                "_id": "$session_id",
+                "title": {"$first": "$question"},
+                "first_at": {"$first": "$created_at"},
+                "last_at": {"$last": "$created_at"},
+                "count": {"$sum": 1},
+            }
+        },
+        {"$sort": {"last_at": -1}},
+        {"$limit": 50},
+    ]
+    sessions = []
+    async for row in db.beneficiary_concierge_messages.aggregate(pipeline):
+        title = (row.get("title") or "").strip()
+        if len(title) > 80:
+            title = title[:77] + "…"
+        sessions.append(
+            {
+                "session_id": row.get("_id"),
+                "title": title or "Untitled chat",
+                "last_at": row.get("last_at"),
+                "first_at": row.get("first_at"),
+                "message_count": row.get("count", 0),
+            }
+        )
+    return {"sessions": sessions}
+
+
+@router.delete("/beneficiary/concierge/session/{session_id}")
+async def concierge_session_delete(
+    session_id: str,
+    estate_id: str,
+    current_user: dict = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Delete every message in one of the beneficiary's BEC chats.
+
+    Hard-scoped by user_id + estate_id so a beneficiary can never
+    delete another beneficiary's session even with a guessed id.
+    """
+    info = await _resolve_concierge_access(current_user["id"], estate_id)
+    if not info["available"]:
+        raise HTTPException(status_code=403, detail=info["reason"])
+    res = await db.beneficiary_concierge_messages.delete_many(  # session hard-delete
+        {
+            "session_id": session_id,
+            "estate_id": estate_id,
+            "user_id": current_user["id"],
+        }
+    )
+    return {"deleted": res.deleted_count}
+
+
+@router.get("/beneficiary/concierge/history")
+async def concierge_history(
+    estate_id: str,
+    session_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Return the prior chat turns for this beneficiary on this estate.
+
+    If `session_id` is provided, returns only that session's turns —
+    used when the user clicks into a specific chat from the landing
+    page. Without it, returns every turn (legacy single-thread view).
+    """
     info = await _resolve_concierge_access(current_user["id"], estate_id)
     if not info["available"]:
         return {"messages": []}
-    cursor = (
-        db.beneficiary_concierge_messages.find(
-            {"estate_id": estate_id, "user_id": current_user["id"]},
-            {"_id": 0},
-        )
-        .sort("created_at", 1)
-        .limit(100)
-    )
+    query: dict[str, Any] = {
+        "estate_id": estate_id,
+        "user_id": current_user["id"],
+    }
+    if session_id:
+        query["session_id"] = session_id
+    cursor = db.beneficiary_concierge_messages.find(query, {"_id": 0}).sort("created_at", 1).limit(200)
     messages = [m async for m in cursor]
     return {"messages": messages}

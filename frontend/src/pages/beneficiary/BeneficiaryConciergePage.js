@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Sparkles, Send, ArrowLeft, Loader2, AlertTriangle, BookOpen, ChevronDown, ChevronUp, FileText, X } from 'lucide-react';
+import { Sparkles, Send, ArrowLeft, Loader2, AlertTriangle, BookOpen, ChevronDown, ChevronUp, FileText, X, MessageCircle, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_URL } from '../../config';
 import { Card, CardContent } from '../../components/ui/card';
@@ -44,6 +44,22 @@ export default function BeneficiaryConciergePage() {
   const [sending, setSending] = useState(false);
   const [showSharedPanel, setShowSharedPanel] = useState(false);
   const [previewDoc, setPreviewDoc] = useState(null); // { id, name, category, snippet, truncated, loading }
+  // ── New session model (May 2026) ─────────────────────────────────
+  // The page now has two views:
+  //   • 'list' — landing screen with prior chats + quick-question chips
+  //   • 'chat' — the actual conversation (was the only view previously)
+  // The active session id is persisted per-estate in localStorage so
+  // that navigating away and coming back drops the user into the same
+  // chat they were in (reset only on explicit "back" or "new chat").
+  const sessionStorageKey = estateId ? `bec_active_session_${estateId}` : null;
+  const [view, setView] = useState('list');
+  const [sessionId, setSessionId] = useState(() => (
+    typeof window !== 'undefined' && estateId
+      ? localStorage.getItem(`bec_active_session_${estateId}`)
+      : null
+  ));
+  const [sessions, setSessions] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
   const scrollerRef = useRef(null);
   // AbortController for the in-flight ask. Lets the user hit Stop on
   // the ThinkingIndicator and bail out of a long xAI roundtrip without
@@ -77,7 +93,7 @@ export default function BeneficiaryConciergePage() {
   }, [estateId, getAuthHeaders]);
   const closeDocPreview = useCallback(() => setPreviewDoc(null), []);
 
-  const loadStatusAndHistory = useCallback(async () => {
+  const loadStatus = useCallback(async () => {
     if (!estateId) {
       // Keep the page in its loading state while the auto-resolve effect
       // is still trying to fetch the user's estates. Only show the
@@ -91,17 +107,11 @@ export default function BeneficiaryConciergePage() {
       return;
     }
     try {
-      const [statusRes, historyRes] = await Promise.all([
-        axios.get(`${API_URL}/beneficiary/concierge/status`, { ...getAuthHeaders(), params: { estate_id: estateId } }),
-        axios.get(`${API_URL}/beneficiary/concierge/history`, { ...getAuthHeaders(), params: { estate_id: estateId } }).catch(() => ({ data: { messages: [] } })),
-      ]);
+      const statusRes = await axios.get(
+        `${API_URL}/beneficiary/concierge/status`,
+        { ...getAuthHeaders(), params: { estate_id: estateId } },
+      );
       setStatus(statusRes.data || { available: false });
-      const turns = [];
-      for (const m of (historyRes.data?.messages || [])) {
-        turns.push({ role: 'user', content: m.question, ts: m.created_at });
-        turns.push({ role: 'assistant', content: m.answer, citations: m.citations || {}, ts: m.created_at });
-      }
-      setMessages(turns);
     } catch {
       setStatus({ available: false, reason: 'load_failed' });
     } finally {
@@ -109,7 +119,60 @@ export default function BeneficiaryConciergePage() {
     }
   }, [estateId, getAuthHeaders, resolvingEstate]);
 
-  useEffect(() => { loadStatusAndHistory(); }, [loadStatusAndHistory]);
+  const loadSessions = useCallback(async () => {
+    if (!estateId) return;
+    setSessionsLoading(true);
+    try {
+      const res = await axios.get(
+        `${API_URL}/beneficiary/concierge/sessions`,
+        { ...getAuthHeaders(), params: { estate_id: estateId } },
+      );
+      setSessions(res.data?.sessions || []);
+    } catch {
+      setSessions([]);
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, [estateId, getAuthHeaders]);
+
+  const loadHistoryFor = useCallback(async (sid) => {
+    if (!estateId || !sid) return [];
+    try {
+      const res = await axios.get(
+        `${API_URL}/beneficiary/concierge/history`,
+        { ...getAuthHeaders(), params: { estate_id: estateId, session_id: sid } },
+      );
+      const turns = [];
+      for (const m of (res.data?.messages || [])) {
+        turns.push({ role: 'user', content: m.question, ts: m.created_at });
+        turns.push({ role: 'assistant', content: m.answer, citations: m.citations || {}, ts: m.created_at });
+      }
+      return turns;
+    } catch {
+      return [];
+    }
+  }, [estateId, getAuthHeaders]);
+
+  useEffect(() => { loadStatus(); }, [loadStatus]);
+  useEffect(() => { if (estateId) loadSessions(); }, [estateId, loadSessions]);
+
+  // On page mount, if a session_id is cached for this estate, drop the
+  // user straight back into that chat — same flow EGA uses. Without
+  // this, switching to /vault and back re-landed users on the list.
+  useEffect(() => {
+    if (!estateId || !sessionId) return;
+    let cancelled = false;
+    (async () => {
+      const turns = await loadHistoryFor(sessionId);
+      if (cancelled) return;
+      if (turns.length > 0) {
+        setMessages(turns);
+        setView('chat');
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estateId]);
 
   // Auto-resolve the beneficiary's estate when no localStorage hint is
   // available — happens when the user navigates directly to
@@ -144,9 +207,68 @@ export default function BeneficiaryConciergePage() {
     if (scrollerRef.current) scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
   }, [messages, sending]);
 
-  const send = async () => {
-    const q = input.trim();
+  // ── Session navigation helpers ─────────────────────────────────
+  const newSessionId = useCallback(() => {
+    return `sess_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  }, []);
+
+  const enterSession = useCallback(async (sid) => {
+    setSessionId(sid);
+    if (sessionStorageKey) localStorage.setItem(sessionStorageKey, sid);
+    const turns = await loadHistoryFor(sid);
+    setMessages(turns);
+    setView('chat');
+  }, [sessionStorageKey, loadHistoryFor]);
+
+  const startNewChat = useCallback((prefill = '') => {
+    const sid = newSessionId();
+    setSessionId(sid);
+    if (sessionStorageKey) localStorage.setItem(sessionStorageKey, sid);
+    setMessages([]);
+    setInput(prefill || '');
+    setView('chat');
+  }, [newSessionId, sessionStorageKey]);
+
+  const backToList = useCallback(() => {
+    setView('list');
+    // Refresh the list so a chat the user just had appears immediately.
+    loadSessions();
+  }, [loadSessions]);
+
+  const deleteSession = useCallback(async (sid) => {
+    if (!estateId || !sid) return;
+    // No native confirm dialog at 4 a.m. — just do it; users can start
+    // a fresh chat with one click. If we ever want a confirmation,
+    // gate it on a setting flag.
+    try {
+      await axios.delete(
+        `${API_URL}/beneficiary/concierge/session/${sid}`,
+        { ...getAuthHeaders(), params: { estate_id: estateId } },
+      );
+    } catch {
+      // best-effort; reload sessions either way so the UI reflects
+      // whatever truth the server has.
+    }
+    if (sid === sessionId) {
+      setSessionId(null);
+      if (sessionStorageKey) localStorage.removeItem(sessionStorageKey);
+      setMessages([]);
+    }
+    loadSessions();
+  }, [estateId, getAuthHeaders, sessionId, sessionStorageKey, loadSessions]);
+
+  const send = async (overrideQuestion) => {
+    const q = (overrideQuestion ?? input).trim();
     if (!q || sending) return;
+    // First message in a brand-new chat? Mint a session id now so the
+    // backend persists this turn under it and the list view picks it
+    // up on the next refresh.
+    let sid = sessionId;
+    if (!sid) {
+      sid = newSessionId();
+      setSessionId(sid);
+      if (sessionStorageKey) localStorage.setItem(sessionStorageKey, sid);
+    }
     setMessages((prev) => [...prev, { role: 'user', content: q, ts: new Date().toISOString() }]);
     setInput('');
     setSending(true);
@@ -155,7 +277,7 @@ export default function BeneficiaryConciergePage() {
     try {
       const res = await axios.post(
         `${API_URL}/beneficiary/concierge/ask`,
-        { estate_id: estateId, question: q },
+        { estate_id: estateId, question: q, session_id: sid },
         { ...getAuthHeaders(), signal: controller.signal },
       );
       setMessages((prev) => [...prev, {
@@ -218,8 +340,12 @@ export default function BeneficiaryConciergePage() {
     <div className="p-4 lg:p-6 pb-24 lg:pb-6 animate-fade-in" data-testid="beneficiary-concierge-page">
       {/* Header */}
       <div className="mb-5">
-        <button onClick={() => navigate('/beneficiary/dashboard')} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA] mb-3" data-testid="concierge-back">
-          <ArrowLeft className="w-4 h-4" /> Back to dashboard
+        <button
+          onClick={() => (view === 'chat' ? backToList() : navigate('/beneficiary/dashboard'))}
+          className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA] mb-3"
+          data-testid="concierge-back"
+        >
+          <ArrowLeft className="w-4 h-4" /> {view === 'chat' ? 'Back to chats' : 'Back to dashboard'}
         </button>
         <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.35)' }}>
@@ -311,14 +437,37 @@ export default function BeneficiaryConciergePage() {
             </p>
           </CardContent>
         </Card>
+      ) : view === 'list' ? (
+        <SessionsList
+          benefactorFirst={benefactorFirst}
+          sessions={sessions}
+          loading={sessionsLoading}
+          onEnter={enterSession}
+          onDelete={deleteSession}
+          onNew={() => startNewChat()}
+          onPickQuick={(q) => startNewChat(q)}
+        />
       ) : (
       <Card className="glass-card">
         <CardContent className="p-0">
           <div ref={scrollerRef} className="overflow-y-auto px-4 lg:px-6 py-5 space-y-4" style={{ maxHeight: '60vh', minHeight: '40vh' }} data-testid="concierge-scroller">
             {messages.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-sm text-[var(--t3)] mb-2">Ask about anything in {benefactorFirst}'s estate documents.</p>
-                <p className="text-xs text-[var(--t5)] italic">Examples: "What did {benefactorFirst} want for the house?" · "Who is the executor?" · "What does the will say about the cabin?"</p>
+              <div className="text-center py-6">
+                <p className="text-sm text-[var(--t3)] mb-3">Ask about anything in {benefactorFirst}'s estate documents.</p>
+                <div className="flex flex-wrap justify-center gap-2 max-w-xl mx-auto">
+                  {buildQuickQuestions(benefactorFirst).slice(0, 4).map((q, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => send(q)}
+                      className="px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--t2)] hover:text-[var(--gold)] transition-colors"
+                      style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.30)' }}
+                      data-testid={`concierge-quick-question-${i}`}
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {messages.map((m, i) => (
@@ -342,7 +491,7 @@ export default function BeneficiaryConciergePage() {
                 style={{ background: 'var(--bg2)', border: '1px solid var(--b2)', resize: 'none', fontSize: '16px' }}
                 data-testid="concierge-input"
               />
-              <Button onClick={send} disabled={!input.trim() || sending} className="gold-button shrink-0" data-testid="concierge-send">
+              <Button onClick={() => send()} disabled={!input.trim() || sending} className="gold-button shrink-0" data-testid="concierge-send">
                 <Send className="w-4 h-4" />
               </Button>
             </div>
@@ -573,6 +722,144 @@ function ConciergeUnavailable({ reason, onBack }) {
           </div>
           <h2 className="text-lg font-bold text-[var(--t)] mb-2" data-testid="concierge-unavailable-title">{title}</h2>
           <p className="text-sm text-[var(--t4)] leading-relaxed" data-testid={`concierge-reason-${reason || 'unknown'}`}>{body}</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+
+// ──────────────────────────────────────────────────────────────────
+//  Helpers shared by SessionsList + the chat empty state
+// ──────────────────────────────────────────────────────────────────
+
+// Default first-tap questions a grieving beneficiary is most likely
+// to ask. Names are interpolated with the benefactor's first name so
+// the chips read like a real human conversation rather than generic
+// AI bait. Mirrors EGA's "suggestedQuestions" pattern.
+function buildQuickQuestions(benefactorFirst) {
+  const name = benefactorFirst || 'them';
+  return [
+    `What was I willed?`,
+    `Who is the executor?`,
+    `What does ${name}'s will actually say?`,
+    `Are there any time-sensitive actions I need to take?`,
+    `What insurance policies did ${name} have?`,
+    `Who do I contact about ${name}'s accounts?`,
+  ];
+}
+
+function relativeTime(iso) {
+  if (!iso) return '';
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return '';
+  const diffMs = Date.now() - t;
+  const sec = Math.floor(diffMs / 1000);
+  if (sec < 60) return 'just now';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 7) return `${day}d ago`;
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// ──────────────────────────────────────────────────────────────────
+//  SessionsList — landing view that lists every chat the beneficiary
+//  has had with this benefactor's BEC, plus quick-question chips and
+//  a "Start a new chat" CTA. Mirrors the multi-conversation panel on
+//  the Estate Guardian page so the muscle memory is identical.
+// ──────────────────────────────────────────────────────────────────
+function SessionsList({ benefactorFirst, sessions, loading, onEnter, onDelete, onNew, onPickQuick }) {
+  const quick = buildQuickQuestions(benefactorFirst);
+  return (
+    <div className="space-y-5" data-testid="concierge-sessions-list">
+      {/* Quick-ask chips — start a new chat with one tap */}
+      <Card className="glass-card">
+        <CardContent className="p-4 lg:p-5">
+          <div className="flex items-baseline justify-between mb-3 gap-3">
+            <h2 className="text-sm font-bold text-[var(--gold)]" style={{ fontFamily: 'var(--sans)' }}>
+              Start a new chat
+            </h2>
+            <button
+              type="button"
+              onClick={onNew}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-bold text-[var(--gold)] hover:brightness-110 transition"
+              style={{ background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.40)' }}
+              data-testid="concierge-new-chat-btn"
+            >
+              <Plus className="w-3.5 h-3.5" /> New chat
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {quick.map((q, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => onPickQuick(q)}
+                className="px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--t2)] hover:text-[var(--gold)] transition-colors text-left"
+                style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.30)' }}
+                data-testid={`concierge-list-quick-${i}`}
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Prior chats list */}
+      <Card className="glass-card">
+        <CardContent className="p-4 lg:p-5">
+          <h2 className="text-sm font-bold text-[var(--t)] mb-3" style={{ fontFamily: 'var(--sans)' }}>
+            Your conversations
+          </h2>
+          {loading ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="w-5 h-5 animate-spin text-[var(--gold)]" />
+            </div>
+          ) : sessions.length === 0 ? (
+            <p className="text-sm text-[var(--t4)] italic py-2">
+              No chats yet. Pick a question above or start a new one to begin.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {sessions.map((s) => (
+                <div
+                  key={s.session_id}
+                  className="group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors hover:border-[var(--gold)]"
+                  style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+                  data-testid={`concierge-session-row-${s.session_id}`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => onEnter(s.session_id)}
+                    className="flex-1 min-w-0 text-left flex items-center gap-3"
+                    data-testid={`concierge-session-open-${s.session_id}`}
+                  >
+                    <MessageCircle className="w-4 h-4 text-[var(--gold)] shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-[var(--t)] truncate">{s.title}</p>
+                      <p className="text-[11px] text-[var(--t5)]">
+                        {s.message_count} message{s.message_count === 1 ? '' : 's'} · {relativeTime(s.last_at)}
+                      </p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDelete(s.session_id)}
+                    className="shrink-0 p-1.5 rounded-md text-[var(--t5)] hover:text-[#FCA5A5] hover:bg-[rgba(239,68,68,0.10)] transition-colors"
+                    data-testid={`concierge-session-delete-${s.session_id}`}
+                    title="Delete this chat"
+                    aria-label="Delete this chat"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
