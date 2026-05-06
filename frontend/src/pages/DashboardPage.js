@@ -177,8 +177,21 @@ const DashboardPage = () => {
         const prior = await getLocalDashboardTile(estateId);
         if (typeof prior?.stats?.ccp_plans === 'number') priorCcpCount = prior.stats.ccp_plans;
       } catch { /* non-fatal */ }
-      // Always fetch estate data AND onboarding progress in parallel
-      const [docsRes, msgsRes, bensRes, checklistRes, readinessRes, progressRes, ccpRes] = await Promise.all([
+      // Read the prior cached financialSummary BEFORE the network so
+      // we can preserve it on a transient /financial/summary failure
+      // (overwriting it with null causes the CFP tile to flash to 0).
+      let priorFinancial = null;
+      try {
+        const prior = await getLocalDashboardTile(estateId);
+        priorFinancial = prior?.financialSummary ?? null;
+      } catch { /* non-fatal */ }
+      // Always fetch estate data AND onboarding progress in parallel.
+      // financial/summary is now part of the same Promise.all so the
+      // CFP tile updates in lockstep with the other tiles instead of
+      // a tick later — previously it fired on a separate axios.get().
+      // Without this, CFP visibly jumped from 0 → real *after* the
+      // dashboard had already faded in.
+      const [docsRes, msgsRes, bensRes, checklistRes, readinessRes, progressRes, ccpRes, financialRes] = await Promise.all([
         axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/messages/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/beneficiaries/${estateId}`, getAuthHeaders()),
@@ -190,6 +203,13 @@ const DashboardPage = () => {
           // bugs without silent log loss. Returning null lets ccpCount
           // below fall back to the cached count instead of 0.
           console.warn('[dashboard] /ccp/plans fetch failed:', err?.response?.status || err?.message);
+          return null;
+        }),
+        axios.get(`${API_URL}/financial/summary/${estateId}`, getAuthHeaders()).catch((err) => {
+          // Same protection as ccp_plans: do NOT collapse a transient
+          // network failure into a `0` CFP tile. Return null so the
+          // fallback below preserves the prior cached summary.
+          console.warn('[dashboard] /financial/summary fetch failed:', err?.response?.status || err?.message);
           return null;
         }),
       ]);
@@ -204,46 +224,26 @@ const DashboardPage = () => {
         beneficiaries: bensRes.data.length,
         ccp_plans: ccpCount,
       };
+      const financialPayload = financialRes?.data ?? priorFinancial;
+      // ── Single batched render so every tile (Beneficiaries, IAC,
+      // MM, SDV, CCP, CFP) updates in the same tick. Eliminates the
+      // visible "0 → real" jump on CFP/CCP that the user reported.
       setStats(statsPayload);
+      setFinancialSummary(financialPayload);
       setChecklists(checklistRes.data);
       if (readinessRes) {
         setReadiness(readinessRes.data);
         setEstate(prev => prev ? { ...prev, readiness_score: readinessRes.data.overall_score } : prev);
       }
-      // Fetch financial summary (non-blocking). On success we update
-      // both the in-memory state and the local tile snapshot. On
-      // failure we deliberately DO NOT touch the cache — overwriting
-      // a real summary with `null` previously caused the CFP tile to
-      // render `0` after a single transient blip and stay there until
-      // the next successful fetch happened to coincide with a cache
-      // write. Same root cause as the CCP `ccp_plans` regression.
-      axios.get(`${API_URL}/financial/summary/${estateId}`, getAuthHeaders())
-        .then(res => {
-          setFinancialSummary(res.data);
-          upsertLocalDashboardTile(estateId, {
-            stats: statsPayload,
-            readiness: readinessRes ? readinessRes.data : null,
-            checklists: checklistRes.data,
-            financialSummary: res.data,
-          }).catch(() => {});
-        }).catch(async (err) => {
-          console.warn('[dashboard] /financial/summary fetch failed:', err?.response?.status || err?.message);
-          // Preserve the prior cached financialSummary so a transient
-          // failure doesn't blank out the CFP tile on the next cold
-          // boot. upsertLocalDashboardTile is a put (replaces the row),
-          // so we must explicitly forward the prior value.
-          let priorSummary = null;
-          try {
-            const prior = await getLocalDashboardTile(estateId);
-            priorSummary = prior?.financialSummary ?? null;
-          } catch { /* non-fatal */ }
-          upsertLocalDashboardTile(estateId, {
-            stats: statsPayload,
-            readiness: readinessRes ? readinessRes.data : null,
-            checklists: checklistRes.data,
-            financialSummary: priorSummary,
-          }).catch(() => {});
-        });
+      // Persist the freshest snapshot. We always write CCP+stats; we
+      // only write financialSummary when the network actually returned
+      // a value so a single transient blip can't blank out the cache.
+      upsertLocalDashboardTile(estateId, {
+        stats: statsPayload,
+        readiness: readinessRes ? readinessRes.data : null,
+        checklists: checklistRes.data,
+        financialSummary: financialPayload,
+      }).catch(() => {});
       // Also mirror the readiness scorecard into its own singleton table.
       if (readinessRes) {
         upsertLocalReadiness(estateId, readinessRes.data).catch(() => {});
