@@ -260,7 +260,7 @@ export default function ConnectedProtocolPage() {
   // require manual navigate-off-and-back to refresh. Debounced to
   // coalesce bursts during sync recovery.
   useDebouncedRefetch(
-    fetchPlans,
+    () => fetchPlans(),
     ['online', 'offline', 'carryon:outbox:drained'],
   );
 

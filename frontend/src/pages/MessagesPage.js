@@ -231,7 +231,7 @@ const MessagesPage = () => {
   // on reconnect — swaps the "queued" UI for the server-authoritative row.
   // Refetch is debounced to coalesce sync-recovery event bursts.
   useDebouncedRefetch(
-    fetchData,
+    () => fetchData(),
     ['carryon:upload:complete', 'carryon:outbox:drained'],
   );
 

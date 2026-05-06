@@ -233,7 +233,7 @@ const VaultPage = () => {
   // 6-connection-per-origin limit and starving the thumbnail loaders
   // for a minute or more.
   useDebouncedRefetch(
-    fetchData,
+    () => fetchData(),
     ['carryon:upload:complete', 'carryon:outbox:drained', 'online', 'offline'],
   );
 

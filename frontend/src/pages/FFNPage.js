@@ -94,7 +94,7 @@ export default function FFNPage() {
   // up multiple concurrent /api/family-final requests and starve
   // Safari's per-origin connection budget.
   useDebouncedRefetch(
-    fetchData,
+    () => fetchData(),
     ['online', 'offline', 'carryon:outbox:drained'],
   );
 
