@@ -188,7 +188,10 @@ function taskDashboard(estateId, headers) {
           const { isPinnedLocally, pinDocument } = await import('./pinnedDocsRepo');
           const headerObj = headers?.headers || {};
           for (const d of docs.data) {
-            if (d?.pinned_offline && d?.id && d?.file_url) {
+            // Cloud-stored docs no longer have a static `file_url`;
+            // pinDocument falls back to the auth'd API endpoint via
+            // doc.id alone, so we only require `pinned_offline` + an id.
+            if (d?.pinned_offline && d?.id) {
               isPinnedLocally(d.id).then((already) => {
                 if (!already) pinDocument(d, headerObj).catch(() => {});
               }).catch(() => {});

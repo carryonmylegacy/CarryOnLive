@@ -23,27 +23,42 @@ const cacheKey = (docId) => `doc:${docId}`;
 
 export async function pinDocument(doc, fetchHeaders) {
   const db = getDB();
-  if (!doc?.id || !doc?.file_url) {
-    throw new Error('pinDocument: doc.id and doc.file_url are required');
+  if (!doc?.id) {
+    throw new Error('pinDocument: doc.id is required');
   }
-  // S3 presigned URLs encode auth in the query string; sending
-  // `credentials: 'include'` or an `Authorization` header to S3 forces
-  // a CORS preflight that S3 doesn't satisfy (it can't echo back
-  // `Access-Control-Allow-Credentials: true`), so the fetch fails with
-  // "Access to fetch ... blocked by CORS policy" — which was iter_117's
-  // 18 residual console errors. Detect cross-origin URLs and drop
-  // both the cookies AND the auth header for them; backend-relative
-  // URLs keep the original behavior since the same-origin case never
-  // triggers preflight.
-  let isCrossOrigin = false;
-  try {
-    const u = new URL(doc.file_url, window.location.origin);
-    isCrossOrigin = u.origin !== window.location.origin;
-  } catch { /* malformed URL — let fetch fail naturally */ }
-  const init = isCrossOrigin
-    ? { credentials: 'omit' }
-    : { credentials: 'include', headers: fetchHeaders || {} };
-  const res = await fetch(doc.file_url, init);
+  // Two fetch paths:
+  //   A. Legacy / public docs that ship a direct `file_url` (e.g.
+  //      pre-signed S3 link) — fetch that URL directly. Cross-origin
+  //      handling preserved (S3 doesn't satisfy a credentialed
+  //      preflight, so we strip cookies + auth headers for those).
+  //   B. Modern cloud-stored docs (most production data) only carry a
+  //      `storage_key` server-side; the FE never sees a static URL
+  //      because the bytes are decrypted per-request. For these we
+  //      hit the same auth'd `/documents/{id}/download` endpoint the
+  //      Preview/Download buttons use.
+  let res;
+  if (doc.file_url) {
+    let isCrossOrigin = false;
+    try {
+      const u = new URL(doc.file_url, window.location.origin);
+      isCrossOrigin = u.origin !== window.location.origin;
+    } catch { /* malformed URL — let fetch fail naturally */ }
+    const init = isCrossOrigin
+      ? { credentials: 'omit' }
+      : { credentials: 'include', headers: fetchHeaders || {} };
+    res = await fetch(doc.file_url, init);
+  } else {
+    // Cloud-storage path — pull through the auth'd API. This is the
+    // path beneficiaries hit when toggling "Make available offline"
+    // pre-transition (their essential-docs slots return cloud docs
+    // without a static `file_url`).
+    const apiBase = process.env.REACT_APP_BACKEND_URL;
+    const url = `${apiBase}/api/documents/${doc.id}/download`;
+    res = await fetch(url, {
+      credentials: 'include',
+      headers: fetchHeaders || {},
+    });
+  }
   if (!res.ok) throw new Error(`pinDocument: HTTP ${res.status}`);
   const blob = await res.blob();
   await db[TABLE].put({
