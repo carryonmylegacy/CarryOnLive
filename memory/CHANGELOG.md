@@ -1,5 +1,22 @@
 # CarryOn — Changelog
 
+## May 6, 2026 — Dashboard Title Auto-Scaling (Pitch Polish)
+**UI**: Per user request, the two H2 dashboard titles now auto-scale up on large desktop formats so they better fill the cards during pitches.
+
+**Changes** (`/app/frontend/src/pages/DashboardPage.js`)
+- "CarryOn Core Pillars" (line ~1012) — ramp: `text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl whitespace-nowrap`
+- "Estate Readiness" — side dial (line ~1054): same ramp
+- "Estate Readiness" — dense/non-dense `ReadinessCard` variant (line ~923): also bumped (`xl/2xl` steps + `whitespace-nowrap`) for consistency across layouts
+- `whitespace-nowrap` enforced — titles will never wrap on any breakpoint per user directive.
+
+**Verified**:
+- ESLint clean on `DashboardPage.js` ✅
+- `bash /app/housekeeping.sh` → 0 WARN, 0 FAIL ✅
+- Tile-sync fix from prior session retained (`/financial/summary` is now part of the main `Promise.all` so CFP/CCP no longer flash zero values).
+
+---
+
+
 ## May 4, 2026 — Beneficiary Routing Fix: Stop Auto-Redirect to Single-Estate Pre-Transition
 **Bug fix**: Tapping a benefactor in the FamilyTree (from the benefactor's "Beneficiaries" page) was supposed to land on the **multi-estate beneficiary portal dashboard** but instead drilled directly to a single-estate `/beneficiary/pre` lock screen — losing the estate switcher, beneficiary dock, and dashboard chrome. Offline, the same flow could break into a blank page with the wrong dock.
 

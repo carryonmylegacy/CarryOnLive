@@ -920,7 +920,7 @@ const DashboardPage = () => {
         // to the gauge inside it.
         const ReadinessCard = ({ keyChipsPosition = 'top-right', dense = false }) => (
           <div className={`glass-card relative ${dense ? 'p-4 lg:px-6 lg:py-4' : 'p-5 lg:p-8'} mb-4`} data-testid="readiness-card">
-            <h2 className={`${dense ? 'text-base lg:text-4xl mb-2 lg:mb-3' : 'text-base lg:text-3xl mb-4 lg:mb-5'} font-bold text-[var(--t)] uppercase tracking-wider text-center`} style={{ fontFamily: 'var(--sans)' }}>
+            <h2 className={`${dense ? 'text-base lg:text-4xl xl:text-5xl 2xl:text-6xl mb-2 lg:mb-3' : 'text-base lg:text-3xl xl:text-4xl 2xl:text-5xl mb-4 lg:mb-5'} whitespace-nowrap font-bold text-[var(--t)] uppercase tracking-wider text-center`} style={{ fontFamily: 'var(--sans)' }}>
               Estate Readiness
             </h2>
             {keyChipsPosition === 'top-right' && !dense && (
@@ -1009,7 +1009,7 @@ const DashboardPage = () => {
             <div className="lg:col-span-1">
               <div className="glass-card p-4 lg:p-5 h-full flex flex-col" data-testid="core-pillars-card">
                 <h2
-                  className="text-3xl lg:text-4xl font-semibold text-[var(--t)] mb-4 text-center tracking-tight"
+                  className="text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl whitespace-nowrap font-semibold text-[var(--t)] mb-4 text-center tracking-tight"
                   style={{ fontFamily: 'var(--serif)' }}
                 >
                   CarryOn Core Pillars
@@ -1051,7 +1051,7 @@ const DashboardPage = () => {
             <div className="lg:col-span-1">
               <div className="glass-card p-4 lg:p-5 h-full flex flex-col" data-testid="readiness-card-side">
                 <h2
-                  className="text-3xl lg:text-4xl font-semibold text-[var(--t)] mb-4 text-center tracking-tight"
+                  className="text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl whitespace-nowrap font-semibold text-[var(--t)] mb-4 text-center tracking-tight"
                   style={{ fontFamily: 'var(--serif)' }}
                 >
                   Estate Readiness
