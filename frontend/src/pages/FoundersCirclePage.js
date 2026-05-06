@@ -221,13 +221,22 @@ export default function FoundersCirclePage() {
           const inst = plan.installments[selectedSchedule];
           if (!inst) return null;
           const isPremium = plan.tier === 'premium';
+          // Per-tier accent so light mode doesn't collapse into a flat
+          // grey row — same alpha math as the main paywall.
+          const FC_TIER_ACCENT = {
+            premium: '#d4af37', standard: '#60A5FA', base: '#22C993',
+            new_adult: '#B794F6', military: '#F59E0B', veteran: '#059669',
+          };
+          const accent = FC_TIER_ACCENT[plan.tier] || '#22C993';
           return (
             <div
               key={plan.tier}
               className="rounded-2xl p-5 flex flex-col relative overflow-hidden"
               style={{
-                background: isPremium ? 'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.03))' : 'var(--bg2)',
-                border: isPremium ? '2px solid rgba(212,175,55,0.4)' : '1px solid var(--b)',
+                background: isPremium
+                  ? 'linear-gradient(135deg, rgba(212,175,55,0.18), rgba(212,175,55,0.04))'
+                  : `linear-gradient(168deg, ${accent}14, var(--bg2) 75%)`,
+                border: isPremium ? '2px solid rgba(212,175,55,0.4)' : `1px solid ${accent}30`,
               }}
               data-testid={`fc-tier-${plan.tier}`}
             >

@@ -463,20 +463,24 @@ export default function SubscriptionPaywall({ onDismiss }) {
                   eligible && !isGreyedOut && isPremium ? 'hover:-translate-y-2 sm:scale-[1.03]' : eligible && !isGreyedOut ? 'hover:-translate-y-1' : ''
                 }`}
                 style={{
+                  // Subtle accent wash on every state — keeps light mode
+                  // from collapsing all idle cards into the same flat
+                  // surface color (tier identity stays visible at a
+                  // glance). Alpha kept low so dark-mode contrast holds.
                   background: isActivePlan
                     ? `linear-gradient(168deg, ${colors.bg} 0%, var(--s) 40%)`
                     : isPremium
                       ? `linear-gradient(168deg, rgba(212,175,55,0.15) 0%, var(--s) 40%)`
                       : isSelected && !isGreyedOut
                         ? `linear-gradient(168deg, ${colors.bg} 0%, var(--s) 100%)`
-                        : 'var(--s)',
+                        : `linear-gradient(168deg, ${colors.accent}14, var(--s) 75%)`,
                   border: isActivePlan
                     ? `2px solid ${colors.border}`
                     : isPremium
                       ? '2px solid rgba(212,175,55,0.4)'
                       : isSelected && !isGreyedOut
                         ? `2px solid ${colors.border}`
-                        : '1px solid var(--b)',
+                        : `1px solid ${colors.accent}30`,
                   boxShadow: isActivePlan
                     ? `0 8px 32px -6px ${colors.accent}44, 0 2px 8px rgba(0,0,0,0.25)`
                     : isPremium

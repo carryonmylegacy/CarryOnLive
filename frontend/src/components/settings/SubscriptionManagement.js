@@ -644,18 +644,23 @@ export const SubscriptionManagement = ({
 
             return (
               <div key={plan.id} className={`${flexWidth} relative rounded-2xl overflow-hidden transition-all duration-300 group ${locked ? 'opacity-40 pointer-events-none' : isCurrent ? '' : 'hover:-translate-y-1'}`} style={{
+                // Tile surface — every state gets a subtle accent wash so
+                // light mode doesn't fall back to a flat near-white that
+                // makes the row look monochromatic. Alpha is intentionally
+                // low (~10%) so dark-mode contrast stays correct AND light
+                // mode picks up just enough color to differentiate tiers.
                 background: isAutoSelected
-                  ? `linear-gradient(168deg, ${style.accent}15, ${style.accent}06)`
+                  ? `linear-gradient(168deg, ${style.accent}22, ${style.accent}0a)`
                   : isCurrent
-                  ? `linear-gradient(168deg, ${style.accent}12, ${style.accent}04)`
-                  : 'var(--s)',
+                  ? `linear-gradient(168deg, ${style.accent}1c, ${style.accent}06)`
+                  : `linear-gradient(168deg, ${style.accent}14, var(--s) 75%)`,
                 border: isAutoSelected
                   ? `2px solid ${style.accent}`
                   : isCurrent
                   ? `2px solid ${style.accent}`
                   : isRecommended
                     ? `2px solid ${style.accent}50`
-                    : '1px solid var(--b)',
+                    : `1px solid ${style.accent}30`,
                 boxShadow: isAutoSelected
                   ? `0 8px 32px ${style.accent}25`
                   : isCurrent
