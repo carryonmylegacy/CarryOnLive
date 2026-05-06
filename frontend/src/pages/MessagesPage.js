@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { useDebouncedRefetch } from '../hooks/useDebouncedRefetch';
 import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
 import { ReturnPopup } from '../components/GuidedActivation';
@@ -228,8 +229,13 @@ const MessagesPage = () => {
 
   // Auto-refresh when a queued milestone media upload finishes draining
   // on reconnect — swaps the "queued" UI for the server-authoritative row.
+  // Refetch is debounced to coalesce sync-recovery event bursts.
+  useDebouncedRefetch(
+    fetchData,
+    ['carryon:upload:complete', 'carryon:outbox:drained'],
+  );
+
   useEffect(() => {
-    const refetch = () => { fetchData(); };
     // In-place swap: when the chunked uploader's finalizer echoes back
     // the server id + media URL for a previously-pending row, patch our
     // in-memory `messages` state directly. No fetchData round-trip
@@ -259,12 +265,8 @@ const MessagesPage = () => {
         return touched ? next : prev;
       });
     };
-    window.addEventListener('carryon:upload:complete', refetch);
-    window.addEventListener('carryon:outbox:drained', refetch);
     window.addEventListener('carryon:upload:swapped', onSwapped);
     return () => {
-      window.removeEventListener('carryon:upload:complete', refetch);
-      window.removeEventListener('carryon:outbox:drained', refetch);
       window.removeEventListener('carryon:upload:swapped', onSwapped);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

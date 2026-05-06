@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { useDebouncedRefetch } from '../hooks/useDebouncedRefetch';
 import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
 import {
@@ -222,13 +223,21 @@ const VaultPage = () => {
   // draining on reconnect) or when the outbox drains any DAV mutations.
   // Also refresh on network transitions so airplane-mode toggling
   // re-hydrates the list without the user navigating off-and-back.
+  //
+  // Refetch is debounced (400 ms trailing edge) by `useDebouncedRefetch`
+  // so a burst of `online`/`outbox:drained`/`upload:complete` events
+  // (which happens routinely during offline-sync recovery and in
+  // Safari's flapping private-mode network state) coalesces into ONE
+  // fetch. Without this, rapid user navigation accumulated five-to-
+  // ten concurrent /api/documents requests, saturating Safari's
+  // 6-connection-per-origin limit and starving the thumbnail loaders
+  // for a minute or more.
+  useDebouncedRefetch(
+    fetchData,
+    ['carryon:upload:complete', 'carryon:outbox:drained', 'online', 'offline'],
+  );
+
   useEffect(() => {
-    const refetch = () => { fetchData(); };
-    // In-place swap (mirror of MessagesPage). When the document
-    // finalizer echoes back the server id, patch our optimistic
-    // `local-doc-*` row in `documents` state with the real id so a
-    // Preview/Download tap immediately afterwards hits the real
-    // server-authoritative row instead of 404-ing.
     const onSwapped = (e) => {
       const detail = e?.detail || {};
       if (detail?.kind !== 'document') return;
@@ -248,17 +257,9 @@ const VaultPage = () => {
         return touched ? next : prev;
       });
     };
-    window.addEventListener('carryon:upload:complete', refetch);
-    window.addEventListener('carryon:outbox:drained', refetch);
     window.addEventListener('carryon:upload:swapped', onSwapped);
-    window.addEventListener('online', refetch);
-    window.addEventListener('offline', refetch);
     return () => {
-      window.removeEventListener('carryon:upload:complete', refetch);
-      window.removeEventListener('carryon:outbox:drained', refetch);
       window.removeEventListener('carryon:upload:swapped', onSwapped);
-      window.removeEventListener('online', refetch);
-      window.removeEventListener('offline', refetch);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -99,16 +99,13 @@ export default function LandingPricing() {
     return () => { cancelled = true; };
   }, []);
 
-  // When the discount tiers slide open, only nudge the page IF the
-  // newly revealed content would actually be below the fold. The
-  // previous implementation called scrollIntoView({ block: 'start' })
-  // unconditionally, which yanked the page UP whenever the user had
-  // already scrolled past the trigger button — manifesting as a
-  // jarring "flash to top" instead of the smooth slide-down the
-  // user expects. We now wait for the height transition to finish,
-  // measure the section's bottom edge, and only call into view if
-  // any portion is off-screen — using `block: 'nearest'` so the
-  // scroll moves the minimum distance possible.
+  // Safari's automatic "scroll anchoring" sometimes misfires when the
+  // discount section's max-height transitions from 0 → 4000px, snapping
+  // the page to the top instead of leaving the user where they clicked.
+  // We disable scroll-anchoring on the container (CSS rule below) and
+  // only nudge the viewport AFTER the height transition completes, AND
+  // only if the section's bottom is below the fold AND its top is on-
+  // screen. The `block: 'nearest'` keeps the move minimal.
   useEffect(() => {
     if (!discountOpen || !discountRef.current) return;
     const t = setTimeout(() => {
@@ -116,9 +113,12 @@ export default function LandingPricing() {
       if (!el) return;
       const rect = el.getBoundingClientRect();
       const viewH = window.innerHeight || 0;
+      // Only scroll if the section opens BELOW the fold AND its top is
+      // already visible. If the user clicked the button while it was
+      // anywhere in their current viewport, we leave their scroll alone.
       const offBottom = rect.bottom > viewH;
-      const offTop = rect.top < 0;
-      if (offBottom && !offTop) {
+      const topVisible = rect.top >= 0 && rect.top < viewH;
+      if (offBottom && topVisible) {
         el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     }, 540); // a hair after the 500ms max-height transition completes
@@ -301,7 +301,10 @@ export default function LandingPricing() {
         </button>
       </div>
 
-      {/* Discount tiers — collapsible, smooth height transition */}
+      {/* Discount tiers — collapsible, smooth height transition.
+          `overflow-anchor: none` disables Safari/Chrome scroll anchoring
+          on this container so growing from 0 → 4000px never snaps the
+          viewport to the top of the page. */}
       <div
         id="landing-discount-tiers"
         ref={discountRef}
@@ -310,6 +313,7 @@ export default function LandingPricing() {
         style={{
           maxHeight: discountOpen ? '4000px' : '0px',
           opacity: discountOpen ? 1 : 0,
+          overflowAnchor: 'none',
         }}
         aria-hidden={!discountOpen}
       >

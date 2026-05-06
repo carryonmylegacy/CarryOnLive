@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { useDebouncedRefetch } from '../hooks/useDebouncedRefetch';
 import {
   Heart, Plus, Edit2, Trash2, Loader2, Phone, Mail,
   MapPin, User, X, Check, Users
@@ -87,18 +88,15 @@ export default function FFNPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   // Auto-refresh on reconnect so airplane-mode toggling re-hydrates the
-  // list without the user having to navigate away and back.
-  useEffect(() => {
-    const refetch = () => { fetchData(); };
-    window.addEventListener('online', refetch);
-    window.addEventListener('offline', refetch);
-    window.addEventListener('carryon:outbox:drained', refetch);
-    return () => {
-      window.removeEventListener('online', refetch);
-      window.removeEventListener('offline', refetch);
-      window.removeEventListener('carryon:outbox:drained', refetch);
-    };
-  }, [fetchData]);
+  // list without the user having to navigate away and back. The
+  // refetch is debounced (400 ms trailing edge) so a burst of
+  // online/offline/outbox events during sync recovery doesn't pile
+  // up multiple concurrent /api/family-final requests and starve
+  // Safari's per-origin connection budget.
+  useDebouncedRefetch(
+    fetchData,
+    ['online', 'offline', 'carryon:outbox:drained'],
+  );
 
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error('Name is required'); return; }

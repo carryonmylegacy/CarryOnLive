@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
+import { useDebouncedRefetch } from '../hooks/useDebouncedRefetch';
 import { formatPhoneUS } from '../utils/phoneFormat';
 import { saveList, readList } from '../utils/localListCache';
 import { useDraftState } from '../hooks/useDraftState';
@@ -256,18 +257,12 @@ export default function ConnectedProtocolPage() {
   // Auto-refresh when the offline outbox drains on reconnect — swaps
   // optimistic `_local_pending` CCP plans for the server-authoritative ones.
   // Also refetch on airplane-mode transitions so the plan list doesn't
-  // require manual navigate-off-and-back to refresh.
-  useEffect(() => {
-    const refetch = () => { fetchPlans(); };
-    window.addEventListener('carryon:outbox:drained', refetch);
-    window.addEventListener('online', refetch);
-    window.addEventListener('offline', refetch);
-    return () => {
-      window.removeEventListener('carryon:outbox:drained', refetch);
-      window.removeEventListener('online', refetch);
-      window.removeEventListener('offline', refetch);
-    };
-  }, [fetchPlans]);
+  // require manual navigate-off-and-back to refresh. Debounced to
+  // coalesce bursts during sync recovery.
+  useDebouncedRefetch(
+    fetchPlans,
+    ['online', 'offline', 'carryon:outbox:drained'],
+  );
 
   // Poll when emergency is active
   useEffect(() => {
