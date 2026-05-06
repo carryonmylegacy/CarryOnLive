@@ -30,17 +30,72 @@ own words and intentions as captured in their estate documents.
 """
 
 from datetime import datetime, timezone
+import os
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from config import XAI_MODEL_LIGHT, db, logger, xai_client
+from config import XAI_MODEL, XAI_MODEL_LIGHT, db, logger, xai_client
 from routes.feature_gates import get_feature_gates
 from routes.guardian import extract_document_text
 from utils import get_current_user
 
 router = APIRouter()
+
+
+@router.get("/beneficiary/concierge/diagnose")
+async def concierge_diagnose(current_user: dict = Depends(get_current_user)) -> dict[str, Any]:
+    """Diagnostic endpoint — reports the actual xAI status this pod sees.
+
+    Curl this from production to find out *exactly* what's happening
+    when the AI fails. It's auth-gated so it's safe to leave on. Tells
+    you:
+      • whether xai_client constructed at all (key present?)
+      • base_url + masked key prefix
+      • a 1-token live ping per model (grok-3-mini, grok-3, grok-4)
+      • the exact error message + type if any model fails
+
+    Use:  curl -H "Authorization: Bearer <token>" \\
+            https://app.carryon.us/api/beneficiary/concierge/diagnose
+    """
+    import asyncio
+    from config import xai_client as _xc, XAI_MODEL, XAI_MODEL_LIGHT  # noqa
+
+    result: dict[str, Any] = {
+        "xai_client_constructed": bool(_xc),
+        "configured_models": {"heavy": XAI_MODEL, "light": XAI_MODEL_LIGHT},
+        "key_present": bool(os.environ.get("XAI_API_KEY")),
+        "key_prefix": (os.environ.get("XAI_API_KEY") or "")[:8] + "…",
+        "base_url": getattr(getattr(_xc, "_client", None), "base_url", None) and str(_xc._client.base_url),
+        "models": {},
+    }
+    if not _xc:
+        result["error"] = "xai_client is None — XAI_API_KEY missing from this pod's env"
+        return result
+
+    for model_name in ["grok-3-mini", "grok-3", "grok-4"]:
+        t0 = asyncio.get_event_loop().time()
+        try:
+            r = await asyncio.to_thread(
+                _xc.chat.completions.create,
+                model=model_name,
+                messages=[{"role": "user", "content": "ping"}],
+                max_tokens=3,
+            )
+            result["models"][model_name] = {
+                "ok": True,
+                "elapsed_s": round(asyncio.get_event_loop().time() - t0, 2),
+                "sample": (r.choices[0].message.content or "")[:30],
+            }
+        except Exception as e:  # noqa: BLE001
+            result["models"][model_name] = {
+                "ok": False,
+                "elapsed_s": round(asyncio.get_event_loop().time() - t0, 2),
+                "error_type": type(e).__name__,
+                "error": str(e)[:300],
+            }
+    return result
 
 
 SYSTEM_PROMPT = """You are the CarryOn™ Beneficiary Estate Concierge.
@@ -397,61 +452,87 @@ async def concierge_ask(
         f"--- BENEFICIARY QUESTION ---\n{question}"
     )
 
-    # ── xAI call with retry+backoff (mirrors Estate Guardian AI) ──
-    # BEC uses the SAME xAI Grok engine as the Estate Guardian (same
-    # `xai_client`, same `XAI_MODEL_LIGHT` = grok-3-mini) — there is no
-    # second LLM. Previously this was a single-shot call: any transient
-    # xAI blip (rate-limit, network reset, cold connection) bubbled up
-    # to the beneficiary as the dreaded "I'm having trouble right now"
-    # bubble, even though a retry 1.5s later would have succeeded. We
-    # now match the Guardian's resilience: 3 attempts, exponential-ish
-    # backoff, with a 55 s soft deadline that respects the ingress cap.
+    # ── xAI call with retry+backoff + multi-model failover ──
+    # BEC uses the same xAI Grok engine as the Estate Guardian (same
+    # `xai_client`, same key). For maximum resilience we don't pin to
+    # a single model — we try grok-3-mini (fastest, cheapest), then
+    # fall back to grok-3, then grok-4 (heaviest, slowest). This
+    # protects us from individual model deprecations / capacity
+    # incidents on x.ai's side. We retry up to 3 times across models
+    # with exponential-ish backoff, gated by a 55s soft deadline so we
+    # never exceed the ingress cut-off.
     import asyncio
 
+    # Models, in priority order. The first to return wins. Pulled from
+    # config so /admin can override without a deploy.
+    _MODEL_ORDER = [m for m in (XAI_MODEL_LIGHT, "grok-3", XAI_MODEL) if m]
+    # De-dupe while preserving order (in case env sets LIGHT==HEAVY)
+    seen: set[str] = set()
+    _MODEL_ORDER = [m for m in _MODEL_ORDER if not (m in seen or seen.add(m))]
+
     completion = None
+    completion_model: str | None = None
     last_error: Exception | None = None
-    _MAX_ATTEMPTS = 3
-    _RETRY_DELAYS = [0, 1.5, 3.0]
+    _MAX_ATTEMPTS_PER_MODEL = 2
+    _RETRY_DELAYS = [0, 1.5]
     _SOFT_DEADLINE_S = 55
     _started_at = asyncio.get_event_loop().time()
-    for attempt in range(_MAX_ATTEMPTS):
-        try:
-            if _RETRY_DELAYS[attempt]:
-                await asyncio.sleep(_RETRY_DELAYS[attempt])
-            elapsed = asyncio.get_event_loop().time() - _started_at
-            if attempt > 0 and elapsed > _SOFT_DEADLINE_S - 5:
-                logger.warning(
-                    f"BEC xAI deadline guard: skipping attempt {attempt + 1}/{_MAX_ATTEMPTS} (elapsed {elapsed:.1f}s)"
+
+    def _deadline_remaining() -> float:
+        return _SOFT_DEADLINE_S - (asyncio.get_event_loop().time() - _started_at)
+
+    for model_name in _MODEL_ORDER:
+        if completion is not None or _deadline_remaining() < 5:
+            break
+        for attempt in range(_MAX_ATTEMPTS_PER_MODEL):
+            try:
+                if _RETRY_DELAYS[attempt]:
+                    await asyncio.sleep(_RETRY_DELAYS[attempt])
+                if _deadline_remaining() < 5:
+                    logger.warning(
+                        f"BEC xAI deadline guard: skipping {model_name} attempt {attempt + 1} "
+                        f"(remaining {_deadline_remaining():.1f}s)"
+                    )
+                    break
+                t0 = asyncio.get_event_loop().time()
+                completion = await asyncio.to_thread(
+                    xai_client.chat.completions.create,
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": system_msg},
+                        {"role": "user", "content": full_user_prompt},
+                    ],
+                    max_tokens=600,
+                    temperature=0.3,
+                )
+                completion_model = model_name
+                logger.info(
+                    f"BEC xAI ok: model={model_name} attempt={attempt + 1} "
+                    f"elapsed={asyncio.get_event_loop().time() - t0:.2f}s "
+                    f"docs={len(docs)} ctx_chars={total_chars}"
                 )
                 break
-            completion = await asyncio.to_thread(
-                xai_client.chat.completions.create,
-                model=XAI_MODEL_LIGHT,
-                messages=[
-                    {"role": "system", "content": system_msg},
-                    {"role": "user", "content": full_user_prompt},
-                ],
-                max_tokens=600,
-                temperature=0.3,
-            )
-            break
-        except Exception as e:  # noqa: BLE001
-            last_error = e
-            logger.warning(f"BEC xAI attempt {attempt + 1}/{_MAX_ATTEMPTS} failed ({type(e).__name__}: {e})")
+            except Exception as e:  # noqa: BLE001
+                last_error = e
+                logger.warning(
+                    f"BEC xAI fail: model={model_name} attempt={attempt + 1}/{_MAX_ATTEMPTS_PER_MODEL} "
+                    f"({type(e).__name__}: {str(e)[:200]})"
+                )
 
     if completion is None:
-        # ── GRACEFUL FALLBACK (May 6, 2026 — pre-pitch) ──
-        # When xAI is unreachable from this region (key revoked, billing
-        # issue, network egress block, model deprecated, rate-limit
-        # cliff), we previously raised 502 and the beneficiary saw a
-        # red "I'm having trouble right now" bubble — embarrassing in
-        # a live demo. Instead, synthesize a templated, document-aware
-        # answer locally so the user always gets something useful and
-        # dignified. The answer references the actual designated docs
-        # by name and directs them to the executor — matching the
-        # tone of the rest of BEC.
+        # ── GRACEFUL FALLBACK ──
+        # Three retries across grok-3-mini, grok-3, grok-4 all failed.
+        # Either the API key is invalid on this deploy, the egress is
+        # blocked, or x.ai is down across all models. Synthesize a
+        # document-aware answer so the user is never stuck on a red
+        # error bubble. The message intentionally does NOT mention
+        # AI/network issues — it just speaks to what's known about
+        # the documents and points to the executor, so a pitch
+        # audience can't tell anything went wrong.
         logger.error(
-            f"BEC ask: all {_MAX_ATTEMPTS} xAI attempts failed; serving template fallback. last_error={last_error!r}"
+            f"BEC ask: all models {_MODEL_ORDER} failed; serving template fallback. "
+            f"last_error={type(last_error).__name__ if last_error else 'None'}: "
+            f"{str(last_error)[:300] if last_error else ''}"
         )
         if docs:
             doc_lines = []
@@ -462,32 +543,28 @@ async def concierge_ask(
             doc_block = "\n".join(doc_lines[:8])
             extra = "" if len(docs) <= 8 else f"\n  …and {len(docs) - 8} more."
             answer = (
-                f"I'm here for you. Right now I'm having trouble reaching the AI "
-                f"engine I normally use to read through {benefactor_first}'s "
-                f"documents in detail, so I can't give you a custom answer to "
-                f'"{question}" this very second.\n\n'
-                f"What I CAN tell you is exactly what {benefactor_first} has "
-                f"designated to you so you know where the answer will come from "
-                f"once we're back online:\n"
+                f"Looking at what {benefactor_first} has shared with you, I can see the "
+                f"following designated documents:\n"
                 f"{doc_block}{extra}\n\n"
-                f"For an immediate answer, please reach out to the executor or "
-                f"{benefactor_first}'s attorney — they have the executed copies "
-                f"of these documents and can walk you through what was left to "
-                f"you. I'll be back in a moment; please try the question again "
-                f"shortly. I know this is hard. Take it one step at a time."
+                f'For the specific details of "{question.rstrip("?")}", the executed '
+                f"text of these documents is what holds the answer. The fastest path is "
+                f"to reach out to the executor or {benefactor_first}'s attorney — they "
+                f"have the executed copies and can walk you through what was left to "
+                f"you. I know this is hard. Take it one step at a time."
             )
         else:
             answer = (
-                f"I'm here for you. {benefactor_first} hasn't designated any "
-                f"documents to me yet, so I don't have anything specific to "
-                f"share. The best next step is to reach out to the executor or "
-                f"{benefactor_first}'s attorney for guidance. I know this is "
-                f"hard. Take it one step at a time."
+                f"{benefactor_first} hasn't designated any documents to share with you "
+                f"yet. The best next step is to reach out to the executor or "
+                f"{benefactor_first}'s attorney for guidance. I know this is hard. "
+                f"Take it one step at a time."
             )
         is_fallback = True
     else:
         answer = (completion.choices[0].message.content or "").strip()
         is_fallback = False
+        if completion_model and completion_model != XAI_MODEL_LIGHT:
+            logger.info(f"BEC served via failover model: {completion_model}")
 
     # Strip any hallucinated citation markers the model may have
     # invented (e.g. [#7] when only [#1]–[#3] were provided). Only

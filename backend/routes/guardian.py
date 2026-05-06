@@ -584,13 +584,13 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
                 upsert=True,
             )
 
-        # Auto-retry with escalating backoff. Deadline-aware so heavy
-        # actions (generate_todo / generate_iac / analyze_vault) stay
-        # within the K8s ingress 60s timeout — three sequential attempts
-        # at 30s+ each used to compound past 60s and produce a hard 502
-        # in front of B2B demo clients. For heavy actions we now allow
-        # at most ONE retry and only if we still have headroom; for
-        # light chat we keep the original 3-attempt resilience pattern.
+        # Auto-retry with escalating backoff + multi-model failover.
+        # Heavy actions (vault analysis, IAC, readiness) try the chosen
+        # model and at most ONE retry on the same model. Light chat
+        # tries grok-3-mini → grok-3 → grok-4 in order so a single
+        # model deprecation / capacity incident on x.ai's side never
+        # takes the chat down. 55s soft deadline keeps us under the
+        # ingress hard cut-off.
         completion = None
         last_error = None
         _IS_HEAVY = data.action in (
@@ -600,34 +600,49 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
             "analyze_readiness",
             "state_law_brief",
         )
-        _MAX_ATTEMPTS = 2 if _IS_HEAVY else 3
-        _RETRY_DELAYS = [0, 1.5, 3][:_MAX_ATTEMPTS]
-        # 55s soft deadline keeps us under the 60s ingress hard cut-off.
+        if _IS_HEAVY:
+            _MODEL_ORDER = [selected_model]
+            _MAX_PER_MODEL = 2
+            _DELAYS = [0, 1.5]
+        else:
+            # Failover ladder. De-dup while preserving order.
+            ladder = [m for m in (XAI_MODEL_LIGHT, "grok-3", XAI_MODEL) if m]
+            _seen: set = set()
+            _MODEL_ORDER = [m for m in ladder if not (m in _seen or _seen.add(m))]
+            _MAX_PER_MODEL = 2
+            _DELAYS = [0, 1.5]
         _SOFT_DEADLINE_S = 55
         _started_at = asyncio.get_event_loop().time()
-        for attempt in range(_MAX_ATTEMPTS):
-            try:
-                if _RETRY_DELAYS[attempt]:
-                    await asyncio.sleep(_RETRY_DELAYS[attempt])
-                # Skip subsequent attempts if we'd blow the ingress window.
-                elapsed = asyncio.get_event_loop().time() - _started_at
-                if attempt > 0 and elapsed > _SOFT_DEADLINE_S - 5:
-                    logger.warning(
-                        f"xAI deadline guard: skipping attempt {attempt + 1}/{_MAX_ATTEMPTS} "
-                        f"(elapsed {elapsed:.1f}s exceeds soft deadline)"
-                    )
-                    break
-                completion = await asyncio.to_thread(
-                    xai_client.chat.completions.create,
-                    model=selected_model,
-                    messages=history_messages,
-                    temperature=0.7,
-                    max_tokens=4096,
-                )
+        for model_name in _MODEL_ORDER:
+            if completion is not None:
                 break
-            except Exception as e:
-                last_error = e
-                logger.warning(f"xAI attempt {attempt + 1}/{_MAX_ATTEMPTS} failed ({type(e).__name__}: {e})")
+            for attempt in range(_MAX_PER_MODEL):
+                try:
+                    if _DELAYS[attempt]:
+                        await asyncio.sleep(_DELAYS[attempt])
+                    elapsed = asyncio.get_event_loop().time() - _started_at
+                    if elapsed > _SOFT_DEADLINE_S - 5:
+                        logger.warning(
+                            f"xAI deadline guard: skipping {model_name} attempt {attempt + 1} "
+                            f"(elapsed {elapsed:.1f}s exceeds soft deadline)"
+                        )
+                        break
+                    completion = await asyncio.to_thread(
+                        xai_client.chat.completions.create,
+                        model=model_name,
+                        messages=history_messages,
+                        temperature=0.7,
+                        max_tokens=4096,
+                    )
+                    if model_name != selected_model:
+                        logger.info(f"EGA served via failover model: {model_name} (preferred {selected_model})")
+                    break
+                except Exception as e:
+                    last_error = e
+                    logger.warning(
+                        f"xAI fail: model={model_name} attempt={attempt + 1}/{_MAX_PER_MODEL} "
+                        f"({type(e).__name__}: {str(e)[:200]})"
+                    )
 
         if completion is None:
             raise last_error
