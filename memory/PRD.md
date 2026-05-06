@@ -2151,3 +2151,17 @@ Mobile (2 cols) is naturally symmetric for any even tier count and was left as a
 
 Both are theme-aware — the same selector picks the right hue automatically. New code MUST use these instead of hardcoding `rgba(212,175,55,…)` (which is the legacy off-by-10 variant scattered across ~474 inline styles). The legacy refs can be migrated lazily; the new token is available for every PR going forward.
 
+
+
+## Post-Pitch Follow-Ups (archived — pick up on a calm day)
+
+Items the founder explicitly deferred so they don't carry pre-pitch risk. Each is fully scoped and zero-blocker — pull them off the shelf only when the calendar is clear.
+
+### Brand-gold token migration (cosmetic / future-proofing)
+- **Why it's deferred**: `--gold-rgb` was added 2026-05-06 as a theme-aware token (dark `212, 165, 55` / light `184, 134, 11`). The codebase still has ~474 inline `rgba(212,175,55, X)` references using a slightly off (`#d4af37`) variant that's ~10 units away from the canonical `--gold`. Visually imperceptible today; touching all 474 places before a pitch is a non-zero regression risk for zero immediate user-visible value.
+- **What the work is**: a single regex + visual-diff sweep replacing `rgba(212,175,55, *(0\.[0-9]+|1))` → `rgba(var(--gold-rgb), $1)`. Ship in a dedicated PR with a side-by-side dark/light screenshot of every paywall, settings tab, and admin tile.
+- **Files touched (count):** ~474 across `frontend/src/components/**`, `frontend/src/pages/**`, `frontend/src/index.css`.
+- **Estimated effort:** 30 min coding + 30 min visual review.
+- **Outcome**: zero hardcoded brand-gold hex literals, theme-aware gold everywhere, retired colour-drift inconsistency.
+- **Trigger to pick up:** any quiet day with no pitch / demo within 24 h.
+
