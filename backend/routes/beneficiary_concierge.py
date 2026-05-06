@@ -318,12 +318,35 @@ async def concierge_ask(
         f"--- BENEFICIARY QUESTION ---\n{question}"
     )
 
-    try:
-        import asyncio
+    # ── xAI call with retry+backoff (mirrors Estate Guardian AI) ──
+    # BEC uses the SAME xAI Grok engine as the Estate Guardian (same
+    # `xai_client`, same `XAI_MODEL_LIGHT` = grok-3-mini) — there is no
+    # second LLM. Previously this was a single-shot call: any transient
+    # xAI blip (rate-limit, network reset, cold connection) bubbled up
+    # to the beneficiary as the dreaded "I'm having trouble right now"
+    # bubble, even though a retry 1.5s later would have succeeded. We
+    # now match the Guardian's resilience: 3 attempts, exponential-ish
+    # backoff, with a 55 s soft deadline that respects the ingress cap.
+    import asyncio
 
-        resp = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: xai_client.chat.completions.create(
+    completion = None
+    last_error: Exception | None = None
+    _MAX_ATTEMPTS = 3
+    _RETRY_DELAYS = [0, 1.5, 3.0]
+    _SOFT_DEADLINE_S = 55
+    _started_at = asyncio.get_event_loop().time()
+    for attempt in range(_MAX_ATTEMPTS):
+        try:
+            if _RETRY_DELAYS[attempt]:
+                await asyncio.sleep(_RETRY_DELAYS[attempt])
+            elapsed = asyncio.get_event_loop().time() - _started_at
+            if attempt > 0 and elapsed > _SOFT_DEADLINE_S - 5:
+                logger.warning(
+                    f"BEC xAI deadline guard: skipping attempt {attempt + 1}/{_MAX_ATTEMPTS} (elapsed {elapsed:.1f}s)"
+                )
+                break
+            completion = await asyncio.to_thread(
+                xai_client.chat.completions.create,
                 model=XAI_MODEL_LIGHT,
                 messages=[
                     {"role": "system", "content": system_msg},
@@ -331,12 +354,17 @@ async def concierge_ask(
                 ],
                 max_tokens=600,
                 temperature=0.3,
-            ),
-        )
-        answer = resp.choices[0].message.content.strip()
-    except Exception as e:
-        logger.error(f"BEC ask failed: {e}")
-        raise HTTPException(status_code=502, detail="ai_call_failed") from e
+            )
+            break
+        except Exception as e:  # noqa: BLE001
+            last_error = e
+            logger.warning(f"BEC xAI attempt {attempt + 1}/{_MAX_ATTEMPTS} failed ({type(e).__name__}: {e})")
+
+    if completion is None:
+        logger.error(f"BEC ask failed after {_MAX_ATTEMPTS} attempts: {last_error}")
+        raise HTTPException(status_code=502, detail="ai_call_failed") from last_error
+
+    answer = (completion.choices[0].message.content or "").strip()
 
     # Strip any hallucinated citation markers the model may have
     # invented (e.g. [#7] when only [#1]–[#3] were provided). Only
