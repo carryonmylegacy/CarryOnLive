@@ -271,45 +271,118 @@ async def concierge_ask(
     # append these markers after every factual claim. We return a
     # `citations` map keyed by marker so the frontend can render
     # readable chips ("[Last Will]") instead of raw "[#1]".
+    #
+    # IMPORTANT — handle docs whose contents aren't extractable.
+    # Many designated documents are placeholder/example rows (no
+    # storage_key, no file_data) or files we can't decode (binary,
+    # corrupted). Previously the prompt fed "[No readable text]" for
+    # every such doc, and Grok dutifully replied "the details aren't
+    # available", making BEC look broken even though the docs were
+    # correctly designated. We now ALWAYS feed full metadata (name,
+    # category, type, size, description) AND explicitly mark each
+    # doc as READABLE / METADATA_ONLY / EXTRACTION_FAILED so the
+    # model can answer questions like "what was I willed?" with
+    # something like "{benefactor} designated a Last Will & Testament
+    # to you, but its contents aren't readable yet — please ask the
+    # executor for the actual file."
     benefactor_first = info["benefactor_first_name"]
     docs = info["documents"]
     context_blocks: list[str] = []
     citations: dict[str, dict[str, Any]] = {}
     total_chars = 0
+    readable_count = 0
+    metadata_only_count = 0
+    failed_count = 0
     for idx, doc in enumerate(docs, start=1):
         marker = f"#{idx}"
-        # Always register the citation entry, even if we end up
-        # truncating the doc's text — the LLM still has the header.
         citations[marker] = {
             "id": doc.get("id"),
             "name": doc.get("name") or "Untitled",
             "category": doc.get("category") or "other",
         }
-        if total_chars > 24000:
-            continue
-        try:
-            text = await extract_document_text(doc)
-        except Exception as e:  # pragma: no cover — extraction is best-effort
-            logger.warning(f"BEC: extraction failed for doc {doc.get('id')}: {e}")
-            text = ""
-        header = (
-            f"\n=== [{marker}] DOCUMENT: {doc.get('name') or 'Untitled'} "
-            f"(category: {doc.get('category') or 'unknown'}) ===\n"
-        )
-        snippet = (text or "")[:6000]
-        if not snippet and doc.get("description"):
-            snippet = f"[No extracted text. Description: {doc['description']}]"
-        block = header + (snippet or "[No readable text in this document.]")
+
+        # Try extraction (best-effort). Returning "" means the doc has
+        # no blob to decrypt (placeholder); other strings starting with
+        # "[" are sentinel values from extract_document_text indicating
+        # extraction was attempted but failed.
+        text = ""
+        if total_chars <= 24000:
+            try:
+                text = await extract_document_text(doc) or ""
+            except Exception as e:
+                logger.warning(f"BEC: extraction raised for doc {doc.get('id')}: {e}")
+                text = ""
+
+        is_sentinel = text.startswith("[") and text.endswith("]")
+        has_blob = bool(doc.get("storage_key") or doc.get("file_data"))
+        if text and not is_sentinel:
+            status_tag = "READABLE"
+            readable_count += 1
+        elif has_blob:
+            status_tag = "EXTRACTION_FAILED"
+            failed_count += 1
+        else:
+            status_tag = "METADATA_ONLY"
+            metadata_only_count += 1
+
+        # Build the per-doc block with full metadata so the model can
+        # always identify the document by name/category even when it
+        # can't quote the contents.
+        meta_lines = [
+            f"=== [{marker}] DOCUMENT: {doc.get('name') or 'Untitled'} ===",
+            f"  status: {status_tag}",
+            f"  category: {doc.get('category') or 'unknown'}",
+        ]
+        if doc.get("file_type"):
+            meta_lines.append(f"  file_type: {doc.get('file_type')}")
+        if doc.get("file_size"):
+            meta_lines.append(f"  file_size: {doc.get('file_size')} bytes")
+        if doc.get("description"):
+            meta_lines.append(f"  description: {doc['description']}")
+        block = "\n" + "\n".join(meta_lines) + "\n"
+        if status_tag == "READABLE":
+            block += text[:6000]
+        elif status_tag == "EXTRACTION_FAILED":
+            block += "  (Contents could not be extracted from the file. Acknowledge this document exists and was designated to the beneficiary, but state the contents aren't readable yet.)"
+        else:  # METADATA_ONLY
+            block += "  (No file contents stored — this is a designated document record without an attached file. Acknowledge it was designated to the beneficiary but explain the actual file isn't available yet.)"
         context_blocks.append(block)
         total_chars += len(block)
 
-    document_context = (
-        "\n".join(context_blocks)
-        if context_blocks
-        else f"[{benefactor_first} did not designate any documents to you yet. Tell the user that gently and suggest they reach out to the executor or family.]"
-    )
+    if context_blocks:
+        coverage_summary = (
+            f"\n\n--- DOCUMENT COVERAGE ---\n"
+            f"Total designated to this beneficiary: {len(docs)}\n"
+            f"  • Readable contents: {readable_count}\n"
+            f"  • Designated but no file contents (placeholder records): {metadata_only_count}\n"
+            f"  • File present but extraction failed: {failed_count}\n"
+        )
+        document_context = "\n".join(context_blocks) + coverage_summary
+    else:
+        document_context = (
+            f"[{benefactor_first} did not designate any documents to you yet. "
+            f"Tell the user that gently and suggest they reach out to the executor or family.]"
+        )
 
     system_msg = SYSTEM_PROMPT.replace("[BENEFACTOR_FIRST_NAME]", benefactor_first)
+    # Append a precise grounding rule that handles the no-contents case.
+    if metadata_only_count or failed_count:
+        system_msg += (
+            "\n\nADDITIONAL RULE — when the user asks about something a designated "
+            "document would normally contain (e.g. 'what was I willed?' against a "
+            "Last Will & Testament), and that document's status is METADATA_ONLY "
+            "or EXTRACTION_FAILED:\n"
+            "  • DO acknowledge the document exists by name and that it was "
+            "designated to them.\n"
+            "  • DO explain plainly that the file's contents aren't readable to "
+            "you yet (it may be a placeholder the executor still needs to "
+            "replace with the real file, or a file we couldn't open).\n"
+            "  • DO suggest they ask the executor for the actual file or "
+            "contact the attorney.\n"
+            "  • DO NOT say 'the documents don't cover that' — that misleads the "
+            "beneficiary into thinking nothing was shared with them. The "
+            "documents ARE shared; only their contents aren't readable yet.\n"
+        )
     full_user_prompt = (
         f"You are speaking with the beneficiary of {info['benefactor']['name']}'s "
         f"estate. The documents below are the ONLY documents shared with this "
