@@ -1164,7 +1164,28 @@ const MessagesPage = () => {
           setPlayingVideoUrl(URL.createObjectURL(pending.blob));
           return;
         }
-      } catch { /* fall through to error toast below */ }
+      } catch { /* fall through to the post-sync-race handler below */ }
+
+      // No blob found. Two possibilities:
+      //   A. Post-sync race: the uploader just finished, dropped the
+      //      pendingUpload row, and emitted carryon:upload:complete.
+      //      fetchData() is mid-flight. The user tapped Play faster
+      //      than the server round-trip returned, so `msg` here is the
+      //      stale optimistic row (no video_url yet). The real
+      //      server-authoritative row with the real video_url WILL
+      //      land on the next paint.
+      //   B. Genuine offline (airplane mode, no connection) — the
+      //      recording is queued and will sync on reconnect.
+      // Only the (B) case deserves the scary "still queued" error.
+      // For (A), silently re-fetch and nudge the user to retry.
+      const isDeviceOffline = (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function')
+        ? window.__isDeviceOffline()
+        : (typeof navigator !== 'undefined' && navigator.onLine === false);
+      if (!isDeviceOffline) {
+        toast.info('Finishing sync — refreshing your milestones…');
+        try { await fetchData(); } catch { /* non-fatal */ }
+        return;
+      }
       toast.error('This recording is still queued — it will sync when you reconnect.');
       return;
     }
