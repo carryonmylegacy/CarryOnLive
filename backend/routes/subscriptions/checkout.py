@@ -319,7 +319,35 @@ async def create_subscription_checkout(
         },
     )
 
-    session = await stripe_checkout.create_checkout_session(checkout_request)
+    # Hard 15s budget on the Stripe round-trip. The previous code path
+    # could hang indefinitely on a wedged HTTPS connection (no inner
+    # timeout), spinning the user's Subscribe button forever — a hard
+    # credibility hit in B2B pitches. If Stripe doesn't respond within
+    # the budget we surface a clean retry message and clear the spinner
+    # client-side instead of holding the request open.
+    try:
+        session = await asyncio.wait_for(
+            stripe_checkout.create_checkout_session(checkout_request),
+            timeout=15.0,
+        )
+    except asyncio.TimeoutError:
+        logger.error(
+            "stripe checkout timeout: user=%s plan=%s billing=%s amount=%s",
+            current_user.get("id"),
+            data.plan_id,
+            data.billing_cycle,
+            amount,
+        )
+        raise HTTPException(
+            status_code=504,
+            detail="Stripe is taking longer than usual to respond. Please try again in a moment.",
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("stripe checkout error: %s", exc)
+        raise HTTPException(
+            status_code=502,
+            detail="Could not reach Stripe right now. Please try again in a moment.",
+        )
 
     # Record transaction
     await db.payment_transactions.insert_one(
@@ -776,7 +804,20 @@ async def change_subscription_plan(
             "original_new_cost": str(new_total),
         },
     )
-    session = await stripe_checkout.create_checkout_session(checkout_request)
+    # Same 15s timeout protection as /subscriptions/checkout above.
+    try:
+        session = await asyncio.wait_for(
+            stripe_checkout.create_checkout_session(checkout_request),
+            timeout=15.0,
+        )
+    except asyncio.TimeoutError:
+        logger.error("stripe change-plan timeout: user=%s", current_user.get("id"))
+        raise HTTPException(
+            status_code=504, detail="Stripe is taking longer than usual to respond. Please try again in a moment."
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("stripe change-plan error: %s", exc)
+        raise HTTPException(status_code=502, detail="Could not reach Stripe right now. Please try again in a moment.")
 
     import uuid
 
@@ -915,7 +956,20 @@ async def change_billing_cycle(
             "billing_change": "true",
         },
     )
-    session = await stripe_checkout.create_checkout_session(checkout_request)
+    # Same 15s timeout protection as /subscriptions/checkout above.
+    try:
+        session = await asyncio.wait_for(
+            stripe_checkout.create_checkout_session(checkout_request),
+            timeout=15.0,
+        )
+    except asyncio.TimeoutError:
+        logger.error("stripe change-billing timeout: user=%s", current_user.get("id"))
+        raise HTTPException(
+            status_code=504, detail="Stripe is taking longer than usual to respond. Please try again in a moment."
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("stripe change-billing error: %s", exc)
+        raise HTTPException(status_code=502, detail="Could not reach Stripe right now. Please try again in a moment.")
 
     await db.payment_transactions.insert_one(
         {

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
-import { Crown, ChevronLeft, ChevronRight, Shield, Heart, Infinity, Check, Loader2 } from 'lucide-react';
+import { Crown, Shield, Heart, Infinity, Check, Loader2 } from 'lucide-react';
 import { toast } from '../utils/toast';
 
 const INSTALLMENT_LABELS = { '1': 'Pay in Full', '3': '3 Payments', '6': '6 Payments', '12': '12 Payments' };
@@ -75,20 +75,13 @@ export default function FoundersCirclePage() {
     }
   };
 
-  // Safe Back: if the user just returned from Stripe (via session id
-  // or stripe.com referrer), navigate(-1) would bounce them forward
-  // into Stripe. Route them to /subscription instead so the Back
-  // button always makes sense.
+  // Always-safe Back: paywall pages must NEVER use navigate(-1).
+  // After a Stripe round-trip the previous history entry is the
+  // checkout.stripe.com URL, and document.referrer is unreliable
+  // (cleared after browser-back from a cross-origin page). Hard-coding
+  // a known route is the only loop-proof option.
   const handleBack = () => {
-    const ref = (typeof document !== 'undefined' && document.referrer) || '';
-    const cameFromStripe = /stripe\.com/i.test(ref) ||
-      new URLSearchParams(window.location.search).has('fc_session_id') ||
-      new URLSearchParams(window.location.search).has('session_id');
-    if (cameFromStripe) {
-      navigate('/subscription', { replace: true });
-    } else {
-      navigate(-1);
-    }
+    navigate('/subscription', { replace: true });
   };
 
   if (loading) {
@@ -99,36 +92,55 @@ export default function FoundersCirclePage() {
     );
   }
 
+  // Shared header — mirrors SubscriptionPage so Back placement and
+  // styling are identical between the two paywalls (no jarring shift
+  // in chrome when the user moves between them).
+  const Header = ({ title, subtitle }) => (
+    <div className="flex items-center justify-between">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
+          {title}
+        </h1>
+        {subtitle ? (
+          <p className="text-[var(--t4)] mt-1 text-sm sm:text-base">{subtitle}</p>
+        ) : null}
+      </div>
+      <button
+        onClick={handleBack}
+        className="px-4 py-2 rounded-lg text-sm font-bold transition-transform hover:scale-105 flex-shrink-0"
+        style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
+        data-testid="fc-back-button"
+      >
+        Back
+      </button>
+    </div>
+  );
+
   if (!active) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
-        <Crown className="w-12 h-12 text-[var(--t4)] mb-4" />
-        <h1 className="text-2xl font-semibold text-[var(--t)] tracking-tight" style={{ fontFamily: 'var(--serif)' }}>Founders Circle</h1>
-        <p className="text-[var(--t4)] mt-2">This exclusive program is not currently available.</p>
-        <button onClick={handleBack} className="mt-6 px-6 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--bg3)', color: 'var(--t)' }}>Go Back</button>
+      <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="founders-circle-page">
+        <Header title="Founders Circle" subtitle="This exclusive program is not currently available." />
+        <div className="rounded-xl p-8 flex flex-col items-center justify-center text-center" style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}>
+          <Crown className="w-12 h-12 text-[var(--t4)] mb-3" />
+          <p className="text-sm text-[var(--t3)] max-w-md">Check back soon — we'll announce founding-member windows on the home page and via email.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 lg:p-8 pb-24 lg:pb-8 max-w-5xl mx-auto animate-fade-in" data-testid="founders-circle-page">
-      {/* Back button */}
-      <button onClick={handleBack} className="flex items-center gap-1 text-sm text-[var(--t4)] mb-6 hover:text-[var(--t)]">
-        <ChevronLeft className="w-4 h-4" /> Back
-      </button>
+    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="founders-circle-page">
+      <Header
+        title="Founders Circle"
+        subtitle="Lock in lifetime access at a fraction of the cost. Limited time offer — ends after Year 1."
+      />
 
-      {/* Hero */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4" style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)' }}>
+      {/* Founding Member badge */}
+      <div className="flex justify-center">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full" style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)' }}>
           <Crown className="w-4 h-4 text-[var(--gold)]" />
           <span className="text-xs font-bold text-[var(--gold)] tracking-wide uppercase">Founding Member — Limited Time</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-semibold text-[var(--t)] tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
-          Founders Circle
-        </h1>
-        <p className="text-[var(--t4)] mt-2 text-base max-w-2xl mx-auto">
-          Lock in lifetime access to CarryOn at a fraction of the cost. This exclusive offer disappears after our first year.
-        </p>
       </div>
 
       {/* Value proposition bullets */}
