@@ -591,6 +591,25 @@ const VaultPage = () => {
       const { canOpenCloudFile } = await import('../utils/offlineGuard');
       if (!canOpenCloudFile({ kind: 'document' })) return;
     } catch { /* non-fatal — fall through */ }
+    // Post-sync race-guard: if the user taps download on an optimistic
+    // local row (id starts with `local-doc-`) WHILE the device is
+    // online, the chunked-upload drainer is mid-finalize and the
+    // server-authoritative row hasn't been merged into the list yet.
+    // A direct `/documents/{local-doc-...}/download` call would 404
+    // and surface a misleading "Download failed" toast. Refresh and
+    // ask the user to try again instead.
+    if (typeof doc?.id === 'string' && doc.id.startsWith('local-doc-')) {
+      const isDeviceOffline = (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function')
+        ? window.__isDeviceOffline()
+        : (typeof navigator !== 'undefined' && navigator.onLine === false);
+      if (!isDeviceOffline) {
+        toast.info('Finishing sync — refreshing your documents…');
+        try { await fetchData(); } catch { /* non-fatal */ }
+      } else {
+        toast.error('This document is queued — it will sync when you reconnect.');
+      }
+      return;
+    }
     setDownloading(doc.id);
     try {
       const fileName = resolveFileName(doc.name, doc.file_type);
@@ -749,6 +768,22 @@ const VaultPage = () => {
       const { canOpenCloudFile } = await import('../utils/offlineGuard');
       if (!canOpenCloudFile({ kind: 'document' })) return;
     } catch { /* non-fatal */ }
+    // Post-sync race-guard (mirror of handleDownload). Optimistic
+    // `local-doc-*` rows have no server id yet — calling
+    // /documents/{local-doc-…}/preview would 404. Refresh the list
+    // when online so the next tap hits the real synced row.
+    if (typeof doc?.id === 'string' && doc.id.startsWith('local-doc-')) {
+      const isDeviceOffline = (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function')
+        ? window.__isDeviceOffline()
+        : (typeof navigator !== 'undefined' && navigator.onLine === false);
+      if (!isDeviceOffline) {
+        toast.info('Finishing sync — refreshing your documents…');
+        try { await fetchData(); } catch { /* non-fatal */ }
+      } else {
+        toast.error('This document is queued — it will sync when you reconnect.');
+      }
+      return;
+    }
     const previewable = doc.file_type && (
       doc.file_type.toLowerCase().includes('pdf') ||
       doc.file_type.toLowerCase().includes('image')
