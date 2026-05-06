@@ -28,6 +28,11 @@
     { "source": "/subscription", "destination": "/index.html" },
     { "source": "/create-estate", "destination": "/index.html" },
     { "source": "/ffn", "destination": "/index.html" },
+    { "source": "/founder-about", "destination": "/index.html" },
+    { "source": "/founder-about/:path*", "destination": "/index.html" },
+    { "source": "/founder", "destination": "/index.html" },
+    { "source": "/voices", "destination": "/index.html" },
+    { "source": "/partner-brief", "destination": "/index.html" },
     { "source": "/beneficiary/:path*", "destination": "/index.html" },
     { "source": "/admin/:path*", "destination": "/index.html" },
     { "source": "/ops/:path*", "destination": "/index.html" }

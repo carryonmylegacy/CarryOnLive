@@ -546,6 +546,8 @@ function AppRoutes() {
       <Route path="/about" element={<AboutPage />} />
       <Route path="/founder-about" element={<FounderAboutPage />} />
       <Route path="/founder-about/:token" element={<FounderAboutPage />} />
+      {/* Short alias — share-friendly URL. Renders the same gate/login. */}
+      <Route path="/founder" element={<FounderAboutPage />} />
       <Route path="/home" element={<HomePage />} />
       <Route path="/voices" element={<VoicesPage />} />
       {/* Public B2B partner brief — shareable URL, no auth. Linked from

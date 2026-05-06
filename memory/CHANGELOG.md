@@ -1,5 +1,58 @@
 # CarryOn — Changelog
 
+## May 6, 2026 — Live Pitch Stability Sweep (4 bugs)
+User was mid-pitch and reported four embarrassing regressions. All four root-caused and fixed.
+
+### 1. Founder page flow ("super zoomed flag, then nothing")
+**Three compounding root causes**:
+
+**(a) `/founder-story.html` was 11.3MB (inline base64 images) and excluded from git** via `.gitignore` line 1642 → never deployed to Vercel. Vercel's catch-all served the React shell `index.html` instead → users saw the boot splash (American flag) loading forever inside the iframe. Confirmed via curl: `content-disposition: inline; filename="index.html"`.
+- Extracted 7 inline base64 images → 5 unique files in `/public/founder-images/` (7.7MB total, served as static assets with proper caching).
+- Slimmed `founder-story.html` from **11,320,489 bytes → 22,998 bytes** (~99.8% smaller).
+- Removed the `.gitignore` exclusion so the file actually deploys.
+- Added explicit Vercel rewrite for `/founder-about/:path*`, `/founder`, `/voices`, `/partner-brief` so React Router handles them (previously hit Vercel's catch-all unpredictably).
+
+**(b) No approval email was ever sent to requesters.** Admin would approve a request with a password but the requester had no idea they were approved or what the password was.
+- `POST /api/founder/requests/{id}/approve` now sends a Resend email containing the requester's email, password, and a one-click link to `/founder-about?login=1` that auto-opens the login pane.
+
+**(c) `/founder` short URL didn't exist.**
+- Added a React Route alias so `/founder` → renders the same gate as `/founder-about`.
+- `FounderAboutPage` now reads `?login=1` query param to open the login form instead of the request form by default.
+
+**Files**: `routes/founder_invites.py`, `pages/FounderAboutPage.js`, `App.js`, `vercel.json`, `.gitignore`, `public/founder-story.html`, `public/founder-images/*`.
+
+### 2. DTS workflow — "Failed to submit quote" toast (500 error)
+**Root cause**: `routes/dts.py::submit_dts_quote` did `estate["user_id"]` to send the push notification. **269 production estates have no `user_id` field** (only `owner_id`) → `KeyError: 'user_id'` → 500 → admin sees red toast mid-pitch.
+
+**Fix**: Use `task["owner_id"]` directly (always populated when task is created). Removed the unnecessary `estates.find_one(...)` lookup. Confirmed reproduction (HTTP 500 → KeyError in stack trace) and confirmed fix (HTTP 200, `{"message": "Quote submitted"}`).
+
+**Regression test**: `tests/test_dts_quote_estate_no_user_id.py` — seeds an estate with NO `user_id` field and asserts the quote endpoint returns 200 + flips status to `quoted`.
+
+### 3. ECT chat list — channels "fighting each other / flipping which one was on top"
+**Root cause**: Backend channel sort used `_last_at` as the only key. When two channels had identical timestamps (or both were empty for fresh channels with no messages), Python's stable sort preserved Mongo's `find().to_list()` insertion order — which is **non-deterministic between requests**. Polling refetched every 8s → list reshuffled visibly.
+
+**Fix**: Added `c.get("id", "")` as a deterministic tiebreaker in the primary sort key tuple. Identical timestamps now always sort identically.
+
+**File**: `routes/estate_chat/channels.py`.
+
+### 4. ECT desktop press-and-hold menu didn't work
+**Root cause**: Every 8s the polling loop called `setMessages(data)` unconditionally. Even when the message list was content-identical, every bubble re-rendered with new object identities → handler closures recreated → in-flight long-press timers got their context churned. Combined with general layout flicker, the gesture was consistently failing during demos.
+
+**Fix**: Made `setMessages` idempotent inside `fetchMessages`. Only calls `setMessages(data)` when the array genuinely changed (length OR any `id`/`updated_at` differs). Identical poll responses now bail out and preserve existing object identity → no spurious re-renders → long-press timers complete cleanly.
+
+**File**: `pages/EstateChatPage.js`.
+
+**Verified**:
+- ESLint clean on all touched JS files ✅
+- Ruff clean on all touched Python files ✅
+- `bash /app/housekeeping.sh` → 0 WARN, 0 FAIL ✅
+- DTS quote endpoint reproduces 500 → after fix returns 200 ✅
+- New regression test `test_dts_quote_estate_no_user_id.py` passes ✅
+- Founder story file dropped from 11.3MB → 23KB ✅
+
+---
+
+
 ## May 6, 2026 — ECT/CCP Walkthrough Bottom-CTA Clearance Fix
 **Bug fix**: User reported the gold "Got It — Start Chatting" button at the bottom of the ECT "How to Use" walkthrough tile was hidden behind the iPhone PWA bottom dock and could not be scrolled into view.
 

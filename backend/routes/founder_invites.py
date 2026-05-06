@@ -191,6 +191,40 @@ async def approve_request(request_id: str, body: ApproveRequestBody, current_use
             }
         },
     )
+
+    # Email the requester so they actually know they were approved and
+    # how to log in. Without this the request just goes silent — the
+    # requester has no idea they were approved or what their password is.
+    try:
+        import os
+        from services.email import send_email
+
+        frontend_url = os.environ.get("FRONTEND_URL", "https://app.carryon.us")
+        login_link = f"{frontend_url}/founder-about?login=1"
+        await send_email(
+            to=req["email"],
+            subject="You're approved — About the Founder of CarryOn™",
+            html=f"""
+            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#0d1b2a;color:#e2e8f0;border-radius:12px;">
+                <h2 style="color:#d4af37;margin-top:0;">Access Approved</h2>
+                <p>Hi {req.get("name", "there")},</p>
+                <p>Your request to view the <strong>About the Founder</strong> page has been approved by Brian, the founder of CarryOn&trade;.</p>
+                <p>Use the credentials below to sign in:</p>
+                <table style="width:100%;border-collapse:collapse;margin:16px 0;background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;">
+                    <tr><td style="padding:10px 14px;color:#94a3b8;width:90px;">Email</td><td style="padding:10px 14px;color:#fff;font-weight:600;">{req["email"]}</td></tr>
+                    <tr><td style="padding:10px 14px;color:#94a3b8;">Password</td><td style="padding:10px 14px;color:#d4af37;font-family:monospace;font-weight:600;font-size:15px;">{body.password}</td></tr>
+                </table>
+                <p style="margin:20px 0;">
+                    <a href="{login_link}" style="display:inline-block;background:#d4af37;color:#0d1b2a;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Sign In to View &rarr;</a>
+                </p>
+                <p style="color:#64748b;font-size:13px;margin-top:24px;">If the button doesn't work, copy this link into your browser:<br/><span style="color:#94a3b8;">{login_link}</span></p>
+                <p style="color:#64748b;font-size:13px;margin-top:18px;">This password is single-purpose — it only unlocks the founder page and is not tied to any other CarryOn&trade; account.</p>
+            </div>
+            """,
+        )
+    except Exception as e:
+        logger.error(f"Failed to send founder approval email to {req.get('email')}: {e}")
+
     return {"status": "approved"}
 
 

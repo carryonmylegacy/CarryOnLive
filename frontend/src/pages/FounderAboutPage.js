@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, ShieldX, Lock, Eye, EyeOff, Send, ArrowLeft } from 'lucide-react';
 import { API_URL } from '../config';
 
 const FounderAboutPage = () => {
   const { token } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [status, setStatus] = useState(token ? 'verifying' : 'gate');
   const [reason, setReason] = useState('');
   const iframeRef = useRef(null);
 
   // Gate mode: 'request' (default) or 'login'
-  const [gateMode, setGateMode] = useState('request');
+  // Auto-switch to login when an approval email link arrives with ?login=1
+  const [gateMode, setGateMode] = useState(searchParams.get('login') === '1' ? 'login' : 'request');
 
   // Request form state
   const [reqName, setReqName] = useState('');

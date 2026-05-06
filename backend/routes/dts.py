@@ -156,18 +156,19 @@ async def submit_dts_quote(task_id: str, data: DTSQuoteCreate, current_user: dic
     )
 
     # Notify the task owner about the quote
-    estate = await db.estates.find_one({"id": task["estate_id"]}, {"_id": 0, "id": 1, "user_id": 1})
-    if estate:
-        asyncio.create_task(
-            send_push_notification(
-                estate["user_id"],
-                "DTS Quote Ready",
-                f"Your DTS request '{task['title']}' has a quote: ${total_cost:,.2f}",
-                "/trustee",
-                "dts-quote",
-                "dts",
-            )
+    # Use task["owner_id"] directly — the estate doc may not always carry
+    # `user_id` (older estates only have `owner_id`), and the task owner
+    # is the benefactor who created the request anyway.
+    asyncio.create_task(
+        send_push_notification(
+            task["owner_id"],
+            "DTS Quote Ready",
+            f"Your DTS request '{task['title']}' has a quote: ${total_cost:,.2f}",
+            "/trustee",
+            "dts-quote",
+            "dts",
         )
+    )
 
     # Also notify from services.notifications for consistency
     from services.notifications import notify

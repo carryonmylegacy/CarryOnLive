@@ -57,9 +57,11 @@ async def get_channels(current_user: dict = Depends(get_current_user)):
         lm = c.get("last_message") or {}
         return lm.get("created_at") or c.get("updated_at") or c.get("created_at") or ""
 
-    # 1) Most recent first within ties on type. (reverse=True so newer
-    #    timestamps come first.)
-    enriched.sort(key=_last_at, reverse=True)
+    # 1) Most recent first within ties on type. Tiebreaker on stable
+    #    channel id so two channels with identical _last_at values don't
+    #    reorder between polls (was causing the channel list to "flap"
+    #    — top channel swapping every few seconds during demos).
+    enriched.sort(key=lambda c: (_last_at(c), c.get("id", "")), reverse=True)
     # 2) Then by channel type so circles are always on top.
     enriched.sort(key=lambda c: {"circle": 0, "group": 1, "direct": 2}.get(c.get("type"), 9))
     return enriched

@@ -340,7 +340,22 @@ export default function EstateChatPage() {
         // Never replace populated state with an empty list — that's the
         // SW-returns-empty-cache race on airplane-mode toggle.
         if (Array.isArray(data) && (data.length > 0 || messages.length === 0)) {
-          setMessages(data);
+          // Idempotent setMessages: skip the state update entirely when
+          // the polled response is content-identical to current state.
+          // Without this, every 8s poll forced a full bubble re-render —
+          // which (a) interrupted in-flight long-press gestures and
+          // (b) caused subtle layout flicker. Compare ids + updated_at +
+          // length so any real change still triggers an update.
+          setMessages(prev => {
+            if (prev.length !== data.length) return data;
+            for (let i = 0; i < data.length; i++) {
+              const a = prev[i], b = data[i];
+              if (!a || a.id !== b.id || (a.updated_at || a.created_at) !== (b.updated_at || b.created_at)) {
+                return data;
+              }
+            }
+            return prev; // identical — bail to keep object identity stable
+          });
           upsertLocalMessages(channelId, data).catch(() => {});
           // Prefetch ONLY the most recent 10 image/file attachments rather
           // than the entire scroll-back. A long conversation can contain
