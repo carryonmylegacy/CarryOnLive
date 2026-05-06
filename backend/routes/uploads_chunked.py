@@ -453,6 +453,12 @@ async def _finalize_document(metadata: dict, assembled_path: Path, record: dict,
         "size_bytes": size,
         "estate_id": estate_id,
     }
+    # Echo back the client's optimistic id so the frontend can swap
+    # the optimistic local row in-place (no fetchData round-trip).
+    # Prevents the post-sync race where a tap on the freshly-synced
+    # row hits a 404 because the UI still shows `local-doc-…`.
+    if (metadata or {}).get("pending_id"):
+        result["pending_id"] = metadata["pending_id"]
     if backup_code:
         result["backup_code"] = backup_code
     return result
@@ -576,6 +582,14 @@ async def _finalize_milestone_media(metadata: dict, assembled_path: Path, record
         "created_new_message": created_new,
         "size_bytes": assembled_path.stat().st_size,
         "estate_id": estate_id,
+        # Echo back the client's optimistic id (set in MessagesPage's
+        # offline branch) so the frontend can swap the `pending_*` row
+        # in-place with the real server-authoritative one. Eliminates
+        # the post-sync race where Play taps hit a stale id.
+        "pending_id": (metadata or {}).get("pending_id"),
+        # Surface server-side media URLs so the in-place swap can flip
+        # the row's `video_url`/`voice_url` without a refetch.
+        **({"video_url": media_id} if media == "video" else {"voice_url": media_id}),
     }
 
 

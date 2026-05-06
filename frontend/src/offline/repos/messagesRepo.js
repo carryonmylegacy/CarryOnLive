@@ -122,6 +122,45 @@ export async function deleteLocalMessage(id) {
 }
 
 /**
+ * Swap a still-`_pending` local message row's id with the real
+ * server-authoritative id once the upload finalizer confirms it,
+ * patching in any server-set fields (video_url, voice_url, …) at
+ * the same time. Used by the chunked-uploader success path so the
+ * post-sync UI swap is INSTANT — no refetch round-trip needed,
+ * therefore no race window where a Play tap hits a stale id.
+ *
+ * Behaviour:
+ *   - If no pending row exists for `pendingId`, this is a no-op
+ *     (returns null) so callers can call it unconditionally.
+ *   - The new row keeps every field the optimistic row had
+ *     (recipients, trigger, thumbnail, etc.), overlays the server
+ *     fields, drops `_pending`, and uses the server id as its key.
+ */
+export async function swapLocalMessageId(pendingId, serverId, serverFields = {}) {
+  if (!pendingId || !serverId) return null;
+  try {
+    const db = getDB();
+    const existing = await db.milestoneMessage.get(pendingId);
+    if (!existing) return null;
+    const next = {
+      ...existing,
+      ...serverFields,
+      id: serverId,
+      _pending: false,
+      _updatedAt: Date.now(),
+    };
+    await db.transaction('rw', db.milestoneMessage, async () => {
+      await db.milestoneMessage.delete(pendingId);
+      await db.milestoneMessage.put(next);
+    });
+    return next;
+  } catch (err) {
+    console.warn('[offline] swapLocalMessageId failed:', err);
+    return null;
+  }
+}
+
+/**
  * Replace the cached list with the server's canonical list while
  * preserving any locally-`_pending` rows that haven't been sent yet.
  * Use this from the online-refresh path so we never wipe a queued

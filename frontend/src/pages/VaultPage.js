@@ -224,13 +224,39 @@ const VaultPage = () => {
   // re-hydrates the list without the user navigating off-and-back.
   useEffect(() => {
     const refetch = () => { fetchData(); };
+    // In-place swap (mirror of MessagesPage). When the document
+    // finalizer echoes back the server id, patch our optimistic
+    // `local-doc-*` row in `documents` state with the real id so a
+    // Preview/Download tap immediately afterwards hits the real
+    // server-authoritative row instead of 404-ing.
+    const onSwapped = (e) => {
+      const detail = e?.detail || {};
+      if (detail?.kind !== 'document') return;
+      const pendingId = detail?.pending_id;
+      const server = detail?.server || {};
+      const serverId = server?.id;
+      if (!pendingId || !serverId) return;
+      setDocuments((prev) => {
+        let touched = false;
+        const next = prev.map((d) => {
+          if (d && d.id === pendingId) {
+            touched = true;
+            return { ...d, id: serverId, _local_pending: false };
+          }
+          return d;
+        });
+        return touched ? next : prev;
+      });
+    };
     window.addEventListener('carryon:upload:complete', refetch);
     window.addEventListener('carryon:outbox:drained', refetch);
+    window.addEventListener('carryon:upload:swapped', onSwapped);
     window.addEventListener('online', refetch);
     window.addEventListener('offline', refetch);
     return () => {
       window.removeEventListener('carryon:upload:complete', refetch);
       window.removeEventListener('carryon:outbox:drained', refetch);
+      window.removeEventListener('carryon:upload:swapped', onSwapped);
       window.removeEventListener('online', refetch);
       window.removeEventListener('offline', refetch);
     };
@@ -338,6 +364,12 @@ const VaultPage = () => {
       const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
       if (isOffline) {
         const { addPendingUpload } = await import('../offline/pendingUploadsRepo');
+        // Stable client-side id shared by the optimistic UI row AND
+        // the pending-upload metadata. The chunked uploader's
+        // success path uses this to swap the optimistic row in-place
+        // with the server-authoritative one (no fetchData round-trip,
+        // no post-sync race window).
+        const pendingDocId = `local-doc-${(crypto?.randomUUID?.() || Date.now())}`;
         await addPendingUpload({
           kind: 'document',
           filename: uploadFile.name || uploadName,
@@ -350,6 +382,7 @@ const VaultPage = () => {
             lock_type: uploadLockType === 'none' ? null : uploadLockType,
             lock_password: uploadLockType === 'password' ? uploadLockPassword : null,
             file_type: uploadFile.type || 'application/octet-stream',
+            pending_id: pendingDocId,
           },
         });
         toast.success('Document queued — we\'ll finish uploading it when you reconnect.');
@@ -357,7 +390,7 @@ const VaultPage = () => {
         setDocuments(prev => [
           ...prev,
           {
-            id: `local-doc-${Date.now()}`,
+            id: pendingDocId,
             estate_id: estate.id,
             name: uploadName,
             category: uploadCategory,

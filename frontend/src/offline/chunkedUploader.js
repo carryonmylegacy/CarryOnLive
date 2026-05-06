@@ -257,7 +257,7 @@ async function _uploadMilestoneViaLegacy({ token, full, onProgress }) {
   // Voice upload completes with the create POST.
   if (isAudio) {
     try { onProgress && onProgress({ loaded: total, total, pct: 100 }); } catch { /* ignore */ }
-    return true;
+    return { ok: true, messageId, voiceUrl: createRes?.data?.voice_url || null };
   }
 
   // Step 2 (video only): stream the media via FormData / multipart. iOS
@@ -267,7 +267,7 @@ async function _uploadMilestoneViaLegacy({ token, full, onProgress }) {
   // we can hand it straight to FormData here.
   const formData = new FormData();
   formData.append('video', full.blob, full.filename || 'video.webm');
-  await axios.post(`${API_URL}/messages/${messageId}/upload-video`, formData, {
+  const videoRes = await axios.post(`${API_URL}/messages/${messageId}/upload-video`, formData, {
     headers: { ...headers, 'Content-Type': 'multipart/form-data' },
     timeout: 600000, // 10 min for very slow uplinks
     maxBodyLength: Infinity,
@@ -280,7 +280,7 @@ async function _uploadMilestoneViaLegacy({ token, full, onProgress }) {
       try { onProgress && onProgress({ loaded, total: denom, pct }); } catch { /* ignore */ }
     },
   });
-  return true;
+  return { ok: true, messageId, videoUrl: videoRes?.data?.video_url || `video_${messageId}` };
 }
 
 export async function drainPendingUploads(token, opts = {}) {
@@ -347,12 +347,17 @@ export async function drainPendingUploads(token, opts = {}) {
         // a class of iOS-WKWebView Blob/PUT regressions that left the
         // chunked uploader stalled at 0%.
         let usedLegacy = false;
+        // Capture the server-authoritative upload result so we can swap
+        // the optimistic local row in-place (no fetchData round-trip
+        // → no post-sync race window). Both code paths (legacy + chunked)
+        // populate this with the finalizer's response shape.
+        let serverResult = null;
         const sizeOK = (full.size_bytes || full.blob?.size || 0) <= LEGACY_FALLBACK_MAX_BYTES;
         const isMilestone = full.kind === 'milestone_video' || full.kind === 'milestone_audio';
         if (isMilestone && sizeOK) {
           try {
             const total = full.size_bytes || full.blob?.size || 0;
-            usedLegacy = await _uploadMilestoneViaLegacy({
+            const legacyResult = await _uploadMilestoneViaLegacy({
               token,
               full,
               onProgress: ({ loaded, pct }) => emit('carryon:upload:progress', {
@@ -363,6 +368,16 @@ export async function drainPendingUploads(token, opts = {}) {
                 filename: full.filename,
               }),
             });
+            if (legacyResult?.ok) {
+              usedLegacy = true;
+              serverResult = {
+                kind: full.kind,
+                message_id: legacyResult.messageId,
+                video_url: legacyResult.videoUrl || null,
+                voice_url: legacyResult.voiceUrl || null,
+                pending_id: full?.metadata?.pending_id || null,
+              };
+            }
           } catch (legacyErr) {
             // If legacy fails for a transient reason, fall through to
             // chunked. We log the error in last_error so the user can
@@ -383,26 +398,44 @@ export async function drainPendingUploads(token, opts = {}) {
             pendingId: full.id,
             existingUploadId: full.upload_id,
           });
-          await uploader.run();
+          const runRes = await uploader.run();
+          // The chunked finalizer (`_finalize_*` in uploads_chunked.py)
+          // echoes back the optimistic `pending_id` plus server-set
+          // fields (video_url / voice_url / id) so the in-place swap
+          // below has everything it needs.
+          serverResult = runRes?.result || null;
         }
         await deletePendingUpload(row.id); // success: drop from queue
-        // Clean up the local optimistic milestone row so the next
-        // refresh doesn't double-render it alongside the new
-        // server-authoritative row. The optimistic row's id is
-        // `pending_*` and lives in IndexedDB's `milestoneMessage`
-        // table; without this delete the merge in
-        // MessagesPage.fetchData keeps it (its id isn't in
-        // serverIds), producing the duplicate-row regression the
-        // user reported.
+
+        // ─── In-place swap (eliminates post-sync race) ──────────────
+        // Instead of deleting the optimistic local row and waiting for
+        // a server refetch, we patch the row in-place: swap its id to
+        // the server id and overlay the server-set fields. The page's
+        // upload-swapped listener does the same to its in-memory state.
+        // A user who taps Play immediately after sync gets the real
+        // synced row on the very next render — no info-toast retry.
+        const pendingIdMeta = full?.metadata?.pending_id || null;
         try {
-          const pendingId = full?.metadata?.pending_id;
-          if (pendingId && (full.kind === 'milestone_video' || full.kind === 'milestone_audio')) {
-            const { deleteLocalMessage } = await import('./repos/messagesRepo');
-            await deleteLocalMessage(pendingId).catch(() => {});
+          if (pendingIdMeta && (full.kind === 'milestone_video' || full.kind === 'milestone_audio') && serverResult?.message_id) {
+            const { swapLocalMessageId } = await import('./repos/messagesRepo');
+            const serverFields = {};
+            if (serverResult.video_url) serverFields.video_url = serverResult.video_url;
+            if (serverResult.voice_url) serverFields.voice_url = serverResult.voice_url;
+            await swapLocalMessageId(pendingIdMeta, serverResult.message_id, serverFields).catch(() => {});
           }
         } catch { /* non-fatal cleanup */ }
+
         processed++;
         emit('carryon:upload:complete', { id: row.id, filename: full.filename, kind: full.kind });
+        // Targeted swap event so MessagesPage / VaultPage can patch
+        // their React state in place with zero refetch latency.
+        if (pendingIdMeta && serverResult) {
+          emit('carryon:upload:swapped', {
+            kind: full.kind,
+            pending_id: pendingIdMeta,
+            server: serverResult,
+          });
+        }
       } catch (err) {
         const retry = (full.retry_count || 0) + 1;
         const message = err?.response?.status

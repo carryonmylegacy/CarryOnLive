@@ -230,11 +230,42 @@ const MessagesPage = () => {
   // on reconnect — swaps the "queued" UI for the server-authoritative row.
   useEffect(() => {
     const refetch = () => { fetchData(); };
+    // In-place swap: when the chunked uploader's finalizer echoes back
+    // the server id + media URL for a previously-pending row, patch our
+    // in-memory `messages` state directly. No fetchData round-trip
+    // means zero post-sync race window — a Play tap immediately after
+    // the swap event hits the real server-authoritative row.
+    const onSwapped = (e) => {
+      const detail = e?.detail || {};
+      const pendingId = detail?.pending_id;
+      const server = detail?.server || {};
+      if (!pendingId || !server?.message_id) return;
+      setMessages((prev) => {
+        let touched = false;
+        const next = prev.map((m) => {
+          if (m && m.id === pendingId) {
+            touched = true;
+            return {
+              ...m,
+              id: server.message_id,
+              video_url: server.video_url || m.video_url || null,
+              voice_url: server.voice_url || m.voice_url || null,
+              _pending: false,
+              _local_pending: false,
+            };
+          }
+          return m;
+        });
+        return touched ? next : prev;
+      });
+    };
     window.addEventListener('carryon:upload:complete', refetch);
     window.addEventListener('carryon:outbox:drained', refetch);
+    window.addEventListener('carryon:upload:swapped', onSwapped);
     return () => {
       window.removeEventListener('carryon:upload:complete', refetch);
       window.removeEventListener('carryon:outbox:drained', refetch);
+      window.removeEventListener('carryon:upload:swapped', onSwapped);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
