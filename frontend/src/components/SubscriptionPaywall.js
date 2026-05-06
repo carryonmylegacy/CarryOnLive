@@ -409,8 +409,10 @@ export default function SubscriptionPaywall({ onDismiss }) {
           ))}
         </div>
 
-        {/* Plan Cards — 6 tiles (3x2) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl w-full mb-8 animate-fade-in">
+        {/* Plan Cards — flex-wrap + justify-center to keep the layout
+            symmetric (orphan rows centered, not left-aligned) regardless
+            of how many tiers the user is eligible to see. */}
+        <div className="flex flex-wrap justify-center gap-5 max-w-5xl w-full mb-8 animate-fade-in">
           {visiblePlans.filter(p => !['hospice'].includes(p.id) || p.price === 0).map((plan) => {
             const Icon = TIER_ICONS[plan.id] || Shield;
             const colors = TIER_COLORS[plan.id] || TIER_COLORS.base;
@@ -434,7 +436,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
               <div
                 key={plan.id}
                 onClick={() => eligible && !isGreyedOut && setSelectedPlan(plan.id)}
-                className={`relative rounded-2xl overflow-hidden transition-all duration-300 group ${
+                className={`w-full sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.834rem)] relative rounded-2xl overflow-hidden transition-all duration-300 group ${
                   !eligible || isGreyedOut ? 'opacity-40 cursor-default' : 'cursor-pointer'
                 } ${
                   eligible && !isGreyedOut && isPremium ? 'hover:-translate-y-2 sm:scale-[1.03]' : eligible && !isGreyedOut ? 'hover:-translate-y-1' : ''

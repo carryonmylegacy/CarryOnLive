@@ -44,7 +44,7 @@ const TIER_ACCENT = {
 // (new_adult age-verified, military, hospice, veteran) live behind their
 // own qualification flow inside the paywall, so we keep the public
 // landing focused on the three any-visitor tiers + Founders Circle.
-const PUBLIC_TIERS = ['base', 'standard', 'premium'];
+const PUBLIC_TIERS = ['premium', 'standard', 'base'];
 
 // Eligibility-gated discount tiers, revealed when the visitor opens the
 // "Eligible for a discount?" button. Pricing and features come from the
@@ -84,7 +84,8 @@ export default function LandingPricing() {
         if (cancelled) return;
         const all = plansRes.data.plans || [];
         const visible = all.filter((p) => PUBLIC_TIERS.includes(p.id));
-        // Order: base → standard → premium
+        // Canonical order: premium → standard → base (high-to-low) so
+        // the user's eye lands on the most-recommended tier first.
         visible.sort((a, b) => PUBLIC_TIERS.indexOf(a.id) - PUBLIC_TIERS.indexOf(b.id));
         setPlans(visible);
         const eligible = all.filter((p) => ELIGIBILITY_TIERS.includes(p.id));

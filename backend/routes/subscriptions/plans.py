@@ -219,24 +219,6 @@ DEFAULT_PLANS = [
         ],
     },
     {
-        "id": "hospice",
-        "name": "Hospice",
-        "price": 0.00,
-        "quarterly_price": 0.00,
-        "annual_price": 0.00,
-        "ben_price": 4.99,
-        "paired_price": 6.99,
-        "adjustable": False,
-        "note": "Requires hospice verification",
-        "requires_verification": True,
-        "verification_docs": ["Hospice enrollment documentation"],
-        "features": [
-            "Full platform access at no cost",
-            "For U.S. citizens/residents in certified hospice care",
-            "Compassionate support",
-        ],
-    },
-    {
         "id": "veteran",
         "name": "Veteran",
         "price": 5.99,
@@ -252,6 +234,24 @@ DEFAULT_PLANS = [
             "Full platform access",
             "Priority support",
             "Honoring those who served",
+        ],
+    },
+    {
+        "id": "hospice",
+        "name": "Hospice",
+        "price": 0.00,
+        "quarterly_price": 0.00,
+        "annual_price": 0.00,
+        "ben_price": 4.99,
+        "paired_price": 6.99,
+        "adjustable": False,
+        "note": "Requires hospice verification",
+        "requires_verification": True,
+        "verification_docs": ["Hospice enrollment documentation"],
+        "features": [
+            "Full platform access at no cost",
+            "For U.S. citizens/residents in certified hospice care",
+            "Compassionate support",
         ],
     },
     {
@@ -340,19 +340,6 @@ BENEFICIARY_PLANS = [
         ],
     },
     {
-        "id": "ben_hospice",
-        "name": "Hospice Transition",
-        "price": 4.99,
-        "quarterly_price": 4.49,
-        "annual_price": 3.99,
-        "allows_billing_toggle": True,
-        "note": "After benefactor's transition · 30-day grace period",
-        "features": [
-            "All Base features",
-            "Applies post-transition when no paid tier exists",
-        ],
-    },
-    {
         "id": "ben_veteran",
         "name": "Veteran",
         "price": 1.99,
@@ -363,6 +350,19 @@ BENEFICIARY_PLANS = [
         "features": [
             "Full platform access",
             "Priority support",
+        ],
+    },
+    {
+        "id": "ben_hospice",
+        "name": "Hospice Transition",
+        "price": 4.99,
+        "quarterly_price": 4.49,
+        "annual_price": 3.99,
+        "allows_billing_toggle": True,
+        "note": "After benefactor's transition · 30-day grace period",
+        "features": [
+            "All Base features",
+            "Applies post-transition when no paid tier exists",
         ],
     },
     {
@@ -383,6 +383,31 @@ BENEFICIARY_PLANS = [
 GRACE_PERIOD_DAYS = 30
 
 TRIAL_DURATION_DAYS = 30
+
+# Canonical paywall display order — symmetry/consistency across landing,
+# main paywall, modal paywall, and beneficiary paywall. Re-sorted on
+# every settings load so the stored DB copy never drifts.
+PLAN_ORDER = [
+    "premium",
+    "standard",
+    "base",
+    "new_adult",
+    "military",
+    "veteran",
+    "hospice",
+    "enterprise",
+]
+BEN_PLAN_ORDER = [f"ben_{tier}" for tier in PLAN_ORDER]
+
+
+def _sort_by_canonical_order(plans, order):
+    """Sort a plan list by the canonical PLAN_ORDER. Anything not listed
+    in the canonical order falls to the end in its original relative
+    position (so brand-new plans introduced via admin UI don't get
+    silently hidden until the order is updated)."""
+    rank = {pid: i for i, pid in enumerate(order)}
+    fallback = len(order)
+    return sorted(plans, key=lambda p: rank.get(p.get("id"), fallback))
 
 
 class SubscriptionCheckoutRequest(BaseModel):
@@ -464,6 +489,14 @@ async def get_subscription_settings():
                 {"_id": "global"},
                 {"$set": {"plans": settings["plans"]}},
             )
+    # Always re-sort the returned plan lists into the canonical paywall
+    # order. The user wants symmetry across every paywall (landing, main
+    # paywall modal, beneficiary paywall, admin) and this is the single
+    # source of truth so they cannot drift apart.
+    if settings.get("plans"):
+        settings["plans"] = _sort_by_canonical_order(settings["plans"], PLAN_ORDER)
+    if settings.get("beneficiary_plans"):
+        settings["beneficiary_plans"] = _sort_by_canonical_order(settings["beneficiary_plans"], BEN_PLAN_ORDER)
     return settings
 
 

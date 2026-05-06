@@ -2107,3 +2107,38 @@ Health: `bash /app/housekeeping.sh` → 0 WARN, 0 FAIL (collateral fix: bumped 6
 - The post-transition periodicity paywall is real, gated correctly, and demo-ready. No code change shipped to production for this iteration — the work was a verification + visual capture.
 - During pitch, you can speak to "monthly, quarterly with 10% off, or annual with 20% off — locked to whatever tier the benefactor held the majority of their term." That's exactly what the screenshot shows.
 - Pre-transition beneficiaries continue to see a disabled "Available after transition" badge and zero charge intent — matches your verbal commitment to families.
+
+
+## Design Preferences (founder-stated, sticky)
+
+> *Symmetry is important to me!* — founder, May 2026.
+
+These rules apply across every paywall, every grid, every layout where the natural CSS would leave a left-aligned orphan row. They are NOT optional aesthetics — they are credibility inputs for live B2B pitches and must be preserved across refactors.
+
+### Canonical paywall tier order (across landing page, main paywall, modal paywall, beneficiary paywall, admin tier picker)
+1. **Premium**
+2. **Standard**
+3. **Base**
+4. **New Adult**
+5. **Military / First Responder**
+6. **Veteran**
+7. **Hospice**
+8. **Enterprise**
+
+This order is enforced canonically by:
+- `PLAN_ORDER` / `BEN_PLAN_ORDER` in `/app/backend/routes/subscriptions/plans.py` (re-applied on every `get_subscription_settings()` call so DB drift is impossible).
+- `PUBLIC_TIERS = ['premium', 'standard', 'base']` and `ELIGIBILITY_TIERS = ['new_adult', 'military', 'veteran', 'hospice']` in `/app/frontend/src/components/landing/LandingPricing.js`.
+
+If a new tier is added, append it to `PLAN_ORDER` in the place where it belongs in this list; do not re-shuffle existing positions.
+
+### Symmetric tile grids (orphan rows must center)
+When a paywall renders more cards than fit in a single row, the bottom row's orphans MUST be centered, not left-justified. The "missing card" optical illusion is a credibility killer in a sales demo.
+
+Implementation: `flex flex-wrap justify-center gap-N` with explicit per-card widths via `w-full sm:w-[calc(50%-X)] lg:w-[calc(33.333%-Y)]` where X / Y account for the column gap (gap-4 → 0.5rem / 0.667rem; gap-5 → 0.625rem / 0.834rem).
+
+Live in:
+- `/app/frontend/src/components/settings/SubscriptionManagement.js` (main paywall)
+- `/app/frontend/src/components/SubscriptionPaywall.js` (modal paywall)
+
+Mobile (2 cols) is naturally symmetric for any even tier count and was left as a 2-up flex-wrap for free.
+

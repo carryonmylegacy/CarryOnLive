@@ -598,8 +598,10 @@ export const SubscriptionManagement = ({
           </div>
         )}
 
-        {/* Plan Cards */}
-        <div className={`grid gap-4 ${displayPlans.length === 1 ? 'grid-cols-1 max-w-sm mx-auto' : displayPlans.length <= 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`} data-testid="plan-grid">
+        {/* Plan Cards — flex-wrap + justify-center so any orphan row
+            (e.g. 8 plans in a 3-col layout = 3+3+2) is naturally
+            centered instead of left-justified. Symmetry > convenience. */}
+        <div className={`gap-4 ${displayPlans.length === 1 ? 'grid grid-cols-1 max-w-sm mx-auto' : displayPlans.length <= 3 ? 'grid grid-cols-1 sm:grid-cols-3' : 'flex flex-wrap justify-center'}`} data-testid="plan-grid">
           {displayPlans.map((plan) => {
             const style = TIER_STYLES[plan.id] || TIER_STYLES.base;
             const Icon = style.icon;
@@ -607,13 +609,19 @@ export const SubscriptionManagement = ({
             const isRecommended = plan.id === 'ben_premium' || plan.id === 'premium';
             const locked = isPlanLocked(plan.id);
             const isAutoSelected = autoTier === plan.id;
+            // When using flex-wrap (>3 plans), each card needs an
+            // explicit width so the grid still feels grid-like and the
+            // last row's orphans center cleanly.
+            const flexWidth = displayPlans.length > 3
+              ? 'w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]'
+              : '';
 
             // Premium Annual recommendation pulse
             const isPremiumAnnual = (plan.id === 'premium' || plan.id === 'ben_premium') && billing === 'annual';
             const showRecommendedPulse = isPremiumAnnual && currentPlanId && !isCurrent && !(currentPlanId === plan.id && currentBilling === 'annual');
 
             return (
-              <div key={plan.id} className={`relative rounded-2xl overflow-hidden transition-all duration-300 group ${locked ? 'opacity-40 pointer-events-none' : isCurrent ? '' : 'hover:-translate-y-1'}`} style={{
+              <div key={plan.id} className={`${flexWidth} relative rounded-2xl overflow-hidden transition-all duration-300 group ${locked ? 'opacity-40 pointer-events-none' : isCurrent ? '' : 'hover:-translate-y-1'}`} style={{
                 background: isAutoSelected
                   ? `linear-gradient(168deg, ${style.accent}15, ${style.accent}06)`
                   : isCurrent
