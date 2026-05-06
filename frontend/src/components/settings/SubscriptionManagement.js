@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   CreditCard, Loader2, Clock, ChevronRight, ChevronDown, Zap, Shield, X, Check,
@@ -109,6 +110,7 @@ export const SubscriptionManagement = ({
   getAuthHeaders,
   onShowPaywall,
 }) => {
+  const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
   const [beneficiaryPlans, setBeneficiaryPlans] = useState([]);
   // Admin-configured per-tier feature gates (keyed by tier id).
@@ -358,18 +360,11 @@ export const SubscriptionManagement = ({
   const handleChangePlan = async (planId) => {
     if (planId === currentPlanId && billing === currentBilling) return;
 
-    // Downgrade → send to customer service
+    // Downgrade → route to the in-app Customer Service chat. The user
+    // can articulate their request there with full context (and we
+    // get a richer thread than a one-shot system message).
     if (isDowngrade(planId, billing)) {
-      setSubscribing(planId);
-      try {
-        await axios.post(`${API_URL}/support/messages`, {
-          content: `I'd like to change my subscription from ${currentSub?.plan_name || currentPlanId} (${currentBilling}) to ${planId} (${billing}). Since this is a downgrade, please process the refund for the unused portion and switch my plan. Thank you.`,
-        }, getAuthHeaders());
-        toast.success("Request sent to Customer Service. They'll be in touch shortly.");
-      } catch (e) {
-        toast.error('Failed to send request. Please go to Customer Service directly.');
-      }
-      setSubscribing(null);
+      navigate('/support');
       return;
     }
 
@@ -412,18 +407,10 @@ export const SubscriptionManagement = ({
   };
 
   const handleChangeBilling = async () => {
-    // Downgrading billing cycle (e.g., annual → quarterly) → customer service
+    // Downgrading billing cycle (e.g., annual → quarterly) → route to
+    // the Customer Service chat so the user can request the change.
     if (isDowngrade(currentPlanId, billing)) {
-      setChangingBilling(true);
-      try {
-        await axios.post(`${API_URL}/support/messages`, {
-          content: `I'd like to change my billing cycle from ${currentBilling} to ${billing} on my ${currentSub?.plan_name || currentPlanId} plan. Since this is a downgrade, please process the refund for the unused portion and update my billing. Thank you.`,
-        }, getAuthHeaders());
-        toast.success("Request sent to Customer Service. They'll be in touch shortly.");
-      } catch (e) {
-        toast.error('Failed to send request. Please go to Customer Service directly.');
-      }
-      setChangingBilling(false);
+      navigate('/support');
       return;
     }
 

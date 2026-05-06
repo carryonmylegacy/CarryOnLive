@@ -55,37 +55,16 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
         fetchSavingsPreview();
       }
     } catch (err) { /* silent */ }
-    // Pull every beneficiary across every estate the user owns so the
-    // picker can offer one-tap add. Best-effort: errors here just
-    // collapse the picker into an email-only form (the original UX),
-    // never block the rest of the family-plan page.
+    // Pull every eligible beneficiary across every estate the user
+    // owns. Server-side filters out: members already on the plan,
+    // beneficiaries without an email, and anyone currently in
+    // post-transition state (i.e. their own benefactor has passed
+    // — inviting them to normal-pricing family plan would be wrong).
+    // Best-effort: errors here just collapse the picker into an
+    // email-only form, never block the family-plan page.
     try {
-      const estatesRes = await axios.get(`${API_URL}/estates`, { headers });
-      const estates = estatesRes.data || [];
-      const all = [];
-      for (const est of estates) {
-        try {
-          const bens = await axios.get(`${API_URL}/beneficiaries/${est.id}`, { headers });
-          for (const b of (bens.data || [])) {
-            if (!b.email) continue; // can't invite without an email
-            all.push({
-              id: b.id,
-              email: b.email,
-              name: b.name || b.email,
-              estate_id: est.id,
-              estate_name: est.name,
-              photo_url: b.photo_url || '',
-              relationship: b.relationship || '',
-            });
-          }
-        } catch { /* skip this estate */ }
-      }
-      // Deduplicate by email — same person can be a beneficiary on multiple estates
-      const byEmail = new Map();
-      for (const b of all) {
-        if (!byEmail.has(b.email)) byEmail.set(b.email, b);
-      }
-      setMyBeneficiaries([...byEmail.values()]);
+      const res = await axios.get(`${API_URL}/family-plan/eligible-beneficiaries`, { headers });
+      setMyBeneficiaries(res.data?.beneficiaries || []);
     } catch { /* silent — picker just falls back to email-only */ }
     setLoading(false);
   };

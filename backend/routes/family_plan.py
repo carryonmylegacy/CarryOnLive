@@ -48,6 +48,80 @@ async def is_family_plan_enabled():
     return settings.get("family_plan_enabled", False)
 
 
+@router.get("/family-plan/eligible-beneficiaries")
+async def family_plan_eligible_beneficiaries(current_user: dict = Depends(get_current_user)):
+    """Return the FPO's beneficiaries that can be added to the family plan.
+
+    Filters out:
+      • Beneficiaries without an email (no way to invite them)
+      • Beneficiaries already on the FPO's family plan
+      • Beneficiaries currently in a POST-TRANSITION state — i.e. their
+        own benefactor on another estate has passed away and they are
+        in post-transition mode. Inviting them to a normal-pricing
+        family plan would be inappropriate.
+    """
+    user_id = current_user["id"]
+
+    # 1. The FPO's own estates' beneficiaries (the universe to consider).
+    own_estates = await db.estates.find(
+        {"owner_id": user_id, "deleted_at": None},
+        {"_id": 0, "id": 1, "name": 1, "status": 1},
+    ).to_list(50)
+    candidate_estate_ids = [e["id"] for e in own_estates]
+    candidates = await db.beneficiaries.find(
+        {
+            "estate_id": {"$in": candidate_estate_ids},
+            "deleted_at": None,
+        },
+        {"_id": 0},
+    ).to_list(500)
+
+    # 2. Build the set of user_ids that are currently in post-transition
+    # state — i.e. they are a beneficiary on at least one estate whose
+    # status == "transitioned". One DB roundtrip, then a set lookup.
+    transitioned_estate_ids = await db.estates.distinct("id", {"status": "transitioned"})
+    post_transition_user_ids: set[str] = set()
+    if transitioned_estate_ids:
+        async for b in db.beneficiaries.find(
+            {"estate_id": {"$in": transitioned_estate_ids}, "deleted_at": None},
+            {"_id": 0, "id": 1, "user_id": 1},
+        ):
+            if b.get("user_id"):
+                post_transition_user_ids.add(b["user_id"])
+
+    # 3. Already-on-plan emails (so the picker doesn't re-offer them).
+    fp = await db.family_plans.find_one({"fpo_user_id": user_id, "deleted_at": None}, {"_id": 0})
+    on_plan_emails: set[str] = set()
+    if fp:
+        for m in fp.get("members") or []:
+            if m.get("email"):
+                on_plan_emails.add(m["email"].lower())
+
+    # 4. Apply filters and dedupe by email.
+    estate_name_by_id = {e["id"]: e.get("name") for e in own_estates}
+    by_email: dict[str, dict] = {}
+    for b in candidates:
+        email = (b.get("email") or "").lower().strip()
+        if not email:
+            continue
+        if email in on_plan_emails:
+            continue
+        if b.get("user_id") and b["user_id"] in post_transition_user_ids:
+            continue
+        if email in by_email:
+            continue
+        by_email[email] = {
+            "id": b.get("id"),
+            "email": b.get("email"),
+            "name": b.get("name") or b.get("email"),
+            "estate_id": b.get("estate_id"),
+            "estate_name": estate_name_by_id.get(b.get("estate_id")),
+            "photo_url": b.get("photo_url") or "",
+            "relationship": b.get("relationship") or "",
+        }
+    return {"beneficiaries": list(by_email.values())}
+
+
 @router.get("/family-plan/status")
 async def get_family_plan_status(current_user: dict = Depends(get_current_user)):
     """Get current user's family plan status"""
