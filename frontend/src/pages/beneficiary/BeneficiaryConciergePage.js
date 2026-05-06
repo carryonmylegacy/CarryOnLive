@@ -297,8 +297,26 @@ export default function BeneficiaryConciergePage() {
           stopped: true,
         }]);
       } else {
-        const detail = e?.response?.data?.detail || 'I’m having trouble right now. Please try again in a moment.';
-        setMessages((prev) => [...prev, { role: 'assistant', content: `(${detail})`, ts: new Date().toISOString(), error: true }]);
+        // ── CLIENT-SIDE FALLBACK ──
+        // The backend was patched to ALWAYS return 200 with a templated
+        // answer when xAI fails. But if the backend itself is unreachable
+        // (504, network drop, prod hasn't been redeployed yet, the backend
+        // returns an unexpected shape), the user used to see a red
+        // "(I'm having trouble right now)" bubble and assume BEC was
+        // broken. We mirror the backend's templated fallback locally
+        // using the document list the status endpoint already loaded
+        // — the user always gets a coherent, document-aware answer
+        // and never sees a system-error bubble.
+        const fallback = buildClientFallbackAnswer({
+          benefactorFirst: status?.benefactor_first_name || 'them',
+          documents: status?.documents || [],
+          question: q,
+        });
+        setMessages((prev) => [...prev, {
+          role: 'assistant',
+          content: fallback,
+          ts: new Date().toISOString(),
+        }]);
       }
     } finally {
       abortRef.current = null;
@@ -763,6 +781,36 @@ function relativeTime(iso) {
   const day = Math.floor(hr / 24);
   if (day < 7) return `${day}d ago`;
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// Mirror of the backend's templated fallback answer. Used purely on
+// the client when the API call itself fails (504, network drop, prod
+// not yet redeployed, unexpected response shape). Always produces a
+// coherent, document-aware reply so the user never sees a red error
+// bubble for a system issue. Tone matches BEC's grief-aware voice.
+function buildClientFallbackAnswer({ benefactorFirst, documents, question }) {
+  const name = benefactorFirst || 'them';
+  const q = (question || '').trim().replace(/\?+$/, '');
+  if (!documents || documents.length === 0) {
+    return (
+      `${name} hasn't designated any documents to share with you yet. ` +
+      `The best next step is to reach out to the executor or ${name}'s ` +
+      `attorney for guidance. I know this is hard. Take it one step at a time.`
+    );
+  }
+  const lines = documents.slice(0, 8).map((d, idx) => {
+    const cat = (d.category || 'other').replace(/_/g, ' ');
+    return `  • ${d.name || 'Untitled'} [#${idx + 1}] — ${cat}`;
+  });
+  const extra = documents.length > 8 ? `\n  …and ${documents.length - 8} more.` : '';
+  return (
+    `Looking at what ${name} has shared with you, I can see the following ` +
+    `designated documents:\n${lines.join('\n')}${extra}\n\n` +
+    `For the specific details of "${q}", the executed text of these documents ` +
+    `is what holds the answer. The fastest path is to reach out to the executor ` +
+    `or ${name}'s attorney — they have the executed copies and can walk you ` +
+    `through what was left to you. I know this is hard. Take it one step at a time.`
+  );
 }
 
 // ──────────────────────────────────────────────────────────────────
