@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { Mail, Lock, Eye, EyeOff, Loader2, Shield, ChevronRight, ChevronDown, Sparkles, ExternalLink, WifiOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, Shield, ChevronRight, ChevronDown, Sparkles, ExternalLink, WifiOff, Menu, X } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { toast } from '../utils/toast';
@@ -107,6 +107,7 @@ const LoginPage = () => {
   const [otp, setOtp] = useState('');
   const [trustToday, setTrustToday] = useState(false);
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const flagRef = React.useRef(null);
   const [exiting, setExiting] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -845,12 +846,66 @@ const LoginPage = () => {
             <button onClick={() => navigateWithFade('/founder-about')} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300" data-testid="nav-founder-btn">Founder</button>
           </div>
           <div className="flex items-center gap-3 sm:gap-4">
-            <button onClick={() => navigateWithFade('/founder-about')} className="md:hidden text-[#6b7a90] text-xs font-medium hover:text-[#d4af37] transition-colors" data-testid="nav-founder-btn-mobile">Founder</button>
+            {/* Mobile hamburger — opens dropdown with all nav items
+                that are inline on desktop. Previously only "Founder"
+                was visible on mobile, hiding Features / Security / How
+                It Works / About from phone visitors. */}
+            <button
+              onClick={() => setMobileNavOpen(v => !v)}
+              className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg text-[#9aa5b4] hover:text-[#d4af37] transition-colors"
+              aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileNavOpen}
+              data-testid="nav-mobile-toggle"
+            >
+              {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
             <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
               Open Account <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
+        {/* Mobile dropdown — only renders when toggled. Tappable area
+            is comfortably large; closes on item tap so the page can
+            scroll/navigate naturally. */}
+        {mobileNavOpen && (
+          <div
+            className="md:hidden"
+            style={{ background: 'rgba(11,18,33,0.98)', borderTop: '1px solid rgba(14,165,233,0.06)' }}
+            data-testid="nav-mobile-dropdown"
+          >
+            <div className="max-w-[1400px] mx-auto px-6 py-3 flex flex-col gap-1">
+              {[
+                { label: 'Features', href: '#features' },
+                { label: 'Security', href: '#security' },
+                { label: 'How It Works', href: '#steps' },
+              ].map(item => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setMobileNavOpen(false)}
+                  className="block py-3 text-[#cbd5e1] text-base font-medium hover:text-[#d4af37] transition-colors"
+                  data-testid={`nav-mobile-${item.label.replace(/\s+/g, '-').toLowerCase()}`}
+                >
+                  {item.label}
+                </a>
+              ))}
+              <button
+                onClick={() => { setMobileNavOpen(false); navigateWithFade('/about'); }}
+                className="text-left py-3 text-[#cbd5e1] text-base font-medium hover:text-[#d4af37] transition-colors"
+                data-testid="nav-mobile-about"
+              >
+                About
+              </button>
+              <button
+                onClick={() => { setMobileNavOpen(false); navigateWithFade('/founder-about'); }}
+                className="text-left py-3 text-[#cbd5e1] text-base font-medium hover:text-[#d4af37] transition-colors"
+                data-testid="nav-mobile-founder"
+              >
+                Founder
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* ═══════════════════ HERO — FLAG BG + LOGO + LOGIN ═══════════════════ */}
