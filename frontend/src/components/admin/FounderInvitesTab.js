@@ -15,6 +15,12 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
   const [approvePasswords, setApprovePasswords] = useState({});
   const [showPasswords, setShowPasswords] = useState({});
   const [approving, setApproving] = useState({});
+  // In-app confirmation modal. `window.confirm` is silently blocked
+  // inside iOS PWAs — the tap appears to do nothing and the delete
+  // call never fires. Modal replaces it.
+  // Shape: { kind: 'single'|'bulk', requestId?, name?, count? } | null
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
 
   const getAuth = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` } });
 
@@ -106,29 +112,37 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
     } catch { toast.error('Failed to revoke'); }
   };
 
-  // Delete a single revoked/denied request permanently.
-  const deleteRequest = async (requestId) => {
-    if (!window.confirm('Remove this request from the list permanently?')) return;
-    try {
-      await axios.delete(`${API_URL}/founder/requests/${requestId}`, getAuth());
-      setRequests(prev => prev.filter(r => r.request_id !== requestId));
-      toast.success('Request removed');
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to remove');
-    }
+  // Delete a single revoked/denied request permanently (opens confirm modal).
+  const deleteRequest = (req) => {
+    setDeleteConfirm({ kind: 'single', requestId: req.request_id, name: req.name || req.email });
   };
 
-  // Bulk-clear every revoked + denied request in one tap.
-  const clearInactiveRequests = async () => {
+  // Bulk-clear every revoked + denied request (opens confirm modal).
+  const clearInactiveRequests = () => {
     const count = requests.filter(r => ['revoked', 'denied'].includes(r.status)).length;
     if (count === 0) return;
-    if (!window.confirm(`Clear ${count} revoked/denied request${count === 1 ? '' : 's'} from the list? This cannot be undone.`)) return;
+    setDeleteConfirm({ kind: 'bulk', count });
+  };
+
+  // Actually perform the confirmed action.
+  const runConfirmedDelete = async () => {
+    if (!deleteConfirm) return;
+    setConfirmBusy(true);
     try {
-      const res = await axios.post(`${API_URL}/founder/requests/clear-inactive`, {}, getAuth());
-      setRequests(prev => prev.filter(r => !['revoked', 'denied'].includes(r.status)));
-      toast.success(`Removed ${res.data.deleted} inactive request${res.data.deleted === 1 ? '' : 's'}`);
-    } catch {
-      toast.error('Failed to clear');
+      if (deleteConfirm.kind === 'single') {
+        await axios.delete(`${API_URL}/founder/requests/${deleteConfirm.requestId}`, getAuth());
+        setRequests(prev => prev.filter(r => r.request_id !== deleteConfirm.requestId));
+        toast.success('Request removed');
+      } else {
+        const res = await axios.post(`${API_URL}/founder/requests/clear-inactive`, {}, getAuth());
+        setRequests(prev => prev.filter(r => !['revoked', 'denied'].includes(r.status)));
+        toast.success(`Removed ${res.data.deleted} inactive request${res.data.deleted === 1 ? '' : 's'}`);
+      }
+      setDeleteConfirm(null);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to remove');
+    } finally {
+      setConfirmBusy(false);
     }
   };
 
@@ -371,7 +385,7 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
                   {/* Revoked or denied: permanent delete */}
                   {['revoked', 'denied'].includes(req.status) && (
                     <div className="mt-3 pt-3 flex justify-end" style={{ borderTop: '1px solid rgba(14,165,233,0.06)' }}>
-                      <button onClick={() => deleteRequest(req.request_id)}
+                      <button onClick={() => deleteRequest(req)}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:brightness-110 active:scale-95"
                         style={{ background: 'rgba(100,116,139,0.15)', color: '#94a3b8' }} data-testid={`delete-req-${req.request_id}`}>
                         <Trash2 className="w-3.5 h-3.5" /> Remove from list
@@ -384,6 +398,58 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
           </div>
         )}
       </div>
+
+      {/* Confirmation modal — replaces window.confirm which is blocked
+          inside iOS PWAs. */}
+      {deleteConfirm && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+          onClick={() => !confirmBusy && setDeleteConfirm(null)}
+          data-testid="founder-delete-confirm-overlay"
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl p-5 overflow-y-auto"
+            style={{ background: 'var(--bg2, #0f1a2e)', border: '1px solid rgba(239,68,68,0.18)', boxShadow: '0 24px 80px rgba(0,0,0,0.5)', maxHeight: '90vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.12)' }}>
+                <Trash2 className="w-4 h-4" style={{ color: '#f87171' }} />
+              </div>
+              <h3 className="text-white font-bold text-base">
+                {deleteConfirm.kind === 'bulk' ? 'Clear inactive requests?' : 'Remove request?'}
+              </h3>
+            </div>
+            <p className="text-[#9aa5b4] text-sm leading-relaxed mb-5">
+              {deleteConfirm.kind === 'bulk'
+                ? <>This will permanently remove <strong style={{ color: '#f87171' }}>{deleteConfirm.count}</strong> revoked/denied request{deleteConfirm.count === 1 ? '' : 's'} from the list. This cannot be undone.</>
+                : <>Permanently remove the request from <strong className="text-white">{deleteConfirm.name}</strong>? This cannot be undone.</>}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={confirmBusy}
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all active:scale-95 disabled:opacity-50"
+                style={{ background: 'rgba(148,163,184,0.12)', color: '#cbd5e1' }}
+                data-testid="founder-delete-cancel-btn"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={runConfirmedDelete}
+                disabled={confirmBusy}
+                className="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{ background: '#ef4444', color: '#fff' }}
+                data-testid="founder-delete-confirm-btn"
+              >
+                {confirmBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                {deleteConfirm.kind === 'bulk' ? 'Clear all' : 'Remove'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
