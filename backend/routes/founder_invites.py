@@ -64,6 +64,31 @@ async def revoke_invite(token: str, current_user: dict = Depends(require_admin))
     return {"status": "revoked"}
 
 
+@router.delete("/founder/invites/{token}/permanent")
+async def delete_invite_permanently(token: str, current_user: dict = Depends(require_admin)):
+    """Permanently delete a revoked invite from the list — admin only.
+    Only allowed on already-revoked invites; live invites must be revoked
+    first so a recipient can't be deleted out from under them.
+    """
+    inv = await db.founder_invites.find_one({"token": token}, {"_id": 0, "id": 1, "token": 1, "revoked": 1})
+    if not inv:
+        raise HTTPException(status_code=404, detail="Invite not found")
+    if not inv.get("revoked"):
+        raise HTTPException(
+            status_code=400,
+            detail="Only revoked invites can be deleted. Revoke this invite first.",
+        )
+    await db.founder_invites.delete_one({"token": token})
+    return {"status": "deleted"}
+
+
+@router.post("/founder/invites/clear-revoked")
+async def clear_revoked_invites(current_user: dict = Depends(require_admin)):
+    """Bulk-delete all revoked invite links — admin only."""
+    result = await db.founder_invites.delete_many({"revoked": True})
+    return {"status": "cleared", "deleted": result.deleted_count}
+
+
 @router.get("/founder-about/verify/{token}")
 async def verify_invite(token: str):
     """Public endpoint — verify if an invite token is valid. Tracks views."""

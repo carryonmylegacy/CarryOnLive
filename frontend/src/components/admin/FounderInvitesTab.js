@@ -61,6 +61,18 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
     } catch { toast.error('Failed to revoke invite'); }
   };
 
+  // Remove a single revoked invite (opens confirm modal).
+  const deleteInvite = (invite) => {
+    setDeleteConfirm({ kind: 'single', target: 'invite', token: invite.token, name: invite.note || invite.token.slice(0, 8) });
+  };
+
+  // Bulk-clear every revoked invite (opens confirm modal).
+  const clearRevokedInvites = () => {
+    const count = invites.filter(i => i.revoked).length;
+    if (count === 0) return;
+    setDeleteConfirm({ kind: 'bulk', target: 'invite', count });
+  };
+
   const copyLink = (inviteToken) => {
     const url = `${window.location.origin}/founder-about/${inviteToken}`;
     navigator.clipboard.writeText(url).then(() => {
@@ -114,29 +126,43 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
 
   // Delete a single revoked/denied request permanently (opens confirm modal).
   const deleteRequest = (req) => {
-    setDeleteConfirm({ kind: 'single', requestId: req.request_id, name: req.name || req.email });
+    setDeleteConfirm({ kind: 'single', target: 'request', requestId: req.request_id, name: req.name || req.email });
   };
 
   // Bulk-clear every revoked + denied request (opens confirm modal).
   const clearInactiveRequests = () => {
     const count = requests.filter(r => ['revoked', 'denied'].includes(r.status)).length;
     if (count === 0) return;
-    setDeleteConfirm({ kind: 'bulk', count });
+    setDeleteConfirm({ kind: 'bulk', target: 'request', count });
   };
 
-  // Actually perform the confirmed action.
+  // Actually perform the confirmed action (handles both invite + request targets).
   const runConfirmedDelete = async () => {
     if (!deleteConfirm) return;
     setConfirmBusy(true);
     try {
-      if (deleteConfirm.kind === 'single') {
-        await axios.delete(`${API_URL}/founder/requests/${deleteConfirm.requestId}`, getAuth());
-        setRequests(prev => prev.filter(r => r.request_id !== deleteConfirm.requestId));
-        toast.success('Request removed');
+      const { kind, target } = deleteConfirm;
+      if (target === 'invite') {
+        if (kind === 'single') {
+          await axios.delete(`${API_URL}/founder/invites/${deleteConfirm.token}/permanent`, getAuth());
+          setInvites(prev => prev.filter(i => i.token !== deleteConfirm.token));
+          toast.success('Invite removed');
+        } else {
+          const res = await axios.post(`${API_URL}/founder/invites/clear-revoked`, {}, getAuth());
+          setInvites(prev => prev.filter(i => !i.revoked));
+          toast.success(`Removed ${res.data.deleted} revoked invite${res.data.deleted === 1 ? '' : 's'}`);
+        }
       } else {
-        const res = await axios.post(`${API_URL}/founder/requests/clear-inactive`, {}, getAuth());
-        setRequests(prev => prev.filter(r => !['revoked', 'denied'].includes(r.status)));
-        toast.success(`Removed ${res.data.deleted} inactive request${res.data.deleted === 1 ? '' : 's'}`);
+        // target === 'request'
+        if (kind === 'single') {
+          await axios.delete(`${API_URL}/founder/requests/${deleteConfirm.requestId}`, getAuth());
+          setRequests(prev => prev.filter(r => r.request_id !== deleteConfirm.requestId));
+          toast.success('Request removed');
+        } else {
+          const res = await axios.post(`${API_URL}/founder/requests/clear-inactive`, {}, getAuth());
+          setRequests(prev => prev.filter(r => !['revoked', 'denied'].includes(r.status)));
+          toast.success(`Removed ${res.data.deleted} inactive request${res.data.deleted === 1 ? '' : 's'}`);
+        }
       }
       setDeleteConfirm(null);
     } catch (err) {
@@ -168,6 +194,7 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
   };
 
   const activeInvites = invites.filter(i => !i.revoked).length;
+  const revokedInvitesCount = invites.filter(i => i.revoked).length;
   const totalInviteViews = invites.reduce((s, i) => s + (i.views || 0), 0);
   const pendingRequests = requests.filter(r => r.status === 'pending').length;
   const approvedRequests = requests.filter(r => r.status === 'approved').length;
@@ -218,6 +245,24 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
           </CardContent>
         </Card>
 
+        {/* Bulk clear revoked invites — appears only when there are
+            revoked invites cluttering the list. */}
+        {revokedInvitesCount > 0 && (
+          <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-lg" style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.12)' }}>
+            <span className="text-[#9aa5b4] text-xs">
+              <span className="text-[#f87171] font-semibold">{revokedInvitesCount}</span> revoked invite{revokedInvitesCount === 1 ? '' : 's'} cluttering the list.
+            </span>
+            <button
+              onClick={clearRevokedInvites}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all hover:brightness-110 active:scale-95"
+              style={{ background: 'rgba(239,68,68,0.18)', color: '#f87171' }}
+              data-testid="clear-revoked-invites-btn"
+            >
+              <Sparkles className="w-3.5 h-3.5" /> Clear all
+            </button>
+          </div>
+        )}
+
         {/* List */}
         {invites.length === 0 ? (
           <div className="text-center py-8"><Link2 className="w-8 h-8 text-[#3a4a63] mx-auto mb-2" /><p className="text-[#6b7a90] text-xs">No invite links yet.</p></div>
@@ -251,6 +296,11 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
                       {!invite.revoked && (
                         <button onClick={() => revokeInvite(invite.token)} className="p-2 rounded-lg transition-colors hover:bg-red-500/10" title="Revoke invite" data-testid={`revoke-invite-${invite.token}`} aria-label="Revoke invite">
                           <Trash2 className="w-4 h-4 text-[#6b7a90] hover:text-red-400" />
+                        </button>
+                      )}
+                      {invite.revoked && (
+                        <button onClick={() => deleteInvite(invite)} className="p-2 rounded-lg transition-colors hover:bg-white/5" title="Remove from list permanently" data-testid={`delete-invite-${invite.token}`} aria-label="Remove from list permanently">
+                          <Trash2 className="w-4 h-4 text-[#6b7a90] hover:text-[#f87171]" />
                         </button>
                       )}
                     </div>
@@ -418,13 +468,24 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
                 <Trash2 className="w-4 h-4" style={{ color: '#f87171' }} />
               </div>
               <h3 className="text-white font-bold text-base">
-                {deleteConfirm.kind === 'bulk' ? 'Clear inactive requests?' : 'Remove request?'}
+                {deleteConfirm.kind === 'bulk'
+                  ? (deleteConfirm.target === 'invite' ? 'Clear revoked invites?' : 'Clear inactive requests?')
+                  : (deleteConfirm.target === 'invite' ? 'Remove invite?' : 'Remove request?')}
               </h3>
             </div>
             <p className="text-[#9aa5b4] text-sm leading-relaxed mb-5">
-              {deleteConfirm.kind === 'bulk'
-                ? <>This will permanently remove <strong style={{ color: '#f87171' }}>{deleteConfirm.count}</strong> revoked/denied request{deleteConfirm.count === 1 ? '' : 's'} from the list. This cannot be undone.</>
-                : <>Permanently remove the request from <strong className="text-white">{deleteConfirm.name}</strong>? This cannot be undone.</>}
+              {deleteConfirm.kind === 'bulk' && deleteConfirm.target === 'invite' && (
+                <>This will permanently remove <strong style={{ color: '#f87171' }}>{deleteConfirm.count}</strong> revoked invite{deleteConfirm.count === 1 ? '' : 's'} from the list. This cannot be undone.</>
+              )}
+              {deleteConfirm.kind === 'bulk' && deleteConfirm.target === 'request' && (
+                <>This will permanently remove <strong style={{ color: '#f87171' }}>{deleteConfirm.count}</strong> revoked/denied request{deleteConfirm.count === 1 ? '' : 's'} from the list. This cannot be undone.</>
+              )}
+              {deleteConfirm.kind === 'single' && deleteConfirm.target === 'invite' && (
+                <>Permanently remove the revoked invite <strong className="text-white">{deleteConfirm.name}</strong>? This cannot be undone.</>
+              )}
+              {deleteConfirm.kind === 'single' && deleteConfirm.target === 'request' && (
+                <>Permanently remove the request from <strong className="text-white">{deleteConfirm.name}</strong>? This cannot be undone.</>
+              )}
             </p>
             <div className="flex gap-2">
               <button
