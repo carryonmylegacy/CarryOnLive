@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Copy, Trash2, Loader2, Link2, CheckCircle, XCircle, Plus, UserCheck, UserX, Eye, EyeOff, Clock, ShieldCheck, Ban } from 'lucide-react';
+import { Copy, Trash2, Loader2, Link2, CheckCircle, XCircle, Plus, UserCheck, UserX, Eye, EyeOff, Clock, ShieldCheck, Ban, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
@@ -106,6 +106,32 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
     } catch { toast.error('Failed to revoke'); }
   };
 
+  // Delete a single revoked/denied request permanently.
+  const deleteRequest = async (requestId) => {
+    if (!window.confirm('Remove this request from the list permanently?')) return;
+    try {
+      await axios.delete(`${API_URL}/founder/requests/${requestId}`, getAuth());
+      setRequests(prev => prev.filter(r => r.request_id !== requestId));
+      toast.success('Request removed');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to remove');
+    }
+  };
+
+  // Bulk-clear every revoked + denied request in one tap.
+  const clearInactiveRequests = async () => {
+    const count = requests.filter(r => ['revoked', 'denied'].includes(r.status)).length;
+    if (count === 0) return;
+    if (!window.confirm(`Clear ${count} revoked/denied request${count === 1 ? '' : 's'} from the list? This cannot be undone.`)) return;
+    try {
+      const res = await axios.post(`${API_URL}/founder/requests/clear-inactive`, {}, getAuth());
+      setRequests(prev => prev.filter(r => !['revoked', 'denied'].includes(r.status)));
+      toast.success(`Removed ${res.data.deleted} inactive request${res.data.deleted === 1 ? '' : 's'}`);
+    } catch {
+      toast.error('Failed to clear');
+    }
+  };
+
   const formatDate = (iso) => {
     if (!iso) return '—';
     try { return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }); }
@@ -131,6 +157,7 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
   const totalInviteViews = invites.reduce((s, i) => s + (i.views || 0), 0);
   const pendingRequests = requests.filter(r => r.status === 'pending').length;
   const approvedRequests = requests.filter(r => r.status === 'approved').length;
+  const inactiveRequests = requests.filter(r => ['revoked', 'denied'].includes(r.status)).length;
 
   if (loading) {
     return <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 text-[#d4af37] animate-spin" /></div>;
@@ -249,6 +276,25 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
           ))}
         </div>
 
+        {/* Bulk clear — only appears when there's inactive clutter to
+            clean up. Lets the founder wipe all revoked + denied rows
+            in one tap after running demos. */}
+        {inactiveRequests > 0 && (
+          <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-lg" style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.12)' }}>
+            <span className="text-[#9aa5b4] text-xs">
+              <span className="text-[#f87171] font-semibold">{inactiveRequests}</span> revoked/denied request{inactiveRequests === 1 ? '' : 's'} cluttering the list.
+            </span>
+            <button
+              onClick={clearInactiveRequests}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all hover:brightness-110 active:scale-95"
+              style={{ background: 'rgba(239,68,68,0.18)', color: '#f87171' }}
+              data-testid="clear-inactive-requests-btn"
+            >
+              <Sparkles className="w-3.5 h-3.5" /> Clear all
+            </button>
+          </div>
+        )}
+
         {/* List */}
         {requests.length === 0 ? (
           <div className="text-center py-8"><UserCheck className="w-8 h-8 text-[#3a4a63] mx-auto mb-2" /><p className="text-[#6b7a90] text-xs">No access requests yet.</p></div>
@@ -318,6 +364,17 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:brightness-110"
                         style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171' }} data-testid={`revoke-access-${req.request_id}`}>
                         <Ban className="w-3.5 h-3.5" /> Revoke Access
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Revoked or denied: permanent delete */}
+                  {['revoked', 'denied'].includes(req.status) && (
+                    <div className="mt-3 pt-3 flex justify-end" style={{ borderTop: '1px solid rgba(14,165,233,0.06)' }}>
+                      <button onClick={() => deleteRequest(req.request_id)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:brightness-110 active:scale-95"
+                        style={{ background: 'rgba(100,116,139,0.15)', color: '#94a3b8' }} data-testid={`delete-req-${req.request_id}`}>
+                        <Trash2 className="w-3.5 h-3.5" /> Remove from list
                       </button>
                     </div>
                   )}

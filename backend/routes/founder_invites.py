@@ -264,6 +264,37 @@ async def revoke_request_access(request_id: str, current_user: dict = Depends(re
     return {"status": "revoked"}
 
 
+@router.delete("/founder/requests/{request_id}")
+async def delete_request(request_id: str, current_user: dict = Depends(require_admin)):
+    """Permanently remove a request from the list — admin only.
+    Only allowed on `revoked` or `denied` requests so active access
+    can't be lost by accident.
+    """
+    req = await db.founder_access_requests.find_one(
+        {"request_id": request_id}, {"_id": 0, "id": 1, "request_id": 1, "status": 1}
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+    if req.get("status") not in ("revoked", "denied"):
+        raise HTTPException(
+            status_code=400,
+            detail="Only revoked or denied requests can be deleted. Revoke or deny this request first.",
+        )
+    await db.founder_access_requests.delete_one({"request_id": request_id})
+    return {"status": "deleted"}
+
+
+@router.post("/founder/requests/clear-inactive")
+async def clear_inactive_requests(current_user: dict = Depends(require_admin)):
+    """Bulk-delete all revoked + denied requests — admin only.
+    Convenience for keeping the admin list tidy after lots of demos.
+    """
+    result = await db.founder_access_requests.delete_many(
+        {"status": {"$in": ["revoked", "denied"]}},
+    )
+    return {"status": "cleared", "deleted": result.deleted_count}
+
+
 @router.post("/founder-about/login")
 async def founder_login(body: FounderLoginBody):
     """Public endpoint — verify email + password for Founder page access."""
