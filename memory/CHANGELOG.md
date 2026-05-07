@@ -1,5 +1,24 @@
 # CarryOn — Changelog
 
+## May 6, 2026 — Founder Page Iframe Sizing Fix
+**Bug**: Founder page went white at the bottom and scrolling was glitchy after the previous fix that extracted base64 images to `/founder-images/*.jpg`.
+
+**Root cause**: The iframe height was set once at `onLoad` based on `body.scrollHeight`. With base64 images, the body was already final-size at onLoad. With the new external image URLs, images load AFTER onLoad — so the iframe was sized too small, then the body grew past it as images rendered → content clipped, scroll jumped.
+
+**Fix** (`pages/FounderAboutPage.js`):
+- Extracted `syncIframeHeight()` helper.
+- After onLoad, attach `load`/`error` listeners on every `<img>` inside the iframe so height re-syncs as each image finishes.
+- Attach a `ResizeObserver` on the iframe's body for font swaps and any layout shift the image listeners miss.
+- Belt-and-suspenders: poll at 200ms / 600ms / 1.5s / 3s after load (Safari occasionally drops RO ticks on cross-document content).
+- Removed the static `height: 100%` style that fought against the dynamic height.
+
+**Verified**:
+- ESLint clean ✅
+- `bash /app/housekeeping.sh` → 0 WARN, 0 FAIL ✅
+
+---
+
+
 ## May 6, 2026 — Live Pitch Stability Sweep (4 bugs)
 User was mid-pitch and reported four embarrassing regressions. All four root-caused and fixed.
 

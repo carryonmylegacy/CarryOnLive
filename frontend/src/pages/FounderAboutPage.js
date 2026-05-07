@@ -133,10 +133,61 @@ const FounderAboutPage = () => {
 
   // Valid access — show iframe
   if (status === 'valid') {
+    // Resize handler used by both onLoad AND ongoing observers/listeners
+    // so the iframe height tracks the founder-story body as images
+    // finish loading. Without this the page goes white at the bottom
+    // because images now load async (extracted from inline base64 to
+    // separate /founder-images/ files for shippability).
+    const syncIframeHeight = () => {
+      const iframe = iframeRef.current;
+      if (!iframe) return;
+      try {
+        const doc = iframe.contentDocument;
+        const body = doc?.body;
+        if (!body) return;
+        const h = Math.max(body.scrollHeight, doc.documentElement?.scrollHeight || 0);
+        if (h > 0 && Math.abs(parseInt(iframe.style.height || '0', 10) - h) > 4) {
+          iframe.style.height = h + 'px';
+        }
+      } catch { /* cross-origin or detached — keep current height */ }
+    };
+
+    const handleIframeLoad = () => {
+      syncIframeHeight();
+      const iframe = iframeRef.current;
+      try {
+        const doc = iframe?.contentDocument;
+        if (!doc) return;
+        // (a) Watch every image — recompute height as each one finishes.
+        Array.from(doc.images || []).forEach((img) => {
+          if (img.complete) return;
+          img.addEventListener('load', syncIframeHeight, { once: true });
+          img.addEventListener('error', syncIframeHeight, { once: true });
+        });
+        // (b) ResizeObserver on the body catches font swaps, lazy
+        //     content, and any layout shift that doesn't come from imgs.
+        if (typeof ResizeObserver !== 'undefined') {
+          const ro = new ResizeObserver(syncIframeHeight);
+          ro.observe(doc.body);
+          // Stop observing when iframe unmounts.
+          iframe._ro = ro;
+        }
+        // (c) Belt-and-suspenders: poll a few times after load to catch
+        //     anything the observers miss (Safari occasionally skips RO
+        //     ticks on cross-document content).
+        [200, 600, 1500, 3000].forEach((t) => setTimeout(syncIframeHeight, t));
+      } catch { /* non-fatal */ }
+    };
+
     return (
       <div className="min-h-screen" style={{ background: '#0d1b2a' }} data-testid="founder-page-content">
-        <iframe ref={iframeRef} src="/founder-story.html" title="About the Founder" className="w-full border-0" style={{ minHeight: '100vh', height: '100%' }}
-          onLoad={() => { try { const iframe = iframeRef.current; if (iframe?.contentDocument?.body) { iframe.style.height = iframe.contentDocument.body.scrollHeight + 'px'; } } catch { if (iframeRef.current) iframeRef.current.style.height = '100vh'; } }}
+        <iframe
+          ref={iframeRef}
+          src="/founder-story.html"
+          title="About the Founder"
+          className="w-full border-0 block"
+          style={{ minHeight: '100vh', display: 'block' }}
+          onLoad={handleIframeLoad}
         />
       </div>
     );
