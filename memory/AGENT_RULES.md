@@ -549,3 +549,39 @@ and a noisier branch status. Local hook is the courteous first line.
 won. Offer desktop-only scrollbar visibility instead, which is what the
 current setup already provides via `@media (min-width: 1024px)`.
 
+
+
+────────────────────────────────────────────────────────────────────
+RULE: React Hook Dep TDZ — never reference later-declared consts
+────────────────────────────────────────────────────────────────────
+
+NEVER write a useEffect / useMemo / useCallback / useLayoutEffect
+whose dependency array references a `const` or `let` that is declared
+LATER in the same component function body.
+
+Example of the bug (took prod down once already):
+
+    useEffect(() => { ... }, [canvasW, canvasH]); // ← reads here
+    const { canvasW, canvasH } = useMemo(...);    // ← declared after
+
+Why it bites: works in dev (closure reads `canvasW` only when the
+effect later runs), but the minified production bundle evaluates the
+deps array synchronously during render. The `const` is in JavaScript's
+Temporal Dead Zone at that point, so it throws
+
+    ReferenceError: Cannot access 'P' before initialization
+
+(where 'P' is the minified rename of `canvasW`). The whole React tree
+crashes into the global error boundary.
+
+PREVENTION:
+  • Always declare the `const`/`let` BEFORE any hook that references it.
+  • Reorder useMemo/useCallback blocks so producers come before consumers.
+  • If two values are mutually dependent, refactor — don't paper over it.
+
+ENFORCEMENT:
+  • housekeeping.sh check 3b runs /app/scripts/check_hook_dep_tdz.py
+    after every push and fails if any hook deps reference a later-
+    declared const.
+  • Run manually: `python3 /app/scripts/check_hook_dep_tdz.py
+    /app/frontend/src`

@@ -130,6 +130,25 @@ else
   ISSUES=$((ISSUES + 1))
 fi
 
+# ── 2b. React Hook TDZ Regression Guard ──────────────────────────────
+# Catches the exact crash pattern that took prod down once: a useEffect
+# (or useMemo / useCallback) whose dependency array references a const
+# that's declared LATER in the same component function. Works in dev
+# because the closure isn't read until effect time, but bombs the
+# minified production bundle with `ReferenceError: Cannot access 'X'
+# before initialization`. Scanner lives in /app/scripts/check_hook_dep_tdz.py.
+echo -n "3b. Hook deps TDZ guard ........... "
+TDZ_OUT=$(python3 /app/scripts/check_hook_dep_tdz.py /app/frontend/src 2>&1)
+TDZ_EXIT=$?
+if [ "$TDZ_EXIT" = "0" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL"
+  echo "$TDZ_OUT" | sed 's/^/    /'
+  ISSUES=$((ISSUES + 1))
+fi
+cd /app/frontend
+
 # ── 3. Frontend Build ────────────────────────────────────────────────
 echo -n "4.  Frontend build ................ "
 if [ "$HK_SKIP_BUILD" = "1" ]; then
