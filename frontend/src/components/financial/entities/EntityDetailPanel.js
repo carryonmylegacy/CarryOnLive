@@ -26,6 +26,7 @@ import FinancialFields from './FinancialFields';
 export default function EntityDetailPanel({
   open,
   node,
+  startInEdit,
   user,
   beneficiaries,
   entities,
@@ -59,7 +60,7 @@ export default function EntityDetailPanel({
 
   // Reset form when node changes
   React.useEffect(() => {
-    setEditing(false);
+    setEditing(!!startInEdit);
     setAddingConn(false);
     setNewSourceKey(''); setNewRole('owner'); setNewPct('');
     if (!node) return;
@@ -76,7 +77,7 @@ export default function EntityDetailPanel({
       setExtLast(p?.last_name || '');
       setExtNotes(p?.notes || '');
     }
-  }, [node, externals]);
+  }, [node, externals, startInEdit]);
 
   const incomingRels = useMemo(() => {
     if (!node) return [];

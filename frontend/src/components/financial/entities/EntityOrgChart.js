@@ -15,9 +15,10 @@
  * animation language as FamilyTree.
  */
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Building2, Shield, Landmark, Home, User as UserIcon, Settings } from 'lucide-react';
+import { Building2, Shield, Landmark, Home, User as UserIcon, Settings, Info, Pencil } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { getEntityPalette, getTypeMeta, ROLE_PALETTE, PALETTE } from '../../../config/entityCatalog';
+import { AvatarCircle } from '../../AvatarCircle';
 
 const BUCKET_ICON = {
   business: Building2, trust: Shield, charity: Landmark,
@@ -360,40 +361,77 @@ function polylineToRoundedPath(points, r = CORNER_R) {
 // ---------------------------------------------------------------------------
 // Node renderers
 // ---------------------------------------------------------------------------
-function PersonTile({ node, palette, dragging, onPointerDownDrag, onClick, onDoubleClick }) {
+// Stops drag from starting AND stops propagation so the tile's click /
+// double-click handlers don't also fire when a user taps an icon button.
+const stopAll = (e) => { e.stopPropagation(); e.preventDefault(); };
+
+// Reusable little circular icon-button shown on every tile.
+function TileIconButton({ icon: Icon, onClick, label, color = 'rgba(255,255,255,0.85)', testId }) {
+  return (
+    <button
+      onPointerDown={stopAll}
+      onMouseDown={stopAll}
+      onClick={(e) => { stopAll(e); onClick?.(e); }}
+      className="rounded-full flex items-center justify-center transition-colors hover:bg-[rgba(212,165,55,0.18)]"
+      style={{
+        width: 22, height: 22,
+        border: '1px solid rgba(212,165,55,0.45)',
+        background: 'rgba(11,17,32,0.55)',
+        color,
+        backdropFilter: 'blur(4px)',
+      }}
+      aria-label={label}
+      title={label}
+      data-testid={testId}
+    >
+      <Icon style={{ width: 12, height: 12 }} />
+    </button>
+  );
+}
+
+function PersonTile({ node, palette, dragging, onPointerDownDrag, onClick, onDoubleClick, onInfoClick, onEditClick }) {
   const initials = (node.label?.[0] || '') + (node.sublabel?.[0] || '');
   const color = node.avatar_color || palette.stroke;
+  const cacheKey =
+    node.kind === 'user' ? `user:${node.id}:photo` :
+    node.kind === 'beneficiary' ? `beneficiary:${node.id}:photo` :
+    undefined;
   return (
     <div
-      className="flex flex-col items-center gap-1 select-none"
+      className="relative flex flex-col items-center gap-1 select-none"
       style={{ width: PERSON_W, height: PERSON_H, cursor: dragging ? 'grabbing' : 'grab' }}
       onPointerDown={onPointerDownDrag}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       data-testid={`entity-node-${node.key}`}
     >
-      <div
-        className="rounded-full flex items-center justify-center font-bold transition-transform"
-        style={{
-          width: 56, height: 56,
-          background: color + '20', color,
-          border: `2.5px solid ${color}`,
-          boxShadow: `0 0 14px ${color}55`,
-          fontSize: 18,
-          pointerEvents: 'none',
-        }}
-      >
-        {initials.toUpperCase().slice(0, 2) || <UserIcon className="w-5 h-5" />}
+      <div style={{ pointerEvents: 'none' }}>
+        <AvatarCircle
+          photo={node.photo}
+          initials={(initials || '?').toUpperCase().slice(0, 2)}
+          color={color}
+          size={56}
+          cacheKey={cacheKey}
+          isPrimary={node.kind === 'user'}
+        />
       </div>
-      <span className="text-xs font-semibold text-[var(--t)] text-center leading-tight truncate w-full">{node.label}</span>
+      <span className="text-xs font-semibold text-[var(--t)] text-center leading-tight truncate w-full" style={{ pointerEvents: 'none' }}>{node.label}</span>
       {node.sublabel && (
-        <span className="text-[11px] text-[var(--t4)] text-center leading-tight truncate w-full">{node.sublabel}</span>
+        <span className="text-[11px] text-[var(--t4)] text-center leading-tight truncate w-full" style={{ pointerEvents: 'none' }}>{node.sublabel}</span>
       )}
+      {/* Action buttons overlay (top-right of the avatar). External-person nodes
+          don't get an Edit pencil because they're handled differently. */}
+      <div className="absolute top-0 right-0 flex flex-col gap-1">
+        <TileIconButton icon={Info} onClick={onInfoClick} label="Info" testId={`tile-info-${node.key}`} />
+        {node.kind !== 'user' && (
+          <TileIconButton icon={Pencil} onClick={onEditClick} label="Edit" testId={`tile-edit-${node.key}`} />
+        )}
+      </div>
     </div>
   );
 }
 
-function EntityTile({ node, dragging, onPointerDownDrag, onClick, onDoubleClick }) {
+function EntityTile({ node, dragging, onPointerDownDrag, onClick, onDoubleClick, onInfoClick, onEditClick }) {
   const e = node.entity;
   const palette = getEntityPalette(e);
   const meta = getTypeMeta(e.category, e.type);
@@ -404,7 +442,7 @@ function EntityTile({ node, dragging, onPointerDownDrag, onClick, onDoubleClick 
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       data-testid={`entity-node-entity-${e.id}`}
-      className="rounded-2xl px-3 py-2.5 transition-shadow flex items-start gap-2 select-none"
+      className="relative rounded-2xl px-3 py-2.5 transition-shadow flex items-start gap-2 select-none"
       style={{
         width: ENTITY_W, height: ENTITY_H,
         background: palette.fill,
@@ -415,11 +453,11 @@ function EntityTile({ node, dragging, onPointerDownDrag, onClick, onDoubleClick 
     >
       <div
         className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
-        style={{ background: `${palette.stroke}25`, color: palette.text }}
+        style={{ background: `${palette.stroke}25`, color: palette.text, pointerEvents: 'none' }}
       >
         <Icon style={{ width: 18, height: 18 }} />
       </div>
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 pr-7" style={{ pointerEvents: 'none' }}>
         <div className="text-[13px] font-bold text-[var(--t)] truncate" style={{ fontFamily: 'var(--sans)' }}>
           {e.name}
         </div>
@@ -435,6 +473,11 @@ function EntityTile({ node, dragging, onPointerDownDrag, onClick, onDoubleClick 
           </span>
         )}
       </div>
+      {/* Action buttons */}
+      <div className="absolute top-1.5 right-1.5 flex flex-col gap-1">
+        <TileIconButton icon={Info} onClick={onInfoClick} label="Info" testId={`tile-info-entity-${e.id}`} />
+        <TileIconButton icon={Pencil} onClick={onEditClick} label="Edit" testId={`tile-edit-entity-${e.id}`} />
+      </div>
     </div>
   );
 }
@@ -444,7 +487,7 @@ function EntityTile({ node, dragging, onPointerDownDrag, onClick, onDoubleClick 
 // ---------------------------------------------------------------------------
 export default function EntityOrgChart({
   estateId, entities, externals, relationships, beneficiaries,
-  onSingleClickNode, onDoubleClickNode,
+  onSingleClickNode, onDoubleClickNode, onInfoClickNode, onEditClickNode,
   cleanUpSignal,
 }) {
   const { user } = useAuth();
@@ -650,11 +693,10 @@ export default function EntityOrgChart({
               return;
             }
             // Defer single-click action so a double-click within ~250ms can cancel it.
-            const rect = e.currentTarget.getBoundingClientRect();
             if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
             clickTimerRef.current = setTimeout(() => {
               clickTimerRef.current = null;
-              onSingleClickNode?.(n, rect);
+              onSingleClickNode?.(n);
             }, 230);
           };
           const handleDoubleClick = (e) => {
@@ -666,6 +708,19 @@ export default function EntityOrgChart({
             if (recentDragRef.current) return;
             e.preventDefault(); e.stopPropagation();
             onDoubleClickNode?.(n);
+          };
+          const handleInfoClick = (e) => {
+            // Capture the tile rect for popover anchoring. Walk up from the
+            // click target until we hit the [data-testid="entity-node-..."] tile.
+            let tileEl = e.currentTarget;
+            while (tileEl && !tileEl.dataset?.testid?.startsWith('entity-node-')) {
+              tileEl = tileEl.parentElement;
+            }
+            const rect = tileEl ? tileEl.getBoundingClientRect() : e.currentTarget.getBoundingClientRect();
+            onInfoClickNode?.(n, rect);
+          };
+          const handleEditClick = () => {
+            onEditClickNode?.(n);
           };
           return (
             <div
@@ -682,7 +737,9 @@ export default function EntityOrgChart({
                 <EntityTile node={n} dragging={isDragging}
                   onPointerDownDrag={(e) => onPointerDownDrag(e, n)}
                   onClick={handleClick}
-                  onDoubleClick={handleDoubleClick} />
+                  onDoubleClick={handleDoubleClick}
+                  onInfoClick={handleInfoClick}
+                  onEditClick={handleEditClick} />
               ) : (
                 <PersonTile
                   node={n}
@@ -695,6 +752,8 @@ export default function EntityOrgChart({
                   onPointerDownDrag={(e) => onPointerDownDrag(e, n)}
                   onClick={handleClick}
                   onDoubleClick={handleDoubleClick}
+                  onInfoClick={handleInfoClick}
+                  onEditClick={handleEditClick}
                 />
               )}
             </div>

@@ -2259,3 +2259,25 @@ End-to-end verified on `info@carryon.us`:
 3. Doc-row click → `/vault` with openDoc param consumed (v8_vault_redirect.png).
 4. Drag → (800,404) then Clean Up snapped to (800,404), grid-aligned to 20px (v8_clean_up.png).
 5. `bash scripts/check.sh` → ALL CLEAR — SAFE TO PUSH.
+
+
+### Iteration 131-d — Tile-level "i" / pencil buttons + real avatar photos (May 8, 2026)
+
+User asked: a small circular "i" info button on each tile, a pencil edit button on each tile, single click on the tile body should open the linked-documents modal directly. Also: avatars must pull from the same source Settings → Profile uses.
+
+Frontend
+- `EntityOrgChart.js` — added `TileIconButton` (22 × 22 dark glassy circle, gold border, scoped `stopPropagation` + `preventDefault` on `onPointerDown` / `onMouseDown` / `onClick` so it never starts a drag and never bubbles to the tile body).
+  - `EntityTile`: Info + Pencil buttons stacked top-right.
+  - `PersonTile`: now renders the shared `<AvatarCircle>` (same one Settings / Beneficiaries use) so the user's profile photo and beneficiary photos display via the existing offline-cached photo pipeline. Initials remain the fallback when `photo_url` is empty. Top-right shows Info; Pencil appears only on non-user nodes (editing yourself = Settings).
+  - New props: `onSingleClickNode`, `onDoubleClickNode`, `onInfoClickNode`, `onEditClickNode`. 230 ms timer still distinguishes single vs double.
+- `EntitiesSection.js` — click semantics rewired:
+  - Single click on tile body → Documents modal (entities) / Quick Info popover (persons).
+  - Double click on tile body → Documents modal (entities only).
+  - `i` button → Quick Info popover anchored to the tile's bounding rect.
+  - Pencil button → Edit panel auto-opens in edit mode (`startInEdit` prop on `EntityDetailPanel`).
+  - Added `freshUser` state — re-fetches `/api/auth/me` on section mount and prefers that for `user.photo_url` so a newly-saved Settings photo appears immediately even when the AuthContext's cached user is stale.
+- `EntityDetailPanel.js` — new `startInEdit` prop. When true, opens directly into edit mode.
+
+End-to-end verified on `info@carryon.us`: info-buttons=3, edit-buttons=2 (intentionally no pencil on user node), user-photo loaded (naturalW=400, complete=true). Pencil → detail-panel=1, Info → quick-info=1, body click → docs-modal=1. `bash scripts/check.sh` → ALL CLEAR.
+
+User-reported "my picture isn't showing": confirmed via `/auth/me` that the founder account stores `photo_url: ""` (empty). The chart reads the same field Settings → Profile uses, so once a profile photo is saved there it will display. The fresh `/auth/me` fetch added here closes the staleness gap where a just-uploaded photo would otherwise wait until logout/login.

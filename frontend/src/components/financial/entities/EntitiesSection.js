@@ -20,6 +20,7 @@ import EntityDocumentsModal from './EntityDocumentsModal';
 
 export default function EntitiesSection({ estateId, beneficiaries }) {
   const { user, getAuthHeaders } = useAuth();
+  const [freshUser, setFreshUser] = useState(null);
   const [entities, setEntities] = useState([]);
   const [externals, setExternals] = useState([]);
   const [relationships, setRelationships] = useState([]);
@@ -30,6 +31,7 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
   const [quickInfoRect, setQuickInfoRect] = useState(null);
   const [docsModalEntity, setDocsModalEntity] = useState(null);
   const [editingNode, setEditingNode] = useState(null); // opens the full SlidePanel
+  const [editStartInEdit, setEditStartInEdit] = useState(false); // pencil shortcut
   const [viewMode, setViewMode] = useState('chart'); // 'chart' | 'list'
   const [expanded, setExpanded] = useState(false);
   const [resetTick, setResetTick] = useState(0);
@@ -38,14 +40,18 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
   const fetchAll = useCallback(async () => {
     if (!estateId) return;
     try {
-      const [r, docResp] = await Promise.all([
+      const [r, docResp, meResp] = await Promise.all([
         axios.get(`${API_URL}/financial/entities/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()).catch(() => ({ data: [] })),
+        // Re-fetch the user so photo_url is always the freshest from settings,
+        // even if the AuthContext has a stale value cached from login.
+        axios.get(`${API_URL}/auth/me`, getAuthHeaders()).catch(() => ({ data: null })),
       ]);
       setEntities(r.data?.entities || []);
       setExternals(r.data?.external_people || []);
       setRelationships(r.data?.relationships || []);
       setDocuments(Array.isArray(docResp.data) ? docResp.data : []);
+      if (meResp.data) setFreshUser(meResp.data);
     } catch {
       // Surface = silent for read failures
     } finally {
@@ -60,19 +66,47 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
   // Section height grows to fit content, capped at 50dvh / 90dvh expanded.
   const maxH = expanded ? '90vh' : '50vh';
 
+  // The user object passed downstream uses the freshest photo_url
+  // available — fall back to the auth-context user when /auth/me hasn't
+  // returned yet so the chart always has SOMETHING to render.
+  const effectiveUser = freshUser || user;
+
   if (!estateId) return null;
   if (!loaded) return null;
 
-  // Click handlers: single → quick info popover, double → docs modal
-  const handleSingleClick = (node, rect) => {
-    setQuickInfoNode(node);
-    setQuickInfoRect(rect);
+  // Click handlers:
+  //   single click on tile body  → documents modal (or quick info for non-entity nodes)
+  //   "i" button on tile         → quick info popover
+  //   pencil button on tile      → edit panel (auto-jumps to edit mode)
+  //   double click on tile body  → documents modal (entities only)
+  const handleSingleClick = (node) => {
+    if (node.kind === 'entity') {
+      const ent = entities.find((e) => e.id === node.id);
+      if (ent) setDocsModalEntity(ent);
+    } else {
+      // For person nodes, single click shows the quick info bubble (centered)
+      setQuickInfoNode(node);
+      setQuickInfoRect({
+        left: window.innerWidth / 2 - 50,
+        right: window.innerWidth / 2 + 50,
+        top: window.innerHeight / 2 - 50,
+        bottom: window.innerHeight / 2 + 50,
+      });
+    }
   };
   const handleDoubleClick = (node) => {
     if (node.kind === 'entity') {
       const ent = entities.find((e) => e.id === node.id);
       if (ent) setDocsModalEntity(ent);
     }
+  };
+  const handleInfoClick = (node, rect) => {
+    setQuickInfoNode(node);
+    setQuickInfoRect(rect);
+  };
+  const handleEditClick = (node) => {
+    setEditStartInEdit(true);
+    setEditingNode(node);
   };
 
   if (isEmpty) {
@@ -91,7 +125,7 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
         <EntityWizard
           open={showWizard}
           estateId={estateId}
-          user={user}
+          user={effectiveUser}
           beneficiaries={beneficiaries || []}
           entities={entities}
           externals={externals}
@@ -195,6 +229,8 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
             beneficiaries={beneficiaries || []}
             onSingleClickNode={handleSingleClick}
             onDoubleClickNode={handleDoubleClick}
+            onInfoClickNode={handleInfoClick}
+            onEditClickNode={handleEditClick}
             cleanUpSignal={cleanUpSignal}
           />
         ) : (
@@ -203,7 +239,7 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
             externals={externals}
             relationships={relationships}
             beneficiaries={beneficiaries || []}
-            user={user}
+            user={effectiveUser}
             onSelectNode={(node) => setEditingNode(node)}
           />
         )}
@@ -212,7 +248,7 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
       <EntityWizard
         open={showWizard}
         estateId={estateId}
-        user={user}
+        user={effectiveUser}
         beneficiaries={beneficiaries || []}
         entities={entities}
         externals={externals}
@@ -229,12 +265,14 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
         entities={entities}
         externals={externals}
         beneficiaries={beneficiaries || []}
-        user={user}
+        user={effectiveUser}
         relationships={relationships}
         onClose={() => { setQuickInfoNode(null); setQuickInfoRect(null); }}
         onEdit={() => {
-          setEditingNode(quickInfoNode);
+          const node = quickInfoNode;
           setQuickInfoNode(null); setQuickInfoRect(null);
+          setEditStartInEdit(true);
+          setEditingNode(node);
         }}
         onShowDocuments={() => {
           if (quickInfoNode?.kind === 'entity') {
@@ -255,14 +293,15 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
       <EntityDetailPanel
         open={!!editingNode}
         node={editingNode}
-        user={user}
+        startInEdit={editStartInEdit}
+        user={effectiveUser}
         beneficiaries={beneficiaries || []}
         entities={entities}
         externals={externals}
         documents={documents}
         relationships={relationships}
         onChanged={() => fetchAll()}
-        onClose={() => setEditingNode(null)}
+        onClose={() => { setEditingNode(null); setEditStartInEdit(false); }}
       />
     </div>
   );
