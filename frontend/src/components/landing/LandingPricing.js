@@ -51,7 +51,7 @@ const PUBLIC_TIERS = ['premium', 'standard', 'base'];
 // Eligibility-gated discount tiers, revealed when the visitor opens the
 // "Eligible for a discount?" button. Pricing and features come from the
 // same /api/subscriptions/plans response the in-app paywall uses.
-const ELIGIBILITY_TIERS = ['seniors', 'new_adult', 'military', 'veteran', 'hospice'];
+const ELIGIBILITY_TIERS = ['military', 'veteran', 'seniors', 'new_adult', 'hospice'];
 
 const ELIGIBILITY_BLURB = {
   new_adult: 'Ages 18–25 — verified at signup.',
