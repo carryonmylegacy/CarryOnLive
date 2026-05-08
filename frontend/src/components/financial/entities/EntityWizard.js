@@ -26,6 +26,8 @@ import {
 } from '../../../config/entityCatalog';
 import DocumentLinker from './DocumentLinker';
 import FinancialFields from './FinancialFields';
+import EntityCredentialsField from './EntityCredentialsField';
+import { persistEntityCredentials } from './persistEntityCredentials';
 
 const ICONS = {
   Building2, Shield, Landmark, Home, User: UserIcon, Settings,
@@ -86,6 +88,7 @@ export default function EntityWizard({
   const [linkedDocIds, setLinkedDocIds] = useState([]);
   const [grossAssets, setGrossAssets] = useState('');
   const [grossDebts, setGrossDebts] = useState('');
+  const [credentials, setCredentials] = useState([]);
   // External person fields
   const [extFirst, setExtFirst] = useState('');
   const [extLast, setExtLast] = useState('');
@@ -101,6 +104,7 @@ export default function EntityWizard({
     setName(''); setState(''); setNotes(''); setShowMore(false);
     setEinLast4(''); setFormationDate(''); setTaxElection(''); setRegisteredAgent('');
     setLinkedDocIds([]); setGrossAssets(''); setGrossDebts('');
+    setCredentials([]);
     setExtFirst(''); setExtLast(''); setExtNotes('');
     setConnections([{ sourceKey: user?.id ? `user:${user.id}` : '', role: 'owner', ownership_pct: 100 }]);
   };
@@ -210,6 +214,16 @@ export default function EntityWizard({
       }));
 
       toast.success('Entity added to your structure.');
+
+      // Persist any digital credentials → DAV (linked to the new entity)
+      if (credentials.length > 0) {
+        await persistEntityCredentials({
+          credentials,
+          entityId: newEntity.id,
+          authHeaders: getAuthHeaders(),
+        });
+      }
+
       onCreated?.(newEntity, rels.filter(Boolean));
       reset();
       onCancel?.();
@@ -449,6 +463,19 @@ export default function EntityWizard({
                   value={linkedDocIds}
                   onChange={setLinkedDocIds}
                   documents={documents || []}
+                />
+              </div>
+
+              {/* Digital credentials → populate the Digital Access Vault */}
+              <div className="space-y-2">
+                <Label className="text-[var(--t4)]">
+                  Digital credentials
+                  <span className="text-[11px] font-normal text-[var(--t5)] ml-1.5">— saved to your DAV</span>
+                </Label>
+                <EntityCredentialsField
+                  credentials={credentials}
+                  onChange={setCredentials}
+                  defaultAccountName={name ? `${name} portal` : ''}
                 />
               </div>
             </>

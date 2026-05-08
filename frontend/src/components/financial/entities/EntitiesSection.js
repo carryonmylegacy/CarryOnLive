@@ -25,6 +25,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   const [externals, setExternals] = useState([]);
   const [relationships, setRelationships] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [walletEntries, setWalletEntries] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
   const [quickInfoNode, setQuickInfoNode] = useState(null);
@@ -40,17 +41,19 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   const fetchAll = useCallback(async () => {
     if (!estateId) return;
     try {
-      const [r, docResp, meResp] = await Promise.all([
+      const [r, docResp, meResp, walletResp] = await Promise.all([
         axios.get(`${API_URL}/financial/entities/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()).catch(() => ({ data: [] })),
         // Re-fetch the user so photo_url is always the freshest from settings,
         // even if the AuthContext has a stale value cached from login.
         axios.get(`${API_URL}/auth/me`, getAuthHeaders()).catch(() => ({ data: null })),
+        axios.get(`${API_URL}/digital-wallet/${estateId}`, getAuthHeaders()).catch(() => ({ data: [] })),
       ]);
       setEntities(r.data?.entities || []);
       setExternals(r.data?.external_people || []);
       setRelationships(r.data?.relationships || []);
       setDocuments(Array.isArray(docResp.data) ? docResp.data : []);
+      setWalletEntries(Array.isArray(walletResp.data) ? walletResp.data : []);
       if (meResp.data) setFreshUser(meResp.data);
     } catch {
       // Surface = silent for read failures
@@ -299,6 +302,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
         entities={entities}
         externals={externals}
         documents={documents}
+        walletEntries={walletEntries}
         relationships={relationships}
         onChanged={() => { fetchAll(); onEntitiesChanged?.(); }}
         onClose={() => { setEditingNode(null); setEditStartInEdit(false); }}

@@ -22,6 +22,8 @@ import {
 } from '../../../config/entityCatalog';
 import DocumentLinker from './DocumentLinker';
 import FinancialFields from './FinancialFields';
+import EntityCredentialsField from './EntityCredentialsField';
+import { persistEntityCredentials } from './persistEntityCredentials';
 
 export default function EntityDetailPanel({
   open,
@@ -32,6 +34,7 @@ export default function EntityDetailPanel({
   entities,
   externals,
   documents,
+  walletEntries,
   relationships,
   onChanged,
   onClose,
@@ -46,6 +49,7 @@ export default function EntityDetailPanel({
   const [linkedDocIds, setLinkedDocIds] = useState([]);
   const [grossAssets, setGrossAssets] = useState('');
   const [grossDebts, setGrossDebts] = useState('');
+  const [credentials, setCredentials] = useState([]);
   // Edit form state for external person
   const [extFirst, setExtFirst] = useState('');
   const [extLast, setExtLast] = useState('');
@@ -63,21 +67,33 @@ export default function EntityDetailPanel({
     setEditing(!!startInEdit);
     setAddingConn(false);
     setNewSourceKey(''); setNewRole('owner'); setNewPct('');
-    if (!node) return;
-    if (node.kind === 'entity' && node.entity) {
+    if (!node) return;    if (node.kind === 'entity' && node.entity) {
       setName(node.entity.name || '');
       setState(node.entity.formation_state || '');
       setNotes(node.entity.notes || '');
       setLinkedDocIds(node.entity.document_ids || []);
       setGrossAssets(node.entity.gross_assets == null ? '' : String(node.entity.gross_assets));
       setGrossDebts(node.entity.gross_debts == null ? '' : String(node.entity.gross_debts));
+      const linked = (walletEntries || [])
+        .filter((w) => w.linked_entity_id === node.entity.id)
+        .map((w) => ({
+          id: w.id,
+          _new: false,
+          _dirty: false,
+          account_name: w.account_name || '',
+          login_username: w.login_username || '',
+          password: w.password || '',
+          additional_access: w.additional_access || '',
+          notes: w.notes || '',
+        }));
+      setCredentials(linked);
     } else if (node.kind === 'external_person') {
       const p = externals.find((x) => x.id === node.id);
       setExtFirst(p?.first_name || '');
       setExtLast(p?.last_name || '');
       setExtNotes(p?.notes || '');
     }
-  }, [node, externals, startInEdit]);
+  }, [node, externals, startInEdit, walletEntries]);
 
   const incomingRels = useMemo(() => {
     if (!node) return [];
@@ -134,6 +150,12 @@ export default function EntityDetailPanel({
         gross_assets: grossAssets === '' ? null : Number(grossAssets),
         gross_debts: grossDebts === '' ? null : Number(grossDebts),
       }, getAuthHeaders());
+      // Persist any digital-credential edits to the DAV
+      await persistEntityCredentials({
+        credentials,
+        entityId: ent.id,
+        authHeaders: getAuthHeaders(),
+      });
       toast.success('Saved.');
       setEditing(false);
       onChanged?.();
@@ -321,6 +343,17 @@ export default function EntityDetailPanel({
                   value={linkedDocIds}
                   onChange={setLinkedDocIds}
                   documents={documents || []}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[var(--t4)]">
+                  Digital credentials
+                  <span className="text-[11px] font-normal text-[var(--t5)] ml-1.5">— saved to your DAV</span>
+                </Label>
+                <EntityCredentialsField
+                  credentials={credentials}
+                  onChange={setCredentials}
+                  defaultAccountName={name ? `${name} portal` : ''}
                 />
               </div>
               <div className="flex gap-2">

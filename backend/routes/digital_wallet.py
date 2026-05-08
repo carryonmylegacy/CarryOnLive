@@ -29,6 +29,7 @@ class DigitalWalletEntry(BaseModel):
     assigned_beneficiary_id: Optional[str] = None
     assigned_beneficiary_name: Optional[str] = None
     category: str = "other"  # crypto, social_media, email, banking, cloud, subscription, other
+    linked_entity_id: Optional[str] = None  # CFP entity (LLC, trust, etc.) this credential belongs to
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
@@ -40,6 +41,7 @@ class DigitalWalletCreate(BaseModel):
     notes: Optional[str] = None
     assigned_beneficiary_id: Optional[str] = None
     category: str = "other"
+    linked_entity_id: Optional[str] = None
 
 
 class DigitalWalletUpdate(BaseModel):
@@ -50,6 +52,7 @@ class DigitalWalletUpdate(BaseModel):
     notes: Optional[str] = None
     assigned_beneficiary_id: Optional[str] = None
     category: Optional[str] = None
+    linked_entity_id: Optional[str] = None
 
 
 @router.get("/digital-wallet/{estate_id}")
@@ -162,6 +165,7 @@ async def create_digital_wallet_entry(data: DigitalWalletCreate, current_user: d
         assigned_beneficiary_id=data.assigned_beneficiary_id,
         assigned_beneficiary_name=ben_name,
         category=data.category,
+        linked_entity_id=data.linked_entity_id,
     )
 
     doc = entry.model_dump()
