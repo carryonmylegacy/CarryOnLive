@@ -204,7 +204,7 @@ User was mid-pitch and reported four embarrassing regressions. All four root-cau
 
 ## Feb 2026 — Offline Avatar Caching: Final Fix (S3 Regional URLs)
 
-iteration_123 testing-agent run identified that the JS-side fixes alone weren't enough — the S3 presigned URLs were 307-redirecting from the legacy global hostname to the regional one, and the redirect response was dropping CORS headers. The bucket CORS policy itself was correctly configured all along (`https://*.preview.emergentagent.com`, `https://carryon.us`, `https://www.carryon.us` — verified live via `s3.get_bucket_cors`).
+iteration_123 testing-agent run identified that the JS-side fixes alone weren't enough — the S3 presigned URLs were 307-redirecting from the legacy global hostname to the regional one, and the redirect response was dropping CORS headers. The bucket CORS policy itself was correctly configured all along (`https://polish-pitch.preview.emergentagent.com`, `https://carryon.us`, `https://www.carryon.us` — verified live via `s3.get_bucket_cors`).
 
 **Root cause:** `services/photo_urls.py` was instantiating boto3 without forcing SigV4 + virtual-hosted-style addressing. Default behaviour for non-`us-east-1` regions is to emit `<bucket>.s3.amazonaws.com` (the legacy global host). For an actual us-east-2 bucket, AWS responds with HTTP 307 → `<bucket>.s3.us-east-2.amazonaws.com`. The 307 carries no CORS headers, so browser-side `fetch()` rejects with a CORS preflight failure even though the destination would have served correctly.
 
@@ -1769,7 +1769,7 @@ Upgraded the existing push-only service worker into a full App Shell service wor
 
 **Test fix:** three test files (`smoke.spec.js`, `scrollbar.spec.js`) used `waitForLoadState('networkidle')` which never fires when a SW is running background stale-while-revalidate refreshes. Swapped to `'load'` — a more correct and less brittle assertion regardless.
 
-**Live verified:** served `https://preflight-sweep.preview.emergentagent.com/` in Playwright — SW state `activated`, 4 cache buckets populated (shell has index+splash+icons; images has logos+textures; runtime+api populate on usage). Playwright smoke + scrollbar + toggle_state 11/11 passed, housekeeping 65/65 PASS, ESLint clean.
+**Live verified:** served `https://polish-pitch.preview.emergentagent.com/` in Playwright — SW state `activated`, 4 cache buckets populated (shell has index+splash+icons; images has logos+textures; runtime+api populate on usage). Playwright smoke + scrollbar + toggle_state 11/11 passed, housekeeping 65/65 PASS, ESLint clean.
 
 **Expected user impact:** first load same as before; second load from home-screen icon paints the shell in ~100 ms (vs 1-3 s before); offline: basic navigation and cached tiles still render; logout → login on same device: fresh state guaranteed.
 

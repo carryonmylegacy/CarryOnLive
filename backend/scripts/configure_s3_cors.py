@@ -48,7 +48,7 @@ CORS_RULE = {
             "AllowedOrigins": [
                 "https://carryon.us",
                 "https://www.carryon.us",
-                "https://*.preview.emergentagent.com",
+                "https://polish-pitch.preview.emergentagent.com",
                 "capacitor://localhost",
                 "ionic://localhost",
             ],

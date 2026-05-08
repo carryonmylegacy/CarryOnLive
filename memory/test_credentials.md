@@ -30,7 +30,7 @@
 ## 🟡 PREVIEW POD ACCOUNTS (preview-only, not production)
 
 ### Preview Admin/Founder
-- URL: `https://preflight-sweep.preview.emergentagent.com`
+- URL: `https://polish-pitch.preview.emergentagent.com`
 - Email: info@carryon.us
 - Password: Demo1234!
 - Username: admin_5dfa64
