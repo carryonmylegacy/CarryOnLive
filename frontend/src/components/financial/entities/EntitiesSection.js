@@ -7,11 +7,11 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Plus, Network, List as ListIcon, Maximize2 } from 'lucide-react';
+import { Plus, Network, List as ListIcon, Maximize2, RotateCcw } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Button } from '../../ui/button';
 import { API_URL } from '../../../config';
-import EntityOrgChart from './EntityOrgChart';
+import EntityOrgChart, { resetEntityChartPositions } from './EntityOrgChart';
 import EntityWizard from './EntityWizard';
 import EntityDetailPanel from './EntityDetailPanel';
 import EntityListView from './EntityListView';
@@ -26,6 +26,7 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
   const [selectedNode, setSelectedNode] = useState(null);
   const [viewMode, setViewMode] = useState('chart'); // 'chart' | 'list'
   const [expanded, setExpanded] = useState(false);
+  const [resetTick, setResetTick] = useState(0);
 
   const fetchAll = useCallback(async () => {
     if (!estateId) return;
@@ -48,13 +49,8 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
   // entry point is discoverable even when no entities exist yet.
   const isEmpty = entities.length === 0 && externals.length === 0;
 
-  // Section height grows with complexity (capped on desktop).
-  const totalNodes = entities.length + externals.length;
-  const maxH = expanded ? '80vh'
-    : totalNodes <= 3 ? '260px'
-    : totalNodes <= 8 ? '380px'
-    : totalNodes <= 15 ? '500px'
-    : '600px';
+  // Section height grows to fit content, capped at 50vh / 90vh when expanded.
+  const maxH = expanded ? '90vh' : '50vh';
 
   if (!estateId) return null;
   if (!loaded) return null;
@@ -125,6 +121,21 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
           </button>
           {viewMode === 'chart' && (
             <button
+              onClick={() => {
+                resetEntityChartPositions(estateId);
+                // bump a key so the chart re-mounts and re-reads localStorage
+                setResetTick((t) => t + 1);
+              }}
+              className="text-[11px] font-bold flex items-center gap-1 px-2.5 py-1 rounded-full transition-colors"
+              style={{ color: 'var(--t3)', border: '1px solid var(--b)' }}
+              data-testid="entities-reset-layout"
+              title="Reset tile positions to auto-layout"
+            >
+              <RotateCcw className="w-3 h-3" /> Reset layout
+            </button>
+          )}
+          {viewMode === 'chart' && (
+            <button
               onClick={() => setExpanded((x) => !x)}
               className="text-[11px] font-bold flex items-center gap-1 px-2.5 py-1 rounded-full transition-colors"
               style={{ color: 'var(--t3)', border: '1px solid var(--b)' }}
@@ -154,11 +165,12 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
       >
         {viewMode === 'chart' ? (
           <EntityOrgChart
+            key={resetTick}
+            estateId={estateId}
             entities={entities}
             externals={externals}
             relationships={relationships}
             beneficiaries={beneficiaries || []}
-            onAddEntity={() => setShowWizard(true)}
             onSelectNode={(node) => setSelectedNode(node)}
           />
         ) : (

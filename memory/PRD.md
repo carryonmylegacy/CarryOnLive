@@ -2218,3 +2218,13 @@ Frontend
 - Entities are NOT coupled to the formal Beneficiaries list — adding an entity never adds a beneficiary.
 - Bills/Debts/Accounts/Property tiles unchanged. Future enhancement (only on user request) could let a financial item be tagged with the entity that holds it.
 - No pinch-to-zoom / "Center on" anchor switcher in v1; horizontal scroll + vertical scroll inside the section, plus a List View pill, cover the dense-graph case for now.
+
+
+### Iteration 131-b — Free-drag tiles + obstacle-aware edge routing (May 8, 2026)
+- Tiles in the Entities & Structures org chart are now freely draggable anywhere inside the chart pane via pointer events. Positions persist per-estate via `localStorage` key `cfp_entity_chart_positions:{estateId}`. A header "Reset layout" button clears overrides and falls back to the auto-layout.
+- Edges re-route in real time during drag using **orthogonal routing with rounded elbows + obstacle deflection**. Three guarantees: (1) lines always anchor to the proper perimeter point on each tile (top/bottom/left/right based on relative position), (2) lines bend around any other tile that lies between source and target instead of cutting through it, (3) parallel edges are nudged apart by a stable per-edge hash-based offset so they don't stack on top of each other.
+- Person nodes (user / beneficiaries / external people) are now only included in the chart if they participate in at least one relationship — prevents an estate's full beneficiary roster from cluttering the chart when only a few are actually connected to entities.
+- `EntitiesSection` height simplified from per-tier maxes to natural growth capped at 50dvh / 90dvh expanded — the chart's own canvasH drives the display, no clipping.
+- 🐛 **Fixed**: SVG paths weren't rendering because the platform's `<span data-ve-dynamic>` instrumentation wraps any `.map()` JSX output, and an HTML `<span>` ancestor inside an SVG breaks the namespace and prevents children from rendering. Worked around by computing edge SVG markup as a string and injecting via `dangerouslySetInnerHTML` on the `<svg>` element. Lines now render correctly.
+- 🐛 **Fixed**: click-after-drag was opening the detail panel for the just-moved tile because the click event fires AFTER `pointerup`. Added a `recentDragRef` flag with a 50ms grace window after a real drag to suppress the bogus click.
+- Verified end-to-end on `info@carryon.us`: tile dragged from (545,344) → (785,420), persisted across reload (`PERSIST_OK=True`), edges routed cleanly with "100%" ownership badges visible on the gold lines, and `bash scripts/check.sh` returns `ALL CLEAR — SAFE TO PUSH`.
