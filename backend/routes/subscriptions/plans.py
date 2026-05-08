@@ -427,10 +427,10 @@ PLAN_ORDER = [
     "premium",
     "standard",
     "base",
+    "seniors",
     "new_adult",
     "military",
     "veteran",
-    "seniors",
     "hospice",
     "enterprise",
 ]
