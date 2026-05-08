@@ -399,7 +399,7 @@ function PersonTile({ node, palette, dragging, onPointerDownDrag, onClick, onDou
   return (
     <div
       className="relative flex flex-col items-center gap-1 select-none"
-      style={{ width: PERSON_W, height: PERSON_H, cursor: dragging ? 'grabbing' : 'grab' }}
+      style={{ width: PERSON_W, height: PERSON_H, cursor: dragging ? 'grabbing' : 'grab', touchAction: 'none' }}
       onPointerDown={onPointerDownDrag}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
@@ -449,6 +449,7 @@ function EntityTile({ node, dragging, onPointerDownDrag, onClick, onDoubleClick,
         border: `1.5px solid ${palette.stroke}`,
         boxShadow: dragging ? `0 8px 24px rgba(0,0,0,0.45), 0 0 24px ${palette.glow}` : `0 0 18px ${palette.glow}`,
         cursor: dragging ? 'grabbing' : 'grab',
+        touchAction: 'none',
       }}
     >
       <div
