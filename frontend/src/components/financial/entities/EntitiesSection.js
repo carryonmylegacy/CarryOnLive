@@ -189,17 +189,20 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setViewMode((v) => v === 'chart' ? 'list' : 'chart')}
-            className="text-[11px] font-bold flex items-center gap-1 px-2.5 py-1 rounded-full transition-colors"
+            className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
             style={{ color: 'var(--t3)', border: '1px solid var(--b)' }}
             data-testid="entities-toggle-view"
             title={viewMode === 'chart' ? 'Switch to list view' : 'Switch to chart view'}
+            aria-label={viewMode === 'chart' ? 'List view' : 'Chart view'}
           >
-            {viewMode === 'chart' ? <><ListIcon className="w-3 h-3" /> List</> : <><Network className="w-3 h-3" /> Chart</>}
+            {viewMode === 'chart'
+              ? <><ListIcon className="w-3 h-3" /><span className="hidden sm:inline">List</span></>
+              : <><Network className="w-3 h-3" /><span className="hidden sm:inline">Chart</span></>}
           </button>
           {viewMode === 'chart' && (
             <button
               onClick={toggleLocked}
-              className="text-[11px] font-bold flex items-center gap-1 px-2.5 py-1 rounded-full transition-all"
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-all whitespace-nowrap"
               style={locked ? {
                 color: '#1A1A1A',
                 background: 'var(--gold)',
@@ -212,17 +215,18 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
               }}
               data-testid="entities-toggle-lock"
               title={locked ? 'Unlock tile positions' : 'Lock tile positions'}
+              aria-label={locked ? 'Unlock tile positions' : 'Lock tile positions'}
               aria-pressed={locked}
             >
               {locked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
-              {locked ? 'Locked' : 'Lock'}
+              <span className="hidden sm:inline">{locked ? 'Locked' : 'Lock'}</span>
             </button>
           )}
           {viewMode === 'chart' && (
             <button
               onClick={() => setCleanUpSignal((t) => t + 1)}
               disabled={locked}
-              className="text-[11px] font-bold flex items-center gap-1 px-2.5 py-1 rounded-full transition-colors"
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
               style={{
                 color: 'var(--gold)',
                 border: '1px solid rgba(212,165,55,0.4)',
@@ -231,8 +235,9 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
               }}
               data-testid="entities-cleanup"
               title={locked ? 'Unlock to rearrange tiles' : 'Snap tiles to a logical grid'}
+              aria-label="Clean up layout"
             >
-              <Wand2 className="w-3 h-3" /> Clean Up
+              <Wand2 className="w-3 h-3" /><span className="hidden sm:inline">Clean Up</span>
             </button>
           )}
           {viewMode === 'chart' && (
@@ -242,7 +247,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                 setResetTick((t) => t + 1);
               }}
               disabled={locked}
-              className="text-[11px] font-bold flex items-center gap-1 px-2.5 py-1 rounded-full transition-colors"
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
               style={{
                 color: 'var(--t3)',
                 border: '1px solid var(--b)',
@@ -251,27 +256,30 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
               }}
               data-testid="entities-reset-layout"
               title={locked ? 'Unlock to reset layout' : 'Reset tile positions to auto-layout'}
+              aria-label="Reset layout"
             >
-              <RotateCcw className="w-3 h-3" /> Reset layout
+              <RotateCcw className="w-3 h-3" /><span className="hidden sm:inline">Reset layout</span>
             </button>
           )}
           {viewMode === 'chart' && (
             <button
               onClick={() => setExpanded((x) => !x)}
-              className="text-[11px] font-bold flex items-center gap-1 px-2.5 py-1 rounded-full transition-colors"
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
               style={{ color: 'var(--t3)', border: '1px solid var(--b)' }}
               data-testid="entities-toggle-expand"
               title={expanded ? 'Collapse' : 'Expand'}
+              aria-label={expanded ? 'Collapse' : 'Expand'}
             >
-              <Maximize2 className="w-3 h-3" /> {expanded ? 'Collapse' : 'Expand'}
+              <Maximize2 className="w-3 h-3" /><span className="hidden sm:inline">{expanded ? 'Collapse' : 'Expand'}</span>
             </button>
           )}
           <Button
             onClick={() => setShowWizard(true)}
-            className="px-3 py-1.5 rounded-md text-xs font-semibold btn-gold-cta"
+            className="px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold btn-gold-cta whitespace-nowrap"
             data-testid="entities-add-button"
+            aria-label="Add entity"
           >
-            <Plus className="w-3.5 h-3.5 mr-1" /> Add
+            <Plus className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">Add</span>
           </Button>
         </div>
       </div>

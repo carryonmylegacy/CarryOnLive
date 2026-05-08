@@ -532,6 +532,42 @@ export default function EntityOrgChart({
   // Effective position of any node = override OR initial
   const positionOf = useCallback((key) => overrides[key] || initial[key] || { x: PADDING, y: PADDING }, [overrides, initial]);
 
+  // Auto-center the benefactor (root user) tile horizontally inside the
+  // scrollable canvas on first paint and whenever the canvas/layout size
+  // changes. Important for narrow PWA viewports where the tree extends
+  // wider than the screen — without this the user lands looking at the
+  // top-left corner of the canvas with the root tile off-screen-right.
+  // We do NOT touch the vertical position; the user is free to scroll up
+  // and down naturally.
+  const userKey = useMemo(() => {
+    const u = nodes.find((n) => n.kind === 'user');
+    return u?.key || null;
+  }, [nodes]);
+  useEffect(() => {
+    if (!userKey) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const pos = overrides[userKey] || initial[userKey];
+    if (!pos) return;
+    const node = nodes.find((n) => n.key === userKey);
+    const tileW = node?.w || 110;
+    // Center the tile's midpoint inside the visible viewport. Clamp to
+    // [0, scrollable-width] so we never set a negative or out-of-range
+    // scrollLeft (which would silently no-op on some browsers).
+    const target = Math.max(
+      0,
+      Math.min(
+        el.scrollWidth - el.clientWidth,
+        pos.x + tileW / 2 - el.clientWidth / 2
+      )
+    );
+    // RAF so the layout has actually flushed before we scroll.
+    const id = requestAnimationFrame(() => {
+      el.scrollLeft = target;
+    });
+    return () => cancelAnimationFrame(id);
+  }, [userKey, overrides, initial, nodes, canvasW, canvasH]); // re-center on size changes
+
   // Canvas size: max of initial canvas + farthest dragged node
   const { canvasW, canvasH } = useMemo(() => {
     let w = initialW, h = initialH;

@@ -302,7 +302,18 @@ export default function EntityDetailPanel({
         {/* Body */}
         <div
           className="flex-1 overflow-y-auto px-4 py-4 space-y-4 cfp-edit-surface"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 28px)' }}
+          style={{
+            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 28px)',
+            // iOS PWA scroll fixes: `min-height: 0` lets the flex child
+            // actually shrink so its overflow region is hit-testable;
+            // `pan-y` + `WebkitOverflowScrolling` ensure touch gestures
+            // route into this scroller instead of bubbling to the page;
+            // `overscroll-behavior: contain` blocks rubber-band escape.
+            minHeight: 0,
+            touchAction: 'pan-y',
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain',
+          }}
         >
           {/* Entity edit mode */}
           {isEntity && editing && (
