@@ -5,6 +5,7 @@
  * relationships, and lets the user add new relationships in place.
  */
 import React, { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ChevronLeft, Loader2, Trash2, Plus, Edit2,
 } from 'lucide-react';
@@ -261,12 +262,19 @@ export default function EntityDetailPanel({
   };
 
   // -------- render --------
-  return (
+  // Portal to <body> so iOS PWA + OverlayScrollbars/transform ancestors
+  // never trap the fixed positioning or eat the scroll region.
+  return createPortal((
     <div className="fixed inset-0 z-50 flex items-stretch justify-end" data-testid="entity-detail-panel">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div
-        className="relative h-full w-full sm:w-[460px] flex flex-col"
-        style={{ background: 'var(--bg)', borderLeft: '1px solid var(--b)', maxHeight: '100dvh' }}
+        className="relative w-full sm:w-[460px] flex flex-col"
+        style={{
+          background: 'var(--bg)',
+          borderLeft: '1px solid var(--b)',
+          height: '100vh',
+          maxHeight: '100dvh',
+        }}
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--b)] flex-shrink-0">
@@ -603,5 +611,5 @@ export default function EntityDetailPanel({
         )}
       </div>
     </div>
-  );
+  ), document.body);
 }

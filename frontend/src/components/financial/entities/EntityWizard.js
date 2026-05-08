@@ -8,6 +8,7 @@
  * Step 3 — add at least one connection (who connects, in what role, %)
  */
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Building2, Shield, Landmark, Home, User as UserIcon, Settings,
   ChevronLeft, Loader2, HelpCircle, Plus, Trash2,
@@ -243,7 +244,9 @@ export default function EntityWizard({
   ].filter(Boolean);
 
   // -------------- render --------------
-  return (
+  // Portal to <body> so iOS PWA + OverlayScrollbars/transform ancestors
+  // never trap the fixed positioning or eat the scroll region.
+  return createPortal((
     <div className="fixed inset-0 z-50 flex items-stretch justify-end" data-testid="entity-wizard">
       {/* Backdrop */}
       <div
@@ -252,8 +255,13 @@ export default function EntityWizard({
       />
       {/* Panel */}
       <div
-        className="relative h-full w-full sm:w-[460px] flex flex-col"
-        style={{ background: 'var(--bg)', borderLeft: '1px solid var(--b)', maxHeight: '100dvh' }}
+        className="relative w-full sm:w-[460px] flex flex-col"
+        style={{
+          background: 'var(--bg)',
+          borderLeft: '1px solid var(--b)',
+          height: '100vh',
+          maxHeight: '100dvh',
+        }}
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--b)] flex-shrink-0">
@@ -630,5 +638,5 @@ export default function EntityWizard({
         </div>
       </div>
     </div>
-  );
+  ), document.body);
 }
