@@ -64,7 +64,7 @@ export default function EntityQuickInfoPopover({
       <div className="fixed inset-0 z-40" onClick={onClose} data-testid="quick-info-backdrop" />
       <div
         data-testid="entity-quick-info"
-        className="fixed z-50 rounded-2xl shadow-2xl"
+        className="fixed z-50 rounded-2xl shadow-2xl overflow-y-auto max-h-[80vh]"
         style={{
           left, top, width: PW,
           background: 'var(--bg2)',
@@ -86,7 +86,7 @@ export default function EntityQuickInfoPopover({
               <div className="text-[11px] text-[var(--t4)] truncate">{meta.friendly}{ent?.formation_state ? ` · ${ent.formation_state}` : ''}</div>
             )}
           </div>
-          <button onClick={onClose} className="p-1 text-[var(--t5)] hover:text-[var(--t)]" aria-label="Close">
+          <button onClick={onClose} className="p-2 text-[var(--t5)] hover:text-[var(--t)]" aria-label="Close">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -96,11 +96,11 @@ export default function EntityQuickInfoPopover({
           <div className="px-3 py-2.5 border-b border-[var(--b)]">
             <div className="grid grid-cols-2 gap-2 text-[12px]">
               <div>
-                <div className="text-[10px] uppercase font-bold tracking-wide text-[var(--t5)]">Assets</div>
+                <div className="text-[11px] uppercase font-bold tracking-wide text-[var(--t5)]">Assets</div>
                 <div className="text-sm font-bold" style={{ color: '#22C993' }}>{a == null ? '—' : formatCurrency(a)}</div>
               </div>
               <div>
-                <div className="text-[10px] uppercase font-bold tracking-wide text-[var(--t5)]">Debts</div>
+                <div className="text-[11px] uppercase font-bold tracking-wide text-[var(--t5)]">Debts</div>
                 <div className="text-sm font-bold" style={{ color: '#C49545' }}>{d == null ? '—' : formatCurrency(d)}</div>
               </div>
             </div>
@@ -111,7 +111,7 @@ export default function EntityQuickInfoPopover({
                 border: `1px solid ${net == null ? 'var(--b)' : net >= 0 ? 'rgba(34,201,147,0.35)' : 'rgba(196,149,69,0.45)'}`,
               }}
             >
-              <span className="text-[10px] uppercase font-bold tracking-wide text-[var(--t4)]">Net worth</span>
+              <span className="text-[11px] uppercase font-bold tracking-wide text-[var(--t4)]">Net worth</span>
               <span
                 className="text-sm font-bold"
                 style={{ color: net == null ? 'var(--t5)' : net >= 0 ? '#22C993' : '#C49545' }}
@@ -126,7 +126,7 @@ export default function EntityQuickInfoPopover({
         <div className="px-3 py-2.5 border-b border-[var(--b)] space-y-2">
           {incoming.length > 0 && (
             <div>
-              <div className="text-[10px] uppercase font-bold tracking-wide text-[var(--t5)] mb-1">Above (connects in)</div>
+              <div className="text-[11px] uppercase font-bold tracking-wide text-[var(--t5)] mb-1">Above (connects in)</div>
               {incoming.slice(0, 3).map((r) => {
                 const role = ROLE_OPTIONS.find((x) => x.id === r.role);
                 return (
@@ -141,7 +141,7 @@ export default function EntityQuickInfoPopover({
           )}
           {outgoing.length > 0 && (
             <div>
-              <div className="text-[10px] uppercase font-bold tracking-wide text-[var(--t5)] mb-1">Below (controls)</div>
+              <div className="text-[11px] uppercase font-bold tracking-wide text-[var(--t5)] mb-1">Below (controls)</div>
               {outgoing.slice(0, 3).map((r) => {
                 const role = ROLE_OPTIONS.find((x) => x.id === r.role);
                 return (

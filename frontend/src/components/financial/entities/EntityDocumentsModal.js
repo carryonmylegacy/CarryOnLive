@@ -34,7 +34,7 @@ export default function EntityDocumentsModal({ open, entity, documents, onClose 
             <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--t5)]">Linked documents</div>
             <div className="text-sm font-bold text-[var(--t)] truncate">{entity.name}</div>
           </div>
-          <button onClick={onClose} className="p-1 text-[var(--t5)] hover:text-[var(--t)]" aria-label="Close">
+          <button onClick={onClose} className="p-2 text-[var(--t5)] hover:text-[var(--t)]" aria-label="Close">
             <X className="w-4 h-4" />
           </button>
         </div>
