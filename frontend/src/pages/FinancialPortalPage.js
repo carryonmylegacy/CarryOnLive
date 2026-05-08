@@ -36,6 +36,7 @@ import CashflowTimeline from '../components/financial/CashflowTimeline';
 import FinancialSummary from '../components/financial/FinancialSummary';
 import CfpVisibilityToggle from '../components/CfpVisibilityToggle';
 import QuickAdd from '../components/financial/QuickAdd';
+import EntitiesSection from '../components/financial/entities/EntitiesSection';
 
 const DEFAULT_BILL_CATEGORIES = [
   'mortgage_rent', 'utilities', 'insurance', 'subscriptions', 'credit_card',
@@ -740,6 +741,10 @@ const FinancialPortalPage = () => {
           )}
         </div>
       </div>
+
+      {/* Entities & Structures org chart — appears above Financial Summary
+          when the user has any entities. Hidden completely otherwise. */}
+      <EntitiesSection estateId={estate?.id} beneficiaries={beneficiaries} />
 
       {/* Financial Summary Cards */}
       <FinancialSummary summary={summary} onNavigate={(tab) => setActiveTab(tab)} />

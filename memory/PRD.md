@@ -2181,3 +2181,40 @@ Items the founder explicitly deferred so they don't carry pre-pitch risk. Each i
 - **What the work is**: extract `BeneficiaryConciergePage`'s auto-resolve `useEffect` into `frontend/src/hooks/useBeneficiaryEstateId.js`, then refactor the six pages to use it. Returns `{ estateId, isResolving }`. Belt-and-braces parity, zero behaviour change for the happy path.
 - **Estimated effort**: 1 hour.
 
+
+
+## Iteration 131 — CFP Entities & Structures Org Chart (May 8, 2026)
+
+**User ask** (verbatim): "build a feature that in an extremely user-friendly way, enables a user to build out a visual representation of the most simple, to the most insanely complex (think master-mind super villain) entity structure that displays in the same UX as the beneficiary page tree, with the same graphic light flow and flash at each node … in a new space above the first tiles in the CarryOn Financial Picture (CFP)."
+
+**Design picks (founder-stated)**: 2D org chart that stretches both horizontally and vertically (NOT orbital). No stoplight colours (no red, no yellow, no traffic-light green). Bronze/antique-gold replaces red as the "weighty / locked / irrevocable" signal. Section-4 lucide icons used everywhere (Building2 / Shield / Landmark / Home / User / Settings).
+
+**What shipped**
+
+Backend (`backend/routes/financial_portal/entities.py`)
+- 3 new soft-deleted Mongo collections: `cfp_entities`, `cfp_external_people`, `cfp_entity_relationships`.
+- Routes (all owner-only, beneficiary GET returns empty payload so frontend renders-then-hides gracefully):
+  - `GET /api/financial/entities/{estate_id}` — bundle of {entities, external_people, relationships}.
+  - `POST/PATCH/DELETE /api/financial/entities[/{id}]` — entity CRUD (cascade soft-deletes relationships on entity delete).
+  - `POST/PATCH/DELETE /api/financial/external-people[/{id}]` — lightweight outside-person CRUD (cascades).
+  - `POST/PATCH/DELETE /api/financial/entity-relationships[/{id}]` — relationship CRUD with ownership_pct 0-100 sanity check.
+
+Frontend
+- `frontend/src/config/entityCatalog.js` — single source of truth: 6 buckets (`business`, `trust`, `charity`, `property`, `external_person`, `specialized`) × every entity type from the founder's master list. Each type carries `id`, `friendly`, `legal`, `blurb`, `accent` colour key, `state_relevant` flag. No-stoplight palette: `bronze` (irrevocable/locked), `indigo` (other trusts), `steel` (business), `champagne` (charity), `teal` (property-holding), `slate` (specialized), `cream` (you).
+- `frontend/src/components/financial/entities/EntityOrgChart.js` — layered 2D org chart. Nodes laid out by BFS depth with horizontal flex rows; SVG overlay redraws lines via ResizeObserver. Lines use gold-gradient pulse for ownership (thickness scales with %), dashed indigo for trustee, dotted teal for beneficiary, slate arrow for manager/officer/director, gold-dot start for grantor. Mid-line ownership-% badges. Same dash-reveal animation language as `FamilyTree`.
+- `frontend/src/components/financial/entities/EntityWizard.js` — slide-in wizard. Step 1 picks bucket → type (with search + per-type "?" help-dot popovers carrying kindergarten-simple blurbs). Step 2 captures name / formation_state / notes (advanced fields collapsed behind "Show more details": EIN last-4, formation date, tax election, registered agent). Step 3 captures ≥ 1 connection (autocomplete picker over you / beneficiaries / existing entities / external people; toggle-pill role row; ownership % field appears only for owner/gp/lp). External-person path collapses to 2 steps.
+- `frontend/src/components/financial/entities/EntityDetailPanel.js` — tap-on-node side panel. Read-only summary, in-place edit for entities + external people, full incoming/outgoing relationship list with per-row removal, "Add a connection" inline form, soft-delete entity action. Custom in-panel confirm modal (PWA-iOS blocks `window.confirm`).
+- `frontend/src/components/financial/entities/EntityListView.js` — fallback indented-tree view for dense graphs / small screens. Toggled via header pill.
+- `frontend/src/components/financial/entities/EntitiesSection.js` — wrapper that fetches the bundle and renders directly above the FinancialSummary tiles. Empty state = a single quiet "Map your entities & trusts" pill at the top-right of the CFP (zero vertical footprint until populated). Section height grows commensurately with node count: 260 → 380 → 500 → 600 px. Header has Network/List toggle + Expand toggle + Add button.
+- Wired into `frontend/src/pages/FinancialPortalPage.js` — `<EntitiesSection estateId={estate?.id} beneficiaries={beneficiaries} />` rendered immediately above `<FinancialSummary>`.
+
+**Verified end-to-end**
+- Curl roundtrip on the seeded admin estate: GET (empty) → POST entity (DE LLC) → POST relationship (user → entity, owner 100%) → GET (entities=1, rels=1) → DELETE entity → cascade soft-delete confirmed. ALL 200s.
+- Playwright on the founder demo account at `info@carryon.us`: empty-state CTA pill renders on CFP, wizard opens with all 6 buckets shown using the section-4 icons (Building2 / Shield / Landmark / Home / User / Settings).
+- Housekeeping: `bash /app/scripts/check.sh` → ALL CLEAR (0 WARN / 0 FAIL, ESLint clean, frontend build clean, ruff clean).
+
+**Out-of-scope (explicit)**
+- No legal advice / no auto-suggestions ever.
+- Entities are NOT coupled to the formal Beneficiaries list — adding an entity never adds a beneficiary.
+- Bills/Debts/Accounts/Property tiles unchanged. Future enhancement (only on user request) could let a financial item be tagged with the entity that holds it.
+- No pinch-to-zoom / "Center on" anchor switcher in v1; horizontal scroll + vertical scroll inside the section, plus a List View pill, cover the dense-graph case for now.
