@@ -7,7 +7,7 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Plus, Network, List as ListIcon, Maximize2, RotateCcw } from 'lucide-react';
+import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Button } from '../../ui/button';
 import { API_URL } from '../../../config';
@@ -15,28 +15,39 @@ import EntityOrgChart, { resetEntityChartPositions } from './EntityOrgChart';
 import EntityWizard from './EntityWizard';
 import EntityDetailPanel from './EntityDetailPanel';
 import EntityListView from './EntityListView';
+import EntityQuickInfoPopover from './EntityQuickInfoPopover';
+import EntityDocumentsModal from './EntityDocumentsModal';
 
 export default function EntitiesSection({ estateId, beneficiaries }) {
   const { user, getAuthHeaders } = useAuth();
   const [entities, setEntities] = useState([]);
   const [externals, setExternals] = useState([]);
   const [relationships, setRelationships] = useState([]);
+  const [documents, setDocuments] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
-  const [selectedNode, setSelectedNode] = useState(null);
+  const [quickInfoNode, setQuickInfoNode] = useState(null);
+  const [quickInfoRect, setQuickInfoRect] = useState(null);
+  const [docsModalEntity, setDocsModalEntity] = useState(null);
+  const [editingNode, setEditingNode] = useState(null); // opens the full SlidePanel
   const [viewMode, setViewMode] = useState('chart'); // 'chart' | 'list'
   const [expanded, setExpanded] = useState(false);
   const [resetTick, setResetTick] = useState(0);
+  const [cleanUpSignal, setCleanUpSignal] = useState(0);
 
   const fetchAll = useCallback(async () => {
     if (!estateId) return;
     try {
-      const r = await axios.get(`${API_URL}/financial/entities/${estateId}`, getAuthHeaders());
+      const [r, docResp] = await Promise.all([
+        axios.get(`${API_URL}/financial/entities/${estateId}`, getAuthHeaders()),
+        axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()).catch(() => ({ data: [] })),
+      ]);
       setEntities(r.data?.entities || []);
       setExternals(r.data?.external_people || []);
       setRelationships(r.data?.relationships || []);
+      setDocuments(Array.isArray(docResp.data) ? docResp.data : []);
     } catch {
-      // Surface = silent for read failures (estate may not have it yet, beneficiary view returns empty)
+      // Surface = silent for read failures
     } finally {
       setLoaded(true);
     }
@@ -44,19 +55,27 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  // Hidden entirely until the first entity is created.
-  // Floating "+ Start mapping" button appears at the very top so the
-  // entry point is discoverable even when no entities exist yet.
   const isEmpty = entities.length === 0 && externals.length === 0;
 
-  // Section height grows to fit content, capped at 50vh / 90vh when expanded.
+  // Section height grows to fit content, capped at 50dvh / 90dvh expanded.
   const maxH = expanded ? '90vh' : '50vh';
 
   if (!estateId) return null;
   if (!loaded) return null;
 
+  // Click handlers: single → quick info popover, double → docs modal
+  const handleSingleClick = (node, rect) => {
+    setQuickInfoNode(node);
+    setQuickInfoRect(rect);
+  };
+  const handleDoubleClick = (node) => {
+    if (node.kind === 'entity') {
+      const ent = entities.find((e) => e.id === node.id);
+      if (ent) setDocsModalEntity(ent);
+    }
+  };
+
   if (isEmpty) {
-    // Discreet entry pill — no orbit space, just a quiet inviter.
     return (
       <>
         <div className="flex justify-end" data-testid="entities-empty-cta">
@@ -76,6 +95,7 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
           beneficiaries={beneficiaries || []}
           entities={entities}
           externals={externals}
+          documents={documents}
           onCreated={() => fetchAll()}
           onCreatedExternal={() => fetchAll()}
           onCancel={() => setShowWizard(false)}
@@ -93,7 +113,6 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
       }}
       data-testid="entities-section"
     >
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--b)] flex-wrap gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center"
@@ -121,9 +140,19 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
           </button>
           {viewMode === 'chart' && (
             <button
+              onClick={() => setCleanUpSignal((t) => t + 1)}
+              className="text-[11px] font-bold flex items-center gap-1 px-2.5 py-1 rounded-full transition-colors"
+              style={{ color: 'var(--gold)', border: '1px solid rgba(212,165,55,0.4)' }}
+              data-testid="entities-cleanup"
+              title="Snap tiles to a logical grid"
+            >
+              <Wand2 className="w-3 h-3" /> Clean Up
+            </button>
+          )}
+          {viewMode === 'chart' && (
+            <button
               onClick={() => {
                 resetEntityChartPositions(estateId);
-                // bump a key so the chart re-mounts and re-reads localStorage
                 setResetTick((t) => t + 1);
               }}
               className="text-[11px] font-bold flex items-center gap-1 px-2.5 py-1 rounded-full transition-colors"
@@ -155,14 +184,7 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
         </div>
       </div>
 
-      {/* Body */}
-      <div
-        className="overflow-auto"
-        style={{
-          maxHeight: maxH,
-          WebkitOverflowScrolling: 'touch',
-        }}
-      >
+      <div className="overflow-auto" style={{ maxHeight: maxH, WebkitOverflowScrolling: 'touch' }}>
         {viewMode === 'chart' ? (
           <EntityOrgChart
             key={resetTick}
@@ -171,7 +193,9 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
             externals={externals}
             relationships={relationships}
             beneficiaries={beneficiaries || []}
-            onSelectNode={(node) => setSelectedNode(node)}
+            onSingleClickNode={handleSingleClick}
+            onDoubleClickNode={handleDoubleClick}
+            cleanUpSignal={cleanUpSignal}
           />
         ) : (
           <EntityListView
@@ -180,7 +204,7 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
             relationships={relationships}
             beneficiaries={beneficiaries || []}
             user={user}
-            onSelectNode={(node) => setSelectedNode(node)}
+            onSelectNode={(node) => setEditingNode(node)}
           />
         )}
       </div>
@@ -192,21 +216,53 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
         beneficiaries={beneficiaries || []}
         entities={entities}
         externals={externals}
+        documents={documents}
         onCreated={() => fetchAll()}
         onCreatedExternal={() => fetchAll()}
         onCancel={() => setShowWizard(false)}
       />
 
+      <EntityQuickInfoPopover
+        open={!!quickInfoNode}
+        anchorRect={quickInfoRect}
+        node={quickInfoNode}
+        entities={entities}
+        externals={externals}
+        beneficiaries={beneficiaries || []}
+        user={user}
+        relationships={relationships}
+        onClose={() => { setQuickInfoNode(null); setQuickInfoRect(null); }}
+        onEdit={() => {
+          setEditingNode(quickInfoNode);
+          setQuickInfoNode(null); setQuickInfoRect(null);
+        }}
+        onShowDocuments={() => {
+          if (quickInfoNode?.kind === 'entity') {
+            const ent = entities.find((e) => e.id === quickInfoNode.id);
+            if (ent) setDocsModalEntity(ent);
+          }
+          setQuickInfoNode(null); setQuickInfoRect(null);
+        }}
+      />
+
+      <EntityDocumentsModal
+        open={!!docsModalEntity}
+        entity={docsModalEntity}
+        documents={documents}
+        onClose={() => setDocsModalEntity(null)}
+      />
+
       <EntityDetailPanel
-        open={!!selectedNode}
-        node={selectedNode}
+        open={!!editingNode}
+        node={editingNode}
         user={user}
         beneficiaries={beneficiaries || []}
         entities={entities}
         externals={externals}
+        documents={documents}
         relationships={relationships}
         onChanged={() => fetchAll()}
-        onClose={() => setSelectedNode(null)}
+        onClose={() => setEditingNode(null)}
       />
     </div>
   );

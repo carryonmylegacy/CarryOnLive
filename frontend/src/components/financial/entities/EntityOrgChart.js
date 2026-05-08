@@ -360,7 +360,7 @@ function polylineToRoundedPath(points, r = CORNER_R) {
 // ---------------------------------------------------------------------------
 // Node renderers
 // ---------------------------------------------------------------------------
-function PersonTile({ node, palette, dragging, onPointerDownDrag, onClick }) {
+function PersonTile({ node, palette, dragging, onPointerDownDrag, onClick, onDoubleClick }) {
   const initials = (node.label?.[0] || '') + (node.sublabel?.[0] || '');
   const color = node.avatar_color || palette.stroke;
   return (
@@ -369,6 +369,7 @@ function PersonTile({ node, palette, dragging, onPointerDownDrag, onClick }) {
       style={{ width: PERSON_W, height: PERSON_H, cursor: dragging ? 'grabbing' : 'grab' }}
       onPointerDown={onPointerDownDrag}
       onClick={onClick}
+      onDoubleClick={onDoubleClick}
       data-testid={`entity-node-${node.key}`}
     >
       <div
@@ -392,7 +393,7 @@ function PersonTile({ node, palette, dragging, onPointerDownDrag, onClick }) {
   );
 }
 
-function EntityTile({ node, dragging, onPointerDownDrag, onClick }) {
+function EntityTile({ node, dragging, onPointerDownDrag, onClick, onDoubleClick }) {
   const e = node.entity;
   const palette = getEntityPalette(e);
   const meta = getTypeMeta(e.category, e.type);
@@ -401,6 +402,7 @@ function EntityTile({ node, dragging, onPointerDownDrag, onClick }) {
     <div
       onPointerDown={onPointerDownDrag}
       onClick={onClick}
+      onDoubleClick={onDoubleClick}
       data-testid={`entity-node-entity-${e.id}`}
       className="rounded-2xl px-3 py-2.5 transition-shadow flex items-start gap-2 select-none"
       style={{
@@ -442,13 +444,15 @@ function EntityTile({ node, dragging, onPointerDownDrag, onClick }) {
 // ---------------------------------------------------------------------------
 export default function EntityOrgChart({
   estateId, entities, externals, relationships, beneficiaries,
-  onSelectNode,
+  onSingleClickNode, onDoubleClickNode,
+  cleanUpSignal,
 }) {
   const { user } = useAuth();
   const containerRef = useRef(null);
   const [draggingKey, setDraggingKey] = useState(null);
   const dragStateRef = useRef(null); // { key, startX, startY, origX, origY }
   const recentDragRef = useRef(false); // suppresses the click that follows a real drag
+  const clickTimerRef = useRef(null);  // for distinguishing single vs double click
   // Position overrides per node (loaded from localStorage). Initial layout
   // fills any node not present here.
   const [overrides, setOverrides] = useState(() => {
@@ -645,7 +649,23 @@ export default function EntityOrgChart({
               e.preventDefault(); e.stopPropagation();
               return;
             }
-            onSelectNode?.(n);
+            // Defer single-click action so a double-click within ~250ms can cancel it.
+            const rect = e.currentTarget.getBoundingClientRect();
+            if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
+            clickTimerRef.current = setTimeout(() => {
+              clickTimerRef.current = null;
+              onSingleClickNode?.(n, rect);
+            }, 230);
+          };
+          const handleDoubleClick = (e) => {
+            // Cancel the pending single-click
+            if (clickTimerRef.current) {
+              clearTimeout(clickTimerRef.current);
+              clickTimerRef.current = null;
+            }
+            if (recentDragRef.current) return;
+            e.preventDefault(); e.stopPropagation();
+            onDoubleClickNode?.(n);
           };
           return (
             <div
@@ -661,7 +681,8 @@ export default function EntityOrgChart({
               {n.kind === 'entity' ? (
                 <EntityTile node={n} dragging={isDragging}
                   onPointerDownDrag={(e) => onPointerDownDrag(e, n)}
-                  onClick={handleClick} />
+                  onClick={handleClick}
+                  onDoubleClick={handleDoubleClick} />
               ) : (
                 <PersonTile
                   node={n}
@@ -673,6 +694,7 @@ export default function EntityOrgChart({
                   dragging={isDragging}
                   onPointerDownDrag={(e) => onPointerDownDrag(e, n)}
                   onClick={handleClick}
+                  onDoubleClick={handleDoubleClick}
                 />
               )}
             </div>
@@ -687,4 +709,61 @@ export default function EntityOrgChart({
 // for this estate so the chart falls back to the auto-layout.
 export function resetEntityChartPositions(estateId) {
   try { window.localStorage?.removeItem(POS_KEY(estateId)); } catch { /* ignore */ }
+}
+
+/**
+ * Clean Up — snap every tile to a logical grid based on its current
+ * relative positioning. We:
+ *   1. Cluster tiles into horizontal rows: tiles whose Y is within
+ *      ROW_BAND of an existing band collapse into that band's average Y.
+ *   2. Within each band, sort tiles by current X and re-distribute them
+ *      with uniform COL_GAP horizontal spacing, centered on the band's
+ *      average X.
+ *   3. Snap each final coord to the nearest 20px so everything aligns.
+ *
+ * Persists the new positions immediately and returns them so callers
+ * can bump a re-mount key if they want a fresh animation.
+ */
+export function cleanUpEntityChartPositions(estateId, currentPositionsByKey, nodeMetaByKey) {
+  if (!currentPositionsByKey || Object.keys(currentPositionsByKey).length === 0) {
+    // Nothing to do — let the auto-layout drive.
+    try { window.localStorage?.removeItem(POS_KEY(estateId)); } catch { /* ignore */ }
+    return {};
+  }
+  const ROW_BAND = 60; // px
+  const SNAP = 20;     // px
+  const entries = Object.entries(currentPositionsByKey).map(([k, p]) => {
+    const meta = nodeMetaByKey[k] || { w: ENTITY_W, h: ENTITY_H };
+    return { key: k, x: p.x, y: p.y, w: meta.w, h: meta.h };
+  });
+  // Sort by Y to make banding deterministic
+  entries.sort((a, b) => a.y - b.y);
+  const bands = []; // [{y_avg, members:[entry]}]
+  entries.forEach((e) => {
+    const center = e.y + e.h / 2;
+    const band = bands.find((b) => Math.abs(b.y_avg - center) <= ROW_BAND);
+    if (band) {
+      band.members.push(e);
+      band.y_avg = (band.y_avg * (band.members.length - 1) + center) / band.members.length;
+    } else {
+      bands.push({ y_avg: center, members: [e] });
+    }
+  });
+  // Within each band, lay out left-to-right by current X
+  const out = {};
+  bands.forEach((b) => {
+    const members = [...b.members].sort((m1, m2) => m1.x - m2.x);
+    const totalW = members.reduce((s, m) => s + m.w, 0) + COL_GAP * (members.length - 1);
+    const avgX = members.reduce((s, m) => s + (m.x + m.w / 2), 0) / members.length;
+    let cursor = avgX - totalW / 2;
+    if (cursor < PADDING) cursor = PADDING;
+    members.forEach((m) => {
+      const x = Math.round(cursor / SNAP) * SNAP;
+      const y = Math.round((b.y_avg - m.h / 2) / SNAP) * SNAP;
+      out[m.key] = { x: Math.max(PADDING, x), y: Math.max(PADDING, y) };
+      cursor += m.w + COL_GAP;
+    });
+  });
+  try { window.localStorage?.setItem(POS_KEY(estateId), JSON.stringify(out)); } catch { /* quota */ }
+  return out;
 }

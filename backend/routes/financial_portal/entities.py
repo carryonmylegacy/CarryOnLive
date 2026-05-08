@@ -14,7 +14,7 @@ do not see this surface — entities are a benefactor-only structural layer.
 """
 
 from datetime import datetime, timezone
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 import uuid
 
 from fastapi import Depends, HTTPException
@@ -57,6 +57,9 @@ class EntityCreate(BaseModel):
     tax_election: Optional[str] = None
     registered_agent: Optional[str] = None
     notes: Optional[str] = None
+    document_ids: Optional[List[str]] = None
+    gross_assets: Optional[float] = None
+    gross_debts: Optional[float] = None
 
 
 class EntityUpdate(BaseModel):
@@ -69,6 +72,9 @@ class EntityUpdate(BaseModel):
     tax_election: Optional[str] = None
     registered_agent: Optional[str] = None
     notes: Optional[str] = None
+    document_ids: Optional[List[str]] = None
+    gross_assets: Optional[float] = None
+    gross_debts: Optional[float] = None
 
 
 class ExternalPersonCreate(BaseModel):
@@ -164,6 +170,9 @@ async def create_entity(payload: EntityCreate, current_user: dict = Depends(get_
         "tax_election": (payload.tax_election or None),
         "registered_agent": (payload.registered_agent or None),
         "notes": (payload.notes or None),
+        "document_ids": list(payload.document_ids or []),
+        "gross_assets": payload.gross_assets,
+        "gross_debts": payload.gross_debts,
         "created_at": _now_iso(),
         "updated_at": _now_iso(),
         "deleted_at": None,
@@ -188,6 +197,8 @@ async def update_entity(
     update_fields = payload.model_dump(exclude_unset=True)
     if "name" in update_fields and isinstance(update_fields["name"], str):
         update_fields["name"] = update_fields["name"].strip()
+    if "document_ids" in update_fields and update_fields["document_ids"] is None:
+        update_fields["document_ids"] = []
     update_fields["updated_at"] = _now_iso()
     await db.cfp_entities.update_one({"id": entity_id}, {"$set": update_fields})
     refreshed = await db.cfp_entities.find_one({"id": entity_id}, {"_id": 0})

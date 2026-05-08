@@ -219,6 +219,32 @@ const VaultPage = () => {
     fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Deep-link: ?openDoc=<id> arrived from the Entities & Structures
+  // chart (or anywhere else). Once docs are loaded, find the matching
+  // doc and open its preview. Fires once per ID in the URL — clearing
+  // the param afterwards so refreshes don't re-trigger.
+  const deepLinkHandledRef = useRef(false);
+  useEffect(() => {
+    if (loading || deepLinkHandledRef.current || documents.length === 0) return;
+    const params = new URLSearchParams(location.search);
+    const openId = params.get('openDoc');
+    if (!openId) return;
+    const target = documents.find((d) => d.id === openId);
+    if (!target) {
+      deepLinkHandledRef.current = true;
+      return;
+    }
+    deepLinkHandledRef.current = true;
+    setTimeout(() => {
+      try { handlePreview(target); } catch { /* ignore */ }
+    }, 100);
+    // strip the param so a manual reload doesn't keep re-opening it
+    const next = new URLSearchParams(location.search);
+    next.delete('openDoc');
+    const cleanQs = next.toString();
+    navigate({ pathname: location.pathname, search: cleanQs ? `?${cleanQs}` : '' }, { replace: true });
+  }, [loading, documents, location.search]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Auto-refresh when a chunked upload completes (offline DAV docs
   // draining on reconnect) or when the outbox drains any DAV mutations.
   // Also refresh on network transitions so airplane-mode toggling

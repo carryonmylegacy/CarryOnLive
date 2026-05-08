@@ -24,6 +24,8 @@ import { API_URL } from '../../../config';
 import {
   BUCKETS, TYPES, ROLE_OPTIONS, FORMATION_STATES, getTypeMeta,
 } from '../../../config/entityCatalog';
+import DocumentLinker from './DocumentLinker';
+import FinancialFields from './FinancialFields';
 
 const ICONS = {
   Building2, Shield, Landmark, Home, User: UserIcon, Settings,
@@ -62,6 +64,7 @@ export default function EntityWizard({
   beneficiaries,
   entities,
   externals,
+  documents,
   onCreated,
   onCreatedExternal,
   onCancel,
@@ -80,6 +83,9 @@ export default function EntityWizard({
   const [formationDate, setFormationDate] = useState('');
   const [taxElection, setTaxElection] = useState('');
   const [registeredAgent, setRegisteredAgent] = useState('');
+  const [linkedDocIds, setLinkedDocIds] = useState([]);
+  const [grossAssets, setGrossAssets] = useState('');
+  const [grossDebts, setGrossDebts] = useState('');
   // External person fields
   const [extFirst, setExtFirst] = useState('');
   const [extLast, setExtLast] = useState('');
@@ -94,6 +100,7 @@ export default function EntityWizard({
     setStep(1); setBucketId(null); setTypeId(null); setSearch('');
     setName(''); setState(''); setNotes(''); setShowMore(false);
     setEinLast4(''); setFormationDate(''); setTaxElection(''); setRegisteredAgent('');
+    setLinkedDocIds([]); setGrossAssets(''); setGrossDebts('');
     setExtFirst(''); setExtLast(''); setExtNotes('');
     setConnections([{ sourceKey: user?.id ? `user:${user.id}` : '', role: 'owner', ownership_pct: 100 }]);
   };
@@ -179,6 +186,9 @@ export default function EntityWizard({
         tax_election: taxElection || null,
         registered_agent: registeredAgent || null,
         notes: notes.trim() || null,
+        document_ids: linkedDocIds.filter(Boolean),
+        gross_assets: grossAssets === '' ? null : Number(grossAssets),
+        gross_debts: grossDebts === '' ? null : Number(grossDebts),
       }, getAuthHeaders());
       const newEntity = ent.data;
 
@@ -421,6 +431,26 @@ export default function EntityWizard({
                   </div>
                 </div>
               )}
+
+              {/* Financials */}
+              <div className="space-y-2">
+                <Label className="text-[var(--t4)]">Financial snapshot</Label>
+                <FinancialFields
+                  assets={grossAssets}
+                  debts={grossDebts}
+                  onChange={({ assets, debts }) => { setGrossAssets(assets); setGrossDebts(debts); }}
+                />
+              </div>
+
+              {/* Linked SDV documents */}
+              <div className="space-y-2">
+                <Label className="text-[var(--t4)]">Linked documents (SDV)</Label>
+                <DocumentLinker
+                  value={linkedDocIds}
+                  onChange={setLinkedDocIds}
+                  documents={documents || []}
+                />
+              </div>
             </>
           )}
 

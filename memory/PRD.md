@@ -2228,3 +2228,34 @@ Frontend
 - 🐛 **Fixed**: SVG paths weren't rendering because the platform's `<span data-ve-dynamic>` instrumentation wraps any `.map()` JSX output, and an HTML `<span>` ancestor inside an SVG breaks the namespace and prevents children from rendering. Worked around by computing edge SVG markup as a string and injecting via `dangerouslySetInnerHTML` on the `<svg>` element. Lines now render correctly.
 - 🐛 **Fixed**: click-after-drag was opening the detail panel for the just-moved tile because the click event fires AFTER `pointerup`. Added a `recentDragRef` flag with a 50ms grace window after a real drag to suppress the bogus click.
 - Verified end-to-end on `info@carryon.us`: tile dragged from (545,344) → (785,420), persisted across reload (`PERSIST_OK=True`), edges routed cleanly with "100%" ownership badges visible on the gold lines, and `bash scripts/check.sh` returns `ALL CLEAR — SAFE TO PUSH`.
+
+
+### Iteration 131-c — SDV linkage + financials + click semantics + Clean Up (May 8, 2026)
+
+User asked for: per-tile SDV document linkage with multi-add UX, gross-assets / gross-debts / net-worth fields, single-click quick info, double-click documents modal that deep-links into the SDV with the picked document open, persistent drag positions, and a "Clean Up" snap-to-grid action.
+
+Backend (`backend/routes/financial_portal/entities.py`)
+- Extended `EntityCreate` and `EntityUpdate` with `document_ids: List[str]`, `gross_assets: float`, `gross_debts: float`. Stored on the `cfp_entities` document. No new endpoints — uses existing POST / PATCH.
+
+Frontend
+- `DocumentLinker.js` (new): reusable multi-add SDV doc picker — one dropdown per linked doc, "+ Add another document" only offers docs not already linked, per-row trash icon.
+- `FinancialFields.js` (new): reusable gross-assets / gross-debts inputs with live-computed Net Worth row (emerald when ≥ 0, bronze when negative — no stoplight colours).
+- `EntityQuickInfoPopover.js` (new): single-click anchored popover. Category label, name, type/state, assets/debts/net worth, Above (incoming) + Below (outgoing) hierarchy, Docs / Edit actions. Auto-flips to other side / bottom when it would overflow viewport. Click-outside backdrop closes.
+- `EntityDocumentsModal.js` (new): double-click target. Lists every linked SDV doc, click → `/vault?openDoc=<id>`.
+- `EntityWizard.js` Step 2 now captures Linked documents (DocumentLinker) and Financial snapshot (FinancialFields). Wizard accepts `documents` prop.
+- `EntityDetailPanel.js` edit form now persists `document_ids`, `gross_assets`, `gross_debts` alongside name/state/notes.
+- `EntityOrgChart.js`:
+  - Single vs double click distinguished via a 230 ms timer (double cancels the pending single).
+  - New exported `cleanUpEntityChartPositions()` — snap-to-grid: cluster tiles into rows by Y (±60 px → averaged band), distribute each band L→R with COL_GAP spacing centered on band's average X, snap to nearest 20 px. Persists to localStorage.
+  - New `cleanUpSignal` prop bumps cleanup; section's gold "Clean Up" header button increments it.
+- `EntitiesSection.js`: orchestrator. Fetches `/api/documents/{estateId}` alongside entities. Wires single → QuickInfoPopover, double → DocumentsModal, popover Edit → EntityDetailPanel, popover Docs → DocumentsModal. New gold Clean Up button.
+- `VaultPage.js`: deep-link `useEffect` — when `?openDoc=<id>` arrives and docs are loaded, finds the doc and calls `handlePreview`. Strips the param afterwards so reloads don't re-trigger.
+
+Tile positions persistence (already shipped in 131-b) satisfies "wherever I move a tile, it stays there until moved again" — localStorage-keyed per estate.
+
+End-to-end verified on `info@carryon.us`:
+1. Single click → quick-info-popover-visible=1 (screenshot v8_quick_info.png).
+2. Double click → docs-modal-visible=1, doc-rows=2 (screenshot v8_docs_modal.png).
+3. Doc-row click → `/vault` with openDoc param consumed (v8_vault_redirect.png).
+4. Drag → (800,404) then Clean Up snapped to (800,404), grid-aligned to 20px (v8_clean_up.png).
+5. `bash scripts/check.sh` → ALL CLEAR — SAFE TO PUSH.

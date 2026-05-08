@@ -20,6 +20,8 @@ import { API_URL } from '../../../config';
 import {
   ROLE_OPTIONS, FORMATION_STATES, getTypeMeta, getBucketMeta, getEntityPalette,
 } from '../../../config/entityCatalog';
+import DocumentLinker from './DocumentLinker';
+import FinancialFields from './FinancialFields';
 
 export default function EntityDetailPanel({
   open,
@@ -28,6 +30,7 @@ export default function EntityDetailPanel({
   beneficiaries,
   entities,
   externals,
+  documents,
   relationships,
   onChanged,
   onClose,
@@ -39,6 +42,9 @@ export default function EntityDetailPanel({
   const [name, setName] = useState('');
   const [state, setState] = useState('');
   const [notes, setNotes] = useState('');
+  const [linkedDocIds, setLinkedDocIds] = useState([]);
+  const [grossAssets, setGrossAssets] = useState('');
+  const [grossDebts, setGrossDebts] = useState('');
   // Edit form state for external person
   const [extFirst, setExtFirst] = useState('');
   const [extLast, setExtLast] = useState('');
@@ -61,6 +67,9 @@ export default function EntityDetailPanel({
       setName(node.entity.name || '');
       setState(node.entity.formation_state || '');
       setNotes(node.entity.notes || '');
+      setLinkedDocIds(node.entity.document_ids || []);
+      setGrossAssets(node.entity.gross_assets == null ? '' : String(node.entity.gross_assets));
+      setGrossDebts(node.entity.gross_debts == null ? '' : String(node.entity.gross_debts));
     } else if (node.kind === 'external_person') {
       const p = externals.find((x) => x.id === node.id);
       setExtFirst(p?.first_name || '');
@@ -120,6 +129,9 @@ export default function EntityDetailPanel({
         name: name.trim() || ent.name,
         formation_state: state || null,
         notes: notes.trim() || null,
+        document_ids: linkedDocIds.filter(Boolean),
+        gross_assets: grossAssets === '' ? null : Number(grossAssets),
+        gross_debts: grossDebts === '' ? null : Number(grossDebts),
       }, getAuthHeaders());
       toast.success('Saved.');
       setEditing(false);
@@ -293,6 +305,22 @@ export default function EntityDetailPanel({
               <div className="space-y-2">
                 <Label className="text-[var(--t4)]">Notes</Label>
                 <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="input-field min-h-[80px]" rows={3} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[var(--t4)]">Financial snapshot</Label>
+                <FinancialFields
+                  assets={grossAssets}
+                  debts={grossDebts}
+                  onChange={({ assets, debts }) => { setGrossAssets(assets); setGrossDebts(debts); }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[var(--t4)]">Linked documents (SDV)</Label>
+                <DocumentLinker
+                  value={linkedDocIds}
+                  onChange={setLinkedDocIds}
+                  documents={documents || []}
+                />
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setEditing(false)} className="btn-outline-cta">Cancel</Button>
