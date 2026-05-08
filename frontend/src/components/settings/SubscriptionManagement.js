@@ -25,7 +25,7 @@ const TIER_STYLES = {
   premium: { accent: '#d4af37', icon: Crown, label: 'Most Popular' },
   standard: { accent: '#60A5FA', icon: Star, label: null },
   base: { accent: '#22C993', icon: Shield, label: null },
-  new_adult: { accent: '#B794F6', icon: Award, label: 'Ages 18-25' },
+  new_adult: { accent: '#B794F6', icon: Award, label: 'Verified · 18–25' },
   military: { accent: '#F59E0B', icon: Shield, label: 'Verified' },
   hospice: { accent: '#ec4899', icon: Heart, label: 'Free' },
   veteran: { accent: '#059669', icon: Award, label: 'Verified' },
@@ -242,7 +242,7 @@ export const SubscriptionManagement = ({
   const showBillingToggle = !isBeneficiary || (lockedPlan && lockedPlan.allows_billing_toggle !== false);
   const beneficiaryNoTierYet = isBeneficiary && !lockedTier;
 
-  const requiresVerification = (planId) => ['military', 'hospice', 'veteran', 'seniors', 'enterprise'].includes(planId);
+  const requiresVerification = (planId) => ['military', 'hospice', 'veteran', 'seniors', 'new_adult', 'enterprise'].includes(planId);
 
   // Check if user is already verified for a tier
   const isVerifiedFor = (planId) => {
@@ -255,6 +255,7 @@ export const SubscriptionManagement = ({
     hospice: ['Hospice Enrollment Documentation'],
     veteran: ['DD214', 'Veterans Administration Benefits Letter'],
     seniors: ["Driver's License", 'Passport', 'State ID'],
+    new_adult: ["Driver's License", 'Passport', 'State ID'],
     enterprise: ['Partner access code'],
   };
 
@@ -604,7 +605,7 @@ export const SubscriptionManagement = ({
           <div className="mb-4 p-3 rounded-xl" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
             <p className="text-xs text-[var(--yw)] leading-relaxed">
               {isNewAdult
-                ? 'Based on your age (18-25), you qualify for the New Adult tier. No verification required.'
+                ? 'Based on your age (18–25), you qualify for the New Adult tier. A government-issued ID is required after subscribing.'
                 : autoTier === 'seniors'
                 ? 'Based on your age (65+), you qualify for the Seniors tier. A government-issued ID is required after subscribing.'
                 : autoTier === 'enterprise'
@@ -997,7 +998,7 @@ export const SubscriptionManagement = ({
           }}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
-                {verificationTier === 'military' ? 'Military / First Responder' : verificationTier === 'veteran' ? 'Veteran' : verificationTier === 'seniors' ? 'Seniors (65+)' : 'Hospice'} Verification
+                {verificationTier === 'military' ? 'Military / First Responder' : verificationTier === 'veteran' ? 'Veteran' : verificationTier === 'seniors' ? 'Seniors (65+)' : verificationTier === 'new_adult' ? 'New Adult (18–25)' : 'Hospice'} Verification
               </h2>
               <button onClick={() => { setShowVerification(false); setVerificationFile(null); setVerificationDocType(''); }}
                 className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform">

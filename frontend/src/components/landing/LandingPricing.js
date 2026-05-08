@@ -54,7 +54,7 @@ const PUBLIC_TIERS = ['premium', 'standard', 'base'];
 const ELIGIBILITY_TIERS = ['military', 'veteran', 'seniors', 'new_adult', 'hospice'];
 
 const ELIGIBILITY_BLURB = {
-  new_adult: 'Ages 18–25 — verified at signup.',
+  new_adult: 'Ages 18–25 — government ID verified at signup.',
   seniors: 'Ages 65+ — government ID verified at signup.',
   military: 'Active military / first responders — verified at signup.',
   veteran: 'Veterans — verified at signup.',

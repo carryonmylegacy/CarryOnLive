@@ -192,8 +192,13 @@ DEFAULT_PLANS = [
         "ben_price": 1.99,
         "paired_price": 3.99,
         "adjustable": False,
-        "note": "Ages 18-25 · Auto-detected",
-        "requires_age_verification": True,
+        "note": "Ages 18–25 · Requires verification",
+        "requires_verification": True,
+        "verification_docs": [
+            "Driver's License",
+            "Passport",
+            "State ID",
+        ],
         "features": [
             "Full platform access",
             "Life Milestone onboarding",

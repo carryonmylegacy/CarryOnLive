@@ -258,7 +258,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
       ? ['Military ID', 'First Responder Badge']
       : verificationTier === 'veteran'
         ? ['DD214', 'Veterans Administration Benefits Letter']
-        : verificationTier === 'seniors'
+        : verificationTier === 'seniors' || verificationTier === 'new_adult'
           ? ["Driver's License", 'Passport', 'State ID']
           : ['Hospice enrollment documentation'];
     const verificationTitle = verificationTier === 'military'
@@ -267,7 +267,9 @@ export default function SubscriptionPaywall({ onDismiss }) {
         ? 'Veteran'
         : verificationTier === 'seniors'
           ? 'Seniors (65+)'
-          : 'Hospice';
+          : verificationTier === 'new_adult'
+            ? 'New Adult (18–25)'
+            : 'Hospice';
 
     return (
       <div className="fixed inset-0 z-[9999] bg-[#0a0e1a]/95 flex items-center justify-center p-4" data-testid="verification-modal">
