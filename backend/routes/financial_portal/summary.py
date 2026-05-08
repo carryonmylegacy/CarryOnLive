@@ -74,7 +74,24 @@ async def get_financial_summary(estate_id: str, current_user: dict = Depends(get
     total_debt = sum(d.get("outstanding_balance") or 0 for d in debts)
     account_assets = sum(a.get("approximate_balance") or 0 for a in accounts)
     property_value = sum(p.get("estimated_value") or 0 for p in property_assets)
-    total_assets = account_assets + property_value
+
+    # Entities & Structures roll-up (CFP org-chart). User-defined legal
+    # entities (LLCs, trusts, FLPs, etc.) carry their own gross_assets /
+    # gross_debts that represent value held *outside* the individual
+    # accounts/properties already counted above. Fold them into the
+    # total so the dashboard tile + CFP summary cards include the full
+    # picture. Beneficiaries don't see this surface, so we skip the
+    # roll-up for non-owners to keep their view consistent with what
+    # they're allowed to view in the org-chart UI.
+    entity_assets = 0.0
+    entity_debts = 0.0
+    if is_owner:
+        entities = await db.cfp_entities.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
+        entity_assets = sum(e.get("gross_assets") or 0 for e in entities)
+        entity_debts = sum(e.get("gross_debts") or 0 for e in entities)
+
+    total_assets = account_assets + property_value + entity_assets
+    total_debt = total_debt + entity_debts
 
     # Upcoming bills (next 7 days)
     today = datetime.now(timezone.utc)
@@ -120,6 +137,8 @@ async def get_financial_summary(estate_id: str, current_user: dict = Depends(get
         "property_count": len(property_assets),
         "account_assets": round(account_assets, 2),
         "property_value": round(property_value, 2),
+        "entity_assets": round(entity_assets, 2),
+        "entity_debts": round(entity_debts, 2),
         "total_assets": round(total_assets, 2),
         "net_position": round(total_assets - total_debt, 2),
         "upcoming_bills": upcoming[:5],

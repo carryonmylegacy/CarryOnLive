@@ -18,7 +18,7 @@ import EntityListView from './EntityListView';
 import EntityQuickInfoPopover from './EntityQuickInfoPopover';
 import EntityDocumentsModal from './EntityDocumentsModal';
 
-export default function EntitiesSection({ estateId, beneficiaries }) {
+export default function EntitiesSection({ estateId, beneficiaries, onEntitiesChanged }) {
   const { user, getAuthHeaders } = useAuth();
   const [freshUser, setFreshUser] = useState(null);
   const [entities, setEntities] = useState([]);
@@ -130,8 +130,8 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
           entities={entities}
           externals={externals}
           documents={documents}
-          onCreated={() => fetchAll()}
-          onCreatedExternal={() => fetchAll()}
+          onCreated={() => { fetchAll(); onEntitiesChanged?.(); }}
+          onCreatedExternal={() => { fetchAll(); onEntitiesChanged?.(); }}
           onCancel={() => setShowWizard(false)}
         />
       </>
@@ -253,8 +253,8 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
         entities={entities}
         externals={externals}
         documents={documents}
-        onCreated={() => fetchAll()}
-        onCreatedExternal={() => fetchAll()}
+        onCreated={() => { fetchAll(); onEntitiesChanged?.(); }}
+        onCreatedExternal={() => { fetchAll(); onEntitiesChanged?.(); }}
         onCancel={() => setShowWizard(false)}
       />
 
@@ -300,7 +300,7 @@ export default function EntitiesSection({ estateId, beneficiaries }) {
         externals={externals}
         documents={documents}
         relationships={relationships}
-        onChanged={() => fetchAll()}
+        onChanged={() => { fetchAll(); onEntitiesChanged?.(); }}
         onClose={() => { setEditingNode(null); setEditStartInEdit(false); }}
       />
     </div>

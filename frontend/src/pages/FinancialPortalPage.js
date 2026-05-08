@@ -231,6 +231,19 @@ const FinancialPortalPage = () => {
     setLoading(false);
   };
 
+  // Light-weight summary-only refresh — used when the user mutates an
+  // entity in the org chart (assets/debts roll up into the totals on the
+  // backend, so the cards above need to refresh without a full portal
+  // reload).
+  const refreshSummary = async () => {
+    if (!estate?.id) return;
+    try {
+      const headers = (await getAuthHeaders()).headers;
+      const res = await axios.get(`${API_URL}/financial/summary/${estate.id}`, { headers });
+      if (res.data) setSummary(res.data);
+    } catch { /* silent */ }
+  };
+
   // Auto-refresh on reconnect so the user doesn't have to navigate off-and-back.
   useEffect(() => {
     const refetch = () => { fetchAll(); };
