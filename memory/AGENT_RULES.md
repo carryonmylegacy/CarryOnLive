@@ -585,3 +585,34 @@ ENFORCEMENT:
     declared const.
   • Run manually: `python3 /app/scripts/check_hook_dep_tdz.py
     /app/frontend/src`
+
+
+────────────────────────────────────────────────────────────────────
+RULE: Never put two `style=` (or `className=`) attrs on the same JSX
+────────────────────────────────────────────────────────────────────
+
+React silently keeps only the LAST attribute when a JSX element has
+duplicate `style={...}` or `className={...}`. Every property in the
+earlier object is dropped without warning. The first symptom is a
+layout that works in dev but breaks on iOS PWA / production because
+critical inline styles (min-height, touch-action, overflow modes,
+padding, z-index) silently vanish.
+
+Bug pattern that shipped once:
+
+    <div
+      className="flex-1 overflow-y-auto"
+      style={{ minHeight: 0, touchAction: 'pan-y' }}    // ← dropped
+      style={{ paddingBottom: 'calc(...)' }}            // ← wins
+    >
+
+PREVENTION:
+  • Always merge into a single style / className.
+  • If you need to add styles to existing ones, edit the existing
+    object — don't append a second attribute.
+
+ENFORCEMENT:
+  • housekeeping.sh check 3c runs /app/scripts/check_jsx_duplicate_attrs.py
+    after every push and fails if any duplicate style/className exists.
+  • Run manually: `python3 /app/scripts/check_jsx_duplicate_attrs.py
+    /app/frontend/src`

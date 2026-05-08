@@ -278,12 +278,15 @@ export default function EntityWizard({
         <div
           className="flex-1 overflow-y-auto px-4 py-4 space-y-4 cfp-edit-surface"
           style={{
+            // iOS PWA scroll fixes — must coexist in a SINGLE style prop
+            // because JSX silently keeps only the last `style={...}` on
+            // duplicates. (One regression already shipped from this.)
             minHeight: 0,
             touchAction: 'pan-y',
             WebkitOverflowScrolling: 'touch',
             overscrollBehavior: 'contain',
+            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)',
           }}
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)' }}
         >
           {/* ---------------- STEP 1 ---------------- */}
           {step === 1 && (

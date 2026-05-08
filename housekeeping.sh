@@ -147,6 +147,25 @@ else
   echo "$TDZ_OUT" | sed 's/^/    /'
   ISSUES=$((ISSUES + 1))
 fi
+
+# ── 2c. JSX Duplicate Attribute Guard ────────────────────────────────
+# Catches a second silent-regression pattern: two `style={...}` (or
+# `className={...}`) attributes on the same JSX element. React keeps
+# only the LAST one and drops every property in the earlier object
+# without warning — first symptom is a panel that "works in dev" but
+# loses critical inline styles (min-height, touch-action, overflow)
+# in production, freezing scroll on iOS PWA. Scanner lives in
+# /app/scripts/check_jsx_duplicate_attrs.py.
+echo -n "3c. JSX duplicate-attr guard ...... "
+DUP_OUT=$(python3 /app/scripts/check_jsx_duplicate_attrs.py /app/frontend/src 2>&1)
+DUP_EXIT=$?
+if [ "$DUP_EXIT" = "0" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL"
+  echo "$DUP_OUT" | sed 's/^/    /'
+  ISSUES=$((ISSUES + 1))
+fi
 cd /app/frontend
 
 # ── 3. Frontend Build ────────────────────────────────────────────────

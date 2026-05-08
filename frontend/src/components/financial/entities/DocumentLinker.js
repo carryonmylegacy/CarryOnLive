@@ -73,7 +73,7 @@ export default function DocumentLinker({ value, onChange, documents }) {
       })}
 
       {/* Adder: button OR a native <select> while picking */}
-      {!picking && available.length > 0 && (
+      {!picking && (
         <button
           type="button"
           onClick={() => setPicking(true)}
@@ -84,7 +84,7 @@ export default function DocumentLinker({ value, onChange, documents }) {
         </button>
       )}
 
-      {picking && (
+      {picking && available.length > 0 && (
         <div className="flex items-stretch gap-2">
           {/* Native <select>; iOS PWA opens its wheel picker, Android &
               desktop get a normal dropdown — both reliable and high
@@ -114,12 +114,38 @@ export default function DocumentLinker({ value, onChange, documents }) {
         </div>
       )}
 
-      {/* Helper messages */}
-      {!picking && available.length === 0 && (documents || []).length > 0 && selected.length > 0 && (
-        <p className="text-[12px] text-[var(--t5)] italic">All available SDV documents are linked.</p>
-      )}
-      {(documents || []).length === 0 && !picking && (
-        <p className="text-[12px] text-[var(--t5)] italic">No documents in your SDV yet.</p>
+      {picking && available.length === 0 && (
+        <div
+          className="px-3 py-3 rounded-lg space-y-2"
+          style={{ background: 'var(--card)', border: '1px solid rgba(212,165,55,0.35)' }}
+          data-testid="doc-link-empty-prompt"
+        >
+          <p className="text-[12px] text-[var(--t3)]">
+            {(documents || []).length === 0
+              ? 'Your Secure Document Vault is empty. Upload a document to your SDV first, then come back here to link it.'
+              : 'Every document in your SDV is already linked here.'}
+          </p>
+          <div className="flex items-center gap-2">
+            {(documents || []).length === 0 && (
+              <button
+                type="button"
+                onClick={() => { setPicking(false); window.location.href = '/vault'; }}
+                className="px-3 py-1.5 rounded-md text-[11px] font-bold btn-gold-cta"
+                data-testid="doc-link-goto-vault"
+              >
+                Open SDV
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setPicking(false)}
+              className="px-3 py-1.5 rounded-md text-[11px] font-bold text-[var(--t4)] border border-[var(--b)]"
+              data-testid="doc-link-empty-cancel"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
