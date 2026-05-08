@@ -7,7 +7,7 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2 } from 'lucide-react';
+import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2, Lock, Unlock } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Button } from '../../ui/button';
 import { API_URL } from '../../../config';
@@ -17,6 +17,8 @@ import EntityDetailPanel from './EntityDetailPanel';
 import EntityListView from './EntityListView';
 import EntityQuickInfoPopover from './EntityQuickInfoPopover';
 import EntityDocumentsModal from './EntityDocumentsModal';
+
+const LOCK_KEY = (estateId) => `cfp:entities:locked:${estateId || 'global'}`;
 
 export default function EntitiesSection({ estateId, beneficiaries, onEntitiesChanged }) {
   const { user, getAuthHeaders } = useAuth();
@@ -37,6 +39,25 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   const [expanded, setExpanded] = useState(false);
   const [resetTick, setResetTick] = useState(0);
   const [cleanUpSignal, setCleanUpSignal] = useState(0);
+  const [locked, setLocked] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try { return window.localStorage?.getItem(LOCK_KEY(estateId)) === '1'; }
+    catch { return false; }
+  });
+
+  // Re-read the lock state when the estate changes (per-estate persistence)
+  useEffect(() => {
+    try { setLocked(window.localStorage?.getItem(LOCK_KEY(estateId)) === '1'); }
+    catch { /* ignore */ }
+  }, [estateId]);
+
+  const toggleLocked = () => {
+    setLocked((prev) => {
+      const next = !prev;
+      try { window.localStorage?.setItem(LOCK_KEY(estateId), next ? '1' : '0'); } catch { /* quota */ }
+      return next;
+    });
+  };
 
   const fetchAll = useCallback(async () => {
     if (!estateId) return;
@@ -177,11 +198,39 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           </button>
           {viewMode === 'chart' && (
             <button
+              onClick={toggleLocked}
+              className="text-[11px] font-bold flex items-center gap-1 px-2.5 py-1 rounded-full transition-all"
+              style={locked ? {
+                color: '#1A1A1A',
+                background: 'var(--gold)',
+                border: '1px solid var(--gold)',
+                boxShadow: '0 0 12px rgba(212,165,55,0.55), 0 0 24px rgba(212,165,55,0.25)',
+              } : {
+                color: 'var(--t4)',
+                background: 'transparent',
+                border: '1px solid var(--b)',
+              }}
+              data-testid="entities-toggle-lock"
+              title={locked ? 'Unlock tile positions' : 'Lock tile positions'}
+              aria-pressed={locked}
+            >
+              {locked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+              {locked ? 'Locked' : 'Lock'}
+            </button>
+          )}
+          {viewMode === 'chart' && (
+            <button
               onClick={() => setCleanUpSignal((t) => t + 1)}
+              disabled={locked}
               className="text-[11px] font-bold flex items-center gap-1 px-2.5 py-1 rounded-full transition-colors"
-              style={{ color: 'var(--gold)', border: '1px solid rgba(212,165,55,0.4)' }}
+              style={{
+                color: 'var(--gold)',
+                border: '1px solid rgba(212,165,55,0.4)',
+                opacity: locked ? 0.4 : 1,
+                cursor: locked ? 'not-allowed' : 'pointer',
+              }}
               data-testid="entities-cleanup"
-              title="Snap tiles to a logical grid"
+              title={locked ? 'Unlock to rearrange tiles' : 'Snap tiles to a logical grid'}
             >
               <Wand2 className="w-3 h-3" /> Clean Up
             </button>
@@ -192,10 +241,16 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                 resetEntityChartPositions(estateId);
                 setResetTick((t) => t + 1);
               }}
+              disabled={locked}
               className="text-[11px] font-bold flex items-center gap-1 px-2.5 py-1 rounded-full transition-colors"
-              style={{ color: 'var(--t3)', border: '1px solid var(--b)' }}
+              style={{
+                color: 'var(--t3)',
+                border: '1px solid var(--b)',
+                opacity: locked ? 0.4 : 1,
+                cursor: locked ? 'not-allowed' : 'pointer',
+              }}
               data-testid="entities-reset-layout"
-              title="Reset tile positions to auto-layout"
+              title={locked ? 'Unlock to reset layout' : 'Reset tile positions to auto-layout'}
             >
               <RotateCcw className="w-3 h-3" /> Reset layout
             </button>
@@ -235,6 +290,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
             onInfoClickNode={handleInfoClick}
             onEditClickNode={handleEditClick}
             cleanUpSignal={cleanUpSignal}
+            locked={locked}
           />
         ) : (
           <EntityListView

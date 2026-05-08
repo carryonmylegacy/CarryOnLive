@@ -389,7 +389,7 @@ function TileIconButton({ icon: Icon, onClick, label, color = 'rgba(255,255,255,
   );
 }
 
-function PersonTile({ node, palette, dragging, onPointerDownDrag, onClick, onDoubleClick, onInfoClick, onEditClick }) {
+function PersonTile({ node, palette, dragging, locked, onPointerDownDrag, onClick, onDoubleClick, onInfoClick, onEditClick }) {
   const initials = (node.label?.[0] || '') + (node.sublabel?.[0] || '');
   const color = node.avatar_color || palette.stroke;
   const cacheKey =
@@ -399,7 +399,7 @@ function PersonTile({ node, palette, dragging, onPointerDownDrag, onClick, onDou
   return (
     <div
       className="relative flex flex-col items-center gap-1 select-none"
-      style={{ width: PERSON_W, height: PERSON_H, cursor: dragging ? 'grabbing' : 'grab', touchAction: 'none' }}
+      style={{ width: PERSON_W, height: PERSON_H, cursor: locked ? 'pointer' : (dragging ? 'grabbing' : 'grab'), touchAction: locked ? 'auto' : 'none' }}
       onPointerDown={onPointerDownDrag}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
@@ -431,7 +431,7 @@ function PersonTile({ node, palette, dragging, onPointerDownDrag, onClick, onDou
   );
 }
 
-function EntityTile({ node, dragging, onPointerDownDrag, onClick, onDoubleClick, onInfoClick, onEditClick }) {
+function EntityTile({ node, dragging, locked, onPointerDownDrag, onClick, onDoubleClick, onInfoClick, onEditClick }) {
   const e = node.entity;
   const palette = getEntityPalette(e);
   const meta = getTypeMeta(e.category, e.type);
@@ -448,8 +448,8 @@ function EntityTile({ node, dragging, onPointerDownDrag, onClick, onDoubleClick,
         background: palette.fill,
         border: `1.5px solid ${palette.stroke}`,
         boxShadow: dragging ? `0 8px 24px rgba(0,0,0,0.45), 0 0 24px ${palette.glow}` : `0 0 18px ${palette.glow}`,
-        cursor: dragging ? 'grabbing' : 'grab',
-        touchAction: 'none',
+        cursor: locked ? 'pointer' : (dragging ? 'grabbing' : 'grab'),
+        touchAction: locked ? 'auto' : 'none',
       }}
     >
       <div
@@ -489,7 +489,7 @@ function EntityTile({ node, dragging, onPointerDownDrag, onClick, onDoubleClick,
 export default function EntityOrgChart({
   estateId, entities, externals, relationships, beneficiaries,
   onSingleClickNode, onDoubleClickNode, onInfoClickNode, onEditClickNode,
-  cleanUpSignal,
+  cleanUpSignal, locked = false,
 }) {
   const { user } = useAuth();
   const containerRef = useRef(null);
@@ -546,6 +546,10 @@ export default function EntityOrgChart({
 
   // ---- drag handling ----
   const onPointerDownDrag = (e, node) => {
+    // When locked, drag is suppressed so the user can pan/scroll the
+    // canvas without nudging tiles, and accidental layout resets are
+    // impossible. Click handlers (single/double/info/edit) still fire.
+    if (locked) return;
     // Don't start dragging on right-click or on the node click handler — we use
     // a small movement threshold below to disambiguate click vs drag.
     if (e.button === 2) return;
@@ -736,6 +740,7 @@ export default function EntityOrgChart({
             >
               {n.kind === 'entity' ? (
                 <EntityTile node={n} dragging={isDragging}
+                  locked={locked}
                   onPointerDownDrag={(e) => onPointerDownDrag(e, n)}
                   onClick={handleClick}
                   onDoubleClick={handleDoubleClick}
@@ -750,6 +755,7 @@ export default function EntityOrgChart({
                     PALETTE.slate
                   }
                   dragging={isDragging}
+                  locked={locked}
                   onPointerDownDrag={(e) => onPointerDownDrag(e, n)}
                   onClick={handleClick}
                   onDoubleClick={handleDoubleClick}

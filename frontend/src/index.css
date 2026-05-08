@@ -840,6 +840,26 @@
     font-size: max(1rem, inherit) !important;
   }
 
+  /* Higher-contrast input fields scoped to surfaces where the panel
+     background already uses --bg2 (e.g. the Entity wizard / detail
+     panel inside a SlidePanel). The default input-field shares the
+     same --bg2 background as the panel which makes fields blend in
+     in dark mode. Within `.cfp-edit-surface` we elevate fields onto
+     the slightly lighter --card and bump border alpha so each field
+     reads as a distinct, tappable target. */
+  .cfp-edit-surface .input-field,
+  .cfp-edit-surface select.input-field {
+    background: var(--card);
+    border-color: rgba(255,255,255,0.20);
+  }
+  .cfp-edit-surface .input-field:focus {
+    border-color: var(--gold);
+  }
+  [data-theme="light"] .cfp-edit-surface .input-field,
+  [data-theme="light"] .cfp-edit-surface select.input-field {
+    background: #ffffff;
+    border-color: rgba(15,23,42,0.18);
+  }
   
   /* Stat Card - Uses CSS variables with depth */
   .stat-card-vault {

@@ -301,7 +301,7 @@ export default function EntityDetailPanel({
 
         {/* Body */}
         <div
-          className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
+          className="flex-1 overflow-y-auto px-4 py-4 space-y-4 cfp-edit-surface"
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 28px)' }}
         >
           {/* Entity edit mode */}
