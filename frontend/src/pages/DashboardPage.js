@@ -150,6 +150,20 @@ const DashboardPage = () => {
     // tile snapshot so the page renders instantly. Flag-agnostic now —
     // always try local first. When fully offline we short-circuit and
     // never attempt the server fetch.
+    //
+    // Reveal-timing rule (May 6 2026 user report):
+    //   "CFP, CCP and the readiness meter still update a tick after the
+    //    other 4 tiles on initial load."
+    // Root cause: dashboardReady was flipping true here (right after the
+    // cache paint) and AGAIN in the finally block after the network
+    // fetch. The cache often has stale ccp_plans or no financialSummary
+    // at all, so the reveal shows zeros/old values for those three —
+    // then the network response updates them visibly a moment later.
+    // Fix: hold the reveal until the network fetch completes (or a 2s
+    // safety timeout fires for genuinely-slow networks). Cache values
+    // are still applied to state immediately so the dashboard is
+    // already rendered to its final tiles when reveal fires.
+    let revealedFromCache = false;
     try {
       const tile = await getLocalDashboardTile(estateId);
       if (tile) {
@@ -160,11 +174,27 @@ const DashboardPage = () => {
         }
         if (tile.checklists) setChecklists(tile.checklists);
         if (tile.financialSummary) setFinancialSummary(tile.financialSummary);
-        setLoading(false);
-        requestAnimationFrame(() => requestAnimationFrame(() => setDashboardReady(true)));
+        // Note: do NOT call setLoading(false) here — we keep the splash
+        // up until the network fetch lands so we don't get a blank
+        // window between "splash gone" and "dashboard revealed".
+        // Safety timer: if the network fetch is still in flight after
+        // 2s, reveal with the cached values rather than block the user
+        // staring at a splash on slow connections.
+        if (!revealedFromCache) {
+          revealedFromCache = true;
+          setTimeout(() => {
+            setLoading(false);
+            requestAnimationFrame(() => requestAnimationFrame(() => setDashboardReady(true)));
+          }, 2000);
+        }
       }
     } catch { /* non-fatal */ }
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      // Genuinely offline — reveal with cached values now since no
+      // network update is coming. (The 2s safety timer would also
+      // fire, but doing it eagerly avoids a needless 2s splash hold.)
+      setLoading(false);
+      requestAnimationFrame(() => requestAnimationFrame(() => setDashboardReady(true)));
       return;
     }
     try {
