@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { clearCache } from '../utils/apiCache';
 import {
   ArrowLeft, ArrowRight, Loader2, Check, Shield, Users,
-  User, Heart, UserPlus, Mail, AlertCircle, Award
+  User, Heart, UserPlus, Mail, AlertCircle, Award, Sun
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -716,6 +716,7 @@ const CreateEstatePage = () => {
                             { id: 'federal_agent', label: 'Federal / State Operator', icon: Shield, color: '#3B82F6' },
                             { id: 'first_responder', label: 'First Responder', icon: Shield, color: '#EF4444' },
                             { id: 'veteran', label: 'Veteran', icon: Award, color: '#059669' },
+                            { id: 'seniors', label: 'Seniors (65+)', icon: Sun, color: '#FBBF24' },
                             { id: 'hospice', label: 'Hospice Patient', icon: Heart, color: '#ec4899' },
                             { id: 'enterprise', label: 'Employer / B2B', icon: Users, color: '#8B5CF6' },
                           ].map(s => {

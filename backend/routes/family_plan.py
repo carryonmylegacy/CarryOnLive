@@ -17,7 +17,7 @@ router = APIRouter()
 # Legacy defaults — overridden by dynamic settings from subscription_settings collection
 FAMILY_BENEFICIARY_FLAT_RATE = 3.49
 FAMILY_BENEFACTOR_DISCOUNT = 1.00
-FLOOR_EXEMPT_TIERS = ["new_adult", "military", "hospice"]
+FLOOR_EXEMPT_TIERS = ["new_adult", "military", "veteran", "seniors", "hospice"]
 
 
 async def get_family_discount_settings():

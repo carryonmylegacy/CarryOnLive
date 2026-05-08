@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   CreditCard, Loader2, Clock, ChevronRight, ChevronDown, Zap, Shield, X, Check,
-  Crown, Star, Heart, Award, ArrowRight, Users, Mail, Sparkles
+  Crown, Star, Heart, Award, ArrowRight, Users, Mail, Sparkles, Sun
 } from 'lucide-react';
 import { isNative } from '../../services/native';
 import { restoreIAPPurchases } from '../../services/iap';
@@ -204,8 +204,8 @@ export const SubscriptionManagement = ({
   const hasSpecialStatus = specialStatus.length > 0;
   const isNewAdult = eligibleTiers.includes('new_adult') && !hasSpecialStatus;
   const autoTier = hasSpecialStatus
-    ? (specialStatus.includes('hospice') ? 'hospice' : specialStatus.includes('veteran') ? 'veteran' : specialStatus.includes('enterprise') ? 'enterprise' : 'military')
-    : (isNewAdult ? 'new_adult' : null);
+    ? (specialStatus.includes('hospice') ? 'hospice' : specialStatus.includes('veteran') ? 'veteran' : specialStatus.includes('seniors') ? 'seniors' : specialStatus.includes('enterprise') ? 'enterprise' : 'military')
+    : (isNewAdult ? 'new_adult' : (eligibleTiers.includes('seniors') ? 'seniors' : null));
 
   // Auto-open the discount section when the user has a verified
   // discount tier (military / veteran / hospice / enterprise / new
@@ -242,7 +242,7 @@ export const SubscriptionManagement = ({
   const showBillingToggle = !isBeneficiary || (lockedPlan && lockedPlan.allows_billing_toggle !== false);
   const beneficiaryNoTierYet = isBeneficiary && !lockedTier;
 
-  const requiresVerification = (planId) => ['military', 'hospice', 'veteran', 'enterprise'].includes(planId);
+  const requiresVerification = (planId) => ['military', 'hospice', 'veteran', 'seniors', 'enterprise'].includes(planId);
 
   // Check if user is already verified for a tier
   const isVerifiedFor = (planId) => {
@@ -254,6 +254,7 @@ export const SubscriptionManagement = ({
     military: ['Military ID', 'Active Duty Orders', 'First Responder Badge'],
     hospice: ['Hospice Enrollment Documentation'],
     veteran: ['DD214', 'Veterans Administration Benefits Letter'],
+    seniors: ["Driver's License", 'Passport', 'State ID'],
     enterprise: ['Partner access code'],
   };
 
@@ -262,7 +263,7 @@ export const SubscriptionManagement = ({
   const [verifyingCode, setVerifyingCode] = useState(false);
 
   // Detect if a plan/billing change is a downgrade (would require refund)
-  const PLAN_RANK = { base: 1, new_adult: 2, veteran: 3, military: 3, enterprise: 3, standard: 4, premium: 5, hospice: 0 };
+  const PLAN_RANK = { base: 1, new_adult: 2, veteran: 3, military: 3, enterprise: 3, seniors: 4, standard: 4, premium: 5, hospice: 0 };
   const CYCLE_RANK = { monthly: 1, quarterly: 2, annual: 3 };
 
   const isDowngrade = (newPlanId, newCycle) => {
@@ -604,6 +605,8 @@ export const SubscriptionManagement = ({
             <p className="text-xs text-[var(--yw)] leading-relaxed">
               {isNewAdult
                 ? 'Based on your age (18-25), you qualify for the New Adult tier. No verification required.'
+                : autoTier === 'seniors'
+                ? 'Based on your age (65+), you qualify for the Seniors tier. A government-issued ID is required after subscribing.'
                 : autoTier === 'enterprise'
                 ? 'You selected Enterprise / B2B Partner. Enter your partner code below to activate your access.'
                 : `Based on your special eligibility, you qualify for the ${autoTier === 'military' ? 'Military / First Responder' : autoTier === 'veteran' ? 'Veteran' : 'Hospice'} tier. Verification is required after subscribing.`}
@@ -888,7 +891,7 @@ export const SubscriptionManagement = ({
                         className="font-semibold leading-snug inline-flex items-center justify-center gap-2"
                         style={{ color: '#0b1120', fontSize: 'clamp(13px, 1.2vw, 15px)' }}
                       >
-                        Eligible for a discount? New adults (18–25), military / first responders, veterans, hospice patients, and B2B partners have dedicated tiers — {discountOpen ? 'hide' : 'see'} pricing.
+                        Eligible for a discount? New adults (18–25), seniors (65+), military / first responders, veterans, hospice patients, and B2B partners have dedicated tiers — {discountOpen ? 'hide' : 'see'} pricing.
                         <ChevronDown
                           className="w-4 h-4 flex-shrink-0 transition-transform"
                           style={{ transform: discountOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
@@ -994,7 +997,7 @@ export const SubscriptionManagement = ({
           }}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
-                {verificationTier === 'military' ? 'Military / First Responder' : 'Hospice'} Verification
+                {verificationTier === 'military' ? 'Military / First Responder' : verificationTier === 'veteran' ? 'Veteran' : verificationTier === 'seniors' ? 'Seniors (65+)' : 'Hospice'} Verification
               </h2>
               <button onClick={() => { setShowVerification(false); setVerificationFile(null); setVerificationDocType(''); }}
                 className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform">

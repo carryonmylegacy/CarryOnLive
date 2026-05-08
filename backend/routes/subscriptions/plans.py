@@ -237,6 +237,29 @@ DEFAULT_PLANS = [
         ],
     },
     {
+        "id": "seniors",
+        "name": "Seniors",
+        "price": 12.99,
+        "quarterly_price": 11.69,
+        "annual_price": 10.39,
+        "ben_price": 1.99,
+        "paired_price": 3.99,
+        "adjustable": False,
+        "note": "Ages 65+ · Requires verification",
+        "requires_verification": True,
+        "verification_docs": [
+            "Driver's License",
+            "Passport",
+            "State ID",
+        ],
+        "features": [
+            "Everything in Standard",
+            "Milestone Messages",
+            "Estate Guardian analysis",
+            "Expanded vault storage",
+        ],
+    },
+    {
         "id": "hospice",
         "name": "Hospice",
         "price": 0.00,
@@ -353,6 +376,19 @@ BENEFICIARY_PLANS = [
         ],
     },
     {
+        "id": "ben_seniors",
+        "name": "Seniors",
+        "price": 1.99,
+        "quarterly_price": 1.99,
+        "annual_price": 1.99,
+        "allows_billing_toggle": False,
+        "note": "Ages 65+",
+        "features": [
+            "Full platform access",
+            "Priority support",
+        ],
+    },
+    {
         "id": "ben_hospice",
         "name": "Hospice Transition",
         "price": 4.99,
@@ -394,6 +430,7 @@ PLAN_ORDER = [
     "new_adult",
     "military",
     "veteran",
+    "seniors",
     "hospice",
     "enterprise",
 ]

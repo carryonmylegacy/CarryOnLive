@@ -579,12 +579,16 @@ async def create_estate_for_existing_user(data: CreateEstateRequest, current_use
                 age = (now - dob.replace(tzinfo=timezone.utc)).days // 365
                 if 18 <= age <= 25:
                     eligible_tier = "new_adult"
+                elif age >= 65:
+                    eligible_tier = "seniors"
             except (ValueError, TypeError):
                 pass
         if any(s in special_statuses for s in ["military", "first_responder", "federal_agent"]):
             eligible_tier = "military"
         elif "veteran" in special_statuses:
             eligible_tier = "veteran"
+        elif "seniors" in special_statuses:
+            eligible_tier = "seniors"
         elif "hospice" in special_statuses:
             eligible_tier = "hospice"
         elif "enterprise" in special_statuses:

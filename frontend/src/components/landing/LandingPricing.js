@@ -16,7 +16,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { Check, Loader2, Crown, Star, Shield, Award, Heart, Sparkles, ChevronDown } from 'lucide-react';
+import { Check, Loader2, Crown, Star, Shield, Award, Heart, Sparkles, Sun, ChevronDown } from 'lucide-react';
 import { API_URL } from '../../config';
 import { recordFunnelEvent } from '../../utils/funnelTelemetry';
 
@@ -27,6 +27,7 @@ const TIER_ICON = {
   new_adult: Award,
   military: Shield,
   veteran: Shield,
+  seniors: Sun,
   hospice: Heart,
 };
 
@@ -37,6 +38,7 @@ const TIER_ACCENT = {
   new_adult: '#B794F6',
   military: '#F59E0B',
   veteran: '#F59E0B',
+  seniors: '#FBBF24',
   hospice: '#ec4899',
 };
 
@@ -49,10 +51,11 @@ const PUBLIC_TIERS = ['premium', 'standard', 'base'];
 // Eligibility-gated discount tiers, revealed when the visitor opens the
 // "Eligible for a discount?" button. Pricing and features come from the
 // same /api/subscriptions/plans response the in-app paywall uses.
-const ELIGIBILITY_TIERS = ['new_adult', 'military', 'veteran', 'hospice'];
+const ELIGIBILITY_TIERS = ['new_adult', 'seniors', 'military', 'veteran', 'hospice'];
 
 const ELIGIBILITY_BLURB = {
   new_adult: 'Ages 18–25 — verified at signup.',
+  seniors: 'Ages 65+ — government ID verified at signup.',
   military: 'Active military / first responders — verified at signup.',
   veteran: 'Veterans — verified at signup.',
   hospice: 'Hospice patients & immediate family — verified at signup.',

@@ -250,6 +250,7 @@ export default function FoundersCirclePage() {
           const FC_TIER_ACCENT = {
             premium: '#d4af37', standard: '#60A5FA', base: '#22C993',
             new_adult: '#B794F6', military: '#F59E0B', veteran: '#059669',
+            seniors: '#FBBF24',
           };
           const accent = FC_TIER_ACCENT[plan.tier] || '#22C993';
           return (

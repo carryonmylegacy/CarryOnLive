@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { Crown, Shield, Check, Star, ChevronRight, ChevronDown, Loader2,
-  Upload, Clock, Users, X, Heart, Award, RotateCcw, Zap
+  Upload, Clock, Users, X, Heart, Award, RotateCcw, Zap, Sun
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from '../utils/toast';
@@ -18,6 +18,7 @@ const TIER_ICONS = {
   new_adult: Award,
   military: Shield,
   veteran: Award,
+  seniors: Sun,
   hospice: Heart,
   enterprise: Zap,
 };
@@ -29,6 +30,7 @@ const TIER_COLORS = {
   new_adult: { border: '#B794F6', bg: 'rgba(183,148,246,0.08)', accent: '#B794F6' },
   military: { border: '#F59E0B', bg: 'rgba(245,158,11,0.08)', accent: '#F59E0B' },
   veteran: { border: '#059669', bg: 'rgba(5,150,105,0.08)', accent: '#059669' },
+  seniors: { border: '#FBBF24', bg: 'rgba(251,191,36,0.08)', accent: '#FBBF24' },
   hospice: { border: '#ec4899', bg: 'rgba(236,72,153,0.08)', accent: '#ec4899' },
   enterprise: { border: '#8B5CF6', bg: 'rgba(139,92,246,0.08)', accent: '#8B5CF6' },
 };
@@ -254,14 +256,25 @@ export default function SubscriptionPaywall({ onDismiss }) {
   if (showVerification) {
     const docOptions = verificationTier === 'military'
       ? ['Military ID', 'First Responder Badge']
-      : ['Hospice enrollment documentation'];
+      : verificationTier === 'veteran'
+        ? ['DD214', 'Veterans Administration Benefits Letter']
+        : verificationTier === 'seniors'
+          ? ["Driver's License", 'Passport', 'State ID']
+          : ['Hospice enrollment documentation'];
+    const verificationTitle = verificationTier === 'military'
+      ? 'Military / First Responder'
+      : verificationTier === 'veteran'
+        ? 'Veteran'
+        : verificationTier === 'seniors'
+          ? 'Seniors (65+)'
+          : 'Hospice';
 
     return (
       <div className="fixed inset-0 z-[9999] bg-[#0a0e1a]/95 flex items-center justify-center p-4" data-testid="verification-modal">
         <div className="w-full max-w-md glass-card p-6 space-y-5 animate-fade-in">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
-              {verificationTier === 'military' ? 'Military / First Responder' : 'Hospice'} Verification
+              {verificationTitle} Verification
             </h2>
             <button onClick={() => setShowVerification(false)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform">
               <X className="w-4 h-4" />
@@ -660,7 +673,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                         className="font-semibold leading-snug inline-flex items-center justify-center gap-2"
                         style={{ color: '#0b1120', fontSize: 'clamp(13px, 1.2vw, 15px)' }}
                       >
-                        Eligible for a discount? New adults (18–25), military / first responders, veterans, hospice patients, and B2B partners have dedicated tiers — {discountOpen ? 'hide' : 'see'} pricing.
+                        Eligible for a discount? New adults (18–25), seniors (65+), military / first responders, veterans, hospice patients, and B2B partners have dedicated tiers — {discountOpen ? 'hide' : 'see'} pricing.
                         <ChevronDown
                           className="w-4 h-4 flex-shrink-0 transition-transform"
                           style={{ transform: discountOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}

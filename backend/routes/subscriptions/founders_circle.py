@@ -25,6 +25,7 @@ FC_DEFAULT_PRICING = [
     {"tier": "new_adult", "name": "New Adult", "lifetime_price": 79},
     {"tier": "military", "name": "Military / First Responder", "lifetime_price": 179},
     {"tier": "veteran", "name": "Veteran", "lifetime_price": 179},
+    {"tier": "seniors", "name": "Seniors", "lifetime_price": 399},
 ]
 
 FC_INSTALLMENT_DISCOUNTS = {1: 15, 3: 10, 6: 5, 12: 0}
@@ -48,9 +49,24 @@ async def get_fc_settings():
         12: int(rules_map.get("fc_12pay_discount", "0%").replace("%", "")),
     }
 
-    # Lifetime pricing from subscription_settings (admin-adjustable)
+    # Lifetime pricing from subscription_settings (admin-adjustable).
+    # Auto-merge any new tiers introduced in code (e.g. seniors) into
+    # the persisted list so the stored DB copy never drifts behind the
+    # source of truth. Existing rows preserve their admin-edited prices.
     settings = await get_subscription_settings()
-    pricing = settings.get("fc_pricing", FC_DEFAULT_PRICING)
+    pricing = settings.get("fc_pricing")
+    if not pricing:
+        pricing = [dict(p) for p in FC_DEFAULT_PRICING]
+        await db.subscription_settings.update_one({"_id": "global"}, {"$set": {"fc_pricing": pricing}}, upsert=True)
+    else:
+        existing_tiers = {p.get("tier") for p in pricing}
+        added = False
+        for default_p in FC_DEFAULT_PRICING:
+            if default_p["tier"] not in existing_tiers:
+                pricing.append(dict(default_p))
+                added = True
+        if added:
+            await db.subscription_settings.update_one({"_id": "global"}, {"$set": {"fc_pricing": pricing}})
 
     return {
         "campaign_active": campaign_active,
