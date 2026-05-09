@@ -75,6 +75,11 @@ export default function EntityWizard({
   const { getAuthHeaders } = useAuth();
   const [step, setStep] = useState(1);
   const [bucketId, setBucketId] = useState(null);
+  // pendingBucketId = highlighted (selected but not yet committed). User
+  // must hit "Continue" for it to actually advance into the type-picker
+  // sub-step. This mirrors how the type cards work — selecting a card
+  // highlights it; the Continue button gates progression.
+  const [pendingBucketId, setPendingBucketId] = useState(null);
   const [typeId, setTypeId] = useState(null);
   const [search, setSearch] = useState('');
   // Step 2 form fields
@@ -101,7 +106,7 @@ export default function EntityWizard({
   const [saving, setSaving] = useState(false);
 
   const reset = () => {
-    setStep(1); setBucketId(null); setTypeId(null); setSearch('');
+    setStep(1); setBucketId(null); setPendingBucketId(null); setTypeId(null); setSearch('');
     setName(''); setState(''); setNotes(''); setShowMore(false);
     setEinLast4(''); setFormationDate(''); setTaxElection(''); setRegisteredAgent('');
     setLinkedDocIds([]); setGrossAssets(''); setGrossDebts('');
@@ -129,22 +134,37 @@ export default function EntityWizard({
   })();
 
   // -------------- step navigation --------------
-  const canProceedFrom1 = !!bucketId && (isExternalPerson || !!typeId);
+  // Step 1 is two-stage: pick a bucket → pick a type within that bucket.
+  // The Continue button advances bucket-picker → type-picker, then
+  // type-picker → step 2.
+  const canProceedFrom1 = bucketId
+    ? (isExternalPerson || !!typeId)
+    : !!pendingBucketId;
   const canProceedFrom2 = isExternalPerson
     ? extFirst.trim().length > 0
     : name.trim().length > 0;
 
   const handleNext = () => {
-    if (step === 1 && canProceedFrom1) setStep(2);
-    else if (step === 2 && canProceedFrom2) {
+    if (step === 1) {
+      if (!bucketId && pendingBucketId) { setBucketId(pendingBucketId); return; }
+      if (canProceedFrom1) setStep(2);
+      return;
+    }
+    if (step === 2 && canProceedFrom2) {
       if (isExternalPerson) handleSaveExternal();
       else setStep(3);
     } else if (step === 3) handleSave();
   };
 
   const handleBack = () => {
-    if (step === 1) onCancel?.();
-    else setStep((s) => s - 1);
+    if (step === 1) {
+      // Two-stage step 1: if we're in the type-picker sub-step, go
+      // back to the bucket-picker; otherwise actually cancel.
+      if (bucketId) { setBucketId(null); return; }
+      onCancel?.();
+      return;
+    }
+    setStep((s) => s - 1);
   };
 
   // -------------- save (external person) --------------
@@ -268,13 +288,18 @@ export default function EntityWizard({
                   <div className="grid grid-cols-1 gap-2">
                     {BUCKETS.map((b) => {
                       const Icon = ICONS[b.icon];
+                      const selected = pendingBucketId === b.id;
                       return (
                         <button
                           key={b.id}
-                          onClick={() => setBucketId(b.id)}
+                          onClick={() => setPendingBucketId(b.id)}
                           className="flex items-start gap-3 p-3 rounded-xl text-left transition-all hover:bg-[var(--s)]"
-                          style={{ border: '1px solid var(--b)', background: 'var(--card)' }}
+                          style={{
+                            border: selected ? '1.5px solid var(--gold)' : '1px solid var(--b)',
+                            background: selected ? 'rgba(212,165,55,0.08)' : 'var(--card)',
+                          }}
                           data-testid={`wizard-bucket-${b.id}`}
+                          aria-pressed={selected}
                         >
                           <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                             style={{ background: 'rgba(212,165,55,0.10)', color: 'var(--gold)' }}>

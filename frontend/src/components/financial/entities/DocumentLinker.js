@@ -75,7 +75,11 @@ export default function DocumentLinker({ value, onChange, documents }) {
         );
       })}
 
-      {/* Adder: button OR a native <select> while picking */}
+      {/* Adder: button OR a native <select> while picking. The picker
+          is a real <select> in BOTH cases — when SDV has docs the
+          options are the docs; when SDV is empty the dropdown still
+          opens but contains a single disabled "No documents" option
+          so the user gets the same UX shape regardless. */}
       {!picking && (
         <button
           type="button"
@@ -87,12 +91,8 @@ export default function DocumentLinker({ value, onChange, documents }) {
         </button>
       )}
 
-      {picking && available.length > 0 && (
+      {picking && (
         <div className="flex items-stretch gap-2">
-          {/* Native <select>; iOS PWA opens its wheel picker, Android &
-              desktop get a normal dropdown — both reliable and high
-              contrast. defaultValue="" so the placeholder option is the
-              initial state. */}
           <select
             autoFocus
             defaultValue=""
@@ -100,11 +100,22 @@ export default function DocumentLinker({ value, onChange, documents }) {
             className="input-field select-themed flex-1"
             data-testid="doc-link-picker"
             style={{ borderColor: 'rgba(212,165,55,0.55)' }}
+            disabled={available.length === 0}
           >
-            <option value="" disabled>Select a document…</option>
-            {available.map((d) => (
-              <option key={d.id} value={d.id}>{docLabel(d)}</option>
-            ))}
+            {available.length === 0 ? (
+              <option value="" disabled>
+                {(documents || []).length === 0
+                  ? 'No documents in your SDV'
+                  : 'No more documents to link'}
+              </option>
+            ) : (
+              <>
+                <option value="" disabled>Select a document…</option>
+                {available.map((d) => (
+                  <option key={d.id} value={d.id}>{docLabel(d)}</option>
+                ))}
+              </>
+            )}
           </select>
           <button
             type="button"
@@ -114,40 +125,6 @@ export default function DocumentLinker({ value, onChange, documents }) {
           >
             Cancel
           </button>
-        </div>
-      )}
-
-      {picking && available.length === 0 && (
-        <div
-          className="px-3 py-3 rounded-lg space-y-2"
-          style={{ background: 'var(--card)', border: '1px solid rgba(212,165,55,0.35)' }}
-          data-testid="doc-link-empty-prompt"
-        >
-          <p className="text-[12px] text-[var(--t3)]">
-            {(documents || []).length === 0
-              ? 'Your Secure Document Vault is empty. Upload a document to your SDV first, then come back here to link it.'
-              : 'Every document in your SDV is already linked here.'}
-          </p>
-          <div className="flex items-center gap-2">
-            {(documents || []).length === 0 && (
-              <button
-                type="button"
-                onClick={() => { setPicking(false); window.location.href = '/vault'; }}
-                className="px-3 py-1.5 rounded-md text-[11px] font-bold btn-gold-cta"
-                data-testid="doc-link-goto-vault"
-              >
-                Open SDV
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setPicking(false)}
-              className="px-3 py-1.5 rounded-md text-[11px] font-bold text-[var(--t4)] border border-[var(--b)]"
-              data-testid="doc-link-empty-cancel"
-            >
-              Close
-            </button>
-          </div>
         </div>
       )}
     </div>
