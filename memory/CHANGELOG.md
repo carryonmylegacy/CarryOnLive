@@ -1,5 +1,23 @@
 # CarryOn — Changelog
 
+## May 9, 2026 — External-Person Photo Persistence Fix
+**Bug**: After uploading a profile photo for an "Outside party" (external_person) in the CFP Entities & Structures editor, the avatar appeared briefly inside the cropper but vanished from the org-chart tile and re-opened edit panel. Photo *was* saving to MongoDB and serving correctly via the backend `/api/photos/...` proxy — yet the iOS PWA dropped the avatar back to initials on every remount.
+
+**Root cause**: `GET /api/financial/entities/{estate_id}` returned the raw `/api/photos/external_people/{id}/{file}.jpg` storage path for `cfp_external_people`. Beneficiary photos already went through `services.photo_urls.resolve_photo_url()` (S3 presigned URL), but external_people did not — so the PWA hit the proxy, which on production with S3-backed storage was the unreliable path.
+
+**Fix** (`backend/routes/financial_portal/entities.py`, `entities_share.py`):
+- Added `_resolve_external_people_photos()` helper that mirrors what `routes/beneficiaries/management.py` already does for beneficiaries.
+- Applied to: list_entities, beneficiary-view, create_external_person, update_external_person, and the photo-upload response. External-person `photo_url` is now always returned as a browser-loadable absolute URL.
+
+**Verified**:
+- Round-trip curl: GET now returns `https://carryon-vault.s3.us-east-2.amazonaws.com/photos/external_people/...?X-Amz-...` ✅
+- HTTP 200, image/jpeg served from S3 ✅
+- New regression test `backend/tests/test_external_person_photo_resolves.py` passes ✅
+- `bash /app/scripts/check.sh` → 0 WARN, 0 FAIL ✅
+
+---
+
+
 ## May 6, 2026 — Founder Page Iframe Sizing Fix
 **Bug**: Founder page went white at the bottom and scrolling was glitchy after the previous fix that extracted base64 images to `/founder-images/*.jpg`.
 

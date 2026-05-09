@@ -38,6 +38,7 @@ from fastapi import Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from config import db
+from services.photo_urls import resolve_photo_url
 from utils import get_current_user
 
 from ._core import router
@@ -185,6 +186,11 @@ async def get_entities_beneficiary_view(estate_id: str, current_user: dict = Dep
         {"estate_id": estate_id, "deleted_at": None},
         {"_id": 0},
     ).to_list(2000)
+    # Resolve external-person photo paths to S3 presigned URLs (mirrors
+    # the benefactor list view in routes/financial_portal/entities.py).
+    for p in people:
+        if p.get("photo_url"):
+            p["photo_url"] = resolve_photo_url(p["photo_url"])
     rels = await db.cfp_entity_relationships.find(
         {"estate_id": estate_id, "deleted_at": None},
         {"_id": 0},

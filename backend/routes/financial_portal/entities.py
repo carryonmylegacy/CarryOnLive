@@ -21,9 +21,26 @@ from fastapi import Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from config import db
+from services.photo_urls import resolve_photo_url
 from utils import get_current_user
 
 from ._core import router, _verify_estate_access
+
+
+def _resolve_external_people_photos(people: list) -> list:
+    """Convert stored `/api/photos/...` paths into S3 presigned URLs so the
+    browser can load external-person avatars directly from S3 (mirrors what
+    `routes/beneficiaries/management.py` does for beneficiary photos).
+
+    Without this, external-person photos saved to the DB serve only via the
+    backend `/api/photos/...` proxy route, which on iOS-PWA/production has
+    been observed to drop the avatar back to initials after the user
+    navigates away from the editor — the live S3 URL works reliably.
+    """
+    for p in people:
+        if p.get("photo_url"):
+            p["photo_url"] = resolve_photo_url(p["photo_url"])
+    return people
 
 
 # ===================== STRICT ENUMS =====================
@@ -149,7 +166,11 @@ async def list_entities(estate_id: str, current_user: dict = Depends(get_current
         {"_id": 0},
     ).to_list(5000)
 
-    return {"entities": entities, "external_people": people, "relationships": rels}
+    return {
+        "entities": entities,
+        "external_people": _resolve_external_people_photos(people),
+        "relationships": rels,
+    }
 
 
 @router.post("/financial/entities")
@@ -258,7 +279,7 @@ async def create_external_person(
         "deleted_at": None,
     }
     await db.cfp_external_people.insert_one(doc)
-    return _strip_id(doc)
+    return _resolve_external_people_photos([_strip_id(doc)])[0]
 
 
 @router.patch("/financial/external-people/{person_id}")
@@ -281,7 +302,7 @@ async def update_external_person(
     update_fields["updated_at"] = _now_iso()
     await db.cfp_external_people.update_one({"id": person_id}, {"$set": update_fields})
     refreshed = await db.cfp_external_people.find_one({"id": person_id}, {"_id": 0})
-    return refreshed
+    return _resolve_external_people_photos([refreshed])[0] if refreshed else refreshed
 
 
 @router.delete("/financial/external-people/{person_id}")
@@ -349,7 +370,7 @@ async def upload_external_person_photo(
         {"id": person_id},
         {"$set": {"photo_url": photo_url, "updated_at": _now_iso()}},
     )
-    return {"success": True, "photo_url": photo_url}
+    return {"success": True, "photo_url": resolve_photo_url(photo_url)}
 
 
 # ===================== RELATIONSHIP CRUD =====================
