@@ -7,7 +7,7 @@
  * Step 2 — name + state + notes (+ "Show more details")
  * Step 3 — add at least one connection (who connects, in what role, %)
  */
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import SlidePanel from '../../SlidePanel';
 import {
   Building2, Shield, Landmark, Home, User as UserIcon, UserCheck, Settings,
@@ -115,6 +115,99 @@ export default function EntityWizard({
   ]);
   const [saving, setSaving] = useState(false);
 
+  // ── Draft persistence ────────────────────────────────────────────
+  // Save the entire wizard state to localStorage on every change so
+  // the user can navigate away (bottom nav, sidebar, deep link) and
+  // come right back to where they left off. Drafts are scoped per
+  // estate, expire after 24 h, and are wiped on save / explicit cancel.
+  const DRAFT_KEY = `cfp:entityWizard:draft:${estateId || 'global'}`;
+  const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
+  const restoredRef = useRef(false);
+
+  const clearDraft = () => {
+    try { window.localStorage?.removeItem(DRAFT_KEY); } catch { /* quota / private mode */ }
+  };
+
+  // Restore draft once when the panel opens.
+  useEffect(() => {
+    if (!open || restoredRef.current) return;
+    restoredRef.current = true;
+    try {
+      const raw = window.localStorage?.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (!d || !d.savedAt || Date.now() - d.savedAt > DRAFT_TTL_MS) {
+        clearDraft();
+        return;
+      }
+      if (d.step) setStep(d.step);
+      if (d.bucketId !== undefined) setBucketId(d.bucketId);
+      if (d.pendingBucketId !== undefined) setPendingBucketId(d.pendingBucketId);
+      if (d.typeId !== undefined) setTypeId(d.typeId);
+      if (d.search !== undefined) setSearch(d.search);
+      if (d.name !== undefined) setName(d.name);
+      if (d.state !== undefined) setState(d.state);
+      if (d.notes !== undefined) setNotes(d.notes);
+      if (d.showMore !== undefined) setShowMore(d.showMore);
+      if (d.einLast4 !== undefined) setEinLast4(d.einLast4);
+      if (d.formationDate !== undefined) setFormationDate(d.formationDate);
+      if (d.taxElection !== undefined) setTaxElection(d.taxElection);
+      if (d.registeredAgent !== undefined) setRegisteredAgent(d.registeredAgent);
+      if (Array.isArray(d.linkedDocIds)) setLinkedDocIds(d.linkedDocIds);
+      if (d.grossAssets !== undefined) setGrossAssets(d.grossAssets);
+      if (d.grossDebts !== undefined) setGrossDebts(d.grossDebts);
+      if (Array.isArray(d.credentials)) setCredentials(d.credentials);
+      if (d.extFirst !== undefined) setExtFirst(d.extFirst);
+      if (d.extLast !== undefined) setExtLast(d.extLast);
+      if (d.extNotes !== undefined) setExtNotes(d.extNotes);
+      if (d.assignBeneficiaryId !== undefined) setAssignBeneficiaryId(d.assignBeneficiaryId);
+      if (d.assignEntityId !== undefined) setAssignEntityId(d.assignEntityId);
+      if (d.assignRole !== undefined) setAssignRole(d.assignRole);
+      if (d.assignPct !== undefined) setAssignPct(d.assignPct);
+      if (d.prefilledBeneficiaryId !== undefined) setPrefilledBeneficiaryId(d.prefilledBeneficiaryId);
+      if (Array.isArray(d.connections) && d.connections.length) setConnections(d.connections);
+    } catch { /* malformed draft — ignore */ }
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset the restore guard when the panel closes so a future open
+  // (e.g. after save → reopen) restores fresh state.
+  useEffect(() => { if (!open) restoredRef.current = false; }, [open]);
+
+  // Save the draft on every state change while the panel is open.
+  useEffect(() => {
+    if (!open) return;
+    const draft = {
+      step, bucketId, pendingBucketId, typeId, search,
+      name, state, notes, showMore,
+      einLast4, formationDate, taxElection, registeredAgent,
+      linkedDocIds, grossAssets, grossDebts, credentials,
+      extFirst, extLast, extNotes,
+      assignBeneficiaryId, assignEntityId, assignRole, assignPct,
+      prefilledBeneficiaryId, connections,
+      savedAt: Date.now(),
+    };
+    // Don't write a no-op draft — only persist once the user has
+    // actually started filling the wizard out.
+    const isDirty = bucketId || pendingBucketId || typeId || name || state || notes ||
+      einLast4 || formationDate || taxElection || registeredAgent ||
+      grossAssets || grossDebts || (linkedDocIds && linkedDocIds.length) ||
+      (credentials && credentials.length) ||
+      extFirst || extLast || extNotes ||
+      assignBeneficiaryId || assignEntityId || prefilledBeneficiaryId;
+    if (!isDirty) {
+      clearDraft();
+      return;
+    }
+    try { window.localStorage?.setItem(DRAFT_KEY, JSON.stringify(draft)); }
+    catch { /* quota / private mode */ }
+  }, [open, step, bucketId, pendingBucketId, typeId, search,
+      name, state, notes, showMore,
+      einLast4, formationDate, taxElection, registeredAgent,
+      linkedDocIds, grossAssets, grossDebts, credentials,
+      extFirst, extLast, extNotes,
+      assignBeneficiaryId, assignEntityId, assignRole, assignPct,
+      prefilledBeneficiaryId, connections]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const reset = () => {
     setStep(1); setBucketId(null); setPendingBucketId(null); setTypeId(null); setSearch('');
     setName(''); setState(''); setNotes(''); setShowMore(false);
@@ -125,6 +218,7 @@ export default function EntityWizard({
     setAssignBeneficiaryId(''); setAssignEntityId(''); setAssignRole('owner'); setAssignPct('');
     setPrefilledBeneficiaryId('');
     setConnections([{ sourceKey: user?.id ? `user:${user.id}` : '', role: 'owner', ownership_pct: 100 }]);
+    clearDraft();
   };
 
   if (!open) return null;

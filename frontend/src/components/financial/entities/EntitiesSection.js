@@ -20,6 +20,8 @@ import EntityQuickInfoPopover from './EntityQuickInfoPopover';
 import EntityDocumentsModal from './EntityDocumentsModal';
 
 const LOCK_KEY = (estateId) => `cfp:entities:locked:${estateId || 'global'}`;
+const DRAFT_KEY = (estateId) => `cfp:entityWizard:draft:${estateId || 'global'}`;
+const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
 
 export default function EntitiesSection({ estateId, beneficiaries, onEntitiesChanged, openEntityId }) {
   const { user, getAuthHeaders } = useAuth();
@@ -51,6 +53,25 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   useEffect(() => {
     try { setLocked(window.localStorage?.getItem(LOCK_KEY(estateId)) === '1'); }
     catch { /* ignore */ }
+  }, [estateId]);
+
+  // If the user was mid-wizard and navigated away (bottom nav, sidebar,
+  // a deep link), drop them right back into the wizard when the CFP
+  // page remounts — drafts live in localStorage scoped per estate and
+  // expire after 24 h. Resuming once is enough; if they close the
+  // wizard explicitly the draft is wiped.
+  useEffect(() => {
+    if (!estateId) return;
+    try {
+      const raw = window.localStorage?.getItem(DRAFT_KEY(estateId));
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (!d || !d.savedAt || Date.now() - d.savedAt > DRAFT_TTL_MS) {
+        window.localStorage?.removeItem(DRAFT_KEY(estateId));
+        return;
+      }
+      setShowWizard(true);
+    } catch { /* malformed draft */ }
   }, [estateId]);
 
   const toggleLocked = () => {
