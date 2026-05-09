@@ -104,6 +104,11 @@ export default function EntityWizard({
   const [assignEntityId, setAssignEntityId] = useState('');
   const [assignRole, setAssignRole] = useState('owner');
   const [assignPct, setAssignPct] = useState('');
+  // Set when the user picked "A beneficiary already on my list" but
+  // then clicked "Create a new entity for them" — we drop them into
+  // the regular entity-creation flow with this beneficiary pre-locked
+  // as the first connection in Step 3.
+  const [prefilledBeneficiaryId, setPrefilledBeneficiaryId] = useState('');
   // Step 3 connection rows
   const [connections, setConnections] = useState([
     { sourceKey: user?.id ? `user:${user.id}` : '', role: 'owner', ownership_pct: 100 },
@@ -118,6 +123,7 @@ export default function EntityWizard({
     setCredentials([]);
     setExtFirst(''); setExtLast(''); setExtNotes('');
     setAssignBeneficiaryId(''); setAssignEntityId(''); setAssignRole('owner'); setAssignPct('');
+    setPrefilledBeneficiaryId('');
     setConnections([{ sourceKey: user?.id ? `user:${user.id}` : '', role: 'owner', ownership_pct: 100 }]);
   };
 
@@ -600,6 +606,38 @@ export default function EntityWizard({
                     )}
                   </SelectContent>
                 </Select>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!assignBeneficiaryId) {
+                      toast.error('Pick a beneficiary first.');
+                      return;
+                    }
+                    // Switch into the regular entity-creation flow with
+                    // this beneficiary pre-locked into the first
+                    // connection slot. Step 3 will surface the lock.
+                    const benId = assignBeneficiaryId;
+                    setPrefilledBeneficiaryId(benId);
+                    // Reset the entity-creation form (without losing the
+                    // pre-fill), then send the user back to the bucket
+                    // picker so they can choose what kind of entity to
+                    // build.
+                    setBucketId(null);
+                    setPendingBucketId(null);
+                    setTypeId(null);
+                    setSearch('');
+                    setName(''); setState(''); setNotes(''); setShowMore(false);
+                    setEinLast4(''); setFormationDate(''); setTaxElection(''); setRegisteredAgent('');
+                    setLinkedDocIds([]); setGrossAssets(''); setGrossDebts('');
+                    setCredentials([]);
+                    setConnections([{ sourceKey: `beneficiary:${benId}`, role: 'owner', ownership_pct: 100 }]);
+                    setStep(1);
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold text-[var(--gold)] border border-dashed border-[var(--gold)]/40 hover:bg-[var(--gold)]/5"
+                  data-testid="wizard-assign-create-new-entity"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Or create a new entity for them
+                </button>
               </div>
 
               <div className="space-y-2">
@@ -648,6 +686,24 @@ export default function EntityWizard({
               <p className="text-sm text-[var(--t3)]">
                 How does <span className="font-bold text-[var(--t)]">{name || 'this entity'}</span> connect to people or other entities?
               </p>
+
+              {prefilledBeneficiaryId && (() => {
+                const ben = (beneficiaries || []).find((b) => b.id === prefilledBeneficiaryId);
+                const benName = ben
+                  ? (ben.name || `${ben.first_name || ''} ${ben.last_name || ''}`.trim() || 'this beneficiary')
+                  : 'this beneficiary';
+                return (
+                  <div
+                    className="rounded-xl p-3 text-[12px] leading-snug"
+                    style={{ background: 'rgba(212,165,55,0.08)', border: '1px solid rgba(212,165,55,0.35)', color: 'var(--t)' }}
+                    data-testid="wizard-prefill-banner"
+                  >
+                    <span className="font-bold text-[var(--gold)]">{benName}</span>{' '}
+                    is pre-filled as the first connection. Pick their role and ownership %
+                    below — or remove them and pick someone else if you change your mind.
+                  </div>
+                );
+              })()}
 
               {connections.map((c, i) => {
                 const showPct = c.role === 'owner' || c.role === 'gp' || c.role === 'lp';
