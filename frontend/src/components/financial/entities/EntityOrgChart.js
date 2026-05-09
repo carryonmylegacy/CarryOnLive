@@ -525,10 +525,29 @@ function EntityTile({ node, dragging, locked, onPointerDownDrag, onClick, onDoub
 export default function EntityOrgChart({
   estateId, entities, externals, relationships, beneficiaries,
   onSingleClickNode, onDoubleClickNode, onInfoClickNode, onEditClickNode,
-  cleanUpSignal, locked = false, readOnly = false,
+  cleanUpSignal, locked = false, readOnly = false, fitOnLoad = false,
 }) {
   const { user } = useAuth();
   const containerRef = useRef(null);
+  // ── Zoom (cursor / pinch-anchored) ────────────────────────────────────
+  // Range deliberately narrower than the previous 0.4–1.6 attempt so
+  // iOS pinches feel controllable. The pinch handler also damps Safari's
+  // raw e.scale (which ramps aggressively) — see usePinchZoom() below.
+  const ZOOM_MIN = 0.55;
+  const ZOOM_MAX = 1.35;
+  const [zoom, setZoom] = useState(1);
+  // Read-only mirror of zoom for stable closures inside event listeners.
+  const zoomRef = useRef(1);
+  useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+  // Scroll intent committed in a layout effect after every zoom change.
+  //   { type:'anchor', worldX, worldY, screenX, screenY }
+  //     → keeps that world point under that screen point across the zoom
+  //       change (Apple Maps / Figma behavior). Used by pinch + ctrl+wheel.
+  //   { type:'abs', x, y }
+  //     → one-shot absolute scroll (initial layout & dbl-tap reset).
+  const scrollIntentRef = useRef(null);
+  // Bumped by the double-tap handler to force a fresh initial layout.
+  const [relayoutTick, setRelayoutTick] = useState(0);
   const [draggingKey, setDraggingKey] = useState(null);
   const dragStateRef = useRef(null); // { key, startX, startY, origX, origY }
   const recentDragRef = useRef(false); // suppresses the click that follows a real drag
@@ -590,52 +609,197 @@ export default function EntityOrgChart({
   const outerW = canvasW + PAN_MARGIN * 2;
   const outerH = canvasH + PAN_MARGIN * 2;
 
-  // Auto-center the benefactor (root user) tile both horizontally
-  // AND vertically inside the scrollable canvas. Fires exactly ONCE
-  // per mount — re-running whenever `overrides` changes was fighting
-  // active drags by tugging the viewport back to centre after every
-  // tiny tile move. After the first paint the user is in full control
-  // of the scroll position.
+  // Find the benefactor (root user) tile so we always have a canonical
+  // "home" for the viewport in centered mode.
   const userKey = useMemo(() => {
     const u = nodes.find((n) => n.kind === 'user');
     return u?.key || null;
   }, [nodes]);
-  const centeredOnceRef = React.useRef(false);
-  useEffect(() => {
-    // Reset the "did initial centre" flag whenever the estate (and
-    // therefore the entire chart) changes, so a portal switch /
-    // estate switch still re-centres on next mount.
-    centeredOnceRef.current = false;
-  }, [estateId]);
-  useEffect(() => {
-    if (centeredOnceRef.current) return;
-    if (!userKey) return;
+
+  // ── Initial layout pass ───────────────────────────────────────────────
+  // Runs once per (estateId × fitOnLoad × relayoutTick). Decides
+  // (a) the starting zoom and (b) the starting scroll position, then
+  // hands them off via scrollIntentRef so they commit synchronously
+  // with the new zoom in the same paint (no visible jump frame).
+  //
+  //   • fitOnLoad=false → zoom 1×, benefactor centered in viewport.
+  //   • fitOnLoad=true  → zoom = min(viewportW/treeW, viewportH/treeH, 1.0)
+  //                       clamped to [ZOOM_MIN, ZOOM_MAX]; tree-bbox
+  //                       centroid centered in viewport.
+  const initialLayoutKeyRef = useRef('');
+  useLayoutEffect(() => {
+    if (!nodes.length) return;
     const el = containerRef.current;
     if (!el) return;
-    const pos = overrides[userKey] || initial[userKey];
-    if (!pos) return;
-    const node = nodes.find((n) => n.key === userKey);
-    const tileW = node?.w || 110;
-    const tileH = node?.h || 96;
-    const targetX = Math.max(0, Math.min(
-      el.scrollWidth - el.clientWidth,
-      PAN_MARGIN + pos.x + tileW / 2 - el.clientWidth / 2
-    ));
-    const targetY = Math.max(0, Math.min(
-      el.scrollHeight - el.clientHeight,
-      PAN_MARGIN + pos.y + tileH / 2 - el.clientHeight / 2
-    ));
-    // Two RAFs: first lets the browser commit the new scroll bounds,
-    // second lets the centre paint. After this, the flag flips and
-    // the effect refuses to re-fire — so dragging never fights the
-    // viewport again.
-    const id = requestAnimationFrame(() => {
-      el.scrollLeft = targetX;
-      el.scrollTop = targetY;
-      requestAnimationFrame(() => { centeredOnceRef.current = true; });
-    });
-    return () => cancelAnimationFrame(id);
-  }, [userKey, nodes, overrides, initial, canvasW, canvasH]);
+    const cw = el.clientWidth;
+    const ch = el.clientHeight;
+    if (cw === 0 || ch === 0) return; // viewport not measured yet
+    const key = `${estateId}|${fitOnLoad ? 'fit' : 'center'}|${relayoutTick}`;
+    if (initialLayoutKeyRef.current === key) return;
+
+    let nextZoom = 1;
+    let scrollX = 0;
+    let scrollY = 0;
+
+    if (fitOnLoad) {
+      // Compute world bbox of every tile (in natural-canvas coords).
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      nodes.forEach((n) => {
+        const p = overrides[n.key] || initial[n.key];
+        if (!p) return;
+        if (p.x < minX) minX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.x + n.w > maxX) maxX = p.x + n.w;
+        if (p.y + n.h > maxY) maxY = p.y + n.h;
+      });
+      if (Number.isFinite(minX)) {
+        const PAD = 60; // breathing room around the tree
+        const treeW = (maxX - minX) + PAD * 2;
+        const treeH = (maxY - minY) + PAD * 2;
+        nextZoom = Math.min(cw / treeW, ch / treeH, 1.0);
+        nextZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, nextZoom));
+        const worldCx = (minX + maxX) / 2 + PAN_MARGIN;
+        const worldCy = (minY + maxY) / 2 + PAN_MARGIN;
+        scrollX = worldCx * nextZoom - cw / 2;
+        scrollY = worldCy * nextZoom - ch / 2;
+      }
+    } else if (userKey) {
+      const pos = overrides[userKey] || initial[userKey];
+      const node = nodes.find((n) => n.key === userKey);
+      if (pos && node) {
+        const tileW = node.w || 110;
+        const tileH = node.h || 96;
+        scrollX = (PAN_MARGIN + pos.x + tileW / 2) * nextZoom - cw / 2;
+        scrollY = (PAN_MARGIN + pos.y + tileH / 2) * nextZoom - ch / 2;
+      }
+    }
+
+    scrollIntentRef.current = { type: 'abs', x: Math.max(0, scrollX), y: Math.max(0, scrollY) };
+    initialLayoutKeyRef.current = key;
+    setZoom(nextZoom);
+  }, [estateId, fitOnLoad, relayoutTick, nodes, userKey, overrides, initial]);
+
+  // ── Commit any pending scroll intent the moment the new zoom paints.
+  // This is what makes anchored zoom feel snappy: there's no visible
+  // jump frame between the scale change and the scroll correction.
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    const it = scrollIntentRef.current;
+    if (!el || !it) return;
+    if (it.type === 'anchor') {
+      el.scrollLeft = Math.max(0, it.worldX * zoom - it.screenX);
+      el.scrollTop = Math.max(0, it.worldY * zoom - it.screenY);
+      // Anchor intent is cleared by gestureend / wheel-idle so multiple
+      // continuous events keep using the same anchor.
+    } else if (it.type === 'abs') {
+      el.scrollLeft = Math.max(0, it.x);
+      el.scrollTop = Math.max(0, it.y);
+      scrollIntentRef.current = null;
+    }
+  }, [zoom]);
+
+  // ── Pinch-to-zoom (iOS Safari) ────────────────────────────────────────
+  // Listens to gesture* events. Damping factor 0.45 makes Safari's raw
+  // e.scale ramp feel controllable. Anchored at the gesturestart midpoint.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const base = { zoom: 1, screenX: 0, screenY: 0, worldX: 0, worldY: 0 };
+    const onStart = (e) => {
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const z = zoomRef.current;
+      base.zoom = z;
+      base.screenX = e.clientX - rect.left;
+      base.screenY = e.clientY - rect.top;
+      base.worldX = (base.screenX + el.scrollLeft) / z;
+      base.worldY = (base.screenY + el.scrollTop) / z;
+      scrollIntentRef.current = {
+        type: 'anchor',
+        worldX: base.worldX,
+        worldY: base.worldY,
+        screenX: base.screenX,
+        screenY: base.screenY,
+      };
+    };
+    const onChange = (e) => {
+      e.preventDefault();
+      const damped = Math.pow(e.scale || 1, 0.45);
+      const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, base.zoom * damped));
+      setZoom(+next.toFixed(3));
+    };
+    const onEnd = (e) => {
+      e.preventDefault();
+      scrollIntentRef.current = null;
+    };
+    el.addEventListener('gesturestart', onStart, { passive: false });
+    el.addEventListener('gesturechange', onChange, { passive: false });
+    el.addEventListener('gestureend', onEnd, { passive: false });
+    return () => {
+      el.removeEventListener('gesturestart', onStart);
+      el.removeEventListener('gesturechange', onChange);
+      el.removeEventListener('gestureend', onEnd);
+    };
+  }, []); // attach once
+
+  // ── Ctrl/Cmd + wheel zoom (desktop) ───────────────────────────────────
+  // macOS trackpad pinch fires wheel events with ctrlKey === true so this
+  // handler covers both keyboard zoom and trackpad pinch. Anchored at
+  // the cursor.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    let clearAnchorTimer = null;
+    const onWheel = (e) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const z = zoomRef.current;
+      const screenX = e.clientX - rect.left;
+      const screenY = e.clientY - rect.top;
+      const worldX = (screenX + el.scrollLeft) / z;
+      const worldY = (screenY + el.scrollTop) / z;
+      // deltaY positive (scroll down) = zoom out. exp() gives a smooth
+      // multiplicative ramp; 0.0025 keeps it gentle.
+      const stepFactor = Math.exp(-e.deltaY * 0.0025);
+      const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z * stepFactor));
+      scrollIntentRef.current = { type: 'anchor', worldX, worldY, screenX, screenY };
+      setZoom(+next.toFixed(3));
+      if (clearAnchorTimer) clearTimeout(clearAnchorTimer);
+      clearAnchorTimer = setTimeout(() => { scrollIntentRef.current = null; }, 200);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      if (clearAnchorTimer) clearTimeout(clearAnchorTimer);
+    };
+  }, []);
+
+  // ── Double-tap to reset → re-applies current fit/center mode ─────────
+  // Only triggers when both taps land on empty canvas (not on a tile or
+  // button) so it never hijacks tile dbl-clicks.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    let lastTap = 0;
+    const onTap = (e) => {
+      const t = e.target;
+      if (t && (
+        t.closest?.('[data-testid^="entity-node-"]') ||
+        t.closest?.('button') ||
+        t.closest?.('a')
+      )) return;
+      const now = Date.now();
+      if (now - lastTap < 320) {
+        lastTap = 0;
+        setRelayoutTick((n) => n + 1);
+      } else {
+        lastTap = now;
+      }
+    };
+    el.addEventListener('pointerup', onTap);
+    return () => el.removeEventListener('pointerup', onTap);
+  }, []);
 
   // ---- drag handling ----
   const onPointerDownDrag = (e, node) => {
@@ -673,8 +837,13 @@ export default function EntityOrgChart({
     const dy = e.clientY - ds.startClientY;
     if (!ds.moved && Math.hypot(dx, dy) < 4) return; // movement threshold
     ds.moved = true;
-    const nextX = ds.origX + dx;
-    const nextY = ds.origY + dy;
+    // Pointer deltas are in viewport pixels but tile coords live in
+    // natural-canvas space. With a CSS scale(zoom) wrapper we have to
+    // divide deltas by zoom or the dragged tile drifts away from the
+    // cursor at non-1× zoom levels.
+    const z = zoom || 1;
+    const nextX = ds.origX + dx / z;
+    const nextY = ds.origY + dy / z;
     setOverrides((prev) => ({ ...prev, [ds.key]: { x: nextX, y: nextY } }));
   };
 
@@ -685,18 +854,15 @@ export default function EntityOrgChart({
       recentDragRef.current = true;
       // clear after the click event has had a chance to fire
       setTimeout(() => { recentDragRef.current = false; }, 50);
-      // Persist to localStorage on drop
+      // Persist to localStorage on drop. We intentionally DO NOT
+      // re-shift the entire layout when a tile lands in negative space
+      // — the outer canvas already provides PAN_MARGIN px of room on
+      // every side, so a tile dragged left of the natural tree should
+      // simply stay there, not yank the rest of the chart back toward
+      // the centre.
       setOverrides((prev) => {
-        // clamp to non-negative coords (re-shift if dragged beyond left/top)
-        let minX = 0, minY = 0;
-        Object.values(prev).forEach((p) => { if (p.x < minX) minX = p.x; if (p.y < minY) minY = p.y; });
-        const shift = (minX < 0 || minY < 0) ? { x: Math.max(0, -minX) + PADDING, y: Math.max(0, -minY) + PADDING } : null;
-        const out = {};
-        Object.entries(prev).forEach(([k, v]) => {
-          out[k] = shift ? { x: v.x + shift.x, y: v.y + shift.y } : v;
-        });
-        persistOverrides(out);
-        return out;
+        persistOverrides(prev);
+        return prev;
       });
     }
     dragStateRef.current = null;
@@ -762,7 +928,7 @@ export default function EntityOrgChart({
       className="relative"
       style={{
         width: '100%',
-        minHeight: Math.max(260, outerH),
+        minHeight: Math.max(260, outerH * zoom),
         overflow: 'auto',
         WebkitOverflowScrolling: 'touch',
         touchAction: draggingKey ? 'none' : 'auto',
@@ -775,13 +941,22 @@ export default function EntityOrgChart({
         .ec-edge { /* shadow disabled for now while we sanity-check rendering */ }
       `}</style>
 
-      {/* Outer pan-margin layer — gives the user identical room to
-          scroll/pan in every direction so dragging a tile never feels
-          like it's hitting a side wall. The natural tree lives inside
-          the inner div at offset (PAN_MARGIN, PAN_MARGIN); coordinates
-          on tiles remain in natural-canvas space so saved overrides
-          continue to work unchanged. */}
-      <div className="relative" style={{ width: outerW, height: outerH }}>
+      {/* Outer pan-margin layer. Sized in screen pixels (outerW × zoom)
+          so the parent's overflow:auto gets correct scroll bounds.
+          Inside, a scale(zoom) wrapper carries the actual visual zoom
+          with transformOrigin: top-left so screen-px math lines up
+          cleanly. Coordinates on tiles remain in natural-canvas space
+          so saved drag overrides keep working unchanged. */}
+      <div className="relative" style={{ width: outerW * zoom, height: outerH * zoom }}>
+        <div
+          className="relative"
+          style={{
+            width: outerW,
+            height: outerH,
+            transform: zoom !== 1 ? `scale(${zoom})` : undefined,
+            transformOrigin: 'top left',
+          }}
+        >
         <div
           className="absolute"
           style={{ left: PAN_MARGIN, top: PAN_MARGIN, width: canvasW, height: canvasH }}
@@ -874,6 +1049,7 @@ export default function EntityOrgChart({
             </div>
           );
         })}
+        </div>
         </div>
       </div>
     </div>

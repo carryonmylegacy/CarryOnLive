@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2, Lock, Unlock } from 'lucide-react';
+import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2, Lock, Unlock, Frame, Crosshair } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Button } from '../../ui/button';
 import { API_URL } from '../../../config';
@@ -22,6 +22,10 @@ import EntitiesShareToggle from './EntitiesShareToggle';
 
 const DRAFT_KEY = (estateId) => `cfp:entityWizard:draft:${estateId || 'global'}`;
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
+// Per-estate preference: should the E&S chart open zoomed-out to fit
+// the whole tree, or 1× centered on the benefactor? Persists across
+// reloads so users with sprawling structures don't have to re-toggle.
+const FIT_KEY = (estateId) => `cfp:entities:fit-on-load:${estateId || 'global'}`;
 
 export default function EntitiesSection({ estateId, beneficiaries, onEntitiesChanged, openEntityId }) {
   const { user, getAuthHeaders } = useAuth();
@@ -51,6 +55,24 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   // previously-persisted unlocked state — locked is the safe default
   // every time CFP appears.
   const [locked, setLocked] = useState(true);
+  // "Open the chart fit-to-screen" preference. Default = false (open at
+  // 1× centered on the benefactor — feels right for small trees). Users
+  // with bigger structures can flip it on and we remember per estate.
+  const [fitOnLoad, setFitOnLoad] = useState(() => {
+    try { return window.localStorage?.getItem(FIT_KEY(estateId)) === '1'; }
+    catch { return false; }
+  });
+  useEffect(() => {
+    try { setFitOnLoad(window.localStorage?.getItem(FIT_KEY(estateId)) === '1'); }
+    catch { setFitOnLoad(false); }
+  }, [estateId]);
+  const toggleFit = () => {
+    setFitOnLoad((prev) => {
+      const next = !prev;
+      try { window.localStorage?.setItem(FIT_KEY(estateId), next ? '1' : '0'); } catch { /* quota */ }
+      return next;
+    });
+  };
 
   // Re-arm the lock whenever the estate changes too (covers
   // portal-switching that reuses the same component instance).
@@ -250,6 +272,23 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           </button>
           {viewMode === 'chart' && (
             <button
+              onClick={toggleFit}
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
+              style={{
+                color: fitOnLoad ? 'var(--gold)' : 'var(--t3)',
+                border: fitOnLoad ? '1px solid rgba(212,165,55,0.4)' : '1px solid var(--b)',
+              }}
+              data-testid="entities-toggle-fit"
+              title={fitOnLoad ? 'Currently: open zoomed-out to fit the whole tree. Tap to switch to 1× centered on you.' : 'Currently: open 1× centered on you. Tap to switch to fit-the-whole-tree.'}
+              aria-label={fitOnLoad ? 'Switch to centered open' : 'Switch to fit-tree open'}
+              aria-pressed={fitOnLoad}
+            >
+              {fitOnLoad ? <Frame className="w-3 h-3" /> : <Crosshair className="w-3 h-3" />}
+              <span className="hidden sm:inline">{fitOnLoad ? 'Fit tree' : 'Centered'}</span>
+            </button>
+          )}
+          {viewMode === 'chart' && (
+            <button
               onClick={toggleLocked}
               className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-all whitespace-nowrap"
               style={locked ? {
@@ -353,6 +392,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
             onEditClickNode={handleEditClick}
             cleanUpSignal={cleanUpSignal}
             locked={locked}
+            fitOnLoad={fitOnLoad}
           />
         ) : (
           <EntityListView
