@@ -7,6 +7,7 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2, Lock, Unlock } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Button } from '../../ui/button';
@@ -22,6 +23,7 @@ const LOCK_KEY = (estateId) => `cfp:entities:locked:${estateId || 'global'}`;
 
 export default function EntitiesSection({ estateId, beneficiaries, onEntitiesChanged, openEntityId }) {
   const { user, getAuthHeaders } = useAuth();
+  const navigate = useNavigate();
   const [freshUser, setFreshUser] = useState(null);
   const [entities, setEntities] = useState([]);
   const [externals, setExternals] = useState([]);
@@ -120,7 +122,17 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   const handleSingleClick = (node) => {
     if (node.kind === 'entity') {
       const ent = entities.find((e) => e.id === node.id);
-      if (ent) setDocsModalEntity(ent);
+      if (!ent) return;
+      const docIds = (ent.document_ids || []).filter(Boolean);
+      // Shortcut: if the entity has exactly one linked SDV document, go
+      // straight to its full preview. Skip the chooser modal — there's
+      // nothing to choose. Multi-doc entities still open the modal so
+      // the user can pick which one to open.
+      if (docIds.length === 1) {
+        navigate(`/vault?openDoc=${encodeURIComponent(docIds[0])}`);
+        return;
+      }
+      setDocsModalEntity(ent);
     } else {
       // For person nodes, single click shows the quick info bubble (centered)
       setQuickInfoNode(node);

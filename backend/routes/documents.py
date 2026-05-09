@@ -134,7 +134,7 @@ async def get_documents(estate_id: str, current_user: dict = Depends(get_current
     if documents:
         ent_rows = await db.cfp_entities.find(
             {"estate_id": estate_id, "deleted_at": None},
-            {"_id": 0, "id": 1, "name": 1, "document_ids": 1},
+            {"_id": 0, "id": 1, "name": 1, "category": 1, "type": 1, "document_ids": 1},
         ).to_list(500)
         doc_to_entities = {}
         for ent in ent_rows:
@@ -142,6 +142,14 @@ async def get_documents(estate_id: str, current_user: dict = Depends(get_current
                 doc_to_entities.setdefault(doc_id, []).append({"id": ent["id"], "name": ent.get("name")})
         for doc in documents:
             doc["linked_entities"] = doc_to_entities.get(doc["id"], [])
+        # Re-resolve with category so the SDV card can render an
+        # entity-type icon overlay on the document thumbnail.
+        ent_meta = {e["id"]: e for e in ent_rows}
+        for doc in documents:
+            for ent_ref in doc.get("linked_entities", []):
+                full = ent_meta.get(ent_ref["id"], {})
+                ent_ref["category"] = full.get("category")
+                ent_ref["type"] = full.get("type")
 
     # Add encryption info to each document
     for doc in documents:

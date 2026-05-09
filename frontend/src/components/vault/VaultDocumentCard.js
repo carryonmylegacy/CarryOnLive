@@ -2,11 +2,30 @@ import React from 'react';
 import {
   Lock, Unlock, Eye, Download, Loader2, Edit2, Trash2,
   Users, ChevronDown, ChevronUp,
+  Building2, Shield as ShieldIcon, Landmark, Home, User as UserIcon, Settings,
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import DocThumbnail from '../DocThumbnail';
 import PinForOfflineButton from './PinForOfflineButton';
+
+// Map an entity category → small icon for the SDV thumbnail overlay.
+const ENTITY_ICON = {
+  business: Building2,
+  trust: ShieldIcon,
+  charity: Landmark,
+  property: Home,
+  external_person: UserIcon,
+  specialized: Settings,
+};
+const ENTITY_TINT = {
+  business: '#3B82F6',
+  trust: '#6366F1',
+  charity: '#D4A537',
+  property: '#0E7490',
+  external_person: '#64748B',
+  specialized: '#64748B',
+};
 
 const VaultDocumentCard = ({
   doc,
@@ -62,6 +81,44 @@ const VaultDocumentCard = ({
         {/* Thumbnail area */}
         <div className="h-28 w-full rounded-t-xl overflow-hidden relative">
           <DocThumbnail doc={doc} getAuthHeaders={getAuthHeaders} />
+          {/* Entity-link overlay — shows the type of entity this doc is
+              linked to (one badge per linked entity, capped at 3). Lets
+              the user spot at a glance which docs map to which legal
+              structures in the CFP org chart. */}
+          {Array.isArray(doc.linked_entities) && doc.linked_entities.length > 0 && (
+            <div
+              className="absolute top-1.5 right-1.5 flex items-center gap-1"
+              data-testid={`doc-entity-overlay-${doc.id}`}
+            >
+              {doc.linked_entities.slice(0, 3).map((ent) => {
+                const Icon = ENTITY_ICON[ent.category] || ShieldIcon;
+                const tint = ENTITY_TINT[ent.category] || '#64748B';
+                return (
+                  <div
+                    key={ent.id}
+                    className="w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{
+                      background: 'rgba(10,14,26,0.85)',
+                      border: `1px solid ${tint}`,
+                      color: tint,
+                    }}
+                    title={`Linked to ${ent.name}`}
+                  >
+                    <Icon className="w-3 h-3" />
+                  </div>
+                );
+              })}
+              {doc.linked_entities.length > 3 && (
+                <div
+                  className="px-1.5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold"
+                  style={{ background: 'rgba(10,14,26,0.85)', border: '1px solid var(--gold)', color: 'var(--gold)' }}
+                  title={`${doc.linked_entities.length} linked entities`}
+                >
+                  +{doc.linked_entities.length - 3}
+                </div>
+              )}
+            </div>
+          )}
         </div>
         
         <div className="p-4 pt-3">
