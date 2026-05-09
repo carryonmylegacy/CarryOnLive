@@ -6,6 +6,15 @@
  *   assets, debts        : numeric strings (the wizard / detail panel manage them as state)
  *   onChange({assets, debts})
  *   compact (bool)       : if true, renders inline on a single row (used in detail panel)
+ *
+ * Currency UX (added 2026-02-09):
+ *   • Inputs accept any raw number ("1500", "1500.5") while focused so
+ *     typing is never disrupted (no comma/$ formatting fights with
+ *     the caret).
+ *   • The moment the input loses focus, the value re-renders as
+ *     formatted USD with dollars and cents — e.g. "$1,500.50".
+ *   • Internally stored value remains a plain numeric string so the
+ *     parent's `Number(value)` conversion at save time keeps working.
  */
 import React from 'react';
 import { Input } from '../../ui/input';
@@ -17,6 +26,68 @@ const fmt = (n) => {
   return v.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 };
 
+const fmtCents = (n) => {
+  if (n === '' || n === null || n === undefined || Number.isNaN(Number(n))) return '';
+  return Number(n).toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
+/**
+ * Controlled currency input. Shows the user's raw typed value while
+ * focused, then renders the value as USD with dollars-and-cents on blur.
+ */
+function CurrencyInput({ value, onChange, ...rest }) {
+  const [focused, setFocused] = React.useState(false);
+  const [draft, setDraft] = React.useState('');
+
+  const display = focused
+    ? draft
+    : (value === '' || value === null || value === undefined ? '' : fmtCents(value));
+
+  const handleChange = (e) => {
+    // Allow digits and a single decimal point only.
+    let raw = e.target.value.replace(/[^0-9.]/g, '');
+    const firstDot = raw.indexOf('.');
+    if (firstDot !== -1) {
+      raw =
+        raw.slice(0, firstDot + 1) +
+        raw.slice(firstDot + 1).replace(/\./g, '').slice(0, 2);
+    }
+    setDraft(raw);
+    onChange(raw);
+  };
+
+  return (
+    <Input
+      {...rest}
+      type="text"
+      inputMode="decimal"
+      value={display}
+      onFocus={(e) => {
+        setFocused(true);
+        setDraft(value === '' || value === null || value === undefined ? '' : String(value));
+        // Defer caret-to-end until React paints the raw value.
+        const el = e.currentTarget;
+        requestAnimationFrame(() => {
+          try {
+            const len = (el.value || '').length;
+            el.setSelectionRange(len, len);
+          } catch (_) { /* select unsupported on some types */ }
+        });
+      }}
+      onBlur={() => {
+        setFocused(false);
+        if (draft === '' || draft === '.') onChange('');
+      }}
+      onChange={handleChange}
+    />
+  );
+}
+
 export default function FinancialFields({ assets, debts, onChange }) {
   const a = assets === '' ? '' : Number(assets);
   const d = debts === '' ? '' : Number(debts);
@@ -27,26 +98,20 @@ export default function FinancialFields({ assets, debts, onChange }) {
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1.5">
           <Label className="text-[11px] text-[var(--t4)]">Gross assets ($)</Label>
-          <Input
-            type="number"
-            inputMode="decimal"
-            min="0"
-            value={assets ?? ''}
-            onChange={(e) => onChange({ assets: e.target.value, debts })}
-            placeholder="0"
+          <CurrencyInput
+            value={assets}
+            onChange={(v) => onChange({ assets: v, debts })}
+            placeholder="$0.00"
             className="input-field"
             data-testid="entity-gross-assets"
           />
         </div>
         <div className="space-y-1.5">
           <Label className="text-[11px] text-[var(--t4)]">Gross debts ($)</Label>
-          <Input
-            type="number"
-            inputMode="decimal"
-            min="0"
-            value={debts ?? ''}
-            onChange={(e) => onChange({ assets, debts: e.target.value })}
-            placeholder="0"
+          <CurrencyInput
+            value={debts}
+            onChange={(v) => onChange({ assets, debts: v })}
+            placeholder="$0.00"
             className="input-field"
             data-testid="entity-gross-debts"
           />
