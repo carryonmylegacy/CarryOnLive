@@ -341,9 +341,17 @@ export default function FoundersCirclePage() {
 
         return (
           <>
-            {/* Main 3 tiers — symmetric 3-up. */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              {mainPlans.map(renderFcCard)}
+            {/* Main 3 tiers — flex-wrap with center justify so any
+                orphan on a partial row stays visually centered. */}
+            <div className="flex flex-wrap justify-center gap-4 mb-6">
+              {mainPlans.map((p) => (
+                <div
+                  key={p.tier}
+                  className="w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]"
+                >
+                  {renderFcCard(p)}
+                </div>
+              ))}
             </div>
 
             {/* Eligibility pill + collapsible discount tiers. */}
@@ -384,8 +392,15 @@ export default function FoundersCirclePage() {
                   <p className="text-center text-[11px] uppercase tracking-[0.18em] mt-5 mb-4" style={{ color: 'var(--gold)' }}>
                     Dedicated lifetime tiers · same Founders Circle benefits · eligibility verified after subscribe
                   </p>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {discountPlans.map(renderFcCard)}
+                  <div className="flex flex-wrap justify-center gap-4">
+                    {discountPlans.map((p) => (
+                      <div
+                        key={p.tier}
+                        className="w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]"
+                      >
+                        {renderFcCard(p)}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
