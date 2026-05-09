@@ -30,8 +30,14 @@ export default function ExternalPersonPhotoField({
   const fileRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
+  // Tracks <img> load failures (broken URL, S3 hiccup, transient ingress
+  // glitch). When true we render the gold UserIcon placeholder instead
+  // of the browser's default broken-image "?" — cleaner UX, and the
+  // user can simply re-upload to recover.
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const url = previewUrl || currentUrl || null;
+  const showFallback = !url || loadFailed;
 
   const handlePick = () => fileRef.current?.click();
 
@@ -47,9 +53,16 @@ export default function ExternalPersonPhotoField({
       toast.error('Image too large (max 10 MB).');
       return;
     }
-    // Show local preview immediately for instant feedback.
+    // Show local preview immediately for instant feedback. We deliberately
+    // KEEP this blob URL as the displayed image even after the upload
+    // completes — the server URL is persisted in the DB for next mount,
+    // but reading it back from S3 introduces a round-trip that, if it
+    // hiccups (DNS, ingress, eventual consistency), would replace the
+    // user's just-picked photo with a broken-image "?". The blob is
+    // reliable for the lifetime of this panel.
     const localUrl = URL.createObjectURL(file);
     setPreviewUrl(localUrl);
+    setLoadFailed(false);
 
     setUploading(true);
     try {
@@ -62,8 +75,11 @@ export default function ExternalPersonPhotoField({
         { headers: { ...headers, 'Content-Type': 'multipart/form-data' } }
       );
       const newUrl = res.data?.photo_url;
-      if (newUrl) setPreviewUrl(newUrl);
       toast.success('Photo updated.');
+      // Notify parent so it can refetch the externals list — but DON'T
+      // swap our preview to newUrl here. The blob preview already shows
+      // the picked image and is rock-solid; on next mount the parent
+      // will pass the server URL via currentUrl.
       onUploaded?.(newUrl);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Upload failed.');
@@ -82,8 +98,14 @@ export default function ExternalPersonPhotoField({
           border: '2px solid rgba(212,165,55,0.45)',
         }}
       >
-        {url ? (
-          <img src={url} alt="" className="w-full h-full object-cover" />
+        {!showFallback ? (
+          <img
+            src={url}
+            alt=""
+            className="w-full h-full object-cover"
+            onError={() => setLoadFailed(true)}
+            onLoad={() => setLoadFailed(false)}
+          />
         ) : (
           <UserIcon className="w-7 h-7 text-[var(--gold)]" />
         )}
@@ -108,7 +130,7 @@ export default function ExternalPersonPhotoField({
           data-testid="external-person-photo-upload"
         >
           <Camera className="w-3.5 h-3.5" />
-          {url ? 'Replace photo' : 'Upload photo'}
+          {url && !loadFailed ? 'Replace photo' : 'Upload photo'}
         </button>
         <div className="text-[11px] text-[var(--t5)] mt-1">
           Square JPEG / PNG up to 10&nbsp;MB. Cropped automatically.
