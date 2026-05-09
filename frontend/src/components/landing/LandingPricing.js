@@ -51,7 +51,7 @@ const PUBLIC_TIERS = ['premium', 'standard', 'base'];
 // Eligibility-gated discount tiers, revealed when the visitor opens the
 // "Eligible for a discount?" button. Pricing and features come from the
 // same /api/subscriptions/plans response the in-app paywall uses.
-const ELIGIBILITY_TIERS = ['military', 'veteran', 'seniors', 'new_adult', 'hospice'];
+const ELIGIBILITY_TIERS = ['military', 'veteran', 'hospice', 'seniors', 'new_adult'];
 
 const ELIGIBILITY_BLURB = {
   new_adult: 'Ages 18–25 — government ID verified at signup.',
@@ -295,7 +295,7 @@ export default function LandingPricing() {
               fontFamily: 'var(--serif)',
             }}
           >
-            Eligible for a discount? New adults (18–25), military / first responders, veterans, and hospice patients have dedicated tiers — {discountOpen ? 'hide' : 'see'} pricing.
+            Eligible for a discount? Military / First Responders, Veterans, Hospice patients, Seniors (65+), and New adults (18–25) have dedicated tiers — {discountOpen ? 'hide' : 'see'} pricing.
             <ChevronDown
               className="w-4 h-4 flex-shrink-0 transition-transform"
               style={{ transform: discountOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}

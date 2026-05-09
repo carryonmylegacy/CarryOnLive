@@ -40,6 +40,16 @@ const TIER_COLORS = {
 // gold pill; main tiers are always front-and-center.
 const MAIN_TIER_IDS_PAYWALL = ['premium', 'standard', 'base'];
 
+// Canonical discount-tier display order (platform-wide).
+// Matches the discount blurb copy: Military / First Responders → Veterans →
+// Hospice → Seniors → New Adults → B2B (enterprise).
+const DISCOUNT_TIER_ORDER = ['military', 'veteran', 'hospice', 'seniors', 'new_adult', 'enterprise'];
+const sortByDiscountOrder = (a, b) => {
+  const ai = DISCOUNT_TIER_ORDER.indexOf(a.id);
+  const bi = DISCOUNT_TIER_ORDER.indexOf(b.id);
+  return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+};
+
 export default function SubscriptionPaywall({ onDismiss }) {
   const { token, refreshSubscription } = useAuth();
   const [plans, setPlans] = useState([]);
@@ -445,7 +455,9 @@ export default function SubscriptionPaywall({ onDismiss }) {
         {(() => {
           const filteredPlans = visiblePlans.filter(p => !['hospice'].includes(p.id) || p.price === 0);
           const mainPlans = filteredPlans.filter(p => MAIN_TIER_IDS_PAYWALL.includes(p.id));
-          const discountPlans = filteredPlans.filter(p => !MAIN_TIER_IDS_PAYWALL.includes(p.id));
+          const discountPlans = filteredPlans
+            .filter(p => !MAIN_TIER_IDS_PAYWALL.includes(p.id))
+            .sort(sortByDiscountOrder);
 
           const renderPaywallCard = (plan, useFlexWidth) => {
             const Icon = TIER_ICONS[plan.id] || Shield;
@@ -675,7 +687,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                         className="font-semibold leading-snug inline-flex items-center justify-center gap-2"
                         style={{ color: '#0b1120', fontSize: 'clamp(13px, 1.2vw, 15px)' }}
                       >
-                        Eligible for a discount? New adults (18–25), seniors (65+), military / first responders, veterans, hospice patients, and B2B partners have dedicated tiers — {discountOpen ? 'hide' : 'see'} pricing.
+                        Eligible for a discount? Military / First Responders, Veterans, Hospice patients, Seniors (65+), New adults (18–25), and B2B partners have dedicated tiers — {discountOpen ? 'hide' : 'see'} pricing.
                         <ChevronDown
                           className="w-4 h-4 flex-shrink-0 transition-transform"
                           style={{ transform: discountOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}

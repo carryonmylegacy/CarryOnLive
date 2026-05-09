@@ -238,8 +238,17 @@ export default function FoundersCirclePage() {
           Veteran) tuck behind a gold pill. Same renderer for both
           grids → zero card-render regression. */}
       {(() => {
+        // Canonical discount-tier display order (platform-wide).
+        const DISCOUNT_TIER_ORDER = ['military', 'veteran', 'hospice', 'seniors', 'new_adult', 'enterprise'];
+        const sortByDiscountOrder = (a, b) => {
+          const ai = DISCOUNT_TIER_ORDER.indexOf(a.tier);
+          const bi = DISCOUNT_TIER_ORDER.indexOf(b.tier);
+          return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+        };
         const mainPlans = plans.filter(p => FC_MAIN_TIERS.includes(p.tier));
-        const discountPlans = plans.filter(p => !FC_MAIN_TIERS.includes(p.tier));
+        const discountPlans = plans
+          .filter(p => !FC_MAIN_TIERS.includes(p.tier))
+          .sort(sortByDiscountOrder);
 
         const renderFcCard = (plan) => {
           const inst = plan.installments[selectedSchedule];
@@ -358,7 +367,7 @@ export default function FoundersCirclePage() {
                       className="font-semibold leading-snug inline-flex items-center justify-center gap-2"
                       style={{ color: '#0b1120', fontSize: 'clamp(13px, 1.2vw, 15px)' }}
                     >
-                      Eligible for a discount? New adults (18–25), military / first responders, and veterans have dedicated lifetime tiers — {discountOpen ? 'hide' : 'see'} pricing.
+                      Eligible for a discount? Military / First Responders, Veterans, and New adults (18–25) have dedicated lifetime tiers — {discountOpen ? 'hide' : 'see'} pricing.
                       <ChevronDown
                         className="w-4 h-4 flex-shrink-0 transition-transform"
                         style={{ transform: discountOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}

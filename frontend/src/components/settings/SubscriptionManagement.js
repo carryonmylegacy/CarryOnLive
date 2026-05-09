@@ -192,9 +192,18 @@ export const SubscriptionManagement = ({
   // focused on the 95% case. Beneficiaries always see only their
   // locked tier — no pill needed.
   const MAIN_TIER_IDS = ['premium', 'standard', 'base', 'ben_premium', 'ben_standard', 'ben_base'];
+  // Canonical discount-tier display order (platform-wide).
+  const DISCOUNT_TIER_ORDER = ['military', 'veteran', 'hospice', 'seniors', 'new_adult', 'enterprise'];
+  const sortByDiscountOrder = (a, b) => {
+    const ai = DISCOUNT_TIER_ORDER.indexOf(a.id);
+    const bi = DISCOUNT_TIER_ORDER.indexOf(b.id);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  };
   const isMainTier = (id) => MAIN_TIER_IDS.includes(id);
   const mainPlans = isBeneficiary ? displayPlans : displayPlans.filter(p => isMainTier(p.id));
-  const discountPlans = isBeneficiary ? [] : displayPlans.filter(p => !isMainTier(p.id));
+  const discountPlans = isBeneficiary
+    ? []
+    : displayPlans.filter(p => !isMainTier(p.id)).sort(sortByDiscountOrder);
   const [discountOpen, setDiscountOpen] = useState(false);
   const discountSectionRef = useRef(null);
 
@@ -892,7 +901,7 @@ export const SubscriptionManagement = ({
                         className="font-semibold leading-snug inline-flex items-center justify-center gap-2"
                         style={{ color: '#0b1120', fontSize: 'clamp(13px, 1.2vw, 15px)' }}
                       >
-                        Eligible for a discount? New adults (18–25), seniors (65+), military / first responders, veterans, hospice patients, and B2B partners have dedicated tiers — {discountOpen ? 'hide' : 'see'} pricing.
+                        Eligible for a discount? Military / First Responders, Veterans, Hospice patients, Seniors (65+), New adults (18–25), and B2B partners have dedicated tiers — {discountOpen ? 'hide' : 'see'} pricing.
                         <ChevronDown
                           className="w-4 h-4 flex-shrink-0 transition-transform"
                           style={{ transform: discountOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
