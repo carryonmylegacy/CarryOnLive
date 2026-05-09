@@ -208,6 +208,17 @@ export default function EntityWizard({
       assignBeneficiaryId, assignEntityId, assignRole, assignPct,
       prefilledBeneficiaryId, connections]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Reset the scroll-to-top when step changes (or when the bucket/type
+  // sub-step within Step 1 advances). Without this, scrolling down to
+  // tap "Continue" leaves the next page rendered at the same scroll
+  // offset.
+  useEffect(() => {
+    if (!open) return;
+    const el = document.querySelector('.slide-panel-scroll');
+    if (el) el.scrollTop = 0;
+    if (typeof window !== 'undefined') window.scrollTo?.(0, 0);
+  }, [open, step, bucketId, typeId]);
+
   const reset = () => {
     setStep(1); setBucketId(null); setPendingBucketId(null); setTypeId(null); setSearch('');
     setName(''); setState(''); setNotes(''); setShowMore(false);
