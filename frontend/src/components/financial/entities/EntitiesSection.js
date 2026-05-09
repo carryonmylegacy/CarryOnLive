@@ -20,7 +20,6 @@ import EntityQuickInfoPopover from './EntityQuickInfoPopover';
 import EntityDocumentsModal from './EntityDocumentsModal';
 import EntitiesShareToggle from './EntitiesShareToggle';
 
-const LOCK_KEY = (estateId) => `cfp:entities:locked:${estateId || 'global'}`;
 const DRAFT_KEY = (estateId) => `cfp:entityWizard:draft:${estateId || 'global'}`;
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -44,17 +43,18 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   const [expanded, setExpanded] = useState(false);
   const [resetTick, setResetTick] = useState(0);
   const [cleanUpSignal, setCleanUpSignal] = useState(0);
-  const [locked, setLocked] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    try { return window.localStorage?.getItem(LOCK_KEY(estateId)) === '1'; }
-    catch { return false; }
-  });
+  // Auto-lock the chart on every CFP mount. This means panning around
+  // (single-finger swipe / two-finger trackpad scroll) never
+  // accidentally drags a tile when the user just came back from
+  // somewhere else. To move tiles, the user has to deliberately tap
+  // the lock chip to unlock first. We intentionally ignore any
+  // previously-persisted unlocked state — locked is the safe default
+  // every time CFP appears.
+  const [locked, setLocked] = useState(true);
 
-  // Re-read the lock state when the estate changes (per-estate persistence)
-  useEffect(() => {
-    try { setLocked(window.localStorage?.getItem(LOCK_KEY(estateId)) === '1'); }
-    catch { /* ignore */ }
-  }, [estateId]);
+  // Re-arm the lock whenever the estate changes too (covers
+  // portal-switching that reuses the same component instance).
+  useEffect(() => { setLocked(true); }, [estateId]);
 
   // If the user was mid-wizard and navigated away (bottom nav, sidebar,
   // a deep link), drop them right back into the wizard when the CFP
@@ -76,11 +76,10 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   }, [estateId]);
 
   const toggleLocked = () => {
-    setLocked((prev) => {
-      const next = !prev;
-      try { window.localStorage?.setItem(LOCK_KEY(estateId), next ? '1' : '0'); } catch { /* quota */ }
-      return next;
-    });
+    // Just flip the in-memory lock — we no longer persist it because
+    // the rule is "always locked on CFP mount" so the user can pan
+    // without fear of accidentally moving tiles.
+    setLocked((prev) => !prev);
   };
 
   // Deep-link: when arriving via `/financial?openEntity=<id>` from the

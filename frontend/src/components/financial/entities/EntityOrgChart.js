@@ -568,9 +568,17 @@ export default function EntityOrgChart({
   // Effective position of any node = override OR initial
   const positionOf = useCallback((key) => overrides[key] || initial[key] || { x: PADDING, y: PADDING }, [overrides, initial]);
 
-  // Canvas size: max of initial canvas + farthest dragged node
+  // Canvas size: enforce a generous baseline so the user always has
+  // pan-room in every direction (no "side wall" feel when dragging
+  // tiles outward). The natural tree sits inside an outer pan margin
+  // so users can scroll left/up just as easily as right/down. Tile
+  // coordinates remain relative to the natural canvas (so saved
+  // overrides keep working unchanged); the margin is purely a render
+  // wrapper.
+  const PAN_MARGIN = 700;
   const { canvasW, canvasH } = useMemo(() => {
-    let w = initialW, h = initialH;
+    let w = initialW;
+    let h = initialH;
     nodes.forEach((n) => {
       const p = overrides[n.key];
       if (!p) return;
@@ -579,17 +587,28 @@ export default function EntityOrgChart({
     });
     return { canvasW: w, canvasH: h };
   }, [nodes, overrides, initialW, initialH]);
+  const outerW = canvasW + PAN_MARGIN * 2;
+  const outerH = canvasH + PAN_MARGIN * 2;
 
-  // Auto-center the benefactor (root user) tile horizontally inside the
-  // scrollable canvas on first paint and whenever the canvas/layout size
-  // changes. Important for narrow PWA viewports where the tree extends
-  // wider than the screen — without this the user lands looking at the
-  // top-left corner of the canvas with the root tile off-screen-right.
+  // Auto-center the benefactor (root user) tile both horizontally
+  // AND vertically inside the scrollable canvas. Fires exactly ONCE
+  // per mount — re-running whenever `overrides` changes was fighting
+  // active drags by tugging the viewport back to centre after every
+  // tiny tile move. After the first paint the user is in full control
+  // of the scroll position.
   const userKey = useMemo(() => {
     const u = nodes.find((n) => n.kind === 'user');
     return u?.key || null;
   }, [nodes]);
+  const centeredOnceRef = React.useRef(false);
   useEffect(() => {
+    // Reset the "did initial centre" flag whenever the estate (and
+    // therefore the entire chart) changes, so a portal switch /
+    // estate switch still re-centres on next mount.
+    centeredOnceRef.current = false;
+  }, [estateId]);
+  useEffect(() => {
+    if (centeredOnceRef.current) return;
     if (!userKey) return;
     const el = containerRef.current;
     if (!el) return;
@@ -597,18 +616,26 @@ export default function EntityOrgChart({
     if (!pos) return;
     const node = nodes.find((n) => n.key === userKey);
     const tileW = node?.w || 110;
-    const target = Math.max(
-      0,
-      Math.min(
-        el.scrollWidth - el.clientWidth,
-        pos.x + tileW / 2 - el.clientWidth / 2
-      )
-    );
+    const tileH = node?.h || 96;
+    const targetX = Math.max(0, Math.min(
+      el.scrollWidth - el.clientWidth,
+      PAN_MARGIN + pos.x + tileW / 2 - el.clientWidth / 2
+    ));
+    const targetY = Math.max(0, Math.min(
+      el.scrollHeight - el.clientHeight,
+      PAN_MARGIN + pos.y + tileH / 2 - el.clientHeight / 2
+    ));
+    // Two RAFs: first lets the browser commit the new scroll bounds,
+    // second lets the centre paint. After this, the flag flips and
+    // the effect refuses to re-fire — so dragging never fights the
+    // viewport again.
     const id = requestAnimationFrame(() => {
-      el.scrollLeft = target;
+      el.scrollLeft = targetX;
+      el.scrollTop = targetY;
+      requestAnimationFrame(() => { centeredOnceRef.current = true; });
     });
     return () => cancelAnimationFrame(id);
-  }, [userKey, overrides, initial, nodes, canvasW, canvasH]);
+  }, [userKey, nodes, overrides, initial, canvasW, canvasH]);
 
   // ---- drag handling ----
   const onPointerDownDrag = (e, node) => {
@@ -735,7 +762,7 @@ export default function EntityOrgChart({
       className="relative"
       style={{
         width: '100%',
-        minHeight: Math.max(260, canvasH),
+        minHeight: Math.max(260, outerH),
         overflow: 'auto',
         WebkitOverflowScrolling: 'touch',
         touchAction: draggingKey ? 'none' : 'auto',
@@ -748,7 +775,17 @@ export default function EntityOrgChart({
         .ec-edge { /* shadow disabled for now while we sanity-check rendering */ }
       `}</style>
 
-      <div className="relative" style={{ width: canvasW, height: canvasH }}>
+      {/* Outer pan-margin layer — gives the user identical room to
+          scroll/pan in every direction so dragging a tile never feels
+          like it's hitting a side wall. The natural tree lives inside
+          the inner div at offset (PAN_MARGIN, PAN_MARGIN); coordinates
+          on tiles remain in natural-canvas space so saved overrides
+          continue to work unchanged. */}
+      <div className="relative" style={{ width: outerW, height: outerH }}>
+        <div
+          className="absolute"
+          style={{ left: PAN_MARGIN, top: PAN_MARGIN, width: canvasW, height: canvasH }}
+        >
         {/* SVG line layer — innerHTML to bypass the platform's <span data-ve-dynamic>
             wrappers that would otherwise corrupt SVG namespace rendering. */}
         <svg
@@ -837,6 +874,7 @@ export default function EntityOrgChart({
             </div>
           );
         })}
+        </div>
       </div>
     </div>
   );
