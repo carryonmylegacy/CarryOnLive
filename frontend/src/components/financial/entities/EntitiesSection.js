@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2, Lock, Unlock, Frame, Crosshair } from 'lucide-react';
+import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2, Lock, Unlock, Frame, Crosshair, Map } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Button } from '../../ui/button';
 import { API_URL } from '../../../config';
@@ -19,6 +19,7 @@ import EntityListView from './EntityListView';
 import EntityQuickInfoPopover from './EntityQuickInfoPopover';
 import EntityDocumentsModal from './EntityDocumentsModal';
 import EntitiesShareToggle from './EntitiesShareToggle';
+import EntityLegend from './EntityLegend';
 
 const DRAFT_KEY = (estateId) => `cfp:entityWizard:draft:${estateId || 'global'}`;
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
@@ -62,6 +63,16 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
     try { return window.localStorage?.getItem(FIT_KEY(estateId)) === '1'; }
     catch { return false; }
   });
+  // Legend visibility — persists per estate so the user's last
+  // preference survives a portal switch / hard reload.
+  const [legendHidden, setLegendHidden] = useState(() => EntityLegend.readHiddenForEstate(estateId));
+  useEffect(() => {
+    setLegendHidden(EntityLegend.readHiddenForEstate(estateId));
+  }, [estateId]);
+  const showLegend = () => {
+    EntityLegend.writeHiddenForEstate(estateId, false);
+    setLegendHidden(false);
+  };
   useEffect(() => {
     try { setFitOnLoad(window.localStorage?.getItem(FIT_KEY(estateId)) === '1'); }
     catch { setFitOnLoad(false); }
@@ -355,6 +366,21 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
               <Maximize2 className="w-3 h-3" /><span className="hidden sm:inline">{expanded ? 'Collapse' : 'Expand'}</span>
             </button>
           )}
+          {viewMode === 'chart' && legendHidden && (
+            <button
+              onClick={showLegend}
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
+              style={{
+                color: 'var(--gold)',
+                border: '1px solid rgba(212,165,55,0.4)',
+              }}
+              data-testid="entities-show-legend"
+              title="Show legend"
+              aria-label="Show legend"
+            >
+              <Map className="w-3 h-3" /><span className="hidden sm:inline">Legend</span>
+            </button>
+          )}
           <EntitiesShareToggle
             estateId={estateId}
             beneficiaries={beneficiaries || []}
@@ -373,21 +399,34 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
 
       <div style={{ height: maxH, position: 'relative' }}>
         {viewMode === 'chart' ? (
-          <EntityOrgChart
-            key={resetTick}
-            estateId={estateId}
-            entities={entities}
-            externals={externals}
-            relationships={relationships}
-            beneficiaries={beneficiaries || []}
-            onSingleClickNode={handleSingleClick}
-            onDoubleClickNode={handleDoubleClick}
-            onInfoClickNode={handleInfoClick}
-            onEditClickNode={handleEditClick}
-            cleanUpSignal={cleanUpSignal}
-            locked={locked}
-            fitOnLoad={fitOnLoad}
-          />
+          <>
+            <EntityOrgChart
+              key={resetTick}
+              estateId={estateId}
+              entities={entities}
+              externals={externals}
+              relationships={relationships}
+              beneficiaries={beneficiaries || []}
+              onSingleClickNode={handleSingleClick}
+              onDoubleClickNode={handleDoubleClick}
+              onInfoClickNode={handleInfoClick}
+              onEditClickNode={handleEditClick}
+              cleanUpSignal={cleanUpSignal}
+              locked={locked}
+              fitOnLoad={fitOnLoad}
+            />
+            {/* Floating draggable legend — positioned inside the same
+                relative-wrapper as the chart so it sits ON TOP of the
+                chart's scroll viewport but does NOT scroll with the
+                chart's panned content. */}
+            <EntityLegend
+              estateId={estateId}
+              entities={entities}
+              relationships={relationships}
+              hidden={legendHidden}
+              onHiddenChange={setLegendHidden}
+            />
+          </>
         ) : (
           <div className="overflow-auto" style={{ height: maxH, WebkitOverflowScrolling: 'touch' }}>
             <EntityListView
