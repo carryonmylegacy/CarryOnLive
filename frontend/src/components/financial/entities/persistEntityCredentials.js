@@ -1,6 +1,12 @@
 /**
  * persistEntityCredentials — given the credential rows produced by
  * EntityCredentialsField, sync them with the digital_wallet (DAV) API:
+ *   - rows with `_link_to_id`        → PATCH /api/digital-wallet/:id
+ *                                       to set linked_entity_id (no
+ *                                       new DAV row is created — the
+ *                                       user opted to link this entity
+ *                                       to an existing DAV entry whose
+ *                                       login matched).
  *   - rows with `_new: true`         → POST  /api/digital-wallet
  *   - rows with `id` and `_dirty`    → PUT   /api/digital-wallet/:id
  *   - rows with `id` and `_delete`   → DELETE/api/digital-wallet/:id
@@ -24,11 +30,12 @@ export async function persistEntityCredentials({
   entityId,
   authHeaders,
 }) {
-  if (!entityId || !Array.isArray(credentials)) return { created: 0, updated: 0, deleted: 0 };
+  if (!entityId || !Array.isArray(credentials)) return { created: 0, updated: 0, deleted: 0, linked: 0 };
 
   let created = 0;
   let updated = 0;
   let deleted = 0;
+  let linked = 0;
 
   for (const c of credentials) {
     try {
@@ -36,6 +43,16 @@ export async function persistEntityCredentials({
       if (c._delete && c.id) {
         await axios.delete(`${API_URL}/digital-wallet/${c.id}`, authHeaders);
         deleted += 1;
+        continue;
+      }
+      // Link-to-existing: user accepted the duplicate-hint and chose
+      // to attach this entity to an existing DAV entry. PATCH the
+      // existing row's linked_entity_id; no new DAV record created.
+      if (c._link_to_id) {
+        await axios.put(`${API_URL}/digital-wallet/${c._link_to_id}`, {
+          linked_entity_id: entityId,
+        }, authHeaders);
+        linked += 1;
         continue;
       }
       // Skip newly-added rows that were left completely blank
@@ -63,5 +80,5 @@ export async function persistEntityCredentials({
     }
   }
 
-  return { created, updated, deleted };
+  return { created, updated, deleted, linked };
 }

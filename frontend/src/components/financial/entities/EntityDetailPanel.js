@@ -345,6 +345,7 @@ export default function EntityDetailPanel({
                   credentials={credentials}
                   onChange={setCredentials}
                   defaultAccountName={name ? `${name} portal` : ''}
+                  davEntries={walletEntries || []}
                 />
               </div>
               <div className="flex gap-2">

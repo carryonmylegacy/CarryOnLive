@@ -201,6 +201,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           entities={entities}
           externals={externals}
           documents={documents}
+          walletEntries={walletEntries}
           onCreated={() => { fetchAll(); onEntitiesChanged?.(); }}
           onCreatedExternal={() => { fetchAll(); onEntitiesChanged?.(); }}
           onCancel={() => setShowWizard(false)}
@@ -368,6 +369,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
         entities={entities}
         externals={externals}
         documents={documents}
+        walletEntries={walletEntries}
         onCreated={() => { fetchAll(); onEntitiesChanged?.(); }}
         onCreatedExternal={() => { fetchAll(); onEntitiesChanged?.(); }}
         onCancel={() => setShowWizard(false)}

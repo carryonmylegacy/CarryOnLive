@@ -245,6 +245,11 @@ async def update_digital_wallet_entry(
             )
         else:
             update["assigned_beneficiary_name"] = None
+    if data.linked_entity_id is not None:
+        # Allow attaching this DAV credential to a CFP entity (LLC,
+        # trust, etc.) — surfaced when the entity wizard's
+        # duplicate-login hint is accepted.
+        update["linked_entity_id"] = data.linked_entity_id or None
 
     if update:
         update["updated_at"] = datetime.now(timezone.utc).isoformat()

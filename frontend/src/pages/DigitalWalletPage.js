@@ -335,8 +335,17 @@ const DigitalWalletPage = () => {
         <WalletEntryPanel
           entry={editEntry}
           beneficiaries={beneficiaries}
+          existingEntries={entries}
           onClose={() => { clearShowAddDraft(); setShowAdd(false); setEditEntry(null); }}
           onSaved={handleCredentialSaved}
+          onLinkExisting={(existing) => {
+            // User chose to open the existing entry instead of creating
+            // a duplicate. Discard any draft, drop the add form, and
+            // open the existing entry in edit mode.
+            clearShowAddDraft();
+            setShowAdd(false);
+            setEditEntry(existing);
+          }}
           getAuthHeaders={getAuthHeaders}
         />
       )}
@@ -356,7 +365,7 @@ const DigitalWalletPage = () => {
   );
 };
 
-const WalletEntryPanel = ({ entry, beneficiaries, onClose, onSaved, getAuthHeaders }) => {
+const WalletEntryPanel = ({ entry, beneficiaries, existingEntries, onClose, onSaved, onLinkExisting, getAuthHeaders }) => {
   // Draft persistence for NEW credential creation only. Sensitive
   // fields (password, additional_access) are intentionally NOT
   // persisted — they're re-entered on resume. Per-estate keyed so
@@ -384,6 +393,29 @@ const WalletEntryPanel = ({ entry, beneficiaries, onClose, onSaved, getAuthHeade
   const handleSave = async () => {
     if (!name) { toast.error('Account Name is required'); return; }
     if (!login) { toast.error('Login / Username / Email is required'); return; }
+    // Duplicate-login guard. If the login matches another entry that
+    // already lives in the DAV (and we're not editing that very entry),
+    // pause and surface a toast offering to open the existing entry
+    // instead of silently creating a duplicate. Comparison is
+    // case-insensitive trim — same shape used everywhere else.
+    const normalized = (login || '').trim().toLowerCase();
+    const dup = (existingEntries || []).find(e =>
+      (e.login_username || '').trim().toLowerCase() === normalized &&
+      e.id !== entry?.id
+    );
+    if (dup) {
+      toast.warning(
+        `A DAV entry with this login already exists${dup.account_name ? ` ("${dup.account_name}")` : ''}. Want to open that one and add to it instead?`,
+        {
+          duration: 7000,
+          action: {
+            label: 'Open existing entry',
+            onClick: () => onLinkExisting?.(dup),
+          },
+        }
+      );
+      return;
+    }
     setSaving(true);
     try {
       const data = {

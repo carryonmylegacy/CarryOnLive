@@ -68,6 +68,7 @@ export default function EntityWizard({
   entities,
   externals,
   documents,
+  walletEntries,
   onCreated,
   onCreatedExternal,
   onCancel,
@@ -730,6 +731,7 @@ export default function EntityWizard({
                   credentials={credentials}
                   onChange={setCredentials}
                   defaultAccountName={name ? `${name} portal` : ''}
+                  davEntries={walletEntries || []}
                 />
               </div>
             </>

@@ -22,7 +22,7 @@
  *     the expanded form so the user can fill them in immediately.
  */
 import React from 'react';
-import { Plus, Trash2, Eye, EyeOff, KeyRound, Pencil, Check } from 'lucide-react';
+import { Plus, Trash2, Eye, EyeOff, KeyRound, Pencil, Check, Link2 } from 'lucide-react';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Textarea } from '../../ui/textarea';
@@ -41,6 +41,7 @@ export default function EntityCredentialsField({
   credentials,
   onChange,
   defaultAccountName = '',
+  davEntries = [],
 }) {
   const [revealed, setRevealed] = React.useState({}); // index -> bool
   // Per-row expansion. Persisted rows default collapsed; new rows expand
@@ -83,6 +84,50 @@ export default function EntityCredentialsField({
 
   const visible = credentials.filter((c) => !c._delete);
 
+  // Build a quick lookup for DAV duplicates by normalized login.
+  // Used to surface the inline "Link to existing" hint on each row.
+  const davByLogin = React.useMemo(() => {
+    const map = new Map();
+    (davEntries || []).forEach((e) => {
+      const key = (e.login_username || '').trim().toLowerCase();
+      if (key) map.set(key, e);
+    });
+    return map;
+  }, [davEntries]);
+
+  const findDavDuplicate = (row) => {
+    // Skip if the row is already persisted as this DAV entry, already
+    // linked, blank, or marked for deletion.
+    if (!row || row._delete || row._link_to_id) return null;
+    const key = (row.login_username || '').trim().toLowerCase();
+    if (!key) return null;
+    const match = davByLogin.get(key);
+    if (!match) return null;
+    if (row.id && match.id === row.id) return null; // editing the same one
+    return match;
+  };
+
+  const linkRowToExistingDav = (idx, davEntry) => {
+    onChange(credentials.map((c, i) => i === idx ? {
+      ...c,
+      _link_to_id: davEntry.id,
+      _link_to_name: davEntry.account_name,
+      _link_to_login: davEntry.login_username,
+      _new: false, // no longer a fresh insert; persistEntityCredentials will PATCH instead
+      _dirty: false,
+    } : c));
+  };
+
+  const unlinkRow = (idx) => {
+    onChange(credentials.map((c, i) => i === idx ? {
+      ...c,
+      _link_to_id: undefined,
+      _link_to_name: undefined,
+      _link_to_login: undefined,
+      _new: !c.id, // restore "new row" state if it had no DAV id of its own
+    } : c));
+  };
+
   return (
     <div className="space-y-3">
       {visible.length === 0 && (
@@ -102,6 +147,51 @@ export default function EntityCredentialsField({
         const summaryTitle =
           (c.account_name || '').trim() || `Credential ${idx + 1}`;
         const summarySub = (c.login_username || '').trim();
+        const dupMatch = findDavDuplicate(c);
+
+        // ── Linked to existing DAV entry — compact display, no edit form ──
+        if (c._link_to_id) {
+          return (
+            <div
+              key={`linked-${c._link_to_id}-${idx}`}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl"
+              style={{
+                background: 'rgba(212,165,55,0.08)',
+                border: '1px solid rgba(212,165,55,0.45)',
+              }}
+              data-testid={`entity-credential-linked-${idx}`}
+            >
+              <Link2 className="w-3.5 h-3.5 text-[var(--gold)] flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="text-[13px] text-[var(--t)] truncate font-medium">
+                  Linked to {c._link_to_name || 'existing DAV entry'}
+                </div>
+                {c._link_to_login && (
+                  <div className="text-[11px] text-[var(--t5)] truncate">
+                    {c._link_to_login}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => unlinkRow(idx)}
+                className="text-[11px] font-bold px-2 py-1 rounded-md text-[var(--t4)] hover:text-[var(--t)] hover:bg-[var(--s)]"
+                data-testid={`entity-credential-unlink-${idx}`}
+              >
+                Unlink
+              </button>
+              <button
+                type="button"
+                onClick={() => remove(idx)}
+                className="p-1.5 rounded-md text-[var(--t5)] hover:text-[#ef4444] hover:bg-[var(--rdbg)]"
+                aria-label="Remove credential"
+                data-testid={`entity-credential-remove-${idx}`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          );
+        }
 
         // ── Collapsed read-only summary row ──────────────────────────
         if (!open) {
@@ -225,6 +315,41 @@ export default function EntityCredentialsField({
                 </div>
               </div>
             </div>
+
+            {/* Duplicate-DAV hint — appears when the typed username
+                matches an existing DAV entry. Offers a one-tap link
+                instead of creating a duplicate row. */}
+            {dupMatch && (
+              <div
+                className="rounded-lg p-2.5 flex items-start gap-2"
+                style={{
+                  background: 'rgba(212,165,55,0.08)',
+                  border: '1px solid rgba(212,165,55,0.45)',
+                }}
+                data-testid={`entity-credential-dup-hint-${idx}`}
+              >
+                <Link2 className="w-3.5 h-3.5 text-[var(--gold)] flex-shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[12px] text-[var(--t)] leading-snug">
+                    A DAV entry with this login already exists
+                    {dupMatch.account_name ? ` ("${dupMatch.account_name}")` : ''}.
+                    Link this entity to that entry instead of creating a duplicate?
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => linkRowToExistingDav(idx, dupMatch)}
+                  className="text-[11px] font-bold px-2.5 py-1 rounded-md flex-shrink-0"
+                  style={{
+                    background: 'var(--gold)',
+                    color: '#0b1120',
+                  }}
+                  data-testid={`entity-credential-link-existing-${idx}`}
+                >
+                  Link
+                </button>
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <Label className="text-[var(--t4)] text-xs">2FA / recovery / extra access</Label>
