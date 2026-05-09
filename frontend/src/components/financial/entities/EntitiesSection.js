@@ -355,6 +355,11 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
               <Maximize2 className="w-3 h-3" /><span className="hidden sm:inline">{expanded ? 'Collapse' : 'Expand'}</span>
             </button>
           )}
+          <EntitiesShareToggle
+            estateId={estateId}
+            beneficiaries={beneficiaries || []}
+            getAuthHeaders={getAuthHeaders}
+          />
           <Button
             onClick={() => setShowWizard(true)}
             className="px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold btn-gold-cta whitespace-nowrap"
@@ -363,11 +368,6 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           >
             <Plus className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">Add</span>
           </Button>
-          <EntitiesShareToggle
-            estateId={estateId}
-            beneficiaries={beneficiaries || []}
-            getAuthHeaders={getAuthHeaders}
-          />
         </div>
       </div>
 

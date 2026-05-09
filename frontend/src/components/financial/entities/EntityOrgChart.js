@@ -749,7 +749,7 @@ export default function EntityOrgChart({
   }, [nodes]);
 
   // ── Initial layout pass ───────────────────────────────────────────────
-  // Runs once per (estateId × fitOnLoad × relayoutTick). Decides
+  // Runs once per (estateId × fitOnLoad × relayoutTick × viewport). Decides
   // (a) the starting zoom and (b) the starting scroll position, then
   // hands them off via scrollIntentRef so they commit synchronously
   // with the new zoom in the same paint (no visible jump frame).
@@ -758,7 +758,44 @@ export default function EntityOrgChart({
   //   • fitOnLoad=true  → zoom = min(viewportW/treeW, viewportH/treeH, 1.0)
   //                       clamped to [ZOOM_MIN, ZOOM_MAX]; tree-bbox
   //                       centroid centered in viewport.
+  //
+  // The viewport bucket lives in `viewportTick`, which is bumped by a
+  // ResizeObserver below. Without that bump, rotating the device from
+  // portrait → landscape leaves the tree scrolled to the old centered
+  // x/y inside a viewport that suddenly has very different dimensions —
+  // exactly the "tree sits outside the viewport momentarily" symptom
+  // the user reported. Bumping viewportTick re-runs this effect and
+  // re-issues the centering scrollIntent.
   const initialLayoutKeyRef = useRef('');
+  const [viewportTick, setViewportTick] = useState(0);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    let lastW = el.clientWidth;
+    let lastH = el.clientHeight;
+    let raf = null;
+    const ro = new ResizeObserver(() => {
+      // Coalesce bursty resize events (Safari fires several during a
+      // rotation animation) into a single rAF tick.
+      if (raf != null) return;
+      raf = requestAnimationFrame(() => {
+        raf = null;
+        const w = el.clientWidth;
+        const h = el.clientHeight;
+        // Only re-center on a meaningful change (≥ 32px on either axis)
+        // so a vertical scrollbar appearing/disappearing doesn't yank
+        // the viewport mid-pan.
+        if (Math.abs(w - lastW) < 32 && Math.abs(h - lastH) < 32) return;
+        lastW = w; lastH = h;
+        setViewportTick((t) => t + 1);
+      });
+    });
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      if (raf != null) cancelAnimationFrame(raf);
+    };
+  }, []);
   useLayoutEffect(() => {
     if (!nodes.length) return;
     const el = containerRef.current;
@@ -766,7 +803,7 @@ export default function EntityOrgChart({
     const cw = el.clientWidth;
     const ch = el.clientHeight;
     if (cw === 0 || ch === 0) return; // viewport not measured yet
-    const key = `${estateId}|${fitOnLoad ? 'fit' : 'center'}|${relayoutTick}`;
+    const key = `${estateId}|${fitOnLoad ? 'fit' : 'center'}|${relayoutTick}|${viewportTick}`;
     if (initialLayoutKeyRef.current === key) return;
 
     let nextZoom = 1;
@@ -809,7 +846,7 @@ export default function EntityOrgChart({
     scrollIntentRef.current = { type: 'abs', x: Math.max(0, scrollX), y: Math.max(0, scrollY) };
     initialLayoutKeyRef.current = key;
     setZoom(nextZoom);
-  }, [estateId, fitOnLoad, relayoutTick, nodes, userKey, overrides, initial]);
+  }, [estateId, fitOnLoad, relayoutTick, viewportTick, nodes, userKey, overrides, initial]);
 
   // ── Commit any pending scroll intent the moment the new zoom paints.
   // This is what makes anchored zoom feel snappy: there's no visible
