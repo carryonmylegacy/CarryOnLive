@@ -525,7 +525,8 @@ function EntityTile({ node, dragging, locked, onPointerDownDrag, onClick, onDoub
 export default function EntityOrgChart({
   estateId, entities, externals, relationships, beneficiaries,
   onSingleClickNode, onDoubleClickNode, onInfoClickNode, onEditClickNode,
-  cleanUpSignal, locked = false, readOnly = false, zoom = 1,
+  cleanUpSignal, locked = false, readOnly = false,
+  zoom = 1, onZoomChange,
 }) {
   const { user } = useAuth();
   const containerRef = useRef(null);
