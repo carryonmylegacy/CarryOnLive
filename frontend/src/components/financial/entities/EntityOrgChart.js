@@ -770,16 +770,20 @@ export default function EntityOrgChart({
   const [viewportTick, setViewportTick] = useState(0);
   useEffect(() => {
     const el = containerRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    if (!el) return undefined;
     let lastW = el.clientWidth;
     let lastH = el.clientHeight;
-    let raf = null;
-    const ro = new ResizeObserver(() => {
-      // Coalesce bursty resize events (Safari fires several during a
-      // rotation animation) into a single rAF tick.
-      if (raf != null) return;
-      raf = requestAnimationFrame(() => {
-        raf = null;
+    let timer = null;
+    // We want to re-center AFTER the iOS rotation animation finishes
+    // (~250-300 ms). A short rAF-only debounce was too eager and
+    // captured intermediate clientHeight values mid-rotation, leaving
+    // the tree off-center until the user manually panned. A 280ms
+    // trailing-edge debounce settles cleanly on the post-rotation size.
+    const SETTLE_MS = 280;
+    const schedule = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = null;
         const w = el.clientWidth;
         const h = el.clientHeight;
         // Only re-center on a meaningful change (≥ 32px on either axis)
@@ -788,12 +792,25 @@ export default function EntityOrgChart({
         if (Math.abs(w - lastW) < 32 && Math.abs(h - lastH) < 32) return;
         lastW = w; lastH = h;
         setViewportTick((t) => t + 1);
-      });
-    });
-    ro.observe(el);
+      }, SETTLE_MS);
+    };
+    let ro = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(schedule);
+      ro.observe(el);
+    }
+    // Belt-and-suspenders for iOS Safari, which has historically been
+    // flaky about firing ResizeObserver inside a transform: scale()
+    // ancestor during orientation flips. Listen on both events so
+    // every rotation triggers a re-center even when RO is silent.
+    const onOrient = () => schedule();
+    window.addEventListener('orientationchange', onOrient);
+    window.addEventListener('resize', onOrient);
     return () => {
-      ro.disconnect();
-      if (raf != null) cancelAnimationFrame(raf);
+      if (ro) ro.disconnect();
+      window.removeEventListener('orientationchange', onOrient);
+      window.removeEventListener('resize', onOrient);
+      if (timer) clearTimeout(timer);
     };
   }, []);
   useLayoutEffect(() => {
@@ -845,7 +862,24 @@ export default function EntityOrgChart({
 
     scrollIntentRef.current = { type: 'abs', x: Math.max(0, scrollX), y: Math.max(0, scrollY) };
     initialLayoutKeyRef.current = key;
-    setZoom(nextZoom);
+    // If the new zoom matches the current zoom (very common on
+    // rotation in centered mode where zoom stays at 1×), `setZoom`
+    // is a no-op and the [zoom]-keyed scroll-commit effect below
+    // will NOT re-fire — silently dropping the scroll intent and
+    // leaving the chart parked at the pre-rotation scroll position.
+    // Commit the absolute scroll synchronously here when there's no
+    // zoom change so landscape rotation always re-centers cleanly.
+    // (Anchored zoom paths still go through setZoom → commit effect.)
+    if (Math.abs(zoomRef.current - nextZoom) < 0.001) {
+      const el2 = containerRef.current;
+      if (el2) {
+        el2.scrollLeft = Math.max(0, scrollX);
+        el2.scrollTop = Math.max(0, scrollY);
+      }
+      scrollIntentRef.current = null;
+    } else {
+      setZoom(nextZoom);
+    }
   }, [estateId, fitOnLoad, relayoutTick, viewportTick, nodes, userKey, overrides, initial]);
 
   // ── Commit any pending scroll intent the moment the new zoom paints.
