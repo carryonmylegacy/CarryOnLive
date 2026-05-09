@@ -109,6 +109,17 @@ export function rolesForCategory(category, includeAll = false) {
   );
 }
 
+/**
+ * Equity-style roles that imply an ownership %. Used by the wizard,
+ * detail panel, and chart to decide when to surface the % field /
+ * label / edge stroke-width scaling.
+ */
+export const EQUITY_ROLES = new Set([
+  'owner', 'member', 'shareholder', 'gp', 'lp',
+  'joint_tenant', 'tenant_in_common', 'community_property',
+]);
+export const isEquityRole = (role) => EQUITY_ROLES.has(role);
+
 // Buckets: Step 1 of the wizard
 export const BUCKETS = [
   {

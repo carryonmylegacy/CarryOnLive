@@ -19,11 +19,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from '../../../utils/toast';
 import { API_URL } from '../../../config';
 import {
-  ROLE_OPTIONS, rolesForCategory, FORMATION_STATES, getTypeMeta, getBucketMeta, getEntityPalette,
+  ROLE_OPTIONS, rolesForCategory, isEquityRole, FORMATION_STATES, getTypeMeta, getBucketMeta, getEntityPalette,
 } from '../../../config/entityCatalog';
 import DocumentLinker from './DocumentLinker';
 import FinancialFields from './FinancialFields';
 import EntityCredentialsField from './EntityCredentialsField';
+import ExternalPersonPhotoField from './ExternalPersonPhotoField';
 import { persistEntityCredentials } from './persistEntityCredentials';
 
 export default function EntityDetailPanel({
@@ -243,7 +244,7 @@ export default function EntityDetailPanel({
   const handleAddConnection = async () => {
     if (!ent || !newSourceKey || saving) return;
     const [src_type, src_id] = newSourceKey.split(':');
-    const showPct = newRole === 'owner' || newRole === 'gp' || newRole === 'lp';
+    const showPct = isEquityRole(newRole);
     setSaving(true);
     try {
       await axios.post(`${API_URL}/financial/entity-relationships`, {
@@ -365,6 +366,12 @@ export default function EntityDetailPanel({
           {/* External person edit mode */}
           {isExternal && editing && (
             <div className="space-y-3">
+              <ExternalPersonPhotoField
+                personId={node.id}
+                currentUrl={(externals || []).find((p) => p.id === node.id)?.photo_url || null}
+                getAuthHeaders={getAuthHeaders}
+                onUploaded={() => onChanged?.()}
+              />
               <div className="space-y-2"><Label>First name</Label>
                 <Input value={extFirst} onChange={(e) => setExtFirst(e.target.value)} className="input-field" /></div>
               <div className="space-y-2"><Label>Last name</Label>
@@ -516,7 +523,7 @@ export default function EntityDetailPanel({
                           </button>
                         )}
                       </div>
-                      {(newRole === 'owner' || newRole === 'gp' || newRole === 'lp') && (
+                      {isEquityRole(newRole) && (
                         <>
                           <Label className="text-[11px] text-[var(--t4)] mt-2">Ownership %</Label>
                           <Input type="number" min="0" max="100" value={newPct} onChange={(e) => setNewPct(e.target.value)} className="input-field" placeholder="e.g. 100" />

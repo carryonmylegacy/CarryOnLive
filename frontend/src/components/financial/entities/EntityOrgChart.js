@@ -71,6 +71,7 @@ function buildGraph({ entities, externals, relationships, beneficiaries, user })
     pool.set(`external_person:${p.id}`, {
       key: `external_person:${p.id}`, kind: 'external_person', id: p.id,
       label: p.first_name, sublabel: p.last_name || 'Outside party',
+      photo: p.photo_url, avatar_color: p.avatar_color,
       w: PERSON_W, h: PERSON_H,
     });
   });
@@ -91,6 +92,25 @@ function buildGraph({ entities, externals, relationships, beneficiaries, user })
       raw: r,
     }))
     .filter((e) => pool.has(e.sourceKey) && pool.has(e.targetKey));
+
+  // Attach the largest equity stake per person to its node so the
+  // PersonTile can render a "% chip" beneath the avatar — exactly the
+  // UX the user asked for: "show ... percentage equity with a little
+  // percent sign underneath their avatar". Roles considered equity:
+  // owner, member, shareholder, gp, lp, joint_tenant, tenant_in_common,
+  // community_property.
+  const EQUITY_ROLES = new Set([
+    'owner', 'member', 'shareholder', 'gp', 'lp',
+    'joint_tenant', 'tenant_in_common', 'community_property',
+  ]);
+  edges.forEach((e) => {
+    if (!EQUITY_ROLES.has(e.role)) return;
+    if (e.ownership_pct == null) return;
+    const node = pool.get(e.sourceKey);
+    if (!node) return;
+    const cur = node.primary_equity_pct;
+    if (cur == null || e.ownership_pct > cur) node.primary_equity_pct = e.ownership_pct;
+  });
 
   // Persons (user/beneficiary/external_person) are only included if they touch
   // a relationship. Entities are always included so orphan entities still show.
@@ -419,6 +439,20 @@ function PersonTile({ node, palette, dragging, locked, onPointerDownDrag, onClic
       {node.sublabel && (
         <span className="text-[11px] text-[var(--t4)] text-center leading-tight truncate w-full" style={{ pointerEvents: 'none' }}>{node.sublabel}</span>
       )}
+      {node.primary_equity_pct != null && (
+        <span
+          className="inline-block text-[11px] font-bold rounded-full px-1.5 py-0.5 leading-none"
+          style={{
+            background: 'var(--bg2)',
+            color: '#D4A537',
+            border: '1px solid #D4A537',
+            pointerEvents: 'none',
+          }}
+          data-testid={`entity-node-equity-${node.key}`}
+        >
+          {Math.round(node.primary_equity_pct)}%
+        </span>
+      )}
       {/* Action buttons overlay (top-right of the avatar). External-person nodes
           don't get an Edit pencil because they're handled differently. */}
       <div className="absolute top-0 right-0 flex flex-col gap-1">
@@ -668,16 +702,21 @@ export default function EntityOrgChart({
       const obstacles = tileRects.filter((r) => r.key !== sR.key && r.key !== tR.key);
       const { points, midPoint } = routeEdge(sR, tR, obstacles, edge.id);
       const role = ROLE_PALETTE[edge.role] || ROLE_PALETTE.owner;
-      const stroke = (edge.role === 'owner' || edge.role === 'gp' || edge.role === 'lp')
-        ? 'url(#ec-flow-gold)' : role.color;
-      const sw = edge.role === 'owner' && edge.ownership_pct
+      const isEquity = (
+        edge.role === 'owner' || edge.role === 'member' ||
+        edge.role === 'shareholder' || edge.role === 'gp' || edge.role === 'lp' ||
+        edge.role === 'joint_tenant' || edge.role === 'tenant_in_common' ||
+        edge.role === 'community_property'
+      );
+      const stroke = isEquity ? 'url(#ec-flow-gold)' : role.color;
+      const sw = isEquity && edge.ownership_pct
         ? Math.max(1.6, Math.min(3.4, edge.ownership_pct / 33)) : 1.8;
       const d = polylineToRoundedPath(points);
       const dash = role.dash ? ` stroke-dasharray="${role.dash}"` : '';
       parts.push(
         `<g style="color:${role.color}">` +
         `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"${dash} opacity="0.95" class="ec-edge"/>` +
-        (edge.role === 'owner' && edge.ownership_pct != null
+        (isEquity && edge.ownership_pct != null
           ? `<g transform="translate(${midPoint.x - 18}, ${midPoint.y - 9})">` +
             `<rect width="36" height="18" rx="9" fill="#0b1120" stroke="#D4A537" stroke-width="1" opacity="0.92"/>` +
             `<text x="18" y="13" text-anchor="middle" font-size="10" font-weight="700" fill="#D4A537">${Math.round(edge.ownership_pct)}%</text>` +

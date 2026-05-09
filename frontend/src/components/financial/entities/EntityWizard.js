@@ -23,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from '../../../utils/toast';
 import { API_URL } from '../../../config';
 import {
-  BUCKETS, TYPES, ROLE_OPTIONS, rolesForCategory, FORMATION_STATES, getTypeMeta,
+  BUCKETS, TYPES, ROLE_OPTIONS, rolesForCategory, isEquityRole, FORMATION_STATES, getTypeMeta,
 } from '../../../config/entityCatalog';
 import DocumentLinker from './DocumentLinker';
 import FinancialFields from './FinancialFields';
@@ -347,8 +347,7 @@ export default function EntityWizard({
         target_id: assignEntityId,
         target_type: 'entity',
         role: assignRole,
-        ownership_pct: (assignRole === 'owner' || assignRole === 'gp' || assignRole === 'lp') &&
-          assignPct !== '' && assignPct != null
+        ownership_pct: isEquityRole(assignRole) && assignPct !== '' && assignPct != null
           ? Number(assignPct) : null,
       }, getAuthHeaders());
       toast.success('Beneficiary assigned to entity.');
@@ -401,7 +400,7 @@ export default function EntityWizard({
           target_id: newEntity.id,
           target_type: 'entity',
           role: c.role,
-          ownership_pct: (c.role === 'owner' || c.role === 'gp' || c.role === 'lp') && c.ownership_pct != null && c.ownership_pct !== ''
+          ownership_pct: isEquityRole(c.role) && c.ownership_pct != null && c.ownership_pct !== ''
             ? Number(c.ownership_pct) : null,
         }, getAuthHeaders())
           .then((r) => r.data)
@@ -869,7 +868,7 @@ export default function EntityWizard({
                 </div>
               </div>
 
-              {(assignRole === 'owner' || assignRole === 'gp' || assignRole === 'lp') && (
+              {isEquityRole(assignRole) && (
                 <div className="space-y-2">
                   <Label className="text-[var(--t4)]">Ownership %</Label>
                   <Input
@@ -913,7 +912,7 @@ export default function EntityWizard({
               })()}
 
               {connections.map((c, i) => {
-                const showPct = c.role === 'owner' || c.role === 'gp' || c.role === 'lp';
+                const showPct = isEquityRole(c.role);
                 return (
                   <div key={i} className="p-3 rounded-xl space-y-2" style={{ background: 'var(--card)', border: '1px solid var(--b)' }}>
                     <div className="flex items-center justify-between">

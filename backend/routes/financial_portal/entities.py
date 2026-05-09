@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from typing import List, Literal, Optional
 import uuid
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from config import db
@@ -79,12 +79,16 @@ class ExternalPersonCreate(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: Optional[str] = Field(None, max_length=100)
     notes: Optional[str] = None
+    photo_url: Optional[str] = None
+    avatar_color: Optional[str] = None
 
 
 class ExternalPersonUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     notes: Optional[str] = None
+    photo_url: Optional[str] = None
+    avatar_color: Optional[str] = None
 
 
 class RelationshipCreate(BaseModel):
@@ -247,6 +251,8 @@ async def create_external_person(
         "first_name": payload.first_name.strip(),
         "last_name": (payload.last_name or "").strip() or None,
         "notes": (payload.notes or None),
+        "photo_url": payload.photo_url or None,
+        "avatar_color": payload.avatar_color or None,
         "created_at": _now_iso(),
         "updated_at": _now_iso(),
         "deleted_at": None,
@@ -300,6 +306,50 @@ async def delete_external_person(person_id: str, current_user: dict = Depends(ge
         {"$set": {"deleted_at": now}},
     )
     return {"ok": True}
+
+
+@router.post("/financial/external-people/{person_id}/photo")
+async def upload_external_person_photo(
+    person_id: str,
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """Upload a profile photo for an external person (someone in the
+    E&S who is not a beneficiary). Mirrors the beneficiary photo
+    pipeline — same `services.photo_storage.upload_photo` helper, just
+    keyed under the `external_people` category.
+    """
+    from services.photo_storage import delete_photo, upload_photo
+
+    existing = await db.cfp_external_people.find_one({"id": person_id, "deleted_at": None}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Person not found")
+    estate, can_manage = await _verify_estate_access(existing["estate_id"], current_user, require_owner=True)
+    if not can_manage:
+        raise HTTPException(status_code=403, detail="Only the estate owner can upload photos")
+
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large (max 10MB)")
+
+    content_type = file.content_type or "image/jpeg"
+    if not content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+
+    # Delete old photo, if any
+    old_url = existing.get("photo_url") or ""
+    if old_url and not old_url.startswith("data:"):
+        try:
+            await delete_photo(old_url)
+        except Exception:
+            pass
+
+    photo_url = await upload_photo(content, "external_people", person_id, max_size=200)
+    await db.cfp_external_people.update_one(
+        {"id": person_id},
+        {"$set": {"photo_url": photo_url, "updated_at": _now_iso()}},
+    )
+    return {"success": True, "photo_url": photo_url}
 
 
 # ===================== RELATIONSHIP CRUD =====================
