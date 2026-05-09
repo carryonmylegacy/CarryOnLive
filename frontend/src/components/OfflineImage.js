@@ -142,7 +142,11 @@ export default function OfflineImage({
     }
   };
 
-  if (errored && !resolvedSrc) {
+  if (errored) {
+    // Live URL failed AND any cache rescue inside handleError already
+    // had its chance — render the caller's fallback (initials block,
+    // gold UserIcon, etc.) instead of leaving a broken <img> in place
+    // that would show the browser's stock "?" glyph forever.
     return fallback;
   }
 

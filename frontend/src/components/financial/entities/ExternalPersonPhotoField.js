@@ -128,8 +128,16 @@ export default function ExternalPersonPhotoField({
   };
 
   // ── Save (crop + upload) ────────────────────────────────────────────
+  // Synchronous re-entry guard. setUploading() is async — on iOS PWA
+  // a second tap can land before the state update commits and slip
+  // past `if (uploading) return`, which is what was producing two
+  // "Photo updated" toasts and (worse) two competing POSTs racing
+  // each other on the same person row.
+  const savingRef = useRef(false);
   const handleSaveCrop = async () => {
-    if (!cropFile || !cropUrl || !imgGeom || uploading) return;
+    if (savingRef.current) return;
+    if (!cropFile || !cropUrl || !imgGeom) return;
+    savingRef.current = true;
     setUploading(true);
     try {
       // Compute the source rectangle (in the original image's pixel
@@ -183,6 +191,7 @@ export default function ExternalPersonPhotoField({
       toast.error(err?.response?.data?.detail || err?.message || 'Upload failed.');
     } finally {
       setUploading(false);
+      savingRef.current = false;
     }
   };
 
