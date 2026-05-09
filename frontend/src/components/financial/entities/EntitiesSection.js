@@ -313,16 +313,13 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           {viewMode === 'chart' && (
             <button
               onClick={() => setCleanUpSignal((t) => t + 1)}
-              disabled={locked}
               className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
               style={{
                 color: 'var(--gold)',
                 border: '1px solid rgba(212,165,55,0.4)',
-                opacity: locked ? 0.4 : 1,
-                cursor: locked ? 'not-allowed' : 'pointer',
               }}
               data-testid="entities-cleanup"
-              title={locked ? 'Unlock to rearrange tiles' : 'Snap tiles to a logical grid'}
+              title="Snap tiles to a logical grid (works while locked too)"
               aria-label="Clean up layout"
             >
               <Wand2 className="w-3 h-3" /><span className="hidden sm:inline">Clean Up</span>
@@ -334,16 +331,13 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                 resetEntityChartPositions(estateId);
                 setResetTick((t) => t + 1);
               }}
-              disabled={locked}
               className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
               style={{
                 color: 'var(--t3)',
                 border: '1px solid var(--b)',
-                opacity: locked ? 0.4 : 1,
-                cursor: locked ? 'not-allowed' : 'pointer',
               }}
               data-testid="entities-reset-layout"
-              title={locked ? 'Unlock to reset layout' : 'Reset tile positions to auto-layout'}
+              title="Reset tile positions to auto-layout (works while locked too)"
               aria-label="Reset layout"
             >
               <RotateCcw className="w-3 h-3" /><span className="hidden sm:inline">Reset layout</span>
