@@ -28,10 +28,12 @@ const BUCKET_ICON = {
 // Tile size constants — width/height are uniform so routing math stays sane.
 const ENTITY_W = 200;
 const ENTITY_H = 92;
-const PERSON_W = 100;
-// Extra height (was 96) to make room for the role-title line beneath the
-// last name (e.g., "Trustee" / "Co-trustee, Member" / "Benefactor").
-const PERSON_H = 110;
+const PERSON_W = 110;
+// Extra height (was 96) to make room for the role-title chips beneath
+// the last name (e.g., "Trustee" / "Co-trustee + Member (LLC)" /
+// "Benefactor"). Chips wrap onto a second line when a person holds
+// multiple roles, so this height accommodates up to ~2 rows of chips.
+const PERSON_H = 124;
 const PADDING = 24;          // canvas inner padding
 const ROW_GAP = 70;          // vertical gap between layout rows
 const COL_GAP = 30;          // horizontal gap between sibling tiles
@@ -115,16 +117,17 @@ function buildGraph({ entities, externals, relationships, beneficiaries, user })
   });
 
   // Role title beneath the name.
-  //   user (the benefactor)        → "Benefactor" (always)
-  //   beneficiary                  → "Beneficiary" (always)
+  //   user (the benefactor)        → ["Benefactor"] (always)
+  //   beneficiary                  → ["Beneficiary"] (always)
   //   external_person              → derived from their connections —
-  //                                  comma-separate de-duped role labels
-  //                                  in first-seen order. Empty if no
-  //                                  connections yet.
+  //                                  de-duped role labels in first-seen
+  //                                  order. Empty if no connections yet.
+  // `titles` is the array (each rendered as its own clickable chip);
+  // `title` is the comma-joined string kept for tooltip / accessibility.
   const ROLE_LABEL = new Map(ROLE_OPTIONS.map((r) => [r.id, r.label]));
   pool.forEach((n, k) => {
-    if (n.kind === 'user') { n.title = 'Benefactor'; return; }
-    if (n.kind === 'beneficiary') { n.title = 'Beneficiary'; return; }
+    if (n.kind === 'user') { n.titles = ['Benefactor']; n.title = 'Benefactor'; return; }
+    if (n.kind === 'beneficiary') { n.titles = ['Beneficiary']; n.title = 'Beneficiary'; return; }
     if (n.kind !== 'external_person') return;
     const seen = new Set();
     const labels = [];
@@ -135,6 +138,7 @@ function buildGraph({ entities, externals, relationships, beneficiaries, user })
       seen.add(lbl);
       labels.push(lbl);
     });
+    n.titles = labels;
     n.title = labels.join(', ');
   });
 
@@ -452,7 +456,7 @@ function TileIconButton({ icon: Icon, onClick, label, color = 'rgba(255,255,255,
   );
 }
 
-function PersonTile({ node, palette, dragging, locked, onPointerDownDrag, onClick, onDoubleClick, onInfoClick, onEditClick }) {
+function PersonTile({ node, palette, dragging, locked, onPointerDownDrag, onClick, onDoubleClick, onInfoClick, onEditClick, roleFilter, onTitleClick }) {
   const initials = (node.label?.[0] || '') + (node.sublabel?.[0] || '');
   const color = node.avatar_color || palette.stroke;
   const cacheKey =
@@ -482,15 +486,42 @@ function PersonTile({ node, palette, dragging, locked, onPointerDownDrag, onClic
       {node.sublabel && (
         <span className="text-[11px] text-[var(--t4)] text-center leading-tight truncate w-full" style={{ pointerEvents: 'none' }}>{node.sublabel}</span>
       )}
-      {node.title && (
-        <span
-          className="text-[10px] font-semibold text-center leading-tight truncate w-full"
-          style={{ color: 'var(--gold)', pointerEvents: 'none' }}
-          title={node.title}
+      {Array.isArray(node.titles) && node.titles.length > 0 && (
+        <div
+          className="flex flex-wrap justify-center gap-x-1 gap-y-0.5 w-full px-0.5"
+          // The chips need pointer events to be tappable for filtering,
+          // but the rest of the tile body inherits the parent's drag/
+          // click flow. Stop propagation in the chip handler so a tap
+          // on the chip never opens the docs/info popover by accident.
+          style={{ pointerEvents: 'auto' }}
           data-testid={`entity-node-title-${node.key}`}
         >
-          {node.title}
-        </span>
+          {node.titles.map((t) => {
+            const active = roleFilter === t;
+            return (
+              <button
+                key={t}
+                type="button"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onTitleClick?.(t);
+                }}
+                className="text-[10px] font-bold leading-none rounded-full px-1.5 py-0.5 transition-all max-w-full truncate"
+                style={{
+                  background: active ? 'var(--gold)' : 'rgba(212,165,55,0.10)',
+                  color: active ? '#080e1a' : 'var(--gold)',
+                  border: active ? '1px solid var(--gold)' : '1px solid rgba(212,165,55,0.45)',
+                }}
+                title={`Filter by ${t}`}
+                data-testid={`entity-node-title-chip-${node.key}-${t}`}
+              >
+                {t}
+              </button>
+            );
+          })}
+        </div>
       )}
       {node.primary_equity_pct != null && node.kind !== 'user' && (
         <span
@@ -605,6 +636,14 @@ export default function EntityOrgChart({
   const dragStateRef = useRef(null); // { key, startX, startY, origX, origY }
   const recentDragRef = useRef(false); // suppresses the click that follows a real drag
   const clickTimerRef = useRef(null);  // for distinguishing single vs double click
+  // Tap any role chip beneath a person tile to dim everyone who
+  // doesn't share that role — e.g., tap "Trustee" to instantly see
+  // who controls each trust. Tap the same chip again (or the "Clear"
+  // button on the floating filter pill) to dismiss the filter.
+  const [roleFilter, setRoleFilter] = useState(null);
+  const handleTitleClick = useCallback((label) => {
+    setRoleFilter((prev) => (prev === label ? null : label));
+  }, []);
   // Position overrides per node (loaded from localStorage). Initial layout
   // fills any node not present here.
   const [overrides, setOverrides] = useState(() => {
@@ -636,6 +675,46 @@ export default function EntityOrgChart({
     () => computeInitialLayout(nodes, depth),
     [nodes, depth]
   );
+
+  // Compute "matches the role filter" sets. Two passes:
+  //   Pass 1 — persons that match the active filter:
+  //     • "Benefactor" → the user node.
+  //     • "Beneficiary" → all beneficiary nodes (kind), plus any
+  //       external_person whose `titles` includes "Beneficiary".
+  //     • Anything else → any person whose `titles` includes that label.
+  //   Pass 2 — entities + edges:
+  //     • An entity is matched if at least one incoming edge starts
+  //       from a matched person AND the edge's role label corresponds
+  //       to the filter (so "Trustee" lights up only the trusts that
+  //       have the matched trustees).
+  //     • An edge is matched when its source is a matched person AND
+  //       its role label === filter (or the special-case kind labels).
+  // Non-matched tiles + edges render at reduced opacity. The matched
+  // ones stay at full opacity so the user instantly sees "who controls
+  // this trust?" / "what does this beneficiary inherit from?".
+  const ROLE_LABEL = useMemo(() => new Map(ROLE_OPTIONS.map((r) => [r.id, r.label])), []);
+  const { activeNodeKeys, activeEdgeIds } = useMemo(() => {
+    if (!roleFilter) return { activeNodeKeys: null, activeEdgeIds: null };
+    const matchedPersonKeys = new Set();
+    nodes.forEach((n) => {
+      if (n.kind === 'entity') return;
+      const titles = Array.isArray(n.titles) ? n.titles : [];
+      if (titles.includes(roleFilter)) matchedPersonKeys.add(n.key);
+    });
+    const matchedEdgeIds = new Set();
+    const matchedEntityKeys = new Set();
+    edges.forEach((e) => {
+      if (!matchedPersonKeys.has(e.sourceKey)) return;
+      const lbl = ROLE_LABEL.get(e.role) || e.role;
+      const isSpecial = roleFilter === 'Benefactor' || roleFilter === 'Beneficiary';
+      if (isSpecial || lbl === roleFilter) {
+        matchedEdgeIds.add(e.id);
+        if (e.targetKey.startsWith('entity:')) matchedEntityKeys.add(e.targetKey);
+      }
+    });
+    const all = new Set([...matchedPersonKeys, ...matchedEntityKeys]);
+    return { activeNodeKeys: all, activeEdgeIds: matchedEdgeIds };
+  }, [roleFilter, nodes, edges, ROLE_LABEL]);
 
   // Effective position of any node = override OR initial
   const positionOf = useCallback((key) => overrides[key] || initial[key] || { x: PADDING, y: PADDING }, [overrides, initial]);
@@ -1062,9 +1141,13 @@ export default function EntityOrgChart({
         ? Math.max(1.6, Math.min(3.4, edge.ownership_pct / 33)) : 1.8;
       const d = polylineToRoundedPath(points);
       const dash = role.dash ? ` stroke-dasharray="${role.dash}"` : '';
+      // Dim non-matching edges when a role filter is active.
+      const dimmed = activeEdgeIds && !activeEdgeIds.has(edge.id);
+      const groupOpacity = dimmed ? 0.18 : 1;
+      const edgeOpacity = dimmed ? 0.6 : 0.95;
       parts.push(
-        `<g style="color:${role.color}">` +
-        `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"${dash} opacity="0.95" class="ec-edge"/>` +
+        `<g style="color:${role.color}" opacity="${groupOpacity}">` +
+        `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"${dash} opacity="${edgeOpacity}" class="ec-edge"/>` +
         (isEquity && edge.ownership_pct != null
           ? `<g transform="translate(${midPoint.x - 18}, ${midPoint.y - 9})">` +
             `<rect width="36" height="18" rx="9" fill="#0b1120" stroke="#D4A537" stroke-width="1" opacity="0.92"/>` +
@@ -1097,6 +1180,44 @@ export default function EntityOrgChart({
       <style>{`
         .ec-edge { /* shadow disabled for now while we sanity-check rendering */ }
       `}</style>
+
+      {/* Floating "Filtering by …" pill — appears whenever a role chip
+          on a person tile is tapped. Sticky to the chart's top-center
+          inside the scrollable viewport so it never scrolls off, and
+          z-indexed above tiles + edges. Tap × to clear. */}
+      {roleFilter && (
+        <div
+          className="absolute top-2 left-1/2 z-40 flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-bold whitespace-nowrap"
+          style={{
+            transform: 'translateX(-50%)',
+            background: 'rgba(11,17,32,0.92)',
+            border: '1px solid var(--gold)',
+            color: 'var(--gold)',
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 4px 18px rgba(0,0,0,0.45), 0 0 14px rgba(212,165,55,0.35)',
+            position: 'sticky',
+          }}
+          data-testid="entity-role-filter-pill"
+        >
+          <span>Filtering by:</span>
+          <span style={{ color: '#fff' }}>{roleFilter}</span>
+          <button
+            type="button"
+            onClick={() => setRoleFilter(null)}
+            className="ml-1 inline-flex items-center justify-center rounded-full transition-colors hover:bg-[rgba(212,165,55,0.18)]"
+            style={{
+              width: 20, height: 20,
+              border: '1px solid rgba(212,165,55,0.55)',
+              color: 'var(--gold)',
+            }}
+            aria-label="Clear role filter"
+            title="Clear filter"
+            data-testid="entity-role-filter-clear"
+          >
+            <span style={{ fontSize: 12, lineHeight: 1 }}>×</span>
+          </button>
+        </div>
+      )}
 
       {/* Outer pan-margin layer. Sized in screen pixels (outerW × zoom)
           so the parent's overflow:auto gets correct scroll bounds.
@@ -1175,7 +1296,8 @@ export default function EntityOrgChart({
                 left: p.x,
                 top: p.y,
                 zIndex: isDragging ? 30 : 10,
-                transition: isDragging ? 'none' : 'box-shadow 200ms ease',
+                transition: isDragging ? 'none' : 'box-shadow 200ms ease, opacity 200ms ease',
+                opacity: activeNodeKeys && !activeNodeKeys.has(n.key) ? 0.25 : 1,
               }}
             >
               {n.kind === 'entity' ? (
@@ -1201,6 +1323,8 @@ export default function EntityOrgChart({
                   onDoubleClick={readOnly ? undefined : handleDoubleClick}
                   onInfoClick={handleInfoClick}
                   onEditClick={readOnly ? undefined : handleEditClick}
+                  roleFilter={roleFilter}
+                  onTitleClick={handleTitleClick}
                 />
               )}
             </div>

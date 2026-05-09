@@ -1,5 +1,24 @@
 # CarryOn — Changelog
 
+## May 9, 2026 — Tap-Role-To-Filter on the E&S Org Chart
+**Feature**: Each role label beneath a person tile is now an individual gold pill chip. Tap any chip (e.g., "Trustee") and the chart instantly dims everyone who isn't a trustee — answering "who controls this trust?" in one tap.
+
+**Behavior** (`components/financial/entities/EntityOrgChart.js`):
+- Person tiles render their roles as separate clickable chips (was: a single comma-joined label).
+- Tapping a chip sets `roleFilter`. The matching person tiles + the entities they connect to via that role stay at full opacity; everyone else fades to 25% opacity. The matching edges keep their full colour; non-matching edges drop to 18% group opacity.
+- Tapping the same chip again, or hitting the × on the floating "Filtering by: Trustee" pill at the top of the chart, clears the filter.
+- The filter chip is the same gold styling as the existing Lock / Clean Up / Reset chips; full opacity for the active chip vs. translucent for inactive.
+
+**Tile geometry**: PERSON_W bumped 100 → 110, PERSON_H bumped 110 → 124 to fit chips that wrap onto a second line for multi-role outsiders.
+
+**Verified**:
+- ESLint clean ✅
+- `bash /app/scripts/check.sh` → 0 WARN, 0 FAIL ✅
+- App boots cleanly (smoke screenshot) ✅
+
+---
+
+
 ## May 9, 2026 — Person-Tile Role Title Line
 **Feature**: Each person tile in the Entities & Structures org chart now shows a role title beneath the first/last name, in CarryOn gold.
 
