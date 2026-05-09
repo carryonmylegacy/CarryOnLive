@@ -93,7 +93,7 @@ export const BUCKETS = [
   {
     id: 'external_person',
     icon: 'User',
-    label: "A person who isn't in my beneficiaries list",
+    label: 'A person or entity who/that isn\'t in my beneficiaries list',
     sub: 'Outside trustee, business partner, third party',
     accent: 'slate',
   },

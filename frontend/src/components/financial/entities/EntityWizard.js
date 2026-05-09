@@ -99,6 +99,13 @@ export default function EntityWizard({
   const [extFirst, setExtFirst] = useState('');
   const [extLast, setExtLast] = useState('');
   const [extNotes, setExtNotes] = useState('');
+  // When the "external" bucket is picked, we ask whether it's a person
+  // or an entity (because the user phrased the bucket as "anything not
+  // in my beneficiaries list"). null = sub-picker shown; 'person' =
+  // continue with the external-person form; 'entity' is transient —
+  // it routes the user back to the bucket list to pick a real entity
+  // bucket, after which it becomes irrelevant.
+  const [externalKind, setExternalKind] = useState(null);
   // Existing-beneficiary → existing-entity assignment fields
   const [assignBeneficiaryId, setAssignBeneficiaryId] = useState('');
   const [assignEntityId, setAssignEntityId] = useState('');
@@ -160,6 +167,7 @@ export default function EntityWizard({
       if (d.extFirst !== undefined) setExtFirst(d.extFirst);
       if (d.extLast !== undefined) setExtLast(d.extLast);
       if (d.extNotes !== undefined) setExtNotes(d.extNotes);
+      if (d.externalKind !== undefined) setExternalKind(d.externalKind);
       if (d.assignBeneficiaryId !== undefined) setAssignBeneficiaryId(d.assignBeneficiaryId);
       if (d.assignEntityId !== undefined) setAssignEntityId(d.assignEntityId);
       if (d.assignRole !== undefined) setAssignRole(d.assignRole);
@@ -181,7 +189,7 @@ export default function EntityWizard({
       name, state, notes, showMore,
       einLast4, formationDate, taxElection, registeredAgent,
       linkedDocIds, grossAssets, grossDebts, credentials,
-      extFirst, extLast, extNotes,
+      extFirst, extLast, extNotes, externalKind,
       assignBeneficiaryId, assignEntityId, assignRole, assignPct,
       prefilledBeneficiaryId, connections,
       savedAt: Date.now(),
@@ -204,7 +212,7 @@ export default function EntityWizard({
       name, state, notes, showMore,
       einLast4, formationDate, taxElection, registeredAgent,
       linkedDocIds, grossAssets, grossDebts, credentials,
-      extFirst, extLast, extNotes,
+      extFirst, extLast, extNotes, externalKind,
       assignBeneficiaryId, assignEntityId, assignRole, assignPct,
       prefilledBeneficiaryId, connections]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -226,6 +234,7 @@ export default function EntityWizard({
     setLinkedDocIds([]); setGrossAssets(''); setGrossDebts('');
     setCredentials([]);
     setExtFirst(''); setExtLast(''); setExtNotes('');
+    setExternalKind(null);
     setAssignBeneficiaryId(''); setAssignEntityId(''); setAssignRole('owner'); setAssignPct('');
     setPrefilledBeneficiaryId('');
     setConnections([{ sourceKey: user?.id ? `user:${user.id}` : '', role: 'owner', ownership_pct: 100 }]);
@@ -235,12 +244,18 @@ export default function EntityWizard({
   if (!open) return null;
 
   const selectedBucket = BUCKETS.find((b) => b.id === bucketId);
-  const isExternalPerson = bucketId === 'external_person';
+  // The "external" bucket is now a router: the user picks "person" or
+  // "entity" inside it. Only "person" continues with the lightweight
+  // external-person form; "entity" routes the user back to the bucket
+  // list so they can pick a real entity bucket (business, trust, etc.)
+  // and walk the standard 3-step flow.
+  const isExternalPerson = bucketId === 'external_person' && externalKind === 'person';
+  const isExternalRouter = bucketId === 'external_person' && !externalKind;
   const isExistingBeneficiary = bucketId === 'existing_beneficiary';
   const typeMeta = bucketId && typeId ? getTypeMeta(bucketId, typeId) : null;
 
   const filteredTypes = (() => {
-    if (!bucketId || isExternalPerson || isExistingBeneficiary) return [];
+    if (!bucketId || isExternalPerson || isExternalRouter || isExistingBeneficiary) return [];
     const list = TYPES[bucketId] || [];
     if (!search.trim()) return list;
     const q = search.toLowerCase();
@@ -256,7 +271,9 @@ export default function EntityWizard({
   // The Continue button advances bucket-picker → type-picker, then
   // type-picker → step 2.
   const canProceedFrom1 = bucketId
-    ? (isExternalPerson || isExistingBeneficiary || !!typeId)
+    ? (isExternalRouter
+        ? false
+        : (isExternalPerson || isExistingBeneficiary || !!typeId))
     : !!pendingBucketId;
   const canProceedFrom2 = isExternalPerson
     ? extFirst.trim().length > 0
@@ -515,6 +532,65 @@ export default function EntityWizard({
                 </>
               )}
 
+              {bucketId && isExternalRouter && (
+                <>
+                  <p className="text-sm text-[var(--t3)]">
+                    Is this a person, or an entity (LLC, trust, etc.)?
+                  </p>
+                  <div className="grid grid-cols-1 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExternalKind('person')}
+                      className="flex items-start gap-3 p-3 rounded-xl text-left transition-all hover:bg-[var(--s)]"
+                      style={{ border: '1px solid var(--b)', background: 'var(--card)' }}
+                      data-testid="wizard-external-kind-person"
+                    >
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ background: 'rgba(212,165,55,0.10)', color: 'var(--gold)' }}>
+                        <UserIcon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-[var(--t)]">A person</div>
+                        <div className="text-[11px] text-[var(--t5)] mt-0.5">
+                          Outside trustee, business partner, ex-spouse, third party
+                        </div>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Route the user back to the bucket list so they
+                        // can pick a real entity bucket and walk the
+                        // standard entity-creation flow (which already
+                        // supports assigning beneficiaries / other
+                        // entities in Step 3).
+                        setBucketId(null);
+                        setPendingBucketId(null);
+                        setExternalKind(null);
+                      }}
+                      className="flex items-start gap-3 p-3 rounded-xl text-left transition-all hover:bg-[var(--s)]"
+                      style={{ border: '1px solid var(--b)', background: 'var(--card)' }}
+                      data-testid="wizard-external-kind-entity"
+                    >
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ background: 'rgba(212,165,55,0.10)', color: 'var(--gold)' }}>
+                        <Building2 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-[var(--t)]">An entity</div>
+                        <div className="text-[11px] text-[var(--t5)] mt-0.5">
+                          Pick a business / trust / charity / property / specialized bucket next.
+                          You'll then assign beneficiaries or other entities to it on Step 3.
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                  <button onClick={() => setBucketId(null)} className="text-[var(--gold)] text-xs font-bold hover:underline">
+                    ← Change category
+                  </button>
+                </>
+              )}
+
               {bucketId && isExternalPerson && (
                 <>
                   <p className="text-sm text-[var(--t3)]">
@@ -522,8 +598,11 @@ export default function EntityWizard({
                     business partner, ex-spouse, or third party. They will appear in the chart but never join your
                     formal Beneficiaries.
                   </p>
-                  <button onClick={() => setBucketId(null)} className="text-[var(--gold)] text-xs font-bold hover:underline">
-                    ← Change category
+                  <button
+                    onClick={() => { setExternalKind(null); }}
+                    className="text-[var(--gold)] text-xs font-bold hover:underline"
+                  >
+                    ← Person or entity?
                   </button>
                 </>
               )}
