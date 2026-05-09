@@ -508,7 +508,7 @@ function PersonTile({ node, palette, dragging, locked, onPointerDownDrag, onClic
                   e.stopPropagation();
                   onTitleClick?.(t);
                 }}
-                className="text-[10px] font-bold leading-none rounded-full px-1.5 py-0.5 transition-all max-w-full truncate"
+                className="text-[11px] font-bold leading-none rounded-full px-1.5 py-0.5 transition-all max-w-full truncate"
                 style={{
                   background: active ? 'var(--gold)' : 'rgba(212,165,55,0.10)',
                   color: active ? '#080e1a' : 'var(--gold)',
