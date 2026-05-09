@@ -525,10 +525,44 @@ function EntityTile({ node, dragging, locked, onPointerDownDrag, onClick, onDoub
 export default function EntityOrgChart({
   estateId, entities, externals, relationships, beneficiaries,
   onSingleClickNode, onDoubleClickNode, onInfoClickNode, onEditClickNode,
-  cleanUpSignal, locked = false, readOnly = false,
+  cleanUpSignal, locked = false, readOnly = false, zoom = 1,
 }) {
   const { user } = useAuth();
   const containerRef = useRef(null);
+
+  // iPhone Safari pinch-to-zoom hook. Listens to `gesturestart` /
+  // `gesturechange` / `gestureend` (Safari-only). The chart parent
+  // owns the actual zoom state via the `zoom` prop, so we expose a
+  // ref-attached wheel/pinch listener that calls onZoomChange when
+  // available, otherwise we leave it as-is. We DO NOT touch zoom
+  // here unless the parent provides a setter; this keeps the
+  // component's API surface tight.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || readOnly) return;
+    let baseScale = 1;
+    const onGestureStart = (e) => {
+      e.preventDefault();
+      baseScale = zoom;
+    };
+    const onGestureChange = (e) => {
+      e.preventDefault();
+      const next = Math.max(0.4, Math.min(1.6, baseScale * (e.scale || 1)));
+      // Surface via a custom event so the parent can listen and
+      // update its zoom state. This avoids prop-drilling a setter
+      // while keeping this component zoom-aware.
+      el.dispatchEvent(new CustomEvent('chart-pinch', { detail: { zoom: +next.toFixed(2) }, bubbles: true }));
+    };
+    const onGestureEnd = (e) => { e.preventDefault(); };
+    el.addEventListener('gesturestart', onGestureStart, { passive: false });
+    el.addEventListener('gesturechange', onGestureChange, { passive: false });
+    el.addEventListener('gestureend', onGestureEnd, { passive: false });
+    return () => {
+      el.removeEventListener('gesturestart', onGestureStart);
+      el.removeEventListener('gesturechange', onGestureChange);
+      el.removeEventListener('gestureend', onGestureEnd);
+    };
+  }, [zoom, readOnly]);
   const [draggingKey, setDraggingKey] = useState(null);
   const dragStateRef = useRef(null); // { key, startX, startY, origX, origY }
   const recentDragRef = useRef(false); // suppresses the click that follows a real drag
@@ -619,11 +653,11 @@ export default function EntityOrgChart({
     const tileH = node?.h || 96;
     const targetX = Math.max(0, Math.min(
       el.scrollWidth - el.clientWidth,
-      PAN_MARGIN + pos.x + tileW / 2 - el.clientWidth / 2
+      (PAN_MARGIN + pos.x + tileW / 2) * zoom - el.clientWidth / 2
     ));
     const targetY = Math.max(0, Math.min(
       el.scrollHeight - el.clientHeight,
-      PAN_MARGIN + pos.y + tileH / 2 - el.clientHeight / 2
+      (PAN_MARGIN + pos.y + tileH / 2) * zoom - el.clientHeight / 2
     ));
     // Two RAFs: first lets the browser commit the new scroll bounds,
     // second lets the centre paint. After this, the flag flips and
@@ -673,8 +707,13 @@ export default function EntityOrgChart({
     const dy = e.clientY - ds.startClientY;
     if (!ds.moved && Math.hypot(dx, dy) < 4) return; // movement threshold
     ds.moved = true;
-    const nextX = ds.origX + dx;
-    const nextY = ds.origY + dy;
+    // Pointer deltas are in viewport pixels; tile coords are in
+    // canvas pixels. With CSS transform: scale(zoom) on the canvas,
+    // 1 viewport pixel == 1/zoom canvas pixels — so divide deltas by
+    // zoom or the dragged tile lags / overshoots the cursor.
+    const z = zoom || 1;
+    const nextX = ds.origX + dx / z;
+    const nextY = ds.origY + dy / z;
     setOverrides((prev) => ({ ...prev, [ds.key]: { x: nextX, y: nextY } }));
   };
 
@@ -685,18 +724,15 @@ export default function EntityOrgChart({
       recentDragRef.current = true;
       // clear after the click event has had a chance to fire
       setTimeout(() => { recentDragRef.current = false; }, 50);
-      // Persist to localStorage on drop
+      // Persist to localStorage on drop. We deliberately DO NOT
+      // re-shift the entire layout when a tile is dragged into
+      // negative space — the outer canvas already provides PAN_MARGIN
+      // px of free room on every side, so dragging a tile to the left
+      // of the natural tree should just *stay there*, not yank
+      // everything else back toward the centre.
       setOverrides((prev) => {
-        // clamp to non-negative coords (re-shift if dragged beyond left/top)
-        let minX = 0, minY = 0;
-        Object.values(prev).forEach((p) => { if (p.x < minX) minX = p.x; if (p.y < minY) minY = p.y; });
-        const shift = (minX < 0 || minY < 0) ? { x: Math.max(0, -minX) + PADDING, y: Math.max(0, -minY) + PADDING } : null;
-        const out = {};
-        Object.entries(prev).forEach(([k, v]) => {
-          out[k] = shift ? { x: v.x + shift.x, y: v.y + shift.y } : v;
-        });
-        persistOverrides(out);
-        return out;
+        persistOverrides(prev);
+        return prev;
       });
     }
     dragStateRef.current = null;
@@ -762,7 +798,7 @@ export default function EntityOrgChart({
       className="relative"
       style={{
         width: '100%',
-        minHeight: Math.max(260, outerH),
+        minHeight: Math.max(260, outerH * zoom),
         overflow: 'auto',
         WebkitOverflowScrolling: 'touch',
         touchAction: draggingKey ? 'none' : 'auto',
@@ -780,12 +816,31 @@ export default function EntityOrgChart({
           like it's hitting a side wall. The natural tree lives inside
           the inner div at offset (PAN_MARGIN, PAN_MARGIN); coordinates
           on tiles remain in natural-canvas space so saved overrides
-          continue to work unchanged. */}
-      <div className="relative" style={{ width: outerW, height: outerH }}>
+          continue to work unchanged.
+          A CSS scale() transform on the outer wrapper provides the
+          zoom-out feature (especially important on iPhone screens
+          with 4+ tiles). transformOrigin is top-left so the scroll
+          container's overflow bounds match the visible content. */}
+      <div
+        className="relative"
+        style={{
+          width: outerW * zoom,
+          height: outerH * zoom,
+        }}
+      >
         <div
-          className="absolute"
-          style={{ left: PAN_MARGIN, top: PAN_MARGIN, width: canvasW, height: canvasH }}
+          className="relative"
+          style={{
+            width: outerW,
+            height: outerH,
+            transform: zoom !== 1 ? `scale(${zoom})` : undefined,
+            transformOrigin: 'top left',
+          }}
         >
+          <div
+            className="absolute"
+            style={{ left: PAN_MARGIN, top: PAN_MARGIN, width: canvasW, height: canvasH }}
+          >
         {/* SVG line layer — innerHTML to bypass the platform's <span data-ve-dynamic>
             wrappers that would otherwise corrupt SVG namespace rendering. */}
         <svg
@@ -874,6 +929,7 @@ export default function EntityOrgChart({
             </div>
           );
         })}
+        </div>
         </div>
       </div>
     </div>

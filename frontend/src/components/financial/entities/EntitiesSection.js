@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2, Lock, Unlock } from 'lucide-react';
+import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2, Lock, Unlock, ZoomIn, ZoomOut } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Button } from '../../ui/button';
 import { API_URL } from '../../../config';
@@ -51,6 +51,14 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   // previously-persisted unlocked state — locked is the safe default
   // every time CFP appears.
   const [locked, setLocked] = useState(true);
+  // Pinch-to-zoom support for the org chart. Range is intentionally
+  // wide on the lower end (down to 0.4x) because mobile users with
+  // 4-5 tiles need to pull WAY back to see the whole structure
+  // without endless panning.
+  const [zoom, setZoom] = useState(1);
+  const ZOOM_MIN = 0.4;
+  const ZOOM_MAX = 1.6;
+  const ZOOM_STEP = 0.15;
 
   // Re-arm the lock whenever the estate changes too (covers
   // portal-switching that reuses the same component instance).
@@ -249,6 +257,57 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
               : <><Network className="w-3 h-3" /><span className="hidden sm:inline">Chart</span></>}
           </button>
           {viewMode === 'chart' && (
+            <>
+              <button
+                onClick={() => setZoom((z) => Math.max(ZOOM_MIN, +(z - ZOOM_STEP).toFixed(2)))}
+                disabled={zoom <= ZOOM_MIN}
+                className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
+                style={{
+                  color: 'var(--t3)',
+                  border: '1px solid var(--b)',
+                  opacity: zoom <= ZOOM_MIN ? 0.4 : 1,
+                  cursor: zoom <= ZOOM_MIN ? 'not-allowed' : 'pointer',
+                }}
+                data-testid="entities-zoom-out"
+                title="Zoom out"
+                aria-label="Zoom out"
+              >
+                <ZoomOut className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() => setZoom(1)}
+                className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
+                style={{
+                  color: zoom === 1 ? 'var(--t5)' : 'var(--gold)',
+                  border: '1px solid var(--b)',
+                  minWidth: 44,
+                  justifyContent: 'center',
+                }}
+                data-testid="entities-zoom-reset"
+                title="Reset zoom to 100%"
+                aria-label="Reset zoom"
+              >
+                {Math.round(zoom * 100)}%
+              </button>
+              <button
+                onClick={() => setZoom((z) => Math.min(ZOOM_MAX, +(z + ZOOM_STEP).toFixed(2)))}
+                disabled={zoom >= ZOOM_MAX}
+                className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
+                style={{
+                  color: 'var(--t3)',
+                  border: '1px solid var(--b)',
+                  opacity: zoom >= ZOOM_MAX ? 0.4 : 1,
+                  cursor: zoom >= ZOOM_MAX ? 'not-allowed' : 'pointer',
+                }}
+                data-testid="entities-zoom-in"
+                title="Zoom in"
+                aria-label="Zoom in"
+              >
+                <ZoomIn className="w-3 h-3" />
+              </button>
+            </>
+          )}
+          {viewMode === 'chart' && (
             <button
               onClick={toggleLocked}
               className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-all whitespace-nowrap"
@@ -338,7 +397,25 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
         </div>
       </div>
 
-      <div className="overflow-auto" style={{ maxHeight: maxH, WebkitOverflowScrolling: 'touch' }}>
+      <div
+        className="overflow-auto"
+        style={{ maxHeight: maxH, WebkitOverflowScrolling: 'touch' }}
+        onChartPinch={undefined /* React doesn't natively bind custom events; see effect below */}
+        ref={(el) => {
+          if (!el) return;
+          // Listen for the EntityOrgChart pinch event. iOS Safari
+          // pinch (gesturechange) gets translated into a custom
+          // 'chart-pinch' DOM event by the chart component, which
+          // bubbles up to this container. We tap it here so the
+          // section can drive its own zoom state.
+          if (el.__chartPinchListenerWired) return;
+          el.__chartPinchListenerWired = true;
+          el.addEventListener('chart-pinch', (e) => {
+            const z = e.detail?.zoom;
+            if (typeof z === 'number') setZoom(z);
+          });
+        }}
+      >
         {viewMode === 'chart' ? (
           <EntityOrgChart
             key={resetTick}
@@ -353,6 +430,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
             onEditClickNode={handleEditClick}
             cleanUpSignal={cleanUpSignal}
             locked={locked}
+            zoom={zoom}
           />
         ) : (
           <EntityListView
