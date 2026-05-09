@@ -5,7 +5,7 @@
  * relationships, and lets the user add new relationships in place.
  */
 import React, { useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
+import SlidePanel from '../../SlidePanel';
 import {
   ChevronLeft, Loader2, Trash2, Plus, Edit2,
 } from 'lucide-react';
@@ -262,67 +262,39 @@ export default function EntityDetailPanel({
   };
 
   // -------- render --------
-  // Portal to <body> so iOS PWA + OverlayScrollbars/transform ancestors
-  // never trap the fixed positioning or eat the scroll region.
-  return createPortal((
-    <div className="fixed inset-0 z-50 flex items-stretch justify-end" data-testid="entity-detail-panel">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div
-        className="relative w-full sm:w-[460px] flex flex-col"
-        style={{
-          background: 'var(--bg)',
-          borderLeft: '1px solid var(--b)',
-          height: '100vh',
-          maxHeight: '100dvh',
-        }}
-      >
-        {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--b)] flex-shrink-0">
-          <button
-            onClick={onClose}
-            className="h-8 w-8 rounded-md flex items-center justify-center hover:bg-[var(--s)] text-[var(--t3)]"
-            data-testid="detail-close"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <div className="text-[13px] font-bold text-[var(--t)] truncate" style={{ fontFamily: 'var(--sans)' }}>
-              {isEntity ? ent?.name : isExternal ? `${node.label} ${externals.find(x=>x.id===node.id)?.last_name || ''}`.trim() : node.label}
-            </div>
-            <div className="text-[11px] text-[var(--t5)]">
-              {isEntity ? `${getBucketMeta(ent?.category)?.label} · ${meta?.friendly}` :
-               isExternal ? 'Outside party (not in beneficiaries)' :
-               node.kind === 'beneficiary' ? 'Beneficiary' : 'You'}
-            </div>
-          </div>
-          {(isEntity || isExternal) && !editing && (
+  // Use the platform's proven SlidePanel component (used by every other
+  // slide-in surface across CarryOn). It ships with a battle-tested
+  // mobile/PWA scroll mechanism (`position: absolute; top:48px; bottom:0;
+  // overflow-y:auto`) that gives the inner scroller a concrete pixel
+  // height — unlike a flex-1 child of `100dvh`, that survives iOS PWA
+  // standalone, OverlayScrollbars ancestors, and transform parents.
+  const titleText = isEntity
+    ? (ent?.name || 'Untitled entity')
+    : isExternal
+      ? `${node.label} ${externals.find(x => x.id === node.id)?.last_name || ''}`.trim()
+      : node.label;
+  const subtitleText = isEntity
+    ? `${getBucketMeta(ent?.category)?.label || ''} · ${meta?.friendly || ''}`
+    : isExternal
+      ? 'Outside party (not in beneficiaries)'
+      : node.kind === 'beneficiary' ? 'Beneficiary' : 'You';
+
+  return (
+    <SlidePanel open={open} onClose={onClose} title={titleText} subtitle={subtitleText}>
+      <div className="cfp-edit-surface space-y-4" data-testid="entity-detail-panel">
+        {/* Edit-mode entry button (top-right of body, only shown when not editing) */}
+        {(isEntity || isExternal) && !editing && (
+          <div className="flex justify-end">
             <button
               onClick={() => setEditing(true)}
-              className="h-8 w-8 rounded-md flex items-center justify-center hover:bg-[var(--s)] text-[#3b82f6]"
+              className="text-xs font-bold text-[#3b82f6] hover:underline inline-flex items-center gap-1"
               data-testid="detail-edit"
               aria-label="Edit"
             >
-              <Edit2 className="w-4 h-4" />
+              <Edit2 className="w-3.5 h-3.5" /> Edit
             </button>
-          )}
-        </div>
-
-        {/* Body */}
-        <div
-          className="flex-1 overflow-y-auto px-4 py-4 space-y-4 cfp-edit-surface"
-          style={{
-            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 28px)',
-            // iOS PWA scroll fixes: `min-height: 0` lets the flex child
-            // actually shrink so its overflow region is hit-testable;
-            // `pan-y` + `WebkitOverflowScrolling` ensure touch gestures
-            // route into this scroller instead of bubbling to the page;
-            // `overscroll-behavior: contain` blocks rubber-band escape.
-            minHeight: 0,
-            touchAction: 'pan-y',
-            WebkitOverflowScrolling: 'touch',
-            overscrollBehavior: 'contain',
-          }}
-        >
+          </div>
+        )}
           {/* Entity edit mode */}
           {isEntity && editing && (
             <div className="space-y-3">
@@ -579,7 +551,6 @@ export default function EntityDetailPanel({
               )}
             </>
           )}
-        </div>
 
         {/* Custom confirm modal — PWA-iOS blocks window.confirm */}
         {confirmPrompt && (
@@ -610,6 +581,6 @@ export default function EntityDetailPanel({
           </div>
         )}
       </div>
-    </div>
-  ), document.body);
+    </SlidePanel>
+  );
 }

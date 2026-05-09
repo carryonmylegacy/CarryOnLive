@@ -8,7 +8,7 @@
  * Step 3 — add at least one connection (who connects, in what role, %)
  */
 import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
+import SlidePanel from '../../SlidePanel';
 import {
   Building2, Shield, Landmark, Home, User as UserIcon, Settings,
   ChevronLeft, Loader2, HelpCircle, Plus, Trash2,
@@ -244,58 +244,21 @@ export default function EntityWizard({
   ].filter(Boolean);
 
   // -------------- render --------------
-  // Portal to <body> so iOS PWA + OverlayScrollbars/transform ancestors
-  // never trap the fixed positioning or eat the scroll region.
-  return createPortal((
-    <div className="fixed inset-0 z-50 flex items-stretch justify-end" data-testid="entity-wizard">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={() => { reset(); onCancel?.(); }}
-      />
-      {/* Panel */}
-      <div
-        className="relative w-full sm:w-[460px] flex flex-col"
-        style={{
-          background: 'var(--bg)',
-          borderLeft: '1px solid var(--b)',
-          height: '100vh',
-          maxHeight: '100dvh',
-        }}
-      >
-        {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--b)] flex-shrink-0">
-          <button
-            onClick={handleBack}
-            className="h-8 w-8 rounded-md flex items-center justify-center hover:bg-[var(--s)] text-[var(--t3)]"
-            data-testid="wizard-back"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <div className="text-[13px] font-bold text-[var(--t)]">
-              {step === 1 && 'Add an Entity or Trust'}
-              {step === 2 && (isExternalPerson ? 'About this person' : 'Entity details')}
-              {step === 3 && 'How does it connect?'}
-            </div>
-            <div className="text-[11px] text-[var(--t5)]">Step {step} of {isExternalPerson ? 2 : 3}</div>
-          </div>
-        </div>
+  const wizTitle = step === 1
+    ? 'Add an Entity or Trust'
+    : step === 2
+      ? (isExternalPerson ? 'About this person' : 'Entity details')
+      : 'How does it connect?';
+  const wizSubtitle = `Step ${step} of ${isExternalPerson ? 2 : 3}`;
 
-        {/* Body */}
-        <div
-          className="flex-1 overflow-y-auto px-4 py-4 space-y-4 cfp-edit-surface"
-          style={{
-            // iOS PWA scroll fixes — must coexist in a SINGLE style prop
-            // because JSX silently keeps only the last `style={...}` on
-            // duplicates. (One regression already shipped from this.)
-            minHeight: 0,
-            touchAction: 'pan-y',
-            WebkitOverflowScrolling: 'touch',
-            overscrollBehavior: 'contain',
-            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)',
-          }}
-        >
+  return (
+    <SlidePanel
+      open={open}
+      onClose={() => { reset(); onCancel?.(); }}
+      title={wizTitle}
+      subtitle={wizSubtitle}
+    >
+      <div className="cfp-edit-surface space-y-4" data-testid="entity-wizard">
           {/* ---------------- STEP 1 ---------------- */}
           {step === 1 && (
             <>
@@ -613,12 +576,13 @@ export default function EntityWizard({
               </button>
             </>
           )}
-        </div>
 
-        {/* Footer (sticky CTA) */}
+        {/* Footer (Cancel + Continue) — lives at the end of the
+            scrollable content so SlidePanel's mobile padding-bottom
+            keeps it clear of the floating bottom nav. */}
         <div
-          className="flex-shrink-0 px-4 py-3 border-t border-[var(--b)] flex items-center gap-2"
-          style={{ background: 'var(--bg)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
+          className="px-1 pt-3 pb-1 border-t border-[var(--b)] flex items-center gap-2"
+          style={{ background: 'var(--bg)' }}
         >
           <Button variant="outline" onClick={() => { reset(); onCancel?.(); }} className="btn-outline-cta" data-testid="wizard-cancel">
             Cancel
@@ -637,6 +601,6 @@ export default function EntityWizard({
           </Button>
         </div>
       </div>
-    </div>
-  ), document.body);
+    </SlidePanel>
+  );
 }
