@@ -171,6 +171,22 @@ export default function ExternalPersonPhotoField({
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
       if (!blob) throw new Error('Could not encode crop.');
 
+      // Convert the cropped blob to a base64 data URL up front. Data
+      // URLs are embedded strings (no network, no revoke, no caching
+      // weirdness across iOS PWA + service worker + StrictMode), so
+      // pinning the avatar to one is the only way to GUARANTEE the
+      // just-saved photo paints in this session — independent of how
+      // long S3 takes to make the new key readable, whether the SW
+      // happens to have a stale 404 cached for the prior URL, etc.
+      // The server URL lives in the DB and will load on the next
+      // page mount via `currentUrl` — by then S3 is consistent.
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Could not read crop.'));
+        reader.readAsDataURL(blob);
+      });
+
       const form = new FormData();
       form.append('file', new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
       const headers = getAuthHeaders ? (getAuthHeaders().headers || {}) : {};
@@ -183,15 +199,14 @@ export default function ExternalPersonPhotoField({
       if (!newUrl) throw new Error('Server did not return a photo URL.');
       toast.success('Photo updated.');
 
-      // Tear down the cropper and pin the just-saved server URL as
-      // our committed preview. Triggers `<img onError>` → fallback
-      // (UserIcon) if the URL is somehow not yet retrievable, but
-      // never a stale blob: URL that the next paint can't read.
+      // Tear down the cropper and pin the data URL as the committed
+      // preview. The data URL paints instantly and 100% reliably; the
+      // server URL is already in DB and will take over on next mount.
       setCropFile(null);
       setCropUrl(null);
       setImgGeom(null);
       setPan({ x: 0, y: 0 });
-      setCommittedUrl(newUrl);
+      setCommittedUrl(dataUrl);
       setLoadFailed(false);
       onUploaded?.(newUrl);
     } catch (err) {
