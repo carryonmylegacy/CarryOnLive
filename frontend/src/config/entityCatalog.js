@@ -41,17 +41,73 @@ export const ROLE_PALETTE = {
   director:    { color: '#9AA8BC', dash: null,    label: 'Director' },
 };
 
+// Comprehensive role catalog. Every legal "hat" a person/entity can
+// wear in another entity that we've encountered across business, trust,
+// charity, partnership, real-property and specialized buckets.
+//
+// `categories` controls which entity buckets this role surfaces by
+// default in the connection picker; `'*'` means "always relevant".
+// The picker still exposes a "Show all roles" toggle so unusual
+// pairings (e.g. a trust that is itself an LLC member) aren't gated.
+//
+// `group` is purely visual — the picker can render groups as section
+// headings when the list is long.
 export const ROLE_OPTIONS = [
-  { id: 'owner',       label: 'Owner',           help: 'Holds equity / membership / shares.' },
-  { id: 'trustee',     label: 'Trustee',         help: 'Manages a trust on behalf of beneficiaries.' },
-  { id: 'beneficiary', label: 'Beneficiary',     help: 'Receives benefits from this entity.' },
-  { id: 'grantor',     label: 'Creator (Grantor)', help: 'Created / funded this trust or entity.' },
-  { id: 'manager',     label: 'Manager',         help: 'Day-to-day management role.' },
-  { id: 'officer',     label: 'Officer',         help: 'Officer (e.g., President, CFO).' },
-  { id: 'director',    label: 'Director',        help: 'Sits on the board.' },
-  { id: 'gp',          label: 'General Partner', help: 'GP — full management + liability.' },
-  { id: 'lp',          label: 'Limited Partner', help: 'LP — passive equity, no management.' },
+  // ── Equity / ownership ──────────────────────────────────────────
+  { id: 'owner',              label: 'Owner',              group: 'Equity',     help: 'Holds equity / membership / shares.',                  categories: ['business', 'property', 'specialized'] },
+  { id: 'member',             label: 'Member (LLC)',       group: 'Equity',     help: 'LLC member — equity holder under an operating agreement.', categories: ['business', 'specialized'] },
+  { id: 'shareholder',        label: 'Shareholder',        group: 'Equity',     help: 'Holds stock in a corporation.',                        categories: ['business'] },
+  { id: 'gp',                 label: 'General Partner',    group: 'Equity',     help: 'GP — full management authority and liability.',        categories: ['business'] },
+  { id: 'lp',                 label: 'Limited Partner',    group: 'Equity',     help: 'LP — passive equity, no management.',                  categories: ['business'] },
+  { id: 'joint_tenant',       label: 'Joint tenant (JTWROS)', group: 'Equity',  help: 'Joint tenancy with right of survivorship.',           categories: ['property'] },
+  { id: 'tenant_in_common',   label: 'Tenant in common',   group: 'Equity',     help: 'Co-owner with a divisible undivided interest (no survivorship).', categories: ['property'] },
+  { id: 'community_property', label: 'Community property', group: 'Equity',     help: 'Spousal community-property interest.',                 categories: ['property'] },
+
+  // ── Management ──────────────────────────────────────────────────
+  { id: 'manager',            label: 'Manager',            group: 'Management', help: 'Day-to-day management (e.g., LLC manager).',           categories: ['business', 'specialized', 'property'] },
+  { id: 'officer',            label: 'Officer',            group: 'Management', help: 'Officer (President, CEO, CFO, Secretary, Treasurer).', categories: ['business', 'charity', 'specialized'] },
+  { id: 'director',           label: 'Director / Board',   group: 'Management', help: 'Sits on the board.',                                   categories: ['business', 'charity'] },
+  { id: 'registered_agent',   label: 'Registered agent',   group: 'Management', help: 'Statutory agent for service of process.',              categories: ['business', 'charity', 'specialized', 'trust'] },
+
+  // ── Trust roles ────────────────────────────────────────────────
+  { id: 'grantor',            label: 'Grantor / Settlor',  group: 'Trust',      help: 'Created and funded the trust.',                        categories: ['trust'] },
+  { id: 'trustee',            label: 'Trustee',            group: 'Trust',      help: 'Sole or current trustee — fiduciary administration.',  categories: ['trust', 'charity'] },
+  { id: 'co_trustee',         label: 'Co-trustee',         group: 'Trust',      help: 'Acts jointly with another trustee.',                   categories: ['trust', 'charity'] },
+  { id: 'successor_trustee',  label: 'Successor trustee',  group: 'Trust',      help: 'Steps in if the current trustee resigns or dies.',     categories: ['trust', 'charity'] },
+  { id: 'trust_protector',    label: 'Trust protector',    group: 'Trust',      help: 'Modify trustees / amend administrative provisions.',   categories: ['trust'] },
+  { id: 'investment_trustee', label: 'Investment trustee', group: 'Trust',      help: 'Trustee for investment decisions (directed-trust split).', categories: ['trust'] },
+  { id: 'distribution_trustee', label: 'Distribution trustee', group: 'Trust',  help: 'Trustee for distribution decisions (directed-trust split).', categories: ['trust'] },
+
+  // ── Beneficiary types ──────────────────────────────────────────
+  { id: 'beneficiary',            label: 'Beneficiary',            group: 'Beneficiary', help: 'Receives benefits from this entity.',                          categories: ['*'] },
+  { id: 'income_beneficiary',     label: 'Income beneficiary',     group: 'Beneficiary', help: 'Receives the income generated by the trust.',                  categories: ['trust'] },
+  { id: 'remainder_beneficiary',  label: 'Remainder beneficiary',  group: 'Beneficiary', help: 'Receives the remaining principal at trust termination.',        categories: ['trust', 'property'] },
+  { id: 'contingent_beneficiary', label: 'Contingent beneficiary', group: 'Beneficiary', help: 'Receives only if a primary beneficiary cannot.',                categories: ['trust', '*'] },
+  { id: 'lifetime_beneficiary',   label: 'Lifetime beneficiary',   group: 'Beneficiary', help: 'Beneficiary for life (e.g., QTIP / life-estate beneficiary).',  categories: ['trust', 'property'] },
+
+  // ── Charity-specific ───────────────────────────────────────────
+  { id: 'founder',            label: 'Founder',            group: 'Charity',    help: 'Established the charitable entity.',                  categories: ['charity'] },
+  { id: 'donor',              label: 'Donor',              group: 'Charity',    help: 'Made a substantial gift to the charity.',             categories: ['charity'] },
+
+  // ── Other relationships ────────────────────────────────────────
+  { id: 'custodian',          label: 'Custodian (UTMA/UGMA)', group: 'Other',  help: 'Custodian of a minor account.',                        categories: ['*'] },
+  { id: 'power_of_attorney',  label: 'Power of Attorney',  group: 'Other',      help: 'Holds POA over this entity / its account.',           categories: ['*'] },
+  { id: 'authorized_signer',  label: 'Authorized signer',  group: 'Other',      help: 'Authorized to sign on behalf of the entity.',         categories: ['business', 'specialized', 'charity', 'trust'] },
+  { id: 'guarantor',          label: 'Guarantor',          group: 'Other',      help: 'Personally guarantees the entity\'s obligations.',    categories: ['business', 'specialized'] },
+  { id: 'remainderman',       label: 'Remainderman',       group: 'Other',      help: 'Holds the future interest after a life estate.',      categories: ['property', 'trust'] },
 ];
+
+/**
+ * Roles relevant for a given entity bucket. When `includeAll` is
+ * true (or `category` is missing), returns the entire catalog so
+ * unusual pairings remain reachable via a "Show all roles" toggle.
+ */
+export function rolesForCategory(category, includeAll = false) {
+  if (!category || includeAll) return ROLE_OPTIONS;
+  return ROLE_OPTIONS.filter((r) =>
+    (r.categories || []).includes(category) || (r.categories || []).includes('*')
+  );
+}
 
 // Buckets: Step 1 of the wizard
 export const BUCKETS = [

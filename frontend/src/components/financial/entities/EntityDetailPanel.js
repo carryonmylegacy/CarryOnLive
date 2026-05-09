@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from '../../../utils/toast';
 import { API_URL } from '../../../config';
 import {
-  ROLE_OPTIONS, FORMATION_STATES, getTypeMeta, getBucketMeta, getEntityPalette,
+  ROLE_OPTIONS, rolesForCategory, FORMATION_STATES, getTypeMeta, getBucketMeta, getEntityPalette,
 } from '../../../config/entityCatalog';
 import DocumentLinker from './DocumentLinker';
 import FinancialFields from './FinancialFields';
@@ -59,6 +59,11 @@ export default function EntityDetailPanel({
   const [addingConn, setAddingConn] = useState(false);
   const [newSourceKey, setNewSourceKey] = useState('');
   const [newRole, setNewRole] = useState('owner');
+  // "Show all roles" expander for the connection picker. Defaults to
+  // a category-filtered set so a Trust shows trust-relevant roles
+  // first; once expanded it stays expanded for the rest of the
+  // session so the user doesn't keep re-tapping it.
+  const [showAllRolesAdd, setShowAllRolesAdd] = useState(false);
   const [newPct, setNewPct] = useState('');
   // Custom confirmation prompt (window.confirm is silently blocked in iOS PWA)
   const [confirmPrompt, setConfirmPrompt] = useState(null); // {message, action}
@@ -484,7 +489,7 @@ export default function EntityDetailPanel({
                       </Select>
                       <Label className="text-[11px] text-[var(--t4)] mt-2">As the…</Label>
                       <div className="flex flex-wrap gap-1.5">
-                        {ROLE_OPTIONS.map((r) => (
+                        {rolesForCategory(ent?.category, showAllRolesAdd).map((r) => (
                           <button
                             key={r.id}
                             onClick={() => setNewRole(r.id)}
@@ -494,10 +499,22 @@ export default function EntityDetailPanel({
                               color: newRole === r.id ? '#0b1120' : 'var(--t3)',
                               border: newRole === r.id ? '1px solid var(--gold)' : '1px solid var(--b)',
                             }}
+                            title={r.help}
                           >
                             {r.label}
                           </button>
                         ))}
+                        {!showAllRolesAdd && ent?.category && (
+                          <button
+                            type="button"
+                            onClick={() => setShowAllRolesAdd(true)}
+                            className="text-[11px] font-bold px-2.5 py-1 rounded-full transition-all text-[var(--gold)]"
+                            style={{ border: '1px dashed rgba(212,165,55,0.45)' }}
+                            data-testid="detail-add-conn-role-show-all"
+                          >
+                            + Show all roles
+                          </button>
+                        )}
                       </div>
                       {(newRole === 'owner' || newRole === 'gp' || newRole === 'lp') && (
                         <>

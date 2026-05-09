@@ -23,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from '../../../utils/toast';
 import { API_URL } from '../../../config';
 import {
-  BUCKETS, TYPES, ROLE_OPTIONS, FORMATION_STATES, getTypeMeta,
+  BUCKETS, TYPES, ROLE_OPTIONS, rolesForCategory, FORMATION_STATES, getTypeMeta,
 } from '../../../config/entityCatalog';
 import DocumentLinker from './DocumentLinker';
 import FinancialFields from './FinancialFields';
@@ -242,8 +242,11 @@ export default function EntityWizard({
     clearDraft();
   };
 
+  const [showAllRolesStep3, setShowAllRolesStep3] = useState(false);
+
   if (!open) return null;
 
+  const stepThreeRoles = rolesForCategory(bucketId, showAllRolesStep3);
   const selectedBucket = BUCKETS.find((b) => b.id === bucketId);
   // The "external" bucket is now a router: the user picks "person" or
   // "entity" inside it. Only "person" continues with the lightweight
@@ -829,22 +832,40 @@ export default function EntityWizard({
               <div className="space-y-2">
                 <Label className="text-[var(--t4)]">As the…</Label>
                 <div className="flex flex-wrap gap-1.5">
-                  {ROLE_OPTIONS.map((r) => (
+                  {(() => {
+                    // Filter the role chips by the chosen entity's
+                    // category so a Trust shows trust roles first, etc.
+                    const tgt = (entities || []).find((e) => e.id === assignEntityId);
+                    const cat = tgt?.category;
+                    return rolesForCategory(cat, !cat || showAllRolesStep3).map((r) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => setAssignRole(r.id)}
+                        className="text-[11px] font-bold px-2.5 py-1 rounded-full transition-all"
+                        style={{
+                          background: assignRole === r.id ? 'var(--gold)' : 'transparent',
+                          color: assignRole === r.id ? '#0b1120' : 'var(--t3)',
+                          border: assignRole === r.id ? '1px solid var(--gold)' : '1px solid var(--b)',
+                        }}
+                        data-testid={`wizard-assign-role-${r.id}`}
+                        title={r.help}
+                      >
+                        {r.label}
+                      </button>
+                    ));
+                  })()}
+                  {!showAllRolesStep3 && assignEntityId && (
                     <button
-                      key={r.id}
                       type="button"
-                      onClick={() => setAssignRole(r.id)}
-                      className="text-[11px] font-bold px-2.5 py-1 rounded-full transition-all"
-                      style={{
-                        background: assignRole === r.id ? 'var(--gold)' : 'transparent',
-                        color: assignRole === r.id ? '#0b1120' : 'var(--t3)',
-                        border: assignRole === r.id ? '1px solid var(--gold)' : '1px solid var(--b)',
-                      }}
-                      data-testid={`wizard-assign-role-${r.id}`}
+                      onClick={() => setShowAllRolesStep3(true)}
+                      className="text-[11px] font-bold px-2.5 py-1 rounded-full transition-all text-[var(--gold)]"
+                      style={{ border: '1px dashed rgba(212,165,55,0.45)' }}
+                      data-testid="wizard-assign-role-show-all"
                     >
-                      {r.label}
+                      + Show all roles
                     </button>
-                  ))}
+                  )}
                 </div>
               </div>
 
@@ -930,7 +951,7 @@ export default function EntityWizard({
                     <div className="space-y-1.5">
                       <Label className="text-[11px] text-[var(--t4)]">As the…</Label>
                       <div className="flex flex-wrap gap-1.5">
-                        {ROLE_OPTIONS.map((r) => (
+                        {stepThreeRoles.map((r) => (
                           <button
                             key={r.id}
                             onClick={() => {
@@ -945,10 +966,27 @@ export default function EntityWizard({
                               border: c.role === r.id ? '1px solid var(--gold)' : '1px solid var(--b)',
                             }}
                             data-testid={`wizard-conn-role-${i}-${r.id}`}
+                            title={r.help}
                           >
                             {r.label}
                           </button>
                         ))}
+                        {/* "Show all roles" expander — only renders when
+                            we're filtering. Once expanded, it stays
+                            expanded for the rest of this wizard
+                            session so the user doesn't have to keep
+                            re-tapping it across connection rows. */}
+                        {!showAllRolesStep3 && i === 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setShowAllRolesStep3(true)}
+                            className="text-[11px] font-bold px-2.5 py-1 rounded-full transition-all text-[var(--gold)]"
+                            style={{ border: '1px dashed rgba(212,165,55,0.45)', background: 'transparent' }}
+                            data-testid="wizard-conn-role-show-all"
+                          >
+                            + Show all roles
+                          </button>
+                        )}
                       </div>
                     </div>
                     {showPct && (

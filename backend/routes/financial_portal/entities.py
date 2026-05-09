@@ -30,17 +30,14 @@ from ._core import router, _verify_estate_access
 
 EntityCategory = Literal["business", "trust", "charity", "property", "specialized"]
 NodeType = Literal["entity", "user", "beneficiary", "external_person"]
-RoleType = Literal[
-    "owner",
-    "trustee",
-    "beneficiary",
-    "grantor",
-    "manager",
-    "officer",
-    "director",
-    "gp",
-    "lp",
-]
+# RoleType is intentionally a free-form string keyed off the canonical
+# frontend `ROLE_OPTIONS` catalog (see frontend/src/config/entityCatalog.js).
+# Locking it to a Literal blocks future additions (co-trustee,
+# trust-protector, income / remainder / contingent beneficiary, member,
+# shareholder, founder, donor, custodian, power-of-attorney, etc.) from
+# rolling out without a coordinated backend deploy. The frontend remains
+# the source of truth for which roles render in the picker.
+RoleType = str
 
 
 # ===================== PYDANTIC MODELS =====================
