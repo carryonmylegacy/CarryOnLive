@@ -10,7 +10,7 @@
 import React, { useState } from 'react';
 import SlidePanel from '../../SlidePanel';
 import {
-  Building2, Shield, Landmark, Home, User as UserIcon, Settings,
+  Building2, Shield, Landmark, Home, User as UserIcon, UserCheck, Settings,
   ChevronLeft, Loader2, HelpCircle, Plus, Trash2,
 } from 'lucide-react';
 import axios from 'axios';
@@ -31,7 +31,7 @@ import EntityCredentialsField from './EntityCredentialsField';
 import { persistEntityCredentials } from './persistEntityCredentials';
 
 const ICONS = {
-  Building2, Shield, Landmark, Home, User: UserIcon, Settings,
+  Building2, Shield, Landmark, Home, User: UserIcon, UserCheck, Settings,
 };
 
 // Tiny helper popover
@@ -99,6 +99,11 @@ export default function EntityWizard({
   const [extFirst, setExtFirst] = useState('');
   const [extLast, setExtLast] = useState('');
   const [extNotes, setExtNotes] = useState('');
+  // Existing-beneficiary → existing-entity assignment fields
+  const [assignBeneficiaryId, setAssignBeneficiaryId] = useState('');
+  const [assignEntityId, setAssignEntityId] = useState('');
+  const [assignRole, setAssignRole] = useState('owner');
+  const [assignPct, setAssignPct] = useState('');
   // Step 3 connection rows
   const [connections, setConnections] = useState([
     { sourceKey: user?.id ? `user:${user.id}` : '', role: 'owner', ownership_pct: 100 },
@@ -112,6 +117,7 @@ export default function EntityWizard({
     setLinkedDocIds([]); setGrossAssets(''); setGrossDebts('');
     setCredentials([]);
     setExtFirst(''); setExtLast(''); setExtNotes('');
+    setAssignBeneficiaryId(''); setAssignEntityId(''); setAssignRole('owner'); setAssignPct('');
     setConnections([{ sourceKey: user?.id ? `user:${user.id}` : '', role: 'owner', ownership_pct: 100 }]);
   };
 
@@ -119,10 +125,11 @@ export default function EntityWizard({
 
   const selectedBucket = BUCKETS.find((b) => b.id === bucketId);
   const isExternalPerson = bucketId === 'external_person';
+  const isExistingBeneficiary = bucketId === 'existing_beneficiary';
   const typeMeta = bucketId && typeId ? getTypeMeta(bucketId, typeId) : null;
 
   const filteredTypes = (() => {
-    if (!bucketId || isExternalPerson) return [];
+    if (!bucketId || isExternalPerson || isExistingBeneficiary) return [];
     const list = TYPES[bucketId] || [];
     if (!search.trim()) return list;
     const q = search.toLowerCase();
@@ -138,11 +145,13 @@ export default function EntityWizard({
   // The Continue button advances bucket-picker → type-picker, then
   // type-picker → step 2.
   const canProceedFrom1 = bucketId
-    ? (isExternalPerson || !!typeId)
+    ? (isExternalPerson || isExistingBeneficiary || !!typeId)
     : !!pendingBucketId;
   const canProceedFrom2 = isExternalPerson
     ? extFirst.trim().length > 0
-    : name.trim().length > 0;
+    : isExistingBeneficiary
+      ? !!assignBeneficiaryId && !!assignEntityId
+      : name.trim().length > 0;
 
   const handleNext = () => {
     if (step === 1) {
@@ -152,6 +161,7 @@ export default function EntityWizard({
     }
     if (step === 2 && canProceedFrom2) {
       if (isExternalPerson) handleSaveExternal();
+      else if (isExistingBeneficiary) handleSaveAssignment();
       else setStep(3);
     } else if (step === 3) handleSave();
   };
@@ -184,6 +194,38 @@ export default function EntityWizard({
       onCancel?.();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to add person');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // -------------- save (assign existing beneficiary → existing entity) --------------
+  const handleSaveAssignment = async () => {
+    if (saving) return;
+    if (!assignBeneficiaryId || !assignEntityId) {
+      toast.error('Pick a beneficiary and an entity.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const r = await axios.post(`${API_URL}/financial/entity-relationships`, {
+        estate_id: estateId,
+        source_id: assignBeneficiaryId,
+        source_type: 'beneficiary',
+        target_id: assignEntityId,
+        target_type: 'entity',
+        role: assignRole,
+        ownership_pct: (assignRole === 'owner' || assignRole === 'gp' || assignRole === 'lp') &&
+          assignPct !== '' && assignPct != null
+          ? Number(assignPct) : null,
+      }, getAuthHeaders());
+      toast.success('Beneficiary assigned to entity.');
+      // Re-use onCreated so the parent reloads relationships into the chart.
+      onCreated?.(null, [r.data].filter(Boolean));
+      reset();
+      onCancel?.();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to save assignment');
     } finally {
       setSaving(false);
     }
@@ -267,9 +309,13 @@ export default function EntityWizard({
   const wizTitle = step === 1
     ? 'Add an Entity or Trust'
     : step === 2
-      ? (isExternalPerson ? 'About this person' : 'Entity details')
+      ? (isExternalPerson
+          ? 'About this person'
+          : isExistingBeneficiary
+            ? 'Assign to an entity'
+            : 'Entity details')
       : 'How does it connect?';
-  const wizSubtitle = `Step ${step} of ${isExternalPerson ? 2 : 3}`;
+  const wizSubtitle = `Step ${step} of ${(isExternalPerson || isExistingBeneficiary) ? 2 : 3}`;
 
   return (
     <SlidePanel
@@ -316,7 +362,7 @@ export default function EntityWizard({
                 </>
               )}
 
-              {bucketId && !isExternalPerson && (
+              {bucketId && !isExternalPerson && !isExistingBeneficiary && (
                 <>
                   <div className="flex items-center gap-2">
                     <button onClick={() => setBucketId(null)} className="text-[var(--gold)] text-xs font-bold hover:underline">
@@ -370,11 +416,24 @@ export default function EntityWizard({
                   </button>
                 </>
               )}
+
+              {bucketId && isExistingBeneficiary && (
+                <>
+                  <p className="text-sm text-[var(--t3)]">
+                    Pick one of your existing beneficiaries on the next step and assign them to one of your
+                    existing entities (as owner, trustee, beneficiary of that entity, etc.). No new entity is
+                    created — this just adds a connection in your structure.
+                  </p>
+                  <button onClick={() => setBucketId(null)} className="text-[var(--gold)] text-xs font-bold hover:underline">
+                    ← Change category
+                  </button>
+                </>
+              )}
             </>
           )}
 
           {/* ---------------- STEP 2 ---------------- */}
-          {step === 2 && !isExternalPerson && (
+          {step === 2 && !isExternalPerson && !isExistingBeneficiary && (
             <>
               <div
                 className="rounded-xl p-3"
@@ -503,6 +562,86 @@ export default function EntityWizard({
             </>
           )}
 
+          {step === 2 && isExistingBeneficiary && (
+            <>
+              <div className="space-y-2">
+                <Label className="text-[var(--t4)]">Beneficiary <span className="text-red-400">*</span></Label>
+                <Select value={assignBeneficiaryId} onValueChange={setAssignBeneficiaryId}>
+                  <SelectTrigger className="input-field select-themed" data-testid="wizard-assign-beneficiary">
+                    <SelectValue placeholder="Pick a beneficiary" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-64">
+                    {(beneficiaries || []).length === 0 ? (
+                      <SelectItem value="__none__" disabled>No beneficiaries on file</SelectItem>
+                    ) : (
+                      (beneficiaries || []).map((b) => (
+                        <SelectItem key={b.id} value={b.id}>
+                          {b.name || `${b.first_name || ''} ${b.last_name || ''}`.trim() || 'Unnamed'}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[var(--t4)]">Entity to assign <span className="text-red-400">*</span></Label>
+                <Select value={assignEntityId} onValueChange={setAssignEntityId}>
+                  <SelectTrigger className="input-field select-themed" data-testid="wizard-assign-entity">
+                    <SelectValue placeholder="Pick an entity" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-64">
+                    {(entities || []).length === 0 ? (
+                      <SelectItem value="__none__" disabled>No entities yet — add one first</SelectItem>
+                    ) : (
+                      (entities || []).map((e) => (
+                        <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[var(--t4)]">As the…</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {ROLE_OPTIONS.map((r) => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => setAssignRole(r.id)}
+                      className="text-[11px] font-bold px-2.5 py-1 rounded-full transition-all"
+                      style={{
+                        background: assignRole === r.id ? 'var(--gold)' : 'transparent',
+                        color: assignRole === r.id ? '#0b1120' : 'var(--t3)',
+                        border: assignRole === r.id ? '1px solid var(--gold)' : '1px solid var(--b)',
+                      }}
+                      data-testid={`wizard-assign-role-${r.id}`}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {(assignRole === 'owner' || assignRole === 'gp' || assignRole === 'lp') && (
+                <div className="space-y-2">
+                  <Label className="text-[var(--t4)]">Ownership %</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={assignPct}
+                    onChange={(e) => setAssignPct(e.target.value)}
+                    placeholder="e.g. 25"
+                    className="input-field"
+                    data-testid="wizard-assign-pct"
+                  />
+                </div>
+              )}
+            </>
+          )}
+
           {/* ---------------- STEP 3 ---------------- */}
           {step === 3 && !isExternalPerson && (
             <>
@@ -621,7 +760,7 @@ export default function EntityWizard({
           >
             {saving ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving…</>
               : step === 1 ? 'Continue'
-              : step === 2 ? (isExternalPerson ? 'Add person' : 'Continue')
+              : step === 2 ? (isExternalPerson ? 'Add person' : isExistingBeneficiary ? 'Save assignment' : 'Continue')
               : 'Add to chart'}
           </Button>
         </div>

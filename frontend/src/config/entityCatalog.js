@@ -84,6 +84,13 @@ export const BUCKETS = [
     accent: 'teal',
   },
   {
+    id: 'existing_beneficiary',
+    icon: 'UserCheck',
+    label: 'A beneficiary already on my list',
+    sub: 'Assign one of your existing beneficiaries to an entity',
+    accent: 'champagne',
+  },
+  {
     id: 'external_person',
     icon: 'User',
     label: "A person who isn't in my beneficiaries list",
