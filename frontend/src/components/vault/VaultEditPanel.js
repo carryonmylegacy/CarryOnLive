@@ -1,5 +1,6 @@
 import React from 'react';
-import { Edit2, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Edit2, Loader2, Network } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -20,6 +21,8 @@ const VaultEditPanel = ({
   saving,
   handleEditDocument,
 }) => {
+  const navigate = useNavigate();
+  const linkedEntities = editingDoc?.linked_entities || [];
   return (
     <SlidePanel
       open={open}
@@ -77,6 +80,32 @@ const VaultEditPanel = ({
             <div className="p-3 bg-[var(--s)] rounded-xl">
               <p className="text-xs text-[#64748b]">File info</p>
               <p className="text-sm text-white">{editingDoc.file_type} · {editingDoc.file_size ? `${(editingDoc.file_size / 1024).toFixed(1)} KB` : 'Unknown size'}</p>
+            </div>
+          )}
+
+          {linkedEntities.length > 0 && (
+            <div className="space-y-2" data-testid="vault-edit-linked-entities">
+              <Label className="text-[#94a3b8]">Linked to entities</Label>
+              <div className="flex flex-wrap gap-2">
+                {linkedEntities.map((ent) => (
+                  <button
+                    key={ent.id}
+                    type="button"
+                    onClick={() => { onClose?.(); navigate(`/financial?openEntity=${encodeURIComponent(ent.id)}`); }}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold transition-colors"
+                    style={{
+                      color: 'var(--gold)',
+                      background: 'rgba(212,165,55,0.10)',
+                      border: '1px solid rgba(212,165,55,0.35)',
+                    }}
+                    data-testid={`vault-entity-link-${ent.id}`}
+                    title="Open this entity in your Financial Picture"
+                  >
+                    <Network className="w-3 h-3" />
+                    {ent.name}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>

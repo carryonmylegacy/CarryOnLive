@@ -69,6 +69,21 @@ async def get_digital_wallet(estate_id: str, request: Request = None, current_us
 
     entries = await db.digital_wallet.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(200)
 
+    # Resolve linked_entity_id → linked_entity_name (single batch query)
+    # so the DAV UI can render a "Linked to [Entity]" pill without
+    # round-tripping per row. Soft-deleted entities are filtered.
+    linked_ids = [e["linked_entity_id"] for e in entries if e.get("linked_entity_id")]
+    if linked_ids:
+        ent_rows = await db.cfp_entities.find(
+            {"id": {"$in": list(set(linked_ids))}, "deleted_at": None},
+            {"_id": 0, "id": 1, "name": 1},
+        ).to_list(500)
+        ent_name = {r["id"]: r.get("name") for r in ent_rows}
+        for e in entries:
+            eid = e.get("linked_entity_id")
+            if eid and eid in ent_name:
+                e["linked_entity_name"] = ent_name[eid]
+
     estate_salt = await get_estate_salt(estate_id)
 
     if is_owner or is_admin:

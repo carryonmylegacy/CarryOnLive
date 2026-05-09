@@ -20,7 +20,7 @@ import EntityDocumentsModal from './EntityDocumentsModal';
 
 const LOCK_KEY = (estateId) => `cfp:entities:locked:${estateId || 'global'}`;
 
-export default function EntitiesSection({ estateId, beneficiaries, onEntitiesChanged }) {
+export default function EntitiesSection({ estateId, beneficiaries, onEntitiesChanged, openEntityId }) {
   const { user, getAuthHeaders } = useAuth();
   const [freshUser, setFreshUser] = useState(null);
   const [entities, setEntities] = useState([]);
@@ -58,6 +58,20 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
       return next;
     });
   };
+
+  // Deep-link: when arriving via `/financial?openEntity=<id>` from the
+  // SDV or DAV, scroll the entities surface into view and open the
+  // matching entity's detail panel. Runs once entities are loaded so we
+  // can resolve the id to a node.
+  const sectionRef = React.useRef(null);
+  useEffect(() => {
+    if (!openEntityId || !loaded) return;
+    const ent = entities.find((e) => e.id === openEntityId);
+    if (!ent) return;
+    sectionRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    setEditingNode({ key: `entity:${ent.id}`, kind: 'entity', id: ent.id, label: ent.name, entity: ent });
+    setEditStartInEdit(false);
+  }, [openEntityId, loaded, entities]);
 
   const fetchAll = useCallback(async () => {
     if (!estateId) return;
@@ -164,6 +178,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
 
   return (
     <div
+      ref={sectionRef}
       className="rounded-2xl"
       style={{
         background: 'radial-gradient(ellipse at top, rgba(212,165,55,0.08), transparent 60%), var(--card)',

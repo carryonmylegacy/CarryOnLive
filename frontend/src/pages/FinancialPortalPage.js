@@ -757,7 +757,12 @@ const FinancialPortalPage = () => {
 
       {/* Entities & Structures org chart — appears above Financial Summary
           when the user has any entities. Hidden completely otherwise. */}
-      <EntitiesSection estateId={estate?.id} beneficiaries={beneficiaries} />
+      <EntitiesSection
+        estateId={estate?.id}
+        beneficiaries={beneficiaries}
+        onEntitiesChanged={refreshSummary}
+        openEntityId={new URLSearchParams(location.search).get('openEntity')}
+      />
 
       {/* Financial Summary Cards */}
       <FinancialSummary summary={summary} onNavigate={(tab) => setActiveTab(tab)} />

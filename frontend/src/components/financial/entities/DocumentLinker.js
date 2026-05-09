@@ -17,17 +17,20 @@
  *   documents     : full SDV documents list ({ id, name, ... })
  */
 import React, { useState } from 'react';
-import { Plus, X, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, X, FileText, ExternalLink } from 'lucide-react';
 
 const docLabel = (doc) => doc?.name || doc?.title || `Document ${doc?.id?.slice(0, 6)}`;
 
 export default function DocumentLinker({ value, onChange, documents }) {
+  const navigate = useNavigate();
   const selected = value || [];
   const [picking, setPicking] = useState(false);
   const docById = Object.fromEntries((documents || []).map((d) => [d.id, d]));
 
   const remove = (id) => onChange(selected.filter((x) => x !== id));
   const available = (documents || []).filter((d) => !selected.includes(d.id));
+  const openInVault = (docId) => navigate(`/vault?openDoc=${encodeURIComponent(docId)}`);
 
   const handlePick = (e) => {
     const id = e.target.value;

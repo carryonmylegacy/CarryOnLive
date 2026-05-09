@@ -127,6 +127,22 @@ async def get_documents(estate_id: str, current_user: dict = Depends(get_current
         {"_id": 0, "file_data": 0, "lock_password_hash": 0, "backup_code": 0},
     ).to_list(100)
 
+    # Resolve linked CFP entities (reverse lookup): for each doc, list
+    # the entities whose document_ids include this doc.id. Lets the
+    # SDV doc detail render a "Linked to [Entity]" pill that
+    # deep-links back into the Entities & Structures org chart.
+    if documents:
+        ent_rows = await db.cfp_entities.find(
+            {"estate_id": estate_id, "deleted_at": None},
+            {"_id": 0, "id": 1, "name": 1, "document_ids": 1},
+        ).to_list(500)
+        doc_to_entities = {}
+        for ent in ent_rows:
+            for doc_id in ent.get("document_ids") or []:
+                doc_to_entities.setdefault(doc_id, []).append({"id": ent["id"], "name": ent.get("name")})
+        for doc in documents:
+            doc["linked_entities"] = doc_to_entities.get(doc["id"], [])
+
     # Add encryption info to each document
     for doc in documents:
         doc["encryption_version"] = doc.get("encryption_version", "aes-256-gcm")

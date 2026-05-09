@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { KeyRound, Plus, Trash2, Edit2, Eye, EyeOff, Shield, Loader2, User, Wallet, Globe, Mail, Cloud, CreditCard, Save, ArrowLeft } from 'lucide-react';
+import { KeyRound, Plus, Trash2, Edit2, Eye, EyeOff, Shield, Loader2, User, Wallet, Globe, Mail, Cloud, CreditCard, Save, ArrowLeft, Network } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -294,6 +294,22 @@ const DigitalWalletPage = () => {
                               <User className="w-3.5 h-3.5 text-[var(--gold)]" />
                               <span className="text-xs text-[var(--gold)] font-bold">Assigned to: {entry.assigned_beneficiary_name}</span>
                             </div>
+                          )}
+                          {entry.linked_entity_id && entry.linked_entity_name && (
+                            <button
+                              onClick={() => navigate(`/financial?openEntity=${encodeURIComponent(entry.linked_entity_id)}`)}
+                              className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold transition-colors"
+                              style={{
+                                color: 'var(--gold)',
+                                background: 'rgba(212,165,55,0.10)',
+                                border: '1px solid rgba(212,165,55,0.35)',
+                              }}
+                              data-testid={`wallet-entity-link-${entry.id}`}
+                              title="Open this entity in your Financial Picture"
+                            >
+                              <Network className="w-3 h-3" />
+                              Linked to {entry.linked_entity_name}
+                            </button>
                           )}
                         </div>
                         <div className="flex gap-1">
