@@ -18,6 +18,14 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallba
 import { Building2, Shield, Landmark, Home, User as UserIcon, Settings, Info, Pencil } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { getEntityPalette, getTypeMeta, ROLE_PALETTE, PALETTE, ROLE_OPTIONS } from '../../../config/entityCatalog';
+import EntityLegend, { LEGEND_W, LEGEND_H } from './EntityLegend';
+
+// Pseudo-node key under which the legend's drag-position lives in the
+// chart's `overrides` map. Treating the legend like a tile (key in
+// overrides + positionOf + obstacle list for edge routing) lets the
+// existing tile-drag pipeline move it with zero additional plumbing,
+// which is exactly what the user asked for.
+const LEGEND_KEY = '__legend__';
 import { AvatarCircle } from '../../AvatarCircle';
 
 const BUCKET_ICON = {
@@ -610,6 +618,7 @@ export default function EntityOrgChart({
   estateId, entities, externals, relationships, beneficiaries,
   onSingleClickNode, onDoubleClickNode, onInfoClickNode, onEditClickNode,
   cleanUpSignal, locked = false, readOnly = false, fitOnLoad = false,
+  legendHidden = false, onHideLegend,
 }) {
   const { user } = useAuth();
   const containerRef = useRef(null);
@@ -716,8 +725,19 @@ export default function EntityOrgChart({
     return { activeNodeKeys: all, activeEdgeIds: matchedEdgeIds };
   }, [roleFilter, nodes, edges, ROLE_LABEL]);
 
-  // Effective position of any node = override OR initial
-  const positionOf = useCallback((key) => overrides[key] || initial[key] || { x: PADDING, y: PADDING }, [overrides, initial]);
+  // Effective position of any node = override OR initial.
+  // Special-case the legend pseudo-tile: if it has never been moved,
+  // park it just above-left of the natural tree origin so it lands in
+  // the user's viewport when the chart opens centered on the
+  // benefactor (the inner positioned layer sits inside PAN_MARGIN, so
+  // a small negative-x default still renders inside the outer canvas
+  // padding without scrollbar tricks).
+  const positionOf = useCallback((key) => {
+    if (overrides[key]) return overrides[key];
+    if (initial[key]) return initial[key];
+    if (key === LEGEND_KEY) return { x: -LEGEND_W - 24, y: 0 };
+    return { x: PADDING, y: PADDING };
+  }, [overrides, initial]);
 
   // Canvas size: enforce a generous baseline so the user always has
   // pan-room in every direction (no "side wall" feel when dragging
@@ -1177,11 +1197,17 @@ export default function EntityOrgChart({
 
   if (!nodes.length) return null;
 
-  // Build obstacle list = every tile rect (we exclude src/tgt for each edge inside the loop)
+  // Build obstacle list = every tile rect (we exclude src/tgt for each edge inside the loop).
+  // Also include the legend tile so edges don't route through it — it
+  // visually behaves like another tile, just without lines connected.
   const tileRects = nodes.map((n) => {
     const p = positionOf(n.key);
     return { key: n.key, x: p.x, y: p.y, w: n.w, h: n.h };
   });
+  if (!legendHidden) {
+    const lp = positionOf(LEGEND_KEY);
+    tileRects.push({ key: LEGEND_KEY, x: lp.x, y: lp.y, w: LEGEND_W, h: LEGEND_H });
+  }
   const rectByKey = Object.fromEntries(tileRects.map((r) => [r.key, r]));
 
   // Build the SVG edge layer as raw markup to bypass the platform's
@@ -1401,6 +1427,36 @@ export default function EntityOrgChart({
             </div>
           );
         })}
+
+        {/* Legend pseudo-tile — lives inside the same panned/zoomed
+            inner layer as the regular tiles, so it pans + zooms with
+            the tree exactly like another node. Drag uses the chart's
+            zoom-aware onPointerDownDrag, so deltas feel identical. */}
+        {!legendHidden && (() => {
+          const lp = positionOf(LEGEND_KEY);
+          const isLegendDragging = draggingKey === LEGEND_KEY;
+          return (
+            <div
+              key={LEGEND_KEY}
+              style={{
+                position: 'absolute',
+                left: lp.x,
+                top: lp.y,
+                zIndex: isLegendDragging ? 30 : 12,
+                transition: isLegendDragging ? 'none' : 'box-shadow 200ms ease',
+              }}
+              data-testid="entity-legend-wrapper"
+            >
+              <EntityLegend
+                entities={entities}
+                relationships={relationships}
+                dragging={isLegendDragging}
+                onPointerDownDrag={(e) => onPointerDownDrag(e, { key: LEGEND_KEY, w: LEGEND_W, h: LEGEND_H })}
+                onHide={() => onHideLegend?.()}
+              />
+            </div>
+          );
+        })()}
         </div>
         </div>
       </div>

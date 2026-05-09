@@ -399,34 +399,26 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
 
       <div style={{ height: maxH, position: 'relative' }}>
         {viewMode === 'chart' ? (
-          <>
-            <EntityOrgChart
-              key={resetTick}
-              estateId={estateId}
-              entities={entities}
-              externals={externals}
-              relationships={relationships}
-              beneficiaries={beneficiaries || []}
-              onSingleClickNode={handleSingleClick}
-              onDoubleClickNode={handleDoubleClick}
-              onInfoClickNode={handleInfoClick}
-              onEditClickNode={handleEditClick}
-              cleanUpSignal={cleanUpSignal}
-              locked={locked}
-              fitOnLoad={fitOnLoad}
-            />
-            {/* Floating draggable legend — positioned inside the same
-                relative-wrapper as the chart so it sits ON TOP of the
-                chart's scroll viewport but does NOT scroll with the
-                chart's panned content. */}
-            <EntityLegend
-              estateId={estateId}
-              entities={entities}
-              relationships={relationships}
-              hidden={legendHidden}
-              onHiddenChange={setLegendHidden}
-            />
-          </>
+          <EntityOrgChart
+            key={resetTick}
+            estateId={estateId}
+            entities={entities}
+            externals={externals}
+            relationships={relationships}
+            beneficiaries={beneficiaries || []}
+            onSingleClickNode={handleSingleClick}
+            onDoubleClickNode={handleDoubleClick}
+            onInfoClickNode={handleInfoClick}
+            onEditClickNode={handleEditClick}
+            cleanUpSignal={cleanUpSignal}
+            locked={locked}
+            fitOnLoad={fitOnLoad}
+            legendHidden={legendHidden}
+            onHideLegend={() => {
+              EntityLegend.writeHiddenForEstate(estateId, true);
+              setLegendHidden(true);
+            }}
+          />
         ) : (
           <div className="overflow-auto" style={{ height: maxH, WebkitOverflowScrolling: 'touch' }}>
             <EntityListView
