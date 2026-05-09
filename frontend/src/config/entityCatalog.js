@@ -153,8 +153,8 @@ export const BUCKETS = [
   {
     id: 'existing_beneficiary',
     icon: 'UserCheck',
-    label: 'A beneficiary already on my list',
-    sub: 'Assign one of your existing beneficiaries to an entity',
+    label: 'Connect someone already in my chart to an entity',
+    sub: 'Yourself, a beneficiary, or an outside person → an existing entity',
     accent: 'champagne',
   },
   {

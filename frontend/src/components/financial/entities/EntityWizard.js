@@ -107,16 +107,20 @@ export default function EntityWizard({
   // it routes the user back to the bucket list to pick a real entity
   // bucket, after which it becomes irrelevant.
   const [externalKind, setExternalKind] = useState(null);
-  // Existing-beneficiary → existing-entity assignment fields
-  const [assignBeneficiaryId, setAssignBeneficiaryId] = useState('');
+  // Existing-source → existing-entity assignment fields. Originally
+  // limited to "beneficiary → entity"; now generalised so the user
+  // can also assign themselves (`user:<id>`) or an outside person
+  // (`external_person:<id>`) to an existing entity. The select stores
+  // a typed key (`<type>:<id>`); the save handler parses it.
+  const [assignSourceKey, setAssignSourceKey] = useState('');
   const [assignEntityId, setAssignEntityId] = useState('');
   const [assignRole, setAssignRole] = useState('owner');
   const [assignPct, setAssignPct] = useState('');
-  // Set when the user picked "A beneficiary already on my list" but
-  // then clicked "Create a new entity for them" — we drop them into
-  // the regular entity-creation flow with this beneficiary pre-locked
-  // as the first connection in Step 3.
-  const [prefilledBeneficiaryId, setPrefilledBeneficiaryId] = useState('');
+  // Set when the user picked "Connect someone in my chart" but then
+  // clicked "Create a new entity for them" — drops them into the
+  // regular entity-creation flow with this source pre-locked as the
+  // first connection in Step 3.
+  const [prefilledSourceKey, setPrefilledSourceKey] = useState('');
   // Step 3 connection rows
   const [connections, setConnections] = useState([
     { sourceKey: user?.id ? `user:${user.id}` : '', role: 'owner', ownership_pct: 100 },
@@ -169,11 +173,11 @@ export default function EntityWizard({
       if (d.extLast !== undefined) setExtLast(d.extLast);
       if (d.extNotes !== undefined) setExtNotes(d.extNotes);
       if (d.externalKind !== undefined) setExternalKind(d.externalKind);
-      if (d.assignBeneficiaryId !== undefined) setAssignBeneficiaryId(d.assignBeneficiaryId);
+      if (d.assignSourceKey !== undefined) setAssignSourceKey(d.assignSourceKey);
       if (d.assignEntityId !== undefined) setAssignEntityId(d.assignEntityId);
       if (d.assignRole !== undefined) setAssignRole(d.assignRole);
       if (d.assignPct !== undefined) setAssignPct(d.assignPct);
-      if (d.prefilledBeneficiaryId !== undefined) setPrefilledBeneficiaryId(d.prefilledBeneficiaryId);
+      if (d.prefilledSourceKey !== undefined) setPrefilledSourceKey(d.prefilledSourceKey);
       if (Array.isArray(d.connections) && d.connections.length) setConnections(d.connections);
     } catch { /* malformed draft — ignore */ }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -191,8 +195,8 @@ export default function EntityWizard({
       einLast4, formationDate, taxElection, registeredAgent,
       linkedDocIds, grossAssets, grossDebts, credentials,
       extFirst, extLast, extNotes, externalKind,
-      assignBeneficiaryId, assignEntityId, assignRole, assignPct,
-      prefilledBeneficiaryId, connections,
+      assignSourceKey, assignEntityId, assignRole, assignPct,
+      prefilledSourceKey, connections,
       savedAt: Date.now(),
     };
     // Don't write a no-op draft — only persist once the user has
@@ -202,7 +206,7 @@ export default function EntityWizard({
       grossAssets || grossDebts || (linkedDocIds && linkedDocIds.length) ||
       (credentials && credentials.length) ||
       extFirst || extLast || extNotes ||
-      assignBeneficiaryId || assignEntityId || prefilledBeneficiaryId;
+      assignSourceKey || assignEntityId || prefilledSourceKey;
     if (!isDirty) {
       clearDraft();
       return;
@@ -214,8 +218,8 @@ export default function EntityWizard({
       einLast4, formationDate, taxElection, registeredAgent,
       linkedDocIds, grossAssets, grossDebts, credentials,
       extFirst, extLast, extNotes, externalKind,
-      assignBeneficiaryId, assignEntityId, assignRole, assignPct,
-      prefilledBeneficiaryId, connections]); // eslint-disable-line react-hooks/exhaustive-deps
+      assignSourceKey, assignEntityId, assignRole, assignPct,
+      prefilledSourceKey, connections]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset the scroll-to-top when step changes (or when the bucket/type
   // sub-step within Step 1 advances). Without this, scrolling down to
@@ -236,8 +240,8 @@ export default function EntityWizard({
     setCredentials([]);
     setExtFirst(''); setExtLast(''); setExtNotes('');
     setExternalKind(null);
-    setAssignBeneficiaryId(''); setAssignEntityId(''); setAssignRole('owner'); setAssignPct('');
-    setPrefilledBeneficiaryId('');
+    setAssignSourceKey(''); setAssignEntityId(''); setAssignRole('owner'); setAssignPct('');
+    setPrefilledSourceKey('');
     setConnections([{ sourceKey: user?.id ? `user:${user.id}` : '', role: 'owner', ownership_pct: 100 }]);
     clearDraft();
   };
@@ -282,7 +286,7 @@ export default function EntityWizard({
   const canProceedFrom2 = isExternalPerson
     ? extFirst.trim().length > 0
     : isExistingBeneficiary
-      ? !!assignBeneficiaryId && !!assignEntityId
+      ? !!assignSourceKey && !!assignEntityId
       : name.trim().length > 0;
 
   const handleNext = () => {
@@ -331,26 +335,32 @@ export default function EntityWizard({
     }
   };
 
-  // -------------- save (assign existing beneficiary → existing entity) --------------
+  // -------------- save (assign existing source → existing entity) --------------
   const handleSaveAssignment = async () => {
     if (saving) return;
-    if (!assignBeneficiaryId || !assignEntityId) {
-      toast.error('Pick a beneficiary and an entity.');
+    if (!assignSourceKey || !assignEntityId) {
+      toast.error('Pick a source and a target entity.');
       return;
     }
+    // assignSourceKey is `<type>:<id>` — same convention used by the
+    // EntityDetailPanel "Add a connection" flow. Types we accept here:
+    // user, beneficiary, external_person.
+    const colonIdx = assignSourceKey.indexOf(':');
+    const sourceType = assignSourceKey.slice(0, colonIdx);
+    const sourceId = assignSourceKey.slice(colonIdx + 1);
     setSaving(true);
     try {
       const r = await axios.post(`${API_URL}/financial/entity-relationships`, {
         estate_id: estateId,
-        source_id: assignBeneficiaryId,
-        source_type: 'beneficiary',
+        source_id: sourceId,
+        source_type: sourceType,
         target_id: assignEntityId,
         target_type: 'entity',
         role: assignRole,
         ownership_pct: isEquityRole(assignRole) && assignPct !== '' && assignPct != null
           ? Number(assignPct) : null,
       }, getAuthHeaders());
-      toast.success('Beneficiary assigned to entity.');
+      toast.success('Connection added.');
       // Re-use onCreated so the parent reloads relationships into the chart.
       onCreated?.(null, [r.data].filter(Boolean));
       reset();
@@ -613,9 +623,10 @@ export default function EntityWizard({
               {bucketId && isExistingBeneficiary && (
                 <>
                   <p className="text-sm text-[var(--t3)]">
-                    Pick one of your existing beneficiaries on the next step and assign them to one of your
-                    existing entities (as owner, trustee, beneficiary of that entity, etc.). No new entity is
-                    created — this just adds a connection in your structure.
+                    Pick someone already in your chart on the next step — yourself, a beneficiary, or
+                    an outside person — and assign them to one of your existing entities (as owner, trustee,
+                    beneficiary of that entity, etc.). No new entity is created — this just adds a connection
+                    in your structure.
                   </p>
                   <button onClick={() => setBucketId(null)} className="text-[var(--gold)] text-xs font-bold hover:underline">
                     ← Change category
@@ -759,27 +770,30 @@ export default function EntityWizard({
           {step === 2 && isExistingBeneficiary && (
             <>
               <div className="space-y-2">
-                <Label className="text-[var(--t4)]">Beneficiary <span className="text-red-400">*</span></Label>
-                <Select value={assignBeneficiaryId} onValueChange={setAssignBeneficiaryId}>
-                  <SelectTrigger className="input-field select-themed" data-testid="wizard-assign-beneficiary">
-                    <SelectValue placeholder="Pick a beneficiary" />
+                <Label className="text-[var(--t4)]">Who's connecting? <span className="text-red-400">*</span></Label>
+                <Select value={assignSourceKey} onValueChange={setAssignSourceKey}>
+                  <SelectTrigger className="input-field select-themed" data-testid="wizard-assign-source">
+                    <SelectValue placeholder="Pick yourself, a beneficiary, or an outside person" />
                   </SelectTrigger>
                   <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-64">
-                    {(beneficiaries || []).length === 0 ? (
-                      <SelectItem value="__none__" disabled>No beneficiaries on file</SelectItem>
+                    {sourceOptions.filter((o) => !o.value.startsWith('entity:')).length === 0 ? (
+                      <SelectItem value="__none__" disabled>No people on file</SelectItem>
                     ) : (
-                      (beneficiaries || []).map((b) => (
-                        <SelectItem key={b.id} value={b.id}>
-                          {b.name || `${b.first_name || ''} ${b.last_name || ''}`.trim() || 'Unnamed'}
-                        </SelectItem>
-                      ))
+                      sourceOptions
+                        .filter((o) => !o.value.startsWith('entity:'))
+                        .map((o) => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))
                     )}
                   </SelectContent>
                 </Select>
+                <p className="text-[11px] text-[var(--t5)]">
+                  Tip: pick "you" to add yourself to a Trust as a beneficiary, trustee, grantor, etc.
+                </p>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[var(--t4)]">Entity to assign <span className="text-red-400">*</span></Label>
+                <Label className="text-[var(--t4)]">Entity to connect to <span className="text-red-400">*</span></Label>
                 <Select value={assignEntityId} onValueChange={setAssignEntityId}>
                   <SelectTrigger className="input-field select-themed" data-testid="wizard-assign-entity">
                     <SelectValue placeholder="Pick an entity" />
@@ -797,15 +811,14 @@ export default function EntityWizard({
                 <button
                   type="button"
                   onClick={() => {
-                    if (!assignBeneficiaryId) {
-                      toast.error('Pick a beneficiary first.');
+                    if (!assignSourceKey) {
+                      toast.error('Pick a source first.');
                       return;
                     }
                     // Switch into the regular entity-creation flow with
-                    // this beneficiary pre-locked into the first
-                    // connection slot. Step 3 will surface the lock.
-                    const benId = assignBeneficiaryId;
-                    setPrefilledBeneficiaryId(benId);
+                    // this source pre-locked into the first connection
+                    // slot. Step 3 will surface the lock.
+                    setPrefilledSourceKey(assignSourceKey);
                     // Reset the entity-creation form (without losing the
                     // pre-fill), then send the user back to the bucket
                     // picker so they can choose what kind of entity to
@@ -818,13 +831,13 @@ export default function EntityWizard({
                     setEinLast4(''); setFormationDate(''); setTaxElection(''); setRegisteredAgent('');
                     setLinkedDocIds([]); setGrossAssets(''); setGrossDebts('');
                     setCredentials([]);
-                    setConnections([{ sourceKey: `beneficiary:${benId}`, role: 'owner', ownership_pct: 100 }]);
+                    setConnections([{ sourceKey: assignSourceKey, role: 'owner', ownership_pct: 100 }]);
                     setStep(1);
                   }}
                   className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold text-[var(--gold)] border border-dashed border-[var(--gold)]/40 hover:bg-[var(--gold)]/5"
                   data-testid="wizard-assign-create-new-entity"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Or create a new entity for them
+                  <Plus className="w-3.5 h-3.5" /> Or create a new entity for this person
                 </button>
               </div>
 
@@ -893,19 +906,21 @@ export default function EntityWizard({
                 How does <span className="font-bold text-[var(--t)]">{name || 'this entity'}</span> connect to people or other entities?
               </p>
 
-              {prefilledBeneficiaryId && (() => {
-                const ben = (beneficiaries || []).find((b) => b.id === prefilledBeneficiaryId);
-                const benName = ben
-                  ? (ben.name || `${ben.first_name || ''} ${ben.last_name || ''}`.trim() || 'this beneficiary')
-                  : 'this beneficiary';
+              {prefilledSourceKey && (() => {
+                // Resolve the prefilled source key (e.g. `user:abc`,
+                // `beneficiary:xxx`, `external_person:yyy`) into a display
+                // label by walking the same source-options list used by
+                // the picker.
+                const opt = sourceOptions.find((o) => o.value === prefilledSourceKey);
+                const displayName = opt?.label?.split(' — ')[0] || 'this person';
                 return (
                   <div
                     className="rounded-xl p-3 text-[12px] leading-snug"
                     style={{ background: 'rgba(212,165,55,0.08)', border: '1px solid rgba(212,165,55,0.35)', color: 'var(--t)' }}
                     data-testid="wizard-prefill-banner"
                   >
-                    <span className="font-bold text-[var(--gold)]">{benName}</span>{' '}
-                    is pre-filled as the first connection. Pick their role and ownership %
+                    <span className="font-bold text-[var(--gold)]">{displayName}</span>{' '}
+                    is pre-filled as the first connection. Pick the role and ownership %
                     below — or remove them and pick someone else if you change your mind.
                   </div>
                 );

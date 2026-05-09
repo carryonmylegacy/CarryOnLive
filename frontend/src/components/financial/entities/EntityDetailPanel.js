@@ -425,10 +425,19 @@ export default function EntityDetailPanel({
                   </div>
                 </div>
               )}
+            </>
+          )}
 
-              {/* Connections (for entities) */}
-              {isEntity && (
-                <>
+          {/* Connections section — ALWAYS visible (in both edit-mode and
+              read-only mode). The "Add a connection" button used to be
+              gated behind !editing, which meant a user who tapped the
+              pencil on a Trust tile to add themselves as a beneficiary
+              was stuck staring at the entity edit form with no obvious
+              way to manage relationships. Pulling it out of the edit
+              gate makes the feature discoverable from every entry point
+              into this panel. */}
+          {isEntity && (
+            <>
                   <div>
                     <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--t5)] mb-2">Who connects in</div>
                     {incomingRels.length === 0 && (
@@ -538,16 +547,18 @@ export default function EntityDetailPanel({
                     </div>
                   )}
 
-                  <div className="pt-2 border-t border-[var(--b)]">
-                    <Button
-                      variant="ghost"
-                      onClick={handleDeleteEntity}
-                      className="text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] w-full"
-                      data-testid="detail-delete-entity"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" /> Delete this entity
-                    </Button>
-                  </div>
+                  {!editing && (
+                    <div className="pt-2 border-t border-[var(--b)]">
+                      <Button
+                        variant="ghost"
+                        onClick={handleDeleteEntity}
+                        className="text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] w-full"
+                        data-testid="detail-delete-entity"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" /> Delete this entity
+                      </Button>
+                    </div>
+                  )}
                 </>
               )}
 
@@ -563,19 +574,19 @@ export default function EntityDetailPanel({
                       ))}
                     </div>
                   )}
-                  <div className="pt-2 border-t border-[var(--b)]">
-                    <Button
-                      variant="ghost"
-                      onClick={handleDeleteExternal}
-                      className="text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] w-full"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" /> Remove this person
-                    </Button>
-                  </div>
+                  {!editing && (
+                    <div className="pt-2 border-t border-[var(--b)]">
+                      <Button
+                        variant="ghost"
+                        onClick={handleDeleteExternal}
+                        className="text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] w-full"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" /> Remove this person
+                      </Button>
+                    </div>
+                  )}
                 </>
               )}
-            </>
-          )}
 
         {/* Custom confirm modal — PWA-iOS blocks window.confirm */}
         {confirmPrompt && (
