@@ -202,6 +202,23 @@ class RouteErrorBoundary extends React.Component {
         }, 250);
       }
     }
+    // Online ChunkLoadError auto-recovery (May 2026): the user hit a
+    // missing chunk while ONLINE, which almost always means a fresh
+    // deploy shipped new chunk hashes and the cached main.js still
+    // references the old filenames. A plain reload(true) often serves
+    // the same stale shell from the service worker and re-triggers the
+    // same crash. Fire one silent hard-reload (unregister SW + clear
+    // caches + cache-busted location.replace). Guarded by sessionStorage
+    // so we never loop — if the hard-reload didn't fix it, the user
+    // sees the boundary UI on the second crash and can sign out.
+    if (this.state.errorKind === 'chunk') {
+      const online = typeof navigator !== 'undefined' && navigator.onLine !== false;
+      let alreadyTried = false;
+      try { alreadyTried = window.sessionStorage?.getItem('carryon_chunk_recovery') === '1'; } catch { /* private mode */ }
+      if (online && !alreadyTried) {
+        this.handleHardReload();
+      }
+    }
   }
   componentDidMount() {
     this._onPop = () => {
@@ -232,6 +249,40 @@ class RouteErrorBoundary extends React.Component {
     window.removeEventListener('popstate', this._onPop);
     window.removeEventListener('online', this._onOnline);
   }
+  handleHardReload = async () => {
+    // True post-deploy chunk-load recovery for a PWA. A naive
+    // window.location.reload() often re-serves the same stale shell
+    // from the service worker and we land back on the broken main.js
+    // referencing the missing chunk filename. Steps, in order:
+    //   1. Mark the attempt in sessionStorage so the boundary doesn't
+    //      retry-loop if the new shell is also broken.
+    //   2. Unregister every service-worker registration so the next
+    //      navigation hits the network for a fresh index.html.
+    //   3. Clear every Cache Storage entry — covers Workbox precache,
+    //      runtime caches, and the founder's LocalForage shells.
+    //   4. location.replace() with a cache-bust query so the browser
+    //      and any intermediate CDN don't serve the old HTML.
+    try { window.sessionStorage?.setItem('carryon_chunk_recovery', '1'); } catch { /* private mode */ }
+    try {
+      if (typeof navigator !== 'undefined' && navigator.serviceWorker?.getRegistrations) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister().catch(() => {})));
+      }
+    } catch { /* SW APIs unavailable / disabled */ }
+    try {
+      if (typeof caches !== 'undefined' && caches.keys) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k).catch(() => {})));
+      }
+    } catch { /* Cache APIs unavailable */ }
+    try {
+      const u = new URL(window.location.href);
+      u.searchParams.set('_cb', String(Date.now()));
+      window.location.replace(u.toString());
+    } catch {
+      window.location.reload();
+    }
+  };
   handleRetry = () => {
     // When offline, retrying the same broken route just re-throws —
     // the user sees a flash and stays on the error screen. Send them
@@ -341,7 +392,7 @@ class RouteErrorBoundary extends React.Component {
                   Try again
                 </button>
                 {!offline && (
-                  <button onClick={() => window.location.reload()} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff' }} data-testid="error-boundary-reload">
+                  <button onClick={this.handleHardReload} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff' }} data-testid="error-boundary-reload">
                     Reload
                   </button>
                 )}
