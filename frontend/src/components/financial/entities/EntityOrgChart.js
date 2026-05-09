@@ -793,29 +793,61 @@ export default function EntityOrgChart({
   }, []);
 
   // ── Double-tap to reset → re-applies current fit/center mode ─────────
-  // Only triggers when both taps land on empty canvas (not on a tile or
-  // button) so it never hijacks tile dbl-clicks.
+  // Only fires for STATIONARY taps. The previous version listened to
+  // pointerup alone, so two quick pan-and-release gestures across the
+  // empty canvas registered as a double-tap and yanked the viewport
+  // back to center — which manifested as "the chart keeps jumping
+  // back" while the user was just trying to pan around.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    let lastTap = 0;
-    const onTap = (e) => {
+    const TAP_MOVE_TOL = 8;   // px — anything more is a drag, not a tap
+    const TAP_TIME_TOL = 250; // ms — anything longer is a long-press
+    const DBL_GAP = 320;      // ms — max gap between two taps
+    const downRef = { x: 0, y: 0, t: 0, valid: false };
+    let lastTapAt = 0;
+    const onDown = (e) => {
       const t = e.target;
       if (t && (
         t.closest?.('[data-testid^="entity-node-"]') ||
         t.closest?.('button') ||
         t.closest?.('a')
-      )) return;
+      )) {
+        downRef.valid = false;
+        return;
+      }
+      downRef.x = e.clientX; downRef.y = e.clientY;
+      downRef.t = Date.now();
+      downRef.valid = true;
+    };
+    const onUp = (e) => {
+      if (!downRef.valid) return;
+      const dx = e.clientX - downRef.x;
+      const dy = e.clientY - downRef.y;
+      const dt = Date.now() - downRef.t;
+      // Disqualify drags (panning), long-presses, multi-touch slips.
+      if (Math.hypot(dx, dy) > TAP_MOVE_TOL || dt > TAP_TIME_TOL) {
+        lastTapAt = 0;
+        downRef.valid = false;
+        return;
+      }
       const now = Date.now();
-      if (now - lastTap < 320) {
-        lastTap = 0;
+      if (now - lastTapAt < DBL_GAP) {
+        lastTapAt = 0;
         setRelayoutTick((n) => n + 1);
       } else {
-        lastTap = now;
+        lastTapAt = now;
       }
+      downRef.valid = false;
     };
-    el.addEventListener('pointerup', onTap);
-    return () => el.removeEventListener('pointerup', onTap);
+    el.addEventListener('pointerdown', onDown);
+    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointercancel', onUp);
+    return () => {
+      el.removeEventListener('pointerdown', onDown);
+      el.removeEventListener('pointerup', onUp);
+      el.removeEventListener('pointercancel', onUp);
+    };
   }, []);
 
   // ---- drag handling ----
