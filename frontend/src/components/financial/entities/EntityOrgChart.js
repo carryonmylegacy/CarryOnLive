@@ -294,6 +294,17 @@ function routeEdge(srcRect, tgtRect, obstacles, edgeId) {
       const below = hit.y + hit.h + 14;
       midY = Math.abs(midY - above) < Math.abs(midY - below) ? above : below;
     }
+    // Clamp midY into the corridor between source and target. Without
+    // this, deflecting around an obstacle that sits OUTSIDE the
+    // source→target band can push the horizontal sweep (and the
+    // ownership-% badge that anchors to it) on top of the source or
+    // target tile — that's how the "100% pill eats the benefactor's
+    // name" bug used to manifest.
+    const corridorMin = Math.min(s2.y, t2.y) + 12;
+    const corridorMax = Math.max(s2.y, t2.y) - 12;
+    if (corridorMax > corridorMin) {
+      midY = Math.max(corridorMin, Math.min(corridorMax, midY));
+    }
     // Vertical legs from s2 → (s2.x, midY) → (t2.x, midY) → t2
     // Check vertical legs don't punch through obstacles either; if they do, push midX
     let leftX = s2.x, rightX = t2.x;
@@ -313,6 +324,12 @@ function routeEdge(srcRect, tgtRect, obstacles, edgeId) {
       const left = hit.x - 14;
       const right = hit.x + hit.w + 14;
       midX = Math.abs(midX - left) < Math.abs(midX - right) ? left : right;
+    }
+    // Same corridor clamp on X for symmetric H-V-H routing.
+    const corridorMin = Math.min(s2.x, t2.x) + 12;
+    const corridorMax = Math.max(s2.x, t2.x) - 12;
+    if (corridorMax > corridorMin) {
+      midX = Math.max(corridorMin, Math.min(corridorMax, midX));
     }
     mids = [{ x: midX, y: s2.y }, { x: midX, y: t2.y }];
   } else {
@@ -928,7 +945,8 @@ export default function EntityOrgChart({
       className="relative"
       style={{
         width: '100%',
-        minHeight: Math.max(260, outerH * zoom),
+        height: '100%',
+        minHeight: 260,
         overflow: 'auto',
         WebkitOverflowScrolling: 'touch',
         touchAction: draggingKey ? 'none' : 'auto',

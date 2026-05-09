@@ -377,7 +377,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
         </div>
       </div>
 
-      <div className="overflow-auto" style={{ maxHeight: maxH, WebkitOverflowScrolling: 'touch' }}>
+      <div style={{ height: maxH, position: 'relative' }}>
         {viewMode === 'chart' ? (
           <EntityOrgChart
             key={resetTick}
@@ -395,14 +395,16 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
             fitOnLoad={fitOnLoad}
           />
         ) : (
-          <EntityListView
-            entities={entities}
-            externals={externals}
-            relationships={relationships}
-            beneficiaries={beneficiaries || []}
-            user={effectiveUser}
-            onSelectNode={(node) => setEditingNode(node)}
-          />
+          <div className="overflow-auto" style={{ height: maxH, WebkitOverflowScrolling: 'touch' }}>
+            <EntityListView
+              entities={entities}
+              externals={externals}
+              relationships={relationships}
+              beneficiaries={beneficiaries || []}
+              user={effectiveUser}
+              onSelectNode={(node) => setEditingNode(node)}
+            />
+          </div>
         )}
       </div>
 
