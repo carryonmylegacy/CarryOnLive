@@ -58,7 +58,7 @@ export const BUCKETS = [
   {
     id: 'business',
     icon: 'Building2',
-    label: 'A business I own or run',
+    label: 'A business',
     sub: 'LLCs, corporations, partnerships',
     accent: 'steel',
   },
