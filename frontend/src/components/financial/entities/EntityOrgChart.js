@@ -456,7 +456,7 @@ function PersonTile({ node, palette, dragging, locked, onPointerDownDrag, onClic
       {node.sublabel && (
         <span className="text-[11px] text-[var(--t4)] text-center leading-tight truncate w-full" style={{ pointerEvents: 'none' }}>{node.sublabel}</span>
       )}
-      {node.primary_equity_pct != null && (
+      {node.primary_equity_pct != null && node.kind !== 'user' && (
         <span
           className="inline-block text-[11px] font-bold rounded-full px-1.5 py-0.5 leading-none"
           style={{
