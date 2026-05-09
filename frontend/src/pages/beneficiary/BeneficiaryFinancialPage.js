@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import {
   DollarSign, Receipt, Landmark, PiggyBank, Search, CheckCircle2,
   ChevronLeft, ChevronRight, Loader2, TrendingUp, TrendingDown,
-  XCircle, Phone, ExternalLink, ClipboardList, X
+  XCircle, Phone, ExternalLink, ClipboardList, X, Network,
 } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -81,8 +81,36 @@ const BeneficiaryFinancialPage = () => {
   const [selectedCalendarDay, setSelectedCalendarDay] = useState(null);
   const [isTransitioned, setIsTransitioned] = useState(false);
   const [cancelAdvisor, setCancelAdvisor] = useState(null); // bill being cancelled
+  const [esEntityCount, setEsEntityCount] = useState(0);
+  const [esEstateId, setEsEstateId] = useState(null);
 
   useEffect(() => { fetchAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pre-fetch the entity count from the read-only beneficiary view so
+  // the "Entities & Structures" CTA card only renders if there's
+  // something to actually show. Server returns visible=false (and an
+  // empty list) when the beneficiary isn't allowed to see — exactly
+  // what we want.
+  useEffect(() => {
+    const id = localStorage.getItem('beneficiary_estate_id');
+    if (!id) return;
+    setEsEstateId(id);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await axios.get(
+          `${API_URL}/financial/entities/beneficiary-view/${id}`,
+          getAuthHeaders ? { headers: getAuthHeaders().headers } : {}
+        );
+        if (cancelled) return;
+        if (res.data?.visible) setEsEntityCount((res.data.entities || []).length);
+        else setEsEntityCount(0);
+      } catch {
+        if (!cancelled) setEsEntityCount(0);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchAll = async () => {
     const estateId = localStorage.getItem('beneficiary_estate_id');
@@ -220,6 +248,31 @@ const BeneficiaryFinancialPage = () => {
           <p className="text-xs text-[var(--t5)]">Bills, debts, and accounts for your reference</p>
         </div>
       </div>
+
+      {/* Entities & Structures viewer link — appears when the
+          benefactor has any E&S nodes available to this beneficiary
+          (server-gated). Read-only chart with linked docs + permitted
+          credentials. */}
+      {esEntityCount > 0 && esEstateId && (
+        <div
+          onClick={() => navigate(`/beneficiary/entities/${esEstateId}`)}
+          className="rounded-2xl p-4 cursor-pointer flex items-center gap-3 transition-transform duration-150 active:scale-[0.99]"
+          style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.45)' }}
+          data-testid="ben-financial-entities-cta"
+        >
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(212,175,55,0.18)' }}>
+            <Network className="w-5 h-5 text-[var(--gold)]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-[var(--t)]">Entities & Structures</div>
+            <div className="text-xs text-[var(--t4)]">
+              {esEntityCount} {esEntityCount === 1 ? 'entity' : 'entities'} — businesses, trusts and connections
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-[var(--t4)] flex-shrink-0" />
+        </div>
+      )}
 
       {/* Summary Cards */}
       {summary && (

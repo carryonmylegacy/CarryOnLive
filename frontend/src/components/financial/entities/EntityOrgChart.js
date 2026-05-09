@@ -423,7 +423,7 @@ function PersonTile({ node, palette, dragging, locked, onPointerDownDrag, onClic
           don't get an Edit pencil because they're handled differently. */}
       <div className="absolute top-0 right-0 flex flex-col gap-1">
         <TileIconButton icon={Info} onClick={onInfoClick} label="Info" testId={`tile-info-${node.key}`} />
-        {node.kind !== 'user' && (
+        {node.kind !== 'user' && onEditClick && (
           <TileIconButton icon={Pencil} onClick={onEditClick} label="Edit" testId={`tile-edit-${node.key}`} />
         )}
       </div>
@@ -477,7 +477,9 @@ function EntityTile({ node, dragging, locked, onPointerDownDrag, onClick, onDoub
       {/* Action buttons */}
       <div className="absolute top-1.5 right-1.5 flex flex-col gap-1">
         <TileIconButton icon={Info} onClick={onInfoClick} label="Info" testId={`tile-info-entity-${e.id}`} />
-        <TileIconButton icon={Pencil} onClick={onEditClick} label="Edit" testId={`tile-edit-entity-${e.id}`} />
+        {onEditClick && (
+          <TileIconButton icon={Pencil} onClick={onEditClick} label="Edit" testId={`tile-edit-entity-${e.id}`} />
+        )}
       </div>
     </div>
   );
@@ -489,7 +491,7 @@ function EntityTile({ node, dragging, locked, onPointerDownDrag, onClick, onDoub
 export default function EntityOrgChart({
   estateId, entities, externals, relationships, beneficiaries,
   onSingleClickNode, onDoubleClickNode, onInfoClickNode, onEditClickNode,
-  cleanUpSignal, locked = false,
+  cleanUpSignal, locked = false, readOnly = false,
 }) {
   const { user } = useAuth();
   const containerRef = useRef(null);
@@ -770,12 +772,12 @@ export default function EntityOrgChart({
             >
               {n.kind === 'entity' ? (
                 <EntityTile node={n} dragging={isDragging}
-                  locked={locked}
+                  locked={locked || readOnly}
                   onPointerDownDrag={(e) => onPointerDownDrag(e, n)}
                   onClick={handleClick}
-                  onDoubleClick={handleDoubleClick}
+                  onDoubleClick={readOnly ? undefined : handleDoubleClick}
                   onInfoClick={handleInfoClick}
-                  onEditClick={handleEditClick} />
+                  onEditClick={readOnly ? undefined : handleEditClick} />
               ) : (
                 <PersonTile
                   node={n}
@@ -785,12 +787,12 @@ export default function EntityOrgChart({
                     PALETTE.slate
                   }
                   dragging={isDragging}
-                  locked={locked}
+                  locked={locked || readOnly}
                   onPointerDownDrag={(e) => onPointerDownDrag(e, n)}
                   onClick={handleClick}
-                  onDoubleClick={handleDoubleClick}
+                  onDoubleClick={readOnly ? undefined : handleDoubleClick}
                   onInfoClick={handleInfoClick}
-                  onEditClick={handleEditClick}
+                  onEditClick={readOnly ? undefined : handleEditClick}
                 />
               )}
             </div>

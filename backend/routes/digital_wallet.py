@@ -30,6 +30,7 @@ class DigitalWalletEntry(BaseModel):
     assigned_beneficiary_name: Optional[str] = None
     category: str = "other"  # crypto, social_media, email, banking, cloud, subscription, other
     linked_entity_id: Optional[str] = None  # CFP entity (LLC, trust, etc.) this credential belongs to
+    beneficiary_visibility: str = "private"  # 'private' | 'posthumous_only' | 'show_now'
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
@@ -42,6 +43,7 @@ class DigitalWalletCreate(BaseModel):
     assigned_beneficiary_id: Optional[str] = None
     category: str = "other"
     linked_entity_id: Optional[str] = None
+    beneficiary_visibility: Optional[str] = "private"
 
 
 class DigitalWalletUpdate(BaseModel):
@@ -53,6 +55,7 @@ class DigitalWalletUpdate(BaseModel):
     assigned_beneficiary_id: Optional[str] = None
     category: Optional[str] = None
     linked_entity_id: Optional[str] = None
+    beneficiary_visibility: Optional[str] = None
 
 
 @router.get("/digital-wallet/{estate_id}")
@@ -181,6 +184,7 @@ async def create_digital_wallet_entry(data: DigitalWalletCreate, current_user: d
         assigned_beneficiary_name=ben_name,
         category=data.category,
         linked_entity_id=data.linked_entity_id,
+        beneficiary_visibility=(data.beneficiary_visibility or "private"),
     )
 
     doc = entry.model_dump()
@@ -250,6 +254,12 @@ async def update_digital_wallet_entry(
         # trust, etc.) — surfaced when the entity wizard's
         # duplicate-login hint is accepted.
         update["linked_entity_id"] = data.linked_entity_id or None
+    if data.beneficiary_visibility is not None:
+        # 'private' (default), 'posthumous_only', or 'show_now'. Drives
+        # what the beneficiary read-only view returns.
+        valid = {"private", "posthumous_only", "show_now"}
+        if data.beneficiary_visibility in valid:
+            update["beneficiary_visibility"] = data.beneficiary_visibility
 
     if update:
         update["updated_at"] = datetime.now(timezone.utc).isoformat()

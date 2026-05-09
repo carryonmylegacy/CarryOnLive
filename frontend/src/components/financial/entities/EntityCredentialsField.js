@@ -22,7 +22,7 @@
  *     the expanded form so the user can fill them in immediately.
  */
 import React from 'react';
-import { Plus, Trash2, Eye, EyeOff, KeyRound, Pencil, Check, Link2 } from 'lucide-react';
+import { Plus, Trash2, Eye, EyeOff, KeyRound, Pencil, Check, Link2, Lock, Hourglass } from 'lucide-react';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Textarea } from '../../ui/textarea';
@@ -35,6 +35,7 @@ export const blankCredential = (defaultName = '') => ({
   password: '',
   additional_access: '',
   notes: '',
+  beneficiary_visibility: 'private',
 });
 
 export default function EntityCredentialsField({
@@ -373,6 +374,48 @@ export default function EntityCredentialsField({
                 data-testid={`entity-credential-notes-${idx}`}
               />
             </div>
+
+            {/* ── Beneficiary visibility chip ──────────────────────────
+                Three-state cycle controlling whether (and when) this
+                credential is revealed in the read-only beneficiary
+                E&S view. Default = private. The backend gates "show
+                now" against the global E&S share toggle, so the user
+                can pick this state freely here regardless of the
+                global setting. */}
+            {(() => {
+              const vis = c.beneficiary_visibility || 'private';
+              const STATES = [
+                { id: 'private',          label: 'Private',         Icon: Lock,      bg: 'transparent', fg: 'var(--t5)', border: 'var(--b)' },
+                { id: 'posthumous_only',  label: 'Posthumous only', Icon: Hourglass, bg: 'rgba(212,165,55,0.08)', fg: 'var(--gold)', border: 'rgba(212,165,55,0.45)' },
+                { id: 'show_now',         label: 'Show now',        Icon: Eye,       bg: 'var(--gold)', fg: '#0b1120', border: 'var(--gold)' },
+              ];
+              const cur = STATES.find((s) => s.id === vis) || STATES[0];
+              const idxCur = STATES.indexOf(cur);
+              const next = STATES[(idxCur + 1) % STATES.length];
+              return (
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <div className="text-[10.5px] uppercase tracking-wide font-bold text-[var(--t5)]">
+                    Beneficiary visibility
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => update(idx, { beneficiary_visibility: next.id })}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full transition-all"
+                    style={{ background: cur.bg, color: cur.fg, border: `1px solid ${cur.border}` }}
+                    data-testid={`entity-credential-visibility-${idx}`}
+                    aria-label={`Beneficiary visibility: ${cur.label}. Tap to cycle.`}
+                    title={
+                      cur.id === 'private' ? 'Beneficiaries never see this credential.'
+                        : cur.id === 'posthumous_only' ? 'Beneficiaries see this only after you transition.'
+                          : 'Beneficiaries see this now (only for those you selected via the E&S Share toggle).'
+                    }
+                  >
+                    <cur.Icon className="w-3 h-3" />
+                    {cur.label}
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         );
       })}

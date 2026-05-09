@@ -66,6 +66,7 @@ export async function persistEntityCredentials({
         notes: c.notes || null,
         category: 'other',
         linked_entity_id: entityId,
+        beneficiary_visibility: c.beneficiary_visibility || 'private',
       };
 
       if (c._new) {

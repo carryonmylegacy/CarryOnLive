@@ -85,6 +85,7 @@ const UploadCertificatePage = lazy(() => import('./pages/beneficiary/UploadCerti
 const CondolencePage = lazy(() => import('./pages/beneficiary/CondolencePage'));
 const BeneficiarySettingsPage = lazy(() => import('./pages/beneficiary/BeneficiarySettingsPage'));
 const BeneficiaryFinancialPage = lazy(() => import('./pages/beneficiary/BeneficiaryFinancialPage'));
+const BeneficiaryEntitiesPage = lazy(() => import('./pages/beneficiary/BeneficiaryEntitiesPage'));
 
 const CreateEstatePage = lazy(() => import('./pages/CreateEstatePage'));
 
@@ -665,6 +666,7 @@ function AppRoutes() {
         <Route path="/beneficiary/estate-chat" element={<FeatureGate><EstateChatPage /></FeatureGate>} />
         <Route path="/beneficiary/connected-protocol" element={<FeatureGate><BeneficiaryCCPPage /></FeatureGate>} />
         <Route path="/beneficiary/financial" element={<FeatureGate><BeneficiaryFinancialPage /></FeatureGate>} />
+        <Route path="/beneficiary/entities/:estateId" element={<FeatureGate><BeneficiaryEntitiesPage /></FeatureGate>} />
       </Route>
 
       {/* Admin Routes */}

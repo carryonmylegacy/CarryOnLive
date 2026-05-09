@@ -18,6 +18,7 @@ import EntityDetailPanel from './EntityDetailPanel';
 import EntityListView from './EntityListView';
 import EntityQuickInfoPopover from './EntityQuickInfoPopover';
 import EntityDocumentsModal from './EntityDocumentsModal';
+import EntitiesShareToggle from './EntitiesShareToggle';
 
 const LOCK_KEY = (estateId) => `cfp:entities:locked:${estateId || 'global'}`;
 const DRAFT_KEY = (estateId) => `cfp:entityWizard:draft:${estateId || 'global'}`;
@@ -330,6 +331,11 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           >
             <Plus className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">Add</span>
           </Button>
+          <EntitiesShareToggle
+            estateId={estateId}
+            beneficiaries={beneficiaries || []}
+            getAuthHeaders={getAuthHeaders}
+          />
         </div>
       </div>
 

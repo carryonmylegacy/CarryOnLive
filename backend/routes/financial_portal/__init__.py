@@ -12,5 +12,6 @@ from . import designations  # noqa: F401
 from . import summary  # noqa: F401
 from . import portal_aggregate  # noqa: F401
 from . import entities  # noqa: F401
+from . import entities_share  # noqa: F401
 
 __all__ = ["router"]

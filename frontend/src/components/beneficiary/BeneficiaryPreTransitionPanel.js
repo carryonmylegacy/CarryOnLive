@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Shield, FileText, AlertTriangle, FolderOpen, Upload, MessageCircle, Heart, ShieldCheck } from 'lucide-react';
+import axios from 'axios';
+import { Lock, Shield, FileText, AlertTriangle, FolderOpen, Upload, MessageCircle, Heart, ShieldCheck, Network } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
+import { useAuth } from '../../contexts/AuthContext';
+import { API_URL } from '../../config';
 
 /**
  * BeneficiaryPreTransitionPanel — inline pre-transition content rendered
@@ -29,6 +32,31 @@ import { Card, CardContent } from '../ui/card';
  */
 export default function BeneficiaryPreTransitionPanel({ estate, hasExtraDocs }) {
   const navigate = useNavigate();
+  const { getAuthHeaders } = useAuth();
+  const [esShareNow, setEsShareNow] = useState(false);
+
+  // Check whether THIS beneficiary has been granted pre-transition
+  // access to the benefactor's Entities & Structures. Backend returns
+  // a slimmed-down `you_can_see_now` boolean — we never see the list
+  // of OTHER beneficiaries who do or don't have access.
+  useEffect(() => {
+    const id = estate?.id;
+    if (!id) { setEsShareNow(false); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await axios.get(
+          `${API_URL}/financial/entities-share/${id}`,
+          getAuthHeaders ? getAuthHeaders() : {}
+        );
+        if (!cancelled) setEsShareNow(!!res.data?.you_can_see_now);
+      } catch {
+        if (!cancelled) setEsShareNow(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [estate?.id, getAuthHeaders]);
+
   return (
     <div data-testid="beneficiary-pre-transition-panel">
       {/* Lock banner */}
@@ -75,6 +103,26 @@ export default function BeneficiaryPreTransitionPanel({ estate, hasExtraDocs }) 
               <div className="text-xs text-[var(--gn2)]">View contingency plans assigned to you</div>
             </div>
           </div>
+
+          {/* Entities & Structures (E&S) — pre-transition tile, only
+              rendered when the benefactor has explicitly opted this
+              beneficiary in via their CFP "Share E&S" toggle. */}
+          {esShareNow && (
+            <div
+              className="flex items-center gap-3 p-4 rounded-xl mb-2 cursor-pointer transition-transform duration-150 active:scale-[0.98]"
+              style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.18)' }}
+              onClick={() => navigate(`/beneficiary/entities/${estate?.id}`)}
+              data-testid="pre-entities-structures"
+            >
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.15)' }}>
+                <Network className="w-5 h-5 text-[var(--gold)]" />
+              </div>
+              <div className="flex-1">
+                <div className="font-bold text-[var(--t)]">Entities & Structures</div>
+                <div className="text-xs text-[var(--gn2)]">View your benefactor's businesses, trusts, and connections</div>
+              </div>
+            </div>
+          )}
 
           {/* Living Will / Healthcare Directive (gold slot) */}
           <div
