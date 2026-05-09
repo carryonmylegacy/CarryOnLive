@@ -1,5 +1,23 @@
 # CarryOn — Changelog
 
+## May 9, 2026 — Person-Tile Role Title Line
+**Feature**: Each person tile in the Entities & Structures org chart now shows a role title beneath the first/last name, in CarryOn gold.
+
+**Rules** (`components/financial/entities/EntityOrgChart.js`):
+- The benefactor (the user themselves) → "Benefactor"
+- Beneficiary nodes → "Beneficiary"
+- External persons → derived from their connections, comma-separated, de-duplicated, in first-seen order. Uses the canonical `ROLE_OPTIONS.label` from `entityCatalog.js` (e.g., "Trustee", "Co-trustee", "Member (LLC)", "Shareholder", "General Partner", "Beneficiary", etc.). Empty if no connections yet.
+
+**Tile geometry**: PERSON_H bumped from 96 → 110 px to make room for the new line. Existing layout / drag logic untouched.
+
+**Verified**:
+- ESLint clean ✅
+- `bash /app/scripts/check.sh` → 0 WARN, 0 FAIL ✅
+- App boots and renders cleanly ✅
+
+---
+
+
 ## May 9, 2026 — External-Person Photo Persistence Fix
 **Bug**: After uploading a profile photo for an "Outside party" (external_person) in the CFP Entities & Structures editor, the avatar appeared briefly inside the cropper but vanished from the org-chart tile and re-opened edit panel. Photo *was* saving to MongoDB and serving correctly via the backend `/api/photos/...` proxy — yet the iOS PWA dropped the avatar back to initials on every remount.
 

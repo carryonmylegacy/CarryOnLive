@@ -17,7 +17,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Building2, Shield, Landmark, Home, User as UserIcon, Settings, Info, Pencil } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { getEntityPalette, getTypeMeta, ROLE_PALETTE, PALETTE } from '../../../config/entityCatalog';
+import { getEntityPalette, getTypeMeta, ROLE_PALETTE, PALETTE, ROLE_OPTIONS } from '../../../config/entityCatalog';
 import { AvatarCircle } from '../../AvatarCircle';
 
 const BUCKET_ICON = {
@@ -29,7 +29,9 @@ const BUCKET_ICON = {
 const ENTITY_W = 200;
 const ENTITY_H = 92;
 const PERSON_W = 100;
-const PERSON_H = 96;
+// Extra height (was 96) to make room for the role-title line beneath the
+// last name (e.g., "Trustee" / "Co-trustee, Member" / "Benefactor").
+const PERSON_H = 110;
 const PADDING = 24;          // canvas inner padding
 const ROW_GAP = 70;          // vertical gap between layout rows
 const COL_GAP = 30;          // horizontal gap between sibling tiles
@@ -110,6 +112,30 @@ function buildGraph({ entities, externals, relationships, beneficiaries, user })
     if (!node) return;
     const cur = node.primary_equity_pct;
     if (cur == null || e.ownership_pct > cur) node.primary_equity_pct = e.ownership_pct;
+  });
+
+  // Role title beneath the name.
+  //   user (the benefactor)        → "Benefactor" (always)
+  //   beneficiary                  → "Beneficiary" (always)
+  //   external_person              → derived from their connections —
+  //                                  comma-separate de-duped role labels
+  //                                  in first-seen order. Empty if no
+  //                                  connections yet.
+  const ROLE_LABEL = new Map(ROLE_OPTIONS.map((r) => [r.id, r.label]));
+  pool.forEach((n, k) => {
+    if (n.kind === 'user') { n.title = 'Benefactor'; return; }
+    if (n.kind === 'beneficiary') { n.title = 'Beneficiary'; return; }
+    if (n.kind !== 'external_person') return;
+    const seen = new Set();
+    const labels = [];
+    edges.forEach((e) => {
+      if (e.sourceKey !== k) return;
+      const lbl = ROLE_LABEL.get(e.role) || e.role;
+      if (!lbl || seen.has(lbl)) return;
+      seen.add(lbl);
+      labels.push(lbl);
+    });
+    n.title = labels.join(', ');
   });
 
   // Persons (user/beneficiary/external_person) are only included if they touch
@@ -455,6 +481,16 @@ function PersonTile({ node, palette, dragging, locked, onPointerDownDrag, onClic
       <span className="text-xs font-semibold text-[var(--t)] text-center leading-tight truncate w-full" style={{ pointerEvents: 'none' }}>{node.label}</span>
       {node.sublabel && (
         <span className="text-[11px] text-[var(--t4)] text-center leading-tight truncate w-full" style={{ pointerEvents: 'none' }}>{node.sublabel}</span>
+      )}
+      {node.title && (
+        <span
+          className="text-[10px] font-semibold text-center leading-tight truncate w-full"
+          style={{ color: 'var(--gold)', pointerEvents: 'none' }}
+          title={node.title}
+          data-testid={`entity-node-title-${node.key}`}
+        >
+          {node.title}
+        </span>
       )}
       {node.primary_equity_pct != null && node.kind !== 'user' && (
         <span
