@@ -715,47 +715,86 @@ export default function EntityOrgChart({
     }
   }, [zoom]);
 
-  // ── Pinch-to-zoom (iOS Safari) ────────────────────────────────────────
-  // Listens to gesture* events. Damping factor 0.45 makes Safari's raw
-  // e.scale ramp feel controllable. Anchored at the gesturestart midpoint.
+  // ── Pinch-to-zoom (touch events) ──────────────────────────────────────
+  // Switched from iOS Safari `gesture*` events to plain `touch*` events.
+  // gesture* gave us flaky e.clientX (kept the gesturestart centroid
+  // through gesturechange instead of tracking the live midpoint), would
+  // bail mid-pinch when React's setState batching paused the gesture
+  // for a frame, and never fired at all on Android Chrome / Edge — all
+  // of which combined to "zooms not where my fingers are / stops
+  // mid-pinch / jitters". Touch events expose the live finger
+  // positions directly and let us write zoom + scroll synchronously
+  // in the same event tick, so the visible content stays anchored.
+  const pinchRef = useRef(null);
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const base = { zoom: 1, screenX: 0, screenY: 0, worldX: 0, worldY: 0 };
-    const onStart = (e) => {
+    const onTouchStart = (e) => {
+      // Don't pinch if a tile-drag is already in flight.
+      if (dragStateRef.current) return;
+      if (e.touches.length !== 2) return;
       e.preventDefault();
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const cx = (t1.clientX + t2.clientX) / 2;
+      const cy = (t1.clientY + t2.clientY) / 2;
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
       const rect = el.getBoundingClientRect();
+      const ax = cx - rect.left;
+      const ay = cy - rect.top;
       const z = zoomRef.current;
-      base.zoom = z;
-      base.screenX = e.clientX - rect.left;
-      base.screenY = e.clientY - rect.top;
-      base.worldX = (base.screenX + el.scrollLeft) / z;
-      base.worldY = (base.screenY + el.scrollTop) / z;
-      scrollIntentRef.current = {
-        type: 'anchor',
-        worldX: base.worldX,
-        worldY: base.worldY,
-        screenX: base.screenX,
-        screenY: base.screenY,
+      pinchRef.current = {
+        startDist: Math.max(20, dist), // avoid divide-by-tiny later
+        startZoom: z,
+        anchorScreenX: ax,
+        anchorScreenY: ay,
+        anchorWorldX: (ax + el.scrollLeft) / z,
+        anchorWorldY: (ay + el.scrollTop) / z,
       };
     };
-    const onChange = (e) => {
+    const onTouchMove = (e) => {
+      const p = pinchRef.current;
+      if (!p) return;
+      if (e.touches.length !== 2) return;
       e.preventDefault();
-      const damped = Math.pow(e.scale || 1, 0.45);
-      const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, base.zoom * damped));
-      setZoom(+next.toFixed(3));
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      const ratio = dist / p.startDist;
+      // Mild damping (0.85) — keeps the gesture from over-amplifying
+      // small finger movements without making it feel laggy.
+      const damped = Math.pow(ratio, 0.85);
+      const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, p.startZoom * damped));
+      // Imperatively pin the anchor to the gesturestart midpoint:
+      // newScrollLeft = anchorWorldX * newZoom − anchorScreenX. Doing
+      // this synchronously in the same tick as setZoom (instead of in
+      // a useLayoutEffect on [zoom]) prevents the visible "snap" the
+      // user was seeing when React batched zoom updates.
+      zoomRef.current = next;
+      setZoom(+next.toFixed(4));
+      // After React commits the new transform, set scroll so the
+      // anchor stays under the fingers. Schedule via rAF so we run
+      // after the layout is up-to-date.
+      requestAnimationFrame(() => {
+        const lEl = containerRef.current;
+        if (!lEl) return;
+        lEl.scrollLeft = Math.max(0, p.anchorWorldX * next - p.anchorScreenX);
+        lEl.scrollTop = Math.max(0, p.anchorWorldY * next - p.anchorScreenY);
+      });
     };
-    const onEnd = (e) => {
-      e.preventDefault();
-      scrollIntentRef.current = null;
+    const onTouchEnd = (e) => {
+      // End the pinch when we drop below 2 fingers.
+      if (e.touches.length < 2) {
+        pinchRef.current = null;
+      }
     };
-    el.addEventListener('gesturestart', onStart, { passive: false });
-    el.addEventListener('gesturechange', onChange, { passive: false });
-    el.addEventListener('gestureend', onEnd, { passive: false });
+    el.addEventListener('touchstart', onTouchStart, { passive: false });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd);
+    el.addEventListener('touchcancel', onTouchEnd);
     return () => {
-      el.removeEventListener('gesturestart', onStart);
-      el.removeEventListener('gesturechange', onChange);
-      el.removeEventListener('gestureend', onEnd);
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
     };
   }, []); // attach once
 
@@ -859,6 +898,10 @@ export default function EntityOrgChart({
     // Don't start dragging on right-click or on the node click handler — we use
     // a small movement threshold below to disambiguate click vs drag.
     if (e.button === 2) return;
+    // Bail if a pinch is already active — pinch-then-drag-while-pinch
+    // produced "tile jumping" because both gestures wrote to the
+    // viewport in conflicting ways.
+    if (pinchRef.current) return;
     const cb = containerRef.current?.getBoundingClientRect();
     if (!cb) return;
     e.preventDefault();
@@ -876,24 +919,52 @@ export default function EntityOrgChart({
       h: node.h,
     };
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+    // Also wire window-level listeners as a safety net. iOS PWA
+    // setPointerCapture is unreliable across Safari versions — without
+    // these, a finger that drifts off the tile element would lose
+    // pointermove events and the tile would "stick" until the next
+    // pointer event on the chart, manifesting as the tile teleporting
+    // when the user re-touched the canvas.
+    window.addEventListener('pointermove', onWindowPointerMove);
+    window.addEventListener('pointerup', onWindowPointerUp);
+    window.addEventListener('pointercancel', onWindowPointerUp);
     setDraggingKey(node.key);
   };
 
-  const onPointerMove = (e) => {
+  const applyDragMove = (clientX, clientY) => {
     const ds = dragStateRef.current;
     if (!ds) return;
-    const dx = e.clientX - ds.startClientX;
-    const dy = e.clientY - ds.startClientY;
+    const dx = clientX - ds.startClientX;
+    const dy = clientY - ds.startClientY;
     if (!ds.moved && Math.hypot(dx, dy) < 4) return; // movement threshold
     ds.moved = true;
     // Pointer deltas are in viewport pixels but tile coords live in
     // natural-canvas space. With a CSS scale(zoom) wrapper we have to
     // divide deltas by zoom or the dragged tile drifts away from the
-    // cursor at non-1× zoom levels.
-    const z = zoom || 1;
+    // cursor at non-1× zoom levels. Read zoom from the ref (always
+    // current) — closing over React state could read a stale value
+    // briefly during pinch+drag interleavings.
+    const z = zoomRef.current || 1;
     const nextX = ds.origX + dx / z;
     const nextY = ds.origY + dy / z;
     setOverrides((prev) => ({ ...prev, [ds.key]: { x: nextX, y: nextY } }));
+  };
+
+  const onPointerMove = (e) => {
+    applyDragMove(e.clientX, e.clientY);
+  };
+
+  // Window-level fallback: we listen here whenever a drag is in flight
+  // so movements that leave the chart's bounding box still update the
+  // tile. Removed in onWindowPointerUp.
+  const onWindowPointerMove = (e) => {
+    applyDragMove(e.clientX, e.clientY);
+  };
+  const onWindowPointerUp = () => {
+    onPointerUp();
+    window.removeEventListener('pointermove', onWindowPointerMove);
+    window.removeEventListener('pointerup', onWindowPointerUp);
+    window.removeEventListener('pointercancel', onWindowPointerUp);
   };
 
   const onPointerUp = () => {
