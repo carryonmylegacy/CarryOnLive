@@ -34,17 +34,27 @@ export default function ExternalPersonPhotoField({
   // always covers the circle — no transparent gaps inside it).
   const [pan, setPan] = useState({ x: 0, y: 0 });
 
-  // Final committed photo for display (lifetime of this panel only).
-  const [committedPreview, setCommittedPreview] = useState(null);
+  // After a successful save we hold the server-returned URL here so
+  // the just-saved photo paints immediately without waiting for the
+  // parent's fetchAll() round-trip. We DO NOT use a local blob URL
+  // for this — blob URLs are surprisingly fragile across iOS PWA
+  // re-renders + React StrictMode double-cleanup, which surfaced as
+  // "tapped Save, toast appeared, avatar stayed empty". The server
+  // URL is what the chart will use anyway, so making it the
+  // authority for the post-save preview keeps everything in sync.
+  const [committedUrl, setCommittedUrl] = useState(null);
 
-  const displayUrl = committedPreview || currentUrl || null;
+  const displayUrl = committedUrl || currentUrl || null;
   const showFallback = !displayUrl || loadFailed;
 
-  // Cleanup any object URLs we created so we don't leak.
+  // Revoke the picked-file blob URL on unmount or whenever a new
+  // file replaces it. We only ever have one of these alive at a
+  // time, so the cleanup is straightforward.
   useEffect(() => () => {
-    if (cropUrl) URL.revokeObjectURL(cropUrl);
-    if (committedPreview && committedPreview.startsWith('blob:')) URL.revokeObjectURL(committedPreview);
-  }, [cropUrl, committedPreview]);
+    if (cropUrl) {
+      try { URL.revokeObjectURL(cropUrl); } catch { /* already revoked */ }
+    }
+  }, [cropUrl]);
 
   const handlePick = () => fileRef.current?.click();
 
@@ -161,10 +171,6 @@ export default function ExternalPersonPhotoField({
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
       if (!blob) throw new Error('Could not encode crop.');
 
-      // Optimistic local preview using the cropped blob — survives
-      // the round-trip even if the server URL hiccups on first read.
-      const localPreviewUrl = URL.createObjectURL(blob);
-
       const form = new FormData();
       form.append('file', new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
       const headers = getAuthHeaders ? (getAuthHeaders().headers || {}) : {};
@@ -174,17 +180,18 @@ export default function ExternalPersonPhotoField({
         { headers: { ...headers, 'Content-Type': 'multipart/form-data' } }
       );
       const newUrl = res.data?.photo_url;
+      if (!newUrl) throw new Error('Server did not return a photo URL.');
       toast.success('Photo updated.');
 
-      // Tear down the cropper, swap in the cropped blob preview as
-      // committed display. The blob URL is rock-solid; the server URL
-      // is already in DB and will load on the next mount via currentUrl.
-      URL.revokeObjectURL(cropUrl);
+      // Tear down the cropper and pin the just-saved server URL as
+      // our committed preview. Triggers `<img onError>` → fallback
+      // (UserIcon) if the URL is somehow not yet retrievable, but
+      // never a stale blob: URL that the next paint can't read.
       setCropFile(null);
       setCropUrl(null);
       setImgGeom(null);
       setPan({ x: 0, y: 0 });
-      setCommittedPreview(localPreviewUrl);
+      setCommittedUrl(newUrl);
       setLoadFailed(false);
       onUploaded?.(newUrl);
     } catch (err) {
