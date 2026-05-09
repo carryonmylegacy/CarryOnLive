@@ -1148,6 +1148,18 @@
     animation: panelSlideOut 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
+  /* ── PDF Viewer modal — centered in main-content (right of sidebar) on desktop ── */
+  .pdf-viewer-root {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+  }
+  @media (min-width: 1025px) {
+    .pdf-viewer-root {
+      left: var(--sb-offset, var(--sidebar-width, 260px));
+    }
+  }
+
   /* ── SlidePanel component ── */
   .slide-panel-root {
     position: fixed;

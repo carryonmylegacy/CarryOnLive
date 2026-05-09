@@ -13,9 +13,16 @@
  * are flagged with `_new: true` and persisted on save by the parent.
  * `_dirty` flips to true on any field edit so the parent can decide
  * whether to PATCH vs. skip.
+ *
+ * UX (added per user request):
+ *   • Persisted rows render as a compact READ-ONLY summary with a
+ *     pencil (edit) and trashcan (delete) icon. Tapping the pencil
+ *     expands that row into the full edit form. Tapping it again (or
+ *     "Done") collapses it back. New (unsaved) rows always start in
+ *     the expanded form so the user can fill them in immediately.
  */
 import React from 'react';
-import { Plus, Trash2, Eye, EyeOff, KeyRound } from 'lucide-react';
+import { Plus, Trash2, Eye, EyeOff, KeyRound, Pencil, Check } from 'lucide-react';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Textarea } from '../../ui/textarea';
@@ -36,6 +43,9 @@ export default function EntityCredentialsField({
   defaultAccountName = '',
 }) {
   const [revealed, setRevealed] = React.useState({}); // index -> bool
+  // Per-row expansion. Persisted rows default collapsed; new rows expand
+  // automatically so the user can fill them in.
+  const [expanded, setExpanded] = React.useState({}); // index -> bool
 
   const update = (idx, patch) => {
     const next = credentials.map((c, i) =>
@@ -55,7 +65,20 @@ export default function EntityCredentialsField({
   };
 
   const add = () => {
-    onChange([...credentials, blankCredential(defaultAccountName)]);
+    const next = [...credentials, blankCredential(defaultAccountName)];
+    onChange(next);
+    // New row index = next.length - 1; auto-expand it.
+    setExpanded((e) => ({ ...e, [next.length - 1]: true }));
+  };
+
+  const toggleExpanded = (idx) =>
+    setExpanded((e) => ({ ...e, [idx]: !e[idx] }));
+
+  const isExpanded = (idx, c) => {
+    if (idx in expanded) return expanded[idx];
+    // Default: new rows (no persisted id) start expanded; persisted rows
+    // start collapsed.
+    return !c.id;
   };
 
   const visible = credentials.filter((c) => !c._delete);
@@ -75,6 +98,54 @@ export default function EntityCredentialsField({
       {credentials.map((c, idx) => {
         if (c._delete) return null;
         const show = !!revealed[idx];
+        const open = isExpanded(idx, c);
+        const summaryTitle =
+          (c.account_name || '').trim() || `Credential ${idx + 1}`;
+        const summarySub = (c.login_username || '').trim();
+
+        // ── Collapsed read-only summary row ──────────────────────────
+        if (!open) {
+          return (
+            <div
+              key={c.id || `new-${idx}`}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl"
+              style={{ background: 'var(--card)', border: '1px solid var(--b)' }}
+              data-testid={`entity-credential-row-${idx}`}
+            >
+              <KeyRound className="w-3.5 h-3.5 text-[var(--gold)] flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="text-[13px] text-[var(--t)] truncate font-medium">
+                  {summaryTitle}
+                </div>
+                {summarySub && (
+                  <div className="text-[11px] text-[var(--t5)] truncate">
+                    {summarySub}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => toggleExpanded(idx)}
+                className="p-1.5 rounded-md text-[var(--t5)] hover:text-[var(--gold)] hover:bg-[var(--rdbg)]"
+                aria-label="Edit credential"
+                data-testid={`entity-credential-edit-${idx}`}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => remove(idx)}
+                className="p-1.5 rounded-md text-[var(--t5)] hover:text-[#ef4444] hover:bg-[var(--rdbg)]"
+                aria-label="Remove credential"
+                data-testid={`entity-credential-remove-${idx}`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          );
+        }
+
+        // ── Expanded full edit form ──────────────────────────────────
         return (
           <div
             key={c.id || `new-${idx}`}
@@ -86,15 +157,26 @@ export default function EntityCredentialsField({
               <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[var(--t5)]">
                 <KeyRound className="w-3 h-3" /> Credential {idx + 1}
               </div>
-              <button
-                type="button"
-                onClick={() => remove(idx)}
-                className="p-1.5 rounded-md text-[var(--t5)] hover:text-[#ef4444] hover:bg-[var(--rdbg)]"
-                aria-label="Remove credential"
-                data-testid={`entity-credential-remove-${idx}`}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => toggleExpanded(idx)}
+                  className="p-1.5 rounded-md text-[var(--t5)] hover:text-[var(--gold)] hover:bg-[var(--rdbg)]"
+                  aria-label="Collapse credential"
+                  data-testid={`entity-credential-collapse-${idx}`}
+                >
+                  <Check className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(idx)}
+                  className="p-1.5 rounded-md text-[var(--t5)] hover:text-[#ef4444] hover:bg-[var(--rdbg)]"
+                  aria-label="Remove credential"
+                  data-testid={`entity-credential-remove-${idx}`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
             <div className="space-y-1.5">

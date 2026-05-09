@@ -2805,3 +2805,32 @@ tomorrow → land at the same offset.
 
 ### Housekeeping
 - 74 PASS, 0 WARN, 0 FAIL.
+
+---
+
+## 2026-02-09 — PDF viewer desktop centering + Entity edit/list UI
+
+### PDFViewerModal centered in main-content (not under sidebar)
+- `components/PDFViewerModal.js` — replaced `fixed inset-0` outer
+  with `pdf-viewer-root` class. On desktop (≥1025px) the modal's
+  positioning area starts after the sidebar (`var(--sb-offset, var(--sidebar-width, 260px))`),
+  matching the same offset trick used by `<SlidePanel>`. Inline style
+  sets `--sb-offset` to `72px` when the sidebar is collapsed.
+- `index.css` — new `.pdf-viewer-root` rule (`position: fixed; inset: 0; z-index: 100`)
+  with desktop-only `left: var(--sb-offset, ...)` override.
+
+### EntityCredentialsField — collapsed list rows with pencil/trash
+- Persisted credentials now render as a compact read-only summary
+  (KeyRound icon + account name + login username) with a pencil
+  (edit) and trashcan icon. Pencil expands the row back into the
+  full multi-field form. New (unsaved) rows auto-expand on add.
+
+### DocumentLinker — pencil + trash on linked rows
+- Linked SDV documents render as compact rows with file icon, name,
+  pencil and trash. Pencil swaps that row into a native `<select>`
+  dropdown so the user can re-pick a different SDV doc; Cancel
+  reverts. Trash unlinks the doc. New "+ Add" picker behaviour
+  unchanged (native `<select>` for iOS PWA reliability).
+
+### Housekeeping
+- 74 PASS, 0 WARN, 0 FAIL.

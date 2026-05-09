@@ -2,11 +2,14 @@
  * DocumentLinker — SDV document picker.
  *
  * UX:
- *   • Each linked document renders as a row (file icon + name + × remove).
- *   • Below the rows there is always a single "+ Add linked document" button.
- *   • Tapping the button opens a native <select> populated with all SDV
- *     documents that are NOT yet linked. The user picks one and the
- *     button reappears so they can add another.
+ *   • Each linked document renders as a compact read-only row showing:
+ *       file icon + doc name + pencil (edit) + trashcan (remove)
+ *   • Tapping the pencil swaps that row into the picker dropdown so the
+ *     user can re-select a different SDV document (matches the "expand
+ *     it back to the previous look" UX request).
+ *   • Below the rows there is always a single "+ Add linked document"
+ *     button. Tapping it opens a fresh native <select> populated with
+ *     all SDV documents that are NOT yet linked.
  *   • Native <select> is intentional — Radix Select inside a SlidePanel
  *     can fail to receive pointer events on iOS standalone PWAs; the
  *     native picker is bullet-proof and gets the iOS wheel UI for free.
@@ -17,26 +20,45 @@
  *   documents     : full SDV documents list ({ id, name, ... })
  */
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, X, FileText, ExternalLink } from 'lucide-react';
+import { Plus, X, FileText, Pencil } from 'lucide-react';
 
 const docLabel = (doc) => doc?.name || doc?.title || `Document ${doc?.id?.slice(0, 6)}`;
 
 export default function DocumentLinker({ value, onChange, documents }) {
-  const navigate = useNavigate();
   const selected = value || [];
   const [picking, setPicking] = useState(false);
+  // When set, the row with this docId renders as a re-pick dropdown
+  // in place of its read-only summary.
+  const [editingId, setEditingId] = useState(null);
   const docById = Object.fromEntries((documents || []).map((d) => [d.id, d]));
 
-  const remove = (id) => onChange(selected.filter((x) => x !== id));
+  const remove = (id) => {
+    if (editingId === id) setEditingId(null);
+    onChange(selected.filter((x) => x !== id));
+  };
+
+  // Documents available for fresh "+ Add" picker (not yet linked).
   const available = (documents || []).filter((d) => !selected.includes(d.id));
-  const openInVault = (docId) => navigate(`/vault?openDoc=${encodeURIComponent(docId)}`);
+  // Documents available when re-picking an existing row (not linked,
+  // PLUS the one currently in this row so the user can keep it).
+  const availableForEdit = (currentId) =>
+    (documents || []).filter((d) => !selected.includes(d.id) || d.id === currentId);
 
   const handlePick = (e) => {
     const id = e.target.value;
     if (!id) return;
     onChange([...selected, id]);
     setPicking(false);
+  };
+
+  const handleSwap = (oldId) => (e) => {
+    const newId = e.target.value;
+    if (!newId || newId === oldId) {
+      setEditingId(null);
+      return;
+    }
+    onChange(selected.map((x) => (x === oldId ? newId : x)));
+    setEditingId(null);
   };
 
   return (
@@ -48,6 +70,44 @@ export default function DocumentLinker({ value, onChange, documents }) {
       {/* Linked rows */}
       {selected.map((docId) => {
         const doc = docById[docId];
+        const isEditing = editingId === docId;
+        const opts = availableForEdit(docId);
+
+        if (isEditing) {
+          return (
+            <div
+              key={docId}
+              className="flex items-stretch gap-2"
+              data-testid={`doc-link-edit-${docId}`}
+            >
+              <select
+                autoFocus
+                defaultValue={docId}
+                onChange={handleSwap(docId)}
+                className="input-field select-themed flex-1"
+                data-testid={`doc-link-edit-picker-${docId}`}
+                style={{ borderColor: 'rgba(212,165,55,0.55)' }}
+              >
+                {opts.length === 0 ? (
+                  <option value={docId}>{doc ? docLabel(doc) : 'Document'}</option>
+                ) : (
+                  opts.map((d) => (
+                    <option key={d.id} value={d.id}>{docLabel(d)}</option>
+                  ))
+                )}
+              </select>
+              <button
+                type="button"
+                onClick={() => setEditingId(null)}
+                className="px-3 rounded-lg text-[12px] font-bold text-[var(--t4)] border border-[var(--b)] hover:text-[var(--t)] hover:bg-[var(--s)]"
+                data-testid={`doc-link-edit-cancel-${docId}`}
+              >
+                Cancel
+              </button>
+            </div>
+          );
+        }
+
         return (
           <div
             key={docId}
@@ -62,6 +122,15 @@ export default function DocumentLinker({ value, onChange, documents }) {
             <span className="flex-1 text-[13px] text-[var(--t)] truncate">
               {doc ? docLabel(doc) : 'Document not in your SDV'}
             </span>
+            <button
+              type="button"
+              onClick={() => setEditingId(docId)}
+              className="p-1.5 rounded-md text-[var(--t5)] hover:text-[var(--gold)] hover:bg-[var(--rdbg)]"
+              aria-label="Change linked document"
+              data-testid={`doc-link-edit-${docId}`}
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
             <button
               type="button"
               onClick={() => remove(docId)}

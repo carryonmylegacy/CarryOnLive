@@ -36,10 +36,14 @@ const PDFViewerModal = ({ open, onClose, doc, blobUrl, loading, onDownload }) =>
 
   if (!open) return null;
 
+  const isCollapsed = typeof window !== 'undefined' &&
+    localStorage.getItem('carryon_sidebar_collapsed') === 'true';
+
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      className="pdf-viewer-root flex items-center justify-center p-4"
       data-testid="pdf-viewer-modal"
+      style={{ '--sb-offset': isCollapsed ? '72px' : 'var(--sidebar-width, 260px)' }}
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
