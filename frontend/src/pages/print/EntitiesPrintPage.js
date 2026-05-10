@@ -532,35 +532,45 @@ export default function EntitiesPrintPage() {
             overflow: hidden !important;
           }
           .cfp-print-svg-wrap {
-            display: block !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            justify-content: stretch !important;
             width: 100% !important;
             /* Fills ALL the remaining vertical space below the header
                (root 9.5in - 0.6in padding - 0.65in header - 0.05in
-               header bottom-margin = 8.2in). The SVG inside fills
-               this entirely; preserveAspectRatio="xMidYMid meet"
-               keeps the tree centered both vertically and
-               horizontally. */
+               header bottom-margin = 8.2in). The SVG inside is a
+               flex child with flex:1 so it grows to fill the wrap on
+               every print engine (iOS Safari historically ignored
+               height:100% on a non-flex block parent). */
             height: 8.2in !important;
             max-height: 8.2in !important;
+            min-height: 8.2in !important;
             margin: 0 !important;
             overflow: hidden !important;
             position: relative !important;
           }
           .cfp-print-svg-wrap svg {
             display: block !important;
+            flex: 1 1 auto !important;
             width: 100% !important;
             height: 100% !important;
+            min-height: 0 !important;
           }
-          /* Legend pinned to BOTTOM-RIGHT of the print page, sitting
-             above the iOS footer chrome and clear of the tree
-             (which is centered in the wrap above). */
+          /* Legend pinned to the absolute BOTTOM-RIGHT corner of the
+             print page, above the iOS-rendered footer. Scales as a
+             fraction of the page width (not a fixed pixel size) so
+             it works for any legend content length and any future
+             page-size change. The inner SVG keeps its aspect ratio. */
           .cfp-print-legend {
             position: absolute !important;
-            bottom: 0.3in !important;
-            right: 0.3in !important;
+            bottom: 0.15in !important;
+            right: 0.15in !important;
             top: auto !important;
             left: auto !important;
-            width: ${LEGEND_W}px !important;
+            width: 22% !important;
+            max-width: 2.0in !important;
+            min-width: 1.4in !important;
             margin: 0 !important;
             padding: 0 !important;
             pointer-events: none !important;
@@ -568,6 +578,7 @@ export default function EntitiesPrintPage() {
           .cfp-print-legend svg {
             width: 100% !important;
             height: auto !important;
+            display: block !important;
           }
           /* iOS Safari automatically renders its OWN header (URL) and
              footer (date + page number) on every printed page. Hiding
@@ -605,14 +616,13 @@ export default function EntitiesPrintPage() {
         }
         .cfp-print-legend {
           position: absolute;
-          /* Bottom-right of the on-screen preview so it sits clear of
-             the tree (which centers in the wrap above). The bottom
-             offset accounts for the in-document footer's height plus
-             a small breathing gap; min() caps the width on big
-             monitors and shrinks gracefully on narrow phones. */
-          bottom: 56px;
-          right: 16px;
-          width: min(46vw, ${LEGEND_W}px);
+          /* True bottom-right corner of the on-screen preview frame,
+             just above the in-document footer. Width scales as a
+             fraction of the print-root width (clamped so it never
+             becomes tiny on a phone or oversized on a 4K monitor). */
+          bottom: calc(36px + env(safe-area-inset-bottom, 0px));
+          right: 12px;
+          width: clamp(140px, 24%, 220px);
           z-index: 5;
           pointer-events: none;
         }
@@ -721,11 +731,13 @@ export default function EntitiesPrintPage() {
 
       <div className="cfp-print-svg-wrap">
         <svg
+          width="100%"
+          height="100%"
           viewBox={`${layout.viewBox.x} ${layout.viewBox.y} ${layout.viewBox.w} ${layout.viewBox.h}`}
           preserveAspectRatio="xMidYMid meet"
           xmlns="http://www.w3.org/2000/svg"
           data-testid="entity-print-svg"
-          style={{ display: 'block', width: '100%', height: '100%' }}
+          style={{ display: 'block' }}
         >
           {renderEdges()}
           {layout.tileRects.map(renderTile)}
