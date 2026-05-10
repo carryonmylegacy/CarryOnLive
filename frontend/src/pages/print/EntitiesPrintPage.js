@@ -413,16 +413,10 @@ export default function EntitiesPrintPage() {
           }
           .cfp-print-root {
             color: #0f172a !important;
-            display: flex !important;
-            flex-direction: column !important;
+            display: block !important;
             width: 8.5in !important;
             min-width: 8.5in !important;
             max-width: 8.5in !important;
-            /* Pin to EXACTLY one letter sheet. The flex column inside
-               (header / svg-wrap / footer) absorbs any size variance —
-               the SVG is the flex-grow:1 middle child so it always
-               shrinks to whatever space is left, never pushing the
-               footer onto a second page. */
             height: 11in !important;
             min-height: 11in !important;
             max-height: 11in !important;
@@ -435,39 +429,54 @@ export default function EntitiesPrintPage() {
             break-inside: avoid !important;
             break-after: avoid !important;
           }
-          .cfp-print-svg-wrap {
-            display: flex !important;
-            flex: 1 1 auto !important;
-            min-height: 0 !important;
-            width: 100% !important;
+          /* Fixed pixel heights — flex with min-height:0 was being
+             ignored by iOS Safari's print engine, allowing the SVG
+             to render at native size and overflow onto page 2.
+             Hard-clamping each child means the SVG can NEVER exceed
+             its allotted slice. Math: 11in page - 2×0.4in padding
+             - 0.6in header - 0.3in footer - 0.1in gaps = 9.0in for
+             the SVG wrap. We use 8.6in as a safety margin against
+             iOS Safari's per-block padding leakage. */
+          .cfp-print-header {
+            display: block !important;
+            height: 0.55in !important;
+            max-height: 0.55in !important;
             margin: 0 !important;
+            padding: 0 0 6px 0 !important;
             overflow: hidden !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
+          }
+          .cfp-print-svg-wrap {
+            display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-          }
-          .cfp-print-svg-wrap svg {
             width: 100% !important;
-            height: 100% !important;
-            max-width: 100% !important;
-            max-height: 100% !important;
-            display: block !important;
-          }
-          .cfp-print-header,
-          .cfp-print-footer {
-            flex: 0 0 auto !important;
+            height: 8.6in !important;
+            max-height: 8.6in !important;
+            margin: 0.05in 0 !important;
+            overflow: hidden !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
           }
-          .cfp-print-header {
-            margin: 0 0 6px 0 !important;
-            padding: 0 0 6px 0 !important;
+          .cfp-print-svg-wrap svg {
+            display: block !important;
+            width: 7.6in !important;
+            height: 8.5in !important;
+            max-width: 7.6in !important;
+            max-height: 8.5in !important;
           }
           .cfp-print-footer {
-            margin: 4px 0 0 0 !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            height: 0.25in !important;
+            max-height: 0.25in !important;
+            margin: 0 !important;
             padding: 4px 0 0 0 !important;
             font-size: 9px !important;
+            overflow: hidden !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           .cfp-print-toolbar { display: none !important; }
         }
