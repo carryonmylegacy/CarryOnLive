@@ -105,17 +105,17 @@ export default function EntitiesPrintPage() {
 
     const positionOf = (key) => overrides[key] || initial.positions[key] || { x: 0, y: 0 };
 
-    // Tile rects (real nodes + legend pseudo-tile so edges avoid it
-    // and the bbox includes it).
+    // Tile rects for the TREE only (no legend yet).
     const tileRects = graph.nodes.map((n) => {
       const p = positionOf(n.key);
       return { key: n.key, x: p.x, y: p.y, w: n.w, h: n.h, node: n };
     });
-    const legendPos = overrides.__legend__ || { x: -LEGEND_W - 24, y: 0 };
-    tileRects.push({ key: '__legend__', x: legendPos.x, y: legendPos.y, w: LEGEND_W, h: LEGEND_H });
 
-    // BBox covering every tile + a comfortable padding so strokes
-    // don't clip on the edges of the SVG viewBox.
+    // BBox covering every tree tile. We use this to (a) compute the
+    // SVG viewBox and (b) pin the legend to the bottom-right of the
+    // print canvas — strictly for this PDF page. The user's drag
+    // position for the legend on the live chart is intentionally
+    // ignored here per benefactor request.
     const PAD = 24;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     tileRects.forEach((r) => {
@@ -125,6 +125,19 @@ export default function EntitiesPrintPage() {
       if (r.y + r.h > maxY) maxY = r.y + r.h;
     });
     if (!isFinite(minX)) { minX = minY = 0; maxX = 800; maxY = 600; }
+
+    // Place legend at the bottom-right corner of the tree bbox,
+    // extending the viewBox vertically so it never overlaps tiles.
+    const LEGEND_GAP = 32;
+    const legendPos = {
+      x: maxX - LEGEND_W,
+      y: maxY + LEGEND_GAP,
+    };
+    tileRects.push({ key: '__legend__', x: legendPos.x, y: legendPos.y, w: LEGEND_W, h: LEGEND_H });
+    // Extend bbox to include the new legend so the viewBox crops
+    // cleanly around it.
+    if (legendPos.x < minX) minX = legendPos.x;
+    if (legendPos.y + LEGEND_H > maxY) maxY = legendPos.y + LEGEND_H;
 
     return {
       nodes: graph.nodes,
@@ -523,8 +536,13 @@ export default function EntitiesPrintPage() {
             align-items: center !important;
             justify-content: center !important;
             width: 100% !important;
-            height: 7.4in !important;
-            max-height: 7.4in !important;
+            /* Fills ALL the remaining vertical space below the header
+               (root 9.0in - 0.6in padding - 0.65in header - 0.05in
+               header bottom-margin = 7.7in). SVG content is flex-
+               centered inside, so the tree always sits at the visual
+               middle of the available area. */
+            height: 7.7in !important;
+            max-height: 7.7in !important;
             margin: 0 !important;
             overflow: hidden !important;
           }
