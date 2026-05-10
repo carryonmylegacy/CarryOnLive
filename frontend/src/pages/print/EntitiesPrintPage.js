@@ -397,22 +397,18 @@ export default function EntitiesPrintPage() {
           html, body { background: #ffffff !important; margin: 0 !important; padding: 0 !important; }
           .cfp-print-root {
             color: #0f172a !important;
-            /* Drop flex layout in print — without a viewport height
-               to flex against, .cfp-print-svg-wrap collapsed to 0
-               and the SVG was invisible. Explicit block sizing makes
-               every child render at its natural / specified height. */
             display: block !important;
             width: 7.5in !important;
             max-width: 7.5in !important;
-            height: 10in !important;
-            min-height: 10in !important;
-            max-height: 10in !important;
+            /* Slightly under the usable 10in to absorb iOS Safari's
+               print-engine quirks (it consistently adds ~0.1-0.2in of
+               implicit whitespace that pushed the footer onto page 2). */
+            height: 9.6in !important;
+            min-height: 9.6in !important;
+            max-height: 9.6in !important;
             padding: 0 !important;
-            /* Forbid page break — guarantees the entire chart prints
-               on a single sheet regardless of tree size, just like
-               the user wants. The SVG inside scales via viewBox so
-               an enormous tree just renders smaller, never spills
-               onto a second page. */
+            margin: 0 !important;
+            box-sizing: border-box !important;
             overflow: hidden !important;
             page-break-inside: avoid !important;
             page-break-after: avoid !important;
@@ -421,12 +417,11 @@ export default function EntitiesPrintPage() {
           .cfp-print-svg-wrap {
             display: block !important;
             width: 100% !important;
-            /* Fill the page minus a generous header (~0.9in) and
-               footer (~0.3in) budget. The remaining 8.8in is enough
-               that even with rounding errors / iOS Safari's print
-               margins, the SVG never spills onto page 2. */
-            height: 8.6in !important;
-            max-height: 8.6in !important;
+            /* Tightened from 8.6in → 8.0in. With ~0.8in header and
+               ~0.25in footer that leaves ~0.55in of slack so iOS
+               Safari's per-block margins can't cause overflow. */
+            height: 8.0in !important;
+            max-height: 8.0in !important;
             margin: 0 !important;
             overflow: hidden !important;
             page-break-inside: avoid !important;
@@ -444,15 +439,14 @@ export default function EntitiesPrintPage() {
             break-inside: avoid !important;
           }
           .cfp-print-header {
-            margin-bottom: 10px !important;
-            padding-bottom: 10px !important;
+            margin: 0 0 8px 0 !important;
+            padding: 0 0 8px 0 !important;
           }
           .cfp-print-footer {
-            margin-top: 8px !important;
-            padding-top: 6px !important;
+            margin: 4px 0 0 0 !important;
+            padding: 4px 0 0 0 !important;
+            font-size: 9px !important;
           }
-          /* Hide on-screen toolbar so the print output is just the
-             header + tree + footer. */
           .cfp-print-toolbar { display: none !important; }
         }
         body { background: #f4f4f4; margin: 0; }
