@@ -20,7 +20,7 @@ import EntityQuickInfoPopover from './EntityQuickInfoPopover';
 import EntityDocumentsModal from './EntityDocumentsModal';
 import EntitiesShareToggle from './EntitiesShareToggle';
 import EntityLegend from './EntityLegend';
-import { toast } from 'sonner';
+import { notify } from '../../AppNotification';
 
 const DRAFT_KEY = (estateId) => `cfp:entityWizard:draft:${estateId || 'global'}`;
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
@@ -442,7 +442,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                 ).catch(() => { /* offline / 5xx — local cache covers us */ });
               } catch { /* axios threw before promise — ignore */ }
               if (opts.userInitiated) {
-                toast.success('Tree structure saved');
+                notify.success('Tree structure saved');
               }
             }}
           />
