@@ -45,10 +45,61 @@ import {
   ROLE_OPTIONS,
   BUCKETS as ENTITY_BUCKETS,
   getTypeMeta,
+  getEntityPalette,
+  getBucketMeta,
+  PALETTE,
 } from '../../config/entityCatalog';
 import { LEGEND_W } from '../../components/financial/entities/EntityLegend';
 
 const { ENTITY_W, ENTITY_H, PERSON_W, PERSON_H, CORNER_R } = PRINT_TILE_DIMENSIONS;
+
+// Lucide icon path data (24x24 viewBox, stroke-only) for the bucket
+// indicators on entity tiles. Matches the live platform's
+// EntityOrgChart.js which renders these same icons via lucide-react.
+// We inline the path data here so the printed SVG is self-contained
+// (no React-tree lookups during static SVG rendering).
+const BUCKET_ICON_PATHS = {
+  business: (
+    <>
+      <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
+      <path d="M9 22v-4h6v4" />
+      <circle cx="8" cy="6" r="0.6" /><circle cx="12" cy="6" r="0.6" /><circle cx="16" cy="6" r="0.6" />
+      <circle cx="8" cy="10" r="0.6" /><circle cx="12" cy="10" r="0.6" /><circle cx="16" cy="10" r="0.6" />
+      <circle cx="8" cy="14" r="0.6" /><circle cx="12" cy="14" r="0.6" /><circle cx="16" cy="14" r="0.6" />
+    </>
+  ),
+  trust: (
+    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+  ),
+  charity: (
+    <>
+      <line x1="3" x2="21" y1="22" y2="22" />
+      <line x1="6" x2="6" y1="18" y2="11" />
+      <line x1="10" x2="10" y1="18" y2="11" />
+      <line x1="14" x2="14" y1="18" y2="11" />
+      <line x1="18" x2="18" y1="18" y2="11" />
+      <polygon points="12 2 20 7 4 7" />
+    </>
+  ),
+  property: (
+    <>
+      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </>
+  ),
+  external_person: (
+    <>
+      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </>
+  ),
+  specialized: (
+    <>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </>
+  ),
+};
 
 const EQUITY_ROLE_IDS = new Set([
   'owner', 'member', 'shareholder', 'gp', 'lp',
@@ -254,18 +305,26 @@ export default function EntitiesPrintPage() {
     const subText = isEntity
       ? (typeMeta?.friendly || e?.type || '')
       : (n.sublabel || '');
-    // Tile fills/strokes: gold-tinted, matching the live chart's
-    // "premium" feel rather than the previous stark white-on-gray.
-    const tileFill = isEntity ? '#FFFDF7' : '#FFFFFF';
-    const tileStroke = '#B8860B';
-    const tileStrokeW = 1.2;
+    // Pull category palette + bucket meta from the live entity
+    // catalog so the print SVG inherits the same color coding the
+    // user sees on the platform (steel/indigo/champagne/teal/slate).
+    const entityPalette = isEntity ? getEntityPalette(e) : null;
+    const bucketMeta = isEntity ? getBucketMeta(e?.category) : null;
+    const accentColor = entityPalette?.stroke || '#B8860B';
+    const tileFill = '#FFFFFF';
+    // Person tiles keep the soft gold border (matches platform).
+    // Entity tiles get the bucket's accent color so business/trust/
+    // charity/etc. are visually distinct at a glance.
+    const tileStroke = isEntity ? accentColor : '#B8860B';
+    const tileStrokeW = 1.3;
     const avatarColor = n.avatar_color || '#B8860B';
     const avatarBg = n.kind === 'user' ? '#FEF3C7' : '#FFFFFF';
     const photoUrl = n.photo || null;
     const clipId = `print-avatar-clip-${n.key.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const iconPaths = isEntity ? BUCKET_ICON_PATHS[bucketMeta?.id || 'specialized'] : null;
     return (
       <g key={n.key} transform={`translate(${rect.x}, ${rect.y})`}>
-        {/* Tile background */}
+        {/* Tile background — subtle tint of the category palette */}
         <rect
           width={rect.w}
           height={rect.h}
@@ -274,12 +333,23 @@ export default function EntitiesPrintPage() {
           stroke={tileStroke}
           strokeWidth={tileStrokeW}
         />
-        {/* Entity tile: bucket icon dot (left), then title + sub */}
+        {/* Entity tile: Lucide bucket icon (left), then title + sub */}
         {isEntity && (
           <>
-            <circle cx={16} cy={rect.h / 2} r={6} fill={tileStroke} opacity={0.85} />
+            {iconPaths && (
+              <g
+                transform={`translate(8, ${rect.h / 2 - 10}) scale(0.83)`}
+                fill="none"
+                stroke={accentColor}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                {iconPaths}
+              </g>
+            )}
             <text
-              x={32}
+              x={36}
               y={rect.h / 2 - 4}
               fontSize={13}
               fontWeight="700"
@@ -289,19 +359,19 @@ export default function EntitiesPrintPage() {
             </text>
             {subText && (
               <text
-                x={32}
+                x={36}
                 y={rect.h / 2 + 12}
                 fontSize={10}
                 fontWeight="600"
-                fill={tileStroke}
+                fill={accentColor}
               >
                 {truncate(subText, 28)}
               </text>
             )}
             {e?.formation_state && (
-              <g transform={`translate(${32}, ${rect.h - 18})`}>
-                <rect width="28" height="13" rx="6" fill="#FFFAF0" stroke={tileStroke} strokeWidth={0.9} />
-                <text x="14" y="9.5" textAnchor="middle" fontSize="8" fontWeight="700" fill={tileStroke}>
+              <g transform={`translate(${36}, ${rect.h - 18})`}>
+                <rect width="28" height="13" rx="6" fill="#FFFAF0" stroke={accentColor} strokeWidth={0.9} />
+                <text x="14" y="9.5" textAnchor="middle" fontSize="8" fontWeight="700" fill={accentColor}>
                   {e.formation_state}
                 </text>
               </g>
@@ -450,10 +520,27 @@ export default function EntitiesPrintPage() {
           )}
           {presentCategories.map((b, i) => {
             const yOffset = headerH + 14 + presentRoles.length * rowH + (presentRoles.length ? rowH : 0) + i * rowH;
+            // Use the same palette accent the platform uses for this
+            // bucket on the live chart (steel/indigo/champagne/teal).
+            const bucketColor = (PALETTE[b.accent] || PALETTE.slate).stroke;
+            const iconPaths = BUCKET_ICON_PATHS[b.id];
             return (
               <g key={b.id}>
-                <circle cx={26} cy={yOffset - 3} r={5} fill="#B8860B" />
-                <text x={50} y={yOffset} fontSize={11} fill="#0f172a">{b.label}</text>
+                {iconPaths ? (
+                  <g
+                    transform={`translate(15, ${yOffset - 14}) scale(0.55)`}
+                    fill="none"
+                    stroke={bucketColor}
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    {iconPaths}
+                  </g>
+                ) : (
+                  <circle cx={26} cy={yOffset - 3} r={5} fill={bucketColor} />
+                )}
+                <text x={42} y={yOffset} fontSize={11} fill="#0f172a">{b.label}</text>
               </g>
             );
           })}
@@ -532,30 +619,32 @@ export default function EntitiesPrintPage() {
             overflow: hidden !important;
           }
           .cfp-print-svg-wrap {
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: stretch !important;
-            justify-content: stretch !important;
-            width: 100% !important;
+            display: block !important;
+            width: 7.9in !important;
             /* Fills ALL the remaining vertical space below the header
                (root 9.5in - 0.6in padding - 0.65in header - 0.05in
-               header bottom-margin = 8.2in). The SVG inside is a
-               flex child with flex:1 so it grows to fill the wrap on
-               every print engine (iOS Safari historically ignored
-               height:100% on a non-flex block parent). */
+               header bottom-margin = 8.2in). Block layout with hard
+               inch sizing on BOTH wrap and SVG — iOS Safari's print
+               engine honors absolute inch units but collapses
+               percentage-based SVG sizing inside flex. */
             height: 8.2in !important;
             max-height: 8.2in !important;
             min-height: 8.2in !important;
-            margin: 0 !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
             overflow: hidden !important;
             position: relative !important;
           }
           .cfp-print-svg-wrap svg {
             display: block !important;
-            flex: 1 1 auto !important;
-            width: 100% !important;
-            height: 100% !important;
-            min-height: 0 !important;
+            width: 7.9in !important;
+            height: 8.2in !important;
+            min-width: 7.9in !important;
+            min-height: 8.2in !important;
+            max-width: 7.9in !important;
+            max-height: 8.2in !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
           /* Legend pinned to the absolute BOTTOM-RIGHT corner of the
              print page, above the iOS-rendered footer. Scales as a
