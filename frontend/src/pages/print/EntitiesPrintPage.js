@@ -817,19 +817,44 @@ export default function EntitiesPrintPage() {
       </div>
 
       <div className="cfp-print-svg-wrap">
-        <svg
-          width="7.9in"
-          height="8.2in"
-          viewBox={`${layout.viewBox.x} ${layout.viewBox.y} ${layout.viewBox.w} ${layout.viewBox.h}`}
-          preserveAspectRatio="xMidYMid meet"
-          xmlns="http://www.w3.org/2000/svg"
-          data-testid="entity-print-svg"
-          style={{ display: 'block' }}
-        >
-          {renderEdges()}
-          {layout.tileRects.filter((r) => r.key !== '__legend__').map(renderTile)}
-          {renderLegend()}
-        </svg>
+        {(() => {
+          // iOS Safari's print engine silently ignores `preserveAspectRatio`
+          // on SVG when the surrounding wrapper has hard inch dimensions —
+          // so tree content authored in user-space coordinates leaks past
+          // the right/bottom edges of the page. Sidestep the engine by
+          // using a FIXED pixel-unit viewBox (790×820, the rounded pixel
+          // equivalent of our 7.9×8.2-inch physical SVG) and applying the
+          // bbox-fit scale + center-translate ourselves on an outer <g>.
+          // This makes the tree render *deterministically* at the size
+          // we computed, regardless of how the browser interprets the
+          // outer <svg> sizing.
+          const PAGE_W = 790;
+          const PAGE_H = 820;
+          const bb = layout.viewBox;
+          const scale = Math.min(
+            PAGE_W / Math.max(bb.w, 1),
+            PAGE_H / Math.max(bb.h, 1),
+          );
+          const tx = (PAGE_W - bb.w * scale) / 2 - bb.x * scale;
+          const ty = (PAGE_H - bb.h * scale) / 2 - bb.y * scale;
+          return (
+            <svg
+              width="7.9in"
+              height="8.2in"
+              viewBox={`0 0 ${PAGE_W} ${PAGE_H}`}
+              preserveAspectRatio="xMidYMid meet"
+              xmlns="http://www.w3.org/2000/svg"
+              data-testid="entity-print-svg"
+              style={{ display: 'block' }}
+            >
+              <g transform={`translate(${tx} ${ty}) scale(${scale})`}>
+                {renderEdges()}
+                {layout.tileRects.filter((r) => r.key !== '__legend__').map(renderTile)}
+                {renderLegend()}
+              </g>
+            </svg>
+          );
+        })()}
       </div>
 
       <div className="cfp-print-footer">
