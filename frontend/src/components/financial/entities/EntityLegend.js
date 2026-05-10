@@ -74,13 +74,13 @@ function EntityLegend({ entities, relationships, onHide, onPointerDownDrag, drag
       className="select-none"
       style={{
         width: LEGEND_W,
-        background: 'rgba(11,17,32,0.92)',
+        background: 'var(--bg2)',
         border: '1px solid rgba(212,165,55,0.45)',
         borderRadius: 12,
         backdropFilter: 'blur(8px)',
         boxShadow: dragging
-          ? '0 12px 28px rgba(0,0,0,0.55), 0 0 18px rgba(212,165,55,0.4)'
-          : '0 8px 24px rgba(0,0,0,0.45), 0 0 14px rgba(212,165,55,0.18)',
+          ? '0 12px 28px rgba(0,0,0,0.25), 0 0 18px rgba(212,165,55,0.4)'
+          : '0 8px 24px rgba(0,0,0,0.18), 0 0 14px rgba(212,165,55,0.18)',
         cursor: dragging ? 'grabbing' : 'grab',
         touchAction: 'none',
       }}
