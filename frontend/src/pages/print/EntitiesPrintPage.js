@@ -249,80 +249,141 @@ export default function EntitiesPrintPage() {
     const n = rect.node;
     if (!n) return null;
     const isEntity = n.kind === 'entity';
-    // Entity nodes don't have `label`/`sublabel` populated by buildGraph
-    // (the live EntityTile reads `n.entity.name` / type-meta directly),
-    // so for the static SVG we synthesize the same fields here.
     const e = isEntity ? n.entity : null;
     const typeMeta = isEntity ? getTypeMeta(e.category, e.type) : null;
     const titleText = isEntity ? (e?.name || 'Entity') : (n.label || '');
     const subText = isEntity
       ? (typeMeta?.friendly || e?.type || '')
       : (n.sublabel || '');
-    const fill = '#ffffff';
-    const stroke = '#1f2937';
+    // Tile fills/strokes: gold-tinted, matching the live chart's
+    // "premium" feel rather than the previous stark white-on-gray.
+    const tileFill = isEntity ? '#FFFDF7' : '#FFFFFF';
+    const tileStroke = '#B8860B';
+    const tileStrokeW = 1.2;
+    const avatarColor = n.avatar_color || '#B8860B';
+    const avatarBg = n.kind === 'user' ? '#FEF3C7' : '#FFFFFF';
+    const photoUrl = n.photo || null;
+    const clipId = `print-avatar-clip-${n.key.replace(/[^a-zA-Z0-9]/g, '_')}`;
     return (
       <g key={n.key} transform={`translate(${rect.x}, ${rect.y})`}>
+        {/* Tile background */}
         <rect
           width={rect.w}
           height={rect.h}
           rx={CORNER_R}
-          fill={fill}
-          stroke={stroke}
-          strokeWidth={1.4}
+          fill={tileFill}
+          stroke={tileStroke}
+          strokeWidth={tileStrokeW}
         />
-        {/* Title */}
-        <text
-          x={rect.w / 2}
-          y={isEntity ? 30 : 60}
-          textAnchor="middle"
-          fontSize={isEntity ? 14 : 12}
-          fontWeight="700"
-          fill="#0f172a"
-        >
-          {truncate(titleText, isEntity ? 24 : 14)}
-        </text>
-        {/* Sublabel (entity friendly type / last name / "Outside party") */}
-        {subText && (
-          <text
-            x={rect.w / 2}
-            y={isEntity ? 50 : 76}
-            textAnchor="middle"
-            fontSize={11}
-            fill="#475569"
-          >
-            {truncate(subText, isEntity ? 30 : 16)}
-          </text>
-        )}
-        {/* For entity tiles: state pill */}
-        {isEntity && e?.formation_state && (
-          <g transform={`translate(${rect.w / 2 - 14}, ${64})`}>
-            <rect width="28" height="16" rx="6" fill="#fffaf0" stroke="#B8860B" strokeWidth={1} />
-            <text x="14" y="11" textAnchor="middle" fontSize="9" fontWeight="700" fill="#B8860B">
-              {e.formation_state}
+        {/* Entity tile: bucket icon dot (left), then title + sub */}
+        {isEntity && (
+          <>
+            <circle cx={16} cy={rect.h / 2} r={6} fill={tileStroke} opacity={0.85} />
+            <text
+              x={32}
+              y={rect.h / 2 - 4}
+              fontSize={13}
+              fontWeight="700"
+              fill="#0F172A"
+            >
+              {truncate(titleText, 24)}
             </text>
-          </g>
+            {subText && (
+              <text
+                x={32}
+                y={rect.h / 2 + 12}
+                fontSize={10}
+                fontWeight="600"
+                fill={tileStroke}
+              >
+                {truncate(subText, 28)}
+              </text>
+            )}
+            {e?.formation_state && (
+              <g transform={`translate(${32}, ${rect.h - 18})`}>
+                <rect width="28" height="13" rx="6" fill="#FFFAF0" stroke={tileStroke} strokeWidth={0.9} />
+                <text x="14" y="9.5" textAnchor="middle" fontSize="8" fontWeight="700" fill={tileStroke}>
+                  {e.formation_state}
+                </text>
+              </g>
+            )}
+          </>
         )}
-        {/* For people: role title chip(s) */}
-        {!isEntity && Array.isArray(n.titles) && n.titles.length > 0 && (
-          <text
-            x={rect.w / 2}
-            y={94}
-            textAnchor="middle"
-            fontSize={10}
-            fontWeight="700"
-            fill="#B8860B"
-          >
-            {truncate(n.titles.join(' · '), 18)}
-          </text>
-        )}
-        {/* Avatar circle for people (initials) */}
+        {/* Person tile: avatar circle (with photo if present) + name + sub + role chips */}
         {!isEntity && (
-          <g transform={`translate(${rect.w / 2 - 22}, ${4})`}>
-            <circle cx="22" cy="22" r="22" fill="#fef3c7" stroke="#B8860B" strokeWidth={1.4} />
-            <text x="22" y="27" textAnchor="middle" fontSize="13" fontWeight="700" fill="#92400e">
-              {((n.label?.[0] || '') + (n.sublabel?.[0] || '')).toUpperCase().slice(0, 2)}
+          <>
+            <defs>
+              <clipPath id={clipId}>
+                <circle cx={rect.w / 2} cy={28} r={22} />
+              </clipPath>
+            </defs>
+            {/* Avatar ring */}
+            <circle
+              cx={rect.w / 2}
+              cy={28}
+              r={23}
+              fill={avatarBg}
+              stroke={avatarColor}
+              strokeWidth={1.8}
+            />
+            {photoUrl ? (
+              <image
+                href={photoUrl}
+                xlinkHref={photoUrl}
+                x={rect.w / 2 - 22}
+                y={6}
+                width={44}
+                height={44}
+                preserveAspectRatio="xMidYMid slice"
+                clipPath={`url(#${clipId})`}
+              />
+            ) : (
+              <text
+                x={rect.w / 2}
+                y={33}
+                textAnchor="middle"
+                fontSize={14}
+                fontWeight="700"
+                fill="#92400E"
+              >
+                {((n.label?.[0] || '') + (n.sublabel?.[0] || '')).toUpperCase().slice(0, 2)}
+              </text>
+            )}
+            {/* Name */}
+            <text
+              x={rect.w / 2}
+              y={68}
+              textAnchor="middle"
+              fontSize={11}
+              fontWeight="700"
+              fill="#0F172A"
+            >
+              {truncate(titleText, 14)}
             </text>
-          </g>
+            {subText && (
+              <text
+                x={rect.w / 2}
+                y={82}
+                textAnchor="middle"
+                fontSize={9}
+                fill="#475569"
+              >
+                {truncate(subText, 16)}
+              </text>
+            )}
+            {Array.isArray(n.titles) && n.titles.length > 0 && (
+              <text
+                x={rect.w / 2}
+                y={98}
+                textAnchor="middle"
+                fontSize={9}
+                fontWeight="700"
+                fill={tileStroke}
+              >
+                {truncate(n.titles.join(' · '), 18)}
+              </text>
+            )}
+          </>
         )}
       </g>
     );
@@ -446,10 +507,15 @@ export default function EntitiesPrintPage() {
           }
           .cfp-print-header {
             display: block !important;
-            height: 0.5in !important;
-            max-height: 0.5in !important;
+            height: 0.65in !important;
+            max-height: 0.65in !important;
             margin: 0 0 0.05in 0 !important;
-            padding: 0 0 4px 0 !important;
+            padding: 0 0 6px 0 !important;
+            /* Override screen rule that put a 2px gold border on the
+               bottom — it cut through the subtitle when squeezed into
+               the print height. Use a thin gold rule INSIDE the
+               header's allotted height instead. */
+            border-bottom: 1px solid #B8860B !important;
             overflow: hidden !important;
           }
           .cfp-print-svg-wrap {
@@ -473,16 +539,11 @@ export default function EntitiesPrintPage() {
             max-width: 100% !important;
             max-height: 100% !important;
           }
-          .cfp-print-footer {
-            display: flex !important;
-            justify-content: space-between !important;
-            height: 0.2in !important;
-            max-height: 0.2in !important;
-            margin: 0.05in 0 0 0 !important;
-            padding: 3px 0 0 0 !important;
-            font-size: 9px !important;
-            overflow: hidden !important;
-          }
+          /* iOS Safari automatically renders its OWN header (URL) and
+             footer (date + page number) on every printed page. Hiding
+             our in-document footer avoids the duplicate-footer
+             appearance the user reported. */
+          .cfp-print-footer { display: none !important; }
           .cfp-print-toolbar { display: none !important; }
         }
         body { background: #f4f4f4; margin: 0; }
