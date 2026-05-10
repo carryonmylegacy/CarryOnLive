@@ -49,7 +49,7 @@ import {
   getBucketMeta,
   PALETTE,
 } from '../../config/entityCatalog';
-import { LEGEND_W, LEGEND_H } from '../../components/financial/entities/EntityLegend';
+import { LEGEND_W } from '../../components/financial/entities/EntityLegend';
 
 const { ENTITY_W, ENTITY_H, PERSON_W, PERSON_H, CORNER_R } = PRINT_TILE_DIMENSIONS;
 
@@ -162,30 +162,79 @@ export default function EntitiesPrintPage() {
       const p = positionOf(n.key);
       return { key: n.key, x: p.x, y: p.y, w: n.w, h: n.h, node: n };
     });
+
+    // Compute the legend's REAL height the same way renderLegend()
+    // does. The static LEGEND_H constant assumed a max-size legend —
+    // when fewer roles/categories are present, the legend is shorter,
+    // and conversely with many roles+categories it can exceed
+    // LEGEND_H. Using the wrong height starves the bbox of vertical
+    // room and clips the legend in the printed PDF.
+    const headerH = 22;
+    const rowH = 18;
+    const presentRoleIds = new Set();
+    (data.relationships || []).forEach((r) => { if (r.role) presentRoleIds.add(r.role); });
+    const presentRolesCount = ROLE_OPTIONS.filter((r) => presentRoleIds.has(r.id)).length;
+    const presentCategoryIds = new Set();
+    (data.entities || []).forEach((e) => { if (e.category) presentCategoryIds.add(e.category); });
+    const presentCategoriesCount = (ENTITY_BUCKETS || []).filter((b) => presentCategoryIds.has(b.id)).length;
+    const nLegendRows = presentRolesCount + presentCategoriesCount + ((presentRolesCount && presentCategoriesCount) ? 1 : 0);
+    const computedLegendH = Math.max(60, headerH + nLegendRows * rowH + 14);
+
     // Honor the user's saved legend position from the live chart —
     // they drag it where they want; the print just inherits the same
     // coordinates. Since the legend is rendered INSIDE the tree SVG,
     // the whole composition scales together via preserveAspectRatio.
     const legendPos = overrides.__legend__ || { x: -LEGEND_W - 24, y: 0 };
-    tileRects.push({ key: '__legend__', x: legendPos.x, y: legendPos.y, w: LEGEND_W, h: LEGEND_H });
+    tileRects.push({ key: '__legend__', x: legendPos.x, y: legendPos.y, w: LEGEND_W, h: computedLegendH });
 
-    // BBox covering every tile + a comfortable padding so strokes
-    // don't clip on the edges of the SVG viewBox.
-    const PAD = 24;
+    // Pre-route every edge so we can fold the routed polyline points
+    // and the ownership-% badge box into the bbox. Edge routing
+    // detours around obstacles via `hit.y + hit.h + 14` style jumps —
+    // those bend points can extend FAR outside any single tile, so
+    // bbox'ing tiles alone leaves edges (and their %-pills) clipped
+    // in the printed PDF.
+    const rectByKey = Object.fromEntries(tileRects.map((r) => [r.key, r]));
+    const routedEdges = graph.edges.map((edge) => {
+      const sR = rectByKey[edge.sourceKey];
+      const tR = rectByKey[edge.targetKey];
+      if (!sR || !tR) return null;
+      const obstacles = tileRects.filter((r) => r.key !== sR.key && r.key !== tR.key);
+      const { points, midPoint } = routeEdge(sR, tR, obstacles, edge.id);
+      return { edge, points, midPoint };
+    }).filter(Boolean);
+
+    // BBox covering every tile + every routed edge point + every
+    // ownership label box + a comfortable padding so strokes/labels
+    // never clip at the edges of the SVG viewBox.
+    const PAD = 32;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const extend = (x, y) => {
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+    };
     tileRects.forEach((r) => {
-      if (r.x < minX) minX = r.x;
-      if (r.y < minY) minY = r.y;
-      if (r.x + r.w > maxX) maxX = r.x + r.w;
-      if (r.y + r.h > maxY) maxY = r.y + r.h;
+      extend(r.x, r.y);
+      extend(r.x + r.w, r.y + r.h);
+    });
+    routedEdges.forEach(({ edge, points, midPoint }) => {
+      points.forEach((p) => extend(p.x, p.y));
+      // Ownership % pill: 36×18 centered on midPoint.
+      if (EQUITY_ROLE_IDS.has(edge.role) && edge.ownership_pct != null) {
+        extend(midPoint.x - 18, midPoint.y - 9);
+        extend(midPoint.x + 18, midPoint.y + 9);
+      }
     });
     if (!isFinite(minX)) { minX = minY = 0; maxX = 800; maxY = 600; }
 
     return {
       nodes: graph.nodes,
       edges: graph.edges,
+      routedEdges,
       tileRects,
       legendPos,
+      computedLegendH,
       viewBox: {
         x: minX - PAD,
         y: minY - PAD,
@@ -261,15 +310,9 @@ export default function EntitiesPrintPage() {
   })();
 
   // ── Static SVG renderer ──────────────────────────────────────────
-  const rectByKey = Object.fromEntries(layout.tileRects.map((r) => [r.key, r]));
 
   const renderEdges = () => {
-    return layout.edges.map((edge) => {
-      const sR = rectByKey[edge.sourceKey];
-      const tR = rectByKey[edge.targetKey];
-      if (!sR || !tR) return null;
-      const obstacles = layout.tileRects.filter((r) => r.key !== sR.key && r.key !== tR.key);
-      const { points, midPoint } = routeEdge(sR, tR, obstacles, edge.id);
+    return layout.routedEdges.map(({ edge, points, midPoint }) => {
       const role = ROLE_PALETTE[edge.role] || ROLE_PALETTE.owner;
       const isEquity = EQUITY_ROLE_IDS.has(edge.role);
       const stroke = isEquity ? '#B8860B' : role.color;
@@ -473,8 +516,9 @@ export default function EntitiesPrintPage() {
     const lp = layout.legendPos;
     const headerH = 22;
     const rowH = 18;
-    const nRows = presentRoles.length + presentCategories.length + (presentRoles.length && presentCategories.length ? 1 : 0);
-    const computedH = Math.max(60, headerH + nRows * rowH + 14);
+    // Use the SAME computed height we baked into the bbox so the
+    // legend always fits inside the SVG viewBox (no clipping).
+    const computedH = layout.computedLegendH;
     return (
       <g transform={`translate(${lp.x}, ${lp.y})`}>
         <rect

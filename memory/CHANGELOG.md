@@ -1,5 +1,23 @@
 # CarryOn — Changelog
 
+## Feb 12, 2026 — E&S Print PDF: Stop Clipping Tree Nodes & Legend
+
+**Bug** — "Not everything is showing in the PDF" on Entities & Structures print.
+
+After locking the SVG to physical inches (to prevent iOS print engine multi-page bleed), the `viewBox` was computed strictly from tile rects, so anything rendered OUTSIDE a tile rect — bent edge routes that detour around obstacles, ownership-% pills floating at edge midpoints, and a legend whose actual height exceeded the hardcoded `LEGEND_H = 220` constant — overflowed the viewBox and got clipped.
+
+**Fix** (`pages/print/EntitiesPrintPage.js`):
+1. **Compute the legend's REAL height** (`computedLegendH`) using the same row-math `renderLegend()` uses, then push that into the bbox-contributing tile rect instead of the static `LEGEND_H` constant.
+2. **Pre-route every edge** during layout (vs. on-demand inside `renderEdges`) and fold every polyline point into the bbox. Detours like `hit.y + hit.h + 14` can extend far outside any tile — they're now captured.
+3. **Include every ownership-% pill rect** (36×18 centered on midPoint) in the bbox so floating equity badges never clip.
+4. **Bumped PAD 24 → 32** for a comfortable margin around strokes/labels.
+5. `renderEdges()` now reuses `layout.routedEdges` so we don't re-route, and `renderLegend()` reuses `layout.computedLegendH` so the rendered legend matches the bbox-reserved space exactly.
+
+**Verified**: ESLint clean, housekeeping `0 WARN / 0 FAIL`, webpack compiled successfully. User to visually verify next print run.
+
+---
+
+
 ## Feb 10, 2026 — E&S P0 Fixes: Tile-Drift on Add + Universal Role Picker
 
 **Bug 1 — Tile layout shifting when a new entity is added** (`EntityOrgChart.js`)
