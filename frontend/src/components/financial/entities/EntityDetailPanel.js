@@ -309,7 +309,7 @@ export default function EntityDetailPanel({
                 <Input value={name} onChange={(e) => setName(e.target.value)} className="input-field" data-testid="detail-edit-name" />
               </div>
               {meta?.state_relevant && (
-                <div className="space-y-2">
+                <div className="space-y-2 border-t border-[var(--b)] pt-4">
                   <Label className="text-[var(--t4)]">Formation state</Label>
                   <Select value={state} onValueChange={(v) => setState(v === 'none' ? '' : v)}>
                     <SelectTrigger className="input-field select-themed">
@@ -322,11 +322,11 @@ export default function EntityDetailPanel({
                   </Select>
                 </div>
               )}
-              <div className="space-y-2">
+              <div className="space-y-2 border-t border-[var(--b)] pt-4">
                 <Label className="text-[var(--t4)]">Notes</Label>
                 <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="input-field min-h-[80px]" rows={3} />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 border-t border-[var(--b)] pt-4">
                 <Label className="text-[var(--t4)]">Financial snapshot</Label>
                 <FinancialFields
                   assets={grossAssets}
@@ -334,7 +334,7 @@ export default function EntityDetailPanel({
                   onChange={({ assets, debts }) => { setGrossAssets(assets); setGrossDebts(debts); }}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 border-t border-[var(--b)] pt-4">
                 <Label className="text-[var(--t4)]">Linked documents (SDV)</Label>
                 <DocumentLinker
                   value={linkedDocIds}
@@ -342,7 +342,7 @@ export default function EntityDetailPanel({
                   documents={documents || []}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 border-t border-[var(--b)] pt-4">
                 <Label className="text-[var(--t4)]">
                   Digital credentials
                   <span className="text-[11px] font-normal text-[var(--t5)] ml-1.5">— saved to your DAV</span>
@@ -354,12 +354,11 @@ export default function EntityDetailPanel({
                   davEntries={walletEntries || []}
                 />
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setEditing(false)} className="btn-outline-cta">Cancel</Button>
-                <Button onClick={handleSaveEntity} disabled={saving} className="btn-gold-cta px-4 py-2 rounded-md text-sm font-semibold" data-testid="detail-save">
-                  {saving ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving…</> : 'Save changes'}
-                </Button>
-              </div>
+              {/* Cancel / Save changes are rendered at the very bottom
+                  of the panel (after the connections section) so the
+                  user always lands on the action buttons after they've
+                  reviewed every section. See the editing-actions block
+                  near the end of this file. */}
             </div>
           )}
 
@@ -372,18 +371,14 @@ export default function EntityDetailPanel({
                 getAuthHeaders={getAuthHeaders}
                 onUploaded={() => onChanged?.()}
               />
-              <div className="space-y-2"><Label>First name</Label>
+              <div className="space-y-2 border-t border-[var(--b)] pt-4"><Label>First name</Label>
                 <Input value={extFirst} onChange={(e) => setExtFirst(e.target.value)} className="input-field" /></div>
-              <div className="space-y-2"><Label>Last name</Label>
+              <div className="space-y-2 border-t border-[var(--b)] pt-4"><Label>Last name</Label>
                 <Input value={extLast} onChange={(e) => setExtLast(e.target.value)} className="input-field" /></div>
-              <div className="space-y-2"><Label>Notes</Label>
+              <div className="space-y-2 border-t border-[var(--b)] pt-4"><Label>Notes</Label>
                 <Textarea value={extNotes} onChange={(e) => setExtNotes(e.target.value)} className="input-field min-h-[80px]" rows={3} /></div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setEditing(false)} className="btn-outline-cta">Cancel</Button>
-                <Button onClick={handleSaveExternal} disabled={saving} className="btn-gold-cta px-4 py-2 rounded-md text-sm font-semibold">
-                  {saving ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving…</> : 'Save changes'}
-                </Button>
-              </div>
+              {/* Cancel / Save changes rendered at the bottom — see
+                  the editing-actions block near the end of this file. */}
             </div>
           )}
 
@@ -438,7 +433,7 @@ export default function EntityDetailPanel({
               into this panel. */}
           {isEntity && (
             <>
-                  <div>
+                  <div className="border-t border-[var(--b)] pt-4">
                     <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--t5)] mb-2">Who connects in</div>
                     {incomingRels.length === 0 && (
                       <div className="text-[12px] text-[var(--t5)] italic">No connections yet.</div>
@@ -587,6 +582,35 @@ export default function EntityDetailPanel({
                   )}
                 </>
               )}
+
+        {/* Bottom-of-panel Cancel / Save changes — always rendered at
+            the very end of the scroll surface (after the connections
+            section) when the user is editing, so the action buttons
+            are the LAST thing the user sees before the dock. The two
+            edit forms above used to render their own inline buttons
+            mid-page; users had to scroll past them to manage
+            connections. Single canonical block here removes that
+            confusion. */}
+        {editing && (isEntity || isExternal) && (
+          <div className="flex gap-2 pt-4 border-t border-[var(--b)]">
+            <Button
+              variant="outline"
+              onClick={() => setEditing(false)}
+              className="btn-outline-cta"
+              data-testid="detail-cancel"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={isEntity ? handleSaveEntity : handleSaveExternal}
+              disabled={saving}
+              className="btn-gold-cta px-4 py-2 rounded-md text-sm font-semibold"
+              data-testid="detail-save"
+            >
+              {saving ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving…</> : 'Save changes'}
+            </Button>
+          </div>
+        )}
 
         {/* Custom confirm modal — PWA-iOS blocks window.confirm */}
         {confirmPrompt && (
