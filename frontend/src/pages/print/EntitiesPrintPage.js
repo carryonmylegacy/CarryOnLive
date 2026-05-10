@@ -392,15 +392,17 @@ export default function EntitiesPrintPage() {
   return (
     <div className="cfp-print-root">
       <style>{`
-        @page { size: letter; margin: 0.35in; }
+        @page { size: letter portrait; margin: 0; }
         @media print {
           html, body, #root {
             background: #ffffff !important;
             margin: 0 !important;
             padding: 0 !important;
-            width: auto !important;
-            height: auto !important;
+            width: 8.5in !important;
+            min-width: 8.5in !important;
+            height: 11in !important;
             min-height: 0 !important;
+            overflow: hidden !important;
           }
           /* Belt-and-suspenders: hide every element OUTSIDE our print
              root so a stray app-level wrapper (banner, devtools, etc.)
@@ -411,19 +413,20 @@ export default function EntitiesPrintPage() {
           }
           .cfp-print-root {
             color: #0f172a !important;
-            display: block !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            /* auto-height + page-break-inside:avoid forces the
-               browser to keep the entire chart on a single sheet
-               without us having to guess iOS Safari's exact usable
-               area. The hard upper bound below is for the SVG
-               wrapper, not the root, so the footer always lands
-               above the page break. */
-            height: auto !important;
-            min-height: 0 !important;
-            max-height: 10.0in !important;
-            padding: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            width: 8.5in !important;
+            min-width: 8.5in !important;
+            max-width: 8.5in !important;
+            /* Pin to EXACTLY one letter sheet. The flex column inside
+               (header / svg-wrap / footer) absorbs any size variance —
+               the SVG is the flex-grow:1 middle child so it always
+               shrinks to whatever space is left, never pushing the
+               footer onto a second page. */
+            height: 11in !important;
+            min-height: 11in !important;
+            max-height: 11in !important;
+            padding: 0.4in !important;
             margin: 0 !important;
             box-sizing: border-box !important;
             overflow: hidden !important;
@@ -433,26 +436,27 @@ export default function EntitiesPrintPage() {
             break-after: avoid !important;
           }
           .cfp-print-svg-wrap {
-            display: block !important;
+            display: flex !important;
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
             width: 100% !important;
-            /* Conservative height: 11in - 2*0.35in margin - ~0.6in
-               header - ~0.2in footer ≈ 9.5in available, take 8.5in
-               so every printer's per-block padding is absorbed. */
-            height: 8.5in !important;
-            max-height: 8.5in !important;
             margin: 0 !important;
             overflow: hidden !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
+            align-items: center !important;
+            justify-content: center !important;
           }
           .cfp-print-svg-wrap svg {
             width: 100% !important;
             height: 100% !important;
+            max-width: 100% !important;
             max-height: 100% !important;
             display: block !important;
           }
           .cfp-print-header,
           .cfp-print-footer {
+            flex: 0 0 auto !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
           }
