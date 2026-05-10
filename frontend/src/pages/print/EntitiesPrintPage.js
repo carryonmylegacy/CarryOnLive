@@ -400,8 +400,10 @@ export default function EntitiesPrintPage() {
             padding: 0 !important;
             width: 8.5in !important;
             min-width: 8.5in !important;
-            height: 11in !important;
+            max-width: 8.5in !important;
+            height: 10.5in !important;
             min-height: 0 !important;
+            max-height: 10.5in !important;
             overflow: hidden !important;
           }
           /* Belt-and-suspenders: hide every element OUTSIDE our print
@@ -417,9 +419,14 @@ export default function EntitiesPrintPage() {
             width: 8.5in !important;
             min-width: 8.5in !important;
             max-width: 8.5in !important;
-            height: 11in !important;
-            min-height: 11in !important;
-            max-height: 11in !important;
+            /* Pinned WELL UNDER one full letter sheet (11in) so any
+               sub-pixel rounding inside iOS Safari can't push a single
+               trailing pixel onto page 2. The leftover ~1.0in of
+               page is just blank — the page break still falls inside
+               the same physical sheet. */
+            height: 10.0in !important;
+            min-height: 0 !important;
+            max-height: 10.0in !important;
             padding: 0.4in !important;
             margin: 0 !important;
             box-sizing: border-box !important;
@@ -429,14 +436,12 @@ export default function EntitiesPrintPage() {
             break-inside: avoid !important;
             break-after: avoid !important;
           }
-          /* Fixed pixel heights — flex with min-height:0 was being
-             ignored by iOS Safari's print engine, allowing the SVG
-             to render at native size and overflow onto page 2.
-             Hard-clamping each child means the SVG can NEVER exceed
-             its allotted slice. Math: 11in page - 2×0.4in padding
-             - 0.6in header - 0.3in footer - 0.1in gaps = 9.0in for
-             the SVG wrap. We use 8.6in as a safety margin against
-             iOS Safari's per-block padding leakage. */
+          .cfp-print-root * {
+            page-break-inside: avoid !important;
+            page-break-after: avoid !important;
+            break-inside: avoid !important;
+            break-after: avoid !important;
+          }
           .cfp-print-header {
             display: block !important;
             height: 0.55in !important;
@@ -444,27 +449,23 @@ export default function EntitiesPrintPage() {
             margin: 0 !important;
             padding: 0 0 6px 0 !important;
             overflow: hidden !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
           }
           .cfp-print-svg-wrap {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             width: 100% !important;
-            height: 8.6in !important;
-            max-height: 8.6in !important;
+            height: 7.7in !important;
+            max-height: 7.7in !important;
             margin: 0.05in 0 !important;
             overflow: hidden !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
           }
           .cfp-print-svg-wrap svg {
             display: block !important;
             width: 7.6in !important;
-            height: 8.5in !important;
+            height: 7.6in !important;
             max-width: 7.6in !important;
-            max-height: 8.5in !important;
+            max-height: 7.6in !important;
           }
           .cfp-print-footer {
             display: flex !important;
@@ -475,8 +476,6 @@ export default function EntitiesPrintPage() {
             padding: 4px 0 0 0 !important;
             font-size: 9px !important;
             overflow: hidden !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
           }
           .cfp-print-toolbar { display: none !important; }
         }
