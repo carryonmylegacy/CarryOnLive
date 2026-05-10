@@ -49,6 +49,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   const [viewMode, setViewMode] = useState('chart'); // 'chart' | 'list'
   const [expanded, setExpanded] = useState(false);
   const [resetTick, setResetTick] = useState(0);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [cleanUpSignal, setCleanUpSignal] = useState(0);
   // Auto-lock the chart on every CFP mount. This means panning around
   // (single-finger swipe / two-finger trackpad scroll) never
@@ -344,10 +345,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           )}
           {viewMode === 'chart' && (
             <button
-              onClick={() => {
-                resetEntityChartPositions(estateId);
-                setResetTick((t) => t + 1);
-              }}
+              onClick={() => setShowResetConfirm(true)}
               className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
               style={{
                 color: 'var(--t3)',
@@ -560,6 +558,68 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
         onChanged={() => { fetchAll(); onEntitiesChanged?.(); }}
         onClose={() => { setEditingNode(null); setEditStartInEdit(false); }}
       />
+
+      {/* Reset-layout confirmation modal. Native `window.confirm` is
+          silently blocked in iOS standalone PWA mode (the user lost
+          this dialog completely on their iPad), so we render a
+          custom React modal instead. */}
+      {showResetConfirm && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center px-4"
+          style={{ background: 'rgba(0,0,0,0.55)' }}
+          data-testid="reset-layout-confirm-overlay"
+          onClick={() => setShowResetConfirm(false)}
+        >
+          <div
+            className="rounded-2xl shadow-2xl max-w-sm w-full p-5"
+            style={{ background: 'var(--bg2)', border: '1px solid var(--b)', color: 'var(--t)' }}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reset-layout-confirm-title"
+            data-testid="reset-layout-confirm-modal"
+          >
+            <h3
+              id="reset-layout-confirm-title"
+              className="text-lg font-bold mb-2"
+              style={{ color: 'var(--gold)' }}
+            >
+              Reset chart layout?
+            </h3>
+            <p className="text-sm mb-4" style={{ color: 'var(--t2)' }}>
+              This will discard every tile and legend position you've manually
+              arranged on this Entities &amp; Structures chart and snap them
+              back to the default auto-layout. Your entities, people, and
+              relationships will NOT be deleted — only their positions on
+              the canvas. This cannot be undone.
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(false)}
+                className="px-4 py-2 rounded-full text-sm font-bold"
+                style={{ border: '1px solid var(--b)', color: 'var(--t2)' }}
+                data-testid="reset-layout-confirm-cancel"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  resetEntityChartPositions(estateId);
+                  setResetTick((t) => t + 1);
+                  setShowResetConfirm(false);
+                }}
+                className="px-4 py-2 rounded-full text-sm font-bold"
+                style={{ background: 'var(--gold)', color: '#0F172A' }}
+                data-testid="reset-layout-confirm-yes"
+              >
+                Yes, reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
