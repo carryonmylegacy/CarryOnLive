@@ -474,9 +474,9 @@ export default function EntitiesPrintPage() {
             width: 8.5in !important;
             min-width: 8.5in !important;
             max-width: 8.5in !important;
-            height: 9.0in !important;
+            height: 10.0in !important;
             min-height: 0 !important;
-            max-height: 9.0in !important;
+            max-height: 10.0in !important;
             overflow: hidden !important;
           }
           /* The print root is rendered via React portal AS A DIRECT
@@ -494,14 +494,15 @@ export default function EntitiesPrintPage() {
             width: 8.5in !important;
             min-width: 8.5in !important;
             max-width: 8.5in !important;
-            /* Sized aggressively small (8.5in × 9.0in inside an 11in
-               page). iOS Safari adds invisible "system" margin / its
-               own header-footer chrome we have no CSS hook for —
-               leaving ~2in of vertical slack guarantees we always
-               fit, no matter how iOS interprets in/px units. */
-            height: 9.0in !important;
+            /* Sized to 8.5in × 9.5in inside an 11in page. Leaves
+               ~1.5in of slack for iOS Safari's invisible "system"
+               margin / its own header-footer chrome on every printed
+               page — single-page output is guaranteed and the tree
+               has enough vertical room to center properly between
+               our header and the iOS footer. */
+            height: 9.5in !important;
             min-height: 0 !important;
-            max-height: 9.0in !important;
+            max-height: 9.5in !important;
             padding: 0.3in !important;
             margin: 0 !important;
             box-sizing: border-box !important;
@@ -534,12 +535,13 @@ export default function EntitiesPrintPage() {
             display: block !important;
             width: 100% !important;
             /* Fills ALL the remaining vertical space below the header
-               (root 9.0in - 0.6in padding - 0.65in header - 0.05in
-               header bottom-margin = 7.7in). The SVG inside fills
+               (root 9.5in - 0.6in padding - 0.65in header - 0.05in
+               header bottom-margin = 8.2in). The SVG inside fills
                this entirely; preserveAspectRatio="xMidYMid meet"
-               keeps the tree centered. */
-            height: 7.7in !important;
-            max-height: 7.7in !important;
+               keeps the tree centered both vertically and
+               horizontally. */
+            height: 8.2in !important;
+            max-height: 8.2in !important;
             margin: 0 !important;
             overflow: hidden !important;
             position: relative !important;
@@ -549,14 +551,15 @@ export default function EntitiesPrintPage() {
             width: 100% !important;
             height: 100% !important;
           }
-          /* Legend pinned to the top-right corner of the print page,
-             just below the header rule. Completely disassociated from
-             the tree — the tree centers independently inside the
-             SVG above. */
+          /* Legend pinned to BOTTOM-RIGHT of the print page, sitting
+             above the iOS footer chrome and clear of the tree
+             (which is centered in the wrap above). */
           .cfp-print-legend {
             position: absolute !important;
-            top: 0.95in !important;
+            bottom: 0.3in !important;
             right: 0.3in !important;
+            top: auto !important;
+            left: auto !important;
             width: ${LEGEND_W}px !important;
             margin: 0 !important;
             padding: 0 !important;
@@ -602,9 +605,14 @@ export default function EntitiesPrintPage() {
         }
         .cfp-print-legend {
           position: absolute;
-          top: 132px;
+          /* Bottom-right of the on-screen preview so it sits clear of
+             the tree (which centers in the wrap above). The bottom
+             offset accounts for the in-document footer's height plus
+             a small breathing gap; min() caps the width on big
+             monitors and shrinks gracefully on narrow phones. */
+          bottom: 56px;
           right: 16px;
-          width: min(40vw, ${LEGEND_W}px);
+          width: min(46vw, ${LEGEND_W}px);
           z-index: 5;
           pointer-events: none;
         }
