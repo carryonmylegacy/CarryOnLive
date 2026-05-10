@@ -46,7 +46,7 @@ import {
   BUCKETS as ENTITY_BUCKETS,
   getTypeMeta,
 } from '../../config/entityCatalog';
-import { LEGEND_W, LEGEND_H } from '../../components/financial/entities/EntityLegend';
+import { LEGEND_W } from '../../components/financial/entities/EntityLegend';
 
 const { ENTITY_W, ENTITY_H, PERSON_W, PERSON_H, CORNER_R } = PRINT_TILE_DIMENSIONS;
 
@@ -105,17 +105,17 @@ export default function EntitiesPrintPage() {
 
     const positionOf = (key) => overrides[key] || initial.positions[key] || { x: 0, y: 0 };
 
-    // Tile rects for the TREE only (no legend yet).
+    // Tile rects for the TREE only — legend is rendered as a
+    // separate absolutely-positioned block (see the JSX below), so
+    // it never participates in the tree's bounding box or its
+    // viewBox math. This lets the tree center cleanly inside the
+    // SVG while the legend pins to the page's top-right corner.
     const tileRects = graph.nodes.map((n) => {
       const p = positionOf(n.key);
       return { key: n.key, x: p.x, y: p.y, w: n.w, h: n.h, node: n };
     });
 
-    // BBox covering every tree tile. We use this to (a) compute the
-    // SVG viewBox and (b) pin the legend to the bottom-right of the
-    // print canvas — strictly for this PDF page. The user's drag
-    // position for the legend on the live chart is intentionally
-    // ignored here per benefactor request.
+    // BBox covering every TREE tile with a comfortable stroke pad.
     const PAD = 24;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     tileRects.forEach((r) => {
@@ -126,24 +126,10 @@ export default function EntitiesPrintPage() {
     });
     if (!isFinite(minX)) { minX = minY = 0; maxX = 800; maxY = 600; }
 
-    // Place legend at the bottom-right corner of the tree bbox,
-    // extending the viewBox vertically so it never overlaps tiles.
-    const LEGEND_GAP = 32;
-    const legendPos = {
-      x: maxX - LEGEND_W,
-      y: maxY + LEGEND_GAP,
-    };
-    tileRects.push({ key: '__legend__', x: legendPos.x, y: legendPos.y, w: LEGEND_W, h: LEGEND_H });
-    // Extend bbox to include the new legend so the viewBox crops
-    // cleanly around it.
-    if (legendPos.x < minX) minX = legendPos.x;
-    if (legendPos.y + LEGEND_H > maxY) maxY = legendPos.y + LEGEND_H;
-
     return {
       nodes: graph.nodes,
       edges: graph.edges,
       tileRects,
-      legendPos,
       viewBox: {
         x: minX - PAD,
         y: minY - PAD,
@@ -402,65 +388,77 @@ export default function EntitiesPrintPage() {
     );
   };
 
+  // Standalone legend block — rendered as its own small SVG outside
+  // the main tree SVG and absolutely positioned to the top-right of
+  // the page (see .cfp-print-legend in the CSS). Disassociated from
+  // the tree per benefactor request: tree stays centered, legend
+  // pins to the top-right corner.
   const renderLegend = () => {
     if (presentRoles.length === 0 && presentCategories.length === 0) return null;
-    const lp = layout.legendPos;
     const headerH = 22;
     const rowH = 18;
     const nRows = presentRoles.length + presentCategories.length + (presentRoles.length && presentCategories.length ? 1 : 0);
-    const computedH = headerH + nRows * rowH + 14;
+    const computedH = Math.max(60, headerH + nRows * rowH + 14);
     return (
-      <g transform={`translate(${lp.x}, ${lp.y})`}>
-        <rect
+      <div className="cfp-print-legend" aria-hidden="true">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox={`0 0 ${LEGEND_W} ${computedH}`}
           width={LEGEND_W}
-          height={Math.max(60, computedH)}
-          rx={12}
-          fill="#ffffff"
-          stroke="#B8860B"
-          strokeWidth={1.4}
-        />
-        <text x={10} y={16} fontSize={11} fontWeight="700" fill="#B8860B" letterSpacing="0.06em">
-          LEGEND
-        </text>
-        <line x1={0} x2={LEGEND_W} y1={headerH} y2={headerH} stroke="#B8860B" strokeOpacity={0.35} />
-        {presentRoles.map((role, i) => {
-          const palette = ROLE_PALETTE[role.id] || ROLE_PALETTE.owner;
-          const isEquity = EQUITY_ROLE_IDS.has(role.id);
-          const stroke = isEquity ? '#B8860B' : palette.color;
-          const y = headerH + 14 + i * rowH;
-          return (
-            <g key={role.id}>
-              <line
-                x1={10} x2={42}
-                y1={y - 3} y2={y - 3}
-                stroke={stroke}
-                strokeWidth={isEquity ? 2.2 : 1.8}
-                strokeLinecap="round"
-                strokeDasharray={palette.dash || undefined}
-              />
-              <text x={50} y={y} fontSize={11} fill="#0f172a">{role.label}</text>
-            </g>
-          );
-        })}
-        {presentRoles.length > 0 && presentCategories.length > 0 && (
-          <line
-            x1={6} x2={LEGEND_W - 6}
-            y1={headerH + 8 + presentRoles.length * rowH}
-            y2={headerH + 8 + presentRoles.length * rowH}
+          height={computedH}
+          style={{ display: 'block' }}
+        >
+          <rect
+            width={LEGEND_W}
+            height={computedH}
+            rx={12}
+            fill="#ffffff"
             stroke="#B8860B"
-            strokeOpacity={0.18}
+            strokeWidth={1.4}
           />
-        )}
-        {presentCategories.map((b, i) => {
-          const yOffset = headerH + 14 + presentRoles.length * rowH + (presentRoles.length ? rowH : 0) + i * rowH;
-          return (
-            <g key={b.id}>
-              <circle cx={26} cy={yOffset - 3} r={5} fill="#B8860B" />
-              <text x={50} y={yOffset} fontSize={11} fill="#0f172a">{b.label}</text>
-            </g>
-          );
-        })}
-      </g>
+          <text x={10} y={16} fontSize={11} fontWeight="700" fill="#B8860B" letterSpacing="0.06em">
+            LEGEND
+          </text>
+          <line x1={0} x2={LEGEND_W} y1={headerH} y2={headerH} stroke="#B8860B" strokeOpacity={0.35} />
+          {presentRoles.map((role, i) => {
+            const palette = ROLE_PALETTE[role.id] || ROLE_PALETTE.owner;
+            const isEquity = EQUITY_ROLE_IDS.has(role.id);
+            const stroke = isEquity ? '#B8860B' : palette.color;
+            const y = headerH + 14 + i * rowH;
+            return (
+              <g key={role.id}>
+                <line
+                  x1={10} x2={42}
+                  y1={y - 3} y2={y - 3}
+                  stroke={stroke}
+                  strokeWidth={isEquity ? 2.2 : 1.8}
+                  strokeLinecap="round"
+                  strokeDasharray={palette.dash || undefined}
+                />
+                <text x={50} y={y} fontSize={11} fill="#0f172a">{role.label}</text>
+              </g>
+            );
+          })}
+          {presentRoles.length > 0 && presentCategories.length > 0 && (
+            <line
+              x1={6} x2={LEGEND_W - 6}
+              y1={headerH + 8 + presentRoles.length * rowH}
+              y2={headerH + 8 + presentRoles.length * rowH}
+              stroke="#B8860B"
+              strokeOpacity={0.18}
+            />
+          )}
+          {presentCategories.map((b, i) => {
+            const yOffset = headerH + 14 + presentRoles.length * rowH + (presentRoles.length ? rowH : 0) + i * rowH;
+            return (
+              <g key={b.id}>
+                <circle cx={26} cy={yOffset - 3} r={5} fill="#B8860B" />
+                <text x={50} y={yOffset} fontSize={11} fill="#0f172a">{b.label}</text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
     );
   };
 
@@ -492,6 +490,7 @@ export default function EntitiesPrintPage() {
           .cfp-print-root {
             color: #0f172a !important;
             display: block !important;
+            position: relative !important;
             width: 8.5in !important;
             min-width: 8.5in !important;
             max-width: 8.5in !important;
@@ -532,30 +531,40 @@ export default function EntitiesPrintPage() {
             overflow: hidden !important;
           }
           .cfp-print-svg-wrap {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
+            display: block !important;
             width: 100% !important;
             /* Fills ALL the remaining vertical space below the header
                (root 9.0in - 0.6in padding - 0.65in header - 0.05in
-               header bottom-margin = 7.7in). SVG content is flex-
-               centered inside, so the tree always sits at the visual
-               middle of the available area. */
+               header bottom-margin = 7.7in). The SVG inside fills
+               this entirely; preserveAspectRatio="xMidYMid meet"
+               keeps the tree centered. */
             height: 7.7in !important;
             max-height: 7.7in !important;
             margin: 0 !important;
             overflow: hidden !important;
+            position: relative !important;
           }
-          /* DO NOT set width/height on the SVG via CSS — the HTML
-             width/height attributes on the <svg> element itself are
-             the authoritative size (per SVG spec). iOS Safari ignored
-             CSS in-units in print, but it respects intrinsic SVG
-             attribute pixels. The SVG is rendered at exactly 672×624
-             logical px = 7.0in × 6.5in at 96dpi. */
           .cfp-print-svg-wrap svg {
             display: block !important;
-            max-width: 100% !important;
-            max-height: 100% !important;
+            width: 100% !important;
+            height: 100% !important;
+          }
+          /* Legend pinned to the top-right corner of the print page,
+             just below the header rule. Completely disassociated from
+             the tree — the tree centers independently inside the
+             SVG above. */
+          .cfp-print-legend {
+            position: absolute !important;
+            top: 0.95in !important;
+            right: 0.3in !important;
+            width: ${LEGEND_W}px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            pointer-events: none !important;
+          }
+          .cfp-print-legend svg {
+            width: 100% !important;
+            height: auto !important;
           }
           /* iOS Safari automatically renders its OWN header (URL) and
              footer (date + page number) on every printed page. Hiding
@@ -574,12 +583,36 @@ export default function EntitiesPrintPage() {
              pins it to the exact letter usable area. */
           width: 100%;
           max-width: 7.5in;
+          /* Use dynamic-viewport-height so the layout fits the *real*
+             visible area on iOS Safari/PWA (where the URL bar and
+             home-indicator eat into 100vh). Falls back to 100vh for
+             browsers that don't support dvh. */
           min-height: 100vh;
+          min-height: 100dvh;
+          height: 100vh;
+          height: 100dvh;
           margin: 0 auto;
           padding: 0 12px;
+          padding-bottom: max(12px, env(safe-area-inset-bottom));
           box-sizing: border-box;
           display: flex;
           flex-direction: column;
+          position: relative;
+          overflow: hidden;
+        }
+        .cfp-print-legend {
+          position: absolute;
+          top: 132px;
+          right: 16px;
+          width: min(40vw, ${LEGEND_W}px);
+          z-index: 5;
+          pointer-events: none;
+        }
+        .cfp-print-legend svg {
+          width: 100%;
+          height: auto;
+          display: block;
+          filter: drop-shadow(0 2px 6px rgba(15, 23, 42, 0.08));
         }
         .cfp-print-toolbar {
           display: flex;
@@ -626,16 +659,16 @@ export default function EntitiesPrintPage() {
           color: #475569;
         }
         .cfp-print-svg-wrap {
-          flex: 1;
+          flex: 1 1 auto;
           min-height: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          width: 100%;
+          display: block;
+          position: relative;
         }
         .cfp-print-svg-wrap svg {
           width: 100%;
-          height: auto;
-          max-height: 8.5in;
+          height: 100%;
+          display: block;
         }
         .cfp-print-footer {
           margin-top: 12px;
@@ -683,15 +716,13 @@ export default function EntitiesPrintPage() {
           viewBox={`${layout.viewBox.x} ${layout.viewBox.y} ${layout.viewBox.w} ${layout.viewBox.h}`}
           preserveAspectRatio="xMidYMid meet"
           xmlns="http://www.w3.org/2000/svg"
-          width="672"
-          height="624"
           data-testid="entity-print-svg"
-          style={{ display: 'block', maxWidth: '100%', maxHeight: '100%' }}
+          style={{ display: 'block', width: '100%', height: '100%' }}
         >
           {renderEdges()}
-          {layout.tileRects.filter((r) => r.key !== '__legend__').map(renderTile)}
-          {renderLegend()}
+          {layout.tileRects.map(renderTile)}
         </svg>
+        {renderLegend()}
       </div>
 
       <div className="cfp-print-footer">
