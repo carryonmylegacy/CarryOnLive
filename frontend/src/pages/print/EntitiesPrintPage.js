@@ -141,18 +141,12 @@ export default function EntitiesPrintPage() {
     };
   }, [data, user]);
 
-  // Auto-trigger print once the layout has rendered. We wait two
-  // animation frames so layout/fonts settle, otherwise iOS Safari has
-  // been known to print a half-laid-out page.
-  useEffect(() => {
-    if (!layout) return;
-    let raf = requestAnimationFrame(() => {
-      raf = requestAnimationFrame(() => {
-        try { window.print(); } catch { /* user dismissed */ }
-      });
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [layout]);
+  // No auto-print: iOS Safari blocks programmatic window.print() that
+  // isn't a direct response to a user tap, and re-rendering on memo
+  // changes causes the "blocked from automatically printing" dialog
+  // to re-pop forever. The user invokes printing via the Print chip
+  // in the on-screen toolbar — that click IS a user gesture, so iOS
+  // shows the share-sheet print UI cleanly with no warning.
 
   if (error) {
     return (
