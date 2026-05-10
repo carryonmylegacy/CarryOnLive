@@ -43,6 +43,7 @@ import {
   ROLE_PALETTE,
   ROLE_OPTIONS,
   BUCKETS as ENTITY_BUCKETS,
+  getTypeMeta,
 } from '../../config/entityCatalog';
 import { LEGEND_W, LEGEND_H } from '../../components/financial/entities/EntityLegend';
 
@@ -253,6 +254,15 @@ export default function EntitiesPrintPage() {
     const n = rect.node;
     if (!n) return null;
     const isEntity = n.kind === 'entity';
+    // Entity nodes don't have `label`/`sublabel` populated by buildGraph
+    // (the live EntityTile reads `n.entity.name` / type-meta directly),
+    // so for the static SVG we synthesize the same fields here.
+    const e = isEntity ? n.entity : null;
+    const typeMeta = isEntity ? getTypeMeta(e.category, e.type) : null;
+    const titleText = isEntity ? (e?.name || 'Entity') : (n.label || '');
+    const subText = isEntity
+      ? (typeMeta?.friendly || e?.type || '')
+      : (n.sublabel || '');
     const fill = '#ffffff';
     const stroke = '#1f2937';
     return (
@@ -268,31 +278,34 @@ export default function EntitiesPrintPage() {
         {/* Title */}
         <text
           x={rect.w / 2}
-          y={isEntity ? 24 : 60}
+          y={isEntity ? 30 : 60}
           textAnchor="middle"
-          fontSize={isEntity ? 13 : 12}
+          fontSize={isEntity ? 14 : 12}
           fontWeight="700"
           fill="#0f172a"
         >
-          {truncate(n.label, isEntity ? 24 : 14)}
+          {truncate(titleText, isEntity ? 24 : 14)}
         </text>
-        {/* Sublabel (entity type / last name / "Outside party") */}
-        {n.sublabel && (
+        {/* Sublabel (entity friendly type / last name / "Outside party") */}
+        {subText && (
           <text
             x={rect.w / 2}
-            y={isEntity ? 42 : 76}
+            y={isEntity ? 50 : 76}
             textAnchor="middle"
             fontSize={11}
             fill="#475569"
           >
-            {truncate(n.sublabel, isEntity ? 30 : 16)}
+            {truncate(subText, isEntity ? 30 : 16)}
           </text>
         )}
-        {/* For entity tiles: state line */}
-        {isEntity && n.entity?.formation_state && (
-          <text x={rect.w / 2} y={60} textAnchor="middle" fontSize={10} fill="#64748b">
-            {n.entity.formation_state}
-          </text>
+        {/* For entity tiles: state pill */}
+        {isEntity && e?.formation_state && (
+          <g transform={`translate(${rect.w / 2 - 14}, ${64})`}>
+            <rect width="28" height="16" rx="6" fill="#fffaf0" stroke="#B8860B" strokeWidth={1} />
+            <text x="14" y="11" textAnchor="middle" fontSize="9" fontWeight="700" fill="#B8860B">
+              {e.formation_state}
+            </text>
+          </g>
         )}
         {/* For people: role title chip(s) */}
         {!isEntity && Array.isArray(n.titles) && n.titles.length > 0 && (
@@ -401,17 +414,37 @@ export default function EntitiesPrintPage() {
         .cfp-print-root {
           font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
           color: #0f172a;
-          width: 7.5in;
-          min-height: 10in;
+          /* Fluid on small screens, capped at letter width on tablets
+             and desktop so the on-screen preview matches what the
+             saved PDF will look like. The @media print branch below
+             pins it to the exact letter usable area. */
+          width: 100%;
+          max-width: 7.5in;
+          min-height: 100vh;
           margin: 0 auto;
-          padding: 0;
+          padding: 0 12px;
+          box-sizing: border-box;
           display: flex;
           flex-direction: column;
+        }
+        @media print {
+          .cfp-print-root {
+            width: 7.5in;
+            max-width: 7.5in;
+            min-height: 10in;
+            padding: 0;
+          }
         }
         .cfp-print-toolbar {
           display: flex;
           gap: 8px;
           padding: 12px 0;
+          /* Honor the iOS notch / Dynamic-Island safe area so Back +
+             Print stay tappable on every device. The :12px inner
+             padding is in addition to the env() inset. */
+          padding-top: max(12px, env(safe-area-inset-top));
+          padding-left: max(12px, env(safe-area-inset-left));
+          padding-right: max(12px, env(safe-area-inset-right));
           position: sticky;
           top: 0;
           background: #f4f4f4;
