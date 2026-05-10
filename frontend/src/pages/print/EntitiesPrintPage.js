@@ -731,8 +731,8 @@ export default function EntitiesPrintPage() {
 
       <div className="cfp-print-svg-wrap">
         <svg
-          width="100%"
-          height="100%"
+          width="756"
+          height="787"
           viewBox={`${layout.viewBox.x} ${layout.viewBox.y} ${layout.viewBox.w} ${layout.viewBox.h}`}
           preserveAspectRatio="xMidYMid meet"
           xmlns="http://www.w3.org/2000/svg"
