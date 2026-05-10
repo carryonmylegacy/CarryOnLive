@@ -309,7 +309,7 @@ export default function EntityDetailPanel({
                 <Input value={name} onChange={(e) => setName(e.target.value)} className="input-field" data-testid="detail-edit-name" />
               </div>
               {meta?.state_relevant && (
-                <div className="space-y-2 border-t border-[var(--b)] pt-4">
+                <div className="space-y-2 border-t border-[var(--b2)] pt-4">
                   <Label className="text-[var(--t4)]">Formation state</Label>
                   <Select value={state} onValueChange={(v) => setState(v === 'none' ? '' : v)}>
                     <SelectTrigger className="input-field select-themed">
@@ -322,11 +322,11 @@ export default function EntityDetailPanel({
                   </Select>
                 </div>
               )}
-              <div className="space-y-2 border-t border-[var(--b)] pt-4">
+              <div className="space-y-2 border-t border-[var(--b2)] pt-4">
                 <Label className="text-[var(--t4)]">Notes</Label>
                 <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="input-field min-h-[80px]" rows={3} />
               </div>
-              <div className="space-y-2 border-t border-[var(--b)] pt-4">
+              <div className="space-y-2 border-t border-[var(--b2)] pt-4">
                 <Label className="text-[var(--t4)]">Financial snapshot</Label>
                 <FinancialFields
                   assets={grossAssets}
@@ -334,7 +334,7 @@ export default function EntityDetailPanel({
                   onChange={({ assets, debts }) => { setGrossAssets(assets); setGrossDebts(debts); }}
                 />
               </div>
-              <div className="space-y-2 border-t border-[var(--b)] pt-4">
+              <div className="space-y-2 border-t border-[var(--b2)] pt-4">
                 <Label className="text-[var(--t4)]">Linked documents (SDV)</Label>
                 <DocumentLinker
                   value={linkedDocIds}
@@ -342,7 +342,7 @@ export default function EntityDetailPanel({
                   documents={documents || []}
                 />
               </div>
-              <div className="space-y-2 border-t border-[var(--b)] pt-4">
+              <div className="space-y-2 border-t border-[var(--b2)] pt-4">
                 <Label className="text-[var(--t4)]">
                   Digital credentials
                   <span className="text-[11px] font-normal text-[var(--t5)] ml-1.5">— saved to your DAV</span>
@@ -371,11 +371,11 @@ export default function EntityDetailPanel({
                 getAuthHeaders={getAuthHeaders}
                 onUploaded={() => onChanged?.()}
               />
-              <div className="space-y-2 border-t border-[var(--b)] pt-4"><Label>First name</Label>
+              <div className="space-y-2 border-t border-[var(--b2)] pt-4"><Label>First name</Label>
                 <Input value={extFirst} onChange={(e) => setExtFirst(e.target.value)} className="input-field" /></div>
-              <div className="space-y-2 border-t border-[var(--b)] pt-4"><Label>Last name</Label>
+              <div className="space-y-2 border-t border-[var(--b2)] pt-4"><Label>Last name</Label>
                 <Input value={extLast} onChange={(e) => setExtLast(e.target.value)} className="input-field" /></div>
-              <div className="space-y-2 border-t border-[var(--b)] pt-4"><Label>Notes</Label>
+              <div className="space-y-2 border-t border-[var(--b2)] pt-4"><Label>Notes</Label>
                 <Textarea value={extNotes} onChange={(e) => setExtNotes(e.target.value)} className="input-field min-h-[80px]" rows={3} /></div>
               {/* Cancel / Save changes rendered at the bottom — see
                   the editing-actions block near the end of this file. */}
@@ -433,7 +433,7 @@ export default function EntityDetailPanel({
               into this panel. */}
           {isEntity && (
             <>
-                  <div className="border-t border-[var(--b)] pt-4">
+                  <div className="border-t border-[var(--b2)] pt-4">
                     <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--t5)] mb-2">Who connects in</div>
                     {incomingRels.length === 0 && (
                       <div className="text-[12px] text-[var(--t5)] italic">No connections yet.</div>
@@ -441,7 +441,7 @@ export default function EntityDetailPanel({
                     {incomingRels.map((r) => {
                       const role = ROLE_OPTIONS.find((x) => x.id === r.role);
                       return (
-                        <div key={r.id} className="flex items-center gap-2 p-2 rounded-md" style={{ background: 'var(--card)', border: '1px solid var(--b)' }}>
+                        <div key={r.id} className="flex items-center gap-2 p-2 rounded-md" style={{ background: 'var(--card)', border: '1px solid var(--b2)' }}>
                           <div className="flex-1 min-w-0">
                             <div className="text-[12px] font-semibold text-[var(--t)] truncate">{labelFor(r.source_type, r.source_id)}</div>
                             <div className="text-[11px] text-[var(--t5)]">
@@ -463,7 +463,7 @@ export default function EntityDetailPanel({
                       {outgoingRels.map((r) => {
                         const role = ROLE_OPTIONS.find((x) => x.id === r.role);
                         return (
-                          <div key={r.id} className="flex items-center gap-2 p-2 rounded-md" style={{ background: 'var(--card)', border: '1px solid var(--b)' }}>
+                          <div key={r.id} className="flex items-center gap-2 p-2 rounded-md" style={{ background: 'var(--card)', border: '1px solid var(--b2)' }}>
                             <div className="flex-1 min-w-0">
                               <div className="text-[12px] font-semibold text-[var(--t)] truncate">{labelFor(r.target_type, r.target_id)}</div>
                               <div className="text-[11px] text-[var(--t5)]">
@@ -482,15 +482,17 @@ export default function EntityDetailPanel({
 
                   {/* Add connection */}
                   {!addingConn ? (
-                    <button
-                      onClick={() => setAddingConn(true)}
-                      className="w-full text-xs text-[var(--gold)] font-bold hover:underline flex items-center justify-center gap-1 py-2"
-                      data-testid="detail-add-conn"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Add a connection
-                    </button>
+                    <div className="flex justify-center pt-1">
+                      <button
+                        onClick={() => setAddingConn(true)}
+                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[var(--gold)] whitespace-nowrap border border-[var(--gold)]/70 bg-[rgba(212,165,55,0.10)] hover:bg-[rgba(212,165,55,0.20)] hover:border-[var(--gold)] transition-colors"
+                        data-testid="detail-add-conn"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Add a connection
+                      </button>
+                    </div>
                   ) : (
-                    <div className="p-3 rounded-xl space-y-2" style={{ background: 'var(--card)', border: '1px solid var(--b)' }}>
+                    <div className="p-3 rounded-xl space-y-2" style={{ background: 'var(--card)', border: '1px solid var(--b2)' }}>
                       <Label className="text-[11px] text-[var(--t4)]">Connected to</Label>
                       <Select value={newSourceKey} onValueChange={setNewSourceKey}>
                         <SelectTrigger className="input-field select-themed"><SelectValue placeholder="Select a person or entity" /></SelectTrigger>
@@ -543,7 +545,7 @@ export default function EntityDetailPanel({
                   )}
 
                   {!editing && (
-                    <div className="pt-2 border-t border-[var(--b)]">
+                    <div className="pt-2 border-t border-[var(--b2)]">
                       <Button
                         variant="ghost"
                         onClick={handleDeleteEntity}
@@ -570,7 +572,7 @@ export default function EntityDetailPanel({
                     </div>
                   )}
                   {!editing && (
-                    <div className="pt-2 border-t border-[var(--b)]">
+                    <div className="pt-2 border-t border-[var(--b2)]">
                       <Button
                         variant="ghost"
                         onClick={handleDeleteExternal}
@@ -592,7 +594,7 @@ export default function EntityDetailPanel({
             connections. Single canonical block here removes that
             confusion. */}
         {editing && (isEntity || isExternal) && (
-          <div className="flex gap-2 pt-4 border-t border-[var(--b)]">
+          <div className="flex gap-2 pt-4 border-t border-[var(--b2)]">
             <Button
               variant="outline"
               onClick={() => setEditing(false)}

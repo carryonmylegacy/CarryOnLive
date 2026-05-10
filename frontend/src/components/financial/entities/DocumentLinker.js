@@ -99,7 +99,7 @@ export default function DocumentLinker({ value, onChange, documents }) {
               <button
                 type="button"
                 onClick={() => setEditingId(null)}
-                className="px-3 rounded-lg text-[12px] font-bold text-[var(--t4)] border border-[var(--b)] hover:text-[var(--t)] hover:bg-[var(--s)]"
+                className="px-3 rounded-lg text-[12px] font-bold text-[var(--t4)] border border-[var(--b2)] hover:text-[var(--t)] hover:bg-[var(--s)]"
                 data-testid={`doc-link-edit-cancel-${docId}`}
               >
                 Cancel
@@ -150,14 +150,16 @@ export default function DocumentLinker({ value, onChange, documents }) {
           opens but contains a single disabled "No documents" option
           so the user gets the same UX shape regardless. */}
       {!picking && (
-        <button
-          type="button"
-          onClick={() => setPicking(true)}
-          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold text-[var(--gold)] border border-dashed border-[var(--gold)]/40 hover:bg-[var(--gold)]/5"
-          data-testid="doc-link-add"
-        >
-          <Plus className="w-3.5 h-3.5" /> Add linked document
-        </button>
+        <div className="flex justify-center pt-1">
+          <button
+            type="button"
+            onClick={() => setPicking(true)}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[var(--gold)] whitespace-nowrap border border-[var(--gold)]/70 bg-[rgba(212,165,55,0.10)] hover:bg-[rgba(212,165,55,0.20)] hover:border-[var(--gold)] transition-colors"
+            data-testid="doc-link-add"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add linked document
+          </button>
+        </div>
       )}
 
       {picking && (
@@ -189,7 +191,7 @@ export default function DocumentLinker({ value, onChange, documents }) {
           <button
             type="button"
             onClick={() => setPicking(false)}
-            className="px-3 rounded-lg text-[12px] font-bold text-[var(--t4)] border border-[var(--b)] hover:text-[var(--t)] hover:bg-[var(--s)]"
+            className="px-3 rounded-lg text-[12px] font-bold text-[var(--t4)] border border-[var(--b2)] hover:text-[var(--t)] hover:bg-[var(--s)]"
             data-testid="doc-link-cancel"
           >
             Cancel

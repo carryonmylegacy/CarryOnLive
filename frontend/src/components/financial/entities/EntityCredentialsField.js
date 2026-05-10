@@ -134,7 +134,7 @@ export default function EntityCredentialsField({
       {visible.length === 0 && (
         <div
           className="text-[12px] text-[var(--t5)] italic px-3 py-3 rounded-lg"
-          style={{ background: 'var(--card)', border: '1px dashed var(--b)' }}
+          style={{ background: 'var(--card)', border: '1px dashed var(--b2)' }}
         >
           No digital credentials saved for this entity yet. Add a portal login,
           tax-filing account, registered-agent dashboard, etc.
@@ -200,7 +200,7 @@ export default function EntityCredentialsField({
             <div
               key={c.id || `new-${idx}`}
               className="flex items-center gap-2 px-3 py-2 rounded-xl"
-              style={{ background: 'var(--card)', border: '1px solid var(--b)' }}
+              style={{ background: 'var(--card)', border: '1px solid var(--b2)' }}
               data-testid={`entity-credential-row-${idx}`}
             >
               <KeyRound className="w-3.5 h-3.5 text-[var(--gold)] flex-shrink-0" />
@@ -420,14 +420,16 @@ export default function EntityCredentialsField({
         );
       })}
 
-      <button
-        type="button"
-        onClick={add}
-        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold text-[var(--gold)] border border-dashed border-[var(--gold)]/40 hover:bg-[var(--gold)]/5"
-        data-testid="entity-credential-add"
-      >
-        <Plus className="w-3.5 h-3.5" /> Add credential
-      </button>
+      <div className="flex justify-center pt-1">
+        <button
+          type="button"
+          onClick={add}
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[var(--gold)] whitespace-nowrap border border-[var(--gold)]/70 bg-[rgba(212,165,55,0.10)] hover:bg-[rgba(212,165,55,0.20)] hover:border-[var(--gold)] transition-colors"
+          data-testid="entity-credential-add"
+        >
+          <Plus className="w-3.5 h-3.5" /> Add credential
+        </button>
+      </div>
     </div>
   );
 }

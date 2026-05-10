@@ -850,7 +850,7 @@
   .cfp-edit-surface .input-field,
   .cfp-edit-surface select.input-field {
     background: var(--card);
-    border-color: rgba(255,255,255,0.20);
+    border-color: rgba(255,255,255,0.28);
   }
   .cfp-edit-surface .input-field:focus {
     border-color: var(--gold);
@@ -858,7 +858,7 @@
   [data-theme="light"] .cfp-edit-surface .input-field,
   [data-theme="light"] .cfp-edit-surface select.input-field {
     background: #ffffff;
-    border-color: rgba(15,23,42,0.18);
+    border-color: rgba(15,23,42,0.26);
   }
   
   /* Stat Card - Uses CSS variables with depth */
