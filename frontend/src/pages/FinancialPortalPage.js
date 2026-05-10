@@ -765,7 +765,15 @@ const FinancialPortalPage = () => {
       />
 
       {/* Financial Summary Cards */}
-      <FinancialSummary summary={summary} onNavigate={(tab) => setActiveTab(tab)} />
+      <FinancialSummary
+        summary={summary}
+        bills={bills}
+        debts={debts}
+        accounts={accounts}
+        propertyAssets={propertyAssets}
+        estateId={estate?.id}
+        onNavigate={(tab) => setActiveTab(tab)}
+      />
 
       {/* 30-day rolling cashflow timeline — beneficiaries see what's due before next paycheck */}
       {estate?.id && <CashflowTimeline estateId={estate.id} />}
