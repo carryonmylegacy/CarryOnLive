@@ -20,6 +20,7 @@ import EntityQuickInfoPopover from './EntityQuickInfoPopover';
 import EntityDocumentsModal from './EntityDocumentsModal';
 import EntitiesShareToggle from './EntitiesShareToggle';
 import EntityLegend from './EntityLegend';
+import { toast } from 'sonner';
 
 const DRAFT_KEY = (estateId) => `cfp:entityWizard:draft:${estateId || 'global'}`;
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
@@ -424,19 +425,25 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
               setLegendHidden(true);
             }}
             serverOverrides={serverChartLayout}
-            onSaveLayout={(overrides) => {
-              // Fire-and-forget to keep the lock toggle responsive.
-              // Server is idempotent (upsert) so a duplicate save on
-              // unmount is harmless. Errors are swallowed because the
-              // local cache + next-load rehydrate cover the offline
-              // case; a future Sentry capture is fine here.
+            onSaveLayout={(overrides, opts = {}) => {
+              // Two paths:
+              //   • opts.userInitiated === true  → user tapped the
+              //     lock chip while still on the page — show the
+              //     "Tree structure saved" toast.
+              //   • opts.userInitiated === false → unmount cleanup
+              //     fired because the user navigated away — save
+              //     silently so the toast doesn't flash for one
+              //     frame on the way out.
               try {
                 axios.put(
                   `${API_URL}/financial/entities/${estateId}/layout`,
                   { overrides: overrides || {} },
                   getAuthHeaders(),
                 ).catch(() => { /* offline / 5xx — local cache covers us */ });
-              } catch { /* axios throw before promise — ignore */ }
+              } catch { /* axios threw before promise — ignore */ }
+              if (opts.userInitiated) {
+                toast.success('Tree structure saved');
+              }
             }}
           />
         ) : (

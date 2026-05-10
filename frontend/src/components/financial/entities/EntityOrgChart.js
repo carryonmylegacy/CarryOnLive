@@ -712,10 +712,11 @@ export default function EntityOrgChart({
   }, [estateId]);
 
   // Save to backend whenever the chart transitions into the LOCKED
-  // state — both manual taps of the lock chip AND auto-locks that
-  // fire when the user navigates away (the parent flips `locked` to
-  // true on unmount paths). Bookended by the unmount cleanup below
-  // so a fast nav-away that beats the lock effect still saves.
+  // state — the user clicked the lock chip while still on the page.
+  // We pass `userInitiated: true` so the parent can surface a toast.
+  // Unmount-on-navigate-away is handled by the cleanup effect below
+  // with `userInitiated: false` so the toast doesn't flash on the way
+  // out.
   const lockedRef = useRef(locked);
   useEffect(() => {
     const wasLocked = lockedRef.current;
@@ -723,20 +724,21 @@ export default function EntityOrgChart({
     if (locked && !wasLocked && dirtyRef.current) {
       const snapshot = overrides;
       dirtyRef.current = false;
-      try { onSaveLayoutRef.current?.(snapshot); } catch { /* surfaced as toast in parent */ }
+      try { onSaveLayoutRef.current?.(snapshot, { userInitiated: true }); } catch { /* surfaced as toast in parent */ }
     }
   }, [locked, overrides]);
 
-  // Final flush on unmount — captures the case where the user backs
-  // out of the page so quickly that the parent never had a chance to
-  // bump `locked` to true. We read `overrides` from a ref to avoid
-  // capturing a stale closure in the cleanup.
+  // Final flush on unmount — silent (`userInitiated: false`). Captures
+  // both (a) "user navigated away while still unlocked" and (b)
+  // "user navigated away in the millisecond between toggling lock
+  // and the lock-effect committing". We read overrides via a ref so
+  // the cleanup doesn't capture a stale closure.
   const overridesRef = useRef(overrides);
   useEffect(() => { overridesRef.current = overrides; }, [overrides]);
   useEffect(() => {
     return () => {
       if (dirtyRef.current) {
-        try { onSaveLayoutRef.current?.(overridesRef.current); } catch { /* best effort */ }
+        try { onSaveLayoutRef.current?.(overridesRef.current, { userInitiated: false }); } catch { /* best effort */ }
       }
     };
   }, []);
