@@ -1,5 +1,5 @@
 import React, { useEffect, useState, lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SectionLockProvider } from './components/security/SectionLock';
@@ -86,6 +86,7 @@ const CondolencePage = lazy(() => import('./pages/beneficiary/CondolencePage'));
 const BeneficiarySettingsPage = lazy(() => import('./pages/beneficiary/BeneficiarySettingsPage'));
 const BeneficiaryFinancialPage = lazy(() => import('./pages/beneficiary/BeneficiaryFinancialPage'));
 const BeneficiaryEntitiesPage = lazy(() => import('./pages/beneficiary/BeneficiaryEntitiesPage'));
+const EntitiesPrintPage = lazy(() => import('./pages/print/EntitiesPrintPage'));
 
 const CreateEstatePage = lazy(() => import('./pages/CreateEstatePage'));
 
@@ -657,6 +658,14 @@ function AppRoutes() {
         <Route path="/timeline" element={<FeatureGate><LegacyTimelinePage /></FeatureGate>} />
         <Route path="/estate-chat" element={<FeatureGate><EstateChatPage /></FeatureGate>} />
         <Route path="/connected-protocol" element={<FeatureGate><ConnectedProtocolPage /></FeatureGate>} />
+      </Route>
+
+      {/* Print-only routes — benefactor-gated but NOT wrapped in
+          DashboardLayout so the sidebar / dock / mobile nav don't
+          show up on the printed page. The page itself fires
+          window.print() once layout settles. */}
+      <Route element={<ProtectedRoute allowedRoles={['benefactor']}><Outlet /></ProtectedRoute>}>
+        <Route path="/financial/entities/:estateId/print" element={<EntitiesPrintPage />} />
       </Route>
 
       {/* Beneficiary Routes */}

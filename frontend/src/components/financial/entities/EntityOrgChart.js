@@ -614,6 +614,14 @@ function EntityTile({ node, dragging, locked, onPointerDownDrag, onClick, onDoub
 // ---------------------------------------------------------------------------
 // Main chart
 // ---------------------------------------------------------------------------
+// Export the layout helpers so the print page (`/financial/entities/{id}/print`)
+// can render a static SVG of the same tree without re-implementing the
+// layered layout / edge-routing math. Internal usage is unchanged.
+export { buildGraph, computeInitialLayout, routeEdge, polylineToRoundedPath };
+export const PRINT_TILE_DIMENSIONS = {
+  ENTITY_W, ENTITY_H, PERSON_W, PERSON_H, PADDING, CORNER_R,
+};
+
 export default function EntityOrgChart({
   estateId, entities, externals, relationships, beneficiaries,
   onSingleClickNode, onDoubleClickNode, onInfoClickNode, onEditClickNode,

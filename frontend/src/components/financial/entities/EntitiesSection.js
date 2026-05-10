@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2, Lock, Unlock, Frame, Crosshair, Map } from 'lucide-react';
+import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2, Lock, Unlock, Frame, Crosshair, Map, Printer } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Button } from '../../ui/button';
 import { API_URL } from '../../../config';
@@ -385,6 +385,26 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
               aria-label="Show legend"
             >
               <Map className="w-3 h-3" /><span className="hidden sm:inline">Legend</span>
+            </button>
+          )}
+          {viewMode === 'chart' && estateId && (
+            <button
+              onClick={() => {
+                // Open the print page in a new tab so the user can
+                // come back to the live chart after saving the PDF
+                // / closing the OS print dialog.
+                window.open(`/financial/entities/${estateId}/print`, '_blank', 'noopener,noreferrer');
+              }}
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
+              style={{
+                color: 'var(--gold)',
+                border: '1px solid rgba(212,165,55,0.4)',
+              }}
+              data-testid="entities-print-button"
+              title="Print as PDF (8.5×11)"
+              aria-label="Print"
+            >
+              <Printer className="w-3 h-3" /><span className="hidden sm:inline">Print</span>
             </button>
           )}
           <EntitiesShareToggle
