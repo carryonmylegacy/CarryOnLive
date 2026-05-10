@@ -474,8 +474,8 @@ export default function EntitiesPrintPage() {
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox={`0 0 ${LEGEND_W} ${computedH}`}
-          width={LEGEND_W}
-          height={computedH}
+          width="1.7in"
+          height={`${(1.7 * computedH / LEGEND_W).toFixed(3)}in`}
           style={{ display: 'block' }}
         >
           <rect
@@ -647,26 +647,28 @@ export default function EntitiesPrintPage() {
             padding: 0 !important;
           }
           /* Legend pinned to the absolute BOTTOM-RIGHT corner of the
-             print page, above the iOS-rendered footer. Scales as a
-             fraction of the page width (not a fixed pixel size) so
-             it works for any legend content length and any future
-             page-size change. The inner SVG keeps its aspect ratio. */
+             print page, above the iOS-rendered footer. Sized in
+             ABSOLUTE inch units (no percentages) — iOS Safari's
+             print engine doesn't reliably resolve % against an
+             absolutely-positioned ancestor in print, which made the
+             legend balloon to 30%+ of the page. */
           .cfp-print-legend {
             position: absolute !important;
             bottom: 0.15in !important;
             right: 0.15in !important;
             top: auto !important;
             left: auto !important;
-            width: 22% !important;
-            max-width: 2.0in !important;
-            min-width: 1.4in !important;
+            width: 1.7in !important;
+            max-width: 1.7in !important;
+            height: auto !important;
             margin: 0 !important;
             padding: 0 !important;
             pointer-events: none !important;
           }
           .cfp-print-legend svg {
-            width: 100% !important;
+            width: 1.7in !important;
             height: auto !important;
+            max-width: 1.7in !important;
             display: block !important;
           }
           /* iOS Safari automatically renders its OWN header (URL) and
@@ -820,8 +822,8 @@ export default function EntitiesPrintPage() {
 
       <div className="cfp-print-svg-wrap">
         <svg
-          width="756"
-          height="787"
+          width="7.9in"
+          height="8.2in"
           viewBox={`${layout.viewBox.x} ${layout.viewBox.y} ${layout.viewBox.w} ${layout.viewBox.h}`}
           preserveAspectRatio="xMidYMid meet"
           xmlns="http://www.w3.org/2000/svg"
