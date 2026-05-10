@@ -406,24 +406,50 @@ export default function EntitiesPrintPage() {
             max-width: 7.5in !important;
             height: 10in !important;
             min-height: 10in !important;
+            max-height: 10in !important;
             padding: 0 !important;
+            /* Forbid page break — guarantees the entire chart prints
+               on a single sheet regardless of tree size, just like
+               the user wants. The SVG inside scales via viewBox so
+               an enormous tree just renders smaller, never spills
+               onto a second page. */
+            overflow: hidden !important;
+            page-break-inside: avoid !important;
+            page-break-after: avoid !important;
+            break-inside: avoid !important;
           }
           .cfp-print-svg-wrap {
             display: block !important;
             width: 100% !important;
-            /* Fill the page minus header (~80px) and footer (~30px). */
-            height: 9in !important;
-            max-height: 9in !important;
+            /* Fill the page minus a generous header (~0.9in) and
+               footer (~0.3in) budget. The remaining 8.8in is enough
+               that even with rounding errors / iOS Safari's print
+               margins, the SVG never spills onto page 2. */
+            height: 8.6in !important;
+            max-height: 8.6in !important;
             margin: 0 !important;
+            overflow: hidden !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           .cfp-print-svg-wrap svg {
             width: 100% !important;
             height: 100% !important;
             max-height: 100% !important;
+            display: block !important;
+          }
+          .cfp-print-header,
+          .cfp-print-footer {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           .cfp-print-header {
-            margin-bottom: 12px !important;
-            padding-bottom: 12px !important;
+            margin-bottom: 10px !important;
+            padding-bottom: 10px !important;
+          }
+          .cfp-print-footer {
+            margin-top: 8px !important;
+            padding-top: 6px !important;
           }
           /* Hide on-screen toolbar so the print output is just the
              header + tree + footer. */
