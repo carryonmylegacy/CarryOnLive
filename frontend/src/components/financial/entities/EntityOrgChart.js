@@ -693,15 +693,19 @@ export default function EntityOrgChart({
     } catch { setOverrides({}); }
   }, [estateId]);
 
-  // Hydrate from server payload when it arrives. Server wins because
-  // it's the authoritative cross-device record; localStorage on this
-  // device may be stale (e.g., the user moved tiles on their iPad and
-  // is now opening the chart on iPhone). Only override if the server
-  // returned a non-empty map — an empty server payload could just
-  // mean "this estate has never been saved", in which case we keep
-  // any local overrides the user has made on this device.
+  // Hydrate from server payload — but ONLY ONCE per estate. Subsequent
+  // fetchAll calls (e.g., after the user adds a new entity, or saves
+  // an edit) re-emit the same `serverOverrides` reference on each
+  // refetch; if we re-applied it every time we would silently wipe any
+  // unsaved local drags the user has made on this device. Once-per-
+  // estate hydration is correct: the authoritative cross-device value
+  // arrives on the first load, and after that local state is the
+  // source of truth, with `onSaveLayout` pushing changes back.
+  const hydratedEstateRef = useRef(null);
   useEffect(() => {
     if (!serverOverrides) return;
+    if (hydratedEstateRef.current === estateId) return;
+    hydratedEstateRef.current = estateId;
     if (Object.keys(serverOverrides).length === 0) return;
     setOverrides(serverOverrides);
     // Mirror to localStorage so offline reload starts from the truth.
@@ -761,6 +765,27 @@ export default function EntityOrgChart({
     [nodes, depth]
   );
 
+  // Pin every node's initial position the first time we see it, and
+  // keep that pinned position stable across subsequent renders. This
+  // is what stops a tile from shifting when the user adds a NEW entity
+  // — without this, `computeInitialLayout` re-runs across the entire
+  // graph (depth + sibling-count change as nodes appear), which moves
+  // ANY tile that doesn't yet have an explicit drag-override. Reset
+  // the pin map when the estate changes so we don't leak positions
+  // from one estate into another.
+  const stableInitialRef = useRef({ estateId: null, positions: {} });
+  if (stableInitialRef.current.estateId !== estateId) {
+    stableInitialRef.current = { estateId, positions: {} };
+  }
+  // Append-only: any node we haven't pinned yet, take its current
+  // initial position and lock it in. Existing pinned positions are
+  // never overwritten — that's the whole point.
+  Object.entries(initial).forEach(([k, p]) => {
+    if (!stableInitialRef.current.positions[k]) {
+      stableInitialRef.current.positions[k] = p;
+    }
+  });
+
   // Compute "matches the role filter" sets. Two passes:
   //   Pass 1 — persons that match the active filter:
   //     • "Benefactor" → the user node.
@@ -801,7 +826,11 @@ export default function EntityOrgChart({
     return { activeNodeKeys: all, activeEdgeIds: matchedEdgeIds };
   }, [roleFilter, nodes, edges, ROLE_LABEL]);
 
-  // Effective position of any node = override OR initial.
+  // Effective position of any node = override OR pinned-stable initial OR
+  // current initial OR (legend pseudo-tile fallback). The pinned-stable
+  // map (built above) keeps existing tiles fixed when new entities are
+  // added; without it, `computeInitialLayout` re-balances rows on every
+  // graph change and unmoved tiles drift.
   // Special-case the legend pseudo-tile: if it has never been moved,
   // park it just above-left of the natural tree origin so it lands in
   // the user's viewport when the chart opens centered on the
@@ -810,6 +839,7 @@ export default function EntityOrgChart({
   // padding without scrollbar tricks).
   const positionOf = useCallback((key) => {
     if (overrides[key]) return overrides[key];
+    if (stableInitialRef.current.positions[key]) return stableInitialRef.current.positions[key];
     if (initial[key]) return initial[key];
     if (key === LEGEND_KEY) return { x: -LEGEND_W - 24, y: 0 };
     return { x: PADDING, y: PADDING };
@@ -827,7 +857,7 @@ export default function EntityOrgChart({
     let w = initialW;
     let h = initialH;
     nodes.forEach((n) => {
-      const p = overrides[n.key];
+      const p = overrides[n.key] || stableInitialRef.current.positions[n.key];
       if (!p) return;
       w = Math.max(w, p.x + n.w + PADDING);
       h = Math.max(h, p.y + n.h + PADDING);

@@ -1,5 +1,26 @@
 # CarryOn — Changelog
 
+## Feb 10, 2026 — E&S P0 Fixes: Tile-Drift on Add + Universal Role Picker
+
+**Bug 1 — Tile layout shifting when a new entity is added** (`EntityOrgChart.js`)
+
+Two root causes, both fixed surgically:
+
+1. **`serverOverrides` re-applied on every refetch.** Previously the server-payload-hydration `useEffect` fired on every `fetchAll` (because `chart_layout` came back as a new reference), and `setOverrides(serverOverrides)` silently wiped any unsaved local drags. Now gated by `hydratedEstateRef` — server hydrates exactly once per estateId; subsequent refetches leave local state alone.
+
+2. **`computeInitialLayout` re-balanced rows on every graph change.** Existing tiles without an explicit drag-override would drift because `depth` + sibling count changed when a new node appeared. Added `stableInitialRef` (estate-scoped, append-only) — every node's first-seen initial position is pinned and never recomputed. New tiles still get a fresh natural position; old ones stay put.
+
+Net effect: adding an entity / external person / connection no longer moves a single existing tile.
+
+**Bug 2 — "Cannot subordinate any entity to any other entity"** (`EntityDetailPanel.js`, `EntityWizard.js`)
+
+Per benefactor mandate: *"make sure I can always subordinate anything to anything and I can make superior anything to anything using the proper applicable legal terms."* The role catalog already supports it (`beneficiary`, `member`, `shareholder`, etc. all reachable for entity↔entity links), but the connection picker was filtering by the target entity's category by default — burying roles like "Beneficiary" / "Trustee" behind a `+ Show all roles` expander. Defaulted both pickers (detail panel + wizard step 3) to the full role catalog so every legal hat is one tap away.
+
+**Verified**: ESLint clean on all 3 files, housekeeping `0 WARN / 0 FAIL`, smoke screenshot green.
+
+---
+
+
 ## May 9, 2026 — Tap-Role-To-Filter on the E&S Org Chart
 **Feature**: Each role label beneath a person tile is now an individual gold pill chip. Tap any chip (e.g., "Trustee") and the chart instantly dims everyone who isn't a trustee — answering "who controls this trust?" in one tap.
 

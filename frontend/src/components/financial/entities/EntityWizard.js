@@ -246,7 +246,10 @@ export default function EntityWizard({
     clearDraft();
   };
 
-  const [showAllRolesStep3, setShowAllRolesStep3] = useState(false);
+  // Always default to the full legal-role catalog. Per benefactor
+  // request: "anything to anything using the proper applicable legal
+  // terms" — every role must be reachable in one tap.
+  const [showAllRolesStep3, setShowAllRolesStep3] = useState(true);
 
   if (!open) return null;
 

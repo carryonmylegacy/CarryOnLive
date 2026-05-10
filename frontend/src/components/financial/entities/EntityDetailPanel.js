@@ -60,11 +60,13 @@ export default function EntityDetailPanel({
   const [addingConn, setAddingConn] = useState(false);
   const [newSourceKey, setNewSourceKey] = useState('');
   const [newRole, setNewRole] = useState('owner');
-  // "Show all roles" expander for the connection picker. Defaults to
-  // a category-filtered set so a Trust shows trust-relevant roles
-  // first; once expanded it stays expanded for the rest of the
-  // session so the user doesn't keep re-tapping it.
-  const [showAllRolesAdd, setShowAllRolesAdd] = useState(false);
+  // The connection picker always shows the full legal-role catalog.
+  // The user explicitly wants "anything to anything using the proper
+  // applicable legal terms" — i.e., never have a role hidden by a
+  // category-based smart-default. (The expander state is kept so
+  // future tweaks can re-introduce filtering without touching the
+  // render code.)
+  const [showAllRolesAdd, setShowAllRolesAdd] = useState(true);
   const [newPct, setNewPct] = useState('');
   // Custom confirmation prompt (window.confirm is silently blocked in iOS PWA)
   const [confirmPrompt, setConfirmPrompt] = useState(null); // {message, action}
