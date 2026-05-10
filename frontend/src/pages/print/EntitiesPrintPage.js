@@ -458,93 +458,76 @@ export default function EntitiesPrintPage() {
     );
   };
 
-  // Standalone legend block — rendered as its own small SVG outside
-  // the main tree SVG and absolutely positioned to the top-right of
-  // the page (see .cfp-print-legend in the CSS). Disassociated from
-  // the tree per benefactor request: tree stays centered, legend
-  // pins to the top-right corner.
+  // Standalone legend block — pure HTML/CSS now (not a big outer
+  // SVG). iOS Safari's print engine kept ignoring our width/height
+  // on the outer SVG element (CSS in-units, HTML attrs with units,
+  // unitless pixels — none worked reliably), so the legend ballooned
+  // off the page. Pure HTML divs honor our inch-based CSS without
+  // exception. The role indicator strokes are CSS borders; the
+  // bucket icons are tiny inline 14x14 SVGs (fixed-size, no chance
+  // of overflow).
   const renderLegend = () => {
     if (presentRoles.length === 0 && presentCategories.length === 0) return null;
-    const headerH = 22;
-    const rowH = 18;
-    const nRows = presentRoles.length + presentCategories.length + (presentRoles.length && presentCategories.length ? 1 : 0);
-    const computedH = Math.max(60, headerH + nRows * rowH + 14);
     return (
       <div className="cfp-print-legend" aria-hidden="true">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox={`0 0 ${LEGEND_W} ${computedH}`}
-          width="1.7in"
-          height={`${(1.7 * computedH / LEGEND_W).toFixed(3)}in`}
-          style={{ display: 'block' }}
-        >
-          <rect
-            width={LEGEND_W}
-            height={computedH}
-            rx={12}
-            fill="#ffffff"
-            stroke="#B8860B"
-            strokeWidth={1.4}
-          />
-          <text x={10} y={16} fontSize={11} fontWeight="700" fill="#B8860B" letterSpacing="0.06em">
-            LEGEND
-          </text>
-          <line x1={0} x2={LEGEND_W} y1={headerH} y2={headerH} stroke="#B8860B" strokeOpacity={0.35} />
-          {presentRoles.map((role, i) => {
+        <div className="cfp-print-legend-title">LEGEND</div>
+        <div className="cfp-print-legend-body">
+          {presentRoles.map((role) => {
             const palette = ROLE_PALETTE[role.id] || ROLE_PALETTE.owner;
             const isEquity = EQUITY_ROLE_IDS.has(role.id);
-            const stroke = isEquity ? '#B8860B' : palette.color;
-            const y = headerH + 14 + i * rowH;
+            const color = isEquity ? '#B8860B' : palette.color;
+            const dash = palette.dash;
+            // CSS border style picker: solid (no dash), dashed, dotted.
+            let borderStyle = 'solid';
+            if (dash) {
+              const parts = dash.split(/[ ,]+/).map((v) => parseFloat(v));
+              if (parts[0] && parts[0] <= 3) borderStyle = 'dotted';
+              else borderStyle = 'dashed';
+            }
             return (
-              <g key={role.id}>
-                <line
-                  x1={10} x2={42}
-                  y1={y - 3} y2={y - 3}
-                  stroke={stroke}
-                  strokeWidth={isEquity ? 2.2 : 1.8}
-                  strokeLinecap="round"
-                  strokeDasharray={palette.dash || undefined}
+              <div className="cfp-print-legend-row" key={role.id}>
+                <span
+                  className="cfp-print-legend-line"
+                  style={{ borderTopColor: color, borderTopStyle: borderStyle, borderTopWidth: isEquity ? 2.2 : 1.8 }}
                 />
-                <text x={50} y={y} fontSize={11} fill="#0f172a">{role.label}</text>
-              </g>
+                <span className="cfp-print-legend-label">{role.label}</span>
+              </div>
             );
           })}
           {presentRoles.length > 0 && presentCategories.length > 0 && (
-            <line
-              x1={6} x2={LEGEND_W - 6}
-              y1={headerH + 8 + presentRoles.length * rowH}
-              y2={headerH + 8 + presentRoles.length * rowH}
-              stroke="#B8860B"
-              strokeOpacity={0.18}
-            />
+            <div className="cfp-print-legend-divider" />
           )}
-          {presentCategories.map((b, i) => {
-            const yOffset = headerH + 14 + presentRoles.length * rowH + (presentRoles.length ? rowH : 0) + i * rowH;
-            // Use the same palette accent the platform uses for this
-            // bucket on the live chart (steel/indigo/champagne/teal).
+          {presentCategories.map((b) => {
             const bucketColor = (PALETTE[b.accent] || PALETTE.slate).stroke;
             const iconPaths = BUCKET_ICON_PATHS[b.id];
             return (
-              <g key={b.id}>
-                {iconPaths ? (
-                  <g
-                    transform={`translate(15, ${yOffset - 14}) scale(0.55)`}
-                    fill="none"
-                    stroke={bucketColor}
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    {iconPaths}
-                  </g>
-                ) : (
-                  <circle cx={26} cy={yOffset - 3} r={5} fill={bucketColor} />
-                )}
-                <text x={42} y={yOffset} fontSize={11} fill="#0f172a">{b.label}</text>
-              </g>
+              <div className="cfp-print-legend-row" key={b.id}>
+                <span className="cfp-print-legend-icon">
+                  {iconPaths ? (
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke={bucketColor}
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      {iconPaths}
+                    </svg>
+                  ) : (
+                    <span
+                      className="cfp-print-legend-dot"
+                      style={{ backgroundColor: bucketColor }}
+                    />
+                  )}
+                </span>
+                <span className="cfp-print-legend-label">{b.label}</span>
+              </div>
             );
           })}
-        </svg>
+        </div>
       </div>
     );
   };
@@ -647,11 +630,9 @@ export default function EntitiesPrintPage() {
             padding: 0 !important;
           }
           /* Legend pinned to the absolute BOTTOM-RIGHT corner of the
-             print page, above the iOS-rendered footer. Sized in
-             ABSOLUTE inch units (no percentages) — iOS Safari's
-             print engine doesn't reliably resolve % against an
-             absolutely-positioned ancestor in print, which made the
-             legend balloon to 30%+ of the page. */
+             print page, above the iOS-rendered footer. Pure HTML
+             now — no outer SVG — so iOS Safari's print engine
+             reliably honors our inch-based dimensions. */
           .cfp-print-legend {
             position: absolute !important;
             bottom: 0.15in !important;
@@ -660,16 +641,63 @@ export default function EntitiesPrintPage() {
             left: auto !important;
             width: 1.7in !important;
             max-width: 1.7in !important;
-            height: auto !important;
+            min-width: 1.7in !important;
             margin: 0 !important;
-            padding: 0 !important;
+            padding: 0.08in 0.1in !important;
+            box-sizing: border-box !important;
             pointer-events: none !important;
+            background: #ffffff !important;
+            border: 1px solid #B8860B !important;
+            border-radius: 8px !important;
+            color: #0f172a !important;
+            font-size: 9px !important;
+            line-height: 1.25 !important;
           }
-          .cfp-print-legend svg {
-            width: 1.7in !important;
-            height: auto !important;
-            max-width: 1.7in !important;
-            display: block !important;
+          .cfp-print-legend-title {
+            font-size: 9px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.08em !important;
+            color: #B8860B !important;
+            margin: 0 0 4px 0 !important;
+            padding: 0 0 3px 0 !important;
+            border-bottom: 1px solid rgba(184, 134, 11, 0.35) !important;
+          }
+          .cfp-print-legend-body { display: block !important; }
+          .cfp-print-legend-row {
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            margin: 2px 0 !important;
+          }
+          .cfp-print-legend-line {
+            display: inline-block !important;
+            width: 26px !important;
+            height: 0 !important;
+            border-top-width: 2px !important;
+          }
+          .cfp-print-legend-icon {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 16px !important;
+            height: 16px !important;
+            flex: 0 0 16px !important;
+          }
+          .cfp-print-legend-dot {
+            display: inline-block !important;
+            width: 8px !important;
+            height: 8px !important;
+            border-radius: 50% !important;
+          }
+          .cfp-print-legend-divider {
+            height: 1px !important;
+            background: rgba(184, 134, 11, 0.18) !important;
+            margin: 3px 0 !important;
+          }
+          .cfp-print-legend-label {
+            font-size: 9px !important;
+            color: #0f172a !important;
+            white-space: nowrap !important;
           }
           /* iOS Safari automatically renders its OWN header (URL) and
              footer (date + page number) on every printed page. Hiding
@@ -708,20 +736,71 @@ export default function EntitiesPrintPage() {
         .cfp-print-legend {
           position: absolute;
           /* True bottom-right corner of the on-screen preview frame,
-             just above the in-document footer. Width scales as a
-             fraction of the print-root width (clamped so it never
-             becomes tiny on a phone or oversized on a 4K monitor). */
+             just above the in-document footer. */
           bottom: calc(36px + env(safe-area-inset-bottom, 0px));
           right: 12px;
-          width: clamp(140px, 24%, 220px);
+          width: clamp(160px, 28%, 220px);
+          padding: 8px 10px;
+          box-sizing: border-box;
+          background: #ffffff;
+          border: 1px solid #B8860B;
+          border-radius: 10px;
+          color: #0f172a;
           z-index: 5;
           pointer-events: none;
+          box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+          font-size: 11px;
+          line-height: 1.3;
+        }
+        .cfp-print-legend-title {
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          color: #B8860B;
+          margin: 0 0 6px 0;
+          padding: 0 0 4px 0;
+          border-bottom: 1px solid rgba(184, 134, 11, 0.35);
+        }
+        .cfp-print-legend-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin: 3px 0;
+        }
+        .cfp-print-legend-line {
+          display: inline-block;
+          width: 32px;
+          height: 0;
+          border-top-width: 2px;
+        }
+        .cfp-print-legend-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 18px;
+          height: 18px;
+          flex: 0 0 18px;
+        }
+        .cfp-print-legend-dot {
+          display: inline-block;
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+        }
+        .cfp-print-legend-divider {
+          height: 1px;
+          background: rgba(184, 134, 11, 0.18);
+          margin: 4px 0;
+        }
+        .cfp-print-legend-label {
+          font-size: 11px;
+          color: #0f172a;
+          white-space: nowrap;
         }
         .cfp-print-legend svg {
-          width: 100%;
-          height: auto;
+          /* Tiny bucket icons inside legend rows — render at their
+             intrinsic 14×14 size; no scaling needed. */
           display: block;
-          filter: drop-shadow(0 2px 6px rgba(15, 23, 42, 0.08));
         }
         .cfp-print-toolbar {
           display: flex;
