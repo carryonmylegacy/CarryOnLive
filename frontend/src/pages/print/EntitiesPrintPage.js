@@ -392,20 +392,37 @@ export default function EntitiesPrintPage() {
   return (
     <div className="cfp-print-root">
       <style>{`
-        @page { size: letter; margin: 0.5in; }
+        @page { size: letter; margin: 0.35in; }
         @media print {
-          html, body { background: #ffffff !important; margin: 0 !important; padding: 0 !important; }
+          html, body, #root {
+            background: #ffffff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: auto !important;
+            height: auto !important;
+            min-height: 0 !important;
+          }
+          /* Belt-and-suspenders: hide every element OUTSIDE our print
+             root so a stray app-level wrapper (banner, devtools, etc.)
+             can't push our content onto a second page. */
+          body > *:not(#root),
+          #root > *:not(.cfp-print-root) {
+            display: none !important;
+          }
           .cfp-print-root {
             color: #0f172a !important;
             display: block !important;
-            width: 7.5in !important;
-            max-width: 7.5in !important;
-            /* Slightly under the usable 10in to absorb iOS Safari's
-               print-engine quirks (it consistently adds ~0.1-0.2in of
-               implicit whitespace that pushed the footer onto page 2). */
-            height: 9.6in !important;
-            min-height: 9.6in !important;
-            max-height: 9.6in !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            /* auto-height + page-break-inside:avoid forces the
+               browser to keep the entire chart on a single sheet
+               without us having to guess iOS Safari's exact usable
+               area. The hard upper bound below is for the SVG
+               wrapper, not the root, so the footer always lands
+               above the page break. */
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: 10.0in !important;
             padding: 0 !important;
             margin: 0 !important;
             box-sizing: border-box !important;
@@ -413,15 +430,16 @@ export default function EntitiesPrintPage() {
             page-break-inside: avoid !important;
             page-break-after: avoid !important;
             break-inside: avoid !important;
+            break-after: avoid !important;
           }
           .cfp-print-svg-wrap {
             display: block !important;
             width: 100% !important;
-            /* Tightened from 8.6in → 8.0in. With ~0.8in header and
-               ~0.25in footer that leaves ~0.55in of slack so iOS
-               Safari's per-block margins can't cause overflow. */
-            height: 8.0in !important;
-            max-height: 8.0in !important;
+            /* Conservative height: 11in - 2*0.35in margin - ~0.6in
+               header - ~0.2in footer ≈ 9.5in available, take 8.5in
+               so every printer's per-block padding is absorbed. */
+            height: 8.5in !important;
+            max-height: 8.5in !important;
             margin: 0 !important;
             overflow: hidden !important;
             page-break-inside: avoid !important;
@@ -439,8 +457,8 @@ export default function EntitiesPrintPage() {
             break-inside: avoid !important;
           }
           .cfp-print-header {
-            margin: 0 0 8px 0 !important;
-            padding: 0 0 8px 0 !important;
+            margin: 0 0 6px 0 !important;
+            padding: 0 0 6px 0 !important;
           }
           .cfp-print-footer {
             margin: 4px 0 0 0 !important;
