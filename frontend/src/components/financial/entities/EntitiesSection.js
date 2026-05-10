@@ -390,10 +390,14 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           {viewMode === 'chart' && estateId && (
             <button
               onClick={() => {
-                // Open the print page in a new tab so the user can
-                // come back to the live chart after saving the PDF
-                // / closing the OS print dialog.
-                window.open(`/financial/entities/${estateId}/print`, '_blank', 'noopener,noreferrer');
+                // Same-tab navigation — `window.open(..., '_blank')`
+                // in iOS standalone PWA mode opens a chromeless
+                // window with no Back button, leaving the user
+                // stranded after dismissing the OS print dialog.
+                // Same-tab keeps the SPA history intact so the
+                // print page's own Back chip returns the user to
+                // the live chart on a single tap.
+                navigate(`/financial/entities/${estateId}/print`);
               }}
               className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
               style={{

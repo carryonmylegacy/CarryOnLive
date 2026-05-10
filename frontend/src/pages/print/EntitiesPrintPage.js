@@ -27,8 +27,9 @@
  * dragged it to in the live chart.
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { ChevronLeft, Printer } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_URL } from '../../config';
 import {
@@ -58,7 +59,8 @@ const fmtDate = (d = new Date()) =>
 
 export default function EntitiesPrintPage() {
   const { estateId } = useParams();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, getAuthHeaders } = useAuth();
   const [data, setData] = useState(null);
   const [estateName, setEstateName] = useState('');
   const [error, setError] = useState(null);
@@ -69,7 +71,7 @@ export default function EntitiesPrintPage() {
     let alive = true;
     (async () => {
       try {
-        const headers = { headers: { Authorization: `Bearer ${localStorage.getItem('access_token') || ''}` } };
+        const headers = getAuthHeaders();
         const [entitiesRes, estateRes] = await Promise.all([
           axios.get(`${API_URL}/financial/entities/${estateId}`, headers),
           axios.get(`${API_URL}/estates/${estateId}`, headers).catch(() => ({ data: null })),
@@ -79,11 +81,11 @@ export default function EntitiesPrintPage() {
         setEstateName(estateRes?.data?.name || '');
       } catch (e) {
         if (!alive) return;
-        setError(e?.response?.data?.detail || 'Could not load chart data');
+        setError(e?.response?.data?.detail || e?.message || 'Could not load chart data');
       }
     })();
     return () => { alive = false; };
-  }, [estateId]);
+  }, [estateId, getAuthHeaders]);
 
   // Compute layout + bbox once data lands.
   const layout = useMemo(() => {
@@ -153,15 +155,43 @@ export default function EntitiesPrintPage() {
 
   if (error) {
     return (
-      <div style={{ padding: 32, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-        <h1>Could not generate print</h1>
+      <div style={{ padding: 32, fontFamily: 'system-ui, -apple-system, sans-serif', color: '#0f172a', background: '#ffffff', minHeight: '100vh' }}>
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '8px 14px', borderRadius: 9999,
+            border: '1px solid #B8860B', background: '#fffaf0',
+            color: '#B8860B', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            marginBottom: 16,
+          }}
+          data-testid="entity-print-back"
+        >
+          <ChevronLeft size={14} /> Back
+        </button>
+        <h1 style={{ marginTop: 0, fontSize: 20 }}>Could not generate print</h1>
         <p>{error}</p>
       </div>
     );
   }
   if (!layout) {
     return (
-      <div style={{ padding: 32, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <div style={{ padding: 32, fontFamily: 'system-ui, -apple-system, sans-serif', color: '#0f172a', background: '#ffffff', minHeight: '100vh' }}>
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '8px 14px', borderRadius: 9999,
+            border: '1px solid #B8860B', background: '#fffaf0',
+            color: '#B8860B', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            marginBottom: 16,
+          }}
+          data-testid="entity-print-back"
+        >
+          <ChevronLeft size={14} /> Back
+        </button>
         Loading chart for printing…
       </div>
     );
@@ -359,6 +389,9 @@ export default function EntitiesPrintPage() {
         @media print {
           html, body { background: #ffffff !important; margin: 0 !important; padding: 0 !important; }
           .cfp-print-root { color: #0f172a !important; }
+          /* Hide on-screen toolbar so the print output is just the
+             header + tree + footer. */
+          .cfp-print-toolbar { display: none !important; }
           /* Hide everything outside this page (in case any persistent
              top-bar / dock survived the route mount). */
           body > div:not(.cfp-print-root):not(#root),
@@ -374,6 +407,27 @@ export default function EntitiesPrintPage() {
           padding: 0;
           display: flex;
           flex-direction: column;
+        }
+        .cfp-print-toolbar {
+          display: flex;
+          gap: 8px;
+          padding: 12px 0;
+          position: sticky;
+          top: 0;
+          background: #f4f4f4;
+          z-index: 10;
+        }
+        .cfp-print-toolbar button {
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 8px 14px; border-radius: 9999px;
+          font-size: 13px; font-weight: 700;
+          cursor: pointer;
+        }
+        .cfp-print-back {
+          background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1;
+        }
+        .cfp-print-reprint {
+          background: #fffaf0; color: #B8860B; border: 1px solid #B8860B;
         }
         .cfp-print-header {
           border-bottom: 2px solid #B8860B;
@@ -414,6 +468,29 @@ export default function EntitiesPrintPage() {
           justify-content: space-between;
         }
       `}</style>
+
+      {/* Screen-only toolbar — gives the user an obvious escape route
+          on iOS standalone PWA where the OS print dialog cancels and
+          leaves them on this page. Hidden via @media print so the
+          PDF stays clean. */}
+      <div className="cfp-print-toolbar">
+        <button
+          type="button"
+          className="cfp-print-back"
+          onClick={() => navigate(-1)}
+          data-testid="entity-print-back"
+        >
+          <ChevronLeft size={14} /> Back
+        </button>
+        <button
+          type="button"
+          className="cfp-print-reprint"
+          onClick={() => { try { window.print(); } catch { /* user dismissed */ } }}
+          data-testid="entity-print-reprint"
+        >
+          <Printer size={14} /> Print
+        </button>
+      </div>
 
       <div className="cfp-print-header">
         <h1>Entities &amp; Structures</h1>
