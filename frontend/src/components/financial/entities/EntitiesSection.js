@@ -35,6 +35,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   const [entities, setEntities] = useState([]);
   const [externals, setExternals] = useState([]);
   const [relationships, setRelationships] = useState([]);
+  const [serverChartLayout, setServerChartLayout] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [walletEntries, setWalletEntries] = useState([]);
   const [loaded, setLoaded] = useState(false);
@@ -143,6 +144,10 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
       setEntities(r.data?.entities || []);
       setExternals(r.data?.external_people || []);
       setRelationships(r.data?.relationships || []);
+      // chart_layout may be undefined if the server is older — leave
+      // it as null in that case so the chart falls back to local
+      // overrides cleanly.
+      setServerChartLayout(r.data?.chart_layout || null);
       setDocuments(Array.isArray(docResp.data) ? docResp.data : []);
       setWalletEntries(Array.isArray(walletResp.data) ? walletResp.data : []);
       if (meResp.data) setFreshUser(meResp.data);
@@ -417,6 +422,21 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
             onHideLegend={() => {
               EntityLegend.writeHiddenForEstate(estateId, true);
               setLegendHidden(true);
+            }}
+            serverOverrides={serverChartLayout}
+            onSaveLayout={(overrides) => {
+              // Fire-and-forget to keep the lock toggle responsive.
+              // Server is idempotent (upsert) so a duplicate save on
+              // unmount is harmless. Errors are swallowed because the
+              // local cache + next-load rehydrate cover the offline
+              // case; a future Sentry capture is fine here.
+              try {
+                axios.put(
+                  `${API_URL}/financial/entities/${estateId}/layout`,
+                  { overrides: overrides || {} },
+                  getAuthHeaders(),
+                ).catch(() => { /* offline / 5xx — local cache covers us */ });
+              } catch { /* axios throw before promise — ignore */ }
             }}
           />
         ) : (

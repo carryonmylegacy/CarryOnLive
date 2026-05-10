@@ -151,7 +151,7 @@ async def list_entities(estate_id: str, current_user: dict = Depends(get_current
     """
     estate, can_manage = await _verify_estate_access(estate_id, current_user)
     if not can_manage:
-        return {"entities": [], "external_people": [], "relationships": []}
+        return {"entities": [], "external_people": [], "relationships": [], "chart_layout": {}}
 
     entities = await db.cfp_entities.find(
         {"estate_id": estate_id, "deleted_at": None},
@@ -165,12 +165,56 @@ async def list_entities(estate_id: str, current_user: dict = Depends(get_current
         {"estate_id": estate_id, "deleted_at": None},
         {"_id": 0},
     ).to_list(5000)
+    # Server-persisted tile-position overrides (one doc per estate ×
+    # benefactor). Lets the layout survive a hard reload, a portal
+    # switch to a different device, or a browser localStorage wipe.
+    layout = await db.cfp_chart_layouts.find_one(
+        {"estate_id": estate_id, "user_id": current_user["id"]},
+        {"_id": 0, "overrides": 1},
+    )
 
     return {
         "entities": entities,
         "external_people": _resolve_external_people_photos(people),
         "relationships": rels,
+        "chart_layout": (layout or {}).get("overrides") or {},
     }
+
+
+class ChartLayoutBody(BaseModel):
+    # Map of node-key → {x, y} (e.g., {"entity:abc": {"x": 120, "y": 40},
+    # "user:xyz": {"x": 0, "y": 0}, "__legend__": {"x": -200, "y": 0}}).
+    # The frontend persists this on lock-toggle and on unmount so the
+    # benefactor's hand-tuned layout survives across devices.
+    overrides: Optional[dict] = None
+
+
+@router.put("/financial/entities/{estate_id}/layout")
+async def save_chart_layout(estate_id: str, body: ChartLayoutBody, current_user: dict = Depends(get_current_user)):
+    """Persist the org-chart tile positions for this estate × user.
+    Owner/admin only — beneficiaries get a 403 so they cannot mutate
+    the benefactor's layout.
+    """
+    _estate, can_manage = await _verify_estate_access(estate_id, current_user, require_owner=True)
+    if not can_manage:
+        raise HTTPException(status_code=403, detail="Only the estate owner can save chart layout")
+    overrides = body.overrides or {}
+    # Cap the payload to avoid unbounded growth from a buggy client.
+    if len(overrides) > 1000:
+        raise HTTPException(status_code=400, detail="Layout payload too large")
+    await db.cfp_chart_layouts.update_one(
+        {"estate_id": estate_id, "user_id": current_user["id"]},
+        {
+            "$set": {
+                "estate_id": estate_id,
+                "user_id": current_user["id"],
+                "overrides": overrides,
+                "updated_at": _now_iso(),
+            }
+        },
+        upsert=True,
+    )
+    return {"ok": True}
 
 
 @router.post("/financial/entities")

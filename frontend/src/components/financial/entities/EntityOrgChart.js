@@ -619,6 +619,7 @@ export default function EntityOrgChart({
   onSingleClickNode, onDoubleClickNode, onInfoClickNode, onEditClickNode,
   cleanUpSignal, locked = false, readOnly = false, fitOnLoad = false,
   legendHidden = false, onHideLegend,
+  serverOverrides, onSaveLayout,
 }) {
   const { user } = useAuth();
   const containerRef = useRef(null);
@@ -653,8 +654,13 @@ export default function EntityOrgChart({
   const handleTitleClick = useCallback((label) => {
     setRoleFilter((prev) => (prev === label ? null : label));
   }, []);
-  // Position overrides per node (loaded from localStorage). Initial layout
-  // fills any node not present here.
+  // Position overrides per node. Two-tier source of truth:
+  //   1. localStorage (instant, offline-friendly, per-device)
+  //   2. server `serverOverrides` (authoritative, survives device
+  //      switching / cache wipes / hard reloads)
+  // When the server payload arrives (any non-empty serverOverrides),
+  // it wins — that's the latest committed state. Otherwise we fall
+  // back to whatever the user's local cache had.
   const [overrides, setOverrides] = useState(() => {
     if (typeof window === 'undefined') return {};
     try {
@@ -662,6 +668,14 @@ export default function EntityOrgChart({
       return raw ? JSON.parse(raw) : {};
     } catch { return {}; }
   });
+  // Tracks whether the user has dragged anything since the last save.
+  // We only push to the backend when this is true to avoid a flood of
+  // identical PUTs every time the user toggles the lock chip.
+  const dirtyRef = useRef(false);
+  // Stable mirror of onSaveLayout so unmount cleanup doesn't capture a
+  // stale closure if the parent re-renders.
+  const onSaveLayoutRef = useRef(onSaveLayout);
+  useEffect(() => { onSaveLayoutRef.current = onSaveLayout; }, [onSaveLayout]);
 
   // Reload overrides when estate changes
   useEffect(() => {
@@ -671,9 +685,61 @@ export default function EntityOrgChart({
     } catch { setOverrides({}); }
   }, [estateId]);
 
+  // Hydrate from server payload when it arrives. Server wins because
+  // it's the authoritative cross-device record; localStorage on this
+  // device may be stale (e.g., the user moved tiles on their iPad and
+  // is now opening the chart on iPhone). Only override if the server
+  // returned a non-empty map — an empty server payload could just
+  // mean "this estate has never been saved", in which case we keep
+  // any local overrides the user has made on this device.
+  useEffect(() => {
+    if (!serverOverrides) return;
+    if (Object.keys(serverOverrides).length === 0) return;
+    setOverrides(serverOverrides);
+    // Mirror to localStorage so offline reload starts from the truth.
+    try { window.localStorage?.setItem(POS_KEY(estateId), JSON.stringify(serverOverrides)); }
+    catch { /* quota */ }
+    dirtyRef.current = false;
+  }, [serverOverrides, estateId]);
+
   const persistOverrides = useCallback((next) => {
     try { window.localStorage?.setItem(POS_KEY(estateId), JSON.stringify(next)); } catch { /* quota */ }
+    // Mark dirty so the next lock-toggle / unmount pushes to the
+    // backend. We deliberately do NOT save on every drop — the user
+    // typically nudges several tiles in a row, and we only need to
+    // capture the final committed state per "session".
+    dirtyRef.current = true;
   }, [estateId]);
+
+  // Save to backend whenever the chart transitions into the LOCKED
+  // state — both manual taps of the lock chip AND auto-locks that
+  // fire when the user navigates away (the parent flips `locked` to
+  // true on unmount paths). Bookended by the unmount cleanup below
+  // so a fast nav-away that beats the lock effect still saves.
+  const lockedRef = useRef(locked);
+  useEffect(() => {
+    const wasLocked = lockedRef.current;
+    lockedRef.current = locked;
+    if (locked && !wasLocked && dirtyRef.current) {
+      const snapshot = overrides;
+      dirtyRef.current = false;
+      try { onSaveLayoutRef.current?.(snapshot); } catch { /* surfaced as toast in parent */ }
+    }
+  }, [locked, overrides]);
+
+  // Final flush on unmount — captures the case where the user backs
+  // out of the page so quickly that the parent never had a chance to
+  // bump `locked` to true. We read `overrides` from a ref to avoid
+  // capturing a stale closure in the cleanup.
+  const overridesRef = useRef(overrides);
+  useEffect(() => { overridesRef.current = overrides; }, [overrides]);
+  useEffect(() => {
+    return () => {
+      if (dirtyRef.current) {
+        try { onSaveLayoutRef.current?.(overridesRef.current); } catch { /* best effort */ }
+      }
+    };
+  }, []);
 
   // Build graph + initial layout
   const { nodes, edges, depth } = useMemo(

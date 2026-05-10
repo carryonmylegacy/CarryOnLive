@@ -33,6 +33,12 @@ export default function BeneficiaryEntitiesPage() {
   const [payload, setPayload] = useState(null);
   const [viewMode, setViewMode] = useState('chart');
   const [tappedNode, setTappedNode] = useState(null);
+  // 'docs' = single-tap on tile → "go to the documents associated";
+  // 'info' = tap on the (i) button → "additional information such as
+  //          login credentials". Both flows reuse the same modal but
+  //          render only the relevant section so each tap surfaces
+  //          exactly what the user asked for and nothing else.
+  const [tapMode, setTapMode] = useState('docs');
 
   useEffect(() => {
     if (!estateId) return;
@@ -114,7 +120,8 @@ export default function BeneficiaryEntitiesPage() {
     );
   }
 
-  const handleSingleClickNode = (node) => setTappedNode(node);
+  const handleSingleClickNode = (node) => { setTapMode('docs'); setTappedNode(node); };
+  const handleInfoClickNode = (node) => { setTapMode('info'); setTappedNode(node); };
 
   return (
     <div className="min-h-screen bg-[var(--bg)] p-4 sm:p-6" data-testid="beneficiary-entities-page">
@@ -139,12 +146,6 @@ export default function BeneficiaryEntitiesPage() {
         </div>
       </div>
 
-      <div className="rounded-xl px-3 py-2 mb-3 text-[11.5px] text-[var(--t4)]"
-        style={{ background: 'var(--card)', border: '1px solid var(--b)' }}>
-        Read-only view. Tap a tile to see linked documents
-        {(payload.credentials || []).length > 0 ? ' and credentials' : ''}.
-      </div>
-
       <div className="overflow-auto" style={{ maxHeight: '70vh', WebkitOverflowScrolling: 'touch' }}>
         {viewMode === 'chart' ? (
           <EntityOrgChart
@@ -154,8 +155,13 @@ export default function BeneficiaryEntitiesPage() {
             relationships={payload.relationships || []}
             beneficiaries={beneficiaries}
             onSingleClickNode={handleSingleClickNode}
-            // Edit / double-click / info / cleanup handlers are intentionally
-            // omitted so no write path can ever be reached from this page.
+            onInfoClickNode={handleInfoClickNode}
+            // Edit / double-click / cleanup handlers are intentionally
+            // omitted so no write path can ever be reached from this
+            // page. `locked` + `readOnly` block tile drag and the
+            // pencil/edit chips. `onSaveLayout` is also unset, so even
+            // if the chart's persistence flushed somehow, no PUT
+            // would fire from the beneficiary surface.
             cleanUpSignal={0}
             locked
             readOnly
@@ -177,6 +183,7 @@ export default function BeneficiaryEntitiesPage() {
           node={tappedNode}
           docsById={docsById}
           credsByEntityId={credsByEntityId}
+          mode={tapMode}
           onClose={() => setTappedNode(null)}
         />
       )}
@@ -184,13 +191,20 @@ export default function BeneficiaryEntitiesPage() {
   );
 }
 
-function BeneficiaryNodeInfoModal({ node, docsById, credsByEntityId, onClose }) {
+function BeneficiaryNodeInfoModal({ node, docsById, credsByEntityId, mode = 'docs', onClose }) {
   const [revealed, setRevealed] = useState({});
   const isEntity = node?.kind === 'entity';
   const e = node?.entity;
   const linkedDocIds = (e?.document_ids || []).filter((id) => docsById[id]);
   const linkedCreds = e ? (credsByEntityId[e.id] || []) : [];
   const title = isEntity ? (e?.name || 'Entity') : (node?.label || 'Node');
+  // 'docs' = single-tap on a tile → show ONLY linked documents (the
+  //          user's "go to the document associated" intent).
+  // 'info' = (i) button on a tile → show ONLY the additional info the
+  //          benefactor has chosen to share pre-transition (currently
+  //          credentials, extensible to other facets later).
+  const showDocs = mode === 'docs';
+  const showInfo = mode === 'info';
 
   return (
     <div
@@ -217,7 +231,8 @@ function BeneficiaryNodeInfoModal({ node, docsById, credsByEntityId, onClose }) 
         </div>
 
         <div className="p-4 space-y-4 max-h-[70vh] overflow-auto">
-          {/* Linked documents */}
+          {/* Linked documents — surfaced only when the user single-tapped a tile. */}
+          {showDocs && (
           <div>
             <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--t5)] mb-1.5">
               Linked documents
@@ -245,9 +260,10 @@ function BeneficiaryNodeInfoModal({ node, docsById, credsByEntityId, onClose }) 
               </div>
             )}
           </div>
+          )}
 
-          {/* Linked credentials */}
-          {isEntity && (
+          {/* Linked credentials — surfaced only when the user tapped (i). */}
+          {showInfo && isEntity && (
             <div>
               <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--t5)] mb-1.5">
                 Credentials
