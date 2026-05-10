@@ -189,12 +189,38 @@ const FinancialSummary = ({
 
   const modalMeta = activeModal ? cards.find((c) => c.key === activeModal) : null;
   const rows = activeModal ? rowsFor(activeModal) : [];
-  const totalRow = activeModal === 'net'
-    ? Number(summary.net_position) || 0
-    : rows.reduce((s, r) => s + (r.amount || 0), 0);
+  // Tile total ALWAYS pulls from the canonical backend summary so it
+  // matches the number on the tile face exactly — even before the
+  // lazy-loaded entities arrive. Previously we summed `rows` which
+  // missed entity rollups during the few hundred ms the entity fetch
+  // was in flight, producing a visibly wrong total in the modal.
+  const tileTotal = (() => {
+    if (activeModal === 'bills') return Number(summary.monthly_total) || 0;
+    if (activeModal === 'debts') return Number(summary.total_debt) || 0;
+    if (activeModal === 'assets') return Number(summary.total_assets) || 0;
+    if (activeModal === 'net') return Number(summary.net_position) || 0;
+    return 0;
+  })();
 
   return (
     <>
+      {/* Override the app's global "hide scrollbar" rule for the
+          summary detail modal so the user can see they can scroll
+          when the list overflows. Scoped via .summary-detail-scroll
+          so it doesn't bleed into other components. */}
+      <style>{`
+        .summary-detail-scrollarea::-webkit-scrollbar {
+          width: 6px;
+          display: block !important;
+        }
+        .summary-detail-scrollarea::-webkit-scrollbar-thumb {
+          background: rgba(212, 165, 55, 0.55);
+          border-radius: 3px;
+        }
+        .summary-detail-scrollarea::-webkit-scrollbar-track {
+          background: transparent;
+        }
+      `}</style>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" data-testid="financial-summary">
         {cards.map((card) => (
           <button
@@ -217,14 +243,34 @@ const FinancialSummary = ({
 
       {activeModal && modalMeta && (
         <div
-          className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center px-3 sm:px-4 py-4"
-          style={{ background: 'rgba(0,0,0,0.55)' }}
+          className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center"
+          style={{
+            background: 'rgba(0,0,0,0.55)',
+            // Pad the bottom enough to clear the fixed mobile dock
+            // (~80px) PLUS the home-indicator safe-area inset PLUS a
+            // breathing gap, so the modal's bottom edge is always
+            // fully visible above the nav. Side padding stays tight
+            // so the sheet feels mobile-native on phones.
+            paddingBottom: 'calc(96px + env(safe-area-inset-bottom, 0px))',
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+            paddingLeft: '12px',
+            paddingRight: '12px',
+          }}
           onClick={() => setActiveModal(null)}
           data-testid="summary-detail-overlay"
         >
           <div
-            className="rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col"
-            style={{ background: 'var(--bg2)', border: '1px solid var(--b)', color: 'var(--t)' }}
+            className="rounded-2xl shadow-2xl w-full max-w-lg flex flex-col summary-detail-scroll"
+            style={{
+              background: 'var(--bg2)',
+              border: '1px solid var(--b)',
+              color: 'var(--t)',
+              // Cap the modal height to the *available* viewport
+              // height after our overlay's top + bottom padding so
+              // the sheet always fits cleanly between the iOS status
+              // bar and the bottom dock.
+              maxHeight: 'calc(100dvh - 96px - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px) - 24px)',
+            }}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -254,11 +300,14 @@ const FinancialSummary = ({
             <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--b)' }}>
               <div className="text-xs text-[var(--t4)]">Tile total</div>
               <div className="text-2xl font-bold" style={{ color: modalMeta.color }}>
-                {fmtPrecise(activeModal === 'net' ? (Number(summary.net_position) || 0) : totalRow)}
+                {fmtPrecise(tileTotal)}
               </div>
             </div>
 
-            <div className="overflow-y-auto flex-1 px-2 py-2">
+            <div
+              className="overflow-y-auto flex-1 px-2 py-2 summary-detail-scrollarea"
+              style={{ scrollbarWidth: 'thin', WebkitOverflowScrolling: 'touch' }}
+            >
               {rows.length === 0 ? (
                 <div className="px-3 py-8 text-center text-sm text-[var(--t4)]" data-testid="summary-detail-empty">
                   No line items contribute to this total yet.
