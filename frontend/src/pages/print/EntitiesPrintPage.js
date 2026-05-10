@@ -402,9 +402,9 @@ export default function EntitiesPrintPage() {
             width: 8.5in !important;
             min-width: 8.5in !important;
             max-width: 8.5in !important;
-            height: 10.5in !important;
+            height: 9.0in !important;
             min-height: 0 !important;
-            max-height: 10.5in !important;
+            max-height: 9.0in !important;
             overflow: hidden !important;
           }
           /* The print root is rendered via React portal AS A DIRECT
@@ -421,15 +421,15 @@ export default function EntitiesPrintPage() {
             width: 8.5in !important;
             min-width: 8.5in !important;
             max-width: 8.5in !important;
-            /* Pinned WELL UNDER one full letter sheet (11in) so any
-               sub-pixel rounding inside iOS Safari can't push a single
-               trailing pixel onto page 2. The leftover ~1.0in of
-               page is just blank — the page break still falls inside
-               the same physical sheet. */
-            height: 10.0in !important;
+            /* Sized aggressively small (8.5in × 9.0in inside an 11in
+               page). iOS Safari adds invisible "system" margin / its
+               own header-footer chrome we have no CSS hook for —
+               leaving ~2in of vertical slack guarantees we always
+               fit, no matter how iOS interprets in/px units. */
+            height: 9.0in !important;
             min-height: 0 !important;
-            max-height: 10.0in !important;
-            padding: 0.4in !important;
+            max-height: 9.0in !important;
+            padding: 0.3in !important;
             margin: 0 !important;
             box-sizing: border-box !important;
             overflow: hidden !important;
@@ -446,10 +446,10 @@ export default function EntitiesPrintPage() {
           }
           .cfp-print-header {
             display: block !important;
-            height: 0.55in !important;
-            max-height: 0.55in !important;
-            margin: 0 !important;
-            padding: 0 0 6px 0 !important;
+            height: 0.5in !important;
+            max-height: 0.5in !important;
+            margin: 0 0 0.05in 0 !important;
+            padding: 0 0 4px 0 !important;
             overflow: hidden !important;
           }
           .cfp-print-svg-wrap {
@@ -457,25 +457,29 @@ export default function EntitiesPrintPage() {
             align-items: center !important;
             justify-content: center !important;
             width: 100% !important;
-            height: 7.7in !important;
-            max-height: 7.7in !important;
-            margin: 0.05in 0 !important;
+            height: 7.4in !important;
+            max-height: 7.4in !important;
+            margin: 0 !important;
             overflow: hidden !important;
           }
+          /* DO NOT set width/height on the SVG via CSS — the HTML
+             width/height attributes on the <svg> element itself are
+             the authoritative size (per SVG spec). iOS Safari ignored
+             CSS in-units in print, but it respects intrinsic SVG
+             attribute pixels. The SVG is rendered at exactly 672×624
+             logical px = 7.0in × 6.5in at 96dpi. */
           .cfp-print-svg-wrap svg {
             display: block !important;
-            width: 7.6in !important;
-            height: 7.6in !important;
-            max-width: 7.6in !important;
-            max-height: 7.6in !important;
+            max-width: 100% !important;
+            max-height: 100% !important;
           }
           .cfp-print-footer {
             display: flex !important;
             justify-content: space-between !important;
-            height: 0.25in !important;
-            max-height: 0.25in !important;
-            margin: 0 !important;
-            padding: 4px 0 0 0 !important;
+            height: 0.2in !important;
+            max-height: 0.2in !important;
+            margin: 0.05in 0 0 0 !important;
+            padding: 3px 0 0 0 !important;
             font-size: 9px !important;
             overflow: hidden !important;
           }
@@ -600,7 +604,10 @@ export default function EntitiesPrintPage() {
           viewBox={`${layout.viewBox.x} ${layout.viewBox.y} ${layout.viewBox.w} ${layout.viewBox.h}`}
           preserveAspectRatio="xMidYMid meet"
           xmlns="http://www.w3.org/2000/svg"
+          width="672"
+          height="624"
           data-testid="entity-print-svg"
+          style={{ display: 'block', maxWidth: '100%', maxHeight: '100%' }}
         >
           {renderEdges()}
           {layout.tileRects.filter((r) => r.key !== '__legend__').map(renderTile)}
