@@ -395,14 +395,39 @@ export default function EntitiesPrintPage() {
         @page { size: letter; margin: 0.5in; }
         @media print {
           html, body { background: #ffffff !important; margin: 0 !important; padding: 0 !important; }
-          .cfp-print-root { color: #0f172a !important; }
+          .cfp-print-root {
+            color: #0f172a !important;
+            /* Drop flex layout in print — without a viewport height
+               to flex against, .cfp-print-svg-wrap collapsed to 0
+               and the SVG was invisible. Explicit block sizing makes
+               every child render at its natural / specified height. */
+            display: block !important;
+            width: 7.5in !important;
+            max-width: 7.5in !important;
+            height: 10in !important;
+            min-height: 10in !important;
+            padding: 0 !important;
+          }
+          .cfp-print-svg-wrap {
+            display: block !important;
+            width: 100% !important;
+            /* Fill the page minus header (~80px) and footer (~30px). */
+            height: 9in !important;
+            max-height: 9in !important;
+            margin: 0 !important;
+          }
+          .cfp-print-svg-wrap svg {
+            width: 100% !important;
+            height: 100% !important;
+            max-height: 100% !important;
+          }
+          .cfp-print-header {
+            margin-bottom: 12px !important;
+            padding-bottom: 12px !important;
+          }
           /* Hide on-screen toolbar so the print output is just the
              header + tree + footer. */
           .cfp-print-toolbar { display: none !important; }
-          /* Hide everything outside this page (in case any persistent
-             top-bar / dock survived the route mount). */
-          body > div:not(.cfp-print-root):not(#root),
-          #root > div:not(:has(.cfp-print-root)) { display: none !important; }
         }
         body { background: #f4f4f4; margin: 0; }
         .cfp-print-root {
@@ -410,7 +435,7 @@ export default function EntitiesPrintPage() {
           color: #0f172a;
           /* Fluid on small screens, capped at letter width on tablets
              and desktop so the on-screen preview matches what the
-             saved PDF will look like. The @media print branch below
+             saved PDF will look like. The @media print branch above
              pins it to the exact letter usable area. */
           width: 100%;
           max-width: 7.5in;
@@ -420,14 +445,6 @@ export default function EntitiesPrintPage() {
           box-sizing: border-box;
           display: flex;
           flex-direction: column;
-        }
-        @media print {
-          .cfp-print-root {
-            width: 7.5in;
-            max-width: 7.5in;
-            min-height: 10in;
-            padding: 0;
-          }
         }
         .cfp-print-toolbar {
           display: flex;
