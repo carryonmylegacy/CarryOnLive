@@ -425,24 +425,40 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
               setLegendHidden(true);
             }}
             serverOverrides={serverChartLayout}
-            onSaveLayout={(overrides, opts = {}) => {
+            onSaveLayout={async (overrides, opts = {}) => {
               // Two paths:
               //   • opts.userInitiated === true  → user tapped the
-              //     lock chip while still on the page — show the
-              //     "Tree structure saved" toast.
+              //     lock chip while still on the page — toast on
+              //     SUCCESS only (we await the PUT first so a 5xx /
+              //     offline call doesn't show a false "saved" toast).
               //   • opts.userInitiated === false → unmount cleanup
-              //     fired because the user navigated away — save
-              //     silently so the toast doesn't flash for one
-              //     frame on the way out.
+              //     fired because the user navigated away — silent
+              //     fire-and-forget so the toast never flashes.
+              if (!opts.userInitiated) {
+                try {
+                  axios.put(
+                    `${API_URL}/financial/entities/${estateId}/layout`,
+                    { overrides: overrides || {} },
+                    getAuthHeaders(),
+                  ).catch(() => { /* offline / 5xx — local cache covers us */ });
+                } catch { /* axios threw before promise — ignore */ }
+                return;
+              }
               try {
-                axios.put(
+                const res = await axios.put(
                   `${API_URL}/financial/entities/${estateId}/layout`,
                   { overrides: overrides || {} },
                   getAuthHeaders(),
-                ).catch(() => { /* offline / 5xx — local cache covers us */ });
-              } catch { /* axios threw before promise — ignore */ }
-              if (opts.userInitiated) {
-                notify.success('Tree structure saved');
+                );
+                // Server explicitly answers `{ ok: true }` on a clean
+                // upsert. Only celebrate when we have that proof.
+                if (res?.data?.ok === true) {
+                  notify.success('Tree structure saved');
+                } else {
+                  notify.warning("Couldn't confirm save — try again");
+                }
+              } catch {
+                notify.error("Couldn't save tree structure");
               }
             }}
           />
