@@ -77,6 +77,10 @@ export default function EntityDetailPanel({
   // one having to be dragged into place individually).
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkSelected, setBulkSelected] = useState(() => new Set());
+  // Whether to include the benefactor themselves as a beneficiary of
+  // the entity (e.g. classic revocable trust where the grantor is also
+  // a beneficiary). Defaults to off — user opts in via checkbox.
+  const [bulkIncludeBenefactor, setBulkIncludeBenefactor] = useState(false);
   const [bulkSaving, setBulkSaving] = useState(false);
   // Quick-add: people typed in directly inside the bulk modal that
   // don't exist on the estate yet. Each row holds {tmpId, first_name,
@@ -298,7 +302,7 @@ export default function EntityDetailPanel({
   const handleBulkAddBeneficiaries = async () => {
     if (!ent || bulkSaving) return;
     const existingIds = Array.from(bulkSelected);
-    if (existingIds.length === 0 && bulkNewPeople.length === 0) return;
+    if (existingIds.length === 0 && bulkNewPeople.length === 0 && !bulkIncludeBenefactor) return;
     setBulkSaving(true);
     const headers = getAuthHeaders();
     try {
@@ -317,20 +321,26 @@ export default function EntityDetailPanel({
       ).then((r) => r.data)));
 
       // 1) Create the beneficiary relationships in parallel.
-      // Pre-existing beneficiaries → target_type: 'beneficiary'.
-      // Newly-created people → target_type: 'external_person'.
+      // Direction matches the platform convention used everywhere else:
+      // SOURCE = the person inheriting, TARGET = the entity they
+      // inherit from, role = 'beneficiary'. (Earlier this was reversed,
+      // which caused the API to return a 422 validation error rendered
+      // in the toast as the unhelpful "[object Object]".)
       const linkOps = [
-        ...existingIds.map((bid) => ({ target_id: bid, target_type: 'beneficiary' })),
-        ...createdExternals.map((ep) => ({ target_id: ep.id, target_type: 'external_person' })),
+        ...existingIds.map((bid) => ({ source_id: bid, source_type: 'beneficiary' })),
+        ...createdExternals.map((ep) => ({ source_id: ep.id, source_type: 'external_person' })),
       ];
+      if (bulkIncludeBenefactor && user?.id) {
+        linkOps.push({ source_id: user.id, source_type: 'user' });
+      }
       await Promise.all(linkOps.map((op) => axios.post(
         `${API_URL}/financial/entity-relationships`,
         {
           estate_id: ent.estate_id,
-          source_id: ent.id,
-          source_type: 'entity',
-          target_id: op.target_id,
-          target_type: op.target_type,
+          source_id: op.source_id,
+          source_type: op.source_type,
+          target_id: ent.id,
+          target_type: 'entity',
           role: 'beneficiary',
           ownership_pct: null,
         },
@@ -352,11 +362,15 @@ export default function EntityDetailPanel({
       const anchor = currentOverrides[entityKey] || { x: 0, y: 0 };
       // Combined ordered list of every node key we just linked, so
       // they all sit in one row (pre-existing beneficiaries first,
-      // then the just-created externals).
+      // then the just-created externals, then the benefactor if
+      // included).
       const orderedKeys = [
         ...existingIds.map((bid) => `beneficiary:${bid}`),
         ...createdExternals.map((ep) => `external_person:${ep.id}`),
       ];
+      if (bulkIncludeBenefactor && user?.id) {
+        orderedKeys.push(`user:${user.id}`);
+      }
       const n = orderedKeys.length;
       const totalW = n * PERSON_W + (n - 1) * COL_GAP;
       const startX = anchor.x + (ENTITY_W - totalW) / 2;
@@ -382,11 +396,21 @@ export default function EntityDetailPanel({
       toast.success(`Added ${n} ${n === 1 ? 'beneficiary' : 'beneficiaries'}.`);
       setBulkOpen(false);
       setBulkSelected(new Set());
+      setBulkIncludeBenefactor(false);
       setBulkNewPeople([]);
       setBulkNewFirst(''); setBulkNewLast('');
       onChanged?.();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to add beneficiaries');
+      // FastAPI validation errors come back as `detail: [{loc, msg, …}]`,
+      // which renders as "[object Object]" if dumped directly into the
+      // toast. Normalize to a readable string before showing the user.
+      const detail = err?.response?.data?.detail;
+      let message = 'Failed to add beneficiaries';
+      if (typeof detail === 'string') message = detail;
+      else if (Array.isArray(detail)) message = detail.map((d) => d?.msg || JSON.stringify(d)).join('; ');
+      else if (detail && typeof detail === 'object') message = JSON.stringify(detail);
+      else if (err?.message) message = err.message;
+      toast.error(message);
     } finally {
       setBulkSaving(false);
     }
@@ -622,7 +646,7 @@ export default function EntityDetailPanel({
                           user pick from the beneficiary list AND/OR
                           quick-add new people inline. */}
                       <button
-                        onClick={() => { setBulkSelected(new Set()); setBulkNewPeople([]); setBulkOpen(true); }}
+                        onClick={() => { setBulkSelected(new Set()); setBulkIncludeBenefactor(false); setBulkNewPeople([]); setBulkOpen(true); }}
                         className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[#22C993] whitespace-nowrap border border-[#22C993]/60 bg-[rgba(34,201,147,0.08)] hover:bg-[rgba(34,201,147,0.18)] hover:border-[#22C993] transition-colors"
                         data-testid="detail-bulk-add-beneficiaries"
                       >
@@ -787,12 +811,23 @@ export default function EntityDetailPanel({
             person is linked + auto-positioned in a tidy row. */}
         {bulkOpen && isEntity && (() => {
           const linkedKey = `entity:${ent.id}`;
+          // Pre-existing beneficiary IDs already linked as a
+          // beneficiary of this entity (source-side, per the corrected
+          // relationship direction).
           const alreadyLinked = new Set(
             (relationships || [])
               .filter((r) => r.role === 'beneficiary'
-                && `${r.source_type}:${r.source_id}` === linkedKey
-                && r.target_type === 'beneficiary')
-              .map((r) => r.target_id)
+                && `${r.target_type}:${r.target_id}` === linkedKey
+                && r.source_type === 'beneficiary')
+              .map((r) => r.source_id)
+          );
+          // Is the benefactor themselves already linked as a
+          // beneficiary of this entity? (Same role, source = user).
+          const benefactorAlreadyLinked = (relationships || []).some(
+            (r) => r.role === 'beneficiary'
+              && `${r.target_type}:${r.target_id}` === linkedKey
+              && r.source_type === 'user'
+              && r.source_id === user?.id
           );
           const pickable = (beneficiaries || []).filter((b) => !alreadyLinked.has(b.id));
           const allSelected = pickable.length > 0 && pickable.every((b) => bulkSelected.has(b.id));
@@ -827,9 +862,9 @@ export default function EntityDetailPanel({
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-5 py-3">
-                  {pickable.length === 0 && bulkNewPeople.length === 0 ? (
+                  {pickable.length === 0 && bulkNewPeople.length === 0 && benefactorAlreadyLinked ? (
                     <div className="text-[12px] text-[var(--t4)] py-4 text-center">
-                      Every beneficiary on this estate is already linked to {ent?.name || 'this entity'}. Add a new person below to include someone else.
+                      Every beneficiary on this estate (and you) is already linked to {ent?.name || 'this entity'}. Add a new person below to include someone else.
                     </div>
                   ) : (
                     <>
@@ -844,6 +879,49 @@ export default function EntityDetailPanel({
                         </button>
                       )}
                       <div className="space-y-1.5">
+                        {/* Benefactor (estate owner) row — lets the
+                            user include THEMSELVES as a beneficiary
+                            of the entity (e.g. classic revocable
+                            trust where the grantor is also a
+                            current beneficiary). Hidden if they're
+                            already linked to this entity. */}
+                        {!benefactorAlreadyLinked && user?.id && (
+                          <label
+                            key="__benefactor__"
+                            className="flex items-center gap-3 p-2 rounded-md cursor-pointer"
+                            style={{
+                              background: bulkIncludeBenefactor ? 'rgba(212,165,55,0.10)' : 'var(--card)',
+                              border: `1px solid ${bulkIncludeBenefactor ? 'var(--gold)' : 'var(--b2)'}`,
+                            }}
+                            data-testid="bulk-add-row-benefactor"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={bulkIncludeBenefactor}
+                              onChange={() => setBulkIncludeBenefactor((v) => !v)}
+                              className="w-4 h-4 accent-[var(--gold)]"
+                              data-testid="bulk-add-check-benefactor"
+                            />
+                            {user.photo_url ? (
+                              <img src={user.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                            ) : (
+                              <div
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold"
+                                style={{ background: 'var(--gold)', color: '#0b1120' }}
+                              >
+                                {((user.first_name || user.name || 'Y')[0] || 'Y').toUpperCase()}
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[13px] font-semibold text-[var(--t)] truncate">
+                                You ({(user.first_name || user.name || 'Benefactor')}{user.last_name ? ' ' + user.last_name : ''})
+                              </div>
+                              <div className="text-[11px] truncate" style={{ color: 'var(--gold)' }}>
+                                Benefactor — also a beneficiary
+                              </div>
+                            </div>
+                          </label>
+                        )}
                         {pickable.map((b) => {
                           const checked = bulkSelected.has(b.id);
                           const label = `${b.first_name || b.name || 'Beneficiary'}${b.last_name ? ' ' + b.last_name : ''}`;
@@ -973,6 +1051,7 @@ export default function EntityDetailPanel({
                     onClick={() => {
                       setBulkOpen(false);
                       setBulkSelected(new Set());
+                      setBulkIncludeBenefactor(false);
                       setBulkNewPeople([]);
                       setBulkNewFirst(''); setBulkNewLast('');
                     }}
@@ -984,14 +1063,14 @@ export default function EntityDetailPanel({
                   </Button>
                   <Button
                     onClick={handleBulkAddBeneficiaries}
-                    disabled={bulkSaving || (bulkSelected.size === 0 && bulkNewPeople.length === 0)}
+                    disabled={bulkSaving || (bulkSelected.size === 0 && bulkNewPeople.length === 0 && !bulkIncludeBenefactor)}
                     className="px-4 py-2 rounded-md text-sm font-semibold"
                     style={{ background: '#22C993', color: '#0b1120' }}
                     data-testid="bulk-add-confirm"
                   >
                     {(() => {
                       if (bulkSaving) return <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Adding…</>;
-                      const total = bulkSelected.size + bulkNewPeople.length;
+                      const total = bulkSelected.size + bulkNewPeople.length + (bulkIncludeBenefactor ? 1 : 0);
                       return `Add ${total || ''} ${total === 1 ? 'beneficiary' : 'beneficiaries'}`.trim();
                     })()}
                   </Button>
