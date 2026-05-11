@@ -1,6 +1,28 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — PDF Preview: Fit Width Only (User Clarification)
+
+**User clarification** — Width was the real problem, not height. "I wouldn't mind the height so that all I have to do is scroll down, but the width was the issue."
+
+**Adjustment** — Removed the height constraint from the fit calculation. Page scale is now `availW / pageW` only (was `Math.min(availW/pageW, availH/pageH)`). Result: each page exactly fills the visible WIDTH of the scrollable container (no horizontal scroll, ever). Height overflows naturally → user scrolls down to see the rest of a page and to move to the next page, exactly as requested.
+
+This sidesteps the regression where `min()` shrank pages on short-wide viewports (iPad landscape, desktop with narrow window) so the page looked smaller than expected.
+
+The resize re-render machinery (orientationchange, resize, ResizeObserver) stays in place so width recalculates on rotate / split-screen / sidebar collapse.
+
+**Cache bust**: `SHELL_VERSION` → `v44-2026-02-13-pdf-preview-fit-width-only`.
+
+**Verified**: ESLint clean, housekeeping 0 WARN / 0 FAIL, all 3 smoke checks 8/8 green.
+
+**Files touched**:
+- `frontend/src/pages/print/PdfPreviewPage.js` — fit-to-width math
+- `frontend/public/sw-push.js` — SHELL_VERSION bump
+
+---
+
+
+
 ## Feb 13, 2026 — PDF Preview Fit-to-Page (No More "Zoomed In" Feel)
 
 **Bug** — User reported every PDF preview "appears a little bit zoomed in, and I have to scroll around in order to see the full page."

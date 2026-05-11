@@ -52,15 +52,14 @@ export default function PdfPreviewPage() {
       const wrap = wrapRef.current;
       if (!container || !wrap) return;
 
-      // Available viewport for ONE page: subtract small breathing-room
-      // padding on both axes so the page never crowds the edges of the
-      // scrollable area. We scale each page to fit BOTH width AND height
-      // of the visible area so the user never needs to horizontally scroll
-      // and sees the full page on every device (phone portrait, iPad
-      // landscape, desktop, PWA standalone — all fit).
+      // Available width for ONE page: subtract small breathing-room padding
+      // on each side so the page never crowds the edges of the scrollable
+      // area. We scale each page to fit the WIDTH of the visible area —
+      // height is allowed to overflow into vertical scroll. No horizontal
+      // scroll ever, on any device. The user explicitly opted for this:
+      // "fit width, don't mind scrolling down for the rest of the height."
       const breath = 24; // ~12px margin on each side
       const availW = Math.max(120, (wrap.clientWidth || 320) - breath);
-      const availH = Math.max(120, (wrap.clientHeight || 480) - breath);
       const dpr = window.devicePixelRatio || 1;
 
       // Pre-flight: collect viewports so we can render quickly without
@@ -72,11 +71,9 @@ export default function PdfPreviewPage() {
         const page = await pdf.getPage(i);
         if (cancelled || myToken !== renderToken) return;
         const base = page.getViewport({ scale: 1 });
-        // FIT-TO-PAGE: pick the smaller of fit-to-width / fit-to-height
-        // so the whole page is visible without any horizontal scroll.
-        const fitW = availW / base.width;
-        const fitH = availH / base.height;
-        const cssScale = Math.min(fitW, fitH);
+        // FIT-TO-WIDTH only: page exactly fits the visible width; vertical
+        // overflow is fine and produces normal scroll-down behavior.
+        const cssScale = availW / base.width;
         const renderScale = cssScale * dpr;
         const viewport = page.getViewport({ scale: renderScale });
 
