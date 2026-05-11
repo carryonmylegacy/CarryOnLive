@@ -1,6 +1,52 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — Universal PDF Preview Wrapper (Platform-Wide)
+
+**Feature** — Per user request: "Give me the same sort of preview page for every PDF generated that has the Back and Print buttons as you have created for the PDF generated for the E&S. Platform wide. That means EGA, IAC, CFP, etc." User explicitly carved out the E&S print page: "don't mess with the E&S one. That one is now perfect."
+
+**New universal preview system**:
+- `/app/frontend/src/utils/openPdfPreview.js` — `openPdfPreview({ navigate, blobFetcher, filename, title, subtitle })`. Caller passes an async `blobFetcher` returning a Blob; the utility stashes it in a module-level Map keyed by UUID (30-min TTL, automatic GC) and navigates to `/pdf-preview/:key`.
+- `/app/frontend/src/pages/print/PdfPreviewPage.js` — new universal preview page. Mirrors `EntitiesPrintPage` toolbar exactly: sticky Back (white) + Print (gold) at top, safe-area aware, hidden under `@media print`. PDF rendered inline via `<iframe src=blob:>`. Print handler chain: iOS → `navigator.share({files:[pdf]})` → desktop iframe `contentWindow.print()` → download fallback. Refresh / 30-min-old preview shows a friendly "Preview expired" empty state with Back button (NOT a dead blob).
+- `/app/frontend/src/App.js` — new route `/pdf-preview/:key` under generic `ProtectedRoute` (any authenticated role).
+
+**Converted call sites** (12 PDFs across 6 files):
+- `GuardianPage.js` (5): `handleChecklistExport`, `handleTodoDownload`, `handleIacDownload`, `handleExportTranscript`, `handleExportPlan` → titles: IAC Checklist / EGA To-Do List / IAC Report / EGA Conversation Transcript / EGA Plan of Action.
+- `beneficiary/BeneficiaryGuardianPage.js` (1): `handleIacDownload` → title: Beneficiary IAC Checklist.
+- `FinancialPortalPage.js` (1): `handleHandoffExport` → title: CFP Hand-off Package, subtitle: estate name. (Removed legacy `iosSafeDownload` import — now unused.)
+- `ConnectedProtocolPage.js` (3): `downloadPlan` / `downloadEmergencyCard` / inline `Family Readiness Report` button → titles: Contingency Care Plan / Emergency Card / Family Readiness Report. (Removed legacy `platformDownload` import — now unused.)
+- `components/admin/IntegrationsTab.js` (1): `handleSOC2Download` → title: SOC 2 Compliance Report.
+- `MessagesPage.js` (1): text-message PDF branch → title: Message. **Intentionally untouched**: the video/voice branch still uses `platformDownload` (those aren't PDFs — `navigator.share` is the right experience for video/audio).
+
+**Untouched** (gold-standard reference): `EntitiesPrintPage.js` at `/financial/entities/:estateId/print`.
+
+**Cache bust**: `SHELL_VERSION` → `v39-2026-02-13-universal-pdf-preview`.
+
+**Verification** (testing_agent_v3_fork iter 131):
+- **PASS** — Direct nav to `/pdf-preview/<bad-key>` while authenticated shows the "Preview expired" state (no auth redirect).
+- **PASS** — CFP Hand-off Export from `/financial-portal` navigates to `/pdf-preview/<uuid>`, renders iframe with `blob:` src, title shows "CFP Hand-off Package", Print button click doesn't throw, Back returns to `/financial`.
+- **PASS** — E&S print page (`/financial/entities/<id>/print`) unchanged; still uses its original `entity-print-back` / `entity-print-reprint` test IDs.
+- **SKIP (source-verified)** — EGA / CCP / SOC2 / Messages flows: testing account has no seeded EGA session, CCP plan, text message, or admin session in this run; static source review confirmed all 5 handlers wire the same way (correct `navigate`, `blobFetcher`, `title`).
+- **ZERO regressions**, ZERO file mutations from the testing agent.
+
+**ESLint**: 0 issues across all 9 modified files. **Webpack**: compiled successfully. **Housekeeping**: 0 WARN, 0 FAIL (all 3 smoke checks 8/8 green).
+
+**Files touched**:
+- `/app/frontend/src/utils/openPdfPreview.js` (new)
+- `/app/frontend/src/pages/print/PdfPreviewPage.js` (new)
+- `/app/frontend/src/App.js` (route + lazy import)
+- `/app/frontend/src/pages/GuardianPage.js` (5 handlers)
+- `/app/frontend/src/pages/beneficiary/BeneficiaryGuardianPage.js` (1 handler)
+- `/app/frontend/src/pages/FinancialPortalPage.js` (1 handler)
+- `/app/frontend/src/pages/ConnectedProtocolPage.js` (3 handlers)
+- `/app/frontend/src/components/admin/IntegrationsTab.js` (1 handler)
+- `/app/frontend/src/pages/MessagesPage.js` (1 handler, text branch only)
+- `/app/frontend/public/sw-push.js` (SHELL_VERSION bump)
+
+---
+
+
+
 ## Feb 13, 2026 — Pitch-Smoke Wired into Housekeeping + Production GitHub Action
 
 **Tooling** — Per user request, made the pitch-smoke a permanent part of the agent's housekeeping loop AND a production CI watchdog.
