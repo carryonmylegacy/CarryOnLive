@@ -78,6 +78,15 @@ export default function EntityDetailPanel({
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkSelected, setBulkSelected] = useState(() => new Set());
   const [bulkSaving, setBulkSaving] = useState(false);
+  // Quick-add: people typed in directly inside the bulk modal that
+  // don't exist on the estate yet. Each row holds {tmpId, first_name,
+  // last_name} — on confirm we POST each to /financial/external-people
+  // (no email required, unlike full beneficiaries) and then link them
+  // to the entity in the same bulk operation. They auto-position
+  // alongside the pre-existing beneficiaries in the tidy row.
+  const [bulkNewPeople, setBulkNewPeople] = useState([]);
+  const [bulkNewFirst, setBulkNewFirst] = useState('');
+  const [bulkNewLast, setBulkNewLast] = useState('');
   // Custom confirmation prompt (window.confirm is silently blocked in iOS PWA)
   const [confirmPrompt, setConfirmPrompt] = useState(null); // {message, action}
 
@@ -287,20 +296,41 @@ export default function EntityDetailPanel({
   // EntityOrgChart (ENTITY_W=200, PERSON_W=110, COL_GAP=30, ROW_GAP=70)
   // so the bulk row aligns perfectly with the rest of the chart.
   const handleBulkAddBeneficiaries = async () => {
-    if (!ent || bulkSaving || bulkSelected.size === 0) return;
+    if (!ent || bulkSaving) return;
+    const existingIds = Array.from(bulkSelected);
+    if (existingIds.length === 0 && bulkNewPeople.length === 0) return;
     setBulkSaving(true);
     const headers = getAuthHeaders();
-    const selectedIds = Array.from(bulkSelected);
     try {
-      // 1) Create the relationships in parallel.
-      await Promise.all(selectedIds.map((bid) => axios.post(
+      // 0) Create any newly-typed people first so we have their
+      // server IDs to link to. They're created as external_people
+      // (no email required) — the chart still tags them with the
+      // "Beneficiary" role chip via the relationship below.
+      const createdExternals = await Promise.all(bulkNewPeople.map((p) => axios.post(
+        `${API_URL}/financial/external-people`,
+        {
+          estate_id: ent.estate_id,
+          first_name: p.first_name,
+          last_name: p.last_name || null,
+        },
+        headers,
+      ).then((r) => r.data)));
+
+      // 1) Create the beneficiary relationships in parallel.
+      // Pre-existing beneficiaries → target_type: 'beneficiary'.
+      // Newly-created people → target_type: 'external_person'.
+      const linkOps = [
+        ...existingIds.map((bid) => ({ target_id: bid, target_type: 'beneficiary' })),
+        ...createdExternals.map((ep) => ({ target_id: ep.id, target_type: 'external_person' })),
+      ];
+      await Promise.all(linkOps.map((op) => axios.post(
         `${API_URL}/financial/entity-relationships`,
         {
           estate_id: ent.estate_id,
           source_id: ent.id,
           source_type: 'entity',
-          target_id: bid,
-          target_type: 'beneficiary',
+          target_id: op.target_id,
+          target_type: op.target_type,
           role: 'beneficiary',
           ownership_pct: null,
         },
@@ -316,17 +346,24 @@ export default function EntityDetailPanel({
       const entityKey = `entity:${ent.id}`;
       // Anchor on the entity's current effective position. If the
       // entity has a drag-override, honor it; otherwise fall back to
-      // (0,0) — the new beneficiary positions will then be relative
-      // to that origin and the chart's natural layout still keeps
-      // everything visible (just less precisely centered).
+      // (0,0) — the new positions will then be relative to that
+      // origin and the chart's natural layout still keeps everything
+      // visible (just less precisely centered).
       const anchor = currentOverrides[entityKey] || { x: 0, y: 0 };
-      const n = selectedIds.length;
+      // Combined ordered list of every node key we just linked, so
+      // they all sit in one row (pre-existing beneficiaries first,
+      // then the just-created externals).
+      const orderedKeys = [
+        ...existingIds.map((bid) => `beneficiary:${bid}`),
+        ...createdExternals.map((ep) => `external_person:${ep.id}`),
+      ];
+      const n = orderedKeys.length;
       const totalW = n * PERSON_W + (n - 1) * COL_GAP;
       const startX = anchor.x + (ENTITY_W - totalW) / 2;
       const rowY = anchor.y + ENTITY_H + ROW_GAP;
       const additions = {};
-      selectedIds.forEach((bid, i) => {
-        additions[`beneficiary:${bid}`] = {
+      orderedKeys.forEach((key, i) => {
+        additions[key] = {
           x: startX + i * (PERSON_W + COL_GAP),
           y: rowY,
         };
@@ -345,6 +382,8 @@ export default function EntityDetailPanel({
       toast.success(`Added ${n} ${n === 1 ? 'beneficiary' : 'beneficiaries'}.`);
       setBulkOpen(false);
       setBulkSelected(new Set());
+      setBulkNewPeople([]);
+      setBulkNewFirst(''); setBulkNewLast('');
       onChanged?.();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to add beneficiaries');
@@ -579,17 +618,16 @@ export default function EntityDetailPanel({
                       {/* Bulk-add beneficiaries — separate button so the
                           user can assign many people at once without
                           stepping through the single-connection wizard
-                          N times. Hidden when no beneficiaries exist on
-                          the estate. */}
-                      {(beneficiaries || []).length > 0 && (
-                        <button
-                          onClick={() => { setBulkSelected(new Set()); setBulkOpen(true); }}
-                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[#22C993] whitespace-nowrap border border-[#22C993]/60 bg-[rgba(34,201,147,0.08)] hover:bg-[rgba(34,201,147,0.18)] hover:border-[#22C993] transition-colors"
-                          data-testid="detail-bulk-add-beneficiaries"
-                        >
-                          <Users className="w-3.5 h-3.5" /> Add beneficiaries (bulk)
-                        </button>
-                      )}
+                          N times. Always available; the modal lets the
+                          user pick from the beneficiary list AND/OR
+                          quick-add new people inline. */}
+                      <button
+                        onClick={() => { setBulkSelected(new Set()); setBulkNewPeople([]); setBulkOpen(true); }}
+                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[#22C993] whitespace-nowrap border border-[#22C993]/60 bg-[rgba(34,201,147,0.08)] hover:bg-[rgba(34,201,147,0.18)] hover:border-[#22C993] transition-colors"
+                        data-testid="detail-bulk-add-beneficiaries"
+                      >
+                        <Users className="w-3.5 h-3.5" /> Add beneficiaries (bulk)
+                      </button>
                     </div>
                   ) : (
                     <div className="p-3 rounded-xl space-y-2" style={{ background: 'var(--card)', border: '1px solid var(--b2)' }}>
@@ -789,20 +827,22 @@ export default function EntityDetailPanel({
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-5 py-3">
-                  {pickable.length === 0 ? (
+                  {pickable.length === 0 && bulkNewPeople.length === 0 ? (
                     <div className="text-[12px] text-[var(--t4)] py-4 text-center">
-                      Every beneficiary on this estate is already linked to {ent?.name || 'this entity'}.
+                      Every beneficiary on this estate is already linked to {ent?.name || 'this entity'}. Add a new person below to include someone else.
                     </div>
                   ) : (
                     <>
-                      <button
-                        type="button"
-                        onClick={toggleAll}
-                        className="text-[11px] font-bold uppercase tracking-wide text-[var(--gold)] mb-2"
-                        data-testid="bulk-add-toggle-all"
-                      >
-                        {allSelected ? 'Clear all' : 'Select all'}
-                      </button>
+                      {pickable.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={toggleAll}
+                          className="text-[11px] font-bold uppercase tracking-wide text-[var(--gold)] mb-2"
+                          data-testid="bulk-add-toggle-all"
+                        >
+                          {allSelected ? 'Clear all' : 'Select all'}
+                        </button>
+                      )}
                       <div className="space-y-1.5">
                         {pickable.map((b) => {
                           const checked = bulkSelected.has(b.id);
@@ -843,15 +883,99 @@ export default function EntityDetailPanel({
                             </label>
                           );
                         })}
+                        {/* Just-typed new people — auto-included in the
+                            bulk action, with a × to remove if the user
+                            changes their mind before confirming. */}
+                        {bulkNewPeople.map((p) => {
+                          const label = `${p.first_name}${p.last_name ? ' ' + p.last_name : ''}`;
+                          return (
+                            <div
+                              key={p.tmpId}
+                              className="flex items-center gap-3 p-2 rounded-md"
+                              style={{ background: 'rgba(34,201,147,0.10)', border: '1px solid #22C993' }}
+                              data-testid={`bulk-add-new-row-${p.tmpId}`}
+                            >
+                              <div className="w-4 h-4 flex items-center justify-center text-[#22C993] text-[11px] font-bold">NEW</div>
+                              <div
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold"
+                                style={{ background: '#22C993', color: '#0b1120' }}
+                              >
+                                {(p.first_name?.[0] || '?').toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-[13px] font-semibold text-[var(--t)] truncate">{label}</div>
+                                <div className="text-[11px] text-[var(--t4)] truncate">Will be created on save</div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setBulkNewPeople((prev) => prev.filter((x) => x.tmpId !== p.tmpId))}
+                                className="text-[#ef4444] hover:opacity-70 p-1"
+                                aria-label="Remove"
+                                data-testid={`bulk-add-new-remove-${p.tmpId}`}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     </>
                   )}
+
+                  {/* Inline new-person mini-form — lets the user add
+                      someone who isn't yet in their beneficiary list
+                      directly into the bulk operation. They get
+                      created as external_people (no email required)
+                      and tagged with the "Beneficiary" chip via the
+                      relationship role on save. */}
+                  <div className="mt-4 pt-3 border-t border-[var(--b2)]">
+                    <Label className="text-[11px] text-[var(--t4)]">Not in your list? Add a new person</Label>
+                    <div className="flex gap-2 mt-1.5">
+                      <Input
+                        value={bulkNewFirst}
+                        onChange={(e) => setBulkNewFirst(e.target.value)}
+                        placeholder="First name"
+                        className="input-field flex-1"
+                        data-testid="bulk-add-new-first"
+                      />
+                      <Input
+                        value={bulkNewLast}
+                        onChange={(e) => setBulkNewLast(e.target.value)}
+                        placeholder="Last name (optional)"
+                        className="input-field flex-1"
+                        data-testid="bulk-add-new-last"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const first = bulkNewFirst.trim();
+                        if (!first) return;
+                        setBulkNewPeople((prev) => [...prev, {
+                          tmpId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                          first_name: first,
+                          last_name: bulkNewLast.trim(),
+                        }]);
+                        setBulkNewFirst(''); setBulkNewLast('');
+                      }}
+                      disabled={!bulkNewFirst.trim()}
+                      className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full text-[12px] font-bold border border-[#22C993]/60 text-[#22C993] bg-[rgba(34,201,147,0.08)] hover:bg-[rgba(34,201,147,0.18)] disabled:opacity-40 disabled:cursor-not-allowed"
+                      data-testid="bulk-add-new-submit"
+                    >
+                      <Plus className="w-3 h-3" /> Queue this person
+                    </button>
+                  </div>
                 </div>
 
                 <div className="px-5 py-3 border-t border-[var(--b2)] flex justify-end gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => { setBulkOpen(false); setBulkSelected(new Set()); }}
+                    onClick={() => {
+                      setBulkOpen(false);
+                      setBulkSelected(new Set());
+                      setBulkNewPeople([]);
+                      setBulkNewFirst(''); setBulkNewLast('');
+                    }}
                     disabled={bulkSaving}
                     className="btn-outline-cta"
                     data-testid="bulk-add-cancel"
@@ -860,14 +984,16 @@ export default function EntityDetailPanel({
                   </Button>
                   <Button
                     onClick={handleBulkAddBeneficiaries}
-                    disabled={bulkSaving || bulkSelected.size === 0}
+                    disabled={bulkSaving || (bulkSelected.size === 0 && bulkNewPeople.length === 0)}
                     className="px-4 py-2 rounded-md text-sm font-semibold"
                     style={{ background: '#22C993', color: '#0b1120' }}
                     data-testid="bulk-add-confirm"
                   >
-                    {bulkSaving
-                      ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Adding…</>
-                      : `Add ${bulkSelected.size || ''} ${bulkSelected.size === 1 ? 'beneficiary' : 'beneficiaries'}`.trim()}
+                    {(() => {
+                      if (bulkSaving) return <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Adding…</>;
+                      const total = bulkSelected.size + bulkNewPeople.length;
+                      return `Add ${total || ''} ${total === 1 ? 'beneficiary' : 'beneficiaries'}`.trim();
+                    })()}
                   </Button>
                 </div>
               </div>
