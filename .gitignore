@@ -29,6 +29,12 @@ next-env.d.ts
 /build
 dist/
 
+# Auto-generated build artifact — Vercel regenerates this on every deploy
+# via the frontend `build` script (see frontend/package.json). Tracking
+# it in git creates a forever-loop of merge conflicts because Emergent's
+# auto-commit also rewrites it on each push. Source of truth: build time.
+frontend/public/version.json
+
 *token.json*
 *credentials.json*
 
