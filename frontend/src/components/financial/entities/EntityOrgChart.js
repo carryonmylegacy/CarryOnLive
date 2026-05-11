@@ -37,6 +37,14 @@ const BUCKET_ICON = {
 const ENTITY_W = 200;
 const ENTITY_H = 92;
 const PERSON_W = 110;
+// "Mini" dimensions — used for bulk-added beneficiaries so a trust
+// with N beneficiaries can render as a compact cluster (5-per-row,
+// wraps) instead of a long row of full-sized cards that crowds the
+// entity tile. Roughly half the standard size. Position overrides
+// in `chart_layout` can opt a person tile into mini mode with
+// `{ x, y, mini: true }`.
+const MINI_W = 64;
+const MINI_H = 84;
 // Extra height (was 96) to make room for the role-title chips beneath
 // the last name (e.g., "Trustee" / "Co-trustee + Member (LLC)" /
 // "Benefactor"). Chips wrap onto a second line when a person holds
@@ -464,13 +472,48 @@ function TileIconButton({ icon: Icon, onClick, label, color = 'rgba(255,255,255,
   );
 }
 
-function PersonTile({ node, palette, dragging, locked, onPointerDownDrag, onClick, onDoubleClick, onInfoClick, onEditClick, roleFilter, onTitleClick }) {
+function PersonTile({ node, palette, dragging, locked, onPointerDownDrag, onClick, onDoubleClick, onInfoClick, onEditClick, roleFilter, onTitleClick, mini }) {
   const initials = (node.label?.[0] || '') + (node.sublabel?.[0] || '');
   const color = node.avatar_color || palette.stroke;
   const cacheKey =
     node.kind === 'user' ? `user:${node.id}:photo` :
     node.kind === 'beneficiary' ? `beneficiary:${node.id}:photo` :
     undefined;
+  // Mini mode: compact 64×84 tile with a 40px avatar and FIRST NAME
+  // ONLY. Used when a node has been positioned as part of a
+  // bulk-add cluster. Skips sublabel / role chips / equity badges /
+  // hover action buttons to keep the cluster visually quiet.
+  if (mini) {
+    return (
+      <div
+        className="relative flex flex-col items-center gap-0.5 select-none"
+        style={{ width: MINI_W, height: MINI_H, cursor: locked ? 'pointer' : (dragging ? 'grabbing' : 'grab'), touchAction: locked ? 'auto' : 'none' }}
+        onPointerDown={onPointerDownDrag}
+        onClick={onClick}
+        onDoubleClick={onDoubleClick}
+        data-testid={`entity-node-${node.key}`}
+      >
+        <div style={{ pointerEvents: 'none' }}>
+          <AvatarCircle
+            photo={node.photo}
+            initials={(initials || '?').toUpperCase().slice(0, 2)}
+            color={color}
+            size={40}
+            cacheKey={cacheKey}
+            isPrimary={node.kind === 'user'}
+          />
+        </div>
+        <span className="text-[11px] font-semibold text-[var(--t)] text-center leading-tight truncate w-full px-0.5" style={{ pointerEvents: 'none' }}>
+          {(node.label || '').split(' ')[0]}
+        </span>
+        {/* Single subtle info dot for tap-to-detail; full action stack
+            would visually overwhelm the cluster. */}
+        <div className="absolute top-0 right-0">
+          <TileIconButton icon={Info} onClick={onInfoClick} label="Info" testId={`tile-info-${node.key}`} />
+        </div>
+      </div>
+    );
+  }
   return (
     <div
       className="relative flex flex-col items-center gap-1 select-none"
@@ -1306,9 +1349,19 @@ export default function EntityOrgChart({
   // Build obstacle list = every tile rect (we exclude src/tgt for each edge inside the loop).
   // Also include the legend tile so edges don't route through it — it
   // visually behaves like another tile, just without lines connected.
+  // Mini-mode nodes get their dims swapped here so edge routing knows
+  // the smaller bounding box (otherwise routes would jump as if the
+  // tile was still full-sized).
   const tileRects = nodes.map((n) => {
     const p = positionOf(n.key);
-    return { key: n.key, x: p.x, y: p.y, w: n.w, h: n.h };
+    const isMiniTile = !!p?.mini && n.kind !== 'entity';
+    return {
+      key: n.key,
+      x: p.x,
+      y: p.y,
+      w: isMiniTile ? MINI_W : n.w,
+      h: isMiniTile ? MINI_H : n.h,
+    };
   });
   if (!legendHidden) {
     const lp = positionOf(LEGEND_KEY);
@@ -1528,6 +1581,7 @@ export default function EntityOrgChart({
                   onEditClick={readOnly ? undefined : handleEditClick}
                   roleFilter={roleFilter}
                   onTitleClick={handleTitleClick}
+                  mini={!!p?.mini}
                 />
               )}
             </div>

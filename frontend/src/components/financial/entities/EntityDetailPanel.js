@@ -347,21 +347,24 @@ export default function EntityDetailPanel({
         headers,
       )));
 
-      // 2) Compute tight override positions beneath the entity.
-      // Chart constants (kept inline so the panel doesn't import the
-      // 1600-line EntityOrgChart module just for four numbers):
+      // 2) Compute compact mini-grid positions beneath the entity.
+      // Bulk-added beneficiaries render as a tight cluster of small
+      // avatars (5 per row, wraps), flagged with `mini: true` in the
+      // override so EntityOrgChart knows to render them in mini mode.
+      // Cluster constants:
       const ENTITY_W = 200, ENTITY_H = 92;
-      const PERSON_W = 110, COL_GAP = 30, ROW_GAP = 70;
+      const MINI_W = 64, MINI_H = 84;
+      const MINI_COL_GAP = 12;     // horizontal gap between mini tiles
+      const MINI_ROW_GAP = 16;     // vertical gap between cluster rows
+      const CLUSTER_GAP = 60;      // gap between entity bottom and top row
+      const PER_ROW = 5;
       const currentOverrides = (chartLayout && typeof chartLayout === 'object') ? chartLayout : {};
       const entityKey = `entity:${ent.id}`;
-      // Anchor on the entity's current effective position. If the
-      // entity has a drag-override, honor it; otherwise fall back to
-      // (0,0) — the new positions will then be relative to that
-      // origin and the chart's natural layout still keeps everything
-      // visible (just less precisely centered).
+      // Anchor on the entity's current effective position (drag override
+      // wins; otherwise (0,0)).
       const anchor = currentOverrides[entityKey] || { x: 0, y: 0 };
       // Combined ordered list of every node key we just linked, so
-      // they all sit in one row (pre-existing beneficiaries first,
+      // they all sit in one cluster (pre-existing beneficiaries first,
       // then the just-created externals, then the benefactor if
       // included).
       const orderedKeys = [
@@ -372,16 +375,25 @@ export default function EntityDetailPanel({
         orderedKeys.push(`user:${user.id}`);
       }
       const n = orderedKeys.length;
-      const totalW = n * PERSON_W + (n - 1) * COL_GAP;
-      const startX = anchor.x + (ENTITY_W - totalW) / 2;
-      const rowY = anchor.y + ENTITY_H + ROW_GAP;
+      const rows = Math.ceil(n / PER_ROW);
+      // Center each row beneath the entity. Items in the LAST row may
+      // be fewer than PER_ROW; we center the actual count, not always 5.
+      const rowY0 = anchor.y + ENTITY_H + CLUSTER_GAP;
       const additions = {};
       orderedKeys.forEach((key, i) => {
+        const row = Math.floor(i / PER_ROW);
+        const col = i % PER_ROW;
+        const itemsInThisRow = Math.min(PER_ROW, n - row * PER_ROW);
+        const rowW = itemsInThisRow * MINI_W + (itemsInThisRow - 1) * MINI_COL_GAP;
+        const rowStartX = anchor.x + (ENTITY_W - rowW) / 2;
         additions[key] = {
-          x: startX + i * (PERSON_W + COL_GAP),
-          y: rowY,
+          x: rowStartX + col * (MINI_W + MINI_COL_GAP),
+          y: rowY0 + row * (MINI_H + MINI_ROW_GAP),
+          mini: true,
         };
       });
+      // Unused locals so lint stays quiet
+      void rows;
 
       // 3) Merge + persist. The layout endpoint replaces the whole
       // overrides map, so we MUST include every existing override or
