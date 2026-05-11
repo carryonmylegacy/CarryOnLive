@@ -62,11 +62,11 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   // "Open the chart fit-to-screen" preference. Default = false (open at
   // 1× centered on the benefactor — feels right for small trees). Users
   // with bigger structures can flip it on and we remember per estate.
-  // Default view = Fit Tree (the user's explicit ask) — only stay
-  // Centered if they've previously opted out (localStorage value === '0').
+  // Default view = Centered (1× centered on the benefactor). Users who
+  // previously opted into Fit Tree (localStorage value === '1') keep it.
   const [fitOnLoad, setFitOnLoad] = useState(() => {
-    try { return window.localStorage?.getItem(FIT_KEY(estateId)) !== '0'; }
-    catch { return true; }
+    try { return window.localStorage?.getItem(FIT_KEY(estateId)) === '1'; }
+    catch { return false; }
   });
   // Legend visibility — persists per estate so the user's last
   // preference survives a portal switch / hard reload.
@@ -79,8 +79,8 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
     setLegendHidden(false);
   };
   useEffect(() => {
-    try { setFitOnLoad(window.localStorage?.getItem(FIT_KEY(estateId)) !== '0'); }
-    catch { setFitOnLoad(true); }
+    try { setFitOnLoad(window.localStorage?.getItem(FIT_KEY(estateId)) === '1'); }
+    catch { setFitOnLoad(false); }
   }, [estateId]);
   const toggleFit = () => {
     setFitOnLoad((prev) => {
