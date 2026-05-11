@@ -1273,6 +1273,70 @@ else
   VERCEL_ISSUES=$((VERCEL_ISSUES + 1))
 fi
 
+# ── A1.2 — Live Endpoint Smoke Tests (pitch_smoke.sh) ────────────────
+# Runs the 8-endpoint conversion smoke test against:
+#   67. Preview  (default API_URL from frontend/.env, info@carryon.us benefactor)
+#   68. Production  (PROD_API_URL env var, info@carryon.us benefactor)
+#   69. Preview / alternate account (founder@carryon.us admin)
+#
+# Production smoke is INFO-only when PROD_API_URL is unset (typical for the
+# preview pod, because `app.carryon.us` is the Vercel SPA — the FastAPI backend
+# lives at a separate Railway origin). The GitHub Action sets PROD_API_URL from
+# a repo secret and runs the full check on every production deploy.
+PITCH_SMOKE="/app/scripts/pitch_smoke.sh"
+
+_run_pitch_smoke() {
+  # _run_pitch_smoke <label> <env-prefix-vars> <probe-url-or-empty> <severity>
+  # severity ∈ {FAIL, WARN}: how a regression is reported.
+  local label="$1"
+  local env_prefix="$2"
+  local probe_url="$3"
+  local severity="${4:-FAIL}"
+  echo -n "$label"
+  if [ ! -x "$PITCH_SMOKE" ]; then
+    echo -e "$WARN (scripts/pitch_smoke.sh missing or not executable)"
+    return
+  fi
+  if [ -z "$probe_url" ]; then
+    probe_url=$(grep -E '^REACT_APP_BACKEND_URL=' /app/frontend/.env 2>/dev/null | cut -d= -f2-)
+  fi
+  if [ -z "$probe_url" ]; then
+    echo -e "$WARN (no API_URL configured — set PROD_API_URL to enable)"
+    return
+  fi
+  # 3s reachability probe; a hard-down target degrades to WARN so housekeeping
+  # stays green when run from a sandboxed env.
+  if ! curl -s -o /dev/null --max-time 3 "${probe_url%/}/api/subscriptions/plans"; then
+    echo -e "$WARN (target unreachable: $probe_url)"
+    return
+  fi
+  local out rc passes fails
+  out=$(eval "$env_prefix bash $PITCH_SMOKE" 2>&1)
+  rc=$?
+  # Strip ANSI before counting.
+  passes=$(echo "$out" | sed 's/\x1b\[[0-9;]*m//g' | grep -c "^  PASS  " || true)
+  fails=$(echo "$out" | sed 's/\x1b\[[0-9;]*m//g' | grep -c "^  FAIL  " || true)
+  if [ "$rc" = "0" ]; then
+    echo -e "$PASS ($passes/8 endpoints green)"
+  else
+    if [ "$severity" = "WARN" ]; then
+      echo -e "$WARN ($fails endpoint(s) regressed against $probe_url — informational, not blocking)"
+    else
+      echo -e "$FAIL ($fails endpoint(s) regressed — run: $env_prefix bash $PITCH_SMOKE)"
+      ISSUES=$((ISSUES + 1))
+    fi
+    echo "$out" | sed 's/\x1b\[[0-9;]*m//g' | grep "^  FAIL  " | sed 's/^/    /'
+  fi
+}
+
+_run_pitch_smoke "67. [A1.2]  Smoke: preview ......... " "" "" "FAIL"
+if [ -n "${PROD_API_URL:-}" ]; then
+  _run_pitch_smoke "68. [A1.2]  Smoke: production ...... " "API_URL=$PROD_API_URL" "$PROD_API_URL" "WARN"
+else
+  echo -e "68. [A1.2]  Smoke: production ...... $INFO (skipped — set PROD_API_URL to Railway backend origin)"
+fi
+_run_pitch_smoke "69. [A1.2]  Smoke: preview / admin . " "TEST_EMAIL=founder@carryon.us TEST_PASSWORD=CarryOntheWisdom!" "" "FAIL"
+
 echo ""
 echo -e "${BOLD}SECTION G: Settings UI Primitives (Regression Guard)${NC}"
 echo "------------------------------------------"

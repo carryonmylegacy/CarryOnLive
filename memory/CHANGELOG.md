@@ -1,6 +1,43 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — Pitch-Smoke Wired into Housekeeping + Production GitHub Action
+
+**Tooling** — Per user request, made the pitch-smoke a permanent part of the agent's housekeeping loop AND a production CI watchdog.
+
+### Housekeeping integration
+Added 3 new checks to `/app/housekeeping.sh` (Section F tail, before Section G):
+- **#67 [A1.2] Smoke: preview** — runs `pitch_smoke.sh` against the preview API_URL with the `info@carryon.us` benefactor. **FAIL** on any endpoint regression.
+- **#68 [A1.2] Smoke: production** — runs against `$PROD_API_URL` if set. **INFO** when the secret is absent (typical for the preview pod, because `app.carryon.us` is the Vercel SPA; the FastAPI backend lives on a separate Railway origin). When set, regressions report as **WARN** (informational, not blocking) so housekeeping doesn't get stuck on transient prod network issues from the sandbox.
+- **#69 [A1.2] Smoke: preview / admin** — same as #67 but as `founder@carryon.us`. **FAIL** on regression.
+
+3s pre-flight reachability probe per target so unreachable origins degrade gracefully. Output strips ANSI codes before counting passes/fails so the housekeeping summary shows accurate `(N/8 endpoints green)`.
+
+**Verified**: `bash /app/housekeeping.sh` → 0 WARN, 0 FAIL, both preview smokes report 8/8 green, production correctly INFO-skipped (PROD_API_URL not set on the preview pod).
+
+### Production GitHub Action
+New workflow `/app/.github/workflows/pitch-smoke.yml`:
+- Triggers: every push to `main` (deploy gate), hourly cron (passive watchdog), `workflow_dispatch` (manual), `repository_dispatch: deploy-smoke` (wire to Railway/Vercel deploy webhook).
+- Skips path-ignore commits (`**/*.md`, `docs/**`, `memory/**`).
+- Runs `bash scripts/pitch_smoke.sh` with `API_URL=$PROD_API_URL`, `TEST_EMAIL=$PITCH_SMOKE_EMAIL`, `TEST_PASSWORD=$PITCH_SMOKE_PASSWORD` from repo secrets.
+- On failure: Slack-pings `$SLACK_WEBHOOK_URL` (skipped silently if unset) with a formatted block-kit message listing every regressed endpoint, AND opens/appends a GitHub issue tagged `pitch-smoke-alert` + `p0`.
+- On recovery: closes the open `pitch-smoke-alert` issue and posts a green confirmation comment.
+- Idempotent: an existing open alert gets comments rather than spawning duplicates.
+- Self-disables cleanly if secrets are not configured — logs `::warning::` and exits 0.
+
+### Required secrets (Repo Settings → Secrets and variables → Actions)
+- `PROD_API_URL` — Railway FastAPI backend origin (e.g. `https://api.carryon.us`). **Not** the Vercel frontend at `app.carryon.us` (returns 405 on POST).
+- `PITCH_SMOKE_EMAIL` / `PITCH_SMOKE_PASSWORD` — test account credentials.
+- `SLACK_WEBHOOK_URL` (optional) — Slack incoming webhook for failure pings.
+
+**Files touched**:
+- `/app/housekeeping.sh` — checks #67-69 + `_run_pitch_smoke` helper
+- `/app/.github/workflows/pitch-smoke.yml` — new workflow
+
+---
+
+
+
 ## Feb 13, 2026 — Permanent Pitch-Day Smoke Script + Backlog Triage
 
 **Tooling** — Committed `/app/scripts/pitch_smoke.sh` as a permanent pre-pitch confidence check. Hits 8 critical conversion endpoints (login, register, plans, checkout, forgot/reset password, estates list, financial portal aggregate) and exits non-zero if any returns an unexpected status. Auto-reads `API_URL` from `/app/frontend/.env` if not set, defaults to the preview-pod benefactor account, supports `API_URL=https://app.carryon.us bash scripts/pitch_smoke.sh` for production. ~3 second total runtime.
