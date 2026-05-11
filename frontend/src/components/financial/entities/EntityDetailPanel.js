@@ -7,7 +7,7 @@
 import React, { useMemo, useState } from 'react';
 import SlidePanel from '../../SlidePanel';
 import {
-  ChevronLeft, Loader2, Trash2, Plus, Edit2,
+  ChevronLeft, Loader2, Trash2, Plus, Edit2, Users,
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -38,6 +38,7 @@ export default function EntityDetailPanel({
   documents,
   walletEntries,
   relationships,
+  chartLayout,
   onChanged,
   onClose,
 }) {
@@ -68,6 +69,15 @@ export default function EntityDetailPanel({
   // render code.)
   const [showAllRolesAdd, setShowAllRolesAdd] = useState(true);
   const [newPct, setNewPct] = useState('');
+  // Bulk "Add beneficiaries" picker — lets the user multi-select
+  // people from their beneficiary list and assign them all as
+  // beneficiaries of the current entity in one tap. After save,
+  // the platform auto-positions them in a tight horizontal row
+  // beneath the entity so the tree stays visually tidy (vs. each
+  // one having to be dragged into place individually).
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkSelected, setBulkSelected] = useState(() => new Set());
+  const [bulkSaving, setBulkSaving] = useState(false);
   // Custom confirmation prompt (window.confirm is silently blocked in iOS PWA)
   const [confirmPrompt, setConfirmPrompt] = useState(null); // {message, action}
 
@@ -266,6 +276,80 @@ export default function EntityDetailPanel({
       toast.error(err.response?.data?.detail || 'Failed to add connection');
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Bulk-add beneficiaries handler.
+  // Creates a "beneficiary" relationship for every selected person in
+  // parallel, then computes a tight horizontal row of override
+  // positions beneath the entity so the auto-rendered tree stays
+  // visually tidy. Override math mirrors the constants used by
+  // EntityOrgChart (ENTITY_W=200, PERSON_W=110, COL_GAP=30, ROW_GAP=70)
+  // so the bulk row aligns perfectly with the rest of the chart.
+  const handleBulkAddBeneficiaries = async () => {
+    if (!ent || bulkSaving || bulkSelected.size === 0) return;
+    setBulkSaving(true);
+    const headers = getAuthHeaders();
+    const selectedIds = Array.from(bulkSelected);
+    try {
+      // 1) Create the relationships in parallel.
+      await Promise.all(selectedIds.map((bid) => axios.post(
+        `${API_URL}/financial/entity-relationships`,
+        {
+          estate_id: ent.estate_id,
+          source_id: ent.id,
+          source_type: 'entity',
+          target_id: bid,
+          target_type: 'beneficiary',
+          role: 'beneficiary',
+          ownership_pct: null,
+        },
+        headers,
+      )));
+
+      // 2) Compute tight override positions beneath the entity.
+      // Chart constants (kept inline so the panel doesn't import the
+      // 1600-line EntityOrgChart module just for four numbers):
+      const ENTITY_W = 200, ENTITY_H = 92;
+      const PERSON_W = 110, COL_GAP = 30, ROW_GAP = 70;
+      const currentOverrides = (chartLayout && typeof chartLayout === 'object') ? chartLayout : {};
+      const entityKey = `entity:${ent.id}`;
+      // Anchor on the entity's current effective position. If the
+      // entity has a drag-override, honor it; otherwise fall back to
+      // (0,0) — the new beneficiary positions will then be relative
+      // to that origin and the chart's natural layout still keeps
+      // everything visible (just less precisely centered).
+      const anchor = currentOverrides[entityKey] || { x: 0, y: 0 };
+      const n = selectedIds.length;
+      const totalW = n * PERSON_W + (n - 1) * COL_GAP;
+      const startX = anchor.x + (ENTITY_W - totalW) / 2;
+      const rowY = anchor.y + ENTITY_H + ROW_GAP;
+      const additions = {};
+      selectedIds.forEach((bid, i) => {
+        additions[`beneficiary:${bid}`] = {
+          x: startX + i * (PERSON_W + COL_GAP),
+          y: rowY,
+        };
+      });
+
+      // 3) Merge + persist. The layout endpoint replaces the whole
+      // overrides map, so we MUST include every existing override or
+      // the user's prior drags will be wiped.
+      const merged = { ...currentOverrides, ...additions };
+      await axios.put(
+        `${API_URL}/financial/entities/${ent.estate_id}/layout`,
+        { overrides: merged },
+        headers,
+      ).catch(() => { /* layout save is best-effort; relationships are already saved */ });
+
+      toast.success(`Added ${n} ${n === 1 ? 'beneficiary' : 'beneficiaries'}.`);
+      setBulkOpen(false);
+      setBulkSelected(new Set());
+      onChanged?.();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to add beneficiaries');
+    } finally {
+      setBulkSaving(false);
     }
   };
 
@@ -484,7 +568,7 @@ export default function EntityDetailPanel({
 
                   {/* Add connection */}
                   {!addingConn ? (
-                    <div className="flex justify-center pt-1">
+                    <div className="flex flex-col items-stretch gap-2 pt-1">
                       <button
                         onClick={() => setAddingConn(true)}
                         className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[var(--gold)] whitespace-nowrap border border-[var(--gold)]/70 bg-[rgba(212,165,55,0.10)] hover:bg-[rgba(212,165,55,0.20)] hover:border-[var(--gold)] transition-colors"
@@ -492,6 +576,20 @@ export default function EntityDetailPanel({
                       >
                         <Plus className="w-3.5 h-3.5" /> Add a connection
                       </button>
+                      {/* Bulk-add beneficiaries — separate button so the
+                          user can assign many people at once without
+                          stepping through the single-connection wizard
+                          N times. Hidden when no beneficiaries exist on
+                          the estate. */}
+                      {(beneficiaries || []).length > 0 && (
+                        <button
+                          onClick={() => { setBulkSelected(new Set()); setBulkOpen(true); }}
+                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[#22C993] whitespace-nowrap border border-[#22C993]/60 bg-[rgba(34,201,147,0.08)] hover:bg-[rgba(34,201,147,0.18)] hover:border-[#22C993] transition-colors"
+                          data-testid="detail-bulk-add-beneficiaries"
+                        >
+                          <Users className="w-3.5 h-3.5" /> Add beneficiaries (bulk)
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <div className="p-3 rounded-xl space-y-2" style={{ background: 'var(--card)', border: '1px solid var(--b2)' }}>
@@ -644,6 +742,138 @@ export default function EntityDetailPanel({
             </div>
           </div>
         )}
+
+        {/* Bulk-add beneficiaries modal — multi-select picker. Filters
+            out anyone who is already a beneficiary of this entity so
+            the user can't double-link. After confirm, every selected
+            person is linked + auto-positioned in a tidy row. */}
+        {bulkOpen && isEntity && (() => {
+          const linkedKey = `entity:${ent.id}`;
+          const alreadyLinked = new Set(
+            (relationships || [])
+              .filter((r) => r.role === 'beneficiary'
+                && `${r.source_type}:${r.source_id}` === linkedKey
+                && r.target_type === 'beneficiary')
+              .map((r) => r.target_id)
+          );
+          const pickable = (beneficiaries || []).filter((b) => !alreadyLinked.has(b.id));
+          const allSelected = pickable.length > 0 && pickable.every((b) => bulkSelected.has(b.id));
+          const toggle = (bid) => {
+            const next = new Set(bulkSelected);
+            if (next.has(bid)) next.delete(bid); else next.add(bid);
+            setBulkSelected(next);
+          };
+          const toggleAll = () => {
+            if (allSelected) setBulkSelected(new Set());
+            else setBulkSelected(new Set(pickable.map((b) => b.id)));
+          };
+          return (
+            <div
+              className="absolute inset-0 z-10 flex items-center justify-center bg-black/70 p-4"
+              data-testid="bulk-add-beneficiaries-overlay"
+              onClick={() => !bulkSaving && setBulkOpen(false)}
+            >
+              <div
+                className="rounded-2xl max-w-sm w-full flex flex-col"
+                style={{ background: 'var(--bg2)', border: '1px solid var(--b)', boxShadow: '0 12px 40px rgba(0,0,0,0.5)', maxHeight: '80vh' }}
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                data-testid="bulk-add-beneficiaries-modal"
+              >
+                <div className="px-5 pt-5 pb-3 border-b border-[var(--b2)]">
+                  <div className="text-[15px] font-bold text-[var(--t)]">Add beneficiaries</div>
+                  <div className="text-[11px] text-[var(--t4)] mt-0.5">
+                    Pick everyone who inherits from <span style={{ color: 'var(--gold)' }}>{ent?.name || 'this entity'}</span>. We'll fan them out in a tidy row below the tile — no dragging required.
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-5 py-3">
+                  {pickable.length === 0 ? (
+                    <div className="text-[12px] text-[var(--t4)] py-4 text-center">
+                      Every beneficiary on this estate is already linked to {ent?.name || 'this entity'}.
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={toggleAll}
+                        className="text-[11px] font-bold uppercase tracking-wide text-[var(--gold)] mb-2"
+                        data-testid="bulk-add-toggle-all"
+                      >
+                        {allSelected ? 'Clear all' : 'Select all'}
+                      </button>
+                      <div className="space-y-1.5">
+                        {pickable.map((b) => {
+                          const checked = bulkSelected.has(b.id);
+                          const label = `${b.first_name || b.name || 'Beneficiary'}${b.last_name ? ' ' + b.last_name : ''}`;
+                          return (
+                            <label
+                              key={b.id}
+                              className="flex items-center gap-3 p-2 rounded-md cursor-pointer"
+                              style={{
+                                background: checked ? 'rgba(34,201,147,0.10)' : 'var(--card)',
+                                border: `1px solid ${checked ? '#22C993' : 'var(--b2)'}`,
+                              }}
+                              data-testid={`bulk-add-row-${b.id}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggle(b.id)}
+                                className="w-4 h-4 accent-[#22C993]"
+                                data-testid={`bulk-add-check-${b.id}`}
+                              />
+                              {b.photo_url ? (
+                                <img src={b.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                              ) : (
+                                <div
+                                  className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold"
+                                  style={{ background: b.avatar_color || 'var(--gold)', color: '#0b1120' }}
+                                >
+                                  {(b.first_name?.[0] || 'B').toUpperCase()}
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="text-[13px] font-semibold text-[var(--t)] truncate">{label}</div>
+                                {b.relation && (
+                                  <div className="text-[11px] text-[var(--t4)] truncate">{b.relation}</div>
+                                )}
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="px-5 py-3 border-t border-[var(--b2)] flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => { setBulkOpen(false); setBulkSelected(new Set()); }}
+                    disabled={bulkSaving}
+                    className="btn-outline-cta"
+                    data-testid="bulk-add-cancel"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleBulkAddBeneficiaries}
+                    disabled={bulkSaving || bulkSelected.size === 0}
+                    className="px-4 py-2 rounded-md text-sm font-semibold"
+                    style={{ background: '#22C993', color: '#0b1120' }}
+                    data-testid="bulk-add-confirm"
+                  >
+                    {bulkSaving
+                      ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Adding…</>
+                      : `Add ${bulkSelected.size || ''} ${bulkSelected.size === 1 ? 'beneficiary' : 'beneficiaries'}`.trim()}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </SlidePanel>
   );

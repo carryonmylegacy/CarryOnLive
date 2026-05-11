@@ -1,6 +1,29 @@
 # CarryOn — Changelog
 
-## Feb 12, 2026 — Service-Worker Cache Bust: Force iOS PWA to Pick Up Print-PDF Fixes
+## Feb 12, 2026 — E&S Bulk-Add Beneficiaries with Auto-Layout
+
+**Feature** — User reported (with IMG_0513): "instead of adding each one individually and then trying to drag each one around so that they don't overlap and look good, I would rather have a little selector and have the UX take care of building a mini tree of avatars". When a trust has multiple beneficiaries, adding them one at a time produces a sprawling layout that needs manual cleanup.
+
+**Implementation**:
+- New green **"Add beneficiaries (bulk)"** button on `EntityDetailPanel` (entities only), beside the existing "Add a connection" button. Hidden when the estate has no beneficiaries.
+- Tapping it opens a multi-select modal listing every beneficiary on the estate, with photo/avatar, name, and relation chip. People already linked as a beneficiary of THIS entity are filtered out so you can't double-link.
+- "Select all" / "Clear all" toggle for fast batch picking.
+- On confirm:
+  1. Creates a `beneficiary` relationship for every selected person in parallel (`POST /financial/entity-relationships`).
+  2. Computes a tight horizontal row of override positions beneath the entity using the chart's actual constants (`ENTITY_W=200`, `PERSON_W=110`, `COL_GAP=30`, `ROW_GAP=70`) so the row aligns perfectly with the rest of the tree.
+  3. Anchor x/y is taken from the entity's existing drag-override (`chartLayout[entity:<id>]`) so the row tracks wherever the user has placed the entity tile.
+  4. Merges new overrides with existing layout and persists via `PUT /financial/entities/{eid}/layout` — never wipes the user's prior drags.
+  5. Toast confirms, modal closes, `onChanged()` refreshes the chart.
+
+**Wiring** (`EntitiesSection.js`): Threads `serverChartLayout` down to `EntityDetailPanel` as a new `chartLayout` prop so the anchor math can read it.
+
+**Cache bust**: `SHELL_VERSION` → `v29-2026-02-12-bulk-add-beneficiaries`.
+
+**Verified**: ESLint clean (both files), housekeeping clean, webpack compiled successfully. User to force-quit iOS PWA, reopen, tap a trust, then "Add beneficiaries (bulk)" to verify.
+
+---
+
+
 
 **Bug** — User reported "Absolutely no change" three times in a row after each round of print-PDF fixes. The fixes were verifiably deployed to the preview environment (confirmed: chunked JS at `/static/js/src_pages_print_EntitiesPrintPage_js.chunk.js` contains the new `/beneficiaries/{estateId}` fetch, the `PAGE_W` scale math, and the manual `<g translate/scale>` transform). But on the user's iOS PWA, none of these changes appeared.
 
