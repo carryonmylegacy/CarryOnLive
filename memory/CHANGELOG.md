@@ -1,6 +1,56 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — iPad Landscape PWA Top Inset + EGA Plan of Action by-Professional Breakdown
+
+**1) iPad Pro landscape PWA — top-edge relief**
+User reported on iPad Pro in landscape mode, the iOS status bar (clock, signal, battery) was touching the very top of the app surface in some places.
+
+**Root cause** — The mobile CSS branch (`@media max-width:1024px`) already honors `env(safe-area-inset-top)` for `.main-content` and `.mobile-header`. But iPad Pro landscape is **1194px (11")** or **1366px (12.9")** wide, which lands in the DESKTOP branch where `.sb` and `.main-content` have `top:0` / `padding-top:0` and zero status-bar protection.
+
+**Fix** — Added a new rule in `/app/frontend/src/index.css` gated to `@media (display-mode: standalone) and (min-width: 1025px)`:
+```css
+.sb { top: calc(...banner... + max(6px, env(safe-area-inset-top, 0px))); ... }
+.main-content { padding-top: calc(...banner... + max(6px, env(safe-area-inset-top, 0px))); }
+```
+- `max(6px, env(safe-area-inset-top))` gives at least 6px of relief (the "smidge" the user asked for) on iPad PWA where iOS reports a small inset, and falls back to 6px on devices that don't report one.
+- Gated to `display-mode: standalone` so regular desktop browsers (Chrome / Safari with a normal window chrome) are completely unaffected — no double-padding on Mac / Windows / Linux.
+- Gated to `min-width: 1025px` so iPad portrait (which falls into the mobile branch at 1024px) doesn't get double-padding.
+
+**SHELL_VERSION** bumped → `v41-2026-02-13-ipad-landscape-top-relief`.
+
+---
+
+**2) EGA Plan of Action — break out to-do list by professional**
+User asked to break the Plan of Action's "Professional Referrals" section into discrete sub-sections by professional type so the benefactor can hand each block to the right person.
+
+**Change** — Updated the xAI summarizer prompt in `/app/backend/routes/guardian_exports.py` (`export_plan_of_action_pdf`). Replaced the single line:
+```
+6. Professional Referrals — If any actions require an attorney, CPA, or financial advisor, note that.
+```
+with a structured 6-sub-section breakdown:
+- **6a. Estate Planning Attorney** — wills, trusts, POA, healthcare directive, HIPAA, guardianship clauses, state-specific probate.
+- **6b. Tax / CPA** — estate-tax exposure, gift-tax planning, step-up basis, IRA/401(k) tax-deferred strategy, charitable giving, state inheritance tax.
+- **6c. Financial Advisor / Wealth Manager** — asset allocation, beneficiary designations, 529 plans, Roth conversion ladders.
+- **6d. Life Insurance Agent** — term vs. permanent review, beneficiary updates, ILIT funding, coverage gap analysis.
+- **6e. Estate / Trust Administrator (Trustee / Executor)** — confirm executor, successor trustees, letter of instruction, asset locations, key custodians, digital-asset access, funeral wishes.
+- **6f. Other Specialists** — elder-law, special-needs trust, business succession, real-estate attorney for property transfers.
+
+The prompt explicitly instructs the AI to omit empty sub-sections and produce numbered action items within each so the benefactor can literally hand each block to the right professional.
+
+**Verified live**: `POST /api/guardian/export-plan-of-action` → **HTTP 200, 5390 bytes, 24.8s** with the new structured prompt (vs. 4957 bytes / 35.3s previously — slightly bigger PDF, slightly faster because we made the prompt itself longer but kept max_tokens at 4096).
+
+**Files touched**:
+- `frontend/src/index.css` — new `@media (display-mode: standalone) and (min-width: 1025px)` block
+- `frontend/public/sw-push.js` — SHELL_VERSION bump
+- `backend/routes/guardian_exports.py` — `export_plan_of_action_pdf` prompt restructure
+
+Housekeeping: 0 WARN, 0 FAIL, all 3 smoke checks 8/8 green.
+
+---
+
+
+
 ## Feb 13, 2026 — EGA Plan of Action Timeout Fix (Pre-Existing Bug)
 
 **Bug** — User reported "Failed to generate Plan of Action" toast every time they tried to export an EGA Plan of Action PDF for the benefactor.

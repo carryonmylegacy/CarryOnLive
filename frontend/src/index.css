@@ -1468,6 +1468,26 @@
   }
 }
 
+/* ── iPad-class PWA landscape: top-edge relief ────────────────
+   Mobile (max-width:1024px) already honors env(safe-area-inset-top)
+   on .main-content and .mobile-header. But iPad Pro landscape lands
+   in the DESKTOP branch (1194px / 1366px wide) where .sb and
+   .main-content have no top inset — leaving content touching the
+   iOS status bar in PWA standalone mode. Add a small inset (≥6px,
+   or the OS-reported inset, whichever is larger) for desktop-width
+   standalone PWAs only. Regular desktop browsers report a 0 inset
+   so the `max()` falls back to 6px which is the "smidge of relief"
+   the user requested. */
+@media (display-mode: standalone) and (min-width: 1025px) {
+  .sb {
+    top: calc(var(--cy-offline-banner-h, 0px) + max(6px, env(safe-area-inset-top, 0px)));
+    height: calc(100vh - var(--cy-offline-banner-h, 0px) - max(6px, env(safe-area-inset-top, 0px)));
+  }
+  .main-content {
+    padding-top: calc(var(--cy-offline-banner-h, 0px) + max(6px, env(safe-area-inset-top, 0px)));
+  }
+}
+
 
 /* ── Minimum Font Size Enforcement ────────────────────────── */
 /* Demographics: 40+ user base. No interactive/content text below 12px.

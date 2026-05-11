@@ -860,9 +860,29 @@ Analyze the entire conversation and produce a structured **Plan of Action** that
 3. **Recommended Actions** — Specific, prioritized steps the benefactor should take, each with a clear description and urgency level (Immediate / Short-term / Long-term).
 4. **State-Specific Considerations** — Any items specific to {user_state} law.
 5. **Documents Needed** — Any legal documents that should be created, updated, or reviewed.
-6. **Professional Referrals** — If any actions require an attorney, CPA, or financial advisor, note that.
+6. **Professional Consultations — Action Items by Professional**
 
-Format each section with clear headers. Use numbered lists for action items. Be specific and actionable — this will be printed as a formal Plan of Action document.
+Instead of a single referral list, break out the action items by the SPECIFIC professional the benefactor should consult, so they can hand each block to the right person. Use these sub-sections (omit any that have no action items — DO NOT include empty sub-sections):
+
+   **6a. Estate Planning Attorney**
+   List specific, numbered questions / asks for an attorney (e.g., draft / update will, create revocable trust, review beneficiary designations, durable power of attorney, healthcare directive, draft pour-over will, advance healthcare directive, HIPAA release, guardianship clauses for minors, state-specific probate planning).
+
+   **6b. Tax / CPA**
+   Tax-impacting items (e.g., estate-tax exposure analysis, gift-tax planning, step-up basis review, IRA/401(k) tax-deferred withdrawal strategy, charitable giving structures, state inheritance tax for {user_state}).
+
+   **6c. Financial Advisor / Wealth Manager**
+   Investment-related items (e.g., asset allocation in retirement, rebalancing, beneficiary designations on brokerage / IRA accounts, 529 plan setup, college funding, Roth conversion ladder).
+
+   **6d. Life Insurance Agent**
+   Coverage analysis (e.g., term vs. permanent review, beneficiary update, ILIT funding, key-person coverage, coverage gap analysis based on liabilities + dependents).
+
+   **6e. Estate / Trust Administrator (Trustee / Executor)**
+   Operational continuity items (e.g., confirm named executor is willing & able, name successor trustees, prepare letter of instruction, document asset locations, key custodians list, digital-asset access plan, funeral / disposition wishes).
+
+   **6f. Other Specialists**
+   Any other recommended consultations not covered above (e.g., elder-law attorney for Medicaid planning, special-needs trust attorney, business succession advisor, real-estate attorney for property transfers).
+
+Format each section with clear markdown headers (## for top-level sections, ### for sub-sections like 6a/6b/6c…). Use numbered lists within each professional sub-section. Be specific and actionable — this will be printed as a formal Plan of Action document that the benefactor can literally hand to each professional.
 
 CONVERSATION:
 {conv_text}"""
