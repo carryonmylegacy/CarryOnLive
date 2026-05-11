@@ -370,6 +370,7 @@ const FinancialPortalPage = () => {
           const res = await axios.get(`${API_URL}/financial/handoff-package/${estate.id}`, {
             headers,
             responseType: 'blob',
+            timeout: 120000,
           });
           return new Blob([res.data], { type: 'application/pdf' });
         },

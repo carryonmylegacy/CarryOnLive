@@ -441,7 +441,7 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
         subtitle: new Date().toISOString().slice(0, 10),
         blobFetcher: async () => {
           const res = await axios.post(`${API_URL}/admin/integrations/soc2-report`, { pin: pin || sessionPin }, {
-            ...getAuthHeaders(), responseType: 'blob',
+            ...getAuthHeaders(), responseType: 'blob', timeout: 120000,
           });
           return new Blob([res.data], { type: 'application/pdf' });
         },

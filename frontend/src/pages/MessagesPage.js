@@ -1047,7 +1047,7 @@ const MessagesPage = () => {
           title: 'Message',
           subtitle: msg.title || '',
           blobFetcher: async () => {
-            const res = await axios.get(`${API_URL}/messages/${msg.id}/download`, { ...getAuthHeaders(), responseType: 'blob' });
+            const res = await axios.get(`${API_URL}/messages/${msg.id}/download`, { ...getAuthHeaders(), responseType: 'blob', timeout: 60000 });
             return new Blob([res.data], { type: 'application/pdf' });
           },
         });

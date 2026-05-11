@@ -343,7 +343,7 @@ const GuardianPage = () => {
         subtitle: dateStr,
         blobFetcher: async () => {
           const headers = getAuthHeaders()?.headers;
-          const res = await axios.post(`${API_URL}/guardian/export-checklist`, {}, { headers, responseType: 'blob' });
+          const res = await axios.post(`${API_URL}/guardian/export-checklist`, {}, { headers, responseType: 'blob', timeout: 120000 });
           return new Blob([res.data], { type: 'application/pdf' });
         },
       });
@@ -364,7 +364,7 @@ const GuardianPage = () => {
         subtitle: dateStr,
         blobFetcher: async () => {
           const headers = getAuthHeaders()?.headers;
-          const res = await axios.post(`${API_URL}/guardian/export-todo`, { content }, { headers, responseType: 'blob' });
+          const res = await axios.post(`${API_URL}/guardian/export-todo`, { content }, { headers, responseType: 'blob', timeout: 60000 });
           return new Blob([res.data], { type: 'application/pdf' });
         },
       });
@@ -384,7 +384,7 @@ const GuardianPage = () => {
         subtitle: dateStr,
         blobFetcher: async () => {
           const headers = getAuthHeaders()?.headers;
-          const res = await axios.post(`${API_URL}/guardian/export-iac-report`, { content }, { headers, responseType: 'blob' });
+          const res = await axios.post(`${API_URL}/guardian/export-iac-report`, { content }, { headers, responseType: 'blob', timeout: 120000 });
           return new Blob([res.data], { type: 'application/pdf' });
         },
       });
@@ -406,7 +406,7 @@ const GuardianPage = () => {
         subtitle: dateStr,
         blobFetcher: async () => {
           const headers = getAuthHeaders()?.headers;
-          const res = await axios.post(`${API_URL}/guardian/export-conversation`, { session_id: sessionId }, { headers, responseType: 'blob' });
+          const res = await axios.post(`${API_URL}/guardian/export-conversation`, { session_id: sessionId }, { headers, responseType: 'blob', timeout: 60000 });
           return new Blob([res.data], { type: 'application/pdf' });
         },
       });
@@ -428,7 +428,7 @@ const GuardianPage = () => {
         subtitle: dateStr,
         blobFetcher: async () => {
           const headers = getAuthHeaders()?.headers;
-          const res = await axios.post(`${API_URL}/guardian/export-plan-of-action`, { session_id: sessionId }, { headers, responseType: 'blob' });
+          const res = await axios.post(`${API_URL}/guardian/export-plan-of-action`, { session_id: sessionId }, { headers, responseType: 'blob', timeout: 120000 });
           return new Blob([res.data], { type: 'application/pdf' });
         },
       });

@@ -1,6 +1,38 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — EGA Plan of Action Timeout Fix (Pre-Existing Bug)
+
+**Bug** — User reported "Failed to generate Plan of Action" toast every time they tried to export an EGA Plan of Action PDF for the benefactor.
+
+**Root cause** — Pre-existing bug, NOT caused by today's PDF preview refactor. `/app/frontend/src/index.js:27` sets `axios.defaults.timeout = 8000` (8 seconds), but EGA Plan of Action calls xAI Grok with `max_tokens=4096` which takes **35 seconds end-to-end** (verified via curl: `POST /api/guardian/export-plan-of-action` → 200 OK, 4957 bytes, `time_total=35.3s`). The 8s default fired → `ECONNABORTED` → caught and toasted as a generic error. The old `platformDownload` flow had the same bug; today's preview refactor just surfaced it because the user actually tried to use the feature.
+
+**Fix** — Added explicit per-call `timeout` to every PDF-generating axios call in the converted handlers:
+- `GuardianPage.js` — `export-checklist`, `export-iac-report`, `export-plan-of-action` → **120s** (all xAI-backed); `export-todo`, `export-conversation` → **60s** (no xAI, but big PDFs).
+- `beneficiary/BeneficiaryGuardianPage.js` — `beneficiary-export-checklist` → **120s**.
+- `FinancialPortalPage.js` — `financial/handoff-package` → **120s** (composes 4-tile snapshot + weekly cash + 30-day bill calendar).
+- `components/admin/IntegrationsTab.js` — `admin/integrations/soc2-report` → **120s**.
+- `MessagesPage.js` — `messages/{id}/download` (text PDF) → **60s**.
+- (CCP downloads via `fetch()` not affected — `fetch` has no default timeout.)
+
+**Cache bust**: `SHELL_VERSION` → `v40-2026-02-13-pdf-preview-timeout-fix`.
+
+**Verified** (live curl):
+- `POST /api/guardian/export-plan-of-action` → 200 OK in 35.3s, 4957-byte PDF ✓
+- ESLint clean, housekeeping 0 WARN / 0 FAIL, all 3 smoke checks 8/8.
+
+**Files touched**:
+- `pages/GuardianPage.js` — 5 timeouts
+- `pages/beneficiary/BeneficiaryGuardianPage.js` — 1 timeout
+- `pages/FinancialPortalPage.js` — 1 timeout
+- `components/admin/IntegrationsTab.js` — 1 timeout
+- `pages/MessagesPage.js` — 1 timeout
+- `public/sw-push.js` — SHELL_VERSION bump
+
+---
+
+
+
 ## Feb 13, 2026 — Universal PDF Preview Wrapper (Platform-Wide)
 
 **Feature** — Per user request: "Give me the same sort of preview page for every PDF generated that has the Back and Print buttons as you have created for the PDF generated for the E&S. Platform wide. That means EGA, IAC, CFP, etc." User explicitly carved out the E&S print page: "don't mess with the E&S one. That one is now perfect."

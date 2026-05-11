@@ -62,7 +62,7 @@ const BeneficiaryGuardianPage = () => {
         subtitle: dateStr,
         blobFetcher: async () => {
           const res = await axios.post(`${API_URL}/guardian/beneficiary-export-checklist`, {}, {
-            ...getAuthHeaders(), responseType: 'blob',
+            ...getAuthHeaders(), responseType: 'blob', timeout: 120000,
           });
           return new Blob([res.data], { type: 'application/pdf' });
         },
