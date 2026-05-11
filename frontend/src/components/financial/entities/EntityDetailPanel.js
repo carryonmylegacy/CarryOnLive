@@ -302,7 +302,14 @@ export default function EntityDetailPanel({
   const handleBulkAddBeneficiaries = async () => {
     if (!ent || bulkSaving) return;
     const existingIds = Array.from(bulkSelected);
-    if (existingIds.length === 0 && bulkNewPeople.length === 0 && !bulkIncludeBenefactor) return;
+    // Count existing beneficiaries already linked to this entity — if
+    // there are any, the user can click Confirm with no new picks
+    // just to re-tidy the existing cluster.
+    const linkedKeyEarly = `entity:${ent.id}`;
+    const existingCountEarly = (relationships || []).filter((r) =>
+      r.role === 'beneficiary' && `${r.target_type}:${r.target_id}` === linkedKeyEarly
+    ).length;
+    if (existingIds.length === 0 && bulkNewPeople.length === 0 && !bulkIncludeBenefactor && existingCountEarly === 0) return;
     setBulkSaving(true);
     const headers = getAuthHeaders();
     try {
@@ -366,17 +373,29 @@ export default function EntityDetailPanel({
       // Anchor on the entity's current effective position (drag override
       // wins; otherwise (0,0)).
       const anchor = currentOverrides[entityKey] || { x: 0, y: 0 };
-      // Combined ordered list of every node key we just linked, so
-      // they all sit in one cluster (pre-existing beneficiaries first,
-      // then the just-created externals, then the benefactor if
-      // included).
-      const orderedKeys = [
-        ...existingIds.map((bid) => `beneficiary:${bid}`),
-        ...createdExternals.map((ep) => `external_person:${ep.id}`),
-      ];
-      if (bulkIncludeBenefactor && user?.id) {
-        orderedKeys.push(`user:${user.id}`);
-      }
+      // Combined ordered list of EVERY node connected to this entity
+      // as a beneficiary — existing relationships (so the cluster
+      // re-tidies them, not just newly-linked people) + newly-created
+      // externals + benefactor if included. This is the trick that
+      // makes the brick-stack happen even when the user opens the
+      // modal with no new selections: clicking Confirm will simply
+      // re-compact whoever is already linked.
+      const linkedKey = `entity:${ent.id}`;
+      const existingClusterKeys = (relationships || [])
+        .filter((r) => r.role === 'beneficiary'
+          && `${r.target_type}:${r.target_id}` === linkedKey)
+        .map((r) => `${r.source_type}:${r.source_id}`);
+      // De-dupe while preserving order: existing first, then
+      // newly-added picks (avoiding double-add since the picker
+      // already filtered out anyone in `alreadyLinked`), then new
+      // externals, then benefactor.
+      const orderedKeys = [];
+      const seen = new Set();
+      const pushIfNew = (k) => { if (!seen.has(k)) { seen.add(k); orderedKeys.push(k); } };
+      existingClusterKeys.forEach(pushIfNew);
+      existingIds.forEach((bid) => pushIfNew(`beneficiary:${bid}`));
+      createdExternals.forEach((ep) => pushIfNew(`external_person:${ep.id}`));
+      if (bulkIncludeBenefactor && user?.id) pushIfNew(`user:${user.id}`);
       const n = orderedKeys.length;
       const rowY0 = anchor.y + ENTITY_H + CLUSTER_GAP;
       const HALF_STEP = (MINI_W + MINI_COL_GAP) / 2;
@@ -408,7 +427,12 @@ export default function EntityDetailPanel({
         headers,
       ).catch(() => { /* layout save is best-effort; relationships are already saved */ });
 
-      toast.success(`Added ${n} ${n === 1 ? 'beneficiary' : 'beneficiaries'}.`);
+      const newlyAdded = existingIds.length + createdExternals.length + (bulkIncludeBenefactor && user?.id ? 1 : 0);
+      if (newlyAdded > 0) {
+        toast.success(`Added ${newlyAdded} — cluster of ${n} compacted.`);
+      } else {
+        toast.success(`Compacted ${n} beneficiar${n === 1 ? 'y' : 'ies'} into a mini cluster.`);
+      }
       setBulkOpen(false);
       setBulkSelected(new Set());
       setBulkIncludeBenefactor(false);
@@ -845,6 +869,12 @@ export default function EntityDetailPanel({
               && r.source_id === user?.id
           );
           const pickable = (beneficiaries || []).filter((b) => !alreadyLinked.has(b.id));
+          // Count of beneficiaries currently linked to this entity —
+          // enables the Confirm button even with 0 new picks so the
+          // user can re-tidy the existing cluster (snap to mini grid).
+          const existingCount = (relationships || []).filter((r) =>
+            r.role === 'beneficiary' && `${r.target_type}:${r.target_id}` === linkedKey
+          ).length;
           const allSelected = pickable.length > 0 && pickable.every((b) => bulkSelected.has(b.id));
           const toggle = (bid) => {
             const next = new Set(bulkSelected);
@@ -1078,15 +1108,19 @@ export default function EntityDetailPanel({
                   </Button>
                   <Button
                     onClick={handleBulkAddBeneficiaries}
-                    disabled={bulkSaving || (bulkSelected.size === 0 && bulkNewPeople.length === 0 && !bulkIncludeBenefactor)}
+                    disabled={bulkSaving || (bulkSelected.size === 0 && bulkNewPeople.length === 0 && !bulkIncludeBenefactor && existingCount === 0)}
                     className="px-4 py-2 rounded-md text-sm font-semibold"
                     style={{ background: '#22C993', color: '#0b1120' }}
                     data-testid="bulk-add-confirm"
                   >
                     {(() => {
-                      if (bulkSaving) return <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Adding…</>;
-                      const total = bulkSelected.size + bulkNewPeople.length + (bulkIncludeBenefactor ? 1 : 0);
-                      return `Add ${total || ''} ${total === 1 ? 'beneficiary' : 'beneficiaries'}`.trim();
+                      if (bulkSaving) return <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving…</>;
+                      const newCount = bulkSelected.size + bulkNewPeople.length + (bulkIncludeBenefactor ? 1 : 0);
+                      const total = newCount + existingCount;
+                      if (newCount === 0 && existingCount > 0) {
+                        return `Compact ${existingCount} beneficiar${existingCount === 1 ? 'y' : 'ies'}`;
+                      }
+                      return `Add ${newCount}${existingCount ? ` + compact ${existingCount}` : ''} (${total} total)`;
                     })()}
                   </Button>
                 </div>
