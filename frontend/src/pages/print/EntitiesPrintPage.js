@@ -377,15 +377,20 @@ export default function EntitiesPrintPage() {
     const iconPaths = isEntity ? BUCKET_ICON_PATHS[bucketMeta?.id || 'specialized'] : null;
     return (
       <g key={n.key} transform={`translate(${rect.x}, ${rect.y})`}>
-        {/* Tile background — subtle tint of the category palette */}
-        <rect
-          width={rect.w}
-          height={rect.h}
-          rx={CORNER_R}
-          fill={tileFill}
-          stroke={tileStroke}
-          strokeWidth={tileStrokeW}
-        />
+        {/* Tile background — entities only. Person tiles render
+            borderless (just the avatar circle + name + role) so the
+            print page matches the live chart, where people float on
+            the canvas without a surrounding card. */}
+        {isEntity && (
+          <rect
+            width={rect.w}
+            height={rect.h}
+            rx={CORNER_R}
+            fill={tileFill}
+            stroke={tileStroke}
+            strokeWidth={tileStrokeW}
+          />
+        )}
         {/* Entity tile: Lucide bucket icon (left), then title + sub */}
         {isEntity && (
           <>
