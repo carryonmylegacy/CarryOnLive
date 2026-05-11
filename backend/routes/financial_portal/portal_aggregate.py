@@ -289,11 +289,16 @@ def _fmt_today() -> str:
 
 @router.get("/financial/handoff-package/{estate_id}")
 async def export_handoff_package(estate_id: str, current_user: dict = Depends(get_current_user)):
-    """One-shot printable PDF dossier containing every bill, debt,
-    account, asset, plus the 3-prompt pass-down notes — what the
-    beneficiary needs to do FIRST, gotchas, and who to call. Designed
-    to be tucked inside a binder so heirs have it offline if everything
-    else fails."""
+    """One-shot printable PDF dossier — the entire financial picture of
+    the estate (everything EXCEPT E&S, by user request). Designed to be
+    stuck on the fridge and followed in order to keep the estate
+    operating during a hand-off. Contains:
+      • A 4-tile snapshot (Monthly Bills, Total Debt, Total Assets, Net Position)
+      • Weekly cash required to cover bills
+      • A 30-day calendar showing what's due each day, with weekly subtotals
+      • Detailed bills list (phone, web, account, auto-pay flag, pass-down notes)
+      • Detailed debts, accounts, property/asset lists
+    """
     from fpdf import FPDF
 
     estate, is_owner = await _verify_estate_access(estate_id, current_user)
@@ -306,9 +311,71 @@ async def export_handoff_package(estate_id: str, current_user: dict = Depends(ge
     property_assets = await db.property_assets.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(
         500
     )
+    # E&S entities — only used to compute the 4-tile totals (so the
+    # handoff numbers MATCH the dashboard), per user direction:
+    # "Capture everything EXCEPT the E&S" — we exclude the entity
+    # *roster* from the PDF, but the dashboard tile values still need
+    # to roll in their assets/debts so the snapshot is accurate.
+    entities = await db.cfp_entities.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
 
+    # ===== Snapshot tile totals (match dashboard math) =====
+    monthly_total = 0.0
+    for bill in bills:
+        amt = bill.get("amount") or 0
+        freq = (bill.get("frequency") or "monthly").lower()
+        if freq == "monthly":
+            monthly_total += amt
+        elif freq == "quarterly":
+            monthly_total += amt / 3
+        elif freq == "semi_annual":
+            monthly_total += amt / 6
+        elif freq == "annual":
+            monthly_total += amt / 12
+        else:
+            monthly_total += amt
+    bills_count = len(bills)
+    weekly_required = monthly_total * 12 / 52
+
+    bill_debt_total = sum(d.get("outstanding_balance") or 0 for d in debts)
+    entity_debts = sum(e.get("gross_debts") or 0 for e in entities)
+    total_debt = bill_debt_total + entity_debts
+
+    account_assets = sum(a.get("approximate_balance") or 0 for a in accounts)
+    property_value = sum(p.get("estimated_value") or 0 for p in property_assets)
+    entity_assets = sum(e.get("gross_assets") or 0 for e in entities)
+    total_assets = account_assets + property_value + entity_assets
+    net_position = total_assets - total_debt
+
+    # ===== 30-day cashflow timeline =====
+    today = datetime.now(timezone.utc)
+    timeline = []
+    for offset in range(30):
+        day = today + timedelta(days=offset)
+        timeline.append({"date": day, "items": [], "total": 0.0})
+    for bill in bills:
+        due_day = bill.get("due_day")
+        amt = bill.get("amount") or 0
+        if not due_day or not amt or (bill.get("status") and bill.get("status") != "active"):
+            continue
+        try:
+            offset = _days_until(int(due_day), today)
+        except Exception:
+            continue
+        if 0 <= offset < 30:
+            entry = timeline[offset]
+            entry["items"].append(
+                {
+                    "name": bill.get("name", "?"),
+                    "amount": float(amt),
+                    "is_auto_pay": bool(bill.get("is_auto_pay")),
+                }
+            )
+            entry["total"] += float(amt)
+    thirty_day_outflow = sum(d["total"] for d in timeline)
+
+    # ===== PDF =====
     pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=18)
+    pdf.set_auto_page_break(auto=True, margin=14)
     pdf.add_page()
 
     # Header
@@ -317,16 +384,128 @@ async def export_handoff_package(estate_id: str, current_user: dict = Depends(ge
     pdf.set_font("Helvetica", "", 10)
     pdf.set_text_color(120, 120, 120)
     pdf.cell(
-        0,
-        6,
-        _safe(f"Generated {_fmt_today()}"),
-        new_x="LMARGIN",
-        new_y="NEXT",
-        align="C",
+        0, 6, _safe(f"Generated {_fmt_today()} - Stick this on the fridge."), new_x="LMARGIN", new_y="NEXT", align="C"
     )
     pdf.set_text_color(0, 0, 0)
-    pdf.ln(6)
+    pdf.ln(4)
 
+    # ===== Four-tile snapshot =====
+    # 2x2 grid of tiles, each 88mm wide x 26mm tall.
+    def _fmt_money(v: float) -> str:
+        if abs(v) >= 1_000_000:
+            return f"${v / 1_000_000:.1f}M"
+        if abs(v) >= 1_000:
+            return f"${v / 1_000:.1f}K"
+        return f"${v:,.0f}"
+
+    tiles = [
+        (
+            "Monthly Bills",
+            _fmt_money(monthly_total),
+            f"{bills_count} bill{'s' if bills_count != 1 else ''}",
+            (220, 245, 232),
+        ),
+        ("Total Debt", _fmt_money(total_debt), f"{len(debts)} debt{'s' if len(debts) != 1 else ''}", (250, 220, 220)),
+        ("Total Assets", _fmt_money(total_assets), f"{len(accounts) + len(property_assets)} items", (220, 232, 250)),
+        (
+            "Net Position",
+            _fmt_money(net_position),
+            "Positive" if net_position >= 0 else "Negative",
+            (220, 245, 232) if net_position >= 0 else (250, 220, 220),
+        ),
+    ]
+    tile_w, tile_h = 88, 26
+    gap = 4
+    start_x = pdf.l_margin
+    start_y = pdf.get_y()
+    for idx, (label, value, sub, color) in enumerate(tiles):
+        col = idx % 2
+        row = idx // 2
+        x = start_x + col * (tile_w + gap)
+        y = start_y + row * (tile_h + gap)
+        pdf.set_fill_color(*color)
+        pdf.rect(x, y, tile_w, tile_h, "F")
+        pdf.set_xy(x + 4, y + 3)
+        pdf.set_font("Helvetica", "", 9)
+        pdf.set_text_color(80, 80, 80)
+        pdf.cell(tile_w - 8, 4, _safe(label))
+        pdf.set_xy(x + 4, y + 9)
+        pdf.set_font("Helvetica", "B", 18)
+        pdf.set_text_color(15, 23, 42)
+        pdf.cell(tile_w - 8, 9, _safe(value))
+        pdf.set_xy(x + 4, y + 19)
+        pdf.set_font("Helvetica", "B", 9)
+        pdf.set_text_color(40, 120, 80) if "Positive" in sub else pdf.set_text_color(120, 120, 120)
+        pdf.cell(tile_w - 8, 4, _safe(sub))
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_y(start_y + 2 * (tile_h + gap) + 2)
+
+    # ===== Weekly cash strip =====
+    pdf.set_fill_color(247, 235, 200)
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.cell(
+        0,
+        8,
+        _safe(
+            f"Cash needed per week to cover bills: {_fmt_money(weekly_required)} "
+            f"(30-day total: {_fmt_money(thirty_day_outflow)})"
+        ),
+        new_x="LMARGIN",
+        new_y="NEXT",
+        fill=True,
+        align="C",
+    )
+    pdf.ln(4)
+
+    # ===== 30-day calendar =====
+    pdf.set_font("Helvetica", "B", 14)
+    pdf.set_fill_color(247, 235, 200)
+    pdf.cell(0, 9, _safe("Next 30 Days - Bill Calendar"), new_x="LMARGIN", new_y="NEXT", fill=True)
+    pdf.ln(2)
+    # Walk timeline in weeks; print a "Week N (subtotal)" header, then
+    # one line per day with bills. Empty days printed as "-" to make
+    # the document a complete checklist (nothing-due is still useful).
+    week_total = 0.0
+    for i, day_entry in enumerate(timeline):
+        if i % 7 == 0:
+            if i > 0:
+                # close previous week's subtotal line
+                pdf.set_font("Helvetica", "BI", 9)
+                pdf.set_text_color(80, 80, 80)
+                pdf.cell(0, 5, _safe(f"    Week subtotal: {_fmt_money(week_total)}"), new_x="LMARGIN", new_y="NEXT")
+                pdf.set_text_color(0, 0, 0)
+                pdf.ln(1)
+            week_total = 0.0
+            pdf.set_font("Helvetica", "B", 10)
+            week_num = (i // 7) + 1
+            wk_start = day_entry["date"].strftime("%b %-d")
+            wk_end = timeline[min(i + 6, len(timeline) - 1)]["date"].strftime("%b %-d")
+            pdf.set_fill_color(235, 240, 250)
+            pdf.cell(0, 6, _safe(f"Week {week_num}  ({wk_start} - {wk_end})"), new_x="LMARGIN", new_y="NEXT", fill=True)
+        # Day row
+        d = day_entry["date"]
+        day_label = d.strftime("%a %b %-d")
+        pdf.set_font("Helvetica", "B", 10)
+        if day_entry["items"]:
+            items_str = ", ".join(
+                f"{it['name']} {_fmt_money(it['amount'])}{' (auto)' if it['is_auto_pay'] else ''}"
+                for it in day_entry["items"]
+            )
+            _safe_pdf_write(pdf, f"  {day_label}: {items_str} = {_fmt_money(day_entry['total'])}")
+            week_total += day_entry["total"]
+        else:
+            pdf.set_font("Helvetica", "", 9)
+            pdf.set_text_color(150, 150, 150)
+            pdf.cell(0, 5, _safe(f"  {day_label}: -"), new_x="LMARGIN", new_y="NEXT")
+            pdf.set_text_color(0, 0, 0)
+    # final week's subtotal
+    pdf.set_font("Helvetica", "BI", 9)
+    pdf.set_text_color(80, 80, 80)
+    pdf.cell(0, 5, _safe(f"    Week subtotal: {_fmt_money(week_total)}"), new_x="LMARGIN", new_y="NEXT")
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(4)
+
+    # ===== Detail sections =====
     def section_header(title: str, count: int):
         pdf.set_font("Helvetica", "B", 14)
         pdf.set_fill_color(247, 235, 200)
@@ -452,8 +631,10 @@ async def export_handoff_package(estate_id: str, current_user: dict = Depends(ge
         4,
         _safe(
             "Confidential. Generated by CarryOn for the Estate Owner. "
-            "Login credentials are NOT printed in this packet — they live "
-            "in the Digital Access Vault, which requires the owner's master key."
+            "Login credentials are NOT printed in this packet - they live "
+            "in the Digital Access Vault, which requires the owner's master key. "
+            "Entities & Structures (E&S) are intentionally excluded from this "
+            "document; see the separate E&S Print Page for the org-chart hand-off."
         ),
     )
 
