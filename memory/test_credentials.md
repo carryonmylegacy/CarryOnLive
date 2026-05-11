@@ -22,28 +22,30 @@
 - Password: `Question2711`
 - Role: benefactor (also has beneficiary side per user's instruction — must test both)
 
-### Note on `info@carryon.us` on production
-- On production, this email is bound to a benefactor named "Pete" (`role=benefactor`, `id=6425f12a-...`), NOT to the founder admin. Do NOT use it for admin testing on prod. (On the **preview pod** it IS the admin — see section below.)
+### Note on `info@carryon.us`
+- On production AND on the preview pod, this email is bound to a benefactor named **"Pete Mitchell"** (`role=benefactor`). **This is a LIVE BENEFACTOR ACCOUNT — NOT an admin.** Use it for any user-facing / benefactor-side testing.
+- The ONLY admin/founder account is `founder@carryon.us`.
 
 ---
 
 ## 🟡 PREVIEW POD ACCOUNTS (preview-only, not production)
 
-### Preview Admin/Founder
+### Preview Benefactor — Pete Mitchell (use this for ALL user-facing testing)
 - URL: `https://polish-pitch.preview.emergentagent.com`
 - Email: info@carryon.us
 - Password: Demo1234!
-- Username: admin_5dfa64
+- Role: **benefactor** (Pete Mitchell) — same role as on production. NOT an admin.
+
+### Preview Admin/Founder (ONLY for admin-portal testing)
+- URL: `https://polish-pitch.preview.emergentagent.com`
+- Email: founder@carryon.us
+- Password: CarryOntheWisdom!
 - Role: admin (founder) — `isStaff=true` in the frontend.
 
 ---
 
 ## Gap: No non-staff benefactor test account seeded
-- `dev_switcher_active_role=benefactor` in localStorage does NOT flip `isStaff` to false (driven by user.role on the backend).
-- To E2E test non-staff-only UI (incl. ChatAutoscrollCard, MenuOrderCustomizer, ECT channel scroll-restore logic), either:
-  (a) register a fresh benefactor via `POST /api/auth/register` inside the test, OR
-  (b) use the admin's "My Benefactor Portal" switch in the logo menu (this swaps the token to a real benefactor user via `/api/auth/dev-switch`), OR
-  (c) seed a persistent non-staff benefactor here and list creds below.
+- This gap is now CLOSED — `info@carryon.us` is a real benefactor on preview (matches production).
 
 ### ✅ Verified path for testing agents (Apr 2026)
 The auth token is stored in `localStorage` under the key **`carryon_token`** (NOT `token`).
@@ -52,15 +54,15 @@ after login — they are not redirected away. If the agent sees a redirect, it's
 the login response landed on `/admin` (Founder Portal) and the agent didn't perform a fresh
 `page.goto('/estate-chat')` after login.
 
-Working sequence for E2E testing of /estate-chat and /messages:
+Working sequence for E2E testing of /estate-chat and /messages (using a real BENEFACTOR account — info@carryon.us is the benefactor "Pete Mitchell"):
 ```python
-# 1. Login (lands on /admin for the founder account)
+# 1. Login as benefactor
 await page.goto(f'{URL}/login')
 await page.fill('input[type="text"]', 'info@carryon.us')
 await page.fill('input[type="password"]', 'Demo1234!')
 await page.click('button[type="submit"]')
 await page.wait_for_timeout(4000)
-# 2. Now navigate directly — ECT/Messages WILL render for the admin
+# 2. Now navigate directly — ECT/Messages will render for the benefactor
 await page.goto(f'{URL}/estate-chat')
 await page.wait_for_timeout(4000)
 # data-testid='ect-back-to-dashboard' will be present
