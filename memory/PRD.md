@@ -54,6 +54,34 @@
 >
 > Pinned because three separate sessions sent the user on a wild-goose chase through their AWS console looking for a bucket that isn't there. NEVER AGAIN.
 
+> ## 🔧 BACKLOG — Wire Railway Deploy Webhook → `pitch-smoke.yml` (Sub-30-Second Regression Detection)
+>
+> The `pitch-smoke.yml` GitHub Action already listens on `repository_dispatch: deploy-smoke`. Wiring it to Railway's deploy webhook makes it run the very second a new production build goes live — typically detecting a regression within 30 seconds of deploy, **before the first real user sees it**.
+>
+> **Setup steps** (do when you have a GitHub Personal Access Token ready):
+> 1. Generate a fine-scoped GitHub PAT with `repo:write` scope only on the CarryOn repo. (Settings → Developer settings → Personal access tokens → Fine-grained tokens.)
+> 2. Railway → CarryOn service → **Settings → Webhooks → "On Deploy"** (or equivalent post-deploy hook).
+> 3. **URL**: `https://api.github.com/repos/<owner>/<repo>/dispatches`
+> 4. **Method**: `POST`
+> 5. **Headers**:
+>    - `Authorization: token <github-pat>`
+>    - `Accept: application/vnd.github.v3+json`
+>    - `Content-Type: application/json`
+> 6. **Payload**: `{"event_type":"deploy-smoke"}`
+> 7. Save. Trigger a redeploy on Railway and verify the pitch-smoke run appears in the GitHub Actions tab within ~5 seconds.
+>
+> **Optional extension** — include the deploy SHA in the payload so the smoke run reports against a specific commit:
+> ```json
+> {"event_type":"deploy-smoke","client_payload":{"sha":"<railway-deploy-sha>"}}
+> ```
+> The workflow can then read `${{ github.event.client_payload.sha }}` and `checkout@v5` that exact SHA before running the smoke (avoids "smoke ran against newer commit than what just deployed" races).
+>
+> **Why this matters**: a Stripe key rotation breakage or an env-var typo currently surfaces only on the hourly cron — up to 60 minutes of broken checkout exposed to prospects. Wired to the deploy webhook, the worst case shrinks to under a minute.
+>
+> Ask the agent to "write me the exact webhook config" once the PAT is generated — it has the templated curl + Railway UI screenshots-of-fields ready.
+
+
+
 > ## 🚨 `info@carryon.us` IS A LIVE BENEFACTOR ACCOUNT — NOT AN ADMIN
 >
 > **`info@carryon.us` (password `Demo1234!`) is the user's primary BENEFACTOR account named "Pete Mitchell".** It is the canonical user-facing test account on both production AND on the preview pod. It is **NOT** an admin/founder account on either environment.
