@@ -1,6 +1,20 @@
 # CarryOn — Changelog
 
-## Feb 12, 2026 — E&S Print PDF: Missing Beneficiaries (Tom, Penny, Emma)
+## Feb 12, 2026 — Service-Worker Cache Bust: Force iOS PWA to Pick Up Print-PDF Fixes
+
+**Bug** — User reported "Absolutely no change" three times in a row after each round of print-PDF fixes. The fixes were verifiably deployed to the preview environment (confirmed: chunked JS at `/static/js/src_pages_print_EntitiesPrintPage_js.chunk.js` contains the new `/beneficiaries/{estateId}` fetch, the `PAGE_W` scale math, and the manual `<g translate/scale>` transform). But on the user's iOS PWA, none of these changes appeared.
+
+**Root cause** — `public/sw-push.js` serves hashed JS bundle chunks via `cacheFirst(request, RUNTIME_CACHE)` (line 358-360). The runtime cache is keyed by `SHELL_VERSION` — and the previous SHELL_VERSION (`v26-2026-02-22-cors-cache-bust`) hadn't been bumped, so the user's installed SW kept serving the OLD `EntitiesPrintPage.js` chunk from disk cache forever. Every new build had zero effect on their PWA.
+
+**Fix** (`public/sw-push.js`):
+- Bumped `SHELL_VERSION` → `v27-2026-02-12-print-pdf-fix`.
+- This re-keys `SHELL_CACHE`, `RUNTIME_CACHE`, `API_CACHE`, `IMAGE_CACHE` — the activate handler then purges every `carryon-*` cache that doesn't match the new version, forcing a fresh fetch of all JS/CSS chunks (and the new print page logic).
+
+**User action required**: Force-quit the CarryOn PWA on iPhone (swipe up from bottom, swipe the CarryOn card off the top) and re-open. The SW will activate the new version, purge the old cache, and pull fresh JS chunks containing all three rounds of print-PDF fixes (beneficiary fetch + manual scale transform + bbox math).
+
+---
+
+
 
 **Bug** — User compared the live chart to the print PDF and noted: "It looks nothing like the pdf." Confirmed via screenshots (IMG_0510 vs IMG_0511): the print page was missing Pete's spouse (Penny) and children (Tom, Emma) entirely — every node with `kind: 'beneficiary'`.
 
