@@ -555,6 +555,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
         documents={documents}
         walletEntries={walletEntries}
         relationships={relationships}
+        chartLayout={serverChartLayout || {}}
         onChanged={() => { fetchAll(); onEntitiesChanged?.(); }}
         onClose={() => { setEditingNode(null); setEditStartInEdit(false); }}
       />
