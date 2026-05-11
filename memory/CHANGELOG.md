@@ -1,5 +1,47 @@
 # CarryOn — Changelog
 
+
+## Feb 13, 2026 — Pre-Pitch Stability Sweep: False-Positive 404s Cleared, Analytics Digest Test Fixture Repaired
+
+**Verification + bug fix** — Final reliability pass before Wednesday's B2B pitch (12 prospect consultations).
+
+**Findings**:
+- The "P0 pitch killers" inherited from the prior session (`POST /api/subscriptions/checkout-session` and `POST /api/auth/password-reset` returning 404) were **false positives**. The previous smoke script invented paths that don't exist in the codebase.
+- Actual frontend-used endpoints are alive: `POST /api/subscriptions/checkout`, `POST /api/auth/forgot-password`, `POST /api/auth/reset-password`. Verified end-to-end with `info@carryon.us` benefactor token — checkout returns 200 (beta-free mode message), forgot-password returns 200, reset-password returns 422 (validation, as expected).
+
+**Smoke test results** (production-style curl chain against the preview pod):
+```
+[1/8] POST /api/auth/register             -> 422 (validation, route alive)
+[2/8] POST /api/auth/login                -> 200 (token issued)
+[3/8] GET  /api/subscriptions/plans       -> 200
+[4/8] POST /api/subscriptions/checkout    -> 200
+[5/8] POST /api/auth/forgot-password      -> 200
+[6/8] POST /api/auth/reset-password       -> 422 (validation, route alive)
+[7/8] GET  /api/estates                   -> 200
+[8/8] GET  /api/financial/portal/{id}     -> 200
+[+]   GET  /api/financial/handoff-package -> 200
+```
+
+**Repaired**: `/app/backend/tests/test_admin_analytics_digest.py`
+- Fixture was using a non-existent admin (`admin@carryon.com` / `admin123`) and assuming `founder@carryon.us` was a regular non-admin. Per `test_credentials.md`, `founder@carryon.us` is the **ADMIN** and `info@carryon.us` is a non-admin **BENEFACTOR** ("Pete Mitchell").
+- Updated `ADMIN_EMAIL` → `founder@carryon.us`, `REGULAR_USER_EMAIL` → `info@carryon.us`, added `force_login: true` to bypass the active-session guard on the module-scoped login fixtures.
+- **Result**: full suite now 19/19 PASS (was 0/19, all skipping on bad admin login).
+
+**Defensive backend fix**: `/app/backend/routes/admin_digest.py::send_admin_analytics_digest()`
+- Some admin/ops staff seed rows carry a username (e.g., `ops_manager_1`) in the `email` slot, which Resend rejects with "Invalid `to` field" — producing log noise that tripped `housekeeping.sh` rule #34 (recent error patterns in backend.err.log).
+- Added a one-liner filter: only send to admins whose `email` contains an `@` and a TLD. Returns `{"sent": 0, "reason": "no_admin_emails"}` if none qualify.
+
+**Housekeeping**: `bash /app/housekeeping.sh` → **0 WARN, 0 FAIL** after the fix.
+
+**Files touched**:
+- `/app/backend/tests/test_admin_analytics_digest.py` (fixture + force_login)
+- `/app/backend/routes/admin_digest.py` (valid_admins filter)
+
+**Verified**: No frontend changes → no `SHELL_VERSION` bump required. Smoke test green, test suite green, housekeeping green.
+
+---
+
+
 ## Feb 12, 2026 — E&S Bulk-Add Beneficiaries with Auto-Layout
 
 **Feature** — User reported (with IMG_0513): "instead of adding each one individually and then trying to drag each one around so that they don't overlap and look good, I would rather have a little selector and have the UX take care of building a mini tree of avatars". When a trust has multiple beneficiaries, adding them one at a time produces a sprawling layout that needs manual cleanup.

@@ -303,12 +303,20 @@ async def send_admin_analytics_digest():
         logger.info("No admin users found for analytics digest")
         return {"sent": 0, "reason": "no_admins"}
 
+    # Filter to admins with a real email address (some staff seed rows use usernames in the email slot).
+    valid_admins = [
+        a for a in admins if isinstance(a.get("email"), str) and "@" in a["email"] and "." in a["email"].split("@")[-1]
+    ]
+    if not valid_admins:
+        logger.info("No admin users with valid email addresses for analytics digest")
+        return {"sent": 0, "reason": "no_admin_emails"}
+
     data = await gather_weekly_analytics()
     html = build_analytics_digest_html(data)
     subject = f"CarryOn™ Weekly Analytics — {datetime.now(timezone.utc).strftime('%b %d, %Y')}"
 
     sent = 0
-    for admin in admins:
+    for admin in valid_admins:
         try:
             await asyncio.to_thread(
                 resend.Emails.send,
