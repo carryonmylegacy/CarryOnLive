@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'v44-2026-02-13-pdf-preview-fit-width-only';
+const SHELL_VERSION = 'v45-2026-02-13-pdf-modal-and-viewport-reflow';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;

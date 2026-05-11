@@ -87,7 +87,10 @@ const BeneficiarySettingsPage = lazy(() => import('./pages/beneficiary/Beneficia
 const BeneficiaryFinancialPage = lazy(() => import('./pages/beneficiary/BeneficiaryFinancialPage'));
 const BeneficiaryEntitiesPage = lazy(() => import('./pages/beneficiary/BeneficiaryEntitiesPage'));
 const EntitiesPrintPage = lazy(() => import('./pages/print/EntitiesPrintPage'));
-const PdfPreviewPage = lazy(() => import('./pages/print/PdfPreviewPage'));
+const PdfPreviewModal = lazy(() => import('./components/PdfPreviewModal'));
+const PdfPreviewLegacyExpired = lazy(() =>
+  import('./components/PdfPreviewModal').then((m) => ({ default: m.PdfPreviewLegacyExpired }))
+);
 
 const CreateEstatePage = lazy(() => import('./pages/CreateEstatePage'));
 
@@ -669,11 +672,11 @@ function AppRoutes() {
         <Route path="/financial/entities/:estateId/print" element={<EntitiesPrintPage />} />
       </Route>
 
-      {/* Universal PDF preview — usable by ANY authenticated role. The blob is
-          held in a client-side module map keyed by UUID; refreshing the page
-          intentionally lands on a "preview expired" message. */}
+      {/* Legacy /pdf-preview/:key route — previews are now an in-app modal
+          overlay (see PdfPreviewModal mounted at app root). This route shows
+          a friendly "preview unavailable" message for any cached deep-links. */}
       <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
-        <Route path="/pdf-preview/:key" element={<PdfPreviewPage />} />
+        <Route path="/pdf-preview/:key" element={<PdfPreviewLegacyExpired />} />
       </Route>
 
       {/* Beneficiary Routes */}
@@ -843,6 +846,12 @@ function App() {
           <UsernameReviewModal />
           <AppRoutes />
           <ShareHandler />
+          {/* Global PDF preview modal — listens for `carryon:open-pdf-preview`
+              CustomEvent so any caller can pop the preview overlay without
+              navigating away (instant back, no boot-splash flash). */}
+          <Suspense fallback={null}>
+            <PdfPreviewModal />
+          </Suspense>
         </BrowserRouter>
         <SpeedInsights />
         </SectionLockProvider>

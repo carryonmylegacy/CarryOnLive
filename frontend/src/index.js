@@ -4,6 +4,7 @@ import axios from "axios";
 import "./index.css";
 import App from "./App";
 import installHistoryRateLimit from "./utils/historyRateLimit";
+import installViewportReflow from "./utils/viewportReflow";
 
 // Install the history.replaceState / pushState rate limiter FIRST —
 // before any library (React Router, Sentry, Capacitor, etc.) patches
@@ -11,6 +12,12 @@ import installHistoryRateLimit from "./utils/historyRateLimit";
 // ceiling so we never throw the `SecurityError` that otherwise crashes
 // the PWA at boot. See utils/historyRateLimit.js for the full story.
 installHistoryRateLimit();
+
+// Install global viewport reflow handler — fixes iOS Safari's known bug
+// where `vw`/`vh` CSS units can get "stuck" at initial-orientation values
+// when rotating, AND where scroll containers occasionally fail to recompute
+// height after rotation in PWA standalone mode. See utils/viewportReflow.js.
+installViewportReflow();
 
 // ── Global axios defaults — MUST run before any page mounts ────────────────
 // Two problems we fix here:

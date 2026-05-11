@@ -1,80 +1,41 @@
 /**
  * openPdfPreview — universal PDF preview launcher.
  *
- * Replaces the "download immediately" flow with a "preview-then-print" flow
- * that mirrors the EntitiesPrintPage pattern: a clean page with sticky
- * Back + Print toolbar (safe-area aware, hidden during @media print).
+ * Fetches a PDF blob from the caller's `blobFetcher`, then pops a full-screen
+ * MODAL OVERLAY (PdfPreviewModal) over the current route. The calling page
+ * stays mounted in the background so "Back" instantly returns the user to
+ * exactly where they were — no SPA route re-mount, no boot-splash flash on
+ * iOS PWA where suspending the webview during a 30s xAI call can sometimes
+ * trigger a re-launch.
  *
  * Usage (call-site):
  *
  *   await openPdfPreview({
- *     navigate,                       // react-router navigate fn
- *     filename: 'CarryOn_IAC.pdf',    // for share-sheet / download fallback
- *     title:    'IAC Checklist',      // shown in the preview header
- *     blobFetcher: async () => {      // returns a Blob (application/pdf)
- *       const res = await axios.post(...,  { responseType: 'blob' });
+ *     filename: 'CarryOn_IAC.pdf',
+ *     title:    'IAC Checklist',
+ *     subtitle: '2026-02-13',
+ *     blobFetcher: async () => {
+ *       const res = await axios.post(..., { responseType: 'blob' });
  *       return new Blob([res.data], { type: 'application/pdf' });
  *     },
  *   });
  *
- * Behaviour:
- *   - blobFetcher runs in the calling page (so existing spinner/toast logic
- *     keeps working). On success the blob is registered in a module-level
- *     map keyed by a UUID and the user is navigated to /pdf-preview/:key.
- *   - PdfPreviewPage consumes the entry, renders the PDF inline, and offers
- *     Back / Print. Print = navigator.share() on iOS, iframe.print() on
- *     desktop, with a "download" fallback.
- *   - Stale entries are GC'd after 30 min so blob URLs don't leak.
+ * The `navigate` parameter is accepted for backwards compatibility with
+ * call-sites converted before this refactor — it is now ignored.
  */
 
-const previewBlobMap = new Map();
-const TTL_MS = 30 * 60 * 1000;
-
-function uuid() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return 'pdf-' + Math.random().toString(36).slice(2) + '-' + Date.now().toString(36);
-}
-
-function gc() {
-  const now = Date.now();
-  for (const [key, entry] of previewBlobMap.entries()) {
-    if (now - entry.createdAt > TTL_MS) {
-      try { URL.revokeObjectURL(entry.url); } catch { /* ignore */ }
-      previewBlobMap.delete(key);
-    }
-  }
-}
-
-export function consumePreviewEntry(key) {
-  gc();
-  return previewBlobMap.get(key) || null;
-}
-
-export function disposePreviewEntry(key) {
-  const entry = previewBlobMap.get(key);
-  if (entry) {
-    try { URL.revokeObjectURL(entry.url); } catch { /* ignore */ }
-    previewBlobMap.delete(key);
-  }
-}
-
 /**
- * Fetch a PDF blob and route the user to the preview page.
+ * Fetch a PDF blob and pop the preview modal.
  *
  * @param {object} opts
- * @param {function} opts.navigate     React-router navigate function
  * @param {function} opts.blobFetcher  Async fn → Blob (application/pdf)
  * @param {string}   opts.filename     Used for share-sheet / download
  * @param {string}   opts.title        Shown in the preview header
  * @param {string=}  opts.subtitle     Optional sub-line under the title
- * @returns {Promise<{ key: string }>} Resolves once the navigation is queued.
+ * @param {function=} opts.navigate    Ignored — kept for backwards compat
+ * @returns {Promise<void>}
  */
-export async function openPdfPreview({ navigate, blobFetcher, filename, title, subtitle }) {
-  if (typeof navigate !== 'function') {
-    throw new Error('openPdfPreview: navigate function is required');
-  }
+export async function openPdfPreview({ blobFetcher, filename, title, subtitle }) {
   if (typeof blobFetcher !== 'function') {
     throw new Error('openPdfPreview: blobFetcher function is required');
   }
@@ -85,16 +46,21 @@ export async function openPdfPreview({ navigate, blobFetcher, filename, title, s
   if (blob.size < 50) {
     throw new Error('Generated PDF is empty');
   }
-  const key = uuid();
   const url = URL.createObjectURL(blob);
-  previewBlobMap.set(key, {
+  const entry = {
     blob,
     url,
     filename: filename || 'document.pdf',
     title: title || 'Document',
     subtitle: subtitle || '',
-    createdAt: Date.now(),
-  });
-  navigate(`/pdf-preview/${key}`);
-  return { key };
+  };
+  window.dispatchEvent(new CustomEvent('carryon:open-pdf-preview', { detail: entry }));
 }
+
+// --- Legacy compatibility ----------------------------------------------------
+// Old PdfPreviewPage stored entries in a module-level Map. Anything that still
+// reaches `/pdf-preview/:key` after this refactor will land on a friendly
+// "preview unavailable" page (see PdfPreviewModal.PdfPreviewLegacyExpired).
+// The named exports below are no-ops kept around so prior imports don't break.
+export function consumePreviewEntry() { return null; }
+export function disposePreviewEntry() { /* no-op */ }

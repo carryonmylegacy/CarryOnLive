@@ -1,6 +1,55 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — PDF Preview Modal Refactor + iOS Landscape Viewport Reflow
+
+### A) PDF Preview → Modal Overlay (Back is Instant)
+**Bug** — Tapping Back from a PDF preview went through the boot splash before returning to the previous page on iOS PWA.
+
+**Root cause** — Previous implementation navigated to a separate route (`/pdf-preview/:key`), which unmounted the calling page. On iOS PWA, after a 30s xAI generation call, the webview is sometimes suspended and a route remount triggers the boot splash (which runs until `carryon:app-ready` fires).
+
+**Fix** — Converted the entire flow to a portal-rendered modal overlay:
+- `/app/frontend/src/components/PdfPreviewModal.js` (new) — full-screen `createPortal` modal mounted at App root. Subscribes to a global `carryon:open-pdf-preview` CustomEvent so any caller pops the preview without a route change. Identical UI (sticky Back + gold Print toolbar, PDF.js canvas-stack rendering, fit-to-width, resize re-render).
+- `/app/frontend/src/utils/openPdfPreview.js` rewritten — `navigate` param ignored (kept for backwards compat); now dispatches the global event with the fetched blob.
+- `/app/frontend/src/App.js` — mounted `<PdfPreviewModal />` inside `<BrowserRouter>` so it sits over every route. The legacy `/pdf-preview/:key` route now resolves to a `PdfPreviewLegacyExpired` page for any cached deep-links.
+- `/app/frontend/src/pages/print/PdfPreviewPage.js` — **deleted** (logic absorbed into the modal).
+
+**UX impact**:
+- Back is **instant** — the calling page never unmounted, so it's still in memory and just re-emerges when the modal closes.
+- Esc key support added (closes modal on desktop).
+- Body scroll-lock while modal is open (no iOS rubber-band-through to the underlying page).
+
+The E&S print page (`EntitiesPrintPage.js`, route `/financial/entities/:estateId/print`) remains a dedicated route — untouched, as per standing rule.
+
+### B) iOS PWA Landscape Bug: Stale `vw`/`vh` and Scroll Failures
+**Bug** — User reported on iPad PWA after rotation: "fonts get larger but when going back to portrait they don't shrink", plus "inability to scroll" in landscape on some pages.
+
+**Root cause** — Documented iOS Safari / PWA bug where `vw`/`vh`/`dvh` values cache at initial orientation and don't refresh on rotate. Triggered especially after a long background task (e.g. 30s xAI call) where iOS suspends layout work.
+
+**Fix** — Installed a global viewport-reflow handler at boot:
+- `/app/frontend/src/utils/viewportReflow.js` (new) — listens to `resize`, `orientationchange`, and `visibilitychange`. On each:
+  1. Publishes actual `innerWidth`/`innerHeight` as `--app-vw` / `--app-vh` / `--app-100vw` / `--app-100vh` CSS custom properties (in px). Components using viewport-relative units can switch to these if `vw`/`vh` proves unreliable.
+  2. Forces a layout reflow by reading `documentElement.offsetHeight` — the documented workaround that nudges Safari to recompute viewport-derived values, unstuck `dvh` containers, and reset stale font sizes.
+- `/app/frontend/src/index.js` — calls `installViewportReflow()` immediately after `installHistoryRateLimit()` so it runs before any page mounts.
+- Idempotent (calling twice is a no-op).
+
+**Cache bust**: `SHELL_VERSION` → `v45-2026-02-13-pdf-modal-and-viewport-reflow`.
+
+**Verified**: ESLint clean across all 5 modified files. Webpack compiled successfully. Housekeeping: 0 WARN, 0 FAIL, all 3 smoke checks 8/8 green.
+
+**Files touched**:
+- `frontend/src/components/PdfPreviewModal.js` (new)
+- `frontend/src/utils/openPdfPreview.js` (rewritten)
+- `frontend/src/utils/viewportReflow.js` (new)
+- `frontend/src/index.js` (install boot hook)
+- `frontend/src/App.js` (mount modal, replace route)
+- `frontend/src/pages/print/PdfPreviewPage.js` (deleted)
+- `frontend/public/sw-push.js` (SHELL_VERSION bump)
+
+---
+
+
+
 ## Feb 13, 2026 — PDF Preview: Fit Width Only (User Clarification)
 
 **User clarification** — Width was the real problem, not height. "I wouldn't mind the height so that all I have to do is scroll down, but the width was the issue."
