@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Lock, ExternalLink, Eye, EyeOff, Shield, Database, CreditCard, Mail, Bot, Cloud,
   MessageSquare, MapPin, Bell, Key, Smartphone, Mic, FileText, Puzzle, Server, Globe,
@@ -7,7 +8,7 @@ import { Lock, ExternalLink, Eye, EyeOff, Shield, Database, CreditCard, Mail, Bo
   Activity, HardDrive, TrendingUp, Pencil, X, BarChart3, Crosshair } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
-import { iosSafeDownload } from '../../utils/iosSafeDownload';
+import { openPdfPreview } from '../../utils/openPdfPreview';
 import { API_URL } from '../../config';
 import { EmailHealthCard } from './EmailHealthCard';
 
@@ -317,6 +318,7 @@ const SuggestionsPanel = ({ capacity }) => {
 
 // ─── Main Tab ────────────────────────────────────────────────
 export const IntegrationsTab = ({ getAuthHeaders }) => {
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState({});
@@ -431,11 +433,19 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
   const handleSOC2Download = async (pin) => {
     setPdfLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/admin/integrations/soc2-report`, { pin: pin || sessionPin }, {
-        ...getAuthHeaders(), responseType: 'blob',
-      });
       const filename = `CarryOn_SOC2_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
-      await iosSafeDownload(new Blob([res.data], { type: 'application/pdf' }), filename, 'SOC 2 report', 'soc2_report');
+      await openPdfPreview({
+        navigate,
+        filename,
+        title: 'SOC 2 Compliance Report',
+        subtitle: new Date().toISOString().slice(0, 10),
+        blobFetcher: async () => {
+          const res = await axios.post(`${API_URL}/admin/integrations/soc2-report`, { pin: pin || sessionPin }, {
+            ...getAuthHeaders(), responseType: 'blob',
+          });
+          return new Blob([res.data], { type: 'application/pdf' });
+        },
+      });
     } catch { toast.error('Failed to generate report'); }
     finally { setPdfLoading(false); }
   };

@@ -38,6 +38,7 @@ import {
 
 import { toast } from '../utils/toast';
 import { downloadFile, platformDownload } from '../utils/downloadFile';
+import { openPdfPreview } from '../utils/openPdfPreview';
 import { API_URL } from '../config';
 import { Button } from '../components/ui/button';
 // removed unused SectionLock from '../components/security/SectionLock';
@@ -335,14 +336,15 @@ const GuardianPage = () => {
     try {
       const dateStr = new Date().toISOString().split('T')[0];
       const filename = `CarryOn_IAC_${dateStr}.pdf`;
-      await platformDownload({
-        action: 'ega_checklist',
-        params: {},
+      await openPdfPreview({
+        navigate,
         filename,
-        onFallback: async () => {
+        title: 'IAC Checklist',
+        subtitle: dateStr,
+        blobFetcher: async () => {
           const headers = getAuthHeaders()?.headers;
           const res = await axios.post(`${API_URL}/guardian/export-checklist`, {}, { headers, responseType: 'blob' });
-          await downloadFile(new Blob([res.data], { type: 'application/pdf' }), filename);
+          return new Blob([res.data], { type: 'application/pdf' });
         },
       });
     } catch (err) {
@@ -355,17 +357,17 @@ const GuardianPage = () => {
     try {
       const dateStr = new Date().toISOString().split('T')[0];
       const filename = `CarryOn_ToDo_${dateStr}.pdf`;
-      const result = await platformDownload({
-        action: 'ega_todo',
-        params: { content },
+      await openPdfPreview({
+        navigate,
         filename,
-        onFallback: async () => {
+        title: 'EGA To-Do List',
+        subtitle: dateStr,
+        blobFetcher: async () => {
           const headers = getAuthHeaders()?.headers;
           const res = await axios.post(`${API_URL}/guardian/export-todo`, { content }, { headers, responseType: 'blob' });
-          await downloadFile(new Blob([res.data], { type: 'application/pdf' }), filename);
+          return new Blob([res.data], { type: 'application/pdf' });
         },
       });
-      if (result !== 'cancelled') toast.success('To-Do List saved');
     } catch (err) {
       toast.error('Failed to generate PDF');
     }
@@ -375,17 +377,17 @@ const GuardianPage = () => {
     try {
       const dateStr = new Date().toISOString().split('T')[0];
       const filename = `CarryOn_IAC_Report_${dateStr}.pdf`;
-      const result = await platformDownload({
-        action: 'ega_iac_report',
-        params: { content },
+      await openPdfPreview({
+        navigate,
         filename,
-        onFallback: async () => {
+        title: 'IAC Report',
+        subtitle: dateStr,
+        blobFetcher: async () => {
           const headers = getAuthHeaders()?.headers;
           const res = await axios.post(`${API_URL}/guardian/export-iac-report`, { content }, { headers, responseType: 'blob' });
-          await downloadFile(new Blob([res.data], { type: 'application/pdf' }), filename);
+          return new Blob([res.data], { type: 'application/pdf' });
         },
       });
-      if (result !== 'cancelled') toast.success('IAC Report saved');
     } catch (err) {
       toast.error('Failed to generate IAC Report PDF');
     }
@@ -397,17 +399,17 @@ const GuardianPage = () => {
     try {
       const dateStr = new Date().toISOString().split('T')[0];
       const filename = `CarryOn_Transcript_${dateStr}.pdf`;
-      const result = await platformDownload({
-        action: 'ega_transcript',
-        params: { session_id: sessionId },
+      await openPdfPreview({
+        navigate,
         filename,
-        onFallback: async () => {
+        title: 'EGA Conversation Transcript',
+        subtitle: dateStr,
+        blobFetcher: async () => {
           const headers = getAuthHeaders()?.headers;
           const res = await axios.post(`${API_URL}/guardian/export-conversation`, { session_id: sessionId }, { headers, responseType: 'blob' });
-          await downloadFile(new Blob([res.data], { type: 'application/pdf' }), filename);
+          return new Blob([res.data], { type: 'application/pdf' });
         },
       });
-      if (result !== 'cancelled') toast.success('Transcript saved');
     } catch (err) { toast.error('Failed to export transcript'); }
     setExporting(false);
   };
@@ -419,17 +421,17 @@ const GuardianPage = () => {
     try {
       const dateStr = new Date().toISOString().split('T')[0];
       const filename = `CarryOn_Plan_of_Action_${dateStr}.pdf`;
-      const result = await platformDownload({
-        action: 'ega_plan',
-        params: { session_id: sessionId },
+      await openPdfPreview({
+        navigate,
         filename,
-        onFallback: async () => {
+        title: 'EGA Plan of Action',
+        subtitle: dateStr,
+        blobFetcher: async () => {
           const headers = getAuthHeaders()?.headers;
           const res = await axios.post(`${API_URL}/guardian/export-plan-of-action`, { session_id: sessionId }, { headers, responseType: 'blob' });
-          await downloadFile(new Blob([res.data], { type: 'application/pdf' }), filename);
+          return new Blob([res.data], { type: 'application/pdf' });
         },
       });
-      if (result !== 'cancelled') toast.success('Plan of Action saved');
     } catch (err) { toast.error('Failed to generate Plan of Action'); }
     setPlanExporting(false);
   };

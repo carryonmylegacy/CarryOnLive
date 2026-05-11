@@ -87,6 +87,7 @@ const BeneficiarySettingsPage = lazy(() => import('./pages/beneficiary/Beneficia
 const BeneficiaryFinancialPage = lazy(() => import('./pages/beneficiary/BeneficiaryFinancialPage'));
 const BeneficiaryEntitiesPage = lazy(() => import('./pages/beneficiary/BeneficiaryEntitiesPage'));
 const EntitiesPrintPage = lazy(() => import('./pages/print/EntitiesPrintPage'));
+const PdfPreviewPage = lazy(() => import('./pages/print/PdfPreviewPage'));
 
 const CreateEstatePage = lazy(() => import('./pages/CreateEstatePage'));
 
@@ -666,6 +667,13 @@ function AppRoutes() {
           window.print() once layout settles. */}
       <Route element={<ProtectedRoute allowedRoles={['benefactor']}><Outlet /></ProtectedRoute>}>
         <Route path="/financial/entities/:estateId/print" element={<EntitiesPrintPage />} />
+      </Route>
+
+      {/* Universal PDF preview — usable by ANY authenticated role. The blob is
+          held in a client-side module map keyed by UUID; refreshing the page
+          intentionally lands on a "preview expired" message. */}
+      <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
+        <Route path="/pdf-preview/:key" element={<PdfPreviewPage />} />
       </Route>
 
       {/* Beneficiary Routes */}

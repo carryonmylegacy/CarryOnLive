@@ -40,6 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { toast } from '../utils/toast';
 import { iosSafeDownload } from '../utils/iosSafeDownload';
 import { platformDownload, downloadFile } from '../utils/downloadFile';
+import { openPdfPreview } from '../utils/openPdfPreview';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import { Checkbox } from '../components/ui/checkbox';
@@ -1040,19 +1041,20 @@ const MessagesPage = () => {
       } else {
         // Text message → PDF
         const filename = `${safeTitle}.pdf`;
-        result = await platformDownload({
-          action: 'message_pdf',
-          params: { message_id: msg.id },
+        await openPdfPreview({
+          navigate,
           filename,
-          onProgress,
-          onFallback: async () => {
+          title: 'Message',
+          subtitle: msg.title || '',
+          blobFetcher: async () => {
             const res = await axios.get(`${API_URL}/messages/${msg.id}/download`, { ...getAuthHeaders(), responseType: 'blob' });
-            const blob = new Blob([res.data], { type: 'application/pdf' });
-            await downloadFile(blob, filename);
+            return new Blob([res.data], { type: 'application/pdf' });
           },
         });
+        result = 'previewed';
       }
       if (result === 'shared' || result === 'saved') toast.success('Saved');
+      // 'previewed' silently transitions — the preview page handles next-step UX.
     } catch (err) {
       if (err?.name === 'AbortError') return;
       console.error('MM Download error:', err);

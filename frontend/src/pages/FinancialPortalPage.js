@@ -11,7 +11,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from '../utils/toast';
-import { iosSafeDownload } from '../utils/iosSafeDownload';
+import { openPdfPreview } from '../utils/openPdfPreview';
 // STATIC import — dynamic await import() chunks fail to fetch when
 // the user is offline, breaking delete/designation/category mutations.
 import { mutateWithOutbox } from '../utils/offlineMutation';
@@ -359,14 +359,21 @@ const FinancialPortalPage = () => {
     }
     setExportingHandoff(true);
     try {
-      const headers = getAuthHeaders()?.headers;
-      const res = await axios.get(`${API_URL}/financial/handoff-package/${estate.id}`, {
-        headers,
-        responseType: 'blob',
-      });
-      const blob = new Blob([res.data], { type: 'application/pdf' });
       const filename = `carryon-handoff-${estate.id.slice(0, 8)}.pdf`;
-      await iosSafeDownload(blob, filename, 'Hand-off PDF', 'cfp_handoff');
+      await openPdfPreview({
+        navigate,
+        filename,
+        title: 'CFP Hand-off Package',
+        subtitle: estate?.name || '',
+        blobFetcher: async () => {
+          const headers = getAuthHeaders()?.headers;
+          const res = await axios.get(`${API_URL}/financial/handoff-package/${estate.id}`, {
+            headers,
+            responseType: 'blob',
+          });
+          return new Blob([res.data], { type: 'application/pdf' });
+        },
+      });
     } catch {
       toast.error('Failed to generate hand-off PDF.');
     }

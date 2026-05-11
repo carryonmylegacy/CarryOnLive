@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   Bot, Send, User, Loader2, Sparkles, Lock, Download
@@ -11,9 +12,11 @@ import { ScrollArea } from '../../components/ui/scroll-area';
 import { API_URL } from '../../config';
 import { toast } from '../../utils/toast';
 import { downloadFile, platformDownload } from '../../utils/downloadFile';
+import { openPdfPreview } from '../../utils/openPdfPreview';
 
 const BeneficiaryGuardianPage = () => {
   const { user, getAuthHeaders } = useAuth();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -52,20 +55,20 @@ const BeneficiaryGuardianPage = () => {
     try {
       const dateStr = new Date().toISOString().slice(0, 10);
       const filename = `CarryOn_IAC_${dateStr}.pdf`;
-      const result = await platformDownload({
-        action: 'beneficiary_iac',
-        params: {},
+      await openPdfPreview({
+        navigate,
         filename,
-        onFallback: async () => {
+        title: 'Beneficiary IAC Checklist',
+        subtitle: dateStr,
+        blobFetcher: async () => {
           const res = await axios.post(`${API_URL}/guardian/beneficiary-export-checklist`, {}, {
             ...getAuthHeaders(), responseType: 'blob',
           });
-          downloadFile(res.data, filename);
+          return new Blob([res.data], { type: 'application/pdf' });
         },
       });
-      if (result !== 'cancelled') toast.success('IAC saved');
     } catch {
-      toast.error('Failed to download IAC');
+      toast.error('Failed to generate IAC');
     }
   };
 

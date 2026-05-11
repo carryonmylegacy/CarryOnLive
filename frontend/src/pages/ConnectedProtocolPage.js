@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
 import { useDebouncedRefetch } from '../hooks/useDebouncedRefetch';
@@ -48,7 +49,7 @@ import {
   CreditCard,
   Info,
 } from 'lucide-react';
-import { platformDownload } from '../utils/downloadFile';
+import { openPdfPreview } from '../utils/openPdfPreview';
 
 const STATUS_CONFIG = {
   safe: { label: 'SAFE', color: '#22C993', bg: 'rgba(34,201,147,0.15)', border: 'rgba(34,201,147,0.4)', icon: Check },
@@ -72,6 +73,7 @@ const CCP_POLL_INTERVAL = 5000;
 
 export default function ConnectedProtocolPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const token = localStorage.getItem('carryon_token');
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
@@ -417,21 +419,24 @@ export default function ConnectedProtocolPage() {
   const downloadPlan = async (plan) => {
     try {
       const safeName = (plan.name || 'plan').replace(/[^a-zA-Z0-9 _-]/g, '').trim() || 'plan';
-      await platformDownload({
-        action: 'ccp_plan',
-        params: { plan_id: plan.id },
-        filename: `CCP_${safeName}.pdf`,
-        onFallback: async () => {
-          const token = localStorage.getItem('carryon_token');
-          // Use the download proxy even on desktop for simplicity
-          const res = await fetch(`${API_URL}/downloads/prepare`, {
+      const filename = `CCP_${safeName}.pdf`;
+      await openPdfPreview({
+        navigate,
+        filename,
+        title: 'Contingency Care Plan',
+        subtitle: plan.name || '',
+        blobFetcher: async () => {
+          const t = localStorage.getItem('carryon_token');
+          const prep = await fetch(`${API_URL}/downloads/prepare`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'ccp_plan', params: { plan_id: plan.id }, filename: `CCP_${safeName}.pdf` }),
+            headers: { 'Authorization': `Bearer ${t}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'ccp_plan', params: { plan_id: plan.id }, filename }),
           });
-          if (!res.ok) throw new Error('Failed to prepare download');
-          const data = await res.json();
-          window.location.href = `${API_URL}/downloads/${data.token}`;
+          if (!prep.ok) throw new Error('Failed to prepare download');
+          const { token: dt } = await prep.json();
+          const res = await fetch(`${API_URL}/downloads/${dt}`);
+          if (!res.ok) throw new Error('Failed to fetch PDF');
+          return await res.blob();
         },
       });
     } catch {
@@ -488,20 +493,24 @@ export default function ConnectedProtocolPage() {
   const downloadEmergencyCard = async (plan) => {
     try {
       const safeName = (plan.name || 'plan').replace(/[^a-zA-Z0-9 _-]/g, '').trim() || 'plan';
-      await platformDownload({
-        action: 'emergency_card',
-        params: { plan_id: plan.id },
-        filename: `EmergencyCard_${safeName}.pdf`,
-        onFallback: async () => {
+      const filename = `EmergencyCard_${safeName}.pdf`;
+      await openPdfPreview({
+        navigate,
+        filename,
+        title: 'Emergency Card',
+        subtitle: plan.name || '',
+        blobFetcher: async () => {
           const t = localStorage.getItem('carryon_token');
-          const res = await fetch(`${API_URL}/downloads/prepare`, {
+          const prep = await fetch(`${API_URL}/downloads/prepare`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${t}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'emergency_card', params: { plan_id: plan.id }, filename: `EmergencyCard_${safeName}.pdf` }),
+            body: JSON.stringify({ action: 'emergency_card', params: { plan_id: plan.id }, filename }),
           });
-          if (!res.ok) throw new Error('Failed');
-          const d = await res.json();
-          window.location.href = `${API_URL}/downloads/${d.token}`;
+          if (!prep.ok) throw new Error('Failed to prepare');
+          const { token: dt } = await prep.json();
+          const res = await fetch(`${API_URL}/downloads/${dt}`);
+          if (!res.ok) throw new Error('Failed to fetch PDF');
+          return await res.blob();
         },
       });
     } catch { alert('Failed to generate emergency card'); }
@@ -1000,20 +1009,24 @@ export default function ConnectedProtocolPage() {
         <button
           onClick={async () => {
             try {
-              await platformDownload({
-                action: 'family_readiness_report',
-                params: { estate_id: estateId },
-                filename: 'CarryOn_Readiness_Report.pdf',
-                onFallback: async () => {
+              const filename = 'CarryOn_Readiness_Report.pdf';
+              await openPdfPreview({
+                navigate,
+                filename,
+                title: 'Family Readiness Report',
+                subtitle: new Date().toISOString().slice(0, 10),
+                blobFetcher: async () => {
                   const t = localStorage.getItem('carryon_token');
-                  const res = await fetch(`${API_URL}/downloads/prepare`, {
+                  const prep = await fetch(`${API_URL}/downloads/prepare`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${t}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'family_readiness_report', params: { estate_id: estateId }, filename: 'CarryOn_Readiness_Report.pdf' }),
+                    body: JSON.stringify({ action: 'family_readiness_report', params: { estate_id: estateId }, filename }),
                   });
-                  if (!res.ok) throw new Error('Failed');
-                  const d = await res.json();
-                  window.location.href = `${API_URL}/downloads/${d.token}`;
+                  if (!prep.ok) throw new Error('Failed to prepare');
+                  const { token: dt } = await prep.json();
+                  const res = await fetch(`${API_URL}/downloads/${dt}`);
+                  if (!res.ok) throw new Error('Failed to fetch PDF');
+                  return await res.blob();
                 },
               });
             } catch { alert('Failed to generate report'); }
