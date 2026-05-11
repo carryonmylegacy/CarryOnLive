@@ -238,7 +238,7 @@
 
 > **Preview URL rotation (GitHub Actions E2E secrets)** — the `E2E_BASE_URL`
 > and `E2E_API_URL` repository secrets both point at the current preview
-> URL (today: `https://polish-pitch.preview.emergentagent.com`). If the
+> URL (today: `https://b2b-pitch-ready.preview.emergentagent.com`). If the
 > preview URL ever changes (e.g. Emergent re-provisions the pod, rename,
 > staging migration), **the `e2e-smoke` job will start failing with
 > `net::ERR_CONNECTION_REFUSED` or 502**. Fix:
@@ -935,7 +935,7 @@ Three console/UX cleanups requested by user as "optional polish" after iter 116 
 **User-reported gap**: "The configure-CORS job is recommended? This isn't already done to support offline mode?!" — confirmed honest diagnosis: the bucket-level CORS rule had never been applied, so every `fetch()` against signed S3 URLs failed with `net::ERR_FAILED`, which silently broke `imageBlobsRepo.fetchAndStoreImageBlob` for the entire history of the project. Photos rendered fine online via `<img src>` (CORS-exempt) but the IndexedDB cache layer never populated, meaning beneficiaries opening the app cold in airplane mode would have seen broken avatars.
 
 **Fix shipped**:
-1. `backend/scripts/configure_s3_cors.py` — one-time boto3 `put_bucket_cors` script that applies the AllowedOrigins list (`https://carryon.us`, `https://www.carryon.us`, `https://polish-pitch.preview.emergentagent.com`, `capacitor://localhost`, `ionic://localhost`) + GET method + standard expose headers. Idempotent, safe to re-run. Already executed on production.
+1. `backend/scripts/configure_s3_cors.py` — one-time boto3 `put_bucket_cors` script that applies the AllowedOrigins list (`https://carryon.us`, `https://www.carryon.us`, `https://b2b-pitch-ready.preview.emergentagent.com`, `capacitor://localhost`, `ionic://localhost`) + GET method + standard expose headers. Idempotent, safe to re-run. Already executed on production.
 2. `frontend/src/offline/imageBlobsRepo.js` — removed the host-blocklist seed that was masking the symptom (no longer needed now that the bucket actually allows the fetches).
 
 **Verified on prod (iter 117):**
@@ -1901,7 +1901,7 @@ Housekeeping: 66/66 PASS, 0 WARN, 0 FAIL. ESLint + ruff clean. Visually verified
 - `components/layout/DashboardLayout.js` — route-change `scrollToTop` effect now skips when the previous and next pathnames are both within `/admin/*` or both within `/ops/*`. Sub-tab navigation in the admin portal is logically a tab change, not a new page; preserving scroll matches user intent.
 - `pages/FinancialPortalPage.js` — wired `useScrollLock(activeTab)` so Bills/Debts/Accounts/Property switches benefit from the same preservation.
 
-**Verified live** (Playwright on `https://polish-pitch.preview.emergentagent.com`, 1440×900):
+**Verified live** (Playwright on `https://b2b-pitch-ready.preview.emergentagent.com`, 1440×900):
 - BEFORE tab tap (deep-scrolled in Bills): `windowY = 3960`.
 - Tap **Accounts** (empty content, ~1100px): clamps to `11` — browser physics, can't scroll past content end.
 - Tap **Debts** (4 items, ~1170px): clamps to `146`.
@@ -1928,7 +1928,7 @@ Health: `bash /app/scripts/check.sh` → ALL CLEAR (housekeeping 0 WARN/0 FAIL, 
 
 **DB hygiene**: confirmed `db.partner_brief_content` had no customized override (`is_customized: False`), so the new defaults are served immediately. No reset needed.
 
-**Verified live** (Playwright on `https://polish-pitch.preview.emergentagent.com`):
+**Verified live** (Playwright on `https://b2b-pitch-ready.preview.emergentagent.com`):
 - `/home` body contains "Ten Pillars" ✓ and "Beneficiary Estate Concierge" ✓; does NOT contain "Nine Pillars" ✓.
 - `/partner-brief` body contains "Ten Pillars" ✓, "BEC" ✓, "Beneficiary Estate Concierge" ✓, "full ten" ✓; does NOT contain "Nine Pillars" or "full nine" ✓. BEC vertical references render (e.g., Financial Planners section shows "BEC (after transition, the surviving spouse / heirs can ask the AI Concierge plain-English questions about the plan and get cited answers...)").
 - `/landing-consumer` body contains "Beneficiary Estate Concierge" + the 10 numbered grid card with `10 / Beneficiary Estate Concierge (BEC)`.
