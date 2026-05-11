@@ -115,22 +115,28 @@ export default function EntitiesPrintPage() {
   const navigate = useNavigate();
   const { user, getAuthHeaders } = useAuth();
   const [data, setData] = useState(null);
+  const [beneficiaries, setBeneficiaries] = useState([]);
   const [estateName, setEstateName] = useState('');
   const [error, setError] = useState(null);
 
   // Fetch the chart payload (entities + people + relationships +
-  // server-persisted overrides) plus the estate name for the header.
+  // server-persisted overrides), the beneficiaries list (so spouse /
+  // children / other named beneficiaries that participate in
+  // relationships render as person tiles — exactly like the live
+  // chart does), plus the estate name for the header.
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
         const headers = getAuthHeaders();
-        const [entitiesRes, estateRes] = await Promise.all([
+        const [entitiesRes, estateRes, bensRes] = await Promise.all([
           axios.get(`${API_URL}/financial/entities/${estateId}`, headers),
           axios.get(`${API_URL}/estates/${estateId}`, headers).catch(() => ({ data: null })),
+          axios.get(`${API_URL}/beneficiaries/${estateId}`, headers).catch(() => ({ data: [] })),
         ]);
         if (!alive) return;
         setData(entitiesRes.data || {});
+        setBeneficiaries(Array.isArray(bensRes?.data) ? bensRes.data : []);
         setEstateName(estateRes?.data?.name || '');
       } catch (e) {
         if (!alive) return;
@@ -143,7 +149,6 @@ export default function EntitiesPrintPage() {
   // Compute layout + bbox once data lands.
   const layout = useMemo(() => {
     if (!data) return null;
-    const beneficiaries = []; // benefactor view → no extra benef nodes; relationships drive everything
     const graph = buildGraph({
       entities: data.entities || [],
       externals: data.external_people || [],
@@ -244,7 +249,7 @@ export default function EntitiesPrintPage() {
       relationships: data.relationships || [],
       entities: data.entities || [],
     };
-  }, [data, user]);
+  }, [data, user, beneficiaries]);
 
   // No auto-print: iOS Safari blocks programmatic window.print() that
   // isn't a direct response to a user tap, and re-rendering on memo

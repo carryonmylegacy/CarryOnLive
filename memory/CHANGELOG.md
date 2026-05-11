@@ -1,5 +1,25 @@
 # CarryOn — Changelog
 
+## Feb 12, 2026 — E&S Print PDF: Missing Beneficiaries (Tom, Penny, Emma)
+
+**Bug** — User compared the live chart to the print PDF and noted: "It looks nothing like the pdf." Confirmed via screenshots (IMG_0510 vs IMG_0511): the print page was missing Pete's spouse (Penny) and children (Tom, Emma) entirely — every node with `kind: 'beneficiary'`.
+
+**Root cause** — The print page passed `beneficiaries = []` to `buildGraph` (`pages/print/EntitiesPrintPage.js`) with a stale comment claiming "benefactor view → no extra benef nodes; relationships drive everything". That assumption is wrong: `buildGraph` filters edges to only those whose source AND target keys exist in the pool (line 106 of `EntityOrgChart.js`), so any relationship pointing at `beneficiary:<id>` gets silently dropped when the beneficiary pool is empty.
+
+**Fix** (`pages/print/EntitiesPrintPage.js`):
+- Added a third parallel fetch: `GET /beneficiaries/{estateId}` (the same endpoint `FinancialPortalPage.js` uses).
+- Stored result in component state.
+- Pass `beneficiaries` to `buildGraph` so spouse/children/named beneficiary tiles render in the print SVG identically to the live chart.
+- Added `beneficiaries` to the layout `useMemo` dependency array.
+
+**Round 1 + Round 2 fixes preserved** (still in play):
+- BBox includes routed edge points + ownership-% pill rects + dynamic legend height.
+- Fixed-pixel viewBox (`0 0 790 820`) + manual `<g translate/scale>` to bypass iOS print engine's `preserveAspectRatio` quirks.
+
+**Verified**: ESLint clean, housekeeping clean, webpack compiled successfully. **User to print again and confirm Tom, Penny, Emma render alongside Pete in the printed tree.**
+
+---
+
 ## Feb 12, 2026 — E&S Print PDF: Stop Clipping Tree Nodes & Legend (Round 2 — Manual Scale Transform)
 
 **Bug** — Round 1 fix (dynamic `viewBox` + `preserveAspectRatio="xMidYMid meet"`) produced zero change in the printed PDF. Tiles (Mitchell Holdings, Tennessee Rental Property, etc.) still clipped at the right page edge.
