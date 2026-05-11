@@ -1,6 +1,41 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — PDF Preview Multi-Page Rendering (PDF.js)
+
+**Bug** — User reported the new universal PDF Preview page only showed page 1, but the OS print-preview (after tapping Print) showed all pages. Verified: Plan of Action is **2 pages**, CFP Hand-off is **2 pages** (likely more for richer accounts).
+
+**Root cause** — iOS Safari's native PDF viewer rendered inside `<iframe src=blob:application/pdf>` displays **only the first page with no scrolling** in PWA standalone mode. Desktop browsers scroll fine, but iOS doesn't. A `<embed>` / `<object>` has the same limitation on iOS.
+
+**Fix** — Replaced the single-iframe preview with a PDF.js-rendered canvas stack:
+- Installed `pdfjs-dist@5.7.284` (~500 KB, lazy-imported only when a preview page is hit).
+- Copied `pdf.worker.min.mjs` to `/app/frontend/public/` so the worker is served same-origin (no CDN dependency, works in PWA standalone mode).
+- `PdfPreviewPage.js` rewritten:
+  - Dynamic `import('pdfjs-dist')` on mount → `pdfjs.getDocument({ data: arrayBuffer })` → loop every page, render each into a `<canvas>` at `devicePixelRatio` scale, append to a scrollable container.
+  - Shows a loader (`Loader2` spinner + "Rendering pages…") while drawing; switches to the rendered stack on completion; error state if pdfjs throws.
+  - Each canvas gets `data-testid="pdf-preview-page-N"` and the header shows a `"{N} pages"` badge (`data-testid="pdf-preview-page-count"`).
+  - **Print button still uses a hidden vector-PDF iframe** so the OS print dialog gets the raw PDF (not the rasterized canvases). On iOS, the Print button still uses `navigator.share({files:[pdf]})` — unchanged.
+  - The Print button is disabled while pages are rendering (avoids race).
+- E&S print page (`EntitiesPrintPage.js`, route `/financial/entities/:estateId/print`) is **completely untouched** and still uses its own dedicated layout, as the user explicitly requested.
+
+**Cache bust**: `SHELL_VERSION` → `v42-2026-02-13-pdf-preview-pdfjs-multipage`.
+
+**Verified**:
+- ESLint clean.
+- Worker URL `/pdf.worker.min.mjs` served HTTP 200 with valid pdf.js worker JS.
+- Live Plan of Action PDF = 2 pages, CFP Hand-off PDF = 2 pages (both confirmed via raw `/Type /Page` parse).
+- Housekeeping: 0 WARN, 0 FAIL, all 3 smoke checks 8/8 green.
+
+**Files touched**:
+- `frontend/package.json` / `yarn.lock` — `pdfjs-dist@5.7.284` added
+- `frontend/public/pdf.worker.min.mjs` — refreshed to bundled version
+- `frontend/src/pages/print/PdfPreviewPage.js` — rewritten for multi-page canvas rendering
+- `frontend/public/sw-push.js` — SHELL_VERSION bump
+
+---
+
+
+
 ## Feb 13, 2026 — iPad Landscape PWA Top Inset + EGA Plan of Action by-Professional Breakdown
 
 **1) iPad Pro landscape PWA — top-edge relief**

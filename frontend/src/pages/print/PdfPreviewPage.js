@@ -2,42 +2,102 @@
  * PdfPreviewPage — universal preview wrapper for ALL server-generated PDFs
  * across the platform (EGA, IAC, CFP Hand-off, CCP, SOC2, Messages…).
  *
- * Mirrors the EntitiesPrintPage toolbar exactly so the UX is identical:
- *   • Sticky Back + Print buttons at the top (safe-area aware)
- *   • PDF rendered inline via <iframe src=blob:>
- *   • Print:  iOS  → navigator.share() (native share sheet w/ Print / Save)
- *             else → iframe.contentWindow.print()
+ * Renders the PDF page-by-page via PDF.js so users can SCROLL through every
+ * page inside the preview surface itself — not just see page 1. iOS Safari's
+ * native PDF viewer in an <iframe src=blob:> only shows the first page with
+ * no scrolling, which is exactly the bug the user reported.
+ *
+ * Mirrors the EntitiesPrintPage toolbar:
+ *   • Sticky Back + Print at top (safe-area aware)
+ *   • @media print hides the toolbar; print uses a hidden iframe with the
+ *     blob URL so the OS print dialog still gets a clean, vectored PDF.
+ *   • Print:  iOS  → navigator.share() (native share sheet)
+ *             else → hidden iframe contentWindow.print()
  *             else → download fallback
  *   • Back  → navigate(-1)
- *   • @media print hides the toolbar; iframe takes the page
  *
- * Entries are passed in via the `openPdfPreview` utility which seeds a
- * module-level Map keyed by UUID. The URL carries only the key, so refreshes
- * land on a friendly "preview expired" message rather than a dead blob URL.
+ * The E&S print page (EntitiesPrintPage.js) is intentionally NOT routed
+ * through here — it remains its own dedicated page per user's standing rule.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Printer, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, Printer, AlertTriangle, Loader2 } from 'lucide-react';
 import { consumePreviewEntry, disposePreviewEntry } from '../../utils/openPdfPreview';
 import { isIOS } from '../../utils/downloadFile';
 
 export default function PdfPreviewPage() {
   const navigate = useNavigate();
   const { key } = useParams();
-  const iframeRef = useRef(null);
+  const canvasContainerRef = useRef(null);
+  const printIframeRef = useRef(null);
   const [printing, setPrinting] = useState(false);
+  const [renderState, setRenderState] = useState('loading'); // 'loading' | 'ready' | 'error'
+  const [pageCount, setPageCount] = useState(0);
 
   const entry = useMemo(() => consumePreviewEntry(key), [key]);
 
-  // Revoke the blob URL when the user navigates away. We keep the entry
-  // alive (not disposed) so a tap-back / forward-nav re-renders without
-  // refetching, but the URL is GC'd after the 30-min TTL.
+  // Render every page of the PDF as a stacked canvas. Uses dynamic import
+  // so the ~500 KB pdfjs library is lazy-loaded only when a user actually
+  // hits a preview page (not on every app load).
   useEffect(() => {
-    return () => {
-      // No-op cleanup — the Map's TTL gc() will reclaim. We don't dispose
-      // on unmount because users routinely backswipe-then-forward on iOS.
-    };
-  }, []);
+    if (!entry) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const pdfjs = await import('pdfjs-dist');
+        // Worker is shipped in /public so it's served same-origin and works
+        // even when the PWA is being inspected offline-first.
+        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+        const arrayBuffer = await entry.blob.arrayBuffer();
+        if (cancelled) return;
+        const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        if (cancelled) return;
+        setPageCount(pdf.numPages);
+
+        const container = canvasContainerRef.current;
+        if (!container) return;
+        // Clear any prior render (Strict Mode double-mount, fast navigation).
+        container.replaceChildren();
+
+        const dpr = window.devicePixelRatio || 1;
+        const targetCssWidth = Math.min((container.clientWidth || 800) - 16, 920);
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          if (cancelled) return;
+          const base = page.getViewport({ scale: 1 });
+          const cssScale = targetCssWidth / base.width;
+          const renderScale = cssScale * dpr;
+          const viewport = page.getViewport({ scale: renderScale });
+
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.floor(viewport.width);
+          canvas.height = Math.floor(viewport.height);
+          canvas.style.width = `${Math.floor(base.width * cssScale)}px`;
+          canvas.style.height = `${Math.floor(base.height * cssScale)}px`;
+          canvas.style.display = 'block';
+          canvas.style.margin = i === 1 ? '0 auto 16px' : '0 auto 16px';
+          canvas.style.background = '#ffffff';
+          canvas.style.boxShadow = '0 1px 6px rgba(0,0,0,0.18)';
+          canvas.dataset.pageIndex = String(i);
+          canvas.setAttribute('data-testid', `pdf-preview-page-${i}`);
+          container.appendChild(canvas);
+
+          const ctx = canvas.getContext('2d');
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          if (cancelled) return;
+        }
+        if (!cancelled) setRenderState('ready');
+      } catch (err) {
+        if (!cancelled) {
+          console.error('PdfPreviewPage render failed:', err);
+          setRenderState('error');
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [entry]);
 
   if (!entry) {
     return (
@@ -84,7 +144,7 @@ export default function PdfPreviewPage() {
     if (printing) return;
     setPrinting(true);
     try {
-      // iOS PWA: native share sheet handles Print / Save to Files / etc.
+      // iOS: native share sheet handles Print / Save to Files / etc.
       if (isIOS() && navigator.share) {
         try {
           const file = new File([blob], filename, { type: 'application/pdf' });
@@ -92,11 +152,14 @@ export default function PdfPreviewPage() {
           return;
         } catch (err) {
           if (err && err.name === 'AbortError') return;
-          // fall through to iframe.print() or download
+          // fall through to hidden iframe print
         }
       }
-      // Desktop / Android: trigger the iframe's print dialog.
-      const iframe = iframeRef.current;
+      // Desktop / Android: print via a hidden iframe loaded with the blob URL.
+      // We render the PDF as canvases for VIEWING (because iOS can't scroll
+      // an inline PDF iframe), but for PRINTING we hand the raw PDF to the
+      // browser so the print dialog gets a vector PDF, not rasterized images.
+      const iframe = printIframeRef.current;
       if (iframe && iframe.contentWindow) {
         try {
           iframe.contentWindow.focus();
@@ -106,7 +169,7 @@ export default function PdfPreviewPage() {
           // Some browsers block iframe.print() — fall through to download.
         }
       }
-      // Last resort: download the blob as a file.
+      // Last resort: download.
       const a = document.createElement('a');
       a.href = url;
       a.download = filename;
@@ -125,8 +188,8 @@ export default function PdfPreviewPage() {
         @media print {
           .pdf-preview-toolbar { display: none !important; }
           .pdf-preview-header  { display: none !important; }
-          .pdf-preview-shell   { padding: 0 !important; height: auto !important; }
-          .pdf-preview-iframe-wrap { height: auto !important; }
+          .pdf-preview-shell   { padding: 0 !important; height: auto !important; overflow: visible !important; }
+          .pdf-preview-canvas-wrap { display: none !important; }
         }
         html, body, #root { background: #f4f4f4 !important; }
         .pdf-preview-shell {
@@ -169,6 +232,7 @@ export default function PdfPreviewPage() {
           border-bottom: 2px solid #B8860B;
           padding: 0 16px 10px;
           margin: 0 4px 8px;
+          display: flex; align-items: baseline; gap: 10px;
         }
         .pdf-preview-header h1 {
           margin: 0;
@@ -179,26 +243,53 @@ export default function PdfPreviewPage() {
           line-height: 1.2;
         }
         .pdf-preview-header .subtitle {
-          margin-top: 2px;
           font-size: 12px;
           color: #475569;
         }
-        .pdf-preview-iframe-wrap {
+        .pdf-preview-header .pages {
+          margin-left: auto;
+          font-size: 11px;
+          color: #94a3b8;
+          font-weight: 600;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+        }
+        .pdf-preview-canvas-wrap {
           flex: 1 1 auto;
           min-height: 0;
           width: 100%;
-          background: #ffffff;
-          margin: 0 4px;
-          margin-bottom: max(4px, env(safe-area-inset-bottom));
-          border: 1px solid #e2e8f0;
-          border-radius: 4px;
-          overflow: hidden;
+          overflow: auto;
+          -webkit-overflow-scrolling: touch;
+          padding: 0 8px 8px;
+          padding-bottom: max(8px, env(safe-area-inset-bottom));
         }
-        .pdf-preview-iframe-wrap iframe,
-        .pdf-preview-iframe-wrap embed,
-        .pdf-preview-iframe-wrap object {
-          width: 100%; height: 100%; border: 0; display: block;
-          background: #ffffff;
+        .pdf-preview-loading {
+          display: flex; flex-direction: column;
+          align-items: center; justify-content: center;
+          padding: 48px 24px;
+          gap: 12px;
+          color: #475569;
+          font-size: 13px;
+        }
+        .pdf-preview-loading .spin {
+          animation: pdf-spin 1s linear infinite;
+          color: #B8860B;
+        }
+        @keyframes pdf-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+        .pdf-preview-error {
+          padding: 24px 16px;
+          color: #B91C1C;
+          font-size: 14px;
+          text-align: center;
+        }
+        /* Hidden print iframe — invisible to the user, used only as the
+           target for window.print() so the OS dialog gets the raw PDF. */
+        .pdf-preview-print-iframe {
+          position: absolute;
+          width: 0; height: 0;
+          border: 0;
+          visibility: hidden;
+          pointer-events: none;
         }
       `}</style>
 
@@ -215,7 +306,7 @@ export default function PdfPreviewPage() {
           type="button"
           className="pdf-preview-print"
           onClick={handlePrint}
-          disabled={printing}
+          disabled={printing || renderState === 'loading'}
           data-testid="pdf-preview-print"
         >
           <Printer size={14} /> {printing ? 'Opening…' : 'Print'}
@@ -225,20 +316,38 @@ export default function PdfPreviewPage() {
       <div className="pdf-preview-header">
         <h1 data-testid="pdf-preview-title">{title}</h1>
         {subtitle ? <div className="subtitle">{subtitle}</div> : null}
+        {pageCount > 0 ? (
+          <div className="pages" data-testid="pdf-preview-page-count">
+            {pageCount} page{pageCount === 1 ? '' : 's'}
+          </div>
+        ) : null}
       </div>
 
-      <div className="pdf-preview-iframe-wrap">
-        {/* iOS Safari renders blob: PDFs via the native viewer inside the
-            iframe. Desktop browsers use their built-in PDF viewer. We use
-            <iframe> (not <embed>/<object>) because it's the only element
-            whose `contentWindow.print()` we can call from the toolbar. */}
-        <iframe
-          ref={iframeRef}
-          src={url}
-          title={title}
-          data-testid="pdf-preview-iframe"
-        />
+      <div className="pdf-preview-canvas-wrap" data-testid="pdf-preview-canvas-wrap">
+        {renderState === 'loading' && (
+          <div className="pdf-preview-loading" data-testid="pdf-preview-loading">
+            <Loader2 size={28} className="spin" />
+            <div>Rendering pages…</div>
+          </div>
+        )}
+        {renderState === 'error' && (
+          <div className="pdf-preview-error" data-testid="pdf-preview-error">
+            Failed to render PDF. Tap Print to view it in your browser's PDF dialog.
+          </div>
+        )}
+        <div ref={canvasContainerRef} />
       </div>
+
+      {/* Hidden iframe used only for the Print button on non-iOS platforms.
+          The blob URL renders as a vector PDF inside the OS print dialog. */}
+      <iframe
+        ref={printIframeRef}
+        src={url}
+        title="print"
+        className="pdf-preview-print-iframe"
+        aria-hidden="true"
+        tabIndex={-1}
+      />
     </div>
   );
 }
