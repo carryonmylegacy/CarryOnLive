@@ -1369,6 +1369,34 @@ export default function EntityOrgChart({
   }
   const rectByKey = Object.fromEntries(tileRects.map((r) => [r.key, r]));
 
+  // Pre-compute "trunk Y" per target-entity for mini-cluster groups.
+  // For every entity that has 2+ beneficiary connections coming from
+  // mini-mode source tiles, we want the lines to fan up vertically
+  // from each avatar to a SHARED horizontal trunk that sits just
+  // above the top row of mini tiles, then run laterally to the
+  // entity. This kills the "spaghetti" mess of routeEdge crossing
+  // through avatars in a tight cluster.
+  const miniTrunkYByEntity = (() => {
+    const groups = new Map(); // entityKey -> [{srcRect}]
+    edges.forEach((edge) => {
+      const sR = rectByKey[edge.sourceKey];
+      const tR = rectByKey[edge.targetKey];
+      if (!sR || !tR) return;
+      const srcPos = positionOf(edge.sourceKey);
+      if (!srcPos?.mini) return;
+      if (edge.role !== 'beneficiary') return;
+      if (!groups.has(edge.targetKey)) groups.set(edge.targetKey, []);
+      groups.get(edge.targetKey).push(sR);
+    });
+    const out = {};
+    groups.forEach((srcRects, entityKey) => {
+      if (srcRects.length < 2) return; // single line → routeEdge handles cleanly
+      const topRowY = Math.min(...srcRects.map((r) => r.y));
+      out[entityKey] = topRowY - 14;
+    });
+    return out;
+  })();
+
   // Build the SVG edge layer as raw markup to bypass the platform's
   // `<span data-ve-dynamic>` instrumentation that wraps React .map() output —
   // SVG cannot have HTML span ancestors without breaking the namespace, which
@@ -1383,8 +1411,31 @@ export default function EntityOrgChart({
       const sR = rectByKey[edge.sourceKey];
       const tR = rectByKey[edge.targetKey];
       if (!sR || !tR) return;
-      const obstacles = tileRects.filter((r) => r.key !== sR.key && r.key !== tR.key);
-      const { points, midPoint } = routeEdge(sR, tR, obstacles, edge.id);
+      // Manifold routing for mini-cluster beneficiary edges:
+      // up from the avatar to the shared trunk above the top row,
+      // laterally to the entity center, then down into the entity
+      // bottom. (Falls through to routeEdge for everything else.)
+      const trunkY = miniTrunkYByEntity[edge.targetKey];
+      const srcPos = positionOf(edge.sourceKey);
+      let points;
+      let midPoint;
+      if (trunkY != null && srcPos?.mini && edge.role === 'beneficiary') {
+        const srcCenterX = sR.x + sR.w / 2;
+        const tgtCenterX = tR.x + tR.w / 2;
+        const tgtBottomY = tR.y + tR.h;
+        points = [
+          { x: srcCenterX, y: sR.y },          // top of avatar
+          { x: srcCenterX, y: trunkY },        // up to trunk
+          { x: tgtCenterX, y: trunkY },        // over to entity
+          { x: tgtCenterX, y: tgtBottomY },    // down into entity bottom
+        ];
+        midPoint = { x: (srcCenterX + tgtCenterX) / 2, y: trunkY };
+      } else {
+        const obstacles = tileRects.filter((r) => r.key !== sR.key && r.key !== tR.key);
+        const routed = routeEdge(sR, tR, obstacles, edge.id);
+        points = routed.points;
+        midPoint = routed.midPoint;
+      }
       const role = ROLE_PALETTE[edge.role] || ROLE_PALETTE.owner;
       const isEquity = (
         edge.role === 'owner' || edge.role === 'member' ||
