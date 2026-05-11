@@ -349,14 +349,17 @@ export default function EntityDetailPanel({
 
       // 2) Compute compact mini-grid positions beneath the entity.
       // Bulk-added beneficiaries render as a tight cluster of small
-      // avatars (5 per row, wraps), flagged with `mini: true` in the
-      // override so EntityOrgChart knows to render them in mini mode.
+      // avatars (5 per row, wraps, staggered like bricks), flagged
+      // with `mini: true` in the override so EntityOrgChart knows to
+      // render them in mini mode. Stagger means even-numbered rows
+      // (0, 2, …) are aligned to the entity center; odd rows offset
+      // by half a column so circles sit BETWEEN circles above them.
       // Cluster constants:
       const ENTITY_W = 200, ENTITY_H = 92;
-      const MINI_W = 64, MINI_H = 84;
-      const MINI_COL_GAP = 12;     // horizontal gap between mini tiles
-      const MINI_ROW_GAP = 16;     // vertical gap between cluster rows
-      const CLUSTER_GAP = 60;      // gap between entity bottom and top row
+      const MINI_W = 56, MINI_H = 70;
+      const MINI_COL_GAP = 8;      // horizontal gap between mini tiles
+      const MINI_ROW_GAP = 4;      // vertical gap between cluster rows
+      const CLUSTER_GAP = 50;      // gap between entity bottom and top row
       const PER_ROW = 5;
       const currentOverrides = (chartLayout && typeof chartLayout === 'object') ? chartLayout : {};
       const entityKey = `entity:${ent.id}`;
@@ -375,25 +378,25 @@ export default function EntityDetailPanel({
         orderedKeys.push(`user:${user.id}`);
       }
       const n = orderedKeys.length;
-      const rows = Math.ceil(n / PER_ROW);
-      // Center each row beneath the entity. Items in the LAST row may
-      // be fewer than PER_ROW; we center the actual count, not always 5.
       const rowY0 = anchor.y + ENTITY_H + CLUSTER_GAP;
+      const HALF_STEP = (MINI_W + MINI_COL_GAP) / 2;
       const additions = {};
       orderedKeys.forEach((key, i) => {
         const row = Math.floor(i / PER_ROW);
         const col = i % PER_ROW;
         const itemsInThisRow = Math.min(PER_ROW, n - row * PER_ROW);
         const rowW = itemsInThisRow * MINI_W + (itemsInThisRow - 1) * MINI_COL_GAP;
-        const rowStartX = anchor.x + (ENTITY_W - rowW) / 2;
+        // Even rows centered under the entity; odd rows shifted right
+        // by half a column-step so the avatars on row N+1 sit between
+        // the avatars on row N (brick / honeycomb feel).
+        const stagger = row % 2 === 1 ? HALF_STEP : 0;
+        const rowStartX = anchor.x + (ENTITY_W - rowW) / 2 + stagger;
         additions[key] = {
           x: rowStartX + col * (MINI_W + MINI_COL_GAP),
           y: rowY0 + row * (MINI_H + MINI_ROW_GAP),
           mini: true,
         };
       });
-      // Unused locals so lint stays quiet
-      void rows;
 
       // 3) Merge + persist. The layout endpoint replaces the whole
       // overrides map, so we MUST include every existing override or

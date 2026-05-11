@@ -38,13 +38,13 @@ const ENTITY_W = 200;
 const ENTITY_H = 92;
 const PERSON_W = 110;
 // "Mini" dimensions — used for bulk-added beneficiaries so a trust
-// with N beneficiaries can render as a compact cluster (5-per-row,
-// wraps) instead of a long row of full-sized cards that crowds the
-// entity tile. Roughly half the standard size. Position overrides
-// in `chart_layout` can opt a person tile into mini mode with
-// `{ x, y, mini: true }`.
-const MINI_W = 64;
-const MINI_H = 84;
+// with N beneficiaries can render as a compact, brick-stacked cluster
+// (5 per row, wraps, staggered) instead of a long row of full-sized
+// cards that crowds the entity tile. Roughly half the standard size.
+// Position overrides in `chart_layout` can opt a person tile into
+// mini mode with `{ x, y, mini: true }`.
+const MINI_W = 56;
+const MINI_H = 70;
 // Extra height (was 96) to make room for the role-title chips beneath
 // the last name (e.g., "Trustee" / "Co-trustee + Member (LLC)" /
 // "Benefactor"). Chips wrap onto a second line when a person holds
@@ -498,7 +498,7 @@ function PersonTile({ node, palette, dragging, locked, onPointerDownDrag, onClic
             photo={node.photo}
             initials={(initials || '?').toUpperCase().slice(0, 2)}
             color={color}
-            size={40}
+            size={36}
             cacheKey={cacheKey}
             isPrimary={node.kind === 'user'}
           />
