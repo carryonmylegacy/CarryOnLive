@@ -932,7 +932,7 @@ const DashboardPage = () => {
                     // and a viewport-proportional ceiling so the key
                     // grows with iPad-and-above viewports instead of
                     // staying pinned at the discrete sm/md/lg jump.
-                    style={{ fontSize: `clamp(${cfg.font}px, 1.1vw, ${cfg.font + 8}px)` }}
+                    style={{ fontSize: `clamp(${cfg.font}px, calc(var(--app-100vw, 100vw) * 0.011), ${cfg.font + 8}px)` }}
                   >
                     {e.chipPercent}% {e.chipLabel}
                   </span>
@@ -971,7 +971,7 @@ const DashboardPage = () => {
                 {ENTRIES.slice(0, 3).map((e) => (
                   <div key={e.key} className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: e.chipColor }} />
-                    <span className="text-[var(--t4)] font-bold" style={{ fontSize: 'clamp(12px, 3.2vw, 14px)' }}>{e.chipPercent}% {e.chipLabel}</span>
+                    <span className="text-[var(--t4)] font-bold" style={{ fontSize: 'clamp(12px, calc(var(--app-100vw, 100vw) * 0.032), 14px)' }}>{e.chipPercent}% {e.chipLabel}</span>
                   </div>
                 ))}
               </div>
@@ -979,7 +979,7 @@ const DashboardPage = () => {
                 {ENTRIES.slice(3, 6).map((e) => (
                   <div key={e.key} className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: e.chipColor }} />
-                    <span className="text-[var(--t4)] font-bold" style={{ fontSize: 'clamp(12px, 3.2vw, 14px)' }}>{e.chipPercent}% {e.chipLabel}</span>
+                    <span className="text-[var(--t4)] font-bold" style={{ fontSize: 'clamp(12px, calc(var(--app-100vw, 100vw) * 0.032), 14px)' }}>{e.chipPercent}% {e.chipLabel}</span>
                   </div>
                 ))}
               </div>

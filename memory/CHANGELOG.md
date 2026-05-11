@@ -1,6 +1,30 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — Targeted Landscape vw/vh → --app-vw/--app-vh Sweep
+
+**Preemptive sweep** across Dashboard / CFP / EGA / CCP requested by user after the global `installViewportReflow()` boot hook was added. Conversion strategy: swap any `vw`/`vh` value at risk of getting "stuck" on iOS PWA rotation with the new `--app-100vw` / `--app-100vh` CSS custom property (with the original viewport unit kept as a fallback for browsers that haven't fired the first resize event yet).
+
+**Findings**:
+- **DashboardPage.js** (3 fixes) — the three fluid font sizes:
+  - `clamp(${cfg.font}px, 1.1vw, ${cfg.font + 8}px)` → `clamp(${cfg.font}px, calc(var(--app-100vw, 100vw) * 0.011), ${cfg.font + 8}px)` (CCP/CFP tile labels — was growing on landscape and not shrinking back)
+  - `clamp(12px, 3.2vw, 14px)` → `clamp(12px, calc(var(--app-100vw, 100vw) * 0.032), 14px)` (×2, chip percent + label rows)
+- **EntityDetailPanel.js** (1 fix) — bulk-add-beneficiaries modal `maxHeight: 80vh` → `maxHeight: calc(var(--app-100vh, 100vh) * 0.8)`. Modals are the most likely place a stale viewport unit can trap content with no scroll after rotation.
+- **CFP / GuardianPage / ConnectedProtocolPage** — no vw/vh font sizes found; nothing to convert. The viewport reflow hook covers them implicitly via the layout-recompute trick (`documentElement.offsetHeight` read on rotate).
+
+**Cache bust**: `SHELL_VERSION` → `v46-2026-02-13-landscape-vw-vh-sweep`.
+
+**Verified**: ESLint clean. Housekeeping: 0 WARN, 0 FAIL, all 3 smoke checks 8/8 green.
+
+**Files touched**:
+- `frontend/src/pages/DashboardPage.js` — 3 fluid font sizes
+- `frontend/src/components/financial/entities/EntityDetailPanel.js` — bulk-add modal max-height
+- `frontend/public/sw-push.js` — SHELL_VERSION bump
+
+---
+
+
+
 ## Feb 13, 2026 — PDF Preview Modal Refactor + iOS Landscape Viewport Reflow
 
 ### A) PDF Preview → Modal Overlay (Back is Instant)

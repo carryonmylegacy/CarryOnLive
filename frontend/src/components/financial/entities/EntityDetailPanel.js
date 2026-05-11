@@ -893,7 +893,7 @@ export default function EntityDetailPanel({
             >
               <div
                 className="rounded-2xl max-w-sm w-full flex flex-col"
-                style={{ background: 'var(--bg2)', border: '1px solid var(--b)', boxShadow: '0 12px 40px rgba(0,0,0,0.5)', maxHeight: '80vh' }}
+                style={{ background: 'var(--bg2)', border: '1px solid var(--b)', boxShadow: '0 12px 40px rgba(0,0,0,0.5)', maxHeight: 'calc(var(--app-100vh, 100vh) * 0.8)' }}
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
