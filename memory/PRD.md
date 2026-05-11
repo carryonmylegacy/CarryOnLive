@@ -25,6 +25,57 @@
 >
 > Stated explicitly by the user (May 3, 2026, after multiple URL-bar suggestions), pin to top permanently.
 
+> ## 🚨 S3 / OBJECT STORAGE — `carryon-vault` IS NOT IN THE USER'S AWS ACCOUNT
+>
+> **DO NOT send the user to the AWS S3 console for any reason.** The bucket `carryon-vault` is in an Emergent-managed AWS account, NOT the user's personal `barnetharris` account. When the user logs into the AWS console, they see ZERO buckets across all regions — this is correct, not a bug.
+>
+> Bucket facts:
+> - **Bucket name**: `carryon-vault`
+> - **Region**: `us-east-2` (Ohio)
+> - **Owner**: Emergent platform (separate AWS account from the user's personal one)
+> - **Backend access**: via `S3_BUCKET_NAME` / `S3_REGION` / `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` in `/app/backend/.env`
+>
+> **To configure CORS, IAM, lifecycle, or any S3-side property — DO NOT GO TO THE CONSOLE. Run the script:**
+>
+> ```bash
+> cd /app/backend && python3 scripts/configure_s3_cors.py
+> ```
+>
+> The script uses the backend `.env` credentials, is **idempotent** (safe to re-run), and prints back the live CORS rule for verification. To add a new origin, edit `AllowedOrigins` inside the script and re-run. The script also serves any future S3-side operations (extend it for additional bucket actions).
+>
+> **Currently applied CORS origins** (as of Feb 12, 2026):
+> - `https://carryon.us`
+> - `https://www.carryon.us`
+> - `https://app.carryon.us`
+> - `https://polish-pitch.preview.emergentagent.com`
+> - `capacitor://localhost`
+> - `ionic://localhost`
+> - Methods: GET, HEAD · MaxAge: 86400s
+>
+> Pinned because three separate sessions sent the user on a wild-goose chase through their AWS console looking for a bucket that isn't there. NEVER AGAIN.
+
+> ## 🚨 `info@carryon.us` IS A LIVE BENEFACTOR ACCOUNT — NOT AN ADMIN
+>
+> **`info@carryon.us` (password `Demo1234!`) is the user's primary BENEFACTOR account named "Pete Mitchell".** It is the canonical user-facing test account on both production AND on the preview pod. It is **NOT** an admin/founder account on either environment.
+>
+> The ONLY admin/founder account is `founder@carryon.us` (password `CarryOntheWisdom!`).
+>
+> If any agent / test report / DB seed flags `info@carryon.us` as `role=admin` on the preview pod, **that is a stale data bug — fix it in the preview DB immediately**:
+>
+> ```python
+> from motor.motor_asyncio import AsyncIOMotorClient
+> import os; from dotenv import load_dotenv
+> load_dotenv('/app/backend/.env')
+> client = AsyncIOMotorClient(os.environ['MONGO_URL'])
+> db = client[os.environ['DB_NAME']]
+> await db.users.update_one(
+>     {'email': 'info@carryon.us'},
+>     {'$set': {'role': 'benefactor', 'first_name': 'Pete', 'last_name': 'Mitchell'}}
+> )
+> ```
+>
+> Stated explicitly by the user (Feb 12, 2026, after THREE separate sessions told them the account was admin): "**INFO@CARRYON.US IS A LIVE BENEFACTOR ACCOUNT!!!!!!!! CHANGE THIS IN WHATEVER KEEPS TELLING YOU OTHERWISE.**"
+
 > ## 🔴 AGENT PROTOCOL — READ FIRST, EVERY FORK
 >
 > **Before doing ANYTHING, read `/app/memory/AGENT_RULES.md`.**
