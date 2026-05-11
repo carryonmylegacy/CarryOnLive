@@ -162,10 +162,25 @@ export default function EntitiesPrintPage() {
     const positionOf = (key) => overrides[key] || initial.positions[key] || { x: 0, y: 0 };
 
     // Tile rects (real nodes + legend pseudo-tile so edges avoid it
-    // and the bbox includes it).
+    // and the bbox includes it). Mini-mode tiles (set by the
+    // bulk-add cluster) get their dims swapped to MINI_W/MINI_H so
+    // edge routing knows the smaller bounding box and the
+    // print SVG bbox doesn't include space the mini tile doesn't
+    // actually occupy.
+    const MINI_W_PRINT = 56;
+    const MINI_H_PRINT = 70;
     const tileRects = graph.nodes.map((n) => {
       const p = positionOf(n.key);
-      return { key: n.key, x: p.x, y: p.y, w: n.w, h: n.h, node: n };
+      const isMini = !!p?.mini && n.kind !== 'entity';
+      return {
+        key: n.key,
+        x: p.x,
+        y: p.y,
+        w: isMini ? MINI_W_PRINT : n.w,
+        h: isMini ? MINI_H_PRINT : n.h,
+        node: n,
+        mini: isMini,
+      };
     });
 
     // Compute the legend's REAL height the same way renderLegend()
@@ -199,10 +214,51 @@ export default function EntitiesPrintPage() {
     // bbox'ing tiles alone leaves edges (and their %-pills) clipped
     // in the printed PDF.
     const rectByKey = Object.fromEntries(tileRects.map((r) => [r.key, r]));
+
+    // Mirror the live chart's "trunk Y per mini-cluster target"
+    // pre-pass so the printed PDF gets the same clean manifold
+    // routing (all lines go UP from each avatar to a shared trunk
+    // above the top row, then over to the entity) instead of
+    // routeEdge's spaghetti through a tight cluster.
+    const miniTrunkYByEntity = (() => {
+      const groups = new Map();
+      graph.edges.forEach((edge) => {
+        const sR = rectByKey[edge.sourceKey];
+        const tR = rectByKey[edge.targetKey];
+        if (!sR || !tR) return;
+        if (!sR.mini) return;
+        if (edge.role !== 'beneficiary') return;
+        if (!groups.has(edge.targetKey)) groups.set(edge.targetKey, []);
+        groups.get(edge.targetKey).push(sR);
+        void tR;
+      });
+      const out = {};
+      groups.forEach((srcRects, entityKey) => {
+        if (srcRects.length < 2) return;
+        const topRowY = Math.min(...srcRects.map((r) => r.y));
+        out[entityKey] = topRowY - 14;
+      });
+      return out;
+    })();
+
     const routedEdges = graph.edges.map((edge) => {
       const sR = rectByKey[edge.sourceKey];
       const tR = rectByKey[edge.targetKey];
       if (!sR || !tR) return null;
+      const trunkY = miniTrunkYByEntity[edge.targetKey];
+      if (trunkY != null && sR.mini && edge.role === 'beneficiary') {
+        const srcCenterX = sR.x + sR.w / 2;
+        const tgtCenterX = tR.x + tR.w / 2;
+        const tgtBottomY = tR.y + tR.h;
+        const points = [
+          { x: srcCenterX, y: sR.y },
+          { x: srcCenterX, y: trunkY },
+          { x: tgtCenterX, y: trunkY },
+          { x: tgtCenterX, y: tgtBottomY },
+        ];
+        const midPoint = { x: (srcCenterX + tgtCenterX) / 2, y: trunkY };
+        return { edge, points, midPoint };
+      }
       const obstacles = tileRects.filter((r) => r.key !== sR.key && r.key !== tR.key);
       const { points, midPoint } = routeEdge(sR, tR, obstacles, edge.id);
       return { edge, points, midPoint };
@@ -436,8 +492,53 @@ export default function EntitiesPrintPage() {
             )}
           </>
         )}
-        {/* Person tile: avatar circle (with photo if present) + name + sub + role chips */}
-        {!isEntity && (
+        {/* Person tile: avatar circle (with photo if present) + name + sub + role chips.
+            Mini-mode tiles render compact: 36px avatar + first-name only,
+            matching the live chart's mini cluster look. */}
+        {!isEntity && rect.mini && (
+          <>
+            <defs>
+              <clipPath id={clipId}>
+                <circle cx={rect.w / 2} cy={20} r={16} />
+              </clipPath>
+            </defs>
+            <circle cx={rect.w / 2} cy={20} r={17} fill={avatarBg} stroke={avatarColor} strokeWidth={1.5} />
+            {photoUrl ? (
+              <image
+                href={photoUrl}
+                xlinkHref={photoUrl}
+                x={rect.w / 2 - 16}
+                y={4}
+                width={32}
+                height={32}
+                preserveAspectRatio="xMidYMid slice"
+                clipPath={`url(#${clipId})`}
+              />
+            ) : (
+              <text
+                x={rect.w / 2}
+                y={24}
+                textAnchor="middle"
+                fontSize={11}
+                fontWeight="700"
+                fill="#92400E"
+              >
+                {((n.label?.[0] || '') + (n.sublabel?.[0] || '')).toUpperCase().slice(0, 2)}
+              </text>
+            )}
+            <text
+              x={rect.w / 2}
+              y={50}
+              textAnchor="middle"
+              fontSize={9}
+              fontWeight="700"
+              fill="#0F172A"
+            >
+              {truncate((titleText || '').split(' ')[0], 10)}
+            </text>
+          </>
+        )}
+        {!isEntity && !rect.mini && (
           <>
             <defs>
               <clipPath id={clipId}>
