@@ -1,6 +1,28 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — Permanent Pitch-Day Smoke Script + Backlog Triage
+
+**Tooling** — Committed `/app/scripts/pitch_smoke.sh` as a permanent pre-pitch confidence check. Hits 8 critical conversion endpoints (login, register, plans, checkout, forgot/reset password, estates list, financial portal aggregate) and exits non-zero if any returns an unexpected status. Auto-reads `API_URL` from `/app/frontend/.env` if not set, defaults to the preview-pod benefactor account, supports `API_URL=https://app.carryon.us bash scripts/pitch_smoke.sh` for production. ~3 second total runtime.
+
+Note: a naive version had the login fixture re-issuing a second login mid-flight, which the single-session guard rejected (subsequent auth calls 401'd). Fixed by using the pre-flight login as the login check itself — no double-issuance.
+
+**Verified**: `bash scripts/pitch_smoke.sh` → 8/8 PASS, exit 0.
+
+**Backlog triage** (per user request):
+- ❌ **Deleted** the Posthumous social-auto-post feature (X + LinkedIn / "Final Word" / "Last Post") from the roadmap entirely. User no longer wants it.
+- ✅ **Closed** the `estate["user_id"]` backend sweep. Searched all of `backend/routes/` — zero remaining occurrences. The only mention is a docstring in `tests/test_dts_quote_estate_no_user_id.py` describing the already-fixed bug. Other `estate["..."]` accesses (e.g., `estate["owner_id"]`, `estate["id"]`, `estate["name"]`) reference fields that exist on the estate model and don't need defensive `.get()` rewrites.
+- ⏸️ **Deferred** the 526-occurrence `--gold-rgb` color sweep — NOT safe pre-pitch. Legacy `rgba(212, 175, 55, X)` (#D4AF37) differs from the new variable's dark value `212, 165, 55` (G-channel mismatch) and from the light-theme value `184, 134, 11` (#B8860B — entirely different shade). A mechanical replace would subtly shift dark mode and dramatically re-color light mode. Recommend post-pitch with theme-by-theme visual QA.
+
+**Files touched**:
+- `/app/scripts/pitch_smoke.sh` (new, executable)
+
+**Housekeeping**: 0 WARN, 0 FAIL.
+
+---
+
+
+
 ## Feb 13, 2026 — Pre-Pitch Stability Sweep: False-Positive 404s Cleared, Analytics Digest Test Fixture Repaired
 
 **Verification + bug fix** — Final reliability pass before Wednesday's B2B pitch (12 prospect consultations).
