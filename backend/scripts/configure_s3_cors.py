@@ -44,10 +44,11 @@ CORS_RULE = {
     "CORSRules": [
         {
             "AllowedHeaders": ["*"],
-            "AllowedMethods": ["GET"],
+            "AllowedMethods": ["GET", "HEAD"],
             "AllowedOrigins": [
                 "https://carryon.us",
                 "https://www.carryon.us",
+                "https://app.carryon.us",
                 "https://polish-pitch.preview.emergentagent.com",
                 "capacitor://localhost",
                 "ionic://localhost",
