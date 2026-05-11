@@ -29,6 +29,7 @@ export default function PdfPreviewPage() {
   const navigate = useNavigate();
   const { key } = useParams();
   const canvasContainerRef = useRef(null);
+  const wrapRef = useRef(null);
   const printIframeRef = useRef(null);
   const [printing, setPrinting] = useState(false);
   const [renderState, setRenderState] = useState('loading'); // 'loading' | 'ready' | 'error'
@@ -42,6 +43,62 @@ export default function PdfPreviewPage() {
   useEffect(() => {
     if (!entry) return;
     let cancelled = false;
+    let pdfHandle = null;
+    let renderToken = 0;
+
+    const renderAtCurrentSize = async (pdf) => {
+      const myToken = ++renderToken;
+      const container = canvasContainerRef.current;
+      const wrap = wrapRef.current;
+      if (!container || !wrap) return;
+
+      // Available viewport for ONE page: subtract small breathing-room
+      // padding on both axes so the page never crowds the edges of the
+      // scrollable area. We scale each page to fit BOTH width AND height
+      // of the visible area so the user never needs to horizontally scroll
+      // and sees the full page on every device (phone portrait, iPad
+      // landscape, desktop, PWA standalone — all fit).
+      const breath = 24; // ~12px margin on each side
+      const availW = Math.max(120, (wrap.clientWidth || 320) - breath);
+      const availH = Math.max(120, (wrap.clientHeight || 480) - breath);
+      const dpr = window.devicePixelRatio || 1;
+
+      // Pre-flight: collect viewports so we can render quickly without
+      // re-fetching pages on resize.
+      container.replaceChildren();
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        if (cancelled || myToken !== renderToken) return;
+        const page = await pdf.getPage(i);
+        if (cancelled || myToken !== renderToken) return;
+        const base = page.getViewport({ scale: 1 });
+        // FIT-TO-PAGE: pick the smaller of fit-to-width / fit-to-height
+        // so the whole page is visible without any horizontal scroll.
+        const fitW = availW / base.width;
+        const fitH = availH / base.height;
+        const cssScale = Math.min(fitW, fitH);
+        const renderScale = cssScale * dpr;
+        const viewport = page.getViewport({ scale: renderScale });
+
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
+        canvas.style.width = `${Math.floor(base.width * cssScale)}px`;
+        canvas.style.height = `${Math.floor(base.height * cssScale)}px`;
+        canvas.style.display = 'block';
+        canvas.style.margin = '0 auto 16px';
+        canvas.style.background = '#ffffff';
+        canvas.style.boxShadow = '0 1px 6px rgba(0,0,0,0.18)';
+        canvas.dataset.pageIndex = String(i);
+        canvas.setAttribute('data-testid', `pdf-preview-page-${i}`);
+        container.appendChild(canvas);
+
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        if (cancelled || myToken !== renderToken) return;
+      }
+    };
+
     (async () => {
       try {
         const pdfjs = await import('pdfjs-dist');
@@ -53,41 +110,9 @@ export default function PdfPreviewPage() {
         const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
         if (cancelled) return;
+        pdfHandle = pdf;
         setPageCount(pdf.numPages);
-
-        const container = canvasContainerRef.current;
-        if (!container) return;
-        // Clear any prior render (Strict Mode double-mount, fast navigation).
-        container.replaceChildren();
-
-        const dpr = window.devicePixelRatio || 1;
-        const targetCssWidth = Math.min((container.clientWidth || 800) - 16, 920);
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          if (cancelled) return;
-          const base = page.getViewport({ scale: 1 });
-          const cssScale = targetCssWidth / base.width;
-          const renderScale = cssScale * dpr;
-          const viewport = page.getViewport({ scale: renderScale });
-
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.floor(viewport.width);
-          canvas.height = Math.floor(viewport.height);
-          canvas.style.width = `${Math.floor(base.width * cssScale)}px`;
-          canvas.style.height = `${Math.floor(base.height * cssScale)}px`;
-          canvas.style.display = 'block';
-          canvas.style.margin = i === 1 ? '0 auto 16px' : '0 auto 16px';
-          canvas.style.background = '#ffffff';
-          canvas.style.boxShadow = '0 1px 6px rgba(0,0,0,0.18)';
-          canvas.dataset.pageIndex = String(i);
-          canvas.setAttribute('data-testid', `pdf-preview-page-${i}`);
-          container.appendChild(canvas);
-
-          const ctx = canvas.getContext('2d');
-          await page.render({ canvasContext: ctx, viewport }).promise;
-          if (cancelled) return;
-        }
+        await renderAtCurrentSize(pdf);
         if (!cancelled) setRenderState('ready');
       } catch (err) {
         if (!cancelled) {
@@ -96,7 +121,32 @@ export default function PdfPreviewPage() {
         }
       }
     })();
-    return () => { cancelled = true; };
+
+    // Re-render on viewport changes (orientation flip, window resize,
+    // browser chrome show/hide, split-screen toggle on iPad). Debounced
+    // to avoid thrashing during a drag-to-resize on desktop.
+    let debounceTimer = null;
+    const resizeHandler = () => {
+      if (!pdfHandle) return;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        renderAtCurrentSize(pdfHandle).catch(() => {});
+      }, 120);
+    };
+    window.addEventListener('resize', resizeHandler);
+    window.addEventListener('orientationchange', resizeHandler);
+    let resizeObserver = null;
+    if (typeof ResizeObserver !== 'undefined' && wrapRef.current) {
+      resizeObserver = new ResizeObserver(resizeHandler);
+      resizeObserver.observe(wrapRef.current);
+    }
+    return () => {
+      cancelled = true;
+      clearTimeout(debounceTimer);
+      window.removeEventListener('resize', resizeHandler);
+      window.removeEventListener('orientationchange', resizeHandler);
+      if (resizeObserver) resizeObserver.disconnect();
+    };
   }, [entry]);
 
   if (!entry) {
@@ -323,7 +373,7 @@ export default function PdfPreviewPage() {
         ) : null}
       </div>
 
-      <div className="pdf-preview-canvas-wrap" data-testid="pdf-preview-canvas-wrap">
+      <div className="pdf-preview-canvas-wrap" data-testid="pdf-preview-canvas-wrap" ref={wrapRef}>
         {renderState === 'loading' && (
           <div className="pdf-preview-loading" data-testid="pdf-preview-loading">
             <Loader2 size={28} className="spin" />

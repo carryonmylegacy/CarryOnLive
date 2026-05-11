@@ -1,6 +1,33 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — PDF Preview Fit-to-Page (No More "Zoomed In" Feel)
+
+**Bug** — User reported every PDF preview "appears a little bit zoomed in, and I have to scroll around in order to see the full page."
+
+**Root cause** — Previous render fit each page only to the container WIDTH (`targetCssWidth = Math.min(container.clientWidth - 16, 920)`). On letter-format PDFs, height was always larger than the visible viewport on most devices (iPad landscape, desktop with toolbar, phone in portrait), so the user landed seeing only the top portion of page 1 — perceived as "zoomed in".
+
+**Fix** — Switched from fit-to-width to true fit-to-page: per-page render scale is now `Math.min(availW / pageW, availH / pageH)`, where `availW` and `availH` are the actual visible dimensions of the `.pdf-preview-canvas-wrap` element. Each page now fits ENTIRELY within the visible area on every device + orientation. Users scroll VERTICALLY between pages (one page per screen) — never horizontally — exactly like the standard PDF reader experience.
+
+**Bonus** — Added live re-render on viewport changes:
+- `window.addEventListener('resize')` — desktop window drag, browser chrome show/hide
+- `window.addEventListener('orientationchange')` — iPad rotate
+- `ResizeObserver` on the wrap — split-screen toggle, soft-keyboard show/hide, sidebar collapse
+
+All re-renders are debounced 120ms to avoid thrashing during a drag. Each render call carries a monotonic `renderToken`; stale renders cancel themselves so a rapid-rotate sequence doesn't produce out-of-order pages.
+
+**Cache bust**: `SHELL_VERSION` → `v43-2026-02-13-pdf-preview-fit-to-page`.
+
+**Verified**: ESLint clean, frontend compiles, housekeeping 0 WARN / 0 FAIL, all 3 smoke checks 8/8 green.
+
+**Files touched**:
+- `frontend/src/pages/print/PdfPreviewPage.js` — fit-to-page math + resize re-render
+- `frontend/public/sw-push.js` — SHELL_VERSION bump
+
+---
+
+
+
 ## Feb 13, 2026 — PDF Preview Multi-Page Rendering (PDF.js)
 
 **Bug** — User reported the new universal PDF Preview page only showed page 1, but the OS print-preview (after tapping Print) showed all pages. Verified: Plan of Action is **2 pages**, CFP Hand-off is **2 pages** (likely more for richer accounts).
