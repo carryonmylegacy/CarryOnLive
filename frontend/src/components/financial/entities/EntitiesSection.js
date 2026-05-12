@@ -7,6 +7,7 @@
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2, Lock, Unlock, Frame, Crosshair, Map, Printer } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -174,6 +175,65 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   // returned yet so the chart always has SOMETHING to render.
   const effectiveUser = freshUser || user;
 
+  // Per-tile delete dispatcher fired by EntityOrgChart's Remove modal.
+  // Defined here (before any early returns) so React's hook ordering
+  // stays stable on the loading-skeleton vs full-render paths. The
+  // chart's modal has already confirmed user intent — this just hits
+  // the right backend endpoint based on node kind and refetches.
+  // Returns a Promise so the modal can show a "Deleting…" state and
+  // close itself on success / leave open on error.
+  const handleDeleteNode = useCallback(async (node) => {
+    if (!node) return;
+    const headers = getAuthHeaders();
+    try {
+      if (node.kind === 'entity') {
+        await axios.delete(`${API_URL}/financial/entities/${node.id}`, headers);
+        toast.success(`Deleted "${node.entity?.name || 'entity'}".`);
+      } else if (node.kind === 'cluster') {
+        // Cluster represents N beneficiary→entity relationships for
+        // a single entity. Delete every matching relationship in
+        // parallel; the underlying beneficiary records stay intact.
+        const entityId = node.id;
+        const rels = (relationships || []).filter((r) =>
+          r.source_type === 'beneficiary'
+          && r.target_type === 'entity'
+          && r.target_id === entityId
+          && r.role === 'beneficiary'
+        );
+        await Promise.all(rels.map((r) => axios.delete(
+          `${API_URL}/financial/entity-relationships/${r.id}`,
+          headers,
+        )));
+        toast.success(`Unlinked ${rels.length} beneficiar${rels.length === 1 ? 'y' : 'ies'} from this entity.`);
+      } else if (node.kind === 'beneficiary') {
+        await axios.delete(`${API_URL}/beneficiaries/${node.id}`, headers);
+        toast.success(`Deleted "${node.label || 'beneficiary'}".`);
+      } else if (node.kind === 'external_person') {
+        await axios.delete(`${API_URL}/financial/external-people/${node.id}`, headers);
+        toast.success(`Deleted "${node.label || 'person'}".`);
+      } else {
+        // node.kind === 'user' shouldn't reach here — the modal hides
+        // the Delete button for the benefactor — but bail loudly so a
+        // future regression is obvious.
+        toast.error("This tile can't be deleted (it's your own benefactor record).");
+        return;
+      }
+      // Refresh local state + bubble up so sibling cards (CFP totals,
+      // beneficiary count chip, etc.) re-read.
+      await fetchAll();
+      onEntitiesChanged?.();
+    } catch (err) {
+      const detail = err?.response?.data?.detail;
+      let msg = 'Delete failed';
+      if (typeof detail === 'string') msg = detail;
+      else if (Array.isArray(detail)) msg = detail.map((d) => d?.msg || JSON.stringify(d)).join('; ');
+      else if (err?.message) msg = err.message;
+      toast.error(msg);
+      throw err; // keep the chart's modal open for retry
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getAuthHeaders, relationships, onEntitiesChanged]);
+
   if (!estateId) return null;
   if (!loaded) {
     // Render a same-shape skeleton placeholder while `fetchAll` is
@@ -294,6 +354,9 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
     setEditStartInEdit(true);
     setEditingNode(node);
   };
+
+  // (handleDeleteNode is defined ABOVE the early returns to keep hook
+  //  ordering stable on every render — see line ~170.)
 
   if (isEmpty) {
     return (
@@ -513,6 +576,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
             onDoubleClickNode={handleDoubleClick}
             onInfoClickNode={handleInfoClick}
             onEditClickNode={handleEditClick}
+            onDeleteNode={handleDeleteNode}
             cleanUpSignal={cleanUpSignal}
             locked={locked}
             fitOnLoad={fitOnLoad}

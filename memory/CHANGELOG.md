@@ -1,6 +1,42 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — Per-Tile Delete in E&S (Real DB delete + Benefactor-safe)
+
+### Need
+User asked: "I need the ability to delete each tile and individual (non bulk) from the E&S. For example, I'm unable to delete the benefactor that is the user." The previous × button only hid tiles from the chart — it didn't actually delete the underlying record.
+
+### Change
+- The × button on every tile now opens a **PWA-safe React-portal confirm modal** (no `window.confirm` — silently blocked on iOS standalone).
+- Modal offers TWO actions:
+  - **Hide from chart only** — adds the node key to `hiddenKeys` (reversible via the "N hidden · Show all" pill).
+  - **Delete permanently** — fires `onDeleteNode(node)` upstream which hits the correct backend endpoint and refetches.
+- The benefactor / user tile gets ONLY the "Hide from chart" option (you can't delete yourself from your own estate). Help text in the modal explains why.
+
+### Backend endpoints wired in `EntitiesSection.handleDeleteNode`
+| Node kind | Endpoint | Effect |
+|---|---|---|
+| `entity` | `DELETE /api/financial/entities/{id}` | Removes entity + cascade-deletes its relationships |
+| `cluster` | Parallel `DELETE /api/financial/entity-relationships/{rel_id}` for every ben→entity rel | Empties the cluster without deleting beneficiary records |
+| `beneficiary` | `DELETE /api/beneficiaries/{id}` | Permanently removes beneficiary (all trusts) |
+| `external_person` | `DELETE /api/financial/external-people/{id}` | Permanently removes external person |
+| `user` | — (Hide-only path; modal hides the Delete button) | Visual hide only |
+
+### Architecture
+- `EntityOrgChart.js`: new `onDeleteNode` prop, new `confirmRemoveNode` / `removeBusy` state, new portal-rendered modal at end of JSX. The × → `openRemoveModal(node)` swap means clicking × never accidentally deletes — every delete has confirm-state.
+- `EntitiesSection.js`: imports `sonner.toast`, `useCallback`-wrapped `handleDeleteNode` declared **before** the `if (!estateId) return null` and `if (!loaded) return skeleton` early-returns (React-Hooks rules-of-hooks). Toast wording is dynamic per kind ("Deleted Trust X", "Unlinked 3 beneficiaries…", etc.). Errors keep the modal open so the user can retry.
+
+### Verified
+Live e2e on preview pod (`info@carryon.us` / Admin Estate). Seeded 1 entity + 2 beneficiaries + 2 rels →
+- × on user tile → modal opens, **Delete button absent**, only Hide ✅
+- × on entity tile → modal opens, **Delete button present** → click → entity gone (count 1→0), cluster auto-gone (1→0) ✅
+- Toast surfaced "Deleted Delete Test Trust." ✅
+- Test data cleaned up post-run.
+
+`bash /app/housekeeping.sh` → 0 WARN + 0 FAIL.
+
+
+
 ## Feb 14, 2026 — E&S Cluster Box Rewrite (Bulk-Beneficiary Cleanup + Node Hide)
 
 ### Replaced the per-instance mini approach with a single composite cluster tile
