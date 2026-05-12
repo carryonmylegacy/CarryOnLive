@@ -1,6 +1,26 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — SDV Thumbnails Fix (pdf.js Worker Version Mismatch)
+
+### Secure Document Vault Thumbnails Showing Only Gray Icon Placeholders
+**Bug** — Every PDF document in the SDV rendered as a gray placeholder with a small `<FileText>` icon instead of the expected first-page preview. User reported "All my thumbnails in the SDV are messed up."
+
+**Root cause** — Console showed `UnknownErrorException: The API version "5.4.296" does not match the Worker version "5.7.284"`. We have **two** consumers of pdf.js in the codebase:
+- `DocThumbnail.js` + `PDFViewerModal.js` import from `react-pdf` (10.4.1), which bundles its own pinned `pdfjs-dist@5.4.296` under `node_modules/react-pdf/node_modules/pdfjs-dist/`.
+- `PdfPreviewModal.js` imports `pdfjs-dist` directly (5.7.284, the top-level dependency).
+
+All three were pointing `pdfjs.GlobalWorkerOptions.workerSrc` at the same `/pdf.worker.min.mjs`, which we copied from the **top-level** `pdfjs-dist@5.7.284`. pdf.js refuses to render whenever its API and Worker versions diverge, so every react-pdf consumer (i.e. every SDV thumbnail and every legacy PDFViewerModal preview) fell into the error state silently.
+
+**Fix** —
+1. Copied react-pdf's bundled worker to `frontend/public/pdf.worker.react-pdf.min.mjs` (the 5.4.296 version).
+2. `DocThumbnail.js` and `PDFViewerModal.js` now point `pdfjs.GlobalWorkerOptions.workerSrc` at `/pdf.worker.react-pdf.min.mjs`. `PdfPreviewModal.js` keeps using `/pdf.worker.min.mjs` (the 5.7.284 worker) because it imports the top-level `pdfjs-dist` directly — versions match.
+3. `package.json` `build` script now copies both worker files on every build, keeping them in sync with whichever `pdfjs-dist` versions are currently resolved in `node_modules/`. This permanently prevents the regression on the next dependency upgrade.
+
+**Verification** — Uploaded a valid PDF to a Pete-owned test estate; the SDV thumbnail rendered the actual first-page PDF content with a 200×258 canvas. Console showed zero `version does not match` errors. 8/8 pitch smoke checks still pass. ESLint clean on both touched files.
+
+
+
 ## Feb 13, 2026 — EGA Top-Inset (iPad Landscape) + Global PDF Generation Chip
 
 ### A) EGA Chat Header Touching iOS Status Bar (iPad Landscape PWA)

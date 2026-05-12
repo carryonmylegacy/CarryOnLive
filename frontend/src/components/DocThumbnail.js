@@ -5,7 +5,15 @@ import axios from 'axios';
 import { getCachedBlob, setCachedBlob } from '../utils/blobCache';
 import { API_URL } from '../config';
 
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+// react-pdf bundles its own pinned `pdfjs-dist` (currently 5.4.296). The
+// standalone `pdfjs-dist` we install directly is on a newer version
+// (5.7.284), and its worker is incompatible with the API loaded by
+// react-pdf — pdf.js refuses to render PDFs whenever the API and Worker
+// versions diverge, which silently broke every PDF thumbnail in the SDV.
+// We ship react-pdf's bundled worker as a separate file and point this
+// consumer at it; the standalone `pdfjs-dist` consumers (PdfPreviewModal)
+// continue to use the matching `/pdf.worker.min.mjs`.
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.react-pdf.min.mjs';
 
 const DocThumbnail = ({ doc }) => {
   const [blobUrl, setBlobUrl] = useState(null);

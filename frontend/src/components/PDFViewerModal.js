@@ -7,7 +7,11 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/button';
 
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+// See DocThumbnail.js for the rationale — react-pdf bundles
+// pdfjs-dist 5.4.x while our standalone pdfjs-dist is 5.7.x; their
+// workers are not interchangeable. Both PDFViewerModal and DocThumbnail
+// use react-pdf, so they share the same versioned worker file.
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.react-pdf.min.mjs';
 
 const PDFViewerModal = ({ open, onClose, doc, blobUrl, loading, onDownload }) => {
   const [numPages, setNumPages] = useState(null);
