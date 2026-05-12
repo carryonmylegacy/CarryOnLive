@@ -1,6 +1,26 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — Tappable Block-Reusability Badge (pulse-highlight attached entities)
+
+### Need (user said "yes" to suggested enhancement)
+Make the `× N` badge on each named-block tile **tappable** — one tap pulses every entity the block is attached to (using the existing 2.2s gold-ring pulse animation), so during a live pitch the demo audience can literally see one named group wired into many trusts/LLCs without any narrative overhead.
+
+### Change
+- `EntityOrgChart.js` `buildGraph`: each block node now carries `attachedEntityKeys: string[]` (e.g. `["entity:<id1>", "entity:<id2>"]`) alongside `attachedEntityCount`. Computed in the same single sweep over the relationships list, no extra cost.
+- `EntityOrgChart.js` main chart: added `pulseMultipleKeys(keys)` helper that mirrors the existing single-key effect — it (a) computes the bounding-box centroid of all targets and smooth-scrolls to it so the audience's eye lands on the cluster, and (b) adds every key to `pulseKeys` for 2.2s so the `ec-pulse-ring` keyframe fires on each entity tile. Cleanly tears down even if the user navigates away mid-pulse.
+- `EntityOrgChart.js` `ClusterTile`: badge upgraded from `<span>` to `<button>`. Click handler calls `onBadgeClick?.()` (which the chart routes to `pulseMultipleKeys(n.attachedEntityKeys)`). Click + pointerdown both `stopPropagation()` so the badge doesn't open the entity detail panel or start a drag. `pointer-events: auto` overrides the header's `pointer-events: none`. Hover micro-interaction (`hover:brightness-125`) signals it's tappable. ARIA + tooltip both explicit.
+
+### Verified
+- `bash /app/housekeeping.sh` → **0 FAIL, 0 WARN**.
+- ESLint on the edited file → **0 errors**.
+- 11px font on the badge → passes the iOS accessibility floor (housekeeping check #50).
+
+### Note
+The print PDF badge stays static (it's a printed artefact — no tap surface). On-canvas only.
+
+
+
 ## Feb 14, 2026 — Block Reusability Badge (× N entities)
 
 ### Need (user said "yes" to the suggested pitch-relevant add)
