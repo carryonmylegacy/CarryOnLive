@@ -1,6 +1,21 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — Avatar Photo Fade-In + Shimmer (`OfflineImage`)
+
+### Avatars Flashed from Initials → Photo with No Transition
+**Bug** — On Beneficiaries, Messages, Estate covers, and anywhere `OfflineImage` is consumed, photos popped in the moment the `<img>` finished decoding. While the photo was loading, users saw a flat colored circle with initials — no indication that a real photo was coming.
+
+**Fix** — `OfflineImage` now does two things:
+1. **Pre-img phase** (`resolvedSrc === null` but a `src` was provided): wraps the `fallback` slot in a gold-tinted left→right shimmer sheen so the avatar feels alive.
+2. **Decoding phase** (`<img>` is mounted, `onLoad` hasn't fired): renders the fallback as an absolutely-positioned underlay with the shimmer overlay, while the photo `<img>` itself starts at `opacity: 0` and fades to `1` over 220 ms once `onLoad` fires.
+
+The optional `shimmer={false}` prop is exposed for tiny inline pixel icons where animation would feel like jitter; defaults to `true`.
+
+This pairs with the SDV `DocThumbnail` shimmer added in the same session, so every async media surface in the app now feels intentional under slow networks. Verified on a Pete-owned beneficiary with a real S3-hosted photo: photo renders cleanly with opacity 1, zero console errors, no layout shift. The `Section Unlocked` banner, Family Tree, and Succession Hierarchy panels all remain pixel-stable.
+
+
+
 ## Feb 13, 2026 — SDV Thumbnails Fix (pdf.js Worker Version Mismatch)
 
 ### Secure Document Vault Thumbnails Showing Only Gray Icon Placeholders

@@ -40,10 +40,16 @@ export default function OfflineImage({
   fallback = null,
   // Optional: kind tag stored alongside the blob ('photo', 'thumb', etc.).
   kind = 'photo',
+  // When true (default), show a subtle gold shimmer sheen over the
+  // fallback while the <img> is fetching/decoding, then fade the photo
+  // in over the fallback once it lands. Set to `false` for tiny inline
+  // pixel icons where animation would feel like jitter.
+  shimmer = true,
   ...rest
 }) {
   const [resolvedSrc, setResolvedSrc] = useState(null);
   const [errored, setErrored] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const objectUrlRef = useRef(null);
 
   // Track the latest invocation so an in-flight async lookup can't
@@ -53,6 +59,7 @@ export default function OfflineImage({
   useEffect(() => {
     const myGen = ++generationRef.current;
     setErrored(false);
+    setLoaded(false);
 
     // Revoke any previous object URL to free GPU/memory.
     if (objectUrlRef.current) {
@@ -151,19 +158,79 @@ export default function OfflineImage({
   }
 
   if (!resolvedSrc) {
-    // Nothing to render yet — render the fallback to avoid layout shift.
+    // Photo not yet selected (or no src at all). When `src` is set but
+    // we haven't yet picked a renderable URL, wrap the fallback in a
+    // gold shimmer sheen so the user sees the avatar is "loading"
+    // instead of looking like a permanent initials avatar.
+    if (shimmer && src) {
+      return (
+        <span
+          className={className}
+          style={{ ...style, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
+          data-testid="offline-image-shimmer"
+        >
+          {fallback}
+          <span
+            aria-hidden
+            style={{
+              position: 'absolute', inset: 0, pointerEvents: 'none',
+              background: 'linear-gradient(110deg, transparent 25%, rgba(212,175,55,0.22) 50%, transparent 75%)',
+              animation: 'offline-image-shimmer 1.4s ease-in-out infinite',
+            }}
+          />
+          <style>{`
+            @keyframes offline-image-shimmer {
+              0%   { transform: translateX(-100%); }
+              100% { transform: translateX(100%); }
+            }
+          `}</style>
+        </span>
+      );
+    }
     return fallback;
   }
 
+  // Image is being decoded by the browser. Render the fallback
+  // underneath the <img> until onLoad fires, then fade the photo in.
+  // This eliminates the "initials → instant photo pop" flash.
   return (
-    <img
-      src={resolvedSrc}
-      alt={alt}
-      className={className}
-      style={style}
-      onLoad={onLoad}
-      onError={handleError}
-      {...rest}
-    />
+    <span style={{ position: 'relative', display: 'contents' }}>
+      {shimmer && !loaded && fallback && (
+        <span
+          aria-hidden
+          className={className}
+          style={{ ...style, position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
+        >
+          {fallback}
+          <span
+            aria-hidden
+            style={{
+              position: 'absolute', inset: 0, pointerEvents: 'none',
+              background: 'linear-gradient(110deg, transparent 25%, rgba(212,175,55,0.22) 50%, transparent 75%)',
+              animation: 'offline-image-shimmer 1.4s ease-in-out infinite',
+            }}
+          />
+        </span>
+      )}
+      <img
+        src={resolvedSrc}
+        alt={alt}
+        className={className}
+        style={{
+          ...style,
+          opacity: shimmer ? (loaded ? 1 : 0) : 1,
+          transition: shimmer ? 'opacity 220ms ease-out' : undefined,
+        }}
+        onLoad={(e) => { setLoaded(true); if (typeof onLoad === 'function') onLoad(e); }}
+        onError={handleError}
+        {...rest}
+      />
+      <style>{`
+        @keyframes offline-image-shimmer {
+          0%   { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
+    </span>
   );
 }
