@@ -1550,30 +1550,28 @@ export default function EntityOrgChart({
     const cur = positionOf(node.key);
 
     // Determine the "group" that should translate together with the
-    // primary dragged tile. Two cases:
+    // primary dragged tile. ONE case now:
     //
-    //   (a) The dragged tile is part of an active marquee selection.
-    //       Move the entire selection together.
-    //   (b) The dragged tile is an entity that has a beneficiary
-    //       cluster (`cluster:<eid>`). The cluster follows the parent
-    //       entity so the visual relationship stays intact.
+    //   • The dragged tile is part of an active marquee selection.
+    //     Move every selected tile together as a rigid body.
     //
-    // We capture each member's current origX/origY at drag-start so the
-    // pointermove handler can apply a single delta to all of them.
+    // (Earlier we also auto-paired an entity with its cluster so the
+    //  cluster "followed" the parent on drag. That was useful when
+    //  the cluster was rendered as many individual avatars with
+    //  fragile spaghetti edges — moving the parent meant manually
+    //  re-tidying every avatar. Now the cluster is a single
+    //  composite tile and the one connecting edge re-routes itself
+    //  in real time, so the auto-pair just gets in the user's way.
+    //  Per user request, the user moves tiles independently and the
+    //  line adapts as they go.)
+    //
+    // We capture each member's current origX/origY at drag-start so
+    // the pointermove handler can apply a single delta to all of
+    // them.
     let groupKeys = null;
     let groupOrig = null;
     if (selectedKeys.size > 0 && selectedKeys.has(node.key)) {
       groupKeys = Array.from(selectedKeys);
-    } else if (node.kind === 'entity') {
-      const clusterKey = `cluster:${node.id}`;
-      if (nodes.some((n) => n.key === clusterKey)) {
-        groupKeys = [node.key, clusterKey];
-      }
-    } else if (node.kind === 'cluster') {
-      const entityKey = `entity:${node.id}`;
-      if (nodes.some((n) => n.key === entityKey)) {
-        groupKeys = [node.key, entityKey];
-      }
     }
     if (groupKeys && groupKeys.length > 1) {
       groupOrig = {};

@@ -1,6 +1,28 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — Remove Entity↔Cluster Auto-Pair Drag
+
+### Need
+User reported (with a highlighted screenshot): the entity tile and the cluster tile drag together as a rigid pair, fixing the edge length between them. They want every tile to be independently draggable now that the cluster is a single composite tile — the connecting edge already re-routes itself in real time, so the auto-pair only gets in the way.
+
+### Change
+`EntityOrgChart.onPointerDownDrag` previously bound any entity to its `cluster:<eid>` (and vice-versa) into a `groupKeys` array so the pair translated together. That code path was needed when the cluster was rendered as N individual avatars (where edges would otherwise blow up into spaghetti when an entity moved). Now that the cluster is one composite tile and the single connecting edge re-routes itself between any two new positions, the auto-pair is harmful — it traps the user.
+
+Stripped that case from the drag handler. Marquee-selection group drag (long-press → draw rectangle → drag the selection as a rigid body) is unchanged — that's user-initiated grouping and still valuable.
+
+### Verified
+Live e2e on preview pod (`info@carryon.us`, Admin Estate):
+- Seeded entity + cluster with 2 beneficiaries.
+- Drag cluster +200px → `entity_delta=0, cluster_delta=+200` ✅
+- Drag entity −200px → `entity_delta=−200, cluster_delta=0` ✅
+- Connecting edge re-routed itself smoothly in both cases.
+- Test data cleaned up.
+
+`bash /app/housekeeping.sh` → 0 WARN + 0 FAIL.
+
+
+
 ## Feb 14, 2026 — Undoable Delete for E&S Tiles (5-second grace)
 
 ### Need
