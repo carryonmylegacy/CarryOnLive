@@ -17,6 +17,7 @@
  */
 import React, { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useLocation } from 'react-router-dom';
 import { Loader2, FileText, AlertTriangle, X } from 'lucide-react';
 
 const PdfJobChip = () => {
@@ -27,6 +28,13 @@ const PdfJobChip = () => {
   // (which auto-opens the modal). This keeps the chip simple and prevents
   // chip-stacking visual noise.
   const [job, setJob] = useState(null); // { jobId, title, status, entry?, error?, hasBeenViewed? }
+
+  // The job-state tracker runs globally (so a 30s xAI call survives the
+  // user wandering away from /guardian and back), but the chip itself is
+  // only RENDERED on the EGA screen. The user found the "tap to view
+  // again" toast distracting when it followed them onto unrelated pages.
+  const location = useLocation();
+  const isOnEgaScreen = location.pathname === '/guardian' || location.pathname.startsWith('/guardian/');
 
   useEffect(() => {
     const onStart = (e) => {
@@ -88,6 +96,10 @@ const PdfJobChip = () => {
 
   if (typeof document === 'undefined') return null;
   if (!job) return null;
+  // Hide the chip on every screen except the EGA. Job state is preserved
+  // in component state, so when the user returns to /guardian the chip
+  // reappears in its current state (running / ready / error).
+  if (!isOnEgaScreen) return null;
 
   const isRunning = job.status === 'running';
   const isReady = job.status === 'ready';

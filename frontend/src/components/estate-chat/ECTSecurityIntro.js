@@ -11,13 +11,22 @@ import {
 export default function ECTSecurityIntro({ introStep, setIntroStep, onDismiss, onBack }) {
   return (
     <div
-      className="fixed inset-0 z-[60] flex flex-col items-center justify-start lg:justify-center overflow-y-auto pt-[calc(72px+env(safe-area-inset-top,0px))] pb-[calc(140px+env(safe-area-inset-bottom,0px))] lg:!pt-8 lg:!pb-8"
+      className="fixed inset-0 z-[60] flex flex-col items-center justify-start lg:justify-center overflow-y-auto pt-[calc(72px+env(safe-area-inset-top,0px))] pb-[calc(180px+env(safe-area-inset-bottom,0px))] lg:!pt-8 lg:!pb-8"
       style={{
         background: 'rgba(0,0,0,0.82)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         paddingLeft: '14px',
         paddingRight: '14px',
+        // iOS Safari requires explicit overflow + touch-action to allow
+        // momentum scrolling inside a `position: fixed` element. Without
+        // these, the step-2 walkthrough (which is taller than the iPhone
+        // viewport once the bottom-dock + safe-area inset are factored in)
+        // refuses to scroll and the "Got It — Start Chatting" button is
+        // hidden behind the dock.
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'pan-y',
+        overscrollBehavior: 'contain',
       }}
     >
       {/* Tile — fills available width, all 4 corners rounded, generous padding */}

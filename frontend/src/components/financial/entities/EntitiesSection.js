@@ -175,7 +175,80 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   const effectiveUser = freshUser || user;
 
   if (!estateId) return null;
-  if (!loaded) return null;
+  if (!loaded) {
+    // Render a same-shape skeleton placeholder while `fetchAll` is
+    // in flight. The user previously complained that the CFP page would
+    // paint, then ~2-3 s later the E&S section would mount and shove
+    // the Financial Summary tiles downward. We now reserve roughly the
+    // same vertical space up front so there is no jump-down on load.
+    // After load completes:
+    //   • If the estate has no entities, the section unmounts and the
+    //     summary tiles slide up once (single small one-time shift,
+    //     down→up instead of the prior up→down) — far less jarring.
+    //   • If the estate has entities, the skeleton swaps for the real
+    //     tree in-place with effectively no layout shift.
+    return (
+      <div
+        className="mb-6 rounded-2xl overflow-hidden"
+        data-testid="entities-section-skeleton"
+        style={{
+          background: 'var(--bg2, #0F1729)',
+          border: '1px solid var(--b, rgba(255,255,255,0.06))',
+          minHeight: '280px',
+          position: 'relative',
+        }}
+      >
+        <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.10)' }}>
+            <Network className="w-4 h-4" style={{ color: '#d4af37' }} />
+          </div>
+          <div className="flex-1">
+            <div className="text-sm font-bold" style={{ color: 'var(--t)' }}>Entities &amp; Structures</div>
+            <div className="text-[11px]" style={{ color: 'var(--t5)' }}>Loading your structure…</div>
+          </div>
+        </div>
+        <div style={{ position: 'relative', height: '220px', overflow: 'hidden' }}>
+          {/* Faint node skeletons — three "nodes" arranged tree-style so
+              the silhouette matches the real chart and the swap doesn't
+              feel like a content change. */}
+          {[
+            { left: '50%', top: 28, size: 56 },
+            { left: '28%', top: 130, size: 48 },
+            { left: '72%', top: 130, size: 48 },
+          ].map((n, i) => (
+            <div
+              key={i}
+              style={{
+                position: 'absolute',
+                left: n.left,
+                top: n.top,
+                width: n.size,
+                height: n.size,
+                marginLeft: -(n.size / 2),
+                borderRadius: '50%',
+                background: 'rgba(212,175,55,0.06)',
+                border: '1px solid rgba(212,175,55,0.12)',
+              }}
+            />
+          ))}
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute', inset: 0, pointerEvents: 'none',
+              background: 'linear-gradient(110deg, transparent 25%, rgba(212,175,55,0.10) 50%, transparent 75%)',
+              animation: 'entities-section-shimmer 1.6s ease-in-out infinite',
+            }}
+          />
+          <style>{`
+            @keyframes entities-section-shimmer {
+              0%   { transform: translateX(-100%); }
+              100% { transform: translateX(100%); }
+            }
+          `}</style>
+        </div>
+      </div>
+    );
+  }
 
   // Click handlers:
   //   single click on tile body  → documents modal (or quick info for non-entity nodes)

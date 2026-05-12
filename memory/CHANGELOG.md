@@ -1,6 +1,29 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — Pre-Pitch UI Polish Batch (5 fixes)
+
+### 1. ECT Walkthrough Step 2 Won't Scroll on iPhone
+**Bug** — On the "How to Use the Estate Comms Tool" tile (step 2 of the security intro overlay), the bottom "Got It — Start Chatting" button was hidden behind the platform bottom-dock and the modal refused to scroll.
+**Fix** — `ECTSecurityIntro.js`: bumped `pb-[calc(140px+safe-area)]` → `pb-[calc(180px+safe-area)]` and added explicit `WebkitOverflowScrolling: 'touch'`, `touchAction: 'pan-y'`, `overscrollBehavior: 'contain'` on the fixed scroll container. iOS Safari requires these to allow momentum scrolling inside a `position: fixed` element with a backdrop filter — without them, the overlay silently swallows touch-scroll gestures.
+
+### 2. EGA "Plan of Action — tap to view again" Chip Followed User onto Every Screen
+**Bug** — The persistent `PdfJobChip` correctly stayed visible after PDF generation, but it appeared on the Beneficiaries page, ECT, SDV, and every other screen — the user only wanted it on the EGA screen.
+**Fix** — `PdfJobChip.js`: added a `useLocation()` check; the chip's job-state tracker is still global (so a 30s xAI call survives the user wandering away and coming back), but the chip is only **rendered** when `pathname.startsWith('/guardian')`. When the user returns to /guardian, the chip reappears in its current state (running / ready / error). Side benefit: also suppresses the brief "EGA failed to generate" error flash the user saw when clicking rapidly between pages while a generation aborted.
+
+### 3. ECT Channel List & Message Header Avatars Used Bare `<img>` With `onError` DOM-Mutation
+**Bug** — Five bare `<img>` tags in `ECTChannelList.js` (channel direct photo, channel estate photo) and `ECTMessageHeader.js` (active-channel direct photo, active-channel estate photo, member-dropdown photo) used inline `onError` handlers that mutated the DOM (`e.target.parentElement.textContent = initials`). On S3 presigned-URL rotation mid-session this caused a brief broken-image-icon flash before the swap.
+**Fix** — All five tags converted to `<OfflineImage>` with a proper `fallback={<span>{initials}</span>}` and a stable `cacheKey` so the offline IndexedDB blob cache picks them up. The shimmer + initials fallback now activates uniformly on slow networks and during S3 signature rotation.
+
+### 4. CFP Layout Jump — `E&S View` Pane Mounting Late Pushed Summary Tiles Down
+**Bug** — On `/financial`, the page would paint the Financial Summary tiles, then ~2-3 s later the `EntitiesSection` finished its `fetchAll` and mounted, shoving the tiles downward — a jarring "tiles jump down then tree materializes then avatars pop" sequence.
+**Fix** — `EntitiesSection.js`: replaced `if (!loaded) return null` with a same-shape skeleton placeholder (`280px min-height`, header with `Network` icon + "Loading your structure…", three faint node-shaped circles arranged tree-style, gold shimmer sweep). The skeleton reserves the same vertical space as the eventual tree, so the swap is effectively in-place. Empty estates get a single small one-time shift-up (vs. the prior jarring shift-down).
+
+### 5. CFP Avatar Shimmer Already Inherited from `AvatarCircle` → `OfflineImage`
+No new code needed — the entity-chart `PersonTile` uses `AvatarCircle`, which uses `OfflineImage`. The shimmer added earlier this session activates automatically while the offline blob cache is in flight. With the skeleton-placeholder fix (item 4 above), the CFP load sequence is now: page → skeleton (immediate) → tree-with-shimmering-avatars → avatars decode in place. Verified zero layout shift between skeleton and real tree.
+
+
+
 ## Feb 13, 2026 — Avatar Photo Fade-In + Shimmer (`OfflineImage`)
 
 ### Avatars Flashed from Initials → Photo with No Transition

@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Pin, X, Trash2, UserPlus } from 'lucide-react';
+import OfflineImage from '../OfflineImage';
 
 /**
  * ECTMessageHeader — pure presentational top-of-conversation bar.
@@ -34,9 +35,23 @@ const ECTMessageHeader = ({
       <ArrowLeft className="w-4 h-4" style={{ color: 'var(--t4)' }} />
     </button>
     <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}>
-      {activeChannel.type === 'direct' && activeChannel.photo_url ? <img src={activeChannel.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = activeChannel.name?.charAt(0)?.toUpperCase() || '?'; }} />
-        : activeChannel.estate_photo_url ? <img src={activeChannel.estate_photo_url} alt="" className="w-9 h-9 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = (activeChannel.estate_name || activeChannel.name)?.charAt(0)?.toUpperCase() || '?'; }} />
-        : activeChannel.type === 'direct' ? (activeChannel.name?.charAt(0)?.toUpperCase() || '?') : getChannelIcon(activeChannel.type)}
+      {activeChannel.type === 'direct' && activeChannel.photo_url ? (
+        <OfflineImage
+          src={activeChannel.photo_url}
+          cacheKey={`ect:dm:${activeChannel.id}:photo`}
+          alt=""
+          className="w-9 h-9 rounded-full object-cover"
+          fallback={<span>{activeChannel.name?.charAt(0)?.toUpperCase() || '?'}</span>}
+        />
+      ) : activeChannel.estate_photo_url ? (
+        <OfflineImage
+          src={activeChannel.estate_photo_url}
+          cacheKey={activeChannel.estate_id ? `estate:${activeChannel.estate_id}:cover` : undefined}
+          alt=""
+          className="w-9 h-9 rounded-full object-cover"
+          fallback={<span>{(activeChannel.estate_name || activeChannel.name)?.charAt(0)?.toUpperCase() || '?'}</span>}
+        />
+      ) : activeChannel.type === 'direct' ? (activeChannel.name?.charAt(0)?.toUpperCase() || '?') : getChannelIcon(activeChannel.type)}
     </div>
     <div className="flex-1 min-w-0 relative">
       <div className="text-sm font-bold truncate" style={{ color: 'var(--t)' }}>{activeChannel.type === 'direct' ? activeChannel.name : `${activeChannel.estate_name || activeChannel.name} Members`}</div>
@@ -54,7 +69,15 @@ const ECTMessageHeader = ({
             return (
               <div key={m.id} className="flex items-center gap-2.5 px-3 py-2" data-testid={`header-member-${m.id}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                 <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-xs font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
-                  {m.photo_url ? <img src={m.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = initials; }} /> : initials}
+                  {m.photo_url ? (
+                    <OfflineImage
+                      src={m.photo_url}
+                      cacheKey={m.id ? `user:${m.id}:photo` : undefined}
+                      alt=""
+                      className="w-8 h-8 rounded-full object-cover"
+                      fallback={<span>{initials}</span>}
+                    />
+                  ) : initials}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-semibold truncate" style={{ color: 'var(--t)' }}>{m.name}{isYou ? ' (You)' : ''}</div>

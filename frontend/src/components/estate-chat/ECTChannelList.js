@@ -3,6 +3,7 @@ import {
   MessageCircle, Plus, ArrowLeft, Trash2, Loader2, X, Check,
   Search, Shield, ChevronDown, CheckSquare2,
 } from 'lucide-react';
+import OfflineImage from '../OfflineImage';
 
 /**
  * ECTChannelList — pure presentational sidebar for the Estate Chat.
@@ -190,9 +191,23 @@ const ECTChannelList = ({
                   </div>
                 )}
                 <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t4)' }}>
-                  {ch.type === 'direct' && ch.photo_url ? <img src={ch.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = ch.name?.charAt(0)?.toUpperCase() || '?'; }} />
-                    : ch.estate_photo_url ? <img src={ch.estate_photo_url} alt="" className="w-10 h-10 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = (ch.estate_name || ch.name)?.charAt(0)?.toUpperCase() || '?'; }} />
-                    : ch.type === 'direct' ? (ch.name?.charAt(0)?.toUpperCase() || '?') : getChannelIcon(ch.type)}
+                  {ch.type === 'direct' && ch.photo_url ? (
+                    <OfflineImage
+                      src={ch.photo_url}
+                      cacheKey={`ect:dm:${ch.id}:photo`}
+                      alt=""
+                      className="w-10 h-10 rounded-full object-cover"
+                      fallback={<span>{ch.name?.charAt(0)?.toUpperCase() || '?'}</span>}
+                    />
+                  ) : ch.estate_photo_url ? (
+                    <OfflineImage
+                      src={ch.estate_photo_url}
+                      cacheKey={ch.estate_id ? `estate:${ch.estate_id}:cover` : undefined}
+                      alt=""
+                      className="w-10 h-10 rounded-full object-cover"
+                      fallback={<span>{(ch.estate_name || ch.name)?.charAt(0)?.toUpperCase() || '?'}</span>}
+                    />
+                  ) : ch.type === 'direct' ? (ch.name?.charAt(0)?.toUpperCase() || '?') : getChannelIcon(ch.type)}
                 </div>
                 <div className="flex-1 min-w-0 relative" style={{ zIndex: showListMembersId === ch.id ? 50 : 'auto' }}>
                   <div className="flex items-center justify-between">
