@@ -1,6 +1,51 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — E&S PDF Two-Page Layout + Orientation Toggle + 12pt Floor
+
+### Need (verbatim user request)
+"I want that to be the second page of an E&S PDF generation. First page is always the tree and key, fit to page... Second and subsequent pages is your list. No less than 12 point font anywhere in any text PDFs."
++ "User definable, give me a button or toggle on the preview page" (page-1 orientation).
++ "Make sure everything is getting done correctly" (audit first, no premature summarisation).
+
+### Audit findings — what the in-progress state actually broke
+Pre-fix, the file had page-1/page-2 DOM wrappers but the print CSS *actively prevented* multi-page output:
+1. `html, body { height: 10in; max-height: 10in; overflow: hidden }` and `.cfp-print-root { height: 9.5in; overflow: hidden; page-break-after: avoid }` — locked to a single sheet.
+2. `.cfp-print-root * { page-break-after: avoid !important; page-break-inside: avoid !important }` — wildcard killed every page break so page-2 DOM would never reach a fresh sheet.
+3. No `page-break-before: always` on `.cfp-print-page-2`.
+4. `@page { size: letter portrait }` was hard-coded — no way to land the org chart in landscape per user pick.
+5. `.cfp-print-blocks-list / -block-row / -block-name / -block-line / -block-label` were referenced in JSX but had **zero styles** → page-2 text would render at browser-default ~8–10pt, breaking the 12pt rule.
+6. `mf()` minimum-font math used `Math.ceil(16 / s)` — at s=1 gives 11.52pt (under 12pt). Off-by-one.
+7. No orientation toggle in the toolbar.
+
+### Change
+- `EntitiesPrintPage.js`:
+  - Added `page1Orientation` state (default `landscape`), with a toolbar pill toggle button `[data-testid="entity-print-orient-toggle"]` (text flips between "Landscape" and "Portrait" with matching `lucide-react` icons). Page-2 (blocks list) is always portrait per spec.
+  - New `PAGE1_DIMS` const with svg/page inch sizes for both orientations.
+  - Moved scale + 12pt floor (`minFont = Math.ceil(17 / max(s,0.01))`) from the data memo into render so the toggle is instant; floor of 17 user-units guarantees ≥12.24pt at s=1.
+  - SVG `width`/`height` props now derive from `page1Dims.svgW/svgH`.
+  - Rewrote the entire `<style>` block:
+    - Named `@page page1 { size: letter ${page1Orientation}; }` + `@page page2 { size: letter portrait; }` rules + a generic fallback `@page`.
+    - Removed every single-page lock (`html, body height/overflow`, `.cfp-print-root height/overflow`, the wildcard `page-break-*: avoid` selector).
+    - `.cfp-print-page-1 { page: page1; page-break-after: always }` and `.cfp-print-page-2 { page: page2; page-break-before: always; min-height: 11in; page-break-inside: auto }`.
+    - Full @media-print typography for page-2 (12pt body, 14pt block-name, 20pt h1, 12pt subtitle, 12pt block-label) and on-screen card mocks with `aspect-ratio: ${pageW}/${pageH}`.
+    - Force `.cfp-print-root` to overlay the viewport on screen (`position: fixed; inset: 0; z-index: 99999; background: #f4f4f4`) so the app's dark theme doesn't bleed through.
+  - **Critical fix**: switched `<style>{`...`}</style>` → `<style dangerouslySetInnerHTML={{ __html: `...` }} />`. Reason: the dev-mode visual-edit instrumentation wraps JSX children in `<span data-ve-dynamic="true" style="display: contents;">`, and that span IS injected inside the `<style>` tag, which makes the browser's CSS parser return **zero parsed rules**. Diagnostic before: `cssRules.length === 0`; after: `cssRules.length === 31`.
+
+### Verified (preview pod, `info@carryon.us`)
+- `document.querySelector('.cfp-print-root style')` → no nested `<span>` ✅
+- `style.sheet.cssRules.length` → **31** (was 0) ✅
+- Computed `getComputedStyle('.cfp-print-root')`: `background: rgb(244,244,244)`, `position: fixed`, `zIndex: 99999` ✅
+- Toolbar pill buttons render with proper rounded styling: **Back / Landscape / Print** ✅
+- Click the **Landscape** pill → text flips to **Portrait**, the on-screen mock card flips from 11×8.5 to 8.5×11 aspect ratio ✅
+- Header rendered in `#B8860B` gold at 20px+ on-screen, 18pt/20pt in print CSS ✅
+- ESLint clean, `bash /app/housekeeping.sh` → **0 FAIL, 0 WARN**.
+
+### Known dev-mode caveat
+The visual-edit instrumentation that broke CSS parsing is dev-only. Production builds (Vercel) don't inject the wrapper span, so the dangerouslySetInnerHTML guard is belt-and-braces — keeps preview and production behaviour identical.
+
+
+
 ## Feb 14, 2026 — Click-to-Focus on Summary Card Rows
 
 ### Need

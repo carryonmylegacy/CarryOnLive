@@ -30,7 +30,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ChevronLeft, Printer } from 'lucide-react';
+import { ChevronLeft, Printer, Maximize2, AlignVerticalJustifyCenter } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_URL } from '../../config';
 import {
@@ -110,6 +110,24 @@ const ROLE_LABEL = new Map(ROLE_OPTIONS.map((r) => [r.id, r.label]));
 const fmtDate = (d = new Date()) =>
   d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 
+// Page-1 SVG content dimensions (inches) for each orientation. The
+// values represent the USABLE area for the org-chart SVG inside a
+// US Letter page: page size minus padding (0.3in) minus the header
+// strip (~0.7in) minus the footer strip (~0.5in).
+//   • Portrait  : 8.5 × 11   →  svg 7.9 × 8.2 in   (matches the
+//                 historical single-page layout; preserves prior
+//                 pdf appearance when users pick portrait).
+//   • Landscape : 11  × 8.5  →  svg 10.4 × 6.7 in  (default — gives
+//                 the widest possible tree per user pitch demo
+//                 request).
+// We keep these in CSS inches because iOS Safari's print engine
+// honors absolute inch units inside @media print but mangles
+// percentage-based SVG sizing.
+const PAGE1_DIMS = {
+  landscape: { pageW: 11,  pageH: 8.5, svgW: 10.4, svgH: 6.7 },
+  portrait:  { pageW: 8.5, pageH: 11,  svgW: 7.9,  svgH: 8.2 },
+};
+
 export default function EntitiesPrintPage() {
   const { estateId } = useParams();
   const navigate = useNavigate();
@@ -118,6 +136,13 @@ export default function EntitiesPrintPage() {
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [estateName, setEstateName] = useState('');
   const [error, setError] = useState(null);
+  // Page-1 orientation toggle. User picked landscape as the default
+  // for their pitch deck (widest possible tree). Toggle button in
+  // the screen-only toolbar lets them flip to portrait without a
+  // re-load. Page 2+ (Beneficiary Blocks list) is always portrait —
+  // letter portrait is the standard reading orientation for text
+  // lists and the user explicitly asked for portrait there.
+  const [page1Orientation, setPage1Orientation] = useState('landscape');
 
   // Fetch the chart payload (entities + people + relationships +
   // server-persisted overrides), the beneficiaries list (so spouse /
@@ -250,21 +275,12 @@ export default function EntitiesPrintPage() {
     };
 
     // 12pt minimum print font enforcement.
-    // The page SVG is 7.9in × 8.2in. At 96 dpi that's 790 × 820 CSS-px,
-    // which is also our outer viewBox. We then transform the inner
-    // <g> by `scale(s)` where s = min(PAGE_W/bbox.w, PAGE_H/bbox.h).
-    // Inside that transform, 1 user-unit prints at:
-    //   user-unit-px = s × (7.9in / 790) = s × 0.01 in = s × 0.72 pt
-    // To guarantee 12 pt minimum printed text, fontSize in user-units
-    // must be ≥ 12 / (s × 0.72) ≈ 16 / s.
-    // We pre-compute that here and ship it in the layout object so
-    // every text element wraps its hard-coded fontSize in
-    // Math.max(N, minFont). Tiles that don't shrink (s≥1) get the
-    // raw 16 floor (12pt native at 1:1 scale).
-    const PAGE_W = 790;
-    const PAGE_H = 820;
-    const s = Math.min(PAGE_W / Math.max(viewBox.w, 1), PAGE_H / Math.max(viewBox.h, 1));
-    const minFont = Math.ceil(16 / Math.max(s, 0.01));
+    // The page SVG width/height changes with the user's orientation
+    // toggle, so the `scale = min(PAGE_W/bbox.w, PAGE_H/bbox.h)`
+    // factor — and therefore the `minFont` floor — is computed
+    // *outside* this memo (in render) where the current orientation
+    // is known. We just hand back the raw bbox here; render does the
+    // fit-to-page math.
 
     return {
       nodes: graph.nodes,
@@ -274,7 +290,6 @@ export default function EntitiesPrintPage() {
       legendPos,
       computedLegendH,
       viewBox,
-      minFont,
       relationships: data.relationships || [],
       entities: data.entities || [],
       blocks: data.beneficiary_blocks || [],
@@ -346,11 +361,31 @@ export default function EntitiesPrintPage() {
 
   // ── Static SVG renderer ──────────────────────────────────────────
 
+  // Orientation-aware page-1 SVG dimensions (inches → user-units at
+  // 100 user-units per inch). Recomputed each render so the toggle
+  // re-renders instantly.
+  const page1Dims = PAGE1_DIMS[page1Orientation] || PAGE1_DIMS.landscape;
+  const PAGE_W = page1Dims.svgW * 100;
+  const PAGE_H = page1Dims.svgH * 100;
+  const bbScale = Math.min(
+    PAGE_W / Math.max(layout.viewBox.w, 1),
+    PAGE_H / Math.max(layout.viewBox.h, 1),
+  );
+  // 12pt minimum print font enforcement.
+  // 1 user-unit prints at bbScale × (svgW_in / PAGE_W) × 72 pt
+  //                     = bbScale × 0.01 × 72 = bbScale × 0.72 pt.
+  // For text fontSize N to render at ≥ 12pt:
+  //   N × bbScale × 0.72 ≥ 12   →   N ≥ 12 / (0.72 × bbScale) ≈ 16.667 / bbScale
+  // We use 17 (rounded up to be safe — gives 12.24pt at bbScale=1)
+  // so EVERY hard-coded fontSize honors the user's strict "no less
+  // than 12 point font" rule, even after the chart shrinks to fit.
+  const minFont = Math.ceil(17 / Math.max(bbScale, 0.01));
+
   // 12pt minimum-font helper. Every hard-coded fontSize in the SVG
-  // below is wrapped in `mf(N)` so it can be bumped up by the layout
-  // memo when the chart shrinks to fit a single page (per user's
-  // strict "no less than 12pt in any text PDFs" rule).
-  const mf = (n) => Math.max(n, layout.minFont);
+  // below is wrapped in `mf(N)` so it can be bumped up when the chart
+  // shrinks to fit a single page (per user's strict "no less than
+  // 12pt in any text PDFs" rule).
+  const mf = (n) => Math.max(n, minFont);
 
   const renderEdges = () => {
     return layout.routedEdges.map(({ edge, points, midPoint }) => {
@@ -723,20 +758,23 @@ export default function EntitiesPrintPage() {
 
   return ReactDOM.createPortal(
     <div className="cfp-print-root">
-      <style>{`
-        @page { size: letter portrait; margin: 0; }
+      <style dangerouslySetInnerHTML={{ __html: `
+        /* Named @page rules let us give page 1 (org chart) and page
+           2+ (beneficiary blocks list) different orientations. The
+           page-1 orientation is user-controllable via the toolbar
+           toggle; page 2 is always portrait per the user spec. */
+        @page page1 { size: letter ${page1Orientation}; margin: 0; }
+        @page page2 { size: letter portrait; margin: 0; }
+        @page { size: letter ${page1Orientation}; margin: 0; }
+
         @media print {
           html, body {
             background: #ffffff !important;
             margin: 0 !important;
             padding: 0 !important;
-            width: 8.5in !important;
-            min-width: 8.5in !important;
-            max-width: 8.5in !important;
-            height: 10.0in !important;
-            min-height: 0 !important;
-            max-height: 10.0in !important;
-            overflow: hidden !important;
+            /* No height/overflow locks — they would prevent page 2
+               from rendering at all. The browser handles paging via
+               our explicit page-break rules below. */
           }
           /* The print root is rendered via React portal AS A DIRECT
              CHILD OF <body>. That lets us hide every OTHER body
@@ -749,115 +787,193 @@ export default function EntitiesPrintPage() {
           .cfp-print-root {
             color: #0f172a !important;
             display: block !important;
-            position: relative !important;
-            width: 8.5in !important;
-            min-width: 8.5in !important;
-            max-width: 8.5in !important;
-            /* Sized to 8.5in × 9.5in inside an 11in page. Leaves
-               ~1.5in of slack for iOS Safari's invisible "system"
-               margin / its own header-footer chrome on every printed
-               page — single-page output is guaranteed and the tree
-               has enough vertical room to center properly between
-               our header and the iOS footer. */
-            height: 9.5in !important;
-            min-height: 0 !important;
-            max-height: 9.5in !important;
-            padding: 0.3in !important;
+            background: #ffffff !important;
             margin: 0 !important;
-            box-sizing: border-box !important;
-            overflow: hidden !important;
-            page-break-inside: avoid !important;
-            page-break-after: avoid !important;
-            break-inside: avoid !important;
-            break-after: avoid !important;
+            padding: 0 !important;
+            width: auto !important;
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            overflow: visible !important;
+            position: static !important;
           }
-          .cfp-print-root * {
-            page-break-inside: avoid !important;
-            page-break-after: avoid !important;
-            break-inside: avoid !important;
-            break-after: avoid !important;
-          }
-          .cfp-print-header {
+
+          /* Common page wrapper — each .cfp-print-page represents
+             one (or more, for page 2 if the list overflows) physical
+             pages. */
+          .cfp-print-page {
             display: block !important;
-            height: 0.65in !important;
-            max-height: 0.65in !important;
-            margin: 0 0 0.05in 0 !important;
-            padding: 0 0 6px 0 !important;
-            /* Override screen rule that put a 2px gold border on the
-               bottom — it cut through the subtitle when squeezed into
-               the print height. Use a thin gold rule INSIDE the
-               header's allotted height instead. */
+            box-sizing: border-box !important;
+            margin: 0 !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
+          }
+
+          /* Page 1 — Org Chart. Uses orientation-specific named page
+             rule so the printer flips paper for us. Hard size in
+             inches matches the @page so the SVG fills it perfectly.
+             page-break-after forces a fresh sheet for page 2. */
+          .cfp-print-page-1 {
+            page: page1;
+            width: ${page1Dims.pageW}in !important;
+            height: ${page1Dims.pageH}in !important;
+            padding: 0.3in !important;
+            overflow: hidden !important;
+            page-break-after: always !important;
+            break-after: page !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+
+          /* Page 2+ — Beneficiary Blocks list. ALWAYS portrait. We
+             let the block list flow across multiple sheets naturally
+             (page-break-inside: auto on the wrapper) but keep each
+             block-row intact (avoid breaking a single block across
+             pages). */
+          .cfp-print-page-2 {
+            page: page2;
+            width: 8.5in !important;
+            min-height: 11in !important;
+            padding: 0.5in !important;
+            page-break-before: always !important;
+            break-before: page !important;
+            page-break-inside: auto !important;
+            break-inside: auto !important;
+          }
+
+          /* Header strip on each printed page. Sized so the SVG /
+             list area below has predictable room. */
+          .cfp-print-page-1 .cfp-print-header,
+          .cfp-print-page-2 .cfp-print-header {
+            display: block !important;
+            margin: 0 0 0.1in 0 !important;
+            padding: 0 0 0.08in 0 !important;
             border-bottom: 1px solid #B8860B !important;
             overflow: hidden !important;
           }
+          .cfp-print-page-1 .cfp-print-header { height: 0.65in !important; max-height: 0.65in !important; }
+          .cfp-print-page-1 .cfp-print-header h1 {
+            margin: 0 !important;
+            font-size: 18pt !important;
+            font-weight: 800 !important;
+            color: #B8860B !important;
+            line-height: 1.1 !important;
+          }
+          .cfp-print-page-1 .cfp-print-header .subtitle {
+            margin-top: 0.04in !important;
+            font-size: 12pt !important;
+            color: #475569 !important;
+          }
+          .cfp-print-page-2 .cfp-print-header h1 {
+            margin: 0 !important;
+            font-size: 20pt !important;
+            font-weight: 800 !important;
+            color: #B8860B !important;
+            line-height: 1.1 !important;
+          }
+          .cfp-print-page-2 .cfp-print-header .subtitle {
+            margin-top: 0.05in !important;
+            font-size: 12pt !important;
+            color: #475569 !important;
+          }
+
+          /* SVG wrap on page 1 — hard inch sizing matches our viewBox
+             scale calc so the tree renders at exactly the size we
+             computed. */
           .cfp-print-svg-wrap {
             display: block !important;
-            width: 7.9in !important;
-            /* Fills ALL the remaining vertical space below the header
-               (root 9.5in - 0.6in padding - 0.65in header - 0.05in
-               header bottom-margin = 8.2in). Block layout with hard
-               inch sizing on BOTH wrap and SVG — iOS Safari's print
-               engine honors absolute inch units but collapses
-               percentage-based SVG sizing inside flex. */
-            height: 8.2in !important;
-            max-height: 8.2in !important;
-            min-height: 8.2in !important;
+            width: ${page1Dims.svgW}in !important;
+            height: ${page1Dims.svgH}in !important;
+            max-width: ${page1Dims.svgW}in !important;
+            max-height: ${page1Dims.svgH}in !important;
+            min-width: ${page1Dims.svgW}in !important;
+            min-height: ${page1Dims.svgH}in !important;
             margin: 0 auto !important;
             padding: 0 !important;
             overflow: hidden !important;
             position: relative !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           .cfp-print-svg-wrap svg {
             display: block !important;
-            width: 7.9in !important;
-            height: 8.2in !important;
-            min-width: 7.9in !important;
-            min-height: 8.2in !important;
-            max-width: 7.9in !important;
-            max-height: 8.2in !important;
+            width: ${page1Dims.svgW}in !important;
+            height: ${page1Dims.svgH}in !important;
             margin: 0 !important;
             padding: 0 !important;
           }
-          /* iOS Safari automatically renders its OWN footer (URL +
-             date + page number) on every printed page; hide our
-             in-document footer to avoid the duplicate. */
+
+          /* Page 2 — Beneficiary Blocks list typography & spacing.
+             All sizes are ≥ 12pt per the user's strict requirement. */
+          .cfp-print-blocks-list {
+            font-size: 12pt !important;
+            line-height: 1.4 !important;
+            color: #0f172a !important;
+            margin-top: 0.15in !important;
+          }
+          .cfp-print-block-row {
+            padding: 0.12in 0 !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .cfp-print-block-row:last-child { border-bottom: none !important; }
+          .cfp-print-block-name {
+            font-size: 14pt !important;
+            font-weight: 700 !important;
+            color: #0F172A !important;
+            margin-bottom: 0.06in !important;
+          }
+          .cfp-print-block-line {
+            font-size: 12pt !important;
+            color: #334155 !important;
+            margin: 0.04in 0 !important;
+          }
+          .cfp-print-block-label {
+            font-weight: 700 !important;
+            color: #B8860B !important;
+          }
+
+          /* iOS Safari renders its own footer (URL + date + page
+             number) on every printed page; hide our in-document
+             footer to avoid the duplicate. */
           .cfp-print-footer { display: none !important; }
           .cfp-print-toolbar { display: none !important; }
         }
-        body { background: #f4f4f4; margin: 0; }
+
+        /* Screen preview styles. Each printed page is mocked as a
+           card so the user sees a faithful preview before printing.
+           We force an opaque light background on the root so the
+           app's dark theme (which lives on #root, a sibling in <body>)
+           doesn't bleed through. */
+        body { background: #f4f4f4 !important; margin: 0; }
         .cfp-print-root {
           font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-          color: #0f172a;
-          /* Fluid on small screens, capped at letter width on tablets
-             and desktop so the on-screen preview matches what the
-             saved PDF will look like. The @media print branch above
-             pins it to the exact letter usable area. */
-          width: 100%;
-          max-width: 7.5in;
-          /* Use dynamic-viewport-height so the layout fits the *real*
-             visible area on iOS Safari/PWA (where the URL bar and
-             home-indicator eat into 100vh). Falls back to 100vh for
-             browsers that don't support dvh. */
+          color: #0f172a !important;
+          background: #f4f4f4 !important;
+          width: 100vw !important;
           min-height: 100vh;
           min-height: 100dvh;
-          height: 100vh;
-          height: 100dvh;
-          margin: 0 auto;
-          padding: 0 12px;
-          padding-bottom: max(12px, env(safe-area-inset-bottom));
+          margin: 0 !important;
+          padding: 0 12px 12px 12px !important;
+          padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
           box-sizing: border-box;
           display: flex;
           flex-direction: column;
-          position: relative;
-          overflow: hidden;
+          position: fixed !important;
+          inset: 0 !important;
+          z-index: 99999 !important;
+          overflow: auto;
+          -webkit-overflow-scrolling: touch;
         }
+        .cfp-print-page { color: #0f172a !important; }
+        .cfp-print-header h1 { color: #B8860B !important; }
+        .cfp-print-header .subtitle { color: #475569 !important; }
+        .cfp-print-toolbar button { box-shadow: none !important; }
         .cfp-print-toolbar {
           display: flex;
           gap: 8px;
           padding: 12px 0;
-          /* Honor the iOS notch / Dynamic-Island safe area so Back +
-             Print stay tappable on every device. The :12px inner
-             padding is in addition to the env() inset. */
           padding-top: max(12px, env(safe-area-inset-top));
           padding-left: max(12px, env(safe-area-inset-left));
           padding-right: max(12px, env(safe-area-inset-right));
@@ -865,6 +981,7 @@ export default function EntitiesPrintPage() {
           top: 0;
           background: #f4f4f4;
           z-index: 10;
+          flex-wrap: wrap;
         }
         .cfp-print-toolbar button {
           display: inline-flex; align-items: center; gap: 6px;
@@ -875,12 +992,36 @@ export default function EntitiesPrintPage() {
         .cfp-print-back {
           background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1;
         }
+        .cfp-print-orient {
+          background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1;
+        }
         .cfp-print-reprint {
           background: #fffaf0; color: #B8860B; border: 1px solid #B8860B;
         }
+
+        /* On-screen page cards (mock the printed sheets). */
+        .cfp-print-page {
+          background: #ffffff;
+          margin: 12px auto;
+          box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+          box-sizing: border-box;
+          color: #0f172a;
+          width: 100%;
+        }
+        .cfp-print-page-1 {
+          max-width: ${page1Dims.pageW}in;
+          aspect-ratio: ${page1Dims.pageW} / ${page1Dims.pageH};
+          padding: 0.3in;
+          display: flex;
+          flex-direction: column;
+        }
+        .cfp-print-page-2 {
+          max-width: 8.5in;
+          padding: 0.5in;
+        }
         .cfp-print-header {
           border-bottom: 2px solid #B8860B;
-          padding-bottom: 12px;
+          padding-bottom: 8px;
           margin-bottom: 12px;
         }
         .cfp-print-header h1 {
@@ -895,6 +1036,8 @@ export default function EntitiesPrintPage() {
           font-size: 13px;
           color: #475569;
         }
+        .cfp-print-page-2 .cfp-print-header h1 { font-size: 22px; }
+
         .cfp-print-svg-wrap {
           flex: 1 1 auto;
           min-height: 0;
@@ -907,6 +1050,34 @@ export default function EntitiesPrintPage() {
           height: 100%;
           display: block;
         }
+
+        .cfp-print-blocks-list {
+          margin-top: 8px;
+          font-size: 16px;
+          line-height: 1.45;
+          color: #0f172a;
+        }
+        .cfp-print-block-row {
+          padding: 12px 0;
+          border-bottom: 1px solid #e2e8f0;
+        }
+        .cfp-print-block-row:last-child { border-bottom: none; }
+        .cfp-print-block-name {
+          font-size: 18px;
+          font-weight: 700;
+          color: #0F172A;
+          margin-bottom: 6px;
+        }
+        .cfp-print-block-line {
+          font-size: 16px;
+          color: #334155;
+          margin: 4px 0;
+        }
+        .cfp-print-block-label {
+          font-weight: 700;
+          color: #B8860B;
+        }
+
         .cfp-print-footer {
           margin-top: 12px;
           padding-top: 8px;
@@ -916,7 +1087,7 @@ export default function EntitiesPrintPage() {
           display: flex;
           justify-content: space-between;
         }
-      `}</style>
+      `}} />
 
       {/* Screen-only toolbar — gives the user an obvious escape route
           on iOS standalone PWA where the OS print dialog cancels and
@@ -930,6 +1101,19 @@ export default function EntitiesPrintPage() {
           data-testid="entity-print-back"
         >
           <ChevronLeft size={14} /> Back
+        </button>
+        <button
+          type="button"
+          className="cfp-print-orient"
+          onClick={() => setPage1Orientation((o) => (o === 'landscape' ? 'portrait' : 'landscape'))}
+          data-testid="entity-print-orient-toggle"
+          title="Toggle page-1 orientation"
+        >
+          {page1Orientation === 'landscape' ? (
+            <><Maximize2 size={14} /> Landscape</>
+          ) : (
+            <><AlignVerticalJustifyCenter size={14} /> Portrait</>
+          )}
         </button>
         <button
           type="button"
@@ -955,32 +1139,26 @@ export default function EntitiesPrintPage() {
             // on SVG when the surrounding wrapper has hard inch dimensions —
             // so tree content authored in user-space coordinates leaks past
             // the right/bottom edges of the page. Sidestep the engine by
-            // using a FIXED pixel-unit viewBox (790×820, the rounded pixel
-            // equivalent of our 7.9×8.2-inch physical SVG) and applying the
-            // bbox-fit scale + center-translate ourselves on an outer <g>.
-            // This makes the tree render *deterministically* at the size
-            // we computed, regardless of how the browser interprets the
-            // outer <svg> sizing.
-            const PAGE_W = 790;
-            const PAGE_H = 820;
+            // using a FIXED pixel-unit viewBox (PAGE_W × PAGE_H — the
+            // 100-px-per-inch equivalent of our physical SVG) and applying
+            // the bbox-fit scale + center-translate ourselves on an outer
+            // <g>. This makes the tree render *deterministically* at the
+            // size we computed, regardless of how the browser interprets
+            // the outer <svg> sizing.
             const bb = layout.viewBox;
-            const scale = Math.min(
-              PAGE_W / Math.max(bb.w, 1),
-              PAGE_H / Math.max(bb.h, 1),
-            );
-            const tx = (PAGE_W - bb.w * scale) / 2 - bb.x * scale;
-            const ty = (PAGE_H - bb.h * scale) / 2 - bb.y * scale;
+            const tx = (PAGE_W - bb.w * bbScale) / 2 - bb.x * bbScale;
+            const ty = (PAGE_H - bb.h * bbScale) / 2 - bb.y * bbScale;
             return (
               <svg
-                width="7.9in"
-                height="8.2in"
+                width={`${page1Dims.svgW}in`}
+                height={`${page1Dims.svgH}in`}
                 viewBox={`0 0 ${PAGE_W} ${PAGE_H}`}
                 preserveAspectRatio="xMidYMid meet"
                 xmlns="http://www.w3.org/2000/svg"
                 data-testid="entity-print-svg"
                 style={{ display: 'block' }}
               >
-                <g transform={`translate(${tx} ${ty}) scale(${scale})`}>
+                <g transform={`translate(${tx} ${ty}) scale(${bbScale})`}>
                   {renderEdges()}
                   {layout.tileRects.filter((r) => r.key !== '__legend__').map(renderTile)}
                   {renderLegend()}
