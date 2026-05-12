@@ -1,6 +1,31 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — Blocks Summary Card
+
+### Need
+Following the Blocks shipment, the user asked for a small "Blocks" summary card on the CFP Entities sidebar so investors during the live pitch can see the data structure at a glance — every block on the estate with its member count and which entities it's attached to — without hunting through individual entity panels.
+
+### Change
+Inline collapsible card in `EntitiesSection.js`, sits between the chart toolbar and the canvas. Only renders when ≥1 block exists on the estate.
+
+- **Header** (always visible): "Beneficiary blocks (N) · ▸ Show" / "▾ Hide".
+- **Expanded rows** (one per block): block name in bold + `N member(s) · attached to <comma-list of entity names>` (or `not attached to any entity yet` when N attachments = 0) + a right-aligned `N× linked` gold pill so the multi-attach value is immediately legible.
+- Pure read-only — no editing here (lives in the entity edit panel). Hover and click states match the rest of the chart toolbar palette.
+
+### Verified
+Live e2e on preview pod (`info@carryon.us`, Admin Estate). Seeded two trusts + 3 beneficiaries + 2 blocks: "All Three Kids" (3 members, attached to both trusts) and "Future Heirs" (1 member, not attached anywhere). Reloaded `/financial`:
+- Card visible at the top reading `BENEFICIARY BLOCKS (2)`.
+- Expand toggle works (▸ Show → ▾ Hide).
+- Row 1: "All Three Kids · 3 members · attached to Summary Trust X, Summary Trust Y · 2× linked". ✅
+- Row 2: "Future Heirs · 1 member · not attached to any entity yet · 0× linked". ✅
+- Chart simultaneously rendered both block tiles with the expected edge topology (2 edges to "All Three Kids", 0 edges to "Future Heirs"). ✅
+- Test data cleaned up.
+
+`bash /app/housekeeping.sh` → 0 WARN + 0 FAIL.
+
+
+
 ## Feb 14, 2026 — Beneficiary Blocks: Reusable Named Groups (Phase 1)
 
 ### Need

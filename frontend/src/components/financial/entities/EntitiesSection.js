@@ -9,7 +9,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { notify } from '../../AppNotification';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2, Lock, Unlock, Frame, Crosshair, Map, Printer } from 'lucide-react';
+import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2, Lock, Unlock, Frame, Crosshair, Map, Printer, Users } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Button } from '../../ui/button';
 import { API_URL } from '../../../config';
@@ -49,6 +49,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   const [editStartInEdit, setEditStartInEdit] = useState(false); // pencil shortcut
   const [viewMode, setViewMode] = useState('chart'); // 'chart' | 'list'
   const [expanded, setExpanded] = useState(false);
+  const [blocksExpanded, setBlocksExpanded] = useState(false);
   const [resetTick, setResetTick] = useState(0);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [cleanUpSignal, setCleanUpSignal] = useState(0);
@@ -565,6 +566,79 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           </Button>
         </div>
       </div>
+
+      {/* Beneficiary Blocks summary card. Renders only if there's at
+          least one block on the estate. Collapsed by default — click
+          to expand and see each block's member count and the entities
+          it's attached to. Lets the user verify the "shared block"
+          relationships at a glance without hunting through individual
+          entity panels. */}
+      {(blocks || []).length > 0 && (
+        <div
+          className="mb-2 rounded-lg overflow-hidden"
+          style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.35)' }}
+          data-testid="blocks-summary-card"
+        >
+          <button
+            type="button"
+            onClick={() => setBlocksExpanded((v) => !v)}
+            className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left hover:bg-[rgba(212,175,55,0.08)]"
+            data-testid="blocks-summary-toggle"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <Users className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#D4AF37' }} />
+              <span className="text-[12px] font-bold uppercase tracking-wide truncate" style={{ color: '#D4AF37' }}>
+                Beneficiary blocks ({(blocks || []).length})
+              </span>
+            </div>
+            <span className="text-[11px] font-bold" style={{ color: 'var(--t4)' }}>
+              {blocksExpanded ? '▾ Hide' : '▸ Show'}
+            </span>
+          </button>
+          {blocksExpanded && (
+            <div className="px-3 pb-2 pt-1 space-y-1.5">
+              {(blocks || []).map((b) => {
+                const attachedEntityIds = (relationships || [])
+                  .filter((r) => r.source_type === 'beneficiary_block'
+                    && r.source_id === b.id
+                    && r.target_type === 'entity'
+                    && r.role === 'beneficiary')
+                  .map((r) => r.target_id);
+                const attachedNames = attachedEntityIds
+                  .map((eid) => (entities || []).find((e) => e.id === eid)?.name)
+                  .filter(Boolean);
+                return (
+                  <div
+                    key={b.id}
+                    className="flex items-start justify-between gap-3 px-2 py-1.5 rounded-md"
+                    style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}
+                    data-testid={`blocks-summary-row-${b.id}`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[12px] font-bold truncate" style={{ color: 'var(--t)' }}>{b.name}</div>
+                      <div className="text-[11px] truncate" style={{ color: 'var(--t4)' }}>
+                        {(b.members || []).length} member{(b.members || []).length === 1 ? '' : 's'}
+                        {attachedNames.length > 0 && (
+                          <> · attached to <span style={{ color: 'var(--gold)' }}>{attachedNames.join(', ')}</span></>
+                        )}
+                        {attachedEntityIds.length === 0 && (
+                          <> · <span style={{ color: 'var(--t3)' }}>not attached to any entity yet</span></>
+                        )}
+                      </div>
+                    </div>
+                    <span
+                      className="text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0"
+                      style={{ background: 'rgba(212,175,55,0.12)', color: 'var(--gold)', border: '1px solid rgba(212,175,55,0.4)' }}
+                    >
+                      {attachedEntityIds.length}× linked
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       <div style={{ height: maxH, position: 'relative' }}>
         {viewMode === 'chart' ? (
