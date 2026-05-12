@@ -1,6 +1,21 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — CFP "Boot-Splash Reload" Glitch Fix
+
+### Tapping Back from E&S Print Page Felt Like a Full App Reload
+**Bug** — When the user tapped "Back" from `/financial/entities/<id>/print`, the CFP would unmount, then on remount show its full-page skeleton for ~2-3 s while `fetchAll` re-hit the network. Combined with the boot-splash-like centered fade, the user described it as: "the platform went to its load page and then reloaded the CFP again." The E&S print page is one of the only PDF surfaces that still uses `window.print()` (server-driven PDFs use the global `PdfPreviewModal`), so it's the only flow that does a real SPA route navigation away from `/financial`.
+
+**Fix** — `FinancialPortalPage.js`: introduced synchronous localStorage cache hydration on mount. The page already wrote a consolidated `financial:portal:<estate_id>` blob to localStorage on every successful `fetchAll`. We now read that blob *synchronously* before the first paint and seed every `useState` initializer (`bills`, `debts`, `accounts`, `property`, `beneficiaries`, `dav`, `summary`, `customCategories`, `estate`) with the cached values. `loading` defaults to `false` whenever cached data is present, so the skeleton is skipped entirely on every back-navigation. `fetchAll` still runs in the background and overwrites state when fresh data arrives — invisible to the user.
+
+**User-facing effect**:
+- **First-ever visit:** skeleton shows (unchanged).
+- **Every subsequent visit/back-navigation:** CFP paints instantly with last-known data, no skeleton flash, no "boot splash reload" feeling.
+
+**Why this matches what Beneficiaries already feels like** — Beneficiaries has shipped with the same offline-mirror-first hydration pattern for months; CFP was the outlier still doing a network-first paint.
+
+
+
 ## Feb 13, 2026 — Pre-Pitch UI Polish Batch (5 fixes)
 
 ### 1. ECT Walkthrough Step 2 Won't Scroll on iPhone

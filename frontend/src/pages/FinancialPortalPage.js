@@ -78,17 +78,51 @@ const FinancialPortalPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // --- Synchronous cache hydration ------------------------------------------
+  // CFP previously always rendered a skeleton placeholder for 2-3 s on every
+  // mount while `fetchAll` re-hit the network. That made every back-navigation
+  // (e.g. returning from /financial/entities/<id>/print) feel like a full page
+  // reload — the user described it as "the platform went to its load page
+  // and then reloaded the CFP again."
+  //
+  // `fetchAll` already writes a consolidated `financial:portal:<estate_id>`
+  // blob to localStorage on every successful response. We now read that blob
+  // SYNCHRONOUSLY before the first paint and seed every useState with it.
+  // The network refresh still runs in the background and overwrites state
+  // when fresh data arrives — but the user sees the last-known-good page
+  // instantly, with zero skeleton flash.
+  const _cachedEid = (typeof localStorage !== 'undefined') ? localStorage.getItem('selected_estate_id') : null;
+  const _cachedPortal = _cachedEid ? readList(`financial:portal:${_cachedEid}`) : null;
+  const _cachedEstate = _cachedEid ? readList(`financial:estate:${_cachedEid}`) : null;
+  const _hasCachedPortal = !!(_cachedPortal && typeof _cachedPortal === 'object' && !Array.isArray(_cachedPortal));
+  const _seed = (key) => (_hasCachedPortal && Array.isArray(_cachedPortal[key])) ? _cachedPortal[key] : [];
+
   const [activeTab, setActiveTab] = useState('bills');
-  const [bills, setBills] = useState([]);
-  const [debts, setDebts] = useState([]);
-  const [accounts, setAccounts] = useState([]);
-  const [propertyAssets, setPropertyAssets] = useState([]);
-  const [beneficiaries, setBeneficiaries] = useState([]);
-  const [davEntries, setDavEntries] = useState([]);
-  const [customCategories, setCustomCategories] = useState({ bills: [], debts: [], accounts: [] });
-  const [summary, setSummary] = useState(null);
-  const [estate, setEstate] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [bills, setBills] = useState(() => _seed('bills'));
+  const [debts, setDebts] = useState(() => _seed('debts'));
+  const [accounts, setAccounts] = useState(() => _seed('accounts'));
+  const [propertyAssets, setPropertyAssets] = useState(() => _seed('property'));
+  const [beneficiaries, setBeneficiaries] = useState(() => _seed('beneficiaries'));
+  const [davEntries, setDavEntries] = useState(() => _seed('dav'));
+  const [customCategories, setCustomCategories] = useState(() => (
+    _hasCachedPortal && _cachedPortal.categories && typeof _cachedPortal.categories === 'object' && !Array.isArray(_cachedPortal.categories)
+      ? _cachedPortal.categories
+      : { bills: [], debts: [], accounts: [] }
+  ));
+  const [summary, setSummary] = useState(() => (
+    _hasCachedPortal && _cachedPortal.summary && typeof _cachedPortal.summary === 'object' && !Array.isArray(_cachedPortal.summary)
+      ? _cachedPortal.summary
+      : null
+  ));
+  const [estate, setEstate] = useState(() => (
+    _cachedEstate && typeof _cachedEstate === 'object' && !Array.isArray(_cachedEstate)
+      ? _cachedEstate
+      : null
+  ));
+  // Skip the full-page skeleton on every mount where cached portal data
+  // exists. fetchAll still runs in background to refresh.
+  const [loading, setLoading] = useState(!_hasCachedPortal);
   const [billFilter, setBillFilter] = useState('all');
   const [debtFilter, setDebtFilter] = useState('all');
   // Confirm-delete modal state. Set when the user taps "delete" on
