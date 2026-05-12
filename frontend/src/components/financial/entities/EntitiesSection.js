@@ -7,7 +7,7 @@
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
-import { toast } from 'sonner';
+import { notify } from '../../AppNotification';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2, Lock, Unlock, Frame, Crosshair, Map, Printer } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -21,7 +21,6 @@ import EntityQuickInfoPopover from './EntityQuickInfoPopover';
 import EntityDocumentsModal from './EntityDocumentsModal';
 import EntitiesShareToggle from './EntitiesShareToggle';
 import EntityLegend from './EntityLegend';
-import { notify } from '../../AppNotification';
 
 const DRAFT_KEY = (estateId) => `cfp:entityWizard:draft:${estateId || 'global'}`;
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
@@ -188,7 +187,6 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
     try {
       if (node.kind === 'entity') {
         await axios.delete(`${API_URL}/financial/entities/${node.id}`, headers);
-        toast.success(`Deleted "${node.entity?.name || 'entity'}".`);
       } else if (node.kind === 'cluster') {
         // Cluster represents N beneficiary→entity relationships for
         // a single entity. Delete every matching relationship in
@@ -204,20 +202,19 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           `${API_URL}/financial/entity-relationships/${r.id}`,
           headers,
         )));
-        toast.success(`Unlinked ${rels.length} beneficiar${rels.length === 1 ? 'y' : 'ies'} from this entity.`);
       } else if (node.kind === 'beneficiary') {
         await axios.delete(`${API_URL}/beneficiaries/${node.id}`, headers);
-        toast.success(`Deleted "${node.label || 'beneficiary'}".`);
       } else if (node.kind === 'external_person') {
         await axios.delete(`${API_URL}/financial/external-people/${node.id}`, headers);
-        toast.success(`Deleted "${node.label || 'person'}".`);
       } else {
-        // node.kind === 'user' shouldn't reach here — the modal hides
-        // the Delete button for the benefactor — but bail loudly so a
-        // future regression is obvious.
-        toast.error("This tile can't be deleted (it's your own benefactor record).");
+        // node.kind === 'user' shouldn't reach here — the chart's
+        // modal hides the Delete button for the benefactor — but
+        // bail loudly so a future regression is obvious.
+        notify.error("This tile can't be deleted (it's your own benefactor record).");
         return;
       }
+      // Success: the chart already showed an undoable "Deleted X"
+      // toast, so we stay silent here to avoid double-toasting.
       // Refresh local state + bubble up so sibling cards (CFP totals,
       // beneficiary count chip, etc.) re-read.
       await fetchAll();
@@ -228,8 +225,8 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
       if (typeof detail === 'string') msg = detail;
       else if (Array.isArray(detail)) msg = detail.map((d) => d?.msg || JSON.stringify(d)).join('; ');
       else if (err?.message) msg = err.message;
-      toast.error(msg);
-      throw err; // keep the chart's modal open for retry
+      notify.error(msg);
+      throw err; // chart will restore the optimistically-hidden tile
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getAuthHeaders, relationships, onEntitiesChanged]);

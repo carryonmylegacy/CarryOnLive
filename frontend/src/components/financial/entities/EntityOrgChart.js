@@ -16,6 +16,7 @@
  */
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { notify } from '../../AppNotification';
 import { Building2, Shield, Landmark, Home, User as UserIcon, Settings, Info, Pencil, X } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { getEntityPalette, getTypeMeta, ROLE_PALETTE, PALETTE, ROLE_OPTIONS } from '../../../config/entityCatalog';
@@ -916,32 +917,81 @@ export default function EntityOrgChart({
   // there's no DB record to delete (you can't delete yourself from
   // your own estate).
   const [confirmRemoveNode, setConfirmRemoveNode] = useState(null);
-  const [removeBusy, setRemoveBusy] = useState(false);
   const openRemoveModal = useCallback((node) => {
     setConfirmRemoveNode(node || null);
   }, []);
   const closeRemoveModal = useCallback(() => {
-    if (removeBusy) return;
     setConfirmRemoveNode(null);
-  }, [removeBusy]);
+  }, []);
   const confirmRemoveHide = useCallback(() => {
     if (!confirmRemoveNode) return;
     hideNode(confirmRemoveNode.key);
     setConfirmRemoveNode(null);
   }, [confirmRemoveNode, hideNode]);
-  const confirmRemoveDelete = useCallback(async () => {
+  const confirmRemoveDelete = useCallback(() => {
     if (!confirmRemoveNode || typeof onDeleteNode !== 'function') return;
-    setRemoveBusy(true);
-    try {
-      await onDeleteNode(confirmRemoveNode);
-      setConfirmRemoveNode(null);
-    } catch {
-      // Parent surfaces its own toast; modal stays open so user
-      // can retry.
-    } finally {
-      setRemoveBusy(false);
-    }
-  }, [confirmRemoveNode, onDeleteNode]);
+    const node = confirmRemoveNode;
+    const nodeKey = node.key;
+    // Build a friendly toast title per node kind. The toast IS the
+    // "deleted" confirmation; parent's handleDeleteNode now stays
+    // silent on success so we don't double-toast.
+    const toastTitle = (() => {
+      if (node.kind === 'entity') return `Deleted "${node.entity?.name || 'entity'}"`;
+      if (node.kind === 'cluster') {
+        const n = node.members?.length || 0;
+        const parentName = (entities || []).find((e) => e.id === node.id)?.name || 'this entity';
+        return `Unlinked ${n} beneficiar${n === 1 ? 'y' : 'ies'} from ${parentName}`;
+      }
+      return `Deleted "${node.label || 'item'}"`;
+    })();
+
+    // Optimistic hide → tile vanishes immediately. The hiddenKeys
+    // entry gets cleaned up below in both branches (post-delete refetch
+    // makes the key orphan; restore drops it explicitly).
+    hideNode(nodeKey);
+    setConfirmRemoveNode(null);
+
+    const dropFromHidden = () => {
+      setHiddenKeys((prev) => {
+        if (!prev.has(nodeKey)) return prev;
+        const next = new Set(prev);
+        next.delete(nodeKey);
+        try { window.localStorage?.setItem(HIDDEN_KEY(estateId), JSON.stringify(Array.from(next))); }
+        catch { /* quota */ }
+        return next;
+      });
+    };
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      if (cancelled) return;
+      try {
+        await onDeleteNode(node);
+      } catch {
+        // Parent surfaced an error toast — restore the tile so the
+        // user isn't left with a phantom-hidden record.
+        dropFromHidden();
+      } finally {
+        // Whether success or fail, drop the local hide flag — after
+        // the parent's refetch the key is either orphan (record gone)
+        // or the tile is visible again (record still there).
+        dropFromHidden();
+      }
+    }, 5000);
+
+    notify.success(toastTitle, {
+      duration: 5000,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          cancelled = true;
+          clearTimeout(timer);
+          dropFromHidden();
+          notify.info('Restored.');
+        },
+      },
+    });
+  }, [confirmRemoveNode, hideNode, onDeleteNode, estateId, entities]);
   // Tracks whether the user has dragged anything since the last save.
   // We only push to the backend when this is true to avoid a flood of
   // identical PUTs every time the user toggles the lock chip.
@@ -2163,8 +2213,7 @@ export default function EntityOrgChart({
               <button
                 type="button"
                 onClick={confirmRemoveHide}
-                disabled={removeBusy}
-                className="flex-1 rounded-md px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+                className="flex-1 rounded-md px-4 py-2.5 text-sm font-semibold"
                 style={{
                   background: 'rgba(212,165,55,0.12)',
                   border: '1px solid var(--gold)',
@@ -2178,8 +2227,7 @@ export default function EntityOrgChart({
                 <button
                   type="button"
                   onClick={confirmRemoveDelete}
-                  disabled={removeBusy}
-                  className="flex-1 rounded-md px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+                  className="flex-1 rounded-md px-4 py-2.5 text-sm font-semibold"
                   style={{
                     background: '#7F1D1D',
                     border: '1px solid #DC2626',
@@ -2187,14 +2235,14 @@ export default function EntityOrgChart({
                   }}
                   data-testid="entity-remove-modal-delete"
                 >
-                  {removeBusy ? 'Deleting…' : 'Delete permanently'}
+                  Delete permanently
                 </button>
               )}
             </div>
             <div className="text-[11px] mt-3" style={{ color: 'var(--t4)' }}>
               {confirmRemoveNode.kind === 'user'
                 ? 'Tip: click the "N hidden · Show all" pill in the top-right to restore.'
-                : 'Hiding is reversible. Deleting is permanent and runs immediately.'}
+                : 'Hiding is reversible. Deleting fires after a 5-second Undo window — tap "Undo" in the toast if you change your mind.'}
             </div>
           </div>
         </div>,

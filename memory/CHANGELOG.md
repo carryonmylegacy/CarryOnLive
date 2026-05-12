@@ -1,6 +1,30 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — Undoable Delete for E&S Tiles (5-second grace)
+
+### Need
+After landing per-tile Delete, user asked for an Undo affordance so an accidental tap during the live pitch doesn't wipe data with no recovery path.
+
+### Change
+- After confirming "Delete permanently" in the chart's Remove modal, the tile is **hidden optimistically** while a 5-second grace timer runs in the background. A push-style notification slides in from the top titled "Deleted [name]" with an "Undo" action.
+- **Tap Undo** within 5 s → timer is cleared, tile is restored, no API call is ever made, and a brief "Restored." notification confirms.
+- **No tap** → after 5 s the actual backend `DELETE` fires (entity / cluster / beneficiary / external-person — same dispatcher as before).
+- On error (network / 4xx / 5xx) the chart automatically restores the optimistically-hidden tile and shows the error message, so the user is never left with a phantom-deleted record.
+
+### Discovered + fixed: app-wide toast routing
+While building the Undo flow I discovered that the codebase has been calling `import { toast } from 'sonner'` in many places, but **no `Toaster` is mounted anywhere** in the app — every `toast()` call has been silently dropping for the entire project. The app uses a custom iOS-style notification system at `components/AppNotification.js` (named `notify`) — mounted as `<NotificationContainer/>` in `App.js`. Routed both the new Undo flow and the existing per-kind error toasts through `notify` so notifications actually appear. (Other files using `sonner` are unchanged for now — that's a bigger sweep deferred until after the pitch.)
+
+### Verified
+Live e2e on preview pod (`info@carryon.us`, Admin Estate):
+- Created 2 entities → clicked × on first → Delete permanently → tile hides, notification appears with "Undo" button → clicked Undo → tile restored AND entity confirmed still in DB ✅
+- Repeated for the 2nd entity → Delete permanently → waited 6.5 s without clicking Undo → entity confirmed gone from DB AND tile permanently removed from chart ✅
+- Test data cleaned up post-run.
+
+`bash /app/housekeeping.sh` → 0 WARN + 0 FAIL.
+
+
+
 ## Feb 14, 2026 — Per-Tile Delete in E&S (Real DB delete + Benefactor-safe)
 
 ### Need
