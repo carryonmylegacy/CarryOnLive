@@ -56,6 +56,27 @@ const COL_GAP = 30;          // horizontal gap between sibling tiles
 const STEP_OUT = 18;         // how far a line steps perpendicular out of a tile before turning
 const CORNER_R = 10;         // rounded-corner radius
 
+// ---- Beneficiary cluster tile geometry --------------------------------
+// A "cluster" is a single composite tile that contains every
+// beneficiary relationship pointing at a given entity. Per user
+// request: each member renders as a half-sized avatar (32 px) with
+// first-name underneath; members lay out 5-per-row, with each row
+// staggered by half a column so the grid reads as a brick pattern;
+// only ONE connection line is drawn from the cluster up to its parent
+// entity (the individual avatars carry no edges of their own).
+const CLUSTER_AVATAR = 36;
+const CLUSTER_SLOT_W = 50;          // per-member horizontal slot
+const CLUSTER_SLOT_H = 60;          // per-member vertical slot
+const CLUSTER_COLS = 5;
+const CLUSTER_HEADER_H = 22;        // entity-label strip above the grid
+const CLUSTER_PAD_X = 10;
+const CLUSTER_PAD_Y = 8;
+const CLUSTER_W = CLUSTER_PAD_X * 2 + CLUSTER_COLS * CLUSTER_SLOT_W; // 270
+const clusterHeight = (memberCount) => {
+  const rows = Math.max(1, Math.ceil(memberCount / CLUSTER_COLS));
+  return CLUSTER_HEADER_H + CLUSTER_PAD_Y * 2 + rows * CLUSTER_SLOT_H + 4;
+};
+
 // LocalStorage key for per-estate position overrides
 const POS_KEY = (estateId) => `cfp_entity_chart_positions:${estateId || 'global'}`;
 
@@ -102,60 +123,86 @@ function buildGraph({ entities, externals, relationships, beneficiaries, user })
     });
   });
 
-  // -- Per-trust beneficiary instancing -----------------------------------
-  // A single beneficiary can be linked to many trusts/entities. To render
-  // a full family tree under EACH entity (the user's explicit request),
-  // we clone the beneficiary into a separate visual instance per
-  // (beneficiary, entity) relationship. The instance keys are
-  // `beneficiary:<bid>@<eid>` so per-trust positions can be stored
-  // independently in the layout overrides.
-  //
-  // Edges that originate from a beneficiary and target an entity are
-  // rewritten to reference the matching instance key. All other edges
-  // (e.g., person-to-person, beneficiary-as-trustee that targets a
-  // person) still use the global `beneficiary:<bid>` key. The global
-  // node is only included in the final `nodes` map if it has at least
-  // one non-instance edge; otherwise it's hidden so we don't show a
-  // duplicate avatar floating outside any cluster.
-  const benEntityPairs = new Set();
+  // -- Per-entity beneficiary cluster tiles ---------------------------------
+  // Per user request (and replacing the prior per-instance approach):
+  // every entity that has at least one beneficiary-relationship gets a
+  // SINGLE composite cluster tile. The tile renders a brick-pattern
+  // grid of half-sized avatars and first-names internally and has ONE
+  // edge up to its parent entity. The individual beneficiaries
+  // themselves no longer render as separate person-tiles for their
+  // entity-beneficiary relationships — they're consumed into the
+  // cluster. They DO still render as full tiles for any *other*
+  // relationship they participate in (person-to-person, trustee-of, …).
+  const benByEntity = new Map(); // entityId -> [ {bid, b} ]
   (relationships || []).forEach((r) => {
-    if (r.source_type === 'beneficiary' && r.target_type === 'entity') {
-      benEntityPairs.add(`${r.source_id}@${r.target_id}`);
+    if (r.source_type === 'beneficiary' && r.target_type === 'entity' && r.role === 'beneficiary') {
+      const list = benByEntity.get(r.target_id) || [];
+      if (!list.find((m) => m.bid === r.source_id)) {
+        list.push({ bid: r.source_id });
+      }
+      benByEntity.set(r.target_id, list);
     }
   });
-  benEntityPairs.forEach((pair) => {
-    const atIdx = pair.indexOf('@');
-    const bid = pair.slice(0, atIdx);
-    const eid = pair.slice(atIdx + 1);
-    const orig = pool.get(`beneficiary:${bid}`);
-    if (!orig) return;
-    // Clone all visual fields. `id` stays as the underlying beneficiary
-    // id so click handlers, edit panels, and titles all behave as if
-    // the user clicked the original beneficiary.
-    pool.set(`beneficiary:${bid}@${eid}`, {
-      ...orig,
-      key: `beneficiary:${bid}@${eid}`,
-      // Tag with the parent entity so the drag-with-children logic in
-      // the chart can find every instance that should follow when the
-      // entity tile is dragged.
+  // Hydrate member metadata from the beneficiary pool entries.
+  const benIndex = new Map();
+  (beneficiaries || []).forEach((b) => benIndex.set(b.id, b));
+  benByEntity.forEach((members, eid) => {
+    const hydrated = members
+      .map((m) => benIndex.get(m.bid))
+      .filter(Boolean)
+      .map((b) => ({
+        id: b.id,
+        first_name: b.first_name || (b.name || '').split(' ')[0] || 'Member',
+        photo: b.photo_url,
+        avatar_color: b.avatar_color,
+      }));
+    if (hydrated.length === 0) return;
+    pool.set(`cluster:${eid}`, {
+      key: `cluster:${eid}`,
+      kind: 'cluster',
+      id: eid,
       cluster_parent_entity_id: eid,
+      members: hydrated,
+      w: CLUSTER_W,
+      h: clusterHeight(hydrated.length),
     });
   });
 
+  // Map each consumed beneficiary→entity edge to a single cluster→entity
+  // edge. A given (entity) only gets one such edge regardless of how
+  // many beneficiaries are inside its cluster.
+  const clusterEdgesAdded = new Set(); // entityIds we've already emitted an edge for
   const edges = (relationships || [])
-    .map((r) => {
-      const isBenToEntity = r.source_type === 'beneficiary' && r.target_type === 'entity';
-      return {
+    .reduce((acc, r) => {
+      const isBenToEntity = r.source_type === 'beneficiary'
+        && r.target_type === 'entity'
+        && r.role === 'beneficiary';
+      if (isBenToEntity) {
+        if (!clusterEdgesAdded.has(r.target_id) && pool.has(`cluster:${r.target_id}`)) {
+          clusterEdgesAdded.add(r.target_id);
+          acc.push({
+            id: `cluster-edge:${r.target_id}`,
+            sourceKey: `cluster:${r.target_id}`,
+            targetKey: `entity:${r.target_id}`,
+            role: 'beneficiary',
+            ownership_pct: null,
+            raw: r,
+          });
+        }
+        // Suppress the individual beneficiary→entity edge — it's
+        // represented inside the cluster tile, no line needed.
+        return acc;
+      }
+      acc.push({
         id: r.id,
-        sourceKey: isBenToEntity
-          ? `beneficiary:${r.source_id}@${r.target_id}`
-          : `${r.source_type}:${r.source_id}`,
+        sourceKey: `${r.source_type}:${r.source_id}`,
         targetKey: `${r.target_type}:${r.target_id}`,
         role: r.role,
         ownership_pct: r.ownership_pct,
         raw: r,
-      };
-    })
+      });
+      return acc;
+    }, [])
     .filter((e) => pool.has(e.sourceKey) && pool.has(e.targetKey));
 
   // Attach the largest equity stake per person to its node so the
