@@ -88,6 +88,7 @@ const BeneficiaryFinancialPage = lazy(() => import('./pages/beneficiary/Benefici
 const BeneficiaryEntitiesPage = lazy(() => import('./pages/beneficiary/BeneficiaryEntitiesPage'));
 const EntitiesPrintPage = lazy(() => import('./pages/print/EntitiesPrintPage'));
 const PdfPreviewModal = lazy(() => import('./components/PdfPreviewModal'));
+const PdfJobChip = lazy(() => import('./components/PdfJobChip'));
 const PdfPreviewLegacyExpired = lazy(() =>
   import('./components/PdfPreviewModal').then((m) => ({ default: m.PdfPreviewLegacyExpired }))
 );
@@ -851,6 +852,12 @@ function App() {
               navigating away (instant back, no boot-splash flash). */}
           <Suspense fallback={null}>
             <PdfPreviewModal />
+          </Suspense>
+          {/* Global PDF generation progress chip — persists across SPA
+              navigation so a 30s xAI call survives the user wandering off
+              to another page and back. */}
+          <Suspense fallback={null}>
+            <PdfJobChip />
           </Suspense>
         </BrowserRouter>
         <SpeedInsights />

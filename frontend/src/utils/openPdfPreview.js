@@ -27,6 +27,16 @@
 /**
  * Fetch a PDF blob and pop the preview modal.
  *
+ * Emits three CustomEvents during the lifecycle so a global progress chip can
+ * persist across SPA navigation (the calling component might unmount before
+ * the 30s xAI call returns):
+ *
+ *   carryon:pdf-job-start    → { jobId, title, subtitle }
+ *   carryon:pdf-job-complete → { jobId, blob, url, filename, title, subtitle }
+ *   carryon:pdf-job-error    → { jobId, title, error }
+ *
+ * On success, ALSO fires `carryon:open-pdf-preview` to pop the modal.
+ *
  * @param {object} opts
  * @param {function} opts.blobFetcher  Async fn → Blob (application/pdf)
  * @param {string}   opts.filename     Used for share-sheet / download
@@ -35,26 +45,41 @@
  * @param {function=} opts.navigate    Ignored — kept for backwards compat
  * @returns {Promise<void>}
  */
+let _jobCounter = 0;
+
 export async function openPdfPreview({ blobFetcher, filename, title, subtitle }) {
   if (typeof blobFetcher !== 'function') {
     throw new Error('openPdfPreview: blobFetcher function is required');
   }
-  const blob = await blobFetcher();
-  if (!(blob instanceof Blob)) {
-    throw new Error('openPdfPreview: blobFetcher must return a Blob');
+  const jobId = ++_jobCounter;
+  window.dispatchEvent(new CustomEvent('carryon:pdf-job-start', {
+    detail: { jobId, title: title || 'Document', subtitle: subtitle || '' },
+  }));
+  try {
+    const blob = await blobFetcher();
+    if (!(blob instanceof Blob)) {
+      throw new Error('blobFetcher must return a Blob');
+    }
+    if (blob.size < 50) {
+      throw new Error('Generated PDF is empty');
+    }
+    const url = URL.createObjectURL(blob);
+    const entry = {
+      jobId,
+      blob,
+      url,
+      filename: filename || 'document.pdf',
+      title: title || 'Document',
+      subtitle: subtitle || '',
+    };
+    window.dispatchEvent(new CustomEvent('carryon:open-pdf-preview', { detail: entry }));
+    window.dispatchEvent(new CustomEvent('carryon:pdf-job-complete', { detail: entry }));
+  } catch (err) {
+    window.dispatchEvent(new CustomEvent('carryon:pdf-job-error', {
+      detail: { jobId, title: title || 'Document', error: err?.message || 'unknown' },
+    }));
+    throw err;
   }
-  if (blob.size < 50) {
-    throw new Error('Generated PDF is empty');
-  }
-  const url = URL.createObjectURL(blob);
-  const entry = {
-    blob,
-    url,
-    filename: filename || 'document.pdf',
-    title: title || 'Document',
-    subtitle: subtitle || '',
-  };
-  window.dispatchEvent(new CustomEvent('carryon:open-pdf-preview', { detail: entry }));
 }
 
 // --- Legacy compatibility ----------------------------------------------------

@@ -70,16 +70,36 @@ const GuardianPage = () => {
   const location = useLocation();
   const fromGettingStarted = location.state?.fromGettingStarted === true;
   const [headerHeight, setHeaderHeight] = useState(48);
+  const [mobileHeaderVisible, setMobileHeaderVisible] = useState(true);
   const [isListening, setIsListening] = useState(false);
   const [showOnboardingReturn, setShowOnboardingReturn] = useState(fromGettingStarted);
   const recognitionRef = useRef(null);
   const [guidedFlowDone, setGuidedFlowDone] = useState(true);
   const [hasAddress, setHasAddress] = useState(null); // null = loading, true/false = resolved
 
-  // Measure actual header height to position Guardian correctly
+  // Measure actual header height to position Guardian correctly.
+  // .mobile-header is `lg:hidden` so it exists in the DOM but is display:none
+  // on iPad landscape / desktop, where offsetHeight returns 0 — that used to
+  // drop the EGA chat header onto the iOS status bar. Now: if the header
+  // is hidden, keep the default 48 and add safe-area inset via CSS calc().
   useEffect(() => {
-    const header = document.querySelector('.mobile-header');
-    if (header) setHeaderHeight(header.offsetHeight);
+    const measure = () => {
+      const header = document.querySelector('.mobile-header');
+      if (header && header.offsetParent !== null) {
+        setHeaderHeight(header.offsetHeight);
+        setMobileHeaderVisible(true);
+      } else {
+        setHeaderHeight(48);
+        setMobileHeaderVisible(false);
+      }
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('orientationchange', measure);
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('orientationchange', measure);
+    };
   }, []);
 
   // View state: 'landing' or 'chat'
@@ -759,7 +779,14 @@ const GuardianPage = () => {
   // CHAT VIEW
   // ═══════════════════════════════════════════════
   return (
-    <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', left: 0, overscrollBehavior: 'contain' }} data-testid="estate-guardian">
+    <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10" style={{
+      top: mobileHeaderVisible
+        ? headerHeight + 'px'
+        : `calc(${headerHeight}px + env(safe-area-inset-top, 0px))`,
+      bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))',
+      left: 0,
+      overscrollBehavior: 'contain'
+    }} data-testid="estate-guardian">
       <style>{`@media (min-width: 1024px) { [data-testid="estate-guardian"] { left: var(--sidebar-width, 260px) !important; bottom: 0 !important; } }`}</style>
       {renderAddressGate()}
 

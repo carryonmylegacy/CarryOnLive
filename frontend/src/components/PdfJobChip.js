@@ -1,0 +1,181 @@
+/**
+ * PdfJobChip — global, persistent progress indicator for in-flight PDF jobs.
+ *
+ * Mounted once at the App root. Subscribes to:
+ *   carryon:pdf-job-start    → render "Generating <Title>…" chip with spinner
+ *   carryon:pdf-job-complete → render "<Title> ready — tap to view" briefly,
+ *                              then auto-dismiss after 6 s
+ *   carryon:pdf-job-error    → render red "<Title> failed — tap to retry"
+ *
+ * Survives SPA navigation (the calling page can unmount mid-generation and
+ * the chip will still tell the user their PDF is being made). Tapping the
+ * chip re-opens the modal (after completion) or dismisses (during start /
+ * after error).
+ *
+ * Renders into a portal at document.body bottom-center, above the iOS
+ * bottom-tab safe-area inset.
+ */
+import React, { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { Loader2, FileText, AlertTriangle, X } from 'lucide-react';
+
+const PdfJobChip = () => {
+  // Most recent job state per jobId. We only ever show ONE chip — the
+  // most-recently-started or most-recently-completed job. If the user fires
+  // a second generation while a first is pending, the second replaces the
+  // first chip but the first job still fires its own complete event
+  // (which auto-opens the modal). This keeps the chip simple and prevents
+  // chip-stacking visual noise.
+  const [job, setJob] = useState(null); // { jobId, title, status: 'running'|'ready'|'error', entry?, error? }
+
+  useEffect(() => {
+    const onStart = (e) => {
+      const { jobId, title } = e.detail || {};
+      setJob({ jobId, title, status: 'running' });
+    };
+    const onComplete = (e) => {
+      const entry = e.detail || {};
+      setJob({ jobId: entry.jobId, title: entry.title, status: 'ready', entry });
+    };
+    const onError = (e) => {
+      const { jobId, title, error } = e.detail || {};
+      setJob({ jobId, title, status: 'error', error });
+    };
+    window.addEventListener('carryon:pdf-job-start', onStart);
+    window.addEventListener('carryon:pdf-job-complete', onComplete);
+    window.addEventListener('carryon:pdf-job-error', onError);
+    return () => {
+      window.removeEventListener('carryon:pdf-job-start', onStart);
+      window.removeEventListener('carryon:pdf-job-complete', onComplete);
+      window.removeEventListener('carryon:pdf-job-error', onError);
+    };
+  }, []);
+
+  // Auto-dismiss "ready" / "error" chips after a beat.
+  useEffect(() => {
+    if (!job) return undefined;
+    if (job.status === 'running') return undefined;
+    const ttl = job.status === 'ready' ? 6000 : 8000;
+    const t = setTimeout(() => setJob(null), ttl);
+    return () => clearTimeout(t);
+  }, [job]);
+
+  const handleTap = useCallback(() => {
+    if (!job) return;
+    if (job.status === 'ready' && job.entry) {
+      window.dispatchEvent(new CustomEvent('carryon:open-pdf-preview', { detail: job.entry }));
+      setJob(null);
+    } else if (job.status === 'error') {
+      setJob(null);
+    }
+    // Running: tap is a no-op (don't let user accidentally cancel).
+  }, [job]);
+
+  const handleDismiss = useCallback((e) => {
+    e.stopPropagation();
+    setJob(null);
+  }, []);
+
+  if (typeof document === 'undefined') return null;
+  if (!job) return null;
+
+  const isRunning = job.status === 'running';
+  const isReady = job.status === 'ready';
+  const isError = job.status === 'error';
+
+  const colors = isError
+    ? { bg: '#fff1f2', border: '#b91c1c', text: '#b91c1c' }
+    : isReady
+      ? { bg: '#fffaf0', border: '#B8860B', text: '#B8860B' }
+      : { bg: '#0f172a', border: '#334155', text: '#e2e8f0' };
+
+  const Icon = isError ? AlertTriangle : isReady ? FileText : Loader2;
+
+  return createPortal(
+    <div
+      role="status"
+      aria-live="polite"
+      data-testid="pdf-job-chip"
+      data-job-status={job.status}
+      onClick={handleTap}
+      style={{
+        position: 'fixed',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        bottom: `calc(max(72px, env(safe-area-inset-bottom, 0px) + 64px))`,
+        zIndex: 2147481999, // just below the modal but above everything else
+        background: colors.bg,
+        border: `1px solid ${colors.border}`,
+        color: colors.text,
+        borderRadius: 9999,
+        padding: '8px 14px 8px 12px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        fontSize: 13,
+        fontWeight: 700,
+        cursor: isRunning ? 'default' : 'pointer',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+        maxWidth: 'min(92vw, 520px)',
+        userSelect: 'none',
+        WebkitTapHighlightColor: 'transparent',
+        animation: 'pdf-chip-pop 220ms ease-out',
+      }}
+    >
+      <style>{`
+        @keyframes pdf-chip-pop {
+          from { opacity: 0; transform: translate(-50%, 12px); }
+          to   { opacity: 1; transform: translate(-50%, 0); }
+        }
+        [data-testid="pdf-job-chip"][data-job-status="running"] svg.pdf-chip-spinner {
+          animation: pdf-chip-spin 1s linear infinite;
+        }
+        @keyframes pdf-chip-spin {
+          from { transform: rotate(0); } to { transform: rotate(360deg); }
+        }
+      `}</style>
+      <Icon
+        size={16}
+        className={isRunning ? 'pdf-chip-spinner' : ''}
+        style={{ flex: '0 0 auto' }}
+      />
+      <span
+        style={{
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          maxWidth: 'min(72vw, 400px)',
+        }}
+        data-testid="pdf-job-chip-text"
+      >
+        {isRunning && `Generating ${job.title}…`}
+        {isReady && `${job.title} ready — tap to view`}
+        {isError && `${job.title} failed — tap to dismiss`}
+      </span>
+      {!isRunning && (
+        <button
+          type="button"
+          onClick={handleDismiss}
+          data-testid="pdf-job-chip-dismiss"
+          aria-label="Dismiss"
+          style={{
+            background: 'transparent',
+            border: 0,
+            color: 'inherit',
+            cursor: 'pointer',
+            padding: 0,
+            display: 'flex',
+            alignItems: 'center',
+            opacity: 0.7,
+            marginLeft: 2,
+          }}
+        >
+          <X size={14} />
+        </button>
+      )}
+    </div>,
+    document.body
+  );
+};
+
+export default PdfJobChip;

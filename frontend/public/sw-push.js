@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'v46-2026-02-13-landscape-vw-vh-sweep';
+const SHELL_VERSION = 'v47-2026-02-13-ega-safearea-and-global-pdf-chip';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;

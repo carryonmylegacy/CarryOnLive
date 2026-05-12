@@ -1,6 +1,47 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — EGA Top-Inset (iPad Landscape) + Global PDF Generation Chip
+
+### A) EGA Chat Header Touching iOS Status Bar (iPad Landscape PWA)
+**Bug** — On iPad Pro landscape PWA, the four icons at the top-right of the EGA chat (download / Plan of Action / IAC / theme toggle) sat directly under the iOS clock / signal / battery indicators.
+
+**Root cause** — `GuardianPage.js` measures the visible top header via `document.querySelector('.mobile-header').offsetHeight`. On iPad landscape, the mobile header IS in the DOM but Tailwind hides it (`lg:hidden`), and `offsetHeight` on a `display:none` element returns **0**. So `setHeaderHeight(0)` fired → `<div fixed top="0px">` → chat header collided with the status bar.
+
+**Fix** — `useEffect` now checks `header.offsetParent !== null` (which is null when an element is hidden) before reading offsetHeight. If hidden, `headerHeight` stays at its 48px default AND the container's top now uses `calc(48px + env(safe-area-inset-top, 0px))` so the chat header clears the iOS status bar. Also added resize / orientationchange listeners so rotating between landscape ↔ portrait flips between mobile-header-measured and safe-area-calculated modes.
+
+### B) PDF Generation Doesn't Visibly Persist Across SPA Navigation
+**Bug** — User taps "Plan of Action" → 30-second xAI call starts → user navigates to Dashboard → returns to EGA → button looks reset, user re-taps and re-waits.
+
+**Root cause** — The fetch was *technically* still running in the background (`axios.post(...)` isn't cancelled when the React component unmounts), but the per-page button-spinner state was lost on unmount and the user had no visual cue that work was still in flight. When the fetch eventually completed, the modal popped open — possibly while the user was on a different page.
+
+**Fix** — Two-part:
+1. **`openPdfPreview.js`** now emits three CustomEvents during the job lifecycle:
+   - `carryon:pdf-job-start` (immediately, with jobId / title / subtitle)
+   - `carryon:pdf-job-complete` (on success, with the full blob entry)
+   - `carryon:pdf-job-error` (on failure, with the error message)
+   The existing `carryon:open-pdf-preview` event still fires on success so the modal pops automatically.
+2. **`PdfJobChip.js`** (new) — a global, portal-rendered chip mounted at App root. Floats at the bottom-center of every page above the iOS safe-area inset. Three states:
+   - **Running**: dark slate background + spinning loader + "Generating <Title>…"
+   - **Ready**: gold border + file icon + "<Title> ready — tap to view" (auto-dismisses after 6s; tapping re-pops the modal)
+   - **Error**: red border + warning icon + "<Title> failed — tap to dismiss" (auto-dismisses after 8s)
+   Survives SPA navigation. The user can leave EGA, do anything else, and **always sees the chip** until the PDF is ready.
+
+**Cache bust**: `SHELL_VERSION` → `v47-2026-02-13-ega-safearea-and-global-pdf-chip`.
+
+**Verified**: ESLint clean. Webpack compiled successfully. Housekeeping: 0 WARN, 0 FAIL, all 3 smoke checks 8/8 green.
+
+**Files touched**:
+- `frontend/src/pages/GuardianPage.js` — hidden-header detection + safe-area top calc
+- `frontend/src/utils/openPdfPreview.js` — emit job lifecycle events
+- `frontend/src/components/PdfJobChip.js` — new global chip
+- `frontend/src/App.js` — mount the chip
+- `frontend/public/sw-push.js` — SHELL_VERSION bump
+
+---
+
+
+
 ## Feb 13, 2026 — Targeted Landscape vw/vh → --app-vw/--app-vh Sweep
 
 **Preemptive sweep** across Dashboard / CFP / EGA / CCP requested by user after the global `installViewportReflow()` boot hook was added. Conversion strategy: swap any `vw`/`vh` value at risk of getting "stuck" on iOS PWA rotation with the new `--app-100vw` / `--app-100vh` CSS custom property (with the original viewport unit kept as a fallback for browsers that haven't fired the first resize event yet).
