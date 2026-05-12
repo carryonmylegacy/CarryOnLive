@@ -154,6 +154,7 @@ export default function EntitiesPrintPage() {
       externals: data.external_people || [],
       relationships: data.relationships || [],
       beneficiaries,
+      blocks: data.beneficiary_blocks || [],
       user,
     });
     const initial = computeInitialLayout(graph.nodes, graph.depth);
@@ -241,6 +242,30 @@ export default function EntitiesPrintPage() {
     });
     if (!isFinite(minX)) { minX = minY = 0; maxX = 800; maxY = 600; }
 
+    const viewBox = {
+      x: minX - PAD,
+      y: minY - PAD,
+      w: (maxX - minX) + 2 * PAD,
+      h: (maxY - minY) + 2 * PAD,
+    };
+
+    // 12pt minimum print font enforcement.
+    // The page SVG is 7.9in × 8.2in. At 96 dpi that's 790 × 820 CSS-px,
+    // which is also our outer viewBox. We then transform the inner
+    // <g> by `scale(s)` where s = min(PAGE_W/bbox.w, PAGE_H/bbox.h).
+    // Inside that transform, 1 user-unit prints at:
+    //   user-unit-px = s × (7.9in / 790) = s × 0.01 in = s × 0.72 pt
+    // To guarantee 12 pt minimum printed text, fontSize in user-units
+    // must be ≥ 12 / (s × 0.72) ≈ 16 / s.
+    // We pre-compute that here and ship it in the layout object so
+    // every text element wraps its hard-coded fontSize in
+    // Math.max(N, minFont). Tiles that don't shrink (s≥1) get the
+    // raw 16 floor (12pt native at 1:1 scale).
+    const PAGE_W = 790;
+    const PAGE_H = 820;
+    const s = Math.min(PAGE_W / Math.max(viewBox.w, 1), PAGE_H / Math.max(viewBox.h, 1));
+    const minFont = Math.ceil(16 / Math.max(s, 0.01));
+
     return {
       nodes: graph.nodes,
       edges: graph.edges,
@@ -248,14 +273,11 @@ export default function EntitiesPrintPage() {
       tileRects,
       legendPos,
       computedLegendH,
-      viewBox: {
-        x: minX - PAD,
-        y: minY - PAD,
-        w: (maxX - minX) + 2 * PAD,
-        h: (maxY - minY) + 2 * PAD,
-      },
+      viewBox,
+      minFont,
       relationships: data.relationships || [],
       entities: data.entities || [],
+      blocks: data.beneficiary_blocks || [],
     };
   }, [data, user, beneficiaries]);
 
@@ -324,6 +346,12 @@ export default function EntitiesPrintPage() {
 
   // ── Static SVG renderer ──────────────────────────────────────────
 
+  // 12pt minimum-font helper. Every hard-coded fontSize in the SVG
+  // below is wrapped in `mf(N)` so it can be bumped up by the layout
+  // memo when the chart shrinks to fit a single page (per user's
+  // strict "no less than 12pt in any text PDFs" rule).
+  const mf = (n) => Math.max(n, layout.minFont);
+
   const renderEdges = () => {
     return layout.routedEdges.map(({ edge, points, midPoint }) => {
       const role = ROLE_PALETTE[edge.role] || ROLE_PALETTE.owner;
@@ -346,7 +374,7 @@ export default function EntitiesPrintPage() {
           {isEquity && edge.ownership_pct != null && (
             <g transform={`translate(${midPoint.x - 18}, ${midPoint.y - 9})`}>
               <rect width="36" height="18" rx="9" fill="#fffaf0" stroke="#B8860B" strokeWidth="1" />
-              <text x="18" y="13" textAnchor="middle" fontSize="10" fontWeight="700" fill="#B8860B">
+              <text x="18" y="13" textAnchor="middle" fontSize={mf(10)} fontWeight="700" fill="#B8860B">
                 {Math.round(edge.ownership_pct)}%
               </text>
             </g>
@@ -418,7 +446,7 @@ export default function EntitiesPrintPage() {
             <text
               x={36}
               y={rect.h / 2 - 4}
-              fontSize={13}
+              fontSize={mf(13)}
               fontWeight="700"
               fill="#0F172A"
             >
@@ -428,7 +456,7 @@ export default function EntitiesPrintPage() {
               <text
                 x={36}
                 y={rect.h / 2 + 12}
-                fontSize={10}
+                fontSize={mf(10)}
                 fontWeight="600"
                 fill={accentColor}
               >
@@ -438,7 +466,7 @@ export default function EntitiesPrintPage() {
             {e?.formation_state && (
               <g transform={`translate(${36}, ${rect.h - 18})`}>
                 <rect width="28" height="13" rx="6" fill="#FFFAF0" stroke={accentColor} strokeWidth={0.9} />
-                <text x="14" y="9.5" textAnchor="middle" fontSize="8" fontWeight="700" fill={accentColor}>
+                <text x="14" y="9.5" textAnchor="middle" fontSize={mf(8)} fontWeight="700" fill={accentColor}>
                   {e.formation_state}
                 </text>
               </g>
@@ -473,7 +501,7 @@ export default function EntitiesPrintPage() {
               <text
                 x={CLUSTER_PAD_X}
                 y={14}
-                fontSize={9}
+                fontSize={mf(9)}
                 fontWeight="700"
                 fill="#0F766E"
                 style={{ textTransform: 'uppercase' }}
@@ -510,7 +538,7 @@ export default function EntitiesPrintPage() {
                         clipPath={`url(#${memberClip})`}
                       />
                     ) : (
-                      <text x={cx} y={cy + 4} textAnchor="middle" fontSize={10} fontWeight="700" fill="#0F766E">
+                      <text x={cx} y={cy + 4} textAnchor="middle" fontSize={mf(10)} fontWeight="700" fill="#0F766E">
                         {initials}
                       </text>
                     )}
@@ -518,7 +546,7 @@ export default function EntitiesPrintPage() {
                       x={cx}
                       y={cy + CLUSTER_AVATAR_R + 10}
                       textAnchor="middle"
-                      fontSize={8}
+                      fontSize={mf(8)}
                       fontWeight="700"
                       fill="#0F172A"
                     >
@@ -563,7 +591,7 @@ export default function EntitiesPrintPage() {
                 x={rect.w / 2}
                 y={33}
                 textAnchor="middle"
-                fontSize={14}
+                fontSize={mf(14)}
                 fontWeight="700"
                 fill="#92400E"
               >
@@ -575,7 +603,7 @@ export default function EntitiesPrintPage() {
               x={rect.w / 2}
               y={68}
               textAnchor="middle"
-              fontSize={11}
+              fontSize={mf(11)}
               fontWeight="700"
               fill="#0F172A"
             >
@@ -586,7 +614,7 @@ export default function EntitiesPrintPage() {
                 x={rect.w / 2}
                 y={82}
                 textAnchor="middle"
-                fontSize={9}
+                fontSize={mf(9)}
                 fill="#475569"
               >
                 {truncate(subText, 16)}
@@ -597,7 +625,7 @@ export default function EntitiesPrintPage() {
                 x={rect.w / 2}
                 y={98}
                 textAnchor="middle"
-                fontSize={9}
+                fontSize={mf(9)}
                 fontWeight="700"
                 fill={tileStroke}
               >
@@ -633,7 +661,7 @@ export default function EntitiesPrintPage() {
           stroke="#B8860B"
           strokeWidth={1.4}
         />
-        <text x={10} y={16} fontSize={11} fontWeight="700" fill="#B8860B" letterSpacing="0.06em">
+        <text x={10} y={16} fontSize={mf(11)} fontWeight="700" fill="#B8860B" letterSpacing="0.06em">
           LEGEND
         </text>
         <line x1={0} x2={LEGEND_W} y1={headerH} y2={headerH} stroke="#B8860B" strokeOpacity={0.35} />
@@ -652,7 +680,7 @@ export default function EntitiesPrintPage() {
                 strokeLinecap="round"
                 strokeDasharray={palette.dash || undefined}
               />
-              <text x={50} y={y} fontSize={11} fill="#0f172a">{role.label}</text>
+              <text x={50} y={y} fontSize={mf(11)} fill="#0f172a">{role.label}</text>
             </g>
           );
         })}
@@ -685,7 +713,7 @@ export default function EntitiesPrintPage() {
               ) : (
                 <circle cx={26} cy={yOffset - 3} r={5} fill={bucketColor} />
               )}
-              <text x={42} y={yOffset} fontSize={11} fill="#0f172a">{b.label}</text>
+              <text x={42} y={yOffset} fontSize={mf(11)} fill="#0f172a">{b.label}</text>
             </g>
           );
         })}
@@ -913,58 +941,118 @@ export default function EntitiesPrintPage() {
         </button>
       </div>
 
-      <div className="cfp-print-header">
-        <h1>Entities &amp; Structures</h1>
-        <div className="subtitle">
-          {estateName ? `${estateName} • ` : ''}{today}
+      <div className="cfp-print-page cfp-print-page-1">
+        <div className="cfp-print-header">
+          <h1>Entities &amp; Structures</h1>
+          <div className="subtitle">
+            {estateName ? `${estateName} • ` : ''}{today}
+          </div>
+        </div>
+
+        <div className="cfp-print-svg-wrap">
+          {(() => {
+            // iOS Safari's print engine silently ignores `preserveAspectRatio`
+            // on SVG when the surrounding wrapper has hard inch dimensions —
+            // so tree content authored in user-space coordinates leaks past
+            // the right/bottom edges of the page. Sidestep the engine by
+            // using a FIXED pixel-unit viewBox (790×820, the rounded pixel
+            // equivalent of our 7.9×8.2-inch physical SVG) and applying the
+            // bbox-fit scale + center-translate ourselves on an outer <g>.
+            // This makes the tree render *deterministically* at the size
+            // we computed, regardless of how the browser interprets the
+            // outer <svg> sizing.
+            const PAGE_W = 790;
+            const PAGE_H = 820;
+            const bb = layout.viewBox;
+            const scale = Math.min(
+              PAGE_W / Math.max(bb.w, 1),
+              PAGE_H / Math.max(bb.h, 1),
+            );
+            const tx = (PAGE_W - bb.w * scale) / 2 - bb.x * scale;
+            const ty = (PAGE_H - bb.h * scale) / 2 - bb.y * scale;
+            return (
+              <svg
+                width="7.9in"
+                height="8.2in"
+                viewBox={`0 0 ${PAGE_W} ${PAGE_H}`}
+                preserveAspectRatio="xMidYMid meet"
+                xmlns="http://www.w3.org/2000/svg"
+                data-testid="entity-print-svg"
+                style={{ display: 'block' }}
+              >
+                <g transform={`translate(${tx} ${ty}) scale(${scale})`}>
+                  {renderEdges()}
+                  {layout.tileRects.filter((r) => r.key !== '__legend__').map(renderTile)}
+                  {renderLegend()}
+                </g>
+              </svg>
+            );
+          })()}
+        </div>
+
+        <div className="cfp-print-footer">
+          <span>Generated by CarryOn™</span>
+          <span>carryon.us</span>
         </div>
       </div>
 
-      <div className="cfp-print-svg-wrap">
-        {(() => {
-          // iOS Safari's print engine silently ignores `preserveAspectRatio`
-          // on SVG when the surrounding wrapper has hard inch dimensions —
-          // so tree content authored in user-space coordinates leaks past
-          // the right/bottom edges of the page. Sidestep the engine by
-          // using a FIXED pixel-unit viewBox (790×820, the rounded pixel
-          // equivalent of our 7.9×8.2-inch physical SVG) and applying the
-          // bbox-fit scale + center-translate ourselves on an outer <g>.
-          // This makes the tree render *deterministically* at the size
-          // we computed, regardless of how the browser interprets the
-          // outer <svg> sizing.
-          const PAGE_W = 790;
-          const PAGE_H = 820;
-          const bb = layout.viewBox;
-          const scale = Math.min(
-            PAGE_W / Math.max(bb.w, 1),
-            PAGE_H / Math.max(bb.h, 1),
-          );
-          const tx = (PAGE_W - bb.w * scale) / 2 - bb.x * scale;
-          const ty = (PAGE_H - bb.h * scale) / 2 - bb.y * scale;
-          return (
-            <svg
-              width="7.9in"
-              height="8.2in"
-              viewBox={`0 0 ${PAGE_W} ${PAGE_H}`}
-              preserveAspectRatio="xMidYMid meet"
-              xmlns="http://www.w3.org/2000/svg"
-              data-testid="entity-print-svg"
-              style={{ display: 'block' }}
-            >
-              <g transform={`translate(${tx} ${ty}) scale(${scale})`}>
-                {renderEdges()}
-                {layout.tileRects.filter((r) => r.key !== '__legend__').map(renderTile)}
-                {renderLegend()}
-              </g>
-            </svg>
-          );
-        })()}
-      </div>
-
-      <div className="cfp-print-footer">
-        <span>Generated by CarryOn™</span>
-        <span>carryon.us</span>
-      </div>
+      {/* Page 2+ — Beneficiary Blocks summary list. Only renders when
+          the estate has at least one block. Flows naturally across
+          additional pages if the list is long. Every text element on
+          this page is set to ≥ 12pt per the user's "no less than 12
+          point font anywhere in any text PDFs" requirement. */}
+      {(layout.blocks || []).length > 0 && (
+        <div className="cfp-print-page cfp-print-page-2" data-testid="entity-print-blocks-page">
+          <div className="cfp-print-header">
+            <h1>Beneficiary Blocks</h1>
+            <div className="subtitle">
+              {estateName ? `${estateName} • ` : ''}{today} • {(layout.blocks || []).length} block{(layout.blocks || []).length === 1 ? '' : 's'}
+            </div>
+          </div>
+          <div className="cfp-print-blocks-list">
+            {(layout.blocks || []).map((b) => {
+              const attachedEntityNames = (layout.relationships || [])
+                .filter((r) => r.source_type === 'beneficiary_block'
+                  && r.source_id === b.id
+                  && r.target_type === 'entity'
+                  && r.role === 'beneficiary')
+                .map((r) => (layout.entities || []).find((e) => e.id === r.target_id)?.name)
+                .filter(Boolean);
+              const memberLabels = (b.members || []).map((m) => {
+                if (m.kind === 'beneficiary') {
+                  const ben = (beneficiaries || []).find((bb) => bb.id === m.id);
+                  return ben ? `${ben.first_name || ''} ${ben.last_name || ''}`.trim() : null;
+                }
+                if (m.kind === 'external_person') {
+                  const ep = (data?.external_people || []).find((p) => p.id === m.id);
+                  return ep ? `${ep.first_name || ''} ${ep.last_name || ''}`.trim() : null;
+                }
+                if (m.kind === 'user') {
+                  return user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'You' : 'You';
+                }
+                return null;
+              }).filter(Boolean);
+              return (
+                <div key={b.id} className="cfp-print-block-row" data-testid={`entity-print-block-row-${b.id}`}>
+                  <div className="cfp-print-block-name">{b.name}</div>
+                  <div className="cfp-print-block-line">
+                    <span className="cfp-print-block-label">Members ({memberLabels.length}):</span>{' '}
+                    {memberLabels.length === 0 ? '—' : memberLabels.join(', ')}
+                  </div>
+                  <div className="cfp-print-block-line">
+                    <span className="cfp-print-block-label">Attached to ({attachedEntityNames.length}):</span>{' '}
+                    {attachedEntityNames.length === 0 ? 'not attached to any entity yet' : attachedEntityNames.join(', ')}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="cfp-print-footer">
+            <span>Generated by CarryOn™</span>
+            <span>carryon.us</span>
+          </div>
+        </div>
+      )}
     </div>,
     document.body
   );
