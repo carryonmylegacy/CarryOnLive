@@ -1,6 +1,39 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — E&S Per-Trust Trees + Drag-with-Cluster + Marquee Select
+
+### Ask 1 — Same Beneficiary, Multiple Trusts, Visible Under Each
+**Need** — A beneficiary who is named in multiple trusts should render as a distinct visual instance under each trust, not collapsed into a single tile with crisscrossing edges.
+
+**Approach** — Per-trust visual instances. `buildGraph` in `EntityOrgChart.js` now pre-scans `relationships` for every `(source_type: beneficiary, target_type: entity)` pair, clones the global `beneficiary:<bid>` pool entry into `beneficiary:<bid>@<eid>`, and rewrites edges so each entity-beneficiary edge points at the matching instance key. The global `beneficiary:<bid>` node is only kept if it has at least one *other* edge (e.g., a person-to-person relationship); otherwise it's hidden so the user sees zero duplicate avatars floating outside any cluster.
+
+`EntityDetailPanel.handleBulkAddBeneficiaries` was updated to emit override keys in the new instance format: `beneficiary:<bid>@<entity_id>` for both newly-added picks and pre-existing relationships being re-tidied. The toast wording is unchanged.
+
+Net result: one bulk-add call per entity = one independent mini cluster per entity, regardless of how many trusts share the same beneficiaries.
+
+### Ask 2 — Drag an Entity → Its Mini Cluster Follows
+**Need** — Moving a trust tile shouldn't shatter the auto-generated mini cluster underneath it. The user shouldn't have to re-tidy every avatar after every drag.
+
+**Fix** — `onPointerDownDrag` in `EntityOrgChart` now detects when the dragged node is an entity and walks the `nodes` Map for every member whose `cluster_parent_entity_id` matches. Their origX/origY are captured into a `groupOrig` map at drag-start. The pointer-move handler applies a single (dx/zoom, dy/zoom) delta to every group member in one `setOverrides` call — the cluster translates as a rigid body with no edge re-routing artefact.
+
+Also fixed a separate regression while in the same code path: the prior `setOverrides((prev) => ({ ...prev, [ds.key]: { x, y } }))` wiped any non-x/y fields (`mini: true`, future flags) on every drag. Now uses `{ ...(prev[ds.key] || {}), x, y }` to preserve all metadata.
+
+### Ask 3 — Marquee Select + Group Move
+**Need** — Tap-and-hold on empty canvas → drag out a rectangle → release → tap one selected tile to drag the whole batch.
+
+**Fix** — Three additions to `EntityOrgChart`:
+1. **State:** `selectedKeys: Set<string>`, `marquee: { x0, y0, x1, y1 } | null`, refs for the long-press timer + origin.
+2. **Container pointer handlers:** `onContainerPointerDown` schedules a 350 ms long-press timer (auto-cancelled if the pointer drifts > 6 px or leaves blank canvas — tiles still call `stopPropagation` on their own pointerdown, so a tap on a tile never starts a marquee). When the timer fires, `marquee` is initialised at the touch point and tracked through pointermove. On pointerup, every node whose centre falls inside the rect is added to `selectedKeys`.
+3. **Group drag from selection:** `onPointerDownDrag` checks `selectedKeys` before the entity-cluster fallback. When the dragged tile is part of the selection, the entire selection becomes the drag group.
+
+**Visual affordances:**
+- The marquee renders as a gold-tinted dashed rectangle (`data-testid="marquee-rect"`) at z-index 40 so it sits above edges but below tiles.
+- Each selected tile gets a 3 px gold ring + 18 px gold glow box-shadow so the user knows what's about to move together.
+- A plain tap-and-release on empty canvas (no long-press, no marquee) clears the selection so it doesn't get sticky.
+
+
+
 ## Feb 13, 2026 — Bulk-Add Reliability Pass 2 (Portal + Anchor Fix)
 
 ### Bulk-Add Picker Still Wouldn't Scroll on iPhone (Pass 1 Didn't Stick)

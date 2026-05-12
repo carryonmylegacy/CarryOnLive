@@ -102,15 +102,60 @@ function buildGraph({ entities, externals, relationships, beneficiaries, user })
     });
   });
 
+  // -- Per-trust beneficiary instancing -----------------------------------
+  // A single beneficiary can be linked to many trusts/entities. To render
+  // a full family tree under EACH entity (the user's explicit request),
+  // we clone the beneficiary into a separate visual instance per
+  // (beneficiary, entity) relationship. The instance keys are
+  // `beneficiary:<bid>@<eid>` so per-trust positions can be stored
+  // independently in the layout overrides.
+  //
+  // Edges that originate from a beneficiary and target an entity are
+  // rewritten to reference the matching instance key. All other edges
+  // (e.g., person-to-person, beneficiary-as-trustee that targets a
+  // person) still use the global `beneficiary:<bid>` key. The global
+  // node is only included in the final `nodes` map if it has at least
+  // one non-instance edge; otherwise it's hidden so we don't show a
+  // duplicate avatar floating outside any cluster.
+  const benEntityPairs = new Set();
+  (relationships || []).forEach((r) => {
+    if (r.source_type === 'beneficiary' && r.target_type === 'entity') {
+      benEntityPairs.add(`${r.source_id}@${r.target_id}`);
+    }
+  });
+  benEntityPairs.forEach((pair) => {
+    const atIdx = pair.indexOf('@');
+    const bid = pair.slice(0, atIdx);
+    const eid = pair.slice(atIdx + 1);
+    const orig = pool.get(`beneficiary:${bid}`);
+    if (!orig) return;
+    // Clone all visual fields. `id` stays as the underlying beneficiary
+    // id so click handlers, edit panels, and titles all behave as if
+    // the user clicked the original beneficiary.
+    pool.set(`beneficiary:${bid}@${eid}`, {
+      ...orig,
+      key: `beneficiary:${bid}@${eid}`,
+      // Tag with the parent entity so the drag-with-children logic in
+      // the chart can find every instance that should follow when the
+      // entity tile is dragged.
+      cluster_parent_entity_id: eid,
+    });
+  });
+
   const edges = (relationships || [])
-    .map((r) => ({
-      id: r.id,
-      sourceKey: `${r.source_type}:${r.source_id}`,
-      targetKey: `${r.target_type}:${r.target_id}`,
-      role: r.role,
-      ownership_pct: r.ownership_pct,
-      raw: r,
-    }))
+    .map((r) => {
+      const isBenToEntity = r.source_type === 'beneficiary' && r.target_type === 'entity';
+      return {
+        id: r.id,
+        sourceKey: isBenToEntity
+          ? `beneficiary:${r.source_id}@${r.target_id}`
+          : `${r.source_type}:${r.source_id}`,
+        targetKey: `${r.target_type}:${r.target_id}`,
+        role: r.role,
+        ownership_pct: r.ownership_pct,
+        raw: r,
+      };
+    })
     .filter((e) => pool.has(e.sourceKey) && pool.has(e.targetKey));
 
   // Attach the largest equity stake per person to its node so the
@@ -694,8 +739,19 @@ export default function EntityOrgChart({
   // Bumped by the double-tap handler to force a fresh initial layout.
   const [relayoutTick, setRelayoutTick] = useState(0);
   const [draggingKey, setDraggingKey] = useState(null);
-  const dragStateRef = useRef(null); // { key, startX, startY, origX, origY }
+  const dragStateRef = useRef(null); // { key, startX, startY, origX, origY, groupKeys?, groupOrig? }
   const recentDragRef = useRef(false); // suppresses the click that follows a real drag
+
+  // -- Marquee selection (Ask 3) --------------------------------------------
+  // The user can long-press on empty canvas to draw a selection
+  // rectangle; on release every tile centre inside the rect joins the
+  // `selectedKeys` set. Tapping-and-holding any selected tile then
+  // drags the entire selection as a single group.
+  const [selectedKeys, setSelectedKeys] = useState(() => new Set());
+  const [marquee, setMarquee] = useState(null); // { x0, y0, x1, y1 } in canvas-coords
+  const marqueeRef = useRef(null); // mirrors marquee for fast pointermove reads
+  const longPressTimerRef = useRef(null);
+  const longPressOriginRef = useRef(null); // { clientX, clientY, canvasX, canvasY }
   const clickTimerRef = useRef(null);  // for distinguishing single vs double click
   // Tap any role chip beneath a person tile to dim everyone who
   // doesn't share that role — e.g., tap "Trustee" to instantly see
@@ -1262,6 +1318,44 @@ export default function EntityOrgChart({
     e.preventDefault();
     e.stopPropagation();
     const cur = positionOf(node.key);
+
+    // Determine the "group" that should translate together with the
+    // primary dragged tile. Two cases:
+    //
+    //   (a) The dragged tile is part of an active marquee selection
+    //       (Ask 3). Move the entire selection together.
+    //   (b) The dragged tile is an entity that hosts a mini-cluster
+    //       (any beneficiary instance key matching `*@<entity_id>`).
+    //       The user demanded the cluster follow when the parent tile
+    //       moves so they don't have to manually re-tidy after every
+    //       drag (Ask 2).
+    //
+    // We capture each member's current origX/origY at drag-start so the
+    // pointermove handler can apply a single delta to all of them.
+    let groupKeys = null;
+    let groupOrig = null;
+    if (selectedKeys.size > 0 && selectedKeys.has(node.key)) {
+      groupKeys = Array.from(selectedKeys);
+    } else if (node.kind === 'entity') {
+      const children = [];
+      nodes.forEach((n, k) => {
+        if (k === node.key) return;
+        if (n.cluster_parent_entity_id === node.id) children.push(k);
+      });
+      if (children.length > 0) {
+        groupKeys = [node.key, ...children];
+      }
+    }
+    if (groupKeys && groupKeys.length > 1) {
+      groupOrig = {};
+      groupKeys.forEach((k) => {
+        const p = positionOf(k);
+        groupOrig[k] = { x: p.x, y: p.y };
+      });
+    } else {
+      groupKeys = null;
+    }
+
     dragStateRef.current = {
       key: node.key,
       startClientX: e.clientX,
@@ -1272,6 +1366,8 @@ export default function EntityOrgChart({
       moved: false,
       w: node.w,
       h: node.h,
+      groupKeys,
+      groupOrig,
     };
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* ignore */ }
     // Also wire window-level listeners as a safety net. iOS PWA
@@ -1300,9 +1396,27 @@ export default function EntityOrgChart({
     // current) — closing over React state could read a stale value
     // briefly during pinch+drag interleavings.
     const z = zoomRef.current || 1;
-    const nextX = ds.origX + dx / z;
-    const nextY = ds.origY + dy / z;
-    setOverrides((prev) => ({ ...prev, [ds.key]: { x: nextX, y: nextY } }));
+    const ndx = dx / z;
+    const ndy = dy / z;
+    if (ds.groupKeys && ds.groupOrig) {
+      // Translate every member of the group by the same delta so an
+      // entity drags its mini-cluster (Ask 2) and a marquee selection
+      // drags as a unit (Ask 3) without falling apart.
+      setOverrides((prev) => {
+        const next = { ...prev };
+        ds.groupKeys.forEach((k) => {
+          const o = ds.groupOrig[k];
+          if (!o) return;
+          next[k] = { ...(prev[k] || {}), x: o.x + ndx, y: o.y + ndy };
+        });
+        return next;
+      });
+    } else {
+      setOverrides((prev) => ({
+        ...prev,
+        [ds.key]: { ...(prev[ds.key] || {}), x: ds.origX + ndx, y: ds.origY + ndy },
+      }));
+    }
   };
 
   const onPointerMove = (e) => {
@@ -1324,7 +1438,15 @@ export default function EntityOrgChart({
 
   const onPointerUp = () => {
     const ds = dragStateRef.current;
-    if (!ds) return;
+    if (!ds) {
+      // Clear marquee selection on a plain tap-and-release on blank
+      // canvas (no drag, no long-press fired). This keeps the
+      // "selected" outline from getting sticky.
+      if (!marqueeRef.current && longPressTimerRef.current === null && longPressOriginRef.current === null) {
+        if (selectedKeys.size > 0) setSelectedKeys(new Set());
+      }
+      return;
+    }
     if (ds.moved) {
       recentDragRef.current = true;
       // clear after the click event has had a chance to fire
@@ -1343,6 +1465,113 @@ export default function EntityOrgChart({
     dragStateRef.current = null;
     setDraggingKey(null);
   };
+
+  // ---- Marquee selection helpers (Ask 3) ----------------------------------
+  // Map a viewport-space (clientX, clientY) into chart-canvas coords by
+  // subtracting the container bounds and dividing by zoom. The chart
+  // is rendered inside a CSS-scaled wrapper so this matches what we
+  // store in `overrides`.
+  const eventToCanvasXY = (clientX, clientY) => {
+    const cb = containerRef.current?.getBoundingClientRect();
+    if (!cb) return { x: 0, y: 0 };
+    const z = zoomRef.current || 1;
+    const sx = containerRef.current.scrollLeft || 0;
+    const sy = containerRef.current.scrollTop || 0;
+    return {
+      x: (clientX - cb.left + sx) / z,
+      y: (clientY - cb.top + sy) / z,
+    };
+  };
+
+  const cancelLongPress = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    longPressOriginRef.current = null;
+  };
+
+  // Pointer-down on EMPTY canvas (i.e., not on a tile). Tiles call
+  // `stopPropagation` in their own pointerdown so this only fires when
+  // the user touches blank chart space. Schedule a 350 ms long-press
+  // timer; if the pointer stays within ~6 px until it expires we start
+  // drawing a marquee rect (`setMarquee`). Otherwise it's just a tap
+  // or a regular scroll/pan and we cancel.
+  const onContainerPointerDown = (e) => {
+    if (locked) return;
+    if (e.button === 2) return;
+    if (pinchRef.current) return;
+    const pt = eventToCanvasXY(e.clientX, e.clientY);
+    longPressOriginRef.current = { clientX: e.clientX, clientY: e.clientY, canvasX: pt.x, canvasY: pt.y };
+    cancelLongPress();
+    longPressTimerRef.current = setTimeout(() => {
+      if (!longPressOriginRef.current) return;
+      // Clear any prior selection — starting a fresh marquee.
+      setSelectedKeys(new Set());
+      const rect = { x0: pt.x, y0: pt.y, x1: pt.x, y1: pt.y };
+      marqueeRef.current = rect;
+      setMarquee(rect);
+    }, 350);
+  };
+
+  const onContainerPointerMove = (e) => {
+    // Existing drag-move logic stays first.
+    applyDragMove(e.clientX, e.clientY);
+    // Cancel pending long-press if the finger drifts before the timer.
+    if (longPressTimerRef.current && longPressOriginRef.current) {
+      const ox = longPressOriginRef.current.clientX;
+      const oy = longPressOriginRef.current.clientY;
+      if (Math.hypot(e.clientX - ox, e.clientY - oy) > 6) {
+        cancelLongPress();
+      }
+    }
+    // Update marquee rect if active.
+    if (marqueeRef.current) {
+      const pt = eventToCanvasXY(e.clientX, e.clientY);
+      const next = {
+        x0: marqueeRef.current.x0,
+        y0: marqueeRef.current.y0,
+        x1: pt.x,
+        y1: pt.y,
+      };
+      marqueeRef.current = next;
+      setMarquee(next);
+    }
+  };
+
+  const onContainerPointerUp = () => {
+    cancelLongPress();
+    // Finalize marquee — compute selection.
+    if (marqueeRef.current) {
+      const m = marqueeRef.current;
+      const minX = Math.min(m.x0, m.x1);
+      const maxX = Math.max(m.x0, m.x1);
+      const minY = Math.min(m.y0, m.y1);
+      const maxY = Math.max(m.y0, m.y1);
+      const sel = new Set();
+      nodes.forEach((n) => {
+        const p = positionOf(n.key);
+        const cx = p.x + n.w / 2;
+        const cy = p.y + n.h / 2;
+        if (cx >= minX && cx <= maxX && cy >= minY && cy <= maxY) {
+          sel.add(n.key);
+        }
+      });
+      marqueeRef.current = null;
+      setMarquee(null);
+      setSelectedKeys(sel);
+    }
+    onPointerUp();
+  };
+
+  // Clear marquee selection when the user taps anywhere that isn't a
+  // selected tile and isn't the start of a new marquee. The simple
+  // heuristic: any pointerdown on the container that DOESN'T evolve
+  // into a long-press OR a drag of a selected tile clears the set.
+  // We handle that by clearing in `onContainerPointerDown` if the user
+  // taps blank canvas and the long-press never fires (handled in the
+  // existing flow — if they just tap, the long-press timer is canceled
+  // by the pointerup at < 350 ms; we clear `selectedKeys` then too).
 
   if (!nodes.length) return null;
 
@@ -1480,9 +1709,10 @@ export default function EntityOrgChart({
         WebkitOverflowScrolling: 'touch',
         touchAction: draggingKey ? 'none' : 'auto',
       }}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
+      onPointerDown={onContainerPointerDown}
+      onPointerMove={onContainerPointerMove}
+      onPointerUp={onContainerPointerUp}
+      onPointerCancel={onContainerPointerUp}
     >
       <style>{`
         .ec-edge { /* shadow disabled for now while we sanity-check rendering */ }
@@ -1555,6 +1785,32 @@ export default function EntityOrgChart({
           dangerouslySetInnerHTML={{ __html: edgesSvgInner }}
         />
 
+        {/* Marquee selection rectangle (Ask 3) — only visible while
+            the user is actively dragging out a selection. */}
+        {marquee && (() => {
+          const x = Math.min(marquee.x0, marquee.x1);
+          const y = Math.min(marquee.y0, marquee.y1);
+          const w = Math.abs(marquee.x1 - marquee.x0);
+          const h = Math.abs(marquee.y1 - marquee.y0);
+          return (
+            <div
+              data-testid="marquee-rect"
+              style={{
+                position: 'absolute',
+                left: x,
+                top: y,
+                width: w,
+                height: h,
+                pointerEvents: 'none',
+                background: 'rgba(212,175,55,0.10)',
+                border: '1.5px dashed rgba(212,175,55,0.75)',
+                borderRadius: 6,
+                zIndex: 40,
+              }}
+            />
+          );
+        })()}
+
         {/* Tile layer */}
         {nodes.map((n) => {
           const p = positionOf(n.key);
@@ -1598,6 +1854,7 @@ export default function EntityOrgChart({
           return (
             <div
               key={n.key}
+              data-selected={selectedKeys.has(n.key) ? 'true' : undefined}
               style={{
                 position: 'absolute',
                 left: p.x,
@@ -1605,6 +1862,13 @@ export default function EntityOrgChart({
                 zIndex: isDragging ? 30 : 10,
                 transition: isDragging ? 'none' : 'box-shadow 200ms ease, opacity 200ms ease',
                 opacity: activeNodeKeys && !activeNodeKeys.has(n.key) ? 0.25 : 1,
+                // Selection ring (Ask 3): a subtle gold glow on every
+                // tile the marquee picked up so the user knows what
+                // moves together.
+                boxShadow: selectedKeys.has(n.key)
+                  ? '0 0 0 3px rgba(212,175,55,0.85), 0 0 18px rgba(212,175,55,0.55)'
+                  : undefined,
+                borderRadius: selectedKeys.has(n.key) ? 12 : undefined,
               }}
             >
               {n.kind === 'entity' ? (

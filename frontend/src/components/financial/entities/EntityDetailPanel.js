@@ -410,7 +410,16 @@ export default function EntityDetailPanel({
       const existingClusterKeys = (relationships || [])
         .filter((r) => r.role === 'beneficiary'
           && `${r.target_type}:${r.target_id}` === linkedKey)
-        .map((r) => `${r.source_type}:${r.source_id}`);
+        .map((r) => {
+          // Match the EntityOrgChart per-trust instance keying: a
+          // beneficiary→entity relationship resolves to the cloned
+          // `beneficiary:<bid>@<eid>` node so multiple trusts can each
+          // host their own visual instance of the same beneficiary.
+          if (r.source_type === 'beneficiary') {
+            return `beneficiary:${r.source_id}@${ent.id}`;
+          }
+          return `${r.source_type}:${r.source_id}`;
+        });
       // De-dupe while preserving order: existing first, then
       // newly-added picks (avoiding double-add since the picker
       // already filtered out anyone in `alreadyLinked`), then new
@@ -419,7 +428,10 @@ export default function EntityDetailPanel({
       const seen = new Set();
       const pushIfNew = (k) => { if (!seen.has(k)) { seen.add(k); orderedKeys.push(k); } };
       existingClusterKeys.forEach(pushIfNew);
-      existingIds.forEach((bid) => pushIfNew(`beneficiary:${bid}`));
+      // Newly-added beneficiaries also use the per-entity instance key
+      // so they land in this trust's cluster (not in some unrelated
+      // trust where the same beneficiary might already be visible).
+      existingIds.forEach((bid) => pushIfNew(`beneficiary:${bid}@${ent.id}`));
       createdExternals.forEach((ep) => pushIfNew(`external_person:${ep.id}`));
       if (bulkIncludeBenefactor && user?.id) pushIfNew(`user:${user.id}`);
       const n = orderedKeys.length;
