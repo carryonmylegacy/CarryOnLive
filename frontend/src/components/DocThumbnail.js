@@ -69,12 +69,52 @@ const DocThumbnail = ({ doc }) => {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="w-full h-full flex items-center justify-center animate-pulse" style={{ background: 'var(--s)' }}>
-        <FileText className="w-6 h-6 text-[var(--t5)]" />
+  // Shared shimmer that suggests "a document is materializing here" while
+  // either (a) we fetch the encrypted blob from the server or (b) pdf.js
+  // parses the first page. Uses a gold-tinted left→right gradient sweep
+  // over fake "paragraph" lines so the SDV grid feels like it's loading
+  // something valuable, not just empty rectangles.
+  const Shimmer = () => (
+    <div
+      className="w-full h-full overflow-hidden relative"
+      style={{ background: 'linear-gradient(180deg, var(--s) 0%, rgba(212,175,55,0.04) 100%)' }}
+      data-testid="doc-thumbnail-shimmer"
+    >
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute', inset: 0,
+          padding: '12px 14px',
+          display: 'flex', flexDirection: 'column', gap: 6,
+          opacity: 0.5,
+        }}
+      >
+        <div style={{ height: 6, width: '60%', borderRadius: 3, background: 'rgba(212,175,55,0.18)' }} />
+        <div style={{ height: 4, width: '85%', borderRadius: 2, background: 'rgba(255,255,255,0.06)' }} />
+        <div style={{ height: 4, width: '78%', borderRadius: 2, background: 'rgba(255,255,255,0.06)' }} />
+        <div style={{ height: 4, width: '90%', borderRadius: 2, background: 'rgba(255,255,255,0.06)' }} />
+        <div style={{ height: 4, width: '70%', borderRadius: 2, background: 'rgba(255,255,255,0.06)' }} />
+        <div style={{ height: 4, width: '82%', borderRadius: 2, background: 'rgba(255,255,255,0.06)' }} />
       </div>
-    );
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(110deg, transparent 25%, rgba(212,175,55,0.14) 50%, transparent 75%)',
+          animation: 'doc-shimmer 1.6s ease-in-out infinite',
+        }}
+      />
+      <style>{`
+        @keyframes doc-shimmer {
+          0%   { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
+    </div>
+  );
+
+  if (loading) {
+    return <Shimmer />;
   }
 
   if (error || !blobUrl) {
@@ -97,7 +137,11 @@ const DocThumbnail = ({ doc }) => {
   if (isPdf) {
     return (
       <div className="w-full h-full overflow-hidden flex items-start justify-center" style={{ background: '#fff' }}>
-        <Document file={blobUrl} loading={<div className="w-full h-full" style={{ background: 'var(--s)' }} />} error={<FileText className="w-8 h-8 text-[var(--t5)]" />}>
+        <Document
+          file={blobUrl}
+          loading={<Shimmer />}
+          error={<FileText className="w-8 h-8 text-[var(--t5)]" />}
+        >
           <Page pageNumber={1} width={200} renderTextLayer={false} renderAnnotationLayer={false} />
         </Document>
       </div>
