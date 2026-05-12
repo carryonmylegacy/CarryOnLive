@@ -1,6 +1,37 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — Bulk-Add Reliability Pass 2 (Portal + Anchor Fix)
+
+### Bulk-Add Picker Still Wouldn't Scroll on iPhone (Pass 1 Didn't Stick)
+**Bug** — Pass 1 added `WebkitOverflowScrolling: 'touch'` etc. to the picker's inner scroll container but the user reported "zero change whatsoever" — gestures still leaked to the SlidePanel scroller below ("the scrollbar moving in the background on the right").
+
+**Root cause** — The bulk-add dialog was rendered as a `position: absolute; inset: 0` child of `SlidePanel`'s own `overflow-y: auto` scroller. On iOS Safari, even with `overscroll-behavior: contain` on the child, the gesture starts inside the parent scroll region before iOS decides which scroller "owns" the touch — and the parent always wins when the child's content doesn't actually overflow yet (the dialog's natural height was usually < its `maxHeight`, so the inner scroll body had nothing to scroll).
+
+**Fix** — `EntityDetailPanel.js`: wrapped the dialog return in `createPortal(…, document.body)`. The dialog now lives at the document body level, completely outside the `SlidePanel` scroller. Also changed:
+- Dialog container from `absolute inset-0 z-10` → `fixed inset-0 z-[80]` so it sits above the page chrome.
+- Dialog `maxHeight: 'calc(var(--app-100vh, 100vh) * 0.8)'` → `maxHeight: '100%'`, with safe-area-aware padding on the outer overlay so the Confirm/Cancel footer is always visible above the iPhone home indicator.
+- Added `e.stopPropagation()` on the dialog body so clicks inside the dialog don't bubble to the outer overlay's close handler.
+
+### Bulk-Added Mini Cluster Appeared Under the Wrong Entity (And Cut Through Other Tiles)
+**Bug** — User created a brand-new `Harris Family Trust` entity and bulk-added 6 beneficiaries to it. Instead of materializing under Harris Family, the mini cluster appeared at the top of the canvas under an unrelated `Trust` (Irrevocable) tile, with edges from each beneficiary cutting straight down through the middle of the Harris Family tile.
+
+**Root cause** — `handleBulkAddBeneficiaries` computed each new beneficiary's position relative to `anchor`, where:
+```js
+const anchor = currentOverrides[entityKey] || { x: 0, y: 0 };
+```
+For a freshly-created entity (no user-saved drag override yet), `anchor` was `{ x: 0, y: 0 }` — the canvas origin, **not** wherever the entity actually renders. The cluster anchored at the top-left of the canvas regardless of which entity the user clicked. Relationship targeting was correct (lines went to Harris Family), but the cluster's spatial anchor was wrong, hence the cross-tree edges.
+
+**Fix** —
+1. Imported `buildGraph` and `computeInitialLayout` from `EntityOrgChart.js` (both already exported).
+2. Re-build the graph inside the handler and compute the naturally-resolved initial position for every node.
+3. New anchor lookup priority: `currentOverrides[entityKey]` → `initialPositions[entityKey]` → `{ x: 0, y: 0 }`. The cluster now anchors under wherever the target entity actually renders.
+4. Also pin the entity's own position into the merged overrides (only when it didn't already have a user-saved one) so that future layout recomputes don't drift the entity out from under its freshly-positioned cluster.
+
+Net effect: bulk-add now Just Works against any entity in the chart — newly created, dragged, or default-positioned — and the cluster snaps under the correct tile with clean, short edges instead of spaghetti routing.
+
+
+
 ## Feb 13, 2026 — Bulk-Add Beneficiaries Reliability Fixes
 
 ### 1. Bulk-Add Picker Won't Scroll on iPhone

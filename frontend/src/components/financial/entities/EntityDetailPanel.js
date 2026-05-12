@@ -5,6 +5,7 @@
  * relationships, and lets the user add new relationships in place.
  */
 import React, { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import SlidePanel from '../../SlidePanel';
 import {
   ChevronLeft, Loader2, Trash2, Plus, Edit2, Users,
@@ -12,6 +13,7 @@ import {
 import axios from 'axios';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Button } from '../../ui/button';
+import { buildGraph, computeInitialLayout } from './EntityOrgChart';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Textarea } from '../../ui/textarea';
@@ -371,9 +373,32 @@ export default function EntityDetailPanel({
       const PER_ROW = 5;
       const currentOverrides = (chartLayout && typeof chartLayout === 'object') ? chartLayout : {};
       const entityKey = `entity:${ent.id}`;
-      // Anchor on the entity's current effective position (drag override
-      // wins; otherwise (0,0)).
-      const anchor = currentOverrides[entityKey] || { x: 0, y: 0 };
+      // Resolve the entity's effective position in the chart. Priority:
+      //   1. Saved override in `chartLayout` (user already dragged the
+      //      entity to a custom spot)
+      //   2. Naturally-computed initial layout (the position the
+      //      EntityOrgChart would have placed the entity at if no
+      //      override exists)
+      //   3. Hard fallback (0, 0) — only happens if the graph is empty
+      //
+      // The previous code fell back STRAIGHT to (0, 0), which placed
+      // the bulk-added mini cluster at the canvas origin regardless of
+      // where the target entity actually rendered. The user reported
+      // adding beneficiaries to "Harris Family Trust" only to see them
+      // pop up under the top-level "Trust" tile with edges crossing
+      // through the middle of Harris Family — that's the bug fixed here.
+      let initialPositions = {};
+      try {
+        const g = buildGraph({ entities, externals, relationships, beneficiaries, user });
+        const init = computeInitialLayout(g.nodes, g.depth);
+        initialPositions = init?.positions || {};
+      } catch {
+        // If graph-build fails (e.g., during a partial mount), we fall
+        // back to (0, 0) below — never throw.
+      }
+      const anchor = currentOverrides[entityKey]
+        || initialPositions[entityKey]
+        || { x: 0, y: 0 };
       // Combined ordered list of EVERY node connected to this entity
       // as a beneficiary — existing relationships (so the cluster
       // re-tidies them, not just newly-linked people) + newly-created
@@ -420,8 +445,18 @@ export default function EntityDetailPanel({
 
       // 3) Merge + persist. The layout endpoint replaces the whole
       // overrides map, so we MUST include every existing override or
-      // the user's prior drags will be wiped.
-      const merged = { ...currentOverrides, ...additions };
+      // the user's prior drags will be wiped. Also pin the target
+      // entity's own position to its current anchor — otherwise if
+      // the entity had no prior override, the next layout-recompute
+      // could move it out from under the freshly-positioned mini
+      // cluster, and the cluster would drift visually.
+      const merged = {
+        ...currentOverrides,
+        // Only write the entity anchor if it isn't already a saved
+        // override (don't clobber an existing user-drag position).
+        ...(currentOverrides[entityKey] ? {} : { [entityKey]: { x: anchor.x, y: anchor.y } }),
+        ...additions,
+      };
 
       // 3a) Apply the merged layout to the parent's local state
       // BEFORE awaiting the network round-trip. Two reasons:
@@ -928,15 +963,38 @@ export default function EntityDetailPanel({
             if (allSelected) setBulkSelected(new Set());
             else setBulkSelected(new Set(pickable.map((b) => b.id)));
           };
-          return (
+          return createPortal(
             <div
-              className="absolute inset-0 z-10 flex items-center justify-center bg-black/70 p-4"
+              className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4"
               data-testid="bulk-add-beneficiaries-overlay"
               onClick={() => !bulkSaving && setBulkOpen(false)}
+              style={{
+                // Belt-and-suspenders: the picker dialog ALWAYS scrolls
+                // internally. iOS Safari was bubbling vertical-swipe
+                // gestures to the SlidePanel below because the dialog
+                // used to be rendered as a `position: absolute` child
+                // of the SlidePanel's own overflow-y scroller. We now
+                // portal the dialog to document.body so it lives in a
+                // sibling layer of the page chrome — no parent scroller
+                // to leak gestures into.
+                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
+                paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)',
+              }}
             >
               <div
                 className="rounded-2xl max-w-sm w-full flex flex-col"
-                style={{ background: 'var(--bg2)', border: '1px solid var(--b)', boxShadow: '0 12px 40px rgba(0,0,0,0.5)', maxHeight: 'calc(var(--app-100vh, 100vh) * 0.8)' }}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  background: 'var(--bg2)',
+                  border: '1px solid var(--b)',
+                  boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+                  // The outer overlay already pads for safe areas, so
+                  // 100% here means "all the available space inside the
+                  // padded region." That guarantees the Confirm/Cancel
+                  // footer stays above the iPhone home indicator and
+                  // the inner scroll body has somewhere to scroll to.
+                  maxHeight: '100%',
+                }}
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
@@ -1183,7 +1241,8 @@ export default function EntityDetailPanel({
                   </Button>
                 </div>
               </div>
-            </div>
+            </div>,
+            document.body,
           );
         })()}
       </div>
