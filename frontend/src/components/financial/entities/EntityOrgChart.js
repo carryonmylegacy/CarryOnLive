@@ -206,12 +206,23 @@ function buildGraph({ entities, externals, relationships, beneficiaries, user, b
       }
       return null;
     }).filter(Boolean);
+    // Count distinct entities this block is currently attached to.
+    // Surfaces on the tile as "× N entities" so during a demo the
+    // audience can see at a glance that one named group is reused
+    // across multiple trusts / LLCs — the whole point of named blocks.
+    const attachedEntityCount = (relationships || []).filter((r) =>
+      r.role === 'beneficiary'
+      && r.source_type === 'beneficiary_block'
+      && r.source_id === b.id
+      && r.target_type === 'entity',
+    ).length;
     pool.set(`block:${b.id}`, {
       key: `block:${b.id}`,
       kind: 'block',
       id: b.id,
       name: b.name || 'Block',
       members: hydratedMembers,
+      attachedEntityCount,
       w: CLUSTER_W,
       h: clusterHeight(Math.max(1, hydratedMembers.length)),
     });
@@ -833,10 +844,24 @@ function ClusterTile({ node, dragging, locked, onPointerDownDrag, onClick, entit
       }}
     >
       <div
-        className="px-2 pt-1.5 pb-1 text-[11px] font-bold uppercase tracking-wide truncate"
+        className="px-2 pt-1.5 pb-1 text-[11px] font-bold uppercase tracking-wide flex items-center justify-between gap-2"
         style={{ color: headerColor, pointerEvents: 'none' }}
       >
-        {headerLabel}
+        <span className="truncate flex-1 min-w-0">{headerLabel}</span>
+        {isBlock && (node.attachedEntityCount || 0) > 1 && (
+          <span
+            className="flex-shrink-0 px-1.5 py-0.5 rounded-full text-[11px] font-bold normal-case tracking-normal"
+            style={{
+              background: 'rgba(34,201,147,0.18)',
+              border: `1px solid ${headerColor}`,
+              color: headerColor,
+            }}
+            data-testid={`block-attached-count-${node.id}`}
+            title={`Attached to ${node.attachedEntityCount} entities`}
+          >
+            ×{node.attachedEntityCount}
+          </span>
+        )}
       </div>
       <div
         className="absolute"

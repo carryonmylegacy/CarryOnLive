@@ -550,6 +550,39 @@ export default function EntitiesPrintPage() {
                   ? (n.name || 'Block').slice(0, 40)
                   : `${members.length} beneficiar${members.length === 1 ? 'y' : 'ies'} · ${parentName}`.slice(0, 40)}
               </text>
+              {isBlock && (n.attachedEntityCount || 0) > 1 && (() => {
+                // "× N entities" reusability badge, top-right of the
+                // cluster tile. Only shown when the block is attached
+                // to more than one entity — the whole point of named
+                // blocks is reusability. Single-attach blocks don't
+                // need the visual chrome.
+                const badgeW = 28;
+                const badgeH = 14;
+                const badgeX = rect.w - CLUSTER_PAD_X - badgeW;
+                const badgeY = 4;
+                return (
+                  <g transform={`translate(${badgeX}, ${badgeY})`}>
+                    <rect
+                      width={badgeW}
+                      height={badgeH}
+                      rx={7}
+                      fill="rgba(34,201,147,0.18)"
+                      stroke="#0F766E"
+                      strokeWidth={0.9}
+                    />
+                    <text
+                      x={badgeW / 2}
+                      y={10}
+                      textAnchor="middle"
+                      fontSize={mf(8)}
+                      fontWeight="700"
+                      fill="#0F766E"
+                    >
+                      ×{n.attachedEntityCount}
+                    </text>
+                  </g>
+                );
+              })()}
               {members.map((m, i) => {
                 const row = Math.floor(i / CLUSTER_COLS);
                 const col = i % CLUSTER_COLS;

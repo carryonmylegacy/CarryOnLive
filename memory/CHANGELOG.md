@@ -1,6 +1,22 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — Block Reusability Badge (× N entities)
+
+### Need (user said "yes" to the suggested pitch-relevant add)
+Show, at a glance on each on-canvas named-block tile, how many entities the block is attached to — so during a live demo the audience can see one named group ("Kids", "Charities") wired into multiple trusts/LLCs and the named-block reusability pitch lands visually.
+
+### Change
+- `EntityOrgChart.js` `buildGraph`: each `kind: 'block'` node now carries `attachedEntityCount` (computed once per render, from the relationships list — filter `role='beneficiary' && source_type='beneficiary_block' && source_id===b.id && target_type='entity'`).
+- `EntityOrgChart.js` `ClusterTile`: when `isBlock && attachedEntityCount > 1`, render a small teal pill (`× N`) right-aligned in the tile header, alongside the block name. Single-attach blocks suppress the pill (the badge only makes sense when there's reuse to brag about). `11px` font (housekeeping iOS accessibility floor).
+- `EntitiesPrintPage.js` renderTile: identical badge in the print SVG — `28×14` rounded rect with `×N` text in the cluster header. Same `>1` threshold so single-attach blocks print cleanly without the chrome.
+
+### Verified
+- `bash /app/housekeeping.sh` → **0 FAIL, 0 WARN**.
+- ESLint on both edited files → **0 errors**.
+
+
+
 ## Feb 14, 2026 — Consolidated "Add beneficiaries (bulk)" + Named Blocks (drop gold)
 
 ### Need (verbatim, screenshot context)
