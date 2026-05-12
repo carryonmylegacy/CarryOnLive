@@ -791,12 +791,12 @@ const GuardianPage = () => {
       {renderAddressGate()}
 
       {/* Chat Header */}
-      <div className="flex items-center justify-between px-4 py-2 flex-shrink-0" style={{
+      <div className="flex items-center justify-between px-3 py-2 flex-shrink-0 gap-2" style={{
         borderBottom: '1px solid var(--b)',
       }}>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           <button onClick={goBackToLanding}
-            className="w-10 h-10 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
+            className="w-10 h-10 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)] flex-shrink-0"
             data-testid="back-to-landing-btn">
             <ArrowLeft className="w-5 h-5 text-[var(--t3)]" />
           </button>
@@ -804,14 +804,14 @@ const GuardianPage = () => {
             style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
             <Sparkles className="w-4 h-4 text-[var(--gold)]" />
           </div>
-          <div>
-            <h1 className="text-sm font-bold text-[var(--t)] leading-none" style={{ fontFamily: 'var(--sans)' }}>Estate Guardian AI (EGA)</h1>
-            <span className="text-[var(--t5)] text-[11px] flex items-center gap-1">
-              <Shield className="w-2 h-2 text-[#22C993]" /> AES-256 encrypted session
+          <div className="min-w-0 flex-1">
+            <h1 className="text-sm font-bold text-[var(--t)] leading-tight whitespace-nowrap overflow-hidden text-ellipsis" style={{ fontFamily: 'var(--sans)' }}>Estate Guardian AI <span className="text-[var(--t4)] font-normal">(EGA)</span></h1>
+            <span className="text-[var(--t5)] text-[11px] flex items-center gap-1 whitespace-nowrap overflow-hidden text-ellipsis">
+              <Shield className="w-2 h-2 text-[#22C993] flex-shrink-0" /> <span className="truncate">AES-256 encrypted session</span>
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 flex-shrink-0">
           <button onClick={handleExportTranscript} disabled={exporting || !sessionId} title="Download Transcript"
             className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
             style={{ color: '#94a3b8' }}
@@ -1057,16 +1057,16 @@ const GuardianPage = () => {
         </div>
 
         <form onSubmit={handleChatSubmit} className="flex items-end gap-2 max-w-3xl lg:max-w-5xl mx-auto px-3 lg:px-8 pb-2">
-          <div className="flex-1 rounded-2xl px-3 py-1.5" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+          <div className="flex-1 rounded-2xl px-3 py-1" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
             <textarea
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (input.trim() && !loading) { sendMessage(input); } } }}
               placeholder="Ask about your estate plan..."
-              className="w-full bg-transparent text-base text-[var(--t)] placeholder:text-[var(--t5)] outline-none resize-none py-1.5"
-              rows={3}
-              style={{ overflow: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent' }}
+              className="w-full bg-transparent text-base text-[var(--t)] placeholder:text-[var(--t5)] outline-none resize-none py-1"
+              rows={2}
+              style={{ overflow: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent', maxHeight: '120px' }}
               disabled={loading}
               data-testid="guardian-input"
             />

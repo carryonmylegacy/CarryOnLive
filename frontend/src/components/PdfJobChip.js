@@ -26,7 +26,7 @@ const PdfJobChip = () => {
   // first chip but the first job still fires its own complete event
   // (which auto-opens the modal). This keeps the chip simple and prevents
   // chip-stacking visual noise.
-  const [job, setJob] = useState(null); // { jobId, title, status: 'running'|'ready'|'error', entry?, error? }
+  const [job, setJob] = useState(null); // { jobId, title, status, entry?, error?, hasBeenViewed? }
 
   useEffect(() => {
     const onStart = (e) => {
@@ -35,7 +35,7 @@ const PdfJobChip = () => {
     };
     const onComplete = (e) => {
       const entry = e.detail || {};
-      setJob({ jobId: entry.jobId, title: entry.title, status: 'ready', entry });
+      setJob({ jobId: entry.jobId, title: entry.title, status: 'ready', entry, hasBeenViewed: false });
     };
     const onError = (e) => {
       const { jobId, title, error } = e.detail || {};
@@ -51,12 +51,15 @@ const PdfJobChip = () => {
     };
   }, []);
 
-  // Auto-dismiss "ready" / "error" chips after a beat.
+  // Auto-dismiss only the ERROR chip (after 8s). The READY chip is
+  // intentionally STICKY — it stays visible until the user dismisses it
+  // (X button) or a new job starts. This way, after the user closes the
+  // preview modal they always have a one-tap way to re-open the same PDF
+  // for the rest of the session, until they explicitly dismiss the chip.
   useEffect(() => {
     if (!job) return undefined;
-    if (job.status === 'running') return undefined;
-    const ttl = job.status === 'ready' ? 6000 : 8000;
-    const t = setTimeout(() => setJob(null), ttl);
+    if (job.status === 'running' || job.status === 'ready') return undefined;
+    const t = setTimeout(() => setJob(null), 8000);
     return () => clearTimeout(t);
   }, [job]);
 
@@ -64,7 +67,8 @@ const PdfJobChip = () => {
     if (!job) return;
     if (job.status === 'ready' && job.entry) {
       window.dispatchEvent(new CustomEvent('carryon:open-pdf-preview', { detail: job.entry }));
-      setJob(null);
+      // Mark as viewed (changes chip label from "tap to view" to "tap to view again")
+      setJob((prev) => prev ? { ...prev, hasBeenViewed: true } : prev);
     } else if (job.status === 'error') {
       setJob(null);
     }
@@ -73,7 +77,13 @@ const PdfJobChip = () => {
 
   const handleDismiss = useCallback((e) => {
     e.stopPropagation();
-    setJob(null);
+    // Revoke the blob URL on dismiss so memory is freed.
+    setJob((prev) => {
+      if (prev?.entry?.url) {
+        try { URL.revokeObjectURL(prev.entry.url); } catch { /* ignore */ }
+      }
+      return null;
+    });
   }, []);
 
   if (typeof document === 'undefined') return null;
@@ -149,7 +159,9 @@ const PdfJobChip = () => {
         data-testid="pdf-job-chip-text"
       >
         {isRunning && `Generating ${job.title}…`}
-        {isReady && `${job.title} ready — tap to view`}
+        {isReady && (job.hasBeenViewed
+          ? `${job.title} — tap to view again`
+          : `${job.title} ready — tap to view`)}
         {isError && `${job.title} failed — tap to dismiss`}
       </span>
       {!isRunning && (

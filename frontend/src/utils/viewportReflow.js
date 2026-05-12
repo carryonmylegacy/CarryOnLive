@@ -41,11 +41,18 @@ export default function installViewportReflow() {
     root.style.setProperty('--app-vh', `${h * 0.01}px`);
     root.style.setProperty('--app-100vw', `${w}px`);
     root.style.setProperty('--app-100vh', `${h}px`);
-    // Force layout reflow — touching offsetHeight invalidates layout cache
-    // and forces Safari to recompute viewport-relative units. This is the
-    // documented workaround for the iOS PWA vw/vh stale-cache bug.
-    // eslint-disable-next-line no-unused-expressions
-    root.offsetHeight;
+    // Force a HARD layout reflow. Two-step:
+    //   1) Touch body.minHeight to invalidate the body box-model cache.
+    //   2) Read documentElement.offsetHeight (sync layout flush).
+    // This is the documented workaround for the iOS PWA vw/vh stale-cache
+    // bug that survives a simple offsetHeight read after orientationchange.
+    if (document.body) {
+      const prevMin = document.body.style.minHeight;
+      document.body.style.minHeight = '0px';
+      // eslint-disable-next-line no-unused-expressions
+      root.offsetHeight;
+      document.body.style.minHeight = prevMin;
+    }
   };
 
   // Initial values so CSS can rely on the vars from first paint.
