@@ -82,7 +82,7 @@ const HIDDEN_KEY = (estateId) => `cfp_entity_chart_hidden:${estateId || 'global'
 // ---------------------------------------------------------------------------
 // Graph build (same approach as v1 but returns nodes flat for free layout)
 // ---------------------------------------------------------------------------
-function buildGraph({ entities, externals, relationships, beneficiaries, user }) {
+function buildGraph({ entities, externals, relationships, beneficiaries, user, blocks }) {
   const nodes = new Map();
 
   // Person/entity nodes only get added if they participate in a relationship
@@ -166,6 +166,57 @@ function buildGraph({ entities, externals, relationships, beneficiaries, user })
     });
   });
 
+  // -- Named beneficiary blocks ---------------------------------------------
+  // Blocks are first-class, reusable, named groups. Each block becomes
+  // a single `block:<bid>` tile, regardless of how many entities it's
+  // attached to. Members are resolved from the block's stored member
+  // list (kind + id) — kinds are 'beneficiary' | 'external_person' | 'user'.
+  const externalsIndex = new Map();
+  (externals || []).forEach((p) => externalsIndex.set(p.id, p));
+  const userIdToHydrated = user ? {
+    id: user.id,
+    first_name: user.first_name || (user.name || '').split(' ')[0] || 'You',
+    photo: user.photo_url,
+    avatar_color: '#D4AF37',
+  } : null;
+  (blocks || []).forEach((b) => {
+    const hydratedMembers = (b.members || []).map((m) => {
+      if (m.kind === 'beneficiary') {
+        const ben = benIndex.get(m.id);
+        if (!ben) return null;
+        return {
+          id: ben.id,
+          first_name: ben.first_name || (ben.name || '').split(' ')[0] || 'Member',
+          photo: ben.photo_url,
+          avatar_color: ben.avatar_color,
+        };
+      }
+      if (m.kind === 'external_person') {
+        const p = externalsIndex.get(m.id);
+        if (!p) return null;
+        return {
+          id: p.id,
+          first_name: p.first_name || (p.name || '').split(' ')[0] || 'Member',
+          photo: p.photo_url,
+          avatar_color: '#94A3B8',
+        };
+      }
+      if (m.kind === 'user' && userIdToHydrated && userIdToHydrated.id === m.id) {
+        return userIdToHydrated;
+      }
+      return null;
+    }).filter(Boolean);
+    pool.set(`block:${b.id}`, {
+      key: `block:${b.id}`,
+      kind: 'block',
+      id: b.id,
+      name: b.name || 'Block',
+      members: hydratedMembers,
+      w: CLUSTER_W,
+      h: clusterHeight(Math.max(1, hydratedMembers.length)),
+    });
+  });
+
   // Map each consumed beneficiary→entity edge to a single
   // entity→cluster edge. Direction is reversed (entity source,
   // cluster target) so the BFS depth pass naturally places the
@@ -192,6 +243,24 @@ function buildGraph({ entities, externals, relationships, beneficiaries, user })
         }
         // Suppress the individual beneficiary→entity edge — it's
         // represented inside the cluster tile, no line needed.
+        return acc;
+      }
+      // Block→entity relationship: one edge per (block, entity) pair.
+      // Direction reversed (entity source, block target) to mirror the
+      // legacy cluster behavior — block sits below its attached entity
+      // in the BFS depth pass.
+      if (r.source_type === 'beneficiary_block' && r.target_type === 'entity' && r.role === 'beneficiary') {
+        if (pool.has(`block:${r.source_id}`) && pool.has(`entity:${r.target_id}`)) {
+          acc.push({
+            id: `block-edge:${r.id}`,
+            sourceKey: `entity:${r.target_id}`,
+            targetKey: `block:${r.source_id}`,
+            role: 'beneficiary',
+            ownership_pct: null,
+            synthetic: true,
+            raw: r,
+          });
+        }
         return acc;
       }
       acc.push({
@@ -262,6 +331,7 @@ function buildGraph({ entities, externals, relationships, beneficiaries, user })
   pool.forEach((n, k) => {
     if (n.kind === 'entity') nodes.set(k, n);
     else if (n.kind === 'cluster') nodes.set(k, n);
+    else if (n.kind === 'block') nodes.set(k, n);
     else if (personKeysWithRel.has(k)) nodes.set(k, n);
   });
 
@@ -719,40 +789,48 @@ function EntityTile({ node, dragging, locked, onPointerDownDrag, onClick, onDoub
   );
 }
 
-// ClusterTile — one composite tile per entity that has beneficiaries.
-// Renders the entity name on a header strip, then a brick-pattern grid
-// of half-sized avatars (5 per row, odd rows offset by half a column).
-// First name only beneath each avatar. One SVG edge connects this tile
-// to the parent entity (handled by the edge layer, not in here).
+// ClusterTile — composite tile per entity that has beneficiaries.
+// Used for both auto-clusters (n.kind === 'cluster', header derives
+// from the parent entity name) AND named blocks (n.kind === 'block',
+// header is the user-given block name).
+// Renders the title strip on top, then a brick-pattern grid of
+// half-sized avatars (5 per row, odd rows offset by half a column).
+// First name only beneath each avatar.
 function ClusterTile({ node, dragging, locked, onPointerDownDrag, onClick, entities, onHideClick }) {
   const members = node.members || [];
   const w = CLUSTER_W;
-  const h = clusterHeight(members.length);
-  const parentName = (entities || []).find((e) => e.id === node.id)?.name || '';
+  const h = clusterHeight(Math.max(1, members.length));
+  const isBlock = node.kind === 'block';
+  const headerLabel = isBlock
+    ? (node.name || 'Block')
+    : `${members.length} beneficiar${members.length === 1 ? 'y' : 'ies'} · ${(entities || []).find((e) => e.id === node.id)?.name || 'this entity'}`;
+  const headerColor = isBlock ? '#D4AF37' : '#22C993';
+  const borderColor = isBlock ? 'rgba(212,175,55,0.55)' : 'rgba(34,201,147,0.55)';
+  const bgColor = isBlock ? 'rgba(212,175,55,0.06)' : 'rgba(34,201,147,0.08)';
   const HALF_STEP = CLUSTER_SLOT_W / 2;
   return (
     <div
       onPointerDown={onPointerDownDrag}
       onClick={onClick}
-      data-testid={`entity-node-cluster-${node.id}`}
+      data-testid={isBlock ? `entity-node-block-${node.id}` : `entity-node-cluster-${node.id}`}
       className="relative rounded-xl select-none"
       style={{
         width: w,
         height: h,
-        background: 'rgba(34,201,147,0.08)',
-        border: '1.5px solid rgba(34,201,147,0.55)',
+        background: bgColor,
+        border: `1.5px solid ${borderColor}`,
         boxShadow: dragging
-          ? '0 8px 24px rgba(0,0,0,0.45), 0 0 24px rgba(34,201,147,0.45)'
-          : '0 0 14px rgba(34,201,147,0.22)',
+          ? `0 8px 24px rgba(0,0,0,0.45), 0 0 24px ${headerColor}55`
+          : `0 0 14px ${headerColor}33`,
         cursor: locked ? 'pointer' : (dragging ? 'grabbing' : 'grab'),
         touchAction: locked ? 'auto' : 'none',
       }}
     >
       <div
         className="px-2 pt-1.5 pb-1 text-[11px] font-bold uppercase tracking-wide truncate"
-        style={{ color: '#22C993', pointerEvents: 'none' }}
+        style={{ color: headerColor, pointerEvents: 'none' }}
       >
-        {members.length} beneficiar{members.length === 1 ? 'y' : 'ies'} · {parentName || 'this entity'}
+        {headerLabel}
       </div>
       <div
         className="absolute"
@@ -780,7 +858,7 @@ function ClusterTile({ node, dragging, locked, onPointerDownDrag, onClick, entit
               <AvatarCircle
                 photo={m.photo}
                 initials={initials}
-                color={m.avatar_color || '#22C993'}
+                color={m.avatar_color || headerColor}
                 size={CLUSTER_AVATAR}
                 cacheKey={`beneficiary:${m.id}:photo`}
               />
@@ -793,7 +871,7 @@ function ClusterTile({ node, dragging, locked, onPointerDownDrag, onClick, entit
       </div>
       {onHideClick && (
         <div className="absolute top-1 right-1">
-          <TileIconButton icon={X} onClick={onHideClick} label="Hide from chart" testId={`tile-hide-cluster-${node.id}`} />
+          <TileIconButton icon={X} onClick={onHideClick} label="Hide from chart" testId={isBlock ? `tile-hide-block-${node.id}` : `tile-hide-cluster-${node.id}`} />
         </div>
       )}
     </div>
@@ -812,7 +890,7 @@ export const PRINT_TILE_DIMENSIONS = {
 };
 
 export default function EntityOrgChart({
-  estateId, entities, externals, relationships, beneficiaries,
+  estateId, entities, externals, relationships, beneficiaries, blocks,
   onSingleClickNode, onDoubleClickNode, onInfoClickNode, onEditClickNode,
   onDeleteNode,
   cleanUpSignal, locked = false, readOnly = false, fitOnLoad = false,
@@ -942,6 +1020,7 @@ export default function EntityOrgChart({
         const parentName = (entities || []).find((e) => e.id === node.id)?.name || 'this entity';
         return `Unlinked ${n} beneficiar${n === 1 ? 'y' : 'ies'} from ${parentName}`;
       }
+      if (node.kind === 'block') return `Deleted block "${node.name || 'block'}"`;
       return `Deleted "${node.label || 'item'}"`;
     })();
 
@@ -1078,8 +1157,8 @@ export default function EntityOrgChart({
 
   // Build graph + initial layout
   const { nodes: rawNodes, edges: rawEdges, depth } = useMemo(
-    () => buildGraph({ entities, externals, relationships, beneficiaries, user }),
-    [entities, externals, relationships, beneficiaries, user]
+    () => buildGraph({ entities, externals, relationships, beneficiaries, user, blocks }),
+    [entities, externals, relationships, beneficiaries, user, blocks]
   );
   // Apply per-estate hide filter. Hidden node-keys drop both their
   // tile AND any edge that touches them, so the visual reads cleanly.
@@ -2084,7 +2163,7 @@ export default function EntityOrgChart({
                   onInfoClick={handleInfoClick}
                   onEditClick={readOnly ? undefined : handleEditClick}
                   onHideClick={readOnly ? undefined : handleHideClick} />
-              ) : n.kind === 'cluster' ? (
+              ) : n.kind === 'cluster' || n.kind === 'block' ? (
                 <ClusterTile node={n} dragging={isDragging}
                   locked={locked || readOnly}
                   entities={entities}
@@ -2180,6 +2259,9 @@ export default function EntityOrgChart({
                     const n = confirmRemoveNode;
                     if (n.kind === 'entity') {
                       return `"${n.entity?.name || 'Entity'}" — deleting will also remove every connection to this entity.`;
+                    }
+                    if (n.kind === 'block') {
+                      return `"${n.name || 'Block'}" — deleting permanently removes this block from every entity it's attached to (the underlying beneficiary records are kept).`;
                     }
                     if (n.kind === 'cluster') {
                       const parentName = (entities || []).find((e) => e.id === n.id)?.name || 'this entity';

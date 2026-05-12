@@ -36,6 +36,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   const [entities, setEntities] = useState([]);
   const [externals, setExternals] = useState([]);
   const [relationships, setRelationships] = useState([]);
+  const [blocks, setBlocks] = useState([]); // beneficiary_blocks for this estate
   const [serverChartLayout, setServerChartLayout] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [walletEntries, setWalletEntries] = useState([]);
@@ -148,6 +149,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
       setEntities(r.data?.entities || []);
       setExternals(r.data?.external_people || []);
       setRelationships(r.data?.relationships || []);
+      setBlocks(r.data?.beneficiary_blocks || []);
       // chart_layout may be undefined if the server is older — leave
       // it as null in that case so the chart falls back to local
       // overrides cleanly.
@@ -206,6 +208,10 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
         await axios.delete(`${API_URL}/beneficiaries/${node.id}`, headers);
       } else if (node.kind === 'external_person') {
         await axios.delete(`${API_URL}/financial/external-people/${node.id}`, headers);
+      } else if (node.kind === 'block') {
+        // Soft-deletes the block + cascade-unlinks every entity it
+        // was attached to (handled server-side).
+        await axios.delete(`${API_URL}/financial/beneficiary-blocks/${node.id}`, headers);
       } else {
         // node.kind === 'user' shouldn't reach here — the chart's
         // modal hides the Delete button for the benefactor — but
@@ -569,6 +575,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
             externals={externals}
             relationships={relationships}
             beneficiaries={beneficiaries || []}
+            blocks={blocks}
             onSingleClickNode={handleSingleClick}
             onDoubleClickNode={handleDoubleClick}
             onInfoClickNode={handleInfoClick}
@@ -691,6 +698,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
         documents={documents}
         walletEntries={walletEntries}
         relationships={relationships}
+        blocks={blocks}
         onChanged={() => { fetchAll(); onEntitiesChanged?.(); }}
         onClose={() => { setEditingNode(null); setEditStartInEdit(false); }}
       />

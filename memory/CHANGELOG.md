@@ -1,6 +1,54 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — Beneficiary Blocks: Reusable Named Groups (Phase 1)
+
+### Need
+User: "Make it so that I can connect multiple entities to the same Beneficiary block… if the members are all the same for various entities, I should be able to connect that block to an unlimited amount of entities. Some sort of dropdown… create a new block or add an existing block. We will need to name blocks now."
+
+### What shipped — backend
+New first-class collection `cfp_beneficiary_blocks` with full CRUD:
+- `GET  /api/financial/beneficiary-blocks/{estate_id}` — list
+- `POST /api/financial/beneficiary-blocks` — create (`{estate_id, name, members:[{kind,id}]}`)
+- `PATCH /api/financial/beneficiary-blocks/{id}` — rename / change members
+- `DELETE /api/financial/beneficiary-blocks/{id}` — soft-delete + cascade-soft-delete every `beneficiary_block → entity` relationship sourced from it
+- `GET /api/financial/entities/{estate_id}` response now includes `beneficiary_blocks: []`
+- `NodeType` literal + `entity_relationships` validator widened to accept `source_type='beneficiary_block'`.
+- Soft delete throughout (`deleted_at: null` by default) — CC8.1 compliant.
+
+### What shipped — chart
+- `EntityOrgChart.buildGraph` accepts a new `blocks` param.
+- For each block, a `block:<id>` pool entry is created with `kind: 'block'`, hydrated members (resolves `kind: 'beneficiary' | 'external_person' | 'user'`).
+- Block→entity relationships emit one `entity → block` synthetic edge per attached entity (so a block linked to N entities renders as **one tile with N incoming edges**).
+- `ClusterTile` was generalized to handle both legacy auto-clusters (green theme, header derived from entity name) AND named blocks (gold theme, header = user-given block name).
+- `data-testid="entity-node-block-<id>"` / `tile-hide-block-<id>` for testing.
+
+### What shipped — UI
+- New "Connect a block" gold-pill button next to "Add beneficiaries (bulk)" in `EntityDetailPanel`.
+- Picker modal (portal-rendered, PWA-safe):
+  - Primary action: "+ Create a new block…" → name + member picker + "Include me (benefactor)" checkbox → creates block + auto-attaches to current entity.
+  - Below: list of existing blocks for the estate (with member count). Blocks already attached to this entity are filtered out so the user can't double-link.
+- × on a block tile → opens the existing Remove confirm modal with block-specific copy: *"deleting permanently removes this block from every entity it's attached to (the underlying beneficiary records are kept)"*. Routes through the 5-second Undo flow.
+- `handleDeleteNode` switch in `EntitiesSection` adds the `node.kind === 'block'` case → `DELETE /api/financial/beneficiary-blocks/{id}`.
+
+### Scoping decisions (committed without round-trip clarification)
+- **(b) Legacy + blocks side-by-side.** Existing `beneficiary → entity` direct relationships keep auto-clustering as before. NEW additions go through the block dropdown. Zero risk of data shuffle before the pitch — old data renders identically, new flow opt-in.
+- **× on a block tile = delete entire block** (after grace). Per-entity detach lives inside the panel UI surface (deferred polish — current workaround: open the panel for that entity, find the Connections list and remove the block edge there).
+- **Naming required**, term stays "Block" (gold-themed, matches the platform's overall palette).
+- **Phase 2 (post-pitch):** per-entity detach affordance in the picker modal, block rename UI, block-member editing UI, auto-migrate legacy direct rels into blocks.
+
+### Verified live
+Live e2e on preview pod (`info@carryon.us`, Admin Estate):
+1. Seeded `Trust Alpha`, `Trust Beta`, beneficiaries Alex + Bea.
+2. POST a block "Kids" with [Alex, Bea].
+3. POST two block→entity relationships (one per trust).
+4. Reload → exactly **one** block tile rendered (data-testid `entity-node-block-…`), header reads "KIDS", contains both half-size avatars + first names, and **two dashed edges** route down from Trust Alpha and Trust Beta into the same tile.
+5. Cleanup confirmed: deleting the block via API cascade-removed both block→entity rels and the tile disappeared cleanly.
+
+`bash /app/housekeeping.sh` → 0 WARN + 0 FAIL.
+
+
+
 ## Feb 14, 2026 — Remove Entity↔Cluster Auto-Pair Drag
 
 ### Need

@@ -46,7 +46,7 @@ def _resolve_external_people_photos(people: list) -> list:
 # ===================== STRICT ENUMS =====================
 
 EntityCategory = Literal["business", "trust", "charity", "property", "specialized"]
-NodeType = Literal["entity", "user", "beneficiary", "external_person"]
+NodeType = Literal["entity", "user", "beneficiary", "external_person", "beneficiary_block"]
 # RoleType is intentionally a free-form string keyed off the canonical
 # frontend `ROLE_OPTIONS` catalog (see frontend/src/config/entityCatalog.js).
 # Locking it to a Literal blocks future additions (co-trustee,
@@ -125,6 +125,31 @@ class RelationshipUpdate(BaseModel):
     notes: Optional[str] = None
 
 
+# Beneficiary block — a named, reusable group of people that can be
+# attached to any number of entities as that entity's beneficiary
+# cluster. Member kinds mirror the chart's tile kinds (beneficiary,
+# external_person, user). The same block can be linked to multiple
+# entities via `entity_relationships` rows with
+# source_type='beneficiary_block'.
+BlockMemberType = Literal["beneficiary", "external_person", "user"]
+
+
+class BlockMember(BaseModel):
+    kind: BlockMemberType
+    id: str
+
+
+class BeneficiaryBlockCreate(BaseModel):
+    estate_id: str
+    name: str = Field(min_length=1, max_length=80)
+    members: List[BlockMember] = []
+
+
+class BeneficiaryBlockUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=80)
+    members: Optional[List[BlockMember]] = None
+
+
 # ===================== HELPERS =====================
 
 
@@ -151,7 +176,13 @@ async def list_entities(estate_id: str, current_user: dict = Depends(get_current
     """
     estate, can_manage = await _verify_estate_access(estate_id, current_user)
     if not can_manage:
-        return {"entities": [], "external_people": [], "relationships": [], "chart_layout": {}}
+        return {
+            "entities": [],
+            "external_people": [],
+            "relationships": [],
+            "beneficiary_blocks": [],
+            "chart_layout": {},
+        }
 
     entities = await db.cfp_entities.find(
         {"estate_id": estate_id, "deleted_at": None},
@@ -165,6 +196,10 @@ async def list_entities(estate_id: str, current_user: dict = Depends(get_current
         {"estate_id": estate_id, "deleted_at": None},
         {"_id": 0},
     ).to_list(5000)
+    blocks = await db.cfp_beneficiary_blocks.find(
+        {"estate_id": estate_id, "deleted_at": None},
+        {"_id": 0},
+    ).to_list(2000)
     # Server-persisted tile-position overrides (one doc per estate ×
     # benefactor). Lets the layout survive a hard reload, a portal
     # switch to a different device, or a browser localStorage wipe.
@@ -177,6 +212,7 @@ async def list_entities(estate_id: str, current_user: dict = Depends(get_current
         "entities": entities,
         "external_people": _resolve_external_people_photos(people),
         "relationships": rels,
+        "beneficiary_blocks": blocks,
         "chart_layout": (layout or {}).get("overrides") or {},
     }
 
@@ -442,6 +478,15 @@ async def create_relationship(
     if not target_entity:
         raise HTTPException(status_code=404, detail="Target entity not found")
 
+    # If sourcing from a beneficiary_block, the block must exist + belong to this estate.
+    if payload.source_type == "beneficiary_block":
+        src_block = await db.cfp_beneficiary_blocks.find_one(
+            {"id": payload.source_id, "estate_id": payload.estate_id, "deleted_at": None},
+            {"_id": 0, "id": 1},
+        )
+        if not src_block:
+            raise HTTPException(status_code=404, detail="Source beneficiary block not found")
+
     doc = {
         "id": str(uuid.uuid4()),
         "estate_id": payload.estate_id,
@@ -492,4 +537,98 @@ async def delete_relationship(rel_id: str, current_user: dict = Depends(get_curr
         raise HTTPException(status_code=403, detail="Only the estate owner can delete relationships")
 
     await db.cfp_entity_relationships.update_one({"id": rel_id}, {"$set": {"deleted_at": _now_iso()}})
+    return {"ok": True}
+
+
+# ===================== BENEFICIARY BLOCKS CRUD =====================
+
+
+@router.get("/financial/beneficiary-blocks/{estate_id}")
+async def list_beneficiary_blocks(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """All beneficiary blocks for an estate. Mirrors the access rules
+    of the entities GET — only owner/admin sees results, beneficiaries
+    receive an empty list rather than a 403.
+    """
+    _estate, can_manage = await _verify_estate_access(estate_id, current_user)
+    if not can_manage:
+        return []
+    blocks = await db.cfp_beneficiary_blocks.find(
+        {"estate_id": estate_id, "deleted_at": None},
+        {"_id": 0},
+    ).to_list(2000)
+    return blocks
+
+
+@router.post("/financial/beneficiary-blocks")
+async def create_beneficiary_block(
+    payload: BeneficiaryBlockCreate,
+    current_user: dict = Depends(get_current_user),
+):
+    _estate, can_manage = await _verify_estate_access(payload.estate_id, current_user, require_owner=True)
+    if not can_manage:
+        raise HTTPException(status_code=403, detail="Only the estate owner can create beneficiary blocks")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "estate_id": payload.estate_id,
+        "owner_user_id": current_user["id"],
+        "name": payload.name.strip(),
+        "members": [m.model_dump() for m in (payload.members or [])],
+        "created_at": _now_iso(),
+        "updated_at": _now_iso(),
+        "deleted_at": None,
+    }
+    await db.cfp_beneficiary_blocks.insert_one(doc)
+    return _strip_id(doc)
+
+
+@router.patch("/financial/beneficiary-blocks/{block_id}")
+async def update_beneficiary_block(
+    block_id: str,
+    payload: BeneficiaryBlockUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    existing = await db.cfp_beneficiary_blocks.find_one({"id": block_id, "deleted_at": None}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Beneficiary block not found")
+    _estate, can_manage = await _verify_estate_access(existing["estate_id"], current_user, require_owner=True)
+    if not can_manage:
+        raise HTTPException(status_code=403, detail="Only the estate owner can edit beneficiary blocks")
+
+    update_fields = {}
+    if payload.name is not None:
+        update_fields["name"] = payload.name.strip()
+    if payload.members is not None:
+        update_fields["members"] = [m.model_dump() for m in payload.members]
+    if update_fields:
+        update_fields["updated_at"] = _now_iso()
+        await db.cfp_beneficiary_blocks.update_one({"id": block_id}, {"$set": update_fields})
+    refreshed = await db.cfp_beneficiary_blocks.find_one({"id": block_id}, {"_id": 0})
+    return refreshed
+
+
+@router.delete("/financial/beneficiary-blocks/{block_id}")
+async def delete_beneficiary_block(block_id: str, current_user: dict = Depends(get_current_user)):
+    """Soft-delete a beneficiary block AND cascade-soft-delete every
+    `beneficiary_block → entity` relationship that points at it, so the
+    block disappears from every entity it was attached to.
+    """
+    existing = await db.cfp_beneficiary_blocks.find_one({"id": block_id, "deleted_at": None}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Beneficiary block not found")
+    _estate, can_manage = await _verify_estate_access(existing["estate_id"], current_user, require_owner=True)
+    if not can_manage:
+        raise HTTPException(status_code=403, detail="Only the estate owner can delete beneficiary blocks")
+
+    now = _now_iso()
+    await db.cfp_beneficiary_blocks.update_one({"id": block_id}, {"$set": {"deleted_at": now}})
+    # Cascade unlink — soft-delete every relationship sourced from this block.
+    await db.cfp_entity_relationships.update_many(
+        {
+            "estate_id": existing["estate_id"],
+            "source_type": "beneficiary_block",
+            "source_id": block_id,
+            "deleted_at": None,
+        },
+        {"$set": {"deleted_at": now}},
+    )
     return {"ok": True}
