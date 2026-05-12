@@ -12,6 +12,8 @@
 
 The optional `shimmer={false}` prop is exposed for tiny inline pixel icons where animation would feel like jitter; defaults to `true`.
 
+Also converted the **Beneficiary Hub estate-card tiles** + **benefactor photo-editor row** (`BeneficiaryHubPage.js`) from bare `<img>` tags to `OfflineImage` so they pick up the same shimmer + fade-in. Those are the largest, most demo-visible images on the beneficiary dashboard.
+
 This pairs with the SDV `DocThumbnail` shimmer added in the same session, so every async media surface in the app now feels intentional under slow networks. Verified on a Pete-owned beneficiary with a real S3-hosted photo: photo renders cleanly with opacity 1, zero console errors, no layout shift. The `Section Unlocked` banner, Family Tree, and Succession Hierarchy panels all remain pixel-stable.
 
 

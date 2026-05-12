@@ -7,6 +7,7 @@ import { Card, CardContent } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
 import OrbitVisualization from '../../components/estate/OrbitVisualization';
 import EmergencyAccessPanel from '../../components/beneficiary/EmergencyAccessPanel';
+import OfflineImage from '../../components/OfflineImage';
 import { resolvePhotoUrl } from '../../utils/photoUrl';
 import BenefactorPrompt from '../../components/BenefactorPrompt';
 import { API_URL } from '../../config';
@@ -219,7 +220,13 @@ const BeneficiaryHubPage = () => {
                   <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0"
                     style={{ background: photo ? 'transparent' : 'var(--b2)', border: '2px solid var(--b2)' }}>
                     {photo ? (
-                      <img src={resolvePhotoUrl(photo)} alt="" className="w-full h-full object-cover" />
+                      <OfflineImage
+                        src={resolvePhotoUrl(photo)}
+                        cacheKey={estateId ? `estate:${estateId}:cover` : undefined}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        fallback={<span className="text-xs font-bold text-[var(--t3)]">{initials}</span>}
+                      />
                     ) : (
                       <span className="text-xs font-bold text-[var(--t3)]">{initials}</span>
                     )}
@@ -295,7 +302,13 @@ const BeneficiaryHubPage = () => {
                   }}
                 >
                   {estatePhoto ? (
-                    <img src={resolvePhotoUrl(estatePhoto)} alt={estate.name} className="w-full h-full object-cover" />
+                    <OfflineImage
+                      src={resolvePhotoUrl(estatePhoto)}
+                      cacheKey={estate.id ? `estate:${estate.id}:cover` : undefined}
+                      alt={estate.name}
+                      className="w-full h-full object-cover"
+                      fallback={<span>{ownerInitials}</span>}
+                    />
                   ) : ownerInitials}
                 </div>
                 <h3 className="font-bold text-[var(--t)] text-lg">{estate.name}</h3>
