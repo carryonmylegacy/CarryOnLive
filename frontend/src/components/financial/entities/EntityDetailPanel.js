@@ -40,6 +40,7 @@ export default function EntityDetailPanel({
   relationships,
   chartLayout,
   onChanged,
+  onLayoutOptimistic,
   onClose,
 }) {
   const { getAuthHeaders } = useAuth();
@@ -421,17 +422,59 @@ export default function EntityDetailPanel({
       // overrides map, so we MUST include every existing override or
       // the user's prior drags will be wiped.
       const merged = { ...currentOverrides, ...additions };
-      await axios.put(
-        `${API_URL}/financial/entities/${ent.estate_id}/layout`,
-        { overrides: merged },
-        headers,
-      ).catch(() => { /* layout save is best-effort; relationships are already saved */ });
+
+      // 3a) Apply the merged layout to the parent's local state
+      // BEFORE awaiting the network round-trip. Two reasons:
+      //
+      //   • Snappier UI — the mini cluster snaps into place
+      //     instantly rather than waiting for both the PUT and the
+      //     subsequent fetchAll to complete.
+      //   • Resilience — if the layout PUT silently fails (403
+      //     because the user isn't the estate owner, 500 from a
+      //     backend hiccup, etc.), the user STILL sees the correct
+      //     mini cluster instead of full-size avatars with spaghetti
+      //     edges. Previously the .catch(()=>{}) on the PUT swallowed
+      //     the error and the user had no idea persistence had been
+      //     lost; this turn we both keep the visual state correct
+      //     locally AND surface a warning toast if the persist fails.
+      if (typeof onLayoutOptimistic === 'function') {
+        try { onLayoutOptimistic(merged); } catch { /* parent will heal on next fetchAll */ }
+      }
+
+      let putFailed = false;
+      let putError = null;
+      try {
+        await axios.put(
+          `${API_URL}/financial/entities/${ent.estate_id}/layout`,
+          { overrides: merged },
+          headers,
+        );
+      } catch (err) {
+        putFailed = true;
+        putError = err;
+        // Don't re-throw — relationships were already saved
+        // successfully and the user has the correct visual state
+        // thanks to the optimistic local update above.
+        console.warn('Bulk-add: layout save failed (cluster will revert on hard reload).', err?.response?.status, err?.response?.data);
+      }
 
       const newlyAdded = existingIds.length + createdExternals.length + (bulkIncludeBenefactor && user?.id ? 1 : 0);
       if (newlyAdded > 0) {
         toast.success(`Added ${newlyAdded} — cluster of ${n} compacted.`);
       } else {
         toast.success(`Compacted ${n} beneficiar${n === 1 ? 'y' : 'ies'} into a mini cluster.`);
+      }
+      if (putFailed) {
+        // Beneficiary relationships were saved successfully and the
+        // local view shows the correct mini cluster, but the layout
+        // override didn't persist server-side. Tell the user so they
+        // know to re-tidy (and report a status code if there is one).
+        const status = putError?.response?.status;
+        toast.warning(
+          status === 403
+            ? 'Cluster shape saved locally — only the estate owner can persist layout.'
+            : 'Cluster shape saved locally — layout sync failed; reload may reset shape.'
+        );
       }
       setBulkOpen(false);
       setBulkSelected(new Set());
@@ -906,7 +949,22 @@ export default function EntityDetailPanel({
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-5 py-3">
+                <div
+                  className="flex-1 min-h-0 overflow-y-auto px-5 py-3"
+                  style={{
+                    // iOS Safari requires these explicit hints to allow
+                    // touch-scrolling inside a dialog that lives inside
+                    // a `position: fixed` SlidePanel. Without them, the
+                    // gesture bubbles up to the SlidePanel's own
+                    // scroller (the user saw the SlidePanel scrollbar
+                    // moving in the background while this picker stayed
+                    // frozen) and the bulk-add picker is unreachable
+                    // past the visible viewport.
+                    WebkitOverflowScrolling: 'touch',
+                    touchAction: 'pan-y',
+                    overscrollBehavior: 'contain',
+                  }}
+                >
                   {pickable.length === 0 && bulkNewPeople.length === 0 && benefactorAlreadyLinked ? (
                     <div className="text-[12px] text-[var(--t4)] py-4 text-center">
                       Every beneficiary on this estate (and you) is already linked to {ent?.name || 'this entity'}. Add a new person below to include someone else.

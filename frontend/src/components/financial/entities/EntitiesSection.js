@@ -5,7 +5,7 @@
  * the user creates their first entity. Once populated, height/width grows
  * commensurately with the structure's complexity.
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2, Lock, Unlock, Frame, Crosshair, Map, Printer } from 'lucide-react';
@@ -37,6 +37,14 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   const [externals, setExternals] = useState([]);
   const [relationships, setRelationships] = useState([]);
   const [serverChartLayout, setServerChartLayout] = useState(null);
+  // Mini-cluster keys whose layout the user just bulk-compacted in
+  // this session. We track them so that if the layout PUT silently
+  // fails (e.g., 403 on non-owner accounts), the SUBSEQUENT fetchAll
+  // doesn't blow our optimistic local override away by replacing it
+  // with the server's older layout. Once a successful PUT lands, the
+  // server's layout will already include the `mini` flags, and these
+  // local overrides become idempotent / no-ops.
+  const pendingLayoutOverridesRef = useRef({});
   const [documents, setDocuments] = useState([]);
   const [walletEntries, setWalletEntries] = useState([]);
   const [loaded, setLoaded] = useState(false);
@@ -150,8 +158,19 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
       setRelationships(r.data?.relationships || []);
       // chart_layout may be undefined if the server is older — leave
       // it as null in that case so the chart falls back to local
-      // overrides cleanly.
-      setServerChartLayout(r.data?.chart_layout || null);
+      // overrides cleanly. Re-apply any pending optimistic overrides
+      // (bulk-compact mini clusters whose layout PUT may have failed)
+      // on top of the freshly-fetched server layout so the user's
+      // visual state survives the refetch round-trip.
+      const fresh = r.data?.chart_layout || null;
+      const pending = pendingLayoutOverridesRef.current || {};
+      if (fresh && Object.keys(pending).length > 0) {
+        setServerChartLayout({ ...fresh, ...pending });
+      } else if (!fresh && Object.keys(pending).length > 0) {
+        setServerChartLayout({ ...pending });
+      } else {
+        setServerChartLayout(fresh);
+      }
       setDocuments(Array.isArray(docResp.data) ? docResp.data : []);
       setWalletEntries(Array.isArray(walletResp.data) ? walletResp.data : []);
       if (meResp.data) setFreshUser(meResp.data);
@@ -631,6 +650,16 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
         walletEntries={walletEntries}
         relationships={relationships}
         chartLayout={serverChartLayout || {}}
+        onLayoutOptimistic={(merged) => {
+          // Persist the merged overrides locally so the mini cluster
+          // renders immediately — and also stash them in the ref so
+          // the subsequent fetchAll re-applies them on top of the
+          // (possibly stale) server layout. This is what guarantees
+          // the mini-cluster shape sticks even if the layout PUT
+          // silently failed (403 / 500 / etc).
+          pendingLayoutOverridesRef.current = { ...(pendingLayoutOverridesRef.current || {}), ...(merged || {}) };
+          setServerChartLayout((prev) => ({ ...(prev || {}), ...(merged || {}) }));
+        }}
         onChanged={() => { fetchAll(); onEntitiesChanged?.(); }}
         onClose={() => { setEditingNode(null); setEditStartInEdit(false); }}
       />

@@ -1,6 +1,27 @@
 # CarryOn — Changelog
 
 
+## Feb 13, 2026 — Bulk-Add Beneficiaries Reliability Fixes
+
+### 1. Bulk-Add Picker Won't Scroll on iPhone
+**Bug** — Opening the "Add beneficiaries" picker inside the E&S Detail Panel would lock the user's scroll: trying to swipe the picker's inner list bubbled the gesture up to the SlidePanel parent (the user saw "the scrollbar moving in the background on the right" while the picker stayed frozen). On a long beneficiary list, the bottom of the picker — including the Confirm button — was unreachable.
+
+**Fix** — `EntityDetailPanel.js`: added `WebkitOverflowScrolling: 'touch'`, `touchAction: 'pan-y'`, `overscrollBehavior: 'contain'`, and `min-h-0` to the picker's scrollable list container. iOS Safari requires these explicit hints for momentum-scroll inside a `flex-1` child of a `position: fixed` parent.
+
+### 2. Bulk-Add Mini-Cluster Layout Silently Lost on Non-Owner / Server Hiccup Estates
+**Bug** — When the user bulk-added beneficiaries (or re-tidied an existing cluster) in their live personal account, the beneficiaries rendered as full-size avatars with spaghetti edges instead of the compact mini-cluster (small avatars, shared trunk line up to the parent entity). Worked perfectly in the demo account, broke on personal. The toast still claimed success.
+
+**Root cause** — `handleBulkAddBeneficiaries` (in `EntityDetailPanel.js`) used `.catch(() => {})` to swallow errors from `PUT /api/financial/entities/{eid}/layout`. The layout endpoint enforces `require_owner=True` and rejects payloads with `>1000` overrides — both can fire on real estates with rich entity graphs. The PUT failed silently, the `mini: true` flags never persisted, the relationships were saved fine but the visual layout reverted to defaults.
+
+**Fix** —
+1. **Optimistic local update before the PUT** — `EntityDetailPanel` now receives a new `onLayoutOptimistic(merged)` callback. The merged overrides (including the `mini: true` flags) are applied to the parent's `serverChartLayout` state *before* the PUT is awaited, so the mini cluster snaps into place instantly regardless of network outcome.
+2. **Pending-overrides ref in `EntitiesSection`** — stores in-session bulk-compact overrides in a `useRef` so the next `fetchAll` doesn't replace them with the (possibly stale) server layout. Once a successful PUT lands, the server layout will already include the `mini` flags, making these local overrides idempotent / no-ops.
+3. **Surface PUT failures via toast** — replaced the swallow-everything `.catch(() => {})` with explicit logging + a user-visible `toast.warning`: 403 → "only the estate owner can persist layout"; other → "layout sync failed; reload may reset shape." The toast goes alongside the existing success toast, so the user sees both the relationship-save success and the layout-sync warning.
+
+Net effect: the bulk-add mini cluster ALWAYS renders correctly in the current session, even when layout persistence is impossible (non-owner account) or temporarily broken (server hiccup, exceeded override cap). The user gets clear feedback when persistence falls back to local-only.
+
+
+
 ## Feb 13, 2026 — CFP "Boot-Splash Reload" Glitch Fix
 
 ### Tapping Back from E&S Print Page Felt Like a Full App Reload
