@@ -162,24 +162,16 @@ export default function EntitiesPrintPage() {
     const positionOf = (key) => overrides[key] || initial.positions[key] || { x: 0, y: 0 };
 
     // Tile rects (real nodes + legend pseudo-tile so edges avoid it
-    // and the bbox includes it). Mini-mode tiles (set by the
-    // bulk-add cluster) get their dims swapped to MINI_W/MINI_H so
-    // edge routing knows the smaller bounding box and the
-    // print SVG bbox doesn't include space the mini tile doesn't
-    // actually occupy.
-    const MINI_W_PRINT = 56;
-    const MINI_H_PRINT = 70;
+    // and the bbox includes it).
     const tileRects = graph.nodes.map((n) => {
       const p = positionOf(n.key);
-      const isMini = !!p?.mini && n.kind !== 'entity';
       return {
         key: n.key,
         x: p.x,
         y: p.y,
-        w: isMini ? MINI_W_PRINT : n.w,
-        h: isMini ? MINI_H_PRINT : n.h,
+        w: n.w,
+        h: n.h,
         node: n,
-        mini: isMini,
       };
     });
 
@@ -215,50 +207,10 @@ export default function EntitiesPrintPage() {
     // in the printed PDF.
     const rectByKey = Object.fromEntries(tileRects.map((r) => [r.key, r]));
 
-    // Mirror the live chart's "trunk Y per mini-cluster target"
-    // pre-pass so the printed PDF gets the same clean manifold
-    // routing (all lines go UP from each avatar to a shared trunk
-    // above the top row, then over to the entity) instead of
-    // routeEdge's spaghetti through a tight cluster.
-    const miniTrunkYByEntity = (() => {
-      const groups = new Map();
-      graph.edges.forEach((edge) => {
-        const sR = rectByKey[edge.sourceKey];
-        const tR = rectByKey[edge.targetKey];
-        if (!sR || !tR) return;
-        if (!sR.mini) return;
-        if (edge.role !== 'beneficiary') return;
-        if (!groups.has(edge.targetKey)) groups.set(edge.targetKey, []);
-        groups.get(edge.targetKey).push(sR);
-        void tR;
-      });
-      const out = {};
-      groups.forEach((srcRects, entityKey) => {
-        if (srcRects.length < 2) return;
-        const topRowY = Math.min(...srcRects.map((r) => r.y));
-        out[entityKey] = topRowY - 14;
-      });
-      return out;
-    })();
-
     const routedEdges = graph.edges.map((edge) => {
       const sR = rectByKey[edge.sourceKey];
       const tR = rectByKey[edge.targetKey];
       if (!sR || !tR) return null;
-      const trunkY = miniTrunkYByEntity[edge.targetKey];
-      if (trunkY != null && sR.mini && edge.role === 'beneficiary') {
-        const srcCenterX = sR.x + sR.w / 2;
-        const tgtCenterX = tR.x + tR.w / 2;
-        const tgtBottomY = tR.y + tR.h;
-        const points = [
-          { x: srcCenterX, y: sR.y },
-          { x: srcCenterX, y: trunkY },
-          { x: tgtCenterX, y: trunkY },
-          { x: tgtCenterX, y: tgtBottomY },
-        ];
-        const midPoint = { x: (srcCenterX + tgtCenterX) / 2, y: trunkY };
-        return { edge, points, midPoint };
-      }
       const obstacles = tileRects.filter((r) => r.key !== sR.key && r.key !== tR.key);
       const { points, midPoint } = routeEdge(sR, tR, obstacles, edge.id);
       return { edge, points, midPoint };
@@ -408,6 +360,7 @@ export default function EntitiesPrintPage() {
     const n = rect.node;
     if (!n) return null;
     const isEntity = n.kind === 'entity';
+    const isCluster = n.kind === 'cluster';
     const e = isEntity ? n.entity : null;
     const typeMeta = isEntity ? getTypeMeta(e.category, e.type) : null;
     const titleText = isEntity ? (e?.name || 'Entity') : (n.label || '');
@@ -428,7 +381,7 @@ export default function EntitiesPrintPage() {
     const tileStrokeW = 1.3;
     const avatarColor = n.avatar_color || '#B8860B';
     const avatarBg = n.kind === 'user' ? '#FEF3C7' : '#FFFFFF';
-    const photoUrl = n.photo || null;
+    const photoUrl = !isCluster ? (n.photo || null) : null;
     const clipId = `print-avatar-clip-${n.key.replace(/[^a-zA-Z0-9]/g, '_')}`;
     const iconPaths = isEntity ? BUCKET_ICON_PATHS[bucketMeta?.id || 'specialized'] : null;
     return (
@@ -492,53 +445,93 @@ export default function EntitiesPrintPage() {
             )}
           </>
         )}
-        {/* Person tile: avatar circle (with photo if present) + name + sub + role chips.
-            Mini-mode tiles render compact: 36px avatar + first-name only,
-            matching the live chart's mini cluster look. */}
-        {!isEntity && rect.mini && (
-          <>
-            <defs>
-              <clipPath id={clipId}>
-                <circle cx={rect.w / 2} cy={20} r={16} />
-              </clipPath>
-            </defs>
-            <circle cx={rect.w / 2} cy={20} r={17} fill={avatarBg} stroke={avatarColor} strokeWidth={1.5} />
-            {photoUrl ? (
-              <image
-                href={photoUrl}
-                xlinkHref={photoUrl}
-                x={rect.w / 2 - 16}
-                y={4}
-                width={32}
-                height={32}
-                preserveAspectRatio="xMidYMid slice"
-                clipPath={`url(#${clipId})`}
+        {/* Cluster tile — composite box rendering every beneficiary
+            of the parent entity as a half-size avatar (5 per row,
+            staggered). Connected to the parent entity by a single
+            line in the edge layer. */}
+        {isCluster && (() => {
+          const members = n.members || [];
+          const CLUSTER_AVATAR_R = 16;
+          const CLUSTER_SLOT_W = 50;
+          const CLUSTER_SLOT_H = 60;
+          const CLUSTER_COLS = 5;
+          const CLUSTER_HEADER_H = 22;
+          const CLUSTER_PAD_X = 10;
+          const CLUSTER_PAD_Y = 8;
+          const HALF_STEP = CLUSTER_SLOT_W / 2;
+          const parentName = (data.entities || []).find((ent) => ent.id === n.id)?.name || '';
+          return (
+            <>
+              <rect
+                width={rect.w}
+                height={rect.h}
+                rx={CORNER_R}
+                fill="#F0FDF9"
+                stroke="#22C993"
+                strokeWidth={1.3}
               />
-            ) : (
               <text
-                x={rect.w / 2}
-                y={24}
-                textAnchor="middle"
-                fontSize={11}
+                x={CLUSTER_PAD_X}
+                y={14}
+                fontSize={9}
                 fontWeight="700"
-                fill="#92400E"
+                fill="#0F766E"
+                style={{ textTransform: 'uppercase' }}
               >
-                {((n.label?.[0] || '') + (n.sublabel?.[0] || '')).toUpperCase().slice(0, 2)}
+                {`${members.length} beneficiar${members.length === 1 ? 'y' : 'ies'} · ${parentName}`.slice(0, 40)}
               </text>
-            )}
-            <text
-              x={rect.w / 2}
-              y={50}
-              textAnchor="middle"
-              fontSize={9}
-              fontWeight="700"
-              fill="#0F172A"
-            >
-              {truncate((titleText || '').split(' ')[0], 10)}
-            </text>
-          </>
-        )}
-        {!isEntity && !rect.mini && (
+              {members.map((m, i) => {
+                const row = Math.floor(i / CLUSTER_COLS);
+                const col = i % CLUSTER_COLS;
+                const stagger = row % 2 === 1 ? HALF_STEP : 0;
+                const slotX = CLUSTER_PAD_X + col * CLUSTER_SLOT_W + stagger;
+                const slotY = CLUSTER_HEADER_H + CLUSTER_PAD_Y + row * CLUSTER_SLOT_H;
+                const cx = slotX + CLUSTER_AVATAR_R + 2;
+                const cy = slotY + CLUSTER_AVATAR_R + 2;
+                const memberClip = `print-cluster-clip-${n.id}-${m.id}`;
+                const initials = (m.first_name?.[0] || '?').toUpperCase();
+                return (
+                  <g key={m.id}>
+                    <defs>
+                      <clipPath id={memberClip}>
+                        <circle cx={cx} cy={cy} r={CLUSTER_AVATAR_R - 1} />
+                      </clipPath>
+                    </defs>
+                    <circle cx={cx} cy={cy} r={CLUSTER_AVATAR_R} fill="#FFFFFF" stroke={m.avatar_color || '#22C993'} strokeWidth={1.3} />
+                    {m.photo ? (
+                      <image
+                        href={m.photo}
+                        xlinkHref={m.photo}
+                        x={cx - CLUSTER_AVATAR_R + 1}
+                        y={cy - CLUSTER_AVATAR_R + 1}
+                        width={(CLUSTER_AVATAR_R - 1) * 2}
+                        height={(CLUSTER_AVATAR_R - 1) * 2}
+                        preserveAspectRatio="xMidYMid slice"
+                        clipPath={`url(#${memberClip})`}
+                      />
+                    ) : (
+                      <text x={cx} y={cy + 4} textAnchor="middle" fontSize={10} fontWeight="700" fill="#0F766E">
+                        {initials}
+                      </text>
+                    )}
+                    <text
+                      x={cx}
+                      y={cy + CLUSTER_AVATAR_R + 10}
+                      textAnchor="middle"
+                      fontSize={8}
+                      fontWeight="700"
+                      fill="#0F172A"
+                    >
+                      {truncate((m.first_name || '').split(' ')[0], 8)}
+                    </text>
+                  </g>
+                );
+              })}
+            </>
+          );
+        })()}
+        {/* Person tile: avatar circle (with photo if present) + name + sub + role chips. */}
+        {!isEntity && !isCluster && (
           <>
             <defs>
               <clipPath id={clipId}>

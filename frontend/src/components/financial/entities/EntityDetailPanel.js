@@ -13,7 +13,6 @@ import {
 import axios from 'axios';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Button } from '../../ui/button';
-import { buildGraph, computeInitialLayout } from './EntityOrgChart';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Textarea } from '../../ui/textarea';
@@ -40,9 +39,7 @@ export default function EntityDetailPanel({
   documents,
   walletEntries,
   relationships,
-  chartLayout,
   onChanged,
-  onLayoutOptimistic,
   onClose,
 }) {
   const { getAuthHeaders } = useAuth();
@@ -296,23 +293,15 @@ export default function EntityDetailPanel({
   };
 
   // Bulk-add beneficiaries handler.
-  // Creates a "beneficiary" relationship for every selected person in
-  // parallel, then computes a tight horizontal row of override
-  // positions beneath the entity so the auto-rendered tree stays
-  // visually tidy. Override math mirrors the constants used by
-  // EntityOrgChart (ENTITY_W=200, PERSON_W=110, COL_GAP=30, ROW_GAP=70)
-  // so the bulk row aligns perfectly with the rest of the chart.
+  // Creates a "beneficiary" relationship for every selected person
+  // (existing beneficiaries + just-typed new people + optionally the
+  // benefactor themselves). The chart automatically renders all
+  // beneficiaries of a given entity inside a single composite
+  // cluster tile — no per-tile positioning math needed here.
   const handleBulkAddBeneficiaries = async () => {
     if (!ent || bulkSaving) return;
     const existingIds = Array.from(bulkSelected);
-    // Count existing beneficiaries already linked to this entity — if
-    // there are any, the user can click Confirm with no new picks
-    // just to re-tidy the existing cluster.
-    const linkedKeyEarly = `entity:${ent.id}`;
-    const existingCountEarly = (relationships || []).filter((r) =>
-      r.role === 'beneficiary' && `${r.target_type}:${r.target_id}` === linkedKeyEarly
-    ).length;
-    if (existingIds.length === 0 && bulkNewPeople.length === 0 && !bulkIncludeBenefactor && existingCountEarly === 0) return;
+    if (existingIds.length === 0 && bulkNewPeople.length === 0 && !bulkIncludeBenefactor) return;
     setBulkSaving(true);
     const headers = getAuthHeaders();
     try {
@@ -331,11 +320,8 @@ export default function EntityDetailPanel({
       ).then((r) => r.data)));
 
       // 1) Create the beneficiary relationships in parallel.
-      // Direction matches the platform convention used everywhere else:
       // SOURCE = the person inheriting, TARGET = the entity they
-      // inherit from, role = 'beneficiary'. (Earlier this was reversed,
-      // which caused the API to return a 422 validation error rendered
-      // in the toast as the unhelpful "[object Object]".)
+      // inherit from, role = 'beneficiary'.
       const linkOps = [
         ...existingIds.map((bid) => ({ source_id: bid, source_type: 'beneficiary' })),
         ...createdExternals.map((ep) => ({ source_id: ep.id, source_type: 'external_person' })),
@@ -357,172 +343,8 @@ export default function EntityDetailPanel({
         headers,
       )));
 
-      // 2) Compute compact mini-grid positions beneath the entity.
-      // Bulk-added beneficiaries render as a tight cluster of small
-      // avatars (5 per row, wraps, staggered like bricks), flagged
-      // with `mini: true` in the override so EntityOrgChart knows to
-      // render them in mini mode. Stagger means even-numbered rows
-      // (0, 2, …) are aligned to the entity center; odd rows offset
-      // by half a column so circles sit BETWEEN circles above them.
-      // Cluster constants:
-      const ENTITY_W = 200, ENTITY_H = 92;
-      const MINI_W = 56, MINI_H = 70;
-      const MINI_COL_GAP = 8;      // horizontal gap between mini tiles
-      const MINI_ROW_GAP = 4;      // vertical gap between cluster rows
-      const CLUSTER_GAP = 50;      // gap between entity bottom and top row
-      const PER_ROW = 5;
-      const currentOverrides = (chartLayout && typeof chartLayout === 'object') ? chartLayout : {};
-      const entityKey = `entity:${ent.id}`;
-      // Resolve the entity's effective position in the chart. Priority:
-      //   1. Saved override in `chartLayout` (user already dragged the
-      //      entity to a custom spot)
-      //   2. Naturally-computed initial layout (the position the
-      //      EntityOrgChart would have placed the entity at if no
-      //      override exists)
-      //   3. Hard fallback (0, 0) — only happens if the graph is empty
-      //
-      // The previous code fell back STRAIGHT to (0, 0), which placed
-      // the bulk-added mini cluster at the canvas origin regardless of
-      // where the target entity actually rendered. The user reported
-      // adding beneficiaries to "Harris Family Trust" only to see them
-      // pop up under the top-level "Trust" tile with edges crossing
-      // through the middle of Harris Family — that's the bug fixed here.
-      let initialPositions = {};
-      try {
-        const g = buildGraph({ entities, externals, relationships, beneficiaries, user });
-        const init = computeInitialLayout(g.nodes, g.depth);
-        initialPositions = init?.positions || {};
-      } catch {
-        // If graph-build fails (e.g., during a partial mount), we fall
-        // back to (0, 0) below — never throw.
-      }
-      const anchor = currentOverrides[entityKey]
-        || initialPositions[entityKey]
-        || { x: 0, y: 0 };
-      // Combined ordered list of EVERY node connected to this entity
-      // as a beneficiary — existing relationships (so the cluster
-      // re-tidies them, not just newly-linked people) + newly-created
-      // externals + benefactor if included. This is the trick that
-      // makes the brick-stack happen even when the user opens the
-      // modal with no new selections: clicking Confirm will simply
-      // re-compact whoever is already linked.
-      const linkedKey = `entity:${ent.id}`;
-      const existingClusterKeys = (relationships || [])
-        .filter((r) => r.role === 'beneficiary'
-          && `${r.target_type}:${r.target_id}` === linkedKey)
-        .map((r) => {
-          // Match the EntityOrgChart per-trust instance keying: a
-          // beneficiary→entity relationship resolves to the cloned
-          // `beneficiary:<bid>@<eid>` node so multiple trusts can each
-          // host their own visual instance of the same beneficiary.
-          if (r.source_type === 'beneficiary') {
-            return `beneficiary:${r.source_id}@${ent.id}`;
-          }
-          return `${r.source_type}:${r.source_id}`;
-        });
-      // De-dupe while preserving order: existing first, then
-      // newly-added picks (avoiding double-add since the picker
-      // already filtered out anyone in `alreadyLinked`), then new
-      // externals, then benefactor.
-      const orderedKeys = [];
-      const seen = new Set();
-      const pushIfNew = (k) => { if (!seen.has(k)) { seen.add(k); orderedKeys.push(k); } };
-      existingClusterKeys.forEach(pushIfNew);
-      // Newly-added beneficiaries also use the per-entity instance key
-      // so they land in this trust's cluster (not in some unrelated
-      // trust where the same beneficiary might already be visible).
-      existingIds.forEach((bid) => pushIfNew(`beneficiary:${bid}@${ent.id}`));
-      createdExternals.forEach((ep) => pushIfNew(`external_person:${ep.id}`));
-      if (bulkIncludeBenefactor && user?.id) pushIfNew(`user:${user.id}`);
-      const n = orderedKeys.length;
-      const rowY0 = anchor.y + ENTITY_H + CLUSTER_GAP;
-      const HALF_STEP = (MINI_W + MINI_COL_GAP) / 2;
-      const additions = {};
-      orderedKeys.forEach((key, i) => {
-        const row = Math.floor(i / PER_ROW);
-        const col = i % PER_ROW;
-        const itemsInThisRow = Math.min(PER_ROW, n - row * PER_ROW);
-        const rowW = itemsInThisRow * MINI_W + (itemsInThisRow - 1) * MINI_COL_GAP;
-        // Even rows centered under the entity; odd rows shifted right
-        // by half a column-step so the avatars on row N+1 sit between
-        // the avatars on row N (brick / honeycomb feel).
-        const stagger = row % 2 === 1 ? HALF_STEP : 0;
-        const rowStartX = anchor.x + (ENTITY_W - rowW) / 2 + stagger;
-        additions[key] = {
-          x: rowStartX + col * (MINI_W + MINI_COL_GAP),
-          y: rowY0 + row * (MINI_H + MINI_ROW_GAP),
-          mini: true,
-        };
-      });
-
-      // 3) Merge + persist. The layout endpoint replaces the whole
-      // overrides map, so we MUST include every existing override or
-      // the user's prior drags will be wiped. Also pin the target
-      // entity's own position to its current anchor — otherwise if
-      // the entity had no prior override, the next layout-recompute
-      // could move it out from under the freshly-positioned mini
-      // cluster, and the cluster would drift visually.
-      const merged = {
-        ...currentOverrides,
-        // Only write the entity anchor if it isn't already a saved
-        // override (don't clobber an existing user-drag position).
-        ...(currentOverrides[entityKey] ? {} : { [entityKey]: { x: anchor.x, y: anchor.y } }),
-        ...additions,
-      };
-
-      // 3a) Apply the merged layout to the parent's local state
-      // BEFORE awaiting the network round-trip. Two reasons:
-      //
-      //   • Snappier UI — the mini cluster snaps into place
-      //     instantly rather than waiting for both the PUT and the
-      //     subsequent fetchAll to complete.
-      //   • Resilience — if the layout PUT silently fails (403
-      //     because the user isn't the estate owner, 500 from a
-      //     backend hiccup, etc.), the user STILL sees the correct
-      //     mini cluster instead of full-size avatars with spaghetti
-      //     edges. Previously the .catch(()=>{}) on the PUT swallowed
-      //     the error and the user had no idea persistence had been
-      //     lost; this turn we both keep the visual state correct
-      //     locally AND surface a warning toast if the persist fails.
-      if (typeof onLayoutOptimistic === 'function') {
-        try { onLayoutOptimistic(merged); } catch { /* parent will heal on next fetchAll */ }
-      }
-
-      let putFailed = false;
-      let putError = null;
-      try {
-        await axios.put(
-          `${API_URL}/financial/entities/${ent.estate_id}/layout`,
-          { overrides: merged },
-          headers,
-        );
-      } catch (err) {
-        putFailed = true;
-        putError = err;
-        // Don't re-throw — relationships were already saved
-        // successfully and the user has the correct visual state
-        // thanks to the optimistic local update above.
-        console.warn('Bulk-add: layout save failed (cluster will revert on hard reload).', err?.response?.status, err?.response?.data);
-      }
-
       const newlyAdded = existingIds.length + createdExternals.length + (bulkIncludeBenefactor && user?.id ? 1 : 0);
-      if (newlyAdded > 0) {
-        toast.success(`Added ${newlyAdded} — cluster of ${n} compacted.`);
-      } else {
-        toast.success(`Compacted ${n} beneficiar${n === 1 ? 'y' : 'ies'} into a mini cluster.`);
-      }
-      if (putFailed) {
-        // Beneficiary relationships were saved successfully and the
-        // local view shows the correct mini cluster, but the layout
-        // override didn't persist server-side. Tell the user so they
-        // know to re-tidy (and report a status code if there is one).
-        const status = putError?.response?.status;
-        toast.warning(
-          status === 403
-            ? 'Cluster shape saved locally — only the estate owner can persist layout.'
-            : 'Cluster shape saved locally — layout sync failed; reload may reset shape.'
-        );
-      }
+      toast.success(`Added ${newlyAdded} beneficiar${newlyAdded === 1 ? 'y' : 'ies'}.`);
       setBulkOpen(false);
       setBulkSelected(new Set());
       setBulkIncludeBenefactor(false);
@@ -959,12 +781,6 @@ export default function EntityDetailPanel({
               && r.source_id === user?.id
           );
           const pickable = (beneficiaries || []).filter((b) => !alreadyLinked.has(b.id));
-          // Count of beneficiaries currently linked to this entity —
-          // enables the Confirm button even with 0 new picks so the
-          // user can re-tidy the existing cluster (snap to mini grid).
-          const existingCount = (relationships || []).filter((r) =>
-            r.role === 'beneficiary' && `${r.target_type}:${r.target_id}` === linkedKey
-          ).length;
           const allSelected = pickable.length > 0 && pickable.every((b) => bulkSelected.has(b.id));
           const toggle = (bid) => {
             const next = new Set(bulkSelected);
@@ -1015,7 +831,7 @@ export default function EntityDetailPanel({
                 <div className="px-5 pt-5 pb-3 border-b border-[var(--b2)]">
                   <div className="text-[15px] font-bold text-[var(--t)]">Add beneficiaries</div>
                   <div className="text-[11px] text-[var(--t4)] mt-0.5">
-                    Pick everyone who inherits from <span style={{ color: 'var(--gold)' }}>{ent?.name || 'this entity'}</span>. We'll fan them out in a tidy row below the tile — no dragging required.
+                    Pick everyone who inherits from <span style={{ color: 'var(--gold)' }}>{ent?.name || 'this entity'}</span>. They'll appear together in a single beneficiary cluster beneath the tile.
                   </div>
                 </div>
 
@@ -1236,7 +1052,7 @@ export default function EntityDetailPanel({
                   </Button>
                   <Button
                     onClick={handleBulkAddBeneficiaries}
-                    disabled={bulkSaving || (bulkSelected.size === 0 && bulkNewPeople.length === 0 && !bulkIncludeBenefactor && existingCount === 0)}
+                    disabled={bulkSaving || (bulkSelected.size === 0 && bulkNewPeople.length === 0 && !bulkIncludeBenefactor)}
                     className="px-4 py-2 rounded-md text-sm font-semibold"
                     style={{ background: '#22C993', color: '#0b1120' }}
                     data-testid="bulk-add-confirm"
@@ -1244,11 +1060,7 @@ export default function EntityDetailPanel({
                     {(() => {
                       if (bulkSaving) return <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving…</>;
                       const newCount = bulkSelected.size + bulkNewPeople.length + (bulkIncludeBenefactor ? 1 : 0);
-                      const total = newCount + existingCount;
-                      if (newCount === 0 && existingCount > 0) {
-                        return `Compact ${existingCount} beneficiar${existingCount === 1 ? 'y' : 'ies'}`;
-                      }
-                      return `Add ${newCount}${existingCount ? ` + compact ${existingCount}` : ''} (${total} total)`;
+                      return `Add ${newCount} beneficiar${newCount === 1 ? 'y' : 'ies'}`;
                     })()}
                   </Button>
                 </div>

@@ -15,7 +15,7 @@
  * animation language as FamilyTree.
  */
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Building2, Shield, Landmark, Home, User as UserIcon, Settings, Info, Pencil } from 'lucide-react';
+import { Building2, Shield, Landmark, Home, User as UserIcon, Settings, Info, Pencil, X } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { getEntityPalette, getTypeMeta, ROLE_PALETTE, PALETTE, ROLE_OPTIONS } from '../../../config/entityCatalog';
 import EntityLegend, { LEGEND_W, LEGEND_H } from './EntityLegend';
@@ -37,14 +37,6 @@ const BUCKET_ICON = {
 const ENTITY_W = 200;
 const ENTITY_H = 92;
 const PERSON_W = 110;
-// "Mini" dimensions — used for bulk-added beneficiaries so a trust
-// with N beneficiaries can render as a compact, brick-stacked cluster
-// (5 per row, wraps, staggered) instead of a long row of full-sized
-// cards that crowds the entity tile. Roughly half the standard size.
-// Position overrides in `chart_layout` can opt a person tile into
-// mini mode with `{ x, y, mini: true }`.
-const MINI_W = 56;
-const MINI_H = 70;
 // Extra height (was 96) to make room for the role-title chips beneath
 // the last name (e.g., "Trustee" / "Co-trustee + Member (LLC)" /
 // "Benefactor"). Chips wrap onto a second line when a person holds
@@ -79,6 +71,11 @@ const clusterHeight = (memberCount) => {
 
 // LocalStorage key for per-estate position overrides
 const POS_KEY = (estateId) => `cfp_entity_chart_positions:${estateId || 'global'}`;
+// LocalStorage key for per-estate hidden node-keys. The user can hide
+// individual tiles (including their own benefactor tile) from the
+// chart visualization without deleting the underlying database
+// record. The hidden set persists per estate.
+const HIDDEN_KEY = (estateId) => `cfp_entity_chart_hidden:${estateId || 'global'}`;
 
 // ---------------------------------------------------------------------------
 // Graph build (same approach as v1 but returns nodes flat for free layout)
@@ -124,16 +121,16 @@ function buildGraph({ entities, externals, relationships, beneficiaries, user })
   });
 
   // -- Per-entity beneficiary cluster tiles ---------------------------------
-  // Per user request (and replacing the prior per-instance approach):
-  // every entity that has at least one beneficiary-relationship gets a
-  // SINGLE composite cluster tile. The tile renders a brick-pattern
-  // grid of half-sized avatars and first-names internally and has ONE
-  // edge up to its parent entity. The individual beneficiaries
-  // themselves no longer render as separate person-tiles for their
-  // entity-beneficiary relationships — they're consumed into the
-  // cluster. They DO still render as full tiles for any *other*
-  // relationship they participate in (person-to-person, trustee-of, …).
-  const benByEntity = new Map(); // entityId -> [ {bid, b} ]
+  // Per user request: every entity that has at least one
+  // beneficiary-relationship gets a SINGLE composite cluster tile.
+  // The tile renders a brick-pattern grid of half-sized avatars with
+  // first-names internally and has ONE edge from the entity down into
+  // the cluster. The individual beneficiaries no longer render as
+  // separate person-tiles for their entity-beneficiary relationships
+  // — they're consumed into the cluster. They DO still render as
+  // full tiles for any *other* relationship they participate in
+  // (person-to-person, trustee-of, …).
+  const benByEntity = new Map(); // entityId -> [ {bid} ]
   (relationships || []).forEach((r) => {
     if (r.source_type === 'beneficiary' && r.target_type === 'entity' && r.role === 'beneficiary') {
       const list = benByEntity.get(r.target_id) || [];
@@ -161,16 +158,17 @@ function buildGraph({ entities, externals, relationships, beneficiaries, user })
       key: `cluster:${eid}`,
       kind: 'cluster',
       id: eid,
-      cluster_parent_entity_id: eid,
       members: hydrated,
       w: CLUSTER_W,
       h: clusterHeight(hydrated.length),
     });
   });
 
-  // Map each consumed beneficiary→entity edge to a single cluster→entity
-  // edge. A given (entity) only gets one such edge regardless of how
-  // many beneficiaries are inside its cluster.
+  // Map each consumed beneficiary→entity edge to a single
+  // entity→cluster edge. Direction is reversed (entity source,
+  // cluster target) so the BFS depth pass naturally places the
+  // cluster BELOW its parent entity. The edge is marked synthetic
+  // so the equity / role-label passes skip it.
   const clusterEdgesAdded = new Set(); // entityIds we've already emitted an edge for
   const edges = (relationships || [])
     .reduce((acc, r) => {
@@ -182,10 +180,11 @@ function buildGraph({ entities, externals, relationships, beneficiaries, user })
           clusterEdgesAdded.add(r.target_id);
           acc.push({
             id: `cluster-edge:${r.target_id}`,
-            sourceKey: `cluster:${r.target_id}`,
-            targetKey: `entity:${r.target_id}`,
+            sourceKey: `entity:${r.target_id}`,
+            targetKey: `cluster:${r.target_id}`,
             role: 'beneficiary',
             ownership_pct: null,
+            synthetic: true,
             raw: r,
           });
         }
@@ -260,6 +259,7 @@ function buildGraph({ entities, externals, relationships, beneficiaries, user })
   });
   pool.forEach((n, k) => {
     if (n.kind === 'entity') nodes.set(k, n);
+    else if (n.kind === 'cluster') nodes.set(k, n);
     else if (personKeysWithRel.has(k)) nodes.set(k, n);
   });
 
@@ -564,48 +564,13 @@ function TileIconButton({ icon: Icon, onClick, label, color = 'rgba(255,255,255,
   );
 }
 
-function PersonTile({ node, palette, dragging, locked, onPointerDownDrag, onClick, onDoubleClick, onInfoClick, onEditClick, roleFilter, onTitleClick, mini }) {
+function PersonTile({ node, palette, dragging, locked, onPointerDownDrag, onClick, onDoubleClick, onInfoClick, onEditClick, onHideClick, roleFilter, onTitleClick }) {
   const initials = (node.label?.[0] || '') + (node.sublabel?.[0] || '');
   const color = node.avatar_color || palette.stroke;
   const cacheKey =
     node.kind === 'user' ? `user:${node.id}:photo` :
     node.kind === 'beneficiary' ? `beneficiary:${node.id}:photo` :
     undefined;
-  // Mini mode: compact 64×84 tile with a 40px avatar and FIRST NAME
-  // ONLY. Used when a node has been positioned as part of a
-  // bulk-add cluster. Skips sublabel / role chips / equity badges /
-  // hover action buttons to keep the cluster visually quiet.
-  if (mini) {
-    return (
-      <div
-        className="relative flex flex-col items-center gap-0.5 select-none"
-        style={{ width: MINI_W, height: MINI_H, cursor: locked ? 'pointer' : (dragging ? 'grabbing' : 'grab'), touchAction: locked ? 'auto' : 'none' }}
-        onPointerDown={onPointerDownDrag}
-        onClick={onClick}
-        onDoubleClick={onDoubleClick}
-        data-testid={`entity-node-${node.key}`}
-      >
-        <div style={{ pointerEvents: 'none' }}>
-          <AvatarCircle
-            photo={node.photo}
-            initials={(initials || '?').toUpperCase().slice(0, 2)}
-            color={color}
-            size={36}
-            cacheKey={cacheKey}
-            isPrimary={node.kind === 'user'}
-          />
-        </div>
-        <span className="text-[11px] font-semibold text-[var(--t)] text-center leading-tight truncate w-full px-0.5" style={{ pointerEvents: 'none' }}>
-          {(node.label || '').split(' ')[0]}
-        </span>
-        {/* Single subtle info dot for tap-to-detail; full action stack
-            would visually overwhelm the cluster. */}
-        <div className="absolute top-0 right-0">
-          <TileIconButton icon={Info} onClick={onInfoClick} label="Info" testId={`tile-info-${node.key}`} />
-        </div>
-      </div>
-    );
-  }
   return (
     <div
       className="relative flex flex-col items-center gap-1 select-none"
@@ -687,12 +652,15 @@ function PersonTile({ node, palette, dragging, locked, onPointerDownDrag, onClic
         {node.kind !== 'user' && onEditClick && (
           <TileIconButton icon={Pencil} onClick={onEditClick} label="Edit" testId={`tile-edit-${node.key}`} />
         )}
+        {onHideClick && (
+          <TileIconButton icon={X} onClick={onHideClick} label="Hide from chart" testId={`tile-hide-${node.key}`} />
+        )}
       </div>
     </div>
   );
 }
 
-function EntityTile({ node, dragging, locked, onPointerDownDrag, onClick, onDoubleClick, onInfoClick, onEditClick }) {
+function EntityTile({ node, dragging, locked, onPointerDownDrag, onClick, onDoubleClick, onInfoClick, onEditClick, onHideClick }) {
   const e = node.entity;
   const palette = getEntityPalette(e);
   const meta = getTypeMeta(e.category, e.type);
@@ -741,7 +709,91 @@ function EntityTile({ node, dragging, locked, onPointerDownDrag, onClick, onDoub
         {onEditClick && (
           <TileIconButton icon={Pencil} onClick={onEditClick} label="Edit" testId={`tile-edit-entity-${e.id}`} />
         )}
+        {onHideClick && (
+          <TileIconButton icon={X} onClick={onHideClick} label="Hide from chart" testId={`tile-hide-entity-${e.id}`} />
+        )}
       </div>
+    </div>
+  );
+}
+
+// ClusterTile — one composite tile per entity that has beneficiaries.
+// Renders the entity name on a header strip, then a brick-pattern grid
+// of half-sized avatars (5 per row, odd rows offset by half a column).
+// First name only beneath each avatar. One SVG edge connects this tile
+// to the parent entity (handled by the edge layer, not in here).
+function ClusterTile({ node, dragging, locked, onPointerDownDrag, onClick, entities, onHideClick }) {
+  const members = node.members || [];
+  const w = CLUSTER_W;
+  const h = clusterHeight(members.length);
+  const parentName = (entities || []).find((e) => e.id === node.id)?.name || '';
+  const HALF_STEP = CLUSTER_SLOT_W / 2;
+  return (
+    <div
+      onPointerDown={onPointerDownDrag}
+      onClick={onClick}
+      data-testid={`entity-node-cluster-${node.id}`}
+      className="relative rounded-xl select-none"
+      style={{
+        width: w,
+        height: h,
+        background: 'rgba(34,201,147,0.08)',
+        border: '1.5px solid rgba(34,201,147,0.55)',
+        boxShadow: dragging
+          ? '0 8px 24px rgba(0,0,0,0.45), 0 0 24px rgba(34,201,147,0.45)'
+          : '0 0 14px rgba(34,201,147,0.22)',
+        cursor: locked ? 'pointer' : (dragging ? 'grabbing' : 'grab'),
+        touchAction: locked ? 'auto' : 'none',
+      }}
+    >
+      <div
+        className="px-2 pt-1.5 pb-1 text-[11px] font-bold uppercase tracking-wide truncate"
+        style={{ color: '#22C993', pointerEvents: 'none' }}
+      >
+        {members.length} beneficiar{members.length === 1 ? 'y' : 'ies'} · {parentName || 'this entity'}
+      </div>
+      <div
+        className="absolute"
+        style={{
+          left: CLUSTER_PAD_X,
+          top: CLUSTER_HEADER_H + CLUSTER_PAD_Y,
+          right: CLUSTER_PAD_X,
+          bottom: CLUSTER_PAD_Y,
+          pointerEvents: 'none',
+        }}
+      >
+        {members.map((m, i) => {
+          const row = Math.floor(i / CLUSTER_COLS);
+          const col = i % CLUSTER_COLS;
+          const stagger = row % 2 === 1 ? HALF_STEP : 0;
+          const left = col * CLUSTER_SLOT_W + stagger;
+          const top = row * CLUSTER_SLOT_H;
+          const initials = (m.first_name?.[0] || '?').toUpperCase();
+          return (
+            <div
+              key={m.id}
+              className="absolute flex flex-col items-center"
+              style={{ left, top, width: CLUSTER_AVATAR + 4 }}
+            >
+              <AvatarCircle
+                photo={m.photo}
+                initials={initials}
+                color={m.avatar_color || '#22C993'}
+                size={CLUSTER_AVATAR}
+                cacheKey={`beneficiary:${m.id}:photo`}
+              />
+              <span className="text-[11px] font-bold text-[var(--t)] mt-0.5 leading-tight truncate w-full text-center">
+                {(m.first_name || '').split(' ')[0]}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      {onHideClick && (
+        <div className="absolute top-1 right-1">
+          <TileIconButton icon={X} onClick={onHideClick} label="Hide from chart" testId={`tile-hide-cluster-${node.id}`} />
+        </div>
+      )}
     </div>
   );
 }
@@ -822,6 +874,34 @@ export default function EntityOrgChart({
       return raw ? JSON.parse(raw) : {};
     } catch { return {}; }
   });
+  // Per-estate hidden node-keys (user dismissed individual tiles
+  // from the visualization). Persisted to localStorage so the chart
+  // remembers the user's curated view across reloads / device
+  // restarts. The underlying DB records are NOT touched — this is a
+  // purely visual hide.
+  const [hiddenKeys, setHiddenKeys] = useState(() => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const raw = window.localStorage?.getItem(HIDDEN_KEY(estateId));
+      const arr = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(arr) ? arr : []);
+    } catch { return new Set(); }
+  });
+  const hideNode = useCallback((key) => {
+    if (!key) return;
+    setHiddenKeys((prev) => {
+      if (prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.add(key);
+      try { window.localStorage?.setItem(HIDDEN_KEY(estateId), JSON.stringify(Array.from(next))); }
+      catch { /* quota */ }
+      return next;
+    });
+  }, [estateId]);
+  const showAllHidden = useCallback(() => {
+    setHiddenKeys(new Set());
+    try { window.localStorage?.removeItem(HIDDEN_KEY(estateId)); } catch { /* quota */ }
+  }, [estateId]);
   // Tracks whether the user has dragged anything since the last save.
   // We only push to the backend when this is true to avoid a flood of
   // identical PUTs every time the user toggles the lock chip.
@@ -837,6 +917,11 @@ export default function EntityOrgChart({
       const raw = window.localStorage?.getItem(POS_KEY(estateId));
       setOverrides(raw ? JSON.parse(raw) : {});
     } catch { setOverrides({}); }
+    try {
+      const raw = window.localStorage?.getItem(HIDDEN_KEY(estateId));
+      const arr = raw ? JSON.parse(raw) : [];
+      setHiddenKeys(new Set(Array.isArray(arr) ? arr : []));
+    } catch { setHiddenKeys(new Set()); }
   }, [estateId]);
 
   // Hydrate from server payload — but ONLY ONCE per estate. Subsequent
@@ -902,10 +987,18 @@ export default function EntityOrgChart({
   }, []);
 
   // Build graph + initial layout
-  const { nodes, edges, depth } = useMemo(
+  const { nodes: rawNodes, edges: rawEdges, depth } = useMemo(
     () => buildGraph({ entities, externals, relationships, beneficiaries, user }),
     [entities, externals, relationships, beneficiaries, user]
   );
+  // Apply per-estate hide filter. Hidden node-keys drop both their
+  // tile AND any edge that touches them, so the visual reads cleanly.
+  const { nodes, edges } = useMemo(() => {
+    if (hiddenKeys.size === 0) return { nodes: rawNodes, edges: rawEdges };
+    const ns = rawNodes.filter((n) => !hiddenKeys.has(n.key));
+    const es = rawEdges.filter((e) => !hiddenKeys.has(e.sourceKey) && !hiddenKeys.has(e.targetKey));
+    return { nodes: ns, edges: es };
+  }, [rawNodes, rawEdges, hiddenKeys]);
   const { positions: initial, canvasW: initialW, canvasH: initialH } = useMemo(
     () => computeInitialLayout(nodes, depth),
     [nodes, depth]
@@ -1369,13 +1462,11 @@ export default function EntityOrgChart({
     // Determine the "group" that should translate together with the
     // primary dragged tile. Two cases:
     //
-    //   (a) The dragged tile is part of an active marquee selection
-    //       (Ask 3). Move the entire selection together.
-    //   (b) The dragged tile is an entity that hosts a mini-cluster
-    //       (any beneficiary instance key matching `*@<entity_id>`).
-    //       The user demanded the cluster follow when the parent tile
-    //       moves so they don't have to manually re-tidy after every
-    //       drag (Ask 2).
+    //   (a) The dragged tile is part of an active marquee selection.
+    //       Move the entire selection together.
+    //   (b) The dragged tile is an entity that has a beneficiary
+    //       cluster (`cluster:<eid>`). The cluster follows the parent
+    //       entity so the visual relationship stays intact.
     //
     // We capture each member's current origX/origY at drag-start so the
     // pointermove handler can apply a single delta to all of them.
@@ -1384,13 +1475,14 @@ export default function EntityOrgChart({
     if (selectedKeys.size > 0 && selectedKeys.has(node.key)) {
       groupKeys = Array.from(selectedKeys);
     } else if (node.kind === 'entity') {
-      const children = [];
-      nodes.forEach((n, k) => {
-        if (k === node.key) return;
-        if (n.cluster_parent_entity_id === node.id) children.push(k);
-      });
-      if (children.length > 0) {
-        groupKeys = [node.key, ...children];
+      const clusterKey = `cluster:${node.id}`;
+      if (nodes.some((n) => n.key === clusterKey)) {
+        groupKeys = [node.key, clusterKey];
+      }
+    } else if (node.kind === 'cluster') {
+      const entityKey = `entity:${node.id}`;
+      if (nodes.some((n) => n.key === entityKey)) {
+        groupKeys = [node.key, entityKey];
       }
     }
     if (groupKeys && groupKeys.length > 1) {
@@ -1625,18 +1717,14 @@ export default function EntityOrgChart({
   // Build obstacle list = every tile rect (we exclude src/tgt for each edge inside the loop).
   // Also include the legend tile so edges don't route through it — it
   // visually behaves like another tile, just without lines connected.
-  // Mini-mode nodes get their dims swapped here so edge routing knows
-  // the smaller bounding box (otherwise routes would jump as if the
-  // tile was still full-sized).
   const tileRects = nodes.map((n) => {
     const p = positionOf(n.key);
-    const isMiniTile = !!p?.mini && n.kind !== 'entity';
     return {
       key: n.key,
       x: p.x,
       y: p.y,
-      w: isMiniTile ? MINI_W : n.w,
-      h: isMiniTile ? MINI_H : n.h,
+      w: n.w,
+      h: n.h,
     };
   });
   if (!legendHidden) {
@@ -1644,34 +1732,6 @@ export default function EntityOrgChart({
     tileRects.push({ key: LEGEND_KEY, x: lp.x, y: lp.y, w: LEGEND_W, h: LEGEND_H });
   }
   const rectByKey = Object.fromEntries(tileRects.map((r) => [r.key, r]));
-
-  // Pre-compute "trunk Y" per target-entity for mini-cluster groups.
-  // For every entity that has 2+ beneficiary connections coming from
-  // mini-mode source tiles, we want the lines to fan up vertically
-  // from each avatar to a SHARED horizontal trunk that sits just
-  // above the top row of mini tiles, then run laterally to the
-  // entity. This kills the "spaghetti" mess of routeEdge crossing
-  // through avatars in a tight cluster.
-  const miniTrunkYByEntity = (() => {
-    const groups = new Map(); // entityKey -> [{srcRect}]
-    edges.forEach((edge) => {
-      const sR = rectByKey[edge.sourceKey];
-      const tR = rectByKey[edge.targetKey];
-      if (!sR || !tR) return;
-      const srcPos = positionOf(edge.sourceKey);
-      if (!srcPos?.mini) return;
-      if (edge.role !== 'beneficiary') return;
-      if (!groups.has(edge.targetKey)) groups.set(edge.targetKey, []);
-      groups.get(edge.targetKey).push(sR);
-    });
-    const out = {};
-    groups.forEach((srcRects, entityKey) => {
-      if (srcRects.length < 2) return; // single line → routeEdge handles cleanly
-      const topRowY = Math.min(...srcRects.map((r) => r.y));
-      out[entityKey] = topRowY - 14;
-    });
-    return out;
-  })();
 
   // Build the SVG edge layer as raw markup to bypass the platform's
   // `<span data-ve-dynamic>` instrumentation that wraps React .map() output —
@@ -1687,31 +1747,8 @@ export default function EntityOrgChart({
       const sR = rectByKey[edge.sourceKey];
       const tR = rectByKey[edge.targetKey];
       if (!sR || !tR) return;
-      // Manifold routing for mini-cluster beneficiary edges:
-      // up from the avatar to the shared trunk above the top row,
-      // laterally to the entity center, then down into the entity
-      // bottom. (Falls through to routeEdge for everything else.)
-      const trunkY = miniTrunkYByEntity[edge.targetKey];
-      const srcPos = positionOf(edge.sourceKey);
-      let points;
-      let midPoint;
-      if (trunkY != null && srcPos?.mini && edge.role === 'beneficiary') {
-        const srcCenterX = sR.x + sR.w / 2;
-        const tgtCenterX = tR.x + tR.w / 2;
-        const tgtBottomY = tR.y + tR.h;
-        points = [
-          { x: srcCenterX, y: sR.y },          // top of avatar
-          { x: srcCenterX, y: trunkY },        // up to trunk
-          { x: tgtCenterX, y: trunkY },        // over to entity
-          { x: tgtCenterX, y: tgtBottomY },    // down into entity bottom
-        ];
-        midPoint = { x: (srcCenterX + tgtCenterX) / 2, y: trunkY };
-      } else {
-        const obstacles = tileRects.filter((r) => r.key !== sR.key && r.key !== tR.key);
-        const routed = routeEdge(sR, tR, obstacles, edge.id);
-        points = routed.points;
-        midPoint = routed.midPoint;
-      }
+      const obstacles = tileRects.filter((r) => r.key !== sR.key && r.key !== tR.key);
+      const { points, midPoint } = routeEdge(sR, tR, obstacles, edge.id);
       const role = ROLE_PALETTE[edge.role] || ROLE_PALETTE.owner;
       const isEquity = (
         edge.role === 'owner' || edge.role === 'member' ||
@@ -1801,6 +1838,33 @@ export default function EntityOrgChart({
             <span style={{ fontSize: 12, lineHeight: 1 }}>×</span>
           </button>
         </div>
+      )}
+
+      {/* Hidden-tiles pill — appears whenever the user has dismissed
+          one or more tiles from the chart. Click to restore all. */}
+      {hiddenKeys.size > 0 && (
+        <button
+          type="button"
+          onClick={showAllHidden}
+          className="absolute z-40 flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-bold whitespace-nowrap transition-colors hover:bg-[rgba(212,165,55,0.18)]"
+          style={{
+            top: roleFilter ? 44 : 8,
+            right: 8,
+            background: 'rgba(11,17,32,0.92)',
+            border: '1px solid var(--gold)',
+            color: 'var(--gold)',
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 4px 18px rgba(0,0,0,0.45), 0 0 14px rgba(212,165,55,0.35)',
+            position: 'sticky',
+          }}
+          data-testid="entity-hidden-tiles-pill"
+          aria-label={`Show ${hiddenKeys.size} hidden tile${hiddenKeys.size === 1 ? '' : 's'}`}
+          title="Restore all hidden tiles"
+        >
+          <span>{hiddenKeys.size} hidden</span>
+          <span style={{ opacity: 0.7 }}>·</span>
+          <span style={{ color: '#fff' }}>Show all</span>
+        </button>
       )}
 
       {/* Outer pan-margin layer. Sized in screen pixels (outerW × zoom)
@@ -1898,6 +1962,9 @@ export default function EntityOrgChart({
           const handleEditClick = () => {
             onEditClickNode?.(n);
           };
+          const handleHideClick = () => {
+            hideNode(n.key);
+          };
           return (
             <div
               key={n.key}
@@ -1925,7 +1992,15 @@ export default function EntityOrgChart({
                   onClick={handleClick}
                   onDoubleClick={readOnly ? undefined : handleDoubleClick}
                   onInfoClick={handleInfoClick}
-                  onEditClick={readOnly ? undefined : handleEditClick} />
+                  onEditClick={readOnly ? undefined : handleEditClick}
+                  onHideClick={readOnly ? undefined : handleHideClick} />
+              ) : n.kind === 'cluster' ? (
+                <ClusterTile node={n} dragging={isDragging}
+                  locked={locked || readOnly}
+                  entities={entities}
+                  onPointerDownDrag={(e) => onPointerDownDrag(e, n)}
+                  onClick={handleClick}
+                  onHideClick={readOnly ? undefined : handleHideClick} />
               ) : (
                 <PersonTile
                   node={n}
@@ -1941,9 +2016,9 @@ export default function EntityOrgChart({
                   onDoubleClick={readOnly ? undefined : handleDoubleClick}
                   onInfoClick={handleInfoClick}
                   onEditClick={readOnly ? undefined : handleEditClick}
+                  onHideClick={readOnly ? undefined : handleHideClick}
                   roleFilter={roleFilter}
                   onTitleClick={handleTitleClick}
-                  mini={!!p?.mini}
                 />
               )}
             </div>

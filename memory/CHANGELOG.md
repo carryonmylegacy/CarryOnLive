@@ -1,6 +1,39 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — E&S Cluster Box Rewrite (Bulk-Beneficiary Cleanup + Node Hide)
+
+### Replaced the per-instance mini approach with a single composite cluster tile
+**Need** — The "individual beneficiary nodes with crisscrossing lines" approach (24 hrs of work, Feb 13) was rejected as visually "totally f***ed up". User demanded a SINGLE composite "cluster box" tile per entity: half-sized staggered avatars (first name only) in rows of 5, with exactly ONE line from the entity down to the cluster.
+
+**Approach** — In `EntityOrgChart.js > buildGraph`:
+- Every entity with ≥1 beneficiary relationship now produces one `cluster:<eid>` pool node carrying the hydrated member list.
+- The N individual beneficiary→entity edges are collapsed into a single SYNTHETIC `entity:<eid> → cluster:<eid>` edge (direction reversed so BFS depth naturally places the cluster below the parent).
+- New `ClusterTile` component renders the box: header strip ("N beneficiaries · Trust name"), brick-pattern grid of `AvatarCircle`s (5 per row, odd rows offset by half a slot, first-name labels). The print SVG mirrors the same layout.
+
+### Per-node hide affordance
+**Need** — User asked for the ability to delete/hide individual nodes (including the primary benefactor tile) from the chart visualization without touching the underlying DB record.
+
+**Fix** — Added `HIDDEN_KEY` localStorage state per estate. `PersonTile`, `EntityTile`, and `ClusterTile` each render an `×` button (uses `lucide-react/X`) in their action stack. Clicking adds the node's key to `hiddenKeys`, which is then applied as a filter on `rawNodes`/`rawEdges` so the tile AND any incident edge vanish. A "N hidden · Show all" pill appears in the top-right when N>0 to restore in one tap.
+
+### Dead-code purge (24 hrs of failed per-instance work, fully ripped out)
+Combed the E&S code base and deleted every line that supported the previous approach:
+
+| File | Lines removed |
+|---|---|
+| `EntityOrgChart.js` | `MINI_W`/`MINI_H` constants, `PersonTile.mini` render branch (~45 lines), `isMiniTile` tileRects dimension swap, `miniTrunkYByEntity` precomputation, the mini-edge manifold routing branch in `edgesSvgInner` (~30 lines), `cluster_parent_entity_id` field on cluster pool entries, the `cluster_parent_entity_id`-based drag-group detection (now uses `cluster:<eid>` key prefix), the `mini={!!p?.mini}` PersonTile prop wiring |
+| `EntityDetailPanel.js` | `buildGraph`/`computeInitialLayout` imports, `onLayoutOptimistic`/`chartLayout` props, the entire mini-grid positioning math in `handleBulkAddBeneficiaries` (~150 lines: cluster anchor lookup, brick-stack coordinate math, layout PUT, optimistic merge, instance-key emission), the "compact existing" Confirm-button mode |
+| `EntitiesSection.js` | `pendingLayoutOverridesRef`, the optimistic-merge logic in `fetchAll`, the `onLayoutOptimistic` callback passed to `EntityDetailPanel` |
+| `EntitiesPrintPage.js` | `MINI_W_PRINT`/`MINI_H_PRINT`, the `rect.mini` dimension swap, the `miniTrunkYByEntity` pre-pass + manifold mini-edge branch in `routedEdges`, the entire `!isEntity && rect.mini` person-tile SVG render branch (~40 lines). Replaced with a `n.kind === 'cluster'` branch that renders the cluster box in SVG (header strip + brick-pattern half-size avatars with photo clipping). |
+
+Net result: the bulk-add handler shrank from ~250 lines of positioning math to ~50 lines of pure data wiring (create externals → POST relationships → `onChanged()`). The chart now self-renders the correct cluster automatically — no override math, no instance-key tracking, no layout PUT, no optimistic merge.
+
+**Smoke test:** Logged in as `info@carryon.us`, seeded 1 entity + 3 beneficiaries + 3 ben→entity rels via API, navigated to CFP → confirmed 1 cluster tile rendered with 3 staggered half-size avatars (Alice, Bob, Carol), ONE green dashed line from "Smoke Trust" entity to the cluster header. Verified `×` hide button on entity tile dropped both the entity AND the orphaned edge, and the "1 hidden · Show all" pill restored on click. Test data cleaned up.
+
+**Housekeeping**: `bash /app/housekeeping.sh` → 0 WARN + 0 FAIL.
+
+
+
 ## Feb 13, 2026 — E&S Per-Trust Trees + Drag-with-Cluster + Marquee Select
 
 ### Ask 1 — Same Beneficiary, Multiple Trusts, Visible Under Each
