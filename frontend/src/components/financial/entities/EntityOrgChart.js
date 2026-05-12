@@ -896,6 +896,7 @@ export default function EntityOrgChart({
   cleanUpSignal, locked = false, readOnly = false, fitOnLoad = false,
   legendHidden = false, onHideLegend,
   serverOverrides, onSaveLayout,
+  focusKey, focusNonce,
 }) {
   const { user } = useAuth();
   const containerRef = useRef(null);
@@ -1252,6 +1253,49 @@ export default function EntityOrgChart({
     if (key === LEGEND_KEY) return { x: -LEGEND_W - 24, y: 0 };
     return { x: PADDING, y: PADDING };
   }, [overrides, initial]);
+
+  // ── Focus-on-key effect ───────────────────────────────────────────
+  // When the parent bumps `focusKey` (e.g., user tapped a row in the
+  // Blocks Summary card), pan the chart so that node is centered in
+  // the viewport AND add it to `pulseKeys` so the tile shows a 2-sec
+  // gold-ring pulse for the audience to follow during a live demo.
+  const [pulseKeys, setPulseKeys] = useState(() => new Set());
+  useEffect(() => {
+    if (!focusKey) return;
+    const el = containerRef.current;
+    const target = nodes.find((n) => n.key === focusKey);
+    if (!el || !target) return;
+    const pos = positionOf(focusKey);
+    if (!pos) return;
+    const z = zoom || 1;
+    const targetCenterX = (pos.x + target.w / 2) * z;
+    const targetCenterY = (pos.y + target.h / 2) * z;
+    const rect = el.getBoundingClientRect();
+    el.scrollTo({
+      left: Math.max(0, targetCenterX - rect.width / 2),
+      top: Math.max(0, targetCenterY - rect.height / 2),
+      behavior: 'smooth',
+    });
+    setPulseKeys((prev) => {
+      const next = new Set(prev);
+      next.add(focusKey);
+      return next;
+    });
+    const t = setTimeout(() => {
+      setPulseKeys((prev) => {
+        if (!prev.has(focusKey)) return prev;
+        const next = new Set(prev);
+        next.delete(focusKey);
+        return next;
+      });
+    }, 2200);
+    return () => clearTimeout(t);
+    // We intentionally omit positionOf/zoom from deps — refocusing on
+    // every zoom change would yank the viewport mid-pinch. The effect
+    // re-fires when the parent bumps focusKey OR focusNonce (so
+    // clicking the same row twice still re-pulses).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusKey, focusNonce]);
 
   // Canvas size: enforce a generous baseline so the user always has
   // pan-room in every direction (no "side wall" feel when dragging
@@ -2138,20 +2182,29 @@ export default function EntityOrgChart({
             <div
               key={n.key}
               data-selected={selectedKeys.has(n.key) ? 'true' : undefined}
+              data-pulse={pulseKeys.has(n.key) ? 'true' : undefined}
               style={{
                 position: 'absolute',
                 left: p.x,
                 top: p.y,
-                zIndex: isDragging ? 30 : 10,
+                zIndex: isDragging ? 30 : (pulseKeys.has(n.key) ? 25 : 10),
                 transition: isDragging ? 'none' : 'box-shadow 200ms ease, opacity 200ms ease',
                 opacity: activeNodeKeys && !activeNodeKeys.has(n.key) ? 0.25 : 1,
                 // Selection ring (Ask 3): a subtle gold glow on every
                 // tile the marquee picked up so the user knows what
                 // moves together.
-                boxShadow: selectedKeys.has(n.key)
-                  ? '0 0 0 3px rgba(212,175,55,0.85), 0 0 18px rgba(212,175,55,0.55)'
-                  : undefined,
-                borderRadius: selectedKeys.has(n.key) ? 12 : undefined,
+                // Pulse ring: triggered by parent via focusKey — used
+                // by the Blocks Summary card to draw the audience's
+                // eye to a specific tile during a live demo. Animates
+                // a 2-sec gold halo via CSS keyframes (`ec-pulse-ring`
+                // defined in index.css).
+                boxShadow: pulseKeys.has(n.key)
+                  ? '0 0 0 4px rgba(212,175,55,0.95), 0 0 36px rgba(212,175,55,0.85)'
+                  : selectedKeys.has(n.key)
+                    ? '0 0 0 3px rgba(212,175,55,0.85), 0 0 18px rgba(212,175,55,0.55)'
+                    : undefined,
+                borderRadius: (selectedKeys.has(n.key) || pulseKeys.has(n.key)) ? 12 : undefined,
+                animation: pulseKeys.has(n.key) ? 'ec-pulse-ring 2.2s ease-out 1' : undefined,
               }}
             >
               {n.kind === 'entity' ? (

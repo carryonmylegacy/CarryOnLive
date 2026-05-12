@@ -50,6 +50,16 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   const [viewMode, setViewMode] = useState('chart'); // 'chart' | 'list'
   const [expanded, setExpanded] = useState(false);
   const [blocksExpanded, setBlocksExpanded] = useState(false);
+  // When the user clicks a row in the Blocks Summary card we bump
+  // both the focus key (= the chart node key to center on) AND a
+  // nonce so consecutive clicks on the same row still re-fire the
+  // chart's focus effect.
+  const [chartFocusKey, setChartFocusKey] = useState(null);
+  const [chartFocusNonce, setChartFocusNonce] = useState(0);
+  const focusOnBlock = useCallback((blockId) => {
+    setChartFocusKey(`block:${blockId}`);
+    setChartFocusNonce((n) => n + 1);
+  }, []);
   const [resetTick, setResetTick] = useState(0);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [cleanUpSignal, setCleanUpSignal] = useState(0);
@@ -608,9 +618,14 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                   .map((eid) => (entities || []).find((e) => e.id === eid)?.name)
                   .filter(Boolean);
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={b.id}
-                    className="flex items-start justify-between gap-3 px-2 py-1.5 rounded-md"
+                    onClick={() => {
+                      setBlocksExpanded(true);
+                      focusOnBlock(b.id);
+                    }}
+                    className="w-full text-left flex items-start justify-between gap-3 px-2 py-1.5 rounded-md hover:bg-[rgba(212,175,55,0.10)] transition-colors"
                     style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}
                     data-testid={`blocks-summary-row-${b.id}`}
                   >
@@ -632,7 +647,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                     >
                       {attachedEntityIds.length}× linked
                     </span>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -650,6 +665,8 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
             relationships={relationships}
             beneficiaries={beneficiaries || []}
             blocks={blocks}
+            focusKey={chartFocusKey}
+            focusNonce={chartFocusNonce}
             onSingleClickNode={handleSingleClick}
             onDoubleClickNode={handleDoubleClick}
             onInfoClickNode={handleInfoClick}

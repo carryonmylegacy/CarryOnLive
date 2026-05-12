@@ -1456,6 +1456,19 @@
   100% { transform: scale(0); opacity: 0; height: 0; margin: 0; padding: 0; overflow: hidden; }
 }
 
+/* CFP Entity chart: focus-pulse ring for tiles being highlighted by
+   the Blocks Summary card click. Three breathing pulses over ~2.2s,
+   then back to no halo. The box-shadow is also set inline (so the
+   ring renders even before the animation starts) — this keyframe
+   just modulates the spread. */
+@keyframes ec-pulse-ring {
+  0%   { box-shadow: 0 0 0 0   rgba(212,175,55,0.85), 0 0 24px rgba(212,175,55,0.65); }
+  35%  { box-shadow: 0 0 0 8px rgba(212,175,55,0.00), 0 0 36px rgba(212,175,55,0.95); }
+  60%  { box-shadow: 0 0 0 4px rgba(212,175,55,0.85), 0 0 28px rgba(212,175,55,0.70); }
+  100% { box-shadow: 0 0 0 0   rgba(212,175,55,0.00), 0 0 12px rgba(212,175,55,0.20); }
+}
+
+
 
 /* ── iOS Safe Area: Platform-wide protection ────────────────── */
 /* Component-level collisionPadding in select.jsx, dropdown-menu.jsx, and popover.jsx

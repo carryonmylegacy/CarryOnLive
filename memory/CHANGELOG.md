@@ -1,6 +1,29 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — Click-to-Focus on Summary Card Rows
+
+### Need
+After the Blocks Summary card shipped, user agreed to add a click-to-focus interaction: tapping a row should auto-scroll the chart canvas to center the block tile AND pulse a 2-sec gold ring around it so the demo audience's eye follows.
+
+### Change
+- `EntityOrgChart` accepts new props `focusKey` (node key to center on) + `focusNonce` (bump on every click so clicking the same row twice still re-fires).
+- Effect: when `focusNonce` changes, the chart looks up the target node's world position, smooth-scrolls the container so the tile is centered, adds the key to a `pulseKeys` Set, then `setTimeout(2200ms)` removes it.
+- Pulse tiles render with a `data-pulse="true"` attribute + an inline gold box-shadow + the new `ec-pulse-ring` keyframe animation defined in `index.css` (three breathing beats over 2.2s).
+- Summary card rows in `EntitiesSection.js` are now `<button>`s. On click: auto-expand the summary card if collapsed, then `focusOnBlock(block.id)` bumps `chartFocusKey + chartFocusNonce`.
+
+### Verified live (preview pod, `info@carryon.us`)
+Seeded entity + block + 1 beneficiary. Reloaded `/financial` →
+- Row rendered as `<button>` ✅
+- Click on row → exactly 1 tile gained `data-pulse="true"` ✅
+- 2.5s later → `data-pulse="true"` count dropped to 0 (auto-clear works) ✅
+- Smooth scroll behavior triggered in `containerRef.scrollTo({behavior: 'smooth'})` ✅
+- Test data cleaned up.
+
+`bash /app/housekeeping.sh` → 0 WARN + 0 FAIL.
+
+
+
 ## Feb 14, 2026 — Blocks Summary Card
 
 ### Need
