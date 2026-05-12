@@ -423,7 +423,12 @@ export default function EntitiesPrintPage() {
     const n = rect.node;
     if (!n) return null;
     const isEntity = n.kind === 'entity';
-    const isCluster = n.kind === 'cluster';
+    // Auto-clusters (kind=cluster) and named blocks (kind=block) share
+    // the same teal composite-tile rendering — they're conceptually
+    // identical artefacts (a group of beneficiaries attached to an
+    // entity). Only the header label differs.
+    const isCluster = n.kind === 'cluster' || n.kind === 'block';
+    const isBlock = n.kind === 'block';
     const e = isEntity ? n.entity : null;
     const typeMeta = isEntity ? getTypeMeta(e.category, e.type) : null;
     const titleText = isEntity ? (e?.name || 'Entity') : (n.label || '');
@@ -541,7 +546,9 @@ export default function EntitiesPrintPage() {
                 fill="#0F766E"
                 style={{ textTransform: 'uppercase' }}
               >
-                {`${members.length} beneficiar${members.length === 1 ? 'y' : 'ies'} · ${parentName}`.slice(0, 40)}
+                {isBlock
+                  ? (n.name || 'Block').slice(0, 40)
+                  : `${members.length} beneficiar${members.length === 1 ? 'y' : 'ies'} · ${parentName}`.slice(0, 40)}
               </text>
               {members.map((m, i) => {
                 const row = Math.floor(i / CLUSTER_COLS);

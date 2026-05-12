@@ -92,22 +92,18 @@ export default function EntityDetailPanel({
   const [bulkNewPeople, setBulkNewPeople] = useState([]);
   const [bulkNewFirst, setBulkNewFirst] = useState('');
   const [bulkNewLast, setBulkNewLast] = useState('');
+  // Optional block name. Every bulk-add now produces a named,
+  // reusable beneficiary_block — if the user leaves this blank we
+  // auto-generate "Block N" so they can rename later. The user can
+  // also pick an existing block from the dropdown above, which
+  // routes the confirm to a simple block→entity attach instead of
+  // creating a new block.
+  const [bulkBlockName, setBulkBlockName] = useState('');
+  const [bulkPickExistingId, setBulkPickExistingId] = useState('');
 
-  // === Beneficiary Block picker ===
-  // A "block" is a named, reusable group of beneficiaries that can be
-  // attached to any number of entities. The picker offers two paths:
-  //   • Create a brand-new block (name + member list) → POST it, then
-  //     POST a block→entity relationship for the current entity.
-  //   • Pick an existing block from the estate → POST a block→entity
-  //     relationship only (block stays as-is).
-  // Blocks attached to this entity already are filtered out of the
-  // "pick existing" list so the user can't double-link.
-  const [blockPickerOpen, setBlockPickerOpen] = useState(false);
-  const [blockCreateMode, setBlockCreateMode] = useState(false);
-  const [newBlockName, setNewBlockName] = useState('');
-  const [newBlockMembers, setNewBlockMembers] = useState(() => new Set()); // beneficiary ids
-  const [newBlockIncludeBenefactor, setNewBlockIncludeBenefactor] = useState(false);
-  const [blockSaving, setBlockSaving] = useState(false);
+  // (Legacy block-picker modal removed. The bulk-add modal now
+  // handles both create-new and pick-existing flows. No separate
+  // saving state needed.)
   // Custom confirmation prompt (window.confirm is silently blocked in iOS PWA)
   const [confirmPrompt, setConfirmPrompt] = useState(null); // {message, action}
 
@@ -317,15 +313,46 @@ export default function EntityDetailPanel({
   // cluster tile — no per-tile positioning math needed here.
   const handleBulkAddBeneficiaries = async () => {
     if (!ent || bulkSaving) return;
-    const existingIds = Array.from(bulkSelected);
-    if (existingIds.length === 0 && bulkNewPeople.length === 0 && !bulkIncludeBenefactor) return;
     setBulkSaving(true);
     const headers = getAuthHeaders();
     try {
-      // 0) Create any newly-typed people first so we have their
-      // server IDs to link to. They're created as external_people
-      // (no email required) — the chart still tags them with the
-      // "Beneficiary" role chip via the relationship below.
+      // PATH A — user picked an EXISTING named block from the
+      // dropdown. One POST: attach that block to this entity.
+      if (bulkPickExistingId) {
+        await axios.post(
+          `${API_URL}/financial/entity-relationships`,
+          {
+            estate_id: ent.estate_id,
+            source_id: bulkPickExistingId,
+            source_type: 'beneficiary_block',
+            target_id: ent.id,
+            target_type: 'entity',
+            role: 'beneficiary',
+            ownership_pct: null,
+          },
+          headers,
+        );
+        const b = (blocks || []).find((x) => x.id === bulkPickExistingId);
+        toast.success(`Attached "${b?.name || 'block'}" to ${ent.name || 'this entity'}.`);
+        setBulkOpen(false);
+        setBulkSelected(new Set());
+        setBulkIncludeBenefactor(false);
+        setBulkNewPeople([]);
+        setBulkBlockName('');
+        setBulkPickExistingId('');
+        onChanged?.();
+        return;
+      }
+
+      // PATH B — create a brand-new named block from the picked
+      // members (and any quick-add new people), then attach it to
+      // this entity. This unifies the old "bulk-add" + "create
+      // block" flows: every bulk-add now produces a named, reusable
+      // block instead of a one-off flat-relationship cluster.
+      const existingIds = Array.from(bulkSelected);
+      if (existingIds.length === 0 && bulkNewPeople.length === 0 && !bulkIncludeBenefactor) return;
+
+      // 0) Quick-add new people first so we have their IDs.
       const createdExternals = await Promise.all(bulkNewPeople.map((p) => axios.post(
         `${API_URL}/financial/external-people`,
         {
@@ -336,113 +363,25 @@ export default function EntityDetailPanel({
         headers,
       ).then((r) => r.data)));
 
-      // 1) Create the beneficiary relationships in parallel.
-      // SOURCE = the person inheriting, TARGET = the entity they
-      // inherit from, role = 'beneficiary'.
-      const linkOps = [
-        ...existingIds.map((bid) => ({ source_id: bid, source_type: 'beneficiary' })),
-        ...createdExternals.map((ep) => ({ source_id: ep.id, source_type: 'external_person' })),
-      ];
-      if (bulkIncludeBenefactor && user?.id) {
-        linkOps.push({ source_id: user.id, source_type: 'user' });
-      }
-      await Promise.all(linkOps.map((op) => axios.post(
-        `${API_URL}/financial/entity-relationships`,
-        {
-          estate_id: ent.estate_id,
-          source_id: op.source_id,
-          source_type: op.source_type,
-          target_id: ent.id,
-          target_type: 'entity',
-          role: 'beneficiary',
-          ownership_pct: null,
-        },
-        headers,
-      )));
+      // 1) Auto-name the block if the user left the name field blank.
+      // We count existing blocks on the estate so successive un-named
+      // blocks get sequential labels ("Block 1", "Block 2", …).
+      const trimmedName = (bulkBlockName || '').trim();
+      const existingBlockCount = (blocks || []).length;
+      const blockName = trimmedName || `Block ${existingBlockCount + 1}`;
 
-      const newlyAdded = existingIds.length + createdExternals.length + (bulkIncludeBenefactor && user?.id ? 1 : 0);
-      toast.success(`Added ${newlyAdded} beneficiar${newlyAdded === 1 ? 'y' : 'ies'}.`);
-      setBulkOpen(false);
-      setBulkSelected(new Set());
-      setBulkIncludeBenefactor(false);
-      setBulkNewPeople([]);
-      setBulkNewFirst(''); setBulkNewLast('');
-      onChanged?.();
-    } catch (err) {
-      // FastAPI validation errors come back as `detail: [{loc, msg, …}]`,
-      // which renders as "[object Object]" if dumped directly into the
-      // toast. Normalize to a readable string before showing the user.
-      const detail = err?.response?.data?.detail;
-      let message = 'Failed to add beneficiaries';
-      if (typeof detail === 'string') message = detail;
-      else if (Array.isArray(detail)) message = detail.map((d) => d?.msg || JSON.stringify(d)).join('; ');
-      else if (detail && typeof detail === 'object') message = JSON.stringify(detail);
-      else if (err?.message) message = err.message;
-      toast.error(message);
-    } finally {
-      setBulkSaving(false);
-    }
-  };
-
-  // ---- Beneficiary block handlers ----
-  // Attach an existing block to the current entity. POSTs one
-  // block→entity relationship; the chart auto-renders the same block
-  // tile but with an additional edge to this entity.
-  const handleAttachExistingBlock = async (blockId) => {
-    if (!ent || !blockId || blockSaving) return;
-    setBlockSaving(true);
-    try {
-      await axios.post(
-        `${API_URL}/financial/entity-relationships`,
-        {
-          estate_id: ent.estate_id,
-          source_id: blockId,
-          source_type: 'beneficiary_block',
-          target_id: ent.id,
-          target_type: 'entity',
-          role: 'beneficiary',
-          ownership_pct: null,
-        },
-        getAuthHeaders(),
-      );
-      const b = (blocks || []).find((x) => x.id === blockId);
-      toast.success(`Attached block "${b?.name || 'block'}" to this entity.`);
-      setBlockPickerOpen(false);
-      onChanged?.();
-    } catch (err) {
-      const detail = err?.response?.data?.detail;
-      let msg = 'Failed to attach block';
-      if (typeof detail === 'string') msg = detail;
-      else if (Array.isArray(detail)) msg = detail.map((d) => d?.msg || JSON.stringify(d)).join('; ');
-      else if (err?.message) msg = err.message;
-      toast.error(msg);
-    } finally {
-      setBlockSaving(false);
-    }
-  };
-
-  // Create a brand-new named block from the picked members, then
-  // attach it to the current entity. Two-step API call:
-  //   1. POST /financial/beneficiary-blocks  (create)
-  //   2. POST /financial/entity-relationships (attach)
-  const handleCreateAndAttachBlock = async () => {
-    if (!ent || blockSaving) return;
-    const trimmed = (newBlockName || '').trim();
-    if (!trimmed) { toast.error('Give the block a name first.'); return; }
-    const memberIds = Array.from(newBlockMembers);
-    if (memberIds.length === 0 && !newBlockIncludeBenefactor) {
-      toast.error('Pick at least one member.'); return;
-    }
-    setBlockSaving(true);
-    try {
+      // 2) Build the block's member list.
       const members = [
-        ...memberIds.map((id) => ({ kind: 'beneficiary', id })),
-        ...(newBlockIncludeBenefactor && user?.id ? [{ kind: 'user', id: user.id }] : []),
+        ...existingIds.map((id) => ({ kind: 'beneficiary', id })),
+        ...createdExternals.map((ep) => ({ kind: 'external_person', id: ep.id })),
+        ...(bulkIncludeBenefactor && user?.id ? [{ kind: 'user', id: user.id }] : []),
       ];
+
+      // 3) Create the block, then attach it to this entity.
       const created = await axios.post(
         `${API_URL}/financial/beneficiary-blocks`,
-        { estate_id: ent.estate_id, name: trimmed, members },
-        getAuthHeaders(),
+        { estate_id: ent.estate_id, name: blockName, members },
+        headers,
       );
       const blockId = created.data?.id;
       if (!blockId) throw new Error('Block create did not return id');
@@ -457,26 +396,34 @@ export default function EntityDetailPanel({
           role: 'beneficiary',
           ownership_pct: null,
         },
-        getAuthHeaders(),
+        headers,
       );
-      toast.success(`Created block "${trimmed}" with ${members.length} member${members.length === 1 ? '' : 's'}.`);
-      setBlockPickerOpen(false);
-      setBlockCreateMode(false);
-      setNewBlockName('');
-      setNewBlockMembers(new Set());
-      setNewBlockIncludeBenefactor(false);
+      toast.success(`Added ${members.length} beneficiar${members.length === 1 ? 'y' : 'ies'} as "${blockName}".`);
+      setBulkOpen(false);
+      setBulkSelected(new Set());
+      setBulkIncludeBenefactor(false);
+      setBulkNewPeople([]);
+      setBulkNewFirst(''); setBulkNewLast('');
+      setBulkBlockName('');
+      setBulkPickExistingId('');
       onChanged?.();
     } catch (err) {
       const detail = err?.response?.data?.detail;
-      let msg = 'Failed to create block';
-      if (typeof detail === 'string') msg = detail;
-      else if (Array.isArray(detail)) msg = detail.map((d) => d?.msg || JSON.stringify(d)).join('; ');
-      else if (err?.message) msg = err.message;
-      toast.error(msg);
+      let message = 'Failed to add beneficiaries';
+      if (typeof detail === 'string') message = detail;
+      else if (Array.isArray(detail)) message = detail.map((d) => d?.msg || JSON.stringify(d)).join('; ');
+      else if (detail && typeof detail === 'object') message = JSON.stringify(detail);
+      else if (err?.message) message = err.message;
+      toast.error(message);
     } finally {
-      setBlockSaving(false);
+      setBulkSaving(false);
     }
   };
+
+  // ---- Beneficiary block handlers ----
+  // (Block creation + attachment is now fully inlined inside
+  // `handleBulkAddBeneficiaries` — bulk-add and block-create were
+  // consolidated into a single flow.)
 
 
 
@@ -710,27 +657,11 @@ export default function EntityDetailPanel({
                           user pick from the beneficiary list AND/OR
                           quick-add new people inline. */}
                       <button
-                        onClick={() => { setBulkSelected(new Set()); setBulkIncludeBenefactor(false); setBulkNewPeople([]); setBulkOpen(true); }}
+                        onClick={() => { setBulkSelected(new Set()); setBulkIncludeBenefactor(false); setBulkNewPeople([]); setBulkBlockName(''); setBulkPickExistingId(''); setBulkOpen(true); }}
                         className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[#22C993] whitespace-nowrap border border-[#22C993]/60 bg-[rgba(34,201,147,0.08)] hover:bg-[rgba(34,201,147,0.18)] hover:border-[#22C993] transition-colors"
                         data-testid="detail-bulk-add-beneficiaries"
                       >
                         <Users className="w-3.5 h-3.5" /> Add beneficiaries (bulk)
-                      </button>
-                      {/* Block picker — connect this entity to a
-                          named, reusable beneficiary block (same group
-                          of people can be shared across many entities). */}
-                      <button
-                        onClick={() => {
-                          setBlockCreateMode(false);
-                          setNewBlockName('');
-                          setNewBlockMembers(new Set());
-                          setNewBlockIncludeBenefactor(false);
-                          setBlockPickerOpen(true);
-                        }}
-                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[#D4AF37] whitespace-nowrap border border-[#D4AF37]/60 bg-[rgba(212,175,55,0.08)] hover:bg-[rgba(212,175,55,0.18)] hover:border-[#D4AF37] transition-colors"
-                        data-testid="detail-add-block"
-                      >
-                        <Users className="w-3.5 h-3.5" /> Connect a block
                       </button>
                     </div>
                   ) : (
@@ -885,218 +816,11 @@ export default function EntityDetailPanel({
           </div>
         )}
 
-        {/* Bulk-add beneficiaries modal — multi-select picker. Filters
-            out anyone who is already a beneficiary of this entity so
-        {/* Block picker — Connect this entity to a beneficiary block
-            (named, reusable group). Two modes: pick an existing block,
-            or create a brand-new one. */}
-        {blockPickerOpen && isEntity && (() => {
-          // Blocks already attached to this entity (so we can hide
-          // them from the "pick existing" list).
-          const alreadyAttachedIds = new Set(
-            (relationships || [])
-              .filter((r) => r.role === 'beneficiary'
-                && r.source_type === 'beneficiary_block'
-                && r.target_type === 'entity'
-                && r.target_id === ent.id)
-              .map((r) => r.source_id)
-          );
-          const pickableBlocks = (blocks || []).filter((b) => !alreadyAttachedIds.has(b.id));
-          return createPortal(
-            <div
-              className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4"
-              onClick={() => !blockSaving && setBlockPickerOpen(false)}
-              data-testid="block-picker-overlay"
-            >
-              <div
-                onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col"
-                style={{
-                  background: 'var(--card)',
-                  border: '1px solid var(--gold)',
-                  color: 'var(--t)',
-                  maxHeight: '85vh',
-                }}
-                data-testid="block-picker-modal"
-              >
-                <div className="px-4 py-3 flex items-start justify-between gap-3 border-b" style={{ borderColor: 'var(--b)' }}>
-                  <div>
-                    <div className="text-[15px] font-bold" style={{ color: 'var(--gold)' }}>
-                      {blockCreateMode ? 'Create a new block' : 'Connect a beneficiary block'}
-                    </div>
-                    <div className="text-[12px] mt-0.5" style={{ color: 'var(--t3)' }}>
-                      {blockCreateMode
-                        ? 'Name the group and pick its members. You can attach this block to more entities later.'
-                        : 'Pick an existing block to attach to this entity, or create a new one.'}
-                    </div>
-                  </div>
-                  <button onClick={() => setBlockPickerOpen(false)} className="text-[var(--t3)] hover:text-[var(--t)]" aria-label="Close" data-testid="block-picker-close">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {!blockCreateMode ? (
-                  <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                    {/* Always-visible create-new affordance */}
-                    <button
-                      onClick={() => setBlockCreateMode(true)}
-                      className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] font-bold text-[#D4AF37] hover:bg-[rgba(212,175,55,0.10)] border border-[#D4AF37]/60 bg-[rgba(212,175,55,0.04)]"
-                      data-testid="block-picker-create-new"
-                    >
-                      <span style={{ marginRight: 6 }}>＋</span> Create a new block…
-                    </button>
-                    {pickableBlocks.length === 0 ? (
-                      <div className="text-[12px] text-[var(--t4)] px-2 py-3">
-                        {(blocks || []).length === 0
-                          ? 'No blocks yet — create one above.'
-                          : 'Every existing block is already attached to this entity.'}
-                      </div>
-                    ) : (
-                      <>
-                        <div className="text-[11px] uppercase tracking-wide font-bold mt-2 px-2" style={{ color: 'var(--t4)' }}>
-                          Existing blocks
-                        </div>
-                        {pickableBlocks.map((b) => (
-                          <button
-                            key={b.id}
-                            onClick={() => handleAttachExistingBlock(b.id)}
-                            disabled={blockSaving}
-                            className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-[rgba(255,255,255,0.05)] disabled:opacity-50 flex items-center justify-between gap-3"
-                            style={{ border: '1px solid var(--b)', background: 'var(--bg2)' }}
-                            data-testid={`block-picker-existing-${b.id}`}
-                          >
-                            <div className="min-w-0 flex-1">
-                              <div className="text-[13px] font-bold truncate" style={{ color: 'var(--t)' }}>{b.name}</div>
-                              <div className="text-[11px] truncate" style={{ color: 'var(--t4)' }}>
-                                {(b.members || []).length} member{(b.members || []).length === 1 ? '' : 's'}
-                              </div>
-                            </div>
-                            <span className="text-[11px] font-bold" style={{ color: 'var(--gold)' }}>Attach →</span>
-                          </button>
-                        ))}
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                    <div>
-                      <Label className="text-[11px] text-[var(--t4)]">Block name</Label>
-                      <Input
-                        value={newBlockName}
-                        onChange={(e) => setNewBlockName(e.target.value)}
-                        placeholder='e.g. "Kids" or "My Children"'
-                        className="input-field mt-1"
-                        data-testid="block-picker-name-input"
-                        autoFocus
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-[11px] text-[var(--t4)]">Members</Label>
-                      <div className="mt-1.5 space-y-1 max-h-60 overflow-y-auto pr-1">
-                        {(beneficiaries || []).map((b) => {
-                          const selected = newBlockMembers.has(b.id);
-                          return (
-                            <button
-                              key={b.id}
-                              type="button"
-                              onClick={() => {
-                                const next = new Set(newBlockMembers);
-                                if (next.has(b.id)) next.delete(b.id); else next.add(b.id);
-                                setNewBlockMembers(next);
-                              }}
-                              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-[rgba(255,255,255,0.04)] text-left"
-                              data-testid={`block-picker-member-${b.id}`}
-                            >
-                              <span
-                                className="w-4 h-4 rounded-sm flex items-center justify-center text-[11px] font-bold flex-shrink-0"
-                                style={{
-                                  background: selected ? '#D4AF37' : 'transparent',
-                                  border: `1.5px solid ${selected ? '#D4AF37' : 'var(--b)'}`,
-                                  color: selected ? '#000' : 'transparent',
-                                }}
-                              >
-                                ✓
-                              </span>
-                              <span className="text-[13px] truncate flex-1" style={{ color: 'var(--t)' }}>
-                                {b.first_name} {b.last_name || ''}
-                              </span>
-                            </button>
-                          );
-                        })}
-                        {(beneficiaries || []).length === 0 && (
-                          <div className="text-[12px] text-[var(--t4)] px-2 py-2">
-                            No beneficiaries on this estate yet. Add some in the beneficiary tab first.
-                          </div>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setNewBlockIncludeBenefactor((v) => !v)}
-                        className="mt-2 flex items-center gap-2 text-[12px]"
-                        style={{ color: newBlockIncludeBenefactor ? 'var(--gold)' : 'var(--t3)' }}
-                        data-testid="block-picker-include-benefactor"
-                      >
-                        <span
-                          className="w-4 h-4 rounded-sm flex items-center justify-center text-[11px] font-bold"
-                          style={{
-                            background: newBlockIncludeBenefactor ? '#D4AF37' : 'transparent',
-                            border: `1.5px solid ${newBlockIncludeBenefactor ? '#D4AF37' : 'var(--b)'}`,
-                            color: newBlockIncludeBenefactor ? '#000' : 'transparent',
-                          }}
-                        >
-                          ✓
-                        </span>
-                        <span>Include me ({user?.first_name || 'benefactor'})</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="px-4 py-3 flex items-center justify-end gap-2 border-t" style={{ borderColor: 'var(--b)' }}>
-                  {blockCreateMode && (
-                    <Button
-                      variant="outline"
-                      onClick={() => setBlockCreateMode(false)}
-                      disabled={blockSaving}
-                      className="text-[13px]"
-                      data-testid="block-picker-back"
-                    >
-                      ← Back
-                    </Button>
-                  )}
-                  {blockCreateMode ? (
-                    <Button
-                      onClick={handleCreateAndAttachBlock}
-                      disabled={blockSaving || !newBlockName.trim() || (newBlockMembers.size === 0 && !newBlockIncludeBenefactor)}
-                      className="px-4 py-2 rounded-md text-[13px] font-bold"
-                      style={{ background: '#D4AF37', color: '#0b1120' }}
-                      data-testid="block-picker-create-confirm"
-                    >
-                      {blockSaving ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving…</> : 'Create & attach'}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      onClick={() => setBlockPickerOpen(false)}
-                      className="text-[13px]"
-                      data-testid="block-picker-cancel"
-                    >
-                      Cancel
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>,
-            document.body,
-          );
-        })()}
-
         {/* Bulk-add modal: lets the user multi-select people +
             quick-add new external_people, then bulk-link them all
-            as beneficiaries of this entity. The picker filters out
-            anyone already attached as a beneficiary here so that
-            the user can't double-link. After confirm, every selected
-            person is linked + auto-positioned in a tidy row. */}
+            as beneficiaries of this entity. After consolidation it
+            also handles picking from / creating named blocks — every
+            bulk-add now produces a reusable named block. */}
         {bulkOpen && isEntity && (() => {
           const linkedKey = `entity:${ent.id}`;
           // Pre-existing beneficiary IDs already linked as a
@@ -1119,6 +843,20 @@ export default function EntityDetailPanel({
           );
           const pickable = (beneficiaries || []).filter((b) => !alreadyLinked.has(b.id));
           const allSelected = pickable.length > 0 && pickable.every((b) => bulkSelected.has(b.id));
+          // Blocks NOT yet attached to this entity — used to populate
+          // the "Pick an existing group" radio list at the top of the
+          // modal. Once the user picks one, the create-new section
+          // disables (radio-style mutual exclusion).
+          const attachedBlockIds = new Set(
+            (relationships || [])
+              .filter((r) => r.role === 'beneficiary'
+                && r.source_type === 'beneficiary_block'
+                && r.target_type === 'entity'
+                && r.target_id === ent.id)
+              .map((r) => r.source_id)
+          );
+          const attachableBlocks = (blocks || []).filter((b) => !attachedBlockIds.has(b.id));
+          const usingExisting = !!bulkPickExistingId;
           const toggle = (bid) => {
             const next = new Set(bulkSelected);
             if (next.has(bid)) next.delete(bid); else next.add(bid);
@@ -1165,9 +903,9 @@ export default function EntityDetailPanel({
                 data-testid="bulk-add-beneficiaries-modal"
               >
                 <div className="px-5 pt-5 pb-3 border-b border-[var(--b2)]">
-                  <div className="text-[15px] font-bold text-[var(--t)]">Add beneficiaries</div>
+                  <div className="text-[15px] font-bold text-[var(--t)]">Add beneficiaries (bulk)</div>
                   <div className="text-[11px] text-[var(--t4)] mt-0.5">
-                    Pick everyone who inherits from <span style={{ color: 'var(--gold)' }}>{ent?.name || 'this entity'}</span>. They'll appear together in a single beneficiary cluster beneath the tile.
+                    Pick an existing group, or create a new one to attach to <span style={{ color: '#22C993' }}>{ent?.name || 'this entity'}</span>.
                   </div>
                 </div>
 
@@ -1187,7 +925,74 @@ export default function EntityDetailPanel({
                     overscrollBehavior: 'contain',
                   }}
                 >
-                  {pickable.length === 0 && bulkNewPeople.length === 0 && benefactorAlreadyLinked ? (
+                  {/* Existing-block picker — surfaced FIRST so users
+                      with reusable groups (e.g. "Kids", "Charities")
+                      can attach them in one tap without re-checking
+                      every name. Picking a block disables the
+                      "create new" controls below (mutual exclusion). */}
+                  {attachableBlocks.length > 0 && (
+                    <div className="mb-3 pb-3 border-b border-[var(--b2)]">
+                      <Label className="text-[11px] text-[var(--t4)]">Pick an existing group</Label>
+                      <div className="mt-1.5 space-y-1.5" data-testid="bulk-existing-block-picker">
+                        {attachableBlocks.map((b) => {
+                          const checked = bulkPickExistingId === b.id;
+                          return (
+                            <button
+                              key={b.id}
+                              type="button"
+                              onClick={() => setBulkPickExistingId(checked ? '' : b.id)}
+                              className="w-full flex items-center gap-3 p-2 rounded-md text-left"
+                              style={{
+                                background: checked ? 'rgba(34,201,147,0.12)' : 'var(--card)',
+                                border: `1px solid ${checked ? '#22C993' : 'var(--b2)'}`,
+                              }}
+                              data-testid={`bulk-existing-block-${b.id}`}
+                            >
+                              <span
+                                className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                                style={{
+                                  background: checked ? '#22C993' : 'transparent',
+                                  border: `1.5px solid ${checked ? '#22C993' : 'var(--b)'}`,
+                                }}
+                              >
+                                {checked && <span className="w-1.5 h-1.5 rounded-full bg-[#0b1120]" />}
+                              </span>
+                              <Users className="w-3.5 h-3.5" style={{ color: '#22C993' }} />
+                              <div className="flex-1 min-w-0">
+                                <div className="text-[13px] font-semibold text-[var(--t)] truncate">{b.name}</div>
+                                <div className="text-[11px] text-[var(--t4)] truncate">
+                                  {(b.members || []).length} member{(b.members || []).length === 1 ? '' : 's'}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Or-create-new section header. Hidden when the
+                      user has chosen an existing block, since the
+                      create-new controls are then disabled below. */}
+                  {!usingExisting && (
+                    <div className="mb-2">
+                      <Label className="text-[11px] text-[var(--t4)]">
+                        {attachableBlocks.length > 0 ? 'Or create a new group' : 'Create a group'}
+                      </Label>
+                      <Input
+                        value={bulkBlockName}
+                        onChange={(e) => setBulkBlockName(e.target.value)}
+                        placeholder={`Group name (optional — e.g. "Kids")`}
+                        className="input-field mt-1"
+                        data-testid="bulk-block-name-input"
+                      />
+                      <div className="text-[11px] text-[var(--t4)] mt-1">
+                        Leave blank to auto-name (Block {(blocks || []).length + 1}). You can rename later.
+                      </div>
+                    </div>
+                  )}
+
+                  {!usingExisting && (pickable.length === 0 && bulkNewPeople.length === 0 && benefactorAlreadyLinked ? (
                     <div className="text-[12px] text-[var(--t4)] py-4 text-center">
                       Every beneficiary on this estate (and you) is already linked to {ent?.name || 'this entity'}. Add a new person below to include someone else.
                     </div>
@@ -1323,14 +1128,17 @@ export default function EntityDetailPanel({
                         })}
                       </div>
                     </>
-                  )}
+                  ))}
 
                   {/* Inline new-person mini-form — lets the user add
                       someone who isn't yet in their beneficiary list
                       directly into the bulk operation. They get
                       created as external_people (no email required)
                       and tagged with the "Beneficiary" chip via the
-                      relationship role on save. */}
+                      relationship role on save. Hidden when the user
+                      is attaching an existing block (no point in
+                      adding new people then). */}
+                  {!usingExisting && (
                   <div className="mt-4 pt-3 border-t border-[var(--b2)]">
                     <Label className="text-[11px] text-[var(--t4)]">Not in your list? Add a new person</Label>
                     <div className="flex gap-2 mt-1.5">
@@ -1368,6 +1176,7 @@ export default function EntityDetailPanel({
                       <Plus className="w-3 h-3" /> Queue this person
                     </button>
                   </div>
+                  )}
                 </div>
 
                 <div className="px-5 py-3 border-t border-[var(--b2)] flex justify-end gap-2">
@@ -1379,6 +1188,8 @@ export default function EntityDetailPanel({
                       setBulkIncludeBenefactor(false);
                       setBulkNewPeople([]);
                       setBulkNewFirst(''); setBulkNewLast('');
+                      setBulkBlockName('');
+                      setBulkPickExistingId('');
                     }}
                     disabled={bulkSaving}
                     className="btn-outline-cta"
@@ -1388,15 +1199,24 @@ export default function EntityDetailPanel({
                   </Button>
                   <Button
                     onClick={handleBulkAddBeneficiaries}
-                    disabled={bulkSaving || (bulkSelected.size === 0 && bulkNewPeople.length === 0 && !bulkIncludeBenefactor)}
+                    disabled={bulkSaving || (
+                      usingExisting
+                        ? false
+                        : (bulkSelected.size === 0 && bulkNewPeople.length === 0 && !bulkIncludeBenefactor)
+                    )}
                     className="px-4 py-2 rounded-md text-sm font-semibold"
                     style={{ background: '#22C993', color: '#0b1120' }}
                     data-testid="bulk-add-confirm"
                   >
                     {(() => {
                       if (bulkSaving) return <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving…</>;
+                      if (usingExisting) {
+                        const picked = (blocks || []).find((b) => b.id === bulkPickExistingId);
+                        return `Attach "${picked?.name || 'group'}"`;
+                      }
                       const newCount = bulkSelected.size + bulkNewPeople.length + (bulkIncludeBenefactor ? 1 : 0);
-                      return `Add ${newCount} beneficiar${newCount === 1 ? 'y' : 'ies'}`;
+                      if (newCount === 0) return 'Add beneficiaries';
+                      return `Create group · ${newCount} member${newCount === 1 ? '' : 's'}`;
                     })()}
                   </Button>
                 </div>

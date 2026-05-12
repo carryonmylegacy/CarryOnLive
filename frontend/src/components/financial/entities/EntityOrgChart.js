@@ -804,9 +804,15 @@ function ClusterTile({ node, dragging, locked, onPointerDownDrag, onClick, entit
   const headerLabel = isBlock
     ? (node.name || 'Block')
     : `${members.length} beneficiar${members.length === 1 ? 'y' : 'ies'} · ${(entities || []).find((e) => e.id === node.id)?.name || 'this entity'}`;
-  const headerColor = isBlock ? '#D4AF37' : '#22C993';
-  const borderColor = isBlock ? 'rgba(212,175,55,0.55)' : 'rgba(34,201,147,0.55)';
-  const bgColor = isBlock ? 'rgba(212,175,55,0.06)' : 'rgba(34,201,147,0.08)';
+  // Both auto-clusters and named blocks share the same teal palette
+  // on the canvas — they're conceptually the same artefact (a group
+  // of beneficiaries attached to an entity). The user-facing
+  // distinction is just the header text: auto-clusters show the
+  // member-count + parent-entity, named blocks show the user-given
+  // group name.
+  const headerColor = '#22C993';
+  const borderColor = 'rgba(34,201,147,0.55)';
+  const bgColor = 'rgba(34,201,147,0.08)';
   const HALF_STEP = CLUSTER_SLOT_W / 2;
   return (
     <div

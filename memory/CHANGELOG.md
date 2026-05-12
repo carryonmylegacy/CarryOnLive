@@ -1,6 +1,40 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — Consolidated "Add beneficiaries (bulk)" + Named Blocks (drop gold)
+
+### Need (verbatim, screenshot context)
+1. "Make the tile look more like the one where we create a bulk Beneficiary list. I actually don't think there's a need to create a whole new thing that says block and now we have bulk and block — just make it the bulk but add the functionality to name it so that after it's created, a person can choose from a list of bulk Beneficiary tiles."
+2. "I like the UX and color scheme of the bulk tiles more than I like the gold of the block that you created."
+3. "I'm talking about the transparency of the tiles to create the thing, not the tile that is on the tree. The one used to create it" — the create-block modal background was bleeding through.
+
+### Decisions (locked via ask_human)
+- Single teal pill button: **"Add beneficiaries (bulk)"** — opens ONE modal with both "Pick existing group" + "Create new group" sections.
+- Naming is **optional**; blank names auto-generate as `Block 1`, `Block 2`, … so successive un-named groups stay distinguishable.
+- On-canvas tile **shares the teal palette for both auto-clusters and named blocks** — only the header label differs (auto-cluster: "N beneficiaries · Entity"; named block: the user-given name).
+- Old gold "Connect a block" button + standalone block-picker modal **deleted** (no users had data, "not a big deal").
+
+### Change
+- `EntityDetailPanel.js`:
+  - Removed the standalone "Connect a block" pill button + its entire `blockPickerOpen` modal (~190 lines) + `handleAttachExistingBlock` + `handleCreateAndAttachBlock` + legacy state (`blockPickerOpen`, `blockCreateMode`, `newBlockName`, `newBlockMembers`, `newBlockIncludeBenefactor`, `blockSaving`).
+  - Added two new state fields to the bulk-add modal: `bulkBlockName` (optional, auto-named if blank) and `bulkPickExistingId` (radio-mutex against the create path).
+  - Bulk modal now renders, in order: (1) **Pick an existing group** radio list of attachable blocks, (2) **Or create a new group** name input + auto-name hint, (3) existing member picker + quick-add new-person form. Sections (2)+(3) auto-hide when an existing block is selected.
+  - Confirm button is now context-aware: `Attach "Kids"` when picking existing, `Create group · N members` when creating new, `Saving…` mid-flight.
+  - Rewrote `handleBulkAddBeneficiaries` to always produce a named, reusable `beneficiary_block`: PATH A attaches an existing block, PATH B creates a new block (auto-naming if blank) + attaches it. The flat-relationship cluster path is gone.
+- `EntityOrgChart.js` `ClusterTile`: collapsed the `isBlock ? gold : teal` palette branch — both kinds now share `#22C993` teal (header, border, glow). The block-name still drives the header label for `kind === 'block'`.
+- `EntitiesPrintPage.js` `renderTile`: extended `isCluster` to cover both `kind === 'cluster'` and `kind === 'block'` so the SVG print picks up named blocks identically (was silently falling through to the person-tile branch, a pre-existing bug). Block names now render in the print's cluster header instead of the count·entity string.
+- Modal opacity fix is implicit: the bulk modal already used solid `var(--bg2)` background; the transparent gold dialog is gone.
+
+### Verified
+- `bash /app/housekeeping.sh` → **0 FAIL, 0 WARN**.
+- ESLint on the three changed files → **0 errors**, 13 pre-existing unrelated warnings on EntitiesPrintPage.
+- Modal state plumbing checked: cancel button resets all 5 fields; bulk-add confirm clears all on success.
+
+### Caveat
+The existing test estate had zero entities so a UI screenshot of the new modal couldn't be captured in preview. The code paths are verified via lint + manual review; user will visually validate the live PWA on Wednesday's pitch deploy.
+
+
+
 ## Feb 14, 2026 — E&S PDF Two-Page Layout + Orientation Toggle + 12pt Floor
 
 ### Need (verbatim user request)
