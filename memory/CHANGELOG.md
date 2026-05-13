@@ -1,6 +1,33 @@
 # CarryOn — Changelog
 
 
+## May 13, 2026 — Global Trial Policy + B2B Live Gates + Pitch-Ready Polish
+
+**Today's session — major architectural milestones:**
+
+### Global Trial Policy (NEW)
+- Admin → Trials tab now has a pill picker for global free trial duration: **5 / 7 / 10 / 14 / 15 / 20 / 30 days**.
+- Reminder email cadence is auto-derived per duration (e.g. 14d trial → reminders at 10d / 5d / 2d / 1d before end + 1 expired notice).
+- Changing the policy retroactively recomputes `trial_ends_at` for every in-progress trial (`signup_at + new_days`) and resets all reminder-sent flags so the new cadence fires correctly.
+- Single source of truth: `routes/admin/trial_policy.py` (`get_trial_days()` + `get_reminder_intervals()`). All hot paths (signup, Reset Trial, subscription reset, referral bonus, reminder scheduler, onboarding drip) read live from this.
+- All hardcoded "30-day" copy in admin UI + emails replaced with dynamic `{N}-day` strings. Includes: trial reminder emails, trial-expired emails, onboarding drip "trial ending" step, ResetTrialModal, UsersTab Reset Trial tooltip, beta-toggle toast, SubscriptionsTab reset confirmation. Platform-rules admin table auto-syncs to the live value.
+- New endpoints: `GET/PUT /api/admin/trial-policy`.
+- Verified: backend 15/15 tests, frontend 9/11 (2 failures were test-timing artifacts, not real bugs).
+
+### B2B Partners — Live Gates Architecture (Concerns #1-3 resolved)
+- Partner feature gates now read LIVE from `b2b_partners` on every gate check — not from a snapshot copy on user records. Admin toggle changes propagate **instantly** to all that partner's members.
+- Verified end-to-end: bind user to partner with SDV-only → returns `["sdv"]` + `partner_override:true`; flip toggles → user picks up new gates on next request; deactivate partner → user safely falls back to tier gates (no orphan access).
+- Legacy `b2b_codes` system retired: CREATE/UPDATE return 410 with friendly message ("Use Admin → Partners"), VERIFY returns 404 "Invalid or inactive code". LIST + DELETE kept active for legacy audit/cleanup.
+- New "Legacy B2B Codes" read-only panel renders at the bottom of Partners tab only when stragglers exist (empty on clean install).
+- Bug fix: welcome email link was 404'ing because the URL was built from `request.url.netloc` (internal backend host). Now uses `FRONTEND_URL` env var — same canonical public URL every other email-sending service uses.
+- UX polish: "URL Slug" renamed to "Partner Web Page Name". Auto-fills from Company Name. Auto-cleans pasted URLs (`/p/p/www.acme.com` → `acme`). Plain-English help text with full URL preview.
+- Bug fix: "Create Account" on partner landing page was bouncing logged-in admins back to /admin. Now prompts "Sign out to create a new account?" → logs out → routes to signup.
+
+### EGA Chip Repositioning
+- The "Generating Plan of Action..." pill that floated over the EGA chat input box is now positioned in the EGA header bar (top of viewport, centered, above the divider line).
+- URL revocation race fixed: PdfJobChip no longer revokes the blob URL on auto-dismiss; PdfPreviewModal's `handleClose` is the single owner of the URL lifecycle.
+
+
 ## Feb 14, 2026 — Removed "Beneficiary Blocks" summary banner from CFP
 
 ### Need
