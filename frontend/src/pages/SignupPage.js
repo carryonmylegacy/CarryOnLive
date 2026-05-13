@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   Mail, Lock, Eye, EyeOff, Loader2, ArrowLeft, ArrowRight,
   AlertCircle, CheckSquare, Shield, ChevronRight, User,
+  Briefcase, Sparkles,
   Users, Check, MapPin, Heart, Award
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -71,6 +72,17 @@ const SignupPage = () => {
   const [emailErrors, setEmailErrors] = useState({});
   const [entered, setEntered] = useState(false);
   const scrollRef = useRef(null);
+
+  // ─── Enterprise / B2B partner code (final signup tile) ──────────
+  // Stashed by `/p/:slug` partner landing page in localStorage so the
+  // visitor sees their code prefilled at the end of signup. Account
+  // is already created + token is already stored before this tile
+  // appears, so `/partners/redeem-code` (auth-required) just works.
+  const [partnerCodeInput, setPartnerCodeInput] = useState('');
+  const [partnerLandingCompany, setPartnerLandingCompany] = useState('');
+  const [applyingPartnerCode, setApplyingPartnerCode] = useState(false);
+  const [partnerCodeError, setPartnerCodeError] = useState('');
+  const [partnerCodeApplied, setPartnerCodeApplied] = useState(null);
 
   // Form state
   const [firstName, setFirstName] = useState('');
@@ -154,6 +166,11 @@ const SignupPage = () => {
     // Benefactor flow (all direct signups are benefactors)
     steps.push({ id: 'eligibility', label: 'Eligibility', icon: Shield });
     steps.push({ id: 'credentials', label: 'Login', icon: Lock });
+    // Enterprise / partner code — shown to EVERY benefactor as the
+    // last tile. Visitors coming from `/p/:slug` see their code
+    // prefilled; everyone else gets a Skip path. Sits AFTER
+    // credentials because /partners/redeem-code is auth-required.
+    steps.push({ id: 'partner_code', label: 'Enterprise Code', icon: Briefcase });
     return steps;
   };
 
@@ -173,6 +190,27 @@ const SignupPage = () => {
   useEffect(() => {
     const t = setTimeout(() => setEntered(true), 150);
     return () => clearTimeout(t);
+  }, []);
+
+  // On mount, hydrate the partner-code tile from anything the visitor
+  // stashed when they hit `/p/:slug`. We attempt up to two sources:
+  //   1. `cy_partner_code` — set if the visitor explicitly typed/saw
+  //      the code on the partner landing page (future-proofing).
+  //   2. `cy_partner_slug` — set unconditionally on partner-page load;
+  //      we re-fetch the public partner blob to surface the company
+  //      name so the "wrong code? confirm with X" error tile is
+  //      personalized even before they enter anything.
+  useEffect(() => {
+    try {
+      const stashedCode = localStorage.getItem('cy_partner_code');
+      if (stashedCode) setPartnerCodeInput(stashedCode);
+      const stashedSlug = localStorage.getItem('cy_partner_slug');
+      if (stashedSlug) {
+        axios.get(`${API_URL}/public/partners/${stashedSlug}`)
+          .then(r => setPartnerLandingCompany(r.data?.company_name || ''))
+          .catch(() => { /* partner deactivated since landing — silent */ });
+      }
+    } catch { /* private mode → skip */ }
   }, []);
 
   const goTo = (nextStep) => {
@@ -201,6 +239,12 @@ const SignupPage = () => {
       return true;
     }
     if (sid === 'credentials') return email.trim() && username.trim() && !usernameError && !usernameChecking && password.length >= 8 && password === confirmPassword && smsConsent;
+    if (sid === 'partner_code') {
+      // Advance is always allowed — the button morphs to "Apply",
+      // "Skip", or "Continue" depending on input state. The handler
+      // decides what to do on click.
+      return true;
+    }
     return false;
   };
 
@@ -224,8 +268,70 @@ const SignupPage = () => {
       }
       return;
     }
+    // Credentials step → create the account. We DON'T advance the
+    // visible step here — handleSignup does it after the token is
+    // in localStorage so the final partner_code tile can call the
+    // auth-required `/partners/redeem-code`.
+    if (currentStep?.id === 'credentials') {
+      handleSignup();
+      return;
+    }
+    // Partner-code step → submit or skip.
+    if (currentStep?.id === 'partner_code') {
+      handlePartnerCodeSubmit();
+      return;
+    }
     if (step < STEPS.length - 1) goTo(step + 1);
     else handleSignup();
+  };
+
+  // Final-tile post-account-creation handler. If the visitor entered
+  // a code, redeem it. If they didn't (or already applied), continue
+  // to dashboard.
+  const handlePartnerCodeSubmit = async () => {
+    if (partnerCodeApplied) {
+      finishToDashboard();
+      return;
+    }
+    const code = partnerCodeInput.trim().toUpperCase();
+    if (!code) {
+      // Empty → treat as Skip (button label is "Skip — None")
+      finishToDashboard();
+      return;
+    }
+    setApplyingPartnerCode(true);
+    setPartnerCodeError('');
+    try {
+      const token = localStorage.getItem('carryon_token');
+      const res = await axios.post(
+        `${API_URL}/partners/redeem-code`,
+        { code },
+        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } },
+      );
+      setPartnerCodeApplied(res.data);
+      toast.success(`${res.data.company_name} access unlocked`);
+      // Auto-advance after a brief moment so the user can SEE the
+      // green confirmation before being dropped into the platform.
+      setTimeout(() => finishToDashboard(), 1200);
+    } catch (err) {
+      const detail = err.response?.data?.detail || 'Invalid or inactive code';
+      setPartnerCodeError(detail);
+    } finally {
+      setApplyingPartnerCode(false);
+    }
+  };
+
+  const finishToDashboard = () => {
+    // Clear partner stash so a future signup on the same device
+    // doesn't accidentally inherit it.
+    try {
+      localStorage.removeItem('cy_partner_code');
+      localStorage.removeItem('cy_partner_slug');
+    } catch { /* ignore */ }
+    navigate('/dashboard');
+    // Force a fresh hydrate so AuthContext + feature gates pick up
+    // the partner overrides we just attached to the user record.
+    window.location.reload();
   };
 
   const handleSignup = async () => {
@@ -301,8 +407,23 @@ const SignupPage = () => {
           }
         } catch {}
         const u = response.data.user || {};
-        navigate(u.role === 'beneficiary' ? '/beneficiary' : '/dashboard');
-        // Force a hydrate so AuthContext picks up the new token.
+        // Beneficiaries skip the partner-code tile entirely.
+        if (u.role === 'beneficiary') {
+          navigate('/beneficiary');
+          window.location.reload();
+          return;
+        }
+        // Benefactor → advance to the final partner_code tile.
+        // Token is now in localStorage, so the auth-required
+        // `/partners/redeem-code` will work from the tile.
+        const idx = STEPS.findIndex(s => s.id === 'partner_code');
+        if (idx >= 0) {
+          setLoading(false);
+          goTo(idx);
+          return;
+        }
+        // Fallback (no partner_code step compiled — shouldn't happen)
+        navigate('/dashboard');
         window.location.reload();
         return;
       }
@@ -334,7 +455,21 @@ const SignupPage = () => {
           localStorage.removeItem('carryon_referral_code');
         }
       } catch {}
-      navigate(user.role === 'beneficiary' ? '/beneficiary' : '/dashboard');
+      // Beneficiaries skip the partner-code tile entirely.
+      if (user.role === 'beneficiary') {
+        navigate('/beneficiary');
+        return;
+      }
+      // Benefactor → dismiss OTP modal and advance to the final
+      // partner_code tile. Token has been stored by `verifyOtp`.
+      setShowOtpModal(false);
+      const idx = STEPS.findIndex(s => s.id === 'partner_code');
+      if (idx >= 0) {
+        setLoading(false);
+        goTo(idx);
+        return;
+      }
+      navigate('/dashboard');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Invalid OTP');
     } finally {
@@ -815,12 +950,114 @@ const SignupPage = () => {
                         </div>
                       </div>
                     )}
+
+                    {/* STEP: Partner / Enterprise Code (final tile) */}
+                    {currentStep?.id === 'partner_code' && (
+                      <div className="space-y-5" data-testid="signup-partner-code-step">
+                        <div>
+                          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-3"
+                            style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.3)' }}>
+                            <Sparkles className="w-3.5 h-3.5 text-[#a78bfa]" />
+                            <span className="text-[#a78bfa] text-[11px] font-bold tracking-wider uppercase">Last step</span>
+                          </div>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>
+                            Enterprise Access Code
+                          </h2>
+                          <p className="text-[#94a3b8] text-sm leading-relaxed">
+                            {partnerLandingCompany ? (
+                              <>Enter the code <span className="text-white font-semibold">{partnerLandingCompany}</span> shared with you to unlock your custom CarryOn experience. No code? Tap <span className="text-[#d4af37] font-semibold">Skip</span> below.</>
+                            ) : (
+                              <>If you arrived from a CarryOn partner&apos;s portal, enter your access code below. Otherwise tap <span className="text-[#d4af37] font-semibold">Skip</span> to continue.</>
+                            )}
+                          </p>
+                        </div>
+
+                        {partnerCodeApplied ? (
+                          <div className="rounded-xl p-4" style={{ background: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.35)' }} data-testid="partner-code-applied-banner">
+                            <div className="flex items-start gap-3">
+                              <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(16,185,129,0.18)' }}>
+                                <Check className="w-5 h-5 text-[#34d399]" strokeWidth={3} />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-[#34d399] text-sm font-bold">
+                                  {partnerCodeApplied.company_name} access unlocked
+                                </p>
+                                <p className="text-[#94a3b8] text-xs mt-1">
+                                  Your custom feature set is now active. Taking you to your dashboard…
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="space-y-2">
+                              <Label htmlFor="partner-code-input" className="text-[#7b879e] text-sm font-medium">
+                                Access Code
+                              </Label>
+                              <div className="relative">
+                                <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
+                                <Input
+                                  id="partner-code-input"
+                                  type="text"
+                                  value={partnerCodeInput}
+                                  onChange={(e) => {
+                                    setPartnerCodeInput(e.target.value.toUpperCase());
+                                    setPartnerCodeError('');
+                                  }}
+                                  placeholder="ACME2026"
+                                  autoComplete="off"
+                                  autoCapitalize="characters"
+                                  className={`${inputClass} pl-12 font-mono tracking-wider ${partnerCodeError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : ''}`}
+                                  data-testid="partner-code-input"
+                                />
+                              </div>
+                              {partnerCodeError && (
+                                <div className="rounded-lg p-3 flex items-start gap-2" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
+                                  data-testid="partner-code-error">
+                                  <AlertCircle className="w-4 h-4 text-[#fca5a5] flex-shrink-0 mt-0.5" />
+                                  <p className="text-[#fca5a5] text-xs leading-relaxed">
+                                    We couldn&apos;t find that code. Please confirm with{' '}
+                                    <span className="text-white font-semibold">
+                                      {partnerLandingCompany || 'your CarryOn partner'}
+                                    </span>{' '}
+                                    for their correct access code, or tap Skip to continue without one.
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="rounded-xl p-3.5" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.18)' }}>
+                              <p className="text-[#a78bfa] text-xs leading-relaxed flex items-start gap-2">
+                                <Briefcase className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                <span>
+                                  An enterprise code unlocks the custom feature set your B2B partner negotiated with CarryOn. You can skip this and add a code later from your profile.
+                                </span>
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => { finishToDashboard(); }}
+                              className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors"
+                              data-testid="partner-code-skip-btn"
+                            >
+                              I don&apos;t have a code — skip
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Navigation Buttons — pinned to bottom */}
                   <div className="flex-shrink-0">
                     <div className="flex items-center justify-between pt-4 sm:pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                    {step > 0 ? (
+                    {currentStep?.id === 'partner_code' ? (
+                      // Account is already created on this step — no
+                      // "Back" path. Empty slot keeps the primary CTA
+                      // right-aligned via flex justify-between.
+                      <span />
+                    ) : step > 0 ? (
                       <button onClick={() => goTo(step - 1)}
                         className="flex items-center gap-2 text-[#6b7a90] text-sm font-medium hover:text-white transition-colors"
                         data-testid="signup-back-btn">
@@ -832,7 +1069,7 @@ const SignupPage = () => {
                       </Link>
                     )}
 
-                    <Button onClick={handleNext} disabled={loading || usernameChecking}
+                    <Button onClick={handleNext} disabled={loading || usernameChecking || applyingPartnerCode}
                       className="h-11 sm:h-12 px-6 sm:px-8 rounded-xl font-semibold text-sm"
                       style={{
                         background: canAdvance() ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(212,175,55,0.15)',
@@ -844,10 +1081,20 @@ const SignupPage = () => {
                     >
                       {loading ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating...</>
+                      ) : applyingPartnerCode ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Applying...</>
                       ) : usernameChecking && currentStep?.id === 'credentials' ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Checking username...</>
                       ) : currentStep?.id === 'credentials' ? (
                         <>Create Account <ChevronRight className="w-4 h-4 ml-1" /></>
+                      ) : currentStep?.id === 'partner_code' ? (
+                        partnerCodeApplied ? (
+                          <>Continue <ArrowRight className="w-4 h-4 ml-1" /></>
+                        ) : partnerCodeInput.trim() ? (
+                          <>Apply Code <ChevronRight className="w-4 h-4 ml-1" /></>
+                        ) : (
+                          <>Skip — No Code <ArrowRight className="w-4 h-4 ml-1" /></>
+                        )
                       ) : currentStep?.id === 'eligibility' && specialStatus.length === 0 ? (
                         <>Skip — None Apply <ArrowRight className="w-4 h-4 ml-1" /></>
                       ) : (

@@ -274,6 +274,30 @@ async def get_user_enabled_features(
 
     gates = await get_feature_gates()
     enabled = get_enabled_features_for_tier(gates, effective_tier)
+
+    # ─── B2B partner override ──────────────────────────────────────
+    # When the user redeemed a white-label partner code during signup,
+    # `user.partner_feature_gates` was copied onto their record (see
+    # `routes/admin/partners.py::redeem_partner_code`). Partner gates
+    # are AUTHORITATIVE: they represent exactly the pillars the
+    # benefactor's B2B sponsor negotiated with CarryOn. They win over
+    # tier gates regardless of what the user's effective subscription
+    # tier would otherwise expose. Only applies when the user is
+    # NOT viewing in beneficiary-of-someone-else's-estate mode
+    # (handled above via `estate_id` re-routing).
+    user_doc = await db.users.find_one(
+        {"id": current_user["id"]},
+        {"_id": 0, "partner_feature_gates": 1, "partner_id": 1},
+    )
+    if user_doc and user_doc.get("partner_id") and isinstance(user_doc.get("partner_feature_gates"), dict):
+        partner_gates = user_doc["partner_feature_gates"]
+        enabled = [k for k in FEATURE_KEYS if partner_gates.get(k, False)]
+        return {
+            "enabled_features": enabled,
+            "all_enabled": len(enabled) == len(FEATURE_KEYS),
+            "partner_override": True,
+        }
+
     return {"enabled_features": enabled, "all_enabled": len(enabled) == len(FEATURE_KEYS)}
 
 
