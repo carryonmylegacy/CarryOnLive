@@ -21,10 +21,35 @@ const urgencyColor = (days) => {
 // Reminder cadence is auto-derived per option. Changing the policy
 // retroactively shifts every in-progress trial's end date so the
 // new policy applies platform-wide.
-const TrialPolicyCard = ({ policy, onChange, getAuthHeaders, saving, setSaving }) => {
+const TrialPolicyCard = ({ policy, onChange, getAuthHeaders, saving, setSaving, fetchFailed }) => {
   const [expanded, setExpanded] = useState(false);
 
-  if (!policy) return null;
+  // Visible error/retry surface — if the initial fetch failed (e.g.
+  // axios timed out under preview-pod contention) we MUST show a
+  // recoverable UI rather than silently rendering nothing.
+  if (!policy) {
+    if (fetchFailed) {
+      return (
+        <Card className="glass-card" style={{ borderColor: 'rgba(239,68,68,0.25)' }} data-testid="trial-policy-card">
+          <CardContent className="p-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <Clock className="w-4 h-4 text-red-400 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-[var(--t)]">Global trial policy unavailable</p>
+                <p className="text-[11px] text-[var(--t5)]">Network glitch — retry to load the picker.</p>
+              </div>
+            </div>
+            <button
+              onClick={onChange}
+              className="px-3 py-1.5 rounded-md text-xs font-bold bg-[var(--gold)]/12 text-[var(--gold)] hover:bg-[var(--gold)]/20"
+              data-testid="trial-policy-retry"
+            >Retry</button>
+          </CardContent>
+        </Card>
+      );
+    }
+    return null;
+  }
 
   const apply = async (days) => {
     if (days === policy.trial_days) return;
@@ -43,7 +68,7 @@ const TrialPolicyCard = ({ policy, onChange, getAuthHeaders, saving, setSaving }
       const res = await axios.put(
         `${API_URL}/admin/trial-policy`,
         { trial_days: days },
-        getAuthHeaders(),
+        { ...(getAuthHeaders() || {}), timeout: 60000 },
       );
       toast.success(
         `Trial set to ${days} days · ${res.data.users_shifted} user${res.data.users_shifted !== 1 ? 's' : ''} re-scheduled`,
@@ -154,17 +179,24 @@ export const TrialUsersTab = ({ getAuthHeaders }) => {
   const [policy, setPolicy] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  // Tracks the most recent policy-fetch outcome. When TRUE the card
+  // renders a visible "Network glitch — Retry" surface instead of
+  // disappearing. Reset on every successful refetch.
+  const [policyFetchFailed, setPolicyFetchFailed] = useState(false);
 
   const fetchAll = useCallback(async () => {
+    // Build auth headers once + extend with a generous 30s timeout so
+    // these calls aren't killed by the global 8s axios default during
+    // preview-pod parallel-fetch contention (AdminPage fires many
+    // admin endpoints concurrently on mount).
+    const cfg = { ...(getAuthHeaders() || {}), timeout: 30000 };
+
     // Use allSettled rather than Promise.all so a slow/timing-out
     // trial-users call (or vice versa) doesn't take down the OTHER
-    // fetch with it. The policy card is the primary UX here — if
-    // it fails to mount the founder has no way to change the
-    // global trial duration. We tolerate either fetch failing
-    // independently and surface a targeted toast.
+    // fetch with it.
     const [usersRes, policyRes] = await Promise.allSettled([
-      axios.get(`${API_URL}/admin/trial-users`, getAuthHeaders()),
-      axios.get(`${API_URL}/admin/trial-policy`, getAuthHeaders()),
+      axios.get(`${API_URL}/admin/trial-users`, cfg),
+      axios.get(`${API_URL}/admin/trial-policy`, cfg),
     ]);
     if (usersRes.status === 'fulfilled') {
       setUsers(usersRes.value.data || []);
@@ -173,7 +205,9 @@ export const TrialUsersTab = ({ getAuthHeaders }) => {
     }
     if (policyRes.status === 'fulfilled') {
       setPolicy(policyRes.value.data);
+      setPolicyFetchFailed(false);
     } else {
+      setPolicyFetchFailed(true);
       toast.error('Failed to load trial policy');
     }
     setLoading(false);
@@ -191,6 +225,7 @@ export const TrialUsersTab = ({ getAuthHeaders }) => {
         getAuthHeaders={getAuthHeaders}
         saving={saving}
         setSaving={setSaving}
+        fetchFailed={policyFetchFailed}
       />
 
       <p className="text-sm text-[var(--t4)]">{users.length} user{users.length !== 1 ? 's' : ''} currently in trial</p>
