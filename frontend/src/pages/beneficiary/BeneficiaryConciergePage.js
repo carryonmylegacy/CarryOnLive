@@ -735,7 +735,7 @@ function Bubble({ role, content, citations, error, modelUsed, isFallback, onCita
           <div className="mt-2 flex items-center gap-1.5" data-testid="concierge-model-badge">
             {isFallback ? (
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
                 style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.30)', color: '#FCA5A5' }}
                 title="xAI Grok was unreachable for this turn — a templated response was served instead. Try again in a moment for a live AI answer."
               >
@@ -743,7 +743,7 @@ function Bubble({ role, content, citations, error, modelUsed, isFallback, onCita
               </span>
             ) : (
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
                 style={{ background: 'rgba(34,201,147,0.10)', border: '1px solid rgba(34,201,147,0.30)', color: '#6EE7B7' }}
                 title={`Answered live by xAI ${modelUsed}`}
               >
