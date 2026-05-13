@@ -36,7 +36,7 @@ const LOGO_PLACEHOLDER = (
     }}
   >
     <ImageIcon className="w-4 h-4 mb-0.5" />
-    <span className="text-[10px] font-semibold leading-none">LOGO</span>
+    <span className="text-[11px] font-semibold leading-none">LOGO</span>
   </div>
 );
 
@@ -436,7 +436,7 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
             />
             <button
               onClick={() => fileInputs.current[partner.id]?.click()}
-              className="text-[10px] font-bold text-[var(--gold)] hover:text-[#fcd34d] flex items-center gap-0.5"
+              className="text-[11px] font-bold text-[var(--gold)] hover:text-[#fcd34d] flex items-center gap-0.5"
               data-testid={`partner-logo-upload-${partner.slug}`}
             >
               <Upload className="w-2.5 h-2.5" /> {partner.logo_key ? 'Replace' : 'Upload'}
@@ -550,7 +550,7 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
                 )}
               </button>
               {partner.welcome_email_last_sent_at && (
-                <span className="text-[10px] text-[var(--t5)] italic" title={`Last sent ${partner.welcome_email_last_sent_at}`}>
+                <span className="text-[11px] text-[var(--t5)] italic" title={`Last sent ${partner.welcome_email_last_sent_at}`}>
                   · sent {new Date(partner.welcome_email_last_sent_at).toLocaleDateString()}
                 </span>
               )}

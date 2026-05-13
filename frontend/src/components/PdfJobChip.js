@@ -64,18 +64,20 @@ const PdfJobChip = () => {
   // `<CachedPdfIcon>` next to its generate button, the chip's only
   // job is to indicate IN-FLIGHT work + a brief celebratory "ready"
   // moment. Auto-dismiss READY after 5s, ERROR after 8s.
+  //
+  // NOTE: we deliberately do NOT call `URL.revokeObjectURL` here even
+  // though the chip is the only place that still holds the URL ref.
+  // The same blob URL is shared with `<PdfPreviewModal>` (the modal
+  // received the entry via the `carryon:open-pdf-preview` event), and
+  // the modal may still have it open in its <iframe> for printing.
+  // Revoking under the modal's feet would 404 the iframe mid-print.
+  // The modal's own `handleClose` revokes the URL when the user
+  // dismisses the preview — single owner of the lifecycle.
   useEffect(() => {
     if (!job) return undefined;
     if (job.status === 'running') return undefined;
     const ms = job.status === 'ready' ? 5000 : 8000;
-    const t = setTimeout(() => {
-      setJob((prev) => {
-        if (prev?.entry?.url) {
-          try { URL.revokeObjectURL(prev.entry.url); } catch { /* ignore */ }
-        }
-        return null;
-      });
-    }, ms);
+    const t = setTimeout(() => setJob(null), ms);
     return () => clearTimeout(t);
   }, [job]);
 

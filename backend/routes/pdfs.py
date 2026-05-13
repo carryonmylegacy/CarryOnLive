@@ -195,7 +195,7 @@ async def delete_latest_pdf(pdf_type: str, current_user: dict = Depends(get_curr
     if pdf_type not in ALLOWED_PDF_TYPES:
         raise HTTPException(status_code=404, detail="Unknown PDF type.")
     user_id = current_user["id"]
-    doc = await db.latest_pdfs.find_one({"user_id": user_id, "pdf_type": pdf_type}, {"_id": 0, "s3_key": 1})
+    doc = await db.latest_pdfs.find_one({"user_id": user_id, "pdf_type": pdf_type}, {"_id": 0, "id": 1, "s3_key": 1})
     if not doc:
         return {"deleted": False, "reason": "not_cached"}
     try:

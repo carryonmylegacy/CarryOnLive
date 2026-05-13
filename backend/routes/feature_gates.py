@@ -287,7 +287,7 @@ async def get_user_enabled_features(
     # (handled above via `estate_id` re-routing).
     user_doc = await db.users.find_one(
         {"id": current_user["id"]},
-        {"_id": 0, "partner_feature_gates": 1, "partner_id": 1},
+        {"_id": 0, "id": 1, "partner_feature_gates": 1, "partner_id": 1},
     )
     if user_doc and user_doc.get("partner_id") and isinstance(user_doc.get("partner_feature_gates"), dict):
         partner_gates = user_doc["partner_feature_gates"]
