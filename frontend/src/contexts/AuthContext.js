@@ -12,6 +12,50 @@ export const AuthProvider = ({ children }) => {
   const [pendingEmail, setPendingEmail] = useState(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [enabledFeatures, setEnabledFeatures] = useState(null);
+  // ── Partner co-branding ──────────────────────────────────────────
+  // When the signed-in user redeemed a B2B/Enterprise code, this
+  // holds their partner's logo (as a base64 data URL) + company name
+  // so every CarryOn-branded surface (sidebar, mobile header,
+  // onboarding, paywall) can swap to the partner's mark.
+  //
+  // Strict invariants:
+  //   • Direct consumer signups (`partner_slug` not set) NEVER see
+  //     a partner logo. Value stays null. Nothing changes for them.
+  //   • Admin/founder sessions don't have `partner_slug`. Their
+  //     UX is untouched — the Founder Portal Switcher keeps the
+  //     CarryOn mark exactly as before.
+  //   • Reset on logout so the next user on the same device gets
+  //     the right brand.
+  const [partnerBranding, setPartnerBranding] = useState(null);
+
+  // Fetch the partner's branding (logo + name) once per session when
+  // the auth'd user has a `partner_slug`. Public endpoint — no auth
+  // header needed — same blob the unauth landing page uses.
+  useEffect(() => {
+    const slug = user?.partner_slug;
+    if (!slug) {
+      setPartnerBranding(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await axios.get(`${API_URL}/public/partners/${slug}`, { timeout: 15000 });
+        if (cancelled || !res.data) return;
+        setPartnerBranding({
+          slug,
+          companyName: res.data.company_name || null,
+          logoUrl: res.data.logo_data_url || null,
+        });
+      } catch {
+        // Partner deleted, deactivated, or transient network blip —
+        // fall back to default CarryOn branding rather than locking
+        // the UI into a half-loaded state.
+        if (!cancelled) setPartnerBranding(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.partner_slug]);
 
   const fetchSubscriptionStatus = async (authToken) => {
     try {
@@ -570,6 +614,7 @@ export const AuthProvider = ({ children }) => {
       pendingEmail,
       subscriptionStatus,
       enabledFeatures,
+      partnerBranding,
       login,
       loginWithToken,
       verifyOtp,
