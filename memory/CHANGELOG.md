@@ -1,6 +1,33 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — Edit Pencil Now Works on Auto-Clusters Too (cluster → named-block on-edit conversion)
+
+### Need (verbatim)
+"Auto clusters is exactly what I want to be able to edit! If by auto cluster, you mean the one where I select all the members and then it creates a Tile with all the avatars in it then yes I need an edit button on that so I can remove or retitle as desired."
+
+### Decision (locked via "Do it")
+First edit of an auto-cluster auto-promotes it into a first-class named block. After save the tile is indistinguishable from one that was created via the consolidated bulk-add flow — same data model, same affordances, same render path. No two parallel concepts to maintain.
+
+### Change
+- **`EntityOrgChart.js` `ClusterTile`**: dropped the `isBlock &&` guard on the pencil chip — both `kind: 'block'` and `kind: 'cluster'` tiles now render it at `top-1 right-7`. Tooltip is mode-aware ("Edit block name and members" vs "Name this group and edit members").
+- **`EntitiesSection.js` `onEditBlockClick`**: branches on `node.kind`:
+  - `'block'` → look up the full block from local cache, open the modal in `mode='edit'` (existing behavior, single PATCH on save).
+  - `'cluster'` → cluster nodes carry the entity id (not a block id). Filter the relationships list to find every flat `beneficiary → entity` rel that constitutes the visual cluster, build a synthetic block-shape (`{name:'', members:[{kind:'beneficiary', id}, …]}`), and open the modal in `mode='convert'` with `{entityId, memberRelIds, estateId}` as the conversion context.
+- **`BlockEditModal.js`**: new `mode` and `convert` props. Save branches:
+  - `mode='edit'`: one PATCH to `/financial/beneficiary-blocks/{id}` (unchanged).
+  - `mode='convert'`: three-step sequence — POST a new beneficiary_block with the chosen members + auto-named to `Group <date>` if the user left the field blank → POST one `beneficiary_block → entity` relationship → parallel DELETEs of the N old flat `beneficiary → entity` rels. Cluster tile gracefully turns into a named block tile after `fetchAll`.
+- Header copy + input placeholder + label are all mode-aware ("Edit group" vs "Name this group", required vs optional name, helper text shifts accordingly).
+
+### Verified
+- `bash /app/housekeeping.sh` → **0 FAIL, 0 WARN**.
+- ESLint on `BlockEditModal.js`, `EntitiesSection.js`, `EntityOrgChart.js` → **0 errors**.
+
+### Why the auto-promote design
+Keeping clusters and named blocks as two parallel render kinds in perpetuity creates compounding complexity (two save paths, two delete paths, two edge cases for every future feature). By converging on edit, we let the user opt into "first-class" naming organically at the moment they care, and the chart only ever needs to render one kind of grouped tile going forward.
+
+
+
 ## Feb 14, 2026 — Edit Pencil for Named Blocks (drop ×N badge)
 
 ### Need (verbatim)

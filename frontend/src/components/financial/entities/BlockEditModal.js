@@ -32,6 +32,8 @@ const getAuthHeaders = () => {
 
 export default function BlockEditModal({
   block,
+  mode = 'edit', // 'edit' | 'convert'
+  convert,       // { entityId, memberRelIds, estateId } — only when mode='convert'
   beneficiaries = [],
   externals = [],
   user,
@@ -73,7 +75,6 @@ export default function BlockEditModal({
 
   const handleSave = async () => {
     const trimmed = (name || '').trim();
-    if (!trimmed) { toast.error('Give the block a name.'); return; }
     if (memberKeys.size === 0 && !includeBenefactor) {
       toast.error('Pick at least one member.');
       return;
@@ -87,12 +88,55 @@ export default function BlockEditModal({
         }),
         ...(includeBenefactor && user?.id ? [{ kind: 'user', id: user.id }] : []),
       ];
-      await axios.patch(
-        `${API_URL}/financial/beneficiary-blocks/${block.id}`,
-        { name: trimmed, members },
-        getAuthHeaders(),
-      );
-      toast.success(`Saved "${trimmed}".`);
+
+      if (mode === 'convert' && convert) {
+        // Auto-cluster → named block upgrade. Three-step sequence:
+        //   1) Create the new beneficiary_block with name + members.
+        //      Auto-name "Block N" if the user left the field blank,
+        //      using the existing block count from the modal payload
+        //      isn't reliable here — fall back to a date-stamped
+        //      default the user can rename later.
+        const blockName = trimmed || `Group ${new Date().toLocaleDateString()}`;
+        const created = await axios.post(
+          `${API_URL}/financial/beneficiary-blocks`,
+          { estate_id: convert.estateId, name: blockName, members },
+          getAuthHeaders(),
+        );
+        const newBlockId = created.data?.id;
+        if (!newBlockId) throw new Error('Block create did not return id');
+        //   2) Attach the new block to the entity the cluster was on.
+        await axios.post(
+          `${API_URL}/financial/entity-relationships`,
+          {
+            estate_id: convert.estateId,
+            source_id: newBlockId,
+            source_type: 'beneficiary_block',
+            target_id: convert.entityId,
+            target_type: 'entity',
+            role: 'beneficiary',
+            ownership_pct: null,
+          },
+          getAuthHeaders(),
+        );
+        //   3) Delete the N old flat beneficiary→entity relationships
+        //      that constituted the auto-cluster. Done in parallel —
+        //      the underlying beneficiary records stay intact, only
+        //      the entity-attach edges go.
+        await Promise.all((convert.memberRelIds || []).map((relId) => axios.delete(
+          `${API_URL}/financial/entity-relationships/${relId}`,
+          getAuthHeaders(),
+        )));
+        toast.success(`Saved "${blockName}".`);
+      } else {
+        // Plain edit on an existing named block — single PATCH.
+        if (!trimmed) { toast.error('Give the block a name.'); setSaving(false); return; }
+        await axios.patch(
+          `${API_URL}/financial/beneficiary-blocks/${block.id}`,
+          { name: trimmed, members },
+          getAuthHeaders(),
+        );
+        toast.success(`Saved "${trimmed}".`);
+      }
       onSaved?.();
       onClose?.();
     } catch (err) {
@@ -128,10 +172,12 @@ export default function BlockEditModal({
           <div className="min-w-0">
             <div className="text-[15px] font-bold text-[var(--t)] flex items-center gap-2">
               <Users className="w-4 h-4" style={{ color: '#22C993' }} />
-              Edit group
+              {mode === 'convert' ? 'Name this group' : 'Edit group'}
             </div>
             <div className="text-[11px] text-[var(--t4)] mt-0.5">
-              Rename, add or remove members. Saves to every entity this group is attached to.
+              {mode === 'convert'
+                ? 'Give this group a name and adjust members. It becomes a reusable group you can attach to other entities too.'
+                : 'Rename, add or remove members. Saves to every entity this group is attached to.'}
             </div>
           </div>
           <button
@@ -146,11 +192,11 @@ export default function BlockEditModal({
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto px-5 py-3">
-          <Label className="text-[11px] text-[var(--t4)]">Group name</Label>
+          <Label className="text-[11px] text-[var(--t4)]">Group name{mode === 'convert' ? ' (optional)' : ''}</Label>
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder='e.g. "Kids"'
+            placeholder={mode === 'convert' ? 'e.g. "Kids" — leave blank to auto-name' : 'e.g. "Kids"'}
             className="input-field mt-1"
             data-testid="block-edit-name"
             autoFocus

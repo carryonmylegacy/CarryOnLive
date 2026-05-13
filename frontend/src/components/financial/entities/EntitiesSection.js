@@ -679,13 +679,45 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
             onEditClickNode={handleEditClick}
             onDeleteNode={handleDeleteNode}
             onEditBlockClick={(node) => {
-              // Look up the full block object from the local cache so
-              // the modal can seed its form (name + members). The node
-              // from the chart only carries display-shaped data, not
-              // the raw `members: [{kind, id}, …]` shape we need to
-              // PUT back to the API.
-              const full = (blocks || []).find((b) => b.id === node.id);
-              if (full) setEditingBlock(full);
+              // Two paths into the same modal:
+              //
+              // 1) node.kind === 'block' (a first-class named block):
+              //    Look up the full block from the local cache so the
+              //    modal can seed name + members. Save = PATCH the
+              //    block in-place.
+              //
+              // 2) node.kind === 'cluster' (auto-aggregated from flat
+              //    beneficiary→entity relationships, no name yet):
+              //    Build a synthetic block-shape from the cluster's
+              //    members and hand the modal the conversion context
+              //    (entity id + the rel ids that constitute the
+              //    cluster). Save = POST a new named block + POST one
+              //    block→entity rel + bulk-DELETE the N old flat
+              //    rels. After save the tile becomes a proper named
+              //    block and behaves like any other.
+              if (node.kind === 'block') {
+                const full = (blocks || []).find((b) => b.id === node.id);
+                if (full) setEditingBlock({ mode: 'edit', block: full, convert: null });
+              } else if (node.kind === 'cluster') {
+                const entityId = node.id; // cluster.id IS the entity id
+                const memberRelIds = (relationships || [])
+                  .filter((r) => r.source_type === 'beneficiary'
+                    && r.target_type === 'entity'
+                    && r.target_id === entityId
+                    && r.role === 'beneficiary')
+                  .map((r) => r.id);
+                const synthetic = {
+                  // No `id` — modal sees mode='convert' and POSTs a
+                  // brand-new block instead of PATCHing.
+                  name: '',
+                  members: (node.members || []).map((m) => ({ kind: 'beneficiary', id: m.id })),
+                };
+                setEditingBlock({
+                  mode: 'convert',
+                  block: synthetic,
+                  convert: { entityId, memberRelIds, estateId },
+                });
+              }
             }}
             cleanUpSignal={cleanUpSignal}
             locked={locked}
@@ -794,7 +826,9 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
       />
 
       <BlockEditModal
-        block={editingBlock}
+        block={editingBlock?.block}
+        mode={editingBlock?.mode}
+        convert={editingBlock?.convert}
         beneficiaries={beneficiaries || []}
         externals={externals}
         user={effectiveUser}

@@ -875,12 +875,12 @@ function ClusterTile({ node, dragging, locked, onPointerDownDrag, onClick, entit
           );
         })}
       </div>
-      {/* Action chips top-right. For named blocks we surface a
-          pencil that opens an edit modal (rename + change members).
-          The hide-from-chart X sits to its right. For auto-clusters
-          (no edit affordance — they're auto-aggregated from flat
-          beneficiary relationships) we only render the X. */}
-      {isBlock && onEditBlockClick && (
+      {/* Action chips top-right. Both named blocks and auto-clusters
+          get the pencil — for clusters the modal converts the
+          group into a first-class named block on save (creates the
+          block + attaches it + wipes the old flat relationships).
+          The hide-from-chart X sits to the pencil's right. */}
+      {onEditBlockClick && (
         <div
           className="absolute top-1 right-7"
           onPointerDown={(e) => e.stopPropagation()}
@@ -888,8 +888,8 @@ function ClusterTile({ node, dragging, locked, onPointerDownDrag, onClick, entit
           <TileIconButton
             icon={Pencil}
             onClick={(e) => { e.stopPropagation(); onEditBlockClick(node); }}
-            label="Edit block name and members"
-            testId={`tile-edit-block-${node.id}`}
+            label={isBlock ? 'Edit block name and members' : 'Name this group and edit members'}
+            testId={isBlock ? `tile-edit-block-${node.id}` : `tile-edit-cluster-${node.id}`}
           />
         </div>
       )}
