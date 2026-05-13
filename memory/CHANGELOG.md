@@ -1,6 +1,29 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — Cluster Tile Width Fix (Meg crop) + Removed 12pt PDF Font Floor
+
+### Need
+1. The right-most avatar on the brick-staggered odd rows of a beneficiary cluster tile (e.g. **Meg** in the 5×N grid) was being clipped by the tile's `overflow: hidden` because `CLUSTER_W = 270` ignored the `HALF_STEP = 25` offset applied to odd rows.
+2. The user revoked the prior "12pt minimum font" rule for the E&S Tree PDF — the tree must auto-scale text to whatever size is needed to fit a single page (1 page wide × 1 page tall).
+
+### Change
+- `EntityOrgChart.js`:
+  - `CLUSTER_W` now adds `HALF_STEP` (= `CLUSTER_SLOT_W / 2`) to the width: `CLUSTER_PAD_X * 2 + CLUSTER_COLS * CLUSTER_SLOT_W + CLUSTER_SLOT_W / 2` → **295** (was 270).
+  - Result: odd-row col=4 avatar (e.g. Meg) right-edge = `10 + 4*50 + 25 + 40 = 275`, comfortably inside the new 285px inner right edge with 10px slack. No more clipping on either canvas or print SVG.
+  - The print page consumes the same `CLUSTER_W` via `buildGraph()`, so its `rect.w` widens automatically.
+- `EntitiesPrintPage.js`:
+  - `mf()` is now a pass-through (`(n) => n`). Removed `minFont` computation and the comment block explaining the 12pt floor.
+  - `fitTruncate` is unchanged — still width-aware via the actual font size, which now scales freely with `bbScale`.
+  - All hard-coded `fontSize={mf(N)}` call-sites remain intact, so reintroducing a floor later is a one-line change.
+
+### Verified
+- `bash /app/housekeeping.sh` → **0 FAIL, 0 WARN**.
+- ESLint clean on both files.
+- Geometry math sanity-checked: old inner-width was 250 vs. avatar right-edge 265 → 15px overflow; new inner-width 275 vs. right-edge 265 → 10px slack. ✓
+
+
+
 ## Feb 14, 2026 — 400ms Debounce on User-Initiated Layout Save
 
 ### Need (user said "Yes" to suggested enhancement)

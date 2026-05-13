@@ -321,13 +321,11 @@ export default function EntitiesPrintPage() {
       h: (maxY - minY) + 2 * PAD,
     };
 
-    // 12pt minimum print font enforcement.
     // The page SVG width/height changes with the user's orientation
-    // toggle, so the `scale = min(PAGE_W/bbox.w, PAGE_H/bbox.h)`
-    // factor — and therefore the `minFont` floor — is computed
-    // *outside* this memo (in render) where the current orientation
+    // toggle, so the fit-to-page math (and per-tile placement) lives
+    // *outside* this memo, in render, where the current orientation
     // is known. We just hand back the raw bbox here; render does the
-    // fit-to-page math.
+    // scale-to-fit math so the tree always fits on a single page.
 
     return {
       nodes: graph.nodes,
@@ -418,21 +416,14 @@ export default function EntitiesPrintPage() {
     PAGE_W / Math.max(layout.viewBox.w, 1),
     PAGE_H / Math.max(layout.viewBox.h, 1),
   );
-  // 12pt minimum print font enforcement.
-  // 1 user-unit prints at bbScale × (svgW_in / PAGE_W) × 72 pt
-  //                     = bbScale × 0.01 × 72 = bbScale × 0.72 pt.
-  // For text fontSize N to render at ≥ 12pt:
-  //   N × bbScale × 0.72 ≥ 12   →   N ≥ 12 / (0.72 × bbScale) ≈ 16.667 / bbScale
-  // We use 17 (rounded up to be safe — gives 12.24pt at bbScale=1)
-  // so EVERY hard-coded fontSize honors the user's strict "no less
-  // than 12 point font" rule, even after the chart shrinks to fit.
-  const minFont = Math.ceil(17 / Math.max(bbScale, 0.01));
-
-  // 12pt minimum-font helper. Every hard-coded fontSize in the SVG
-  // below is wrapped in `mf(N)` so it can be bumped up when the chart
-  // shrinks to fit a single page (per user's strict "no less than
-  // 12pt in any text PDFs" rule).
-  const mf = (n) => Math.max(n, minFont);
+  // No print-time font floor. The user explicitly revoked the prior
+  // "12pt minimum" rule: the tree MUST shrink-to-fit one page wide ×
+  // one page tall, so every hard-coded fontSize in the SVG below
+  // must scale freely with `bbScale`. We keep the `mf(N)` wrapper as
+  // a pass-through to avoid touching every call-site — and to leave
+  // a single place to reintroduce a floor later if the user changes
+  // their mind.
+  const mf = (n) => n;
 
   const renderEdges = () => {
     return layout.routedEdges.map(({ edge, points, midPoint }) => {
@@ -1304,9 +1295,6 @@ function truncate(s, n) {
 // a 0.55 width factor (avg glyph is ~55% of the font size for the
 // system-ui stack used in print). The caller decides the width
 // budget; this helper just turns it into a safe character count.
-// This matters because `mf()` inflates fontSize when the chart
-// shrinks to fit (to keep the 12pt-min rule), and at high inflation
-// the static "truncate(text, 24)" calls overflow the tile.
 function fitTruncate(s, widthUserUnits, fontSizeUserUnits, hardMin = 4) {
   if (!s) return '';
   const maxChars = Math.max(hardMin, Math.floor(widthUserUnits / (fontSizeUserUnits * 0.55)));

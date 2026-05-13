@@ -65,7 +65,12 @@ const CLUSTER_COLS = 5;
 const CLUSTER_HEADER_H = 22;        // entity-label strip above the grid
 const CLUSTER_PAD_X = 10;
 const CLUSTER_PAD_Y = 14;
-const CLUSTER_W = CLUSTER_PAD_X * 2 + CLUSTER_COLS * CLUSTER_SLOT_W; // 270
+// Brick-pattern grid offsets odd rows by half a slot, so the
+// rightmost avatar on those rows sits HALF_STEP past the last column.
+// We add that buffer into CLUSTER_W so the staggered avatar never
+// clips against the tile edge (previously: 270 → Meg at col=4 row=1
+// rendered at right-edge=265 vs. inner-right=250 → 15px crop).
+const CLUSTER_W = CLUSTER_PAD_X * 2 + CLUSTER_COLS * CLUSTER_SLOT_W + CLUSTER_SLOT_W / 2; // 295
 const clusterHeight = (memberCount) => {
   const rows = Math.max(1, Math.ceil(memberCount / CLUSTER_COLS));
   return CLUSTER_HEADER_H + CLUSTER_PAD_Y * 2 + rows * CLUSTER_SLOT_H;
