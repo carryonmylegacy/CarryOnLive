@@ -275,28 +275,39 @@ async def get_user_enabled_features(
     gates = await get_feature_gates()
     enabled = get_enabled_features_for_tier(gates, effective_tier)
 
-    # ─── B2B partner override ──────────────────────────────────────
-    # When the user redeemed a white-label partner code during signup,
-    # `user.partner_feature_gates` was copied onto their record (see
-    # `routes/admin/partners.py::redeem_partner_code`). Partner gates
-    # are AUTHORITATIVE: they represent exactly the pillars the
-    # benefactor's B2B sponsor negotiated with CarryOn. They win over
-    # tier gates regardless of what the user's effective subscription
-    # tier would otherwise expose. Only applies when the user is
-    # NOT viewing in beneficiary-of-someone-else's-estate mode
-    # (handled above via `estate_id` re-routing).
+    # ─── B2B partner override (LIVE, single source of truth) ──────
+    # When the user redeemed a white-label partner code during
+    # signup, `user.partner_id` is set as the LINK to their partner
+    # record. The actual gates are read LIVE from the
+    # `b2b_partners` collection on every request — never from a
+    # snapshot on the user. This guarantees that when an admin
+    # toggles a feature for a partner in the Partners tab, ALL of
+    # that partner's members see the change immediately. No drift.
+    #
+    # Backwards-compat: legacy users redeemed before live-read
+    # rollout have a `partner_feature_gates` blob on their record.
+    # That blob is now IGNORED — we always go to `b2b_partners`. If
+    # the partner row has been deleted or deactivated, the user
+    # falls back to their normal tier gates (no orphaned access).
     user_doc = await db.users.find_one(
         {"id": current_user["id"]},
-        {"_id": 0, "id": 1, "partner_feature_gates": 1, "partner_id": 1},
+        {"_id": 0, "id": 1, "partner_id": 1},
     )
-    if user_doc and user_doc.get("partner_id") and isinstance(user_doc.get("partner_feature_gates"), dict):
-        partner_gates = user_doc["partner_feature_gates"]
-        enabled = [k for k in FEATURE_KEYS if partner_gates.get(k, False)]
-        return {
-            "enabled_features": enabled,
-            "all_enabled": len(enabled) == len(FEATURE_KEYS),
-            "partner_override": True,
-        }
+    if user_doc and user_doc.get("partner_id"):
+        partner_doc = await db.b2b_partners.find_one(
+            {"id": user_doc["partner_id"], "active": True},
+            {"_id": 0, "id": 1, "feature_gates": 1},
+        )
+        if partner_doc and isinstance(partner_doc.get("feature_gates"), dict):
+            partner_gates = partner_doc["feature_gates"]
+            enabled = [k for k in FEATURE_KEYS if partner_gates.get(k, False)]
+            return {
+                "enabled_features": enabled,
+                "all_enabled": len(enabled) == len(FEATURE_KEYS),
+                "partner_override": True,
+            }
+        # Partner inactive or deleted → silently fall through to
+        # tier-based gates rather than locking the user out.
 
     return {"enabled_features": enabled, "all_enabled": len(enabled) == len(FEATURE_KEYS)}
 

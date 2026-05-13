@@ -118,6 +118,11 @@ export const PartnersTab = ({ getAuthHeaders }) => {
   });
   const [copied, setCopied] = useState(null);
   const fileInputs = useRef({});
+  // Legacy `b2b_codes` rows — the old system that's been retired.
+  // We surface them here read-only so admins can audit + delete any
+  // stragglers from a single place without ever touching Mongo.
+  // Empty array on a clean install (which is the norm).
+  const [legacyCodes, setLegacyCodes] = useState([]);
 
   // Resolve auth headers fresh on every call. We read straight from
   // localStorage rather than the `getAuthHeaders` closure because the
@@ -142,6 +147,22 @@ export const PartnersTab = ({ getAuthHeaders }) => {
       toast.error(err.response?.data?.detail || 'Failed to load partners');
     } finally {
       setLoading(false);
+    }
+    // Best-effort legacy fetch — never blocks the main load.
+    try {
+      const r = await axios.get(`${API_URL}/admin/b2b-codes`, { headers: authHeaders() });
+      setLegacyCodes(Array.isArray(r.data) ? r.data : []);
+    } catch { setLegacyCodes([]); }
+  };
+
+  const deleteLegacy = async (codeId, codeName) => {
+    if (!window.confirm(`Delete legacy code "${codeName}"? This removes it permanently.`)) return;
+    try {
+      await axios.delete(`${API_URL}/admin/b2b-codes/${codeId}`, { headers: authHeaders() });
+      setLegacyCodes((prev) => prev.filter((c) => c.id !== codeId));
+      toast.success('Legacy code deleted');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to delete legacy code');
     }
   };
   useEffect(() => { fetchAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -432,6 +453,52 @@ export const PartnersTab = ({ getAuthHeaders }) => {
                 ))}
               </tbody>
             </table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Legacy codes panel — only shown when stragglers exist in
+          the retired `b2b_codes` collection. Read-only audit
+          surface; admins can delete each row but not edit. Empty
+          on a clean install. */}
+      {legacyCodes.length > 0 && (
+        <Card className="glass-card" style={{ borderColor: 'rgba(245,158,11,0.25)' }} data-testid="partners-legacy-codes">
+          <CardContent className="p-5">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(245,158,11,0.12)' }}>
+                <Briefcase className="w-4 h-4 text-[#F59E0B]" />
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-sm font-bold text-[var(--t)]">Legacy B2B Codes ({legacyCodes.length})</h4>
+                <p className="text-[11px] text-[var(--t5)] mt-0.5 leading-relaxed">
+                  These codes were created in the older B2B system that&apos;s now retired. They&apos;re
+                  read-only and can no longer be redeemed. Delete each row once you&apos;ve reissued the
+                  partnership through the table above.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              {legacyCodes.map((c) => (
+                <div key={c.id} className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-[var(--s)]" data-testid={`legacy-code-${c.id}`}>
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <span className="font-mono font-bold text-sm text-[#F59E0B]">{c.code}</span>
+                    {c.partner_name && <span className="text-xs text-[var(--t4)] truncate">{c.partner_name}</span>}
+                    <span className="text-[11px] text-[var(--t5)]">
+                      {c.discount_percent >= 100 ? 'Free' : `${c.discount_percent}% off`}
+                      {' · '}{c.times_used || 0}{c.max_uses > 0 ? `/${c.max_uses}` : ''} used
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => deleteLegacy(c.id, c.code)}
+                    className="text-[var(--t5)] hover:text-[var(--rd)] flex-shrink-0"
+                    aria-label={`Delete legacy code ${c.code}`}
+                    data-testid={`legacy-code-delete-${c.id}`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}

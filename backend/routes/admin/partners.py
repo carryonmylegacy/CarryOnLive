@@ -524,17 +524,23 @@ async def redeem_partner_code(request: Request, current_user: dict = Depends(get
         {"id": current_user["id"]},
         {
             "$set": {
+                # Link to the partner record — feature gates are
+                # read LIVE from `b2b_partners` on every gate check,
+                # so admin toggles propagate instantly.
                 "partner_id": partner["id"],
                 "partner_slug": partner["slug"],
                 "partner_company": partner["company_name"],
-                "partner_feature_gates": gates,
                 "b2b_code": code_str,
                 "b2b_partner": partner["company_name"],
                 "b2b_discount_percent": discount,
                 "eligible_tier": "enterprise",
                 "special_status": ["enterprise"],
                 "verified_tier": "enterprise",
-            }
+            },
+            # Wipe any stale snapshot from a pre-live-read redemption.
+            # The live read in feature_gates.py ignores this field
+            # entirely, but keeping it around invites confusion.
+            "$unset": {"partner_feature_gates": ""},
         },
     )
 

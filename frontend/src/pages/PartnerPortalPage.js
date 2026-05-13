@@ -30,7 +30,26 @@ const PARTNER_SLUG_KEY = 'cy_partner_slug';
 const PartnerPortalPage = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, logout, isAuthenticated, user } = useAuth();
+
+  // Friendly Create-Account handler. If the visitor is already
+  // signed in (common when an admin or partner-rep clicks the link
+  // to preview their own landing page), the global `<PublicRoute>`
+  // guard would silently bounce them back to their portal —
+  // breaking the "click → wizard" expectation. Detect that case,
+  // confirm with the user, sign them out, THEN navigate to /signup
+  // so the wizard actually opens.
+  const handleCreateAccount = async () => {
+    if (isAuthenticated) {
+      const who = user?.name || user?.email || 'this account';
+      const ok = window.confirm(
+        `You're currently signed in as ${who}. Sign out and create a new ${partner?.company_name || 'CarryOn'} account?`,
+      );
+      if (!ok) return;
+      try { await logout(); } catch { /* proceed even if server logout fails */ }
+    }
+    navigate('/signup');
+  };
 
   const [loading, setLoading] = useState(true);
   const [partner, setPartner] = useState(null);
@@ -134,7 +153,7 @@ const PartnerPortalPage = () => {
 
       {/* Top-right "Sign up" link */}
       <div className="absolute top-0 right-0 z-20 px-6 lg:px-10 py-4" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
-        <button onClick={() => navigate('/signup')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1" data-testid="partner-portal-signup-top">
+        <button onClick={handleCreateAccount} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1" data-testid="partner-portal-signup-top">
           Create Account <ChevronRight className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -232,7 +251,7 @@ const PartnerPortalPage = () => {
                   </Button>
                 </form>
                 <div className="mt-4 flex items-center justify-between">
-                  <button onClick={() => navigate('/signup')} className="text-[#d4af37] text-sm font-bold hover:text-[#fcd34d] transition-colors"
+                  <button onClick={handleCreateAccount} className="text-[#d4af37] text-sm font-bold hover:text-[#fcd34d] transition-colors"
                     data-testid="partner-portal-create-account">Create Account</button>
                   <button onClick={() => navigate('/login')} className="text-[#94A3B8] text-sm font-bold hover:text-[#d4af37] transition-colors">
                     Need help signing in?

@@ -1,6 +1,5 @@
 """Tier verification, B2B codes, family plans, beneficiary lifecycle, admin stats."""
 
-import re
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -39,8 +38,6 @@ async def upload_verification_document(
     existing = await db.tier_verifications.find_one({"user_id": current_user["id"], "status": "pending"}, {"_id": 0})
     if existing:
         raise HTTPException(status_code=400, detail="You already have a pending verification request")
-
-    import uuid
 
     verification = {
         "id": str(uuid.uuid4()),
@@ -181,8 +178,6 @@ async def notify_benefactor_verified(
         raise HTTPException(status_code=404, detail="Verification not found")
     if verification.get("status") != "approved":
         raise HTTPException(status_code=400, detail="Can only notify for approved verifications")
-
-    import uuid
 
     tier_label = {
         "military": "Military / First Responder",
@@ -465,8 +460,6 @@ async def request_family_plan_add(
     if existing:
         raise HTTPException(status_code=400, detail="Request already pending")
 
-    import uuid
-
     request_doc = {
         "id": str(uuid.uuid4()),
         "beneficiary_id": current_user["id"],
@@ -618,8 +611,6 @@ async def trigger_benefactor_transition(
     for estate in estates:
         for ben_id in estate.get("beneficiaries", []):
             beneficiary_ids.add(ben_id)
-
-    import uuid
 
     now = datetime.now(timezone.utc)
     grace_end = now + timedelta(days=GRACE_PERIOD_DAYS)
@@ -791,13 +782,33 @@ async def check_dob_subscription_events():
 
 
 # ═══════════════════════════════════════════════════
-# B2B / ENTERPRISE PARTNER CODES
+# B2B / ENTERPRISE PARTNER CODES (LEGACY — RETIRED)
 # ═══════════════════════════════════════════════════
+#
+# The legacy `b2b_codes` collection has been superseded by the
+# white-label `b2b_partners` system (see `routes/admin/partners.py`).
+# All NEW partnerships should be created in Admin → Partners tab.
+#
+# The endpoints below are intentionally kept as DEPRECATED STUBS so
+# that:
+#   • Any client still hitting them receives a clear, non-cryptic
+#     error pointing to the new system.
+#   • The LIST endpoint still returns whatever stragglers may exist
+#     in the `b2b_codes` collection so an admin can audit them via
+#     the Partners tab "Legacy Codes" surface.
+#   • The DELETE endpoint still works so admins can clean up legacy
+#     rows from the new tab without going to Mongo directly.
+#
+# Anything attempting to CREATE / UPDATE / REDEEM a legacy code is
+# rejected with a single clear message. Codes that lived in the old
+# system are dead-ends — admins must reissue them through the new
+# Partners tab.
 
 
 @router.get("/admin/b2b-codes")
 async def get_b2b_codes(current_user: dict = Depends(get_current_user)):
-    """List all B2B partner codes."""
+    """List legacy B2B codes. READ-ONLY — surfaced in the new
+    Partners tab so admins can see + delete any stragglers."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
     codes = await db.b2b_codes.find({}, {"_id": 0}).to_list(500)
@@ -805,66 +816,31 @@ async def get_b2b_codes(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/admin/b2b-codes")
-async def create_b2b_code(request: Request, current_user: dict = Depends(get_current_user)):
-    """Create a new B2B partner code."""
+async def create_b2b_code_deprecated(request: Request, current_user: dict = Depends(get_current_user)):
+    """DEPRECATED — point admins to the new Partners tab."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
-    data = await request.json()
-    raw_code = (data.get("code") or "").strip().upper()
-    if not raw_code or len(raw_code) < 3 or len(raw_code) > 50:
-        raise HTTPException(status_code=400, detail="Code must be 3-50 characters")
-    # Sanitize: alphanumeric + hyphens/underscores only
-    if not re.match(r"^[A-Z0-9_-]+$", raw_code):
-        raise HTTPException(
-            status_code=400,
-            detail="Code may only contain letters, numbers, hyphens, and underscores",
-        )
-    partner_name = (data.get("partner_name") or "")[:100].strip()
-    discount = max(0, min(100, int(data.get("discount_percent", 100))))
-    max_uses = max(0, int(data.get("max_uses", 0)))
-    code = {
-        "id": str(uuid.uuid4()),
-        "code": raw_code,
-        "partner_name": partner_name,
-        "discount_percent": discount,
-        "max_uses": max_uses,
-        "times_used": 0,
-        "active": True,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    }
-    # Check uniqueness
-    existing = await db.b2b_codes.find_one({"code": code["code"]}, {"_id": 0})
-    if existing:
-        raise HTTPException(status_code=400, detail="Code already exists")
-    await db.b2b_codes.insert_one(code)
-    code.pop("_id", None)
-    return code
+    raise HTTPException(
+        status_code=410,
+        detail="B2B codes are now managed in Admin → Partners. Create a new partnership there.",
+    )
 
 
 @router.put("/admin/b2b-codes/{code_id}")
-async def update_b2b_code(code_id: str, request: Request, current_user: dict = Depends(get_current_user)):
-    """Update a B2B partner code."""
+async def update_b2b_code_deprecated(code_id: str, current_user: dict = Depends(get_current_user)):
+    """DEPRECATED — legacy codes are read-only. Use the Partners tab."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
-    data = await request.json()
-    update = {}
-    if "active" in data:
-        update["active"] = data["active"]
-    if "discount_percent" in data:
-        update["discount_percent"] = int(data["discount_percent"])
-    if "partner_name" in data:
-        update["partner_name"] = data["partner_name"]
-    if "max_uses" in data:
-        update["max_uses"] = int(data["max_uses"])
-    if update:
-        await db.b2b_codes.update_one({"id": code_id}, {"$set": update})
-    updated = await db.b2b_codes.find_one({"id": code_id}, {"_id": 0})
-    return updated
+    raise HTTPException(
+        status_code=410,
+        detail="Legacy B2B codes are read-only. Re-create this partnership in Admin → Partners.",
+    )
 
 
 @router.delete("/admin/b2b-codes/{code_id}")
 async def delete_b2b_code(code_id: str, current_user: dict = Depends(get_current_user)):
-    """Delete a B2B partner code."""
+    """Delete a legacy B2B code. Kept active so admins can clear
+    legacy rows from the new Partners tab."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
     await db.b2b_codes.delete_one({"id": code_id})
@@ -872,95 +848,12 @@ async def delete_b2b_code(code_id: str, current_user: dict = Depends(get_current
 
 
 @router.post("/subscriptions/verify-b2b-code")
-async def verify_b2b_code(request: Request, current_user: dict = Depends(get_current_user)):
-    """Verify a B2B partner code and apply enterprise tier."""
-    data = await request.json()
-    code_str = (data.get("code") or "").strip().upper()
-    if not code_str or len(code_str) > 50:
-        raise HTTPException(status_code=400, detail="Invalid code format")
-
-    # Check if user already has an enterprise verification
-    existing = await db.tier_verifications.find_one(
-        {
-            "user_id": current_user["id"],
-            "tier_requested": "enterprise",
-            "status": "approved",
-        },
-        {"_id": 0},
-    )
-    if existing:
-        raise HTTPException(status_code=400, detail="You already have an active enterprise subscription")
-
-    code_doc = await db.b2b_codes.find_one({"code": code_str, "active": True}, {"_id": 0})
-    if not code_doc:
-        raise HTTPException(status_code=404, detail="Invalid or inactive code")
-
-    # Check max uses
-    if code_doc.get("max_uses", 0) > 0 and code_doc["times_used"] >= code_doc["max_uses"]:
-        raise HTTPException(status_code=400, detail="This code has reached its usage limit")
-
-    # Apply enterprise tier to user
-    discount = code_doc.get("discount_percent", 100)
-    await db.users.update_one(
-        {"id": current_user["id"]},
-        {
-            "$set": {
-                "eligible_tier": "enterprise",
-                "special_status": ["enterprise"],
-                "b2b_code": code_str,
-                "b2b_partner": code_doc.get("partner_name", ""),
-                "b2b_discount_percent": discount,
-                "verified_tier": "enterprise",
-            }
-        },
-    )
-
-    # Create verification record (auto-approved)
-    verification = {
-        "id": str(uuid.uuid4()),
-        "user_id": current_user["id"],
-        "user_email": current_user.get("email", ""),
-        "user_name": current_user.get("name", ""),
-        "tier_requested": "enterprise",
-        "status": "approved",
-        "doc_type": "B2B Partner Code",
-        "notes": f"Code: {code_str} | Partner: {code_doc.get('partner_name', 'N/A')} | Discount: {discount}%",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "reviewed_at": datetime.now(timezone.utc).isoformat(),
-    }
-    await db.tier_verifications.insert_one(verification)
-
-    # Increment usage count
-    await db.b2b_codes.update_one({"code": code_str}, {"$inc": {"times_used": 1}})
-
-    # Apply subscription override with discount
-    if discount >= 100:
-        await db.subscription_overrides.update_one(
-            {"user_id": current_user["id"]},
-            {
-                "$set": {
-                    "user_id": current_user["id"],
-                    "free_access": True,
-                    "b2b_partner": code_doc.get("partner_name", ""),
-                }
-            },
-            upsert=True,
-        )
-    elif discount > 0:
-        await db.subscription_overrides.update_one(
-            {"user_id": current_user["id"]},
-            {
-                "$set": {
-                    "user_id": current_user["id"],
-                    "custom_discount": discount,
-                    "b2b_partner": code_doc.get("partner_name", ""),
-                }
-            },
-            upsert=True,
-        )
-
-    return {
-        "verified": True,
-        "partner_name": code_doc.get("partner_name", ""),
-        "discount_percent": discount,
-    }
+async def verify_b2b_code_deprecated(request: Request, current_user: dict = Depends(get_current_user)):
+    """DEPRECATED — codes are now redeemed through the new
+    `/api/partners/redeem-code` endpoint, which reads from
+    `b2b_partners`. Legacy codes from the retired `b2b_codes`
+    collection are no longer redeemable; admins must reissue them
+    through Admin → Partners. To the end-user we return the same
+    "Invalid or inactive code" message they'd see for any bad code,
+    so no information leaks about the deprecated path."""
+    raise HTTPException(status_code=404, detail="Invalid or inactive code")
