@@ -490,7 +490,7 @@ export default function EntitiesPrintPage() {
               fontWeight="700"
               fill="#0F172A"
             >
-              {truncate(titleText, 24)}
+              {fitTruncate(titleText, rect.w - 36 - 8, mf(13))}
             </text>
             {subText && (
               <text
@@ -500,7 +500,7 @@ export default function EntitiesPrintPage() {
                 fontWeight="600"
                 fill={accentColor}
               >
-                {truncate(subText, 28)}
+                {fitTruncate(subText, rect.w - 36 - 8, mf(10))}
               </text>
             )}
             {e?.formation_state && (
@@ -546,9 +546,13 @@ export default function EntitiesPrintPage() {
                 fill="#0F766E"
                 style={{ textTransform: 'uppercase' }}
               >
-                {isBlock
-                  ? (n.name || 'Block').slice(0, 40)
-                  : `${members.length} beneficiar${members.length === 1 ? 'y' : 'ies'} · ${parentName}`.slice(0, 40)}
+                {fitTruncate(
+                  isBlock
+                    ? (n.name || 'Block')
+                    : `${members.length} beneficiar${members.length === 1 ? 'y' : 'ies'} · ${parentName}`,
+                  rect.w - CLUSTER_PAD_X * 2,
+                  mf(9),
+                )}
               </text>
               {members.map((m, i) => {
                 const row = Math.floor(i / CLUSTER_COLS);
@@ -592,7 +596,7 @@ export default function EntitiesPrintPage() {
                       fontWeight="700"
                       fill="#0F172A"
                     >
-                      {truncate((m.first_name || '').split(' ')[0], 8)}
+                      {fitTruncate((m.first_name || '').split(' ')[0], CLUSTER_SLOT_W - 4, mf(8))}
                     </text>
                   </g>
                 );
@@ -649,7 +653,7 @@ export default function EntitiesPrintPage() {
               fontWeight="700"
               fill="#0F172A"
             >
-              {truncate(titleText, 14)}
+              {fitTruncate(titleText, rect.w, mf(11))}
             </text>
             {subText && (
               <text
@@ -659,7 +663,7 @@ export default function EntitiesPrintPage() {
                 fontSize={mf(9)}
                 fill="#475569"
               >
-                {truncate(subText, 16)}
+                {fitTruncate(subText, rect.w, mf(9))}
               </text>
             )}
             {Array.isArray(n.titles) && n.titles.length > 0 && (
@@ -671,7 +675,7 @@ export default function EntitiesPrintPage() {
                 fontWeight="700"
                 fill={tileStroke}
               >
-                {truncate(n.titles.join(' · '), 18)}
+                {fitTruncate(n.titles.join(' · '), rect.w, mf(9))}
               </text>
             )}
           </>
@@ -1246,4 +1250,18 @@ export default function EntitiesPrintPage() {
 function truncate(s, n) {
   if (!s) return '';
   return s.length <= n ? s : s.slice(0, n - 1) + '…';
+}
+
+// Width-aware truncation. Computes the max number of glyphs that
+// will fit inside `widthUserUnits` at the given SVG fontSize. We use
+// a 0.55 width factor (avg glyph is ~55% of the font size for the
+// system-ui stack used in print). The caller decides the width
+// budget; this helper just turns it into a safe character count.
+// This matters because `mf()` inflates fontSize when the chart
+// shrinks to fit (to keep the 12pt-min rule), and at high inflation
+// the static "truncate(text, 24)" calls overflow the tile.
+function fitTruncate(s, widthUserUnits, fontSizeUserUnits, hardMin = 4) {
+  if (!s) return '';
+  const maxChars = Math.max(hardMin, Math.floor(widthUserUnits / (fontSizeUserUnits * 0.55)));
+  return truncate(s, maxChars);
 }

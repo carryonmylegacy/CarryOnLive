@@ -1,6 +1,33 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — Print SVG Text Overflow Fix (adaptive truncation)
+
+### Need (user complaint + screenshot)
+"PDF generation for the E&S is turning out very bad on desktop format." Screenshot showed long entity names ("CarryOn Enterprises Inc", "Harris Family Trust") bleeding past tile borders, and the BENEFICIARIES cluster's avatar labels mashed together ("MegumEmmaKenSuzanYoko") with no spacing — all because of inflated font sizes from the 12pt-minimum rule colliding with fixed tile/slot widths.
+
+### Root cause
+`mf()` (the 12pt minimum-font helper) inflates `fontSize` whenever the chart shrinks to fit the page (small `bbScale` → fontSize bumps up to keep readability ≥12pt). But the truncation helpers were hard-coded to fixed character counts (`truncate(title, 24)`, `truncate(firstName, 8)`, etc.) and the tile/slot widths stayed constant. So at high inflation factors, even truncated text overflowed.
+
+### Change
+- `EntitiesPrintPage.js`:
+  - **New `fitTruncate(s, widthUserUnits, fontSizeUserUnits, hardMin=4)`** helper next to the existing `truncate`. Computes the max character count that fits in `widthUserUnits` at the given fontSize (0.55 width factor for the system-ui stack), with a hard minimum to keep the ellipsis itself readable.
+  - Replaced every `truncate(text, N)` call in the renderTile + renderLegend paths with `fitTruncate`:
+    - **Entity tile title**: `fitTruncate(titleText, rect.w - 36 - 8, mf(13))` — width budget = tile minus icon column minus right margin.
+    - **Entity tile sub**: `fitTruncate(subText, rect.w - 36 - 8, mf(10))`.
+    - **Cluster header label**: `fitTruncate(headerText, rect.w - CLUSTER_PAD_X * 2, mf(9))`.
+    - **Cluster avatar first-names**: `fitTruncate(firstName, CLUSTER_SLOT_W - 4, mf(8))` — width budget = the 50-unit slot minus a small gutter.
+    - **Person tile name / sub / titles**: `fitTruncate(text, rect.w, mf(N))`.
+
+### Verified
+- `bash /app/housekeeping.sh` → **0 FAIL, 0 WARN**.
+- ESLint clean.
+
+### What's NOT fixed in this pass
+The screenshot also showed the BENEFICIARIES cluster spatially overlapping the "CarryOn Enterprises Inc" tile. That's a chart-layout collision baked into the user's saved tile positions (same positions render on the live canvas without collision because the live canvas is wider). Fixing that requires either auto-resolving collisions in `computeInitialLayout` or asking the user to tweak the canvas layout. Flagging for user verification — if the truncation fix alone makes the PDF acceptable for the pitch, leave the layout alone. If not, we revisit.
+
+
+
 ## Feb 14, 2026 — "+ Attach to another entity" Picker in BlockEditModal
 
 ### Need (user said "yes")
