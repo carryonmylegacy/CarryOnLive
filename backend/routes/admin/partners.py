@@ -147,6 +147,7 @@ class PartnerCreate(BaseModel):
     discount_percent: int = 100
     max_uses: int = 0
     tagline: str = ""
+    partner_email: str = ""
     feature_gates: Optional[dict] = None
     active: bool = True
 
@@ -178,6 +179,7 @@ async def create_partner(body: PartnerCreate, current_user: dict = Depends(get_c
         "max_uses": max(0, int(body.max_uses)),
         "times_used": 0,
         "tagline": (body.tagline or "").strip()[:280],
+        "partner_email": (body.partner_email or "").strip()[:120],
         "feature_gates": _coerce_gates(body.feature_gates),
         "logo_key": None,
         "active": bool(body.active),
@@ -195,6 +197,7 @@ class PartnerUpdate(BaseModel):
     discount_percent: Optional[int] = None
     max_uses: Optional[int] = None
     tagline: Optional[str] = None
+    partner_email: Optional[str] = None
     feature_gates: Optional[dict] = None
     active: Optional[bool] = None
 
@@ -234,6 +237,8 @@ async def update_partner(
         update["max_uses"] = max(0, int(body.max_uses))
     if body.tagline is not None:
         update["tagline"] = body.tagline.strip()[:280]
+    if body.partner_email is not None:
+        update["partner_email"] = body.partner_email.strip()[:120]
     if body.feature_gates is not None:
         update["feature_gates"] = _coerce_gates(body.feature_gates)
     if body.active is not None:
@@ -262,6 +267,124 @@ async def delete_partner(partner_id: str, current_user: dict = Depends(get_curre
             logger.exception("Partner logo delete failed for %s", logo_key)
     await db.b2b_partners.delete_one({"id": partner_id})
     return {"deleted": True}
+
+
+# ─── Email partner welcome via Resend ─────────────────────────────
+
+
+def _build_welcome_email(partner: dict, base_url: str) -> tuple[str, str]:
+    """Returns (subject, html_body) for the partner welcome email.
+    HTML mirrors the plain-text version used by the Partners tab's
+    'Copy welcome email' button, but rendered for inbox display
+    with branded headings, the unique landing URL as a button, the
+    enterprise code as a monospace token, and the negotiated
+    pillar list as a styled <ul>. Disabled pillars are filtered
+    out so the recipient sees exactly what their members will."""
+    company = partner.get("company_name") or "your team"
+    code = partner.get("code") or ""
+    slug = partner.get("slug") or ""
+    landing = f"{base_url.rstrip('/')}/p/{slug}"
+    enabled = [f for f in PARTNER_FEATURE_PILLARS if (partner.get("feature_gates") or {}).get(f["key"])]
+    pillar_items = (
+        "".join(f'<li style="margin:6px 0;color:#1f2937;">{f["label"]}</li>' for f in enabled)
+        or '<li style="margin:6px 0;color:#1f2937;">Your custom CarryOn feature set</li>'
+    )
+
+    subject = f"Welcome to CarryOn — your {company} portal is live"
+    html = f"""<!doctype html>
+<html><body style="margin:0;padding:0;background:#f5f7fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f5f7fb;padding:32px 16px;">
+  <tr><td align="center">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,0.06);">
+      <tr><td style="padding:32px 36px 8px;border-bottom:3px solid #d4af37;">
+        <div style="color:#d4af37;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;font-weight:700;">CarryOn Enterprises</div>
+        <h1 style="margin:8px 0 0;font-size:22px;line-height:1.3;color:#0f172a;font-weight:600;">Your {company} portal is live.</h1>
+      </td></tr>
+      <tr><td style="padding:24px 36px 8px;font-size:15px;line-height:1.6;color:#334155;">
+        <p style="margin:0 0 14px;">Hi {company} team,</p>
+        <p style="margin:0 0 14px;">Your co-branded CarryOn partner portal is ready. Share the link and access code below with your members — anyone who signs up through it will land in the custom experience we built for you.</p>
+      </td></tr>
+      <tr><td style="padding:8px 36px 8px;">
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px 20px;">
+          <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#64748b;font-weight:700;margin-bottom:6px;">Your partner portal</div>
+          <a href="{landing}" style="color:#1e40af;font-weight:600;text-decoration:none;word-break:break-all;">{landing}</a>
+        </div>
+      </td></tr>
+      <tr><td style="padding:12px 36px 8px;">
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px 20px;">
+          <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#64748b;font-weight:700;margin-bottom:6px;">Member access code</div>
+          <div style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:20px;font-weight:700;color:#0f172a;letter-spacing:0.08em;">{code}</div>
+        </div>
+      </td></tr>
+      <tr><td style="padding:16px 36px 8px;">
+        <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#64748b;font-weight:700;margin-bottom:8px;">Included for your members</div>
+        <ul style="margin:0;padding:0 0 0 22px;font-size:15px;">{pillar_items}</ul>
+      </td></tr>
+      <tr><td style="padding:24px 36px;font-size:15px;line-height:1.6;color:#334155;">
+        <p style="margin:0 0 14px;">When a member creates their account, the final signup step will ask for your access code. Once entered, they'll see only the pillars listed above — exactly the package we negotiated.</p>
+        <p style="margin:0 0 6px;">Let me know when you'd like the first batch invited.</p>
+      </td></tr>
+      <tr><td style="padding:8px 36px 28px;font-size:14px;color:#475569;">
+        — The CarryOn team
+      </td></tr>
+      <tr><td style="padding:14px 36px;background:#0f172a;color:#cbd5e1;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;text-align:center;font-weight:700;">
+        Powered by CarryOn Enterprises Inc.
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>"""
+    return subject, html
+
+
+@router.post("/admin/partners/{partner_id}/send-welcome")
+async def send_partner_welcome(
+    partner_id: str,
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    """Send the welcome email to the partner via Resend. Body may
+    optionally include `to` to override the partner's stored
+    `partner_email` (handy for re-sending to a different stakeholder
+    without mutating the partner record)."""
+    _ensure_founder(current_user)
+    partner = await db.b2b_partners.find_one({"id": partner_id}, {"_id": 0})
+    if not partner:
+        raise HTTPException(status_code=404, detail="Partner not found.")
+
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:  # noqa: BLE001
+        pass
+    to_email = (body.get("to") or partner.get("partner_email") or "").strip()
+    if not to_email or "@" not in to_email:
+        raise HTTPException(
+            status_code=400,
+            detail="No partner email on file — add one to the row first.",
+        )
+
+    # Build base URL from the inbound request so the link in the
+    # email matches the host the founder is actually using (dev
+    # preview, staging, prod). Falls back to request.url if Host
+    # header is missing for any reason.
+    base_url = f"{request.url.scheme}://{request.url.netloc}"
+    subject, html = _build_welcome_email(partner, base_url)
+
+    from services.email import send_email
+
+    ok = await send_email(to_email, subject, html)
+    if not ok:
+        raise HTTPException(
+            status_code=502,
+            detail="Email service did not accept the send — check Resend status.",
+        )
+
+    await db.b2b_partners.update_one(
+        {"id": partner_id},
+        {"$set": {"welcome_email_last_sent_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    return {"sent": True, "to": to_email}
 
 
 @router.post("/admin/partners/{partner_id}/logo")

@@ -16,7 +16,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import {
   Briefcase, Plus, Trash2, Copy, Check, Loader2, ExternalLink,
-  Upload, Image as ImageIcon, Power, Mail,
+  Upload, Image as ImageIcon, Power, Mail, Send,
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -92,7 +92,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
   const [showNew, setShowNew] = useState(false);
   const [newForm, setNewForm] = useState({
     company_name: '', slug: '', code: '', discount_percent: 100,
-    max_uses: 0, tagline: '',
+    max_uses: 0, tagline: '', partner_email: '',
   });
   const [copied, setCopied] = useState(null);
   const fileInputs = useRef({});
@@ -136,7 +136,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
         code: newForm.code.toUpperCase().trim(),
       }, { headers: { ...authHeaders(), 'Content-Type': 'application/json' } });
       setShowNew(false);
-      setNewForm({ company_name: '', slug: '', code: '', discount_percent: 100, max_uses: 0, tagline: '' });
+      setNewForm({ company_name: '', slug: '', code: '', discount_percent: 100, max_uses: 0, tagline: '', partner_email: '' });
       await fetchAll();
       toast.success('Partner created');
     } catch (err) {
@@ -203,6 +203,35 @@ export const PartnersTab = ({ getAuthHeaders }) => {
     setCopied(`${partner.id}:email`);
     setTimeout(() => setCopied(null), 1800);
     toast.success(`Welcome email copied — paste into your mail client`);
+  };
+
+  // Sends the welcome email directly via Resend to the partner's
+  // stored `partner_email`. Same templated body as copyWelcomeEmail
+  // (rendered HTML server-side). Confirms before sending so a
+  // mis-tap doesn't accidentally email a customer; the row is
+  // marked with the timestamp of the most recent send.
+  const [sending, setSending] = useState(null);
+  const sendWelcomeEmail = async (partner) => {
+    const to = (partner.partner_email || '').trim();
+    if (!to) {
+      toast.error('Add a partner email to the row first');
+      return;
+    }
+    if (!window.confirm(`Send the welcome email to ${to}?\n\nThis will deliver a CarryOn-branded message to your partner with their unique landing URL, access code, and enabled pillars.`)) {
+      return;
+    }
+    setSending(partner.id);
+    try {
+      await axios.post(`${API_URL}/admin/partners/${partner.id}/send-welcome`, {}, {
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      });
+      toast.success(`Welcome email sent to ${to}`);
+      await fetchAll();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to send welcome email');
+    } finally {
+      setSending(null);
+    }
   };
 
   if (loading) {
@@ -279,6 +308,15 @@ export const PartnersTab = ({ getAuthHeaders }) => {
                   className="input-field text-sm" maxLength={280} />
                 <p className="text-[11px] text-[var(--t5)]">Appears under the hero on /p/&lt;slug&gt; · 280 chars max</p>
               </div>
+              <div className="space-y-1 md:col-span-2 lg:col-span-3">
+                <Label className="text-xs text-[var(--t4)]">Partner Contact Email <span className="text-[var(--t6)]">(optional)</span></Label>
+                <Input type="email" value={newForm.partner_email}
+                  onChange={e => setNewForm({ ...newForm, partner_email: e.target.value })}
+                  placeholder="ops@acme-insurance.com"
+                  className="input-field text-sm" maxLength={120}
+                  data-testid="new-partner-email" />
+                <p className="text-[11px] text-[var(--t5)]">Used to send the welcome email directly via Resend.</p>
+              </div>
             </div>
             <div className="flex gap-2">
               <Button size="sm" className="gold-button text-xs" onClick={createPartner} disabled={saving} data-testid="save-new-partner-btn">
@@ -317,7 +355,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
               </thead>
               <tbody>
                 {partners.map(partner => (
-                    <PartnerRow
+                  <PartnerRow
                     key={partner.id}
                     partner={partner}
                     columns={columns}
@@ -329,6 +367,8 @@ export const PartnersTab = ({ getAuthHeaders }) => {
                     onDelete={deletePartner}
                     onCopy={copy}
                     onCopyEmail={copyWelcomeEmail}
+                    onSendEmail={sendWelcomeEmail}
+                    sending={sending}
                     copied={copied}
                   />
                 ))}
@@ -341,13 +381,14 @@ export const PartnersTab = ({ getAuthHeaders }) => {
   );
 };
 
-function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUploadLogo, onDelete, onCopy, onCopyEmail, copied }) {
+function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUploadLogo, onDelete, onCopy, onCopyEmail, onSendEmail, sending, copied }) {
   const [draft, setDraft] = useState({
     company_name: partner.company_name,
     slug: partner.slug,
     code: partner.code,
     discount_percent: partner.discount_percent,
     tagline: partner.tagline || '',
+    partner_email: partner.partner_email || '',
   });
   // Re-sync local draft state whenever the persisted partner doc
   // changes from outside (e.g. after a toggle triggers re-fetch).
@@ -360,8 +401,9 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
       code: partner.code,
       discount_percent: partner.discount_percent,
       tagline: partner.tagline || '',
+      partner_email: partner.partner_email || '',
     });
-  }, [partner.company_name, partner.slug, partner.code, partner.discount_percent, partner.tagline]);
+  }, [partner.company_name, partner.slug, partner.code, partner.discount_percent, partner.tagline, partner.partner_email]);
 
   const url = partnerLandingHref(partner.slug);
   const logoUrl = partner.logo_key
@@ -455,7 +497,17 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
               maxLength={280}
               data-testid={`partner-tagline-${partner.slug}`}
             />
-            <div className="flex items-center gap-1.5 text-[11px]">
+            <Input
+              type="email"
+              value={draft.partner_email}
+              onChange={e => setDraft({ ...draft, partner_email: e.target.value })}
+              onBlur={() => commit('partner_email')}
+              className="input-field text-xs h-7"
+              placeholder="Partner contact email (e.g. ops@acme-insurance.com)"
+              maxLength={120}
+              data-testid={`partner-email-${partner.slug}`}
+            />
+            <div className="flex items-center gap-1.5 text-[11px] flex-wrap">
               <a href={url} target="_blank" rel="noopener noreferrer"
                 className="font-mono text-[var(--gold)] hover:text-[#fcd34d] truncate flex items-center gap-1 max-w-[200px]"
                 data-testid={`partner-url-${partner.slug}`}
@@ -471,15 +523,37 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
               <button
                 onClick={() => onCopyEmail(partner)}
                 className="text-[var(--t5)] hover:text-[#a78bfa] flex items-center gap-1 font-semibold"
-                title="Copy ready-to-send welcome email"
+                title="Copy ready-to-send welcome email to your clipboard"
                 data-testid={`partner-copy-email-${partner.slug}`}
               >
                 {copied === `${partner.id}:email` ? (
-                  <><Check className="w-3 h-3 text-[var(--gn2)]" /> Email copied</>
+                  <><Check className="w-3 h-3 text-[var(--gn2)]" /> Copied</>
                 ) : (
-                  <><Mail className="w-3 h-3" /> Welcome email</>
+                  <><Copy className="w-3 h-3" /> Copy email</>
                 )}
               </button>
+              <span className="text-[var(--t6)]">·</span>
+              <button
+                onClick={() => onSendEmail(partner)}
+                disabled={sending === partner.id || !partner.partner_email}
+                className="flex items-center gap-1 font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ color: partner.partner_email ? '#34d399' : 'var(--t6)' }}
+                title={partner.partner_email
+                  ? `Send via Resend to ${partner.partner_email}`
+                  : 'Add a partner email above first'}
+                data-testid={`partner-send-email-${partner.slug}`}
+              >
+                {sending === partner.id ? (
+                  <><Loader2 className="w-3 h-3 animate-spin" /> Sending…</>
+                ) : (
+                  <><Send className="w-3 h-3" /> Send via Resend</>
+                )}
+              </button>
+              {partner.welcome_email_last_sent_at && (
+                <span className="text-[10px] text-[var(--t5)] italic" title={`Last sent ${partner.welcome_email_last_sent_at}`}>
+                  · sent {new Date(partner.welcome_email_last_sent_at).toLocaleDateString()}
+                </span>
+              )}
             </div>
           </div>
         </div>
