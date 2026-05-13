@@ -813,29 +813,33 @@ const GuardianPage = () => {
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           <button onClick={handleExportTranscript} disabled={exporting || !sessionId} title="Download Transcript"
-            className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
+            className="h-9 px-2 lg:px-3 rounded-lg flex items-center gap-1.5 transition-all hover:bg-[var(--s)]"
             style={{ color: '#94a3b8' }}
             data-testid="export-transcript-btn">
             {exporting ? <PieProgress size={18} color="#94a3b8" duration={4} /> : <FileDown className="w-4.5 h-4.5" />}
+            <span className="hidden lg:inline text-xs font-bold">Transcript</span>
           </button>
           <button onClick={handleExportPlan} disabled={planExporting || !sessionId} title="Download Plan of Action"
-            className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
+            className="h-9 px-2 lg:px-3 rounded-lg flex items-center gap-1.5 transition-all hover:bg-[var(--s)]"
             style={{ color: 'var(--gold)' }}
             data-testid="export-plan-btn">
             {planExporting ? <PieProgress size={18} color="#d4af37" duration={15} /> : <ClipboardList className="w-4.5 h-4.5" />}
+            <span className="hidden lg:inline text-xs font-bold">Plan</span>
           </button>
           <button onClick={handleChecklistExport} disabled={checklistExporting} title="Export IAC Checklist"
-            className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
+            className="h-9 px-2 lg:px-3 rounded-lg flex items-center gap-1.5 transition-all hover:bg-[var(--s)]"
             style={{ color: '#22C993' }}
             data-testid="export-checklist-pdf-btn">
             {checklistExporting ? <PieProgress size={18} color="#22C993" duration={4} /> : <ListChecks className="w-4.5 h-4.5" />}
+            <span className="hidden lg:inline text-xs font-bold">Checklist</span>
           </button>
           <button onClick={deleteCurrentSession} disabled={!sessionId} title="Delete this conversation"
-            className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)] disabled:opacity-40"
+            className="h-9 px-2 lg:px-3 rounded-lg flex items-center gap-1.5 transition-all hover:bg-[var(--s)] disabled:opacity-40"
             style={{ color: '#ef4444' }}
             data-testid="delete-current-chat-btn"
             aria-label="Delete this conversation">
             <Trash2 className="w-4.5 h-4.5" />
+            <span className="hidden lg:inline text-xs font-bold">Delete</span>
           </button>
         </div>
       </div>

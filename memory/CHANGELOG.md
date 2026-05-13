@@ -1,6 +1,37 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — EGA heavy-action xAI failover · BEC model badge · IAC Print PDF · EGA desktop icon labels
+
+### 1. Root cause of "EGA keeps failing at generating a To-Do PDF" — fixed
+The PDF generators themselves were never the problem. **Heavy EGA actions (`generate_todo`, `generate_iac`, `analyze_vault`, `analyze_readiness`, `state_law_brief`) only tried `XAI_MODEL` (grok-4)** with a single same-model retry. With grok-4 currently rate-limited (verified: x.ai returns `429 'Some resource has been exhausted'`), the very first AI step failed before a PDF could even be requested — the user perceived this as the PDF generation failing.
+
+**Fix (`routes/guardian.py`)**: Heavy actions now use the same failover ladder pattern as light chat: `[selected_model, "grok-3", XAI_MODEL_LIGHT]` (deduped, ordered). When grok-4 is at capacity the call automatically falls back to grok-3, then grok-3-mini. Verified end-to-end: `POST /api/chat/guardian` with `action=generate_todo` returns HTTP 200 with a live AI response in ~40s; `action=generate_iac` returns HTTP 200 with checklist items in ~50s.
+
+### 2. BEC xAI transparency — model badge
+The user reported "BEC feels canned." The backend has had a graceful template fallback all along that fires silently when every xAI model errors. Now it's no longer silent.
+
+- **Backend (`routes/beneficiary_concierge.py`)**:
+  - `/beneficiary/concierge/ask` response now includes `model_used` (`"grok-3-mini"` / `"grok-3"` / `"grok-4"` / `"fallback"`).
+  - The same field is persisted on every `beneficiary_concierge_messages` document, so history-loaded turns also expose it.
+- **Frontend (`pages/beneficiary/BeneficiaryConciergePage.js`)**:
+  - Bubble component now renders a tiny pill under each assistant message: green "via xAI grok-3-mini" when Grok served, red "Fallback (xAI unavailable)" when the templated path fired. `data-testid="concierge-model-badge"`.
+  - History loader maps `model_used` / `is_fallback` from each stored turn into the bubble so badges persist across reloads.
+
+### 3. IAC Print PDF — Preview → Print
+- **Frontend (`pages/ChecklistPage.js`)**: New "Print PDF" button (data-testid `iac-print-pdf-btn`) in the IAC action row, sits next to "AI Suggest from Vault". Disabled when `totalCount === 0`. Clicking pipes through the universal `openPdfPreview` modal (Preview → tap Print → iOS / macOS share sheet) by POSTing to the existing `/guardian/export-checklist` endpoint — no new backend route needed.
+
+### 4. EGA desktop icon labels
+- **Frontend (`pages/GuardianPage.js`)**: The four header utility buttons (Transcript / Plan / Checklist / Delete) now show one-word text labels next to their icons on `lg:` and up. Mobile / PWA stays icon-only (`hidden lg:inline`). Buttons widened from square (`w-9 h-9`) to pill (`h-9 px-2 lg:px-3`) so the labels have room to breathe.
+
+### Verified
+- `bash /app/housekeeping.sh` → **0 FAIL / 0 WARN**.
+- ESLint clean: `GuardianPage.js`, `ChecklistPage.js`, `BeneficiaryConciergePage.js`.
+- Ruff clean: `guardian.py`, `beneficiary_concierge.py`.
+- End-to-end smoke via curl on preview pod: `generate_todo` HTTP 200 / live AI / ~40s. `generate_iac` HTTP 200 / live AI / ~50s.
+
+
+
 ## Feb 14, 2026 — E&S "Center" button + Fit-on-Load default + HALF_STEP hoist
 
 ### Need (user)

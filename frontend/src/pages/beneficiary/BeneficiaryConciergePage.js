@@ -145,7 +145,14 @@ export default function BeneficiaryConciergePage() {
       const turns = [];
       for (const m of (res.data?.messages || [])) {
         turns.push({ role: 'user', content: m.question, ts: m.created_at });
-        turns.push({ role: 'assistant', content: m.answer, citations: m.citations || {}, ts: m.created_at });
+        turns.push({
+          role: 'assistant',
+          content: m.answer,
+          citations: m.citations || {},
+          modelUsed: m.model_used || (m.is_fallback ? 'fallback' : null),
+          isFallback: !!m.is_fallback,
+          ts: m.created_at,
+        });
       }
       return turns;
     } catch {
@@ -284,6 +291,12 @@ export default function BeneficiaryConciergePage() {
         role: 'assistant',
         content: res.data?.answer || '',
         citations: res.data?.citations || {},
+        // Surface which xAI model served this turn — or "fallback"
+        // when the templated path fired (xAI was unreachable). The UI
+        // renders a tiny badge so the user can prove to themselves
+        // (and to a B2B audience) that real Grok is in the loop.
+        modelUsed: res.data?.model_used || null,
+        isFallback: !!res.data?.is_fallback,
         ts: new Date().toISOString(),
       }]);
     } catch (e) {
@@ -315,6 +328,8 @@ export default function BeneficiaryConciergePage() {
         setMessages((prev) => [...prev, {
           role: 'assistant',
           content: fallback,
+          modelUsed: 'fallback',
+          isFallback: true,
           ts: new Date().toISOString(),
         }]);
       }
@@ -489,7 +504,7 @@ export default function BeneficiaryConciergePage() {
               </div>
             )}
             {messages.map((m, i) => (
-              <Bubble key={i} role={m.role} content={m.content} citations={m.citations} error={m.error} onCitationClick={openDocPreview} />
+              <Bubble key={i} role={m.role} content={m.content} citations={m.citations} error={m.error} modelUsed={m.modelUsed} isFallback={m.isFallback} onCitationClick={openDocPreview} />
             ))}
             {sending && (
               <ThinkingIndicator actionLoading="concierge_ask" onStop={stopAsk} />
@@ -600,7 +615,7 @@ function DocPreviewModal({ doc, onClose }) {
   );
 }
 
-function Bubble({ role, content, citations, error, onCitationClick }) {
+function Bubble({ role, content, citations, error, modelUsed, isFallback, onCitationClick }) {
   const isUser = role === 'user';
   // Inline-cite renderer: convert [#N] markers in the assistant's
   // answer into small clickable gold chips that show the source
@@ -710,6 +725,31 @@ function Bubble({ role, content, citations, error, onCitationClick }) {
                 </span>
               );
             })}
+          </div>
+        )}
+        {/* xAI model badge — appears under every assistant turn so the
+            user (and any pitch audience) can see at a glance whether
+            real Grok served the answer or the templated fallback
+            fired. Hidden on user bubbles and on error bubbles. */}
+        {!isUser && !error && modelUsed && (
+          <div className="mt-2 flex items-center gap-1.5" data-testid="concierge-model-badge">
+            {isFallback ? (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.30)', color: '#FCA5A5' }}
+                title="xAI Grok was unreachable for this turn — a templated response was served instead. Try again in a moment for a live AI answer."
+              >
+                Fallback (xAI unavailable)
+              </span>
+            ) : (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                style={{ background: 'rgba(34,201,147,0.10)', border: '1px solid rgba(34,201,147,0.30)', color: '#6EE7B7' }}
+                title={`Answered live by xAI ${modelUsed}`}
+              >
+                via xAI {modelUsed}
+              </span>
+            )}
           </div>
         )}
       </div>

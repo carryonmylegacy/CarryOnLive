@@ -7,7 +7,7 @@ import { ReturnPopup } from '../components/GuidedActivation';
 import {
   CheckSquare, Plus, Trash2, Edit2, Phone, Mail, MapPin, FileText,
   Briefcase, Users, Heart, Shield, Building, Stethoscope,
-  Sparkles, Save, X,
+  Sparkles, Save, X, Printer,
   Check, XCircle, Loader2, HelpCircle, ChevronDown, ChevronRight, ArrowLeft
 } from 'lucide-react';
 import { toast } from '../utils/toast';
@@ -18,6 +18,7 @@ import { saveList, readList } from '../utils/localListCache';
 import { enqueue as enqueueOutbox } from '../offline/outbox';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import { API_URL } from '../config';
+import { openPdfPreview } from '../utils/openPdfPreview';
 
 const CATEGORIES = [
   { value: 'legal', label: 'Legal', icon: FileText, color: '#3b82f6' },
@@ -346,6 +347,42 @@ const ChecklistPage = () => {
 
   const stopAISuggest = () => {
     if (aiAbortRef.current) aiAbortRef.current.abort();
+  };
+
+  // ── Beneficiary-view PDF preview ──────────────────────────────────
+  // Pops the universal Preview → Print modal. Tapping "Print" inside
+  // the preview opens the native iOS / macOS print-or-share sheet so
+  // the user can save the PDF or AirPrint it. Re-uses the same
+  // `/guardian/export-checklist` endpoint the EGA toolbar already
+  // wires up — same PDF, accessible from inside the IAC page itself
+  // so the user doesn't have to cross over to EGA to print.
+  const [iacPrinting, setIacPrinting] = useState(false);
+  const handleIacPrint = async () => {
+    if (iacPrinting) return;
+    setIacPrinting(true);
+    try {
+      const dateStr = new Date().toISOString().split('T')[0];
+      await openPdfPreview({
+        filename: `CarryOn_IAC_${dateStr}.pdf`,
+        title: 'Immediate Action Checklist',
+        subtitle: `Beneficiary preview · ${dateStr}`,
+        blobFetcher: async () => {
+          const headers = getAuthHeaders()?.headers;
+          const res = await axios.post(
+            `${API_URL}/guardian/export-checklist`,
+            {},
+            { headers, responseType: 'blob', timeout: 120000 },
+          );
+          return new Blob([res.data], { type: 'application/pdf' });
+        },
+      });
+    } catch (err) {
+      toast.error(err?.response?.status === 404
+        ? 'No IAC items yet — add some first'
+        : 'Failed to generate IAC PDF');
+    } finally {
+      setIacPrinting(false);
+    }
   };
 
   const handleActivationAction = async (itemId, action) => {
@@ -691,6 +728,16 @@ const ChecklistPage = () => {
               <button onClick={(e) => { e.stopPropagation(); stopAISuggest(); }} className="ml-1 px-2 py-0.5 rounded text-[11px] font-bold text-[var(--rd)] border border-[var(--rd)]/30">Stop</button>
             </>
           ) : 'AI Suggest from Vault'}
+        </button>
+        <button
+          onClick={handleIacPrint}
+          disabled={iacPrinting || totalCount === 0}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold glass-card hover:border-[var(--gold)] text-[var(--t)] disabled:opacity-50"
+          data-testid="iac-print-pdf-btn"
+          title={totalCount === 0 ? 'Add at least one IAC item first' : 'Preview & print the beneficiary view'}
+        >
+          {iacPrinting ? <Loader2 className="w-4 h-4 animate-spin text-[var(--gold)]" /> : <Printer className="w-4 h-4 text-[var(--gold)]" />}
+          Print PDF
         </button>
       </div>
 

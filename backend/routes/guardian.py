@@ -593,32 +593,37 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
             )
 
         # Auto-retry with escalating backoff + multi-model failover.
-        # Heavy actions (vault analysis, IAC, readiness) try the chosen
-        # model and at most ONE retry on the same model. Light chat
-        # tries grok-3-mini → grok-3 → grok-4 in order so a single
-        # model deprecation / capacity incident on x.ai's side never
-        # takes the chat down. 55s soft deadline keeps us under the
-        # ingress hard cut-off.
+        # Both heavy actions (vault analysis, IAC, readiness, to-do,
+        # state-law brief) AND light chat now share the same failover
+        # ladder: try the preferred model first, then walk DOWN the
+        # ladder (lighter/cheaper models) so a single rate-limit /
+        # capacity incident on x.ai never takes EGA down. Previously
+        # heavy actions only tried `selected_model` and surfaced a 500
+        # the moment grok-4 was at capacity, which manifested to the
+        # user as "Generate To-Do List fails before I can even open
+        # the PDF preview". 55s soft deadline keeps us under ingress
+        # hard cut-off.
         completion = None
         last_error = None
-        _IS_HEAVY = data.action in (
+        # Full ladder (deduped while preserving order). For heavy
+        # actions we lead with the heavy model; for light chat we
+        # lead with the light model. Both fall back through the
+        # remaining models on the ladder.
+        _is_heavy = data.action in (
             "analyze_vault",
             "generate_todo",
             "generate_iac",
             "analyze_readiness",
             "state_law_brief",
         )
-        if _IS_HEAVY:
-            _MODEL_ORDER = [selected_model]
-            _MAX_PER_MODEL = 2
-            _DELAYS = [0, 1.5]
+        if _is_heavy:
+            _ladder = [selected_model, "grok-3", XAI_MODEL_LIGHT]
         else:
-            # Failover ladder. De-dup while preserving order.
-            ladder = [m for m in (XAI_MODEL_LIGHT, "grok-3", XAI_MODEL) if m]
-            _seen: set = set()
-            _MODEL_ORDER = [m for m in ladder if not (m in _seen or _seen.add(m))]
-            _MAX_PER_MODEL = 2
-            _DELAYS = [0, 1.5]
+            _ladder = [XAI_MODEL_LIGHT, "grok-3", XAI_MODEL]
+        _seen: set = set()
+        _MODEL_ORDER = [m for m in _ladder if m and not (m in _seen or _seen.add(m))]
+        _MAX_PER_MODEL = 2
+        _DELAYS = [0, 1.5]
         _SOFT_DEADLINE_S = 55
         _started_at = asyncio.get_event_loop().time()
         for model_name in _MODEL_ORDER:

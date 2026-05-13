@@ -597,6 +597,7 @@ async def concierge_ask(
             "citations": citations,
             "doc_count": len(docs),
             "is_fallback": is_fallback,
+            "model_used": completion_model if completion_model else "fallback",
             "created_at": now,
         }
     )
@@ -608,6 +609,10 @@ async def concierge_ask(
         "accessible_doc_count": len(docs),
         "benefactor_first_name": benefactor_first,
         "is_fallback": is_fallback,
+        # Surface which xAI model actually served this turn (or "fallback"
+        # when the template path fired). Lets the UI prove to the user
+        # — and to a B2B pitch audience — that real Grok is in the loop.
+        "model_used": completion_model if completion_model else "fallback",
     }
 
 
