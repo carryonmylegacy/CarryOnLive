@@ -156,18 +156,27 @@ export const TrialUsersTab = ({ getAuthHeaders }) => {
   const [saving, setSaving] = useState(false);
 
   const fetchAll = useCallback(async () => {
-    try {
-      const [usersRes, policyRes] = await Promise.all([
-        axios.get(`${API_URL}/admin/trial-users`, getAuthHeaders()),
-        axios.get(`${API_URL}/admin/trial-policy`, getAuthHeaders()),
-      ]);
-      setUsers(usersRes.data || []);
-      setPolicy(policyRes.data);
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to load trial data');
-    } finally {
-      setLoading(false);
+    // Use allSettled rather than Promise.all so a slow/timing-out
+    // trial-users call (or vice versa) doesn't take down the OTHER
+    // fetch with it. The policy card is the primary UX here — if
+    // it fails to mount the founder has no way to change the
+    // global trial duration. We tolerate either fetch failing
+    // independently and surface a targeted toast.
+    const [usersRes, policyRes] = await Promise.allSettled([
+      axios.get(`${API_URL}/admin/trial-users`, getAuthHeaders()),
+      axios.get(`${API_URL}/admin/trial-policy`, getAuthHeaders()),
+    ]);
+    if (usersRes.status === 'fulfilled') {
+      setUsers(usersRes.value.data || []);
+    } else {
+      toast.error('Failed to load trial users list');
     }
+    if (policyRes.status === 'fulfilled') {
+      setPolicy(policyRes.value.data);
+    } else {
+      toast.error('Failed to load trial policy');
+    }
+    setLoading(false);
   }, [getAuthHeaders]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
