@@ -31,13 +31,13 @@
 ## 🟡 PREVIEW POD ACCOUNTS (preview-only, not production)
 
 ### Preview Benefactor — Pete Mitchell (use this for ALL user-facing testing)
-- URL: `https://polish-pitch.preview.emergentagent.com`
+- URL: `https://org-chart-fix-2.preview.emergentagent.com`
 - Email: info@carryon.us
 - Password: Demo1234!
 - Role: **benefactor** (Pete Mitchell) — same role as on production. NOT an admin.
 
 ### Preview Admin/Founder (ONLY for admin-portal testing)
-- URL: `https://polish-pitch.preview.emergentagent.com`
+- URL: `https://org-chart-fix-2.preview.emergentagent.com`
 - Email: founder@carryon.us
 - Password: CarryOntheWisdom!
 - Role: admin (founder) — `isStaff=true` in the frontend.

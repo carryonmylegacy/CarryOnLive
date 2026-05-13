@@ -1,11 +1,11 @@
-<analysis>**original_problem_statement**: Continue building, pressure testing, and polishing the existing full-stack application to ensure it is perfectly stable for a live B2B pitch. Address a series of critical AI glitches, UI regressions, offline-sync API pile-ups, dashboard synchronization issues, and PWA specific quirks that are emerging during the user's live demos. PRODUCT REQUIREMENTS: Maintain absolute stability, adhere to strict Zero-WARN CI policy, and avoid unprompted feature work.
+<analysis>**original_problem_statement**: Continue building, pressure testing, and polishing the existing full-stack application to ensure it is perfectly stable for a live B2B pitch. Fix critical UI regressions, refine the PWA landscape layout, fix PDF generation, and resolve AI fallbacks. Maintain absolute stability, adhere to strict Zero-WARN CI policy, ensure all UI elements work flawlessly within the strict constraints of iOS standalone PWA mode. Absolutely NO sweeping refactors of stable code before the pitch.
 
 **User's preferred language**: English (INSTRUCT next agent to respond in English only)
 
-**what currently exists?**: A React/FastAPI/MongoDB offline-first PWA intended for B2B D2C funnels. It features an advanced offline sync architecture via Dexie and two AI integrations (Estate Guardian EGA and Beneficiary Concierge BEC) powered by xAI Grok. The application enforces a strict Zero-WARN CI policy via a  script.
+**what currently exists?**: A React/FastAPI/MongoDB offline-first PWA intended for B2B D2C funnels. Advanced offline sync via Dexie. Features include EGA (Estate Guardian AI), BEC (Beneficiary Concierge), CFP (CarryOn Financial Picture), and Secure Document Vault (SDV). It uses a custom-built 2D draggable org chart for visualizing entities/beneficiaries and includes complex offline-first PDF generation logic via React portals. 
 
 **Last working item**:
-    - Last item agent was working: Fixing the Dashboard tile jump issue. The CFP and CCP tiles, along with the readiness meter, were updating visibly after the page loaded. The agent traced this to the  fade-in flag firing twice (once on the offline-cache paint, which had stale/missing data, and once after the network fetch). The agent deferred  and  until *after* the network fetch completes (with a 2s safety fallback).
+    - Last item agent was working: Surgically removing the BENEFICIARY BLOCKS summary banner/card from the  dashboard. The user found the auto-centering behavior when clicking a block too disruptive for the live demo and requested the banner be stripped out.
     - Status: USER VERIFICATION PENDING
     - Agent Testing Done: Y
     - Which testing method agent to use? manual testing by bash/python -c
@@ -35,32 +35,29 @@
 
 **Upcoming and Future Tasks**
     Upcoming Tasks:
-    - 🟢 (P1) Posthumous social-auto-post feature (X + LinkedIn only, silent fail on dead tokens, exactly 1 asset per benefactor, named Final Word or Last Post).
-    - 🟢 (P2) Codebase Sweep for Unsafe Dictionary Access: Sweep the backend for unsafe  references (like the one that caused the DTS 500 error) and safely use  to prevent similar crashes.
+    - 🟢 (P2) Codebase sweep for unsafe  references → use  to prevent 500 errors.
     
     Future Tasks:
     - 🟢 (P2) Phase 10: FFmpeg-wasm aggressive re-compression of video.
     - 🟢 (P1) Reactivate/Configure iOS Live Updates (Capgo) - AFTER App Store Build.
     - 🟢 (P1) iOS Share Extension Setup - AFTER App Store Build.
     - 🟢 (P2) Add abandoned checkout tracking/metrics in the Admin Marketing tab.
-    - 🟢 (P3) Sweep 474 hardcoded gold RGBA colors to use the new  CSS variable.
+    - 🟢 (P3) Sweep hardcoded gold RGBA colors to use the new  CSS variable.
+    - 🟢 (P2) Refactor Monolith React & Python files (, , ). (DO NOT ATTEMPT BEFORE PITCH).
 
 **Completed work in this session**
-- UI: Auto-scaled dashboard titles (CarryOn Core Pillars, Estate Readiness) with responsive font sizing and . (DONE)
-- UI: Fixed ECT onboarding / CCP walkthrough tile bottom padding to properly clear the mobile PWA bottom dock/safe-area. (DONE)
-- Bug Fix: Fixed Founder page rendering as a zoomed flag by extracting 11MB of base64 images from , shrinking it to 23KB, and un-ignoring it from Vercel's build via . (DONE)
-- Bug Fix: Fixed DTS quote generation 500 error caused by missing  projection. (DONE)
-- Bug Fix: Fixed ECT chat list flipping/fighting and press-and-hold action gestures by making message polling idempotent, stopping layout jank. (DONE)
-- Bug Fix: Fixed Founder page scroll glitch (white space at bottom) by adding ResizeObserver tracking for async image loads inside the iframe. (DONE)
-- Bug Fix: Fixed Home button on Founder page crashing by adding  so it escapes the iframe. (DONE)
-- UI/UX: Restructured mobile login nav to use a hamburger menu exposing all 5 header links (Features, Security, How It Works, About, Founder), eliminating the standalone Founder mobile button. (DONE)
-- Admin Feature: Added single & bulk delete actions (API + UI) for Revoked/Denied Founder Access requests and Invite Links. (DONE)
-- Bug Fix: Replaced  logic with custom in-app modals for the new Admin delete buttons (iOS standalone PWAs silently block native confirm dialogs). (DONE)
-- Bug Fix: Fixed missing offline-mode tile on iPad after portal-switching by caching positive PWA detection signals in . (DONE)
-- Bug Fix: Delayed  fade-in until after the network fetch completes, eliminating the jumping/syncing effect on the CFP, CCP, and Readiness tiles. (DONE)
+- UI: Expanded tile width () in  to fix the Meg avatar cropping issue caused by odd-row staggering. (DONE)
+- Bug Fix: Removed the hardcoded 12pt minimum font rule from E&S PDF tree generation (), allowing the SVG to infinite-scale down to fit 1-page constraints perfectly. (DONE)
+- UI/UX: Added a Center button to the E&S Chart toolbar that zooms out and centers the tree. Made this fit-to-viewport action the default upon loading the CFP page. (DONE)
+- Bug Fix: Fixed EGA (Estate Guardian AI) failing to generate To-Do / IAC PDFs. Root cause was heavy tasks were hardcoded exclusively to  (which was rate-limited). Added a fallback ladder to  and . (DONE)
+- UI/UX: Added AI Model Badges inside Beneficiary Concierge (BEC) chat bubbles to show when xAI vs. fallback logic is triggered, proving to the user that xAI is working. (DONE)
+- Feature: Added a Print PDF generator button for the IAC (Immediate Action Checklist) page. (DONE)
+- UI: Added  text labels to EGA toolbar action icons for better desktop clarity. (DONE)
+- Bug Fix: Repaired ECT Onboarding Step 2 scrolling on iOS PWA by replacing  +  with a bulletproof fixed backdrop + absolute inner scroller container pattern. (DONE)
+- Feature Removal: Surgically deleted the Beneficiary Blocks summary banner and show/hide logic from  per user request. (DONE)
 
 **Earlier issues found/mentioned but not fixed**
-  *(None - all issues raised by the user were addressed in real-time.)*
+  *(None)*
 
 **Known issue recurrence from previous fork**
   - Issue recurrence in previous fork: 0
@@ -70,8 +67,8 @@
 **Code Architecture**
 React Frontend (PWA) / FastAPI Backend / MongoDB.
 - Strict offline sync architecture via Dexie.
-- xAI Integration utilizes a unified  loop and  utility.
-- Strict PWA handling requires considerations for iOS standalone quirks (e.g.,  resets ,  is blocked).
+-  handles custom 2D canvas layouts.
+-  strictly enforces SOC2 and Apple App Store compliance constraints locally (like no fonts under 11px).
 
 **Key Technical Concepts**
 - Zero-WARN Policy: 
@@ -89,8 +86,10 @@ React Frontend (PWA) / FastAPI Backend / MongoDB.
 1.  Backend ruff check ............ [0;32mPASS[0m
 2.  Backend ruff format ........... [0;32mPASS[0m
 3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
+3b. Hook deps TDZ guard ........... [0;32mPASS[0m
+3c. JSX duplicate-attr guard ...... [0;32mPASS[0m
 4.  Frontend build ................ [0;32mPASS[0m
-5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: 6ad1209487de)
+5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: a057d03ce38a)
 6.  MongoDB _id leak scan ......... [0;32mPASS[0m
 7.  Hardcoded secrets scan ........ [0;32mPASS[0m
 7b. Push-blocker secrets scan ..... [0;32mPASS[0m (no push-blocking secret patterns detected)
@@ -125,7 +124,7 @@ React Frontend (PWA) / FastAPI Backend / MongoDB.
 31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
 32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (110 indexes defined)
 33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
-34. [A1.2] Recent backend logs ..... [1;33mWARN[0m (1 recent error patterns in backend.err.log — review logs)
+34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
 35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
 36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
 37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
@@ -135,20 +134,21 @@ React Frontend (PWA) / FastAPI Backend / MongoDB.
 ------------------------------------------
 39. [iOS]   Capacitor sync ......... [0;32mPASS[0m (0 plugins for iOS)
 40. [iOS]   Native purchases plugin  [0;32mPASS[0m (package.json + Capacitor + Podfile, v^8.1.2)
-41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (37 products, no duplicates)
+41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (43 products, no duplicates)
 42. [iOS]   Stripe gated on iOS .... [0;32mPASS[0m (all Stripe redirects gated behind isNative)
 43. [iOS]   IAP imports present .... [0;32mPASS[0m (iap/useIAPPurchase + native imported in both subscription components)
 44. [iOS]   Apple disclosures ...... [0;32mPASS[0m (auto-renew, 24h cancel, Terms, Privacy, Restore)
 45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
 46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
 47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
-48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 85 JS bundles)
+48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 91 JS bundles)
 49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
 50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
 
-51. [React] Monolith size guard .... [0;36mNOTE[0m (2 file(s) over 1500 lines — refactor planned, see PRD)
+51. [React] Monolith size guard .... [0;36mNOTE[0m (3 file(s) over 1500 lines — refactor planned, see PRD)
     1571 /app/frontend/src/pages/BeneficiariesPage.js
-    1892 /app/frontend/src/pages/MessagesPage.js
+    1894 /app/frontend/src/pages/MessagesPage.js
+    2536 /app/frontend/src/components/financial/entities/EntityOrgChart.js
 [1mSECTION E: Mobile / PWA / iOS UX Compliance[0m
 ------------------------------------------
 52. [PWA]   viewport-fit=cover ..... [0;32mPASS[0m
@@ -169,6 +169,9 @@ React Frontend (PWA) / FastAPI Backend / MongoDB.
 64. [VCL]   Capacitor version sync .. [0;32mPASS[0m (all plugins aligned with @capacitor/core v8)
 65. [VCL]   Engine ignore flag ..... [0;32mPASS[0m (.yarnrc has --ignore-engines)
 66. [VCL]   Key peer deps .......... [0;32mPASS[0m
+67. [A1.2]  Smoke: preview ......... [0;32mPASS[0m (8/8 endpoints green)
+68. [A1.2]  Smoke: production ...... [0;36mINFO[0m (skipped — set PROD_API_URL to Railway backend origin)
+69. [A1.2]  Smoke: preview / admin . [0;32mPASS[0m (8/8 endpoints green)
 
 [1mSECTION G: Settings UI Primitives (Regression Guard)[0m
 ------------------------------------------
@@ -247,28 +250,31 @@ Vercel Deployment Reference:
 [1;33m📋 AGENT PRIME DIRECTIVE (RULE 0)[0m: Run this script after EVERY batch
    of changes — not just at finish, but after each set of edits.
    0 WARN + 0 FAIL is the only acceptable state before responding to the user.
-   See /app/memory/AGENT_RULES.md Rule 0 for full context. must ALWAYS return 0 errors/warnings.
-- Soft Deletes: The backend enforces CC8.1 soft delete standards. Avoid hard Mongo deletions () on primary user records without proper justification.
-- PWA Native Limitations: Avoid  and . Use custom React modals for all confirmations.
+   See /app/memory/AGENT_RULES.md Rule 0 for full context.
+
+[1;33mSTRICT MODE[0m: WARNs counted as failures. must ALWAYS return 0 errors/warnings. Treat warnings as hard failures.
+- iOS Standalone PWA Constraints: iOS handles scrolling inside fixed modal containers poorly. Always use absolute positioned scroll-containers inside fixed wrappers.
+- iOS Typography constraints: Never use fonts below  (Apple rejects it;  will block the push).
 
 **key DB schema**
-  - : Uses  and  (, , , ).
-  - : Uses soft-delete ().
+  - : Financial trusts/companies.
+  - : Groupings of beneficiaries for org charts.
+  - : Holds BEC chat history.
 
 **changes in tech stack**
   - None
 
 **All files of reference** 
-  -  (Dashboard tile sync logic, font scaling)
-  - ,  (Founder page logic)
-  -  (DTS quote 500 fix)
-  -  (ECT polling idempotency)
-  -  (Mobile nav hamburger menu)
-  - ,  (Delete/Clear features)
-  - ,  (PWA offline tile detection)
+  -  
+  -  
+  -  (Removed block banner from here)
+  -  (Fixed AI action fallback)
+  -  (Added BEC badges)
+  -  (Added IAC PDF button)
+  -  (Scroll fix)
 
 **Areas that need refactoring**:
-  - Backend codebase sweep for unsafe dictionary lookups (e.g.,  vs ) to prevent 500 errors.
+  -  (2500+ lines), ,  are flagged by housekeeping as too large. (DO NOT REFACTOR BEFORE THE LIVE PITCH).
 
 **key api endpoints**
   - 
@@ -276,8 +282,8 @@ Vercel Deployment Reference:
   - 
 
 **Critical Info for New Agent**
-- 🚨 **LIVE PITCH ENVIRONMENT:** The user is actively demoing the application to B2B prospects. Absolutely NO sweeping refactors or unprompted changes. Await explicit verification.
-- 🚨 **ZERO-WARN POLICY:** Run 
+- 🚨 **LIVE PITCH ENVIRONMENT:** The user is finalizing the app for a B2B demo. Absolutely NO sweeping refactors or unprompted feature additions.
+- 🚨 **HOUSEKEEPING SCRIPT:** Run 
 ==========================================
   CarryOn™ Housekeeping Protocol
   + SOC 2 Compliance Audit
@@ -292,8 +298,10 @@ Vercel Deployment Reference:
 1.  Backend ruff check ............ [0;32mPASS[0m
 2.  Backend ruff format ........... [0;32mPASS[0m
 3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
+3b. Hook deps TDZ guard ........... [0;32mPASS[0m
+3c. JSX duplicate-attr guard ...... [0;32mPASS[0m
 4.  Frontend build ................ [0;32mPASS[0m
-5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: ea8882ac600d)
+5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: a057d03ce38a)
 6.  MongoDB _id leak scan ......... [0;32mPASS[0m
 7.  Hardcoded secrets scan ........ [0;32mPASS[0m
 7b. Push-blocker secrets scan ..... [0;32mPASS[0m (no push-blocking secret patterns detected)
@@ -328,7 +336,7 @@ Vercel Deployment Reference:
 31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
 32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (110 indexes defined)
 33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
-34. [A1.2] Recent backend logs ..... [1;33mWARN[0m (1 recent error patterns in backend.err.log — review logs)
+34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
 35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
 36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
 37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
@@ -338,20 +346,21 @@ Vercel Deployment Reference:
 ------------------------------------------
 39. [iOS]   Capacitor sync ......... [0;32mPASS[0m (0 plugins for iOS)
 40. [iOS]   Native purchases plugin  [0;32mPASS[0m (package.json + Capacitor + Podfile, v^8.1.2)
-41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (37 products, no duplicates)
+41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (43 products, no duplicates)
 42. [iOS]   Stripe gated on iOS .... [0;32mPASS[0m (all Stripe redirects gated behind isNative)
 43. [iOS]   IAP imports present .... [0;32mPASS[0m (iap/useIAPPurchase + native imported in both subscription components)
 44. [iOS]   Apple disclosures ...... [0;32mPASS[0m (auto-renew, 24h cancel, Terms, Privacy, Restore)
 45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
 46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
 47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
-48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 85 JS bundles)
+48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 91 JS bundles)
 49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
 50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
 
-51. [React] Monolith size guard .... [0;36mNOTE[0m (2 file(s) over 1500 lines — refactor planned, see PRD)
+51. [React] Monolith size guard .... [0;36mNOTE[0m (3 file(s) over 1500 lines — refactor planned, see PRD)
     1571 /app/frontend/src/pages/BeneficiariesPage.js
-    1892 /app/frontend/src/pages/MessagesPage.js
+    1894 /app/frontend/src/pages/MessagesPage.js
+    2536 /app/frontend/src/components/financial/entities/EntityOrgChart.js
 [1mSECTION E: Mobile / PWA / iOS UX Compliance[0m
 ------------------------------------------
 52. [PWA]   viewport-fit=cover ..... [0;32mPASS[0m
@@ -372,6 +381,9 @@ Vercel Deployment Reference:
 64. [VCL]   Capacitor version sync .. [0;32mPASS[0m (all plugins aligned with @capacitor/core v8)
 65. [VCL]   Engine ignore flag ..... [0;32mPASS[0m (.yarnrc has --ignore-engines)
 66. [VCL]   Key peer deps .......... [0;32mPASS[0m
+67. [A1.2]  Smoke: preview ......... [0;32mPASS[0m (8/8 endpoints green)
+68. [A1.2]  Smoke: production ...... [0;36mINFO[0m (skipped — set PROD_API_URL to Railway backend origin)
+69. [A1.2]  Smoke: preview / admin . [0;32mPASS[0m (8/8 endpoints green)
 
 [1mSECTION G: Settings UI Primitives (Regression Guard)[0m
 ------------------------------------------
@@ -450,45 +462,51 @@ Vercel Deployment Reference:
 [1;33m📋 AGENT PRIME DIRECTIVE (RULE 0)[0m: Run this script after EVERY batch
    of changes — not just at finish, but after each set of edits.
    0 WARN + 0 FAIL is the only acceptable state before responding to the user.
-   See /app/memory/AGENT_RULES.md Rule 0 for full context. after every file edit. Fix warnings before proceeding.
-- 🚨 **PWA MODALS:** Do not use . It is silently blocked in iOS standalone PWA mode. Build custom UI modals.
+   See /app/memory/AGENT_RULES.md Rule 0 for full context.
+
+[1;33mSTRICT MODE[0m: WARNs counted as failures. after every file edit. The CI hook blocks all  attempts if any warnings/errors appear (such as fonts < 11px).
+- 🚨 **PWA SCROLL SAFETY:** Do not use  directly on  elements on mobile wrappers. iOS will freeze the scroll. 
 
 **documents and test reports created in this job**
-  - 
+  -  (Updated)
 
 **Last 10 User Messages and any pending HUMAN messages** 
- - *User*: Why do I only see Founder on the mobile PWA home page? (Fixed - Added mobile hamburger menu with all nav links)
- - *User*: Give me a way to clear out revoked users to the founder page in the invite tab in my Admin founder portal (Fixed - Built single/bulk delete tools)
- - *User*: I see the new buttons, but none of them work... (Fixed - Swapped native  for custom React modals due to PWA blocking)
- - *User*: I need a clear button for the Invite links as well please (Fixed)
- - *User*: On my iPad I don’t have the tile in settings to turn on offline mode... I used my portal switcher function... (Fixed - Adjusted PWA detection to cache via  to survive hard navigations).
- - *User (PENDING VERIFICATION)*: I still see sometimes the two tiles on the dashboard of CFP and CCP update and the meter update along with them after the page loads... (Agent deferred the visual reveal until the network response completes).
+ - *User*: Go back and start the 12pt fix and avatar crop... its Meg. Do I need to circle it?" (Fixed avatar sizing and font flooring).
+ - *User*: "yes. Also, give me a "Center" button that will center and zoom out on the E&S... Default to the tree showing all the way zoomed out" (Fixed).
+ - *User*: "EGA keeps failing at generating a To Do PDF. BEC feels canned... verify its leveraging xAI... Need PDF generator in IAC... give me a one/two word title for EGA icons on desktop (Fixed all - implemented heavy-action failover, badge tracking, PDF button, and icon labels).
+ - *User*: Failed to push to git: pre-push blocked — housekeeping reported 1 issue (Fixed - bumped  to ).
+ - *User*: The second page of the ECT info and instructions doesn’t scroll. (Fixed - removed direct fixed+overflow styling).
+ - *User*: If I tap on Trust Beneficiaries, it moves the tree out of frame. Please remove the Beneficiary Blocks feature entirely. Be very careful.
+ - *Agent*: (Asked to confirm if they meant the whole feature or just the banner UI).
+ - *User (PENDING VERIFICATION)*: Easy now. I just want to delete the button and functionality of the thing that is circled in these two screenshots [The Summary Banner]. Confirm before doing anything. (Agent successfully deleted just the summary banner).
 
 **Project Health Check:**
   - Broken: Apple IAP (Blocked), Twilio SMS (Blocked).
   - Mocked: None.
 
 **3rd Party Integrations**
-	 •	xAI (Grok) — LIVE (uses Emergent LLM Key)
-	 •	Resend (Emails) — LIVE (uses Env variable)
-	 •	Stripe (Payments) — LIVE (uses User API Key)
-	 •	Google Places API — LIVE (uses Env Variable)
-     •	Sentry (Error Monitoring) — LIVE (uses Env Variable)
+  - xAI (Grok) — LIVE (uses Emergent LLM Key)
+  - Resend (Emails) — LIVE (uses Env variable)
+  - Stripe (Payments) — LIVE (uses User API Key)
+  - Google Places API — LIVE (uses Env Variable)
+  - Sentry (Error Monitoring) — LIVE (uses Env Variable)
+  - AWS S3 (Emergent Object Storage) — LIVE (uses Backend  credentials)
 
 **Testing status**
-  - Testing agent used after significant changes: NO (Rapid fixes executed during a live user demo; manual testing utilized).
+  - Testing agent used after significant changes: NO (Iterative visual/B2B pitch rapid-fixes).
   - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: 
+  - Test files created: None
   - Known regressions: None
 
 **Credentials to test flow:**
-  -  /  (Admin)
+  - Refer to 
   -  /  (Pitch account)
-  -  /  (Test invitee)
+  -  /  (Admin)
 
 **What agent forgot to execute**
-  - All user directives were fully handled. The agent is waiting on the user to verify the Dashboard tile jump fix.
+  - Agent addressed all points. User just needs to verify the UI without the Beneficiary Blocks summary banner.
 
 **Debugging checklist for current issue**
-    Issue: Wait for User verification on the Dashboard tile jump fix. 
-    Frontend files to check:  (Lines regarding  and )</analysis>
+    Issue: Wait for user verification on the removal of the Beneficiary Block summary banner in the E&S chart.
+    Frontend files to check: 
+    Backend files to check: N/A</analysis>

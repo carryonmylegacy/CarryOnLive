@@ -53,8 +53,8 @@ TARGETS = {
         "api": "https://carryon-api-production.up.railway.app",
     },
     "preview": {
-        "frontend": "https://polish-pitch.preview.emergentagent.com",
-        "api": "https://polish-pitch.preview.emergentagent.com",
+        "frontend": "https://org-chart-fix-2.preview.emergentagent.com",
+        "api": "https://org-chart-fix-2.preview.emergentagent.com",
     },
 }
 
