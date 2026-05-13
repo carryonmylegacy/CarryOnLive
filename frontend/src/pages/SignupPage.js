@@ -80,6 +80,7 @@ const SignupPage = () => {
   // appears, so `/partners/redeem-code` (auth-required) just works.
   const [partnerCodeInput, setPartnerCodeInput] = useState('');
   const [partnerLandingCompany, setPartnerLandingCompany] = useState('');
+  const [partnerLandingLogo, setPartnerLandingLogo] = useState('');
   const [applyingPartnerCode, setApplyingPartnerCode] = useState(false);
   const [partnerCodeError, setPartnerCodeError] = useState('');
   const [partnerCodeApplied, setPartnerCodeApplied] = useState(null);
@@ -235,7 +236,10 @@ const SignupPage = () => {
       const stashedSlug = localStorage.getItem('cy_partner_slug');
       if (stashedSlug) {
         axios.get(`${API_URL}/public/partners/${stashedSlug}`)
-          .then(r => setPartnerLandingCompany(r.data?.company_name || ''))
+          .then(r => {
+            setPartnerLandingCompany(r.data?.company_name || '');
+            setPartnerLandingLogo(r.data?.logo_data_url || '');
+          })
           .catch(() => { /* partner deactivated since landing — silent */ });
       }
     } catch { /* private mode → skip */ }
@@ -599,7 +603,7 @@ const SignupPage = () => {
       {/* NAV */}
       <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)', background: 'rgba(8,14,26,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-          <Link to="/login"><img src="/carryon-logo.png" alt="CarryOn" className="h-12" /></Link>
+          <Link to="/login"><img src={partnerLandingLogo || "/carryon-logo.png"} alt={partnerLandingCompany || "CarryOn"} className="h-12" /></Link>
           <Link to="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
             Sign In <ChevronRight className="w-3.5 h-3.5" />
           </Link>
@@ -628,11 +632,11 @@ const SignupPage = () => {
             }}>
               <div className="flex items-start gap-8">
                 <div className="flex-shrink-0">
-                  <img src="/carryon-logo.png" alt="CarryOn" className="w-[220px] h-auto" />
+                  <img src={partnerLandingLogo || "/carryon-logo.png"} alt={partnerLandingCompany || "CarryOn"} className="w-[220px] h-auto" />
                 </div>
                 <div className="flex-1 pt-2">
                   <h1 className="text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'var(--sans)' }}>
-                    Join CarryOn.
+                    Join {partnerLandingCompany || 'CarryOn'}.
                     <span className="block text-[#d4af37] mt-1">Protect Your Estate Plan.</span>
                   </h1>
                   <p className="text-[#7b879e] text-base max-w-sm leading-relaxed mb-6">
@@ -657,7 +661,7 @@ const SignupPage = () => {
               transition: 'opacity 0.6s ease 0.1s',
             }}>
               <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight mb-0.5" style={{ fontFamily: 'var(--sans)' }}>
-                Join CarryOn. <span className="text-[#d4af37]">Protect Your Estate Plan.</span>
+                Join {partnerLandingCompany || 'CarryOn'}. <span className="text-[#d4af37]">Protect Your Estate Plan.</span>
               </h1>
               <p className="text-[#6b7a90] text-xs">Create your account in seconds</p>
             </div>
