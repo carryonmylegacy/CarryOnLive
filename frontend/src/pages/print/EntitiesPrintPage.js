@@ -225,6 +225,53 @@ export default function EntitiesPrintPage() {
     const legendPos = overrides.__legend__ || { x: -LEGEND_W - 24, y: 0 };
     tileRects.push({ key: '__legend__', x: legendPos.x, y: legendPos.y, w: LEGEND_W, h: computedLegendH });
 
+    // Print-only collision auto-resolve. Live-canvas tiles can be
+    // laid out by the user in ways that look fine on a wide screen
+    // but overlap once the whole composition is scaled down to fit a
+    // single letter page (cluster tiles especially — they can grow
+    // tall after a new member is added without the user nudging the
+    // siblings out of the way). We run a small iterative pass to
+    // detect any two overlapping rects and slide the LATER one
+    // downward by the overlap amount plus an 8-px gutter, until the
+    // graph is collision-free or we hit the safety iteration cap.
+    //
+    // The legend is treated as immovable (the user placed it
+    // explicitly; never auto-move it). Real tiles that collide with
+    // the legend are pushed instead. PRINT_OVERLAP_PAD is kept
+    // tighter than live-canvas spacing because every extra pixel
+    // here compresses the whole chart further once bbScale fits it
+    // to the page.
+    const PRINT_OVERLAP_PAD = 8;
+    const COLLISION_ITER_CAP = 6;
+    for (let iter = 0; iter < COLLISION_ITER_CAP; iter++) {
+      let moved = false;
+      for (let i = 0; i < tileRects.length; i++) {
+        for (let j = 0; j < i; j++) {
+          const a = tileRects[i];
+          const b = tileRects[j];
+          const xo = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+          const yo = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+          if (xo > 0 && yo > 0) {
+            // Choose which rect to nudge. Legend is anchored — never
+            // moved. Otherwise the rect with the LARGER y wins the
+            // nudge (move whichever was already lower, further down)
+            // so the visual stack order tends to preserve the user's
+            // intent.
+            const pushA = b.key === '__legend__'
+              ? true
+              : (a.key === '__legend__' ? false : a.y >= b.y);
+            if (pushA) {
+              a.y += yo + PRINT_OVERLAP_PAD;
+            } else {
+              b.y += yo + PRINT_OVERLAP_PAD;
+            }
+            moved = true;
+          }
+        }
+      }
+      if (!moved) break;
+    }
+
     // Pre-route every edge so we can fold the routed polyline points
     // and the ownership-% badge box into the bbox. Edge routing
     // detours around obstacles via `hit.y + hit.h + 14` style jumps —

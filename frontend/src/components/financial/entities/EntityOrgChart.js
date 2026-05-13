@@ -60,15 +60,15 @@ const CORNER_R = 10;         // rounded-corner radius
 // entity (the individual avatars carry no edges of their own).
 const CLUSTER_AVATAR = 36;
 const CLUSTER_SLOT_W = 50;          // per-member horizontal slot
-const CLUSTER_SLOT_H = 60;          // per-member vertical slot
+const CLUSTER_SLOT_H = 66;          // per-member vertical slot (avatar 36 + label ~14 + safety buffer 16)
 const CLUSTER_COLS = 5;
 const CLUSTER_HEADER_H = 22;        // entity-label strip above the grid
 const CLUSTER_PAD_X = 10;
-const CLUSTER_PAD_Y = 8;
+const CLUSTER_PAD_Y = 10;
 const CLUSTER_W = CLUSTER_PAD_X * 2 + CLUSTER_COLS * CLUSTER_SLOT_W; // 270
 const clusterHeight = (memberCount) => {
   const rows = Math.max(1, Math.ceil(memberCount / CLUSTER_COLS));
-  return CLUSTER_HEADER_H + CLUSTER_PAD_Y * 2 + rows * CLUSTER_SLOT_H + 4;
+  return CLUSTER_HEADER_H + CLUSTER_PAD_Y * 2 + rows * CLUSTER_SLOT_H;
 };
 
 // LocalStorage key for per-estate position overrides
@@ -846,6 +846,7 @@ function ClusterTile({ node, dragging, locked, onPointerDownDrag, onClick, entit
           right: CLUSTER_PAD_X,
           bottom: CLUSTER_PAD_Y,
           pointerEvents: 'none',
+          overflow: 'hidden',
         }}
       >
         {members.map((m, i) => {
@@ -859,7 +860,17 @@ function ClusterTile({ node, dragging, locked, onPointerDownDrag, onClick, entit
             <div
               key={m.id}
               className="absolute flex flex-col items-center"
-              style={{ left, top, width: CLUSTER_AVATAR + 4 }}
+              style={{
+                left,
+                top,
+                width: CLUSTER_AVATAR + 4,
+                // Pin slot height so unusually long first-names (or
+                // weird unicode) can't push the label past the slot's
+                // allotted vertical space and bleed onto the next row
+                // or out of the cluster tile entirely.
+                height: CLUSTER_SLOT_H - 4,
+                overflow: 'hidden',
+              }}
             >
               <AvatarCircle
                 photo={m.photo}
@@ -916,7 +927,7 @@ export const PRINT_TILE_DIMENSIONS = {
 export default function EntityOrgChart({
   estateId, entities, externals, relationships, beneficiaries, blocks,
   onSingleClickNode, onDoubleClickNode, onInfoClickNode, onEditClickNode,
-  onDeleteNode, onEditBlockClick,
+  onDeleteNode, onEditBlockClick, onHiddenChange,
   cleanUpSignal, locked = false, readOnly = false, fitOnLoad = false,
   legendHidden = false, onHideLegend,
   serverOverrides, onSaveLayout,
@@ -1008,6 +1019,16 @@ export default function EntityOrgChart({
     setHiddenKeys(new Set());
     try { window.localStorage?.removeItem(HIDDEN_KEY(estateId)); } catch { /* quota */ }
   }, [estateId]);
+
+  // Bubble hidden-tile state up to the parent so the toolbar can
+  // render an always-visible "Show N hidden" pill. We pass `count`
+  // and a stable `showAll` callback. Parent decides where/how to
+  // render the affordance — keeping it in the toolbar (rather than
+  // floating inside the scrollable chart) means it stays visible no
+  // matter how the user has panned/zoomed.
+  useEffect(() => {
+    onHiddenChange?.({ count: hiddenKeys.size, showAll: showAllHidden });
+  }, [hiddenKeys, showAllHidden, onHiddenChange]);
 
   // Per-tile remove modal. When the user clicks the × on any tile,
   // we don't act immediately — we open a small confirm dialog with
@@ -2075,32 +2096,12 @@ export default function EntityOrgChart({
         </div>
       )}
 
-      {/* Hidden-tiles pill — appears whenever the user has dismissed
-          one or more tiles from the chart. Click to restore all. */}
-      {hiddenKeys.size > 0 && (
-        <button
-          type="button"
-          onClick={showAllHidden}
-          className="absolute z-40 flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-bold whitespace-nowrap transition-colors hover:bg-[rgba(212,165,55,0.18)]"
-          style={{
-            top: roleFilter ? 44 : 8,
-            right: 8,
-            background: 'rgba(11,17,32,0.92)',
-            border: '1px solid var(--gold)',
-            color: 'var(--gold)',
-            backdropFilter: 'blur(8px)',
-            boxShadow: '0 4px 18px rgba(0,0,0,0.45), 0 0 14px rgba(212,165,55,0.35)',
-            position: 'sticky',
-          }}
-          data-testid="entity-hidden-tiles-pill"
-          aria-label={`Show ${hiddenKeys.size} hidden tile${hiddenKeys.size === 1 ? '' : 's'}`}
-          title="Restore all hidden tiles"
-        >
-          <span>{hiddenKeys.size} hidden</span>
-          <span style={{ opacity: 0.7 }}>·</span>
-          <span style={{ color: '#fff' }}>Show all</span>
-        </button>
-      )}
+      {/* Hidden-tiles pill lives in the parent toolbar now (via
+          `onHiddenChange`) so it stays visible regardless of pan
+          /zoom. The in-chart sticky pill used to only appear when
+          the user had panned the right side of the chart into view,
+          which made it effectively invisible at 1× zoom on wide
+          estates. */}
 
       {/* Outer pan-margin layer. Sized in screen pixels (outerW × zoom)
           so the parent's overflow:auto gets correct scroll bounds.

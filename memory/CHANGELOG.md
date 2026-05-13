@@ -1,6 +1,56 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — E&S Toolbar Cleanup, Print Collision Auto-Resolve, Cluster Bleed Fix
+
+### Need (verbatim, screenshot context)
+1. "One of the avatars and their name is bleeding over the border of the tile. This should never happen." (TRUST BENEFICIARIES cluster, bottom row).
+2. "The button to see any hidden person is only viewable when I click Fit Tree...which I now think is a useless feature. I always only view the Tree centered." — Remove Fit Tree, always default to centered, always-visible "Show N hidden" pill.
+3. "Make the 'show hidden' button and the 'Beneficiary Blocks (1) show' button look the same...we have too many buttons that look different."
+4. "Don't have any of the pill buttons in gold except for the '+Add' button. They should all be white and just flash gold when tapped/clicked. I'm talking the List, Lock, Reset Layout, Expand, and Print buttons. Don't change the 'Share' button as that becomes full gold when the E&S is actively being shared." Plus the Legend button.
+5. "Delete the 'Clean Up' button as well and any associated code."
+6. Carry-over: "Add tile-collision auto-resolve for print." (from the previous turn's offered improvement, user said "Yes, add that.")
+
+### Change
+- **`EntityOrgChart.js` cluster bleed fix**:
+  - `CLUSTER_SLOT_H` 60 → 66 (extra 6px safety buffer per row).
+  - `CLUSTER_PAD_Y` 8 → 10 (extra 2px top + bottom inside the tile).
+  - Removed the stale `+4` from `clusterHeight` since the buffer is now baked into SLOT_H.
+  - Each member slot div now has an explicit `height: CLUSTER_SLOT_H - 4` + `overflow: hidden` so unusually long first-names or weird unicode glyphs can't push the label past its allotted vertical space.
+  - Outer member-grid container also got `overflow: hidden` as a belt-and-braces second clip.
+
+- **`EntityOrgChart.js` hidden-tiles lift**:
+  - Removed the in-chart `position: sticky` pill (only worked when the user had panned the right edge into view — explaining the user's "only visible in Fit Tree" complaint).
+  - New `onHiddenChange` prop bubbles `{count, showAll}` to the parent whenever `hiddenKeys` changes.
+  - `showAllHidden` is now wrapped in `useCallback` so the prop callback signature is stable.
+
+- **`EntitiesSection.js` toolbar consolidation**:
+  - **Deleted**: Fit Tree button (+ `fitOnLoad` state + `FIT_KEY` localStorage helper + the `useEffect` that re-reads the preference on `estateId` change + `toggleFit` handler + the `fitOnLoad` prop passed to the chart). Chart now always opens 1× centered.
+  - **Deleted**: Clean Up button (+ `cleanUpSignal` state + the `cleanUpSignal` prop passed to the chart).
+  - **Deleted imports**: `Wand2`, `Frame`, `Crosshair` (all only used by the deleted buttons).
+  - **Restyled** every remaining toolbar pill (List, Lock, Reset layout, Expand, Legend, Print) to a SHARED neutral style: white text+border with hover brighten, gold flash on `:active`. Lock no longer renders gold-filled when locked — uses the Lock/Unlock icon glyph to signal state instead.
+  - **New "Show N hidden" pill** in the same toolbar row, identical styling. Wired to the new `onHiddenChange` from the chart.
+
+- **`EntitiesSection.js` Beneficiary Blocks summary card restyle** (now matches the new toolbar pill style):
+  - Outer card: dropped gold border/bg → uses neutral `var(--bg2)` + `var(--b)`.
+  - Header label color: gold → `var(--t3)` (matches toolbar pills).
+  - "Show / Hide" toggle: now a proper white pill with hover treatment (was a bare text glyph).
+  - Per-block "N× linked" badge: gold → teal `#22C993` to match the named-block teal palette everywhere else.
+  - Attached-to entity-name inline color: gold → `var(--t3)`.
+  - Removed gold hover (`hover:bg-[rgba(212,175,55,0.10)]`).
+
+- **`EntitiesPrintPage.js` collision auto-resolve**:
+  - New iterative pass (≤6 iterations, O(n²) per iter — fine for the chart sizes we ship) over all `tileRects`. Detects any two rects that overlap in both X and Y and nudges the LATER one (the one with the larger Y) downward by the overlap amount + an 8-px gutter until the layout is collision-free or the iteration cap kicks in.
+  - The legend pseudo-tile is treated as **immovable** — colliding real tiles get pushed instead.
+  - Runs BEFORE the `rectByKey` build, so all downstream consumers (edge routing, bbox calc, render) automatically read the resolved positions.
+
+### Verified
+- `bash /app/housekeeping.sh` → **0 FAIL, 0 WARN**.
+- ESLint on all 3 changed files → **0 errors**.
+- Smoke test: app loads cleanly; deleted toolbar buttons no longer queryable; routing intact.
+
+
+
 ## Feb 14, 2026 — Print SVG Text Overflow Fix (adaptive truncation)
 
 ### Need (user complaint + screenshot)

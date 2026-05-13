@@ -9,7 +9,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { notify } from '../../AppNotification';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Wand2, Lock, Unlock, Frame, Crosshair, Map, Printer, Users } from 'lucide-react';
+import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Lock, Unlock, Map, Printer, Users } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Button } from '../../ui/button';
 import { API_URL } from '../../../config';
@@ -25,11 +25,6 @@ import BlockEditModal from './BlockEditModal';
 
 const DRAFT_KEY = (estateId) => `cfp:entityWizard:draft:${estateId || 'global'}`;
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
-// Per-estate preference: should the E&S chart open zoomed-out to fit
-// the whole tree, or 1× centered on the benefactor? Persists across
-// reloads so users with sprawling structures don't have to re-toggle.
-const FIT_KEY = (estateId) => `cfp:entities:fit-on-load:${estateId || 'global'}`;
-
 export default function EntitiesSection({ estateId, beneficiaries, onEntitiesChanged, openEntityId }) {
   const { user, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
@@ -68,7 +63,6 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   }, []);
   const [resetTick, setResetTick] = useState(0);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [cleanUpSignal, setCleanUpSignal] = useState(0);
   // Auto-lock the chart on every CFP mount. This means panning around
   // (single-finger swipe / two-finger trackpad scroll) never
   // accidentally drags a tile when the user just came back from
@@ -77,15 +71,12 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   // previously-persisted unlocked state — locked is the safe default
   // every time CFP appears.
   const [locked, setLocked] = useState(true);
-  // "Open the chart fit-to-screen" preference. Default = false (open at
-  // 1× centered on the benefactor — feels right for small trees). Users
-  // with bigger structures can flip it on and we remember per estate.
-  // Default view = Centered (1× centered on the benefactor). Users who
-  // previously opted into Fit Tree (localStorage value === '1') keep it.
-  const [fitOnLoad, setFitOnLoad] = useState(() => {
-    try { return window.localStorage?.getItem(FIT_KEY(estateId)) === '1'; }
-    catch { return false; }
-  });
+  // Hidden-tiles state lifted up from EntityOrgChart so the
+  // "Show N hidden" pill can render in the toolbar (always visible)
+  // instead of floating inside the scrollable chart (which was only
+  // visible in fit-tree mode). The chart bubbles updates via
+  // `onHiddenChange`.
+  const [hiddenInfo, setHiddenInfo] = useState({ count: 0, showAll: () => {} });
   // Legend visibility — persists per estate so the user's last
   // preference survives a portal switch / hard reload.
   const [legendHidden, setLegendHidden] = useState(() => EntityLegend.readHiddenForEstate(estateId));
@@ -95,17 +86,6 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   const showLegend = () => {
     EntityLegend.writeHiddenForEstate(estateId, false);
     setLegendHidden(false);
-  };
-  useEffect(() => {
-    try { setFitOnLoad(window.localStorage?.getItem(FIT_KEY(estateId)) === '1'); }
-    catch { setFitOnLoad(false); }
-  }, [estateId]);
-  const toggleFit = () => {
-    setFitOnLoad((prev) => {
-      const next = !prev;
-      try { window.localStorage?.setItem(FIT_KEY(estateId), next ? '1' : '0'); } catch { /* quota */ }
-      return next;
-    });
   };
 
   // Re-arm the lock whenever the estate changes too (covers
@@ -434,10 +414,16 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           </div>
         </div>
         <div className="flex items-center gap-1.5">
+          {/* Shared pill style — neutral white text+border, gold flash
+              on tap (`active:` state). Per user instruction every
+              toolbar button uses this EXCEPT the "+ Add" CTA (full
+              gold, primary action) and the Sharing pill (turns gold
+              when actively sharing — that gold state is a useful
+              live-share indicator). */}
+          {/* eslint-disable-next-line no-unused-vars */}
           <button
             onClick={() => setViewMode((v) => v === 'chart' ? 'list' : 'chart')}
-            className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
-            style={{ color: 'var(--t3)', border: '1px solid var(--b)' }}
+            className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(212,165,55,0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
             data-testid="entities-toggle-view"
             title={viewMode === 'chart' ? 'Switch to list view' : 'Switch to chart view'}
             aria-label={viewMode === 'chart' ? 'List view' : 'Chart view'}
@@ -448,35 +434,8 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           </button>
           {viewMode === 'chart' && (
             <button
-              onClick={toggleFit}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
-              style={{
-                color: fitOnLoad ? 'var(--gold)' : 'var(--t3)',
-                border: fitOnLoad ? '1px solid rgba(212,165,55,0.4)' : '1px solid var(--b)',
-              }}
-              data-testid="entities-toggle-fit"
-              title={fitOnLoad ? 'Currently: open zoomed-out to fit the whole tree. Tap to switch to 1× centered on you.' : 'Currently: open 1× centered on you. Tap to switch to fit-the-whole-tree.'}
-              aria-label={fitOnLoad ? 'Switch to centered open' : 'Switch to fit-tree open'}
-              aria-pressed={fitOnLoad}
-            >
-              {fitOnLoad ? <Frame className="w-3 h-3" /> : <Crosshair className="w-3 h-3" />}
-              <span className="hidden sm:inline">{fitOnLoad ? 'Fit tree' : 'Centered'}</span>
-            </button>
-          )}
-          {viewMode === 'chart' && (
-            <button
               onClick={toggleLocked}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-all whitespace-nowrap"
-              style={locked ? {
-                color: '#1A1A1A',
-                background: 'var(--gold)',
-                border: '1px solid var(--gold)',
-                boxShadow: '0 0 12px rgba(212,165,55,0.55), 0 0 24px rgba(212,165,55,0.25)',
-              } : {
-                color: 'var(--t4)',
-                background: 'transparent',
-                border: '1px solid var(--b)',
-              }}
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(212,165,55,0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-toggle-lock"
               title={locked ? 'Unlock tile positions' : 'Lock tile positions'}
               aria-label={locked ? 'Unlock tile positions' : 'Lock tile positions'}
@@ -488,27 +447,8 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           )}
           {viewMode === 'chart' && (
             <button
-              onClick={() => setCleanUpSignal((t) => t + 1)}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
-              style={{
-                color: 'var(--gold)',
-                border: '1px solid rgba(212,165,55,0.4)',
-              }}
-              data-testid="entities-cleanup"
-              title="Snap tiles to a logical grid (works while locked too)"
-              aria-label="Clean up layout"
-            >
-              <Wand2 className="w-3 h-3" /><span className="hidden sm:inline">Clean Up</span>
-            </button>
-          )}
-          {viewMode === 'chart' && (
-            <button
               onClick={() => setShowResetConfirm(true)}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
-              style={{
-                color: 'var(--t3)',
-                border: '1px solid var(--b)',
-              }}
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(212,165,55,0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-reset-layout"
               title="Reset tile positions to auto-layout (works while locked too)"
               aria-label="Reset layout"
@@ -519,8 +459,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           {viewMode === 'chart' && (
             <button
               onClick={() => setExpanded((x) => !x)}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
-              style={{ color: 'var(--t3)', border: '1px solid var(--b)' }}
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(212,165,55,0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-toggle-expand"
               title={expanded ? 'Collapse' : 'Expand'}
               aria-label={expanded ? 'Collapse' : 'Expand'}
@@ -528,14 +467,22 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
               <Maximize2 className="w-3 h-3" /><span className="hidden sm:inline">{expanded ? 'Collapse' : 'Expand'}</span>
             </button>
           )}
+          {viewMode === 'chart' && hiddenInfo.count > 0 && (
+            <button
+              onClick={hiddenInfo.showAll}
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(212,165,55,0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
+              data-testid="entities-show-hidden"
+              title={`Restore all ${hiddenInfo.count} hidden tile${hiddenInfo.count === 1 ? '' : 's'}`}
+              aria-label={`Show ${hiddenInfo.count} hidden tile${hiddenInfo.count === 1 ? '' : 's'}`}
+            >
+              <span className="hidden sm:inline">Show {hiddenInfo.count} hidden</span>
+              <span className="sm:hidden">{hiddenInfo.count} hidden</span>
+            </button>
+          )}
           {viewMode === 'chart' && legendHidden && (
             <button
               onClick={showLegend}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
-              style={{
-                color: 'var(--gold)',
-                border: '1px solid rgba(212,165,55,0.4)',
-              }}
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(212,165,55,0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-show-legend"
               title="Show legend"
               aria-label="Show legend"
@@ -555,11 +502,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                 // the live chart on a single tap.
                 navigate(`/financial/entities/${estateId}/print`);
               }}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
-              style={{
-                color: 'var(--gold)',
-                border: '1px solid rgba(212,165,55,0.4)',
-              }}
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(212,165,55,0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-print-button"
               title="Print as PDF (8.5×11)"
               aria-label="Print"
@@ -592,23 +535,25 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
       {(blocks || []).length > 0 && (
         <div
           className="mb-2 rounded-lg overflow-hidden"
-          style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.35)' }}
+          style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}
           data-testid="blocks-summary-card"
         >
           <button
             type="button"
             onClick={() => setBlocksExpanded((v) => !v)}
-            className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left hover:bg-[rgba(212,175,55,0.08)]"
+            className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left hover:bg-[var(--card)] active:bg-[rgba(212,165,55,0.18)] transition-colors"
             data-testid="blocks-summary-toggle"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <Users className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#D4AF37' }} />
-              <span className="text-[12px] font-bold uppercase tracking-wide truncate" style={{ color: '#D4AF37' }}>
+              <Users className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#22C993' }} />
+              <span className="text-[12px] font-bold uppercase tracking-wide truncate" style={{ color: 'var(--t3)' }}>
                 Beneficiary blocks ({(blocks || []).length})
               </span>
             </div>
-            <span className="text-[11px] font-bold" style={{ color: 'var(--t4)' }}>
-              {blocksExpanded ? '▾ Hide' : '▸ Show'}
+            <span
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)]"
+            >
+              {blocksExpanded ? 'Hide' : 'Show'}
             </span>
           </button>
           {blocksExpanded && (
@@ -631,7 +576,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                       setBlocksExpanded(true);
                       focusOnBlock(b.id);
                     }}
-                    className="w-full text-left flex items-start justify-between gap-3 px-2 py-1.5 rounded-md hover:bg-[rgba(212,175,55,0.10)] transition-colors"
+                    className="w-full text-left flex items-start justify-between gap-3 px-2 py-1.5 rounded-md hover:bg-[var(--card)] transition-colors"
                     style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}
                     data-testid={`blocks-summary-row-${b.id}`}
                   >
@@ -640,7 +585,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                       <div className="text-[11px] truncate" style={{ color: 'var(--t4)' }}>
                         {(b.members || []).length} member{(b.members || []).length === 1 ? '' : 's'}
                         {attachedNames.length > 0 && (
-                          <> · attached to <span style={{ color: 'var(--gold)' }}>{attachedNames.join(', ')}</span></>
+                          <> · attached to <span style={{ color: 'var(--t3)' }}>{attachedNames.join(', ')}</span></>
                         )}
                         {attachedEntityIds.length === 0 && (
                           <> · <span style={{ color: 'var(--t3)' }}>not attached to any entity yet</span></>
@@ -649,7 +594,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                     </div>
                     <span
                       className="text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0"
-                      style={{ background: 'rgba(212,175,55,0.12)', color: 'var(--gold)', border: '1px solid rgba(212,175,55,0.4)' }}
+                      style={{ background: 'rgba(34,201,147,0.12)', color: '#22C993', border: '1px solid rgba(34,201,147,0.55)' }}
                     >
                       {attachedEntityIds.length}× linked
                     </span>
@@ -719,9 +664,8 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                 });
               }
             }}
-            cleanUpSignal={cleanUpSignal}
             locked={locked}
-            fitOnLoad={fitOnLoad}
+            onHiddenChange={setHiddenInfo}
             legendHidden={legendHidden}
             onHideLegend={() => {
               EntityLegend.writeHiddenForEstate(estateId, true);
