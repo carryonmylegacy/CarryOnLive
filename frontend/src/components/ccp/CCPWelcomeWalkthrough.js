@@ -3,12 +3,14 @@ import {
   Shield, FileText, AlertTriangle, UserCheck, Play, Zap, MapPin, Clock,
   ArrowRight, ArrowLeft, Check,
 } from 'lucide-react';
+import { useLabelCleaner } from '../../utils/brandLabel';
 
 /**
  * CCPWelcomeWalkthrough — 3-step intro overlay for first-visit CCP users.
  * Large tile with all corners rounded. Scrollable on small screens.
  */
 const CCPWelcomeWalkthrough = ({ welcomeStep, setWelcomeStep, onDismiss }) => {
+  const cleanLabel = useLabelCleaner();
   const dismiss = () => {
     onDismiss();
     localStorage.setItem('carryon_ccp_intro_seen', '1');
@@ -68,7 +70,7 @@ const CCPWelcomeWalkthrough = ({ welcomeStep, setWelcomeStep, onDismiss }) => {
         <div className="flex items-center justify-center mb-4">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
             <Shield className="w-3.5 h-3.5" style={{ color: '#d4af37' }} />
-            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#d4af37' }}>Contingency Protocols (CCP)</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#d4af37' }}>{cleanLabel('Contingency Protocols (CCP)')}</span>
           </div>
         </div>
 

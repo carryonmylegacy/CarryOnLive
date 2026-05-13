@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useLabelCleaner } from '../../../utils/brandLabel';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
@@ -74,6 +75,7 @@ export default function EntityWizard({
   onCancel,
 }) {
   const { getAuthHeaders } = useAuth();
+  const cleanLabel = useLabelCleaner();
   const [step, setStep] = useState(1);
   const [bucketId, setBucketId] = useState(null);
   // pendingBucketId = highlighted (selected but not yet committed). User
@@ -729,7 +731,7 @@ export default function EntityWizard({
 
               {/* Linked SDV documents */}
               <div className="space-y-2">
-                <Label className="text-[var(--t4)]">Linked documents (SDV)</Label>
+                <Label className="text-[var(--t4)]">{cleanLabel('Linked documents (SDV)')}</Label>
                 <DocumentLinker
                   value={linkedDocIds}
                   onChange={setLinkedDocIds}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLabelCleaner } from '../../utils/brandLabel';
 import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft, Users, Settings, Sparkles, KeyRound, Bell, Scale, Info, BookOpen } from 'lucide-react';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Switch } from '../../components/ui/switch';
@@ -17,6 +18,7 @@ import BeneficiaryPreTransitionPanel from '../../components/beneficiary/Benefici
 
 const BeneficiaryDashboardPage = () => {
   const { user, getAuthHeaders, refreshEnabledFeatures } = useAuth();
+  const cleanLabel = useLabelCleaner();
   const navigate = useNavigate();
   const [estate, setEstate] = useState(null);
   const [allEstates, setAllEstates] = useState([]);
@@ -452,7 +454,7 @@ const BeneficiaryDashboardPage = () => {
         {/* Checklist Preview */}
         {(myPerms?.feature_access?.iac_access !== false) && (
         <div className="glass-card p-4 lg:p-5" style={{ borderLeft: '3px solid var(--yw)' }}>
-          <h3 className="font-bold text-[var(--yw)] mb-3">Immediate Action Checklist (IAC)</h3>
+          <h3 className="font-bold text-[var(--yw)] mb-3">{cleanLabel('Immediate Action Checklist (IAC)')}</h3>
           <div className="h-2 bg-[var(--b)] rounded-full overflow-hidden mb-3">
             <div className="h-full rounded-full" style={{ width: `${stats.checklists > 0 ? (stats.checklistsDone / stats.checklists) * 100 : 0}%`, background: 'linear-gradient(90deg, #10B981, #34D399)' }} />
           </div>
@@ -492,7 +494,7 @@ const BeneficiaryDashboardPage = () => {
         {(myPerms?.feature_access?.mm_access !== false) && (
         <div className="glass-card p-4 lg:p-5 lg:col-span-2" style={{ borderLeft: '3px solid var(--pr2)' }}>
           <div className="flex justify-between mb-3">
-            <h3 className="font-bold text-[var(--pr2)]">Milestone Messages (MM)</h3>
+            <h3 className="font-bold text-[var(--pr2)]">{cleanLabel('Milestone Messages (MM)')}</h3>
             <span className="text-xs text-[var(--t5)]">{stats.messages} messages</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

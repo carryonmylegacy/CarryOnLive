@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { useLabelCleaner } from '../utils/brandLabel';
 import { useDebouncedRefetch } from '../hooks/useDebouncedRefetch';
 import {
   Heart, Plus, Edit2, Trash2, Loader2, Phone, Mail,
@@ -21,6 +22,7 @@ const EMPTY_FORM = { name: '', phone: '', email: '', address: '', relationship: 
 
 export default function FFNPage() {
   const { getAuthHeaders } = useAuth();
+  const cleanLabel = useLabelCleaner();
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [estateId, setEstateId] = useState(null);
@@ -192,7 +194,7 @@ export default function FFNPage() {
             <Heart className="w-5 h-5 text-[#ec4899]" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Family &amp; Friends Notification (FFN)</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>{cleanLabel('Family & Friends Notification (FFN)')}</h1>
             <p className="text-xs text-[var(--t5)]">{contacts.length} contact{contacts.length !== 1 ? 's' : ''} to notify</p>
           </div>
         </div>

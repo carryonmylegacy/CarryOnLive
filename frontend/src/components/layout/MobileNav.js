@@ -3,6 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLabelCleaner } from '../../utils/brandLabel';
 import { haptics } from '../../utils/haptics';
 import { clearCache } from '../../utils/apiCache';
 import {
@@ -58,6 +59,7 @@ const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
 const MobileNav = () => {
   const { user, logout, refreshUser, enabledFeatures, setUser, partnerBranding } = useAuth();
+  const cleanLabel = useLabelCleaner();
   // Brand for partner-co-branded labels (CFP/CCP/Core Pillars etc.).
   // Legal text, footers, ™ marks and "powered by" lines stay as CarryOn.
   const brand = partnerBranding?.companyName || 'CarryOn';
@@ -836,6 +838,11 @@ const MobileNav = () => {
                   } else {
                     menuItems = myLegacyItems;
                     sectionTitle = 'ESTATE PLAN ACCESS';
+                  }
+                  // Strip parenthetical feature acronyms for B2B sessions.
+                  // No-op for direct consumers (cleanLabel = identity).
+                  if (partnerBranding?.companyName) {
+                    menuItems = menuItems.map(it => ({ ...it, label: cleanLabel(it.label) }));
                   }
                   return menuItems.length > 0 && (
                 <div className="mb-6">

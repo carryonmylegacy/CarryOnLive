@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
+import { useLabelCleaner } from '../utils/brandLabel';
 import { PieProgress, MarkdownText, timeAgo, ThinkingIndicator } from '../components/guardian/GuardianWidgets';
 import { useDraftState } from '../hooks/useDraftState';
 
@@ -66,6 +67,7 @@ const actionButtons = [
 // ═══════════════════════════════════════════════
 const GuardianPage = () => {
   const { user, getAuthHeaders } = useAuth();
+  const cleanLabel = useLabelCleaner();
   const navigate = useNavigate();
   const guardianRef = useRef(null);
   const location = useLocation();
@@ -811,7 +813,7 @@ const GuardianPage = () => {
             <Sparkles className="w-4 h-4 text-[var(--gold)]" />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-sm font-bold text-[var(--t)] leading-tight whitespace-nowrap overflow-hidden text-ellipsis" style={{ fontFamily: 'var(--sans)' }}>Estate Guardian AI <span className="text-[var(--t4)] font-normal">(EGA)</span></h1>
+            <h1 className="text-sm font-bold text-[var(--t)] leading-tight whitespace-nowrap overflow-hidden text-ellipsis" style={{ fontFamily: 'var(--sans)' }}>Estate Guardian AI{cleanLabel(' (EGA)') && <span className="text-[var(--t4)] font-normal">{cleanLabel(' (EGA)')}</span>}</h1>
             <span className="text-[var(--t5)] text-[11px] flex items-center gap-1 whitespace-nowrap overflow-hidden text-ellipsis">
               <Shield className="w-2 h-2 text-[#22C993] flex-shrink-0" /> <span className="truncate">AES-256 encrypted session</span>
             </span>

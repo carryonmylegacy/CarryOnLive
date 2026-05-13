@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth, useBrand } from '../contexts/AuthContext';
+import { useLabelCleaner } from '../utils/brandLabel';
 import { cachedGet } from '../utils/apiCache';
 import {
   DollarSign, Plus, Loader2, ArrowLeft, Search, Sparkles,
@@ -78,6 +79,7 @@ const ACCOUNT_CATEGORY_LABELS = {
 const FinancialPortalPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const brand = useBrand();
+  const cleanLabel = useLabelCleaner();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -763,7 +765,7 @@ const FinancialPortalPage = () => {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
-              {brand} Financial Picture (CFP)
+              {cleanLabel(`${brand} Financial Picture (CFP)`)}
             </h1>
             <p className="text-xs text-[var(--t5)]">
               Bills, debts, accounts, and property — your complete financial picture

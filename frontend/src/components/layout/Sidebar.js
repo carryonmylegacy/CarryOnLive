@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLabelCleaner } from '../../utils/brandLabel';
 import { haptics } from '../../utils/haptics';
 import { clearCache } from '../../utils/apiCache';
 import axios from 'axios';
@@ -300,6 +301,7 @@ const ADMIN_PORTALS = [
 
 const Sidebar = () => {
   const { user, logout, refreshUser, enabledFeatures, setUser, partnerBranding } = useAuth();
+  const cleanLabel = useLabelCleaner();
   // Brand for partner-co-branded labels (CFP/CCP/Core Pillars etc.).
   // Legal text, footers, ™ marks and "powered by" lines stay as CarryOn.
   const brand = partnerBranding?.companyName || 'CarryOn';
@@ -679,15 +681,25 @@ const Sidebar = () => {
 
   const getNavSections = () => {
     // Admin viewing ops portal should see operator nav
-    if (user?.role === 'admin' && window.location.pathname.startsWith('/ops')) return operatorNavSections;
-    if (user?.role === 'admin') return adminNavSections;
-    if (user?.role === 'operator') return operatorNavSections;
+    let sections;
+    if (user?.role === 'admin' && window.location.pathname.startsWith('/ops')) sections = operatorNavSections;
+    else if (user?.role === 'admin') sections = adminNavSections;
+    else if (user?.role === 'operator') sections = operatorNavSections;
     // Multi-role: beneficiary who is also a benefactor
-    if (user?.role === 'beneficiary' && isBenefactorContext) return benefactorNavSections;
-    if (user?.role === 'beneficiary') return beneficiaryNavSections;
+    else if (user?.role === 'beneficiary' && isBenefactorContext) sections = benefactorNavSections;
+    else if (user?.role === 'beneficiary') sections = beneficiaryNavSections;
     // Benefactor who is also a beneficiary — check path
-    if (user?.role === 'benefactor' && window.location.pathname.startsWith('/beneficiary')) return beneficiaryNavSections;
-    return benefactorNavSections;
+    else if (user?.role === 'benefactor' && window.location.pathname.startsWith('/beneficiary')) sections = beneficiaryNavSections;
+    else sections = benefactorNavSections;
+    // Strip parenthetical feature acronyms for B2B partner sessions.
+    // No-op for direct consumers (cleanLabel returns text unchanged).
+    if (partnerBranding?.companyName) {
+      return sections.map(sec => ({
+        ...sec,
+        items: sec.items?.map(it => ({ ...it, label: cleanLabel(it.label) })),
+      }));
+    }
+    return sections;
   };
 
   const getRoleLabel = () => {

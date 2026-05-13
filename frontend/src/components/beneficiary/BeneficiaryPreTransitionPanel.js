@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Lock, Shield, FileText, AlertTriangle, FolderOpen, Upload, MessageCircle, Heart, ShieldCheck, Network } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLabelCleaner } from '../../utils/brandLabel';
 import { API_URL } from '../../config';
 
 /**
@@ -33,6 +34,7 @@ import { API_URL } from '../../config';
 export default function BeneficiaryPreTransitionPanel({ estate, hasExtraDocs }) {
   const navigate = useNavigate();
   const { getAuthHeaders } = useAuth();
+  const cleanLabel = useLabelCleaner();
   const [esShareNow, setEsShareNow] = useState(false);
 
   // Check whether THIS beneficiary has been granted pre-transition
@@ -99,7 +101,7 @@ export default function BeneficiaryPreTransitionPanel({ estate, hasExtraDocs }) 
               <AlertTriangle className="w-5 h-5 text-[var(--gn2)]" />
             </div>
             <div className="flex-1">
-              <div className="font-bold text-[var(--t)]">Emergency Plans (CCP)</div>
+              <div className="font-bold text-[var(--t)]">{cleanLabel('Emergency Plans (CCP)')}</div>
               <div className="text-xs text-[var(--gn2)]">View contingency plans assigned to you</div>
             </div>
           </div>

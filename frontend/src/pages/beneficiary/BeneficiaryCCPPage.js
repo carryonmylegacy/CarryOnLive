@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useBrand } from '../../contexts/AuthContext';
+import { useLabelCleaner } from '../../utils/brandLabel';
 import {
   Shield, ChevronLeft, MapPin, MessageSquare, Package, FileText,
   AlertTriangle, Loader2,
@@ -19,6 +20,7 @@ const PLAN_TYPE_LABELS = {
 const BeneficiaryCCPPage = () => {
   const { getAuthHeaders } = useAuth();
   const brand = useBrand();
+  const cleanLabel = useLabelCleaner();
   const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);

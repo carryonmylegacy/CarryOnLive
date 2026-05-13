@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useLabelCleaner } from '../../../utils/brandLabel';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
@@ -44,6 +45,7 @@ export default function EntityDetailPanel({
   onClose,
 }) {
   const { getAuthHeaders } = useAuth();
+  const cleanLabel = useLabelCleaner();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   // Edit form state for entity
@@ -495,7 +497,7 @@ export default function EntityDetailPanel({
                 />
               </div>
               <div className="space-y-2 border-t border-[var(--b2)] pt-4">
-                <Label className="text-[var(--t4)]">Linked documents (SDV)</Label>
+                <Label className="text-[var(--t4)]">{cleanLabel('Linked documents (SDV)')}</Label>
                 <DocumentLinker
                   value={linkedDocIds}
                   onChange={setLinkedDocIds}

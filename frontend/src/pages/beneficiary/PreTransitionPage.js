@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLabelCleaner } from '../../utils/brandLabel';
 import { Lock, Shield, FileText, Upload, ChevronLeft, MessageCircle, FolderOpen, AlertTriangle } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
@@ -10,6 +11,7 @@ import { API_URL } from '../../config';
 
 const PreTransitionPage = () => {
   const { getAuthHeaders } = useAuth();
+  const cleanLabel = useLabelCleaner();
   const navigate = useNavigate();
   const [estate, setEstate] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -113,7 +115,7 @@ const PreTransitionPage = () => {
               <AlertTriangle className="w-5 h-5 text-[var(--gn2)]" />
             </div>
             <div className="flex-1">
-              <div className="font-bold text-[var(--t)]">Emergency Plans (CCP)</div>
+              <div className="font-bold text-[var(--t)]">{cleanLabel('Emergency Plans (CCP)')}</div>
               <div className="text-xs text-[var(--gn2)]">View contingency plans assigned to you</div>
             </div>
           </div>

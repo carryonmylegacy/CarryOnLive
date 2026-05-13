@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
+import { useLabelCleaner } from '../utils/brandLabel';
 import { useDraftState } from '../hooks/useDraftState';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -240,6 +241,7 @@ const PaymentForm = ({ task, onPaymentSaved, getAuthHeaders }) => {
 
 const TrusteePage = () => {
   const { getAuthHeaders, subscriptionStatus } = useAuth();
+  const cleanLabel = useLabelCleaner();
   const [tasks, setTasks] = useState([]);
   // Draft persistence — DTS create flow is multi-step (createStep) over a
   // 11-field newTask object. If user navigates away mid-creation, restore
@@ -1145,7 +1147,7 @@ const TrusteePage = () => {
             <Shield className="w-5 h-5 text-[#B794F6]" />
           </div>
           <div>
-            <h1 className="text-xl lg:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Designated Trustee Services (DTS)</h1>
+            <h1 className="text-xl lg:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>{cleanLabel('Designated Trustee Services (DTS)')}</h1>
             <p className="text-xs text-[var(--t5)]">Confidential tasks executed by CarryOn™ after transition</p>
           </div>
         </div>

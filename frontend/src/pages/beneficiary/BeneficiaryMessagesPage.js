@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLabelCleaner } from '../../utils/brandLabel';
 import { MessageSquare, ChevronLeft, Heart, Play } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
@@ -14,6 +15,7 @@ import {
 
 const BeneficiaryMessagesPage = () => {
   const { getAuthHeaders } = useAuth();
+  const cleanLabel = useLabelCleaner();
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -176,7 +178,7 @@ const BeneficiaryMessagesPage = () => {
           <Heart className="w-5 h-5 text-[#B794F6]" />
         </div>
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Milestone Messages (MM)</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>{cleanLabel('Milestone Messages (MM)')}</h1>
           <p className="text-xs text-[var(--t5)]">{messages.length} messages from your benefactor</p>
         </div>
       </div>

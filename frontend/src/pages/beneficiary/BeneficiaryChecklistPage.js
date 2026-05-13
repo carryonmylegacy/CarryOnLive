@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLabelCleaner } from '../../utils/brandLabel';
 import {
   CheckSquare, CheckCircle2, ChevronLeft, Lock, Phone, Mail, MapPin,
   Users
@@ -19,6 +20,7 @@ const priColors = { critical: '#ef4444', high: '#f97316', medium: '#eab308', low
 
 const BeneficiaryChecklistPage = () => {
   const { getAuthHeaders } = useAuth();
+  const cleanLabel = useLabelCleaner();
   const navigate = useNavigate();
   const [checklists, setChecklists] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -86,7 +88,7 @@ const BeneficiaryChecklistPage = () => {
           <CheckSquare className="w-5 h-5 text-[#F59E0B]" />
         </div>
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Immediate Action Checklist (IAC)</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>{cleanLabel('Immediate Action Checklist (IAC)')}</h1>
           <p className="text-xs text-[var(--t5)]">{total} items · Check off as you complete them</p>
         </div>
       </div>

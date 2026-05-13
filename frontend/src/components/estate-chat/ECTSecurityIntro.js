@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Shield, Lock, Users, X, ArrowLeft, Check, ChevronRight, MessageCircle,
 } from 'lucide-react';
+import { useLabelCleaner } from '../../utils/brandLabel';
 
 /**
  * ECT Security Intro — Two-step walkthrough overlay.
@@ -9,6 +10,7 @@ import {
  * Fills more screen real estate on large iPhones.
  */
 export default function ECTSecurityIntro({ introStep, setIntroStep, onDismiss, onBack }) {
+  const cleanLabel = useLabelCleaner();
   return (
     // ── iOS-PWA-safe scrolling modal ──────────────────────────────
     // We deliberately split the overlay into TWO layers so iOS Safari
@@ -75,7 +77,7 @@ export default function ECTSecurityIntro({ introStep, setIntroStep, onDismiss, o
         <div className="flex items-center justify-center mb-4">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
             <Shield className="w-3.5 h-3.5" style={{ color: '#d4af37' }} />
-            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#d4af37' }}>Estate Comms Tool (ECT)</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#d4af37' }}>{cleanLabel('Estate Comms Tool (ECT)')}</span>
           </div>
         </div>
 

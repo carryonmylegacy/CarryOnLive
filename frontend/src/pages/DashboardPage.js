@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth, useBrand } from '../contexts/AuthContext';
+import { useLabelCleaner } from '../utils/brandLabel';
 import { cachedGet } from '../utils/apiCache';
 import { isFeatureKeyEnabled, isFeatureEnabled } from '../utils/featureGates';
 import { SpeedometerGauge, StatCard } from '../components/dashboard/DashboardWidgets';
@@ -46,6 +47,7 @@ import PushPrompt from '../components/PushPrompt';
 const DashboardPage = () => {
   const { user, getAuthHeaders, enabledFeatures, refreshEnabledFeatures } = useAuth();
   const brand = useBrand();
+  const cleanLabel = useLabelCleaner();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [estates, setEstates] = useState([]);
@@ -823,7 +825,7 @@ const DashboardPage = () => {
               <StatCard
                 icon={CheckSquare}
                 value={totalTasks}
-                label="Immediate Action Checklist (IAC)"
+                label={cleanLabel("Immediate Action Checklist (IAC)")}
                 cardClass="stat-card-checklist"
                 onClick={() => navigate('/checklist')}
                 sectionKey="checklist"
@@ -839,7 +841,7 @@ const DashboardPage = () => {
               <StatCard
                 icon={MessageSquare}
                 value={stats.messages}
-                label="Milestone Messages (MM)"
+                label={cleanLabel("Milestone Messages (MM)")}
                 cardClass="stat-card-messages"
                 onClick={() => navigate('/messages')}
                 sectionKey="messages"
@@ -855,7 +857,7 @@ const DashboardPage = () => {
               <StatCard
                 icon={FolderLock}
                 value={stats.documents}
-                label="Secure Document Vault (SDV)"
+                label={cleanLabel("Secure Document Vault (SDV)")}
                 cardClass="stat-card-vault"
                 onClick={() => navigate('/vault')}
                 sectionKey="vault"
@@ -871,7 +873,7 @@ const DashboardPage = () => {
               <StatCard
                 icon={DollarSign}
                 value={(financialSummary?.bills_count || 0) + (financialSummary?.debts_count || 0) + (financialSummary?.accounts_count || 0) + (financialSummary?.property_count || 0)}
-                label={`${brand} Financial Picture (CFP)`}
+                label={cleanLabel(`${brand} Financial Picture (CFP)`)}
                 cardClass="stat-card-financial"
                 onClick={() => navigate('/financial')}
                 sectionKey="financial_portal"
@@ -887,7 +889,7 @@ const DashboardPage = () => {
               <StatCard
                 icon={ShieldAlert}
                 value={stats.ccp_plans}
-                label="Contingency Protocols (CCP)"
+                label={cleanLabel("Contingency Protocols (CCP)")}
                 cardClass="stat-card-ccp"
                 onClick={() => navigate('/connected-protocol')}
                 sectionKey="connected_protocol"
@@ -1125,7 +1127,7 @@ const DashboardPage = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-[#8b5cf6]" />
-              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">Milestone Messages (MM)</h3>
+              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">{cleanLabel("Milestone Messages (MM)")}</h3>
             </div>
             <span className="text-[var(--t4)] text-sm">
               {stats.messages} message{stats.messages !== 1 ? 's' : ''}
@@ -1219,7 +1221,7 @@ const DashboardPage = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <FolderLock className="w-5 h-5 text-[#2563eb]" />
-              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">Secure Document Vault (SDV)</h3>
+              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">{cleanLabel("Secure Document Vault (SDV)")}</h3>
             </div>
             <span className="text-[var(--t4)] text-sm">
               {stats.documents > 0 ? `${(stats.documents * 0.5).toFixed(0)} MB` : '0 MB'} / 10 GB
@@ -1255,7 +1257,7 @@ const DashboardPage = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-[#10b981]" />
-              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">{brand} Financial Picture (CFP)</h3>
+              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">{cleanLabel(`${brand} Financial Picture (CFP)`)}</h3>
             </div>
             <span className="text-[var(--t4)] text-sm">
               {financialSummary ? `${(financialSummary.bills_count || 0) + (financialSummary.debts_count || 0) + (financialSummary.accounts_count || 0) + (financialSummary.property_count || 0)} items` : '0 items'}

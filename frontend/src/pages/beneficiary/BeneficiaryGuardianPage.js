@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLabelCleaner } from '../../utils/brandLabel';
 import {
   Bot, Send, User, Loader2, Sparkles, Lock, Download
 } from 'lucide-react';
@@ -17,6 +18,7 @@ import CachedPdfIcon from '../../components/CachedPdfIcon';
 
 const BeneficiaryGuardianPage = () => {
   const { user, getAuthHeaders } = useAuth();
+  const cleanLabel = useLabelCleaner();
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -105,7 +107,7 @@ const BeneficiaryGuardianPage = () => {
             <Sparkles className="w-5 h-5 text-[#60A5FA]" />
           </div>
           <div>
-            <h1 className="text-xl lg:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Estate Guardian (EGA)</h1>
+            <h1 className="text-xl lg:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>{cleanLabel('Estate Guardian (EGA)')}</h1>
             <p className="text-xs text-[var(--t5)]">50-State Estate Law Brain · Vault-Analyzed · Read-Only</p>
           </div>
         </div>

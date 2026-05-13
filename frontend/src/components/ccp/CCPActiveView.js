@@ -15,6 +15,7 @@ import {
   ExternalLink,
   Mail,
 } from 'lucide-react';
+import { useLabelCleaner } from '../../utils/brandLabel';
 
 /**
  * PlanDetails — collapsible section showing rendezvous points, communication plan,
@@ -88,6 +89,7 @@ export default function CCPActiveView({
   submitting,
   linkedResources,
 }) {
+  const cleanLabel = useLabelCleaner();
   const snap = activeEmergency.plan_snapshot || {};
 
   return (
@@ -172,7 +174,7 @@ export default function CCPActiveView({
             <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(59,123,247,0.2)' }}>
               <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: 'rgba(59,123,247,0.08)' }}>
                 <FolderLock className="w-4 h-4" style={{ color: '#3B7BF7' }} />
-                <span className="text-xs font-bold" style={{ color: '#3B7BF7' }}>DOCUMENTS (SDV)</span>
+                <span className="text-xs font-bold" style={{ color: '#3B7BF7' }}>{cleanLabel('DOCUMENTS (SDV)')}</span>
               </div>
               <div className="p-2 space-y-1">
                 {linkedResources.documents.map(doc => (
@@ -196,7 +198,7 @@ export default function CCPActiveView({
             <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(34,201,147,0.2)' }}>
               <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: 'rgba(34,201,147,0.08)' }}>
                 <Heart className="w-4 h-4" style={{ color: '#22C993' }} />
-                <span className="text-xs font-bold" style={{ color: '#22C993' }}>TRUSTED CONTACTS (FFN)</span>
+                <span className="text-xs font-bold" style={{ color: '#22C993' }}>{cleanLabel('TRUSTED CONTACTS (FFN)')}</span>
               </div>
               <div className="p-2 space-y-1">
                 {linkedResources.ffn_contacts.map(fc => (
@@ -234,7 +236,7 @@ export default function CCPActiveView({
             <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(183,148,246,0.2)' }}>
               <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: 'rgba(183,148,246,0.08)' }}>
                 <KeyRound className="w-4 h-4" style={{ color: '#B794F6' }} />
-                <span className="text-xs font-bold" style={{ color: '#B794F6' }}>DIGITAL CREDENTIALS (DAV)</span>
+                <span className="text-xs font-bold" style={{ color: '#B794F6' }}>{cleanLabel('DIGITAL CREDENTIALS (DAV)')}</span>
               </div>
               <div className="p-2 space-y-1">
                 {linkedResources.dav_entries.map(dav => (
