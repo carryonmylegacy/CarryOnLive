@@ -61,9 +61,16 @@ const PartnerPortalPage = () => {
   const [signingIn, setSigningIn] = useState(false);
   // Track per-render logo-load failure so a broken S3 fetch swaps
   // to the gracious placeholder instead of the browser's stock
-  // broken-image icon. MUST be declared before any early return
-  // (react-hooks/rules-of-hooks).
+  // broken-image icon. MUST be declared (and its companion useEffect
+  // MUST run) before any early return — react-hooks/rules-of-hooks.
   const [logoFailed, setLogoFailed] = useState(false);
+  // Cache-bust the logo URL with the partner's `updated_at` so a
+  // logo re-upload by the admin shows up instantly. Computed BEFORE
+  // the early returns so the useEffect below sees a stable dep.
+  const logoUrl = partner?.has_logo
+    ? `${API_URL}/public/partners/${partner.slug}/logo?v=${encodeURIComponent(partner.updated_at || '')}`
+    : null;
+  useEffect(() => { setLogoFailed(false); }, [logoUrl]);
 
   useEffect(() => {
     let alive = true;
@@ -148,12 +155,7 @@ const PartnerPortalPage = () => {
   // logo re-upload by the admin shows up instantly (would otherwise
   // be held in the browser cache for 24h per the backend's
   // Cache-Control header on successful responses).
-  const logoUrl = partner.has_logo
-    ? `${API_URL}/public/partners/${partner.slug}/logo?v=${encodeURIComponent(partner.updated_at || '')}`
-    : null;
-  // Reset the failed flag whenever the URL changes (admin re-uploads).
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useEffect(() => { setLogoFailed(false); }, [logoUrl]);
+  // (Hoisted above the early returns — see top of component.)
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ background: 'var(--bg)' }} data-testid="partner-portal-page">
