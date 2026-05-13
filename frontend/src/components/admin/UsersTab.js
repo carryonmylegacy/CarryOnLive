@@ -39,8 +39,9 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   const [resetTrialTarget, setResetTrialTarget] = useState(null); // { id, name, role, trial_ends_at }
   const [settingTier, setSettingTier] = useState(null);
   const [sortBy, setSortBy] = useState('default');
-  // The CURRENT global trial duration. Read once; refetched in tandem
-  // with reset operations so the "+N days" preview is always honest.
+  // The CURRENT global trial duration. Read once on mount and used
+  // for any copy that references "the trial period" (Reset Trial
+  // tooltip, modal body, beta-mode toggle toast).
   const [trialDays, setTrialDays] = useState(30);
 
   useEffect(() => {

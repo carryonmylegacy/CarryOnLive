@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Clock, Loader2, User, Mail, ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { Clock, Loader2, User, Mail, ChevronDown, ChevronUp, Check, RotateCcw } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
+import { Button } from '../ui/button';
+import { ResetTrialModal } from './ResetTrialModal';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 
@@ -183,6 +185,42 @@ export const TrialUsersTab = ({ getAuthHeaders }) => {
   // renders a visible "Network glitch — Retry" surface instead of
   // disappearing. Reset on every successful refetch.
   const [policyFetchFailed, setPolicyFetchFailed] = useState(false);
+  // Reset-trial confirmation modal state — the founder taps the
+  // Clock icon on a tile, we open the same ResetTrialModal already
+  // used in UsersTab. Modal pulls trial duration from the live
+  // policy so the "+N days" preview is honest.
+  const [resetTrialTarget, setResetTrialTarget] = useState(null);
+  const [resettingTrialId, setResettingTrialId] = useState(null);
+
+  const handleResetTrial = async () => {
+    if (!resetTrialTarget) return;
+    const userId = resetTrialTarget.id;
+    setResettingTrialId(userId);
+    try {
+      const res = await axios.post(
+        `${API_URL}/admin/users/${userId}/reset-trial`,
+        {},
+        getAuthHeaders(),
+      );
+      // Optimistic local-state update + recompute days_remaining.
+      const newEnd = res.data.trial_ends_at;
+      let daysLeft = res.data.trial_days;
+      try {
+        const ends = new Date(newEnd);
+        daysLeft = Math.max(0, Math.ceil((ends - new Date()) / 86400000));
+      } catch { /* fallback to server-provided trial_days */ }
+      setUsers((prev) => prev.map((u) =>
+        u.id === userId
+          ? { ...u, trial_ends_at: newEnd, days_remaining: daysLeft }
+          : u,
+      ));
+      toast.success(`Trial reset — ${res.data.trial_days} days from today`);
+      setResetTrialTarget(null);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to reset trial');
+    }
+    setResettingTrialId(null);
+  };
 
   const fetchAll = useCallback(async () => {
     // Build auth headers once + extend with a generous 30s timeout so
@@ -238,6 +276,7 @@ export const TrialUsersTab = ({ getAuthHeaders }) => {
         users.map(u => {
           const rc = roleColors[u.role] || roleColors.benefactor;
           const dc = urgencyColor(u.days_remaining);
+          const isResetting = resettingTrialId === u.id;
           return (
             <Card key={u.id} className="glass-card" data-testid={`trial-user-${u.id}`}>
               <CardContent className="p-3 flex items-center gap-3">
@@ -256,11 +295,43 @@ export const TrialUsersTab = ({ getAuthHeaders }) => {
                     {u.days_remaining} day{u.days_remaining !== 1 ? 's' : ''} left
                   </span>
                 </div>
+                {/* Reset Trial — same flow as Users tab, just placed
+                    on the tile where a trial-period user actually
+                    lives. Disabled mid-request. */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-[var(--t5)] h-8 w-8 p-0 hover:bg-[var(--s)] hover:text-[var(--gold)] flex-shrink-0"
+                  onClick={() => setResetTrialTarget({
+                    id: u.id,
+                    name: u.name || u.email,
+                    role: u.role,
+                    trial_ends_at: u.trial_ends_at,
+                  })}
+                  disabled={isResetting}
+                  title={`Reset ${policy?.trial_days || 30}-day free trial`}
+                  data-testid={`trial-reset-${u.id}`}
+                >
+                  {isResetting
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <RotateCcw className="w-4 h-4" />}
+                </Button>
               </CardContent>
             </Card>
           );
         })
       )}
+
+      {/* Reset-trial confirmation modal — same one UsersTab uses,
+          mounted once at tab level. trialDays prop drives the
+          dynamic body copy + new-end-date preview. */}
+      <ResetTrialModal
+        resetTarget={resetTrialTarget}
+        handleResetTrial={handleResetTrial}
+        resetting={resettingTrialId === resetTrialTarget?.id}
+        onCancel={() => setResetTrialTarget(null)}
+        trialDays={policy?.trial_days || 30}
+      />
     </div>
   );
 };
