@@ -154,7 +154,29 @@ const SignupPage = () => {
   }, [maritalStatus, dependentsOver18, dependentsUnder18, isNewAdult]);
 
   // Dynamic steps — beneficiaries join via invitation only, no role selection needed
+  //
+  // The eligibility (Military/First Responder/Hospice/B2B Code) and
+  // partner_code tiles are MUTUALLY EXCLUSIVE based on arrival path:
+  //
+  //   • Landed via /p/<slug>  → SKIP eligibility, SHOW partner_code
+  //                             (their discount is already negotiated
+  //                             through the partner — picking a
+  //                             category would be redundant/confusing)
+  //
+  //   • Direct CarryOn signup → SHOW eligibility, SKIP partner_code
+  //                             (eligibility's "B2B Code" category is
+  //                             the on-ramp for self-found B2B codes;
+  //                             a second dedicated tile would be a
+  //                             duplicate UX)
+  //
+  // We read the WL marker straight from localStorage. It's a one-shot
+  // sync read — cheap on every render and avoids a useState round-trip
+  // that would briefly flash the wrong step set on first paint.
   const computeSteps = () => {
+    const arrivedViaPartnerLanding = (() => {
+      try { return !!localStorage.getItem('cy_partner_slug'); } catch { return false; }
+    })();
+
     const steps = [
       { id: 'name', label: 'About You', icon: User },
     ];
@@ -164,13 +186,19 @@ const SignupPage = () => {
       return steps;
     }
     // Benefactor flow (all direct signups are benefactors)
-    steps.push({ id: 'eligibility', label: 'Eligibility', icon: Shield });
+    if (!arrivedViaPartnerLanding) {
+      // Standard signup — show the Military/First Responder/Hospice/
+      // B2B-Code chooser. This is where self-found B2B codes get
+      // entered.
+      steps.push({ id: 'eligibility', label: 'Eligibility', icon: Shield });
+    }
     steps.push({ id: 'credentials', label: 'Login', icon: Lock });
-    // Enterprise / partner code — shown to EVERY benefactor as the
-    // last tile. Visitors coming from `/p/:slug` see their code
-    // prefilled; everyone else gets a Skip path. Sits AFTER
-    // credentials because /partners/redeem-code is auth-required.
-    steps.push({ id: 'partner_code', label: 'Enterprise Code', icon: Briefcase });
+    if (arrivedViaPartnerLanding) {
+      // White-label arrival — show the dedicated, pre-populated
+      // enterprise-code tile as the closing step. Sits after
+      // credentials because /partners/redeem-code is auth-required.
+      steps.push({ id: 'partner_code', label: 'Enterprise Code', icon: Briefcase });
+    }
     return steps;
   };
 
@@ -413,16 +441,17 @@ const SignupPage = () => {
           window.location.reload();
           return;
         }
-        // Benefactor → advance to the final partner_code tile.
-        // Token is now in localStorage, so the auth-required
-        // `/partners/redeem-code` will work from the tile.
+        // Benefactor → if they came via /p/<slug>, advance to the
+        // final partner_code tile so they can redeem. For direct
+        // signups the partner_code step was never compiled in
+        // (see `computeSteps`) so we just route to the dashboard.
         const idx = STEPS.findIndex(s => s.id === 'partner_code');
         if (idx >= 0) {
           setLoading(false);
           goTo(idx);
           return;
         }
-        // Fallback (no partner_code step compiled — shouldn't happen)
+        // Direct signup — straight to the dashboard.
         navigate('/dashboard');
         window.location.reload();
         return;
@@ -460,8 +489,10 @@ const SignupPage = () => {
         navigate('/beneficiary');
         return;
       }
-      // Benefactor → dismiss OTP modal and advance to the final
-      // partner_code tile. Token has been stored by `verifyOtp`.
+      // Benefactor → if they came via /p/<slug>, advance to the
+      // dedicated partner_code tile. For direct signups that step
+      // doesn't exist (see `computeSteps`) so we land on /dashboard.
+      // Token has been stored by `verifyOtp`.
       setShowOtpModal(false);
       const idx = STEPS.findIndex(s => s.id === 'partner_code');
       if (idx >= 0) {
