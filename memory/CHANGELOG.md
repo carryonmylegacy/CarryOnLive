@@ -1,6 +1,27 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — ECT walkthrough Step 2 scroll fix (iOS PWA recurring bug)
+
+### Need
+User reported (recurring) that the ECT security/instructions walkthrough Step 2 doesn't scroll on iOS PWA — the **"Got It — Start Chatting"** CTA sits behind the mobile bottom dock and can't be reached.
+
+### Root cause
+`ECTSecurityIntro.js` used a single `position: fixed; overflow-y: auto` element as both the dim backdrop and the scroller. iOS Safari standalone gets stuck in a "no-scroll" state when content *barely* fits the available height (after subtracting top/bottom safe-area padding) — the browser hasn't fully committed to enabling touch scrolling at layout time, so the user's pan gestures fall through.
+
+### Change — `components/estate-chat/ECTSecurityIntro.js`
+Refactored to the bulletproof iOS-PWA scrolling pattern:
+- **Outer** `fixed inset-0 z-[60]` = dim/blur backdrop only. No scroll.
+- **Inner** `absolute inset-0 overflow-y-scroll lg:overflow-y-auto` = dedicated scroller with its own scroll context. Uses `overflow-y: scroll` (not `auto`) on mobile so iOS commits to enabling touch scrolling immediately. Keeps `-webkit-overflow-scrolling: touch`, `touch-action: pan-y`, `overscroll-behavior: contain`.
+- **Middle** `min-h-full flex flex-col` ensures the scroller always has scrollable content past its viewport, which forces iOS to enable pan gestures even when content technically fits.
+- Bumped bottom padding from `180px + safe-area` to `224px + safe-area` to clear bottom dock (~80px) + fade gradient (~80px) + 60px breathing buffer for the "Got It" CTA.
+
+### Verified
+- `bash /app/housekeeping.sh --strict` → **0 FAIL / 0 WARN**.
+- ESLint clean.
+
+
+
 ## Feb 14, 2026 — EGA heavy-action xAI failover · BEC model badge · IAC Print PDF · EGA desktop icon labels
 
 ### 1. Root cause of "EGA keeps failing at generating a To-Do PDF" — fixed

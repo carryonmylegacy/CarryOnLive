@@ -10,25 +10,52 @@ import {
  */
 export default function ECTSecurityIntro({ introStep, setIntroStep, onDismiss, onBack }) {
   return (
+    // ── iOS-PWA-safe scrolling modal ──────────────────────────────
+    // We deliberately split the overlay into TWO layers so iOS Safari
+    // standalone reliably scrolls the inner content even when the
+    // body is scroll-locked:
+    //   1. Outer `fixed inset-0` = dim/blur backdrop. Non-scrolling.
+    //      Its job is only to cover the viewport (above the bottom
+    //      dock at z-50) and absorb taps outside the tile.
+    //   2. Inner `absolute inset-0 overflow-y-scroll` = the scroller.
+    //      Has its own scroll context, `overflow-y: scroll` (NOT
+    //      auto — iOS gets stuck in a "no scroll" state when content
+    //      *barely* fits and the browser hasn't decided yet whether
+    //      to enable scrollbars), `-webkit-overflow-scrolling: touch`,
+    //      and `touch-action: pan-y`.
+    //   3. Inner flex column with `min-h-full` so even shorter
+    //      content has a scrollable region — the scroller always
+    //      has somewhere to scroll past, which forces iOS to enable
+    //      touch scrolling at layout time.
+    // Bottom padding is generous enough (224px + safe-area) to clear
+    // the mobile bottom dock (≈80px) + its fade-gradient (≈80px) +
+    // a 60px breathing buffer so the "Got It" CTA is always tappable.
     <div
-      className="fixed inset-0 z-[60] flex flex-col items-center justify-start lg:justify-center overflow-y-auto pt-[calc(72px+env(safe-area-inset-top,0px))] pb-[calc(180px+env(safe-area-inset-bottom,0px))] lg:!pt-8 lg:!pb-8"
+      className="fixed inset-0 z-[60]"
       style={{
         background: 'rgba(0,0,0,0.82)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
-        paddingLeft: '14px',
-        paddingRight: '14px',
-        // iOS Safari requires explicit overflow + touch-action to allow
-        // momentum scrolling inside a `position: fixed` element. Without
-        // these, the step-2 walkthrough (which is taller than the iPhone
-        // viewport once the bottom-dock + safe-area inset are factored in)
-        // refuses to scroll and the "Got It — Start Chatting" button is
-        // hidden behind the dock.
-        WebkitOverflowScrolling: 'touch',
-        touchAction: 'pan-y',
-        overscrollBehavior: 'contain',
       }}
+      data-testid="ect-security-intro-backdrop"
     >
+      <div
+        className="absolute inset-0 overflow-y-scroll lg:overflow-y-auto"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y',
+          overscrollBehavior: 'contain',
+        }}
+      >
+        <div
+          className="min-h-full flex flex-col items-center justify-start lg:justify-center"
+          style={{
+            paddingLeft: '14px',
+            paddingRight: '14px',
+            paddingTop: 'calc(72px + env(safe-area-inset-top, 0px))',
+            paddingBottom: 'calc(224px + env(safe-area-inset-bottom, 0px))',
+          }}
+        >
       {/* Tile — fills available width, all 4 corners rounded, generous padding */}
       <div
         className="w-full max-w-lg rounded-3xl px-5 py-5"
@@ -184,6 +211,8 @@ export default function ECTSecurityIntro({ introStep, setIntroStep, onDismiss, o
         >
           Skip — Go Back
         </button>
+      </div>
+        </div>
       </div>
     </div>
   );
