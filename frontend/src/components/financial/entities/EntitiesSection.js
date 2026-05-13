@@ -9,7 +9,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { notify } from '../../AppNotification';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Lock, Unlock, Map, Printer, Users } from 'lucide-react';
+import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Lock, Unlock, Map, Printer, Users, LocateFixed } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Button } from '../../ui/button';
 import { API_URL } from '../../../config';
@@ -62,6 +62,11 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
     setChartFocusNonce((n) => n + 1);
   }, []);
   const [resetTick, setResetTick] = useState(0);
+  // Bumped by the "Center" toolbar button to re-fit the tree into the
+  // viewport and re-center on its bbox centroid. Chart skips
+  // centerNonce === 0 so this doesn't double-fire on the initial
+  // fit-on-load pass.
+  const [centerNonce, setCenterNonce] = useState(0);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   // Auto-lock the chart on every CFP mount. This means panning around
   // (single-finger swipe / two-finger trackpad scroll) never
@@ -486,6 +491,17 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           )}
           {viewMode === 'chart' && (
             <button
+              onClick={() => setCenterNonce((n) => n + 1)}
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(212,165,55,0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
+              data-testid="entities-center-chart"
+              title="Center the tree in the viewport"
+              aria-label="Center chart"
+            >
+              <LocateFixed className="w-3 h-3" /><span className="hidden sm:inline">Center</span>
+            </button>
+          )}
+          {viewMode === 'chart' && (
+            <button
               onClick={() => setShowResetConfirm(true)}
               className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(212,165,55,0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-reset-layout"
@@ -657,6 +673,8 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
             blocks={blocks}
             focusKey={chartFocusKey}
             focusNonce={chartFocusNonce}
+            fitOnLoad
+            centerNonce={centerNonce}
             onSingleClickNode={handleSingleClick}
             onDoubleClickNode={handleDoubleClick}
             onInfoClickNode={handleInfoClick}

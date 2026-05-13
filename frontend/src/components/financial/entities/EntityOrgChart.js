@@ -65,12 +65,17 @@ const CLUSTER_COLS = 5;
 const CLUSTER_HEADER_H = 22;        // entity-label strip above the grid
 const CLUSTER_PAD_X = 10;
 const CLUSTER_PAD_Y = 14;
+// Brick-pattern offset: odd rows shift right by half a slot so the
+// avatars stagger between columns. Hoisted here (module scope) so the
+// tile-width math and the per-row stagger inside BeneficiaryClusterNode
+// stay in lock-step — never edit one without the other.
+const CLUSTER_HALF_STEP = CLUSTER_SLOT_W / 2;
 // Brick-pattern grid offsets odd rows by half a slot, so the
 // rightmost avatar on those rows sits HALF_STEP past the last column.
 // We add that buffer into CLUSTER_W so the staggered avatar never
 // clips against the tile edge (previously: 270 → Meg at col=4 row=1
 // rendered at right-edge=265 vs. inner-right=250 → 15px crop).
-const CLUSTER_W = CLUSTER_PAD_X * 2 + CLUSTER_COLS * CLUSTER_SLOT_W + CLUSTER_SLOT_W / 2; // 295
+const CLUSTER_W = CLUSTER_PAD_X * 2 + CLUSTER_COLS * CLUSTER_SLOT_W + CLUSTER_HALF_STEP; // 295
 const clusterHeight = (memberCount) => {
   const rows = Math.max(1, Math.ceil(memberCount / CLUSTER_COLS));
   return CLUSTER_HEADER_H + CLUSTER_PAD_Y * 2 + rows * CLUSTER_SLOT_H;
@@ -818,7 +823,7 @@ function ClusterTile({ node, dragging, locked, onPointerDownDrag, onClick, entit
   const headerColor = '#22C993';
   const borderColor = 'rgba(34,201,147,0.55)';
   const bgColor = 'rgba(34,201,147,0.08)';
-  const HALF_STEP = CLUSTER_SLOT_W / 2;
+  const HALF_STEP = CLUSTER_HALF_STEP;
   return (
     <div
       onPointerDown={onPointerDownDrag}
@@ -937,6 +942,12 @@ export default function EntityOrgChart({
   legendHidden = false, onHideLegend,
   serverOverrides, onSaveLayout,
   focusKey, focusNonce,
+  // Bumped (e.g. by a "Center" toolbar button) to re-fit the tree
+  // into the viewport and center on the bbox centroid. Identical
+  // math to the `fitOnLoad=true` initial-layout path, just on demand.
+  // Skips the very first render so it doesn't double-fire with the
+  // initial fit when fitOnLoad is also true.
+  centerNonce = 0,
 }) {
   const { user } = useAuth();
   const containerRef = useRef(null);
@@ -1446,6 +1457,53 @@ export default function EntityOrgChart({
       if (timer) clearTimeout(timer);
     };
   }, []);
+  // ── Reusable fit-and-center routine ───────────────────────────────────
+  // Computes the bbox of every node, picks the largest zoom that keeps
+  // the entire tree inside the current viewport (clamped to
+  // [ZOOM_MIN, ZOOM_MAX] so we never invent a new most-zoomed-out
+  // level), centers the viewport on the bbox centroid, and applies
+  // the result via the existing scrollIntent → setZoom commit pipeline.
+  // Used by both the initial layout effect (when `fitOnLoad` is true)
+  // and the imperative Center handler (`centerNonce`).
+  const runFitAndCenter = useCallback(() => {
+    if (!nodes.length) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const cw = el.clientWidth;
+    const ch = el.clientHeight;
+    if (cw === 0 || ch === 0) return;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    nodes.forEach((n) => {
+      const p = overrides[n.key] || initial[n.key];
+      if (!p) return;
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x + n.w > maxX) maxX = p.x + n.w;
+      if (p.y + n.h > maxY) maxY = p.y + n.h;
+    });
+    if (!Number.isFinite(minX)) return;
+
+    const PAD = 60; // breathing room around the tree
+    const treeW = (maxX - minX) + PAD * 2;
+    const treeH = (maxY - minY) + PAD * 2;
+    let nextZoom = Math.min(cw / treeW, ch / treeH, 1.0);
+    nextZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, nextZoom));
+    const worldCx = (minX + maxX) / 2 + PAN_MARGIN;
+    const worldCy = (minY + maxY) / 2 + PAN_MARGIN;
+    const scrollX = worldCx * nextZoom - cw / 2;
+    const scrollY = worldCy * nextZoom - ch / 2;
+
+    scrollIntentRef.current = { type: 'abs', x: Math.max(0, scrollX), y: Math.max(0, scrollY) };
+    if (Math.abs(zoomRef.current - nextZoom) < 0.001) {
+      el.scrollLeft = Math.max(0, scrollX);
+      el.scrollTop = Math.max(0, scrollY);
+      scrollIntentRef.current = null;
+    } else {
+      setZoom(nextZoom);
+    }
+  }, [nodes, overrides, initial]);
+
   useLayoutEffect(() => {
     if (!nodes.length) return;
     const el = containerRef.current;
@@ -1455,34 +1513,19 @@ export default function EntityOrgChart({
     if (cw === 0 || ch === 0) return; // viewport not measured yet
     const key = `${estateId}|${fitOnLoad ? 'fit' : 'center'}|${relayoutTick}|${viewportTick}`;
     if (initialLayoutKeyRef.current === key) return;
+    initialLayoutKeyRef.current = key;
 
+    if (fitOnLoad) {
+      runFitAndCenter();
+      return;
+    }
+
+    // Benefactor-centered path (fitOnLoad=false): zoom 1×, scroll so
+    // the benefactor tile sits in the middle of the viewport.
     let nextZoom = 1;
     let scrollX = 0;
     let scrollY = 0;
-
-    if (fitOnLoad) {
-      // Compute world bbox of every tile (in natural-canvas coords).
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      nodes.forEach((n) => {
-        const p = overrides[n.key] || initial[n.key];
-        if (!p) return;
-        if (p.x < minX) minX = p.x;
-        if (p.y < minY) minY = p.y;
-        if (p.x + n.w > maxX) maxX = p.x + n.w;
-        if (p.y + n.h > maxY) maxY = p.y + n.h;
-      });
-      if (Number.isFinite(minX)) {
-        const PAD = 60; // breathing room around the tree
-        const treeW = (maxX - minX) + PAD * 2;
-        const treeH = (maxY - minY) + PAD * 2;
-        nextZoom = Math.min(cw / treeW, ch / treeH, 1.0);
-        nextZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, nextZoom));
-        const worldCx = (minX + maxX) / 2 + PAN_MARGIN;
-        const worldCy = (minY + maxY) / 2 + PAN_MARGIN;
-        scrollX = worldCx * nextZoom - cw / 2;
-        scrollY = worldCy * nextZoom - ch / 2;
-      }
-    } else if (userKey) {
+    if (userKey) {
       const pos = overrides[userKey] || initial[userKey];
       const node = nodes.find((n) => n.key === userKey);
       if (pos && node) {
@@ -1492,9 +1535,7 @@ export default function EntityOrgChart({
         scrollY = (PAN_MARGIN + pos.y + tileH / 2) * nextZoom - ch / 2;
       }
     }
-
     scrollIntentRef.current = { type: 'abs', x: Math.max(0, scrollX), y: Math.max(0, scrollY) };
-    initialLayoutKeyRef.current = key;
     // If the new zoom matches the current zoom (very common on
     // rotation in centered mode where zoom stays at 1×), `setZoom`
     // is a no-op and the [zoom]-keyed scroll-commit effect below
@@ -1502,7 +1543,6 @@ export default function EntityOrgChart({
     // leaving the chart parked at the pre-rotation scroll position.
     // Commit the absolute scroll synchronously here when there's no
     // zoom change so landscape rotation always re-centers cleanly.
-    // (Anchored zoom paths still go through setZoom → commit effect.)
     if (Math.abs(zoomRef.current - nextZoom) < 0.001) {
       const el2 = containerRef.current;
       if (el2) {
@@ -1513,7 +1553,18 @@ export default function EntityOrgChart({
     } else {
       setZoom(nextZoom);
     }
-  }, [estateId, fitOnLoad, relayoutTick, viewportTick, nodes, userKey, overrides, initial]);
+  }, [estateId, fitOnLoad, relayoutTick, viewportTick, nodes, userKey, overrides, initial, runFitAndCenter]);
+
+  // ── Imperative re-center handler ──────────────────────────────────────
+  // Parent toolbar bumps `centerNonce` to ask us to re-fit + re-center.
+  // We skip the initial render (nonce starts at 0) so this effect
+  // doesn't double-fire alongside the initial-layout effect.
+  const centerNonceRef = useRef(centerNonce);
+  useEffect(() => {
+    if (centerNonce === centerNonceRef.current) return;
+    centerNonceRef.current = centerNonce;
+    runFitAndCenter();
+  }, [centerNonce, runFitAndCenter]);
 
   // ── Commit any pending scroll intent the moment the new zoom paints.
   // This is what makes anchored zoom feel snappy: there's no visible

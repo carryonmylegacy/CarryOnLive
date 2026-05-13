@@ -1,6 +1,32 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — E&S "Center" button + Fit-on-Load default + HALF_STEP hoist
+
+### Need (user)
+1. Default the E&S tree to "fully zoomed out and centered on the center of mass of the tree" whenever the user lands on CFP.
+2. Add a **Center** toolbar pill that re-fits + re-centers on demand (for when the user pans away and wants to snap back), reusing the current most-zoomed-out level — never inventing a new wider zoom level.
+3. Tidy: hoist `HALF_STEP` to a module-level constant so the cluster-tile width math and the per-row brick stagger stay in lock-step.
+
+### Change — `EntityOrgChart.js`
+- Hoisted `CLUSTER_HALF_STEP = CLUSTER_SLOT_W / 2` to module scope. `CLUSTER_W` now references it; `BeneficiaryClusterNode`'s local `HALF_STEP` aliases the module constant.
+- New `runFitAndCenter()` `useCallback`: computes the tree bbox, picks `nextZoom = min(cw/treeW, ch/treeH, 1.0)` clamped to `[ZOOM_MIN, ZOOM_MAX]`, centers on the centroid, applies via the existing scrollIntent → setZoom commit pipeline. **Does not widen the existing zoom-out floor** — the clamp uses the same `ZOOM_MIN` as pinch zoom.
+- Initial-layout `useLayoutEffect` now delegates the `fitOnLoad` branch to `runFitAndCenter()`. The benefactor-centered branch (when `fitOnLoad=false`) is preserved verbatim.
+- New `centerNonce` prop (default 0). A dedicated `useEffect` watches it and calls `runFitAndCenter()` on every bump (skipping the initial render via a ref so it doesn't double-fire with the initial fit-on-load pass).
+
+### Change — `EntitiesSection.js`
+- Imported `LocateFixed` icon.
+- New `centerNonce` state.
+- Wired `<EntityOrgChart fitOnLoad centerNonce={centerNonce} … />` — flipping the default behavior so the tree opens fit-to-viewport + centered.
+- Added a **Center** toolbar pill (same white-text + gold-flash styling as Reset layout / Expand) between Lock and Reset layout. `data-testid="entities-center-chart"`. Click increments `centerNonce`.
+
+### Verified
+- `bash /app/housekeeping.sh` → **0 FAIL, 0 WARN**.
+- ESLint clean on both files.
+- Logic re-uses the previously-shipped fit-on-load math, so any prior verification of that branch (centroid centering, zoom clamp, rotation re-fit) carries forward.
+
+
+
 ## Feb 14, 2026 — Cluster Tile Width Fix (Meg crop) + Removed 12pt PDF Font Floor
 
 ### Need
