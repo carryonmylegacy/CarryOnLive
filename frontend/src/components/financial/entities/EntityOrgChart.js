@@ -206,27 +206,12 @@ function buildGraph({ entities, externals, relationships, beneficiaries, user, b
       }
       return null;
     }).filter(Boolean);
-    // Count distinct entities this block is currently attached to,
-    // and stash the list of entity keys so the on-canvas badge can
-    // pulse-highlight all of them when tapped. Surfaces on the tile
-    // as "× N entities" so during a demo the audience can see at a
-    // glance that one named group is reused across multiple trusts /
-    // LLCs — the whole point of named blocks.
-    const attachedEntityIds = (relationships || [])
-      .filter((r) => r.role === 'beneficiary'
-        && r.source_type === 'beneficiary_block'
-        && r.source_id === b.id
-        && r.target_type === 'entity')
-      .map((r) => r.target_id);
-    const attachedEntityKeys = attachedEntityIds.map((id) => `entity:${id}`);
     pool.set(`block:${b.id}`, {
       key: `block:${b.id}`,
       kind: 'block',
       id: b.id,
       name: b.name || 'Block',
       members: hydratedMembers,
-      attachedEntityCount: attachedEntityIds.length,
-      attachedEntityKeys,
       w: CLUSTER_W,
       h: clusterHeight(Math.max(1, hydratedMembers.length)),
     });
@@ -811,7 +796,7 @@ function EntityTile({ node, dragging, locked, onPointerDownDrag, onClick, onDoub
 // Renders the title strip on top, then a brick-pattern grid of
 // half-sized avatars (5 per row, odd rows offset by half a column).
 // First name only beneath each avatar.
-function ClusterTile({ node, dragging, locked, onPointerDownDrag, onClick, entities, onHideClick, onBadgeClick }) {
+function ClusterTile({ node, dragging, locked, onPointerDownDrag, onClick, entities, onHideClick, onEditBlockClick }) {
   const members = node.members || [];
   const w = CLUSTER_W;
   const h = clusterHeight(Math.max(1, members.length));
@@ -848,36 +833,10 @@ function ClusterTile({ node, dragging, locked, onPointerDownDrag, onClick, entit
       }}
     >
       <div
-        className="px-2 pt-1.5 pb-1 pr-7 text-[11px] font-bold uppercase tracking-wide flex items-center justify-between gap-2"
+        className="px-2 pt-1.5 pb-1 pr-16 text-[11px] font-bold uppercase tracking-wide truncate"
         style={{ color: headerColor, pointerEvents: 'none' }}
       >
-        <span className="truncate flex-1 min-w-0">{headerLabel}</span>
-        {isBlock && (node.attachedEntityCount || 0) > 1 && (
-          <button
-            type="button"
-            onClick={(e) => {
-              // Stop the click from bubbling to the tile's onClick
-              // (would open the entity detail panel) or onPointerDownDrag
-              // (would start a drag). The badge is its own affordance.
-              e.stopPropagation();
-              onBadgeClick?.();
-            }}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="flex-shrink-0 px-1.5 py-0.5 rounded-full text-[11px] font-bold normal-case tracking-normal hover:brightness-125 transition-all"
-            style={{
-              background: 'rgba(34,201,147,0.18)',
-              border: `1px solid ${headerColor}`,
-              color: headerColor,
-              pointerEvents: 'auto',
-              cursor: 'pointer',
-            }}
-            data-testid={`block-attached-count-${node.id}`}
-            title={`Tap to highlight all ${node.attachedEntityCount} attached entities`}
-            aria-label={`Show the ${node.attachedEntityCount} entities this group is attached to`}
-          >
-            ×{node.attachedEntityCount}
-          </button>
-        )}
+        {headerLabel}
       </div>
       <div
         className="absolute"
@@ -916,6 +875,24 @@ function ClusterTile({ node, dragging, locked, onPointerDownDrag, onClick, entit
           );
         })}
       </div>
+      {/* Action chips top-right. For named blocks we surface a
+          pencil that opens an edit modal (rename + change members).
+          The hide-from-chart X sits to its right. For auto-clusters
+          (no edit affordance — they're auto-aggregated from flat
+          beneficiary relationships) we only render the X. */}
+      {isBlock && onEditBlockClick && (
+        <div
+          className="absolute top-1 right-7"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <TileIconButton
+            icon={Pencil}
+            onClick={(e) => { e.stopPropagation(); onEditBlockClick(node); }}
+            label="Edit block name and members"
+            testId={`tile-edit-block-${node.id}`}
+          />
+        </div>
+      )}
       {onHideClick && (
         <div className="absolute top-1 right-1">
           <TileIconButton icon={X} onClick={onHideClick} label="Hide from chart" testId={isBlock ? `tile-hide-block-${node.id}` : `tile-hide-cluster-${node.id}`} />
@@ -939,7 +916,7 @@ export const PRINT_TILE_DIMENSIONS = {
 export default function EntityOrgChart({
   estateId, entities, externals, relationships, beneficiaries, blocks,
   onSingleClickNode, onDoubleClickNode, onInfoClickNode, onEditClickNode,
-  onDeleteNode,
+  onDeleteNode, onEditBlockClick,
   cleanUpSignal, locked = false, readOnly = false, fitOnLoad = false,
   legendHidden = false, onHideLegend,
   serverOverrides, onSaveLayout,
@@ -1307,47 +1284,6 @@ export default function EntityOrgChart({
   // the viewport AND add it to `pulseKeys` so the tile shows a 2-sec
   // gold-ring pulse for the audience to follow during a live demo.
   const [pulseKeys, setPulseKeys] = useState(() => new Set());
-  // Helper: add a set of node keys to the pulse-ring state for ~2.2s
-  // and pan the viewport so the bounding box of all keys is centered.
-  // Used by the on-canvas block badge to highlight every entity the
-  // block is attached to in one tap (a key pitch beat — visually
-  // proves the named group is reused across multiple entities).
-  const pulseMultipleKeys = (keys) => {
-    if (!Array.isArray(keys) || keys.length === 0) return;
-    const el = containerRef.current;
-    const targets = keys.map((k) => ({ k, n: nodes.find((nn) => nn.key === k), p: positionOf(k) }))
-      .filter((t) => t.n && t.p);
-    if (el && targets.length > 0) {
-      const z = zoom || 1;
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      targets.forEach(({ n, p }) => {
-        minX = Math.min(minX, p.x);
-        minY = Math.min(minY, p.y);
-        maxX = Math.max(maxX, p.x + n.w);
-        maxY = Math.max(maxY, p.y + n.h);
-      });
-      const centerX = ((minX + maxX) / 2) * z;
-      const centerY = ((minY + maxY) / 2) * z;
-      const rect = el.getBoundingClientRect();
-      el.scrollTo({
-        left: Math.max(0, centerX - rect.width / 2),
-        top: Math.max(0, centerY - rect.height / 2),
-        behavior: 'smooth',
-      });
-    }
-    setPulseKeys((prev) => {
-      const next = new Set(prev);
-      keys.forEach((k) => next.add(k));
-      return next;
-    });
-    setTimeout(() => {
-      setPulseKeys((prev) => {
-        const next = new Set(prev);
-        keys.forEach((k) => next.delete(k));
-        return next;
-      });
-    }, 2200);
-  };
   useEffect(() => {
     if (!focusKey) return;
     const el = containerRef.current;
@@ -2311,7 +2247,7 @@ export default function EntityOrgChart({
                   onPointerDownDrag={(e) => onPointerDownDrag(e, n)}
                   onClick={handleClick}
                   onHideClick={readOnly ? undefined : handleHideClick}
-                  onBadgeClick={() => pulseMultipleKeys(n.attachedEntityKeys || [])} />
+                  onEditBlockClick={readOnly ? undefined : onEditBlockClick} />
               ) : (
                 <PersonTile
                   node={n}

@@ -21,6 +21,7 @@ import EntityQuickInfoPopover from './EntityQuickInfoPopover';
 import EntityDocumentsModal from './EntityDocumentsModal';
 import EntitiesShareToggle from './EntitiesShareToggle';
 import EntityLegend from './EntityLegend';
+import BlockEditModal from './BlockEditModal';
 
 const DRAFT_KEY = (estateId) => `cfp:entityWizard:draft:${estateId || 'global'}`;
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
@@ -56,6 +57,11 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   // chart's focus effect.
   const [chartFocusKey, setChartFocusKey] = useState(null);
   const [chartFocusNonce, setChartFocusNonce] = useState(0);
+  // Block-edit modal — opens when the user taps the pencil on a
+  // named-block tile. Lets them rename + change membership in one
+  // place. `editingBlock` holds the full block object (name +
+  // members) so the modal can seed its form without an extra fetch.
+  const [editingBlock, setEditingBlock] = useState(null);
   const focusOnBlock = useCallback((blockId) => {
     setChartFocusKey(`block:${blockId}`);
     setChartFocusNonce((n) => n + 1);
@@ -672,6 +678,15 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
             onInfoClickNode={handleInfoClick}
             onEditClickNode={handleEditClick}
             onDeleteNode={handleDeleteNode}
+            onEditBlockClick={(node) => {
+              // Look up the full block object from the local cache so
+              // the modal can seed its form (name + members). The node
+              // from the chart only carries display-shaped data, not
+              // the raw `members: [{kind, id}, …]` shape we need to
+              // PUT back to the API.
+              const full = (blocks || []).find((b) => b.id === node.id);
+              if (full) setEditingBlock(full);
+            }}
             cleanUpSignal={cleanUpSignal}
             locked={locked}
             fitOnLoad={fitOnLoad}
@@ -776,6 +791,15 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
         entity={docsModalEntity}
         documents={documents}
         onClose={() => setDocsModalEntity(null)}
+      />
+
+      <BlockEditModal
+        block={editingBlock}
+        beneficiaries={beneficiaries || []}
+        externals={externals}
+        user={effectiveUser}
+        onClose={() => setEditingBlock(null)}
+        onSaved={async () => { await fetchAll(); onEntitiesChanged?.(); }}
       />
 
       <EntityDetailPanel

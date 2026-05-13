@@ -1,6 +1,25 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — Edit Pencil for Named Blocks (drop ×N badge)
+
+### Need (verbatim)
+"Remove whatever the '×2' feature is and its associated code. In its place, give me an edit pencil so I can edit (name of block and membership) it directly if desired."
+
+### Change
+- **Reverted the entire ×N badge feature**: dropped `attachedEntityCount` + `attachedEntityKeys` from buildGraph, removed `pulseMultipleKeys` helper, removed the badge `<button>` from `ClusterTile`, removed the matching SVG badge from `EntitiesPrintPage.js`. The block tile header is back to a simple truncated label, with right-padding (`pr-16`) reserved so the two action chips (pencil + close-X) don't run over the text.
+- **Added an edit pencil on every named-block tile**: a second `TileIconButton` (lucide `Pencil` icon, already imported) sits at `top-1 right-7`, one chip's width to the left of the existing close-X at `top-1 right-1`. Auto-cluster tiles (`kind === 'cluster'`) intentionally don't get a pencil — they're aggregated automatically from flat beneficiary relationships, there's nothing first-class to edit.
+- **New `BlockEditModal` component** (`/app/frontend/src/components/financial/entities/BlockEditModal.js`): solid `var(--bg2)` backdrop matching the bulk-add modal (no transparency bleed-through). Lets the user rename the block + toggle every beneficiary / external person / benefactor checkbox. PATCH `/api/financial/beneficiary-blocks/{block_id}` with `{name, members:[{kind,id}]}` — matches the existing `BeneficiaryBlockUpdate` Pydantic shape (kind: `beneficiary | external_person | user`). On save, calls `fetchAll()` + `onEntitiesChanged?.()` so every entity the block is attached to picks up the rename + member-list change in one re-fetch.
+- **Wired in `EntitiesSection.js`**: new `editingBlock` state + `onEditBlockClick` prop on the chart. The chart hands us the rendered node; we look up the full server-shape block from local cache (so the modal seeds with the raw `members:[{kind,id}]` shape it needs to PATCH back).
+- Chart prop signature: `EntityOrgChart` now accepts `onEditBlockClick`, `ClusterTile` accepts `onEditBlockClick` (renamed from the short-lived `onBadgeClick`).
+
+### Verified
+- `bash /app/housekeeping.sh` → **0 FAIL, 0 WARN**.
+- ESLint on all 3 edited/new files → **0 errors**.
+- Backend smoke test: PATCH endpoint reachable, accepts `{name, members}`, hits `BeneficiaryBlockUpdate` validator cleanly. Live block on test estate had been deleted, so the user will verify visually on Wednesday's run-through.
+
+
+
 ## Feb 14, 2026 — Tappable Block-Reusability Badge (pulse-highlight attached entities)
 
 ### Need (user said "yes" to suggested enhancement)
