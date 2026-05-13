@@ -16,7 +16,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import {
   Briefcase, Plus, Trash2, Copy, Check, Loader2, ExternalLink,
-  Upload, Image as ImageIcon, Power,
+  Upload, Image as ImageIcon, Power, Mail,
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -42,6 +42,48 @@ const LOGO_PLACEHOLDER = (
 
 const partnerLandingHref = (slug) => `${window.location.origin}/p/${slug}`;
 
+// Builds a ready-to-send partner welcome email — Subject line on
+// top, blank line, then body. One-shot clipboard paste works for
+// every major mail client. Pillars come from the partner's
+// `feature_gates` map intersected with the active columns so the
+// list always matches what the admin actually toggled on. Code is
+// rendered with monospace-friendly emphasis; URL is fully
+// qualified so it survives copy/paste into any inbox.
+const composeWelcomeEmail = (partner, columns) => {
+  const url = partnerLandingHref(partner.slug);
+  const pillarLabels = (columns || [])
+    .filter((col) => (partner.feature_gates || {})[col.key])
+    .map((col) => `  • ${col.label}`)
+    .join('\n');
+  const pillarLines = pillarLabels || '  • Your custom CarryOn feature set';
+  const subject = `Welcome to CarryOn — your ${partner.company_name} portal is live`;
+  const body = `Hi ${partner.company_name} team,
+
+Your co-branded CarryOn partner portal is ready. Please share the
+link and access code below with your members — anyone who signs up
+through it will land in the custom experience we built for you.
+
+Your partner portal
+  ${url}
+
+Member access code
+  ${partner.code}
+
+Included for your members
+${pillarLines}
+
+When a member creates their account, the final signup step will
+ask for your access code. Once entered, they'll see only the
+pillars listed above — exactly the package we negotiated.
+
+Let me know when you'd like the first batch invited.
+
+— The CarryOn team
+  Powered by CarryOn Enterprises Inc.
+`;
+  return `${subject}\n\n${body}`;
+};
+
 export const PartnersTab = ({ getAuthHeaders }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -55,11 +97,19 @@ export const PartnersTab = ({ getAuthHeaders }) => {
   const [copied, setCopied] = useState(null);
   const fileInputs = useRef({});
 
-  // Resolve auth headers fresh on every call — getAuthHeaders is a
-  // closure over the AuthContext that returns the latest token from
-  // localStorage. Capturing it once at mount loses the token on
-  // first-paint when the context is still hydrating.
-  const authHeaders = () => getAuthHeaders()?.headers || {};
+  // Resolve auth headers fresh on every call. We read straight from
+  // localStorage rather than the `getAuthHeaders` closure because the
+  // AuthContext's `token` React state isn't always hydrated by the
+  // time this component's first useEffect fires (race observed when
+  // landing directly on `/admin/partners`). localStorage is the
+  // single source of truth — AuthContext writes to it on login/OTP
+  // verify and clears on logout, so reading it here is always correct.
+  const authHeaders = () => {
+    const t = (typeof window !== 'undefined' && window.localStorage)
+      ? window.localStorage.getItem('carryon_token')
+      : null;
+    return t ? { Authorization: `Bearer ${t}` } : (getAuthHeaders()?.headers || {});
+  };
 
   const fetchAll = async () => {
     try {
@@ -140,6 +190,19 @@ export const PartnersTab = ({ getAuthHeaders }) => {
     navigator.clipboard.writeText(text);
     setCopied(key);
     setTimeout(() => setCopied(null), 1400);
+  };
+
+  // Copies a ready-to-send welcome email for the partner to the
+  // clipboard. Email body is templated against the partner's CURRENT
+  // toggle state, so re-tapping after flipping a feature on/off
+  // generates fresh copy. Toast confirms the action since the
+  // clipboard is invisible feedback otherwise.
+  const copyWelcomeEmail = (partner) => {
+    const text = composeWelcomeEmail(partner, columns);
+    navigator.clipboard.writeText(text);
+    setCopied(`${partner.id}:email`);
+    setTimeout(() => setCopied(null), 1800);
+    toast.success(`Welcome email copied — paste into your mail client`);
   };
 
   if (loading) {
@@ -254,7 +317,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
               </thead>
               <tbody>
                 {partners.map(partner => (
-                  <PartnerRow
+                    <PartnerRow
                     key={partner.id}
                     partner={partner}
                     columns={columns}
@@ -265,6 +328,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
                     onUploadLogo={uploadLogo}
                     onDelete={deletePartner}
                     onCopy={copy}
+                    onCopyEmail={copyWelcomeEmail}
                     copied={copied}
                   />
                 ))}
@@ -277,7 +341,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
   );
 };
 
-function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUploadLogo, onDelete, onCopy, copied }) {
+function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUploadLogo, onDelete, onCopy, onCopyEmail, copied }) {
   const [draft, setDraft] = useState({
     company_name: partner.company_name,
     slug: partner.slug,
@@ -399,8 +463,22 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
                 <ExternalLink className="w-2.5 h-2.5 flex-shrink-0" />
                 <span className="truncate">/p/{partner.slug}</span>
               </a>
-              <button onClick={() => onCopy(url, partner.id)} className="text-[var(--t5)] hover:text-[var(--t)]">
+              <button onClick={() => onCopy(url, partner.id)} className="text-[var(--t5)] hover:text-[var(--t)]"
+                title="Copy partner URL">
                 {copied === partner.id ? <Check className="w-3 h-3 text-[var(--gn2)]" /> : <Copy className="w-3 h-3" />}
+              </button>
+              <span className="text-[var(--t6)]">·</span>
+              <button
+                onClick={() => onCopyEmail(partner)}
+                className="text-[var(--t5)] hover:text-[#a78bfa] flex items-center gap-1 font-semibold"
+                title="Copy ready-to-send welcome email"
+                data-testid={`partner-copy-email-${partner.slug}`}
+              >
+                {copied === `${partner.id}:email` ? (
+                  <><Check className="w-3 h-3 text-[var(--gn2)]" /> Email copied</>
+                ) : (
+                  <><Mail className="w-3 h-3" /> Welcome email</>
+                )}
               </button>
             </div>
           </div>
