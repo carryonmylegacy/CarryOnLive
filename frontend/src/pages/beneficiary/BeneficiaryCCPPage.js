@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth, useBrand } from '../../contexts/AuthContext';
 import {
   Shield, ChevronLeft, MapPin, MessageSquare, Package, FileText,
   AlertTriangle, Loader2,
@@ -18,6 +18,7 @@ const PLAN_TYPE_LABELS = {
 
 const BeneficiaryCCPPage = () => {
   const { getAuthHeaders } = useAuth();
+  const brand = useBrand();
   const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -188,7 +189,7 @@ const BeneficiaryCCPPage = () => {
         <h1 className="text-2xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>
           Emergency Plans
         </h1>
-        <p className="text-sm text-[var(--t4)]">CarryOn Contingency Protocols assigned to you</p>
+        <p className="text-sm text-[var(--t4)]">{brand} Contingency Protocols assigned to you</p>
       </div>
 
       {plans.length === 0 ? (

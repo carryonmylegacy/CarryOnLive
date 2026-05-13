@@ -639,3 +639,17 @@ export const useAuth = () => {
   }
   return context;
 };
+
+// ── useBrand ──────────────────────────────────────────────────────
+// Returns the brand name to display in user-facing product copy.
+// • For users authenticated under a B2B/Enterprise partner code,
+//   resolves to the partner's company name (e.g., "Acme Wealth").
+// • For direct consumer signups and admin/founder sessions, resolves
+//   to "CarryOn" — preserving the original UX.
+// • Legal text, footers, copyright, ToS, ™ marks, "powered by CarryOn"
+//   attribution and email From lines MUST NOT use this hook — they
+//   should stay as "CarryOn" because that's the legal entity.
+export const useBrand = () => {
+  const { partnerBranding } = useAuth();
+  return partnerBranding?.companyName || 'CarryOn';
+};

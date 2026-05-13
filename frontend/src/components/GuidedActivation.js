@@ -1,11 +1,13 @@
 import React from 'react';
 import { Sparkles, Upload, MessageSquare, CheckSquare, ChevronRight, UserCheck, KeyRound, Users } from 'lucide-react';
+import { useBrand } from '../contexts/AuthContext';
 
 /**
  * Bouncing "Return to Dashboard" popup — appears after completing an activation step.
  * Different copy each time for warmth.
  */
 export const ReturnPopup = ({ step, beneficiaryNames, onReturn, onAlternate, onAddAnother }) => {
+  const brand = useBrand();
   const variants = {
     beneficiary: {
       title: 'Wonderful — your first beneficiary is added!',
@@ -49,7 +51,7 @@ export const ReturnPopup = ({ step, beneficiaryNames, onReturn, onAlternate, onA
     },
     guardian: {
       title: 'Congratulations!',
-      subtitle: 'You have completed the initial creation of your estate plan. Now let\'s go back to the dashboard for you to continue exploring CarryOn and building the security your family deserves!',
+      subtitle: `You have completed the initial creation of your estate plan. Now let's go back to the dashboard for you to continue exploring ${brand} and building the security your family deserves!`,
       returnText: 'Return to Dashboard',
       alternateText: null,
       icon: Sparkles,
@@ -118,7 +120,9 @@ export const ReturnPopup = ({ step, beneficiaryNames, onReturn, onAlternate, onA
  * Celebration overlay — appears when all 4 activation steps are complete.
  * All tiles fade in, then this overlay fades in on top.
  */
-export const ActivationCelebration = ({ onDismiss }) => (
+export const ActivationCelebration = ({ onDismiss }) => {
+  const brand = useBrand();
+  return (
   <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 cursor-pointer overflow-y-auto"
     onClick={onDismiss}
     style={{ animation: 'fadeInSlow 1.5s ease forwards' }}>
@@ -148,10 +152,11 @@ export const ActivationCelebration = ({ onDismiss }) => (
       </h2>
       <p className="text-base text-[#d4af37] font-semibold mb-2">You've created the beginnings of your estate plan.</p>
       <p className="text-sm text-[#94a3b8] mb-4">Your loved ones are already more protected than 70% of American families.</p>
-      <p className="text-xs text-[#64748b] italic">(tap anywhere to continue exploring CarryOn)</p>
+      <p className="text-xs text-[#64748b] italic">(tap anywhere to continue exploring {brand})</p>
     </div>
   </div>
-);
+  );
+};
 
 /**
  * Water balloon pop animation for completed tiles.

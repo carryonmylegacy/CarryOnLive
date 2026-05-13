@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, useBrand } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
 import { isFeatureKeyEnabled, isFeatureEnabled } from '../utils/featureGates';
 import { SpeedometerGauge, StatCard } from '../components/dashboard/DashboardWidgets';
@@ -45,6 +45,7 @@ import PushPrompt from '../components/PushPrompt';
 
 const DashboardPage = () => {
   const { user, getAuthHeaders, enabledFeatures, refreshEnabledFeatures } = useAuth();
+  const brand = useBrand();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [estates, setEstates] = useState([]);
@@ -740,7 +741,7 @@ const DashboardPage = () => {
         <div>
           <h1 className="text-2xl lg:text-4xl font-semibold text-[var(--t)] mb-1 tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
             {justCompletedActivation
-              ? <>{getUserFirstName()}, let's continue exploring CarryOn</>
+              ? <>{getUserFirstName()}, let's continue exploring {brand}</>
               : <>Welcome back, <span className="italic text-[var(--gold)]">{getUserFirstName()}</span></>}
           </h1>
           <p className="text-[var(--t4)] text-base lg:text-xl">
@@ -870,7 +871,7 @@ const DashboardPage = () => {
               <StatCard
                 icon={DollarSign}
                 value={(financialSummary?.bills_count || 0) + (financialSummary?.debts_count || 0) + (financialSummary?.accounts_count || 0) + (financialSummary?.property_count || 0)}
-                label="CarryOn Financial Picture (CFP)"
+                label={`${brand} Financial Picture (CFP)`}
                 cardClass="stat-card-financial"
                 onClick={() => navigate('/financial')}
                 sectionKey="financial_portal"
@@ -1042,7 +1043,7 @@ const DashboardPage = () => {
                   className="text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl whitespace-nowrap font-semibold text-[var(--t)] mb-4 text-center tracking-tight"
                   style={{ fontFamily: 'var(--serif)' }}
                 >
-                  CarryOn Core Pillars
+                  {brand} Core Pillars
                 </h2>
                 {/*
                   Uniform cells via flex-1 grid + auto-rows 1fr:
@@ -1254,7 +1255,7 @@ const DashboardPage = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-[#10b981]" />
-              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">CarryOn Financial Picture (CFP)</h3>
+              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">{brand} Financial Picture (CFP)</h3>
             </div>
             <span className="text-[var(--t4)] text-sm">
               {financialSummary ? `${(financialSummary.bills_count || 0) + (financialSummary.debts_count || 0) + (financialSummary.accounts_count || 0) + (financialSummary.property_count || 0)} items` : '0 items'}
@@ -1353,7 +1354,7 @@ const DashboardPage = () => {
             </h1>
             <p className="text-base lg:text-lg mb-2 max-w-sm mx-auto leading-relaxed"
               style={{ color: 'var(--guided-desc, #94a3b8)' }}>
-              You have completed the initial creation of your estate plan. Welcome to CarryOn — continue exploring and building the security your family deserves!
+              You have completed the initial creation of your estate plan. Welcome to {brand} — continue exploring and building the security your family deserves!
             </p>
             <p className="text-xs mb-8 max-w-sm mx-auto"
               style={{ color: 'var(--guided-skip, #64748b)' }}>

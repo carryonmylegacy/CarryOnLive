@@ -58,6 +58,9 @@ const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
 const MobileNav = () => {
   const { user, logout, refreshUser, enabledFeatures, setUser, partnerBranding } = useAuth();
+  // Brand for partner-co-branded labels (CFP/CCP/Core Pillars etc.).
+  // Legal text, footers, ™ marks and "powered by" lines stay as CarryOn.
+  const brand = partnerBranding?.companyName || 'CarryOn';
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -405,13 +408,13 @@ const MobileNav = () => {
     { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
     { to: '/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
     { to: '/guardian', icon: Sparkles, label: 'Estate Guardian AI (EGA)' },
-    { to: '/financial', icon: DollarSign, label: 'CarryOn Financial Picture (CFP)' },
+    { to: '/financial', icon: DollarSign, label: `${brand} Financial Picture (CFP)` },
     { to: '/ffn', icon: Heart, label: 'Family & Friends Notification (FFN)' },
     { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
     { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
     { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
     { to: '/estate-chat', icon: MessageCircle, label: 'Estate Comms Tool (ECT)', badge: ectUnread },
-    { to: '/connected-protocol', icon: Shield, label: 'CarryOn Contingency Protocols (CCP)' },
+    { to: '/connected-protocol', icon: Shield, label: `${brand} Contingency Protocols (CCP)` },
   ], enabledFeatures), menuOrderBenefactor);
 
   // Get feature access flags from localStorage (set by TransitionGate/Dashboard)
@@ -442,8 +445,8 @@ const MobileNav = () => {
     { to: '/beneficiary/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
     { to: '/beneficiary/milestone', icon: Gift, label: 'Report Milestone' },
     { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Comms Tool (ECT)', badge: ectUnread },
-    { to: '/beneficiary/connected-protocol', icon: Shield, label: 'CarryOn Contingency Protocols (CCP)' },
-    { to: '/beneficiary/financial', icon: DollarSign, label: 'CarryOn Financial Picture (CFP)' },
+    { to: '/beneficiary/connected-protocol', icon: Shield, label: `${brand} Contingency Protocols (CCP)` },
+    { to: '/beneficiary/financial', icon: DollarSign, label: `${brand} Financial Picture (CFP)` },
   ]), enabledFeatures), menuOrderBeneficiary);
 
   // Staff portals — tool shortcuts in hamburger menu

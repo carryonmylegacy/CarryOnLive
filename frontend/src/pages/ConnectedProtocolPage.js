@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, useBrand } from '../contexts/AuthContext';
 import { API_URL } from '../config';
 import { useDebouncedRefetch } from '../hooks/useDebouncedRefetch';
 import { formatPhoneUS } from '../utils/phoneFormat';
@@ -74,6 +74,7 @@ const CCP_POLL_INTERVAL = 5000;
 
 export default function ConnectedProtocolPage() {
   const { user } = useAuth();
+  const brand = useBrand();
   const navigate = useNavigate();
   const token = localStorage.getItem('carryon_token');
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -953,7 +954,7 @@ export default function ConnectedProtocolPage() {
             <Shield className="w-5 h-5 text-[#d4af37]" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>CarryOn Contingency Protocols (CCP)</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>{brand} Contingency Protocols (CCP)</h1>
             <p className="text-xs text-[var(--t5)]">Family disaster preparedness — plans, check-ins &amp; rendezvous</p>
           </div>
         </div>

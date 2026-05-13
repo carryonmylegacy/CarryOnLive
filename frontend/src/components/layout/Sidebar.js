@@ -300,6 +300,9 @@ const ADMIN_PORTALS = [
 
 const Sidebar = () => {
   const { user, logout, refreshUser, enabledFeatures, setUser, partnerBranding } = useAuth();
+  // Brand for partner-co-branded labels (CFP/CCP/Core Pillars etc.).
+  // Legal text, footers, ™ marks and "powered by" lines stay as CarryOn.
+  const brand = partnerBranding?.companyName || 'CarryOn';
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [benEstates, setBenEstates] = useState([]);
@@ -555,8 +558,8 @@ const Sidebar = () => {
         { to: '/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
         { to: '/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
         { to: '/guardian', icon: Sparkles, label: 'Estate Guardian AI (EGA)' },
-        { to: '/financial', icon: DollarSign, label: 'CarryOn Financial Picture (CFP)' },
-        { to: '/connected-protocol', icon: Shield, label: 'CarryOn Contingency Protocols (CCP)' },
+        { to: '/financial', icon: DollarSign, label: `${brand} Financial Picture (CFP)` },
+        { to: '/connected-protocol', icon: Shield, label: `${brand} Contingency Protocols (CCP)` },
         { to: '/estate-chat', icon: MessageCircle, label: 'Estate Comms Tool (ECT)', badge: ectUnread },
         { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
         { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
@@ -608,8 +611,8 @@ const Sidebar = () => {
         { to: '/beneficiary/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
         { to: '/beneficiary/milestone', icon: Home, label: 'Report Milestone' },
         { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Comms Tool (ECT)', badge: ectUnread },
-        { to: '/beneficiary/connected-protocol', icon: Shield, label: 'CarryOn Contingency Protocols (CCP)' },
-        { to: '/beneficiary/financial', icon: DollarSign, label: 'CarryOn Financial Picture (CFP)' },
+        { to: '/beneficiary/connected-protocol', icon: Shield, label: `${brand} Contingency Protocols (CCP)` },
+        { to: '/beneficiary/financial', icon: DollarSign, label: `${brand} Financial Picture (CFP)` },
       ]), enabledFeatures), menuOrderBeneficiary)
     },
     {
