@@ -19,7 +19,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Loader2, Users, X } from 'lucide-react';
+import { Loader2, Users, X, Plus } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
@@ -82,6 +82,17 @@ export default function BlockEditModal({
       }));
   }, [mode, block, relationships, entities]);
 
+  // Entities NOT yet attached to this block. Used by the "+ Attach
+  // to another entity" footer so the user can wire this block into
+  // additional entities directly from the edit modal — no need to
+  // close, navigate to the entity, open its detail panel, etc.
+  const attachableEntities = useMemo(() => {
+    if (mode !== 'edit' || !block?.id) return [];
+    const attachedIds = new Set(attachments.map((a) => a.entityId));
+    return (entities || []).filter((e) => !attachedIds.has(e.id));
+  }, [mode, block, entities, attachments]);
+  const [attachingEntityId, setAttachingEntityId] = useState('');
+
   useEffect(() => {
     setName(block?.name || '');
     setMemberKeys(initialMembers.set);
@@ -122,6 +133,38 @@ export default function BlockEditModal({
         next.delete(relId);
         return next;
       });
+    }
+  };
+
+  const handleAttachToEntity = async (entityId, entityName) => {
+    if (!entityId || !block?.id || !block?.estate_id) return;
+    setAttachingEntityId(entityId);
+    try {
+      await axios.post(
+        `${API_URL}/financial/entity-relationships`,
+        {
+          estate_id: block.estate_id,
+          source_id: block.id,
+          source_type: 'beneficiary_block',
+          target_id: entityId,
+          target_type: 'entity',
+          role: 'beneficiary',
+          ownership_pct: null,
+        },
+        getAuthHeaders(),
+      );
+      toast.success(`Attached to ${entityName}.`);
+      // Same pattern as unlink — modal stays open, parent re-fetches,
+      // attachments useMemo recomputes on next render.
+      onSaved?.();
+    } catch (err) {
+      const detail = err?.response?.data?.detail;
+      const msg = typeof detail === 'string' ? detail
+        : (Array.isArray(detail) ? detail.map((d) => d?.msg || JSON.stringify(d)).join('; ')
+        : (err?.message || 'Failed to attach'));
+      toast.error(msg);
+    } finally {
+      setAttachingEntityId('');
     }
   };
 
@@ -304,51 +347,95 @@ export default function BlockEditModal({
 
           {/* Per-entity attachments. Each chip surgically unlinks
               ONE attachment so the user can remove this block from
-              (say) Trust A while keeping it on Trust B + LLC C. Only
-              meaningful in edit mode — convert mode hasn't created
-              the block yet, so it has no attachments. */}
-          {mode === 'edit' && attachments.length > 0 && (
+              (say) Trust A while keeping it on Trust B + LLC C. The
+              + Attach picker below lists every other entity on the
+              estate so additional attachments can be made without
+              leaving the modal. Only meaningful in edit mode —
+              convert mode hasn't created the block yet. */}
+          {mode === 'edit' && block?.id && (attachments.length > 0 || attachableEntities.length > 0) && (
             <div className="mt-4 pt-3 border-t border-[var(--b2)]">
               <Label className="text-[11px] text-[var(--t4)]">
-                Attached to · {attachments.length} {attachments.length === 1 ? 'entity' : 'entities'}
+                {attachments.length > 0
+                  ? `Attached to · ${attachments.length} ${attachments.length === 1 ? 'entity' : 'entities'}`
+                  : 'Not attached to any entity yet'}
               </Label>
-              <div className="mt-1.5 flex flex-wrap gap-1.5" data-testid="block-edit-attachments">
-                {attachments.map((a) => {
-                  const unlinking = unlinkingRelIds.has(a.relId);
-                  const isLast = attachments.length === 1;
-                  return (
-                    <span
-                      key={a.relId}
-                      className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full text-[12px] font-semibold"
-                      style={{
-                        background: 'rgba(34,201,147,0.12)',
-                        border: '1px solid rgba(34,201,147,0.55)',
-                        color: 'var(--t)',
-                      }}
-                      data-testid={`block-edit-attachment-${a.entityId}`}
-                    >
-                      <span className="truncate max-w-[140px]">{a.entityName}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleUnlinkAttachment(a.relId, a.entityName)}
-                        disabled={unlinking || saving}
-                        className="w-5 h-5 inline-flex items-center justify-center rounded-full hover:bg-[rgba(34,201,147,0.25)] disabled:opacity-50"
-                        style={{ color: '#22C993' }}
-                        data-testid={`block-edit-unlink-${a.entityId}`}
-                        title={isLast
-                          ? `Detach from ${a.entityName} (group will keep existing on its own)`
-                          : `Detach from ${a.entityName}`}
-                        aria-label={`Detach from ${a.entityName}`}
-                      >
-                        {unlinking ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
-                      </button>
-                    </span>
-                  );
-                })}
-              </div>
-              <div className="text-[11px] text-[var(--t4)] mt-2">
-                Tap × on any chip to detach this group from just that entity. The group stays intact everywhere else.
-              </div>
+              {attachments.length > 0 && (
+                <>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5" data-testid="block-edit-attachments">
+                    {attachments.map((a) => {
+                      const unlinking = unlinkingRelIds.has(a.relId);
+                      const isLast = attachments.length === 1;
+                      return (
+                        <span
+                          key={a.relId}
+                          className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full text-[12px] font-semibold"
+                          style={{
+                            background: 'rgba(34,201,147,0.12)',
+                            border: '1px solid rgba(34,201,147,0.55)',
+                            color: 'var(--t)',
+                          }}
+                          data-testid={`block-edit-attachment-${a.entityId}`}
+                        >
+                          <span className="truncate max-w-[140px]">{a.entityName}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleUnlinkAttachment(a.relId, a.entityName)}
+                            disabled={unlinking || saving}
+                            className="w-5 h-5 inline-flex items-center justify-center rounded-full hover:bg-[rgba(34,201,147,0.25)] disabled:opacity-50"
+                            style={{ color: '#22C993' }}
+                            data-testid={`block-edit-unlink-${a.entityId}`}
+                            title={isLast
+                              ? `Detach from ${a.entityName} (group will keep existing on its own)`
+                              : `Detach from ${a.entityName}`}
+                            aria-label={`Detach from ${a.entityName}`}
+                          >
+                            {unlinking ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <div className="text-[11px] text-[var(--t4)] mt-2">
+                    Tap × on any chip to detach this group from just that entity. The group stays intact everywhere else.
+                  </div>
+                </>
+              )}
+
+              {/* "+ Attach to another entity" picker. Renders one
+                  outlined teal pill per attachable entity (the rest
+                  of the estate's entities, minus those already
+                  attached above). Tap to attach in one shot — POST
+                  one block→entity rel + parent re-fetch. Hidden
+                  when there's nothing left to attach to. */}
+              {attachableEntities.length > 0 && (
+                <div className="mt-3" data-testid="block-edit-attachable">
+                  <div className="text-[11px] text-[var(--t4)]">+ Attach to another entity</div>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {attachableEntities.map((e) => {
+                      const busy = attachingEntityId === e.id;
+                      return (
+                        <button
+                          key={e.id}
+                          type="button"
+                          onClick={() => handleAttachToEntity(e.id, e.name || 'this entity')}
+                          disabled={busy || saving || !!attachingEntityId}
+                          className="inline-flex items-center gap-1.5 pl-2.5 pr-2.5 py-1 rounded-full text-[12px] font-semibold hover:bg-[rgba(34,201,147,0.18)] disabled:opacity-50"
+                          style={{
+                            background: 'transparent',
+                            border: '1px dashed rgba(34,201,147,0.6)',
+                            color: '#22C993',
+                          }}
+                          data-testid={`block-edit-attach-${e.id}`}
+                          title={`Attach this group to ${e.name || 'this entity'}`}
+                        >
+                          {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                          <span className="truncate max-w-[140px]">{e.name || 'Entity'}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

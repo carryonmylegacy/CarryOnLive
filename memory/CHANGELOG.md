@@ -1,6 +1,25 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — "+ Attach to another entity" Picker in BlockEditModal
+
+### Need (user said "yes")
+Mirror the surgical-unlink chips with a one-tap re-attach affordance so a user can wire the same group into additional entities mid-pitch without leaving the modal.
+
+### Change
+- `BlockEditModal.js`:
+  - New `attachableEntities` `useMemo` — every entity on the estate that's NOT in the current `attachments` list. Recomputes after each successful attach/unlink because the underlying `relationships` prop refreshes via `onSaved` → parent `fetchAll()`.
+  - New `attachingEntityId` state — single in-flight slot (only one attach can be in progress at a time; the chips disable themselves while it runs).
+  - New `handleAttachToEntity(entityId, entityName)`: one POST on `/financial/entity-relationships` with `source_type='beneficiary_block', target_type='entity', role='beneficiary'`. Uses `block.estate_id` straight off the server-shape block.
+  - New picker section right below the "Attached to:" chips: outlined-dashed teal pills (one per attachable entity) with a `+` icon, contrast with the filled chips above. Tap to attach in one shot.
+  - **Edge-case handling**: if the user detaches the last attachment, the section stays visible (was previously gated on `attachments.length > 0`); the label flips to "Not attached to any entity yet" so the user has a recovery path right there. Otherwise the orphaned block would have no tile on the canvas and no way back into the modal.
+
+### Verified
+- `bash /app/housekeeping.sh` → **0 FAIL, 0 WARN**.
+- ESLint clean on `BlockEditModal.js`.
+
+
+
 ## Feb 14, 2026 — "Attached to:" Surgical-Unlink Footer in BlockEditModal
 
 ### Need (user said "Do it")
