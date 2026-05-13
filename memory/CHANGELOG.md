@@ -1,6 +1,33 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — 400ms Debounce on User-Initiated Layout Save
+
+### Need (user said "Yes" to suggested enhancement)
+Coalesce rapid lock-tap sequences (lock → unlock → move → lock → move → lock, etc.) into a single PUT + a single toast. Reduces server chatter and keeps the UI snappy.
+
+### Change
+- `EntitiesSection.js`:
+  - New `layoutSaveTimerRef` (the pending 400ms timer) + `pendingSaveRef` (the latest `{overrides, hadChanges}` snapshot waiting to fire).
+  - User-initiated `onSaveLayout` calls now stash the latest snapshot, clear any prior timer, and schedule a fresh 400ms one. The timer's callback reads the latest snapshot, then runs the existing three-branch logic (success / no-changes / failure toasts).
+  - Silent navigate-away calls still fire immediately (no debounce) — wrapping them in setTimeout during unmount would never fire its callback.
+  - Unmount cleanup effect flushes any pending debounced save by firing an immediate silent PUT so the user's last lock-tap doesn't get lost if they navigate away within the 400ms window.
+
+### Verified
+- `bash /app/housekeeping.sh` → **0 FAIL, 0 WARN**.
+- ESLint clean.
+
+### Updated behaviour matrix
+| Trigger                                | Network | Toast                                              |
+|----------------------------------------|---------|----------------------------------------------------|
+| Single lock tap (changes pending)      | PUT (debounced 400ms) | success / warning / error after server reply |
+| Single lock tap (no changes)           | none    | "Layout already saved" after 400ms (still acknowledged) |
+| Rapid lock/unlock/lock within 400ms    | 1 PUT   | 1 toast (matches the LAST tap's hadChanges)        |
+| Navigate away with pending debounce    | 1 immediate silent PUT (cleanup flushes) | none |
+| Navigate away (clean)                  | 1 immediate silent PUT                  | none |
+
+
+
 ## Feb 14, 2026 — Lock Pill: Restored Gold + Honest Save-on-Tap Feedback
 
 ### Need (verbatim)

@@ -92,6 +92,35 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   // portal-switching that reuses the same component instance).
   useEffect(() => { setLocked(true); }, [estateId]);
 
+  // Debounced user-initiated layout save. Coalesces rapid lock-taps
+  // (or rapid lock + move + lock cycles) into a single PUT + a single
+  // toast. The latest snapshot wins. Silent navigate-away saves
+  // bypass this debounce so they fire immediately on unmount.
+  const layoutSaveTimerRef = React.useRef(null);
+  const pendingSaveRef = React.useRef(null); // { overrides, hadChanges }
+  useEffect(() => {
+    // Flush any pending debounced save on unmount so the user's
+    // last tap doesn't get lost if they navigate away within the
+    // 400ms window.
+    return () => {
+      if (layoutSaveTimerRef.current) {
+        clearTimeout(layoutSaveTimerRef.current);
+        layoutSaveTimerRef.current = null;
+        const p = pendingSaveRef.current;
+        pendingSaveRef.current = null;
+        if (p && estateId) {
+          try {
+            axios.put(
+              `${API_URL}/financial/entities/${estateId}/layout`,
+              { overrides: p.overrides || {} },
+              getAuthHeaders(),
+            ).catch(() => { /* offline / 5xx — local cache covers us */ });
+          } catch { /* axios threw before promise — ignore */ }
+        }
+      }
+    };
+  }, [estateId]);
+
   // If the user was mid-wizard and navigated away (bottom nav, sidebar,
   // a deep link), drop them right back into the wizard when the CFP
   // page remounts — drafts live in localStorage scoped per estate and
@@ -683,20 +712,10 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
             }}
             serverOverrides={serverChartLayout}
             onSaveLayout={async (overrides, opts = {}) => {
-              // Three paths:
-              //   • opts.userInitiated=true,  opts.hadChanges=true  →
-              //     user tapped the lock chip after moving tiles.
-              //     Await the PUT; toast SUCCESS only on the server
-              //     `{ ok: true }` answer so a 5xx/offline call can't
-              //     show a false confirmation.
-              //   • opts.userInitiated=true,  opts.hadChanges=false →
-              //     user tapped lock without changing anything.
-              //     Skip the network round-trip; toast a friendly
-              //     "already saved" so they get honest feedback that
-              //     their tap registered.
-              //   • opts.userInitiated=false → unmount cleanup (user
-              //     navigated away). Silent fire-and-forget; the
-              //     local cache covers offline / 5xx.
+              // Silent navigate-away path: fire-and-forget, immediate.
+              // Skips the debounce because we may already be in the
+              // middle of unmounting and any setTimeout would never
+              // fire its callback.
               if (!opts.userInitiated) {
                 try {
                   axios.put(
@@ -707,27 +726,35 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                 } catch { /* axios threw before promise — ignore */ }
                 return;
               }
-              if (opts.hadChanges === false) {
-                // Nothing to persist — but acknowledge the tap.
-                notify.success('Layout already saved');
-                return;
-              }
-              try {
-                const res = await axios.put(
-                  `${API_URL}/financial/entities/${estateId}/layout`,
-                  { overrides: overrides || {} },
-                  getAuthHeaders(),
-                );
-                // Server explicitly answers `{ ok: true }` on a clean
-                // upsert. Only celebrate when we have that proof.
-                if (res?.data?.ok === true) {
-                  notify.success('Tree structure saved');
-                } else {
-                  notify.warning("Couldn't confirm save — try again");
+              // User-initiated path (lock chip tap). Debounce 400ms
+              // so rapid taps coalesce into one PUT + one toast. The
+              // latest snapshot + `hadChanges` win.
+              pendingSaveRef.current = { overrides: overrides || {}, hadChanges: opts.hadChanges !== false };
+              if (layoutSaveTimerRef.current) clearTimeout(layoutSaveTimerRef.current);
+              layoutSaveTimerRef.current = setTimeout(async () => {
+                layoutSaveTimerRef.current = null;
+                const pending = pendingSaveRef.current;
+                pendingSaveRef.current = null;
+                if (!pending) return;
+                if (pending.hadChanges === false) {
+                  notify.success('Layout already saved');
+                  return;
                 }
-              } catch {
-                notify.error("Couldn't save tree structure");
-              }
+                try {
+                  const res = await axios.put(
+                    `${API_URL}/financial/entities/${estateId}/layout`,
+                    { overrides: pending.overrides || {} },
+                    getAuthHeaders(),
+                  );
+                  if (res?.data?.ok === true) {
+                    notify.success('Tree structure saved');
+                  } else {
+                    notify.warning("Couldn't confirm save — try again");
+                  }
+                } catch {
+                  notify.error("Couldn't save tree structure");
+                }
+              }, 400);
             }}
           />
         ) : (
