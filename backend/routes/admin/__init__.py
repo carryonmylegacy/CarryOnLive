@@ -21,6 +21,7 @@ from .grace_periods import router as grace_periods_router
 from .ip_whitelist import router as ip_whitelist_router
 from .launch_war_room import router as launch_war_room_router
 from .maintenance import router as maintenance_router
+from .partners import router as partners_router
 from .platform import router as platform_router
 from .scoped_roles import router as scoped_roles_router
 from .security_scan import router as security_scan_router
@@ -42,6 +43,7 @@ router.include_router(ip_whitelist_router)
 router.include_router(bulk_ops_router)
 router.include_router(canned_responses_router)
 router.include_router(maintenance_router)
+router.include_router(partners_router)
 router.include_router(session_policy_router)
 router.include_router(task_management_router)
 router.include_router(launch_war_room_router)

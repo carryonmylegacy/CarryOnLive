@@ -9,7 +9,7 @@ import {
   CheckSquare, AlertTriangle, Clock, TrendingUp, Recycle,
   Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap, Puzzle, Mail, Film, Hourglass,
   Globe, UserCog, Power, MessageSquare, BarChart3, Download, Radio,
-  Calendar, GraduationCap, Bell, Sparkles, MessageSquareQuote, FileText
+  Calendar, GraduationCap, Bell, Sparkles, MessageSquareQuote, FileText, Briefcase
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { toast } from '../utils/toast';
@@ -70,6 +70,7 @@ import { SectionMembersTab } from '../components/admin/SectionMembersTab';
 import { NotificationCategoriesTab } from '../components/admin/NotificationCategoriesTab';
 import { PlatformRulesTab } from '../components/admin/PlatformRulesTab';
 import { PrototypesTab } from '../components/admin/PrototypesTab';
+import { PartnersTab } from '../components/admin/PartnersTab';
 import { VoicesTab } from '../components/admin/VoicesTab';
 import SalesBriefTab from '../components/admin/SalesBriefTab';
 import AdminCommandPalette from '../components/admin/AdminCommandPalette';
@@ -101,6 +102,7 @@ const FOUNDER_SECTIONS = [
     scopes: ['founder', 'finance'],
     tabs: [
       { key: 'subscriptions', label: 'Subs', icon: CreditCard, path: '/admin/subscriptions' },
+      { key: 'partners', label: 'Partners', icon: Briefcase, path: '/admin/partners' },
       { key: 'platform-rules', label: 'Rules', icon: Shield, path: '/admin/platform-rules' },
       { key: 'analytics', label: 'Revenue', icon: Activity, path: '/admin/analytics' },
       { key: 'launch', label: 'Launch', icon: TrendingUp, path: '/admin/launch' },
@@ -204,6 +206,7 @@ const PATH_TO_TAB = {
   '/admin/dev-switcher': 'dev-switcher',
   '/admin/support': 'support',
   '/admin/subscriptions': 'subscriptions',
+  '/admin/partners': 'partners',
   '/admin/verifications': 'verifications',
   '/admin/analytics': 'analytics',
   '/admin/activity': 'activity',
@@ -575,6 +578,7 @@ const AdminPage = ({ operatorMode = false }) => {
         {effectiveTab === 'dts' && <DTSTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'support' && <SupportTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'subscriptions' && <SubscriptionsTab getAuthHeaders={getAuthHeaders} users={users} operatorMode={operatorMode} />}
+        {effectiveTab === 'partners' && <PartnersTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'verifications' && <VerificationsTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'analytics' && <AnalyticsTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'launch' && <LaunchMetricsTab getAuthHeaders={getAuthHeaders} />}

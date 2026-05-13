@@ -62,6 +62,7 @@ const SupportChatPage = lazy(() => import('./pages/SupportChatPage'));
 const SecuritySettingsPage = lazy(() => import('./pages/SecuritySettingsPage'));
 const LegacyTimelinePage = lazy(() => import('./pages/LegacyTimelinePage'));
 const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
+const PartnerPortalPage = lazy(() => import('./pages/PartnerPortalPage'));
 const FoundersCirclePage = lazy(() => import('./pages/FoundersCirclePage'));
 const OperationsPage = lazy(() => import('./pages/OperationsPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
@@ -608,6 +609,12 @@ function AppRoutes() {
       <Route path="/founder" element={<FounderAboutPage />} />
       <Route path="/home" element={<HomePage />} />
       <Route path="/voices" element={<VoicesPage />} />
+      {/* B2B white-label partner landing — `/p/:slug`. Public, mirrors
+          the LoginPage hero but swaps the CarryOn logo for the
+          partner's. Stashes partner slug in localStorage so the
+          onboarding flow can prompt for the partner's enterprise
+          code at the end of signup. */}
+      <Route path="/p/:slug" element={<PartnerPortalPage />} />
       {/* Public B2B partner brief — shareable URL, no auth. Linked from
           Admin → Marketing → Sales Brief. Used by the founder\u2019s assistant
           and anyone the founder forwards the link to. */}
