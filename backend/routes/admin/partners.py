@@ -476,6 +476,11 @@ async def public_partner(slug: str):
         "company_name": doc["company_name"],
         "tagline": doc.get("tagline", ""),
         "has_logo": bool(doc.get("logo_key")),
+        # `updated_at` is included so the landing page can bust the
+        # 24-hour browser cache when an admin re-uploads the logo.
+        # Without this a stale or 404'd logo response would stick in
+        # the browser cache for a full day.
+        "updated_at": doc.get("updated_at"),
         "enabled_pillars": enabled_pillars,
     }
 
@@ -483,21 +488,27 @@ async def public_partner(slug: str):
 @router.get("/public/partners/{slug}/logo")
 async def public_partner_logo(slug: str):
     """Streams the logo bytes. Public so the unauth landing page can
-    render the partner's brand mark without leaking a presigned S3 URL."""
+    render the partner's brand mark without leaking a presigned S3 URL.
+
+    Successful responses are cached for 24h; failures are explicitly
+    NOT cached so a transient S3 hiccup doesn't poison browsers for a
+    full day. Clients should append `?v={updated_at}` to the URL to
+    bust cache when an admin re-uploads."""
     slug = (slug or "").strip().lower()
+    no_cache_headers = {"Cache-Control": "no-store", "Pragma": "no-cache"}
     if not SLUG_RE.match(slug):
-        raise HTTPException(status_code=404, detail="Logo not found.")
+        raise HTTPException(status_code=404, detail="Logo not found.", headers=no_cache_headers)
     doc = await db.b2b_partners.find_one(
         {"slug": slug, "active": True},
         {"_id": 0, "logo_key": 1, "logo_content_type": 1},
     )
     if not doc or not doc.get("logo_key"):
-        raise HTTPException(status_code=404, detail="Logo not found.")
+        raise HTTPException(status_code=404, detail="Logo not found.", headers=no_cache_headers)
     try:
         blob = await storage.download(doc["logo_key"])
     except Exception as exc:  # noqa: BLE001
         logger.exception("Partner logo fetch failed")
-        raise HTTPException(status_code=404, detail="Logo not available.") from exc
+        raise HTTPException(status_code=404, detail="Logo not available.", headers=no_cache_headers) from exc
     return StreamingResponse(
         io.BytesIO(blob),
         media_type=doc.get("logo_content_type") or "image/png",

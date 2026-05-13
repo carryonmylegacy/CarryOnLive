@@ -536,6 +536,11 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
   const logoUrl = partner.logo_key
     ? `${API_URL}/public/partners/${partner.slug}/logo?v=${encodeURIComponent(partner.updated_at || '')}`
     : null;
+  // Track per-row logo-load failures so a broken S3 fetch shows the
+  // gold LOGO placeholder instead of the browser's stock
+  // broken-image icon (which renders as a tiny "?" in a box).
+  const [logoFailed, setLogoFailed] = useState(false);
+  useEffect(() => { setLogoFailed(false); }, [logoUrl]);
 
   const commit = (field) => {
     if (draft[field] === partner[field] || (draft[field] === '' && !partner[field])) return;
@@ -548,8 +553,14 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
         <div className="flex items-start gap-3">
           {/* Logo */}
           <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
-            {logoUrl ? (
-              <img src={logoUrl} alt={partner.company_name} className="w-12 h-12 rounded-lg object-contain bg-white p-1" />
+            {logoUrl && !logoFailed ? (
+              <img
+                src={logoUrl}
+                alt={partner.company_name}
+                className="w-12 h-12 rounded-lg object-contain bg-white p-1"
+                onError={() => setLogoFailed(true)}
+                data-testid={`partner-logo-img-${partner.slug}`}
+              />
             ) : (
               LOGO_PLACEHOLDER
             )}

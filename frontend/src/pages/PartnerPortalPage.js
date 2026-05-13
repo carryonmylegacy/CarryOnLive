@@ -59,6 +59,11 @@ const PartnerPortalPage = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
+  // Track per-render logo-load failure so a broken S3 fetch swaps
+  // to the gracious placeholder instead of the browser's stock
+  // broken-image icon. MUST be declared before any early return
+  // (react-hooks/rules-of-hooks).
+  const [logoFailed, setLogoFailed] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -139,7 +144,16 @@ const PartnerPortalPage = () => {
     heroSubtitle = `${partner?.company_name} members get ${head}, and ${tail} from CarryOn.`;
   }
 
-  const logoUrl = partner.has_logo ? `${API_URL}/public/partners/${partner.slug}/logo` : null;
+  // Cache-bust the logo URL with the partner's `updated_at` so a
+  // logo re-upload by the admin shows up instantly (would otherwise
+  // be held in the browser cache for 24h per the backend's
+  // Cache-Control header on successful responses).
+  const logoUrl = partner.has_logo
+    ? `${API_URL}/public/partners/${partner.slug}/logo?v=${encodeURIComponent(partner.updated_at || '')}`
+    : null;
+  // Reset the failed flag whenever the URL changes (admin re-uploads).
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => { setLogoFailed(false); }, [logoUrl]);
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ background: 'var(--bg)' }} data-testid="partner-portal-page">
@@ -165,10 +179,11 @@ const PartnerPortalPage = () => {
 
             {/* LEFT: Partner logo + tagline */}
             <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
-              {logoUrl ? (
+              {logoUrl && !logoFailed ? (
                 <img src={logoUrl} alt={`${partner.company_name} logo`}
                   className="max-w-[260px] max-h-[160px] w-auto h-auto object-contain mb-6 rounded-xl bg-white/95 p-4"
                   style={{ boxShadow: '0 8px 40px rgba(0,0,0,0.35)' }}
+                  onError={() => setLogoFailed(true)}
                   data-testid="partner-portal-logo" />
               ) : (
                 <div
