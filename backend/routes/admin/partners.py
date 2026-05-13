@@ -364,11 +364,17 @@ async def send_partner_welcome(
             detail="No partner email on file — add one to the row first.",
         )
 
-    # Build base URL from the inbound request so the link in the
-    # email matches the host the founder is actually using (dev
-    # preview, staging, prod). Falls back to request.url if Host
-    # header is missing for any reason.
-    base_url = f"{request.url.scheme}://{request.url.netloc}"
+    # Build the public-facing base URL for the landing-page link.
+    # Use the `FRONTEND_URL` env var (the canonical public app URL
+    # — same one every other email-sending service in this codebase
+    # uses) rather than `request.url.netloc`, because the latter
+    # resolves to the INTERNAL backend host when the request comes
+    # through the Kubernetes ingress / reverse-proxy. That mismatch
+    # was what made the email link 404 — it was pointing at the
+    # backend API host where `/p/<slug>` is a frontend-only route.
+    import os as _os
+
+    base_url = (_os.environ.get("FRONTEND_URL") or f"{request.url.scheme}://{request.url.netloc}").rstrip("/")
     subject, html = _build_welcome_email(partner, base_url)
 
     from services.email import send_email
