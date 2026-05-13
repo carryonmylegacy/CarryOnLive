@@ -134,6 +134,23 @@ async def list_partners(current_user: dict = Depends(get_current_user)):
     _ensure_founder(current_user)
     cursor = db.b2b_partners.find({}, {"_id": 0}).sort("created_at", -1)
     partners = await cursor.to_list(500)
+
+    # Decorate each partner with the LIVE count of users currently
+    # linked via `partner_id` so the founder sees "5 of 10 seats
+    # active" at a glance. We count real `users` documents — not the
+    # `times_used` counter — so deletions/refunds reflect immediately.
+    # `times_used` is preserved as the LIFETIME count (how many
+    # redemptions ever happened) for funnel-analytics reporting.
+    if partners:
+        ids = [p["id"] for p in partners]
+        pipeline = [
+            {"$match": {"partner_id": {"$in": ids}}},
+            {"$group": {"_id": "$partner_id", "n": {"$sum": 1}}},
+        ]
+        counts = {row["_id"]: row["n"] async for row in db.users.aggregate(pipeline)}
+        for p in partners:
+            p["active_users_count"] = int(counts.get(p["id"], 0))
+
     return {
         "partners": partners,
         "feature_columns": PARTNER_FEATURE_PILLARS,

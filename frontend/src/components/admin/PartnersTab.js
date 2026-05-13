@@ -16,7 +16,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import {
   Briefcase, Plus, Trash2, Copy, Check, Loader2, ExternalLink,
-  Upload, Image as ImageIcon, Power, Mail, Send,
+  Upload, Image as ImageIcon, Power, Mail, Send, Pencil, Users,
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -374,11 +374,11 @@ export const PartnersTab = ({ getAuthHeaders }) => {
                 <p className="text-[11px] text-[var(--t5)]">100 = free for all their members</p>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-[var(--t4)]">Max Uses</Label>
+                <Label className="text-xs text-[var(--t4)]">Users Authorized</Label>
                 <Input type="number" min={0} value={newForm.max_uses}
                   onChange={e => setNewForm({ ...newForm, max_uses: parseInt(e.target.value) || 0 })}
-                  className="input-field text-sm" />
-                <p className="text-[11px] text-[var(--t5)]">0 = unlimited</p>
+                  className="input-field text-sm" data-testid="new-partner-max-users" />
+                <p className="text-[11px] text-[var(--t5)]">Number of user subscriptions the partner is paying for. 0 = unlimited.</p>
               </div>
               <div className="space-y-1 md:col-span-2 lg:col-span-3">
                 <Label className="text-xs text-[var(--t4)]">Landing Page Tagline</Label>
@@ -485,7 +485,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
                     {c.partner_name && <span className="text-xs text-[var(--t4)] truncate">{c.partner_name}</span>}
                     <span className="text-[11px] text-[var(--t5)]">
                       {c.discount_percent >= 100 ? 'Free' : `${c.discount_percent}% off`}
-                      {' · '}{c.times_used || 0}{c.max_uses > 0 ? `/${c.max_uses}` : ''} used
+                      {' · '}{c.times_used || 0}{c.max_uses > 0 ? ` of ${c.max_uses}` : ''} users
                     </span>
                   </div>
                   <button
@@ -512,6 +512,7 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
     slug: partner.slug,
     code: partner.code,
     discount_percent: partner.discount_percent,
+    max_uses: partner.max_uses || 0,
     tagline: partner.tagline || '',
     partner_email: partner.partner_email || '',
   });
@@ -525,10 +526,11 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
       slug: partner.slug,
       code: partner.code,
       discount_percent: partner.discount_percent,
+      max_uses: partner.max_uses || 0,
       tagline: partner.tagline || '',
       partner_email: partner.partner_email || '',
     });
-  }, [partner.company_name, partner.slug, partner.code, partner.discount_percent, partner.tagline, partner.partner_email]);
+  }, [partner.company_name, partner.slug, partner.code, partner.discount_percent, partner.max_uses, partner.tagline, partner.partner_email]);
 
   const url = partnerLandingHref(partner.slug);
   const logoUrl = partner.logo_key
@@ -598,20 +600,57 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
               </div>
             </div>
             <div className="grid grid-cols-2 gap-1.5">
-              <div>
+              <div className="relative">
                 <Input
                   type="number" min={0} max={100}
                   value={draft.discount_percent}
                   onChange={e => setDraft({ ...draft, discount_percent: parseInt(e.target.value) || 0 })}
                   onBlur={() => commit('discount_percent')}
-                  className="input-field text-xs h-7"
-                  placeholder="Discount %"
-                  title="Discount %"
+                  className="input-field text-xs h-7 pr-12"
+                  placeholder="Discount"
+                  title="Discount the partner receives off retail (100 = free)"
+                  data-testid={`partner-discount-${partner.slug}`}
                 />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-[var(--t5)] uppercase font-bold tracking-wider pointer-events-none">% off</span>
               </div>
-              <div className="flex items-center text-[11px] text-[var(--t5)]">
-                {partner.times_used}{partner.max_uses > 0 ? `/${partner.max_uses}` : ''} used
+              <div className="relative" title="Number of user subscriptions the partner is paying for (0 = unlimited)">
+                <Input
+                  type="number" min={0}
+                  value={draft.max_uses}
+                  onChange={e => setDraft({ ...draft, max_uses: parseInt(e.target.value) || 0 })}
+                  onBlur={() => commit('max_uses')}
+                  className="input-field text-xs h-7 pr-12"
+                  placeholder="Users"
+                  data-testid={`partner-max-users-${partner.slug}`}
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-[var(--t5)] uppercase font-bold tracking-wider pointer-events-none">
+                  <Pencil className="w-2.5 h-2.5 inline -mt-0.5 mr-0.5" /> seats
+                </span>
               </div>
+            </div>
+            {/* Live seat utilization — count of users currently
+                linked via partner_id (decoded server-side). When
+                max_uses = 0 we show "unlimited". */}
+            <div className="text-[11px] text-[var(--t5)] flex items-center gap-1.5 flex-wrap" data-testid={`partner-seats-${partner.slug}`}>
+              <Users className="w-3 h-3" />
+              <span>
+                <span className={`font-bold ${partner.max_uses > 0 && partner.active_users_count >= partner.max_uses ? 'text-[var(--rd)]' : 'text-[var(--gold)]'}`}>
+                  {partner.active_users_count || 0}
+                </span>
+                {' '}of{' '}
+                <span className="font-bold text-[var(--t3)]">
+                  {partner.max_uses > 0 ? partner.max_uses : '∞'}
+                </span>
+                {' '}users active
+              </span>
+              {partner.max_uses > 0 && partner.active_users_count >= partner.max_uses && (
+                <span className="text-[var(--rd)] font-bold">· FULL</span>
+              )}
+              {partner.times_used > (partner.active_users_count || 0) && (
+                <span className="text-[var(--t6)]" title="Lifetime redemptions — some users may have been deleted">
+                  · {partner.times_used} lifetime
+                </span>
+              )}
             </div>
             <Input
               value={draft.tagline}
