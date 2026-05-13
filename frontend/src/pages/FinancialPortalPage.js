@@ -12,6 +12,7 @@ import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from '../utils/toast';
 import { openPdfPreview } from '../utils/openPdfPreview';
+import CachedPdfIcon from '../components/CachedPdfIcon';
 // STATIC import — dynamic await import() chunks fail to fetch when
 // the user is offline, breaking delete/designation/category mutations.
 import { mutateWithOutbox } from '../utils/offlineMutation';
@@ -396,6 +397,7 @@ const FinancialPortalPage = () => {
       const filename = `carryon-handoff-${estate.id.slice(0, 8)}.pdf`;
       await openPdfPreview({
         navigate,
+        pdfType: 'cfp_handoff',
         filename,
         title: 'CFP Hand-off Package',
         subtitle: estate?.name || '',
@@ -794,6 +796,7 @@ const FinancialPortalPage = () => {
               {exportingHandoff ? 'Generating…' : 'Hand-off PDF'}
             </Button>
           )}
+          {estate?.id && <CachedPdfIcon pdfType="cfp_handoff" size={16} />}
         </div>
       </div>
 

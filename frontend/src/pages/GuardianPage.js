@@ -38,6 +38,7 @@ import {
 
 import { toast } from '../utils/toast';
 import { downloadFile, platformDownload } from '../utils/downloadFile';
+import CachedPdfIcon from '../components/CachedPdfIcon';
 import { openPdfPreview } from '../utils/openPdfPreview';
 import { API_URL } from '../config';
 import { Button } from '../components/ui/button';
@@ -358,6 +359,7 @@ const GuardianPage = () => {
       const filename = `CarryOn_IAC_${dateStr}.pdf`;
       await openPdfPreview({
         navigate,
+        pdfType: 'ega_checklist',
         filename,
         title: 'IAC Checklist',
         subtitle: dateStr,
@@ -379,6 +381,7 @@ const GuardianPage = () => {
       const filename = `CarryOn_ToDo_${dateStr}.pdf`;
       await openPdfPreview({
         navigate,
+        pdfType: 'ega_todo',
         filename,
         title: 'EGA To-Do List',
         subtitle: dateStr,
@@ -399,6 +402,7 @@ const GuardianPage = () => {
       const filename = `CarryOn_IAC_Report_${dateStr}.pdf`;
       await openPdfPreview({
         navigate,
+        pdfType: 'ega_iac',
         filename,
         title: 'IAC Report',
         subtitle: dateStr,
@@ -421,6 +425,7 @@ const GuardianPage = () => {
       const filename = `CarryOn_Transcript_${dateStr}.pdf`;
       await openPdfPreview({
         navigate,
+        pdfType: 'ega_transcript',
         filename,
         title: 'EGA Conversation Transcript',
         subtitle: dateStr,
@@ -443,6 +448,7 @@ const GuardianPage = () => {
       const filename = `CarryOn_Plan_of_Action_${dateStr}.pdf`;
       await openPdfPreview({
         navigate,
+        pdfType: 'ega_plan',
         filename,
         title: 'EGA Plan of Action',
         subtitle: dateStr,
@@ -812,6 +818,7 @@ const GuardianPage = () => {
           </div>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
+          <CachedPdfIcon pdfType="ega_transcript" size={14} />
           <button onClick={handleExportTranscript} disabled={exporting || !sessionId} title="Download Transcript"
             className="h-9 px-2 lg:px-3 rounded-lg flex items-center gap-1.5 transition-all hover:bg-[var(--s)]"
             style={{ color: '#94a3b8' }}
@@ -819,6 +826,7 @@ const GuardianPage = () => {
             {exporting ? <PieProgress size={18} color="#94a3b8" duration={4} /> : <FileDown className="w-4.5 h-4.5" />}
             <span className="hidden lg:inline text-xs font-bold">Transcript</span>
           </button>
+          <CachedPdfIcon pdfType="ega_plan" size={14} />
           <button onClick={handleExportPlan} disabled={planExporting || !sessionId} title="Download Plan of Action"
             className="h-9 px-2 lg:px-3 rounded-lg flex items-center gap-1.5 transition-all hover:bg-[var(--s)]"
             style={{ color: 'var(--gold)' }}
@@ -826,6 +834,7 @@ const GuardianPage = () => {
             {planExporting ? <PieProgress size={18} color="#d4af37" duration={15} /> : <ClipboardList className="w-4.5 h-4.5" />}
             <span className="hidden lg:inline text-xs font-bold">Plan</span>
           </button>
+          <CachedPdfIcon pdfType="ega_checklist" size={14} />
           <button onClick={handleChecklistExport} disabled={checklistExporting} title="Export IAC Checklist"
             className="h-9 px-2 lg:px-3 rounded-lg flex items-center gap-1.5 transition-all hover:bg-[var(--s)]"
             style={{ color: '#22C993' }}

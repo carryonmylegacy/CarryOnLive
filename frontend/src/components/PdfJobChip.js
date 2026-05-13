@@ -59,15 +59,23 @@ const PdfJobChip = () => {
     };
   }, []);
 
-  // Auto-dismiss only the ERROR chip (after 8s). The READY chip is
-  // intentionally STICKY — it stays visible until the user dismisses it
-  // (X button) or a new job starts. This way, after the user closes the
-  // preview modal they always have a one-tap way to re-open the same PDF
-  // for the rest of the session, until they explicitly dismiss the chip.
+  // The READY chip used to be sticky — kept around until the user
+  // dismissed it. Now that each section has its own persistent
+  // `<CachedPdfIcon>` next to its generate button, the chip's only
+  // job is to indicate IN-FLIGHT work + a brief celebratory "ready"
+  // moment. Auto-dismiss READY after 5s, ERROR after 8s.
   useEffect(() => {
     if (!job) return undefined;
-    if (job.status === 'running' || job.status === 'ready') return undefined;
-    const t = setTimeout(() => setJob(null), 8000);
+    if (job.status === 'running') return undefined;
+    const ms = job.status === 'ready' ? 5000 : 8000;
+    const t = setTimeout(() => {
+      setJob((prev) => {
+        if (prev?.entry?.url) {
+          try { URL.revokeObjectURL(prev.entry.url); } catch { /* ignore */ }
+        }
+        return null;
+      });
+    }, ms);
     return () => clearTimeout(t);
   }, [job]);
 

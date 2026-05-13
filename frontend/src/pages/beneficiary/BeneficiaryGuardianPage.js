@@ -13,6 +13,7 @@ import { API_URL } from '../../config';
 import { toast } from '../../utils/toast';
 import { downloadFile, platformDownload } from '../../utils/downloadFile';
 import { openPdfPreview } from '../../utils/openPdfPreview';
+import CachedPdfIcon from '../../components/CachedPdfIcon';
 
 const BeneficiaryGuardianPage = () => {
   const { user, getAuthHeaders } = useAuth();
@@ -57,6 +58,7 @@ const BeneficiaryGuardianPage = () => {
       const filename = `CarryOn_IAC_${dateStr}.pdf`;
       await openPdfPreview({
         navigate,
+        pdfType: 'beneficiary_packet',
         filename,
         title: 'Beneficiary IAC Checklist',
         subtitle: dateStr,
@@ -117,6 +119,7 @@ const BeneficiaryGuardianPage = () => {
           >
             <Download className="w-3.5 h-3.5" /> Download IAC
           </Button>
+          <CachedPdfIcon pdfType="beneficiary_packet" size={16} />
         </div>
       </div>
       <div className="flex flex-col sm:flex-row gap-2 mb-3">

@@ -19,6 +19,7 @@ import { enqueue as enqueueOutbox } from '../offline/outbox';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import { API_URL } from '../config';
 import { openPdfPreview } from '../utils/openPdfPreview';
+import CachedPdfIcon from '../components/CachedPdfIcon';
 
 const CATEGORIES = [
   { value: 'legal', label: 'Legal', icon: FileText, color: '#3b82f6' },
@@ -363,6 +364,7 @@ const ChecklistPage = () => {
     try {
       const dateStr = new Date().toISOString().split('T')[0];
       await openPdfPreview({
+        pdfType: 'iac_standalone',
         filename: `CarryOn_IAC_${dateStr}.pdf`,
         title: 'Immediate Action Checklist',
         subtitle: `Beneficiary preview · ${dateStr}`,
@@ -739,6 +741,7 @@ const ChecklistPage = () => {
           {iacPrinting ? <Loader2 className="w-4 h-4 animate-spin text-[var(--gold)]" /> : <Printer className="w-4 h-4 text-[var(--gold)]" />}
           Print PDF
         </button>
+        <CachedPdfIcon pdfType="iac_standalone" size={18} />
       </div>
 
       {/* Add/Edit Form */}

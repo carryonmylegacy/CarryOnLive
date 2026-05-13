@@ -50,6 +50,7 @@ import {
   Info,
 } from 'lucide-react';
 import { openPdfPreview } from '../utils/openPdfPreview';
+import CachedPdfIcon from '../components/CachedPdfIcon';
 
 const STATUS_CONFIG = {
   safe: { label: 'SAFE', color: '#22C993', bg: 'rgba(34,201,147,0.15)', border: 'rgba(34,201,147,0.4)', icon: Check },
@@ -422,6 +423,7 @@ export default function ConnectedProtocolPage() {
       const filename = `CCP_${safeName}.pdf`;
       await openPdfPreview({
         navigate,
+        pdfType: 'ccp_plan',
         filename,
         title: 'Contingency Care Plan',
         subtitle: plan.name || '',
@@ -496,6 +498,7 @@ export default function ConnectedProtocolPage() {
       const filename = `EmergencyCard_${safeName}.pdf`;
       await openPdfPreview({
         navigate,
+        pdfType: 'ccp_card',
         filename,
         title: 'Emergency Card',
         subtitle: plan.name || '',
@@ -1006,42 +1009,46 @@ export default function ConnectedProtocolPage() {
 
       {/* Family Readiness Report */}
       {isBenefactor && plans.length > 0 && (
-        <button
-          onClick={async () => {
-            try {
-              const filename = 'CarryOn_Readiness_Report.pdf';
-              await openPdfPreview({
-                navigate,
-                filename,
-                title: 'Family Readiness Report',
-                subtitle: new Date().toISOString().slice(0, 10),
-                blobFetcher: async () => {
-                  const t = localStorage.getItem('carryon_token');
-                  const prep = await fetch(`${API_URL}/downloads/prepare`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${t}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'family_readiness_report', params: { estate_id: estateId }, filename }),
-                  });
-                  if (!prep.ok) throw new Error('Failed to prepare');
-                  const { token: dt } = await prep.json();
-                  const res = await fetch(`${API_URL}/downloads/${dt}`);
-                  if (!res.ok) throw new Error('Failed to fetch PDF');
-                  return await res.blob();
-                },
-              });
-            } catch { alert('Failed to generate report'); }
-          }}
-          className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center gap-3 px-5"
-          data-testid="ccp-readiness-report-btn"
-          style={{ background: 'rgba(34,201,147,0.06)', border: '1px solid rgba(34,201,147,0.15)', color: '#22C993' }}
-        >
-          <Download className="w-6 h-6 flex-shrink-0" />
-          <div className="text-left flex-1">
-            <div style={{ fontFamily: 'var(--sans)' }}>Family Readiness Report</div>
-            <div className="text-xs font-normal" style={{ color: 'var(--t4)' }}>Download PDF for your go-bag</div>
-          </div>
-          <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />
-        </button>
+        <div className="flex items-center gap-2 w-full">
+          <button
+            onClick={async () => {
+              try {
+                const filename = 'CarryOn_Readiness_Report.pdf';
+                await openPdfPreview({
+                  navigate,
+                  pdfType: 'ccp_report',
+                  filename,
+                  title: 'Family Readiness Report',
+                  subtitle: new Date().toISOString().slice(0, 10),
+                  blobFetcher: async () => {
+                    const t = localStorage.getItem('carryon_token');
+                    const prep = await fetch(`${API_URL}/downloads/prepare`, {
+                      method: 'POST',
+                      headers: { 'Authorization': `Bearer ${t}`, 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'family_readiness_report', params: { estate_id: estateId }, filename }),
+                    });
+                    if (!prep.ok) throw new Error('Failed to prepare');
+                    const { token: dt } = await prep.json();
+                    const res = await fetch(`${API_URL}/downloads/${dt}`);
+                    if (!res.ok) throw new Error('Failed to fetch PDF');
+                    return await res.blob();
+                  },
+                });
+              } catch { alert('Failed to generate report'); }
+            }}
+            className="flex-1 py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center gap-3 px-5"
+            data-testid="ccp-readiness-report-btn"
+            style={{ background: 'rgba(34,201,147,0.06)', border: '1px solid rgba(34,201,147,0.15)', color: '#22C993' }}
+          >
+            <Download className="w-6 h-6 flex-shrink-0" />
+            <div className="text-left flex-1">
+              <div style={{ fontFamily: 'var(--sans)' }}>Family Readiness Report</div>
+              <div className="text-xs font-normal" style={{ color: 'var(--t4)' }}>Download PDF for your go-bag</div>
+            </div>
+            <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />
+          </button>
+          <CachedPdfIcon pdfType="ccp_report" size={20} />
+        </div>
       )}
 
       {/* Recall walkthrough */}
