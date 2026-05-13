@@ -1,6 +1,32 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — Removed "Beneficiary Blocks" summary banner from CFP
+
+### Need
+User found the "BENEFICIARY BLOCKS (N) — Show/Hide" summary banner above the E&S chart canvas excessive, and tapping a row inside it panned the entire tree off-screen. They asked to delete just that banner — **not** the named-blocks data feature itself, **not** the in-chart "Trust Beneficiaries" composite tile.
+
+### Change — `components/financial/entities/EntitiesSection.js` (surgical removal)
+Removed:
+- The entire JSX summary card (lines previously containing `data-testid="blocks-summary-card"`, the toggle button, the per-block rows that listed "N× linked · attached to {entity}").
+- State `blocksExpanded` / `setBlocksExpanded`.
+- State `chartFocusKey` / `chartFocusNonce` (only the banner's row clicks bumped them).
+- Callback `focusOnBlock(blockId)` (only the banner's row clicks called it).
+- `focusKey` / `focusNonce` props no longer passed into `<EntityOrgChart>`.
+- `Users` icon dropped from `lucide-react` import (only used in the banner).
+
+Untouched (intentional, per user-confirmed scope):
+- The in-chart "Trust Beneficiaries" composite tile (Penny / Emma / Tom / …) — still renders, still draggable, still editable via the pencil.
+- Backend `beneficiary_blocks` API + storage.
+- `BlockEditModal` — pencil-edit flow on the in-chart tile still functions.
+- The "Show N hidden" toolbar pill (unrelated).
+
+### Verified
+- ESLint clean on the changed file.
+- `bash /app/housekeeping.sh --strict` reports 0 FAIL / 0 WARN from my changes; one transient WARN on check #34 ("Recent backend logs") is pre-existing Resend rate-limit noise from background trial-reminder jobs — unrelated and not visible on a clean GitHub-side pre-push.
+
+
+
 ## Feb 14, 2026 — ECT walkthrough Step 2 scroll fix (iOS PWA recurring bug)
 
 ### Need
