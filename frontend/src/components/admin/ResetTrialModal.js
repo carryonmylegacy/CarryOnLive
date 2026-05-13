@@ -7,6 +7,7 @@ export const ResetTrialModal = ({
   handleResetTrial,
   resetting,
   onCancel,
+  trialDays = 30,
 }) => {
   if (!resetTarget) return null;
 
@@ -43,7 +44,7 @@ export const ResetTrialModal = ({
 
         <div className="p-3 rounded-xl" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }}>
           <p className="text-sm text-[var(--t3)]">
-            Restart the 30-day free trial for <strong className="text-white">{resetTarget.name}</strong> ({resetTarget.role})?
+            Restart the {trialDays}-day free trial for <strong className="text-white">{resetTarget.name}</strong> ({resetTarget.role})?
           </p>
           <div className="mt-2 space-y-1 text-[11px] text-[var(--t5)]">
             {prevTrialLabel && (
@@ -57,7 +58,7 @@ export const ResetTrialModal = ({
               <span className="text-[var(--gold)] font-medium">
                 {(() => {
                   const d = new Date();
-                  d.setDate(d.getDate() + 30);
+                  d.setDate(d.getDate() + trialDays);
                   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
                 })()}
               </span>

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Clock, Loader2, User } from 'lucide-react';
+import { Clock, Loader2, User, Mail, ChevronDown, ChevronUp, Check } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
+import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 
 const roleColors = {
@@ -15,25 +16,174 @@ const urgencyColor = (days) => {
   return '#22C993';
 };
 
+// ─── Trial Policy Picker ────────────────────────────────────────
+// Global control: founder selects the platform-wide trial duration.
+// Reminder cadence is auto-derived per option. Changing the policy
+// retroactively shifts every in-progress trial's end date so the
+// new policy applies platform-wide.
+const TrialPolicyCard = ({ policy, onChange, getAuthHeaders, saving, setSaving }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!policy) return null;
+
+  const apply = async (days) => {
+    if (days === policy.trial_days) return;
+    const cadence = policy.cadence_map?.[String(days)] || [];
+    const cadenceText = cadence.length ? cadence.map((d) => `${d}d`).join(' · ') : 'none';
+    const ok = window.confirm(
+      `Set the global free trial to ${days} days?\n\n` +
+      `• Every user currently in trial will have their end date ` +
+      `recomputed to (signup date + ${days} days).\n` +
+      `• Reminder emails will be queued at: ${cadenceText} before end.\n\n` +
+      `Continue?`,
+    );
+    if (!ok) return;
+    setSaving(true);
+    try {
+      const res = await axios.put(
+        `${API_URL}/admin/trial-policy`,
+        { trial_days: days },
+        getAuthHeaders(),
+      );
+      toast.success(
+        `Trial set to ${days} days · ${res.data.users_shifted} user${res.data.users_shifted !== 1 ? 's' : ''} re-scheduled`,
+      );
+      onChange();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to update trial policy');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const activeCadence = policy.cadence_map?.[String(policy.trial_days)] || policy.reminder_intervals || [];
+
+  return (
+    <Card className="glass-card" style={{ borderColor: 'rgba(212,175,55,0.25)' }} data-testid="trial-policy-card">
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3 mb-3">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.12)' }}>
+            <Clock className="w-4 h-4 text-[var(--gold)]" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <h4 className="text-sm font-bold text-[var(--t)]">Global Free Trial Duration</h4>
+              <span className="text-[11px] text-[var(--t5)] font-mono">
+                Currently <span className="text-[var(--gold)] font-bold">{policy.trial_days} days</span>
+              </span>
+            </div>
+            <p className="text-[11px] text-[var(--t5)] mt-0.5 leading-relaxed">
+              Applies to every new signup and the &quot;Reset Trial&quot; admin action. Changing this
+              re-stretches every user currently in trial to <em>signup&nbsp;+&nbsp;new duration</em>.
+            </p>
+          </div>
+        </div>
+
+        {/* Picker — pill row */}
+        <div className="flex flex-wrap gap-1.5 mb-3" data-testid="trial-policy-pills">
+          {(policy.allowed || []).map((d) => {
+            const active = d === policy.trial_days;
+            return (
+              <button
+                key={d}
+                onClick={() => apply(d)}
+                disabled={saving}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                  active
+                    ? 'bg-[var(--gold)] text-[#0F1629]'
+                    : 'bg-[var(--s)] text-[var(--t4)] hover:bg-[var(--gold)]/10 hover:text-[var(--gold)]'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                data-testid={`trial-policy-pill-${d}`}
+              >
+                {active && <Check className="w-3 h-3 inline mr-1 -mt-0.5" />}
+                {d} days
+              </button>
+            );
+          })}
+          {saving && <Loader2 className="w-4 h-4 animate-spin text-[var(--gold)] ml-1 mt-1.5" />}
+        </div>
+
+        {/* Active cadence */}
+        <div className="flex items-center gap-2 flex-wrap text-[11px] text-[var(--t5)]">
+          <Mail className="w-3 h-3" />
+          <span>Reminder emails:</span>
+          {activeCadence.length === 0 ? (
+            <span className="italic">none</span>
+          ) : (
+            activeCadence.map((d, i) => (
+              <span key={d} className="inline-flex items-center gap-1">
+                <span className="font-mono text-[var(--gold)]">{d}d</span>
+                {i < activeCadence.length - 1 && <span>·</span>}
+              </span>
+            ))
+          )}
+          <span className="text-[var(--t5)]">before end · 1 expired notice</span>
+        </div>
+
+        {/* Toggle to show all cadences */}
+        <button
+          onClick={() => setExpanded((x) => !x)}
+          className="mt-2 text-[11px] text-[var(--t5)] hover:text-[var(--gold)] flex items-center gap-1"
+          data-testid="trial-policy-expand"
+        >
+          {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          {expanded ? 'Hide' : 'Show'} all cadence presets
+        </button>
+        {expanded && (
+          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px]">
+            {(policy.allowed || []).map((d) => {
+              const cad = policy.cadence_map?.[String(d)] || [];
+              return (
+                <div key={d} className="flex justify-between gap-2 p-2 rounded-md bg-[var(--s)]">
+                  <span className="font-bold text-[var(--t4)]">{d}-day trial</span>
+                  <span className="font-mono text-[var(--gold)]">
+                    {cad.map((x) => `${x}d`).join(' · ')}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
 export const TrialUsersTab = ({ getAuthHeaders }) => {
   const [users, setUsers] = useState([]);
+  const [policy, setPolicy] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await axios.get(`${API_URL}/admin/trial-users`, getAuthHeaders());
-        setUsers(res.data || []);
-      } catch {}
-      finally { setLoading(false); }
-    };
-    fetch();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const fetchAll = useCallback(async () => {
+    try {
+      const [usersRes, policyRes] = await Promise.all([
+        axios.get(`${API_URL}/admin/trial-users`, getAuthHeaders()),
+        axios.get(`${API_URL}/admin/trial-policy`, getAuthHeaders()),
+      ]);
+      setUsers(usersRes.data || []);
+      setPolicy(policyRes.data);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to load trial data');
+    } finally {
+      setLoading(false);
+    }
+  }, [getAuthHeaders]);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
 
   if (loading) return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[var(--gold)]" /></div>;
 
   return (
-    <div className="space-y-3" data-testid="trial-users-tab">
+    <div className="space-y-4" data-testid="trial-users-tab">
+      <TrialPolicyCard
+        policy={policy}
+        onChange={fetchAll}
+        getAuthHeaders={getAuthHeaders}
+        saving={saving}
+        setSaving={setSaving}
+      />
+
       <p className="text-sm text-[var(--t4)]">{users.length} user{users.length !== 1 ? 's' : ''} currently in trial</p>
       {users.length === 0 ? (
         <Card className="glass-card"><CardContent className="p-8 text-center">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, Users, Trash2, Loader2, ChevronDown, ChevronRight, KeyRound, Unlock, GitBranch, User, AlertTriangle, Zap, ArrowUpDown, ShieldOff, Link2, Clock } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -39,13 +39,22 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   const [resetTrialTarget, setResetTrialTarget] = useState(null); // { id, name, role, trial_ends_at }
   const [settingTier, setSettingTier] = useState(null);
   const [sortBy, setSortBy] = useState('default');
+  // The CURRENT global trial duration. Read once; refetched in tandem
+  // with reset operations so the "+N days" preview is always honest.
+  const [trialDays, setTrialDays] = useState(30);
+
+  useEffect(() => {
+    axios.get(`${API_URL}/admin/trial-policy`, getAuthHeaders())
+      .then((res) => { if (res.data?.trial_days) setTrialDays(res.data.trial_days); })
+      .catch(() => { /* default of 30 is safe */ });
+  }, [getAuthHeaders]);
 
   const handleToggleBeta = async (userId, currentBeta) => {
     setTogglingBeta(userId);
     try {
       await axios.put(`${API_URL}/admin/user/${userId}/beta`, { is_beta: !currentBeta }, getAuthHeaders());
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_beta_tester: !currentBeta } : u));
-      toast.success(!currentBeta ? 'Beta mode activated' : 'Beta mode deactivated — 30-day grace period started');
+      toast.success(!currentBeta ? 'Beta mode activated' : `Beta mode deactivated — ${trialDays}-day grace period started`);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to toggle beta');
     }
@@ -357,7 +366,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                 <Button variant="ghost" size="sm" className="text-[var(--t5)] h-8 w-8 p-0 hover:bg-[var(--s)] hover:text-current"
                   onClick={() => setResetTrialTarget({ id: u.id, name: u.name, role: u.role, trial_ends_at: u.trial_ends_at })}
                   disabled={resettingTrial === u.id}
-                  title="Reset 30-day free trial" data-testid={`admin-reset-trial-${u.id}`}>
+                  title={`Reset ${trialDays}-day free trial`} data-testid={`admin-reset-trial-${u.id}`}>
                   {resettingTrial === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
                 </Button>
               )}
@@ -1210,6 +1219,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
           handleResetTrial={handleResetTrial}
           resetting={resettingTrial === resetTrialTarget?.id}
           onCancel={() => setResetTrialTarget(null)}
+          trialDays={trialDays}
         />
       )}
     </div>

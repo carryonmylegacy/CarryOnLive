@@ -1215,14 +1215,15 @@ async def admin_reset_subscription(
     except Exception:
         pass
 
-    from routes.subscriptions.plans import TRIAL_DURATION_DAYS
+    from routes.admin.trial_policy import get_trial_days
 
+    trial_days = await get_trial_days()
     now = datetime.now(timezone.utc)
     if expire_trial:
         # Set trial to yesterday so user immediately sees the paywall
         new_trial_end = now - timedelta(days=1)
     else:
-        new_trial_end = now + timedelta(days=TRIAL_DURATION_DAYS)
+        new_trial_end = now + timedelta(days=trial_days)
 
     # 1. Delete subscription record
     sub_del = await db.user_subscriptions.delete_many({"user_id": user_id})

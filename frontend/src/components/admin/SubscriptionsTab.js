@@ -120,7 +120,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
       : 'RESET to Fresh Trial';
     const extraNote = expireTrial
       ? '\n\nTrial will be set to EXPIRED — user will see the paywall/IAP flow immediately.'
-      : '\n\nUser will get a fresh 30-day trial.';
+      : '\n\nUser will get a fresh trial at the current global duration.';
     if (!window.confirm(`${modeLabel} for ${userEmail}?\n\nThis will:\n- Delete all subscription records\n- Delete Apple IAP transactions\n- Delete payment history\n- Remove free access / discounts\n- Clear beta acceptance${extraNote}\n\nThis action cannot be undone.`)) return;
     setResettingUser(userId);
     try {

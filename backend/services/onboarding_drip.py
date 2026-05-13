@@ -69,7 +69,7 @@ def _wrap(body: str, *, subject: str, unsub_url: str) -> str:
 </div></body></html>"""
 
 
-def _render_step(step_key: str, user: dict, *, base_url: str) -> Optional[tuple[str, str]]:
+async def _render_step(step_key: str, user: dict, *, base_url: str) -> Optional[tuple[str, str]]:
     """Return (subject, html). None if step is not renderable."""
     name = _greet(user)
     dashboard = f"{base_url}/dashboard"
@@ -124,9 +124,12 @@ def _render_step(step_key: str, user: dict, *, base_url: str) -> Optional[tuple[
             <p style="margin:28px 0;">{cta("Review beneficiaries", bens)}</p>
         """
     elif step_key == "trial_ending":
+        from routes.admin.trial_policy import get_trial_days
+
+        trial_days = await get_trial_days()
         subj = "Your trial ends in 2 days"
         body = f"""
-            <p>Your 30-day Premium trial wraps up shortly, {name}. Two paths:</p>
+            <p>Your {trial_days}-day Premium trial wraps up shortly, {name}. Two paths:</p>
             <ul style="padding-left:18px;line-height:1.8;">
               <li><strong>Continue on Premium</strong> — everything you've built stays, including CarryOn Contingency Protocols, Estate Chat, and your full vault.</li>
               <li><strong>Drop to Base (free)</strong> — your data stays. You keep your beneficiary, your IAC, and document vault. Premium-only features pause until you upgrade.</li>
@@ -142,7 +145,7 @@ def _render_step(step_key: str, user: dict, *, base_url: str) -> Optional[tuple[
 
 async def _send_step_for_user(user: dict, step_idx: int, *, base_url: str) -> bool:
     step_offset, step_key, _label = DRIP_STEPS[step_idx]
-    rendered = _render_step(step_key, user, base_url=base_url)
+    rendered = await _render_step(step_key, user, base_url=base_url)
     if not rendered:
         return False
     subject, html = rendered

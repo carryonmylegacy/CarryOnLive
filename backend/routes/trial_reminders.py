@@ -1,7 +1,9 @@
 """CarryOn™ — Trial Reminder Scheduler
 
-Sends email reminders to users at 10 days and 5 days before trial expiration.
-Runs as a background task alongside the weekly digest scheduler.
+Sends email reminders to users at the cadence defined by the current
+global trial policy (see `routes/admin/trial_policy.py`). The cadence
+list is derived from the active `trial_days` value. Runs as a
+background task alongside the weekly digest scheduler.
 """
 
 import asyncio
@@ -10,12 +12,21 @@ from datetime import datetime, timedelta, timezone
 import resend
 
 from config import RESEND_API_KEY, SENDER_EMAIL, db, logger
+from routes.admin.trial_policy import (
+    ALLOWED_TRIAL_DAYS,
+    REMINDER_CADENCE,
+    get_reminder_intervals,
+    get_trial_days,
+)
 
-REMINDER_INTERVALS = [10, 5, 3, 1]  # days before trial ends
 CHECK_INTERVAL_HOURS = 6  # how often to scan for reminders
 
+# Every distinct reminder offset across all allowed trial lengths.
+# Used so we know which `trial_reminder_*d_sent` flags can exist.
+_ALL_REMINDER_DAYS = sorted({d for days in ALLOWED_TRIAL_DAYS for d in REMINDER_CADENCE[days]}, reverse=True)
 
-def build_trial_reminder_email(user_name, days_remaining, app_url):
+
+def build_trial_reminder_email(user_name, days_remaining, app_url, trial_days):
     """Build HTML email for trial reminder."""
     urgency = "urgent" if days_remaining <= 3 else "standard"
     subject = (
@@ -26,6 +37,11 @@ def build_trial_reminder_email(user_name, days_remaining, app_url):
 
     accent = "#ef4444" if urgency == "urgent" else "#d4af37"
     countdown_text = "ends tomorrow" if days_remaining <= 1 else f"ends in {days_remaining} days"
+    body_copy = (
+        "Your CarryOn™ free trial is almost over. Don't lose access to your secure estate planning tools."
+        if urgency == "urgent"
+        else f"We hope you're enjoying CarryOn™! Your {trial_days}-day free trial is winding down."
+    )
 
     html = f"""
     <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 560px; margin: 0 auto; background: #0F1629; color: #F1F3F8; border-radius: 16px; overflow: hidden;">
@@ -41,7 +57,7 @@ def build_trial_reminder_email(user_name, days_remaining, app_url):
 
       <div style="padding: 32px;">
         <p style="color: #A0AABF; font-size: 14px; line-height: 1.6; margin: 0 0 20px;">
-          {"Your CarryOn™ free trial is almost over. Don't lose access to your secure estate planning tools." if urgency == "urgent" else "We hope you're enjoying CarryOn™! Your 30-day free trial is winding down."}
+          {body_copy}
         </p>
 
         <div style="background: rgba(212,175,55,0.06); border: 1px solid rgba(212,175,55,0.15); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
@@ -78,7 +94,7 @@ def build_trial_reminder_email(user_name, days_remaining, app_url):
     return subject, html
 
 
-def build_trial_expired_email(user_name, app_url):
+def build_trial_expired_email(user_name, app_url, trial_days):
     """Build HTML email for trial expiration — sent on the day access is restricted."""
     subject = "Your CarryOn™ free trial has ended"
 
@@ -96,7 +112,7 @@ def build_trial_expired_email(user_name, app_url):
 
       <div style="padding: 32px;">
         <p style="color: #A0AABF; font-size: 14px; line-height: 1.6; margin: 0 0 20px;">
-          Your 30-day free trial of CarryOn™ has ended. Your account is now in a limited state.
+          Your {trial_days}-day free trial of CarryOn™ has ended. Your account is now in a limited state.
         </p>
 
         <div style="background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.15); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
@@ -142,17 +158,22 @@ def build_trial_expired_email(user_name, app_url):
 
 
 async def send_trial_reminders():
-    """Scan users and send reminders at 10, 5, 3, 1 day marks + expired notice."""
+    """Scan users and send reminders at the cadence dictated by the
+    current global trial policy + an expired-day notice. Reminder
+    offsets come from `get_reminder_intervals(trial_days)`."""
     if not RESEND_API_KEY:
         logger.warning("Trial reminders skipped — RESEND_API_KEY not configured")
         return 0
+
+    trial_days = await get_trial_days()
+    reminder_intervals = get_reminder_intervals(trial_days)
 
     now = datetime.now(timezone.utc)
     sent_count = 0
     app_url = "https://app.carryon.us"
 
-    # --- Pre-expiration reminders (10d, 5d, 3d, 1d) ---
-    for days in REMINDER_INTERVALS:
+    # --- Pre-expiration reminders (cadence depends on global policy) ---
+    for days in reminder_intervals:
         # Find users whose trial ends in exactly `days` days (within a 12-hour window)
         target_start = now + timedelta(days=days - 0.25)
         target_end = now + timedelta(days=days + 0.25)
@@ -175,6 +196,7 @@ async def send_trial_reminders():
                     user.get("name", user.get("first_name", "")),
                     days,
                     app_url,
+                    trial_days,
                 )
 
                 await asyncio.to_thread(
@@ -227,6 +249,7 @@ async def send_trial_reminders():
             subject, html = build_trial_expired_email(
                 user.get("name", user.get("first_name", "")),
                 app_url,
+                trial_days,
             )
 
             await asyncio.to_thread(

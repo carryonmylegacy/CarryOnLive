@@ -174,10 +174,13 @@ async def funnel_convert(request: Request):
     referral_email = session.get("referral_email") if session else None
 
     if referral_email:
-        # Extend referred user's trial by 7 days
+        # Extend referred user's trial: base trial duration + 7d bonus
+        from routes.admin.trial_policy import get_trial_days
+
+        trial_days = await get_trial_days()
         await db.users.update_one(
             {"id": user_id, "subscription_status": "trialing"},
-            {"$set": {"trial_ends_at": (datetime.now(timezone.utc) + timedelta(days=37)).isoformat()}},
+            {"$set": {"trial_ends_at": (datetime.now(timezone.utc) + timedelta(days=trial_days + 7)).isoformat()}},
         )
         # Extend referrer's trial by 7 days (if they exist and are trialing)
         referrer = await db.users.find_one(

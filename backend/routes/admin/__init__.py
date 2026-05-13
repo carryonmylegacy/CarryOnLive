@@ -27,6 +27,7 @@ from .scoped_roles import router as scoped_roles_router
 from .security_scan import router as security_scan_router
 from .session_policy import router as session_policy_router
 from .task_management import router as task_management_router
+from .trial_policy import router as trial_policy_router
 from .users import router as users_router
 
 router = APIRouter()
@@ -50,6 +51,7 @@ router.include_router(launch_war_room_router)
 router.include_router(download_diagnostics_router)
 router.include_router(funnel_analytics_router)
 router.include_router(email_health_router)
+router.include_router(trial_policy_router)
 
 __all__ = [
     "router",

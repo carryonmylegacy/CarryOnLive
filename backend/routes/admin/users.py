@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from config import db
 from guards import require_admin, require_staff
-from routes.subscriptions.plans import TRIAL_DURATION_DAYS
+from routes.admin.trial_policy import get_trial_days
 
 router = APIRouter()
 
@@ -206,8 +206,9 @@ async def toggle_session_exempt(user_id: str, current_user: dict = Depends(requi
 
 @router.post("/admin/users/{user_id}/reset-trial")
 async def reset_user_trial(user_id: str, current_user: dict = Depends(require_admin)):
-    """Reset a user's free trial — sets trial_ends_at to now + TRIAL_DURATION_DAYS,
-    flips subscription_status back to 'trialing'. Admin-only. Logged to activity_log."""
+    """Reset a user's free trial — sets trial_ends_at to now + the
+    global trial duration, flips subscription_status back to
+    'trialing'. Admin-only. Logged to activity_log."""
     user = await db.users.find_one(
         {"id": user_id},
         {"_id": 0, "id": 1, "name": 1, "email": 1, "trial_ends_at": 1, "subscription_status": 1},
@@ -215,9 +216,15 @@ async def reset_user_trial(user_id: str, current_user: dict = Depends(require_ad
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    trial_days = await get_trial_days()
     now = datetime.now(timezone.utc)
-    new_trial_ends_at = (now + timedelta(days=TRIAL_DURATION_DAYS)).isoformat()
+    new_trial_ends_at = (now + timedelta(days=trial_days)).isoformat()
     prev_trial_ends_at = user.get("trial_ends_at")
+
+    # Clear all previously-sent reminder flags so the new trial gets
+    # the full reminder ladder.
+    reset_flags = {f"trial_reminder_{d}d_sent": False for d in {1, 2, 3, 5, 7, 10, 14, 21}}
+    reset_flags["trial_expired_email_sent"] = False
 
     await db.users.update_one(
         {"id": user_id},
@@ -227,6 +234,7 @@ async def reset_user_trial(user_id: str, current_user: dict = Depends(require_ad
                 "subscription_status": "trialing",
                 "trial_reset_at": now.isoformat(),
                 "trial_reset_by": current_user["id"],
+                **reset_flags,
             }
         },
     )
@@ -239,7 +247,7 @@ async def reset_user_trial(user_id: str, current_user: dict = Depends(require_ad
             "actor_name": current_user.get("name", "Admin"),
             "target_id": user_id,
             "details": (
-                f"Reset {TRIAL_DURATION_DAYS}-day trial for {user.get('name', user_id)} "
+                f"Reset {trial_days}-day trial for {user.get('name', user_id)} "
                 f"(previously ended {prev_trial_ends_at or 'never set'})"
             ),
             "created_at": now.isoformat(),
@@ -249,7 +257,7 @@ async def reset_user_trial(user_id: str, current_user: dict = Depends(require_ad
         "ok": True,
         "trial_ends_at": new_trial_ends_at,
         "subscription_status": "trialing",
-        "trial_days": TRIAL_DURATION_DAYS,
+        "trial_days": trial_days,
     }
 
 

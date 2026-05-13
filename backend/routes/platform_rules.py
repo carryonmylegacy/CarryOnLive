@@ -285,10 +285,21 @@ Write only the paragraph. No headers, no bullet points. Keep it under 100 words.
 
 @router.get("/admin/platform-rules")
 async def get_rules(current_user: dict = Depends(get_current_user)):
-    """Get all platform rules. Available to all admin roles (read-only for non-founders)."""
+    """Get all platform rules. Available to all admin roles (read-only for non-founders).
+
+    The `free_trial_duration` row's value is always synced from the
+    live global trial-policy setting at read time, so the rules table
+    never drifts from what the Trials tab is actually enforcing."""
     if current_user.get("role") not in ("admin", "operator"):
         raise HTTPException(status_code=403, detail="Admin access required")
     rules = await get_platform_rules()
+    # Stamp live trial duration into the descriptive rules table.
+    from routes.admin.trial_policy import get_trial_days as _get_trial_days
+
+    trial_days = await _get_trial_days()
+    for r in rules:
+        if r.get("id") == "free_trial_duration":
+            r["value"] = f"{trial_days} days"
     is_founder = current_user.get("role") == "admin"
     return {"rules": rules, "editable": is_founder}
 

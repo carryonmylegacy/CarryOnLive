@@ -8,11 +8,11 @@ from fastapi import HTTPException
 
 from config import db, logger
 from models import UserCreate
+from routes.admin.trial_policy import get_trial_days
 from services.encryption import generate_estate_salt
 from utils import generate_otp, hash_password, send_otp_email
 
 from ._core import (
-    TRIAL_DURATION_DAYS,
     _user_response,
     create_session_token,
     generate_unique_username,
@@ -58,7 +58,8 @@ async def register(data: UserCreate):
 
     user_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
-    trial_ends_at = (now + timedelta(days=TRIAL_DURATION_DAYS)).isoformat()
+    trial_days = await get_trial_days()
+    trial_ends_at = (now + timedelta(days=trial_days)).isoformat()
 
     eligible_tier = None
     special_statuses = data.special_status or []
