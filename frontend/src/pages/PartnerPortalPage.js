@@ -59,13 +59,14 @@ const PartnerPortalPage = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
-  // Cache-bust the logo URL with the partner's `updated_at` so a
-  // logo re-upload by the admin shows up instantly. Hoisted above
-  // the early returns and uses optional chaining so it's safe even
-  // while `partner` is still loading.
-  const logoUrl = partner?.has_logo
-    ? `${API_URL}/public/partners/${partner.slug}/logo?v=${encodeURIComponent(partner.updated_at || '')}`
-    : null;
+  // Logo is now embedded as a base64 data URL in the public partner
+  // JSON response (see backend/routes/admin/partners.py). No more
+  // separate image fetch. Falls back to the legacy URL endpoint if
+  // the response predates the inline encoding rollout.
+  const logoUrl = partner?.logo_data_url
+    || (partner?.has_logo
+      ? `${API_URL}/public/partners/${partner.slug}/logo?v=${encodeURIComponent(partner.updated_at || '')}`
+      : null);
 
   useEffect(() => {
     let alive = true;

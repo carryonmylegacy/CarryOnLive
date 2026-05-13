@@ -533,9 +533,14 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
   }, [partner.company_name, partner.slug, partner.code, partner.discount_percent, partner.max_uses, partner.tagline, partner.partner_email]);
 
   const url = partnerLandingHref(partner.slug);
-  const logoUrl = partner.logo_key
-    ? `${API_URL}/public/partners/${partner.slug}/logo?v=${encodeURIComponent(partner.updated_at || '')}`
-    : null;
+  // Logo is now embedded as a base64 data URL in the API response.
+  // No more separate image fetch, no more browser cache races, no
+  // more 404 ghosts. Falls back to a legacy URL (in case any partner
+  // doc predates the inline encoding rollout) and finally null.
+  const logoUrl = partner.logo_data_url
+    || (partner.logo_key
+      ? `${API_URL}/public/partners/${partner.slug}/logo?v=${encodeURIComponent(partner.updated_at || '')}`
+      : null);
 
   const commit = (field) => {
     if (draft[field] === partner[field] || (draft[field] === '' && !partner[field])) return;

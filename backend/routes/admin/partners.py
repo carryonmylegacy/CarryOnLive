@@ -139,8 +139,6 @@ async def list_partners(current_user: dict = Depends(get_current_user)):
     # linked via `partner_id` so the founder sees "5 of 10 seats
     # active" at a glance. We count real `users` documents — not the
     # `times_used` counter — so deletions/refunds reflect immediately.
-    # `times_used` is preserved as the LIFETIME count (how many
-    # redemptions ever happened) for funnel-analytics reporting.
     if partners:
         ids = [p["id"] for p in partners]
         pipeline = [
@@ -150,6 +148,25 @@ async def list_partners(current_user: dict = Depends(get_current_user)):
         counts = {row["_id"]: row["n"] async for row in db.users.aggregate(pipeline)}
         for p in partners:
             p["active_users_count"] = int(counts.get(p["id"], 0))
+
+    # Inline-encode logo bytes as a data URL so the admin UI renders
+    # the brand mark without a separate image fetch (which has been
+    # racing with browser cache + CDN intermediaries in production
+    # and showing a broken-image icon). Logos are tiny (capped at
+    # 1 MB), so the bandwidth cost is acceptable for an admin list
+    # called once per tab load.
+    import base64
+
+    for p in partners:
+        key = p.get("logo_key")
+        if not key:
+            continue
+        try:
+            blob = await storage.download(key)
+            ctype = p.get("logo_content_type") or "image/png"
+            p["logo_data_url"] = f"data:{ctype};base64,{base64.b64encode(blob).decode('ascii')}"
+        except Exception:  # noqa: BLE001
+            logger.exception("Inline logo encode failed for partner %s", p.get("id"))
 
     return {
         "partners": partners,
@@ -471,15 +488,28 @@ async def public_partner(slug: str):
         raise HTTPException(status_code=404, detail="Partner not found.")
 
     enabled_pillars = [f for f in PARTNER_FEATURE_PILLARS if doc.get("feature_gates", {}).get(f["key"], False)]
+
+    # Inline-encode the logo bytes as a data URL so the landing page
+    # renders the brand mark directly from the JSON response — no
+    # separate image fetch that could be intercepted/cached/broken
+    # by CDNs, browser caches, or stale 404s.
+    logo_data_url = None
+    if doc.get("logo_key"):
+        try:
+            import base64
+
+            blob = await storage.download(doc["logo_key"])
+            ctype = doc.get("logo_content_type") or "image/png"
+            logo_data_url = f"data:{ctype};base64,{base64.b64encode(blob).decode('ascii')}"
+        except Exception:  # noqa: BLE001
+            logger.exception("Inline logo encode failed for partner %s", doc.get("id"))
+
     return {
         "slug": doc["slug"],
         "company_name": doc["company_name"],
         "tagline": doc.get("tagline", ""),
         "has_logo": bool(doc.get("logo_key")),
-        # `updated_at` is included so the landing page can bust the
-        # 24-hour browser cache when an admin re-uploads the logo.
-        # Without this a stale or 404'd logo response would stick in
-        # the browser cache for a full day.
+        "logo_data_url": logo_data_url,
         "updated_at": doc.get("updated_at"),
         "enabled_pillars": enabled_pillars,
     }
