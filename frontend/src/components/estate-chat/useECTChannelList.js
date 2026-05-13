@@ -47,17 +47,33 @@ export default function useECTChannelList({ token, navigate, user }) {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       try {
         const local = await getLocalChannels();
-        if (local.length > 0) setChannels(local);
+        // Same guard as the offline-mode seed below: only paint local
+        // if state is empty. Otherwise we'd flap between server order
+        // (last known) and Dexie's primary-key order on every poll
+        // while airborne.
+        if (local.length > 0) {
+          setChannels((prev) => (prev.length === 0 ? local : prev));
+        }
       } catch { /* non-fatal */ }
       return;
     }
     const mode = getOfflineMode();
     // Offline-first paint: seed from local mirror so the channel list
-    // appears instantly.
+    // appears instantly on FIRST mount. Subsequent polls must NOT
+    // re-seed from IndexedDB — Dexie returns rows sorted by primary
+    // key, which doesn't match the backend's "most-recent-activity
+    // first, tiebroken by id" sort. Re-seeding on every poll caused
+    // the visible list to flash the IndexedDB order, then snap back
+    // to the server order on the next setChannels(data) below —
+    // producing the "channels dance every 10-15s" symptom the user
+    // saw the moment they entered a conversation (the 8s fetchChannels
+    // tick inside the typing poll).
     if (mode === 'on') {
       try {
         const local = await getLocalChannels();
-        if (local.length > 0) setChannels(local);
+        if (local.length > 0) {
+          setChannels((prev) => (prev.length === 0 ? local : prev));
+        }
       } catch { /* non-fatal */ }
     }
     try {
