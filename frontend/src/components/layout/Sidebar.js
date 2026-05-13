@@ -299,7 +299,7 @@ const ADMIN_PORTALS = [
 ];
 
 const Sidebar = () => {
-  const { user, logout, refreshUser, enabledFeatures, setUser } = useAuth();
+  const { user, logout, refreshUser, enabledFeatures, setUser, partnerBranding } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [benEstates, setBenEstates] = useState([]);
@@ -712,8 +712,8 @@ const Sidebar = () => {
         data-testid="sidebar-logo">
         <div className="sb-logo-top">
           <img 
-            src="/carryon-app-icon.png" 
-            alt="CarryOn™" 
+            src={partnerBranding?.logoUrl || "/carryon-app-icon.png"} 
+            alt={partnerBranding?.companyName || "CarryOn™"} 
             className="sb-logo-img"
             onError={(e) => {
               e.target.style.display = 'none';
@@ -726,7 +726,7 @@ const Sidebar = () => {
           >
             <Shield className="w-5 h-5" />
           </div>
-          {!collapsed && <span className="sb-logo-title">CarryOn™</span>}
+          {!collapsed && <span className="sb-logo-title">{partnerBranding?.companyName || 'CarryOn™'}</span>}
         </div>
         {!collapsed && <span className="sb-logo-subtitle" data-testid="sidebar-portal-label">{getRoleLabel()}</span>}
       </div>

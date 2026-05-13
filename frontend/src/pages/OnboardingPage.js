@@ -34,7 +34,7 @@ import { formatPhoneUS } from '../utils/phoneFormat';
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
-  const { user, getAuthHeaders } = useAuth();
+  const { user, getAuthHeaders, partnerBranding } = useAuth();
   const [estate, setEstate] = useState(null);
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -164,7 +164,7 @@ const OnboardingPage = () => {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <img src="/carryon-logo.png" alt="CarryOn™" className="w-32 h-auto mx-auto mb-4" />
+          <img src={partnerBranding?.logoUrl || "/carryon-logo.png"} alt={partnerBranding?.companyName || "CarryOn™"} className="w-32 h-auto mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'var(--sans)' }}>
             Welcome, {user?.first_name || user?.name?.split(' ')[0]}! 🎉
           </h1>

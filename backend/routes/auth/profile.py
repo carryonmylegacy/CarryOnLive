@@ -106,6 +106,13 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "session_timeout_minutes": session_timeout,
         "public_device_mode": pdm_active,
         "public_device_idle_seconds": pdm_idle_seconds if pdm_active else 0,
+        # ── Partner co-branding (B2B / Enterprise) ─────────────────
+        # `partner_slug` drives the AuthContext effect that fetches
+        # the partner's logo + company name and swaps the CarryOn
+        # mark across the authenticated shell. Direct consumer
+        # signups never have these fields, so their UX is untouched.
+        "partner_slug": user_doc.get("partner_slug", "") or "",
+        "partner_company": user_doc.get("partner_company", "") or "",
     }
 
 

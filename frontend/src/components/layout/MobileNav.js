@@ -57,7 +57,7 @@ export { DOCK_REGISTRY }; // re-export so existing consumers don't break
 const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
 const MobileNav = () => {
-  const { user, logout, refreshUser, enabledFeatures, setUser } = useAuth();
+  const { user, logout, refreshUser, enabledFeatures, setUser, partnerBranding } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -609,13 +609,13 @@ const MobileNav = () => {
             onClick={handleLogoTap}
             style={{ cursor: 'pointer', touchAction: 'manipulation', userSelect: 'none', WebkitUserSelect: 'none' }}>
             <img 
-              src="/carryon-app-icon.png" 
-              alt="CarryOn" 
+              src={partnerBranding?.logoUrl || "/carryon-app-icon.png"} 
+              alt={partnerBranding?.companyName || "CarryOn"} 
               className="w-10 h-10"
               style={{ pointerEvents: 'none', objectFit: 'contain' }}
             />
             <span className="text-[#E0AD2B] font-bold text-lg" style={{ fontFamily: 'var(--sans)', pointerEvents: 'none' }}>
-              CarryOn™
+              {partnerBranding?.companyName || 'CarryOn™'}
             </span>
           </div>
 

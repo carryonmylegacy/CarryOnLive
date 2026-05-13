@@ -69,6 +69,12 @@ class UserResponse(BaseModel):
     is_also_beneficiary: bool = False
     is_beta_tester: bool = False
     beta_accepted: bool = False
+    # Partner co-branding — drives the AuthContext effect that
+    # fetches the partner's logo + company name so the auth'd
+    # shell renders the partner's mark instead of CarryOn's.
+    # Empty string for direct consumer signups (no behaviour change).
+    partner_slug: str = ""
+    partner_company: str = ""
 
 
 class TokenResponse(BaseModel):

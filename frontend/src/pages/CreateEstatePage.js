@@ -48,7 +48,7 @@ const selectClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base rou
 
 const CreateEstatePage = () => {
   const navigate = useNavigate();
-  const { getAuthHeaders, refreshUser } = useAuth();
+  const { getAuthHeaders, refreshUser, partnerBranding } = useAuth();
   const scrollRef = useRef(null);
 
   const [step, setStep] = useState(0);
@@ -346,7 +346,7 @@ const CreateEstatePage = () => {
       {/* NAV */}
       <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)', background: 'rgba(8,14,26,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-          <img src="/carryon-logo.png" alt="CarryOn" className="h-12 cursor-pointer" onClick={() => navigate('/dashboard')} />
+          <img src={partnerBranding?.logoUrl || "/carryon-logo.png"} alt={partnerBranding?.companyName || "CarryOn"} className="h-12 cursor-pointer" onClick={() => navigate('/dashboard')} />
           <button onClick={() => { if (step > 0) setStep(step - 1); else navigate('/dashboard'); }} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1" data-testid="create-estate-back">
             <ArrowLeft className="w-3.5 h-3.5" /> Back
           </button>

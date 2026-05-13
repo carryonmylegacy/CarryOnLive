@@ -51,7 +51,7 @@ const sortByDiscountOrder = (a, b) => {
 };
 
 export default function SubscriptionPaywall({ onDismiss }) {
-  const { token, refreshSubscription } = useAuth();
+  const { token, refreshSubscription, partnerBranding } = useAuth();
   const [plans, setPlans] = useState([]);
   const [billing, setBilling] = useState('annual');
   const [selectedPlan, setSelectedPlan] = useState('premium');
@@ -368,7 +368,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
 
         {/* Header */}
         <div className="text-center mb-8 max-w-lg animate-fade-in">
-          <img src="/carryon-logo.png" alt="CarryOn" className="w-[120px] h-auto mx-auto mb-4" />
+          <img src={partnerBranding?.logoUrl || "/carryon-logo.png"} alt={partnerBranding?.companyName || "CarryOn"} className="w-[120px] h-auto mx-auto mb-4" />
 
           {trial.trial_expired ? (
             <>

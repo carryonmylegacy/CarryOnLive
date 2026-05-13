@@ -41,6 +41,8 @@ def _user_response(user: dict, owns_estate: bool = False) -> UserResponse:
         is_also_beneficiary=user.get("is_also_beneficiary", False) or False,
         is_beta_tester=user.get("is_beta_tester", False),
         beta_accepted=bool(user.get("beta_accepted_at")),
+        partner_slug=user.get("partner_slug", "") or "",
+        partner_company=user.get("partner_company", "") or "",
     )
 
 

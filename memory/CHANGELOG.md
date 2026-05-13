@@ -1,6 +1,27 @@
 # CarryOn — Changelog
 
 
+## May 13, 2026 (continued) — Partner Logo Permeation (Authenticated Shell)
+
+When a user is signed in under a B2B/Enterprise partner code, the CarryOn mark is replaced with the partner's logo + company name across every authenticated chrome surface. Direct consumer signups (and admin/founder sessions) see zero change.
+
+### Backend
+- `/auth/me` and `_user_response()` now return `partner_slug` and `partner_company` (empty strings for non-partner users). Without these, `AuthContext`'s partner-branding effect was a no-op because `user.partner_slug` was always undefined. `UserResponse` model widened to match.
+
+### Frontend (logos swapped, all with fallback to default CarryOn mark)
+- `Sidebar.js` — desktop sidebar logo + title pulls `partnerBranding.logoUrl` + `companyName`.
+- `MobileNav.js` — mobile header logo + title pulls `partnerBranding.logoUrl` + `companyName`.
+- `CreateEstatePage.js` — onboarding header logo.
+- `OnboardingPage.js` — welcome wizard logo.
+- `SubscriptionPaywall.js` — paywall modal hero logo.
+
+### Verified
+- `bash /app/housekeeping.sh --strict` → all green (8/8 smoke).
+- End-to-end: redeem partner code → `/auth/me` returns `partner_slug` → `/api/public/partners/{slug}` resolves company name + base64 logo data URL → AuthContext exposes `partnerBranding`.
+- Pre-login marketing/auth pages (Landing, Login, Signup, About, Voices, SpeakWithUs, public HomePage) intentionally untouched — no `partner_slug` known before authentication.
+- `PWAInstallGuide.js` left as CarryOn icon (matches the actual installed PWA icon from manifest, not the logged-in shell).
+
+
 ## May 13, 2026 — Global Trial Policy + B2B Live Gates + Pitch-Ready Polish
 
 **Today's session — major architectural milestones:**
