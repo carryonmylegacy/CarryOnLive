@@ -1,6 +1,37 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — Lock Pill: Restored Gold + Honest Save-on-Tap Feedback
+
+### Need (verbatim)
+"Just exempt the no gold rule from the lock icon and pill, that was my bad. That one works well to intuitively indicate when the tiles are locked from being able to be moved around. Make sure all the associated rules with the lock button still function as before, i.e., when navigating away, the E&S auto-locks and a save is triggered with the DB. When tapping the lock button, a save is triggered with the DB AND a toast is displayed with honest confirmation of save to DB, etc."
+
+### Change
+- `EntitiesSection.js`:
+  - **Restored the original gold-filled Lock pill styling** when `locked === true` (gold bg, dark text, dual-glow box-shadow). Unlocked state stays neutral. Exempted from the "no gold pills" rule per user revision.
+  - **Honest save-on-tap toast** — closed the silent-no-op hole. Previously: tapping Lock with no tile movements did nothing (no save, no toast — user got zero feedback their tap registered). Now: the chart always fires `onSaveLayout(overrides, { userInitiated: true, hadChanges })` on every lock transition; the parent has THREE branches:
+    1. `userInitiated && hadChanges` → await PUT → toast "Tree structure saved" on `{ ok: true }`, "Couldn't confirm save" on missing flag, "Couldn't save tree structure" on throw. (Unchanged from before.)
+    2. `userInitiated && !hadChanges` → skip the round-trip, toast "Layout already saved" — honest acknowledgement that the tap was received and the state matches the DB.
+    3. `!userInitiated` (unmount on navigate-away) → silent fire-and-forget PUT, no toast on the way out. (Unchanged from before.)
+- `EntityOrgChart.js`:
+  - Lock-transition `useEffect` now fires the callback for EVERY transition into locked (not just dirty ones), passing `hadChanges: dirtyRef.current` so the parent can choose between persisting + the appropriate toast and the no-op acknowledgement.
+
+### Verified
+- `bash /app/housekeeping.sh` → **0 FAIL, 0 WARN**.
+- ESLint clean on both files.
+
+### Behaviour matrix recap
+| Trigger                                | Network | Toast                                              |
+|----------------------------------------|---------|----------------------------------------------------|
+| Tap Lock chip after moving tiles → ok  | PUT     | success "Tree structure saved"                     |
+| Tap Lock chip after moving tiles → 5xx | PUT     | error "Couldn't save tree structure"               |
+| Tap Lock chip with no movements        | none    | success "Layout already saved"                     |
+| Navigate away (still dirty)            | PUT     | none (silent)                                      |
+| Navigate away (clean)                  | none    | none                                               |
+| Auto-lock on mount                     | n/a     | none (auto-state, not a save)                      |
+
+
+
 ## Feb 14, 2026 — E&S Toolbar Cleanup, Print Collision Auto-Resolve, Cluster Bleed Fix
 
 ### Need (verbatim, screenshot context)

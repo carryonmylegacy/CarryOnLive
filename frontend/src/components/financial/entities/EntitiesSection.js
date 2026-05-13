@@ -435,7 +435,17 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           {viewMode === 'chart' && (
             <button
               onClick={toggleLocked}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(212,165,55,0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-all whitespace-nowrap"
+              style={locked ? {
+                color: '#1A1A1A',
+                background: 'var(--gold)',
+                border: '1px solid var(--gold)',
+                boxShadow: '0 0 12px rgba(212,165,55,0.55), 0 0 24px rgba(212,165,55,0.25)',
+              } : {
+                color: 'var(--t4)',
+                background: 'transparent',
+                border: '1px solid var(--b)',
+              }}
               data-testid="entities-toggle-lock"
               title={locked ? 'Unlock tile positions' : 'Lock tile positions'}
               aria-label={locked ? 'Unlock tile positions' : 'Lock tile positions'}
@@ -673,14 +683,20 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
             }}
             serverOverrides={serverChartLayout}
             onSaveLayout={async (overrides, opts = {}) => {
-              // Two paths:
-              //   • opts.userInitiated === true  → user tapped the
-              //     lock chip while still on the page — toast on
-              //     SUCCESS only (we await the PUT first so a 5xx /
-              //     offline call doesn't show a false "saved" toast).
-              //   • opts.userInitiated === false → unmount cleanup
-              //     fired because the user navigated away — silent
-              //     fire-and-forget so the toast never flashes.
+              // Three paths:
+              //   • opts.userInitiated=true,  opts.hadChanges=true  →
+              //     user tapped the lock chip after moving tiles.
+              //     Await the PUT; toast SUCCESS only on the server
+              //     `{ ok: true }` answer so a 5xx/offline call can't
+              //     show a false confirmation.
+              //   • opts.userInitiated=true,  opts.hadChanges=false →
+              //     user tapped lock without changing anything.
+              //     Skip the network round-trip; toast a friendly
+              //     "already saved" so they get honest feedback that
+              //     their tap registered.
+              //   • opts.userInitiated=false → unmount cleanup (user
+              //     navigated away). Silent fire-and-forget; the
+              //     local cache covers offline / 5xx.
               if (!opts.userInitiated) {
                 try {
                   axios.put(
@@ -689,6 +705,11 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                     getAuthHeaders(),
                   ).catch(() => { /* offline / 5xx — local cache covers us */ });
                 } catch { /* axios threw before promise — ignore */ }
+                return;
+              }
+              if (opts.hadChanges === false) {
+                // Nothing to persist — but acknowledge the tap.
+                notify.success('Layout already saved');
                 return;
               }
               try {

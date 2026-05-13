@@ -1170,8 +1170,12 @@ export default function EntityOrgChart({
   }, [estateId]);
 
   // Save to backend whenever the chart transitions into the LOCKED
-  // state — the user clicked the lock chip while still on the page.
-  // We pass `userInitiated: true` so the parent can surface a toast.
+  // state — the user tapped the lock chip while still on the page.
+  // We always fire `onSaveLayout` so the parent can surface honest
+  // confirmation (success / no-op / error) every single time the
+  // user taps lock, even if nothing moved. `hadChanges` lets the
+  // parent skip the network round-trip when there's literally
+  // nothing to persist.
   // Unmount-on-navigate-away is handled by the cleanup effect below
   // with `userInitiated: false` so the toast doesn't flash on the way
   // out.
@@ -1179,10 +1183,11 @@ export default function EntityOrgChart({
   useEffect(() => {
     const wasLocked = lockedRef.current;
     lockedRef.current = locked;
-    if (locked && !wasLocked && dirtyRef.current) {
+    if (locked && !wasLocked) {
       const snapshot = overrides;
+      const hadChanges = dirtyRef.current;
       dirtyRef.current = false;
-      try { onSaveLayoutRef.current?.(snapshot, { userInitiated: true }); } catch { /* surfaced as toast in parent */ }
+      try { onSaveLayoutRef.current?.(snapshot, { userInitiated: true, hadChanges }); } catch { /* surfaced as toast in parent */ }
     }
   }, [locked, overrides]);
 
