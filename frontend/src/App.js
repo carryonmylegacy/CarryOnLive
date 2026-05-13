@@ -16,6 +16,7 @@ import OfflineSyncProgress from './components/OfflineSyncProgress';
 import PendingUploadsIndicator from './components/PendingUploadsIndicator';
 import PendingSyncChip from './components/PendingSyncChip';
 import ScrollRestorationProvider from './components/ScrollRestorationProvider';
+import PartnerHeadBranding from './components/PartnerHeadBranding';
 import { AmberAlertProvider } from './components/AmberAlert';
 import { initErrorReporter, reportError } from './utils/errorReporter';
 import { checkForUpdates } from './utils/versionCheck';
@@ -843,6 +844,7 @@ function App() {
     <ForceUpdateGate>
     <ThemeProvider>
       <AuthProvider>
+        <PartnerHeadBranding />
         <SectionLockProvider>
         <BrowserRouter>
           <NetworkStatusBanner />
