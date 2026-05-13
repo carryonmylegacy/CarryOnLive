@@ -848,7 +848,7 @@ function ClusterTile({ node, dragging, locked, onPointerDownDrag, onClick, entit
       }}
     >
       <div
-        className="px-2 pt-1.5 pb-1 text-[11px] font-bold uppercase tracking-wide flex items-center justify-between gap-2"
+        className="px-2 pt-1.5 pb-1 pr-7 text-[11px] font-bold uppercase tracking-wide flex items-center justify-between gap-2"
         style={{ color: headerColor, pointerEvents: 'none' }}
       >
         <span className="truncate flex-1 min-w-0">{headerLabel}</span>
