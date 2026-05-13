@@ -36,6 +36,8 @@ export default function BlockEditModal({
   convert,       // { entityId, memberRelIds, estateId } — only when mode='convert'
   beneficiaries = [],
   externals = [],
+  entities = [],
+  relationships = [],
   user,
   onClose,
   onSaved,
@@ -57,6 +59,28 @@ export default function BlockEditModal({
   const [memberKeys, setMemberKeys] = useState(initialMembers.set);
   const [includeBenefactor, setIncludeBenefactor] = useState(initialMembers.includeBenefactor);
   const [saving, setSaving] = useState(false);
+  // Per-attachment in-flight set so the user can rapidly tap multiple
+  // "× Unlink" buttons without seeing duplicate spinners or flicker.
+  // Keyed by relationship id.
+  const [unlinkingRelIds, setUnlinkingRelIds] = useState(() => new Set());
+
+  // Attachments — every entity this block is currently linked to,
+  // discovered by joining relationships ↔ entities. Only meaningful
+  // in edit mode (convert mode has no block id yet, no attachments).
+  const attachments = useMemo(() => {
+    if (mode !== 'edit' || !block?.id) return [];
+    const entitiesById = new Map((entities || []).map((e) => [e.id, e]));
+    return (relationships || [])
+      .filter((r) => r.source_type === 'beneficiary_block'
+        && r.source_id === block.id
+        && r.target_type === 'entity'
+        && r.role === 'beneficiary')
+      .map((r) => ({
+        relId: r.id,
+        entityId: r.target_id,
+        entityName: entitiesById.get(r.target_id)?.name || 'Unknown entity',
+      }));
+  }, [mode, block, relationships, entities]);
 
   useEffect(() => {
     setName(block?.name || '');
@@ -71,6 +95,34 @@ export default function BlockEditModal({
     if (next.has(key)) next.delete(key);
     else next.add(key);
     setMemberKeys(next);
+  };
+
+  const handleUnlinkAttachment = async (relId, entityName) => {
+    if (!relId || unlinkingRelIds.has(relId)) return;
+    setUnlinkingRelIds((prev) => new Set(prev).add(relId));
+    try {
+      await axios.delete(
+        `${API_URL}/financial/entity-relationships/${relId}`,
+        getAuthHeaders(),
+      );
+      toast.success(`Detached from ${entityName}.`);
+      // Bubble up so the parent re-fetches relationships + entities;
+      // the modal stays open (our useMemo recomputes attachments
+      // from the fresh relationships prop on the next render).
+      onSaved?.();
+    } catch (err) {
+      const detail = err?.response?.data?.detail;
+      const msg = typeof detail === 'string' ? detail
+        : (Array.isArray(detail) ? detail.map((d) => d?.msg || JSON.stringify(d)).join('; ')
+        : (err?.message || 'Failed to detach'));
+      toast.error(msg);
+    } finally {
+      setUnlinkingRelIds((prev) => {
+        const next = new Set(prev);
+        next.delete(relId);
+        return next;
+      });
+    }
   };
 
   const handleSave = async () => {
@@ -249,6 +301,56 @@ export default function BlockEditModal({
               )}
             </div>
           </div>
+
+          {/* Per-entity attachments. Each chip surgically unlinks
+              ONE attachment so the user can remove this block from
+              (say) Trust A while keeping it on Trust B + LLC C. Only
+              meaningful in edit mode — convert mode hasn't created
+              the block yet, so it has no attachments. */}
+          {mode === 'edit' && attachments.length > 0 && (
+            <div className="mt-4 pt-3 border-t border-[var(--b2)]">
+              <Label className="text-[11px] text-[var(--t4)]">
+                Attached to · {attachments.length} {attachments.length === 1 ? 'entity' : 'entities'}
+              </Label>
+              <div className="mt-1.5 flex flex-wrap gap-1.5" data-testid="block-edit-attachments">
+                {attachments.map((a) => {
+                  const unlinking = unlinkingRelIds.has(a.relId);
+                  const isLast = attachments.length === 1;
+                  return (
+                    <span
+                      key={a.relId}
+                      className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full text-[12px] font-semibold"
+                      style={{
+                        background: 'rgba(34,201,147,0.12)',
+                        border: '1px solid rgba(34,201,147,0.55)',
+                        color: 'var(--t)',
+                      }}
+                      data-testid={`block-edit-attachment-${a.entityId}`}
+                    >
+                      <span className="truncate max-w-[140px]">{a.entityName}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleUnlinkAttachment(a.relId, a.entityName)}
+                        disabled={unlinking || saving}
+                        className="w-5 h-5 inline-flex items-center justify-center rounded-full hover:bg-[rgba(34,201,147,0.25)] disabled:opacity-50"
+                        style={{ color: '#22C993' }}
+                        data-testid={`block-edit-unlink-${a.entityId}`}
+                        title={isLast
+                          ? `Detach from ${a.entityName} (group will keep existing on its own)`
+                          : `Detach from ${a.entityName}`}
+                        aria-label={`Detach from ${a.entityName}`}
+                      >
+                        {unlinking ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+              <div className="text-[11px] text-[var(--t4)] mt-2">
+                Tap × on any chip to detach this group from just that entity. The group stays intact everywhere else.
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="px-5 py-3 border-t border-[var(--b2)] flex items-center justify-end gap-2">

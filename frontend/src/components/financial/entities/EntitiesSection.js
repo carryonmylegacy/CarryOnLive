@@ -831,6 +831,8 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
         convert={editingBlock?.convert}
         beneficiaries={beneficiaries || []}
         externals={externals}
+        entities={entities}
+        relationships={relationships}
         user={effectiveUser}
         onClose={() => setEditingBlock(null)}
         onSaved={async () => { await fetchAll(); onEntitiesChanged?.(); }}

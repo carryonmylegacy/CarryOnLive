@@ -1,6 +1,26 @@
 # CarryOn — Changelog
 
 
+## Feb 14, 2026 — "Attached to:" Surgical-Unlink Footer in BlockEditModal
+
+### Need (user said "Do it")
+Lets a user detach a named block from JUST ONE entity (e.g. "Kids" from Trust A) without affecting the same block's attachments to Trust B + LLC C.
+
+### Change
+- `BlockEditModal.js`:
+  - New props: `entities`, `relationships` (joined inside the modal to compute live attachments).
+  - New `attachments` `useMemo` — recomputes from the `relationships` prop on every render, so a successful unlink triggers a re-fetch upstream and the chip list updates without the modal closing.
+  - New `unlinkingRelIds: Set<string>` state — keyed by relationship id so multiple rapid unlinks each show their own spinner with no flicker.
+  - New `handleUnlinkAttachment(relId, entityName)`: single DELETE on `/financial/entity-relationships/{relId}` → toast → bubble `onSaved` so parent refetches (the modal stays open, the chip just disappears from the list).
+  - New section in the scrollable body (edit mode only — convert mode has no block id yet, no attachments to render): teal pill chips with the entity name + a small × button each. Helper copy explains "Tap × on any chip to detach this group from just that entity. The group stays intact everywhere else." The tooltip on the last remaining chip warns: "Group will keep existing on its own."
+- `EntitiesSection.js`: passes `entities` + `relationships` through to the modal.
+
+### Verified
+- `bash /app/housekeeping.sh` → **0 FAIL, 0 WARN**.
+- ESLint clean.
+
+
+
 ## Feb 14, 2026 — Edit Pencil Now Works on Auto-Clusters Too (cluster → named-block on-edit conversion)
 
 ### Need (verbatim)
