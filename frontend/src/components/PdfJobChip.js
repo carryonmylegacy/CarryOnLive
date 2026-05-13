@@ -134,7 +134,11 @@ const PdfJobChip = () => {
         position: 'fixed',
         left: '50%',
         transform: 'translateX(-50%)',
-        bottom: `calc(max(72px, env(safe-area-inset-bottom, 0px) + 64px))`,
+        // EGA header is at the very top of the viewport. Place the
+        // chip there (centered between the title and the toolbar
+        // icons, just above the header's bottom divider line) so it
+        // doesn't sit on top of the chat input box.
+        top: `calc(env(safe-area-inset-top, 0px) + 10px)`,
         zIndex: 2147481999, // just below the modal but above everything else
         background: colors.bg,
         border: `1px solid ${colors.border}`,
@@ -156,7 +160,7 @@ const PdfJobChip = () => {
     >
       <style>{`
         @keyframes pdf-chip-pop {
-          from { opacity: 0; transform: translate(-50%, 12px); }
+          from { opacity: 0; transform: translate(-50%, -12px); }
           to   { opacity: 1; transform: translate(-50%, 0); }
         }
         [data-testid="pdf-job-chip"][data-job-status="running"] svg.pdf-chip-spinner {

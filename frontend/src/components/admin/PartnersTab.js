@@ -42,6 +42,28 @@ const LOGO_PLACEHOLDER = (
 
 const partnerLandingHref = (slug) => `${window.location.origin}/p/${slug}`;
 
+// Strict slug sanitizer — accepts any human-typed input (URLs, pasted
+// text, company names with spaces, etc.) and returns ONLY the
+// canonical "web-page-name" form: lowercase letters, numbers, single
+// hyphens; no leading/trailing hyphens; max 50 chars. Used both
+// while typing (live cleanup) AND on blur (final scrub). Designed
+// so non-developer admins can paste literally anything ("Acme Inc.",
+// "https://www.acme.com", "/p/acme") and still get a valid value.
+const sanitizeSlug = (raw) => {
+  if (!raw) return '';
+  let s = String(raw).toLowerCase().trim();
+  // Drop URL scheme, www, /p/ prefix the user might have copied
+  s = s.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/^\/+/, '').replace(/^p\//, '');
+  // Drop common TLD-y trailing fragments people paste
+  s = s.replace(/\.(com|net|org|io|co|us|app|ai)\b.*$/i, '');
+  // Any run of non-alphanumeric → single hyphen
+  s = s.replace(/[^a-z0-9]+/g, '-');
+  // Trim leading/trailing hyphens
+  s = s.replace(/^-+|-+$/g, '');
+  // Cap length
+  return s.slice(0, 50);
+};
+
 // Builds a ready-to-send partner welcome email — Subject line on
 // top, blank line, then body. One-shot clipboard paste works for
 // every major mail client. Pillars come from the partner's
@@ -255,7 +277,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
               </h3>
               <p className="text-sm text-[var(--t4)] mt-1">
                 Each row is a B2B partnership. Toggle which pillars each partner offers to their clients,
-                then share their unique <span className="font-mono text-[var(--gold)]">/p/&lt;slug&gt;</span> landing page.
+                then share their unique landing page link.
               </p>
             </div>
             <Button size="sm" className="gold-button text-xs" onClick={() => setShowNew(true)} data-testid="add-partner-btn">
@@ -273,19 +295,55 @@ export const PartnersTab = ({ getAuthHeaders }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
               <div className="space-y-1">
                 <Label className="text-xs text-[var(--t4)]">Company Name <span className="text-red-400">*</span></Label>
-                <Input value={newForm.company_name} onChange={e => setNewForm({ ...newForm, company_name: e.target.value })}
-                  placeholder="Acme Insurance" className="input-field text-sm" data-testid="new-partner-name" />
+                <Input
+                  value={newForm.company_name}
+                  onChange={e => {
+                    const next = e.target.value;
+                    setNewForm((prev) => ({
+                      ...prev,
+                      company_name: next,
+                      // Auto-fill the web-page name from the company
+                      // name UNTIL the user has manually edited the
+                      // slug field. Once they touch it, we stop
+                      // tracking. Detected by comparing the current
+                      // slug to the sanitized version of the PRIOR
+                      // company name — matches → still auto.
+                      slug: (!prev.slug || prev.slug === sanitizeSlug(prev.company_name))
+                        ? sanitizeSlug(next)
+                        : prev.slug,
+                    }));
+                  }}
+                  placeholder="Acme Insurance"
+                  className="input-field text-sm"
+                  data-testid="new-partner-name"
+                />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-[var(--t4)]">URL Slug <span className="text-red-400">*</span></Label>
-                <Input value={newForm.slug} onChange={e => setNewForm({ ...newForm, slug: e.target.value.toLowerCase() })}
-                  placeholder="acme-insurance" className="input-field text-sm" data-testid="new-partner-slug" />
-                <p className="text-[11px] text-[var(--t5)]">Landing page: /p/{newForm.slug || 'your-slug'}</p>
+                <Label className="text-xs text-[var(--t4)]">Partner Web Page Name <span className="text-red-400">*</span></Label>
+                <Input
+                  value={newForm.slug}
+                  onChange={e => setNewForm({ ...newForm, slug: sanitizeSlug(e.target.value) })}
+                  onBlur={e => setNewForm({ ...newForm, slug: sanitizeSlug(e.target.value) })}
+                  placeholder="acme-insurance"
+                  className="input-field text-sm"
+                  data-testid="new-partner-slug"
+                />
+                <p className="text-[11px] text-[var(--t5)]">
+                  Their landing page will live at:
+                  {' '}
+                  <span className="font-mono text-[var(--gold)]">
+                    {window.location.origin}/p/{newForm.slug || 'acme-insurance'}
+                  </span>
+                </p>
+                <p className="text-[11px] text-[var(--t5)]">
+                  Lowercase letters, numbers and hyphens only — we&apos;ll auto-clean anything you paste.
+                </p>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-[var(--t4)]">Enterprise Code <span className="text-red-400">*</span></Label>
                 <Input value={newForm.code} onChange={e => setNewForm({ ...newForm, code: e.target.value.toUpperCase() })}
                   placeholder="ACME2026" className="input-field text-sm" data-testid="new-partner-code" />
+                <p className="text-[11px] text-[var(--t5)]">The code your partner&apos;s members type at signup to unlock their plan.</p>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-[var(--t4)]">Discount %</Label>
@@ -306,7 +364,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
                 <Input value={newForm.tagline} onChange={e => setNewForm({ ...newForm, tagline: e.target.value })}
                   placeholder="Acme Insurance members get the full CarryOn family preparedness platform — included with your policy."
                   className="input-field text-sm" maxLength={280} />
-                <p className="text-[11px] text-[var(--t5)]">Appears under the hero on /p/&lt;slug&gt; · 280 chars max</p>
+                <p className="text-[11px] text-[var(--t5)]">Appears under the partner&apos;s logo on their landing page · 280 chars max</p>
               </div>
               <div className="space-y-1 md:col-span-2 lg:col-span-3">
                 <Label className="text-xs text-[var(--t4)]">Partner Contact Email <span className="text-[var(--t6)]">(optional)</span></Label>
@@ -455,10 +513,10 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
               <div>
                 <Input
                   value={draft.slug}
-                  onChange={e => setDraft({ ...draft, slug: e.target.value.toLowerCase() })}
+                  onChange={e => setDraft({ ...draft, slug: sanitizeSlug(e.target.value) })}
                   onBlur={() => commit('slug')}
                   className="input-field text-xs h-7 font-mono"
-                  placeholder="slug"
+                  placeholder="web-page-name"
                 />
               </div>
               <div>
