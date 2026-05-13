@@ -60,11 +60,11 @@ const CORNER_R = 10;         // rounded-corner radius
 // entity (the individual avatars carry no edges of their own).
 const CLUSTER_AVATAR = 36;
 const CLUSTER_SLOT_W = 50;          // per-member horizontal slot
-const CLUSTER_SLOT_H = 66;          // per-member vertical slot (avatar 36 + label ~14 + safety buffer 16)
+const CLUSTER_SLOT_H = 76;          // per-member vertical slot (avatar 36 + label ~14 + generous buffer 26)
 const CLUSTER_COLS = 5;
 const CLUSTER_HEADER_H = 22;        // entity-label strip above the grid
 const CLUSTER_PAD_X = 10;
-const CLUSTER_PAD_Y = 10;
+const CLUSTER_PAD_Y = 14;
 const CLUSTER_W = CLUSTER_PAD_X * 2 + CLUSTER_COLS * CLUSTER_SLOT_W; // 270
 const clusterHeight = (memberCount) => {
   const rows = Math.max(1, Math.ceil(memberCount / CLUSTER_COLS));
