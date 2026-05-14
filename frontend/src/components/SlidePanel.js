@@ -136,9 +136,14 @@ export default function SlidePanel({ open, onClose, title, subtitle, children })
           </div>
         </div>
 
-        {/* Scrollable content */}
+        {/* Scrollable content. Inner cap matches the canonical wizard
+            width (max-w-3xl = 768px) so the slide-in flows (Quick Add,
+            Bill Form, Beneficiary edit, etc.) feel uniform with every
+            other wizard page in the platform. Full-width on mobile. */}
         <div className="slide-panel-scroll">
-          {children}
+          <div className="slide-panel-inner">
+            {children}
+          </div>
         </div>
       </div>
     </div>

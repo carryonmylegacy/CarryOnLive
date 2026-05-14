@@ -502,6 +502,20 @@ const TrusteePage = () => {
   const handleDeleteTask = async (taskId) => {
     setDeleting(true);
     try {
+      // Helper — purge this task from the localStorage rehydration cache
+      // so the offline `Airplane-mode rescue` branch on the next mount
+      // doesn't bring the deleted draft back. Mirrors the soft-delete the
+      // backend performs (`dts_tasks.soft_deleted = true`).
+      const pruneLocalCache = () => {
+        if (!estateId) return;
+        try {
+          const cached = readList(`dts:tasks:${estateId}`);
+          if (Array.isArray(cached)) {
+            saveList(`dts:tasks:${estateId}`, cached.filter(t => t.id !== taskId));
+          }
+        } catch (_) { /* localStorage may be unavailable */ }
+      };
+
       // Offline delete: queue DELETE in outbox + optimistic removal.
       if (typeof navigator !== 'undefined' && navigator.onLine === false) {
         await enqueueOutbox({
@@ -512,6 +526,7 @@ const TrusteePage = () => {
         });
         setShowDeleteDialog(false);
         setTasks(prev => prev.filter(t => t.id !== taskId));
+        pruneLocalCache();
         setView('list');
         setSelectedId(null);
         setDeleting(false);
@@ -522,6 +537,7 @@ const TrusteePage = () => {
       // toast removed
       setShowDeleteDialog(false);
       setTasks(prev => prev.filter(t => t.id !== taskId));
+      pruneLocalCache();
       setView('list');
       setSelectedId(null);
     } catch (err) {

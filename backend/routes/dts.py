@@ -105,18 +105,34 @@ async def get_all_dts_tasks(include_deleted: bool = False, current_user: dict = 
 
 @router.get("/dts/tasks/{estate_id}")
 async def get_dts_tasks(estate_id: str, current_user: dict = Depends(get_current_user)):
-    """Get DTS tasks for an estate (benefactor) or all tasks (admin)"""
+    """Get DTS tasks for an estate (benefactor) or all tasks (admin)
+
+    Soft-deleted tasks are excluded so a draft request the benefactor
+    deleted does not reappear on the next page mount. Admins who need
+    to see deleted records should use `/dts/tasks/all?include_deleted=true`.
+    """
+    base_filter = {"soft_deleted": {"$ne": True}}
     if current_user["role"] == "admin":
-        tasks = await db.dts_tasks.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
+        tasks = await db.dts_tasks.find(base_filter, {"_id": 0}).sort("created_at", -1).to_list(200)
     else:
-        tasks = await db.dts_tasks.find({"estate_id": estate_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+        tasks = (
+            await db.dts_tasks.find(
+                {**base_filter, "estate_id": estate_id},
+                {"_id": 0},
+            )
+            .sort("created_at", -1)
+            .to_list(100)
+        )
     return tasks
 
 
 @router.get("/dts/task/{task_id}")
 async def get_dts_task(task_id: str, current_user: dict = Depends(get_current_user)):
-    """Get a single DTS task"""
-    task = await db.dts_tasks.find_one({"id": task_id}, {"_id": 0})
+    """Get a single DTS task (soft-deleted records return 404)."""
+    task = await db.dts_tasks.find_one(
+        {"id": task_id, "soft_deleted": {"$ne": True}},
+        {"_id": 0},
+    )
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     return task

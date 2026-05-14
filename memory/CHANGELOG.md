@@ -1,6 +1,45 @@
 # CarryOn — Changelog
 
 
+## May 14, 2026 — DTS Soft-Delete Bug Fix + SlidePanel Width Normalization
+
+### Bug fix — DTS draft re-appears after delete (HIGH)
+User report: "I'm in the benefactor portal, there's a draft DTS request, I delete it and get the confirmation, but when I navigate away and come back, it's there again."
+
+**Root cause** (verified via curl + Mongo seed test):
+- `DELETE /api/dts/tasks/{task_id}` performs a **soft-delete** (`soft_deleted: true`) — by design, so admins can audit/restore.
+- `GET /api/dts/tasks/{estate_id}` (benefactor read endpoint) was **not filtering out** soft-deleted rows. The sibling `/dts/tasks/all` admin endpoint already filtered correctly.
+- Result: the benefactor's optimistic local removal worked, but the next mount fetched the same soft-deleted task back from the server → ghost reappearance.
+
+**Fix** (`/app/backend/routes/dts.py`):
+- `get_dts_tasks` — added `{"soft_deleted": {"$ne": True}}` filter to both the admin and benefactor branches.
+- `get_dts_task` (single-task GET) — same filter, returns 404 for soft-deleted rows.
+
+**Frontend hardening** (`/app/frontend/src/pages/TrusteePage.js`):
+- `handleDeleteTask` now also prunes the localStorage rehydration cache (`dts:tasks:${estateId}`) so the offline `Airplane-mode rescue` branch can't bring the deleted draft back when the user opens the app offline before the next sync.
+
+**Verification** (curl + Mongo seed):
+- Seeded 2 tasks in MongoDB for the pitch estate: one active, one with `soft_deleted: true`.
+- `GET /api/dts/tasks/{estate_id}` returned exactly 1 task (the active one). ✅
+- Test rows cleaned up after verification.
+
+### SlidePanel Width Normalization
+Continuation of yesterday's uniform-widths sweep. `SlidePanel` (used by Quick Add, Bill Form, Beneficiary edit, Create Milestone Message, Edit MM, etc.) previously let inner content stretch to the full main-content width (≈1660px on 1920 viewport). Inconsistent with the new canonical wizard width (`max-w-3xl` = 768px) used by `/settings`, `/subscription`, `CCPWizard`, etc.
+
+**Fix**:
+- `/app/frontend/src/components/SlidePanel.js` — wraps children in a `slide-panel-inner` div.
+- `/app/frontend/src/index.css` — `.slide-panel-inner { width: 100%; max-width: 768px; margin: auto; }`.
+
+**Verification** (Playwright `getBoundingClientRect`):
+- Create Message slide-panel on /messages at 1920px → inner content measured `768px wide, left=706, right=1474` ✅ matches max-w-3xl centered within the panel.
+- Header bar remains full-width (correct slide-out wizard pattern).
+- Mobile (<1024px): inner width caps don't kick in (width: 100%), full-screen as before.
+
+### Housekeeping
+- `bash housekeeping.sh --strict` → 0 warnings / 0 failures.
+
+
+
 ## May 14, 2026 — Uniform Page & Wizard Widths (Desktop ↔ PWA Crossover Sweep)
 
 User feedback: "every page, every wizard, has the same crossover point from desktop to PWA and that in desktop, they all smoothly scale large to a certain point". CCP wizard was the visible offender — locked at `max-w-lg sm:max-w-xl` (≈512-576px), it looked like a phone column inside a 1920px desktop window. Across the platform, no two wizards or pages shared a consistent width policy.
