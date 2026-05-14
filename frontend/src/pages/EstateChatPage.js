@@ -86,6 +86,12 @@ export default function EstateChatPage() {
   const activeChannelRef  = useRef(null);
   const scrollContainerRef = useRef(null);
   const previewGuardRef   = useRef(false); // blocks phantom touches after image preview closes
+  // Stamp set whenever `contextmenu` fires on a bubble (right-click,
+  // ctrl-click, two-finger trackpad tap). The click handler checks
+  // this ref to suppress the click-to-close that macOS emits AFTER
+  // ctrl-click — otherwise the action menu would open then immediately
+  // close on the same gesture.
+  const lastContextMenuAtRef = useRef(0);
   // Ref to break circular TDZ dependency: hooks need fetchMessages before it's const-initialized
   const fetchMessagesRef  = useRef(null);
 
@@ -1053,10 +1059,10 @@ export default function EstateChatPage() {
                         )}
                         {msg.pinned && <div className="absolute z-10" style={{ top: '-8px', right: '-6px' }}><Pin className="w-3.5 h-3.5" style={{ color: '#d4af37', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} /></div>}
                         <div className="px-4 py-2.5 rounded-2xl text-sm cursor-pointer" data-testid={`msg-bubble-${msg.id}`}
-                          onClick={() => { if (msgLongPressTriggered.current) { msgLongPressTriggered.current = false; return; } if (previewGuardRef.current) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); closeMsgAction(); }}
+                          onClick={() => { if (Date.now() - lastContextMenuAtRef.current < 500) return; if (msgLongPressTriggered.current) { msgLongPressTriggered.current = false; return; } if (previewGuardRef.current) return; setReactingMsgId(reactingMsgId === msg.id ? null : msg.id); closeMsgAction(); }}
                           onTouchStart={(e) => onMsgTouchStart(e, msg.id)} onTouchMove={onMsgTouchMove} onTouchEnd={(e) => onMsgTouchEnd(e, msg.id)}
                           onMouseDown={(e) => onMsgMouseDown(e, msg.id)} onMouseMove={onMsgMouseMove} onMouseUp={onMsgMouseUp} onMouseLeave={onMsgMouseLeave}
-                          onContextMenu={(e) => { e.preventDefault(); if (previewGuardRef.current) return; openMsgAction(msg.id); setReactingMsgId(null); }}
+                          onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); if (previewGuardRef.current) return; lastContextMenuAtRef.current = Date.now(); onMsgMouseLeave(); openMsgAction(msg.id); setReactingMsgId(null); }}
                           style={{ background: isMe ? 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1))' : 'rgba(255,255,255,0.05)', border: `1px solid ${isMe ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`, color: 'var(--t)', borderTopRightRadius: isMe ? '6px' : '18px', borderTopLeftRadius: isMe ? '18px' : '6px', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none', marginTop: hasReactions ? '10px' : '0' }}>
                           {msg.reply_to && (
                             <div className="mb-1.5 px-2.5 py-1.5 rounded-lg text-xs" style={{ background: 'rgba(255,255,255,0.06)', borderLeft: '2px solid #d4af37' }}>
