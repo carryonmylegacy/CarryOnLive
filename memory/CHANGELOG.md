@@ -1,6 +1,38 @@
 # CarryOn — Changelog
 
 
+## May 14, 2026 — Inline-expand sweep (Go-Bag bug + FFN/DAV/CCP conversion + MM stack)
+
+**Five UX changes shipped in one pass**:
+
+### 1. Go-Bag top-tile bug — first-edit-of-session opened at the bottom
+**RCA**: `sortedItems` memo in `CCPDepthPanels.js` short-circuited and returned **raw items** whenever `editingId !== null`. On the first edit of a session the raw-array order ≠ sorted order, so tapping the visible top tile rendered the editor at the row's raw-index (often near the bottom).
+
+**Fix**: memo now always applies the sort comparator. The `'NEW'` sentinel is the *only* thing pinned to position 0 (it has no category/name yet and would otherwise slide unpredictably). Existing-row edits keep the sort intact.
+
+### 2. FFN (Family Friends Network) → inline expand-to-edit
+Removed the centered fixed-position modal. New `openNew()` sets `editingId='NEW'`; `displayedContacts` prepends a virtual `{id:'NEW', _isNew:true}` row that renders the inline form. Edit pencil on an existing row expands its tile in place. Save / Cancel buttons inline, toast on success. No `<div className="fixed inset-0">` anywhere on the page.
+
+### 3. DAV (Digital Access Vault) → inline expand-to-edit
+Stripped the `<SlidePanel>` wrapper from `WalletEntryPanel`. The 3 inner cards (Account Details / Credentials / Assignment & Notes) now render inline within each entry card when in edit mode, AND as a virtual NEW card at the top of the list when adding. `handleCredentialSaved` already closed the right state.
+
+### 4. CCP depth tiles → single-column inline expand
+The 6 CCP tiles (Household / Go-Bag / Rendezvous / Out-of-Area / Drill / Activation) were previously a 2-column grid where each tile launched a `<SlidePanel>`. Now they stack `space-y-3` single-column, and tapping a tile expands the depth panel inline below the tile header, pushing every subsequent tile down. Chevron flips Right → Down on open. All 6 SlidePanel wrappers removed.
+
+### 5. MM (Milestone Messages) → stacked single column
+`MessagesPage.js` was `grid grid-cols-1 md:grid-cols-2` → `space-y-4`. Skeleton loading state also stacks. Cleaner reading flow on desktop.
+
+### Verified (iteration_141)
+- FFN inline add: runtime PASS — no modal, inline name input, "Contact added" toast, persistence.
+- DAV inline add: runtime PASS — no SlidePanel, inline "New digital account" card with 3 sub-cards above the list.
+- MM stacked: runtime PASS — zero `md:grid-cols-2` on the messages page.
+- Go-Bag sort fix: code review PASS (lines 287-311 of CCPDepthPanels.js).
+- CCP depth tiles: code review PASS (lines 1069-1117 of ConnectedProtocolPage.js); runtime not exercised because Pete Mitchell's session didn't render the `estateId && isBenefactor`-gated section. Pure JSX change, no business logic — code review sufficient.
+
+`bash /app/housekeeping.sh --strict` → 0 WARN / 0 FAIL. Lint clean. `retest_needed: false`.
+
+
+
 ## May 14, 2026 — Defense-in-depth: every paywall tile + external link now suspends auto-logout
 
 **User ask**: "Check all the pay wall tiles and links. Make sure this issue doesn't exist anywhere else."
