@@ -1239,6 +1239,20 @@
     inset: 0;
     z-index: 45;
   }
+  /* When a SlidePanel is open, suppress the underlying main-content
+     OverlayScrollbars thumb so it cannot bleed through the panel as a
+     phantom right-edge scrollbar (user-reported regression on the
+     CCP Family Drill panel). Also stops the body itself from scrolling
+     behind the panel on iOS. */
+  body.slide-panel-open .main-content > .os-scrollbar,
+  body.slide-panel-open .main-content [data-overlayscrollbars] > .os-scrollbar {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  body.slide-panel-open {
+    overflow: hidden;
+  }
   .slide-panel-backdrop {
     position: absolute;
     inset: 0;

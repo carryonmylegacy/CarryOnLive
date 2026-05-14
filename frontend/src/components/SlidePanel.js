@@ -26,6 +26,16 @@ export default function SlidePanel({ open, onClose, title, subtitle, children })
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // While the slide panel is mounted, lock the underlying main-content
+  // scroll AND suppress its OverlayScrollbars gold thumb so the user
+  // never sees a phantom right-edge scrollbar bleeding through the
+  // panel. Restores on unmount.
+  useEffect(() => {
+    if (!mounted) return;
+    document.body.classList.add('slide-panel-open');
+    return () => document.body.classList.remove('slide-panel-open');
+  }, [mounted]);
+
   const handleClose = useCallback(() => {
     setClosing(true);
     setTimeout(() => {

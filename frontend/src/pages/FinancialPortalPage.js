@@ -20,6 +20,7 @@ import { mutateWithOutbox } from '../utils/offlineMutation';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import SlidePanel from '../components/SlidePanel';
+import SortControl, { makeSorter } from '../components/ui/SortControl';
 import { API_URL } from '../config';
 import { saveList, readList } from '../utils/localListCache';
 import { useDraftState } from '../hooks/useDraftState';
@@ -153,6 +154,14 @@ const FinancialPortalPage = () => {
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const searchTimerRef = useRef(null);
   const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Sort key for each CFP tab. "default" preserves the server-provided
+  // (chronological / category-grouped) order; any other key sorts the
+  // displayed list without mutating the underlying data.
+  const [billSort, setBillSort] = useState('default');
+  const [debtSort, setDebtSort] = useState('default');
+  const [accountSort, setAccountSort] = useState('default');
+  const [propertySort, setPropertySort] = useState('default');
 
   // Preserve scroll position when the user taps between Bills / Debts /
   // Accounts / Property tabs. Without this the page slams back near the
@@ -671,22 +680,62 @@ const FinancialPortalPage = () => {
     let items = bills.filter(b => b.status !== 'cancelled');
     if (billFilter !== 'all') items = items.filter(b => b.category === billFilter);
     if (debouncedSearch) items = items.filter(b => b.name.toLowerCase().includes(debouncedSearch.toLowerCase()));
+    if (billSort && billSort !== 'default') {
+      items = [...items].sort(makeSorter(billSort, {
+        name: (b) => b.name || '',
+        createdAt: (b) => b.created_at || b.next_due_date || '',
+        updatedAt: (b) => b.updated_at || b.created_at || '',
+      }));
+    }
     return items;
-  }, [bills, billFilter, debouncedSearch]);
+  }, [bills, billFilter, debouncedSearch, billSort]);
 
   const filteredDebts = useMemo(() => {
     let items = debts;
     if (debtFilter !== 'all') items = items.filter(d => d.category === debtFilter);
     if (debouncedSearch) items = items.filter(d => d.name.toLowerCase().includes(debouncedSearch.toLowerCase()));
+    if (debtSort && debtSort !== 'default') {
+      items = [...items].sort(makeSorter(debtSort, {
+        name: (d) => d.name || '',
+        createdAt: (d) => d.created_at || '',
+        updatedAt: (d) => d.updated_at || d.created_at || '',
+      }));
+    }
     return items;
-  }, [debts, debtFilter, debouncedSearch]);
+  }, [debts, debtFilter, debouncedSearch, debtSort]);
 
   const filteredAccounts = useMemo(() => {
     let items = accounts;
     if (accountFilter !== 'all') items = items.filter(a => a.category === accountFilter);
     if (debouncedSearch) items = items.filter(a => a.name.toLowerCase().includes(debouncedSearch.toLowerCase()));
+    if (accountSort && accountSort !== 'default') {
+      items = [...items].sort(makeSorter(accountSort, {
+        name: (a) => a.name || '',
+        createdAt: (a) => a.created_at || '',
+        updatedAt: (a) => a.updated_at || a.created_at || '',
+      }));
+    }
     return items;
-  }, [accounts, accountFilter, debouncedSearch]);
+  }, [accounts, accountFilter, debouncedSearch, accountSort]);
+
+  const sortedPropertyAssets = useMemo(() => {
+    if (!propertySort || propertySort === 'default') return propertyAssets;
+    return [...propertyAssets].sort(makeSorter(propertySort, {
+      name: (p) => p.name || p.title || '',
+      createdAt: (p) => p.created_at || '',
+      updatedAt: (p) => p.updated_at || p.created_at || '',
+    }));
+  }, [propertyAssets, propertySort]);
+
+  // Reusable sort-option presets so every CFP tab uses identical labels.
+  const cfpSortOptions = [
+    { value: 'default',       label: 'Default order' },
+    { value: 'name_asc',      label: 'Name (A→Z)' },
+    { value: 'name_desc',     label: 'Name (Z→A)' },
+    { value: 'created_desc',  label: 'Newest first' },
+    { value: 'created_asc',   label: 'Oldest first' },
+    { value: 'modified_desc', label: 'Recently modified' },
+  ];
 
   // Get active categories (ones that have items)
   const activeBillCats = useMemo(() => {
@@ -869,7 +918,12 @@ const FinancialPortalPage = () => {
 
         {/* ============ BILLS TAB ============ */}
         <TabsContent value="bills" className="mt-4">
-          {renderCategoryBubbles(activeBillCats, billFilter, setBillFilter, billLabels)}
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="flex-1 min-w-0">{renderCategoryBubbles(activeBillCats, billFilter, setBillFilter, billLabels)}</div>
+            {filteredBills.length > 0 && (
+              <SortControl value={billSort} onChange={setBillSort} options={cfpSortOptions} testId="bill-sort-control" />
+            )}
+          </div>
           <div className="mt-4 flex flex-col lg:flex-row gap-6">
             {/* Mobile: Calendar on top */}
             <div className="lg:hidden">
@@ -927,7 +981,12 @@ const FinancialPortalPage = () => {
 
         {/* ============ DEBTS TAB ============ */}
         <TabsContent value="debts" className="mt-4">
-          {renderCategoryBubbles(activeDebtCats, debtFilter, setDebtFilter, debtLabels)}
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="flex-1 min-w-0">{renderCategoryBubbles(activeDebtCats, debtFilter, setDebtFilter, debtLabels)}</div>
+            {filteredDebts.length > 0 && (
+              <SortControl value={debtSort} onChange={setDebtSort} options={cfpSortOptions} testId="debt-sort-control" />
+            )}
+          </div>
           <div className="mt-4">
             {filteredDebts.length === 0 ? (
               <Card className="glass-card">
@@ -960,7 +1019,12 @@ const FinancialPortalPage = () => {
 
         {/* ============ ACCOUNTS TAB ============ */}
         <TabsContent value="accounts" className="mt-4">
-          {renderCategoryBubbles(activeAcctCats, accountFilter, setAccountFilter, acctLabels)}
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="flex-1 min-w-0">{renderCategoryBubbles(activeAcctCats, accountFilter, setAccountFilter, acctLabels)}</div>
+            {filteredAccounts.length > 0 && (
+              <SortControl value={accountSort} onChange={setAccountSort} options={cfpSortOptions} testId="account-sort-control" />
+            )}
+          </div>
           <div className="mt-4">
             {filteredAccounts.length === 0 ? (
               <Card className="glass-card">
@@ -993,6 +1057,11 @@ const FinancialPortalPage = () => {
 
         {/* ============ PROPERTY TAB ============ */}
         <TabsContent value="property" className="mt-4">
+          {propertyAssets.length > 0 && (
+            <div className="flex justify-end mb-2">
+              <SortControl value={propertySort} onChange={setPropertySort} options={cfpSortOptions} testId="property-sort-control" />
+            </div>
+          )}
           <div>
             {propertyAssets.length === 0 ? (
               <Card className="glass-card">
@@ -1007,7 +1076,7 @@ const FinancialPortalPage = () => {
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {propertyAssets.map(asset => (
+                {sortedPropertyAssets.map(asset => (
                   <PropertyAssetTile
                     key={asset.id}
                     asset={asset}

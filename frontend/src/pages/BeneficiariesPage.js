@@ -68,12 +68,16 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 import SlidePanel from '../components/SlidePanel';
+import SortControl, { makeSorter } from '../components/ui/SortControl';
 import FamilyTree from '../components/FamilyTree';
 import { API_URL } from '../config';
 
-// Sortable wrapper for beneficiary cards
-const SortableCard = ({ id, children }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+// Sortable wrapper for beneficiary cards. When `disabled` is true the
+// useSortable instance is detached (drag listeners are no-ops) so the
+// user-selected non-succession sort order (e.g. alphabetical) doesn't
+// fight the drag handles.
+const SortableCard = ({ id, disabled, children }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -82,7 +86,7 @@ const SortableCard = ({ id, children }) => {
     position: 'relative',
   };
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} {...(disabled ? {} : attributes)} {...(disabled ? {} : listeners)}>
       {children}
     </div>
   );
@@ -122,6 +126,12 @@ const BeneficiariesPage = () => {
   const location = useLocation();
   const fromGettingStarted = location.state?.fromGettingStarted;
   const [beneficiaries, setBeneficiaries] = useState([]);
+  // Sort key for the succession-hierarchy list. "succession" is the
+  // sentinel custom-order value that preserves the drag-to-reorder UX
+  // (top = Primary trustee). Any other key sorts the DISPLAYED list
+  // without touching the canonical succession order, and disables drag
+  // until the user switches back to "succession".
+  const [benSortKey, setBenSortKey] = useState('succession');
   const [estate, setEstate] = useState(null);
   const [loading, setLoading] = useState(true);
   // Draft persistence — Beneficiaries Add/Edit modal. Per-estate keyed.
@@ -757,6 +767,19 @@ const BeneficiariesPage = () => {
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
   );
 
+  // Sorted view of beneficiaries used by the visible list. The canonical
+  // `beneficiaries` state always holds the succession order (top-to-bottom
+  // = Primary → Secondary → …). When the user picks a non-succession sort
+  // we render a re-ordered shallow copy here, leaving the underlying
+  // succession untouched.
+  const displayedBeneficiaries = React.useMemo(() => {
+    if (!benSortKey || benSortKey === 'succession') return beneficiaries;
+    return [...beneficiaries].sort(makeSorter(benSortKey, {
+      name: (b) => b.name || `${b.first_name || ''} ${b.last_name || ''}`.trim(),
+      createdAt: (b) => b.created_at || b.invited_at || '',
+    }));
+  }, [beneficiaries, benSortKey]);
+
   const handleDragEnd = useCallback(async (event) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -923,21 +946,41 @@ const BeneficiariesPage = () => {
 
           {/* RIGHT: Succession Hierarchy — drag to reorder */}
           <div>
-            {/* Succession explainer */}
+            {/* Succession explainer + Sort control */}
             <div className="mb-3 p-3 rounded-xl flex items-start gap-2.5" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }} data-testid="succession-explainer">
               <Shield className="w-4 h-4 text-[var(--gold)] flex-shrink-0 mt-0.5" />
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-sm text-[var(--t)] font-semibold">Succession Hierarchy</p>
                 <p className="text-xs text-[var(--t3)] leading-relaxed mt-0.5">
-                  Drag to set succession order. Top position = Primary Beneficiary (trustee).
+                  {benSortKey === 'succession'
+                    ? 'Drag to set succession order. Top position = Primary Beneficiary (trustee).'
+                    : 'List is temporarily sorted. Switch back to "Succession order" to drag and re-rank.'}
                 </p>
               </div>
+              <SortControl
+                value={benSortKey}
+                onChange={setBenSortKey}
+                options={[
+                  { value: 'succession',    label: 'Succession order' },
+                  { value: 'name_asc',      label: 'Name (A→Z)' },
+                  { value: 'name_desc',     label: 'Name (Z→A)' },
+                  { value: 'created_desc',  label: 'Newest first' },
+                  { value: 'created_asc',   label: 'Oldest first' },
+                ]}
+                testId="ben-sort-control"
+              />
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={beneficiaries.map(b => b.id)} strategy={rectSortingStrategy}>
+            <SortableContext items={displayedBeneficiaries.map(b => b.id)} strategy={rectSortingStrategy}>
             <div className="space-y-3" data-testid="beneficiary-tiles">
-              {beneficiaries.map((ben, index) => {
-                // Compute succession rank only among opted-in beneficiaries
+              {displayedBeneficiaries.map((ben) => {
+                // Succession rank is ALWAYS computed from the canonical
+                // `beneficiaries` order (top-to-bottom), not the displayed
+                // order — so the "PRIMARY / SECONDARY / TERTIARY" badge
+                // remains correct even when the user re-sorts the view
+                // alphabetically or by date.
+                const canonicalIndex = beneficiaries.findIndex(b => b.id === ben.id);
+                const index = canonicalIndex >= 0 ? canonicalIndex : 0;
                 const isInSuccession = ben.succession_order !== null && ben.succession_order !== undefined;
                 const succRank = isInSuccession ? beneficiaries.filter((b, i) => i < index && b.succession_order !== null && b.succession_order !== undefined).length : null;
                 const succStyle = isInSuccession
@@ -945,14 +988,16 @@ const BeneficiariesPage = () => {
                   : { bg: 'rgba(100,116,139,0.08)', color: '#64748b', border: '1px solid rgba(100,116,139,0.15)' };
                 const isTileExpanded = expandedTiles.has(ben.id);
                 return (
-                <SortableCard key={ben.id} id={ben.id}>
+                <SortableCard key={ben.id} id={ben.id} disabled={benSortKey !== 'succession'}>
                 <Card className="glass-card group" data-testid={`beneficiary-${ben.id}`}>
                   <CardContent className="p-4 sm:p-5">
                     {/* Collapsed header — always visible */}
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="drag-handle cursor-grab active:cursor-grabbing flex items-center text-[var(--t5)] hover:text-[var(--t3)] transition-colors touch-none" data-testid={`drag-handle-${ben.id}`}>
-                        <GripVertical className="w-4 h-4" />
-                      </div>
+                      {benSortKey === 'succession' && (
+                        <div className="drag-handle cursor-grab active:cursor-grabbing flex items-center text-[var(--t5)] hover:text-[var(--t3)] transition-colors touch-none" data-testid={`drag-handle-${ben.id}`}>
+                          <GripVertical className="w-4 h-4" />
+                        </div>
+                      )}
                       <AvatarCircle
                         photo={ben.photo_url}
                         cacheKey={ben.id ? `beneficiary:${ben.id}:photo` : undefined}

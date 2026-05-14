@@ -69,7 +69,7 @@ const MessageCard = ({
           </div>
 
           {msg.is_delivered && (
-            <span className="px-2 py-1 bg-[#10b981]/20 text-[#10b981] text-[10px] rounded-full flex-shrink-0">
+            <span className="px-2 py-1 bg-[#10b981]/20 text-[#10b981] text-[11px] font-bold rounded-full flex-shrink-0">
               Delivered
             </span>
           )}
@@ -80,7 +80,7 @@ const MessageCard = ({
               <button
                 onClick={(e) => { e.stopPropagation(); openEdit(msg); }}
                 className="h-8 w-8 flex items-center justify-center rounded-md text-[var(--t4)] hover:text-[#60A5FA] hover:bg-[var(--s)] transition-colors"
-                data-testid={`edit-row-${msg.id}`}
+                data-testid={`edit-message-${msg.id}`}
                 aria-label="Edit message"
               >
                 <Pencil className="w-4 h-4" />

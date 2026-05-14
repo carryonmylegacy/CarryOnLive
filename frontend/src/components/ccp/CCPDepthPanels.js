@@ -130,7 +130,7 @@ export function HouseholdRosterPanel({ estateId, onDirty }) {
                     {b.relation || '—'}{b.date_of_birth ? ` · ${ageFromDob(b.date_of_birth)}y` : ''}
                   </div>
                   {hasMedical && (
-                    <div className="text-[10px] mt-0.5" style={{ color: '#22C993' }}>
+                    <div className="text-[11px] font-bold mt-0.5" style={{ color: '#22C993' }}>
                       ✓ Medical info on file
                     </div>
                   )}

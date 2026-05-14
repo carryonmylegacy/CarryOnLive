@@ -673,7 +673,7 @@ async def readiness_score(estate_id: str, current_user: dict = Depends(get_curre
     twelve_mo = now - timedelta(days=365)
     recent_drill = await db.ccp_drill_runs.find_one(
         {"estate_id": estate_id, "started_at": {"$gte": twelve_mo.isoformat()}},
-        {"_id": 0, "started_at": 1},
+        {"_id": 0, "id": 1, "started_at": 1},
     )
     if recent_drill:
         score += 10
