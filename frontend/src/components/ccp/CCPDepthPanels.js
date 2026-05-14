@@ -16,6 +16,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { API_URL } from '../../config';
+import SortControl from '../ui/SortControl';
 
 const auth = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` } });
 
@@ -183,6 +184,8 @@ export function GoBagPanel({ estateId, onDirty }) {
   // editingId === item.id → that row expanded for editing
   // editingId === 'NEW' → adding a new item
   const [editingId, setEditingId] = useState(null);
+  const [sortKey, setSortKey] = useState(() => localStorage.getItem('gobag:sort') || 'category_asc');
+  useEffect(() => { try { localStorage.setItem('gobag:sort', sortKey); } catch { /* private mode */ } }, [sortKey]);
 
   useEffect(() => {
     if (!estateId) return;
@@ -270,6 +273,31 @@ export function GoBagPanel({ estateId, onDirty }) {
     }
   };
 
+  // Apply current sort. While a row is being edited we lock the order
+  // so the newly-added 'NEW' row doesn't visually jump around.
+  const sortedItems = React.useMemo(() => {
+    if (editingId !== null) return items;
+    const arr = [...items];
+    const cmpStr = (a, b) => String(a || '').localeCompare(String(b || ''), undefined, { sensitivity: 'base' });
+    const cmpDate = (a, b) => {
+      if (!a && !b) return 0;
+      if (!a) return 1;
+      if (!b) return -1;
+      return new Date(a).getTime() - new Date(b).getTime();
+    };
+    arr.sort((a, b) => {
+      switch (sortKey) {
+        case 'name_asc':     return cmpStr(a.name, b.name);
+        case 'name_desc':    return -cmpStr(a.name, b.name);
+        case 'expires_asc':  return cmpDate(a.expires_at, b.expires_at);
+        case 'expires_desc': return -cmpDate(a.expires_at, b.expires_at);
+        case 'category_asc':
+        default:             return cmpStr(a.category, b.category) || cmpStr(a.name, b.name);
+      }
+    });
+    return arr;
+  }, [items, sortKey, editingId]);
+
   return (
     <div className="space-y-4" data-testid="go-bag-panel">
       <p className="text-sm text-[var(--t4)] leading-relaxed">
@@ -282,7 +310,24 @@ export function GoBagPanel({ estateId, onDirty }) {
         </Button>
       )}
 
-      {items.map((it) => {
+      {items.length > 0 && editingId === null && (
+        <div className="flex items-center justify-end">
+          <SortControl
+            value={sortKey}
+            onChange={setSortKey}
+            testId="gobag-sort"
+            options={[
+              { value: 'category_asc',  label: 'Category' },
+              { value: 'name_asc',      label: 'Name (A→Z)' },
+              { value: 'name_desc',     label: 'Name (Z→A)' },
+              { value: 'expires_asc',   label: 'Expiring soonest' },
+              { value: 'expires_desc',  label: 'Expiring latest' },
+            ]}
+          />
+        </div>
+      )}
+
+      {sortedItems.map((it) => {
         const flag = flagExpiring(it.expires_at);
         const isOpen = editingId === it.id;
         if (!isOpen) {

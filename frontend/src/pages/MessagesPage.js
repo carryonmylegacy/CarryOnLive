@@ -50,6 +50,7 @@ import { API_URL } from '../config';
 import VideoPlaybackModal from '../components/messages/VideoPlaybackModal';
 import MessageCard from '../components/messages/MessageCard';
 import MMGuidedWizard from '../components/messages/MMGuidedWizard';
+import SortControl, { makeSorter } from '../components/ui/SortControl';
 import { useDraftState } from '../hooks/useDraftState';
 import VideoRecordingOverlay from '../components/messages/VideoRecordingOverlay';
 import { getOfflineMode } from '../offline/featureFlag';
@@ -1249,9 +1250,23 @@ const MessagesPage = () => {
     }
   };
 
-  const filteredMessages = activeTab === 'all' 
-    ? messages 
+  const filteredMessages = activeTab === 'all'
+    ? messages
     : messages.filter(m => m.trigger_type === activeTab);
+
+  // Sort selection — persisted in localStorage so the user's choice
+  // sticks across visits. `useMemo` so we don't re-sort on every render.
+  const [sortKey, setSortKey] = useState(() => localStorage.getItem('mm:sort') || 'created_desc');
+  useEffect(() => { try { localStorage.setItem('mm:sort', sortKey); } catch { /* private mode */ } }, [sortKey]);
+  const sortedMessages = React.useMemo(() => {
+    const arr = [...filteredMessages];
+    arr.sort(makeSorter(sortKey, {
+      name: m => m.title,
+      createdAt: m => m.created_at,
+      updatedAt: m => m.updated_at || m.created_at,
+    }));
+    return arr;
+  }, [filteredMessages, sortKey]);
 
   if (loading) {
     return (
@@ -1365,12 +1380,27 @@ const MessagesPage = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredMessages.map((msg) => (
-                <MessageCard
-                  key={msg.id}
-                  msg={msg}
-                  user={user}
+            <>
+              <div className="flex items-center justify-end mb-3">
+                <SortControl
+                  value={sortKey}
+                  onChange={setSortKey}
+                  testId="mm-sort"
+                  options={[
+                    { value: 'created_desc',  label: 'Newest first' },
+                    { value: 'created_asc',   label: 'Oldest first' },
+                    { value: 'name_asc',      label: 'Title (A→Z)' },
+                    { value: 'name_desc',     label: 'Title (Z→A)' },
+                    { value: 'modified_desc', label: 'Recently modified' },
+                  ]}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {sortedMessages.map((msg) => (
+                  <MessageCard
+                    key={msg.id}
+                    msg={msg}
+                    user={user}
                   triggerIcons={triggerIcons}
                   loadingPlayback={loadingPlayback}
                   downloadingId={downloadingId}
@@ -1381,7 +1411,8 @@ const MessagesPage = () => {
                   downloadAttachment={downloadAttachment}
                 />
               ))}
-            </div>
+              </div>
+            </>
           )}
         </TabsContent>
       </Tabs>

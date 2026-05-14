@@ -4,6 +4,7 @@ import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
 import { useLabelCleaner } from '../utils/brandLabel';
 import { useDraftState } from '../hooks/useDraftState';
+import SortControl, { makeSorter } from '../components/ui/SortControl';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import {
@@ -251,6 +252,18 @@ const TrusteePage = () => {
   const dtsEstateId = (typeof localStorage !== 'undefined' && localStorage.getItem('selected_estate_id')) || null;
   const dtsBase = dtsEstateId ? `dts_form:${dtsEstateId}` : null;
   const [view, setView, clearViewDraft] = useDraftState(dtsBase ? `${dtsBase}:view` : null, 'list');
+  // Sort selection for the DTS task list (persisted across visits).
+  const [taskSortKey, setTaskSortKey] = useState(() => localStorage.getItem('dts:sort') || 'created_desc');
+  useEffect(() => { try { localStorage.setItem('dts:sort', taskSortKey); } catch { /* private mode */ } }, [taskSortKey]);
+  const sortedTasks = React.useMemo(() => {
+    const arr = [...tasks];
+    arr.sort(makeSorter(taskSortKey, {
+      name: t => t.title,
+      createdAt: t => t.created_at,
+      updatedAt: t => t.updated_at || t.created_at,
+    }));
+    return arr;
+  }, [tasks, taskSortKey]);
   const [selectedId, setSelectedId] = useState(null);
   const [createStep, setCreateStep, clearCreateStepDraft] = useDraftState(dtsBase ? `${dtsBase}:step` : null, 0);
   const EMPTY_NEW_TASK = { type: '', title: '', desc: '', confidential: 'full', discloseTo: '', timedRelease: '', beneficiary: '', notifyName: '', notifyPhone: '', notifyEmail: '', notifyAddress: '' };
@@ -1225,23 +1238,41 @@ const TrusteePage = () => {
         ))}
       </div>
 
+      {/* Sort control — same surface used on Messages and Go-Bag */}
+      {tasks.length > 0 && (
+        <div className="flex items-center justify-end">
+          <SortControl
+            value={taskSortKey}
+            onChange={setTaskSortKey}
+            testId="dts-sort"
+            options={[
+              { value: 'created_desc',  label: 'Newest first' },
+              { value: 'created_asc',   label: 'Oldest first' },
+              { value: 'name_asc',      label: 'Title (A→Z)' },
+              { value: 'name_desc',     label: 'Title (Z→A)' },
+              { value: 'modified_desc', label: 'Recently modified' },
+            ]}
+          />
+        </div>
+      )}
+
       {/* Task Cards */}
       <div className="space-y-3">
-        {tasks.map(t => {
+        {sortedTasks.map(t => {
           const st = statusConfig[t.status] || statusConfig.submitted;
           const cf = confConfig[t.confidential];
           const TypeIcon = typeConfig[t.type]?.icon || Shield;
           return (
-            <Card key={t.id} className="glass-card group hover:border-[var(--b2)] transition-all" data-testid={`dts-task-${t.id}`}>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div 
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 cursor-pointer" 
+            <Card key={t.id} className="glass-card hover:border-[var(--b2)] transition-all" data-testid={`dts-task-${t.id}`}>
+              <CardContent className="p-4 flex items-center gap-3">
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 cursor-pointer"
                   style={{ background: 'rgba(139,92,246,0.08)' }}
                   onClick={() => { setSelectedId(t.id); setView('detail'); }}
                 >
                   <TypeIcon className="w-5 h-5" style={{ color: typeConfig[t.type]?.color }} />
                 </div>
-                <div 
+                <div
                   className="flex-1 min-w-0 cursor-pointer"
                   onClick={() => { setSelectedId(t.id); setView('detail'); }}
                 >
@@ -1252,41 +1283,28 @@ const TrusteePage = () => {
                     {t.lineItems.length > 0 && <span className="text-xs font-bold text-[var(--gold2)]">${totalCost(t.lineItems).toLocaleString()}</span>}
                   </div>
                 </div>
-                
-                {/* Edit & Delete buttons on card */}
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-[var(--bl3)] hover:bg-[var(--blbg)] h-8 w-8 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedId(t.id);
-                      openEditModal(t);
-                    }}
-                    title="Edit"
-                    data-testid={`edit-task-card-${t.id}`}
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-[var(--rd)] hover:bg-[var(--rdbg)] h-8 w-8 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedId(t.id);
-                      setShowDeleteDialog(true);
-                    }}
-                    title="Delete"
-                    data-testid={`delete-task-card-${t.id}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-                
-                <ChevronRight 
-                  className="w-5 h-5 text-[var(--t5)] flex-shrink-0 cursor-pointer" 
+
+                {/* Edit & Delete — always visible (was hover-only) so the
+                    action is reachable on touch devices too. */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setSelectedId(t.id); openEditModal(t); }}
+                  className="h-8 w-8 flex items-center justify-center rounded-md text-[var(--t4)] hover:text-[var(--bl3)] hover:bg-[var(--s)] transition-colors flex-shrink-0"
+                  aria-label="Edit task"
+                  data-testid={`edit-task-card-${t.id}`}
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setSelectedId(t.id); setShowDeleteDialog(true); }}
+                  className="h-8 w-8 flex items-center justify-center rounded-md text-[var(--t4)] hover:text-[var(--rd)] hover:bg-[var(--s)] transition-colors flex-shrink-0"
+                  aria-label="Delete task"
+                  data-testid={`delete-task-card-${t.id}`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+
+                <ChevronRight
+                  className="w-5 h-5 text-[var(--t5)] flex-shrink-0 cursor-pointer"
                   onClick={() => { setSelectedId(t.id); setView('detail'); }}
                 />
               </CardContent>
