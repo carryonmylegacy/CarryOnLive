@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_URL } from '../config';
 import { clearCache } from '../utils/apiCache';
+import { isAutoLogoutSuspended, suspendAutoLogout } from '../utils/autoLogoutSuspend';
 
 const AuthContext = createContext(null);
 
@@ -478,6 +479,12 @@ export const AuthProvider = ({ children }) => {
 
     const handleVisibility = () => {
       if (setting === 'midnight') return; // midnight mode doesn't use bg timer
+      // Skip auto-logout if a critical flow has temporarily suspended
+      // it (verification doc upload → iOS Files/Photos picker, Stripe
+      // Checkout popup, native IAP sheet, etc.). Those round-trips
+      // legitimately hide the tab for a few seconds and must NOT bounce
+      // the user back to /login mid-payment.
+      if (isAutoLogoutSuspended()) return;
       const mins = parseInt(setting, 10);
       if (document.hidden && token) {
         if (mins === 0) {
@@ -489,6 +496,10 @@ export const AuthProvider = ({ children }) => {
           window.location.href = '/login';
         } else {
           bgTimer = setTimeout(() => {
+            // Re-check the suspend flag at the moment the timer fires
+            // (the user may have started a Stripe/upload flow during
+            // the wait window).
+            if (isAutoLogoutSuspended()) return;
             localStorage.removeItem('carryon_token');
             sessionStorage.removeItem('trial_banner_dismissed');
             setToken(null);
@@ -501,8 +512,27 @@ export const AuthProvider = ({ children }) => {
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
+
+    // Global safety net: ANY <input type="file"> click anywhere in the
+    // app temporarily suspends auto-logout. iOS opens Photos / Files /
+    // Camera as a sibling activity which hides the web tab — if the
+    // user's security policy is "instant on app leave" they were being
+    // bounced back to /login mid-upload (Senior verification, Vault
+    // doc upload, Beneficiary avatar, etc.). Released when focus
+    // returns OR after a 90s ceiling.
+    const handleGlobalFileInputClick = (e) => {
+      const t = e.target;
+      if (!t || t.tagName !== 'INPUT') return;
+      if ((t.type || '').toLowerCase() !== 'file') return;
+      const release = suspendAutoLogout();
+      const safety = setTimeout(release, 90000);
+      const cleanup = () => { clearTimeout(safety); release(); };
+      window.addEventListener('focus', cleanup, { once: true });
+    };
+    document.addEventListener('click', handleGlobalFileInputClick, true);
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
+      document.removeEventListener('click', handleGlobalFileInputClick, true);
       if (bgTimer) clearTimeout(bgTimer);
       if (midnightTimer) clearTimeout(midnightTimer);
     };

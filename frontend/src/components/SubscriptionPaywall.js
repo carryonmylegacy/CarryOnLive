@@ -10,6 +10,7 @@ import { isNative } from '../services/native';
 import { useIAPPurchase } from '../hooks/useIAPPurchase';
 import { API_URL } from '../config';
 import { openStripeCheckout } from '../utils/stripeRedirect';
+import { suspendAutoLogout } from '../utils/autoLogoutSuspend';
 
 const TIER_ICONS = {
   premium: Crown,
@@ -177,21 +178,37 @@ export default function SubscriptionPaywall({ onDismiss }) {
       }
 
       // Web: use Stripe checkout
-      const res = await axios.post(`${API_URL}/subscriptions/checkout`, {
-        plan_id: plan.id,
-        billing_cycle: billing,
-        origin_url: window.location.origin,
-      }, { headers });
+      // The redirect / popup hides this tab, which trips the
+      // auto-logout-on-app-leave policy if the user has set it to
+      // "instant". Suspend during the round-trip so they're still
+      // signed in when Stripe sends them back.
+      const releaseAutoLogout = suspendAutoLogout();
+      try {
+        const res = await axios.post(`${API_URL}/subscriptions/checkout`, {
+          plan_id: plan.id,
+          billing_cycle: billing,
+          origin_url: window.location.origin,
+        }, { headers });
 
-      if (res.data.free) {
-        fetchData();
-      } else if (res.data.url) {
-        // Push (not replace): we want a Stripe history entry between
-        // the paywall and the user's prior page so browser-back from
-        // Standalone PWA: open in a new window so the in-app session
-        // is preserved when the user returns. Browser tab: legacy
-        // in-window redirect (Stripe's standard checkout flow).
-        openStripeCheckout(res.data.url);
+        if (res.data.free) {
+          fetchData();
+          releaseAutoLogout();
+        } else if (res.data.url) {
+          // Push (not replace): we want a Stripe history entry between
+          // the paywall and the user's prior page so browser-back from
+          // Standalone PWA: open in a new window so the in-app session
+          // is preserved when the user returns. Browser tab: legacy
+          // in-window redirect (Stripe's standard checkout flow).
+          openStripeCheckout(res.data.url);
+          // Release on return-focus or after a hard 5-min ceiling
+          // (already enforced by suspendAutoLogout itself).
+          window.addEventListener('focus', () => releaseAutoLogout(), { once: true });
+        } else {
+          releaseAutoLogout();
+        }
+      } catch (innerErr) {
+        releaseAutoLogout();
+        throw innerErr;
       }
     } catch (err) {
       toast.error(err.response?.data?.detail || err.message || 'Failed to start checkout');
@@ -324,6 +341,21 @@ export default function SubscriptionPaywall({ onDismiss }) {
                 type="file"
                 accept="image/*,.pdf"
                 className="hidden"
+                onClick={() => {
+                  // iOS opens Photos/Files in a sibling activity which
+                  // hides this tab. Without this suspend, users on the
+                  // "instant-on-app-leave" security setting were being
+                  // kicked back to /login the moment they tapped the
+                  // picker — they could never finish Senior / Veteran
+                  // / Military verification. Released on `change` (file
+                  // chosen) and on `cancel` (back without picking).
+                  const release = suspendAutoLogout();
+                  // Belt-and-suspenders: release after 90s even if no
+                  // event fires (Safari can swallow `cancel`).
+                  const t = setTimeout(release, 90000);
+                  const cleanup = () => { clearTimeout(t); release(); };
+                  window.addEventListener('focus', cleanup, { once: true });
+                }}
                 onChange={(e) => setVerificationFile(e.target.files[0])}
               />
               <Upload className="w-5 h-5 text-[var(--t5)]" />
