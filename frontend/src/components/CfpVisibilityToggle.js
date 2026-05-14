@@ -61,7 +61,7 @@ export default function CfpVisibilityToggle({ estate, onUpdate }) {
             variant="outline"
             onClick={flip}
             disabled={busy}
-            className="flex-shrink-0 border-[var(--b)] text-[var(--t3)] hover:bg-[var(--s)]"
+            className="outline-pill-button flex-shrink-0 px-3 sm:px-4"
             data-testid="cfp-visibility-toggle"
             aria-pressed={enabled}
           >

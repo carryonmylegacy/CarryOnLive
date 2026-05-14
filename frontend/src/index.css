@@ -330,6 +330,69 @@
   cursor: not-allowed;
 }
 
+/* ===== Shared gold-action button (.gold-button) =====================
+   The single source of truth for primary CTAs across the app — used by
+   "Add Bill", "Add Beneficiary", "Send Message", "Save" inside modals,
+   "Print PDF", milestone-type pickers, and ~30 other call-sites that
+   import shadcn's <Button className="gold-button" />.
+
+   Without this rule the class is a no-op string and shadcn falls back
+   to its default `bg-primary` (teal/blue) — which is why the user saw
+   a blue "Add Bill" while everything else in the toolbar was gold.
+
+   Cascade: this lives AFTER `@tailwind utilities` so equal-specificity
+   selectors win source-order without needing `!important`. */
+.gold-button {
+  background: linear-gradient(135deg, var(--gold, #D4A537), color-mix(in srgb, var(--gold, #D4A537) 78%, black 22%));
+  color: #0b1120;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  font-weight: 700;
+  box-shadow:
+    0 4px 14px rgba(var(--gold-rgb, 212,165,55), 0.22),
+    inset 0 1px 0 rgba(255,255,255,0.18);
+  transition: background 200ms ease, box-shadow 200ms ease, transform 120ms ease, color 200ms ease;
+}
+.gold-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--gold, #D4A537) 92%, white 8%), var(--gold, #D4A537));
+  box-shadow:
+    0 6px 20px rgba(var(--gold-rgb, 212,165,55), 0.32),
+    inset 0 1px 0 rgba(255,255,255,0.22);
+  color: #0b1120;
+}
+.gold-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.gold-button:disabled {
+  background: rgba(var(--gold-rgb, 212,165,55), 0.18);
+  color: rgba(var(--gold-rgb, 212,165,55), 0.55);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ===== Shared neutral-action pill (.outline-pill-button) =============
+   Secondary/toolbar pill — matches the dominant pattern in the CFP
+   toolbar (List, Center, Reset, Expand, Print, Share). Use on any
+   shadcn <Button> that should look like a subtle outlined pill instead
+   of a rectangle. Pairs cleanly with .gold-button as the primary CTA. */
+.outline-pill-button {
+  background: transparent;
+  color: var(--t3);
+  border: 1px solid var(--b);
+  border-radius: 9999px;
+  font-weight: 600;
+  transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+.outline-pill-button:hover:not(:disabled) {
+  background: var(--s);
+  border-color: var(--b2);
+  color: var(--t);
+}
+.outline-pill-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* ===== Custom <select> caret =====================================
    iOS Safari doesn't reliably tint the native up/down stepper arrows
    when `color-scheme` changes, so we strip the native chrome and draw

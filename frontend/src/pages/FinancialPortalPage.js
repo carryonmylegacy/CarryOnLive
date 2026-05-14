@@ -778,14 +778,14 @@ const FinancialPortalPage = () => {
             <Plus className="w-5 h-5 mr-2" />
             {addButtonLabel}
           </Button>
-          <Button variant="outline" className="flex-shrink-0 border-[var(--b)] text-[var(--t3)] hover:bg-[var(--s)]"
+          <Button variant="outline" className="outline-pill-button flex-shrink-0 px-3 sm:px-4"
             onClick={() => setShowQuickAdd(true)} data-testid="quick-add-button">
             <Sparkles className="w-4 h-4 mr-1.5 text-[var(--gold)]" /> Quick Add
           </Button>
           {estate?.id && (
             <Button
               variant="outline"
-              className="flex-shrink-0 border-[var(--b)] text-[var(--t3)] hover:bg-[var(--s)]"
+              className="outline-pill-button flex-shrink-0 px-3 sm:px-4"
               onClick={() => handleHandoffExport()}
               disabled={exportingHandoff}
               data-testid="handoff-pdf-btn"

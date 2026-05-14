@@ -417,7 +417,10 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
       className="rounded-2xl"
       style={{
         background: 'radial-gradient(ellipse at top, rgba(212,165,55,0.08), transparent 60%), var(--card)',
-        border: '1px solid var(--b)',
+        // Defined gold-tinted boundary so E&S visually pops away from the
+        // softer `var(--b)` borders used by the rest of the CFP cards.
+        border: '1px solid rgba(var(--gold-rgb, 212,165,55), 0.32)',
+        boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 10px 28px rgba(0,0,0,0.28)',
       }}
       data-testid="entities-section"
     >
