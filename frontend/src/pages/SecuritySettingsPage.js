@@ -121,7 +121,7 @@ const SecuritySettingsPage = () => {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="security-settings-page"
+    <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="security-settings-page"
       style={{ background: 'radial-gradient(ellipse at top left, rgba(212,175,55,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(240,201,92,0.06), transparent 55%)' }}>
       {/* Header — standardized icon-box + title + 1-line description to
           match MM / SDV / IAC / Settings. Back + Save preserved on right. */}

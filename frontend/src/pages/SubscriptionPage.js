@@ -120,7 +120,7 @@ const SubscriptionPage = () => {
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="w-full max-w-3xl mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in" data-testid="subscription-page">
+    <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in" data-testid="subscription-page">
       {/* Payment confirmation overlay */}
       {confirmingPayment && (
         <div className="fixed inset-0 z-50 bg-[#0a0e1a]/80 flex items-center justify-center flex-col gap-3 overflow-y-auto">

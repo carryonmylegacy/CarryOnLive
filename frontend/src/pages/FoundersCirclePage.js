@@ -131,7 +131,7 @@ export default function FoundersCirclePage() {
 
   if (!active) {
     return (
-      <div className="w-full max-w-3xl mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in" data-testid="founders-circle-page">
+      <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in" data-testid="founders-circle-page">
         <Header title="Founders Circle" subtitle="This exclusive program is not currently available." />
         <div className="rounded-xl p-8 flex flex-col items-center justify-center text-center" style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}>
           <Crown className="w-12 h-12 text-[var(--t4)] mb-3" />
@@ -142,7 +142,7 @@ export default function FoundersCirclePage() {
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in" data-testid="founders-circle-page">
+    <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in" data-testid="founders-circle-page">
       <Header
         title="Founders Circle"
         subtitle="Lock in lifetime access at a fraction of the cost. Limited time offer — ends after Year 1."
