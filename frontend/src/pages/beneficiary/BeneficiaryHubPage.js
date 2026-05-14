@@ -138,7 +138,7 @@ const BeneficiaryHubPage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="beneficiary-hub">
+    <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="beneficiary-hub">
       {showBenefactorPrompt && <BenefactorPrompt onDismiss={handleDismissBenefactorPrompt} />}
 
       {/* Header */}

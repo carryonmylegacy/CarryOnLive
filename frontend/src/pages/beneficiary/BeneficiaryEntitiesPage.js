@@ -124,7 +124,7 @@ export default function BeneficiaryEntitiesPage() {
   const handleInfoClickNode = (node) => { setTapMode('info'); setTappedNode(node); };
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] p-4 sm:p-6" data-testid="beneficiary-entities-page">
+    <div className="w-full max-w-[1400px] mx-auto min-h-screen bg-[var(--bg)] p-4 lg:p-6" data-testid="beneficiary-entities-page">
       <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4 text-[var(--t3)]">
         <ChevronLeft className="w-4 h-4 mr-1" /> Back
       </Button>

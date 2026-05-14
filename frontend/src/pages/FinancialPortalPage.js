@@ -752,7 +752,7 @@ const FinancialPortalPage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="financial-portal-page"
+    <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="financial-portal-page"
       style={{ background: 'radial-gradient(ellipse at top left, rgba(16,185,129,0.1), transparent 55%), radial-gradient(ellipse at bottom right, rgba(34,201,147,0.06), transparent 55%)' }}>
 
       <SectionLockBanner sectionId="financial_portal" />

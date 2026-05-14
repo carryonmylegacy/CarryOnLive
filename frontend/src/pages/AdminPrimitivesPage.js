@@ -30,7 +30,7 @@ const AdminPrimitivesPage = () => {
   const [selectVal, setSelectVal] = useState('30');
 
   return (
-    <div className="p-6 md:p-10 max-w-4xl mx-auto space-y-8" data-testid="admin-primitives-page">
+    <div className="w-full max-w-3xl mx-auto p-6 lg:p-10 space-y-8" data-testid="admin-primitives-page">
       <header className="space-y-2">
         <h1 className="text-3xl font-bold text-[var(--t)]">UI Primitives</h1>
         <p className="text-sm text-[var(--t4)]">

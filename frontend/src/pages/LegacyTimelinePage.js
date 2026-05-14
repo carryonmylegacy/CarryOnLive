@@ -173,7 +173,7 @@ const LegacyTimelinePage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="legacy-timeline-page"
+    <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="legacy-timeline-page"
       style={{ background: 'radial-gradient(ellipse at top left, rgba(245,158,11,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(217,119,6,0.06), transparent 55%)' }}>
       {/* Header — standardized icon-box + title + 1-line description to
           match MM, SDV, DAV, etc. */}

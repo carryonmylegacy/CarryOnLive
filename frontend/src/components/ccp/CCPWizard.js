@@ -307,7 +307,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
   const concernLabel = selectedConcern ? CONCERN_OPTIONS.find(c => c.id === selectedConcern)?.label || selectedConcern : '';
 
   return (
-    <div data-testid="ccp-wizard" className="max-w-lg sm:max-w-xl mx-auto px-4 py-6 pb-28 sm:pb-6">
+    <div data-testid="ccp-wizard" className="w-full max-w-3xl mx-auto px-4 lg:px-6 py-6 pb-28 lg:pb-6">
       {/* Header */}
       <button
         onClick={handleBack}

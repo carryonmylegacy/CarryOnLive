@@ -185,7 +185,7 @@ export default function FFNPage() {
   }
 
   return (
-    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="ffn-page"
+    <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="ffn-page"
       style={{ background: 'radial-gradient(ellipse at top left, rgba(236,72,153,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(219,39,119,0.06), transparent 55%)' }}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

@@ -261,7 +261,7 @@ const BeneficiaryDashboardPage = () => {
   // offer the same Emergency Access path the public site does.
   if (!estate) {
     return (
-      <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="beneficiary-dashboard-empty">
+      <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="beneficiary-dashboard-empty">
         <div className="glass-card p-6 lg:p-8 text-center max-w-xl mx-auto">
           <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'rgba(217,119,6,0.12)' }}>
             <Lock className="w-7 h-7 text-[var(--gold)]" />
@@ -297,7 +297,7 @@ const BeneficiaryDashboardPage = () => {
   const isPreTransition = myPerms ? !myPerms.is_transitioned : false;
 
   return (
-    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="beneficiary-dashboard">
+    <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="beneficiary-dashboard">
       {/* Sealed Banner — only shown post-transition (the legacy banner
           incorrectly said "verified and sealed" even pre-transition). */}
       {!isPreTransition && (

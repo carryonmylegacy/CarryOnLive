@@ -652,7 +652,7 @@ const GuardianPage = () => {
         <div className="flex-1 overflow-y-auto flex flex-col" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y',
           // Signature page glow — matches MM/SDV/CFP/IAC/Beneficiaries pattern.
           background: 'radial-gradient(ellipse at top left, rgba(212,175,55,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(240,201,92,0.06), transparent 55%)' }}>
-          <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-4 w-full space-y-5">
+          <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-4 space-y-5">
             {/* Header — standardized icon-box + title + 1-line description,
                 matching MM/SDV/CFP/IAC/Beneficiaries/DTS. */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

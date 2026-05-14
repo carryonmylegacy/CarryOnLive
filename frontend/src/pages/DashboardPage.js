@@ -721,7 +721,7 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="p-4 lg:p-8 pt-2 lg:pt-6 pb-24 lg:pb-8" data-testid="benefactor-dashboard"
+    <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-8 pt-2 lg:pt-6 pb-24 lg:pb-8" data-testid="benefactor-dashboard"
       style={{
         opacity: dashboardReady ? 1 : 0,
         transition: 'opacity 0.5s ease',
