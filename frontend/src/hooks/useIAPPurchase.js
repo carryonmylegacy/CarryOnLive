@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { isNative, platform } from '../services/native';
 import { isIAPAvailable, purchaseIAP, restoreIAPPurchases, IAP_PRODUCTS } from '../services/iap';
 import { toast } from '../utils/toast';
+import { suspendAutoLogout } from '../utils/autoLogoutSuspend';
 
 /**
  * Consolidated hook for Apple In-App Purchase logic.
@@ -44,12 +45,22 @@ export function useIAPPurchase() {
       return { cancelled: true };
     }
 
-    const result = await purchaseIAP(productId);
-    if (result.cancelled) {
-      return { cancelled: true };
+    // Apple's StoreKit sheet visually backgrounds the WebView while
+    // the user authenticates with Face ID / Touch ID / Apple ID. If
+    // the security policy is "instant on app leave" this would log
+    // the user out mid-purchase. Suspend for the duration of the
+    // round-trip; the utility's 5-min hard ceiling guarantees no
+    // permanent disable even if the StoreKit callback is dropped.
+    const release = suspendAutoLogout();
+    try {
+      const result = await purchaseIAP(productId);
+      if (result.cancelled) {
+        return { cancelled: true };
+      }
+      return { success: true, result };
+    } finally {
+      release();
     }
-
-    return { success: true, result };
   };
 
   /**
@@ -58,6 +69,7 @@ export function useIAPPurchase() {
    */
   const restoreWithIAP = async () => {
     setRestoringPurchases(true);
+    const release = suspendAutoLogout();
     try {
       const result = await restoreIAPPurchases();
       if (result.success) {
@@ -68,6 +80,7 @@ export function useIAPPurchase() {
       toast.error('Failed to restore purchases');
       return { success: false };
     } finally {
+      release();
       setRestoringPurchases(false);
     }
   };

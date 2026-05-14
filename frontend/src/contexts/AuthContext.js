@@ -520,19 +520,49 @@ export const AuthProvider = ({ children }) => {
     // bounced back to /login mid-upload (Senior verification, Vault
     // doc upload, Beneficiary avatar, etc.). Released when focus
     // returns OR after a 90s ceiling.
-    const handleGlobalFileInputClick = (e) => {
+    //
+    // Also covers <a target="_blank"> clicks (Terms of Service,
+    // Privacy Policy, "Learn more" links in the paywall surfaces,
+    // any external link in the app) — opening a new tab hides the
+    // current one and would otherwise trip the same instant-logout.
+    const handleGlobalSiblingActivityClick = (e) => {
       const t = e.target;
-      if (!t || t.tagName !== 'INPUT') return;
-      if ((t.type || '').toLowerCase() !== 'file') return;
-      const release = suspendAutoLogout();
-      const safety = setTimeout(release, 90000);
-      const cleanup = () => { clearTimeout(safety); release(); };
-      window.addEventListener('focus', cleanup, { once: true });
+      if (!t) return;
+      // File inputs
+      if (t.tagName === 'INPUT' && (t.type || '').toLowerCase() === 'file') {
+        const release = suspendAutoLogout();
+        const safety = setTimeout(release, 90000);
+        const cleanup = () => { clearTimeout(safety); release(); };
+        window.addEventListener('focus', cleanup, { once: true });
+        return;
+      }
+      // External-target anchors (opens new tab / external app). Walk
+      // up at most 4 levels in case the user clicked an icon/span
+      // inside the anchor.
+      let el = t;
+      for (let depth = 0; depth < 4 && el && el !== document.body; depth++) {
+        if (el.tagName === 'A') {
+          const target = (el.getAttribute('target') || '').toLowerCase();
+          const href = el.getAttribute('href') || '';
+          const isExternal = target === '_blank'
+            || href.startsWith('mailto:')
+            || href.startsWith('tel:')
+            || href.startsWith('sms:');
+          if (isExternal) {
+            const release = suspendAutoLogout();
+            const safety = setTimeout(release, 90000);
+            const cleanup = () => { clearTimeout(safety); release(); };
+            window.addEventListener('focus', cleanup, { once: true });
+          }
+          return;
+        }
+        el = el.parentElement;
+      }
     };
-    document.addEventListener('click', handleGlobalFileInputClick, true);
+    document.addEventListener('click', handleGlobalSiblingActivityClick, true);
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
-      document.removeEventListener('click', handleGlobalFileInputClick, true);
+      document.removeEventListener('click', handleGlobalSiblingActivityClick, true);
       if (bgTimer) clearTimeout(bgTimer);
       if (midnightTimer) clearTimeout(midnightTimer);
     };

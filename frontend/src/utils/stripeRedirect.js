@@ -20,9 +20,26 @@
  *
  * If `window.open` is blocked by a popup blocker we fall back to
  * the in-window redirect so the user is never stranded.
+ *
+ * Auto-logout safety: opening Stripe in a new window/tab hides the
+ * original tab on most platforms. If the user has set their security
+ * policy to "instant on app leave" (`carryon_auto_logout_minutes='0'`)
+ * the visibilitychange handler in AuthContext would log them out
+ * mid-payment. Suspending auto-logout for the duration of the round-
+ * trip — released on focus-return — keeps the session alive across
+ * every paywall surface (main paywall, settings, Founders Circle,
+ * future tiles) without per-caller wiring.
  */
+import { suspendAutoLogout } from './autoLogoutSuspend';
+
 export function openStripeCheckout(url) {
   if (!url) return false;
+  const release = suspendAutoLogout();
+  // Always release when focus returns to the original window. The
+  // utility also has a 5-minute hard ceiling so a never-returning
+  // user can't permanently disable the security policy.
+  const onReturn = () => release();
+  window.addEventListener('focus', onReturn, { once: true });
   if (isStandalonePWA()) {
     const popup = window.open(url, '_blank', 'noopener,noreferrer');
     if (popup) return true;
