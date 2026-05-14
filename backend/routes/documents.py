@@ -1573,6 +1573,25 @@ async def set_document_ai_eligible(
     if not estate or estate.get("owner_id") != current_user["id"]:
         raise HTTPException(status_code=403, detail="Only the estate owner can flag AI eligibility")
 
+    # Cap the number of AI-eligible documents per estate at 5. This
+    # keeps the AI prompt focused on the truly load-bearing estate
+    # documents (will, trust, POA, deeds, life insurance) and keeps
+    # token usage predictable. Lifting an already-eligible doc OFF
+    # never trips this guard.
+    if eligible and not doc.get("ai_eligible"):
+        current_count = await db.documents.count_documents(
+            {
+                "estate_id": doc["estate_id"],
+                "ai_eligible": True,
+                "deleted_at": None,
+            }
+        )
+        if current_count >= 5:
+            raise HTTPException(
+                status_code=400,
+                detail="You can select up to 5 documents for AI analysis. Deselect one first.",
+            )
+
     await db.documents.update_one(
         {"id": document_id},
         {

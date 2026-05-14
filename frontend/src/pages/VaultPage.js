@@ -18,6 +18,7 @@ import {
   FolderLock,
   Heart,
   ArrowLeft,
+  Sparkles,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -1172,6 +1173,44 @@ const VaultPage = () => {
             </Card>
           ) : (
             <>
+            {/* AI-eligibility helper banner — explains the gold AI badge
+                in the corner of each thumbnail and shows the live
+                "N of 5 selected" counter so the user always knows the
+                budget. Only the benefactor (estate owner) sees this. */}
+            {(() => {
+              // Estate owner = benefactor = the only role allowed to
+              // toggle AI eligibility. Beneficiaries viewing shared
+              // documents see no banner and no toggles.
+              const isOwner = !!(estate && user && estate.owner_id === user.id);
+              if (!isOwner) return null;
+              const aiCount = documents.filter(d => d.ai_eligible).length;
+              return (
+                <div
+                  className="mb-4 rounded-xl p-3 flex items-center gap-3"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(212,165,55,0.10), rgba(212,165,55,0.03))',
+                    border: '1px solid rgba(212,165,55,0.35)',
+                  }}
+                  data-testid="ai-eligibility-banner"
+                >
+                  <div className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}>
+                    <Sparkles className="w-4 h-4" style={{ color: '#080e1a' }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-[var(--t)]">
+                      Select up to 5 documents to include in your AI analyses
+                    </p>
+                    <p className="text-xs text-[var(--t4)] leading-snug mt-0.5">
+                      Tap the gold <span className="font-bold text-[var(--gold)]">AI</span> badge on each document's thumbnail to include it. Choose your most important estate documents — will, trust, power of attorney, deeds, life-insurance policies. Selected documents get a gold frame.
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0 text-right">
+                    <div className="text-2xl font-bold leading-none" style={{ color: aiCount >= 5 ? '#10b981' : 'var(--gold)' }}>{aiCount}<span className="text-sm font-normal text-[var(--t5)]"> / 5</span></div>
+                    <div className="text-[11px] uppercase tracking-wider text-[var(--t5)] font-bold mt-1">selected</div>
+                  </div>
+                </div>
+              );
+            })()}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredDocs.map((doc) => {
                 return (
@@ -1195,7 +1234,7 @@ const VaultPage = () => {
                     setExpandedDesignation={setExpandedDesignation}
                     toggleBeneficiaryForDoc={toggleBeneficiaryForDoc}
                     toggleVisibilityTiming={toggleVisibilityTiming}
-                    onToggleAIEligible={toggleAIEligible}
+                    onToggleAIEligible={(estate && user && estate.owner_id === user.id) ? toggleAIEligible : null}
                   />
                 );
               })}

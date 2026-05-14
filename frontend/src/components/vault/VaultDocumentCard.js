@@ -50,10 +50,15 @@ const VaultDocumentCard = ({
 }) => {
   return (
     <Card
-      className={`glass-card relative overflow-hidden group cursor-pointer ${doc.ai_eligible ? 'ai-eligible-frame' : ''}`}
+      className={`glass-card relative overflow-hidden group ${doc.ai_eligible ? 'ai-eligible-card' : ''} ${doc.is_locked ? 'cursor-pointer' : 'cursor-pointer'}`}
       onClick={() => doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handlePreview(doc)}
       data-testid={`document-${doc.id}`}
-      style={doc.ai_eligible ? { boxShadow: '0 0 0 2px var(--gold), 0 8px 24px rgba(212,165,55,0.15)' } : undefined}
+      style={doc.ai_eligible ? {
+        // Thick, unmistakable gold frame. Inline so it cannot be
+        // overridden by glass-card box-shadow.
+        boxShadow: '0 0 0 3px #d4af37, 0 0 18px rgba(212,165,55,0.35), 0 8px 24px rgba(0,0,0,0.25)',
+        background: 'linear-gradient(180deg, rgba(212,165,55,0.10), rgba(212,165,55,0.02))',
+      } : undefined}
     >
       {/* Lock Overlay */}
       {doc.is_locked && (
@@ -83,28 +88,47 @@ const VaultDocumentCard = ({
         {/* Thumbnail area */}
         <div className="h-28 w-full rounded-t-xl overflow-hidden relative">
           <DocThumbnail doc={doc} getAuthHeaders={getAuthHeaders} />
-          {/* AI-eligible toggle — a small sparkles badge in the top-left
-              corner of the thumbnail. Tap to opt this document in /
-              out of EGA & IAC AI analyses. When ON, the card gains a
-              gold frame (see Card className above) so the user can see
-              at a glance which docs feed the AI. Benefactor only. */}
+          {/* AI-eligible toggle — wrapped in a div whose onClick AND
+              onMouseDown both stop event propagation BEFORE the parent
+              Card's onClick can fire. Previously the inner button used
+              only e.stopPropagation on its own onClick which (on iOS
+              Safari and in certain React-event ordering paths) allowed
+              the click to bubble to the Card and open the preview
+              behind the toggle. With the wrapper AND the inner button
+              both halting propagation in both event phases the click
+              never reaches the Card. */}
           {onToggleAIEligible && !doc.is_locked && (
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onToggleAIEligible(doc); }}
-              className="absolute top-1.5 left-1.5 w-7 h-7 rounded-full flex items-center justify-center transition-all"
-              style={{
-                background: doc.ai_eligible ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(10,14,26,0.85)',
-                border: `1px solid ${doc.ai_eligible ? '#d4af37' : 'rgba(255,255,255,0.18)'}`,
-                color: doc.ai_eligible ? '#080e1a' : '#d4af37',
-                boxShadow: doc.ai_eligible ? '0 0 14px rgba(212,165,55,0.55)' : 'none',
-              }}
-              title={doc.ai_eligible ? 'Included in AI analyses — tap to remove' : 'Include this document in EGA / IAC AI analyses'}
-              aria-pressed={!!doc.ai_eligible}
-              data-testid={`ai-eligible-toggle-${doc.id}`}
+            <div
+              className="absolute top-1.5 left-1.5 z-10"
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
             >
-              <Sparkles className="w-3.5 h-3.5" />
-            </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggleAIEligible(doc);
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="flex items-center gap-1 px-2 py-1 rounded-full transition-all"
+                style={{
+                  background: doc.ai_eligible ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(10,14,26,0.85)',
+                  border: `1px solid ${doc.ai_eligible ? '#d4af37' : 'rgba(212,165,55,0.5)'}`,
+                  color: doc.ai_eligible ? '#080e1a' : '#d4af37',
+                  boxShadow: doc.ai_eligible ? '0 0 14px rgba(212,165,55,0.55)' : 'none',
+                }}
+                title={doc.ai_eligible ? 'In your AI analysis — tap to remove' : 'Tap to include this document in your AI analyses'}
+                aria-pressed={!!doc.ai_eligible}
+                data-testid={`ai-eligible-toggle-${doc.id}`}
+              >
+                <Sparkles className="w-3 h-3 flex-shrink-0" />
+                <span className="text-[11px] font-bold uppercase tracking-wider leading-none">
+                  {doc.ai_eligible ? 'AI ✓' : 'AI'}
+                </span>
+              </button>
+            </div>
           )}
           {/* Entity-link overlay — shows the type of entity this doc is
               linked to (one badge per linked entity, capped at 3). Lets
