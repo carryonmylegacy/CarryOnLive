@@ -545,8 +545,14 @@ async def get_transition_status(estate_id: str, current_user: dict = Depends(get
 
 @router.post("/milestones/report")
 async def report_milestone(data: MilestoneReportCreate, current_user: dict = Depends(get_current_user)):
-    """Report a milestone event for a beneficiary."""
-    if current_user["role"] != "beneficiary":
+    """Report a milestone event for a beneficiary.
+
+    A user may submit if their primary role is beneficiary OR if they are
+    also a beneficiary on this estate (benefactor account with
+    is_also_beneficiary=True — common for users with both portals).
+    """
+    is_beneficiary = current_user.get("role") == "beneficiary" or current_user.get("is_also_beneficiary")
+    if not is_beneficiary:
         raise HTTPException(status_code=403, detail="Only beneficiaries can report milestones")
 
     # Enforce subscription: beneficiary must have an active subscription to report new milestones
@@ -649,13 +655,38 @@ async def report_milestone(data: MilestoneReportCreate, current_user: dict = Dep
         await db.milestone_deliveries.insert_one(delivery)
         deliveries_created.append(delivery["id"])
 
-    # NOTIFICATION: Notify all staff about milestone report
+    # If no matching messages were found, still create a placeholder delivery
+    # row so the milestone notification always lands in the staff admin tab
+    # (founders + operators see every beneficiary milestone submission).
+    if not unique_messages:
+        placeholder = {
+            "id": str(uuid.uuid4()),
+            "milestone_report_id": report.id,
+            "estate_id": data.estate_id,
+            "message_id": None,
+            "message_title": "(No matching message — manual review)",
+            "beneficiary_id": current_user["id"],
+            "beneficiary_name": current_user.get("name", ""),
+            "event_type": data.event_type,
+            "event_description": data.event_description,
+            "event_date": data.event_date,
+            "status": "pending_review",
+            "no_match": True,
+            "reviewed_by": None,
+            "reviewed_at": None,
+            "review_notes": None,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.milestone_deliveries.insert_one(placeholder)
+        deliveries_created.append(placeholder["id"])
+
+    # NOTIFICATION: Notify ALL staff (founder + operators) about milestone report
     from services.notifications import notify
     import asyncio
 
     if unique_messages:
         asyncio.create_task(
-            notify.p3_alert(
+            notify.p2_alert(
                 "Milestone Review Required",
                 f"{current_user.get('name', 'Beneficiary')} reported a milestone ({data.event_type}). "
                 f"{len(unique_messages)} matching message(s) found — review required before delivery.",
@@ -669,9 +700,9 @@ async def report_milestone(data: MilestoneReportCreate, current_user: dict = Dep
         )
     else:
         asyncio.create_task(
-            notify.p4_alert(
+            notify.p2_alert(
                 "Milestone Reported",
-                f"{current_user.get('name', 'Beneficiary')} reported a milestone: {data.event_type}. No matching messages at this time.",
+                f"{current_user.get('name', 'Beneficiary')} reported a milestone: {data.event_type}. No matching messages — manual follow-up may be required.",
                 url="/ops/milestones",
                 metadata={
                     "report_id": report.id,

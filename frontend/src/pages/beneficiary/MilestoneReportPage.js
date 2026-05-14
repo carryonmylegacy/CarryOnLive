@@ -54,7 +54,7 @@ const MilestoneReportPage = () => {
         event_description: description || type,
         event_date: date || new Date().toISOString().split('T')[0],
       }, getAuthHeaders());
-      setDeliveredCount(res.data.messages_delivered || 0);
+      setDeliveredCount(res.data.matches_found || 0);
       setSent(true);
       // toast removed
     } catch (err) {
@@ -71,7 +71,7 @@ const MilestoneReportPage = () => {
         <ChevronLeft className="w-4 h-4" /> Back to Dashboard
       </button>
 
-      <div className="max-w-xl mx-auto">
+      <div className="max-w-[1400px] mx-auto">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Report a Milestone</h1>
@@ -79,7 +79,7 @@ const MilestoneReportPage = () => {
         </div>
 
         {!sent ? (
-          <div className="glass-card p-6 lg:p-8">
+          <div className="glass-card p-6 lg:p-8 max-w-2xl mx-auto">
             {/* Info box */}
             <div className="rounded-xl p-4 mb-6" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }}>
               <p className="text-sm text-[var(--pr2)] leading-relaxed">
@@ -147,9 +147,9 @@ const MilestoneReportPage = () => {
             </div>
             <h2 className="text-2xl font-bold text-[var(--t)] mb-3">Milestone Reported</h2>
             <p className="text-sm text-[var(--t3)] leading-relaxed max-w-md mx-auto mb-3">
-              Your milestone has been processed. {deliveredCount > 0
-                ? `${deliveredCount} message${deliveredCount > 1 ? 's have' : ' has'} been delivered to your account.`
-                : `If ${benefactorFirst} recorded a message for this event, it will be delivered to your account shortly.`
+              Your milestone has been recorded. {deliveredCount > 0
+                ? `${deliveredCount} matching message${deliveredCount > 1 ? 's' : ''} found — a CarryOn team member will review and deliver ${deliveredCount > 1 ? 'them' : 'it'} to you shortly.`
+                : `If ${benefactorFirst} recorded a message for this event, the CarryOn team will review and deliver it to your account shortly.`
               }
             </p>
 

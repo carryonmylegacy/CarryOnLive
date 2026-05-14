@@ -71,7 +71,7 @@ const CondolencePage = () => {
   const isComplete = status === 'approved';
 
   return (
-    <div className="w-full max-w-3xl mx-auto p-4 pb-24 animate-fade-in" data-testid="condolence-page">
+    <div className="w-full max-w-[1400px] mx-auto p-4 pb-24 animate-fade-in" data-testid="condolence-page">
       <div className="w-full max-w-lg mx-auto text-center">
         {/* Condolence Message */}
         {showCondolence ? (

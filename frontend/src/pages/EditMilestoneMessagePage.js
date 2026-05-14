@@ -474,7 +474,7 @@ export default function EditMilestoneMessagePage() {
 
   if (loading) {
     return (
-      <div className="w-full max-w-3xl mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6" data-testid="edit-message-loading-page">
+      <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6" data-testid="edit-message-loading-page">
         <Skeleton className="h-12 w-60 bg-[var(--s)]" />
         <Skeleton className="h-64 rounded-3xl bg-[var(--s)]" />
         <Skeleton className="h-80 rounded-3xl bg-[var(--s)]" />
@@ -484,7 +484,7 @@ export default function EditMilestoneMessagePage() {
 
   if (messageRecord?.is_delivered) {
     return (
-      <div className="w-full max-w-3xl mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6" data-testid="edit-message-delivered-page">
+      <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6" data-testid="edit-message-delivered-page">
         <Card className="glass-card max-w-2xl">
           <CardContent className="space-y-4 p-6">
             <Button variant="ghost" className="w-fit px-0 text-[var(--t3)] hover:bg-transparent hover:text-[var(--t)]" onClick={() => navigate('/messages')} data-testid="edit-message-back-from-delivered-button">
@@ -501,7 +501,7 @@ export default function EditMilestoneMessagePage() {
 
   return (
     <div
-      className="w-full max-w-3xl mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-slide-in-right"
+      className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-slide-in-right"
       data-testid="edit-message-page"
       style={{
         background: 'radial-gradient(ellipse at top left, rgba(139,92,246,0.15), transparent 55%), radial-gradient(ellipse at bottom right, rgba(124,58,237,0.08), transparent 55%)',

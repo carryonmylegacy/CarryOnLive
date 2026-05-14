@@ -71,7 +71,7 @@ const BeneficiaryCCPPage = () => {
   // Plan detail view
   if (selectedPlan) {
     return (
-      <div className="p-4 lg:p-8 pt-4 lg:pt-8 pb-24 lg:pb-8 animate-fade-in max-w-2xl lg:max-w-5xl mx-auto" data-testid="ccp-plan-detail">
+      <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-8 pt-4 lg:pt-8 pb-24 lg:pb-8 animate-fade-in" data-testid="ccp-plan-detail">
         <button
           onClick={() => setSelectedPlan(null)}
           className="flex items-center gap-1 text-sm font-semibold mb-5 px-3 py-1.5 rounded-lg transition-all"

@@ -195,6 +195,13 @@ async def review_delivery(
 
     new_status = "approved" if data.action == "approve" else "rejected"
 
+    # Guard against "approving" a no-match placeholder (no message_id to deliver)
+    if data.action == "approve" and not delivery.get("message_id"):
+        raise HTTPException(
+            status_code=400,
+            detail="This milestone has no matching message. Either reject it or send a follow-up message to the beneficiary manually before approving.",
+        )
+
     await db.milestone_deliveries.update_one(
         {"id": delivery_id},
         {

@@ -607,7 +607,7 @@ export default function ConnectedProtocolPage() {
   // ===================== CHECK-IN VIEW =====================
   if (view === 'checkin' && activeEmergency) {
     return (
-      <div data-testid="ccp-checkin-view" className="max-w-lg lg:max-w-4xl mx-auto px-4 lg:px-8 py-6 pb-28 sm:pb-6 space-y-4">
+      <div data-testid="ccp-checkin-view" className="w-full max-w-[1400px] mx-auto px-4 lg:px-6 py-6 pb-28 sm:pb-6 space-y-4">
         <button onClick={() => setView('active')} className="flex items-center gap-2 text-sm font-semibold mb-2" style={{ color: 'var(--t4)' }}>
           <ArrowLeft className="w-4 h-4" />Back to Status Board
         </button>
@@ -726,7 +726,7 @@ export default function ConnectedProtocolPage() {
   // ===================== PLANS LIST VIEW =====================
   if (view === 'plans') {
     return (
-      <div data-testid="ccp-plans-list" className="max-w-2xl lg:max-w-6xl mx-auto px-4 lg:px-8 py-6 pb-28 sm:pb-6 space-y-4">
+      <div data-testid="ccp-plans-list" className="w-full max-w-[1400px] mx-auto px-4 lg:px-6 py-6 pb-28 sm:pb-6 space-y-4">
         <button onClick={() => setView('home')} className="flex items-center gap-2 text-sm font-semibold mb-2" style={{ color: 'var(--t4)' }}>
           <ArrowLeft className="w-4 h-4" />Back
         </button>
@@ -866,7 +866,7 @@ export default function ConnectedProtocolPage() {
   // ===================== HISTORY VIEW =====================
   if (view === 'history') {
     return (
-      <div data-testid="ccp-history" className="max-w-2xl lg:max-w-6xl mx-auto px-4 lg:px-8 py-6 pb-28 sm:pb-6 space-y-4">
+      <div data-testid="ccp-history" className="w-full max-w-[1400px] mx-auto px-4 lg:px-6 py-6 pb-28 sm:pb-6 space-y-4">
         <button onClick={() => setView('home')} className="flex items-center gap-2 text-sm font-semibold mb-2" style={{ color: 'var(--t4)' }}>
           <ArrowLeft className="w-4 h-4" />Back
         </button>
