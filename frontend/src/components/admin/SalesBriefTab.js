@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Copy, ExternalLink, Mail, Check, FileText, Edit3, Save, RotateCcw, ChevronDown, ChevronRight, Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_URL } from '../../config';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 
 /**
  * SalesBriefTab — Admin → Marketing → Sales Brief.

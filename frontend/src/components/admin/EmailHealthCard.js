@@ -10,7 +10,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Loader2, Mail, RefreshCw, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { API_URL } from '../../config';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 
 const STATUS_META = {
   PASS: { color: '#10b981', Icon: CheckCircle2, label: 'PASS' },

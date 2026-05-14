@@ -1,6 +1,42 @@
 # CarryOn — Changelog
 
 
+## May 14, 2026 — Toast feedback for CCP Save buttons + Go-Bag in-place expand
+
+### Critical bug — Save buttons appeared dead across CCP + 5 other surfaces
+
+User report: "There are Save buttons in all the CCP sections, but nothing happens when I click the save button so as a user I have no idea if it did anything."
+
+Root cause: 6 files were importing `toast` directly from `sonner`, but the CarryOn app does NOT mount sonner's `<Toaster />` anywhere — toasts route through `utils/toast.js` → `notify.*` → AppNotification. Every `toast.success(...)` from these 6 files emitted into the void.
+
+Fix — replaced `import { toast } from 'sonner'` with `import { toast } from '<path-to>/utils/toast'` in:
+- `components/ccp/CCPDepthPanels.js` (Household, Go-Bag, Rendezvous, Out-of-Area, Drill, Activation) — every CCP Save button now surfaces its existing success/error toast.
+- `components/admin/SalesBriefTab.js`
+- `components/admin/EmailHealthCard.js`
+- `components/financial/entities/BlockEditModal.js`
+- `components/CfpVisibilityToggle.js`
+- `components/ReferralCard.js`
+
+No code logic changed — only the toast routing. All existing `toast.success(...)`, `toast.error(...)` calls now reach the user.
+
+### UX — Go-Bag "Add Item" opens in place (not at list bottom)
+
+User report (with screenshot): editing "Small bills + coins" rendered the editor below every other tile, hidden behind the keyboard.
+
+Fix in `GoBagPanel`:
+- `startNew()` now **prepends** the blank item to `items` (`[blank, ...it]`) instead of appending.
+- The `Add item` button was moved from a bottom action row to the top toolbar (alongside the SortControl), so the new editor opens directly under the button the user just tapped.
+- Empty-state now shows BOTH affordances side-by-side: "FEMA 7-item starter" and "Add item" — no more all-or-nothing onboarding.
+- Bottom action row simplified to just `Save kit (N)` (bulk save).
+
+Net effect: tapping Add Item slides the existing tiles down and reveals the editor in view — no jarring jump to off-screen.
+
+### Verified
+- Lint clean. `bash /app/housekeeping.sh --strict` → 0 WARN / 0 FAIL.
+- `grep "from 'sonner'"` across `/app/frontend/src` returns zero matches — entire app now routes through the unified toast utility.
+
+
+
 ## May 14, 2026 — SortControl rollout (Beneficiaries + CFP) + SlidePanel phantom scrollbar fix
 
 ### Bug fix — SlidePanel phantom right-edge gold scrollbar

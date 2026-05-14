@@ -18,7 +18,7 @@ import { Eye, EyeOff, Loader2, Plane } from 'lucide-react';
 import { Button } from './ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { API_URL } from '../config';
-import { toast } from 'sonner';
+import { toast } from '../utils/toast';
 
 export default function CfpVisibilityToggle({ estate, onUpdate }) {
   const [busy, setBusy] = useState(false);

@@ -9,7 +9,7 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 import { Plus, Trash2, Save, Mail, AlertTriangle, Calendar, Check, Pencil } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -223,7 +223,10 @@ export function GoBagPanel({ estateId, onDirty }) {
       id: 'NEW', category: preset.category || 'other', name: preset.name || '',
       qty: preset.qty || '', expires_at: '', last_checked: today, notes: '',
     };
-    setItems(it => [...it, blank]);
+    // Prepend so the editor opens at the TOP of the list and pushes
+    // existing tiles down — far less jarring than appending to the
+    // bottom where the new editor is off-screen on long lists.
+    setItems(it => [blank, ...it]);
     setEditingId('NEW');
   };
   const updateField = (id, patch) => setItems(it => it.map(x => x.id === id ? { ...x, ...patch } : x));
@@ -304,14 +307,22 @@ export function GoBagPanel({ estateId, onDirty }) {
         Track what's actually IN your emergency kit. Tap the pencil to edit an item. Items expiring within 30 days will lower your readiness score.
       </p>
 
-      {items.length === 0 && (
-        <Button variant="outline" className="outline-pill-button w-full" onClick={seedStarter} data-testid="gobag-seed">
-          <Plus className="w-4 h-4 mr-1" /> Start with FEMA-recommended 7-item kit
-        </Button>
+      {items.length === 0 && editingId === null && (
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="outline-pill-button flex-1" onClick={seedStarter} data-testid="gobag-seed">
+            <Plus className="w-4 h-4 mr-1" /> FEMA 7-item starter
+          </Button>
+          <Button variant="outline" className="outline-pill-button flex-1" onClick={() => startNew()} data-testid="gb-add-empty">
+            <Plus className="w-4 h-4 mr-1" /> Add item
+          </Button>
+        </div>
       )}
 
       {items.length > 0 && editingId === null && (
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-between gap-2">
+          <Button variant="outline" className="outline-pill-button" onClick={() => startNew()} data-testid="gb-add">
+            <Plus className="w-4 h-4 mr-1" /> Add item
+          </Button>
           <SortControl
             value={sortKey}
             onChange={setSortKey}
@@ -416,19 +427,16 @@ export function GoBagPanel({ estateId, onDirty }) {
         );
       })}
 
-      {/* Bottom actions — Add Item + Save kit (the latter still bulk-saves
-          everything, useful if the user changed multiple rows without
-          opening them. Hidden while a row is open to keep focus clear. */}
-      {editingId === null && (
-        <div className="flex items-center gap-2 pt-1">
-          <Button variant="outline" className="outline-pill-button flex-1" onClick={() => startNew()} data-testid="gb-add">
-            <Plus className="w-4 h-4 mr-1" /> Add item
+      {/* Bottom Save kit — bulk-saves everything, useful if the user
+          changed multiple rows without opening them. Hidden while a row
+          is open to keep focus clear. The "Add item" affordance lives in
+          the top toolbar so the new row opens in view, not below the
+          fold. */}
+      {editingId === null && items.length > 0 && (
+        <div className="pt-1">
+          <Button className="gold-button w-full" onClick={saveAll} disabled={saving} data-testid="gb-save-all">
+            <Save className="w-4 h-4 mr-1" /> {saving ? 'Saving…' : `Save kit (${items.length})`}
           </Button>
-          {items.length > 0 && (
-            <Button className="gold-button flex-1" onClick={saveAll} disabled={saving} data-testid="gb-save-all">
-              <Save className="w-4 h-4 mr-1" /> {saving ? 'Saving…' : `Save kit (${items.length})`}
-            </Button>
-          )}
         </div>
       )}
     </div>

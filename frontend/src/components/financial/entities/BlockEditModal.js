@@ -18,7 +18,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
-import { toast } from 'sonner';
+import { toast } from '../../../utils/toast';
 import { Loader2, Users, X, Plus } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';

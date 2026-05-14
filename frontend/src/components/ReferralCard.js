@@ -10,7 +10,7 @@ import axios from 'axios';
 import { Copy, Share2, Check, Gift, Loader2 } from 'lucide-react';
 import { API_URL } from '../config';
 import { recordFunnelEvent } from '../utils/funnelTelemetry';
-import { toast } from 'sonner';
+import { toast } from '../utils/toast';
 
 const ReferralCard = () => {
   const [data, setData] = useState(null);
