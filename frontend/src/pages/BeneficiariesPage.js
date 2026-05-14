@@ -166,6 +166,15 @@ const BeneficiariesPage = () => {
   // for sessionStorage.
   const [ssnLastFour, setSsnLastFour] = useState('');
   const [notes, setNotes, clearNotesDraft] = useDraftState(benDraftBase ? `${benDraftBase}:notes` : null, '');
+  // ─── Emergency / CCP-readiness inputs. Stored on the Beneficiary
+  //     record so the Household Roster picker on the CCP page can
+  //     surface them without duplicate data entry.
+  const [medicalConditions, setMedicalConditions] = useState('');
+  const [allergies, setAllergies] = useState('');
+  const [prescriptions, setPrescriptions] = useState('');
+  const [bloodType, setBloodType] = useState('');
+  const [primaryDoctor, setPrimaryDoctor] = useState('');
+  const [schoolOrEmployer, setSchoolOrEmployer] = useState('');
   // Aggregator: clears all persisted draft fields. Called on save
   // success and the X / Cancel paths in the Add/Edit modal. Also
   // clears the :open flag so a canceled draft doesn't leave the
@@ -433,6 +442,14 @@ const BeneficiariesPage = () => {
         address_line2: addressLine2 || null,
         ssn_last_four: ssnLastFour || null,
         notes: notes || null,
+        // CCP / emergency-readiness fields — picked up by the
+        // Household Roster picker on the CCP page.
+        medical_conditions: medicalConditions || null,
+        allergies: allergies || null,
+        prescriptions: prescriptions || null,
+        blood_type: bloodType || null,
+        primary_doctor: primaryDoctor || null,
+        school_or_employer: schoolOrEmployer || null,
         avatar_color: avatarColor
       };
 
@@ -558,6 +575,12 @@ const BeneficiariesPage = () => {
     setAddressLine2(ben.address_line2 || '');
     setSsnLastFour(ben.ssn_last_four || '');
     setNotes(ben.notes || '');
+    setMedicalConditions(ben.medical_conditions || '');
+    setAllergies(ben.allergies || '');
+    setPrescriptions(ben.prescriptions || '');
+    setBloodType(ben.blood_type || '');
+    setPrimaryDoctor(ben.primary_doctor || '');
+    setSchoolOrEmployer(ben.school_or_employer || '');
     setAvatarColor(ben.avatar_color || avatarColors[0]);
     setPhotoPreview(ben.photo_url || null);
     setPhotoFile(null);
@@ -690,6 +713,12 @@ const BeneficiariesPage = () => {
     setAddressLine2('');
     setSsnLastFour('');
     setNotes('');
+    setMedicalConditions('');
+    setAllergies('');
+    setPrescriptions('');
+    setBloodType('');
+    setPrimaryDoctor('');
+    setSchoolOrEmployer('');
     setAvatarColor(avatarColors[0]);
     setPhotoFile(null);
     setPhotoPreview(null);
@@ -1396,6 +1425,86 @@ const BeneficiariesPage = () => {
                   placeholder="Any special notes about this beneficiary..."
                   className="input-field min-h-[80px]"
                   rows={3}
+                />
+              </div>
+            </div>
+
+            {/* ─── Medical & Emergency Info ────────────────────────
+                Optional details used by CCP (CarryOn Contingency
+                Protocols) so the Household Roster picker can pull
+                straight off the beneficiary record. */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-[var(--gold)] uppercase tracking-wide">
+                Medical & Emergency Info
+              </h3>
+              <p className="text-xs text-[#64748b] -mt-2">
+                Optional — used by the Household Roster + emergency plans on the CCP page.
+              </p>
+
+              <div className="space-y-2">
+                <Label className="text-[#94a3b8]">Medical conditions</Label>
+                <Input
+                  data-testid="ben-medical-conditions"
+                  value={medicalConditions}
+                  onChange={(e) => setMedicalConditions(e.target.value)}
+                  placeholder="Diabetes Type 2, asthma…"
+                  className="input-field"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[#94a3b8]">Allergies</Label>
+                <Input
+                  data-testid="ben-allergies"
+                  value={allergies}
+                  onChange={(e) => setAllergies(e.target.value)}
+                  placeholder="Peanuts, penicillin, bee stings…"
+                  className="input-field"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[#94a3b8]">Prescriptions</Label>
+                <Input
+                  data-testid="ben-prescriptions"
+                  value={prescriptions}
+                  onChange={(e) => setPrescriptions(e.target.value)}
+                  placeholder="Lisinopril 10mg daily, Metformin 500mg 2x…"
+                  className="input-field"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-[#94a3b8]">Blood type</Label>
+                  <Input
+                    data-testid="ben-blood-type"
+                    value={bloodType}
+                    onChange={(e) => setBloodType(e.target.value)}
+                    placeholder="O+, A−…"
+                    className="input-field"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[#94a3b8]">Primary doctor</Label>
+                  <Input
+                    data-testid="ben-primary-doctor"
+                    value={primaryDoctor}
+                    onChange={(e) => setPrimaryDoctor(e.target.value)}
+                    placeholder="Dr. Patel, 305-555-0123"
+                    className="input-field"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[#94a3b8]">School / employer</Label>
+                <Input
+                  data-testid="ben-school-employer"
+                  value={schoolOrEmployer}
+                  onChange={(e) => setSchoolOrEmployer(e.target.value)}
+                  placeholder="Lincoln High, Acme Corp HQ Building B…"
+                  className="input-field"
                 />
               </div>
             </div>

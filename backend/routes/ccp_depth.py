@@ -65,14 +65,18 @@ def _now_iso() -> str:
 
 
 # ═══════════════════════════════════════════════════════════════════
-# 1.  HOUSEHOLD ROSTER
+# 1.  HOUSEHOLD ROSTER  (selection of beneficiaries — single source of
+#     truth lives on each Beneficiary record)
 # ═══════════════════════════════════════════════════════════════════
 class HouseholdMember(BaseModel):
+    """Legacy free-form shape — retained only for backward-compat with
+    docs persisted before the picker refactor. Not used on writes."""
+
     id: Optional[str] = None
     name: str
-    role: str = "adult"  # adult | child | elderly | pet | dependent
+    role: str = "adult"
     age: Optional[int] = None
-    relationship: Optional[str] = None  # spouse, son, daughter, dog, etc.
+    relationship: Optional[str] = None
     medical_conditions: Optional[str] = None
     allergies: Optional[str] = None
     prescriptions: Optional[str] = None
@@ -82,40 +86,111 @@ class HouseholdMember(BaseModel):
     notes: Optional[str] = None
 
 
+class HouseholdSelection(BaseModel):
+    """New shape — user picks which beneficiaries are in the household;
+    medical/emergency fields live on each Beneficiary record."""
+
+    beneficiary_ids: list[str] = []
+
+
+def _benef_to_member(b: dict) -> dict:
+    """Project a beneficiary doc onto the HouseholdMember shape so the
+    readiness logic + downstream consumers keep working without a fork."""
+    age = None
+    dob = b.get("date_of_birth")
+    if dob:
+        try:
+            dt = datetime.fromisoformat(dob.replace("Z", "+00:00"))
+            today = datetime.now(timezone.utc)
+            age = today.year - dt.year - (1 if (today.month, today.day) < (dt.month, dt.day) else 0)
+        except Exception:
+            pass
+    role = "child" if (age is not None and age < 18) else "adult"
+    return {
+        "id": b.get("id"),
+        "name": b.get("name") or f"{b.get('first_name', '')} {b.get('last_name', '')}".strip(),
+        "role": role,
+        "age": age,
+        "relationship": b.get("relation"),
+        "medical_conditions": b.get("medical_conditions"),
+        "allergies": b.get("allergies"),
+        "prescriptions": b.get("prescriptions"),
+        "blood_type": b.get("blood_type"),
+        "primary_doctor": b.get("primary_doctor"),
+        "school_or_employer": b.get("school_or_employer"),
+        "notes": b.get("notes"),
+        # Pretty-picker extras
+        "photo_url": b.get("photo_url"),
+        "initials": b.get("initials"),
+        "avatar_color": b.get("avatar_color"),
+        "email": b.get("email"),
+    }
+
+
 @router.get("/ccp/household/{estate_id}")
 async def get_household(estate_id: str, current_user: dict = Depends(get_current_user)):
     await _require_estate_access(estate_id, current_user)
-    doc = await db.ccp_household.find_one({"estate_id": estate_id}, {"_id": 0})
-    if not doc:
-        return {"estate_id": estate_id, "members": []}
-    return doc
+    doc = await db.ccp_household.find_one({"estate_id": estate_id}, {"_id": 0}) or {}
+
+    selected_ids = doc.get("beneficiary_ids") or []
+    members: list[dict] = []
+    if selected_ids:
+        cursor = db.beneficiaries.find(
+            {"estate_id": estate_id, "id": {"$in": selected_ids}},
+            {"_id": 0},
+        )
+        benefs = await cursor.to_list(200)
+        by_id = {b["id"]: b for b in benefs}
+        members = [_benef_to_member(by_id[i]) for i in selected_ids if i in by_id]
+
+    # Legacy fallback so pre-refactor records aren't lost.
+    if not members and doc.get("members"):
+        members = doc["members"]
+
+    return {
+        "estate_id": estate_id,
+        "beneficiary_ids": selected_ids,
+        "members": members,
+        "updated_at": doc.get("updated_at"),
+    }
 
 
 @router.put("/ccp/household/{estate_id}")
 async def upsert_household(
     estate_id: str,
-    members: list[HouseholdMember],
+    data: HouseholdSelection,
     current_user: dict = Depends(get_current_user),
 ):
+    """Persist the selected beneficiary IDs. The medical / emergency info
+    lives on each Beneficiary record — edit it there, not here."""
     await _require_estate_access(estate_id, current_user)
-    cleaned = []
-    for m in members:
-        d = m.model_dump()
-        d["id"] = d.get("id") or str(uuid4())
-        cleaned.append(d)
+
+    # Defense: silently drop any IDs that don't belong to this estate.
+    if data.beneficiary_ids:
+        cursor = db.beneficiaries.find(
+            {"estate_id": estate_id, "id": {"$in": data.beneficiary_ids}},
+            {"_id": 0, "id": 1},
+        )
+        valid = {b["id"] for b in await cursor.to_list(200)}
+        clean_ids = [i for i in data.beneficiary_ids if i in valid]
+    else:
+        clean_ids = []
+
     await db.ccp_household.update_one(
         {"estate_id": estate_id},
         {
             "$set": {
                 "estate_id": estate_id,
-                "members": cleaned,
+                "beneficiary_ids": clean_ids,
                 "updated_at": _now_iso(),
                 "updated_by": current_user["id"],
-            }
+            },
+            # Drop the legacy free-form members array now that we use refs.
+            "$unset": {"members": ""},
         },
         upsert=True,
     )
-    return {"estate_id": estate_id, "members": cleaned}
+    return await get_household(estate_id, current_user)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -533,10 +608,12 @@ async def readiness_score(estate_id: str, current_user: dict = Depends(get_curre
     else:
         breakdown.append({"key": "has_plan", "label": "Create your first plan", "points": 20, "earned": 0})
 
-    members = household.get("members") or []
-    if members:
+    # Household roster — accept either the new beneficiary_ids selection
+    # OR the legacy free-form members array (back-compat).
+    roster_count = len(household.get("beneficiary_ids") or []) or len(household.get("members") or [])
+    if roster_count > 0:
         score += 15
-        breakdown.append({"key": "roster", "label": f"Household roster ({len(members)})", "points": 15, "earned": 15})
+        breakdown.append({"key": "roster", "label": f"Household roster ({roster_count})", "points": 15, "earned": 15})
     else:
         breakdown.append({"key": "roster", "label": "Add your household roster", "points": 15, "earned": 0})
 

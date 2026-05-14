@@ -112,6 +112,13 @@ async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depen
         address_zip=data.address_zip,
         ssn_last_four=data.ssn_last_four,
         notes=data.notes,
+        # CCP emergency-readiness fields (carry through on create as well as update)
+        medical_conditions=data.medical_conditions,
+        allergies=data.allergies,
+        prescriptions=data.prescriptions,
+        blood_type=data.blood_type,
+        primary_doctor=data.primary_doctor,
+        school_or_employer=data.school_or_employer,
         avatar_color=data.avatar_color,
         initials=initials,
         invitation_token=invitation_token,
@@ -364,6 +371,14 @@ async def update_beneficiary(
         "address_zip": data.address_zip,
         "ssn_last_four": data.ssn_last_four,
         "notes": data.notes,
+        # CCP / emergency-readiness fields (so the Household Roster picker can
+        # pull these straight off the beneficiary record).
+        "medical_conditions": data.medical_conditions,
+        "allergies": data.allergies,
+        "prescriptions": data.prescriptions,
+        "blood_type": data.blood_type,
+        "primary_doctor": data.primary_doctor,
+        "school_or_employer": data.school_or_employer,
         "avatar_color": data.avatar_color,
         "initials": initials,
         "is_stub": False,

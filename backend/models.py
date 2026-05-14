@@ -121,6 +121,15 @@ class Beneficiary(BaseModel):
     # Additional fields
     ssn_last_four: Optional[str] = None  # Last 4 of SSN for estate planning
     notes: Optional[str] = None  # Special instructions or notes
+    # ── CCP / emergency-readiness fields. Populated here (rather than on
+    # a separate ccp_household record) so the same person can serve as
+    # both an inheritor and a household member without duplicate entry.
+    medical_conditions: Optional[str] = None
+    allergies: Optional[str] = None
+    prescriptions: Optional[str] = None
+    blood_type: Optional[str] = None
+    primary_doctor: Optional[str] = None
+    school_or_employer: Optional[str] = None
     avatar_color: str = "#d4af37"
     initials: str = ""
     photo_url: Optional[str] = None  # Base64 profile photo or URL
@@ -162,6 +171,13 @@ class BeneficiaryCreate(BaseModel):
     address_line2: Optional[str] = None
     ssn_last_four: Optional[str] = None
     notes: Optional[str] = None
+    # CCP / emergency-readiness optional inputs
+    medical_conditions: Optional[str] = None
+    allergies: Optional[str] = None
+    prescriptions: Optional[str] = None
+    blood_type: Optional[str] = None
+    primary_doctor: Optional[str] = None
+    school_or_employer: Optional[str] = None
     avatar_color: str = "#d4af37"
     mm_access: bool = True
     ega_access: bool = True

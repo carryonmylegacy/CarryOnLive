@@ -1,6 +1,35 @@
 # CarryOn — Changelog
 
 
+## May 14, 2026 — Household Roster → Beneficiary Picker
+
+Per user: medical / emergency fields belong on the Beneficiary record itself — they're the same people. CCP's Household Roster panel becomes a pure selection grid (avatar + name + relation, tap to toggle).
+
+### Backend (single source of truth on Beneficiary)
+- `backend/models.py` — Beneficiary + BeneficiaryCreate gain `medical_conditions`, `allergies`, `prescriptions`, `blood_type`, `primary_doctor`, `school_or_employer` (all Optional).
+- `backend/routes/beneficiaries/management.py` — POST and PUT both carry the new fields end-to-end.
+- `backend/routes/ccp_depth.py`:
+  - `HouseholdSelection` model — new write shape is just `{ beneficiary_ids: [...] }`.
+  - `_benef_to_member()` — projects a Beneficiary into the legacy member shape so readiness scoring + downstream consumers keep working without a fork.
+  - `GET /ccp/household/{estate_id}` — returns `{ beneficiary_ids, members }` with `members` populated from the Beneficiaries collection. Legacy free-form `members` array is preserved as a fallback for any pre-refactor docs.
+  - `PUT /ccp/household/{estate_id}` — accepts beneficiary IDs only; validates ownership against the estate; `$unset`s the legacy members array on first new save.
+  - `GET /ccp/readiness/{estate_id}` — roster check now counts `len(beneficiary_ids) or len(legacy members)` so back-compat is preserved.
+
+### Frontend
+- `frontend/src/pages/BeneficiariesPage.js` — Add/Edit modal grows a "Medical & Emergency Info" section right below "Additional Information" with the same six fields. State hooked into the form, edit pre-fill, reset, and the create/update payload.
+- `frontend/src/components/ccp/CCPDepthPanels.js` — `HouseholdRosterPanel` rewritten as a grid of avatar tiles (photo or initials + colored ring), each showing **Name · Relation · Age + "Medical info on file" badge** when applicable. Tap-to-toggle, Save button shows count.
+
+### End-to-end verified via curl
+- POST beneficiary with medical fields → fields persisted ✅
+- PUT /ccp/household with that beneficiary ID → response contains `members` populated with medical_conditions, allergies, blood_type, age (derived from DOB), role inferred (child if <18) ✅
+- Readiness score correctly credits 15/15 with 1 selected household member ✅
+- Cleanup tested, no side-effects left on pitch estate.
+
+### Housekeeping
+`bash housekeeping.sh --strict` → 0 warnings / 0 failures. JS + Python lints clean.
+
+
+
 ## May 14, 2026 — CCP Depth: Persistent State + Readiness Score + AI Risk + Drill/Activation
 
 User feedback: "CCP feels juvenile and prototype-like" vs CFP. Goal — give CCP the same "living model of your life" depth CFP has via entities/accounts/bills.

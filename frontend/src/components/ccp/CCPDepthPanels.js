@@ -10,7 +10,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Plus, Trash2, Save, Mail, AlertTriangle, Calendar } from 'lucide-react';
+import { Plus, Trash2, Save, Mail, AlertTriangle, Calendar, Check } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -19,37 +19,50 @@ import { API_URL } from '../../config';
 
 const auth = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` } });
 
-// ─── HOUSEHOLD ROSTER ───────────────────────────────────────────
-const ROLE_OPTIONS = [
-  ['adult', 'Adult'], ['child', 'Child'], ['elderly', 'Elderly'],
-  ['dependent', 'Dependent'], ['pet', 'Pet'],
-];
-
+// ─── HOUSEHOLD ROSTER — pretty beneficiary picker ───────────────
+// All medical / emergency info lives on each Beneficiary record now,
+// so this panel is purely a selection grid: tap a beneficiary's
+// avatar tile to include or exclude them from the household.
 export function HouseholdRosterPanel({ estateId, onDirty }) {
-  const [members, setMembers] = useState([]);
+  const [benefs, setBenefs] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     if (!estateId) return;
-    axios.get(`${API_URL}/ccp/household/${estateId}`, auth())
-      .then(r => setMembers(r.data.members || []))
-      .catch(() => {});
+    let cancelled = false;
+    (async () => {
+      try {
+        const [benefRes, hhRes] = await Promise.all([
+          axios.get(`${API_URL}/beneficiaries/${estateId}`, auth()),
+          axios.get(`${API_URL}/ccp/household/${estateId}`, auth()),
+        ]);
+        if (cancelled) return;
+        setBenefs(benefRes.data || []);
+        setSelectedIds(hhRes.data?.beneficiary_ids || []);
+      } catch (e) {
+        // silent — empty state below
+      } finally {
+        if (!cancelled) setLoaded(true);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [estateId]);
 
-  const addMember = () => setMembers(m => [...m, {
-    id: crypto.randomUUID(), name: '', role: 'adult', age: null, relationship: '',
-    medical_conditions: '', allergies: '', prescriptions: '', blood_type: '',
-    primary_doctor: '', school_or_employer: '', notes: '',
-  }]);
-  const updateMember = (i, patch) => setMembers(m => m.map((x, idx) => idx === i ? { ...x, ...patch } : x));
-  const removeMember = (i) => setMembers(m => m.filter((_, idx) => idx !== i));
+  const toggle = (id) => setSelectedIds(s =>
+    s.includes(id) ? s.filter(x => x !== id) : [...s, id]
+  );
 
   const save = async () => {
     setSaving(true);
     try {
-      const clean = members.filter(m => m.name?.trim());
-      await axios.put(`${API_URL}/ccp/household/${estateId}`, clean, auth());
-      toast.success(`Saved ${clean.length} household member${clean.length === 1 ? '' : 's'}`);
+      await axios.put(
+        `${API_URL}/ccp/household/${estateId}`,
+        { beneficiary_ids: selectedIds },
+        auth(),
+      );
+      toast.success(`Household set — ${selectedIds.length} member${selectedIds.length === 1 ? '' : 's'}`);
       onDirty?.();
     } catch (e) {
       toast.error('Failed to save household');
@@ -59,66 +72,92 @@ export function HouseholdRosterPanel({ estateId, onDirty }) {
   return (
     <div className="space-y-4" data-testid="household-roster-panel">
       <p className="text-sm text-[var(--t4)] leading-relaxed">
-        Add every member of your household — children, dependents, elderly relatives, pets. Each plan you create will use this roster automatically.
+        Tap each person who lives in your household. Names, relationships, allergies, and medical info come from their <strong className="text-[var(--t)]">Beneficiary</strong> profile — edit those once on the Beneficiaries page and every plan you create will pick them up.
       </p>
 
-      {members.length === 0 && (
+      {loaded && benefs.length === 0 && (
         <div className="rounded-2xl p-8 text-center" style={{ background: 'var(--s)', border: '1px dashed var(--b)' }}>
-          <p className="text-sm text-[var(--t4)] mb-3">No members added yet.</p>
+          <p className="text-sm text-[var(--t4)] mb-1">No beneficiaries yet.</p>
+          <p className="text-xs text-[var(--t5)]">Add people on the Beneficiaries page first, then come back here to pick your household.</p>
         </div>
       )}
 
-      {members.map((m, i) => (
-        <div key={m.id} className="rounded-2xl p-4 space-y-3" style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}>
-          <div className="flex items-start gap-3">
-            <div className="flex-1 min-w-0 space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <Input data-testid={`hh-name-${i}`} placeholder="Name *" value={m.name || ''} onChange={e => updateMember(i, { name: e.target.value })} />
-                <select
-                  data-testid={`hh-role-${i}`}
-                  value={m.role || 'adult'}
-                  onChange={e => updateMember(i, { role: e.target.value })}
-                  className="rounded-md px-3 py-2 text-sm"
-                  style={{ background: 'var(--bg)', border: '1px solid var(--b)', color: 'var(--t)' }}
+      {benefs.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" data-testid="household-benef-grid">
+          {benefs.map(b => {
+            const sel = selectedIds.includes(b.id);
+            const color = b.avatar_color || '#d4af37';
+            const hasMedical = !!(b.medical_conditions || b.allergies || b.prescriptions || b.blood_type);
+            return (
+              <button
+                key={b.id}
+                onClick={() => toggle(b.id)}
+                data-testid={`household-toggle-${b.id}`}
+                aria-pressed={sel}
+                className="flex items-center gap-3 rounded-2xl p-3 text-left transition-all active:scale-[0.98]"
+                style={{
+                  background: sel ? `${color}1A` : 'var(--bg2)',
+                  border: `1px solid ${sel ? color : 'var(--b)'}`,
+                  boxShadow: sel ? `0 0 0 1px ${color}33` : 'none',
+                }}
+              >
+                {/* Avatar */}
+                <div
+                  className="relative w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
+                  style={{ background: color, color: '#0b1120', fontFamily: 'var(--sans)' }}
                 >
-                  {ROLE_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Input placeholder="Relationship (e.g. spouse, son)" value={m.relationship || ''} onChange={e => updateMember(i, { relationship: e.target.value })} />
-                <Input placeholder="Age" type="number" value={m.age ?? ''} onChange={e => updateMember(i, { age: e.target.value ? parseInt(e.target.value, 10) : null })} />
-              </div>
-              <details className="rounded-lg" style={{ background: 'var(--s)' }}>
-                <summary className="px-3 py-2 text-xs font-bold cursor-pointer text-[var(--t4)]">Medical & emergency info</summary>
-                <div className="p-3 space-y-2">
-                  <Input placeholder="Medical conditions" value={m.medical_conditions || ''} onChange={e => updateMember(i, { medical_conditions: e.target.value })} />
-                  <Input placeholder="Allergies" value={m.allergies || ''} onChange={e => updateMember(i, { allergies: e.target.value })} />
-                  <Input placeholder="Prescriptions" value={m.prescriptions || ''} onChange={e => updateMember(i, { prescriptions: e.target.value })} />
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input placeholder="Blood type" value={m.blood_type || ''} onChange={e => updateMember(i, { blood_type: e.target.value })} />
-                    <Input placeholder="Primary doctor" value={m.primary_doctor || ''} onChange={e => updateMember(i, { primary_doctor: e.target.value })} />
-                  </div>
-                  <Input placeholder="School / employer" value={m.school_or_employer || ''} onChange={e => updateMember(i, { school_or_employer: e.target.value })} />
+                  {b.photo_url ? (
+                    <img src={b.photo_url} alt={b.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-base font-bold">{b.initials || (b.name || '?').slice(0, 2).toUpperCase()}</span>
+                  )}
+                  {sel && (
+                    <span
+                      className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center"
+                      style={{ background: color, border: '2px solid var(--bg2)' }}
+                    >
+                      <Check className="w-3 h-3" style={{ color: '#0b1120' }} strokeWidth={3} />
+                    </span>
+                  )}
                 </div>
-              </details>
-            </div>
-            <button onClick={() => removeMember(i)} className="p-2 rounded-lg flex-shrink-0" style={{ color: 'var(--rd)' }} data-testid={`hh-remove-${i}`} aria-label="Remove member">
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      ))}
 
-      <div className="flex items-center gap-2">
-        <Button variant="outline" className="outline-pill-button flex-1" onClick={addMember} data-testid="hh-add">
-          <Plus className="w-4 h-4 mr-1" /> Add member
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-bold truncate" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>
+                    {b.name}
+                  </div>
+                  <div className="text-xs truncate" style={{ color: 'var(--t4)' }}>
+                    {b.relation || '—'}{b.date_of_birth ? ` · ${ageFromDob(b.date_of_birth)}y` : ''}
+                  </div>
+                  {hasMedical && (
+                    <div className="text-[10px] mt-0.5" style={{ color: '#22C993' }}>
+                      ✓ Medical info on file
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {benefs.length > 0 && (
+        <Button className="gold-button w-full" onClick={save} disabled={saving || !loaded} data-testid="hh-save">
+          <Save className="w-4 h-4 mr-1" /> {saving ? 'Saving…' : `Save household (${selectedIds.length})`}
         </Button>
-        <Button className="gold-button flex-1" onClick={save} disabled={saving} data-testid="hh-save">
-          <Save className="w-4 h-4 mr-1" /> {saving ? 'Saving…' : 'Save roster'}
-        </Button>
-      </div>
+      )}
     </div>
   );
+}
+
+function ageFromDob(dob) {
+  try {
+    const d = new Date(dob);
+    const t = new Date();
+    let a = t.getFullYear() - d.getFullYear();
+    const m = t.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && t.getDate() < d.getDate())) a--;
+    return a;
+  } catch { return ''; }
 }
 
 // ─── GO-BAG INVENTORY ──────────────────────────────────────────
