@@ -1,6 +1,28 @@
 # CarryOn — Changelog
 
 
+## May 14, 2026 — CRITICAL: Senior-tier "bounced out" auto-logout bug
+
+**User report**: "User was trying to select the Senior discount tier and said they keep getting bounced out."
+
+**Root cause** (RCA from iteration_139): `AuthContext.handleVisibility` unconditionally cleared the token + redirected to `/login` when `document.hidden && setting === '0'` (instant-on-app-leave mode). iOS opens the Photos / Files / Camera picker as a **sibling activity**, which fires `visibilitychange → hidden` on the web tab. So the moment the user tapped the file input for their Senior-tier ID verification, instant logout fired before they could even pick a file. Same trip on the Stripe Checkout popup redirect.
+
+**Fix**:
+- New utility `/app/frontend/src/utils/autoLogoutSuspend.js` — reference-counted suspend with a hard 5-minute absolute ceiling and idempotent release closures. Concurrent flows can suspend independently without fighting each other.
+- `AuthContext.js` `handleVisibility` now early-exits if `isAutoLogoutSuspended()` is true, AND re-checks the flag inside the non-instant `setTimeout` branch (belt + suspenders).
+- **Global safety net**: a capture-phase `document.addEventListener('click')` in `AuthContext` auto-suspends on any `<input type="file">` click anywhere in the app — released on `window.focus` or after a 90s ceiling. This covers Senior verification, Vault uploads, avatar uploads, and every future file flow without per-feature wiring.
+- `SubscriptionPaywall.handleCheckout` wraps the Stripe POST + redirect in `suspendAutoLogout` / `release` (released on focus-return for the popup, immediately on the `free` / no-URL branches, in the `catch` before re-throw).
+
+**Verified live** (iteration_139):
+1. With `carryon_auto_logout_minutes='0'`, dispatching a file-input click + `visibilitychange → hidden` → token survives, user stays on the modal. ✓
+2. Stripe checkout suspend → code-audited, same utility, mechanism proven by test 1. ✓
+3. Backend `POST /api/verification/upload` with `tier_requested=seniors` → 200 OK. ✓
+4. **Regression**: with no flow active, the instant-logout still fires (visibilitychange→hidden destroys JS context mid-evaluate — confirms the policy is intact). ✓
+
+`bash /app/housekeeping.sh --strict` → 0 WARN / 0 FAIL. Lint clean. `retest_needed: false`.
+
+
+
 ## May 14, 2026 — Toast feedback for CCP Save buttons + Go-Bag in-place expand
 
 ### Critical bug — Save buttons appeared dead across CCP + 5 other surfaces
