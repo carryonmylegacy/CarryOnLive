@@ -20,6 +20,7 @@ import AddressAutocomplete from '../components/AddressAutocomplete';
 import { API_URL } from '../config';
 import { openPdfPreview } from '../utils/openPdfPreview';
 import CachedPdfIcon from '../components/CachedPdfIcon';
+import SlidePanel from '../components/SlidePanel';
 
 const CATEGORIES = [
   { value: 'legal', label: 'Legal', icon: FileText, color: '#3b82f6' },
@@ -299,7 +300,9 @@ const ChecklistPage = () => {
     }
   };
 
-  const formRef = useRef(null);
+  // formRef removed — the edit form now lives inside a SlidePanel
+  // which manages its own focus / scroll. No need to scroll the
+  // underlying page into view.
 
   const openEdit = (item) => {
     setEditingItem(item);
@@ -311,7 +314,8 @@ const ChecklistPage = () => {
       notes: item.notes || '', due_timeframe: item.due_timeframe || 'first_week',
     });
     setShowForm(true);
-    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    // SlidePanel handles its own focus/scroll — no need to scroll the
+    // underlying page into view.
   };
 
   const closeForm = () => {
@@ -759,16 +763,19 @@ const ChecklistPage = () => {
         <CachedPdfIcon pdfType="iac_standalone" size={18} />
       </div>
 
-      {/* Add/Edit Form */}
-      {showForm && (
-        <div ref={formRef} className="glass-card p-5 space-y-4" style={{ borderColor: 'var(--gold)', borderWidth: '1px' }}>
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-[var(--t)]">
-              {editingItem ? 'Edit Checklist Item' : 'New Checklist Item'}
-            </h3>
-            <button onClick={closeForm} aria-label="Close form" className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform"><X className="w-4 h-4" /></button>
-          </div>
-
+      {/* Add/Edit form — slides in from the right matching all other
+          slide-ins across the app (CFP / DAV pre-refactor / Beneficiary
+          / Message / Vault). Body content stays identical to the
+          previous inline glass-card so save/cancel flow and field
+          state are unchanged. */}
+      <SlidePanel
+        open={showForm}
+        onClose={closeForm}
+        title={editingItem ? 'Edit Checklist Item' : 'New Checklist Item'}
+        subtitle={editingItem ? 'Update the action your beneficiaries will see' : 'Add a step your beneficiaries should take after transition'}
+      >
+        {showForm && (
+        <div className="space-y-4" data-testid="iac-form-panel">
           {/* Title */}
           <div>
             <label className="text-xs font-bold text-[var(--t4)] mb-1 block">What should they do? *</label>
@@ -777,6 +784,7 @@ const ChecklistPage = () => {
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="e.g., Call State Farm to file life insurance claim"
               className="w-full px-3 py-2.5 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-sm focus:outline-none focus:border-[var(--gold)]"
+              data-testid="iac-input-title"
             />
           </div>
 
@@ -789,6 +797,7 @@ const ChecklistPage = () => {
               placeholder="Provide step-by-step details, policy numbers, reference codes, etc."
               rows={3}
               className="w-full px-3 py-2.5 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-base focus:outline-none focus:border-[var(--gold)] resize-none"
+              data-testid="iac-input-description"
             />
           </div>
 
@@ -902,15 +911,17 @@ const ChecklistPage = () => {
               disabled={saving}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg, #d4af37, #b8941f)', color: '#0b1120' }}
+              data-testid="iac-save-btn"
             >
               <Save className="w-4 h-4" /> {saving ? 'Saving...' : editingItem ? 'Update Item' : 'Add to Checklist'}
             </button>
-            <button onClick={closeForm} className="px-4 py-2.5 rounded-xl text-sm font-bold glass-card text-[var(--t4)] hover:text-[var(--t)]">
+            <button onClick={closeForm} className="px-4 py-2.5 rounded-xl text-sm font-bold glass-card text-[var(--t4)] hover:text-[var(--t)]" data-testid="iac-cancel-btn">
               Cancel
             </button>
           </div>
         </div>
-      )}
+        )}
+      </SlidePanel>
 
       {/* Checklist Items */}
       {checklists.length === 0 && !showForm ? (
