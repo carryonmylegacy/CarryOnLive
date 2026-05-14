@@ -1,6 +1,34 @@
 # CarryOn — Changelog
 
 
+## May 14, 2026 — Button Style Unification + Entity & Structure Contrast
+
+User reported buttons in CFP "looked like different developers made them" and asked for stronger contrast on the Entity & Structure section border.
+
+### Root Cause
+`.gold-button` class was referenced **30+ times** across the JS codebase (`BeneficiariesPage`, `MessagesPage`, `FinancialPortalPage`, `DigitalWalletPage`, `GuardianPage`, etc.) but **never defined in CSS**. Result: every `<Button className="gold-button">` quietly fell through to shadcn's default `bg-primary` (the teal/blue accent). The visible blue "Add Bill" button in the screenshot was the most prominent symptom of a problem that was actually app-wide.
+
+### Frontend
+- **`index.css`** — Defined two new shared utility classes living after `@tailwind utilities` (wins cascade by source order, no `!important` needed):
+  - `.gold-button` — primary CTA pill (gold gradient + 9999px radius + soft glow + hover/active states + disabled state).
+  - `.outline-pill-button` — secondary toolbar pill (transparent bg, subtle `--b` border, hover lift). Used for "Quick Add", "Hand-off PDF", and the CFP-visibility toggle.
+- **`CfpVisibilityToggle.js`** — Replaced ad-hoc rectangle classes with `.outline-pill-button`. Button is now a pill, matches sibling toolbar buttons in shape and weight.
+- **`FinancialPortalPage.js`** — Quick Add and Hand-off PDF rewired to `.outline-pill-button` for the same pill consistency.
+- **`EntitiesSection.js`** — Outer container border lifted from `1px solid var(--b)` (≈10% white) to `1px solid rgba(var(--gold-rgb), 0.32)` plus a depth shadow. The section now visibly stands away from neighboring CFP cards.
+
+### Verified
+- Frontend testing agent (`/app/test_reports/iteration_136.json`) confirmed computed styles on:
+  - CFP `/financial`: Add Bill → GOLD PILL ✅, Quick Add / Hand-off PDF / CFP-visibility toggle → OUTLINE PILL ✅.
+  - `/beneficiaries`, `/messages`, `/digital-wallet`, `/guardian` primary CTAs → GOLD PILL ✅.
+  - No shadcn-blue `bg-primary` fall-back observed on any tested page.
+- `bash /app/housekeeping.sh --strict` → 0 warnings / 0 failures.
+
+### Flagged (not regressions from this change)
+- Sidebar order on `info@carryon.us` reflects a previously saved user preference via `applyUserMenuOrder` — registry default is still the canonical Dashboard → Beneficiaries → MM → SDV → IAC → EGA → CFP → DAV → FFN → CCP → ECT → DTS for new users.
+- `/checklist` shows FeatureGate "not on plan" panel for the pitch account because its tier excludes IAC. Pre-existing behavior; unrelated to this fix.
+
+
+
 ## May 13, 2026 (continued) — Partner Logo Permeation (Authenticated Shell)
 
 When a user is signed in under a B2B/Enterprise partner code, the CarryOn mark is replaced with the partner's logo + company name across every authenticated chrome surface. Direct consumer signups (and admin/founder sessions) see zero change.
