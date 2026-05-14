@@ -532,6 +532,16 @@
   .nav-section {
     padding: 16px 12px 8px;
   }
+
+  /* Utility-action block at the bottom of the scroll area
+     (Notifications, Theme toggle, Collapse). Stacks the pill
+     buttons with a small vertical breathing gap so they don't
+     visually press against each other. */
+  .nav-section[data-testid="nav-utility-actions"] {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
   
   .nav-section-title {
     font-size: 14px;
