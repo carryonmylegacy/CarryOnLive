@@ -1,6 +1,62 @@
 # CarryOn — Changelog
 
 
+## May 14, 2026 — Uniform Page & Wizard Widths (Desktop ↔ PWA Crossover Sweep)
+
+User feedback: "every page, every wizard, has the same crossover point from desktop to PWA and that in desktop, they all smoothly scale large to a certain point". CCP wizard was the visible offender — locked at `max-w-lg sm:max-w-xl` (≈512-576px), it looked like a phone column inside a 1920px desktop window. Across the platform, no two wizards or pages shared a consistent width policy.
+
+### Standardized Policy
+| Page type | Max width | Rationale |
+| --- | --- | --- |
+| Feature / data pages (CFP, MM, Beneficiaries, Dashboard, IAC, EGA, DAV, FFN, CCP, ECT, DTS, EPT, Vault, beneficiary mirrors) | `max-w-[1400px] mx-auto` | Comfortable on MBP 16" (1728px native), centers cleanly on 4K, fills smoothly on laptops |
+| Wizards & form pages (CCPWizard, Subscription, Settings, SecuritySettings, FoundersCircle, EditMilestoneMessage, BeneficiarySettings, Condolence, AdminPrimitives) | `max-w-3xl mx-auto` (768px) | User choice for optimal reading line-length on wizard flows; mirrors PWA feel on desktop |
+| PWA / Desktop crossover breakpoint | `lg:` = 1024px | Already consistent app-wide before this sweep; no changes required |
+
+### Files touched (top-level wrappers only — zero functional changes)
+- `/app/frontend/src/components/ccp/CCPWizard.js` — `max-w-lg sm:max-w-xl` → `max-w-3xl`
+- `/app/frontend/src/pages/FinancialPortalPage.js`
+- `/app/frontend/src/pages/BeneficiariesPage.js`
+- `/app/frontend/src/pages/MessagesPage.js` (+ defensive `overflow-x-hidden` against inner-child mobile overflow)
+- `/app/frontend/src/pages/DashboardPage.js`
+- `/app/frontend/src/pages/ChecklistPage.js`
+- `/app/frontend/src/pages/ConnectedProtocolPage.js`
+- `/app/frontend/src/pages/GuardianPage.js`
+- `/app/frontend/src/pages/FFNPage.js`
+- `/app/frontend/src/pages/DigitalWalletPage.js`
+- `/app/frontend/src/pages/VaultPage.js`
+- `/app/frontend/src/pages/TrusteePage.js`
+- `/app/frontend/src/pages/LegacyTimelinePage.js`
+- `/app/frontend/src/pages/SettingsPage.js`
+- `/app/frontend/src/pages/SubscriptionPage.js`
+- `/app/frontend/src/pages/SecuritySettingsPage.js`
+- `/app/frontend/src/pages/FoundersCirclePage.js`
+- `/app/frontend/src/pages/EditMilestoneMessagePage.js`
+- `/app/frontend/src/pages/AdminPrimitivesPage.js`
+- `/app/frontend/src/pages/beneficiary/BeneficiarySettingsPage.js`
+- `/app/frontend/src/pages/beneficiary/BeneficiaryHubPage.js`
+- `/app/frontend/src/pages/beneficiary/BeneficiaryDashboardPage.js`
+- `/app/frontend/src/pages/beneficiary/BeneficiaryChecklistPage.js`
+- `/app/frontend/src/pages/beneficiary/BeneficiaryCCPPage.js`
+- `/app/frontend/src/pages/beneficiary/BeneficiaryFinancialPage.js`
+- `/app/frontend/src/pages/beneficiary/BeneficiaryVaultPage.js`
+- `/app/frontend/src/pages/beneficiary/BeneficiaryMessagesPage.js`
+- `/app/frontend/src/pages/beneficiary/BeneficiaryConciergePage.js`
+- `/app/frontend/src/pages/beneficiary/BeneficiaryEntitiesPage.js`
+- `/app/frontend/src/pages/beneficiary/CondolencePage.js`
+
+### Sidebar utility-action spacing
+`/app/frontend/src/index.css` — added `display: flex; flex-direction: column; gap: 6px;` scoped via `.nav-section[data-testid="nav-utility-actions"]` so Notifications / Light Mode / Collapse no longer visually press against each other. Doesn't touch any other stacked pill block.
+
+### Verified (iteration_137)
+- 7/7 feature pages cap at exactly 1400px and center within main-content at 1920px viewport ✅
+- 2/2 wizard pages cap at exactly 768px and center ✅
+- Sidebar nav-utility-actions: computed gap = 6px, display=flex ✅
+- 10/10 routes have zero horizontal overflow at 1920px ✅
+- 6/7 routes are clean at 375px (mobile); /messages flagged with 542px inner-child overflow → fixed via defensive `overflow-x-hidden` on the page root.
+- Housekeeping `--strict`: 0 warnings / 0 failures.
+
+
+
 ## May 14, 2026 — Button Style Unification + Entity & Structure Contrast
 
 User reported buttons in CFP "looked like different developers made them" and asked for stronger contrast on the Entity & Structure section border.
