@@ -13,7 +13,9 @@ import CCPWizard from '../components/ccp/CCPWizard';
 import CCPDebriefView from '../components/ccp/CCPDebriefView';
 import CCPWelcomeWalkthrough from '../components/ccp/CCPWelcomeWalkthrough';
 import ReadinessScoreCard from '../components/ccp/ReadinessScoreCard';
-import SlidePanel from '../components/SlidePanel';
+// SlidePanel import removed — the 6 CCP depth panels now expand
+// inline within their tiles (see the ccp-depth-* tile block below)
+// matching the platform-wide GoBag / FFN / DAV pattern.
 import {
   HouseholdRosterPanel,
   GoBagPanel,
@@ -1059,9 +1061,13 @@ export default function ConnectedProtocolPage() {
       </button>
 
       {/* ─── Depth tiles — persistent state that survives between plans
-              and feeds the readiness score above. */}
+              and feeds the readiness score above. Stacked single-column
+              with inline expand-to-edit: tapping a tile expands its
+              panel below the header, pushing every subsequent tile down.
+              Matches the platform-wide GoBag / FFN / DAV inline pattern.
+      */}
       {estateId && isBenefactor && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+        <div className="space-y-3 pt-1">
           {[
             { key: 'roster', icon: Users, title: 'Household Roster', sub: 'Members, medical info, allergies', color: '#3B7BF7' },
             { key: 'gobag', icon: Briefcase, title: 'Go-Bag Inventory', sub: 'Track items & expirations', color: '#22C993' },
@@ -1069,24 +1075,44 @@ export default function ConnectedProtocolPage() {
             { key: 'ooa', icon: PhoneCall, title: 'Out-of-Area Contact', sub: 'FEMA relay pattern', color: '#A78BFA' },
             { key: 'drill', icon: Send, title: 'Test the Plan (Drill)', sub: 'Practice run via email', color: '#06B6D4' },
             { key: 'activate', icon: AlertOctagon, title: 'Activate Plan', sub: 'Real-event broadcast', color: '#EF4444' },
-          ].map(({ key, icon: Icon, title, sub, color }) => (
-            <button
-              key={key}
-              onClick={() => setDepthPanel(key)}
-              data-testid={`ccp-depth-${key}`}
-              className="rounded-2xl p-4 text-left transition-all active:scale-[0.98] flex items-center gap-3"
-              style={{ background: 'var(--bg2)', border: `1px solid ${color}33` }}
-            >
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${color}1A` }}>
-                <Icon className="w-5 h-5" style={{ color }} />
+          ].map(({ key, icon: Icon, title, sub, color }) => {
+            const isOpen = depthPanel === key;
+            return (
+              <div
+                key={key}
+                data-testid={`ccp-depth-${key}`}
+                className="rounded-2xl overflow-hidden transition-all"
+                style={{ background: 'var(--bg2)', border: `1px solid ${color}33` }}
+              >
+                <button
+                  onClick={() => setDepthPanel(isOpen ? null : key)}
+                  className="w-full p-4 text-left transition-all active:scale-[0.99] flex items-center gap-3"
+                  data-testid={`ccp-depth-toggle-${key}`}
+                >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${color}1A` }}>
+                    <Icon className="w-5 h-5" style={{ color }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-[var(--t)] truncate" style={{ fontFamily: 'var(--sans)' }}>{title}</div>
+                    <div className="text-xs text-[var(--t4)] truncate">{sub}</div>
+                  </div>
+                  {isOpen
+                    ? <ChevronDown className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--t5)' }} />
+                    : <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--t5)' }} />}
+                </button>
+                {isOpen && (
+                  <div className="px-4 pb-4 pt-2 border-t" style={{ borderColor: `${color}1F` }} data-testid={`ccp-depth-panel-${key}`}>
+                    {key === 'roster' && <HouseholdRosterPanel estateId={estateId} onDirty={bumpDepth} />}
+                    {key === 'gobag' && <GoBagPanel estateId={estateId} onDirty={bumpDepth} />}
+                    {key === 'rendezvous' && <RendezvousPanel estateId={estateId} onDirty={bumpDepth} />}
+                    {key === 'ooa' && <OutOfAreaPanel estateId={estateId} onDirty={bumpDepth} />}
+                    {key === 'drill' && <DrillPanel estateId={estateId} plans={plans} onDone={bumpDepth} />}
+                    {key === 'activate' && <ActivationPanel estateId={estateId} plans={plans} rendezvous={rendezvousData} onDone={bumpDepth} />}
+                  </div>
+                )}
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-bold text-[var(--t)] truncate" style={{ fontFamily: 'var(--sans)' }}>{title}</div>
-                <div className="text-xs text-[var(--t4)] truncate">{sub}</div>
-              </div>
-              <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--t5)' }} />
-            </button>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -1206,74 +1232,12 @@ export default function ConnectedProtocolPage() {
       />
     )}
 
-    {/* ===== Depth Panels — Household Roster, Go-Bag, Rendezvous,
-            Out-of-Area Contact, Drill, Activation. One SlidePanel per
-            tile; only the open one renders its children. */}
-    <SlidePanel
-      open={depthPanel === 'roster'}
-      onClose={() => setDepthPanel(null)}
-      title="Household Roster"
-      subtitle="Members, medical info, allergies"
-    >
-      {depthPanel === 'roster' && (
-        <HouseholdRosterPanel estateId={estateId} onDirty={bumpDepth} />
-      )}
-    </SlidePanel>
-
-    <SlidePanel
-      open={depthPanel === 'gobag'}
-      onClose={() => setDepthPanel(null)}
-      title="Go-Bag Inventory"
-      subtitle="What's in your emergency kit, and when it expires"
-    >
-      {depthPanel === 'gobag' && (
-        <GoBagPanel estateId={estateId} onDirty={bumpDepth} />
-      )}
-    </SlidePanel>
-
-    <SlidePanel
-      open={depthPanel === 'rendezvous'}
-      onClose={() => setDepthPanel(null)}
-      title="Meetup Points"
-      subtitle="Primary, secondary, tertiary rendezvous"
-    >
-      {depthPanel === 'rendezvous' && (
-        <RendezvousPanel estateId={estateId} onDirty={bumpDepth} />
-      )}
-    </SlidePanel>
-
-    <SlidePanel
-      open={depthPanel === 'ooa'}
-      onClose={() => setDepthPanel(null)}
-      title="Out-of-Area Relay Contact"
-      subtitle="FEMA-recommended communication anchor"
-    >
-      {depthPanel === 'ooa' && (
-        <OutOfAreaPanel estateId={estateId} onDirty={bumpDepth} />
-      )}
-    </SlidePanel>
-
-    <SlidePanel
-      open={depthPanel === 'drill'}
-      onClose={() => setDepthPanel(null)}
-      title="Test the Plan — Family Drill"
-      subtitle="Practice run via email (no real alerts)"
-    >
-      {depthPanel === 'drill' && (
-        <DrillPanel estateId={estateId} plans={plans} onDone={bumpDepth} />
-      )}
-    </SlidePanel>
-
-    <SlidePanel
-      open={depthPanel === 'activate'}
-      onClose={() => setDepthPanel(null)}
-      title="Activate Plan"
-      subtitle="Real-event broadcast — NOT a drill"
-    >
-      {depthPanel === 'activate' && (
-        <ActivationPanel estateId={estateId} plans={plans} rendezvous={rendezvousData} onDone={bumpDepth} />
-      )}
-    </SlidePanel>
+    {/* ===== Depth panels are now rendered INLINE inside each CCP tile
+            above (see the .map() block at ccp-depth-* tiles). The
+            previous 6 SlidePanels were removed in favor of an
+            expand-in-place pattern matching GoBag / FFN / DAV — taps
+            on a tile expand its panel below the header, pushing the
+            other tiles down. */}
     </>
   );
 }

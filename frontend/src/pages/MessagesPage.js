@@ -1272,7 +1272,7 @@ const MessagesPage = () => {
     return (
       <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6">
         <Skeleton className="h-12 w-64 bg-[var(--s)]" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-4">
           {[1, 2, 3, 4].map(i => (
             <Skeleton key={i} className="h-48 bg-[var(--s)] rounded-2xl" />
           ))}
@@ -1395,7 +1395,7 @@ const MessagesPage = () => {
                   ]}
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 {sortedMessages.map((msg) => (
                   <MessageCard
                     key={msg.id}

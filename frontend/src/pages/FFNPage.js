@@ -103,28 +103,33 @@ export default function FFNPage() {
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error('Name is required'); return; }
     setSaving(true);
+    // 'NEW' is the transient sentinel for an inline-added row that
+    // hasn't been persisted yet — treat it as a create (POST), not
+    // an update.
+    const isCreating = !editingId || editingId === 'NEW';
     try {
       const { mutateWithOutbox } = await import('../utils/offlineMutation');
       const r = await mutateWithOutbox({
         entity_type: 'ffn',
-        entity_id: editingId || undefined,
-        method: editingId ? 'PUT' : 'POST',
-        url: editingId ? `/ffn/${editingId}` : `/ffn/${estateId}`,
+        entity_id: isCreating ? undefined : editingId,
+        method: isCreating ? 'POST' : 'PUT',
+        url: isCreating ? `/ffn/${estateId}` : `/ffn/${editingId}`,
         body: form,
         authHeaders: getAuthHeaders(),
       });
       if (!r.ok) throw r.error || new Error('save failed');
       if (r.queued) {
-        toast.success(editingId ? 'Contact saved offline — will sync when you reconnect.' : 'Contact queued — will sync when you reconnect.');
+        toast.success(isCreating ? 'Contact queued — will sync when you reconnect.' : 'Contact saved offline — will sync when you reconnect.');
         // Optimistically update the UI so the user sees their change.
-        if (editingId) {
-          setContacts(prev => prev.map(c => c.id === editingId ? { ...c, ...form } : c));
-        } else {
+        if (isCreating) {
           const tempId = `local-ffn-${Date.now()}`;
           setContacts(prev => [...prev, { ...form, id: tempId, _local_pending: true }]);
+        } else {
+          setContacts(prev => prev.map(c => c.id === editingId ? { ...c, ...form } : c));
         }
       } else {
         fetchData();
+        toast.success(isCreating ? 'Contact added' : 'Contact saved');
       }
       clearDraft();
       setShowForm(false);
@@ -172,9 +177,30 @@ export default function FFNPage() {
 
   const openNew = () => {
     setForm(EMPTY_FORM);
-    setEditingId(null);
+    // Use 'NEW' sentinel so the inline editor renders at the top of
+    // the list (prepended) — matching the Go-Bag / DAV pattern. The
+    // sentinel is replaced with a real id on first successful save.
+    setEditingId('NEW');
     setShowForm(true);
   };
+
+  const cancelEdit = () => {
+    clearDraft();
+    setShowForm(false);
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+  };
+
+  // List the user sees: real contacts + a transient NEW row pinned to
+  // the top while the user is adding. The NEW row is not in `contacts`
+  // (which mirrors what's on the server) — it's a virtual entry so the
+  // inline-edit form can render inline like every other tile.
+  const displayedContacts = (() => {
+    if (editingId === 'NEW') {
+      return [{ id: 'NEW', _isNew: true, ...EMPTY_FORM }, ...contacts];
+    }
+    return contacts;
+  })();
 
   if (loading) {
     return (
@@ -238,123 +264,120 @@ export default function FFNPage() {
         </Card>
       ) : (
         <div className="space-y-3" data-testid="ffn-contact-list">
-          {contacts.map(c => (
+          {displayedContacts.map(c => {
+            const isEditing = editingId === c.id || (editingId === 'NEW' && c.id === 'NEW');
+            return (
             <Card key={c.id} className="glass-card" data-testid={`ffn-contact-${c.id}`}>
               <CardContent className="p-4">
+                {/* Collapsed header — always visible */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-bold text-[var(--t)]">{c.name}</span>
-                      {c.relationship && (
+                      <span className="font-bold text-[var(--t)]">{c._isNew ? 'New contact' : (c.name || 'Untitled contact')}</span>
+                      {!c._isNew && c.relationship && (
                         <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(236,72,153,0.1)', color: '#ec4899' }}>
                           {c.relationship}
                         </span>
                       )}
                     </div>
-                    <div className="space-y-1">
-                      {c.phone && (
-                        <div className="flex items-center gap-2 text-sm text-[var(--t4)]">
-                          <Phone className="w-3.5 h-3.5 flex-shrink-0" /> {formatPhoneUS(c.phone)}
-                        </div>
-                      )}
-                      {c.email && (
-                        <div className="flex items-center gap-2 text-sm text-[var(--t4)]">
-                          <Mail className="w-3.5 h-3.5 flex-shrink-0" /> {c.email}
-                        </div>
-                      )}
-                      {c.address && (
-                        <div className="flex items-center gap-2 text-sm text-[var(--t4)]">
-                          <MapPin className="w-3.5 h-3.5 flex-shrink-0" /> {c.address}
-                        </div>
-                      )}
-                      {c.notes && (
-                        <p className="text-xs text-[var(--t5)] mt-1 italic">{c.notes}</p>
-                      )}
-                    </div>
+                    {!isEditing && (
+                      <div className="space-y-1">
+                        {c.phone && (
+                          <div className="flex items-center gap-2 text-sm text-[var(--t4)]">
+                            <Phone className="w-3.5 h-3.5 flex-shrink-0" /> {formatPhoneUS(c.phone)}
+                          </div>
+                        )}
+                        {c.email && (
+                          <div className="flex items-center gap-2 text-sm text-[var(--t4)]">
+                            <Mail className="w-3.5 h-3.5 flex-shrink-0" /> {c.email}
+                          </div>
+                        )}
+                        {c.address && (
+                          <div className="flex items-center gap-2 text-sm text-[var(--t4)]">
+                            <MapPin className="w-3.5 h-3.5 flex-shrink-0" /> {c.address}
+                          </div>
+                        )}
+                        {c.notes && (
+                          <p className="text-xs text-[var(--t5)] mt-1 italic">{c.notes}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-[var(--t4)]" onClick={() => openEdit(c)} data-testid={`ffn-edit-${c.id}`}>
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-[var(--rd)]" onClick={() => handleDelete(c.id)} disabled={deleting === c.id} data-testid={`ffn-delete-${c.id}`}>
-                      {deleting === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                    </Button>
+                    {!isEditing && !c._isNew && (
+                      <>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-[var(--t4)]" onClick={() => openEdit(c)} data-testid={`ffn-edit-${c.id}`}>
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-[var(--rd)]" onClick={() => handleDelete(c.id)} disabled={deleting === c.id} data-testid={`ffn-delete-${c.id}`}>
+                          {deleting === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
+
+                {/* Inline editor — pushes the rest of the list down */}
+                {isEditing && (
+                  <div className="mt-4 pt-4 border-t border-[var(--b)] space-y-3" data-testid={`ffn-edit-panel-${c.id}`}>
+                    <div>
+                      <Label className="text-[var(--t4)]">Name <span className="text-red-400">*</span></Label>
+                      <div className="relative mt-1">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--t5)]" />
+                        <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                          placeholder="Full name" className="input-field pl-10" style={{ fontSize: 16 }} data-testid="ffn-input-name" autoFocus />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-[var(--t4)]">Relationship</Label>
+                      <Input value={form.relationship} onChange={e => setForm(p => ({ ...p, relationship: e.target.value }))}
+                        placeholder="e.g., College friend, Former colleague, Neighbor" className="input-field mt-1" style={{ fontSize: 16 }} data-testid="ffn-input-relationship" />
+                    </div>
+                    <div>
+                      <Label className="text-[var(--t4)]">Phone</Label>
+                      <div className="relative mt-1">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--t5)]" />
+                        <Input value={formatPhoneUS(form.phone)} onChange={e => setForm(p => ({ ...p, phone: formatPhoneUS(e.target.value) }))}
+                          placeholder="(555) 123-4567" type="tel" className="input-field pl-10" style={{ fontSize: 16 }} data-testid="ffn-input-phone" />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-[var(--t4)]">Email</Label>
+                      <div className="relative mt-1">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--t5)]" />
+                        <Input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                          placeholder="email@example.com" type="email" className="input-field pl-10" style={{ fontSize: 16 }} data-testid="ffn-input-email" />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-[var(--t4)]">Address</Label>
+                      <div className="relative mt-1">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--t5)]" />
+                        <Input value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))}
+                          placeholder="123 Main St, City, State" className="input-field pl-10" style={{ fontSize: 16 }} data-testid="ffn-input-address" />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-[var(--t4)]">Notes</Label>
+                      <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
+                        placeholder="Any additional context — how you know this person, what to say to them, etc."
+                        className="input-field mt-1 w-full rounded-lg p-3 min-h-[80px] bg-[var(--s)] border border-[var(--b)] text-[var(--t)]"
+                        style={{ fontSize: 16 }} data-testid="ffn-input-notes" />
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <Button onClick={cancelEdit} variant="outline" className="outline-pill-button flex-1" data-testid="ffn-cancel-btn">
+                        <X className="w-4 h-4 mr-1.5" /> Cancel
+                      </Button>
+                      <Button onClick={handleSave} disabled={saving || !form.name.trim()} className="gold-button flex-1" data-testid="ffn-save-btn">
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Check className="w-4 h-4 mr-1.5" />}
+                        {c._isNew ? 'Add' : 'Save'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Add/Edit Form Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4 overflow-y-auto" data-testid="ffn-form-modal">
-          <div className="w-full max-w-md rounded-2xl p-6 space-y-4 glass-card" style={{ border: '1px solid var(--b)', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}>
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
-                {editingId ? 'Edit Contact' : 'Add Contact'}
-              </h2>
-              <button onClick={() => { clearDraft(); setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); }}
-                className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)]"
-                aria-label="Close"
-                data-testid="ffn-modal-close">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <Label className="text-[var(--t4)]">Name <span className="text-red-400">*</span></Label>
-                <div className="relative mt-1">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--t5)]" />
-                  <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                    placeholder="Full name" className="input-field pl-10" style={{ fontSize: 16 }} data-testid="ffn-input-name" />
-                </div>
-              </div>
-              <div>
-                <Label className="text-[var(--t4)]">Relationship</Label>
-                <Input value={form.relationship} onChange={e => setForm(p => ({ ...p, relationship: e.target.value }))}
-                  placeholder="e.g., College friend, Former colleague, Neighbor" className="input-field mt-1" style={{ fontSize: 16 }} data-testid="ffn-input-relationship" />
-              </div>
-              <div>
-                <Label className="text-[var(--t4)]">Phone</Label>
-                <div className="relative mt-1">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--t5)]" />
-                  <Input value={formatPhoneUS(form.phone)} onChange={e => setForm(p => ({ ...p, phone: formatPhoneUS(e.target.value) }))}
-                    placeholder="(555) 123-4567" type="tel" className="input-field pl-10" style={{ fontSize: 16 }} data-testid="ffn-input-phone" />
-                </div>
-              </div>
-              <div>
-                <Label className="text-[var(--t4)]">Email</Label>
-                <div className="relative mt-1">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--t5)]" />
-                  <Input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                    placeholder="email@example.com" type="email" className="input-field pl-10" style={{ fontSize: 16 }} data-testid="ffn-input-email" />
-                </div>
-              </div>
-              <div>
-                <Label className="text-[var(--t4)]">Address</Label>
-                <div className="relative mt-1">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--t5)]" />
-                  <Input value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))}
-                    placeholder="123 Main St, City, State" className="input-field pl-10" style={{ fontSize: 16 }} data-testid="ffn-input-address" />
-                </div>
-              </div>
-              <div>
-                <Label className="text-[var(--t4)]">Notes</Label>
-                <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-                  placeholder="Any additional context — how you know this person, what to say to them, etc."
-                  className="input-field mt-1 w-full rounded-lg p-3 min-h-[80px] bg-[var(--s)] border border-[var(--b)] text-[var(--t)]"
-                  style={{ fontSize: 16 }} data-testid="ffn-input-notes" />
-              </div>
-            </div>
-
-            <Button onClick={handleSave} disabled={saving || !form.name.trim()} className="gold-button w-full" data-testid="ffn-save-btn">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
-              {editingId ? 'Save Changes' : 'Add Contact'}
-            </Button>
-          </div>
+          );})}
         </div>
       )}
 

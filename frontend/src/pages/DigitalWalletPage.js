@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { KeyRound, Plus, Trash2, Edit2, Eye, EyeOff, Shield, Loader2, User, Wallet, Globe, Mail, Cloud, CreditCard, Save, ArrowLeft, Network } from 'lucide-react';
+import { KeyRound, Plus, Trash2, Edit2, Eye, EyeOff, Shield, Loader2, User, Wallet, Globe, Mail, Cloud, CreditCard, Save, ArrowLeft, Network, X } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { ReturnPopup } from '../components/GuidedActivation';
-import SlidePanel from '../components/SlidePanel';
+// SlidePanel import removed — DAV now uses inline expand-to-edit instead
+// of a side panel modal. Keeping the comment as a breadcrumb so future
+// readers understand the historical pattern.
 import axios from 'axios';
 import { cachedGet } from '../utils/apiCache';
 import { API_URL } from '../config';
@@ -231,7 +233,7 @@ const DigitalWalletPage = () => {
 
       <SectionLockedOverlay sectionId="digital-access">
 
-      {entries.length === 0 ? (
+      {entries.length === 0 && !showAdd ? (
         <Card className="glass-card">
           <CardContent className="p-8 text-center">
             <KeyRound className="w-12 h-12 mx-auto text-[var(--gold)] mb-4 opacity-50" />
@@ -244,6 +246,37 @@ const DigitalWalletPage = () => {
         </Card>
       ) : (
         <div className="space-y-3">
+          {/* When user taps "Add Account", render a virtual NEW row at
+              the very top of the list. The inline editor expands below
+              its header, pushing every existing tile down — matching
+              the Go-Bag / FFN inline pattern. */}
+          {showAdd && (
+            <Card className="glass-card" data-testid="wallet-entry-new">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <h4 className="font-bold text-[var(--t)]">New digital account</h4>
+                  <button onClick={() => { clearShowAddDraft(); setShowAdd(false); }} className="p-1.5 rounded-lg hover:bg-[var(--s)] text-[var(--t4)]" aria-label="Cancel add" data-testid="wallet-cancel-new">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="pt-2 border-t border-[var(--b)]">
+                  <WalletEntryPanel
+                    entry={null}
+                    beneficiaries={beneficiaries}
+                    existingEntries={entries}
+                    onClose={() => { clearShowAddDraft(); setShowAdd(false); }}
+                    onSaved={handleCredentialSaved}
+                    onLinkExisting={(existing) => {
+                      clearShowAddDraft();
+                      setShowAdd(false);
+                      setEditEntry(existing);
+                    }}
+                    getAuthHeaders={getAuthHeaders}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
           {CATEGORIES.map(cat => {
             const catEntries = entries.filter(e => e.category === cat.value);
             if (catEntries.length === 0) return null;
@@ -254,101 +287,105 @@ const DigitalWalletPage = () => {
                   <CatIcon className="w-4 h-4 text-[var(--gold)]" />
                   <h3 className="text-sm font-bold text-[var(--t4)] uppercase tracking-wider">{cat.label}</h3>
                 </div>
-                {catEntries.map(entry => (
+                {catEntries.map(entry => {
+                  const isEditing = editEntry?.id === entry.id;
+                  return (
                   <Card key={entry.id} className="glass-card mb-2" data-testid={`wallet-entry-${entry.id}`}>
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h4 className="font-bold text-[var(--t)]">{entry.account_name}</h4>
-                          <div className="mt-2 space-y-1 text-sm">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[var(--t4)] w-20">Login:</span>
-                              <span className="text-[var(--t2)] font-mono">{entry.login_username}</span>
-                            </div>
-                            {(entry.password || entry.encrypted_password) && (
-                              <div className="flex items-center gap-2">
-                                <span className="text-[var(--t4)] w-20">Password:</span>
-                                <span className="text-[var(--t2)] font-mono">
-                                  {visiblePasswords[entry.id] ? (entry.password || '********') : '********'}
-                                </span>
-                                <button onClick={() => togglePassword(entry.id)} className="text-[var(--t5)] hover:text-[var(--t)]">
-                                  {visiblePasswords[entry.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          {!isEditing && (
+                            <>
+                              <div className="mt-2 space-y-1 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[var(--t4)] w-20">Login:</span>
+                                  <span className="text-[var(--t2)] font-mono">{entry.login_username}</span>
+                                </div>
+                                {(entry.password || entry.encrypted_password) && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[var(--t4)] w-20">Password:</span>
+                                    <span className="text-[var(--t2)] font-mono">
+                                      {visiblePasswords[entry.id] ? (entry.password || '********') : '********'}
+                                    </span>
+                                    <button onClick={() => togglePassword(entry.id)} className="text-[var(--t5)] hover:text-[var(--t)]">
+                                      {visiblePasswords[entry.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                    </button>
+                                  </div>
+                                )}
+                                {entry.additional_access && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[var(--t4)] w-20">Access:</span>
+                                    <span className="text-[var(--t2)] font-mono text-xs">{visiblePasswords[entry.id] ? entry.additional_access : '********'}</span>
+                                  </div>
+                                )}
+                                {entry.notes && (
+                                  <div className="flex items-start gap-2 mt-1">
+                                    <span className="text-[var(--t4)] w-20">Notes:</span>
+                                    <span className="text-[var(--t3)] text-xs">{entry.notes}</span>
+                                  </div>
+                                )}
+                              </div>
+                              {entry.assigned_beneficiary_name && (
+                                <div className="mt-2 flex items-center gap-1.5">
+                                  <User className="w-3.5 h-3.5 text-[var(--gold)]" />
+                                  <span className="text-xs text-[var(--gold)] font-bold">Assigned to: {entry.assigned_beneficiary_name}</span>
+                                </div>
+                              )}
+                              {entry.linked_entity_id && entry.linked_entity_name && (
+                                <button
+                                  onClick={() => navigate(`/financial?openEntity=${encodeURIComponent(entry.linked_entity_id)}`)}
+                                  className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold transition-colors"
+                                  style={{
+                                    color: 'var(--gold)',
+                                    background: 'rgba(212,165,55,0.10)',
+                                    border: '1px solid rgba(212,165,55,0.35)',
+                                  }}
+                                  data-testid={`wallet-entity-link-${entry.id}`}
+                                  title="Open this entity in your Financial Picture"
+                                >
+                                  <Network className="w-3 h-3" />
+                                  Linked to {entry.linked_entity_name}
                                 </button>
-                              </div>
-                            )}
-                            {entry.additional_access && (
-                              <div className="flex items-center gap-2">
-                                <span className="text-[var(--t4)] w-20">Access:</span>
-                                <span className="text-[var(--t2)] font-mono text-xs">{visiblePasswords[entry.id] ? entry.additional_access : '********'}</span>
-                              </div>
-                            )}
-                            {entry.notes && (
-                              <div className="flex items-start gap-2 mt-1">
-                                <span className="text-[var(--t4)] w-20">Notes:</span>
-                                <span className="text-[var(--t3)] text-xs">{entry.notes}</span>
-                              </div>
-                            )}
-                          </div>
-                          {entry.assigned_beneficiary_name && (
-                            <div className="mt-2 flex items-center gap-1.5">
-                              <User className="w-3.5 h-3.5 text-[var(--gold)]" />
-                              <span className="text-xs text-[var(--gold)] font-bold">Assigned to: {entry.assigned_beneficiary_name}</span>
-                            </div>
+                              )}
+                            </>
                           )}
-                          {entry.linked_entity_id && entry.linked_entity_name && (
-                            <button
-                              onClick={() => navigate(`/financial?openEntity=${encodeURIComponent(entry.linked_entity_id)}`)}
-                              className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold transition-colors"
-                              style={{
-                                color: 'var(--gold)',
-                                background: 'rgba(212,165,55,0.10)',
-                                border: '1px solid rgba(212,165,55,0.35)',
-                              }}
-                              data-testid={`wallet-entity-link-${entry.id}`}
-                              title="Open this entity in your Financial Picture"
-                            >
-                              <Network className="w-3 h-3" />
-                              Linked to {entry.linked_entity_name}
+                        </div>
+                        {!isEditing && (
+                          <div className="flex gap-1">
+                            <button onClick={() => setEditEntry(entry)} className="p-1.5 rounded-lg hover:bg-[var(--s)] text-[var(--t4)]" data-testid={`edit-wallet-${entry.id}`} aria-label="Edit entry">
+                              <Edit2 className="w-4 h-4" />
                             </button>
-                          )}
-                        </div>
-                        <div className="flex gap-1">
-                          <button onClick={() => setEditEntry(entry)} className="p-1.5 rounded-lg hover:bg-[var(--s)] text-[var(--t4)]" data-testid={`edit-wallet-${entry.id}`} aria-label="Edit entry">
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleDelete(entry.id)} className="p-1.5 rounded-lg hover:bg-[var(--rdbg)] text-[var(--t4)] hover:text-[var(--rd2)]" data-testid={`delete-wallet-${entry.id}`} aria-label="Delete entry">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                            <button onClick={() => handleDelete(entry.id)} className="p-1.5 rounded-lg hover:bg-[var(--rdbg)] text-[var(--t4)] hover:text-[var(--rd2)]" data-testid={`delete-wallet-${entry.id}`} aria-label="Delete entry">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
                       </div>
+                      {isEditing && (
+                        <div className="mt-3 pt-3 border-t border-[var(--b)]" data-testid={`wallet-edit-panel-${entry.id}`}>
+                          <WalletEntryPanel
+                            entry={entry}
+                            beneficiaries={beneficiaries}
+                            existingEntries={entries}
+                            onClose={() => setEditEntry(null)}
+                            onSaved={handleCredentialSaved}
+                            onLinkExisting={(existing) => setEditEntry(existing)}
+                            getAuthHeaders={getAuthHeaders}
+                          />
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
-                ))}
+                );})}
               </div>
             );
           })}
         </div>
       )}
 
-      {/* Add/Edit Modal */}
-      {(showAdd || editEntry) && (
-        <WalletEntryPanel
-          entry={editEntry}
-          beneficiaries={beneficiaries}
-          existingEntries={entries}
-          onClose={() => { clearShowAddDraft(); setShowAdd(false); setEditEntry(null); }}
-          onSaved={handleCredentialSaved}
-          onLinkExisting={(existing) => {
-            // User chose to open the existing entry instead of creating
-            // a duplicate. Discard any draft, drop the add form, and
-            // open the existing entry in edit mode.
-            clearShowAddDraft();
-            setShowAdd(false);
-            setEditEntry(existing);
-          }}
-          getAuthHeaders={getAuthHeaders}
-        />
-      )}
+      {/* (Add/Edit SlidePanel removed — inline expand-to-edit now lives
+          inside each entry card and at the top of the list when adding.) */}
 
       <div className="text-center py-4">
         <div className="flex items-center justify-center gap-2 text-[var(--t5)] text-sm">
@@ -469,78 +506,76 @@ const WalletEntryPanel = ({ entry, beneficiaries, existingEntries, onClose, onSa
   };
 
   return (
-    <SlidePanel open onClose={onClose} title={entry ? 'Edit Account' : 'Add Digital Account'} subtitle={entry ? 'Update credentials and assignment' : 'Store a new set of credentials'}>
-      <div className="space-y-5">
-        <Card className="glass-card animate-bounce-tile" data-testid="wallet-panel-basics">
-          <CardContent className="p-4 space-y-3">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gold)]">Account Details</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-[var(--t4)] text-xs">Account Name <span className="text-red-400">*</span></Label>
-                <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g., Coinbase" className="input-field mt-1" data-testid="wallet-name" />
-              </div>
-              <div>
-                <Label className="text-[var(--t4)] text-xs">Category</Label>
-                <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className="input-field mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]" style={{ zIndex: 99999 }}>
-                    {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value} className="text-[var(--t2)]">{c.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="glass-card animate-bounce-tile" data-testid="wallet-panel-credentials">
-          <CardContent className="p-4 space-y-3">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gold)]">Credentials</p>
+    <div className="space-y-5" data-testid="wallet-entry-form">
+      <Card className="glass-card" data-testid="wallet-panel-basics">
+        <CardContent className="p-4 space-y-3">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gold)]">Account Details</p>
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-[var(--t4)] text-xs">Login / Username / Email <span className="text-red-400">*</span></Label>
-              <Input value={login} onChange={e => setLogin(e.target.value)} placeholder="username or email" className="input-field mt-1" data-testid="wallet-login" />
+              <Label className="text-[var(--t4)] text-xs">Account Name <span className="text-red-400">*</span></Label>
+              <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g., Coinbase" className="input-field mt-1" data-testid="wallet-name" />
             </div>
             <div>
-              <Label className="text-[var(--t4)] text-xs">Password</Label>
-              <div className="relative mt-1">
-                <Input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="********" className="input-field pr-10" data-testid="wallet-password" />
-                <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPw(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
-                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-            <div>
-              <Label className="text-[var(--t4)] text-xs">Additional Access Info</Label>
-              <Input value={access} onChange={e => setAccess(e.target.value)} placeholder="e.g., 2FA backup codes, PIN" className="input-field mt-1" data-testid="wallet-access" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="glass-card animate-bounce-tile" data-testid="wallet-panel-assignment">
-          <CardContent className="p-4 space-y-3">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gold)]">Assignment & Notes</p>
-            <div>
-              <Label className="text-[var(--t4)] text-xs">Notes</Label>
-              <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any additional notes" className="input-field mt-1" />
-            </div>
-            <div>
-              <Label className="text-[var(--t4)] text-xs">Assign to Beneficiary</Label>
-              <Select value={beneficiaryId || 'none'} onValueChange={(val) => setBeneficiaryId(val === 'none' ? '' : val)}>
-                <SelectTrigger className="input-field mt-1"><SelectValue placeholder="Select beneficiary..." /></SelectTrigger>
+              <Label className="text-[var(--t4)] text-xs">Category</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="input-field mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]" style={{ zIndex: 99999 }}>
-                  <SelectItem value="none" className="text-[var(--t4)]">No one (keep private)</SelectItem>
-                  {beneficiaries.map(b => (<SelectItem key={b.id} value={b.id} className="text-[var(--t2)]">{b.first_name} {b.last_name}</SelectItem>))}
+                  {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value} className="text-[var(--t2)]">{c.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-          </CardContent>
-        </Card>
-        <div className="flex gap-3 pt-1 animate-bounce-tile">
-          <Button variant="outline" onClick={onClose} className="flex-1 border-[var(--b)] text-[var(--t3)]">Cancel</Button>
-          <Button className="flex-1 gold-button" onClick={handleSave} disabled={saving || !name || !login} data-testid="wallet-save">
-            {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-            {entry ? 'Update' : 'Save'} Account
-          </Button>
-        </div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="glass-card" data-testid="wallet-panel-credentials">
+        <CardContent className="p-4 space-y-3">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gold)]">Credentials</p>
+          <div>
+            <Label className="text-[var(--t4)] text-xs">Login / Username / Email <span className="text-red-400">*</span></Label>
+            <Input value={login} onChange={e => setLogin(e.target.value)} placeholder="username or email" className="input-field mt-1" data-testid="wallet-login" />
+          </div>
+          <div>
+            <Label className="text-[var(--t4)] text-xs">Password</Label>
+            <div className="relative mt-1">
+              <Input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="********" className="input-field pr-10" data-testid="wallet-password" />
+              <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPw(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
+                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+          <div>
+            <Label className="text-[var(--t4)] text-xs">Additional Access Info</Label>
+            <Input value={access} onChange={e => setAccess(e.target.value)} placeholder="e.g., 2FA backup codes, PIN" className="input-field mt-1" data-testid="wallet-access" />
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="glass-card" data-testid="wallet-panel-assignment">
+        <CardContent className="p-4 space-y-3">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gold)]">Assignment & Notes</p>
+          <div>
+            <Label className="text-[var(--t4)] text-xs">Notes</Label>
+            <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any additional notes" className="input-field mt-1" />
+          </div>
+          <div>
+            <Label className="text-[var(--t4)] text-xs">Assign to Beneficiary</Label>
+            <Select value={beneficiaryId || 'none'} onValueChange={(val) => setBeneficiaryId(val === 'none' ? '' : val)}>
+              <SelectTrigger className="input-field mt-1"><SelectValue placeholder="Select beneficiary..." /></SelectTrigger>
+              <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]" style={{ zIndex: 99999 }}>
+                <SelectItem value="none" className="text-[var(--t4)]">No one (keep private)</SelectItem>
+                {beneficiaries.map(b => (<SelectItem key={b.id} value={b.id} className="text-[var(--t2)]">{b.first_name} {b.last_name}</SelectItem>))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+      <div className="flex gap-3 pt-1">
+        <Button variant="outline" onClick={onClose} className="flex-1 border-[var(--b)] text-[var(--t3)]" data-testid="wallet-cancel">Cancel</Button>
+        <Button className="flex-1 gold-button" onClick={handleSave} disabled={saving || !name || !login} data-testid="wallet-save">
+          {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+          {entry ? 'Update' : 'Save'} Account
+        </Button>
       </div>
-    </SlidePanel>
+    </div>
   );
 };
 
