@@ -1,6 +1,27 @@
 # CarryOn — Changelog
 
 
+## May 14, 2026 — Defense-in-depth: every paywall tile + external link now suspends auto-logout
+
+**User ask**: "Check all the pay wall tiles and links. Make sure this issue doesn't exist anywhere else."
+
+**Audit found 3 sister surfaces with the same vulnerability**:
+1. `pages/FoundersCirclePage.js` — Founders Circle reservation Stripe flow
+2. `components/settings/SubscriptionManagement.js` — three separate Stripe call sites (subscribe / change plan / change billing)
+3. Native iOS IAP flow (`useIAPPurchase.purchaseWithIAP` / `restoreWithIAP`) — StoreKit sheet backgrounds the WebView during Face ID / Touch ID auth
+4. Every `<a target="_blank">` in the app (Terms / Privacy / external help links etc.) — new-tab handoff hides the original tab
+
+**Fix — moved the suspend down to the utility layer so every caller is auto-protected**:
+- `utils/stripeRedirect.js` — `openStripeCheckout` now wraps the redirect itself in `suspendAutoLogout()` + focus-release. Every existing and future caller (`SubscriptionPaywall`, `FoundersCirclePage`, all 3 sites in `SubscriptionManagement`) is auto-covered with zero per-caller wiring.
+- `hooks/useIAPPurchase.js` — both `purchaseWithIAP` and `restoreWithIAP` wrap `purchaseIAP` / `restoreIAPPurchases` in `try/finally` with suspend/release. `finally` guarantees release even on cancel or error paths.
+- `contexts/AuthContext.js` — global capture-phase click listener extended to cover `<a target="_blank">`, `mailto:`, `tel:`, `sms:` (walks up 4 ancestor levels so the user can click an icon inside the anchor). File-input branch unchanged.
+
+**Verified (iteration_140)**: 8/8 surfaces verified by code audit. `retest_needed: false`. Reference-counted suspend handles concurrent flows; 5-min hard ceiling in `autoLogoutSuspend.js` is the ultimate safety net so no flow can permanently disable the security policy.
+
+`bash /app/housekeeping.sh --strict` → 0 WARN / 0 FAIL. Lint clean.
+
+
+
 ## May 14, 2026 — CRITICAL: Senior-tier "bounced out" auto-logout bug
 
 **User report**: "User was trying to select the Senior discount tier and said they keep getting bounced out."
