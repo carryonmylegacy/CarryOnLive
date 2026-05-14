@@ -153,7 +153,7 @@ DEFAULTS: dict[str, Any] = {
             },
             {
                 "n": "08",
-                "name": "Family & Friends Notification",
+                "name": "Friends & Family Notification",
                 "abbr": "FFN",
                 "desc": (
                     "A personalized notification list of family, friends, colleagues, and anyone the "

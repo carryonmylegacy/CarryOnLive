@@ -137,7 +137,7 @@ class Beneficiary(BaseModel):
     ega_access: bool = True  # Estate Guardian AI
     sdv_access: bool = True  # Secure Document Vault
     iac_access: bool = True  # Immediate Action Checklist
-    ffn_access: bool = True  # Family & Friends Notification
+    ffn_access: bool = True  # Friends & Family Notification
     dav_access: bool = True  # Digital Access Vault
     dts_access: bool = True  # Designated Trustee Services
     cfp_access: bool = True  # CarryOn Financial Portal

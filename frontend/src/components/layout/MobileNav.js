@@ -407,16 +407,16 @@ const MobileNav = () => {
     { to: '/dashboard', icon: Home, label: 'Dashboard' },
     { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
     { to: '/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
-    { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
     { to: '/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
+    { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
     { to: '/guardian', icon: Sparkles, label: 'Estate Guardian AI (EGA)' },
     { to: '/financial', icon: DollarSign, label: `${brand} Financial Picture (CFP)` },
-    { to: '/ffn', icon: Heart, label: 'Family & Friends Notification (FFN)' },
     { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
+    { to: '/ffn', icon: Heart, label: 'Friends & Family Notification (FFN)' },
+    { to: '/connected-protocol', icon: Shield, label: `${brand} Contingency Protocols (CCP)` },
+    { to: '/estate-chat', icon: MessageCircle, label: 'Estate Comms Tool (ECT)', badge: ectUnread },
     { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
     { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
-    { to: '/estate-chat', icon: MessageCircle, label: 'Estate Comms Tool (ECT)', badge: ectUnread },
-    { to: '/connected-protocol', icon: Shield, label: `${brand} Contingency Protocols (CCP)` },
   ], enabledFeatures), menuOrderBenefactor);
 
   // Get feature access flags from localStorage (set by TransitionGate/Dashboard)
@@ -441,14 +441,14 @@ const MobileNav = () => {
 
   const beneficiaryLegacyItems = applyUserMenuOrder(filterNavByFeatures(filterByFeatureAccess([
     { to: '/beneficiary', icon: Home, label: 'Dashboard' },
-    { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
-    { to: '/beneficiary/concierge', icon: BookOpen, label: 'Beneficiary Estate Concierge (BEC)' },
-    { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
     { to: '/beneficiary/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
-    { to: '/beneficiary/milestone', icon: Gift, label: 'Report Milestone' },
-    { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Comms Tool (ECT)', badge: ectUnread },
-    { to: '/beneficiary/connected-protocol', icon: Shield, label: `${brand} Contingency Protocols (CCP)` },
+    { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
+    { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
+    { to: '/beneficiary/concierge', icon: BookOpen, label: 'Beneficiary Estate Concierge (BEC)' },
     { to: '/beneficiary/financial', icon: DollarSign, label: `${brand} Financial Picture (CFP)` },
+    { to: '/beneficiary/connected-protocol', icon: Shield, label: `${brand} Contingency Protocols (CCP)` },
+    { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Comms Tool (ECT)', badge: ectUnread },
+    { to: '/beneficiary/milestone', icon: Gift, label: 'Report Milestone' },
   ]), enabledFeatures), menuOrderBeneficiary);
 
   // Staff portals — tool shortcuts in hamburger menu

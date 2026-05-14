@@ -523,7 +523,7 @@ const BeneficiaryDashboardPage = () => {
           { key: 'iac_access', icon: CheckSquare, label: 'Immediate Action Checklist', desc: 'Step-by-step guidance for actions to take during this time', color: '#D97706' },
           { key: 'bec_access', icon: BookOpen, label: 'Beneficiary Estate Concierge', desc: 'AI guide that answers questions grounded only in the documents shared with you', color: '#10B981' },
           { key: 'dav_access', icon: KeyRound, label: 'Digital Access Vault', desc: 'Digital account credentials and access information', color: '#EC4899' },
-          { key: 'ffn_access', icon: Bell, label: 'Family & Friends Notification', desc: 'Coordinated notifications to family and friends', color: '#F59E0B' },
+          { key: 'ffn_access', icon: Bell, label: 'Friends & Family Notification', desc: 'Coordinated notifications to friends and family', color: '#F59E0B' },
           { key: 'dts_access', icon: Scale, label: 'Designated Trustee Services', desc: 'Trustee coordination and legal service referrals', color: '#6366F1' },
         ];
         const enabled = FEATURE_INFO.filter(f => myPerms.feature_access[f.key] !== false);

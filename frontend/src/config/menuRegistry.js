@@ -21,38 +21,77 @@ import {
 } from 'lucide-react';
 
 /**
- * Benefactor feature registry — desktop sidebar uses the LayoutDashboard
- * icon for /dashboard while mobile uses Home. To keep a single registry
- * we expose both and let each consumer pick via `iconDesktop` / `iconMobile`.
- * (For simplicity most items use the same icon across surfaces.)
+ * Canonical platform feature order — the SINGLE source of truth.
+ *
+ * Every surface that lists features (sidebar, mobile hamburger, home
+ * page pillars, paywall tiers, admin Subs tab, "menu reset to default")
+ * sorts through this. Features missing from a user's tier collapse out
+ * silently; the order above is preserved.
+ *
+ * Audit-only surfaces (e.g., Estate Plan Timeline) are appended AFTER
+ * the 12 canonical features in this registry so they still render in
+ * places that include them, but never push canonical items down.
  */
 export const BENEFACTOR_FEATURE_REGISTRY = [
   { to: '/dashboard',            icon: LayoutDashboard, iconMobile: Home, label: 'Dashboard' },
   { to: '/beneficiaries',        icon: Users,           label: 'Beneficiaries' },
   { to: '/messages',             icon: MessageSquare,   label: 'Milestone Messages (MM)' },
   { to: '/vault',                icon: FolderLock,      label: 'Secure Document Vault (SDV)' },
+  { to: '/checklist',            icon: CheckSquare,     label: 'Immediate Action Checklist (IAC)' },
   { to: '/guardian',             icon: Sparkles,        label: 'Estate Guardian AI (EGA)' },
   { to: '/financial',            icon: DollarSign,      label: 'CarryOn Financial Picture (CFP)' },
+  { to: '/digital-wallet',       icon: KeyRound,        label: 'Digital Access Vault (DAV)' },
+  { to: '/ffn',                  icon: Heart,           label: 'Friends & Family Notification (FFN)' },
   { to: '/connected-protocol',   icon: Shield,          label: 'CarryOn Contingency Protocols (CCP)' },
   { to: '/estate-chat',          icon: MessageCircle,   label: 'Estate Comms Tool (ECT)', hasBadge: 'ectUnread' },
-  { to: '/checklist',            icon: CheckSquare,     label: 'Immediate Action Checklist (IAC)' },
   { to: '/trustee',              icon: Shield,          label: 'Designated Trustee Services (DTS)' },
-  { to: '/ffn',                  icon: Heart,           label: 'Family & Friends Notification (FFN)' },
-  { to: '/digital-wallet',       icon: KeyRound,        label: 'Digital Access Vault (DAV)' },
+  // ── Audit-only / non-pillar surfaces ──────────────────────────────
+  // Below this line are NOT user pillars and never appear in paywall
+  // tiers or the home page pillar list. They render in the side menu
+  // only when access is granted (e.g., admin enables audit tools).
   { to: '/timeline',             icon: Clock,           label: 'Estate Plan Timeline (EPT)' },
 ];
 
 export const BENEFICIARY_FEATURE_REGISTRY = [
   { to: '/beneficiary',                     icon: LayoutDashboard, iconMobile: Home, label: 'Dashboard' },
-  { to: '/beneficiary/vault',               icon: FolderLock,      label: 'Secure Document Vault (SDV)' },
-  { to: '/beneficiary/guardian',            icon: Sparkles,        label: 'Estate Guardian (EGA)' },
-  { to: '/beneficiary/checklist',           icon: CheckSquare,     label: 'Immediate Action Checklist (IAC)' },
   { to: '/beneficiary/messages',            icon: MessageSquare,   label: 'Milestone Messages (MM)' },
-  { to: '/beneficiary/milestone',           icon: Gift,            iconDesktop: Home, label: 'Report Milestone' },
-  { to: '/beneficiary/estate-chat',         icon: MessageCircle,   label: 'Estate Comms Tool (ECT)', hasBadge: 'ectUnread' },
-  { to: '/beneficiary/connected-protocol',  icon: Shield,          label: 'CarryOn Contingency Protocols (CCP)' },
+  { to: '/beneficiary/vault',               icon: FolderLock,      label: 'Secure Document Vault (SDV)' },
+  { to: '/beneficiary/checklist',           icon: CheckSquare,     label: 'Immediate Action Checklist (IAC)' },
+  { to: '/beneficiary/guardian',            icon: Sparkles,        label: 'Estate Guardian (EGA)' },
   { to: '/beneficiary/financial',           icon: DollarSign,      label: 'CarryOn Financial Picture (CFP)' },
+  { to: '/beneficiary/connected-protocol',  icon: Shield,          label: 'CarryOn Contingency Protocols (CCP)' },
+  { to: '/beneficiary/estate-chat',         icon: MessageCircle,   label: 'Estate Comms Tool (ECT)', hasBadge: 'ectUnread' },
+  { to: '/beneficiary/milestone',           icon: Gift,            iconDesktop: Home, label: 'Report Milestone' },
 ];
+
+/**
+ * Canonical pillar key order — for surfaces that key by feature_id
+ * rather than route (paywall tiles, admin Subs tab, FeatureGate's
+ * not-on-plan hint). Sort any list of pillar keys through this.
+ */
+export const CANONICAL_PILLAR_ORDER = [
+  'beneficiaries', // Beneficiaries
+  'mm',            // Milestone Messages
+  'sdv',           // Secure Document Vault
+  'iac',           // Immediate Action Checklist
+  'ega',           // Estate Guardian AI
+  'cfp',           // CarryOn Financial Picture
+  'dav',           // Digital Access Vault
+  'ffn',           // Friends & Family Notification
+  'ccp',           // CarryOn Contingency Protocols
+  'ect',           // Estate Comms Tool
+  'dts',           // Designated Trustee Services
+];
+
+/** Stable-sort a list of pillar objects by `CANONICAL_PILLAR_ORDER`. */
+export const sortByCanonicalPillarOrder = (items, keyOf = (x) => x.id || x.key) => {
+  const idx = new Map(CANONICAL_PILLAR_ORDER.map((k, i) => [k, i]));
+  return [...items].sort((a, b) => {
+    const ai = idx.has(keyOf(a)) ? idx.get(keyOf(a)) : 999;
+    const bi = idx.has(keyOf(b)) ? idx.get(keyOf(b)) : 999;
+    return ai - bi;
+  });
+};
 
 /**
  * Apply the user's saved menu order (from GET /api/user-preferences/menu-order)

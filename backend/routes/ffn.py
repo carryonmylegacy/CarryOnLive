@@ -1,4 +1,4 @@
-"""CarryOn™ Backend — Family & Friends Notification (FFN) Routes
+"""CarryOn™ Backend — Friends & Family Notification (FFN) Routes
 A simple CRUD list of contacts the benefactor wants their beneficiaries to notify upon transition.
 """
 

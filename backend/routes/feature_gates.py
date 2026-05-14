@@ -27,16 +27,24 @@ router = APIRouter()
 # core: if True, defaults to ON for every tier (MM / SDV / IAC)
 
 PLATFORM_FEATURES = [
+    # ── Canonical order — MUST match frontend `CANONICAL_PILLAR_ORDER`
+    # in `/app/frontend/src/config/menuRegistry.js`. Single source of
+    # truth for: Admin → Subs tab columns, paywall feature lists,
+    # FeatureGate "not on plan" hint, landing page pillar carousel.
     {"key": "beneficiaries", "label": "Beneficiaries", "route": "/beneficiaries", "core": False},
     {"key": "mm", "label": "Milestone Messages (MM)", "route": "/messages", "core": True},
-    {"key": "iac", "label": "Immediate Action Checklist (IAC)", "route": "/checklist", "core": True},
     {"key": "sdv", "label": "Secure Document Vault (SDV)", "route": "/vault", "core": True},
+    {"key": "iac", "label": "Immediate Action Checklist (IAC)", "route": "/checklist", "core": True},
     {"key": "ega", "label": "Estate Guardian AI (EGA)", "route": "/guardian", "core": False},
-    {"key": "ffn", "label": "Family & Friends Notification (FFN)", "route": "/ffn", "core": False},
+    {
+        "key": "cfp",
+        "label": "CarryOn Financial Picture (CFP)",
+        "route": "/financial",
+        "core": False,
+        "default_off": True,
+    },
     {"key": "dav", "label": "Digital Access Vault (DAV)", "route": "/digital-wallet", "core": False},
-    {"key": "dts", "label": "Designated Trustee Services (DTS)", "route": "/trustee", "core": False},
-    {"key": "timeline", "label": "Estate Plan Timeline", "route": "/timeline", "core": False},
-    {"key": "ect", "label": "Estate Comms (ECT)", "route": "/estate-chat", "core": False, "default_off": True},
+    {"key": "ffn", "label": "Friends & Family Notification (FFN)", "route": "/ffn", "core": False},
     {
         "key": "ccp",
         "label": "CarryOn Contingency Protocols (CCP)",
@@ -44,13 +52,12 @@ PLATFORM_FEATURES = [
         "core": False,
         "default_off": True,
     },
-    {
-        "key": "cfp",
-        "label": "Financial Picture (CFP)",
-        "route": "/financial",
-        "core": False,
-        "default_off": True,
-    },
+    {"key": "ect", "label": "Estate Comms Tool (ECT)", "route": "/estate-chat", "core": False, "default_off": True},
+    {"key": "dts", "label": "Designated Trustee Services (DTS)", "route": "/trustee", "core": False},
+    # ── Below the canonical 12 — audit / beneficiary-side / supporting.
+    # These never appear in the user's pillar list but live in the
+    # Admin Subs tab so the founder can still toggle them per tier.
+    {"key": "timeline", "label": "Estate Plan Timeline (audit-only)", "route": "/timeline", "core": False},
     {
         # Beneficiary Estate Concierge AI — POST-transition AI for the
         # beneficiary side. Reads ONLY the documents the beneficiary has

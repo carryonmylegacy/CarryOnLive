@@ -211,7 +211,7 @@ const BeneficiariesPage = () => {
     guardian: 'Estate Guardian AI (EGA)',
     vault: 'Secure Document Vault (SDV)',
     checklist: 'Immediate Action Checklist (IAC)',
-    ffn: 'Family & Friends Notification (FFN)',
+    ffn: 'Friends & Family Notification (FFN)',
     digital_wallet: 'Digital Access Vault (DAV)',
     dts: 'Designated Trustee Services (DTS)',
   };

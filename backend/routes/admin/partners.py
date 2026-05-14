@@ -51,7 +51,7 @@ PARTNER_FEATURE_PILLARS = [
     {"key": "sdv", "label": "Secure Document Vault"},
     {"key": "iac", "label": "Immediate Action Checklist"},
     {"key": "ega", "label": "Estate Guardian AI"},
-    {"key": "ffn", "label": "Family & Friends Notification"},
+    {"key": "ffn", "label": "Friends & Family Notification"},
     {"key": "dav", "label": "Digital Access Vault"},
     {"key": "dts", "label": "Designated Trustee Services"},
     {"key": "timeline", "label": "Estate Plan Timeline"},
