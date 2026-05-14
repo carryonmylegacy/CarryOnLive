@@ -67,10 +67,15 @@ export default function EntityCredentialsField({
   };
 
   const add = () => {
-    const next = [...credentials, blankCredential(defaultAccountName)];
+    // Prepend so the new credential editor opens at the TOP of the list
+    // (under the "Add credential" button the user just tapped) rather
+    // than slipping off the bottom of the screen on long entity forms.
+    const next = [blankCredential(defaultAccountName), ...credentials];
     onChange(next);
-    // New row index = next.length - 1; auto-expand it.
-    setExpanded((e) => ({ ...e, [next.length - 1]: true }));
+    // Auto-expand the new row (now at index 0). Existing expand keys
+    // referenced numeric indices that just shifted +1; resetting the
+    // map is cleaner than trying to remap every key.
+    setExpanded({ 0: true });
   };
 
   const toggleExpanded = (idx) =>
@@ -131,6 +136,21 @@ export default function EntityCredentialsField({
 
   return (
     <div className="space-y-3">
+      {/* Add button at the TOP — when tapped, prepends a blank row and
+          auto-expands it, so the editor appears directly below the
+          button instead of off-screen at the bottom of long entity
+          forms. */}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={add}
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[var(--gold)] whitespace-nowrap border border-[var(--gold)]/70 bg-[rgba(212,165,55,0.10)] hover:bg-[rgba(212,165,55,0.20)] hover:border-[var(--gold)] transition-colors"
+          data-testid="entity-credential-add"
+        >
+          <Plus className="w-3.5 h-3.5" /> Add credential
+        </button>
+      </div>
+
       {visible.length === 0 && (
         <div
           className="text-[12px] text-[var(--t5)] italic px-3 py-3 rounded-lg"
@@ -419,17 +439,6 @@ export default function EntityCredentialsField({
           </div>
         );
       })}
-
-      <div className="flex justify-center pt-1">
-        <button
-          type="button"
-          onClick={add}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[var(--gold)] whitespace-nowrap border border-[var(--gold)]/70 bg-[rgba(212,165,55,0.10)] hover:bg-[rgba(212,165,55,0.20)] hover:border-[var(--gold)] transition-colors"
-          data-testid="entity-credential-add"
-        >
-          <Plus className="w-3.5 h-3.5" /> Add credential
-        </button>
-      </div>
     </div>
   );
 }
