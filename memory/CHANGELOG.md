@@ -1,6 +1,26 @@
 # CarryOn — Changelog
 
 
+## May 14, 2026 — Go-Bag UX: collapsed list + edit-in-place
+
+User feedback: "Save button does nothing here ... should give me a collapsed list of items with quantities and expiration dates and each one should have a pencil and trash icon so that I can open it and edit it or just delete it right there."
+
+Root cause: Save was actually working (curl verified PUT writes and re-reads correctly) — but the user couldn't *see* it work because every row stayed in always-expanded edit mode, identical before and after save. Bad UX, not a bug.
+
+### Redesigned `GoBagPanel`
+- **Collapsed row** (default): name (bold) · category · qty · expiration date with traffic-light color (red EXPIRED / amber ≤30d / green fresh) — plus a **pencil** (edit) and **trash** (delete) button.
+- **Expanded row** (after pencil): same form as before but with explicit **Cancel** + **Save item** buttons. Only one row can be open at a time.
+- **Trash** is instant — optimistic remove + auto-PUT, toast `Item removed`.
+- **Add item** opens a new blank row in edit mode; **Save item** persists; **Cancel** discards the unsaved blank.
+- **Save kit** at bottom remains (bulk save of all rows, hidden while editing to keep focus clean).
+- Seed FEMA 7-item starter kit now auto-saves (was previously local-only).
+
+### Verified
+- Backend PUT `/api/ccp/go-bag/{estate_id}` accepts the array body, persists, and round-trips through GET ✅ (curl proven before rewrite to rule out a back-end bug).
+- Frontend lint clean, housekeeping --strict clean.
+
+
+
 ## May 14, 2026 — Household Roster → Beneficiary Picker
 
 Per user: medical / emergency fields belong on the Beneficiary record itself — they're the same people. CCP's Household Roster panel becomes a pure selection grid (avatar + name + relation, tap to toggle).

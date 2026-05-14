@@ -10,7 +10,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Plus, Trash2, Save, Mail, AlertTriangle, Calendar, Check } from 'lucide-react';
+import { Plus, Trash2, Save, Mail, AlertTriangle, Calendar, Check, Pencil } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -179,6 +179,10 @@ const STARTER_ITEMS = [
 export function GoBagPanel({ estateId, onDirty }) {
   const [items, setItems] = useState([]);
   const [saving, setSaving] = useState(false);
+  // editingId === null → all rows collapsed (list view)
+  // editingId === item.id → that row expanded for editing
+  // editingId === 'NEW' → adding a new item
+  const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
     if (!estateId) return;
@@ -193,41 +197,83 @@ export function GoBagPanel({ estateId, onDirty }) {
     const d = new Date(exp);
     const diffDays = Math.ceil((d - new Date()) / (1000 * 60 * 60 * 24));
     if (diffDays < 0) return { color: '#EF4444', label: 'EXPIRED' };
-    if (diffDays <= 30) return { color: '#F59E0B', label: `${diffDays}d left` };
-    return { color: '#22C993', label: 'Fresh' };
+    if (diffDays <= 30) return { color: '#F59E0B', label: `${diffDays}d` };
+    return { color: '#22C993', label: '' };
   };
 
-  const addItem = (preset = {}) => setItems(it => [...it, {
-    id: crypto.randomUUID(), category: preset.category || 'other', name: preset.name || '',
-    qty: preset.qty || '', expires_at: '', last_checked: today, notes: '',
-  }]);
-  const updateItem = (i, patch) => setItems(it => it.map((x, idx) => idx === i ? { ...x, ...patch } : x));
-  const removeItem = (i) => setItems(it => it.filter((_, idx) => idx !== i));
-  const seedStarter = () => {
+  const persist = async (next) => {
+    setSaving(true);
+    try {
+      const clean = next.filter(i => i.name?.trim());
+      await axios.put(`${API_URL}/ccp/go-bag/${estateId}`, clean, auth());
+      setItems(clean);
+      onDirty?.();
+      return true;
+    } catch (e) {
+      toast.error('Failed to save go-bag');
+      return false;
+    } finally { setSaving(false); }
+  };
+
+  const startNew = (preset = {}) => {
+    const blank = {
+      id: 'NEW', category: preset.category || 'other', name: preset.name || '',
+      qty: preset.qty || '', expires_at: '', last_checked: today, notes: '',
+    };
+    setItems(it => [...it, blank]);
+    setEditingId('NEW');
+  };
+  const updateField = (id, patch) => setItems(it => it.map(x => x.id === id ? { ...x, ...patch } : x));
+  const removeItem = async (id) => {
+    const next = items.filter(x => x.id !== id);
+    setItems(next);
+    if (id === 'NEW') return;   // never persisted yet
+    const ok = await persist(next);
+    if (ok) toast.success('Item removed');
+  };
+  const seedStarter = async () => {
     const existing = new Set(items.map(i => i.name.toLowerCase()));
     const adds = STARTER_ITEMS
       .filter(s => !existing.has(s.name.toLowerCase()))
       .map(s => ({ ...s, id: crypto.randomUUID(), last_checked: today, expires_at: '', notes: '' }));
-    setItems(it => [...it, ...adds]);
-    toast.success(`Added ${adds.length} starter items`);
+    const next = [...items, ...adds];
+    const ok = await persist(next);
+    if (ok) toast.success(`Added ${adds.length} starter items`);
+  };
+  const commitRow = async (id) => {
+    const row = items.find(x => x.id === id);
+    if (!row || !row.name?.trim()) {
+      toast.error('Name is required');
+      return;
+    }
+    // Replace 'NEW' sentinel with a real id on first commit.
+    const finalId = id === 'NEW' ? crypto.randomUUID() : id;
+    const next = items.map(x => x.id === id ? { ...x, id: finalId } : x);
+    const ok = await persist(next);
+    if (ok) {
+      setEditingId(null);
+      toast.success('Saved');
+    }
+  };
+  const cancelRow = (id) => {
+    if (id === 'NEW') {
+      setItems(it => it.filter(x => x.id !== 'NEW'));
+    }
+    setEditingId(null);
   };
 
-  const save = async () => {
-    setSaving(true);
-    try {
-      const clean = items.filter(i => i.name?.trim());
-      await axios.put(`${API_URL}/ccp/go-bag/${estateId}`, clean, auth());
-      toast.success(`Saved ${clean.length} go-bag items`);
-      onDirty?.();
-    } catch (e) {
-      toast.error('Failed to save go-bag');
-    } finally { setSaving(false); }
+  const saveAll = async () => {
+    const ok = await persist(items);
+    if (ok) {
+      setEditingId(null);
+      toast.success(`Saved ${items.length} item${items.length === 1 ? '' : 's'}`);
+    }
   };
 
   return (
     <div className="space-y-4" data-testid="go-bag-panel">
       <p className="text-sm text-[var(--t4)] leading-relaxed">
-        Track what's actually IN your emergency kit, when each item expires, and when you last checked it. Items expiring within 30 days will lower your readiness score.
+        Track what's actually IN your emergency kit. Tap the pencil to edit an item. Items expiring within 30 days will lower your readiness score.
       </p>
 
       {items.length === 0 && (
@@ -236,54 +282,110 @@ export function GoBagPanel({ estateId, onDirty }) {
         </Button>
       )}
 
-      {items.map((it, i) => {
+      {items.map((it) => {
         const flag = flagExpiring(it.expires_at);
-        return (
-          <div key={it.id} className="rounded-2xl p-4 space-y-3" style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}>
-            <div className="flex items-start gap-3">
-              <div className="flex-1 min-w-0 space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <Input data-testid={`gb-name-${i}`} placeholder="Item name *" value={it.name || ''} onChange={e => updateItem(i, { name: e.target.value })} />
-                  <select
-                    value={it.category}
-                    onChange={e => updateItem(i, { category: e.target.value })}
-                    className="rounded-md px-3 py-2 text-sm"
-                    style={{ background: 'var(--bg)', border: '1px solid var(--b)', color: 'var(--t)' }}
-                  >
-                    {GO_BAG_CATS.map(c => <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>)}
-                  </select>
+        const isOpen = editingId === it.id;
+        if (!isOpen) {
+          // ── COLLAPSED ROW — name · qty · expiry · ✎  🗑
+          return (
+            <div
+              key={it.id}
+              className="rounded-2xl flex items-center gap-3 px-3 py-2.5 transition-all"
+              style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}
+              data-testid={`gb-row-${it.id}`}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold truncate" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>
+                  {it.name || '(unnamed)'}
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <Input placeholder="Qty (e.g. 3 gal)" value={it.qty || ''} onChange={e => updateItem(i, { qty: e.target.value })} />
-                  <div className="relative">
-                    <Input type="date" placeholder="Expires" value={it.expires_at || ''} onChange={e => updateItem(i, { expires_at: e.target.value })} />
-                  </div>
-                  <Input type="date" placeholder="Last checked" value={it.last_checked || ''} onChange={e => updateItem(i, { last_checked: e.target.value })} />
+                <div className="text-xs flex items-center gap-2 truncate" style={{ color: 'var(--t4)' }}>
+                  <span className="truncate">{it.category?.replace(/_/g, ' ')}{it.qty ? ` · ${it.qty}` : ''}</span>
+                  {it.expires_at && (
+                    <span className="font-bold flex items-center gap-1" style={{ color: flag?.color || 'var(--t4)' }}>
+                      <Calendar className="w-3 h-3" /> {it.expires_at}{flag?.label ? ` (${flag.label})` : ''}
+                    </span>
+                  )}
                 </div>
-                {flag && (
-                  <div className="flex items-center gap-2 text-xs font-bold" style={{ color: flag.color }}>
-                    {flag.color === '#EF4444' && <AlertTriangle className="w-3.5 h-3.5" />}
-                    {flag.color === '#F59E0B' && <Calendar className="w-3.5 h-3.5" />}
-                    {flag.label}
-                  </div>
-                )}
               </div>
-              <button onClick={() => removeItem(i)} className="p-2 rounded-lg flex-shrink-0" style={{ color: 'var(--rd)' }} aria-label="Remove item">
+              <button
+                onClick={() => setEditingId(it.id)}
+                className="p-2 rounded-lg flex-shrink-0 transition-colors"
+                style={{ color: 'var(--t3)' }}
+                aria-label="Edit item"
+                data-testid={`gb-edit-${it.id}`}
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => removeItem(it.id)}
+                className="p-2 rounded-lg flex-shrink-0 transition-colors"
+                style={{ color: 'var(--rd)' }}
+                aria-label="Delete item"
+                data-testid={`gb-delete-${it.id}`}
+              >
                 <Trash2 className="w-4 h-4" />
               </button>
+            </div>
+          );
+        }
+        // ── EXPANDED EDITOR ROW
+        return (
+          <div
+            key={it.id}
+            className="rounded-2xl p-4 space-y-3"
+            style={{ background: 'var(--bg2)', border: '1px solid var(--gold)' }}
+            data-testid={`gb-edit-row-${it.id}`}
+          >
+            <div className="grid grid-cols-2 gap-2">
+              <Input data-testid={`gb-name-${it.id}`} placeholder="Item name *" autoFocus value={it.name || ''} onChange={e => updateField(it.id, { name: e.target.value })} />
+              <select
+                value={it.category}
+                onChange={e => updateField(it.id, { category: e.target.value })}
+                className="rounded-md px-3 py-2 text-sm"
+                style={{ background: 'var(--bg)', border: '1px solid var(--b)', color: 'var(--t)' }}
+              >
+                {GO_BAG_CATS.map(c => <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>)}
+              </select>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <Input placeholder="Qty (e.g. 3 gal)" value={it.qty || ''} onChange={e => updateField(it.id, { qty: e.target.value })} />
+              <Input type="date" placeholder="Expires" value={it.expires_at || ''} onChange={e => updateField(it.id, { expires_at: e.target.value })} />
+              <Input type="date" placeholder="Last checked" value={it.last_checked || ''} onChange={e => updateField(it.id, { last_checked: e.target.value })} />
+            </div>
+            {flag && flag.label && (
+              <div className="flex items-center gap-2 text-xs font-bold" style={{ color: flag.color }}>
+                {flag.color === '#EF4444' && <AlertTriangle className="w-3.5 h-3.5" />}
+                {flag.color === '#F59E0B' && <Calendar className="w-3.5 h-3.5" />}
+                {flag.label}
+              </div>
+            )}
+            <div className="flex items-center gap-2 pt-1">
+              <Button variant="outline" className="outline-pill-button flex-1" onClick={() => cancelRow(it.id)} data-testid={`gb-cancel-${it.id}`}>
+                Cancel
+              </Button>
+              <Button className="gold-button flex-1" onClick={() => commitRow(it.id)} disabled={saving} data-testid={`gb-commit-${it.id}`}>
+                <Check className="w-4 h-4 mr-1" /> {saving ? 'Saving…' : 'Save item'}
+              </Button>
             </div>
           </div>
         );
       })}
 
-      <div className="flex items-center gap-2">
-        <Button variant="outline" className="outline-pill-button flex-1" onClick={() => addItem()} data-testid="gb-add">
-          <Plus className="w-4 h-4 mr-1" /> Add item
-        </Button>
-        <Button className="gold-button flex-1" onClick={save} disabled={saving} data-testid="gb-save">
-          <Save className="w-4 h-4 mr-1" /> {saving ? 'Saving…' : 'Save kit'}
-        </Button>
-      </div>
+      {/* Bottom actions — Add Item + Save kit (the latter still bulk-saves
+          everything, useful if the user changed multiple rows without
+          opening them. Hidden while a row is open to keep focus clear. */}
+      {editingId === null && (
+        <div className="flex items-center gap-2 pt-1">
+          <Button variant="outline" className="outline-pill-button flex-1" onClick={() => startNew()} data-testid="gb-add">
+            <Plus className="w-4 h-4 mr-1" /> Add item
+          </Button>
+          {items.length > 0 && (
+            <Button className="gold-button flex-1" onClick={saveAll} disabled={saving} data-testid="gb-save-all">
+              <Save className="w-4 h-4 mr-1" /> {saving ? 'Saving…' : `Save kit (${items.length})`}
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
