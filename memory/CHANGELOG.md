@@ -1,6 +1,27 @@
 # CarryOn — Changelog
 
 
+## May 14, 2026 — Collapsed-list + Inline Pencil/Trash everywhere (Beneficiaries + MM)
+
+Rolled out the same compact list rhythm we built for the CCP Go-Bag to two more high-traffic surfaces.
+
+### Beneficiaries page (`/app/frontend/src/pages/BeneficiariesPage.js`)
+- Each beneficiary row now has **inline ✎ pencil → edit modal** and **🗑 trash → delete (with admin confirm dialog when applicable)** alongside the existing expand chevron. No more "expand first, then hunt for buttons".
+- `data-testid`s: `edit-tile-{id}`, `delete-tile-{id}`, `expand-tile-{id}` (kept).
+
+### Milestone Messages (`/app/frontend/src/components/messages/MessageCard.js`)
+- Card rewritten with collapsed-by-default header: icon + title + trigger summary + recipients count + inline ✎ pencil + 🗑 trash + chevron.
+- Tap chevron (or anywhere on the header) → expands to show preview text, video thumbnail, attachment block, recipient list, and Download action.
+- `Delivered` pill moved into the collapsed header.
+- All previous functionality preserved; existing `openEdit`, `handleDelete`, `handleDownload`, `playVideo`, `downloadAttachment` props unchanged.
+
+### Verified
+- `mcp_lint_javascript` on both files → clean.
+- Playwright smoke test: `/messages` and `/beneficiaries` both load with **0 page errors**.
+- `bash housekeeping.sh --strict` → 0 warnings / 0 failures.
+
+
+
 ## May 14, 2026 — Go-Bag UX: collapsed list + edit-in-place
 
 User feedback: "Save button does nothing here ... should give me a collapsed list of items with quantities and expiration dates and each one should have a pencil and trash icon so that I can open it and edit it or just delete it right there."

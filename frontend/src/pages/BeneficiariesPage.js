@@ -989,6 +989,27 @@ const BeneficiariesPage = () => {
                           <Shield className="w-3 h-3 flex-shrink-0" /> {isInSuccession ? getSuccessionLabel(succRank).toUpperCase() : 'NOT IN SUCCESSION'}
                         </span>
                         <button
+                          onClick={(e) => { e.stopPropagation(); openEditModal(ben); }}
+                          className="h-7 w-7 flex items-center justify-center rounded-md text-[var(--t4)] hover:text-[var(--gold)] hover:bg-[var(--s)] transition-colors"
+                          aria-label="Edit beneficiary"
+                          data-testid={`edit-tile-${ben.id}`}
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            isAdmin
+                              ? setDeleteTarget({ id: ben.id, name: `${ben.first_name} ${ben.last_name}`.trim() })
+                              : handleDelete(ben.id);
+                          }}
+                          className="h-7 w-7 flex items-center justify-center rounded-md text-[var(--t4)] hover:text-[var(--rd)] hover:bg-[var(--s)] transition-colors"
+                          aria-label="Delete beneficiary"
+                          data-testid={`delete-tile-${ben.id}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
                           onClick={() => setExpandedTiles(prev => {
                             const next = new Set(prev);
                             next.has(ben.id) ? next.delete(ben.id) : next.add(ben.id);
