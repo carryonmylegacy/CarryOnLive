@@ -217,6 +217,18 @@ export default function useECTMessageActions({
   const onMsgMouseUp = () => {
     clearTimeout(msgLongPressTimer.current);
     msgLongPressTimer.current = null;
+    // If the long-press already triggered and opened the action menu,
+    // refresh `menuOpenedAtRef` so the synthetic `click` that fires
+    // on mouseup (now landing on the menu's backdrop overlay) is
+    // inside the backdrop's grace window and doesn't slam the menu
+    // shut. Without this, a hold of >900ms (very natural for users
+    // who want to see the menu before releasing) would flash the
+    // menu and immediately close it. After consuming the flag we
+    // reset it so subsequent clicks on OTHER bubbles aren't eaten.
+    if (msgLongPressTriggered.current) {
+      menuOpenedAtRef.current = Date.now();
+      msgLongPressTriggered.current = false;
+    }
   };
 
   const onMsgMouseLeave = () => {
