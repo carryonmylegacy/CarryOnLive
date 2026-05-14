@@ -67,6 +67,7 @@ from routes.shift_scheduling import router as shift_scheduling_router
 from routes.team_chat import router as team_chat_router
 from routes.estate_chat import router as estate_chat_router
 from routes.connected_protocol import router as ccp_router
+from routes.ccp_depth import router as ccp_depth_router
 from routes.downloads import router as downloads_router
 from routes.notification_prefs import router as notification_prefs_router
 from routes.training_tracker import router as training_tracker_router
@@ -277,6 +278,7 @@ api_router.include_router(shift_scheduling_router)
 api_router.include_router(team_chat_router)
 api_router.include_router(estate_chat_router)
 api_router.include_router(ccp_router)
+api_router.include_router(ccp_depth_router)
 api_router.include_router(downloads_router)
 api_router.include_router(notification_prefs_router)
 api_router.include_router(training_tracker_router)

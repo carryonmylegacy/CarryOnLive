@@ -1,0 +1,568 @@
+/**
+ * CCP Depth Panels — Household Roster + Go-Bag + Rendezvous +
+ * Out-of-Area Contact + Drill + Activation, exported as discrete
+ * components so ConnectedProtocolPage can mount each behind its own
+ * SlidePanel without bundling the whole module up front.
+ *
+ * All panels share the same primitives (gold-button, input/textarea
+ * surface styles) so they feel like one coherent product.
+ */
+import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
+import { toast } from 'sonner';
+import { Plus, Trash2, Save, Mail, AlertTriangle, Calendar } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
+import { API_URL } from '../../config';
+
+const auth = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` } });
+
+// ─── HOUSEHOLD ROSTER ───────────────────────────────────────────
+const ROLE_OPTIONS = [
+  ['adult', 'Adult'], ['child', 'Child'], ['elderly', 'Elderly'],
+  ['dependent', 'Dependent'], ['pet', 'Pet'],
+];
+
+export function HouseholdRosterPanel({ estateId, onDirty }) {
+  const [members, setMembers] = useState([]);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!estateId) return;
+    axios.get(`${API_URL}/ccp/household/${estateId}`, auth())
+      .then(r => setMembers(r.data.members || []))
+      .catch(() => {});
+  }, [estateId]);
+
+  const addMember = () => setMembers(m => [...m, {
+    id: crypto.randomUUID(), name: '', role: 'adult', age: null, relationship: '',
+    medical_conditions: '', allergies: '', prescriptions: '', blood_type: '',
+    primary_doctor: '', school_or_employer: '', notes: '',
+  }]);
+  const updateMember = (i, patch) => setMembers(m => m.map((x, idx) => idx === i ? { ...x, ...patch } : x));
+  const removeMember = (i) => setMembers(m => m.filter((_, idx) => idx !== i));
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const clean = members.filter(m => m.name?.trim());
+      await axios.put(`${API_URL}/ccp/household/${estateId}`, clean, auth());
+      toast.success(`Saved ${clean.length} household member${clean.length === 1 ? '' : 's'}`);
+      onDirty?.();
+    } catch (e) {
+      toast.error('Failed to save household');
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="space-y-4" data-testid="household-roster-panel">
+      <p className="text-sm text-[var(--t4)] leading-relaxed">
+        Add every member of your household — children, dependents, elderly relatives, pets. Each plan you create will use this roster automatically.
+      </p>
+
+      {members.length === 0 && (
+        <div className="rounded-2xl p-8 text-center" style={{ background: 'var(--s)', border: '1px dashed var(--b)' }}>
+          <p className="text-sm text-[var(--t4)] mb-3">No members added yet.</p>
+        </div>
+      )}
+
+      {members.map((m, i) => (
+        <div key={m.id} className="rounded-2xl p-4 space-y-3" style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}>
+          <div className="flex items-start gap-3">
+            <div className="flex-1 min-w-0 space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <Input data-testid={`hh-name-${i}`} placeholder="Name *" value={m.name || ''} onChange={e => updateMember(i, { name: e.target.value })} />
+                <select
+                  data-testid={`hh-role-${i}`}
+                  value={m.role || 'adult'}
+                  onChange={e => updateMember(i, { role: e.target.value })}
+                  className="rounded-md px-3 py-2 text-sm"
+                  style={{ background: 'var(--bg)', border: '1px solid var(--b)', color: 'var(--t)' }}
+                >
+                  {ROLE_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Input placeholder="Relationship (e.g. spouse, son)" value={m.relationship || ''} onChange={e => updateMember(i, { relationship: e.target.value })} />
+                <Input placeholder="Age" type="number" value={m.age ?? ''} onChange={e => updateMember(i, { age: e.target.value ? parseInt(e.target.value, 10) : null })} />
+              </div>
+              <details className="rounded-lg" style={{ background: 'var(--s)' }}>
+                <summary className="px-3 py-2 text-xs font-bold cursor-pointer text-[var(--t4)]">Medical & emergency info</summary>
+                <div className="p-3 space-y-2">
+                  <Input placeholder="Medical conditions" value={m.medical_conditions || ''} onChange={e => updateMember(i, { medical_conditions: e.target.value })} />
+                  <Input placeholder="Allergies" value={m.allergies || ''} onChange={e => updateMember(i, { allergies: e.target.value })} />
+                  <Input placeholder="Prescriptions" value={m.prescriptions || ''} onChange={e => updateMember(i, { prescriptions: e.target.value })} />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input placeholder="Blood type" value={m.blood_type || ''} onChange={e => updateMember(i, { blood_type: e.target.value })} />
+                    <Input placeholder="Primary doctor" value={m.primary_doctor || ''} onChange={e => updateMember(i, { primary_doctor: e.target.value })} />
+                  </div>
+                  <Input placeholder="School / employer" value={m.school_or_employer || ''} onChange={e => updateMember(i, { school_or_employer: e.target.value })} />
+                </div>
+              </details>
+            </div>
+            <button onClick={() => removeMember(i)} className="p-2 rounded-lg flex-shrink-0" style={{ color: 'var(--rd)' }} data-testid={`hh-remove-${i}`} aria-label="Remove member">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      ))}
+
+      <div className="flex items-center gap-2">
+        <Button variant="outline" className="outline-pill-button flex-1" onClick={addMember} data-testid="hh-add">
+          <Plus className="w-4 h-4 mr-1" /> Add member
+        </Button>
+        <Button className="gold-button flex-1" onClick={save} disabled={saving} data-testid="hh-save">
+          <Save className="w-4 h-4 mr-1" /> {saving ? 'Saving…' : 'Save roster'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── GO-BAG INVENTORY ──────────────────────────────────────────
+const GO_BAG_CATS = [
+  'water', 'food', 'medication', 'first_aid', 'tools', 'documents',
+  'cash', 'clothing', 'communication', 'pet_supplies', 'comfort', 'other',
+];
+
+const STARTER_ITEMS = [
+  { category: 'water', name: '1 gal water per person per day', qty: '3-day supply' },
+  { category: 'food', name: 'Non-perishable food', qty: '3-day supply' },
+  { category: 'first_aid', name: 'First-aid kit', qty: '1' },
+  { category: 'tools', name: 'Flashlight + batteries', qty: '1' },
+  { category: 'communication', name: 'Battery / crank radio', qty: '1' },
+  { category: 'documents', name: 'Copies of ID, insurance, deeds', qty: '1 set' },
+  { category: 'cash', name: 'Small bills + coins', qty: '$200' },
+];
+
+export function GoBagPanel({ estateId, onDirty }) {
+  const [items, setItems] = useState([]);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!estateId) return;
+    axios.get(`${API_URL}/ccp/go-bag/${estateId}`, auth())
+      .then(r => setItems(r.data.items || []))
+      .catch(() => {});
+  }, [estateId]);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const flagExpiring = (exp) => {
+    if (!exp) return null;
+    const d = new Date(exp);
+    const diffDays = Math.ceil((d - new Date()) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) return { color: '#EF4444', label: 'EXPIRED' };
+    if (diffDays <= 30) return { color: '#F59E0B', label: `${diffDays}d left` };
+    return { color: '#22C993', label: 'Fresh' };
+  };
+
+  const addItem = (preset = {}) => setItems(it => [...it, {
+    id: crypto.randomUUID(), category: preset.category || 'other', name: preset.name || '',
+    qty: preset.qty || '', expires_at: '', last_checked: today, notes: '',
+  }]);
+  const updateItem = (i, patch) => setItems(it => it.map((x, idx) => idx === i ? { ...x, ...patch } : x));
+  const removeItem = (i) => setItems(it => it.filter((_, idx) => idx !== i));
+  const seedStarter = () => {
+    const existing = new Set(items.map(i => i.name.toLowerCase()));
+    const adds = STARTER_ITEMS
+      .filter(s => !existing.has(s.name.toLowerCase()))
+      .map(s => ({ ...s, id: crypto.randomUUID(), last_checked: today, expires_at: '', notes: '' }));
+    setItems(it => [...it, ...adds]);
+    toast.success(`Added ${adds.length} starter items`);
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const clean = items.filter(i => i.name?.trim());
+      await axios.put(`${API_URL}/ccp/go-bag/${estateId}`, clean, auth());
+      toast.success(`Saved ${clean.length} go-bag items`);
+      onDirty?.();
+    } catch (e) {
+      toast.error('Failed to save go-bag');
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="space-y-4" data-testid="go-bag-panel">
+      <p className="text-sm text-[var(--t4)] leading-relaxed">
+        Track what's actually IN your emergency kit, when each item expires, and when you last checked it. Items expiring within 30 days will lower your readiness score.
+      </p>
+
+      {items.length === 0 && (
+        <Button variant="outline" className="outline-pill-button w-full" onClick={seedStarter} data-testid="gobag-seed">
+          <Plus className="w-4 h-4 mr-1" /> Start with FEMA-recommended 7-item kit
+        </Button>
+      )}
+
+      {items.map((it, i) => {
+        const flag = flagExpiring(it.expires_at);
+        return (
+          <div key={it.id} className="rounded-2xl p-4 space-y-3" style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}>
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0 space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Input data-testid={`gb-name-${i}`} placeholder="Item name *" value={it.name || ''} onChange={e => updateItem(i, { name: e.target.value })} />
+                  <select
+                    value={it.category}
+                    onChange={e => updateItem(i, { category: e.target.value })}
+                    className="rounded-md px-3 py-2 text-sm"
+                    style={{ background: 'var(--bg)', border: '1px solid var(--b)', color: 'var(--t)' }}
+                  >
+                    {GO_BAG_CATS.map(c => <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>)}
+                  </select>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <Input placeholder="Qty (e.g. 3 gal)" value={it.qty || ''} onChange={e => updateItem(i, { qty: e.target.value })} />
+                  <div className="relative">
+                    <Input type="date" placeholder="Expires" value={it.expires_at || ''} onChange={e => updateItem(i, { expires_at: e.target.value })} />
+                  </div>
+                  <Input type="date" placeholder="Last checked" value={it.last_checked || ''} onChange={e => updateItem(i, { last_checked: e.target.value })} />
+                </div>
+                {flag && (
+                  <div className="flex items-center gap-2 text-xs font-bold" style={{ color: flag.color }}>
+                    {flag.color === '#EF4444' && <AlertTriangle className="w-3.5 h-3.5" />}
+                    {flag.color === '#F59E0B' && <Calendar className="w-3.5 h-3.5" />}
+                    {flag.label}
+                  </div>
+                )}
+              </div>
+              <button onClick={() => removeItem(i)} className="p-2 rounded-lg flex-shrink-0" style={{ color: 'var(--rd)' }} aria-label="Remove item">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        );
+      })}
+
+      <div className="flex items-center gap-2">
+        <Button variant="outline" className="outline-pill-button flex-1" onClick={() => addItem()} data-testid="gb-add">
+          <Plus className="w-4 h-4 mr-1" /> Add item
+        </Button>
+        <Button className="gold-button flex-1" onClick={save} disabled={saving} data-testid="gb-save">
+          <Save className="w-4 h-4 mr-1" /> {saving ? 'Saving…' : 'Save kit'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── RENDEZVOUS POINTS ─────────────────────────────────────────
+export function RendezvousPanel({ estateId, onDirty }) {
+  const [data, setData] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!estateId) return;
+    axios.get(`${API_URL}/ccp/rendezvous/${estateId}`, auth())
+      .then(r => setData(r.data || {}))
+      .catch(() => {});
+  }, [estateId]);
+
+  const update = (patch) => setData(d => ({ ...d, ...patch }));
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await axios.put(`${API_URL}/ccp/rendezvous/${estateId}`, data, auth());
+      toast.success('Meetup points saved');
+      onDirty?.();
+    } catch (e) {
+      toast.error('Failed to save');
+    } finally { setSaving(false); }
+  };
+
+  const tier = (prefix, title, color) => (
+    <div className="rounded-2xl p-4 space-y-2" style={{ background: 'var(--bg2)', border: `1px solid ${color}55` }}>
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-bold tracking-wide uppercase" style={{ color }}>{title}</span>
+      </div>
+      <Input placeholder={`Label (e.g. "Grandma's house")`} value={data[`${prefix}_label`] || ''} onChange={e => update({ [`${prefix}_label`]: e.target.value })} />
+      <Input placeholder="Address" value={data[`${prefix}_address`] || ''} onChange={e => update({ [`${prefix}_address`]: e.target.value })} />
+      <Textarea placeholder="Notes (gate code, contact, route hint…)" rows={2} value={data[`${prefix}_notes`] || ''} onChange={e => update({ [`${prefix}_notes`]: e.target.value })} />
+    </div>
+  );
+
+  return (
+    <div className="space-y-4" data-testid="rendezvous-panel">
+      <p className="text-sm text-[var(--t4)] leading-relaxed">
+        Three meetup points in concentric rings — across the street, across town, and out of state. Everyone in your household memorizes all three so any reachable one works.
+      </p>
+      {tier('primary', 'Primary — near home', '#22C993')}
+      {tier('secondary', 'Secondary — across town', '#3B7BF7')}
+      {tier('tertiary', 'Tertiary — out of state', '#d4af37')}
+
+      <div className="rounded-2xl p-4 space-y-2" style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}>
+        <Label className="text-xs font-bold tracking-wide uppercase text-[var(--t4)]">Evacuation route notes</Label>
+        <Textarea placeholder="Preferred routes, alternate routes, what to do if I-95 is closed…" rows={3} value={data.evacuation_routes || ''} onChange={e => update({ evacuation_routes: e.target.value })} />
+      </div>
+
+      <Button className="gold-button w-full" onClick={save} disabled={saving} data-testid="rdv-save">
+        <Save className="w-4 h-4 mr-1" /> {saving ? 'Saving…' : 'Save meetup points'}
+      </Button>
+    </div>
+  );
+}
+
+// ─── OUT-OF-AREA RELAY CONTACT ─────────────────────────────────
+export function OutOfAreaPanel({ estateId, onDirty }) {
+  const [data, setData] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!estateId) return;
+    axios.get(`${API_URL}/ccp/out-of-area/${estateId}`, auth())
+      .then(r => setData(r.data || {}))
+      .catch(() => {});
+  }, [estateId]);
+
+  const update = (patch) => setData(d => ({ ...d, ...patch }));
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await axios.put(`${API_URL}/ccp/out-of-area/${estateId}`, data, auth());
+      toast.success('Out-of-area contact saved');
+      onDirty?.();
+    } catch (e) {
+      toast.error('Failed to save');
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="space-y-4" data-testid="out-of-area-panel">
+      <div className="rounded-2xl p-4" style={{ background: 'rgba(59,123,247,0.06)', border: '1px solid rgba(59,123,247,0.2)' }}>
+        <p className="text-sm leading-relaxed text-[var(--t3)]">
+          <strong className="text-[var(--t)]">Why this matters:</strong> in a regional disaster, local phone lines and cell towers fail before long-distance ones. One out-of-state relay contact who everyone can call gives your family a single rendezvous point of information — FEMA's #1 communication recommendation.
+        </p>
+      </div>
+
+      <div className="space-y-3 rounded-2xl p-4" style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}>
+        <Input placeholder="Full name *" value={data.name || ''} onChange={e => update({ name: e.target.value })} data-testid="ooa-name" />
+        <div className="grid grid-cols-2 gap-2">
+          <Input placeholder="Relationship" value={data.relationship || ''} onChange={e => update({ relationship: e.target.value })} />
+          <Input placeholder="Phone" value={data.phone || ''} onChange={e => update({ phone: e.target.value })} />
+        </div>
+        <Input placeholder="Email" type="email" value={data.email || ''} onChange={e => update({ email: e.target.value })} />
+        <div className="grid grid-cols-2 gap-2">
+          <Input placeholder="City" value={data.city || ''} onChange={e => update({ city: e.target.value })} />
+          <Input placeholder="State" value={data.state || ''} onChange={e => update({ state: e.target.value })} />
+        </div>
+        <Textarea placeholder="Notes (work hours, alternate numbers, who else to try…)" rows={2} value={data.notes || ''} onChange={e => update({ notes: e.target.value })} />
+      </div>
+
+      <Button className="gold-button w-full" onClick={save} disabled={saving} data-testid="ooa-save">
+        <Save className="w-4 h-4 mr-1" /> {saving ? 'Saving…' : 'Save relay contact'}
+      </Button>
+    </div>
+  );
+}
+
+// ─── FAMILY DRILL — practice broadcast via email ──────────────
+export function DrillPanel({ estateId, plans, onDone }) {
+  const [planId, setPlanId] = useState(plans?.[0]?.id || '');
+  const [emails, setEmails] = useState('');
+  const [note, setNote] = useState('');
+  const [sending, setSending] = useState(false);
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    if (!estateId) return;
+    axios.get(`${API_URL}/ccp/drill/history/${estateId}`, auth())
+      .then(r => setHistory(r.data || []))
+      .catch(() => {});
+  }, [estateId]);
+
+  const send = async () => {
+    const list = emails.split(/[\s,;]+/).map(s => s.trim()).filter(Boolean);
+    if (list.length === 0) { toast.error('Add at least one email'); return; }
+    setSending(true);
+    try {
+      const plan = plans?.find(p => p.id === planId);
+      const res = await axios.post(`${API_URL}/ccp/drill/run`, {
+        estate_id: estateId,
+        plan_id: planId || null,
+        plan_name: plan?.name || 'Your CarryOn plan',
+        recipient_emails: list,
+        custom_note: note || null,
+      }, auth());
+      const sent = res.data.results.filter(r => r.sent).length;
+      toast.success(`Drill sent to ${sent}/${list.length} recipients`);
+      setEmails(''); setNote('');
+      // refresh history
+      const h = await axios.get(`${API_URL}/ccp/drill/history/${estateId}`, auth());
+      setHistory(h.data || []);
+      onDone?.();
+    } catch (e) {
+      toast.error('Failed to run drill');
+    } finally { setSending(false); }
+  };
+
+  return (
+    <div className="space-y-4" data-testid="drill-panel">
+      <p className="text-sm text-[var(--t4)] leading-relaxed">
+        Send a no-stakes practice email to every household member. They reply confirming they remember the meetup point and out-of-area contact. Running a drill within 12 months earns 10 readiness points.
+      </p>
+
+      <div className="space-y-3 rounded-2xl p-4" style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}>
+        {plans?.length > 0 && (
+          <div>
+            <Label className="text-xs font-bold text-[var(--t4)]">Which plan are we drilling?</Label>
+            <select
+              value={planId} onChange={e => setPlanId(e.target.value)}
+              className="w-full mt-1 rounded-md px-3 py-2 text-sm"
+              style={{ background: 'var(--bg)', border: '1px solid var(--b)', color: 'var(--t)' }}
+              data-testid="drill-plan-select"
+            >
+              {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
+        )}
+        <div>
+          <Label className="text-xs font-bold text-[var(--t4)]">Recipient emails (comma or newline separated)</Label>
+          <Textarea
+            placeholder="spouse@example.com, dad@example.com, sister@example.com"
+            rows={3} value={emails} onChange={e => setEmails(e.target.value)}
+            data-testid="drill-emails"
+          />
+        </div>
+        <div>
+          <Label className="text-xs font-bold text-[var(--t4)]">Optional personal note</Label>
+          <Textarea placeholder="Hey everyone — quick test, please reply!" rows={2} value={note} onChange={e => setNote(e.target.value)} />
+        </div>
+        <Button className="gold-button w-full" onClick={send} disabled={sending} data-testid="drill-send">
+          <Mail className="w-4 h-4 mr-1" /> {sending ? 'Sending drill…' : 'Send drill email'}
+        </Button>
+      </div>
+
+      {history.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs font-bold tracking-wide uppercase text-[var(--t4)]">Recent drills</div>
+          {history.slice(0, 5).map(h => (
+            <div key={h.id} className="rounded-xl p-3 text-xs flex items-center justify-between" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+              <div>
+                <div className="font-bold text-[var(--t)]">{h.plan_name}</div>
+                <div className="text-[var(--t4)]">{new Date(h.started_at).toLocaleString()}</div>
+              </div>
+              <div className="text-[var(--t3)]">
+                {h.recipients.filter(r => r.sent).length}/{h.recipients.length} sent
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── PLAN ACTIVATION — real broadcast ──────────────────────────
+export function ActivationPanel({ estateId, plans, rendezvous, onDone }) {
+  const [planId, setPlanId] = useState(plans?.[0]?.id || '');
+  const [emails, setEmails] = useState('');
+  const [rdvLabel, setRdvLabel] = useState(rendezvous?.primary_label || '');
+  const [rdvAddr, setRdvAddr] = useState(rendezvous?.primary_address || '');
+  const [instructions, setInstructions] = useState('');
+  const [activating, setActivating] = useState(false);
+  const [recent, setRecent] = useState(null);
+
+  useEffect(() => {
+    if (!estateId) return;
+    axios.get(`${API_URL}/ccp/activations/${estateId}`, auth())
+      .then(r => setRecent((r.data || []).find(a => !a.ended_at) || null))
+      .catch(() => {});
+  }, [estateId]);
+
+  const start = async () => {
+    const list = emails.split(/[\s,;]+/).map(s => s.trim()).filter(Boolean);
+    if (list.length === 0) { toast.error('Add at least one recipient'); return; }
+    const plan = plans?.find(p => p.id === planId);
+    if (!plan) { toast.error('Pick a plan'); return; }
+    if (!window.confirm('This sends a REAL activation email — not a drill. Proceed?')) return;
+    setActivating(true);
+    try {
+      const res = await axios.post(`${API_URL}/ccp/activation/start`, {
+        estate_id: estateId,
+        plan_id: planId,
+        plan_name: plan.name,
+        rendezvous_label: rdvLabel,
+        rendezvous_address: rdvAddr,
+        custom_instructions: instructions,
+        recipient_emails: list,
+      }, auth());
+      const sent = res.data.results.filter(r => r.sent).length;
+      toast.success(`Activation sent to ${sent}/${list.length} — track status below`);
+      const r = await axios.get(`${API_URL}/ccp/activations/${estateId}`, auth());
+      setRecent((r.data || []).find(a => !a.ended_at) || null);
+      onDone?.();
+    } catch (e) {
+      toast.error('Failed to activate');
+    } finally { setActivating(false); }
+  };
+
+  const endActivation = async () => {
+    if (!recent) return;
+    if (!window.confirm('End this activation? Recipients will be marked accounted for.')) return;
+    try {
+      await axios.post(`${API_URL}/ccp/activation/end/${recent.id}`, {}, auth());
+      toast.success('Activation closed');
+      setRecent(null);
+      onDone?.();
+    } catch (e) { toast.error('Failed to close'); }
+  };
+
+  return (
+    <div className="space-y-4" data-testid="activation-panel">
+      <div className="rounded-2xl p-4" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.25)' }}>
+        <div className="flex items-center gap-2 mb-2">
+          <AlertTriangle className="w-4 h-4" style={{ color: '#EF4444' }} />
+          <span className="text-sm font-bold" style={{ color: '#EF4444' }}>Real activation — NOT a drill</span>
+        </div>
+        <p className="text-xs text-[var(--t3)] leading-relaxed">
+          Use this when a real emergency is underway. Every recipient gets an email titled "ACTIVATION" with a status-reply link. For practice, use the Drill panel instead.
+        </p>
+      </div>
+
+      {recent ? (
+        <div className="space-y-3 rounded-2xl p-4" style={{ background: 'var(--bg2)', border: '1px solid #EF444455' }}>
+          <div className="text-xs font-bold tracking-wide uppercase" style={{ color: '#EF4444' }}>Active right now</div>
+          <div className="text-base font-bold text-[var(--t)]">{recent.plan_name}</div>
+          <div className="text-xs text-[var(--t4)]">Started {new Date(recent.started_at).toLocaleString()}</div>
+          <div className="text-sm text-[var(--t3)]">
+            {(recent.status_responses || []).length} of {(recent.recipients || []).length} family members confirmed status
+          </div>
+          <Button variant="outline" className="outline-pill-button w-full" onClick={endActivation} data-testid="activation-end">
+            Mark everyone accounted for — end activation
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-3 rounded-2xl p-4" style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}>
+          {plans?.length > 0 && (
+            <div>
+              <Label className="text-xs font-bold text-[var(--t4)]">Which plan?</Label>
+              <select value={planId} onChange={e => setPlanId(e.target.value)}
+                className="w-full mt-1 rounded-md px-3 py-2 text-sm"
+                style={{ background: 'var(--bg)', border: '1px solid var(--b)', color: 'var(--t)' }}
+                data-testid="activation-plan-select">
+                {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+          )}
+          <div>
+            <Label className="text-xs font-bold text-[var(--t4)]">Recipient emails</Label>
+            <Textarea placeholder="spouse@example.com, dad@example.com" rows={2} value={emails} onChange={e => setEmails(e.target.value)} data-testid="activation-emails" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Input placeholder="Meetup label" value={rdvLabel} onChange={e => setRdvLabel(e.target.value)} />
+            <Input placeholder="Meetup address" value={rdvAddr} onChange={e => setRdvAddr(e.target.value)} />
+          </div>
+          <Textarea placeholder="Specific instructions for this event (optional)" rows={2} value={instructions} onChange={e => setInstructions(e.target.value)} />
+          <Button className="gold-button w-full" onClick={start} disabled={activating} data-testid="activation-send">
+            <Mail className="w-4 h-4 mr-1" /> {activating ? 'Activating…' : 'Activate plan now'}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}

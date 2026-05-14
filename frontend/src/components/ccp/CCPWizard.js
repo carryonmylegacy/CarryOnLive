@@ -106,6 +106,36 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
   const [editingSections, setEditingSections] = useState({});
   const [detectingLocation, setDetectingLocation] = useState(false);
 
+  // ─── AI Risk Profile — pre-rank disaster tiles by likelihood for
+  //     this household's location so the picker stops asking the user
+  //     to evaluate 17 disasters with equal weight. Fetched once when
+  //     the user reaches step 2, cached server-side for 24h. */
+  const [riskProfile, setRiskProfile] = useState(null);
+  const [riskLoading, setRiskLoading] = useState(false);
+  useEffect(() => {
+    if (step !== 2 || !estateId || riskProfile || riskLoading) return;
+    setRiskLoading(true);
+    fetch(`${API_URL}/ccp/risk-profile`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ estate_id: estateId, city: location || null }),
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => d && setRiskProfile(d))
+      .catch(() => {})
+      .finally(() => setRiskLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, estateId]);
+
+  // ─── name lookup: option-id → ranked-entry from xAI
+  const riskTierByOptionId = (optId) => {
+    if (!riskProfile?.ranked) return null;
+    // CONCERN_OPTIONS.id is lowercase, ranked.name is Title-Case
+    const e = riskProfile.ranked.find(r => r.name.toLowerCase().replace(/\s+/g, '_').includes(optId)
+      || optId.includes(r.name.toLowerCase().replace(/\s+/g, '_')));
+    return e || null;
+  };
+  const tierColor = (tier) => tier === 'high' ? '#EF4444' : tier === 'medium' ? '#F59E0B' : '#64748B';
+
   // Mirror persistable wizard state to sessionStorage on every change.
   useEffect(() => {
     // Don't persist after the plan is saved — the wizard transitions to
@@ -391,21 +421,60 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
             </p>
           </div>
 
+          {/* AI Risk Profile banner — shows the top-3 disasters the xAI
+              model ranked highest for the household's location. Quietly
+              omitted if the model didn't return a profile. */}
+          {riskProfile?.ranked?.length > 0 && (
+            <div
+              className="rounded-2xl p-3 flex items-start gap-3"
+              data-testid="ccp-risk-profile"
+              style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)' }}
+            >
+              <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#d4af37' }} />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold tracking-wide uppercase mb-1" style={{ color: '#d4af37' }}>
+                  AI-suggested top risks for your area
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {riskProfile.ranked.slice(0, 3).map(r => (
+                    <span key={r.name} className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: `${tierColor(r.tier)}22`, color: tierColor(r.tier) }}>
+                      {r.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          {riskLoading && !riskProfile && (
+            <div className="text-center text-xs" style={{ color: 'var(--t5)' }}>
+              <Loader2 className="w-3 h-3 inline animate-spin mr-1" /> Ranking risks for your area…
+            </div>
+          )}
+
           <div className="grid grid-cols-3 gap-2.5">
             {CONCERN_OPTIONS.map(opt => {
               const Icon = opt.icon;
               const selected = selectedConcern === opt.id;
+              const tier = riskTierByOptionId(opt.id);
               return (
                 <button
                   key={opt.id}
                   onClick={() => setSelectedConcern(opt.id)}
-                  className="flex flex-col items-center justify-center py-4 px-2 rounded-xl transition-all active:scale-[0.95]"
+                  className="relative flex flex-col items-center justify-center py-4 px-2 rounded-xl transition-all active:scale-[0.95]"
                   data-testid={`ccp-wizard-concern-${opt.id}`}
                   style={{
                     background: selected ? `${opt.color}15` : 'var(--s)',
                     border: tileBorder(selected, opt.color),
                   }}
                 >
+                  {tier && tier.tier === 'high' && (
+                    <span
+                      className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
+                      style={{ background: '#EF4444', boxShadow: '0 0 8px rgba(239,68,68,0.6)' }}
+                      aria-label="High risk for your area"
+                    />
+                  )}
                   <Icon className="w-6 h-6 mb-1.5" style={{ color: selected ? opt.color : 'var(--t5)' }} />
                   <span className="text-[11px] font-bold leading-tight text-center" style={{ color: selected ? opt.color : 'var(--t4)' }}>
                     {opt.label}

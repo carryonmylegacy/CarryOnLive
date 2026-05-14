@@ -1,6 +1,65 @@
 # CarryOn — Changelog
 
 
+## May 14, 2026 — CCP Depth: Persistent State + Readiness Score + AI Risk + Drill/Activation
+
+User feedback: "CCP feels juvenile and prototype-like" vs CFP. Goal — give CCP the same "living model of your life" depth CFP has via entities/accounts/bills.
+
+### Bug fix — "How CCP Works" flash-and-disappear
+`useEffect` watching `showWelcome && plans.length > 0` auto-dismissed the welcome on every state flip. Now uses a `useRef` so auto-dismiss happens **once** on initial mount; explicit re-opens via the "How CCP Works" button now stay open until the user closes them.
+
+### Width fix — CCP home now consistent with wizards
+`max-w-[1400px]` → `max-w-3xl` (768px) on the CCP home shell so the rows of action tiles match the width of the wizard steps (1/3, 2/3, 3/3). No more jarring zoom-out → zoom-in jumps as the user moves through the flow.
+
+### New backend module — `/app/backend/routes/ccp_depth.py`
+8 new endpoints, registered on `api_router`:
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET/PUT /ccp/household/{estate_id}` | Persistent household roster (name, role, age, medical, allergies, blood type, doctor, school/employer). |
+| `GET/PUT /ccp/go-bag/{estate_id}` | Inventory with categories + expiration dates + last-checked. |
+| `GET/PUT /ccp/rendezvous/{estate_id}` | Three meetup points (primary/secondary/tertiary) + evacuation routes. |
+| `GET/PUT /ccp/out-of-area/{estate_id}` | FEMA-recommended out-of-state relay contact. |
+| `POST /ccp/drill/run`, `GET /ccp/drill/history/{estate_id}` | Practice broadcast via Resend email (swapped from Twilio per user request). Logged for history. |
+| `POST /ccp/activation/start`, `POST /ccp/activation/end/{id}`, `POST /ccp/activation/status`, `GET /ccp/activation/{id}`, `GET /ccp/activations/{estate_id}` | Real-event broadcast + status reply tracking, again via Resend email. |
+| `GET /ccp/readiness/{estate_id}` | Computed 0–100 score with 8-factor breakdown, mirroring CFP's completeness % feel. |
+| `POST /ccp/risk-profile` | Uses xAI (grok-3-mini for speed) to rank the 17 disaster types HIGH/MEDIUM/LOW for the household's zip/city. Cached 24h. |
+
+All new endpoints share an `_require_estate_access` helper that mirrors the ownership/membership rules used by the existing `/ccp` endpoints.
+
+### Verified via curl
+- Roster save → Readiness score 0 → 15. ✅
+- Go-bag (6 items) + Rendezvous + Out-of-Area → 60/100 "Getting There". ✅
+- AI Risk Profile for Miami, FL → Hurricane / Flood / Power Outage all flagged HIGH with specific reasons. Cold call 24s (grok-3-mini), cached call 126ms. ✅
+- Soft-deleted DTS tasks no longer reappear after page reload. ✅ (previous fix verified end-to-end again as a bonus)
+
+### New frontend
+- `/app/frontend/src/components/ccp/ReadinessScoreCard.js` — SVG ring (0–100) with click-to-expand line-item breakdown. Tinted by tier (red→amber→emerald→gold).
+- `/app/frontend/src/components/ccp/CCPDepthPanels.js` — Six exported panels (`HouseholdRosterPanel`, `GoBagPanel`, `RendezvousPanel`, `OutOfAreaPanel`, `DrillPanel`, `ActivationPanel`). All share `gold-button` / `outline-pill-button` styling from the unification sweep.
+- `ConnectedProtocolPage.js`:
+  - Readiness card mounted at the top of the CCP home.
+  - Six new depth tiles (2-column grid, color-coded) added after Past Activations: Roster, Go-Bag, Meetup Points, Out-of-Area, Test the Plan (Drill), Activate Plan.
+  - Each tile opens a `SlidePanel` (which is auto-capped at `max-w-3xl` thanks to yesterday's SlidePanel inner-cap CSS).
+- `CCPWizard.js` step 2 (disaster picker):
+  - AI Risk Profile banner shows the top-3 likely disasters for the household's location (with HIGH/MEDIUM/LOW tier colors).
+  - Each disaster tile shows a small red dot in its top-right if xAI flagged it as HIGH for this area.
+  - Falls back gracefully to "Ranking risks…" spinner if xAI is cold (24s), then disappears silently if no result.
+
+### Resend integration
+Drill and Activation emails use the same `resend` library + `SENDER_EMAIL` already wired for auth/partner emails. No new credentials, no new env vars. Email HTML matches the CarryOn dark-card aesthetic — drill is amber-tinted (practice), activation is red-tinted (real event) with a "Confirm your status" CTA linking to `${FRONTEND_URL}/ccp/status-confirm/{activation_id}` (mount the public status route in a follow-up if you want the link to land cleanly — endpoint already exists at `POST /ccp/activation/status`).
+
+### Housekeeping & lint
+- `bash housekeeping.sh --strict` → 0 warnings / 0 failures.
+- `mcp_lint_javascript` on all new + modified files → clean.
+- `mcp_lint_python` on ccp_depth.py → clean.
+
+### Carry-over for next session
+- Public `/ccp/status-confirm/:activation_id` frontend route — small one-page form that posts to `POST /api/ccp/activation/status`. The email link already points to this URL.
+- Optional: Wizard step 1 ("Who is in your household?") could pre-fill from the new Roster instead of asking each time.
+- Test the CCP home end-to-end on an account that actually has the CCP feature enabled (pitch account info@carryon.us currently doesn't include ccp in its tier).
+
+
+
 ## May 14, 2026 — DTS Soft-Delete Bug Fix + SlidePanel Width Normalization
 
 ### Bug fix — DTS draft re-appears after delete (HIGH)
