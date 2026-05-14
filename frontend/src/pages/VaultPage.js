@@ -569,6 +569,25 @@ const VaultPage = () => {
     handleDesignateBeneficiaries(docId, newList, currentDoc?.visibility_timing);
   };
 
+  const toggleAIEligible = async (doc) => {
+    // Optimistic UI flip so the user sees the gold frame appear
+    // immediately. Roll back on server failure.
+    const next = !doc.ai_eligible;
+    setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, ai_eligible: next } : d));
+    try {
+      await axios.put(
+        `${API_URL}/documents/${doc.id}/ai-eligible?eligible=${next}`,
+        null,
+        { headers: getAuthHeaders() },
+      );
+      toast.success(next ? 'Added to AI analysis' : 'Removed from AI analysis');
+    } catch (err) {
+      setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, ai_eligible: !next } : d));
+      toast.error(err.response?.data?.detail || 'Could not update AI eligibility');
+    }
+  };
+
+
   const toggleVisibilityTiming = (docId, benId, period, currentDoc) => {
     const timing = { ...(currentDoc?.visibility_timing || {}) };
     const benTiming = timing[benId] || { pre: false, post: true };
@@ -1176,6 +1195,7 @@ const VaultPage = () => {
                     setExpandedDesignation={setExpandedDesignation}
                     toggleBeneficiaryForDoc={toggleBeneficiaryForDoc}
                     toggleVisibilityTiming={toggleVisibilityTiming}
+                    onToggleAIEligible={toggleAIEligible}
                   />
                 );
               })}

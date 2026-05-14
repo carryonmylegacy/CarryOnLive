@@ -4,7 +4,7 @@ import asyncio
 import io
 import json as json_module
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pdfplumber
 from fastapi import APIRouter, Depends, HTTPException
@@ -279,15 +279,44 @@ async def gather_estate_context(estate_id: str, include_doc_content: bool = Fals
     # Documents
     context_parts.append("**DOCUMENTS IN VAULT:**")
     if documents:
+        # AI eligibility: users mark only the documents that materially
+        # drive an IAC / EGA analysis (will, trust, POA, deeds, life
+        # insurance policy, etc.). Everything else (random PDFs, photos,
+        # tax-year-old receipts) stays out of the AI prompt so the model
+        # focuses on what matters AND the prompt stays within a sane
+        # token budget. If the user hasn't marked anything yet we fall
+        # back to the legacy "first 10" cap to preserve old behavior.
+        ai_eligible_docs = [d for d in documents if d.get("ai_eligible") is True]
+        if ai_eligible_docs:
+            ai_docs = ai_eligible_docs
+        else:
+            ai_docs = documents[:10]
+
         for doc in documents:
             locked_status = f" [LOCKED - {doc.get('lock_type', 'unknown')}]" if doc.get("is_locked") else ""
+            ai_flag = " [AI-eligible]" if doc.get("ai_eligible") else ""
             context_parts.append(
-                f"- {doc['name']} (Category: {doc['category']}, Type: {doc.get('file_type', 'unknown')}, Size: {doc.get('file_size', 0)} bytes){locked_status}"
+                f"- {doc['name']} (Category: {doc['category']}, Type: {doc.get('file_type', 'unknown')}, Size: {doc.get('file_size', 0)} bytes){locked_status}{ai_flag}"
             )
 
         # Include document content if requested
         if include_doc_content:
             context_parts.append("\n**DOCUMENT CONTENTS (for analysis):**")
+
+            # Adaptive per-doc cap. Grok-4 has a generous context window
+            # but giant prompts are slow AND expensive. Scale the per-doc
+            # text limit based on how many docs the user has flagged so
+            # the total stays in a sane envelope (~80k chars across all
+            # docs as a soft ceiling).
+            n = len(ai_docs)
+            if n <= 8:
+                per_doc_cap = 4000
+            elif n <= 16:
+                per_doc_cap = 2500
+            elif n <= 32:
+                per_doc_cap = 1500
+            else:
+                per_doc_cap = 1000
 
             async def extract_one(doc):
                 try:
@@ -301,10 +330,10 @@ async def gather_estate_context(estate_id: str, include_doc_content: bool = Fals
                 except Exception:
                     return doc["name"], "[Extraction error]"
 
-            results = await asyncio.gather(*[extract_one(doc) for doc in documents[:10]])
+            results = await asyncio.gather(*[extract_one(doc) for doc in ai_docs])
             for name, text in results:
                 if text and not text.startswith("["):
-                    context_parts.append(f"\n--- {name} ---\n{text[:4000]}\n--- End of {name} ---")
+                    context_parts.append(f"\n--- {name} ---\n{text[:per_doc_cap]}\n--- End of {name} ---")
                 else:
                     context_parts.append(f"\n--- {name} ---\n{text}\n---")
     else:
@@ -371,6 +400,55 @@ async def chat_with_guardian(data: ChatRequest, current_user: dict = Depends(get
 
     if not xai_client:
         raise HTTPException(status_code=500, detail="AI service not configured")
+
+    # ── Rate limits (per-user, rolling 24h) ──
+    # `generate_iac` is a heavy full-vault analysis that ends in a PDF
+    # download. Users very rarely change major estate docs more than
+    # once per day, so capping at 1/day prevents accidental re-runs
+    # eating token budget while preserving genuine same-day refreshes
+    # via admin override. Everything else (regular EGA chat, analyze
+    # readiness, state-law lookup, etc.) shares a 10/day pool.
+    if current_user.get("role") != "admin":
+        since = datetime.now(timezone.utc) - timedelta(hours=24)
+        if data.action == "generate_iac":
+            iac_count = await db.guardian_usage.count_documents(
+                {
+                    "user_id": current_user["id"],
+                    "action": "generate_iac",
+                    "created_at": {"$gte": since.isoformat()},
+                }
+            )
+            if iac_count >= 1:
+                raise HTTPException(
+                    status_code=429,
+                    detail="Daily limit reached — Immediate Action Checklist can be regenerated once per day. Try again tomorrow.",
+                )
+        else:
+            ega_count = await db.guardian_usage.count_documents(
+                {
+                    "user_id": current_user["id"],
+                    "action": {"$ne": "generate_iac"},
+                    "created_at": {"$gte": since.isoformat()},
+                }
+            )
+            if ega_count >= 10:
+                raise HTTPException(
+                    status_code=429,
+                    detail="Daily limit reached — Estate Guardian AI allows 10 queries per day. Try again tomorrow.",
+                )
+
+    # Record this attempt before issuing the LLM call so we count
+    # the user's intent even on failure (prevents retry-storms).
+    try:
+        await db.guardian_usage.insert_one(
+            {
+                "user_id": current_user["id"],
+                "action": data.action or "chat",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+    except Exception as _e:  # noqa: BLE001
+        logger.warning(f"guardian_usage record failed: {_e}")
 
     session_id = data.session_id or f"chat_{current_user['id']}_{str(uuid.uuid4())[:8]}"
     action_result = None

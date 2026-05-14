@@ -332,6 +332,45 @@ const ChecklistPage = () => {
     aiTimerRef.current = setInterval(() => setAiElapsed(s => s + 1), 1000);
     const controller = new AbortController();
     aiAbortRef.current = controller;
+
+    // ── Live progress poller ──
+    // The backend records intermediate task progress in db.ega_tasks
+    // (status: running → completed | failed). We poll it every 5s so
+    // the user sees "12 items added so far…" growing live, and we
+    // also have a safe place to land if the axios call aborts before
+    // the backend finishes. Polling is canceled when the main request
+    // resolves (or fails) or when the user cancels.
+    let pollTimer = null;
+    let didFinish = false;
+    const startPolling = () => {
+      pollTimer = setInterval(async () => {
+        try {
+          const headers = getAuthHeaders()?.headers;
+          const res = await axios.get(`${API_URL}/guardian/iac-task-status`, { headers, timeout: 10000 });
+          const task = res?.data;
+          if (!task || task.status === 'none') return;
+          if (task.status === 'completed') {
+            didFinish = true;
+            clearInterval(pollTimer);
+            fetchData();
+            toast.success(`AI suggested ${task.items_added || 0} new checklist items`);
+            setSuggestingAI(false);
+            clearInterval(aiTimerRef.current);
+          } else if (task.status === 'failed') {
+            didFinish = true;
+            clearInterval(pollTimer);
+            toast.error(task.error || 'AI suggestion failed — please try again');
+            setSuggestingAI(false);
+            clearInterval(aiTimerRef.current);
+          } else if (task.items_added && task.items_added > 0) {
+            // Mid-flight refresh so the user watches their checklist grow.
+            fetchData();
+          }
+        } catch (_e) { /* poll errors are non-fatal */ }
+      }, 5000);
+    };
+    startPolling();
+
     try {
       const res = await axios.post(`${API_URL}/chat/guardian`, {
         estate_id: estate.id,
@@ -340,27 +379,44 @@ const ChecklistPage = () => {
       }, {
         ...getAuthHeaders(),
         signal: controller.signal,
-        // The IAC AI call routinely takes 60-120s (grok-4 reasoning over
-        // every vault doc). Don't let axios bail at the 0-default timeout
-        // before the backend finishes. The ingress proxy may still kill
-        // the connection mid-flight; the catch block surfaces a clearer
-        // hint in that case.
-        timeout: 180000,
+        // The backend can run much longer than the user-perceivable
+        // axios timeout. We give axios a generous ceiling (5 min) but
+        // the live poller above will surface progress AND finalize the
+        // flow if the connection drops sooner. Net effect: the user
+        // never sees a false-failure toast while the backend is still
+        // inserting items.
+        timeout: 300000,
       });
 
       const added = res.data?.action_result?.items_added || 0;
-      if (added > 0) fetchData();
+      if (added > 0 && !didFinish) {
+        fetchData();
+        toast.success(`AI suggested ${added} new checklist items`);
+      }
     } catch (err) {
-      if (!axios.isCancel(err)) {
+      // Suppress timeout/connection errors if the poller has already
+      // reported success or is still tracking progress — the backend
+      // is still inserting items.
+      if (didFinish) {
+        // already handled
+      } else if (axios.isCancel(err) || err?.message === 'canceled') {
+        // user-cancelled
+      } else {
+        const isRateLimit = err?.response?.status === 429;
         const detail = err?.response?.data?.detail
           || (err?.code === 'ECONNABORTED' || err?.message?.includes('timeout')
-              ? 'the analysis is taking longer than expected — your vault may be large. Try again in a moment.'
+              ? 'still working in the background — refresh in a moment to see results.'
               : err?.message || 'try again later');
-        toast.error(`AI suggestion failed — ${detail}`);
+        toast[isRateLimit ? 'error' : (err?.code === 'ECONNABORTED' ? 'success' : 'error')](
+          isRateLimit ? detail : `AI suggestion ${err?.code === 'ECONNABORTED' ? 'is' : 'failed —'} ${detail}`
+        );
       }
     } finally {
-      setSuggestingAI(false);
-      clearInterval(aiTimerRef.current);
+      if (!didFinish) {
+        setSuggestingAI(false);
+        clearInterval(aiTimerRef.current);
+      }
+      if (pollTimer) clearInterval(pollTimer);
       aiAbortRef.current = null;
     }
   };

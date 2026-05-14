@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   Lock, Unlock, Eye, Download, Loader2, Edit2, Trash2,
-  Users, ChevronDown, ChevronUp,
+  Users, ChevronDown, ChevronUp, Sparkles,
   Building2, Shield as ShieldIcon, Landmark, Home, User as UserIcon, Settings,
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
@@ -46,12 +46,14 @@ const VaultDocumentCard = ({
   setExpandedDesignation,
   toggleBeneficiaryForDoc,
   toggleVisibilityTiming,
+  onToggleAIEligible,
 }) => {
   return (
     <Card
-      className="glass-card relative overflow-hidden group cursor-pointer"
+      className={`glass-card relative overflow-hidden group cursor-pointer ${doc.ai_eligible ? 'ai-eligible-frame' : ''}`}
       onClick={() => doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handlePreview(doc)}
       data-testid={`document-${doc.id}`}
+      style={doc.ai_eligible ? { boxShadow: '0 0 0 2px var(--gold), 0 8px 24px rgba(212,165,55,0.15)' } : undefined}
     >
       {/* Lock Overlay */}
       {doc.is_locked && (
@@ -81,6 +83,29 @@ const VaultDocumentCard = ({
         {/* Thumbnail area */}
         <div className="h-28 w-full rounded-t-xl overflow-hidden relative">
           <DocThumbnail doc={doc} getAuthHeaders={getAuthHeaders} />
+          {/* AI-eligible toggle — a small sparkles badge in the top-left
+              corner of the thumbnail. Tap to opt this document in /
+              out of EGA & IAC AI analyses. When ON, the card gains a
+              gold frame (see Card className above) so the user can see
+              at a glance which docs feed the AI. Benefactor only. */}
+          {onToggleAIEligible && !doc.is_locked && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onToggleAIEligible(doc); }}
+              className="absolute top-1.5 left-1.5 w-7 h-7 rounded-full flex items-center justify-center transition-all"
+              style={{
+                background: doc.ai_eligible ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(10,14,26,0.85)',
+                border: `1px solid ${doc.ai_eligible ? '#d4af37' : 'rgba(255,255,255,0.18)'}`,
+                color: doc.ai_eligible ? '#080e1a' : '#d4af37',
+                boxShadow: doc.ai_eligible ? '0 0 14px rgba(212,165,55,0.55)' : 'none',
+              }}
+              title={doc.ai_eligible ? 'Included in AI analyses — tap to remove' : 'Include this document in EGA / IAC AI analyses'}
+              aria-pressed={!!doc.ai_eligible}
+              data-testid={`ai-eligible-toggle-${doc.id}`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+            </button>
+          )}
           {/* Entity-link overlay — shows the type of entity this doc is
               linked to (one badge per linked entity, capped at 3). Lets
               the user spot at a glance which docs map to which legal

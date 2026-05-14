@@ -1543,3 +1543,53 @@ async def set_document_pinned_offline(
     )
 
     return {"document_id": document_id, "pinned_offline": bool(pinned)}
+
+
+@router.put("/documents/{document_id}/ai-eligible")
+async def set_document_ai_eligible(
+    document_id: str,
+    eligible: bool,
+    current_user: dict = Depends(get_current_user),
+):
+    """Mark a document as eligible for inclusion in EGA / IAC analyses.
+
+    Only documents the user explicitly opts in get their full text
+    extracted and sent to the AI prompt. This both narrows the AI's
+    attention to the documents that materially drive the analysis
+    (will, trust, POA, deeds, life insurance, etc.) AND keeps the
+    prompt within a sane token budget for grok-4.
+
+    Only the estate owner (benefactor) can flag AI eligibility.
+    Beneficiaries cannot toggle it on documents shared with them.
+    """
+    doc = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    estate = await db.estates.find_one(
+        {"id": doc["estate_id"]},
+        {"_id": 0, "id": 1, "owner_id": 1},
+    )
+    if not estate or estate.get("owner_id") != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Only the estate owner can flag AI eligibility")
+
+    await db.documents.update_one(
+        {"id": document_id},
+        {
+            "$set": {
+                "ai_eligible": bool(eligible),
+                "ai_eligible_at": datetime.now(timezone.utc).isoformat() if eligible else None,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
+    )
+
+    await audit_log(
+        action="document.ai_eligible_on" if eligible else "document.ai_eligible_off",
+        user_id=current_user["id"],
+        resource_type="document",
+        resource_id=document_id,
+        estate_id=doc["estate_id"],
+    )
+
+    return {"document_id": document_id, "ai_eligible": bool(eligible)}
