@@ -331,14 +331,29 @@ const ChecklistPage = () => {
     try {
       const res = await axios.post(`${API_URL}/chat/guardian`, {
         estate_id: estate.id,
-        action: 'generate_checklist',
+        action: 'generate_iac',
         message: 'Analyze all documents in my Secure Digital Vault and generate specific, actionable checklist items with appropriate priority levels (critical, high, medium, low). Extract contact info where possible. Return items sorted by priority.',
-      }, { ...getAuthHeaders(), signal: controller.signal });
+      }, {
+        ...getAuthHeaders(),
+        signal: controller.signal,
+        // The IAC AI call routinely takes 60-120s (grok-4 reasoning over
+        // every vault doc). Don't let axios bail at the 0-default timeout
+        // before the backend finishes. The ingress proxy may still kill
+        // the connection mid-flight; the catch block surfaces a clearer
+        // hint in that case.
+        timeout: 180000,
+      });
 
       const added = res.data?.action_result?.items_added || 0;
       if (added > 0) fetchData();
     } catch (err) {
-      if (!axios.isCancel(err)) toast.error('AI suggestion failed — try again later');
+      if (!axios.isCancel(err)) {
+        const detail = err?.response?.data?.detail
+          || (err?.code === 'ECONNABORTED' || err?.message?.includes('timeout')
+              ? 'the analysis is taking longer than expected — your vault may be large. Try again in a moment.'
+              : err?.message || 'try again later');
+        toast.error(`AI suggestion failed — ${detail}`);
+      }
     } finally {
       setSuggestingAI(false);
       clearInterval(aiTimerRef.current);
