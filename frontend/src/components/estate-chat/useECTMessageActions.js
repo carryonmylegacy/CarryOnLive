@@ -56,23 +56,38 @@ export default function useECTMessageActions({
     setMenuReady(false);
     setTimeout(() => setMenuReady(true), 500);
     setTimeout(() => {
-      const container = scrollContainerRef.current;
-      const bubbleEl = container
-        ? container.querySelector(`[data-testid="msg-bubble-${msgId}"]`)
-        : document.querySelector(`[data-testid="msg-bubble-${msgId}"]`);
-      if (bubbleEl) {
-        const rect = bubbleEl.getBoundingClientRect();
-        if (rect.width > 0 && rect.height > 0) {
-          const viewH = window.visualViewport?.height || window.innerHeight;
-          const msgObj = messages.find(m => m.id === msgId);
-          const isOwn = msgObj?.sender_id === user?.id;
-          const showAbove = rect.top > viewH * 0.45;
-          setMenuPosition({
-            top: rect.top, bottom: rect.bottom,
-            left: rect.left, right: rect.right,
-            isOwn, showAbove,
-          });
+      // The ECT page renders `messageArea` JSX twice — once inside a
+      // `hidden lg:flex` desktop wrapper and once inside an `lg:hidden`
+      // mobile wrapper — and both copies bind the SAME `scrollContainerRef`.
+      // React commits the ref to whichever copy renders last (the mobile
+      // one), so on desktop `scrollContainerRef.current` is a `display:
+      // none` scroller whose bubbles all measure 0×0. Querying within it
+      // would silently skip `setMenuPosition` and the menu would never
+      // appear. Scan the whole document and pick the first bubble that
+      // is actually painted (non-zero rect).
+      const all = Array.from(
+        document.querySelectorAll(`[data-testid="msg-bubble-${msgId}"]`)
+      );
+      let bubbleEl = null;
+      let rect = null;
+      for (const el of all) {
+        const r = el.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) {
+          bubbleEl = el;
+          rect = r;
+          break;
         }
+      }
+      if (bubbleEl && rect) {
+        const viewH = window.visualViewport?.height || window.innerHeight;
+        const msgObj = messages.find(m => m.id === msgId);
+        const isOwn = msgObj?.sender_id === user?.id;
+        const showAbove = rect.top > viewH * 0.45;
+        setMenuPosition({
+          top: rect.top, bottom: rect.bottom,
+          left: rect.left, right: rect.right,
+          isOwn, showAbove,
+        });
       }
       setMsgActionId(msgId);
     }, 100);
