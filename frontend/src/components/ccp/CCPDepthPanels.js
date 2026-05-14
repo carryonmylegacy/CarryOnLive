@@ -276,11 +276,15 @@ export function GoBagPanel({ estateId, onDirty }) {
     }
   };
 
-  // Apply current sort. While a row is being edited we lock the order
-  // so the newly-added 'NEW' row doesn't visually jump around.
+  // Apply current sort. When the user is ADDING a brand-new row
+  // (editingId==='NEW') we pin it to the top of the list and sort the
+  // rest, so the blank editor never slides to a far-away sorted
+  // position before the user has filled in category/name. For
+  // existing-row edits we keep sorting normally so the editor renders
+  // exactly where the user tapped (not at the bottom of the raw
+  // items array — the bug that affected the first edit of every
+  // session before save).
   const sortedItems = React.useMemo(() => {
-    if (editingId !== null) return items;
-    const arr = [...items];
     const cmpStr = (a, b) => String(a || '').localeCompare(String(b || ''), undefined, { sensitivity: 'base' });
     const cmpDate = (a, b) => {
       if (!a && !b) return 0;
@@ -288,7 +292,7 @@ export function GoBagPanel({ estateId, onDirty }) {
       if (!b) return -1;
       return new Date(a).getTime() - new Date(b).getTime();
     };
-    arr.sort((a, b) => {
+    const comparator = (a, b) => {
       switch (sortKey) {
         case 'name_asc':     return cmpStr(a.name, b.name);
         case 'name_desc':    return -cmpStr(a.name, b.name);
@@ -297,8 +301,13 @@ export function GoBagPanel({ estateId, onDirty }) {
         case 'category_asc':
         default:             return cmpStr(a.category, b.category) || cmpStr(a.name, b.name);
       }
-    });
-    return arr;
+    };
+    if (editingId === 'NEW') {
+      const newRow = items.find(x => x.id === 'NEW');
+      const rest = items.filter(x => x.id !== 'NEW').sort(comparator);
+      return newRow ? [newRow, ...rest] : rest;
+    }
+    return [...items].sort(comparator);
   }, [items, sortKey, editingId]);
 
   return (
