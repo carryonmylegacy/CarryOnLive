@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Edit2, Trash2, Users, ChevronDown, ChevronUp, Zap, CheckCircle2 } from 'lucide-react';
+import { Edit2, Trash2, Users, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { computePassdownScore, passdownColor, passdownLabel } from '../../utils/passdownScore';
 
@@ -30,6 +30,12 @@ const getDueInfo = (bill) => {
 };
 
 const BillTile = ({ bill, categoryLabels, beneficiaries, onEdit, onDelete, onDesignationUpdate }) => {
+  // Master collapsed/expanded state. Collapsed shows only name + amount
+  // + due-date + action icons + chevron — the rest of the card body
+  // (category, pass-down readiness, auto-pay badge, payment-account
+  // hint, beneficiary designation list) is hidden until the user
+  // expands. Matches the Go-Bag / FFN / DAV / Messages collapsed-tile
+  // pattern.
   const [expanded, setExpanded] = useState(false);
   const catColor = getCatColor(bill.category);
   const due = getDueInfo(bill);
@@ -64,132 +70,131 @@ const BillTile = ({ bill, categoryLabels, beneficiaries, onEdit, onDelete, onDes
     <Card
       className="glass-card relative overflow-hidden group"
       data-testid={`bill-tile-${bill.id}`}
-      style={{ contentVisibility: 'auto', containIntrinsicSize: '200px' }}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: '120px' }}
     >
       {due.urgent && (
         <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: due.color }} />
       )}
       <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-2">
+        {/* ── Collapsed header — always visible ── */}
+        <div className="flex items-center gap-3">
+          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: catColor }} />
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: catColor }} />
-              <h3 className="text-sm font-bold text-[var(--t)] truncate">{bill.name}</h3>
+            <h3 className="text-sm font-bold text-[var(--t)] truncate">{bill.name}</h3>
+            <div className="flex items-center gap-2 mt-0.5">
+              {bill.amount != null && (
+                <span className="text-sm font-bold text-[var(--t)]">${bill.amount.toLocaleString()}</span>
+              )}
+              {bill.amount != null && <span className="text-[var(--t5)] text-xs">·</span>}
+              <span className="text-xs font-bold" style={{ color: due.color }}>{due.text}</span>
             </div>
-            <p className="text-xs text-[var(--t5)] mb-2">{catLabel}</p>
           </div>
-          {bill.amount && (
-            <div className="text-right flex-shrink-0">
-              <div className="text-lg font-bold text-[var(--t)]">${bill.amount.toLocaleString()}</div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3 text-xs mb-2" style={{ borderTop: '1px solid var(--b)', paddingTop: '8px' }}>
-          <span style={{ color: due.color }} className="font-bold">{due.text}</span>
-          <span className="text-[var(--t5)]">|</span>
-          <span className="text-[var(--t4)]">{bill.due_day ? `${bill.due_day}th monthly` : 'No schedule'}</span>
-        </div>
-
-        {/* Pass-down readiness — at-a-glance signal of how much
-            beneficiary-facing context is captured on this record. */}
-        {(() => {
-          const pdScore = computePassdownScore(bill, 'bill');
-          const pdColor = passdownColor(pdScore);
-          return (
-            <div className="mb-3" data-testid={`passdown-bar-${bill.id}`} title={`${passdownLabel(pdScore)} — ${pdScore}% of pass-down details captured`}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--t5)]">Pass-down readiness</span>
-                <span className="text-[11px] font-bold" style={{ color: pdColor }}>{pdScore}%</span>
-              </div>
-              <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                <div className="h-full transition-all duration-500" style={{ width: `${pdScore}%`, background: pdColor }} />
-              </div>
-            </div>
-          );
-        })()}
-
-        <div className="flex items-center gap-2 mb-2">
-          {bill.is_auto_pay && (
-            <span className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-full font-bold" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
-              <CheckCircle2 className="w-3 h-3" /> Auto-Pay
-            </span>
-          )}
-          {bill.payment_account && (
-            <span className="text-[11px] text-[var(--t5)] truncate">{bill.payment_account}</span>
-          )}
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center justify-between" style={{ borderTop: '1px solid var(--b)', paddingTop: '8px' }}>
-          <div className="flex items-center gap-1.5">
-            <button onClick={() => onEdit(bill)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[var(--gold)]" data-testid={`edit-bill-${bill.id}`} aria-label="Edit bill">
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button onClick={(e) => { e.stopPropagation(); onEdit(bill); }} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[var(--gold)]" data-testid={`edit-bill-${bill.id}`} aria-label="Edit bill">
               <Edit2 className="w-3.5 h-3.5" />
             </button>
-            <button onClick={() => onDelete(bill.id)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[#ef4444]" data-testid={`delete-bill-${bill.id}`} aria-label="Delete bill">
+            <button onClick={(e) => { e.stopPropagation(); onDelete(bill.id); }} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[#ef4444]" data-testid={`delete-bill-${bill.id}`} aria-label="Delete bill">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
-          </div>
-          {beneficiaries.length > 0 && (
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition-all"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
-              data-testid={`ben-toggle-${bill.id}`}
-            >
-              <Users className="w-3 h-3 text-[var(--t4)]" />
-              <span className="text-[var(--t3)]">{benCount} of {beneficiaries.length}</span>
-              {expanded ? <ChevronUp className="w-3 h-3 text-[var(--t5)]" /> : <ChevronDown className="w-3 h-3 text-[var(--t5)]" />}
+            <button onClick={() => setExpanded(v => !v)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[var(--t4)]" data-testid={`expand-bill-${bill.id}`} aria-label={expanded ? 'Collapse' : 'Expand'}>
+              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
-          )}
+          </div>
         </div>
 
-        {/* Beneficiary designation */}
-        {expanded && beneficiaries.length > 0 && (
-          <div className="mt-3 space-y-1.5" data-testid={`ben-list-${bill.id}`}>
-            {beneficiaries.map(ben => {
-              const isAll = designated.includes('all');
-              const isOn = isAll || designated.includes(ben.id);
-              const timing = bill.visibility_timing?.[ben.id] || { pre: false, post: true };
-              const initials = `${ben.first_name?.charAt(0) || ''}${ben.last_name?.charAt(0) || ''}`;
+        {/* ── Expanded body ── */}
+        {expanded && (
+          <div className="mt-3 pt-3 border-t border-[var(--b)] space-y-3" data-testid={`bill-detail-${bill.id}`}>
+            <div className="flex items-center gap-3 text-xs">
+              <span className="text-[var(--t4)]">{catLabel}</span>
+              <span className="text-[var(--t5)]">·</span>
+              <span className="text-[var(--t4)]">{bill.due_day ? `${bill.due_day}th monthly` : 'No schedule'}</span>
+            </div>
+
+            {/* Pass-down readiness */}
+            {(() => {
+              const pdScore = computePassdownScore(bill, 'bill');
+              const pdColor = passdownColor(pdScore);
               return (
-                <div key={ben.id} className="rounded-xl overflow-hidden" style={{
-                  background: isOn ? 'rgba(212,175,55,0.06)' : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${isOn ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
-                }}>
-                  <div className="flex items-center gap-3 px-3 py-2">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0" style={{
-                      background: isOn ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.08)',
-                      color: isOn ? '#080e1a' : '#7B879E',
-                    }}>{initials}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-semibold truncate text-[var(--t)]">{ben.first_name} {ben.last_name}</div>
-                    </div>
-                    <button onClick={() => toggleBeneficiary(ben.id)} className="w-9 h-5 rounded-full flex-shrink-0 relative transition-all"
-                      style={{ background: isOn ? '#d4af37' : 'rgba(255,255,255,0.12)' }}
-                      data-testid={`ben-switch-${ben.id}-${bill.id}`}>
-                      <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" style={{ left: isOn ? '18px' : '2px' }} />
-                    </button>
+                <div data-testid={`passdown-bar-${bill.id}`} title={`${passdownLabel(pdScore)} — ${pdScore}% of pass-down details captured`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--t5)]">Pass-down readiness</span>
+                    <span className="text-[11px] font-bold" style={{ color: pdColor }}>{pdScore}%</span>
                   </div>
-                  {isOn && (
-                    <div className="flex gap-2 px-3 pb-2">
-                      <button onClick={() => toggleTiming(ben.id, 'pre')} className="flex-1 py-1 rounded-lg text-[11px] font-bold text-center transition-all"
-                        style={{
-                          background: timing.pre ? 'rgba(34,201,147,0.15)' : 'rgba(255,255,255,0.04)',
-                          border: `1px solid ${timing.pre ? 'rgba(34,201,147,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                          color: timing.pre ? '#22C993' : '#525C72',
-                        }}>{timing.pre ? '\u2713 ' : ''}Pre-Transition</button>
-                      <button onClick={() => toggleTiming(ben.id, 'post')} className="flex-1 py-1 rounded-lg text-[11px] font-bold text-center transition-all"
-                        style={{
-                          background: timing.post ? 'rgba(59,123,247,0.15)' : 'rgba(255,255,255,0.04)',
-                          border: `1px solid ${timing.post ? 'rgba(59,123,247,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                          color: timing.post ? '#3B7BF7' : '#525C72',
-                        }}>{timing.post ? '\u2713 ' : ''}Post-Transition</button>
-                    </div>
-                  )}
+                  <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <div className="h-full transition-all duration-500" style={{ width: `${pdScore}%`, background: pdColor }} />
+                  </div>
                 </div>
               );
-            })}
+            })()}
+
+            {(bill.is_auto_pay || bill.payment_account) && (
+              <div className="flex items-center gap-2 flex-wrap">
+                {bill.is_auto_pay && (
+                  <span className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-full font-bold" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
+                    <CheckCircle2 className="w-3 h-3" /> Auto-Pay
+                  </span>
+                )}
+                {bill.payment_account && (
+                  <span className="text-[11px] text-[var(--t5)] truncate">via {bill.payment_account}</span>
+                )}
+              </div>
+            )}
+
+            {/* Beneficiary designation */}
+            {beneficiaries.length > 0 && (
+              <div data-testid={`ben-list-${bill.id}`}>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Users className="w-3 h-3 text-[var(--t4)]" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--t5)]">Visible to {benCount} of {beneficiaries.length}</span>
+                </div>
+                <div className="space-y-1.5">
+                  {beneficiaries.map(ben => {
+                    const isAll = designated.includes('all');
+                    const isOn = isAll || designated.includes(ben.id);
+                    const timing = bill.visibility_timing?.[ben.id] || { pre: false, post: true };
+                    const initials = `${ben.first_name?.charAt(0) || ''}${ben.last_name?.charAt(0) || ''}`;
+                    return (
+                      <div key={ben.id} className="rounded-xl overflow-hidden" style={{
+                        background: isOn ? 'rgba(212,175,55,0.06)' : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${isOn ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                      }}>
+                        <div className="flex items-center gap-3 px-3 py-2">
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0" style={{
+                            background: isOn ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.08)',
+                            color: isOn ? '#080e1a' : '#7B879E',
+                          }}>{initials}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-semibold truncate text-[var(--t)]">{ben.first_name} {ben.last_name}</div>
+                          </div>
+                          <button onClick={() => toggleBeneficiary(ben.id)} className="w-9 h-5 rounded-full flex-shrink-0 relative transition-all"
+                            style={{ background: isOn ? '#d4af37' : 'rgba(255,255,255,0.12)' }}
+                            data-testid={`ben-switch-${ben.id}-${bill.id}`}>
+                            <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" style={{ left: isOn ? '18px' : '2px' }} />
+                          </button>
+                        </div>
+                        {isOn && (
+                          <div className="flex gap-2 px-3 pb-2">
+                            <button onClick={() => toggleTiming(ben.id, 'pre')} className="flex-1 py-1 rounded-lg text-[11px] font-bold text-center transition-all"
+                              style={{
+                                background: timing.pre ? 'rgba(34,201,147,0.15)' : 'rgba(255,255,255,0.04)',
+                                border: `1px solid ${timing.pre ? 'rgba(34,201,147,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                                color: timing.pre ? '#22C993' : '#525C72',
+                              }}>{timing.pre ? '\u2713 ' : ''}Pre-Transition</button>
+                            <button onClick={() => toggleTiming(ben.id, 'post')} className="flex-1 py-1 rounded-lg text-[11px] font-bold text-center transition-all"
+                              style={{
+                                background: timing.post ? 'rgba(59,123,247,0.15)' : 'rgba(255,255,255,0.04)',
+                                border: `1px solid ${timing.post ? 'rgba(59,123,247,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                                color: timing.post ? '#3B7BF7' : '#525C72',
+                              }}>{timing.post ? '\u2713 ' : ''}Post-Transition</button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

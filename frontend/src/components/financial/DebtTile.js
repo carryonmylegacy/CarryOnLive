@@ -37,113 +37,121 @@ const DebtTile = ({ debt, categoryLabels, beneficiaries, onEdit, onDelete, onDes
     <Card
       className="glass-card relative overflow-hidden group"
       data-testid={`debt-tile-${debt.id}`}
-      style={{ contentVisibility: 'auto', containIntrinsicSize: '200px' }}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: '120px' }}
     >
       <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-2 mb-2">
+        {/* ── Collapsed header — always visible: name, balance, status,
+             actions. Tap chevron to expand for monthly/rate/term/etc. */}
+        <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-bold text-[var(--t)] truncate mb-0.5">{debt.name}</h3>
-            <p className="text-xs text-[var(--t5)]">{catLabel}</p>
-          </div>
-          <div className="text-right flex-shrink-0">
-            {debt.outstanding_balance != null && (
-              <div className="text-lg font-bold text-[var(--t)]">${debt.outstanding_balance.toLocaleString()}</div>
-            )}
-            <span className="text-[11px] px-2 py-0.5 rounded-full font-bold" style={{
-              background: `${statusColors[debt.status] || '#64748b'}20`,
-              color: statusColors[debt.status] || '#64748b',
-            }}>{debt.status?.replace(/_/g, ' ')}</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 text-xs mb-3 py-2" style={{ borderTop: '1px solid var(--b)', borderBottom: '1px solid var(--b)' }}>
-          {debt.monthly_payment != null && (
-            <div><span className="text-[var(--t5)]">Monthly: </span><span className="text-[var(--t)] font-medium">${debt.monthly_payment.toLocaleString()}</span></div>
-          )}
-          {debt.interest_rate != null && (
-            <div><span className="text-[var(--t5)]">Rate: </span><span className="text-[var(--t)] font-medium">{debt.interest_rate}%</span></div>
-          )}
-          {debt.loan_term_months && (
-            <div><span className="text-[var(--t5)]">Term: </span><span className="text-[var(--t)] font-medium">{Math.round(debt.loan_term_months / 12)}yr</span></div>
-          )}
-          {debt.estimated_payoff_date && (
-            <div><span className="text-[var(--t5)]">Payoff: </span><span className="text-[var(--t)] font-medium">~{debt.estimated_payoff_date}</span></div>
-          )}
-        </div>
-
-        {debt.collateral && <p className="text-[11px] text-[var(--t5)] mb-2">Secured by: {debt.collateral}</p>}
-
-        {(() => {
-          const pdScore = computePassdownScore(debt, 'debt');
-          const pdColor = passdownColor(pdScore);
-          return (
-            <div className="mb-3" data-testid={`passdown-bar-${debt.id}`} title={`${passdownLabel(pdScore)} — ${pdScore}% of pass-down details captured`}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--t5)]">Pass-down readiness</span>
-                <span className="text-[11px] font-bold" style={{ color: pdColor }}>{pdScore}%</span>
-              </div>
-              <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                <div className="h-full transition-all duration-500" style={{ width: `${pdScore}%`, background: pdColor }} />
-              </div>
+            <h3 className="text-sm font-bold text-[var(--t)] truncate">{debt.name}</h3>
+            <div className="flex items-center gap-2 mt-0.5">
+              {debt.outstanding_balance != null && (
+                <span className="text-sm font-bold text-[var(--t)]">${debt.outstanding_balance.toLocaleString()}</span>
+              )}
+              {debt.status && (
+                <span className="text-[11px] px-2 py-0.5 rounded-full font-bold" style={{
+                  background: `${statusColors[debt.status] || '#64748b'}20`,
+                  color: statusColors[debt.status] || '#64748b',
+                }}>{debt.status.replace(/_/g, ' ')}</span>
+              )}
             </div>
-          );
-        })()}
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <button onClick={() => onEdit(debt)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[var(--gold)]" data-testid={`edit-debt-${debt.id}`} aria-label="Edit debt">
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button onClick={(e) => { e.stopPropagation(); onEdit(debt); }} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[var(--gold)]" data-testid={`edit-debt-${debt.id}`} aria-label="Edit debt">
               <Edit2 className="w-3.5 h-3.5" />
             </button>
-            <button onClick={() => onDelete(debt.id)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[#ef4444]" data-testid={`delete-debt-${debt.id}`} aria-label="Delete debt">
+            <button onClick={(e) => { e.stopPropagation(); onDelete(debt.id); }} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[#ef4444]" data-testid={`delete-debt-${debt.id}`} aria-label="Delete debt">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
-          </div>
-          {beneficiaries.length > 0 && (
-            <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <Users className="w-3 h-3 text-[var(--t4)]" />
-              <span className="text-[var(--t3)]">{benCount} of {beneficiaries.length}</span>
-              {expanded ? <ChevronUp className="w-3 h-3 text-[var(--t5)]" /> : <ChevronDown className="w-3 h-3 text-[var(--t5)]" />}
+            <button onClick={() => setExpanded(v => !v)} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors text-[var(--t4)]" data-testid={`expand-debt-${debt.id}`} aria-label={expanded ? 'Collapse' : 'Expand'}>
+              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
-          )}
+          </div>
         </div>
 
-        {expanded && beneficiaries.length > 0 && (
-          <div className="mt-3 space-y-1.5">
-            {beneficiaries.map(ben => {
-              const isAll = designated.includes('all');
-              const isOn = isAll || designated.includes(ben.id);
-              const timing = debt.visibility_timing?.[ben.id] || { pre: false, post: true };
-              const initials = `${ben.first_name?.charAt(0) || ''}${ben.last_name?.charAt(0) || ''}`;
+        {/* ── Expanded body ── */}
+        {expanded && (
+          <div className="mt-3 pt-3 border-t border-[var(--b)] space-y-3" data-testid={`debt-detail-${debt.id}`}>
+            <p className="text-xs text-[var(--t4)]">{catLabel}</p>
+
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {debt.monthly_payment != null && (
+                <div><span className="text-[var(--t5)]">Monthly: </span><span className="text-[var(--t)] font-medium">${debt.monthly_payment.toLocaleString()}</span></div>
+              )}
+              {debt.interest_rate != null && (
+                <div><span className="text-[var(--t5)]">Rate: </span><span className="text-[var(--t)] font-medium">{debt.interest_rate}%</span></div>
+              )}
+              {debt.loan_term_months && (
+                <div><span className="text-[var(--t5)]">Term: </span><span className="text-[var(--t)] font-medium">{Math.round(debt.loan_term_months / 12)}yr</span></div>
+              )}
+              {debt.estimated_payoff_date && (
+                <div><span className="text-[var(--t5)]">Payoff: </span><span className="text-[var(--t)] font-medium">~{debt.estimated_payoff_date}</span></div>
+              )}
+            </div>
+
+            {debt.collateral && <p className="text-[11px] text-[var(--t5)]">Secured by: {debt.collateral}</p>}
+
+            {(() => {
+              const pdScore = computePassdownScore(debt, 'debt');
+              const pdColor = passdownColor(pdScore);
               return (
-                <div key={ben.id} className="rounded-xl overflow-hidden" style={{
-                  background: isOn ? 'rgba(212,175,55,0.06)' : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${isOn ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
-                }}>
-                  <div className="flex items-center gap-3 px-3 py-2">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0" style={{
-                      background: isOn ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.08)',
-                      color: isOn ? '#080e1a' : '#7B879E',
-                    }}>{initials}</div>
-                    <div className="flex-1 min-w-0"><div className="text-xs font-semibold truncate text-[var(--t)]">{ben.first_name} {ben.last_name}</div></div>
-                    <button onClick={() => toggleBeneficiary(ben.id)} className="w-9 h-5 rounded-full flex-shrink-0 relative transition-all"
-                      style={{ background: isOn ? '#d4af37' : 'rgba(255,255,255,0.12)' }}>
-                      <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" style={{ left: isOn ? '18px' : '2px' }} />
-                    </button>
+                <div data-testid={`passdown-bar-${debt.id}`} title={`${passdownLabel(pdScore)} — ${pdScore}% of pass-down details captured`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--t5)]">Pass-down readiness</span>
+                    <span className="text-[11px] font-bold" style={{ color: pdColor }}>{pdScore}%</span>
                   </div>
-                  {isOn && (
-                    <div className="flex gap-2 px-3 pb-2">
-                      <button onClick={() => toggleTiming(ben.id, 'pre')} className="flex-1 py-1 rounded-lg text-[11px] font-bold text-center"
-                        style={{ background: timing.pre ? 'rgba(34,201,147,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${timing.pre ? 'rgba(34,201,147,0.4)' : 'rgba(255,255,255,0.08)'}`, color: timing.pre ? '#22C993' : '#525C72' }}>
-                        {timing.pre ? '\u2713 ' : ''}Pre-Transition</button>
-                      <button onClick={() => toggleTiming(ben.id, 'post')} className="flex-1 py-1 rounded-lg text-[11px] font-bold text-center"
-                        style={{ background: timing.post ? 'rgba(59,123,247,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${timing.post ? 'rgba(59,123,247,0.4)' : 'rgba(255,255,255,0.08)'}`, color: timing.post ? '#3B7BF7' : '#525C72' }}>
-                        {timing.post ? '\u2713 ' : ''}Post-Transition</button>
-                    </div>
-                  )}
+                  <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <div className="h-full transition-all duration-500" style={{ width: `${pdScore}%`, background: pdColor }} />
+                  </div>
                 </div>
               );
-            })}
+            })()}
+
+            {beneficiaries.length > 0 && (
+              <div data-testid={`ben-list-${debt.id}`}>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Users className="w-3 h-3 text-[var(--t4)]" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--t5)]">Visible to {benCount} of {beneficiaries.length}</span>
+                </div>
+                <div className="space-y-1.5">
+                  {beneficiaries.map(ben => {
+                    const isAll = designated.includes('all');
+                    const isOn = isAll || designated.includes(ben.id);
+                    const timing = debt.visibility_timing?.[ben.id] || { pre: false, post: true };
+                    const initials = `${ben.first_name?.charAt(0) || ''}${ben.last_name?.charAt(0) || ''}`;
+                    return (
+                      <div key={ben.id} className="rounded-xl overflow-hidden" style={{
+                        background: isOn ? 'rgba(212,175,55,0.06)' : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${isOn ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                      }}>
+                        <div className="flex items-center gap-3 px-3 py-2">
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0" style={{
+                            background: isOn ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.08)',
+                            color: isOn ? '#080e1a' : '#7B879E',
+                          }}>{initials}</div>
+                          <div className="flex-1 min-w-0"><div className="text-xs font-semibold truncate text-[var(--t)]">{ben.first_name} {ben.last_name}</div></div>
+                          <button onClick={() => toggleBeneficiary(ben.id)} className="w-9 h-5 rounded-full flex-shrink-0 relative transition-all"
+                            style={{ background: isOn ? '#d4af37' : 'rgba(255,255,255,0.12)' }}>
+                            <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" style={{ left: isOn ? '18px' : '2px' }} />
+                          </button>
+                        </div>
+                        {isOn && (
+                          <div className="flex gap-2 px-3 pb-2">
+                            <button onClick={() => toggleTiming(ben.id, 'pre')} className="flex-1 py-1 rounded-lg text-[11px] font-bold text-center"
+                              style={{ background: timing.pre ? 'rgba(34,201,147,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${timing.pre ? 'rgba(34,201,147,0.4)' : 'rgba(255,255,255,0.08)'}`, color: timing.pre ? '#22C993' : '#525C72' }}>
+                              {timing.pre ? '\u2713 ' : ''}Pre-Transition</button>
+                            <button onClick={() => toggleTiming(ben.id, 'post')} className="flex-1 py-1 rounded-lg text-[11px] font-bold text-center"
+                              style={{ background: timing.post ? 'rgba(59,123,247,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${timing.post ? 'rgba(59,123,247,0.4)' : 'rgba(255,255,255,0.08)'}`, color: timing.post ? '#3B7BF7' : '#525C72' }}>
+                              {timing.post ? '\u2713 ' : ''}Post-Transition</button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
