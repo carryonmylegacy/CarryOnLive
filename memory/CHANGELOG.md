@@ -1,6 +1,47 @@
 # CarryOn — Changelog
 
 
+## May 14, 2026 — SortControl rollout (Beneficiaries + CFP) + SlidePanel phantom scrollbar fix
+
+### Bug fix — SlidePanel phantom right-edge gold scrollbar
+User reported a gold scrollbar visible on the CCP "Test the Plan — Family Drill" panel even though content fit on screen, with the thumb moving on swipe.
+
+Root cause: the underlying `main-content` OverlayScrollbars instance was still emitting its gold thumb behind the slide-panel. Because OS bars are `position: absolute; z-index: 10` inside `.main-content` and the panel is `position: fixed; z-index: 45`, in some stacking-context paths the thumb bled through the panel edge.
+
+Fix:
+- `components/SlidePanel.js`: adds `body.slide-panel-open` class while the panel is mounted; cleanly removed on unmount.
+- `index.css`: when `body.slide-panel-open`, `.main-content > .os-scrollbar` and `.main-content [data-overlayscrollbars] > .os-scrollbar` are forced `visibility:hidden; opacity:0; pointer-events:none`. `body { overflow: hidden }` also locks underlying scroll behind the panel.
+- Testing agent verified live at iPhone 390x844: both OS scrollbars in `.main-content` confirm hidden + body overflow=hidden while panel open; lock cleanly removed on close.
+
+### Feature — SortControl rollout
+Continued the unified `<SortControl>` rollout. Now applied to:
+
+**Beneficiaries page** (`pages/BeneficiariesPage.js`)
+- New `benSortKey` state, default `'succession'` (sentinel preserving canonical drag-to-rank order).
+- 5 options: Succession order · Name (A→Z) · Name (Z→A) · Newest first · Oldest first.
+- `SortableCard` now accepts `disabled` prop — drag listeners detach when sort is non-succession.
+- `GripVertical` drag handle hidden when sort ≠ succession (visually signals drag is inactive).
+- Succession rank for PRIMARY/SECONDARY/TERTIARY badges is computed from the **canonical** `beneficiaries[]` index via `findIndex`, not the displayed sort — so badges stay bound to the real succession order even when the view is sorted alphabetically.
+
+**Financial Portal — CFP** (`pages/FinancialPortalPage.js`)
+- 4 independent sort keys: `billSort`, `debtSort`, `accountSort`, `propertySort` (defaults to `'default'`).
+- 6 options each: Default order · Name (A→Z) · Name (Z→A) · Newest first · Oldest first · Recently modified.
+- `filteredBills`, `filteredDebts`, `filteredAccounts` useMemos extended to apply `makeSorter` when key ≠ default. New `sortedPropertyAssets` useMemo for the Property tab.
+- Each SortControl renders only when its tab has items (auto-hides on empty tabs).
+- Testids: `bill-sort-control`, `debt-sort-control`, `account-sort-control`, `property-sort-control`.
+
+### Housekeeping cleanup
+- `text-[10px]` → `text-[11px] font-bold` in `CCPDepthPanels.js` (Medical info on-file pill) and `MessageCard.js` (Delivered pill) — clears the iOS min-font-size accessibility warning.
+- `MessageCard.js` edit button testid renamed `edit-row-{id}` → `edit-message-{id}` to satisfy the CC8.1 Route Editor Audit wiring rule (delete button kept as `delete-row-{id}`).
+- `ccp_depth.py:676` Mongo projection extended with `"id": 1` to clear the A1.2 projection-safety warning.
+- `bash housekeeping.sh --strict` → 0 WARN / 0 FAIL.
+
+### Verified (iteration_138)
+- Frontend testing agent confirmed: SlidePanel scrollbar fix verified live; SortControl empty-state hide behavior verified live; positive-state rendering verified via static code review (test account's active estate had no seeded items).
+- `retest_needed: false`, `main_agent_can_self_test: true`.
+
+
+
 ## May 14, 2026 — Collapsed-list + Inline Pencil/Trash everywhere (Beneficiaries + MM)
 
 Rolled out the same compact list rhythm we built for the CCP Go-Bag to two more high-traffic surfaces.
