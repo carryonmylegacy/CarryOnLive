@@ -168,10 +168,18 @@ export default function ConnectedProtocolPage() {
   // refetch.
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('carryon_ccp_intro_seen'));
   const [welcomeStep, setWelcomeStep] = useState(1);
+  // Auto-dismiss runs ONCE on initial mount — if the user already has
+  // plans the first-time intro is silently skipped. Without this guard
+  // the effect fires whenever the user explicitly re-opens the
+  // walkthrough via "How CCP Works", instantly closing the overlay
+  // (visible as a sub-second flash).
+  const introAutoDismissed = useRef(false);
   useEffect(() => {
+    if (introAutoDismissed.current) return;
     if (showWelcome && plans.length > 0) {
       try { localStorage.setItem('carryon_ccp_intro_seen', '1'); } catch { /* private mode */ }
       setShowWelcome(false);
+      introAutoDismissed.current = true;
     }
   }, [plans.length, showWelcome]);
 
@@ -946,7 +954,7 @@ export default function ConnectedProtocolPage() {
   // ===================== HOME VIEW — Big Bubble Buttons =====================
   return (
     <>
-    <div data-testid="ccp-home" className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in"
+    <div data-testid="ccp-home" className="w-full max-w-3xl mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in"
       style={{ background: 'radial-gradient(ellipse at top left, rgba(212,175,55,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(240,201,92,0.06), transparent 55%)' }}>
       {/* Header — standardized icon-box + title + 1-line description to
           match MM, SDV, DAV, EPT, etc. (centered hero replaced). */}
