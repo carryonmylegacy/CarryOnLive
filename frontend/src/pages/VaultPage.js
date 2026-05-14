@@ -579,7 +579,7 @@ const VaultPage = () => {
       await axios.put(
         `${API_URL}/documents/${doc.id}/ai-eligible?eligible=${next}`,
         null,
-        { headers: getAuthHeaders() },
+        getAuthHeaders(),
       );
       toast.success(next ? 'Added to AI analysis' : 'Removed from AI analysis');
     } catch (err) {
