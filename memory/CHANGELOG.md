@@ -4701,3 +4701,31 @@ tomorrow → land at the same offset.
 
 ### Housekeeping
 - 74 PASS, 0 WARN, 0 FAIL.
+
+## May 14, 2026 — Milestone Notification submission fix + platform-wide 1400px width audit
+
+### Backend
+- **`/api/milestones/report`** — role check changed from strict `role == "beneficiary"` to also allow `is_also_beneficiary=true`. Multi-role users (e.g. `info@carryon.us`, role=benefactor + is_also_beneficiary=true) can now submit milestones. Previously: 403 "Only beneficiaries can report milestones".
+- **Always lands in admin tab** — submissions with no matching message now ALWAYS create a placeholder `milestone_deliveries` row (`message_id=null`, `message_title="(No matching message — manual review)"`, `no_match=true`, `status="pending_review"`). Founders + operators see every beneficiary milestone in `/admin/milestones` regardless of message matching.
+- **Notification routing upgraded** — `p3_alert` / `p4_alert` (operators-only) → `p2_alert` (founder + operators). Founders no longer miss new milestone reports.
+- **`/api/milestones/deliveries/{id}/review`** — approve action now returns 400 with a clear guard message when invoked against a no-match placeholder (prevents `db.messages.update_one({"id": None}, ...)` no-op confusion). Reject still works as expected.
+
+### Frontend — Width audit & fixes
+All authenticated app pages now use the canonical desktop wrapper `w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6`:
+- `MilestoneReportPage.js` (was `max-w-xl`; success-copy reworded "delivered" → "review and deliver shortly" to match the new manual-review pipeline)
+- `BeneficiarySettingsPage.js` (was `max-w-3xl`)
+- `CondolencePage.js` (was `max-w-3xl`)
+- `UploadCertificatePage.js` (both status + upload returns, was `max-w-md lg:max-w-3xl` / `max-w-xl lg:max-w-4xl`)
+- `EditMilestoneMessagePage.js` (loading + delivered + main returns, was `max-w-3xl`)
+- `ConnectedProtocolPage.js` checkin/plans/history sub-views (were `max-w-4xl` / `max-w-6xl`)
+- `BeneficiaryCCPPage.js` plan-detail view (was `max-w-2xl lg:max-w-5xl`)
+- `BeneficiaryGuardianPage.js` outer wrapper (was unconstrained)
+
+Confirmed already 1400px-clean (no edits): Dashboard, Messages, Vault, Checklist, Beneficiaries, Settings, Subscription, SecuritySettings, DigitalWallet, LegacyTimeline, FinancialPortal, BeneficiaryDashboard, BeneficiaryHub, BeneficiaryChecklist, BeneficiaryConcierge, BeneficiaryEntities, BeneficiaryFinancial, BeneficiaryMessages, BeneficiaryVault.
+
+Excluded by design (different layout contracts): EstateChat, SupportChat, GuardianPage chat surfaces (chat-readable widths inside), public marketing/auth pages.
+
+### Verified
+- Backend testing agent (iter145): **7/7 backend tests pass.**
+- Housekeeping `bash /app/housekeeping.sh --strict`: 0 WARN / 0 FAIL.
+- ruff: clean on touched backend files.
