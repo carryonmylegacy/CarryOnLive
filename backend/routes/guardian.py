@@ -702,18 +702,25 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
             _ladder = [XAI_MODEL_LIGHT, "grok-3", XAI_MODEL]
         _seen: set = set()
         _MODEL_ORDER = [m for m in _ladder if m and not (m in _seen or _seen.add(m))]
-        _MAX_PER_MODEL = 2
+        # For heavy IAC analysis the failover overhead matters more
+        # than retries (a grok-4 timeout means we should move on, not
+        # burn another 90s on the same model). Heavy = 1 attempt per
+        # model. Chat-style replies keep 2 attempts for robustness.
+        _MAX_PER_MODEL = 1 if _is_heavy else 2
         _DELAYS = [0, 1.5]
         # Total wall-clock budget for the full failover ladder.
-        # Heavy IAC analysis legitimately takes >55s on grok-4, so we
-        # give it more headroom; chat-style replies stay snappy.
-        _SOFT_DEADLINE_S = 240 if _is_heavy else 55
-        # Per-attempt hard ceiling. Without this, a single slow grok-4
-        # call can block for minutes and trip the frontend 3-minute
-        # self-heal banner before the failover ladder gets a chance to
-        # walk to grok-3 / grok-3-mini. Heavy IAC analysis gets a
-        # longer ceiling than chat-style replies.
-        _PER_CALL_TIMEOUT_S = 90.0 if _is_heavy else 45.0
+        # Heavy IAC analysis legitimately takes 90-150s on grok-4 with
+        # a large vault prompt, so we budget for one full grok-4 run
+        # plus a grok-3 fallback.
+        _SOFT_DEADLINE_S = 360 if _is_heavy else 55
+        # Per-attempt hard ceiling. Heavy IAC analysis observed to
+        # legitimately need ~120s on grok-4 with a full vault prompt;
+        # the previous 90s ceiling was killing real successful runs
+        # mid-response and forcing the entire failover ladder to also
+        # time out, ending in a generic 500. 180s gives grok-4 the
+        # full headroom it needs and still leaves time for one
+        # failover under the 360s soft deadline.
+        _PER_CALL_TIMEOUT_S = 180.0 if _is_heavy else 45.0
         _started_at = asyncio.get_event_loop().time()
         for model_name in _MODEL_ORDER:
             if completion is not None:
@@ -1088,10 +1095,10 @@ async def get_iac_task_status(current_user: dict = Depends(get_current_user)):
     while EGA is generating IAC items in the background.
 
     Includes a stale-task self-heal: if a task has been "running" for
-    more than 5 minutes without an update, we mark it as ``error`` so
+    more than 7 minutes without an update, we mark it as ``error`` so
     the polling banner doesn't hang forever (covers pod restarts /
     backend crashes between the upsert and the completion write).
-    Heavy IAC runs with large vaults can legitimately take >2 min on
+    Heavy IAC runs with large vaults can legitimately take 3-5 min on
     grok-4 + grok-3 failover, so the threshold is generous.
     """
     estates = await _get_user_estate(current_user, {"_id": 0, "id": 1})
@@ -1113,7 +1120,7 @@ async def get_iac_task_status(current_user: dict = Depends(get_current_user)):
             try:
                 started_dt = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
                 age_s = (datetime.now(timezone.utc) - started_dt).total_seconds()
-                if age_s > 300:
+                if age_s > 420:
                     await db.ega_tasks.update_one(
                         {"id": task.get("id")},
                         {
