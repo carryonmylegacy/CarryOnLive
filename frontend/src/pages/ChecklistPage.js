@@ -774,12 +774,9 @@ const ChecklistPage = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <span className="text-xs px-2 py-0.5 rounded font-bold capitalize" style={{
-              background: priColor + '15', color: priColor, border: `1px solid ${priColor}33`
-            }}>
-              {effectivePri}
-            </span>
+          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+            {/* Action buttons row */}
+            <div className="flex items-center gap-1.5">
             {item.ai_suggested && item.ai_accepted === null && (
               <>
                 <div className="flex items-center gap-0.5">
@@ -836,6 +833,15 @@ const ChecklistPage = () => {
             >
               <Trash2 className="w-4 h-4" />
             </button>
+            </div>
+            {/* Priority pill — moved BELOW the action row so it no
+                longer crowds the title text. Right-aligned to sit
+                directly under the trash icon. */}
+            <span className="text-[11px] px-2 py-0.5 rounded font-bold capitalize" style={{
+              background: priColor + '15', color: priColor, border: `1px solid ${priColor}33`
+            }} data-testid={`iac-priority-${item.id}`}>
+              {effectivePri}
+            </span>
           </div>
         </div>
         {/* Source attribution — full-width row beneath the title/actions
