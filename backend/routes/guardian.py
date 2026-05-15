@@ -545,9 +545,24 @@ Requirements for Section 2:
 
 BOTH sections should be included in your response with clear, bold section headers so the reader can immediately distinguish between "what my family does after I die" and "what I need to fix now."
 
-Return the checklist items from BOTH sections in this exact JSON format at the END of your response, wrapped in ```checklist_json``` tags. Use the "section" field to distinguish between the two types:
+IMPORTANT — INCLUDE A BASELINE OF UNIVERSAL ITEMS:
+Regardless of what specific documents I have in my vault, ALWAYS include the following baseline beneficiary actions in Section 1 (tag their "source" field as "ai_general_recommendation"):
+- Critical / day 1-3: Notify immediate family and executor; secure home + valuables; obtain at least 10 certified death certificates; preserve perishables / care for pets
+- First week: Notify Social Security Administration (1-800-772-1213); notify employer / HR re: final pay + benefits; check for funeral insurance / pre-paid arrangements; secure mail forwarding
+- 2 weeks – 1 month: File life insurance claims (if known carriers); contact each financial institution to freeze + retitle accounts; cancel subscriptions, memberships, recurring auto-payments; cancel driver's license; notify utility companies
+- First month – long term: File final state + federal tax returns; transfer or close credit cards; settle estate debts via probate process; transfer vehicle titles; update beneficiary designations on retirement accounts; consult an estate attorney for state-specific probate
+
+Then ADDITIONALLY, mine my SPECIFIC vault documents for document-derived actionable items (life insurance carrier + policy #, trustee name + phone, attorney contact, etc.). Tag each document-derived item with the EXACT document name in the "source" field.
+
+PRIORITY MAPPING (CRITICAL — used for UI sorting):
+- category=immediate → priority=critical
+- category=first_week → priority=high
+- category=two_weeks → priority=medium
+- category=first_month → priority=low
+
+Return the checklist items from BOTH sections in this exact JSON format at the END of your response, wrapped in ```checklist_json``` tags. Use the "section" field to distinguish between the two types, and the "source" field to attribute the item:
 ```checklist_json
-[{{"title": "Item title", "description": "Detailed description with specific contacts/numbers", "category": "immediate|first_week|two_weeks|first_month", "section": "beneficiary_action|benefactor_recommendation", "order": 1}}]
+[{{"title": "Item title", "description": "Detailed description with specific contacts/numbers", "category": "immediate|first_week|two_weeks|first_month", "priority": "critical|high|medium|low", "section": "beneficiary_action|benefactor_recommendation", "source": "ai_general_recommendation|<exact document name from vault>", "order": 1}}]
 ```"""
 
     elif data.action == "analyze_readiness":
@@ -867,18 +882,38 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
                         duplicates_skipped += 1
                         duplicate_titles.append(item["title"])
                         continue
+                    # Derive priority from category as a defensive
+                    # fallback. The AI sometimes ignores the explicit
+                    # priority field and leaves everything as the
+                    # default — which used to bucket every AI-added
+                    # item under "Medium - First 2 Weeks" in the UI.
+                    cat = item.get("category", "first_month")
+                    category_to_priority = {
+                        "immediate": "critical",
+                        "first_week": "high",
+                        "two_weeks": "medium",
+                        "first_month": "low",
+                    }
+                    priority = item.get("priority") or category_to_priority.get(cat, "medium")
                     checklist_item = ChecklistItem(
                         estate_id=estate_id,
                         title=item["title"],
                         description=item.get("description", ""),
-                        category=item.get("category", "first_month"),
-                        priority=item.get("priority", "medium"),
+                        category=cat,
+                        priority=priority,
                         order=max_order + items_added + 1,
                     )
                     item_dict = checklist_item.model_dump()
                     item_dict["ai_suggested"] = True
                     item_dict["ai_accepted"] = None  # None=pending, True=accepted, False=rejected
                     item_dict["section"] = "beneficiary_action"
+                    # Source attribution — either the exact vault
+                    # document name or "ai_general_recommendation" for
+                    # universal baseline items. Surfaced in the UI so
+                    # the user knows whether an item was derived from
+                    # one of their documents or is a generic best-
+                    # practice suggestion from EGA.
+                    item_dict["source"] = item.get("source") or "ai_general_recommendation"
                     await db.checklists.insert_one(item_dict)
                     items_added += 1
 

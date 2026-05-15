@@ -34,6 +34,7 @@ import ShareYourCarryOn from '../components/ShareYourCarryOn';
 import OfflineStorageWidget from '../components/dashboard/OfflineStorageWidget';
 import TileErrorBoundary from '../components/TileErrorBoundary';
 import { API_URL } from '../config';
+import { toast } from '../utils/toast';
 import { getOfflineMode } from '../offline/featureFlag';
 import { getLocalEstates, upsertLocalEstates } from '../offline/repos/estatesRepo';
 import {
@@ -341,10 +342,33 @@ const DashboardPage = () => {
           setEgaRunning(true);
         } else if (task.status === 'completed' && task.completed_at) {
           setEgaRunning(false);
-          // Only refresh data when a new completion is detected
+          // Only refresh + toast when a new completion is detected.
+          // We DON'T toast on the very first poll of a user's session
+          // (lastCompletedAtRef.current is null), because that would
+          // surface a stale "X items added!" notice for a run that
+          // finished hours ago and the user already moved on from.
           if (lastCompletedAtRef.current && lastCompletedAtRef.current !== task.completed_at) {
             fetchEstateDataRef.current?.(estate.id);
+            const added = task.items_added || 0;
+            const dupes = task.duplicates_skipped || 0;
+            if (added > 0 && dupes > 0) {
+              toast.success(`IAC updated — ${added} new item${added > 1 ? 's' : ''} added (${dupes} duplicate${dupes > 1 ? 's' : ''} skipped)`);
+            } else if (added > 0) {
+              toast.success(`IAC updated — ${added} new item${added > 1 ? 's' : ''} added by Estate Guardian`);
+            } else if (task.error) {
+              toast.error(task.error);
+            } else if (dupes > 0) {
+              toast.success(`Estate Guardian found ${dupes} relevant action${dupes > 1 ? 's' : ''} — all already in your checklist.`);
+            } else {
+              toast.success('Estate Guardian finished generating — no new items this round.');
+            }
           }
+          lastCompletedAtRef.current = task.completed_at;
+        } else if (task.status === 'error' && lastCompletedAtRef.current !== task.completed_at && task.completed_at) {
+          // Background error surfaced from a different page — let the
+          // user know without forcing them to navigate to /checklist.
+          setEgaRunning(false);
+          toast.error(task.error || 'Estate Guardian run failed — please try again from the Checklist page.');
           lastCompletedAtRef.current = task.completed_at;
         } else {
           setEgaRunning(false);
