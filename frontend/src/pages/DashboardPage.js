@@ -1013,13 +1013,19 @@ const DashboardPage = () => {
             </div>
             <ReadinessDial score={readinessScore} id="readiness" labelText={scoreInfo.label} labelColor={scoreInfo.color} />
             {/* Subtle EGA quick-link — sparkle + "EGA" label tucked into
-                the bottom-right corner of the readiness card. Designed to
-                be discoverable without competing with the gauge. */}
+                the bottom-right corner of the readiness card. Styled as a
+                glowing gold pill so it reads as an actionable button, not
+                a passive "AI generated" tag. */}
             <button
               type="button"
               onClick={() => navigate('/guardian')}
-              className="absolute bottom-3 right-3 lg:bottom-4 lg:right-4 flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-transform duration-150 active:scale-[0.94] hover:bg-[rgba(212,175,55,0.06)]"
-              style={{ color: 'var(--gold)' }}
+              className="absolute bottom-3 right-3 lg:bottom-4 lg:right-4 flex flex-col items-center justify-center gap-0.5 w-12 h-12 lg:w-14 lg:h-14 rounded-xl transition-transform duration-150 active:scale-[0.94]"
+              style={{
+                color: 'var(--gold)',
+                background: 'rgba(212,175,55,0.08)',
+                border: '1px solid rgba(212,175,55,0.55)',
+                boxShadow: '0 0 12px rgba(212,175,55,0.45), 0 0 24px rgba(212,175,55,0.18), inset 0 0 8px rgba(212,175,55,0.12)',
+              }}
               title="Open Estate Guardian AI"
               aria-label="Open Estate Guardian AI"
               data-testid="readiness-ega-quicklink"
@@ -1144,8 +1150,13 @@ const DashboardPage = () => {
                 <button
                   type="button"
                   onClick={() => navigate('/guardian')}
-                  className="absolute bottom-3 right-3 lg:bottom-4 lg:right-4 flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-transform duration-150 active:scale-[0.94] hover:bg-[rgba(212,175,55,0.06)]"
-                  style={{ color: 'var(--gold)' }}
+                  className="absolute bottom-3 right-3 lg:bottom-4 lg:right-4 flex flex-col items-center justify-center gap-0.5 w-12 h-12 lg:w-14 lg:h-14 rounded-xl transition-transform duration-150 active:scale-[0.94]"
+                  style={{
+                    color: 'var(--gold)',
+                    background: 'rgba(212,175,55,0.08)',
+                    border: '1px solid rgba(212,175,55,0.55)',
+                    boxShadow: '0 0 12px rgba(212,175,55,0.45), 0 0 24px rgba(212,175,55,0.18), inset 0 0 8px rgba(212,175,55,0.12)',
+                  }}
                   title="Open Estate Guardian AI"
                   aria-label="Open Estate Guardian AI"
                   data-testid="readiness-ega-quicklink-side"
