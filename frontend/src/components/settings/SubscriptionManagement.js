@@ -511,30 +511,29 @@ export const SubscriptionManagement = ({
         </div>
       </CardHeader>
       <CardContent className="pt-2">
-        {/* Status Banner */}
-        {subscriptionStatus && (
+        {/* Status Banner — shown ONLY for non-active states (beta,
+            free trial, or no-plan-chosen). Active subscribers already
+            see their full plan name + price in the "Current Plan"
+            card below, so an extra "${plan_name} · ${cycle}" banner
+            here is redundant — and was rendering as the confusing
+            "undefined · annual" when plan_name wasn't populated. */}
+        {subscriptionStatus && !(currentSub?.status === 'active' && !isBeta) && (
           <div className="mb-6 p-4 rounded-xl relative overflow-hidden" style={{
             background: isBeta
               ? 'linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.05))'
-              : currentSub?.status === 'active'
-                ? 'linear-gradient(135deg, rgba(34,201,147,0.08), rgba(34,201,147,0.02))'
-                : 'linear-gradient(135deg, rgba(212,175,55,0.08), rgba(212,175,55,0.02))',
-            border: `1px solid ${isBeta ? 'rgba(139,92,246,0.15)' : currentSub?.status === 'active' ? 'rgba(34,201,147,0.15)' : 'rgba(212,175,55,0.15)'}`,
+              : 'linear-gradient(135deg, rgba(212,175,55,0.08), rgba(212,175,55,0.02))',
+            border: `1px solid ${isBeta ? 'rgba(139,92,246,0.15)' : 'rgba(212,175,55,0.15)'}`,
           }}>
             <div className="flex items-center gap-2.5">
               {isBeta ? (
                 <Sparkles className="w-4 h-4 text-purple-400" />
-              ) : currentSub?.status === 'active' ? (
-                <Zap className="w-4 h-4 text-[#22C993]" />
               ) : (
                 <Clock className="w-4 h-4 text-[var(--gold)]" />
               )}
               <div>
                 <span className="text-sm font-semibold text-[var(--t)]">
                   {isBeta ? 'Beta Access — All features unlocked' :
-                   currentSub?.status === 'active'
-                    ? `${currentSub.plan_name} · ${currentSub.billing_cycle}`
-                    : subscriptionStatus.trial?.trial_active
+                   subscriptionStatus.trial?.trial_active
                       ? `Free Trial · ${subscriptionStatus.trial.days_remaining} days left`
                       : 'Choose a payment option that best suits you. (Monthly/Quarterly/Annual)'}
                 </span>
