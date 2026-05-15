@@ -1012,6 +1012,21 @@ const DashboardPage = () => {
               </div>
             </div>
             <ReadinessDial score={readinessScore} id="readiness" labelText={scoreInfo.label} labelColor={scoreInfo.color} />
+            {/* Subtle EGA quick-link — sparkle + "EGA" label tucked into
+                the bottom-right corner of the readiness card. Designed to
+                be discoverable without competing with the gauge. */}
+            <button
+              type="button"
+              onClick={() => navigate('/guardian')}
+              className="absolute bottom-3 right-3 lg:bottom-4 lg:right-4 flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-transform duration-150 active:scale-[0.94] hover:bg-[rgba(212,175,55,0.06)]"
+              style={{ color: 'var(--gold)' }}
+              title="Open Estate Guardian AI"
+              aria-label="Open Estate Guardian AI"
+              data-testid="readiness-ega-quicklink"
+            >
+              <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
+              <span className="text-[11px] font-bold tracking-wider leading-none">EGA</span>
+            </button>
           </div>
         );
 
@@ -1110,7 +1125,7 @@ const DashboardPage = () => {
           );
           const dial = (
             <div className="lg:col-span-1">
-              <div className="glass-card p-4 lg:p-5 h-full flex flex-col" data-testid="readiness-card-side">
+              <div className="glass-card relative p-4 lg:p-5 h-full flex flex-col" data-testid="readiness-card-side">
                 <h2
                   className="text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl whitespace-nowrap font-semibold text-[var(--t)] mb-4 text-center tracking-tight"
                   style={{ fontFamily: 'var(--serif)' }}
@@ -1123,6 +1138,21 @@ const DashboardPage = () => {
                 <div className="mt-3 flex justify-center">
                   <KeyChips size="md" columns={2} />
                 </div>
+                {/* Subtle EGA quick-link — matches the inline ReadinessCard
+                    variant so users get the same affordance regardless of
+                    which layout the dashboard chose for their viewport. */}
+                <button
+                  type="button"
+                  onClick={() => navigate('/guardian')}
+                  className="absolute bottom-3 right-3 lg:bottom-4 lg:right-4 flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-transform duration-150 active:scale-[0.94] hover:bg-[rgba(212,175,55,0.06)]"
+                  style={{ color: 'var(--gold)' }}
+                  title="Open Estate Guardian AI"
+                  aria-label="Open Estate Guardian AI"
+                  data-testid="readiness-ega-quicklink-side"
+                >
+                  <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
+                  <span className="text-[11px] font-bold tracking-wider leading-none">EGA</span>
+                </button>
               </div>
             </div>
           );
