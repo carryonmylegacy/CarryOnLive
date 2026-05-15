@@ -288,9 +288,11 @@ cd /app/frontend/src
 FIXED_FAILS=0
 FIXED_LIST=""
 for f in $(find pages components -name "*.js" -newer /app/housekeeping.sh 2>/dev/null); do
-  has_overflow=$(grep -c "overflow.*auto\|overflow.*scroll\|overflow-y" "$f" 2>/dev/null || echo 0)
-  has_large_fixed=$(grep -cE "height:[[:space:]]*['\"]?[4-9][0-9]{2}px|height:[[:space:]]*['\"]?[0-9]{4}px|minHeight:[[:space:]]*['\"]?[4-9][0-9]{2}px" "$f" 2>/dev/null || echo 0)
-  if [ "$has_large_fixed" -gt "0" ] && [ "$has_overflow" = "0" ]; then
+  has_overflow=$(grep -c "overflow.*auto\|overflow.*scroll\|overflow-y" "$f" 2>/dev/null | head -1)
+  has_large_fixed=$(grep -cE "height:[[:space:]]*['\"]?[4-9][0-9]{2}px|height:[[:space:]]*['\"]?[0-9]{4}px|minHeight:[[:space:]]*['\"]?[4-9][0-9]{2}px" "$f" 2>/dev/null | head -1)
+  has_overflow=${has_overflow:-0}
+  has_large_fixed=${has_large_fixed:-0}
+  if [ "$has_large_fixed" -gt 0 ] && [ "$has_overflow" -eq 0 ]; then
     FIXED_FAILS=$((FIXED_FAILS + 1))
     FIXED_LIST="$FIXED_LIST\n    → $f (fixed height without overflow scroll)"
   fi
@@ -771,10 +773,12 @@ for f in /app/frontend/src/components/settings/SubscriptionManagement.js /app/fr
   [ ! -f "$f" ] && continue
   fname=$(basename "$f")
   # Count Stripe redirect lines
-  STRIPE_LINES=$(grep -c "window.location.href = res.data.url" "$f" 2>/dev/null || echo "0")
+  STRIPE_LINES=$(grep -c "window.location.href = res.data.url" "$f" 2>/dev/null | head -1)
   # Count isNative guard blocks (each should return before Stripe code)
-  NATIVE_GUARDS=$(grep -c "if (isNative)" "$f" 2>/dev/null || echo "0")
-  if [ "$STRIPE_LINES" -gt 0 ] && [ "$NATIVE_GUARDS" = "0" ]; then
+  NATIVE_GUARDS=$(grep -c "if (isNative)" "$f" 2>/dev/null | head -1)
+  STRIPE_LINES=${STRIPE_LINES:-0}
+  NATIVE_GUARDS=${NATIVE_GUARDS:-0}
+  if [ "$STRIPE_LINES" -gt 0 ] && [ "$NATIVE_GUARDS" -eq 0 ]; then
     STRIPE_GATE_OK=0
   fi
 done
