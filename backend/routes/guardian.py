@@ -473,6 +473,7 @@ async def chat_with_guardian(data: ChatRequest, current_user: dict = Depends(get
             "analyze_vault",
             "generate_todo",
             "generate_iac",
+            "find_inconsistencies",
         ) or any(
             keyword in data.message.lower()
             for keyword in [
@@ -523,36 +524,42 @@ SECTION 1: "IMMEDIATE ACTION CHECKLIST FOR BENEFICIARIES"
 This section is for my BENEFICIARIES and loved ones to follow AFTER my death. These are instructions they will execute upon my passing.
 
 Requirements for Section 1:
-- Extract SPECIFIC, ACTIONABLE information from my vault documents — phone numbers, policy numbers, contact names, institutions
-- For each life insurance policy: include the carrier name, policy number, and the phone number to call to file a claim
-- Identify who the trustee of my trust is (if a trust document exists) and include their contact info
-- List financial institutions that need to be contacted with account details where available
-- Include steps for filing probate if required in my state
-- Note any immediate deadlines (e.g., life insurance claim windows, Social Security notification)
+- Extract SPECIFIC, ACTIONABLE information from my vault documents — phone numbers, policy numbers, contact names, institutions, account numbers, beneficiary names, percentages
+- For each life insurance policy: include the EXACT carrier name, policy number, primary and contingent beneficiaries with their percentages, and the phone number to call (or note "obtain from policy records" if absent)
+- Identify who the SUCCESSOR TRUSTEE is by NAME (extracted from the trust document) and include their contact info if available
+- List financial institutions by name with account details where available
+- Probate guidance MUST be state-specific: cite the actual statute (e.g., "Florida Statute §735.301 small-estate threshold of $75,000"), name the COUNTY of residence, and provide the county clerk's office contact if you can infer it from the address
+- Note any immediate deadlines tied to state law (e.g., FL probate filing under §733.212)
 - Prioritize by urgency: immediate (day 1-3), first_week, two_weeks, first_month
-- Be extremely specific — "Call MetLife at 1-800-XXX-XXXX, Policy #YYYY, to file death claim" not "Contact life insurance company"
-- Items like: call executor, request death certificates, freeze accounts, file insurance claims, notify SSA, contact trustee, initiate probate, distribute assets
+- Be EXTREMELY specific — "File a claim with Atlantic National Life Insurance Co., Policy #ANL-45839271, primary beneficiary Penny Mitchell (100%)" not "Contact life insurance company"
 
 ==============================
 SECTION 2: "ESTATE STRENGTHENING RECOMMENDATIONS FOR THE BENEFACTOR"
 ==============================
 This section is for ME (the benefactor) — things I should do NOW to tighten up, fix, or improve my estate plan while I'm still alive.
 
-Requirements for Section 2:
-- Identify gaps, missing documents, expired provisions, state non-compliance, beneficiary mismatches, etc.
-- Items like: update will to current state, revise POA, correct beneficiary designations, add missing documents, fund trust, add pour-over provision
-- Prioritize by urgency: immediate, first_week, two_weeks, first_month
+Requirements for Section 2 — actively HUNT FOR INCONSISTENCIES across documents:
+- RESIDENCY MISMATCH: Does any document list a different state/address than my current declared residence? Flag the document by name and cite the relevant statute the mismatch exposes me under (e.g., FL §732.502 for wills, FL §709.2101 for POAs).
+- BENEFICIARY MISMATCH: Cross-reference beneficiaries across the will, trust, life insurance policy, and retirement accounts. Flag any contradictions or omissions (e.g., a child on life insurance but not the will).
+- TRUSTEE/EXECUTOR/AGENT GAPS: Are the named successor trustee, executor, financial POA agent, and healthcare proxy current and reachable? Flag any document with no successor named.
+- UNDER-FUNDED TRUSTS: If a trust is funded with a nominal amount (e.g., "$10.00") and no schedule of assets attached, flag it — the user almost certainly intended to retitle real assets into it.
+- EXPIRED DOCUMENTS: POAs / living wills / healthcare directives older than 5 years.
+- MILESTONE MESSAGE GAPS: Compare my beneficiaries list to recorded milestone messages — if coverage is <50%, surface this as a recommendation.
+- STATE-SPECIFIC EXECUTION DEFECTS: Verify each document meets current state's witnessing / notarization rules; cite the statute.
+- Prioritize by urgency: immediate (invalidates the document), first_week (could delay probate), two_weeks (cleanup), first_month (nice to have)
+
+For EACH recommendation in Section 2, the `description` field MUST cite the specific issue + the relevant statute + the exact fix. Example: "Your 'Last Will & Testament' lists 1234 Main St, McLean VA — update to your current FL residence at 6450 31st Terrace N, St. Petersburg, FL 33710 to comply with FL Statute §732.502."
 
 BOTH sections should be included in your response with clear, bold section headers so the reader can immediately distinguish between "what my family does after I die" and "what I need to fix now."
 
 IMPORTANT — INCLUDE A BASELINE OF UNIVERSAL ITEMS:
 Regardless of what specific documents I have in my vault, ALWAYS include the following baseline beneficiary actions in Section 1 (tag their "source" field as "ai_general_recommendation"):
-- Critical / day 1-3: Notify immediate family and executor; secure home + valuables; obtain at least 10 certified death certificates; preserve perishables / care for pets
-- First week: Notify Social Security Administration (1-800-772-1213); notify employer / HR re: final pay + benefits; check for funeral insurance / pre-paid arrangements; secure mail forwarding
-- 2 weeks – 1 month: File life insurance claims (if known carriers); contact each financial institution to freeze + retitle accounts; cancel subscriptions, memberships, recurring auto-payments; cancel driver's license; notify utility companies
+- Critical / day 1-3: Notify immediate family and executor; secure home + valuables; obtain at least 10 certified death certificates from the county vital records office (NAME THE COUNTY based on my address); preserve perishables / care for pets
+- First week: Notify Social Security Administration (1-800-772-1213); notify employer / HR re: final pay + benefits; check for funeral insurance / pre-paid arrangements; secure mail forwarding via USPS
+- 2 weeks – 1 month: File life insurance claims (with carriers from vault if known); contact each financial institution to freeze + retitle accounts; cancel subscriptions, memberships, recurring auto-payments; cancel driver's license; notify utility companies
 - First month – long term: File final state + federal tax returns; transfer or close credit cards; settle estate debts via probate process; transfer vehicle titles; update beneficiary designations on retirement accounts; consult an estate attorney for state-specific probate
 
-Then ADDITIONALLY, mine my SPECIFIC vault documents for document-derived actionable items (life insurance carrier + policy #, trustee name + phone, attorney contact, etc.). Tag each document-derived item with the EXACT document name in the "source" field.
+Then ADDITIONALLY, mine my SPECIFIC vault documents for document-derived actionable items (life insurance carrier + policy # + beneficiaries by name and %, trustee name + phone, attorney contact, etc.). Tag each document-derived item with the EXACT document filename in the "source" field.
 
 PRIORITY MAPPING (CRITICAL — used for UI sorting):
 - category=immediate → priority=critical
@@ -562,7 +569,7 @@ PRIORITY MAPPING (CRITICAL — used for UI sorting):
 
 Return the checklist items from BOTH sections in this exact JSON format at the END of your response, wrapped in ```checklist_json``` tags. Use the "section" field to distinguish between the two types, and the "source" field to attribute the item:
 ```checklist_json
-[{{"title": "Item title", "description": "Detailed description with specific contacts/numbers", "category": "immediate|first_week|two_weeks|first_month", "priority": "critical|high|medium|low", "section": "beneficiary_action|benefactor_recommendation", "source": "ai_general_recommendation|<exact document name from vault>", "order": 1}}]
+[{{"title": "Item title", "description": "Detailed description with specific contacts/numbers/statute citations", "category": "immediate|first_week|two_weeks|first_month", "priority": "critical|high|medium|low", "section": "beneficiary_action|benefactor_recommendation", "source": "ai_general_recommendation|<exact document name from vault>", "order": 1}}]
 ```"""
 
     elif data.action == "analyze_readiness":
@@ -596,6 +603,31 @@ Provide a clear, organized analysis with specific findings and recommendations."
 8. Recent legislative changes — any new estate planning laws enacted in the last 2 years?
 
 Be specific to MY state. Cite actual statutes or code sections where possible."""
+
+    elif data.action == "find_inconsistencies":
+        user_message_text = """Cross-reference every document in my Secure Document Vault against itself, against my profile, and against my declared state of residence. Surface ALL inconsistencies, mismatches, gaps, and stale information. Be specific, name documents by their exact vault filename, and cite state statutes where relevant. Group your findings into the following categories:
+
+1. RESIDENCY / ADDRESS MISMATCHES — Does any document still list a former state of residence (e.g., a will from Virginia while you've now moved to Florida)? This can invalidate a will or POA under the new state's execution requirements (e.g., FL Statute §732.502 for wills, §709.2101 for POAs). Identify each document with a stale address and call out the specific statute the user is exposed under.
+
+2. BENEFICIARY DESIGNATION MISMATCHES — Compare beneficiary lists across the will, trust, life insurance policy, retirement designations, and any TOD/POD accounts. Flag any contradictions (e.g., a child listed on life insurance but not in the will, an ex-spouse still on a retirement account).
+
+3. TRUSTEE / EXECUTOR / AGENT GAPS — Are the named successor trustee, executor, financial POA agent, and healthcare proxy current, contactable, and aligned? Flag any document with no successor named, or where the named person is deceased / unreachable / conflicted.
+
+4. UNDER-FUNDED OR PLACEHOLDER TRUSTS — If a trust document is funded with a nominal amount (e.g., "$10.00") and no schedule of assets has been attached, flag this — the user almost certainly intended to retitle real assets into it.
+
+5. EXPIRED / OUT-OF-DATE DOCUMENTS — Living wills, healthcare directives, and POAs that are >5 years old should be flagged for re-execution.
+
+6. MILESTONE MESSAGE COVERAGE GAPS — Compare the list of beneficiaries against the milestone messages recorded. Identify beneficiaries with zero messages and recommend the most common milestones to record (graduation, marriage, first child, important birthdays, anniversary of passing).
+
+7. STATE-SPECIFIC EXECUTION DEFECTS — For each document, verify it meets the current state's witnessing / notarization rules. Cite the relevant statute (e.g., FL §732.502 requires 2 witnesses for a will; many states require notarization for POAs).
+
+For EACH finding, return:
+- The exact document filename it relates to (or "MULTIPLE — see description")
+- The specific fix to recommend
+- The state statute the user is exposed under, if applicable
+- An urgency level: critical (invalidates the document), high (could delay probate), medium (cleanup), low (nice to have)
+
+Be exhaustive. The user is preparing for a B2B pitch where this output is a key demo, so the more specific findings you can surface, the better."""
 
     try:
         # Build conversation history from DB for multi-turn context
@@ -659,7 +691,15 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
 
         # Call xAI Grok — use Grok-4 for heavy analysis, Grok-3-mini for chat
         use_heavy_model = (
-            data.action in ("analyze_vault", "generate_todo", "generate_iac", "analyze_readiness", "state_law_brief")
+            data.action
+            in (
+                "analyze_vault",
+                "generate_todo",
+                "generate_iac",
+                "analyze_readiness",
+                "state_law_brief",
+                "find_inconsistencies",
+            )
             or needs_content
         )
         selected_model = XAI_MODEL if use_heavy_model else XAI_MODEL_LIGHT
@@ -710,6 +750,7 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
             "generate_iac",
             "analyze_readiness",
             "state_law_brief",
+            "find_inconsistencies",
         )
         if _is_heavy:
             # grok-4 is observed to occasionally hang at the xAI edge
