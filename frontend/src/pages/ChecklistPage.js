@@ -753,27 +753,6 @@ const ChecklistPage = () => {
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-bold text-[var(--t)]">{item.title}</h3>
             {item.description && <p className="text-xs text-[var(--t5)] mt-0.5 line-clamp-2">{item.description}</p>}
-            {/* Source attribution — distinguishes AI items derived from
-                a specific vault document vs. generic AI best-practice
-                recommendations. Only shown for AI-suggested items. */}
-            {item.ai_suggested && item.source && (
-              <div className="mt-1.5">
-                {item.source === 'ai_general_recommendation' ? (
-                  <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded font-bold"
-                    style={{ background: 'rgba(20,184,166,0.10)', color: '#14b8a6', border: '1px solid rgba(20,184,166,0.25)' }}
-                    data-testid={`iac-source-${item.id}`}>
-                    <Sparkles className="w-3 h-3" /> AI recommendation (general)
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded font-bold"
-                    style={{ background: 'rgba(212,175,55,0.10)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.25)' }}
-                    title={`Derived from: ${item.source}`}
-                    data-testid={`iac-source-${item.id}`}>
-                    <FileText className="w-3 h-3" /> From: {item.source.length > 32 ? item.source.slice(0, 30) + '…' : item.source}
-                  </span>
-                )}
-              </div>
-            )}
             {(item.contact_name || item.contact_phone || item.contact_email) && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {item.contact_name && (
@@ -859,6 +838,31 @@ const ChecklistPage = () => {
             </button>
           </div>
         </div>
+        {/* Source attribution — full-width row beneath the title/actions
+            so the badge never wraps inside the cramped middle column.
+            Only shown for AI-suggested items. */}
+        {item.ai_suggested && item.source && (
+          item.source === 'ai_general_recommendation' ? (
+            <div
+              className="mt-2.5 w-full flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-bold whitespace-nowrap overflow-hidden text-ellipsis"
+              style={{ background: 'rgba(20,184,166,0.10)', color: '#14b8a6', border: '1px solid rgba(20,184,166,0.25)' }}
+              data-testid={`iac-source-${item.id}`}
+            >
+              <Sparkles className="w-3 h-3 flex-shrink-0" />
+              <span className="overflow-hidden text-ellipsis">AI recommendation (general)</span>
+            </div>
+          ) : (
+            <div
+              className="mt-2.5 w-full flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-bold whitespace-nowrap overflow-hidden text-ellipsis"
+              style={{ background: 'rgba(212,175,55,0.10)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.25)' }}
+              title={`Derived from: ${item.source}`}
+              data-testid={`iac-source-${item.id}`}
+            >
+              <FileText className="w-3 h-3 flex-shrink-0" />
+              <span className="overflow-hidden text-ellipsis">From: {item.source}</span>
+            </div>
+          )
+        )}
       </div>
     );
   };

@@ -1027,22 +1027,33 @@ const DashboardPage = () => {
             {ENTRIES.map((e) => (
               <React.Fragment key={e.key}>{e.tile}</React.Fragment>
             ))}
-            {egaRunning && isFeatureKeyEnabled('ega', enabledFeatures) && (
-              <div
-                className={`${chiclet ? 'col-span-2 sm:col-span-3 lg:col-span-6' : 'col-span-2'} flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold`}
-                style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)', color: '#d4af37' }}
-                data-testid="ega-running-banner"
-              >
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Estate Guardian is generating IAC items — counts will update automatically
-              </div>
-            )}
           </div>
+        );
+
+        // Full-width banner shown ABOVE the readiness dial whenever
+        // Estate Guardian is generating in the background. Stretches
+        // across the dashboard so the user instantly sees the live
+        // status without scrolling past the tiles.
+        const EgaBanner = () => (
+          egaRunning && isFeatureKeyEnabled('ega', enabledFeatures) ? (
+            <div
+              className="flex items-start gap-2.5 w-full px-4 py-3 rounded-xl text-sm font-bold mb-4"
+              style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.20)', color: '#d4af37' }}
+              data-testid="ega-running-banner"
+            >
+              <Loader2 className="w-4 h-4 animate-spin flex-shrink-0 mt-0.5" />
+              <div className="flex-1 leading-snug">
+                <div>Estate Guardian is generating IAC items — counts will update automatically.</div>
+                <div className="font-normal text-[var(--t4)] mt-1">This usually takes 1–3 minutes (occasionally longer if xAI is busy). Feel free to navigate to another tab — we'll keep working and notify you when it's done.</div>
+              </div>
+            </div>
+          ) : null
         );
 
         // Mobile/PWA: always vertical readiness-top → 2-col tiles.
         const mobileBlock = (
           <div className="lg:hidden">
+            <EgaBanner />
             <ReadinessCard />
             <TilesGrid />
           </div>
@@ -1053,6 +1064,7 @@ const DashboardPage = () => {
         if (dashboardLayout === 'readiness-top') {
           desktopBlock = (
             <div className="hidden lg:block">
+              <EgaBanner />
               <ReadinessCard dense />
               <TilesGrid chiclet />
             </div>
@@ -1094,14 +1106,6 @@ const DashboardPage = () => {
                   ))}
                 </div>
               </div>
-              {egaRunning && isFeatureKeyEnabled('ega', enabledFeatures) && (
-                <div className="flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold mb-4"
-                  style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)', color: '#d4af37' }}
-                  data-testid="ega-running-banner">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Estate Guardian is generating IAC items — counts will update automatically
-                </div>
-              )}
             </div>
           );
           const dial = (
@@ -1123,10 +1127,11 @@ const DashboardPage = () => {
             </div>
           );
           desktopBlock = (
-            <div
-              className="hidden lg:grid lg:grid-cols-2 lg:gap-4 mb-4"
-            >
-              {dashboardLayout === 'tiles-right' ? <>{dial}{tiles}</> : <>{tiles}{dial}</>}
+            <div className="hidden lg:block">
+              <EgaBanner />
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                {dashboardLayout === 'tiles-right' ? <>{dial}{tiles}</> : <>{tiles}{dial}</>}
+              </div>
             </div>
           );
         }
