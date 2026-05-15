@@ -704,7 +704,16 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
         _MODEL_ORDER = [m for m in _ladder if m and not (m in _seen or _seen.add(m))]
         _MAX_PER_MODEL = 2
         _DELAYS = [0, 1.5]
-        _SOFT_DEADLINE_S = 55
+        # Total wall-clock budget for the full failover ladder.
+        # Heavy IAC analysis legitimately takes >55s on grok-4, so we
+        # give it more headroom; chat-style replies stay snappy.
+        _SOFT_DEADLINE_S = 240 if _is_heavy else 55
+        # Per-attempt hard ceiling. Without this, a single slow grok-4
+        # call can block for minutes and trip the frontend 3-minute
+        # self-heal banner before the failover ladder gets a chance to
+        # walk to grok-3 / grok-3-mini. Heavy IAC analysis gets a
+        # longer ceiling than chat-style replies.
+        _PER_CALL_TIMEOUT_S = 90.0 if _is_heavy else 45.0
         _started_at = asyncio.get_event_loop().time()
         for model_name in _MODEL_ORDER:
             if completion is not None:
@@ -720,16 +729,26 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
                             f"(elapsed {elapsed:.1f}s exceeds soft deadline)"
                         )
                         break
-                    completion = await asyncio.to_thread(
-                        xai_client.chat.completions.create,
-                        model=model_name,
-                        messages=history_messages,
-                        temperature=0.7,
-                        max_tokens=4096,
+                    completion = await asyncio.wait_for(
+                        asyncio.to_thread(
+                            xai_client.chat.completions.create,
+                            model=model_name,
+                            messages=history_messages,
+                            temperature=0.7,
+                            max_tokens=4096,
+                            timeout=_PER_CALL_TIMEOUT_S,
+                        ),
+                        timeout=_PER_CALL_TIMEOUT_S + 5,
                     )
                     if model_name != selected_model:
                         logger.info(f"EGA served via failover model: {model_name} (preferred {selected_model})")
                     break
+                except asyncio.TimeoutError as e:
+                    last_error = e
+                    logger.warning(
+                        f"xAI timeout: model={model_name} attempt={attempt + 1}/{_MAX_PER_MODEL} "
+                        f"(>{_PER_CALL_TIMEOUT_S}s) — failing over"
+                    )
                 except Exception as e:
                     last_error = e
                     logger.warning(
@@ -1069,9 +1088,11 @@ async def get_iac_task_status(current_user: dict = Depends(get_current_user)):
     while EGA is generating IAC items in the background.
 
     Includes a stale-task self-heal: if a task has been "running" for
-    more than 3 minutes without an update, we mark it as ``error`` so
+    more than 5 minutes without an update, we mark it as ``error`` so
     the polling banner doesn't hang forever (covers pod restarts /
     backend crashes between the upsert and the completion write).
+    Heavy IAC runs with large vaults can legitimately take >2 min on
+    grok-4 + grok-3 failover, so the threshold is generous.
     """
     estates = await _get_user_estate(current_user, {"_id": 0, "id": 1})
     if not estates:
@@ -1092,7 +1113,7 @@ async def get_iac_task_status(current_user: dict = Depends(get_current_user)):
             try:
                 started_dt = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
                 age_s = (datetime.now(timezone.utc) - started_dt).total_seconds()
-                if age_s > 180:
+                if age_s > 300:
                     await db.ega_tasks.update_one(
                         {"id": task.get("id")},
                         {
