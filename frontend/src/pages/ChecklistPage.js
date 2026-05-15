@@ -394,7 +394,19 @@ const ChecklistPage = () => {
             didFinish = true;
             clearInterval(pollTimer);
             fetchData();
-            toast.success(`AI suggested ${task.items_added || 0} new checklist items`);
+            const added = task.items_added || 0;
+            const dupes = task.duplicates_skipped || 0;
+            if (added > 0 && dupes > 0) {
+              toast.success(`AI added ${added} new item${added > 1 ? 's' : ''} (${dupes} already in your checklist were skipped)`);
+            } else if (added > 0) {
+              toast.success(`AI added ${added} new checklist item${added > 1 ? 's' : ''}`);
+            } else if (dupes > 0) {
+              toast.success(`AI found ${dupes} relevant action${dupes > 1 ? 's' : ''} — all already in your checklist. Nothing new to add.`);
+            } else if (task.error) {
+              toast.error(task.error);
+            } else {
+              toast.success('AI completed — no new items suggested this round. Try again after adding more documents to your vault.');
+            }
             setSuggestingAI(false);
           } else if (task.status === 'error' || task.status === 'failed') {
             didFinish = true;
@@ -433,9 +445,25 @@ const ChecklistPage = () => {
       });
 
       const added = res.data?.action_result?.items_added || 0;
-      if (added > 0 && !didFinish) {
-        fetchData();
-        toast.success(`AI suggested ${added} new checklist items`);
+      const dupes = res.data?.action_result?.duplicates_skipped || 0;
+      if (!didFinish) {
+        didFinish = true;
+        if (pollTimer) clearInterval(pollTimer);
+        if (added > 0) {
+          fetchData();
+          toast.success(
+            dupes > 0
+              ? `AI added ${added} new item${added > 1 ? 's' : ''} (${dupes} already in your checklist were skipped)`
+              : `AI added ${added} new checklist item${added > 1 ? 's' : ''}`
+          );
+        } else if (dupes > 0) {
+          toast.success(`AI found ${dupes} relevant action${dupes > 1 ? 's' : ''} — all already in your checklist. Nothing new to add.`);
+        } else {
+          // Both 0 — vault might be empty, or the model returned no
+          // checklist block. Tell the user explicitly so they don't
+          // stare at the screen wondering whether it worked.
+          toast.success('AI run complete — no new items suggested this round. Try adding more documents to your vault and re-run.');
+        }
       }
     } catch (err) {
       // Suppress timeout/connection errors if the poller has already
@@ -451,9 +479,17 @@ const ChecklistPage = () => {
           || (err?.code === 'ECONNABORTED' || err?.message?.includes('timeout')
               ? 'still working in the background — refresh in a moment to see results.'
               : err?.message || 'try again later');
-        toast[isRateLimit ? 'error' : (err?.code === 'ECONNABORTED' ? 'success' : 'error')](
-          isRateLimit ? detail : `AI suggestion ${err?.code === 'ECONNABORTED' ? 'is' : 'failed —'} ${detail}`
-        );
+        if (isRateLimit) {
+          // The IAC generation is capped at 1/day per user. The
+          // founder can toggle "AI Unlimited" on any account from
+          // Admin → Users (the gold sparkle icon) to bypass this
+          // cap entirely.
+          toast.error(`${detail} Tip: ask the founder to enable "AI Unlimited" on your account in Admin → Users.`);
+        } else {
+          toast[err?.code === 'ECONNABORTED' ? 'success' : 'error'](
+            `AI suggestion ${err?.code === 'ECONNABORTED' ? 'is' : 'failed —'} ${detail}`
+          );
+        }
       }
     } finally {
       if (!didFinish) {
