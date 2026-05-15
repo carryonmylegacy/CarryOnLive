@@ -697,7 +697,16 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
             "state_law_brief",
         )
         if _is_heavy:
-            _ladder = [selected_model, "grok-3", XAI_MODEL_LIGHT]
+            # grok-4 is observed to occasionally hang at the xAI edge
+            # (even for a 1-token "say hi" prompt), and a hung grok-4
+            # burns our entire per-attempt budget before failing over.
+            # grok-3 returns sub-second for the same prompts and has
+            # been consistently healthy, so we LEAD with grok-3 for
+            # heavy analytical actions and keep grok-4 as a quality
+            # fallback for the rare case grok-3 itself errors. This
+            # turns the previously-common 180s-then-fail pattern into
+            # a sub-5s success in the typical case.
+            _ladder = ["grok-3", selected_model, XAI_MODEL_LIGHT]
         else:
             _ladder = [XAI_MODEL_LIGHT, "grok-3", XAI_MODEL]
         _seen: set = set()
@@ -709,18 +718,14 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
         _MAX_PER_MODEL = 1 if _is_heavy else 2
         _DELAYS = [0, 1.5]
         # Total wall-clock budget for the full failover ladder.
-        # Heavy IAC analysis legitimately takes 90-150s on grok-4 with
-        # a large vault prompt, so we budget for one full grok-4 run
-        # plus a grok-3 fallback.
-        _SOFT_DEADLINE_S = 360 if _is_heavy else 55
-        # Per-attempt hard ceiling. Heavy IAC analysis observed to
-        # legitimately need ~120s on grok-4 with a full vault prompt;
-        # the previous 90s ceiling was killing real successful runs
-        # mid-response and forcing the entire failover ladder to also
-        # time out, ending in a generic 500. 180s gives grok-4 the
-        # full headroom it needs and still leaves time for one
-        # failover under the 360s soft deadline.
-        _PER_CALL_TIMEOUT_S = 180.0 if _is_heavy else 45.0
+        # grok-3 (now lead for heavy) returns sub-30s for most prompts;
+        # grok-4 fallback gets full headroom only if grok-3 itself
+        # errors. 240s covers the worst case.
+        _SOFT_DEADLINE_S = 240 if _is_heavy else 55
+        # Per-attempt hard ceiling. grok-3 typically responds in
+        # 5-30s; we give it 90s before failing over. grok-4 fallback
+        # gets the full 120s it sometimes needs for vault analysis.
+        _PER_CALL_TIMEOUT_S = 90.0 if _is_heavy else 45.0
         _started_at = asyncio.get_event_loop().time()
         for model_name in _MODEL_ORDER:
             if completion is not None:
