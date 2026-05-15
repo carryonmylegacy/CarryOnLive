@@ -774,14 +774,17 @@ Be exhaustive. The user is preparing for a B2B pitch where this output is a key 
         _MAX_PER_MODEL = 1 if _is_heavy else 2
         _DELAYS = [0, 1.5]
         # Total wall-clock budget for the full failover ladder.
-        # grok-3 (now lead for heavy) returns sub-30s for most prompts;
-        # grok-4 fallback gets full headroom only if grok-3 itself
-        # errors. 240s covers the worst case.
-        _SOFT_DEADLINE_S = 240 if _is_heavy else 55
-        # Per-attempt hard ceiling. grok-3 typically responds in
-        # 5-30s; we give it 90s before failing over. grok-4 fallback
-        # gets the full 120s it sometimes needs for vault analysis.
-        _PER_CALL_TIMEOUT_S = 90.0 if _is_heavy else 45.0
+        # New prompt is comprehensive and routinely runs 90-150s on
+        # grok-3 (lead) for a vault-sized prompt; we budget for a full
+        # primary run plus one fallback.
+        _SOFT_DEADLINE_S = 420 if _is_heavy else 55
+        # Per-attempt hard ceiling. The richer IAC + find-inconsistencies
+        # prompt asks for statute citations, cross-doc audits, and
+        # extracted contact details — that produces longer, slower
+        # responses than the original lightweight prompt. 180s gives
+        # grok-3 enough room for a full response without bouncing the
+        # request to grok-4 mid-generation.
+        _PER_CALL_TIMEOUT_S = 180.0 if _is_heavy else 45.0
         _started_at = asyncio.get_event_loop().time()
         for model_name in _MODEL_ORDER:
             if completion is not None:
@@ -890,9 +893,46 @@ Be exhaustive. The user is preparing for a B2B pitch where this output is a key 
         # Handle IAC generation — only generate_iac populates the Immediate Action Checklist
         if data.action == "generate_iac" and "checklist_json" in response:
             try:
-                json_start = response.index("```checklist_json") + len("```checklist_json")
-                json_end = response.index("```", json_start)
-                checklist_json_str = response[json_start:json_end].strip()
+                # Robust fence parser. Grok sometimes emits the fence
+                # as ```checklist_json…```, sometimes as ```\nchecklist_json…```
+                # (newline between the backticks and the language tag),
+                # and occasionally as a plain ```json…``` block whose
+                # contents happen to be our schema. We accept all three
+                # via regex so a benign formatting nit doesn't silently
+                # discard 23 perfectly-good checklist items.
+                import re as _json_re
+
+                checklist_json_str = None
+                # Pattern A — ```checklist_json … ``` (canonical)
+                m = _json_re.search(
+                    r"```\s*checklist_json\s*\n?(.*?)\n?```",
+                    response,
+                    flags=_json_re.DOTALL | _json_re.IGNORECASE,
+                )
+                if m:
+                    checklist_json_str = m.group(1).strip()
+                else:
+                    # Pattern B — any fenced block that contains the
+                    # string "checklist_json" near the top (the
+                    # newline-after-backticks variant).
+                    m = _json_re.search(
+                        r"```[a-zA-Z]*\s*\n\s*checklist_json\s*\n(.*?)\n?```",
+                        response,
+                        flags=_json_re.DOTALL | _json_re.IGNORECASE,
+                    )
+                    if m:
+                        checklist_json_str = m.group(1).strip()
+
+                if not checklist_json_str:
+                    raise ValueError("No checklist_json fenced block found in AI response")
+
+                # Tolerate the case where the AI added a leading
+                # "checklist_json" label inside the fence on its own line.
+                if checklist_json_str.lower().startswith("checklist_json"):
+                    checklist_json_str = (
+                        checklist_json_str.split("\n", 1)[1].strip() if "\n" in checklist_json_str else ""
+                    )
+
                 new_items = json_module.loads(checklist_json_str)
 
                 # Get existing checklist items to avoid duplicates.
@@ -1183,11 +1223,11 @@ async def get_iac_task_status(current_user: dict = Depends(get_current_user)):
     while EGA is generating IAC items in the background.
 
     Includes a stale-task self-heal: if a task has been "running" for
-    more than 7 minutes without an update, we mark it as ``error`` so
+    more than 9 minutes without an update, we mark it as ``error`` so
     the polling banner doesn't hang forever (covers pod restarts /
     backend crashes between the upsert and the completion write).
-    Heavy IAC runs with large vaults can legitimately take 3-5 min on
-    grok-4 + grok-3 failover, so the threshold is generous.
+    Heavy IAC runs with the new richer prompt can legitimately take
+    3-6 min on grok-3 + grok-4 failover, so the threshold is generous.
     """
     estates = await _get_user_estate(current_user, {"_id": 0, "id": 1})
     if not estates:
@@ -1208,7 +1248,7 @@ async def get_iac_task_status(current_user: dict = Depends(get_current_user)):
             try:
                 started_dt = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
                 age_s = (datetime.now(timezone.utc) - started_dt).total_seconds()
-                if age_s > 420:
+                if age_s > 540:
                     await db.ega_tasks.update_one(
                         {"id": task.get("id")},
                         {
