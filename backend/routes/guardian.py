@@ -898,6 +898,49 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
                 )
             except (ValueError, json_module.JSONDecodeError) as e:
                 logger.warning(f"Failed to parse checklist JSON from AI response: {e}")
+                # Mark task as completed-with-0-items so the frontend
+                # banner / poller doesn't hang. The user still sees the
+                # narrative response — the JSON parse just produced no
+                # new checklist items this round.
+                if iac_task_id:
+                    try:
+                        await db.ega_tasks.update_one(
+                            {"id": iac_task_id},
+                            {
+                                "$set": {
+                                    "status": "completed",
+                                    "items_added": 0,
+                                    "duplicates_skipped": 0,
+                                    "duplicate_titles": [],
+                                    "error": "Could not parse checklist JSON from AI response.",
+                                    "completed_at": datetime.now(timezone.utc).isoformat(),
+                                }
+                            },
+                        )
+                    except Exception:
+                        pass
+
+        # Catch-all: if generate_iac ran without raising AND we never
+        # entered the JSON-parse block (because the model omitted the
+        # checklist_json fence), still finalize the task so the
+        # polling banner doesn't hang at "running" forever.
+        if data.action == "generate_iac" and iac_task_id:
+            try:
+                await db.ega_tasks.update_one(
+                    {"id": iac_task_id, "status": "running"},
+                    {
+                        "$set": {
+                            "status": "completed",
+                            "items_added": 0,
+                            "duplicates_skipped": 0,
+                            "duplicate_titles": [],
+                            "error": "AI returned no checklist items this round.",
+                            "completed_at": datetime.now(timezone.utc).isoformat(),
+                        }
+                    },
+                )
+            except Exception:
+                pass
 
         elif data.action == "generate_todo":
             # To-do list generated — mark for frontend PDF download (no DB writes)
@@ -1022,6 +1065,11 @@ async def get_iac_task_status(current_user: dict = Depends(get_current_user)):
 
     Used by Dashboard and Checklist pages to poll for real-time updates
     while EGA is generating IAC items in the background.
+
+    Includes a stale-task self-heal: if a task has been "running" for
+    more than 3 minutes without an update, we mark it as ``error`` so
+    the polling banner doesn't hang forever (covers pod restarts /
+    backend crashes between the upsert and the completion write).
     """
     estates = await _get_user_estate(current_user, {"_id": 0, "id": 1})
     if not estates:
@@ -1034,4 +1082,58 @@ async def get_iac_task_status(current_user: dict = Depends(get_current_user)):
     )
     if not task:
         return {"status": "none"}
+
+    # Stale-task self-heal
+    if task.get("status") == "running":
+        started_at = task.get("started_at")
+        if started_at:
+            try:
+                started_dt = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+                age_s = (datetime.now(timezone.utc) - started_dt).total_seconds()
+                if age_s > 180:
+                    await db.ega_tasks.update_one(
+                        {"id": task.get("id")},
+                        {
+                            "$set": {
+                                "status": "error",
+                                "error": "Generation timed out — please try again.",
+                                "completed_at": datetime.now(timezone.utc).isoformat(),
+                            }
+                        },
+                    )
+                    task["status"] = "error"
+                    task["error"] = "Generation timed out — please try again."
+                    task["completed_at"] = datetime.now(timezone.utc).isoformat()
+            except (ValueError, TypeError):
+                pass
+
     return task
+
+
+@router.post("/guardian/iac-task/cancel")
+async def cancel_iac_task(current_user: dict = Depends(get_current_user)):
+    """Cancel the user's currently-running IAC generation task.
+
+    Flips ``status: running`` → ``status: canceled`` so the frontend
+    polling banner clears immediately, even when the user is on a
+    different page from the one that kicked off the request.
+    The actual backend xAI call (already in flight on the server)
+    cannot be aborted mid-request, but it WILL no-op when it tries to
+    write its own completion update because the filter only matches
+    rows still in ``running``.
+    """
+    estates = await _get_user_estate(current_user, {"_id": 0, "id": 1})
+    if not estates:
+        return {"canceled": False, "reason": "no_estate"}
+    estate_id = estates[0]["id"]
+
+    result = await db.ega_tasks.update_one(
+        {"estate_id": estate_id, "type": "generate_iac", "status": "running"},
+        {
+            "$set": {
+                "status": "canceled",
+                "completed_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
+    )
+    return {"canceled": result.modified_count > 0}

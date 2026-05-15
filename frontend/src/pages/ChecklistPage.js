@@ -139,12 +139,32 @@ const ChecklistPage = () => {
         const task = res.data;
         if (task.status === 'running') {
           setEgaRunning(true);
+          // Compute elapsed from server-side started_at so the timer
+          // resumes correctly when the user navigates away and back
+          // mid-generation. Only update if the local axios call isn't
+          // already managing the timer (suggestingAI flag is the
+          // source of truth when this tab kicked off the request).
+          if (!suggestingAI && task.started_at) {
+            try {
+              const startedMs = Date.parse(task.started_at);
+              if (!Number.isNaN(startedMs)) {
+                setAiElapsed(Math.max(0, Math.floor((Date.now() - startedMs) / 1000)));
+              }
+            } catch {}
+          }
         } else if (task.status === 'completed' && task.completed_at) {
           setEgaRunning(false);
           if (lastCompletedAtRef.current && lastCompletedAtRef.current !== task.completed_at) {
             fetchData();
           }
           lastCompletedAtRef.current = task.completed_at;
+        } else if (task.status === 'error' || task.status === 'canceled') {
+          // Surface a single toast so the user knows the run ended.
+          if (egaRunning) {
+            const msg = task.error || (task.status === 'canceled' ? 'Generation canceled.' : 'Generation failed — please try again.');
+            toast.error(msg);
+          }
+          setEgaRunning(false);
         } else {
           setEgaRunning(false);
         }
@@ -153,7 +173,30 @@ const ChecklistPage = () => {
     poll();
     const interval = setInterval(poll, 4000);
     return () => { active = false; clearInterval(interval); };
-  }, [estate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [estate?.id, suggestingAI, egaRunning]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Drive the local elapsed-seconds timer from a single source so it
+  // ticks whether the request started in THIS mount (suggestingAI) OR
+  // is being tracked from the server because the user navigated back
+  // mid-run (egaRunning). Without this, returning to /checklist while
+  // EGA is still working showed the banner but no live timer.
+  useEffect(() => {
+    if (!egaRunning && !suggestingAI) {
+      if (aiTimerRef.current) {
+        clearInterval(aiTimerRef.current);
+        aiTimerRef.current = null;
+      }
+      return;
+    }
+    if (aiTimerRef.current) return;
+    aiTimerRef.current = setInterval(() => setAiElapsed(s => s + 1), 1000);
+    return () => {
+      if (aiTimerRef.current) {
+        clearInterval(aiTimerRef.current);
+        aiTimerRef.current = null;
+      }
+    };
+  }, [egaRunning, suggestingAI]);
 
   const fetchData = async () => {
     // Airplane-mode rescue — rehydrate checklist + estate from the
@@ -329,24 +372,22 @@ const ChecklistPage = () => {
     if (!estate) return;
     setSuggestingAI(true);
     setAiElapsed(0);
-    aiTimerRef.current = setInterval(() => setAiElapsed(s => s + 1), 1000);
     const controller = new AbortController();
     aiAbortRef.current = controller;
 
     // ── Live progress poller ──
     // The backend records intermediate task progress in db.ega_tasks
-    // (status: running → completed | failed). We poll it every 5s so
-    // the user sees "12 items added so far…" growing live, and we
-    // also have a safe place to land if the axios call aborts before
-    // the backend finishes. Polling is canceled when the main request
-    // resolves (or fails) or when the user cancels.
+    // (status: running → completed | error | canceled). We poll it
+    // every 5s so the user sees "12 items added so far…" growing
+    // live, and we also have a safe place to land if the axios call
+    // aborts before the backend finishes. Polling is canceled when
+    // the main request resolves (or fails) or when the user cancels.
     let pollTimer = null;
     let didFinish = false;
     const startPolling = () => {
       pollTimer = setInterval(async () => {
         try {
-          const headers = getAuthHeaders()?.headers;
-          const res = await axios.get(`${API_URL}/guardian/iac-task-status`, { headers, timeout: 10000 });
+          const res = await axios.get(`${API_URL}/guardian/iac-task-status`, getAuthHeaders());
           const task = res?.data;
           if (!task || task.status === 'none') return;
           if (task.status === 'completed') {
@@ -355,13 +396,16 @@ const ChecklistPage = () => {
             fetchData();
             toast.success(`AI suggested ${task.items_added || 0} new checklist items`);
             setSuggestingAI(false);
-            clearInterval(aiTimerRef.current);
-          } else if (task.status === 'failed') {
+          } else if (task.status === 'error' || task.status === 'failed') {
             didFinish = true;
             clearInterval(pollTimer);
             toast.error(task.error || 'AI suggestion failed — please try again');
             setSuggestingAI(false);
-            clearInterval(aiTimerRef.current);
+          } else if (task.status === 'canceled') {
+            didFinish = true;
+            clearInterval(pollTimer);
+            toast.error('Generation canceled.');
+            setSuggestingAI(false);
           } else if (task.items_added && task.items_added > 0) {
             // Mid-flight refresh so the user watches their checklist grow.
             fetchData();
@@ -414,15 +458,27 @@ const ChecklistPage = () => {
     } finally {
       if (!didFinish) {
         setSuggestingAI(false);
-        clearInterval(aiTimerRef.current);
       }
       if (pollTimer) clearInterval(pollTimer);
       aiAbortRef.current = null;
     }
   };
 
-  const stopAISuggest = () => {
-    if (aiAbortRef.current) aiAbortRef.current.abort();
+  const stopAISuggest = async () => {
+    // Local abort: stop any in-flight axios call from THIS mount.
+    if (aiAbortRef.current) {
+      try { aiAbortRef.current.abort(); } catch {}
+    }
+    // Server cancel: flip the ega_tasks row so the polling banner
+    // clears immediately, even on other tabs/devices and even if the
+    // user just navigated away/back (no local abort controller).
+    try {
+      await axios.post(`${API_URL}/guardian/iac-task/cancel`, null, getAuthHeaders());
+    } catch {}
+    setSuggestingAI(false);
+    setEgaRunning(false);
+    setAiElapsed(0);
+    toast.success('Generation canceled.');
   };
 
   // ── Beneficiary-view PDF preview ──────────────────────────────────
@@ -795,14 +851,19 @@ const ChecklistPage = () => {
         </button>
         <button
           onClick={handleAISuggest}
-          disabled={suggestingAI}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold glass-card hover:border-[var(--gold)] text-[var(--t)] disabled:opacity-50"
+          disabled={suggestingAI || egaRunning}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold glass-card hover:border-[var(--gold)] text-[var(--t)] disabled:opacity-100"
+          data-testid="iac-ai-suggest-btn"
         >
-          <Sparkles className={`w-4 h-4 text-[var(--gold)] ${suggestingAI ? 'animate-spin' : ''}`} />
-          {suggestingAI ? (
+          <Sparkles className={`w-4 h-4 text-[var(--gold)] ${(suggestingAI || egaRunning) ? 'animate-spin' : ''}`} />
+          {(suggestingAI || egaRunning) ? (
             <>
-              Analyzing... <span className="tabular-nums text-xs text-[var(--t5)]">{aiElapsed}s</span>
-              <button onClick={(e) => { e.stopPropagation(); stopAISuggest(); }} className="ml-1 px-2 py-0.5 rounded text-[11px] font-bold text-[var(--rd)] border border-[var(--rd)]/30">Stop</button>
+              Analyzing... <span className="tabular-nums text-xs text-[var(--t5)]" data-testid="iac-ai-elapsed">{aiElapsed}s</span>
+              <button
+                onClick={(e) => { e.stopPropagation(); stopAISuggest(); }}
+                className="ml-1 px-2 py-0.5 rounded text-[11px] font-bold text-[var(--rd)] border border-[var(--rd)]/30"
+                data-testid="iac-ai-stop-btn"
+              >Stop</button>
             </>
           ) : 'AI Suggest from Vault'}
         </button>
