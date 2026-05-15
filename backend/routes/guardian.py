@@ -1254,9 +1254,9 @@ async def get_chat_sessions(current_user: dict = Depends(get_current_user)):
             }
         },
         {"$sort": {"last_message_at": -1}},
-        {"$limit": 20},
+        {"$limit": 100},
     ]
-    sessions_raw = await db.chat_history.aggregate(pipeline).to_list(20)
+    sessions_raw = await db.chat_history.aggregate(pipeline).to_list(100)
 
     sessions = []
     for s in sessions_raw:
@@ -1285,6 +1285,18 @@ async def delete_chat_session(session_id: str, current_user: dict = Depends(get_
     result = await db.chat_history.delete_many({"session_id": session_id, "user_id": current_user["id"]})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Session not found")
+    return {"success": True, "deleted": result.deleted_count}
+
+
+@router.delete("/chat/sessions")
+async def delete_all_chat_sessions(current_user: dict = Depends(get_current_user)):
+    """Hard-delete every EGA conversation belonging to the current user.
+
+    Surfaced as a 'Clear all conversations' button on the Guardian landing
+    page. Backed by a destructive delete_many on chat_history scoped to the
+    authenticated user's id — never crosses user boundaries.
+    """
+    result = await db.chat_history.delete_many({"user_id": current_user["id"]})
     return {"success": True, "deleted": result.deleted_count}
 
 

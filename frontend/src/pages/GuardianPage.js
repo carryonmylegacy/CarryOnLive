@@ -355,6 +355,27 @@ const GuardianPage = () => {
     fetchSessions();
   };
 
+  // Hard-delete EVERY conversation belonging to the current user. Surfaced
+  // as a "Clear all" pill in the Recent Conversations header so users with
+  // long histories (or test-leak residue) can wipe in one shot instead of
+  // clicking the trash icon 30+ times.
+  const clearAllSessions = async () => {
+    if (!sessions.length) return;
+    if (!window.confirm(`Delete ALL ${sessions.length} conversations? This cannot be undone.`)) return;
+    try {
+      await axios.delete(`${API_URL}/chat/sessions`, getAuthHeaders());
+      setSessions([]);
+      setSessionId(null);
+      setMessages([]);
+      setView('landing');
+      try { localStorage.removeItem('ega_active_session'); } catch {}
+      toast.success('All conversations cleared');
+    } catch (err) {
+      const detail = err?.response?.data?.detail || err?.message || 'Unknown error';
+      toast.error(`Failed to clear: ${detail}`);
+    }
+  };
+
   const handleChecklistExport = async () => {
     setChecklistExporting(true);
     try {
@@ -683,9 +704,16 @@ const GuardianPage = () => {
             <div className="glass-card p-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider">Recent Conversations</h2>
-                <button onClick={() => startNewChat()} className="flex items-center gap-1.5 text-xs font-bold text-[var(--gold)]" data-testid="new-chat-btn">
-                  <Plus className="w-3.5 h-3.5" /> New Chat
-                </button>
+                <div className="flex items-center gap-3">
+                  {sessions.length >= 2 && (
+                    <button onClick={clearAllSessions} className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--t5)] active:text-red-400 transition-colors" data-testid="clear-all-sessions-btn" title="Delete every conversation">
+                      <Trash2 className="w-3 h-3" /> Clear all
+                    </button>
+                  )}
+                  <button onClick={() => startNewChat()} className="flex items-center gap-1.5 text-xs font-bold text-[var(--gold)]" data-testid="new-chat-btn">
+                    <Plus className="w-3.5 h-3.5" /> New Chat
+                  </button>
+                </div>
               </div>
               {sessionsLoading ? (
                 <div className="flex items-center justify-center py-6 text-[var(--t5)]">
