@@ -159,8 +159,13 @@ const ChecklistPage = () => {
           }
           lastCompletedAtRef.current = task.completed_at;
         } else if (task.status === 'error' || task.status === 'canceled') {
-          // Surface a single toast so the user knows the run ended.
-          if (egaRunning) {
+          // The user's own AI Suggest call (handleAISuggest) toasts
+          // its own error from the catch / inner-poller branches, so
+          // we only surface a toast here for runs that started on a
+          // DIFFERENT mount (e.g. user navigated to the checklist
+          // from elsewhere while EGA was finishing). suggestingAI is
+          // true only on the originating mount.
+          if (egaRunning && !suggestingAI) {
             const msg = task.error || (task.status === 'canceled' ? 'Generation canceled.' : 'Generation failed — please try again.');
             toast.error(msg);
           }
@@ -371,9 +376,20 @@ const ChecklistPage = () => {
   const handleAISuggest = async () => {
     if (!estate) return;
     setSuggestingAI(true);
+    setEgaRunning(true);
     setAiElapsed(0);
     const controller = new AbortController();
     aiAbortRef.current = controller;
+
+    // Single helper so every exit path resets the UI cleanly.
+    // Without this we were leaving `egaRunning` set after the POST
+    // resolved and the "Analyzing… 138s Stop" pill kept ticking even
+    // though the run had already completed.
+    const finalizeUI = () => {
+      setSuggestingAI(false);
+      setEgaRunning(false);
+      setAiElapsed(0);
+    };
 
     // ── Live progress poller ──
     // The backend records intermediate task progress in db.ega_tasks
@@ -407,17 +423,17 @@ const ChecklistPage = () => {
             } else {
               toast.success('AI completed — no new items suggested this round. Try again after adding more documents to your vault.');
             }
-            setSuggestingAI(false);
+            finalizeUI();
           } else if (task.status === 'error' || task.status === 'failed') {
             didFinish = true;
             clearInterval(pollTimer);
             toast.error(task.error || 'AI suggestion failed — please try again');
-            setSuggestingAI(false);
+            finalizeUI();
           } else if (task.status === 'canceled') {
             didFinish = true;
             clearInterval(pollTimer);
             toast.error('Generation canceled.');
-            setSuggestingAI(false);
+            finalizeUI();
           } else if (task.items_added && task.items_added > 0) {
             // Mid-flight refresh so the user watches their checklist grow.
             fetchData();
@@ -464,6 +480,7 @@ const ChecklistPage = () => {
           // stare at the screen wondering whether it worked.
           toast.success('AI run complete — no new items suggested this round. Try adding more documents to your vault and re-run.');
         }
+        finalizeUI();
       }
     } catch (err) {
       // Suppress timeout/connection errors if the poller has already
@@ -473,7 +490,10 @@ const ChecklistPage = () => {
         // already handled
       } else if (axios.isCancel(err) || err?.message === 'canceled') {
         // user-cancelled
+        finalizeUI();
       } else {
+        didFinish = true;
+        if (pollTimer) clearInterval(pollTimer);
         const isRateLimit = err?.response?.status === 429;
         const detail = err?.response?.data?.detail
           || (err?.code === 'ECONNABORTED' || err?.message?.includes('timeout')
@@ -490,11 +510,9 @@ const ChecklistPage = () => {
             `AI suggestion ${err?.code === 'ECONNABORTED' ? 'is' : 'failed —'} ${detail}`
           );
         }
+        finalizeUI();
       }
     } finally {
-      if (!didFinish) {
-        setSuggestingAI(false);
-      }
       if (pollTimer) clearInterval(pollTimer);
       aiAbortRef.current = null;
     }
