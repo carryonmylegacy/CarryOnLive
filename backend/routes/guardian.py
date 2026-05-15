@@ -408,7 +408,9 @@ async def chat_with_guardian(data: ChatRequest, current_user: dict = Depends(get
     # eating token budget while preserving genuine same-day refreshes
     # via admin override. Everything else (regular EGA chat, analyze
     # readiness, state-law lookup, etc.) shares a 10/day pool.
-    if current_user.get("role") != "admin":
+    # Admins AND users flagged with `ai_unlimited=true` (founder
+    # override, set via Admin → Users tab) bypass these limits.
+    if current_user.get("role") != "admin" and not current_user.get("ai_unlimited"):
         since = datetime.now(timezone.utc) - timedelta(hours=24)
         if data.action == "generate_iac":
             iac_count = await db.guardian_usage.count_documents(

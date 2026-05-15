@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Users, Trash2, Loader2, ChevronDown, ChevronRight, KeyRound, Unlock, GitBranch, User, AlertTriangle, Zap, ArrowUpDown, ShieldOff, Link2, Clock } from 'lucide-react';
+import { Search, Users, Trash2, Loader2, ChevronDown, ChevronRight, KeyRound, Unlock, GitBranch, User, AlertTriangle, Zap, ArrowUpDown, ShieldOff, Link2, Clock, Sparkles } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
@@ -35,6 +35,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   const [deleting, setDeleting] = useState(false);
   const [togglingBeta, setTogglingBeta] = useState(null);
   const [togglingExempt, setTogglingExempt] = useState(null);
+  const [togglingAiUnlimited, setTogglingAiUnlimited] = useState(null);
   const [resettingTrial, setResettingTrial] = useState(null);
   const [resetTrialTarget, setResetTrialTarget] = useState(null); // { id, name, role, trial_ends_at }
   const [settingTier, setSettingTier] = useState(null);
@@ -72,6 +73,18 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
       toast.error(err.response?.data?.detail || 'Failed to toggle session exemption');
     }
     setTogglingExempt(null);
+  };
+
+  const handleToggleAiUnlimited = async (userId, currentVal) => {
+    setTogglingAiUnlimited(userId);
+    try {
+      const res = await axios.put(`${API_URL}/admin/users/${userId}/ai-unlimited`, {}, getAuthHeaders());
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, ai_unlimited: res.data.ai_unlimited } : u));
+      toast.success(res.data.ai_unlimited ? 'AI daily limits removed for this user' : 'AI daily limits restored');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to toggle AI limit override');
+    }
+    setTogglingAiUnlimited(null);
   };
 
   const handleResetTrial = async () => {
@@ -333,6 +346,13 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                 MULTI-SESSION
               </span>
             )}
+            {u.ai_unlimited && (
+              <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold"
+                style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.3)' }}
+                data-testid={`ai-unlimited-badge-${u.id}`}>
+                AI ∞
+              </span>
+            )}
           </div>
           {u.id !== currentUserId && (
             <div className="flex items-center gap-0.5 flex-shrink-0">
@@ -354,6 +374,16 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   title={u.session_exempt ? 'Disable multi-session (restore lockout + single-session)' : 'Enable multi-session (no lockout, simultaneous logins allowed)'}
                   data-testid={`session-exempt-toggle-${u.id}`}>
                   {togglingExempt === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldOff className="w-4 h-4" />}
+                </Button>
+              )}
+              {!operatorMode && (
+                <Button variant="ghost" size="sm"
+                  className={`h-8 w-8 p-0 hover:bg-[var(--s)] hover:text-current ${u.ai_unlimited ? 'text-[#d4af37]' : 'text-[var(--t5)]'}`}
+                  onClick={() => handleToggleAiUnlimited(u.id, u.ai_unlimited)}
+                  disabled={togglingAiUnlimited === u.id}
+                  title={u.ai_unlimited ? 'Restore daily AI limits (1/day IAC, 10/day EGA)' : 'Remove daily AI limits for this user'}
+                  data-testid={`ai-unlimited-toggle-${u.id}`}>
+                  {togglingAiUnlimited === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                 </Button>
               )}
               {(u.role === 'benefactor' || u.role === 'beneficiary') && (

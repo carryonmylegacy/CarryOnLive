@@ -204,6 +204,31 @@ async def toggle_session_exempt(user_id: str, current_user: dict = Depends(requi
     return {"session_exempt": new_val}
 
 
+@router.put("/admin/users/{user_id}/ai-unlimited")
+async def toggle_ai_unlimited(user_id: str, current_user: dict = Depends(require_admin)):
+    """Toggle ai_unlimited flag — when ON, the user bypasses the
+    daily EGA / IAC AI rate limits (1/day IAC, 10/day EGA).
+    Founder-only override for VIPs, internal testers, and demo
+    accounts. Logged to activity_log."""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "ai_unlimited": 1, "name": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    new_val = not user.get("ai_unlimited", False)
+    await db.users.update_one({"id": user_id}, {"$set": {"ai_unlimited": new_val}})
+    await db.activity_log.insert_one(
+        {
+            "id": str(uuid4()),
+            "action": "ai_unlimited_toggle",
+            "actor_id": current_user["id"],
+            "actor_name": current_user.get("name", "Admin"),
+            "target_id": user_id,
+            "details": f"{'Enabled' if new_val else 'Disabled'} AI rate-limit bypass for {user.get('name', user_id)}",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+    return {"ai_unlimited": new_val}
+
+
 @router.post("/admin/users/{user_id}/reset-trial")
 async def reset_user_trial(user_id: str, current_user: dict = Depends(require_admin)):
     """Reset a user's free trial — sets trial_ends_at to now + the
