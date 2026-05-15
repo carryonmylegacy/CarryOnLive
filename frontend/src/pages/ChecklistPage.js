@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { cachedGet } from '../utils/apiCache';
+import { cachedGet, invalidateCache } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
 import { ReturnPopup } from '../components/GuidedActivation';
 import {
@@ -409,7 +409,13 @@ const ChecklistPage = () => {
           if (task.status === 'completed') {
             didFinish = true;
             clearInterval(pollTimer);
+            invalidateCache('/checklists/');
+            invalidateCache('/estates');
             fetchData();
+            // Belt-and-suspenders re-fetch 1.5s later in case the
+            // first fetchData fired before the inserts fully landed
+            // (rare, but a 5-min run is too costly to silently fail).
+            setTimeout(() => { fetchData(); }, 1500);
             const added = task.items_added || 0;
             const dupes = task.duplicates_skipped || 0;
             if (added > 0 && dupes > 0) {
@@ -466,7 +472,10 @@ const ChecklistPage = () => {
         didFinish = true;
         if (pollTimer) clearInterval(pollTimer);
         if (added > 0) {
+          invalidateCache('/checklists/');
+          invalidateCache('/estates');
           fetchData();
+          setTimeout(() => { fetchData(); }, 1500);
           toast.success(
             dupes > 0
               ? `AI added ${added} new item${added > 1 ? 's' : ''} (${dupes} already in your checklist were skipped)`
@@ -877,11 +886,14 @@ const ChecklistPage = () => {
       <SectionLockBanner sectionId="checklist" />
 
       {egaRunning && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold"
+        <div className="flex items-start gap-2 px-4 py-3 rounded-xl text-sm font-bold"
           style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)', color: '#d4af37' }}
           data-testid="ega-generating-banner">
-          <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
-          <span>Estate Guardian is generating IAC items — new items will appear automatically</span>
+          <Loader2 className="w-4 h-4 animate-spin flex-shrink-0 mt-0.5" />
+          <div className="flex-1 leading-snug">
+            <div>Estate Guardian is generating IAC items — new items will appear automatically.</div>
+            <div className="font-normal text-[var(--t4)] mt-1">This usually takes 1–3 minutes (occasionally longer if xAI is busy). Feel free to navigate to another tab — we'll keep working and notify you when it's done.</div>
+          </div>
         </div>
       )}
 

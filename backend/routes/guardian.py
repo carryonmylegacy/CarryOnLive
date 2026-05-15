@@ -839,10 +839,17 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
                 checklist_json_str = response[json_start:json_end].strip()
                 new_items = json_module.loads(checklist_json_str)
 
-                # Get existing checklist items to avoid duplicates
-                existing = await db.checklists.find({"estate_id": estate_id}, {"_id": 0, "id": 1, "title": 1}).to_list(
-                    200
-                )
+                # Get existing checklist items to avoid duplicates.
+                # CRITICAL: must EXCLUDE soft-deleted items so the AI
+                # can re-suggest things the user previously wiped.
+                # Without this filter, a user who clears their IAC and
+                # re-runs AI Suggest gets a toast saying "X added + Y
+                # skipped" while the UI shows fewer items than the
+                # toast implies — the "duplicates" are tombstones.
+                existing = await db.checklists.find(
+                    {"estate_id": estate_id, "deleted_at": None},
+                    {"_id": 0, "id": 1, "title": 1},
+                ).to_list(200)
                 existing_titles = {item["title"].lower() for item in existing}
 
                 items_added = 0
