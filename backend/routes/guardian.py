@@ -552,14 +552,55 @@ For EACH recommendation in Section 2, the `description` field MUST cite the spec
 
 BOTH sections should be included in your response with clear, bold section headers so the reader can immediately distinguish between "what my family does after I die" and "what I need to fix now."
 
-IMPORTANT — INCLUDE A BASELINE OF UNIVERSAL ITEMS:
-Regardless of what specific documents I have in my vault, ALWAYS include the following baseline beneficiary actions in Section 1 (tag their "source" field as "ai_general_recommendation"):
-- Critical / day 1-3: Notify immediate family and executor; secure home + valuables; obtain at least 10 certified death certificates from the county vital records office (NAME THE COUNTY based on my address); preserve perishables / care for pets
-- First week: Notify Social Security Administration (1-800-772-1213); notify employer / HR re: final pay + benefits; check for funeral insurance / pre-paid arrangements; secure mail forwarding via USPS
-- 2 weeks – 1 month: File life insurance claims (with carriers from vault if known); contact each financial institution to freeze + retitle accounts; cancel subscriptions, memberships, recurring auto-payments; cancel driver's license; notify utility companies
-- First month – long term: File final state + federal tax returns; transfer or close credit cards; settle estate debts via probate process; transfer vehicle titles; update beneficiary designations on retirement accounts; consult an estate attorney for state-specific probate
+IMPORTANT — INCLUDE A BASELINE OF UNIVERSAL ITEMS (ONE ITEM PER LINE — DO NOT CONSOLIDATE):
+Regardless of what specific documents I have in my vault, you MUST emit EACH of the following as a SEPARATE checklist item (one JSON object per line below — NEVER merge multiple actions into a single item). Tag every baseline item's "source" field as "ai_general_recommendation".
 
-Then ADDITIONALLY, mine my SPECIFIC vault documents for document-derived actionable items (life insurance carrier + policy # + beneficiaries by name and %, trustee name + phone, attorney contact, etc.). Tag each document-derived item with the EXACT document filename in the "source" field.
+BASELINE — CRITICAL / IMMEDIATE (category=immediate, priority=critical) — emit ALL of these as separate items:
+1. Notify immediate family of the passing
+2. Notify the named executor and successor trustee
+3. Secure the primary residence (lock doors, set alarm, collect mail/packages, arrange for pets)
+4. Secure valuables (jewelry, firearms, cash, important physical documents)
+5. Obtain at least 10 certified death certificates from the county vital records office (NAME THE EXACT COUNTY based on my declared address and provide the county clerk's phone number if you can infer it)
+6. Preserve perishables and arrange short-term care for pets, plants, livestock
+7. Begin funeral / cremation arrangements per any pre-paid plan or written wishes
+
+BASELINE — FIRST WEEK (category=first_week, priority=high) — emit ALL of these as separate items:
+8. Notify the Social Security Administration of the death (1-800-772-1213)
+9. Notify the decedent's employer / HR department to coordinate final pay, COBRA, retirement plan rollover, and any group life insurance
+10. Check for funeral insurance, pre-paid arrangements, or veteran's burial benefits (VA: 1-800-827-1000)
+11. Set up USPS mail forwarding or hold to a trusted address to prevent identity theft
+12. Notify the deceased's primary care physician and any specialists for medical record closure
+13. Locate and inventory all financial accounts, insurance policies, and recurring bills
+
+BASELINE — 2 WEEKS – 1 MONTH (category=two_weeks, priority=medium) — emit ALL of these as separate items:
+14. File life insurance claims with each carrier (use the EXACT carrier names + policy numbers from my vault if available)
+15. Contact each financial institution to freeze, retitle, or claim the accounts (provide the death certificate + executor letter)
+16. Cancel subscriptions, memberships, and recurring auto-payments (streaming, gym, clubs, software)
+17. Notify utility companies and either transfer service or close accounts
+18. Cancel the decedent's driver's license at the DMV and surrender the physical card
+19. Notify credit bureaus (Equifax, Experian, TransUnion) to flag the file as deceased to prevent identity theft
+
+BASELINE — FIRST MONTH+ (category=first_month, priority=low) — emit ALL of these as separate items:
+20. File the decedent's final federal income tax return (Form 1040) and any state return
+21. File the estate's tax return (Form 1041) if required, and an estate tax return (Form 706) if assets exceed thresholds
+22. Transfer or close credit cards, lines of credit, and pay outstanding card balances from the estate
+23. Settle estate debts and creditor claims via the probate process per state law
+24. Transfer vehicle titles via the DMV (provide certified death certificate + executor letter)
+25. Update beneficiary designations on any inherited retirement accounts (rollover vs lump-sum decisions)
+26. Consult an estate / probate attorney for state-specific filings; cite my state's small-estate threshold and any non-court transfer options (transfer-on-death deeds, joint tenancy)
+27. Update or close email accounts, social media (memorialize Facebook, deactivate Twitter), cloud storage
+
+DOCUMENT-DERIVED ITEMS (in addition to the 27 baseline items above):
+For EACH AI-eligible document in my vault, mine it for SPECIFIC, ACTIONABLE items and emit them as additional checklist entries. Tag each with the EXACT document filename in the "source" field. Examples:
+- Life insurance policy → 1 item per beneficiary tier with carrier name, policy #, beneficiary name + %, claim phone
+- Trust document → 1 item to activate successor trustee (with name + phone), 1 item per trust-funded asset to verify retitling
+- Will → 1 item for executor to file with the probate court (with county clerk's address), 1 item per specific bequest
+- POA / Healthcare Directive → cancel or note that the document is no longer in force
+- Deed → 1 item to retitle property per the named survivorship clause or trust transfer instruction
+Aim for at least 2-4 document-derived items per AI-eligible document. NEVER skip a document.
+
+MINIMUM COUNT REQUIREMENT (CRITICAL):
+Before you emit the JSON, COUNT your items. You MUST emit AT LEAST 27 baseline beneficiary_action items + at least 2 document-derived items per AI-eligible vault document. If your count is lower, you have over-consolidated — go back and split merged items into separate entries. A correct response will have at least 30-45 items in the JSON array.
 
 PRIORITY MAPPING (CRITICAL — used for UI sorting):
 - category=immediate → priority=critical
@@ -567,7 +608,7 @@ PRIORITY MAPPING (CRITICAL — used for UI sorting):
 - category=two_weeks → priority=medium
 - category=first_month → priority=low
 
-Return the checklist items from BOTH sections in this exact JSON format at the END of your response, wrapped in ```checklist_json``` tags. Use the "section" field to distinguish between the two types, and the "source" field to attribute the item:
+Return ALL checklist items in this exact JSON format at the END of your response, wrapped in ```checklist_json``` tags. Use the "section" field to distinguish between beneficiary actions (which go into the IAC) and benefactor recommendations (which stay in the chat/PDF). Use the "source" field to attribute the item:
 ```checklist_json
 [{{"title": "Item title", "description": "Detailed description with specific contacts/numbers/statute citations", "category": "immediate|first_week|two_weeks|first_month", "priority": "critical|high|medium|low", "section": "beneficiary_action|benefactor_recommendation", "source": "ai_general_recommendation|<exact document name from vault>", "order": 1}}]
 ```"""
@@ -948,6 +989,24 @@ Be exhaustive. The user is preparing for a B2B pitch where this output is a key 
                     )
 
                 new_items = json_module.loads(checklist_json_str)
+
+                # Diagnostic logging — captures EXACTLY what Grok returned so
+                # we can immediately see if the model is under-emitting,
+                # over-flagging items as benefactor_recommendation (which
+                # would get filtered into chat-only), or if the title
+                # dedup filter is silently discarding novel-but-similar
+                # entries. Without this we have to guess whether 5 items
+                # in the IAC means Grok produced 5 or 35.
+                _bens_in_payload = sum(1 for it in new_items if it.get("section") != "benefactor_recommendation")
+                _bens_recs_in_payload = sum(1 for it in new_items if it.get("section") == "benefactor_recommendation")
+                logger.info(
+                    f"IAC parse OK: total_items={len(new_items)} "
+                    f"beneficiary_actions={_bens_in_payload} "
+                    f"benefactor_recommendations={_bens_recs_in_payload} "
+                    f"response_chars={len(response)} "
+                    f"json_chars={len(checklist_json_str)} "
+                    f"model={selected_model}"
+                )
 
                 # Get existing checklist items to avoid duplicates.
                 # CRITICAL: must EXCLUDE soft-deleted items so the AI
