@@ -800,13 +800,27 @@ Be exhaustive. The user is preparing for a B2B pitch where this output is a key 
                             f"(elapsed {elapsed:.1f}s exceeds soft deadline)"
                         )
                         break
+                    # Heavy IAC / find-inconsistencies / state-law-brief
+                    # responses need room to emit the full Section 1 prose
+                    # + Section 2 prose + a complete checklist_json fence
+                    # with 20-25 richly-described items (statute citations,
+                    # exact policy #s, beneficiary breakdowns, phone
+                    # numbers). 4096 tokens routinely truncates the JSON
+                    # mid-array, causing the parser to silently drop the
+                    # tail — that's why the user used to see only 4-8
+                    # items on the first pass and needed re-runs to
+                    # accumulate the rest. 8192 fits the full output in
+                    # one shot (~10x the prose budget of a typical chat
+                    # reply) while staying well within grok-3's 131K
+                    # output ceiling.
+                    _max_tokens = 8192 if _is_heavy else 4096
                     completion = await asyncio.wait_for(
                         asyncio.to_thread(
                             xai_client.chat.completions.create,
                             model=model_name,
                             messages=history_messages,
                             temperature=0.7,
-                            max_tokens=4096,
+                            max_tokens=_max_tokens,
                             timeout=_PER_CALL_TIMEOUT_S,
                         ),
                         timeout=_PER_CALL_TIMEOUT_S + 5,
