@@ -17,20 +17,39 @@ pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.react-pdf.min.mjs';
 
 const DocThumbnail = ({ doc }) => {
   const [blobUrl, setBlobUrl] = useState(null);
+  const [textPreview, setTextPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const mountedRef = useRef(true);
-  const isPreviewable = doc.file_type && (doc.file_type.includes('pdf') || doc.file_type.includes('image'));
+  const ft = (doc.file_type || '').toLowerCase();
+  const isPdf = ft.includes('pdf');
+  const isImage = ft.includes('image');
+  // Plain-text / markdown documents (e.g. the .poa / .trust example
+  // files in the demo vault) used to render as a generic gray FileText
+  // placeholder because the previewable check only matched PDF/image.
+  // We now fetch the text body and render the first few lines so the
+  // SDV grid shows real document content for every supported type.
+  const isText = !!ft && (
+    ft.startsWith('text/') ||
+    ft.includes('markdown') ||
+    ft === 'application/json' ||
+    ft === 'application/xml'
+  );
+  const isPreviewable = !!ft && (isPdf || isImage || isText);
 
   useEffect(() => {
     mountedRef.current = true;
     setBlobUrl(null);
+    setTextPreview(null);
     setError(false);
     if (!isPreviewable || doc.is_locked) return;
 
-    // Check LRU cache first
-    const cached = getCachedBlob(doc.id);
-    if (cached) { setBlobUrl(cached); return; }
+    // Check LRU cache first (PDF/image only — text previews are tiny
+    // strings and cheaper to refetch than to manage in the blob cache).
+    if (!isText) {
+      const cached = getCachedBlob(doc.id);
+      if (cached) { setBlobUrl(cached); return; }
+    }
 
     const token = localStorage.getItem('carryon_token');
     if (!token) { setError(true); return; }
@@ -38,13 +57,18 @@ const DocThumbnail = ({ doc }) => {
     setLoading(true);
     axios.get(`${API_URL}/documents/${doc.id}/preview`, {
       headers: { 'Authorization': `Bearer ${token}` },
-      responseType: 'blob'
+      responseType: isText ? 'text' : 'blob',
     }).then(res => {
       if (!mountedRef.current) return;
-      const blob = new Blob([res.data], { type: doc.file_type });
-      const url = URL.createObjectURL(blob);
-      setCachedBlob(doc.id, url);
-      setBlobUrl(url);
+      if (isText) {
+        const txt = typeof res.data === 'string' ? res.data : String(res.data || '');
+        setTextPreview(txt.slice(0, 1200));
+      } else {
+        const blob = new Blob([res.data], { type: doc.file_type });
+        const url = URL.createObjectURL(blob);
+        setCachedBlob(doc.id, url);
+        setBlobUrl(url);
+      }
     }).catch(() => {
       if (mountedRef.current) setError(true);
     }).finally(() => {
@@ -52,7 +76,7 @@ const DocThumbnail = ({ doc }) => {
     });
 
     return () => { mountedRef.current = false; };
-  }, [doc.id, doc.is_locked, doc.file_type, isPreviewable]);
+  }, [doc.id, doc.is_locked, doc.file_type, isPreviewable, isText]);
 
   if (!isPreviewable || doc.is_locked) {
     return (
@@ -117,16 +141,13 @@ const DocThumbnail = ({ doc }) => {
     return <Shimmer />;
   }
 
-  if (error || !blobUrl) {
+  if (error || (!blobUrl && !textPreview)) {
     return (
       <div className="w-full h-full flex items-center justify-center" style={{ background: 'var(--s)' }}>
         <FileText className="w-8 h-8 text-[var(--t5)]" />
       </div>
     );
   }
-
-  const isPdf = doc.file_type?.includes('pdf');
-  const isImage = doc.file_type?.includes('image');
 
   if (isImage) {
     return (
@@ -144,6 +165,38 @@ const DocThumbnail = ({ doc }) => {
         >
           <Page pageNumber={1} width={200} renderTextLayer={false} renderAnnotationLayer={false} />
         </Document>
+      </div>
+    );
+  }
+
+  if (isText && textPreview) {
+    // Render a paper-style preview: white "page" with the first few
+    // lines of the document content. Makes plain-text docs (.poa,
+    // .trust, .md, etc.) feel like real documents in the SDV grid
+    // instead of identical gray FileText placeholders.
+    return (
+      <div
+        className="w-full h-full overflow-hidden relative"
+        style={{
+          background: '#fbfaf6',
+          padding: '10px 12px',
+          fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
+          fontSize: 6.5,
+          lineHeight: 1.35,
+          color: '#1f2937',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+        }}
+        aria-hidden
+      >
+        {textPreview}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute', left: 0, right: 0, bottom: 0, height: 28,
+            background: 'linear-gradient(to bottom, rgba(251,250,246,0), #fbfaf6)',
+          }}
+        />
       </div>
     );
   }
