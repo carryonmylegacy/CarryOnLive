@@ -1257,6 +1257,44 @@ async def get_xai_credits(current_user: dict = Depends(get_current_user)):
     guardian_today = await db.guardian_sessions.count_documents({"updated_at": {"$gte": today_start}})
     guardian_month = await db.guardian_sessions.count_documents({"updated_at": {"$gte": month_start}})
 
+    # Top spenders today — surfaces the users most actively burning
+    # token budget so an admin can spot abuse or upsell a heavy user
+    # to a paid tier. Bounded at top 10 to keep the response small.
+    top_spenders_pipeline = [
+        {"$match": {"timestamp": {"$gte": today_start}}},
+        {
+            "$group": {
+                "_id": "$user_id",
+                "tokens": {"$sum": {"$add": ["$input_tokens", "$output_tokens"]}},
+                "cost": {"$sum": "$cost_usd"},
+                "calls": {"$sum": 1},
+            }
+        },
+        {"$sort": {"tokens": -1}},
+        {"$limit": 10},
+    ]
+    top_spenders_raw = await db.xai_usage.aggregate(top_spenders_pipeline).to_list(10)
+    # Hydrate user_id → email so the tile is human-readable.
+    spender_ids = [t["_id"] for t in top_spenders_raw if t.get("_id")]
+    user_lookup = {}
+    if spender_ids:
+        user_rows = await db.users.find(
+            {"id": {"$in": spender_ids}}, {"_id": 0, "id": 1, "email": 1, "name": 1, "ai_unlimited": 1}
+        ).to_list(len(spender_ids))
+        user_lookup = {u["id"]: u for u in user_rows}
+    top_spenders = [
+        {
+            "user_id": t["_id"],
+            "email": (user_lookup.get(t["_id"]) or {}).get("email", "(unknown)"),
+            "name": (user_lookup.get(t["_id"]) or {}).get("name", ""),
+            "tokens": int(t.get("tokens", 0) or 0),
+            "cost_usd": round(t.get("cost", 0.0) or 0.0, 4),
+            "calls": int(t.get("calls", 0) or 0),
+            "ai_unlimited": bool((user_lookup.get(t["_id"]) or {}).get("ai_unlimited")),
+        }
+        for t in top_spenders_raw
+    ]
+
     return {
         "initial_balance_usd": initial_balance,
         "total_spent_usd": round(total_spent, 2),
@@ -1273,6 +1311,7 @@ async def get_xai_credits(current_user: dict = Depends(get_current_user)):
         ],
         "guardian_sessions_today": guardian_today,
         "guardian_sessions_month": guardian_month,
+        "top_spenders_today": top_spenders,
     }
 
 

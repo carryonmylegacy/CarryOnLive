@@ -1,6 +1,7 @@
 """CarryOn™ Backend — Estate Guardian AI & PDF Export"""
 
 import asyncio
+import os
 import io
 import json as json_module
 import uuid
@@ -31,6 +32,14 @@ router = APIRouter()
 # enough that the UI doesn't appear hung.
 _HEAVY_AI_SEMAPHORE = asyncio.Semaphore(6)
 _HEAVY_AI_WAIT_TIMEOUT_S = 30.0
+
+# Per-user daily token budget (input + output tokens summed across all
+# heavy + light AI actions). Caps cost exposure when a single user
+# uploads massive documents or hammers the chat. 500K tokens/day at
+# blended grok-3 pricing (~$0.50/M in + $1.50/M out) is roughly $0.50
+# worst-case per user per day — predictable for B2B unit economics.
+# Override via env if a paid tier needs more.
+PER_USER_DAILY_TOKEN_BUDGET = int(os.environ.get("PER_USER_DAILY_TOKEN_BUDGET", "500000"))
 
 
 async def _get_user_estate(current_user: dict, projection: dict | None = None):
@@ -485,6 +494,40 @@ async def chat_with_guardian(data: ChatRequest, current_user: dict = Depends(get
                 raise HTTPException(
                     status_code=429,
                     detail="Daily limit reached — Estate Guardian AI allows 10 queries per day. Try again tomorrow.",
+                )
+
+        # Per-user daily TOKEN budget — catches users who use a lot of
+        # context (giant vault, long chat history) and would otherwise
+        # slip past the request-count check. Budget = sum of input +
+        # output tokens across all actions in the last 24h. Defaults
+        # to 500K tokens/day (covers ~5 heavy IAC runs at ~100K each
+        # — generous for legit use, hard ceiling against abuse). The
+        # cap is centralized in PER_USER_DAILY_TOKEN_BUDGET so an
+        # admin can lift it via env var if a paying tier needs more.
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        token_usage_agg = await db.xai_usage.aggregate(
+            [
+                {"$match": {"user_id": current_user["id"], "date": today}},
+                {
+                    "$group": {
+                        "_id": None,
+                        "input_total": {"$sum": "$input_tokens"},
+                        "output_total": {"$sum": "$output_tokens"},
+                    }
+                },
+            ]
+        ).to_list(1)
+        if token_usage_agg:
+            tokens_used = (token_usage_agg[0].get("input_total", 0) or 0) + (
+                token_usage_agg[0].get("output_total", 0) or 0
+            )
+            if tokens_used >= PER_USER_DAILY_TOKEN_BUDGET:
+                raise HTTPException(
+                    status_code=429,
+                    detail=(
+                        f"Daily AI budget reached ({tokens_used:,} of {PER_USER_DAILY_TOKEN_BUDGET:,} tokens used today). "
+                        "Your quota resets at midnight UTC."
+                    ),
                 )
 
     # Record this attempt before issuing the LLM call so we count
@@ -1490,3 +1533,47 @@ async def cancel_iac_task(current_user: dict = Depends(get_current_user)):
         },
     )
     return {"canceled": result.modified_count > 0}
+
+
+@router.get("/guardian/usage/today")
+async def get_my_ai_usage_today(current_user: dict = Depends(get_current_user)):
+    """Return today's AI usage for the authenticated user.
+
+    Powers an in-app "today's AI budget" indicator so users can see how
+    much of their daily quota they've consumed before they're cut off.
+    `tokens_remaining` is the live remaining budget (or "unlimited" for
+    `ai_unlimited` users / admins).
+    """
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    agg = await db.xai_usage.aggregate(
+        [
+            {"$match": {"user_id": current_user["id"], "date": today}},
+            {
+                "$group": {
+                    "_id": None,
+                    "input_total": {"$sum": "$input_tokens"},
+                    "output_total": {"$sum": "$output_tokens"},
+                    "cost_total": {"$sum": "$cost_usd"},
+                    "request_count": {"$sum": 1},
+                }
+            },
+        ]
+    ).to_list(1)
+    used = 0
+    cost = 0.0
+    requests = 0
+    if agg:
+        used = (agg[0].get("input_total", 0) or 0) + (agg[0].get("output_total", 0) or 0)
+        cost = round(agg[0].get("cost_total", 0.0) or 0.0, 4)
+        requests = agg[0].get("request_count", 0) or 0
+    unlimited = bool(current_user.get("ai_unlimited") or current_user.get("role") == "admin")
+    return {
+        "date": today,
+        "tokens_used": used,
+        "tokens_budget": PER_USER_DAILY_TOKEN_BUDGET,
+        "tokens_remaining": "unlimited" if unlimited else max(0, PER_USER_DAILY_TOKEN_BUDGET - used),
+        "ratio": (used / PER_USER_DAILY_TOKEN_BUDGET) if PER_USER_DAILY_TOKEN_BUDGET > 0 else 0,
+        "unlimited": unlimited,
+        "cost_usd": cost,
+        "request_count": requests,
+    }

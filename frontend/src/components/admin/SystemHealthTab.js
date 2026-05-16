@@ -114,6 +114,39 @@ const XAICreditsCard = ({ getAuthHeaders }) => {
             Top Up Credits →
           </a>
         )}
+        {Array.isArray(credits.top_spenders_today) && credits.top_spenders_today.length > 0 && (
+          <div className="mt-3 p-3 rounded-lg" style={{ background: 'var(--s)' }} data-testid="top-spenders-block">
+            <div className="text-[11px] font-bold text-[var(--t4)] mb-2 flex items-center justify-between">
+              <span>Top Users Today (by tokens)</span>
+              <span className="text-[var(--t5)]">Daily budget: 500K tokens/user</span>
+            </div>
+            <div className="space-y-1.5">
+              {credits.top_spenders_today.slice(0, 5).map((s, i) => {
+                const pct = Math.min(100, Math.round((s.tokens / 500000) * 100));
+                const barColor = pct >= 90 ? '#EF4444' : pct >= 60 ? '#F59E0B' : '#22C55E';
+                return (
+                  <div key={s.user_id || i} className="flex items-center gap-2 text-[12px]" data-testid={`top-spender-row-${i}`}>
+                    <span className="flex-1 truncate text-[var(--t)]" title={s.email}>
+                      {s.email}
+                      {s.ai_unlimited && <span className="ml-1 text-[11px] text-[var(--gold)] font-bold">(UNLIMITED)</span>}
+                    </span>
+                    <span className="font-mono text-[var(--t4)] tabular-nums" style={{ minWidth: 80 }}>
+                      {s.tokens.toLocaleString()}t
+                    </span>
+                    <span className="font-mono text-[var(--t4)] tabular-nums" style={{ minWidth: 60 }}>
+                      ${s.cost_usd.toFixed(3)}
+                    </span>
+                    {!s.ai_unlimited && (
+                      <span className="w-12 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--b)' }}>
+                        <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: barColor }} />
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
