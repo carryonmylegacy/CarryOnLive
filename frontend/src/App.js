@@ -96,6 +96,7 @@ const BeneficiaryEntitiesPage = lazy(() => import('./pages/beneficiary/Beneficia
 const EntitiesPrintPage = lazy(() => import('./pages/print/EntitiesPrintPage'));
 const PdfPreviewModal = lazy(() => import('./components/PdfPreviewModal'));
 const PdfJobChip = lazy(() => import('./components/PdfJobChip'));
+const PWAInstallPrompt = lazy(() => import('./components/PWAInstallPrompt'));
 const PdfPreviewLegacyExpired = lazy(() =>
   import('./components/PdfPreviewModal').then((m) => ({ default: m.PdfPreviewLegacyExpired }))
 );
@@ -881,6 +882,14 @@ function App() {
               to another page and back. */}
           <Suspense fallback={null}>
             <PdfJobChip />
+          </Suspense>
+          {/* PWA install prompt — captures beforeinstallprompt on
+              install-capable browsers (Chrome / Edge / Brave / Samsung
+              Internet). Self-gated against already-installed devices
+              and respects a 14-day dismissal cooldown. iOS Safari is
+              handled separately by IOSAddToHomeSheet. */}
+          <Suspense fallback={null}>
+            <PWAInstallPrompt />
           </Suspense>
         </BrowserRouter>
         <SpeedInsights />

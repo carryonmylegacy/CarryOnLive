@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 
 import pdfplumber
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 
 from config import XAI_MODEL, XAI_MODEL_LIGHT, db, logger, xai_client
 from models import ChatRequest, ChatResponse, ChecklistItem
@@ -1577,3 +1578,88 @@ async def get_my_ai_usage_today(current_user: dict = Depends(get_current_user)):
         "cost_usd": cost,
         "request_count": requests,
     }
+
+
+@router.get("/guardian/iac-task-stream")
+async def stream_iac_task_status(current_user: dict = Depends(get_current_user)):
+    """Server-Sent Events stream of the current user's IAC task status.
+
+    Replacement for the existing /iac-task-status polling endpoint when
+    the frontend has SSE enabled. Pushes a JSON payload identical to
+    the polling response shape any time the underlying task document
+    changes, then auto-closes when the task reaches a terminal state
+    (completed | error | canceled) OR after 10 minutes of no-change
+    (defensive ceiling so a leaked connection can't live forever).
+
+    Why SSE: at 1,000 active users each polling /iac-task-status every
+    4 seconds, the platform receives ~250 req/sec just for this one
+    feature. With SSE, the same load becomes ~1,000 idle long-lived
+    connections — orders of magnitude less request-handler churn —
+    AND clients see status changes within milliseconds instead of up
+    to 4 s late. The endpoint is backwards-compatible with polling:
+    if a proxy or environment strips SSE, the frontend falls back to
+    the polling endpoint automatically.
+
+    Implementation: we poll the task document internally every 2 s
+    (cheaper than wiring Mongo change streams across the deployment)
+    and only emit an event when the serialized payload actually
+    differs from the previous emission. Final event is `event: close`
+    so the client can cleanly tear down without firing onerror.
+    """
+    estates = await _get_user_estate(current_user, {"_id": 0, "id": 1})
+    if not estates:
+
+        async def _empty():
+            yield 'event: close\ndata: {"status":"none"}\n\n'
+
+        return StreamingResponse(_empty(), media_type="text/event-stream")
+    estate_id = estates[0]["id"]
+
+    MAX_STREAM_DURATION_S = 600  # 10-minute defensive ceiling per connection
+    POLL_INTERVAL_S = 2
+
+    async def _event_stream():
+        started = datetime.now(timezone.utc)
+        last_payload_json = None
+        terminal_states = {"completed", "error", "canceled"}
+        while True:
+            task = await db.ega_tasks.find_one(
+                {"estate_id": estate_id, "type": "generate_iac"},
+                {"_id": 0},
+            )
+            if not task:
+                payload = {"status": "none"}
+            else:
+                payload = {
+                    "status": task.get("status", "none"),
+                    "started_at": task.get("started_at"),
+                    "completed_at": task.get("completed_at"),
+                    "items_added": task.get("items_added", 0),
+                    "duplicates_skipped": task.get("duplicates_skipped", 0),
+                    "error": task.get("error"),
+                }
+            payload_json = json_module.dumps(payload, default=str)
+            if payload_json != last_payload_json:
+                yield f"data: {payload_json}\n\n"
+                last_payload_json = payload_json
+            # Stop the stream once we observe a terminal state.
+            if payload.get("status") in terminal_states:
+                yield 'event: close\ndata: {"reason":"terminal"}\n\n'
+                return
+            # Defensive ceiling so a leaked client connection can't
+            # keep this coroutine running forever.
+            age_s = (datetime.now(timezone.utc) - started).total_seconds()
+            if age_s > MAX_STREAM_DURATION_S:
+                yield 'event: close\ndata: {"reason":"timeout"}\n\n'
+                return
+            await asyncio.sleep(POLL_INTERVAL_S)
+
+    return StreamingResponse(
+        _event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",  # disable proxy buffering (nginx-style)
+            "Connection": "keep-alive",
+        },
+    )
