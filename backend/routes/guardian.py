@@ -190,6 +190,7 @@ async def gather_estate_context(estate_id: str, include_doc_content: bool = Fals
         {"id": estate.get("owner_id")},
         {
             "_id": 0,
+            "name": 1,
             "address_state": 1,
             "address_city": 1,
             "address_street": 1,
@@ -209,6 +210,8 @@ async def gather_estate_context(estate_id: str, include_doc_content: bool = Fals
     benefactor_street = (benefactor or {}).get("address_street", "")
     benefactor_marital = (benefactor or {}).get("marital_status", "")
     benefactor_special = (benefactor or {}).get("special_status", [])
+    benefactor_full_name = (benefactor or {}).get("name", "") or ""
+    benefactor_first_name = benefactor_full_name.split(" ", 1)[0] if benefactor_full_name else "the benefactor"
 
     # Keep estate.state in sync with the user's current Settings address.
     # This ensures PDFs, readiness reports, and other estate-level features
@@ -253,6 +256,7 @@ async def gather_estate_context(estate_id: str, include_doc_content: bool = Fals
     context_parts.append(f"""
 **CURRENT ESTATE INFORMATION:**
 - Estate Name: {estate["name"]}
+- Benefactor's Name: {benefactor_full_name or "Not specified"} (first name: {benefactor_first_name})
 - Benefactor's Declared Address: {benefactor_street or "Not specified"}, {benefactor_city or "Not specified"}, {benefactor_state} {benefactor_zip or ""}
 - Benefactor's State of Residence: {benefactor_state}
 - Benefactor's City: {benefactor_city or "Not specified"}
@@ -342,7 +346,17 @@ async def gather_estate_context(estate_id: str, include_doc_content: bool = Fals
     # Beneficiaries
     context_parts.append("\n**BENEFICIARIES:**")
     if beneficiaries:
-        for ben in beneficiaries:
+        # Sort by succession_order ascending (None last). The first
+        # entry in the resulting list is the PRIMARY beneficiary — the
+        # default assignee for any IAC action item that the benefactor's
+        # documents don't already designate by name.
+        def _succ_key(b: dict) -> tuple:
+            so = b.get("succession_order")
+            return (0, so) if so is not None else (1, 0)
+
+        sorted_bens = sorted(beneficiaries, key=_succ_key)
+        primary_first_name = ""
+        for idx, ben in enumerate(sorted_bens):
             age_info = ""
             if ben.get("date_of_birth"):
                 try:
@@ -352,8 +366,27 @@ async def gather_estate_context(estate_id: str, include_doc_content: bool = Fals
                 except Exception:
                     pass
             gender_info = f", Gender: {ben.get('gender', 'not specified')}" if ben.get("gender") else ""
+            full_name = ben.get("name") or f"{ben.get('first_name', '')} {ben.get('last_name', '')}".strip()
+            first_name = ben.get("first_name") or (full_name.split(" ", 1)[0] if full_name else "")
+            in_succession = ben.get("succession_order") is not None
+            tier_label = f"Succession #{ben['succession_order'] + 1}" if in_succession else "Not in succession"
+            primary_flag = (
+                " ← PRIMARY BENEFICIARY (default assignee for IAC actions when no named individual takes precedence)"
+                if (idx == 0 and in_succession)
+                else ""
+            )
+            if idx == 0 and in_succession and not primary_first_name:
+                primary_first_name = first_name
             context_parts.append(
-                f"- {ben['name']} (Relation: {ben['relation']}{age_info}{gender_info}, Email: {ben['email']})"
+                f"- {full_name} (First name: {first_name}, Relation: {ben.get('relation', 'unknown')}, "
+                f"{tier_label}{age_info}{gender_info}, Email: {ben.get('email', 'not on file')}){primary_flag}"
+            )
+        if primary_first_name:
+            context_parts.append(
+                f"\n**PRIMARY BENEFICIARY (default assignee):** {primary_first_name}. "
+                f"When an IAC action item is not already directed at a person named in a specific vault document "
+                f"(e.g., the executor named in the will, the successor trustee named in the trust, the agent named "
+                f"in a POA), address the item to {primary_first_name} by first name."
             )
     else:
         context_parts.append("- No beneficiaries added yet")
@@ -514,7 +547,19 @@ Requirements:
 Return your response as helpful advice with the to-do items clearly listed. Format them with numbered sections by priority category (Immediate, First Week, Two Weeks, First Month). Do NOT include any JSON blocks — just a clean, readable to-do list that I can download as a PDF."""
 
     elif data.action == "generate_iac":
-        user_message_text = """Based on the documents in my Secure Document Vault, generate a comprehensive Immediate Action Checklist.
+        user_message_text = """Based on the documents in my Secure Document Vault and the beneficiaries I have on file, generate a comprehensive Immediate Action Checklist.
+
+VOICE & ADDRESSING (CRITICAL — read first):
+- This checklist is written FROM ME (the benefactor) TO my loved ones, in my voice. Every item must read as if I am personally asking my family — calmly, warmly, and respectfully — to take care of something on my behalf. NEVER write items in cold, generic, third-person bureaucratic prose ("The executor should...", "Beneficiaries must..."). I am asking, not commanding.
+- Default assignee is the PRIMARY BENEFICIARY (see the BENEFICIARIES context block — they are marked "← PRIMARY BENEFICIARY"). Address them by FIRST NAME ONLY (e.g., "Emma") in every item where my documents do not already designate a specific person by name.
+- Tone: warm, requesting, never bossy. Example phrasings:
+  • "Emma, please reach out to..."
+  • "I'd like you to..." / "I'd appreciate it if Emma could..."
+  • "Would you start by calling..."
+  • "Emma — first, take a breath. Then..."
+- If a vault document explicitly names a different person for a task (e.g., my will names "Sarah Mitchell" as executor, my trust names "Tom Mitchell" as successor trustee, my POA names "Jonathan Mitchell" as agent), that named person takes precedence over the default primary-beneficiary assignment. Address THAT named person by first name for THAT specific item.
+- For items that genuinely involve the whole family (notifying relatives, securing the home), it's fine to address "Emma and the family" or "Emma, with your brother Tom's help" — pull in additional beneficiary first names from the BENEFICIARIES block when appropriate.
+- Each "title" field is the short action label (≤ 60 chars). The "description" field is where the personalized, warm benefactor-voice prose lives. Aim for 2-4 sentences per description with the assignee's first name woven in naturally.
 
 CRITICAL STRUCTURE REQUIREMENT — You MUST organize your response into TWO clearly separated sections with distinct headers. Do NOT intermix items from these two sections:
 
@@ -531,7 +576,7 @@ Requirements for Section 1:
 - Probate guidance MUST be state-specific: cite the actual statute (e.g., "Florida Statute §735.301 small-estate threshold of $75,000"), name the COUNTY of residence, and provide the county clerk's office contact if you can infer it from the address
 - Note any immediate deadlines tied to state law (e.g., FL probate filing under §733.212)
 - Prioritize by urgency: immediate (day 1-3), first_week, two_weeks, first_month
-- Be EXTREMELY specific — "File a claim with Atlantic National Life Insurance Co., Policy #ANL-45839271, primary beneficiary Penny Mitchell (100%)" not "Contact life insurance company"
+- Be EXTREMELY specific — "Emma, please file the life insurance claim with Atlantic National Life Insurance Co., Policy #ANL-45839271 — you're the primary beneficiary (100%). Their claims line is 1-800-555-XXXX." not "Contact life insurance company"
 
 ==============================
 SECTION 2: "ESTATE STRENGTHENING RECOMMENDATIONS FOR THE BENEFACTOR"
@@ -554,6 +599,8 @@ BOTH sections should be included in your response with clear, bold section heade
 
 IMPORTANT — INCLUDE A BASELINE OF UNIVERSAL ITEMS (ONE ITEM PER LINE — DO NOT CONSOLIDATE):
 Regardless of what specific documents I have in my vault, you MUST emit EACH of the following as a SEPARATE checklist item (one JSON object per line below — NEVER merge multiple actions into a single item). Tag every baseline item's "source" field as "ai_general_recommendation".
+
+REMINDER: address the PRIMARY BENEFICIARY by first name in each description (e.g., "Emma, please..."). Vary the phrasing across items so it doesn't read robotically. If the BENEFICIARIES context lists no primary, address items to "my family" warmly.
 
 BASELINE — CRITICAL / IMMEDIATE (category=immediate, priority=critical) — emit ALL of these as separate items:
 1. Notify immediate family of the passing
