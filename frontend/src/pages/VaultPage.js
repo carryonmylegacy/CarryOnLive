@@ -32,7 +32,6 @@ import { Skeleton } from '../components/ui/skeleton';
 import DocThumbnail from '../components/DocThumbnail';
 import { ReturnPopup } from '../components/GuidedActivation';
 import { API_URL } from '../config';
-import { getOfflineMode } from '../offline/featureFlag';
 import { getLocalVaultItems, upsertLocalVaultItems } from '../offline/repos/vaultRepo';
 import VaultDocumentCard from '../components/vault/VaultDocumentCard';
 import VaultUploadPanel from '../components/vault/VaultUploadPanel';
@@ -299,7 +298,6 @@ const VaultPage = () => {
   }, [loading, fromGettingStarted, documents.length, estate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
-    const mode = getOfflineMode();
     // Flag-agnostic airplane-mode rescue — run BEFORE the estates
     // fetch so a `cachedGet` miss doesn't throw us into the catch
     // block with an empty Vault. Reads local estates + local vault
@@ -334,13 +332,16 @@ const VaultPage = () => {
           const { upsertLocalEstates } = await import('../offline/repos/estatesRepo');
           upsertLocalEstates(estates).catch(() => {});
         } catch {}
-        // Offline-first paint (instant rehydration when mirror has data).
-        if (mode !== 'off') {
-          const local = await getLocalVaultItems(selected.id);
-          if (local.length > 0) {
-            setDocuments(local);
-            setLoading(false);
-          }
+        // Offline-first paint — flag-agnostic. Reveal immediately
+        // whenever the mirror has data, so navigating to /vault feels
+        // instant regardless of whether the user has opted into
+        // offline mode. Previously gated behind `mode !== 'off'`
+        // which made default-off users wait for the network on every
+        // visit. Server fetch below silently reconciles.
+        const local = await getLocalVaultItems(selected.id);
+        if (local.length > 0) {
+          setDocuments(local);
+          setLoading(false);
         }
         const docsRes = await axios.get(`${API_URL}/documents/${selected.id}`, getAuthHeaders()).catch(() => ({ data: [] }));
         const docs = Array.isArray(docsRes.data) ? docsRes.data : [];

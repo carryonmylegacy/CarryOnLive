@@ -204,6 +204,27 @@ const ChecklistPage = () => {
   }, [egaRunning, suggestingAI]);
 
   const fetchData = async () => {
+    // Cache-first reveal — paint from localStorage BEFORE the network
+    // fetch so navigating to /checklist feels instant. The network
+    // fetch below silently reconciles state when it lands. Previously
+    // this rescue only fired in the airplane-mode and online-error
+    // branches, so a normal online navigation sat through the full
+    // /estates + /checklists round-trip behind a skeleton splash.
+    try {
+      const savedEidEarly = localStorage.getItem('selected_estate_id');
+      if (savedEidEarly) {
+        const cachedEstateEarly = readList(`checklist:estate:${savedEidEarly}`);
+        if (cachedEstateEarly && typeof cachedEstateEarly === 'object' && !Array.isArray(cachedEstateEarly)) {
+          setEstate(cachedEstateEarly);
+        }
+        const cachedItemsEarly = readList(`checklist:items:${savedEidEarly}`);
+        if (Array.isArray(cachedItemsEarly) && cachedItemsEarly.length > 0) {
+          setChecklists(cachedItemsEarly);
+          setLoading(false);
+        }
+      }
+    } catch { /* non-fatal — fall through to full fetch */ }
+
     // Airplane-mode rescue — rehydrate checklist + estate from the
     // last-known-good localStorage cache so the user keeps seeing
     // their items offline. Populated by the online branch below on

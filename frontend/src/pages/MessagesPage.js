@@ -289,46 +289,46 @@ const MessagesPage = () => {
   }, [loading, fromGettingStarted, messages.length, estate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
-    // Offline read-through: paint from the local mirror first so
-    // airplane-mode users see their real estate, beneficiaries, and MM
-    // list instead of a spurious "Create your first milestone" empty
-    // state. The rescue fires whenever offline mode is enabled OR the
-    // browser reports the device is offline — the `mode === 'on'`-only
-    // gate silently excluded the default-off majority and caused all
-    // previously-cached data to vanish on airplane-mode toggle.
+    // Cache-first reveal — paint from the local mirror first so every
+    // navigation feels instant. Network refresh happens below and
+    // silently reconciles state when it lands. Previously gated behind
+    // `mode !== 'off' || isOffline` which excluded default-off users
+    // (the vast majority) and made every visit sit through a network
+    // round-trip even when fresh cached data was available.
     const mode = getOfflineMode();
     const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
 
-    if (mode !== 'off' || isOffline) {
-      try {
-        const localEstates = await getLocalEstates();
-        if (localEstates && localEstates.length > 0) {
-          const savedId = localStorage.getItem('selected_estate_id');
-          const selected = (savedId && localEstates.find(e => e.id === savedId)) || localEstates[0];
-          if (selected) {
-            setEstate(selected);
-            const [localMsgs, localBens] = await Promise.all([
-              getLocalMessages(selected.id),
-              getLocalBeneficiaries(selected.id),
-            ]);
-            if (localMsgs.length > 0) setMessages(localMsgs);
-            if (localBens.length > 0) setBeneficiaries(localBens);
-            // Unblock the UI immediately; server refresh runs below when
-            // reachable and reconciles.
-            if (localMsgs.length > 0 || localBens.length > 0 || isOffline) {
-              setLoading(false);
-            }
+    try {
+      const localEstates = await getLocalEstates();
+      if (localEstates && localEstates.length > 0) {
+        const savedId = localStorage.getItem('selected_estate_id');
+        const selected = (savedId && localEstates.find(e => e.id === savedId)) || localEstates[0];
+        if (selected) {
+          setEstate(selected);
+          const [localMsgs, localBens] = await Promise.all([
+            getLocalMessages(selected.id),
+            getLocalBeneficiaries(selected.id),
+          ]);
+          if (localMsgs.length > 0) setMessages(localMsgs);
+          if (localBens.length > 0) setBeneficiaries(localBens);
+          // Unblock the UI immediately when the cache has anything —
+          // server refresh runs below when reachable and reconciles.
+          if (localMsgs.length > 0 || localBens.length > 0 || isOffline) {
+            setLoading(false);
           }
         }
-      } catch (err) { console.warn('[offline] MM local read failed:', err); }
-
-      // Skip the server fetch entirely when we know we're offline —
-      // prevents a doomed axios call and its misleading error toast.
-      if (isOffline) {
-        setLoading(false);
-        return;
       }
+    } catch (err) { console.warn('[offline] MM local read failed:', err); }
+
+    // Skip the server fetch entirely when we know we're offline —
+    // prevents a doomed axios call and its misleading error toast.
+    if (isOffline) {
+      setLoading(false);
+      return;
     }
+    // `mode` is intentionally read above so any future offline-mode-
+    // specific reconciliation logic still has access to it.
+    void mode;
 
     try {
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
