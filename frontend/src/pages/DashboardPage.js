@@ -54,7 +54,7 @@ const DashboardPage = () => {
   const [estates, setEstates] = useState([]);
   const [estate, setEstate] = useState(null);
   const [checklists, setChecklists] = useState([]);
-  const [stats, setStats] = useState({ documents: 0, messages: 0, beneficiaries: 0, ccp_plans: 0 });
+  const [stats, setStats] = useState({ documents: 0, messages: 0, beneficiaries: 0, ccp_plans: 0, ccp_drilled: 0 });
   const [readiness, setReadiness] = useState({ documents: { score: 0 }, messages: { score: 0 }, checklist: { score: 0 } });
   const [financialSummary, setFinancialSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -209,9 +209,11 @@ const DashboardPage = () => {
       // we don't overwrite a previously-known real count (e.g. 1) with
       // 0 just because the request hiccuped.
       let priorCcpCount = 0;
+      let priorDrilledCount = 0;
       try {
         const prior = await getLocalDashboardTile(estateId);
         if (typeof prior?.stats?.ccp_plans === 'number') priorCcpCount = prior.stats.ccp_plans;
+        if (typeof prior?.stats?.ccp_drilled === 'number') priorDrilledCount = prior.stats.ccp_drilled;
       } catch { /* non-fatal */ }
       // Read the prior cached financialSummary BEFORE the network so
       // we can preserve it on a transient /financial/summary failure
@@ -253,12 +255,20 @@ const DashboardPage = () => {
       // Reading from the cache (priorCcpCount) is the right fallback —
       // the React-state closure is stale (initial useState default of
       // 0) at this point in fetchEstateData.
-      const ccpCount = Array.isArray(ccpRes?.data) ? ccpRes.data.length : priorCcpCount;
+      const ccpPlansArr = Array.isArray(ccpRes?.data) ? ccpRes.data : [];
+      const ccpCount = ccpRes?.data ? ccpPlansArr.length : priorCcpCount;
+      // Count plans drilled at least once (drill_count field is attached
+      // by the backend /ccp/plans endpoint). The readiness gauge uses
+      // this alongside the plan count to compute the CCP slice.
+      const ccpDrilledCount = ccpRes?.data
+        ? ccpPlansArr.filter(p => (p?.drill_count || 0) > 0).length
+        : priorDrilledCount;
       const statsPayload = {
         documents: docsRes.data.length,
         messages: msgsRes.data.length,
         beneficiaries: bensRes.data.length,
         ccp_plans: ccpCount,
+        ccp_drilled: ccpDrilledCount,
       };
       const financialPayload = financialRes?.data ?? priorFinancial;
       // ── Single batched render so every tile (Beneficiaries, IAC,
@@ -394,11 +404,19 @@ const DashboardPage = () => {
   // Two new client-derived categories — Beneficiaries and CCP — feed
   // the unified Readiness Score alongside the four server-side ones.
   // Beneficiaries: linear ramp 0..3 → 0..100% (3+ beneficiaries = full).
-  // CCP: 100% if at least one Emergency Plan exists, else 0%.
+  // CCP: see the inline comment below — 100% requires 5 plans drilled.
   // Both heuristics intentionally simple — they reward the user for
   // *having configured anything at all*, not for sophistication.
+  // CCP scoring (Feb 16, 2026 — per user spec):
+  //   100% requires 5 plans AND every plan drilled ≥1 time. Scales
+  //   linearly below that. Each "plan exists" earns up to 10% (max 5
+  //   plans = 50%), each "plan drilled at least once" earns another
+  //   up to 10% (max 5 drilled = 50%). Total ceiling is 100%; counts
+  //   above 5 plans/drills are still 100%.
   const beneficiariesPercent = Math.min(100, Math.round(((stats.beneficiaries || 0) / 3) * 100));
-  const ccpPercent = (stats.ccp_plans || 0) > 0 ? 100 : 0;
+  const planCountForCcp = Math.min(5, stats.ccp_plans || 0);
+  const drilledCountForCcp = Math.min(planCountForCcp, stats.ccp_drilled || 0);
+  const ccpPercent = (planCountForCcp * 10) + (drilledCountForCcp * 10);
 
   // Weighted overall readiness — priority order (Beneficiaries → IAC →
   // MM → SDV → CFP → CCP) maps to weights 6..1. Total weight = 21.

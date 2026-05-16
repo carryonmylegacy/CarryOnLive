@@ -402,7 +402,13 @@ async def get_my_plans(current_user: dict = Depends(get_current_user)):
 
 @router.get("/ccp/plans/{estate_id}")
 async def get_plans(estate_id: str, current_user: dict = Depends(get_current_user)):
-    """Get all emergency plans for an estate. Beneficiaries only see plans assigned to them."""
+    """Get all emergency plans for an estate. Beneficiaries only see plans assigned to them.
+
+    Each plan is enriched with `drill_count` — the number of times that plan
+    has been drilled (logged in `ccp_drill_runs`). The dashboard uses this
+    to compute the CCP slice of the Estate Readiness gauge: 100% requires
+    5 plans + each drilled at least once.
+    """
     if not await _is_estate_member(current_user["id"], estate_id):
         raise HTTPException(status_code=403, detail="Not a member of this estate")
     plans = (
@@ -418,6 +424,22 @@ async def get_plans(estate_id: str, current_user: dict = Depends(get_current_use
             for p in plans
             if p.get("assigned_beneficiary_ids") is None or current_user["id"] in p["assigned_beneficiary_ids"]
         ]
+    # Attach drill_count via a single aggregation rather than N round-trips.
+    if plans:
+        plan_ids = [p["id"] for p in plans if p.get("id")]
+        if plan_ids:
+            drill_rows = await db.ccp_drill_runs.aggregate(
+                [
+                    {"$match": {"estate_id": estate_id, "plan_id": {"$in": plan_ids}}},
+                    {"$group": {"_id": "$plan_id", "count": {"$sum": 1}}},
+                ]
+            ).to_list(len(plan_ids))
+            counts = {row["_id"]: row["count"] for row in drill_rows}
+            for p in plans:
+                p["drill_count"] = int(counts.get(p.get("id"), 0))
+        else:
+            for p in plans:
+                p["drill_count"] = 0
     return plans
 
 
