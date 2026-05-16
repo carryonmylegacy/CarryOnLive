@@ -345,14 +345,20 @@ const DashboardPage = () => {
     // Skip polling when EGA is gated for this user's tier
     if (!isFeatureKeyEnabled('ega', enabledFeatures)) return;
     let active = true;
+    let timeoutId = null;
+    const FAST_INTERVAL = 4000;
+    const IDLE_INTERVAL = 30000;
+    let currentInterval = FAST_INTERVAL;
     const poll = async () => {
       try {
         const res = await axios.get(`${API_URL}/guardian/iac-task-status`, getAuthHeadersRef.current());
         if (!active) return;
         const task = res.data;
         if (task.status === 'running') {
+          currentInterval = FAST_INTERVAL;
           setEgaRunning(true);
         } else if (task.status === 'completed' && task.completed_at) {
+          currentInterval = IDLE_INTERVAL;
           setEgaRunning(false);
           // Only refresh + toast when a new completion is detected.
           // We DON'T toast on the very first poll of a user's session
@@ -377,19 +383,23 @@ const DashboardPage = () => {
           }
           lastCompletedAtRef.current = task.completed_at;
         } else if (task.status === 'error' && lastCompletedAtRef.current !== task.completed_at && task.completed_at) {
+          currentInterval = IDLE_INTERVAL;
           // Background error surfaced from a different page — let the
           // user know without forcing them to navigate to /checklist.
           setEgaRunning(false);
           toast.error(task.error || 'Estate Guardian run failed — please try again from the Checklist page.');
           lastCompletedAtRef.current = task.completed_at;
         } else {
+          currentInterval = IDLE_INTERVAL;
           setEgaRunning(false);
         }
       } catch { /* silent */ }
+      if (active) {
+        timeoutId = setTimeout(poll, currentInterval);
+      }
     };
     poll();
-    const interval = setInterval(poll, 4000);
-    return () => { active = false; clearInterval(interval); };
+    return () => { active = false; if (timeoutId) clearTimeout(timeoutId); };
   }, [estate?.id, enabledFeatures]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const completedTasks = checklists.filter(c => c.is_completed).length;

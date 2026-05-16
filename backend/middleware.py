@@ -15,6 +15,36 @@ from starlette.middleware.cors import CORSMiddleware
 from config import logger
 
 
+# ── Scheduler Health Registry ────────────────────────────────────────
+# Mirrors the live status of each background scheduler so /api/health
+# can surface it without poking internal state. Schedulers call
+# `register_scheduler_health(name, status, error=None, failure_count=N)`
+# from inside their supervisor loop on every transition.
+_SCHEDULER_HEALTH: dict = {}
+
+
+def register_scheduler_health(name: str, status: str, error: str | None = None, failure_count: int = 0):
+    """Record the latest known state of a background scheduler.
+
+    `status` is one of: 'running' | 'stopped' | 'error' | 'cancelled'.
+    Updates are best-effort, no exceptions ever propagate.
+    """
+    try:
+        _SCHEDULER_HEALTH[name] = {
+            "status": status,
+            "error": (error or "")[:200] if error else None,
+            "failure_count": int(failure_count or 0),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+    except Exception:
+        pass
+
+
+def get_scheduler_health() -> dict:
+    """Return a snapshot of every scheduler's current status."""
+    return dict(_SCHEDULER_HEALTH)
+
+
 # ── API Metrics Tracker ──────────────────────────────────────────────
 class APIMetrics:
     """In-memory API performance metrics tracker."""

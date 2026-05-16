@@ -128,16 +128,26 @@ const ChecklistPage = () => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Poll for EGA IAC task status (real-time updates while Guardian generates)
+  // Poll for EGA IAC task status (real-time updates while Guardian
+  // generates). Adaptive interval (production-scale audit P0.2):
+  // 4s while a task is running (snappy live updates), 30s when idle.
+  // At 1,000 concurrent users this cuts the polling load on this
+  // endpoint by ~85% — most users at any given moment have no active
+  // task and were being polled 8x more aggressively than necessary.
   useEffect(() => {
     if (!estate?.id) return;
     let active = true;
+    let timeoutId = null;
+    const FAST_INTERVAL = 4000;
+    const IDLE_INTERVAL = 30000;
+    let currentInterval = FAST_INTERVAL;
     const poll = async () => {
       try {
         const res = await axios.get(`${API_URL}/guardian/iac-task-status`, getAuthHeadersRef.current());
         if (!active) return;
         const task = res.data;
         if (task.status === 'running') {
+          currentInterval = FAST_INTERVAL;
           setEgaRunning(true);
           // Compute elapsed from server-side started_at so the timer
           // resumes correctly when the user navigates away and back
@@ -153,12 +163,14 @@ const ChecklistPage = () => {
             } catch {}
           }
         } else if (task.status === 'completed' && task.completed_at) {
+          currentInterval = IDLE_INTERVAL;
           setEgaRunning(false);
           if (lastCompletedAtRef.current && lastCompletedAtRef.current !== task.completed_at) {
             fetchData();
           }
           lastCompletedAtRef.current = task.completed_at;
         } else if (task.status === 'error' || task.status === 'canceled') {
+          currentInterval = IDLE_INTERVAL;
           // The user's own AI Suggest call (handleAISuggest) toasts
           // its own error from the catch / inner-poller branches, so
           // we only surface a toast here for runs that started on a
@@ -171,13 +183,16 @@ const ChecklistPage = () => {
           }
           setEgaRunning(false);
         } else {
+          currentInterval = IDLE_INTERVAL;
           setEgaRunning(false);
         }
       } catch { /* silent */ }
+      if (active) {
+        timeoutId = setTimeout(poll, currentInterval);
+      }
     };
     poll();
-    const interval = setInterval(poll, 4000);
-    return () => { active = false; clearInterval(interval); };
+    return () => { active = false; if (timeoutId) clearTimeout(timeoutId); };
   }, [estate?.id, suggestingAI, egaRunning]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Drive the local elapsed-seconds timer from a single source so it

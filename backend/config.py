@@ -24,8 +24,16 @@ mongo_url = os.environ["MONGO_URL"]
 client = AsyncIOMotorClient(
     mongo_url,
     serverSelectionTimeoutMS=5000,
-    maxPoolSize=50,
+    # Pool sized for ~1,000-user concurrency. The bottleneck on heavy
+    # IAC paths is the long-lived xAI call holding the connection for
+    # up to 9 minutes (per-call timeout). Atlas M30+ handles 500
+    # comfortably; we cap conservatively at 200 to leave headroom for
+    # the background schedulers. minPoolSize stays low so an idle dev
+    # pod doesn't keep 200 sockets open.
+    maxPoolSize=200,
     minPoolSize=5,
+    maxIdleTimeMS=60000,
+    waitQueueTimeoutMS=10000,
 )
 db = client[os.environ["DB_NAME"]]
 

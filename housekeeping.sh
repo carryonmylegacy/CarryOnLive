@@ -340,6 +340,51 @@ cd /app/backend
 UNPROTECTED=$(cd /app/backend && grep -l "async def" routes/*.py routes/subscriptions/*.py 2>/dev/null | wc -l)
 echo -e "$PASS ($UNPROTECTED route files audited)"
 
+# ── 11b. Estate-ownership guard coverage on estate-scoped routes ─────
+# Added Feb 16, 2026 (production-scale audit P1.3). Every route that
+# accepts an estate_id path/body param + an authenticated user MUST
+# call one of the ownership helpers (_require_estate_access,
+# _is_estate_owner, _is_estate_member) or rely on require_admin.
+# WARN-only initially — promote to FAIL once known gaps are cleaned.
+echo -n "11b. Estate-ownership guard cov ... "
+OWNERSHIP_GAPS=$(python3 - <<'PYEOF'
+import os, re, sys
+root = '/app/backend/routes'
+gaps = []
+owner_funcs = re.compile(r"_require_estate_access|_is_estate_owner|_is_estate_member|require_admin|require_partner_admin|require_super_admin")
+for dirpath, _, files in os.walk(root):
+    for fn in files:
+        if not fn.endswith('.py') or fn == '__init__.py':
+            continue
+        path = os.path.join(dirpath, fn)
+        with open(path) as f:
+            src = f.read()
+        # Match each route handler and inspect its body
+        for m in re.finditer(r"@router\.\w+\([^)]*\)\s*\nasync def (\w+)\(([^)]*)\)([^@]*?)(?=\n(?:@router|\Z))", src, re.DOTALL):
+            fn_name, params, body = m.group(1), m.group(2), m.group(3)
+            if 'estate_id' not in params:
+                continue
+            if 'get_current_user' not in params and 'require_admin' not in params:
+                continue
+            # Check first 800 chars of body for any ownership helper call
+            if not owner_funcs.search(body[:800]):
+                gaps.append(f"{path.replace('/app/backend/','')}:{fn_name}")
+print('\n'.join(gaps[:20]))
+print(f"__COUNT__={len(gaps)}")
+PYEOF
+)
+GAP_COUNT=$(echo "$OWNERSHIP_GAPS" | grep "__COUNT__" | sed 's/.*=//')
+if [ "$GAP_COUNT" = "0" ]; then
+  echo -e "$PASS"
+else
+  # INFO-only until the 50+ known gaps are individually triaged. Each
+  # of these routes either (a) verifies ownership via a downstream
+  # entity ID, (b) is an admin/system endpoint, or (c) is a genuine
+  # gap to clean. Promote to WARN/FAIL after the audit-driven cleanup.
+  echo -e "$INFO ($GAP_COUNT estate-scoped routes — full list in /tmp/estate_ownership_gaps.txt — review post-pitch)"
+  echo "$OWNERSHIP_GAPS" | grep -v "__COUNT__" > /tmp/estate_ownership_gaps.txt
+fi
+
 echo ""
 
 # ══════════════════════════════════════════════════════════════

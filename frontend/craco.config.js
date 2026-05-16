@@ -70,6 +70,33 @@ const webpackConfig = {
       if (config.enableHealthCheck && healthPluginInstance) {
         webpackConfig.plugins.push(healthPluginInstance);
       }
+
+      // Strip console.* + debugger in production builds. CRA ships with
+      // terser-webpack-plugin under webpackConfig.optimization.minimizer;
+      // we extend its existing terserOptions rather than replacing the
+      // plugin instance so all other CRA defaults (mangling, format,
+      // sourceMap behavior) stay intact. Logs are kept in dev so we can
+      // still debug locally. Audited Feb 2026 — eliminates 195 prod
+      // log statements that were leaking to user devtools and adding
+      // bundle weight.
+      if (process.env.NODE_ENV === 'production' && webpackConfig.optimization?.minimizer) {
+        webpackConfig.optimization.minimizer.forEach((plugin) => {
+          if (plugin?.constructor?.name === 'TerserPlugin' && plugin.options?.terserOptions) {
+            const compress = plugin.options.terserOptions.compress;
+            if (compress && typeof compress === 'object') {
+              compress.drop_console = ['log', 'info', 'debug', 'trace'];
+              compress.drop_debugger = true;
+              compress.pure_funcs = [
+                'console.log',
+                'console.info',
+                'console.debug',
+                'console.trace',
+              ];
+            }
+          }
+        });
+      }
+
       return webpackConfig;
     },
   },

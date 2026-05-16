@@ -34,14 +34,19 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import LandingPage from './pages/LandingPage';
 
-// Core pages — eagerly loaded for fast navigation
+// Core pages — DashboardPage stays eager so the post-login landing is
+// instant. Others moved to lazy-load (Feb 2026 production-scale audit
+// P0.4) so a first-time visitor on 4G doesn't download ~700KB of
+// detail-page JS before they can see the dashboard. The first
+// navigation to any lazy page incurs a one-time ~200ms chunk fetch,
+// but the chunk is cached for subsequent visits.
 import DashboardPage from './pages/DashboardPage';
-import VaultPage from './pages/VaultPage';
-import MessagesPage from './pages/MessagesPage';
-import BeneficiariesPage from './pages/BeneficiariesPage';
-import DigitalWalletPage from './pages/DigitalWalletPage';
 
 // Lazy-loaded pages — only downloaded when navigated to
+const VaultPage = lazy(() => import('./pages/VaultPage'));
+const MessagesPage = lazy(() => import('./pages/MessagesPage'));
+const BeneficiariesPage = lazy(() => import('./pages/BeneficiariesPage'));
+const DigitalWalletPage = lazy(() => import('./pages/DigitalWalletPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const AcceptInvitationPage = lazy(() => import('./pages/AcceptInvitationPage'));
 // EditBeneficiaryPage removed — editing now handled by SlidePanel in BeneficiariesPage
@@ -808,6 +813,15 @@ function App() {
   useEffect(() => {
     // Initialize global error reporter
     initErrorReporter();
+
+    // Prune synced offline outbox + expired image blobs and surface
+    // storage-pressure events when IndexedDB usage exceeds 80% of
+    // the device quota. Runs once on boot (cheap when nothing to
+    // prune) so a long-lived PWA install can't silently fill the
+    // per-origin storage cap.
+    import('./offline/quotaGuard')
+      .then(({ runQuotaGuard }) => runQuotaGuard())
+      .catch(() => { /* offline module load failed — non-fatal */ });
 
     // Check for platform updates (web only — safe, silent, no crashes)
     if (!isNative) {

@@ -166,15 +166,32 @@ async def lifespan(app):
 
     # Each scheduler is wrapped with a distributed lock. `_locked()` is itself
     # infinite so we restart the scheduler if it ever returns/crashes.
+    # Health state (last_error / last_success / failure_count) is mirrored
+    # into `_SCHEDULER_HEALTH` so /api/health can surface scheduler status.
+    from middleware import register_scheduler_health  # health.py reads this
+
     async def _supervise(name, factory, ttl=900):
+        failure_count = 0
         while True:
             try:
+                register_scheduler_health(name, "running")
                 await _locked(name, factory, ttl_seconds=ttl)
+                # _locked is infinite — only reachable if it returns cleanly.
+                failure_count = 0
+                register_scheduler_health(name, "stopped")
             except asyncio.CancelledError:
+                register_scheduler_health(name, "cancelled")
                 raise
             except Exception as e:
-                logger.error(f"scheduler supervisor[{name}] error: {e}")
-            await asyncio.sleep(30)
+                failure_count += 1
+                logger.error(f"scheduler supervisor[{name}] error #{failure_count}: {e}")
+                register_scheduler_health(name, "error", error=str(e), failure_count=failure_count)
+            # Exponential backoff capped at 5 minutes so a persistent
+            # failure (Mongo down, env var missing) doesn't spin
+            # tight-looping logs but also doesn't take longer than 5
+            # minutes to recover once the dependency comes back.
+            backoff = min(300, 30 * (2 ** min(failure_count, 4)))
+            await asyncio.sleep(backoff)
 
     scheduler_tasks = [
         asyncio.create_task(_supervise("weekly_digest", weekly_digest_scheduler)),
@@ -297,18 +314,30 @@ BUILD_HASH = "2026-04-28T00:00:00Z-pre-launch-refactor"
 
 @api_router.get("/health")
 async def health_check():
-    """Check API and database health."""
+    """Check API, database, and background scheduler health."""
+    from middleware import get_scheduler_health
+
     try:
         await db.command("ping")
         db_status = "connected"
     except Exception:
         db_status = "disconnected"
+
+    schedulers = get_scheduler_health()
+    # Roll up the scheduler statuses for a quick top-line view.
+    sched_summary = {
+        "total": len(schedulers),
+        "running": sum(1 for s in schedulers.values() if s.get("status") == "running"),
+        "errored": sum(1 for s in schedulers.values() if s.get("status") == "error"),
+    }
     return {
         "status": "healthy",
         "database": db_status,
         "version": "1.0.0",
         "min_version": "1.0.0",
         "build": BUILD_HASH,
+        "schedulers": sched_summary,
+        "schedulers_detail": schedulers,
     }
 
 

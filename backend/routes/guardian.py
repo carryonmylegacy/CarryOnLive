@@ -18,6 +18,21 @@ from utils import get_current_user, log_activity, update_estate_readiness
 router = APIRouter()
 
 
+# ── Heavy-action concurrency cap ───────────────────────────────────
+# Caps the number of in-flight heavy AI requests (IAC generation,
+# inconsistency finder, vault analysis, etc.) PLATFORM-WIDE so a
+# burst of simultaneous clicks can't blast xAI's per-API-key rate
+# ceiling and trigger cascading 429s. xAI standard plan tolerates
+# ~60 req/min — at 9-min worst-case per heavy task that's 9
+# concurrent in flight before saturation, so we cap at 6 for
+# headroom. Acquisitions over the cap wait up to 30s before
+# returning a friendly "your analysis will start in a moment"
+# 503 — long enough for typical demand spikes to drain, short
+# enough that the UI doesn't appear hung.
+_HEAVY_AI_SEMAPHORE = asyncio.Semaphore(6)
+_HEAVY_AI_WAIT_TIMEOUT_S = 30.0
+
+
 async def _get_user_estate(current_user: dict, projection: dict | None = None):
     """Get the first estate for a user, with admin fallback (all estates)."""
     proj = projection or {"_id": 0}
@@ -840,6 +855,35 @@ Be exhaustive. The user is preparing for a B2B pitch where this output is a key 
             "state_law_brief",
             "find_inconsistencies",
         )
+
+        # Acquire the platform-wide concurrency token for heavy actions
+        # so a click-storm can't blast xAI's per-API-key ceiling. Wait
+        # up to _HEAVY_AI_WAIT_TIMEOUT_S for a slot; if we time out,
+        # return a friendly 503 with a Retry-After hint instead of
+        # blocking the request indefinitely. Light chat skips this
+        # gate — those calls are sub-second and bounded by the
+        # per-user daily quota.
+        _sem_acquired = False
+        if _is_heavy:
+            try:
+                await asyncio.wait_for(_HEAVY_AI_SEMAPHORE.acquire(), timeout=_HEAVY_AI_WAIT_TIMEOUT_S)
+                _sem_acquired = True
+            except asyncio.TimeoutError:
+                if iac_task_id:
+                    await db.ega_tasks.update_one(
+                        {"id": iac_task_id},
+                        {
+                            "$set": {
+                                "status": "queued",
+                                "queue_message": "Demand is high — your analysis will start as soon as a slot opens. Refresh in ~30 seconds.",
+                            }
+                        },
+                    )
+                raise HTTPException(
+                    status_code=503,
+                    detail="Estate Guardian AI is at capacity right now — try again in ~30 seconds. Your prior work is saved.",
+                    headers={"Retry-After": "30"},
+                )
         if _is_heavy:
             # grok-4 is observed to occasionally hang at the xAI edge
             # (even for a 1-token "say hi" prompt), and a hung grok-4
@@ -930,7 +974,19 @@ Be exhaustive. The user is preparing for a B2B pitch where this output is a key 
                     )
 
         if completion is None:
+            if _sem_acquired:
+                _HEAVY_AI_SEMAPHORE.release()
+                _sem_acquired = False
             raise last_error
+
+        # Heavy-action concurrency token is held only across the xAI
+        # call(s) themselves. The rest of the request handler (JSON
+        # parsing, DB writes, response shaping) is fast and doesn't
+        # need a slot. Release as early as possible so queued requests
+        # can advance.
+        if _sem_acquired:
+            _HEAVY_AI_SEMAPHORE.release()
+            _sem_acquired = False
 
         response = completion.choices[0].message.content
 
@@ -1251,6 +1307,13 @@ Be exhaustive. The user is preparing for a B2B pitch where this output is a key 
 
         return ChatResponse(response=response, session_id=session_id, action_result=action_result)
     except Exception as e:
+        # Always release the heavy-AI concurrency token on any error
+        # path so an exception mid-flight doesn't starve the semaphore.
+        try:
+            if locals().get("_sem_acquired"):
+                _HEAVY_AI_SEMAPHORE.release()
+        except Exception:
+            pass
         # Mark EGA task as error if IAC generation was in progress
         if data.action == "generate_iac" and estate_id:
             try:
