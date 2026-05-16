@@ -923,7 +923,7 @@ const ChecklistPage = () => {
           <Loader2 className="w-4 h-4 animate-spin flex-shrink-0 mt-0.5" />
           <div className="flex-1 leading-snug">
             <div>Estate Guardian is generating IAC items — new items will appear automatically.</div>
-            <div className="font-normal text-[var(--t4)] mt-1">This usually takes 1–3 minutes (occasionally longer if xAI is busy). Feel free to navigate to another tab — we'll keep working and notify you when it's done.</div>
+            <div className="font-normal text-[var(--t4)] mt-1">This usually takes 1–3 minutes. Your documents never leave your AES-256 encrypted vault — feel free to navigate to another tab and we'll notify you when it's done.</div>
           </div>
         </div>
       )}
