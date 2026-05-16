@@ -178,19 +178,21 @@ const DashboardPage = () => {
         }
         if (tile.checklists) setChecklists(tile.checklists);
         if (tile.financialSummary) setFinancialSummary(tile.financialSummary);
-        // Note: do NOT call setLoading(false) here — we keep the splash
-        // up until the network fetch lands so we don't get a blank
-        // window between "splash gone" and "dashboard revealed".
-        // Safety timer: if the network fetch is still in flight after
-        // 2s, reveal with the cached values rather than block the user
-        // staring at a splash on slow connections.
-        if (!revealedFromCache) {
-          revealedFromCache = true;
-          setTimeout(() => {
-            setLoading(false);
-            requestAnimationFrame(() => requestAnimationFrame(() => setDashboardReady(true)));
-          }, 2000);
-        }
+        // Cache-first reveal (Feb 16, 2026 user-perf report): users
+        // were staring at a skeleton splash for ~1s on every Dashboard
+        // navigation because the original logic deliberately HELD the
+        // splash until the network fetch confirmed — to avoid a
+        // visible "tile jumps from 0 → real" on first paint. In
+        // practice the cached values are already accurate the vast
+        // majority of the time (we just wrote them after the prior
+        // visit), so revealing immediately makes navigation feel
+        // instant. The network fetch below still runs and silently
+        // updates state; if any tile changes, it's a single sub-frame
+        // tick that's barely perceptible. The skeleton stays up only
+        // for the genuine first-load case (no cache yet).
+        revealedFromCache = true;
+        setLoading(false);
+        requestAnimationFrame(() => requestAnimationFrame(() => setDashboardReady(true)));
       }
     } catch { /* non-fatal */ }
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {

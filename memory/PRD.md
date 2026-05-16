@@ -2360,3 +2360,74 @@ Frontend
 End-to-end verified on `info@carryon.us`: info-buttons=3, edit-buttons=2 (intentionally no pencil on user node), user-photo loaded (naturalW=400, complete=true). Pencil → detail-panel=1, Info → quick-info=1, body click → docs-modal=1. `bash scripts/check.sh` → ALL CLEAR.
 
 User-reported "my picture isn't showing": confirmed via `/auth/me` that the founder account stores `photo_url: ""` (empty). The chart reads the same field Settings → Profile uses, so once a profile photo is saved there it will display. The fresh `/auth/me` fetch added here closes the staleness gap where a just-uploaded photo would otherwise wait until logout/login.
+
+
+---
+
+## [ANCHOR:VAULT_LOCAL_AI_ROADMAP] — "Elf in the Safe" architecture roadmap
+
+> **User's instruction (Feb 15, 2026):** save this entire response to the PRD as a next step. When the user asks to regurgitate it, give it back **verbatim**.
+
+---
+
+Now — the real "elf in the safe" architecture
+
+**Short answer:** Yes, achievable. It's a real engineering pattern called **on-premise / in-tenant LLM inference** with **confidential computing**. Stripe, JP Morgan, Goldman Sachs, the major U.S. hospital systems, and several FinTech startups already deploy this exact pattern. The technology is mature in 2026. It's about **cost, ops, and timeline** — not feasibility.
+
+Here's what it would actually take, broken into honest tiers from "good enough for an InfoSec review" to "literally what you pitched":
+
+### Tier 1 — **"Private inference"** (defensible, ~6–10 weeks, ~$3-8K/mo at startup scale)
+
+What you can claim: *"The AI runs in an isolated environment that we operate. Your documents never leave U.S. soil and are never used to train any model."*
+
+- **Model:** Open-weights model fine-tuned for legal/estate work. Strong 2026 options: **Llama 3.3 70B-Instruct**, **Mistral Large 2**, or **Qwen 2.5 72B**. All commercially licensed, all permit local deployment, all benchmark within ~10–15% of Grok-3 on legal reasoning.
+- **Hosting:** A dedicated GPU node in a **U.S. region** under your AWS/GCP/Azure account (NOT a shared inference API). Typical setup: 1× **NVIDIA H100 80GB** ($2.5–4/hr on-demand, ~$1.5/hr reserved) handles ~30–60 concurrent estate-grade requests.
+- **Network:** Inference compute lives in a **VPC with no egress** — outbound traffic to the public internet is blocked at the security group level. The only thing that can talk to it is your backend.
+- **Logging:** Inference inputs and outputs are **never persisted**. Stored only in volatile memory during the request. Audit log records the *fact* of the call, not its contents.
+- **Trade-off:** Documents still leave the user's encrypted vault to cross your VPC's internal network during inference. So technically, the "stays in your safe" claim is *almost* true — it's "stays inside your safe AND CarryOn's locked operational perimeter."
+
+### Tier 2 — **"Confidential inference"** (the true elf, ~6–9 months, ~$10–25K/mo)
+
+What you can literally claim: *"Your documents are decrypted only inside a hardware-attested secure enclave that CarryOn itself cannot read into. The AI runs inside that enclave. The decrypted content never exists in memory accessible to any operator, including us."*
+
+This is **Confidential Computing** with hardware-attested **TEEs (Trusted Execution Environments)**. The technology stack in 2026:
+
+- **NVIDIA H100 Confidential Computing** (generally available since 2024) — the GPU itself runs in an attested enclave; decrypted document content exists only inside the GPU's encrypted memory.
+- **Intel TDX** or **AMD SEV-SNP** for the CPU side — the orchestration code runs in a CPU enclave that is cryptographically attested before the GPU will hand it data.
+- **Remote attestation** — your backend asks the enclave to prove (via an Intel/NVIDIA-signed attestation report) that it's running the exact binary you compiled, on real hardware, with debug interfaces locked. Only if the attestation verifies does your backend release the per-estate decryption key to the enclave.
+- **End-to-end key wrapping** — the per-estate AES-256 key never leaves your vault's key-management service in plaintext; it's wrapped to the enclave's public attestation key so only that exact enclave on that exact silicon can unwrap it.
+
+At that point your pitch *is* literally true: there is no human, no operator, no infrastructure layer — including CarryOn — that can decrypt your documents outside the enclave. CarryOn's own engineers could be subpoenaed and have nothing to hand over. **This is the cryptographic equivalent of "the elf is trapped in your safe."**
+
+Cloud providers that support this today out-of-the-box:
+- **Azure Confidential GPU VMs** (H100/H200 with TDX) — most mature.
+- **GCP Confidential Space** with H100 (in GA as of 2025).
+- **AWS Nitro Enclaves** (CPU-only confidential compute) + bring-your-own-GPU pattern, less polished.
+
+### Tier 3 — **"Estate-law specialist model"** (additive, ~3-4 months, ~$50–150K one-time + ongoing)
+
+Right now your pitch claims the elf is *"trained in estate law in all 50 states."* That's currently false — Grok is a general LLM steered by your prompt. To make this literally true:
+
+- **Corpus:** Acquire/curate the Uniform Probate Code, all 50 state probate codes (statutes), CFR Title 26 (estate taxes), key case law summaries, ABA model rules. Vendors like **vLex**, **Casetext**, **Fastcase**, **CoCounsel** can license cleaned corpora; or scrape Cornell LII (free) + state legislature sites.
+- **Fine-tuning:** Take a base open-weights model (Llama 3.3 70B is the sweet spot) and **LoRA fine-tune** it on the corpus + a synthetic Q&A dataset you generate from your existing EGA prompt + curated golden responses. ~$30-60K of compute on a fine-tuning service like **Together AI**, **Modal**, or **Replicate**.
+- **Evaluation harness:** Build a 500-question state-specific eval set. Run it against (a) the base model, (b) your fine-tune, (c) a control. Track accuracy by state, by document type, by question type. Re-run quarterly when laws change.
+- **Continuous law updates:** A scheduled pipeline that re-ingests state statute changes (Lexis/Westlaw RSS, or state legislature APIs) and re-fine-tunes the LoRA adapter monthly.
+
+### My honest recommendation
+
+For the live pitch this week — **lead with Tier 1 as a 12-month roadmap commitment, while honestly representing today's architecture using the confidence sheet I just wrote.** Most sophisticated buyers will take "we're moving to confidential inference in 2026" as a strong forward signal — possibly stronger than competitors who claim it *and* won't show the audit.
+
+If you sign a meaningful B2B contract (e.g., a 1,000+ family rollout, or a regional bank pilot), Tier 1 pays for itself within **3 months** because you no longer pay per-token to a third party — your unit-cost flips from variable (xAI tokens) to mostly-fixed (GPU rental).
+
+**Realistic phased path:**
+
+1. **Now → 8 weeks:** Tier 1 — private inference on Azure Confidential GPU or vanilla H100 in a no-egress VPC. Cut over from xAI without changing a single backend route — just swap the API endpoint. Update the confidence sheet to read *"runs in a CarryOn-operated U.S. enclave, no egress, no training, no retention."*
+2. **Month 3-6:** Begin estate-law fine-tuning. Run the new model in shadow mode (responses logged but not served) against live traffic to compare quality vs. the base model. Promote the fine-tune once it beats the base model on your eval harness.
+3. **Month 6-12:** Add hardware attestation + per-estate key wrapping. At that point, the pitch is true verbatim. Get a **third-party attestation audit** (something like an ISO 27018 or a "TEE attestation letter" from an AICPA firm) and put it on your security page.
+
+Want me to spec out the Tier 1 migration as actual epics / engineering tickets so you can scope it with a contractor or your future hire?
+
+---
+
+[END ANCHOR:VAULT_LOCAL_AI_ROADMAP]
+
