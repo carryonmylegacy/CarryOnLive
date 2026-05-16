@@ -243,7 +243,14 @@ const GuardianPage = () => {
   const startNewChat = (initialMessage = null, action = null) => {
     const newId = `chat_${user?.id || 'anon'}_${Date.now().toString(36)}`;
     setSessionId(newId);
-    setMessages([{
+    // Only show the greeting placeholder when the user opens a *blank*
+    // new chat. If they're entering with a quick-action click or an
+    // initial prompt from the landing input, the greeting would render
+    // for ~200ms before the user message + loader pushes it up, causing
+    // a jarring "flash and slide" transition. Skipping the greeting in
+    // those cases lets sendMessage populate the chat surface cleanly.
+    const hasImmediateIntent = !!initialMessage || !!action;
+    setMessages(hasImmediateIntent ? [] : [{
       role: 'assistant',
       content: `Hey ${user?.name?.split(' ')[0] || 'there'}! I'm EGA — your AI estate planning specialist working inside your encrypted vault.\n\nI've got eyes on your documents, your beneficiary setup, and your overall readiness. I can **analyze your Vault**, **generate a personalized IAC**, or **break down your Readiness Score**.\n\nWhat's on your mind?`
     }]);
