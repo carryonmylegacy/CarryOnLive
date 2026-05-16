@@ -727,27 +727,30 @@ function Bubble({ role, content, citations, error, modelUsed, isFallback, onCita
             })}
           </div>
         )}
-        {/* xAI model badge — appears under every assistant turn so the
-            user (and any pitch audience) can see at a glance whether
-            real Grok served the answer or the templated fallback
-            fired. Hidden on user bubbles and on error bubbles. */}
+        {/* AI model badge — appears under every assistant turn so the
+            user (and any pitch audience) can see whether the live AI
+            engine served the answer or the templated fallback fired.
+            User-facing copy stays brand-neutral (no model-vendor names)
+            so the firewall narrative — "your documents never leave
+            your encrypted vault" — is never undercut. Hidden on user
+            bubbles and on error bubbles. */}
         {!isUser && !error && modelUsed && (
           <div className="mt-2 flex items-center gap-1.5" data-testid="concierge-model-badge">
             {isFallback ? (
               <span
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
                 style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.30)', color: '#FCA5A5' }}
-                title="xAI Grok was unreachable for this turn — a templated response was served instead. Try again in a moment for a live AI answer."
+                title="The live AI engine was briefly unreachable — a templated response was served instead. Try again in a moment for a live AI answer."
               >
-                Fallback (xAI unavailable)
+                Fallback response (retry in a moment)
               </span>
             ) : (
               <span
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
                 style={{ background: 'rgba(34,201,147,0.10)', border: '1px solid rgba(34,201,147,0.30)', color: '#6EE7B7' }}
-                title={`Answered live by xAI ${modelUsed}`}
+                title="Answered live by the EGA AI engine inside your AES-256 encrypted vault."
               >
-                via xAI {modelUsed}
+                via EGA AI engine
               </span>
             )}
           </div>
