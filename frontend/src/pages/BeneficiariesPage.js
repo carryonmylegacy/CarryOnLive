@@ -1016,6 +1016,13 @@ const BeneficiariesPage = () => {
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-sm sm:text-base truncate" style={{ color: isInSuccession ? succStyle.color : 'var(--t)' }}>{ben.name}</h3>
                         <p className="text-[var(--gold)] text-xs truncate">{ben.relation}</p>
+                        <span
+                          className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold whitespace-nowrap px-2 py-0.5 rounded-md"
+                          style={{ background: succStyle.bg, color: succStyle.color, border: succStyle.border }}
+                          data-testid={`succession-badge-${ben.id}`}
+                        >
+                          <Shield className="w-3 h-3 flex-shrink-0" /> {isInSuccession ? getSuccessionLabel(succRank).toUpperCase() : 'NOT IN SUCCESSION'}
+                        </span>
                         {!ben.photo_url && (
                           <p className="text-[11px] text-[var(--t5)] mt-0.5 cursor-pointer hover:text-[var(--t4)] transition-colors"
                             onClick={() => { setQuickUploadBenId(ben.id); setTimeout(() => quickFileRef.current?.click(), 50); }}
@@ -1026,13 +1033,6 @@ const BeneficiariesPage = () => {
                         )}
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <span
-                          className="flex items-center gap-1 text-[11px] font-bold whitespace-nowrap px-2 py-1 rounded-md"
-                          style={{ background: succStyle.bg, color: succStyle.color, border: succStyle.border }}
-                          data-testid={`succession-badge-${ben.id}`}
-                        >
-                          <Shield className="w-3 h-3 flex-shrink-0" /> {isInSuccession ? getSuccessionLabel(succRank).toUpperCase() : 'NOT IN SUCCESSION'}
-                        </span>
                         <button
                           onClick={(e) => { e.stopPropagation(); openEditModal(ben); }}
                           className="h-7 w-7 flex items-center justify-center rounded-md text-[var(--t4)] hover:text-[var(--gold)] hover:bg-[var(--s)] transition-colors"
