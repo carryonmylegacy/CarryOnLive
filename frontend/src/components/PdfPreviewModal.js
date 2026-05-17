@@ -427,7 +427,7 @@ const PdfPreviewModal = () => {
             data-testid="pdf-preview-download"
             title="Save the PDF (keeps clickable links)"
           >
-            <Download size={14} /> Save
+            <Download size={14} /> Save PDF
           </button>
           <button
             type="button"

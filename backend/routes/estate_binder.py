@@ -288,16 +288,15 @@ def _build_footer_overlay_pdf(*, page_count: int, estate_name: str, page_size) -
     for i in range(page_count):
         pdf.add_page()
 
-        # ── Upper-LEFT brand mark.
-        pdf.set_xy(20, 18)
+        # ── Upper-RIGHT brand mark. Position 110pt-wide block flush
+        # against the right margin so the wordmark always lands at
+        # the same visual location regardless of page size.
+        brand_w = 110
+        brand_right_pad = 20
+        pdf.set_xy(page_size[0] - brand_w - brand_right_pad, 18)
         pdf.set_font("Helvetica", "B", 14)
         pdf.set_text_color(212, 175, 55)  # CarryOn gold
-        pdf.cell(0, 14, _safe("CarryOn"))
-
-        pdf.set_xy(20, 32)
-        pdf.set_font("Helvetica", "", 7)
-        pdf.set_text_color(150, 130, 80)
-        pdf.cell(0, 8, _safe("ESTATE BINDER"))
+        pdf.cell(brand_w, 14, _safe("CarryOn"), align="R")
 
         # ── Bottom-centre footer.
         pdf.set_xy(0, page_size[1] - 22)
@@ -578,18 +577,19 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
             try:
                 mb = page.mediabox
                 pg_top = float(mb.top)
-                pg_left = float(mb.left)
+                pg_right = float(mb.right)
             except Exception:
                 pg_top = first_page_size[1]
-                pg_left = 0.0
+                pg_right = first_page_size[0]
 
-            # Brand mark sits at x ∈ [20, 110], y_top ∈ [pg_top-18 .. pg_top-46]
-            # in fpdf coords (y measured from top). pypdf rect is y-up so
-            # we flip onto the source page's coordinate system.
-            link_left = pg_left + 14
-            link_right = pg_left + 120
+            # Brand mark sits in the upper-RIGHT. Match the overlay's
+            # 110pt-wide block, flush against a 20pt right margin.
+            brand_w = 110.0
+            brand_right_pad = 20.0
+            link_right = pg_right - brand_right_pad + 6
+            link_left = link_right - brand_w
             link_top_pt = pg_top - 14  # y-up: top edge
-            link_bottom_pt = pg_top - 50  # y-up: bottom edge
+            link_bottom_pt = pg_top - 38  # y-up: bottom edge
 
             back_link = DictionaryObject(
                 {
