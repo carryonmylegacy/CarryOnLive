@@ -111,6 +111,80 @@ const PdfPreviewModal = () => {
         const ctx = canvas.getContext('2d');
         await page.render({ canvasContext: ctx, viewport }).promise;
         if (cancelled || myToken !== renderToken) return;
+
+        // Overlay an HTML annotation layer so PDF Link annotations
+        // (the TOC hot-links we embed in the Estate Binder) actually
+        // click through. PDF.js renders pages as flat canvases by
+        // default — annotations don't survive — so we manually draw
+        // anchor elements positioned on top of the canvas using the
+        // viewport's `convertToViewportRectangle`.
+        try {
+          const annotations = await page.getAnnotations({ intent: 'display' });
+          const linkAnnots = (annotations || []).filter((a) => a.subtype === 'Link');
+          if (linkAnnots.length) {
+            // CSS viewport for positioning (1:1 with canvas style px,
+            // independent of the dpr-scaled render bitmap).
+            const cssViewport = page.getViewport({ scale: cssScale });
+            const overlay = document.createElement('div');
+            overlay.style.position = 'absolute';
+            overlay.style.inset = '0';
+            overlay.style.pointerEvents = 'none';
+            for (const annot of linkAnnots) {
+              const rect = cssViewport.convertToViewportRectangle(annot.rect);
+              const [x1, y1, x2, y2] = rect;
+              const left = Math.min(x1, x2);
+              const top = Math.min(y1, y2);
+              const width = Math.abs(x2 - x1);
+              const height = Math.abs(y2 - y1);
+              const a = document.createElement('a');
+              a.href = '#';
+              a.setAttribute('data-pdf-link', '1');
+              a.style.position = 'absolute';
+              a.style.left = `${left}px`;
+              a.style.top = `${top}px`;
+              a.style.width = `${width}px`;
+              a.style.height = `${height}px`;
+              a.style.pointerEvents = 'auto';
+              a.style.cursor = 'pointer';
+              // Resolve target page index — PDF.js gives us either an
+              // explicit `dest` array or a named destination string.
+              let targetIndex = null;
+              try {
+                let dest = annot.dest;
+                if (typeof dest === 'string') dest = await pdf.getDestination(dest);
+                if (Array.isArray(dest) && dest[0]) {
+                  targetIndex = await pdf.getPageIndex(dest[0]);
+                }
+              } catch { /* leave null */ }
+              if (targetIndex != null) {
+                a.addEventListener('click', (ev) => {
+                  ev.preventDefault();
+                  const target = container.querySelector(
+                    `canvas[data-page-index="${targetIndex + 1}"]`,
+                  );
+                  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+              }
+              overlay.appendChild(a);
+            }
+            // Wrap the canvas in a relative positioned container so
+            // the absolute overlay coordinates anchor correctly.
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'relative';
+            wrapper.style.width = canvas.style.width;
+            wrapper.style.height = canvas.style.height;
+            wrapper.style.margin = '0 auto 16px';
+            canvas.style.margin = '0';
+            container.removeChild(canvas);
+            wrapper.appendChild(canvas);
+            wrapper.appendChild(overlay);
+            container.appendChild(wrapper);
+          }
+        } catch (annoErr) {
+          // Non-fatal — fall back to the no-link canvas already rendered.
+          // eslint-disable-next-line no-console
+          console.debug('PdfPreviewModal: annotation layer skipped', annoErr);
+        }
       }
     };
 

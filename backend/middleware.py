@@ -341,4 +341,14 @@ def configure_cors(app):
         allow_origins=ALLOWED_ORIGINS,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
+        # Custom response headers the browser is allowed to read from JS.
+        # Without this whitelist, CORS hides everything except the
+        # standard "safe" set, which is why the Estate Binder's
+        # X-CarryOn-Binder-* metadata read as empty/`?` in the modal.
+        expose_headers=[
+            "X-CarryOn-Binder-Included",
+            "X-CarryOn-Binder-Missing",
+            "X-CarryOn-Binder-Page-Count",
+            "Content-Disposition",
+        ],
     )

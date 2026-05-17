@@ -63,13 +63,32 @@ SECTION_ORDER: list[tuple[str, str, str, str]] = [
     ("beneficiary_packet", "Beneficiary IAC Packet", "/beneficiaries", "Beneficiaries"),
 ]
 
-# 1-line ASCII-safe sanitizer for PDF strings (fpdf uses latin-1 by default).
+# 1-line sanitizer for PDF strings (fpdf2 uses latin-1 by default,
+# so we hand-translate the unicode glyphs we actually emit to ASCII
+# equivalents before falling back to "?" for anything still outside
+# latin-1).
 _LATIN1_FALLBACK = "?"
+_GLYPH_SUBSTITUTIONS = {
+    "\u2014": " - ",  # em dash
+    "\u2013": "-",  # en dash
+    "\u2212": "-",  # minus sign
+    "\u2018": "'",  # left single quote
+    "\u2019": "'",  # right single quote / apostrophe
+    "\u201c": '"',  # left double quote
+    "\u201d": '"',  # right double quote
+    "\u2026": "...",  # ellipsis
+    "\u2022": "*",  # bullet
+    "\u00b7": "-",  # middle dot
+    "\u00a0": " ",  # non-breaking space
+}
 
 
 def _safe(text: str | None) -> str:
     if not text:
         return ""
+    for src, repl in _GLYPH_SUBSTITUTIONS.items():
+        if src in text:
+            text = text.replace(src, repl)
     return text.encode("latin-1", errors="replace").decode("latin-1")
 
 
@@ -184,10 +203,18 @@ def _build_title_and_toc_pdf(
         pdf.line(pdf.l_margin, pdf.get_y(), pdf.l_margin + page_w, pdf.get_y())
         pdf.ln(6)
 
-        # Each row is title-cell (110mm) + date (40mm) + page-num
-        # (remainder). For the clickable hit area we want the *whole*
-        # row (left margin → right margin) so taps anywhere on the
-        # entry navigate, not just on the bold title.
+        # Layout columns (in mm, absolute x from page left edge). We
+        # position each cell with explicit set_x() instead of relying
+        # on cell-flow so long titles can't push the date column out
+        # of alignment. Date column is LEFT-aligned at a fixed x so
+        # it reads as a clean vertical column down the page.
+        col_title_x = pdf.l_margin
+        col_title_w = 105.0
+        col_date_x = pdf.l_margin + 110.0
+        col_date_w = 40.0
+        col_page_w = 25.0
+        col_page_x = pdf.w - pdf.r_margin - col_page_w
+
         row_height_mm = 9.0  # 7mm cell + 2mm trailing ln() = visual row
         pdf.set_font("Helvetica", "", 11)
         for idx, section in enumerate(available_sections, start=1):
@@ -200,20 +227,27 @@ def _build_title_and_toc_pdf(
             # the binder is fully stitched.
             row_top_mm = pdf.get_y()
 
-            # Title (left)
+            # Title (left) — bold, dark navy.
+            pdf.set_xy(col_title_x, row_top_mm)
             pdf.set_text_color(40, 50, 80)
             pdf.set_font("Helvetica", "B", 11)
-            pdf.cell(110, 7, _safe(title_str), new_x="END", new_y="TOP")
+            pdf.cell(col_title_w, 7, _safe(title_str))
 
-            # Date (middle)
+            # Date (middle column) — LEFT-aligned at a fixed x so
+            # every date starts at the same column position.
+            pdf.set_xy(col_date_x, row_top_mm)
             pdf.set_text_color(130, 140, 160)
             pdf.set_font("Helvetica", "", 9)
-            pdf.cell(40, 7, _safe(date_str), new_x="END", new_y="TOP", align="R")
+            pdf.cell(col_date_w, 7, _safe(date_str), align="L")
 
-            # Page number (right)
+            # Page number (right) — right-aligned against the right margin.
+            pdf.set_xy(col_page_x, row_top_mm)
             pdf.set_text_color(70, 80, 100)
             pdf.set_font("Helvetica", "B", 10)
-            pdf.cell(0, 7, _safe(page_str), new_x="LMARGIN", new_y="NEXT", align="R")
+            pdf.cell(col_page_w, 7, _safe(page_str), align="R")
+
+            # Advance to next row.
+            pdf.set_xy(pdf.l_margin, row_top_mm + 7)
             pdf.ln(2)
 
             # Compute the link rect in pypdf coordinates (points,
