@@ -15,19 +15,19 @@ import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
 import { toast } from '../utils/toast';
 
-// Pretty-print a delta as "Xs ago" / "Xm ago" / "Xh ago" / "Xd ago".
+// Pretty-print a delta in compact form: "now" / "2m" / "1h" / "2d".
 const formatAgo = (iso) => {
   if (!iso) return '';
   const t = new Date(iso).getTime();
   if (!t || isNaN(t)) return '';
   const diff = Math.max(0, Date.now() - t);
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins} min ago`;
+  if (mins < 1) return 'now';
+  if (mins < 60) return `${mins}m`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return `${hrs}h`;
   const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+  return `${days}d`;
 };
 
 const EstateBinderButton = () => {
@@ -160,7 +160,7 @@ const EstateBinderButton = () => {
           }}
           title={
             lastGeneratedAt
-              ? `Assemble Estate Binder · last built ${formatAgo(lastGeneratedAt)}`
+              ? `Assemble Estate Binder · last built ${formatAgo(lastGeneratedAt)} ago`
               : 'Assemble Estate Binder'
           }
           aria-label="Assemble Estate Binder"
@@ -182,7 +182,7 @@ const EstateBinderButton = () => {
             }}
             data-testid="readiness-estate-binder-stamp"
           >
-            {`Last built ${formatAgo(lastGeneratedAt)}`}
+            {`Built ${formatAgo(lastGeneratedAt)}`}
           </span>
         )}
       </div>
