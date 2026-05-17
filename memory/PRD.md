@@ -2794,3 +2794,57 @@ Lint clean; housekeeping `--strict` exit 0; `max_tokens` 1800 still sufficient.
 - `/tmp/audit.sh` (audit script, reusable for future runs)
 
 [END ANCHOR:PROMPT_HOISTED_AND_AUDIT_RERUN]
+
+
+---
+
+## Monolith reduction — file 1 of 6: `documents.py` ✅ (Feb 17, 2026)
+
+### Engagement rules (locked in for the series)
+1. One monolith file per session, full stop.
+2. ≤3 surgical extractions per session.
+3. Atomic extractions: each one (new file created → original block removed → router mounted → lint → housekeeping) is fully committed before the next starts.
+4. Pre-flight plan stated and user-approved before any code change.
+5. Live-platform safety net: ruff + ESLint + `housekeeping.sh --strict` + `testing_agent_v3_fork` all green before moving on.
+6. User can stop the series between any two files.
+
+### Result for documents.py
+1,630 lines → **1,213 lines** (−417, −26%). Now UNDER the 1,500-line monolith threshold.
+
+Three extractions, each verbatim code-move (no logic changes, no signature changes):
+- `/app/backend/routes/documents_vault_security.py` (89 lines) — single endpoint `GET /vault/security-info/{estate_id}`.
+- `/app/backend/routes/documents_voice.py` (195 lines) — 5 voice/Whisper endpoints + 2 Pydantic models.
+- `/app/backend/routes/documents_designate.py` (216 lines) — `PUT /documents/{id}/designate-beneficiaries` + 2 internal helpers (`_ben_has_pre_visibility`, `_notify_newly_pre_shared`) + 1 model.
+
+Each new module mounts its own `APIRouter` in `server.py` (lines ~32-35, ~262-266).
+
+### Verification
+- ruff lint clean on all 4 documents files.
+- `housekeeping.sh --strict` exit 0.
+- testing_agent_v3_fork iteration 149: **27/27 backend tests PASS**, zero regressions.
+- Regression test suite `/app/backend/tests/test_documents_extraction_iter149.py` (NEW, 250 lines, 27 tests) — reusable for any future documents.py work.
+- No duplicate route registrations in OpenAPI.
+
+### Pre-existing review flags (NOT regressions — left for follow-up tickets)
+- bcrypt 72-byte input limit silently truncates very long voice passphrases.
+- Whisper temp file leaked on exception path (rare disk-leak).
+- `setup_voice_passphrase` accepts passphrase as query-string param (lands in nginx logs).
+- `_notify_newly_pre_shared` serializes notifications instead of `asyncio.gather` fan-out.
+- vault_stats counts only first 200 docs (`to_list(200)`) — under-reports for estates >200 docs.
+
+### Remaining monoliths (next sessions, in order)
+1. `guardian.py` (1,691) — NEXT session
+2. `subscriptions/checkout.py` (1,630) — Stripe; extra care
+3. `BeneficiariesPage.js` (1,747)
+4. `MessagesPage.js` (1,926)
+5. `EntityOrgChart.js` (2,536) — last, highest blast radius
+
+### Files touched this session
+- `/app/backend/routes/documents.py` (3 blocks removed)
+- `/app/backend/routes/documents_vault_security.py` (NEW)
+- `/app/backend/routes/documents_voice.py` (NEW)
+- `/app/backend/routes/documents_designate.py` (NEW)
+- `/app/backend/server.py` (+3 imports, +3 mount lines)
+- `/app/backend/tests/test_documents_extraction_iter149.py` (NEW — by testing agent)
+
+[END ANCHOR:MONOLITH_REDUCTION_DOCUMENTS_PY]
