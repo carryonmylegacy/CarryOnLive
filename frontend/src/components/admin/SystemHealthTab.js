@@ -5,6 +5,7 @@ import { Activity, Database, Shield, CheckCircle2, Loader2, RefreshCw, Zap, Aler
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
+import { DbStatusCard } from './DbStatusCard';
 
 const XAICreditsCard = ({ getAuthHeaders }) => {
   const [credits, setCredits] = useState(null);
@@ -193,6 +194,11 @@ export const SystemHealthTab = ({ getAuthHeaders }) => {
 
       {/* xAI Credits Monitor */}
       <XAICreditsCard getAuthHeaders={getAuthHeaders} />
+
+      {/* MongoDB cluster status — answers "where is our data, is it
+          healthy, and how much do we have?" at a glance. Live to both
+          /admin/system-health and /ops/system-health. */}
+      <DbStatusCard getAuthHeaders={getAuthHeaders} />
 
       {/* Status timestamp */}
       <p className="text-[11px] text-[var(--t5)]">Last checked: {new Date(health.timestamp).toLocaleString()}</p>
