@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { GraduationCap, CheckCircle, Circle, Loader2, ChevronDown, ChevronRight, Users, Award } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
@@ -27,9 +28,9 @@ export const TrainingTrackerTab = ({ getAuthHeaders }) => {
   const fetchData = async () => {
     try {
       const [modulesRes, teamRes] = await Promise.all([
-        axios.get(`${API_URL}/ops/training/modules`, getAuthHeaders()),
+        apiClient.get(`${API_URL}/ops/training/modules`, getAuthHeaders()),
         isManagerOrAdmin
-          ? axios.get(`${API_URL}/ops/training/team-progress`, getAuthHeaders())
+          ? apiClient.get(`${API_URL}/ops/training/team-progress`, getAuthHeaders())
           : Promise.resolve({ data: null }),
       ]);
       setModules(modulesRes.data);
@@ -47,10 +48,10 @@ export const TrainingTrackerTab = ({ getAuthHeaders }) => {
     setMarking(moduleId);
     try {
       if (isCompleted) {
-        await axios.delete(`${API_URL}/ops/training/complete/${moduleId}`, getAuthHeaders());
+        await apiClient.delete(`${API_URL}/ops/training/complete/${moduleId}`, getAuthHeaders());
         toast.success('Unmarked');
       } else {
-        await axios.post(`${API_URL}/ops/training/complete`, { article_id: moduleId }, getAuthHeaders());
+        await apiClient.post(`${API_URL}/ops/training/complete`, { article_id: moduleId }, getAuthHeaders());
         toast.success('Marked complete');
       }
       fetchData();

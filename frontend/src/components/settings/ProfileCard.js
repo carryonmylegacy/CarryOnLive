@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { User, Pencil, ChevronRight, Eye, EyeOff, Loader2 } from 'lucide-react';
@@ -60,7 +61,7 @@ const ProfileCard = () => {
       } catch { /* ignore */ }
       if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
       try {
-        const res = await axios.get(`${API_URL}/auth/me`, getAuthHeaders());
+        const res = await apiClient.get(`${API_URL}/auth/me`, getAuthHeaders());
         if (cancelled) return;
         setProfilePhoto(res.data.photo_url || null);
         setDisplayName(res.data.name || user.name || '');
@@ -105,7 +106,7 @@ const ProfileCard = () => {
                 const reader = new FileReader();
                 reader.onload = async () => {
                   const base64 = reader.result.split(',')[1];
-                  const res = await axios.put(`${API_URL}/auth/profile-photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
+                  const res = await apiClient.put(`${API_URL}/auth/profile-photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
                   if (res.data?.photo_url) setProfilePhoto(res.data.photo_url);
                   toast.success('Profile photo saved');
                 };
@@ -117,7 +118,7 @@ const ProfileCard = () => {
             }}
             onRemove={async () => {
               setProfilePhoto(null);
-              try { await axios.put(`${API_URL}/auth/profile-photo`, { photo_data: '', file_name: '' }, getAuthHeaders()); } catch {}
+              try { await apiClient.put(`${API_URL}/auth/profile-photo`, { photo_data: '', file_name: '' }, getAuthHeaders()); } catch {}
             }}
           />
           <div>
@@ -134,7 +135,7 @@ const ProfileCard = () => {
                     if (e.key === 'Enter' && nameDraft.trim()) {
                       setNameSaving(true);
                       try {
-                        await axios.put(`${API_URL}/auth/display-name`, { name: nameDraft.trim() }, getAuthHeaders());
+                        await apiClient.put(`${API_URL}/auth/display-name`, { name: nameDraft.trim() }, getAuthHeaders());
                         setDisplayName(nameDraft.trim());
                         setEditingName(false);
                         toast.success('Name updated');
@@ -151,7 +152,7 @@ const ProfileCard = () => {
                       if (nameDraft.trim()) {
                         setNameSaving(true);
                         try {
-                          await axios.put(`${API_URL}/auth/display-name`, { name: nameDraft.trim() }, getAuthHeaders());
+                          await apiClient.put(`${API_URL}/auth/display-name`, { name: nameDraft.trim() }, getAuthHeaders());
                           setDisplayName(nameDraft.trim());
                           toast.success('Name updated');
                         } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update name'); }
@@ -205,7 +206,7 @@ const ProfileCard = () => {
                   if (e.key === 'Enter' && usernameDraft.trim()) {
                     setUsernameSaving(true);
                     try {
-                      await axios.put(`${API_URL}/auth/username`, { username: usernameDraft.trim() }, getAuthHeaders());
+                      await apiClient.put(`${API_URL}/auth/username`, { username: usernameDraft.trim() }, getAuthHeaders());
                       setUsername(usernameDraft.trim());
                       setEditingUsername(false);
                       toast.success('Username updated');
@@ -224,7 +225,7 @@ const ProfileCard = () => {
                     if (usernameDraft.trim()) {
                       setUsernameSaving(true);
                       try {
-                        await axios.put(`${API_URL}/auth/username`, { username: usernameDraft.trim() }, getAuthHeaders());
+                        await apiClient.put(`${API_URL}/auth/username`, { username: usernameDraft.trim() }, getAuthHeaders());
                         setUsername(usernameDraft.trim());
                         toast.success('Username updated');
                       } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update username'); }
@@ -299,7 +300,7 @@ const ProfileCard = () => {
                 onClick={async () => {
                   setPwLoading(true);
                   try {
-                    await axios.post(`${API_URL}/auth/change-password`, { current_password: currentPw, new_password: newPw }, getAuthHeaders());
+                    await apiClient.post(`${API_URL}/auth/change-password`, { current_password: currentPw, new_password: newPw }, getAuthHeaders());
                     toast.success('Password changed successfully');
                     setShowChangePassword(false);
                     setCurrentPw(''); setNewPw(''); setConfirmPw('');

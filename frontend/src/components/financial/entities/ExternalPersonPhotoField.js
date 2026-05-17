@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
+import apiClient from '../../../utils/apiClient';
 import { Camera, Loader2, User as UserIcon, Check, X } from 'lucide-react';
 import { API_URL } from '../../../config';
 import { toast } from '../../../utils/toast';
@@ -190,7 +191,7 @@ export default function ExternalPersonPhotoField({
       const form = new FormData();
       form.append('file', new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
       const headers = getAuthHeaders ? (getAuthHeaders().headers || {}) : {};
-      const res = await axios.post(
+      const res = await apiClient.post(
         `${API_URL}/financial/external-people/${personId}/photo`,
         form,
         { headers: { ...headers, 'Content-Type': 'multipart/form-data' } }

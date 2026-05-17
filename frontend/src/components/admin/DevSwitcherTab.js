@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Settings, AlertTriangle, Loader2, Eye, UserCog, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -53,7 +54,7 @@ export const DevSwitcherTab = ({ users, getAuthHeaders }) => {
 
   const fetchConfig = async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/dev-switcher`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/admin/dev-switcher`, getAuthHeaders());
       setConfig(prev => ({
         ...prev,
         benefactor_email: res.data.benefactor_email || '',
@@ -71,7 +72,7 @@ export const DevSwitcherTab = ({ users, getAuthHeaders }) => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await axios.put(`${API_URL}/admin/dev-switcher`, config, getAuthHeaders());
+      await apiClient.put(`${API_URL}/admin/dev-switcher`, config, getAuthHeaders());
       toast.success('Dev Switcher config saved');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to save config');
@@ -111,7 +112,7 @@ export const DevSwitcherTab = ({ users, getAuthHeaders }) => {
     setPortalVisibility(updated);
     setSavingVisibility(true);
     try {
-      await axios.put(`${API_URL}/admin/dev-switcher/portal-visibility`, { portal_visibility: updated }, getAuthHeaders());
+      await apiClient.put(`${API_URL}/admin/dev-switcher/portal-visibility`, { portal_visibility: updated }, getAuthHeaders());
       toast.success(`${SWITCHABLE_PORTALS.find(p => p.key === portalKey)?.label || portalKey} ${updated[portalKey] ? 'shown' : 'hidden'} in switcher`);
     } catch {
       toast.error('Failed to update visibility');

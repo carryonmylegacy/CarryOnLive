@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Megaphone, Plus, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
@@ -22,7 +23,7 @@ export const AnnouncementsTab = ({ getAuthHeaders }) => {
 
   const fetch_ = async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/announcements?active_only=false`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/admin/announcements?active_only=false`, getAuthHeaders());
       setItems(res.data);
     } catch { toast.error('Failed to load announcements'); }
     finally { setLoading(false); }
@@ -33,7 +34,7 @@ export const AnnouncementsTab = ({ getAuthHeaders }) => {
     if (!form.title.trim() || !form.body.trim()) return toast.error('Title and body are required');
     setSaving(true);
     try {
-      await axios.post(`${API_URL}/admin/announcements`, form, getAuthHeaders());
+      await apiClient.post(`${API_URL}/admin/announcements`, form, getAuthHeaders());
       toast.success('Announcement published');
       setShowForm(false);
       setForm({ title: '', body: '', audience: 'all', priority: 'info' });
@@ -44,7 +45,7 @@ export const AnnouncementsTab = ({ getAuthHeaders }) => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`${API_URL}/admin/announcements/${id}`, getAuthHeaders());
+      await apiClient.delete(`${API_URL}/admin/announcements/${id}`, getAuthHeaders());
       toast.success('Announcement deactivated');
       fetch_();
     } catch { toast.error('Failed to delete'); }

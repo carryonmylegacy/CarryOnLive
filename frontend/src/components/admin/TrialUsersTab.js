@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Clock, Loader2, User, Mail, ChevronDown, ChevronUp, Check, RotateCcw } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -67,7 +68,7 @@ const TrialPolicyCard = ({ policy, onChange, getAuthHeaders, saving, setSaving, 
     if (!ok) return;
     setSaving(true);
     try {
-      const res = await axios.put(
+      const res = await apiClient.put(
         `${API_URL}/admin/trial-policy`,
         { trial_days: days },
         { ...(getAuthHeaders() || {}), timeout: 60000 },
@@ -197,7 +198,7 @@ export const TrialUsersTab = ({ getAuthHeaders }) => {
     const userId = resetTrialTarget.id;
     setResettingTrialId(userId);
     try {
-      const res = await axios.post(
+      const res = await apiClient.post(
         `${API_URL}/admin/users/${userId}/reset-trial`,
         {},
         getAuthHeaders(),
@@ -233,8 +234,8 @@ export const TrialUsersTab = ({ getAuthHeaders }) => {
     // trial-users call (or vice versa) doesn't take down the OTHER
     // fetch with it.
     const [usersRes, policyRes] = await Promise.allSettled([
-      axios.get(`${API_URL}/admin/trial-users`, cfg),
-      axios.get(`${API_URL}/admin/trial-policy`, cfg),
+      apiClient.get(`${API_URL}/admin/trial-users`, cfg),
+      apiClient.get(`${API_URL}/admin/trial-policy`, cfg),
     ]);
     if (usersRes.status === 'fulfilled') {
       setUsers(usersRes.value.data || []);

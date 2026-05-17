@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Lock, Eye, EyeOff, Loader2, CheckCircle, AlertCircle,
@@ -45,7 +46,7 @@ const AcceptInvitationPage = () => {
 
   const fetchInvitationDetails = async () => {
     try {
-      const response = await axios.get(`${API_URL}/invitations/${token}`);
+      const response = await apiClient.get(`${API_URL}/invitations/${token}`);
       setInvitationData(response.data);
       // Auto-suggest username from beneficiary name
       const b = response.data?.beneficiary;
@@ -72,7 +73,7 @@ const AcceptInvitationPage = () => {
     if (usernameError) { toast.error(usernameError); return; }
     setSubmitting(true);
     try {
-      const response = await axios.post(`${API_URL}/invitations/accept`, {
+      const response = await apiClient.post(`${API_URL}/invitations/accept`, {
         token, password, phone: phone ? `+1${phone.replace(/\D/g, '')}` : null,
         username: username || null
       });
@@ -88,7 +89,7 @@ const AcceptInvitationPage = () => {
     if (!loginPassword) { toast.error('Please enter your password'); return; }
     setSubmitting(true);
     try {
-      const response = await axios.post(`${API_URL}/invitations/accept-existing`, {
+      const response = await apiClient.post(`${API_URL}/invitations/accept-existing`, {
         token, username: loginUsername, password: loginPassword
       });
       setAccepted(true);
@@ -367,7 +368,7 @@ const AcceptInvitationPage = () => {
                               if (username.length < 3) { setUsernameError('Username must be at least 3 characters'); return; }
                               setUsernameChecking(true);
                               try {
-                                const res = await axios.post(`${API_URL}/auth/check-username`, { username });
+                                const res = await apiClient.post(`${API_URL}/auth/check-username`, { username });
                                 if (!res.data.available) setUsernameError(res.data.message || 'Username is already taken');
                                 else setUsernameError('');
                               } catch { setUsernameError(''); }

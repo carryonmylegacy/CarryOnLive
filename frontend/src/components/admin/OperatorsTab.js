@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   Trash2, Loader2, Plus, Eye, EyeOff, Phone, Mail, Briefcase,
@@ -58,7 +59,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
 
   const fetchOperators = async () => {
     try {
-      const res = await axios.get(`${API_URL}/founder/operators`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/founder/operators`, getAuthHeaders());
       setOperators(res.data);
     } catch {}
     finally { setLoading(false); }
@@ -73,7 +74,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
     }
     setCreating(true);
     try {
-      await axios.post(`${API_URL}/founder/operators`, form, getAuthHeaders());
+      await apiClient.post(`${API_URL}/founder/operators`, form, getAuthHeaders());
       toast.success(`${form.operator_role === 'manager' ? 'Manager' : 'Team Member'} account created`);
       setShowCreate(false);
       setForm({
@@ -89,7 +90,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
     if (!deleteTarget || !deletePassword) return;
     setDeleting(true);
     try {
-      await axios.delete(
+      await apiClient.delete(
         `${API_URL}/founder/operators/${deleteTarget.id}?admin_password=${encodeURIComponent(deletePassword)}`,
         getAuthHeaders()
       );
@@ -105,7 +106,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
     if (!editTarget) return;
     setEditing(true);
     try {
-      await axios.put(
+      await apiClient.put(
         `${API_URL}/founder/operators/${editTarget.id}`,
         editForm,
         getAuthHeaders()

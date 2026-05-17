@@ -22,6 +22,7 @@
  */
 
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 
 const CHUNK_SIZE = 10 * 1024 * 1024;
@@ -66,7 +67,7 @@ export class ChunkedUploader {
 
   async _init() {
     if (this.uploadId) return this.uploadId;
-    const res = await axios.post(`${API_URL}/uploads/chunked/init`, {
+    const res = await apiClient.post(`${API_URL}/uploads/chunked/init`, {
       filename: this.filename,
       total_bytes: this.blob.size,
       mime_type: this.mime_type,
@@ -79,7 +80,7 @@ export class ChunkedUploader {
   async _fetchReceivedChunks() {
     if (!this.uploadId) return [];
     try {
-      const res = await axios.get(`${API_URL}/uploads/chunked/${this.uploadId}/status`, { headers: this._headers(), timeout: 60000 });
+      const res = await apiClient.get(`${API_URL}/uploads/chunked/${this.uploadId}/status`, { headers: this._headers(), timeout: 60000 });
       return res.data.chunks_received || [];
     } catch { return []; }
   }
@@ -100,7 +101,7 @@ export class ChunkedUploader {
       if (this.abortSignal?.aborted) throw new Error('aborted');
       try {
         const baseSent = this.bytesSent;
-        await axios.put(
+        await apiClient.put(
           `${API_URL}/uploads/chunked/${this.uploadId}/chunk`,
           slice,
           {
@@ -138,7 +139,7 @@ export class ChunkedUploader {
   }
 
   async _complete() {
-    const res = await axios.post(
+    const res = await apiClient.post(
       `${API_URL}/uploads/chunked/${this.uploadId}/complete`,
       { kind: this.kind, metadata: this.metadata },
       { headers: this._headers(), timeout: 120000 },
@@ -236,7 +237,7 @@ async function _uploadMilestoneViaLegacy({ token, full, onProgress }) {
 
   // Step 1: create the Message row. For video, video bytes follow in
   // step 2; for voice, the bytes ride inline as base64 here.
-  const createRes = await axios.post(`${API_URL}/messages`, {
+  const createRes = await apiClient.post(`${API_URL}/messages`, {
     estate_id: create.estate_id,
     title: create.title || 'Milestone Message',
     content: create.content || '',
@@ -267,7 +268,7 @@ async function _uploadMilestoneViaLegacy({ token, full, onProgress }) {
   // we can hand it straight to FormData here.
   const formData = new FormData();
   formData.append('video', full.blob, full.filename || 'video.webm');
-  const videoRes = await axios.post(`${API_URL}/messages/${messageId}/upload-video`, formData, {
+  const videoRes = await apiClient.post(`${API_URL}/messages/${messageId}/upload-video`, formData, {
     headers: { ...headers, 'Content-Type': 'multipart/form-data' },
     timeout: 600000, // 10 min for very slow uplinks
     maxBodyLength: Infinity,

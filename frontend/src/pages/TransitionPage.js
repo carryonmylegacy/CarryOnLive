@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -38,7 +39,7 @@ const TransitionPage = () => {
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       if (estatesRes.data.length > 0) {
         setEstate(estatesRes.data[0]);
-        const statusRes = await axios.get(`${API_URL}/transition/status/${estatesRes.data[0].id}`, getAuthHeaders());
+        const statusRes = await apiClient.get(`${API_URL}/transition/status/${estatesRes.data[0].id}`, getAuthHeaders());
         setTransitionStatus(statusRes.data);
       }
     } catch (error) {
@@ -60,7 +61,7 @@ const TransitionPage = () => {
       const formData = new FormData();
       formData.append('file', selectedFile);
       
-      await axios.post(
+      await apiClient.post(
         `${API_URL}/transition/upload-certificate?estate_id=${estate.id}`,
         formData,
         {

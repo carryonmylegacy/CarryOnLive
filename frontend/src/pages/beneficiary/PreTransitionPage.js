@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLabelCleaner } from '../../utils/brandLabel';
 import { Lock, Shield, FileText, Upload, ChevronLeft, MessageCircle, FolderOpen, AlertTriangle } from 'lucide-react';
@@ -22,17 +23,17 @@ const PreTransitionPage = () => {
       try {
         const estateId = localStorage.getItem('beneficiary_estate_id');
         if (estateId) {
-          const res = await axios.get(`${API_URL}/estates/${estateId}`, getAuthHeaders());
+          const res = await apiClient.get(`${API_URL}/estates/${estateId}`, getAuthHeaders());
           setEstate(res.data);
           // Check authoritative transition status (death certificate, not estate.status)
-          const permRes = await axios.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, getAuthHeaders());
+          const permRes = await apiClient.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, getAuthHeaders());
           if (permRes.data.is_transitioned) {
             navigate('/beneficiary/dashboard');
             return;
           }
           // Check if there are extra pre-transition docs
           try {
-            const docsRes = await axios.get(`${API_URL}/documents/${estateId}/pre-transition`, getAuthHeaders());
+            const docsRes = await apiClient.get(`${API_URL}/documents/${estateId}/pre-transition`, getAuthHeaders());
             const extraDocs = (docsRes.data || []).filter(d => !['living_will', 'poa'].includes(d.category));
             setHasExtraDocs(extraDocs.length > 0);
           } catch { /* ok */ }

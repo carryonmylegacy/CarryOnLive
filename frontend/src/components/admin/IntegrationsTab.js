@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Lock, ExternalLink, Eye, EyeOff, Shield, Database, CreditCard, Mail, Bot, Cloud,
   MessageSquare, MapPin, Bell, Key, Smartphone, Mic, FileText, Puzzle, Server, Globe,
   RefreshCw, Download, DollarSign, AlertTriangle, CheckCircle2, Users, Gauge, ArrowUpCircle,
@@ -343,7 +344,7 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
   React.useEffect(() => {
     const load = async () => {
       try {
-        const res = await axios.get(`${API_URL}/admin/integrations`, getAuthHeaders());
+        const res = await apiClient.get(`${API_URL}/admin/integrations`, getAuthHeaders());
         setData(res.data);
       } catch { toast.error('Failed to load integrations'); }
       finally { setLoading(false); }
@@ -362,7 +363,7 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
 
   const submitPin = async (fullPin) => {
     try {
-      const res = await axios.post(`${API_URL}/admin/integrations/unlock`, { pin: fullPin }, getAuthHeaders());
+      const res = await apiClient.post(`${API_URL}/admin/integrations/unlock`, { pin: fullPin }, getAuthHeaders());
       setSessionPin(fullPin);
       setData(res.data);
       setPinPurpose(null);
@@ -416,13 +417,13 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
     if (!editInteg || !sessionPin) return;
     setSaving(true);
     try {
-      await axios.put(`${API_URL}/admin/integrations/${editInteg.id}`, {
+      await apiClient.put(`${API_URL}/admin/integrations/${editInteg.id}`, {
         pin: sessionPin,
         details: editFields,
         cost_monthly: parseFloat(editCost) || 0,
         cost_note: editCostNote || null,
       }, getAuthHeaders());
-      const res = await axios.post(`${API_URL}/admin/integrations/unlock`, { pin: sessionPin }, getAuthHeaders());
+      const res = await apiClient.post(`${API_URL}/admin/integrations/unlock`, { pin: sessionPin }, getAuthHeaders());
       setData(res.data);
       setEditInteg(null);
       toast.success(`${editInteg.name} updated`);
@@ -440,7 +441,7 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
         title: 'SOC 2 Compliance Report',
         subtitle: new Date().toISOString().slice(0, 10),
         blobFetcher: async () => {
-          const res = await axios.post(`${API_URL}/admin/integrations/soc2-report`, { pin: pin || sessionPin }, {
+          const res = await apiClient.post(`${API_URL}/admin/integrations/soc2-report`, { pin: pin || sessionPin }, {
             ...getAuthHeaders(), responseType: 'blob', timeout: 120000,
           });
           return new Blob([res.data], { type: 'application/pdf' });
@@ -484,7 +485,7 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
       if (i === 3) {
         setTimeout(async () => {
           try {
-            await axios.put(`${API_URL}/admin/integrations-pin`, {
+            await apiClient.put(`${API_URL}/admin/integrations-pin`, {
               current_pin: currentPinForChange,
               new_pin: d.join(''),
             }, getAuthHeaders());

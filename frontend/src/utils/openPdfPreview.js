@@ -16,7 +16,7 @@
  *     title:    'EGA To-Do List',
  *     subtitle: '2026-02-13',
  *     blobFetcher: async () => {
- *       const res = await axios.post(..., { responseType: 'blob' });
+ *       const res = await apiClient.post(..., { responseType: 'blob' });
  *       return new Blob([res.data], { type: 'application/pdf' });
  *     },
  *   });
@@ -33,6 +33,7 @@
  * with call-sites converted before this refactor — it is now ignored.
  */
 import axios from 'axios';
+import apiClient from './apiClient';
 import { API_URL } from '../config';
 
 let _jobCounter = 0;
@@ -56,7 +57,7 @@ async function _writeToCache({ blob, pdfType, title, subtitle, filename }) {
     if (title) fd.append('title', title);
     if (subtitle) fd.append('subtitle', subtitle);
     if (filename) fd.append('filename', filename);
-    await axios.post(`${API_URL}/pdfs/cache`, fd, {
+    await apiClient.post(`${API_URL}/pdfs/cache`, fd, {
       headers: { Authorization: `Bearer ${token}` },
       timeout: 30000,
     });

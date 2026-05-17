@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { toast } from '../../utils/toast';
 import { Mail, Shield, TrendingUp, AlertTriangle, Loader2, Trash2, Send, Eye } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
@@ -21,7 +22,7 @@ export const FounderEmailsTab = ({ getAuthHeaders }) => {
 
   const fetchPrefs = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/email-preferences`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/admin/email-preferences`, getAuthHeaders());
       setPrefs(res.data);
     } catch { toast.error('Failed to load email preferences'); }
     finally { setLoading(false); }
@@ -32,7 +33,7 @@ export const FounderEmailsTab = ({ getAuthHeaders }) => {
   const updatePref = async (updates) => {
     setSaving(true);
     try {
-      await axios.put(`${API_URL}/admin/email-preferences`, updates, getAuthHeaders());
+      await apiClient.put(`${API_URL}/admin/email-preferences`, updates, getAuthHeaders());
       setPrefs(p => ({ ...p, ...updates }));
     } catch { toast.error('Failed to save'); }
     finally { setSaving(false); }
@@ -56,7 +57,7 @@ export const FounderEmailsTab = ({ getAuthHeaders }) => {
     const url = type === 'analytics' ? '/admin/analytics-digest/send' : '/admin/audit-digest/send';
     setter(true);
     try {
-      await axios.post(`${API_URL}${url}`, {}, getAuthHeaders());
+      await apiClient.post(`${API_URL}${url}`, {}, getAuthHeaders());
       toast.success(`${type === 'analytics' ? 'Analytics' : 'Audit'} digest sent`);
     } catch { toast.error('Failed to send'); }
     finally { setter(false); }
@@ -65,7 +66,7 @@ export const FounderEmailsTab = ({ getAuthHeaders }) => {
   const preview = async (type) => {
     const url = type === 'analytics' ? '/admin/analytics-digest/preview' : '/admin/audit-digest/preview';
     try {
-      const res = await axios.get(`${API_URL}${url}`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}${url}`, getAuthHeaders());
       setPreviewHtml(res.data.html);
       setPreviewType(type);
     } catch { toast.error('Failed to load preview'); }

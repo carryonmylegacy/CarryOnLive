@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Shield, Loader2, Check } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_URL } from '../../config';
@@ -46,7 +47,7 @@ const PublicDeviceModeMenuButton = ({ flavor = 'sidebar', collapsed = false, onA
   const refreshEstates = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await axios.get(`${API_URL}/estates`, {
+      const res = await apiClient.get(`${API_URL}/estates`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = Array.isArray(res.data) ? res.data : (res.data?.estates || []);
@@ -75,7 +76,7 @@ const PublicDeviceModeMenuButton = ({ flavor = 'sidebar', collapsed = false, onA
   const patchEstate = async (estate, newState) => {
     setBusyId(estate.id);
     try {
-      await axios.patch(
+      await apiClient.patch(
         `${API_URL}/estates/${estate.id}`,
         newState
           ? { public_device_mode: true, public_device_idle_seconds: 60 }

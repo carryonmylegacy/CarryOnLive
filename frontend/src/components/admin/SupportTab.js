@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { MessageCircle, Headphones, UserCircle, Loader2, Send, Search, Trash2, KeyRound, Unlock, RotateCcw } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -31,7 +32,7 @@ export const SupportTab = ({ getAuthHeaders }) => {
     try {
       const params = isFounder && showDeleted ? '?include_deleted=true' : '';
       const base = groupByThread ? '/support/conversations-by-thread' : '/support/conversations';
-      const res = await axios.get(`${API_URL}${base}${params}`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}${base}${params}`, getAuthHeaders());
       setConversations(res.data);
     } catch (err) { console.error('Error fetching conversations:', err); }
   };
@@ -41,7 +42,7 @@ export const SupportTab = ({ getAuthHeaders }) => {
       const url = threadId
         ? `${API_URL}/support/messages/${convId}?thread_id=${encodeURIComponent(threadId)}`
         : `${API_URL}/support/messages/${convId}`;
-      const res = await axios.get(url, getAuthHeaders());
+      const res = await apiClient.get(url, getAuthHeaders());
       setConvMessages(res.data);
     } catch (err) { console.error('Error fetching messages:', err); }
   };
@@ -58,7 +59,7 @@ export const SupportTab = ({ getAuthHeaders }) => {
       if (selectedConv.thread_id && selectedConv.thread_id !== 'default') {
         payload.thread_id = selectedConv.thread_id;
       }
-      const res = await axios.post(`${API_URL}/support/messages`, payload, getAuthHeaders());
+      const res = await apiClient.post(`${API_URL}/support/messages`, payload, getAuthHeaders());
       setConvMessages(prev => [...prev, res.data]);
       setNewMessage('');
       fetchConversations();
@@ -199,7 +200,7 @@ export const SupportTab = ({ getAuthHeaders }) => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          axios.post(`${API_URL}/admin/support/conversation/${conv.conversation_id}/restore`, {}, getAuthHeaders())
+                          apiClient.post(`${API_URL}/admin/support/conversation/${conv.conversation_id}/restore`, {}, getAuthHeaders())
                             .then(() => { toast.success('Conversation restored'); fetchConversations(); })
                             .catch(() => toast.error('Failed to restore'));
                         }}
@@ -213,7 +214,7 @@ export const SupportTab = ({ getAuthHeaders }) => {
                         onClick={(e) => {
                           e.stopPropagation();
                           if (!window.confirm('Delete this conversation?')) return;
-                          axios.delete(`${API_URL}/admin/support/conversation/${conv.conversation_id}`, getAuthHeaders())
+                          apiClient.delete(`${API_URL}/admin/support/conversation/${conv.conversation_id}`, getAuthHeaders())
                             .then(() => { fetchConversations(); if (selectedConv?.conversation_id === conv.conversation_id) setSelectedConv(null); })
                             .catch(() => toast.error('Failed to delete'));
                         }}
@@ -277,7 +278,7 @@ export const SupportTab = ({ getAuthHeaders }) => {
                       onClick={async () => {
                         setUnlockingDocs(true);
                         try {
-                          const res = await axios.post(`${API_URL}/admin/user/${selectedConv.conversation_id}/unlock-all-documents`,
+                          const res = await apiClient.post(`${API_URL}/admin/user/${selectedConv.conversation_id}/unlock-all-documents`,
                             { master_key: masterKeyInput }, { headers: { ...getAuthHeaders()?.headers, 'Content-Type': 'application/json' } });
                           toast.error(`Unlocked ${res.data.unlocked_count} document(s). User must re-lock individually.`);
                           setMasterKeyInput('');

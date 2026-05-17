@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Copy, ExternalLink, Mail, Check, FileText, Edit3, Save, RotateCcw, ChevronDown, ChevronRight, Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_URL } from '../../config';
@@ -35,7 +36,7 @@ export default function SalesBriefTab() {
   const loadBrief = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await axios.get(`${API_URL}/partner-brief`);
+      const r = await apiClient.get(`${API_URL}/partner-brief`);
       setContent(r.data?.content || null);
       setIsCustomized(!!r.data?.is_customized);
     } catch (e) {
@@ -59,7 +60,7 @@ export default function SalesBriefTab() {
     if (!draft) return;
     setSaving(true);
     try {
-      const r = await axios.put(`${API_URL}/partner-brief`, { content: draft }, getAuthHeaders());
+      const r = await apiClient.put(`${API_URL}/partner-brief`, { content: draft }, getAuthHeaders());
       setContent(r.data?.content || draft);
       setIsCustomized(true);
       setDraft(null);
@@ -74,7 +75,7 @@ export default function SalesBriefTab() {
   const resetToDefaults = async () => {
     setSaving(true);
     try {
-      const r = await axios.post(`${API_URL}/partner-brief/reset`, {}, getAuthHeaders());
+      const r = await apiClient.post(`${API_URL}/partner-brief/reset`, {}, getAuthHeaders());
       setContent(r.data?.content || null);
       setIsCustomized(false);
       setDraft(null);

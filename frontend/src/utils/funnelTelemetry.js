@@ -9,6 +9,7 @@
  */
 
 import axios from 'axios';
+import apiClient from './apiClient';
 import { API_URL } from '../config';
 
 const SESSION_KEY = 'carryon_anon_session_id';
@@ -50,7 +51,7 @@ export const recordFunnelEvent = ({ event, meta }) => {
       path: typeof window !== 'undefined' ? window.location.pathname.slice(0, 120) : null,
       referrer: typeof document !== 'undefined' ? (document.referrer || '').slice(0, 200) : null,
     };
-    axios.post(`${API_URL}/diagnostics/funnel-event`, payload, { headers, timeout: 5000 }).catch(() => {});
+    apiClient.post(`${API_URL}/diagnostics/funnel-event`, payload, { headers, timeout: 5000 }).catch(() => {});
   } catch {
     // ignore
   }

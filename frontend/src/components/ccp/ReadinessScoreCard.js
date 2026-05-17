@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { ChevronDown, ChevronUp, Check, Circle, ShieldAlert } from 'lucide-react';
 import { API_URL } from '../../config';
 
@@ -17,7 +18,7 @@ export default function ReadinessScoreCard({ estateId, refreshKey = 0 }) {
     if (!estateId) return;
     try {
       const token = localStorage.getItem('carryon_token');
-      const res = await axios.get(`${API_URL}/ccp/readiness/${estateId}`, {
+      const res = await apiClient.get(`${API_URL}/ccp/readiness/${estateId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setData(res.data);

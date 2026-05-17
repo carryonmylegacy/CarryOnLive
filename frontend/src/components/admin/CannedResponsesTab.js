@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { MessageSquare, Plus, Loader2, Pencil, Trash2, Copy, Check } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -29,7 +30,7 @@ export const CannedResponsesTab = ({ getAuthHeaders, isManager = false }) => {
 
   const fetch_ = async () => {
     try {
-      const res = await axios.get(`${API_URL}/ops/canned-responses`, { headers });
+      const res = await apiClient.get(`${API_URL}/ops/canned-responses`, { headers });
       setItems(res.data);
     } catch { toast.error('Failed to load templates'); }
     finally { setLoading(false); }
@@ -41,7 +42,7 @@ export const CannedResponsesTab = ({ getAuthHeaders, isManager = false }) => {
     if (!form.title.trim() || !form.body.trim()) return toast.error('Title and body required');
     setSaving(true);
     try {
-      await axios.post(`${API_URL}/ops/canned-responses`, form, {
+      await apiClient.post(`${API_URL}/ops/canned-responses`, form, {
         headers: { ...headers, 'Content-Type': 'application/json' },
       });
       toast.success('Template created');
@@ -55,7 +56,7 @@ export const CannedResponsesTab = ({ getAuthHeaders, isManager = false }) => {
   const handleUpdate = async (id) => {
     setSaving(true);
     try {
-      await axios.put(`${API_URL}/ops/canned-responses/${id}`, form, {
+      await apiClient.put(`${API_URL}/ops/canned-responses/${id}`, form, {
         headers: { ...headers, 'Content-Type': 'application/json' },
       });
       toast.success('Updated');
@@ -68,7 +69,7 @@ export const CannedResponsesTab = ({ getAuthHeaders, isManager = false }) => {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this template?')) return;
     try {
-      await axios.delete(`${API_URL}/ops/canned-responses/${id}`, { headers });
+      await apiClient.delete(`${API_URL}/ops/canned-responses/${id}`, { headers });
       fetch_();
     } catch { toast.error('Failed to delete'); }
   };
@@ -78,7 +79,7 @@ export const CannedResponsesTab = ({ getAuthHeaders, isManager = false }) => {
     setCopied(item.id);
     setTimeout(() => setCopied(null), 2000);
     // Track usage
-    axios.post(`${API_URL}/ops/canned-responses/${item.id}/use`, {}, { headers }).catch(() => {});
+    apiClient.post(`${API_URL}/ops/canned-responses/${item.id}/use`, {}, { headers }).catch(() => {});
   };
 
   const filtered = filter ? items.filter(i => i.category === filter) : items;

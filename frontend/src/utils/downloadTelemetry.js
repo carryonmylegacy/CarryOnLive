@@ -8,6 +8,7 @@
  */
 
 import axios from 'axios';
+import apiClient from './apiClient';
 import { API_URL } from '../config';
 
 const detectPlatform = () => {
@@ -47,7 +48,7 @@ export const recordDownloadEvent = ({ action, outcome, filename, bytes, errorMes
       error_message: errorMessage ? String(errorMessage).slice(0, 200) : null,
     };
     // Fire-and-forget — no await, no .catch chained beyond a swallow.
-    axios.post(`${API_URL}/diagnostics/download-event`, payload, {
+    apiClient.post(`${API_URL}/diagnostics/download-event`, payload, {
       headers: { Authorization: `Bearer ${token}` },
       timeout: 5000,
     }).catch(() => {});

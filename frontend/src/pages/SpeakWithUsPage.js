@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { RevealSection } from '../components/landing/RevealSection';
 import LandingContent from '../components/landing/LandingContent';
 import { API_URL } from '../config';
@@ -26,7 +27,7 @@ const SpeakWithUsPage = () => {
   const isMobileView = useIsMobileViewport();
 
   useEffect(() => {
-    axios.get(`${API_URL}/public/site-content`).then(r => {
+    apiClient.get(`${API_URL}/public/site-content`).then(r => {
       setFooterInfo({ line1: r.data.footer_address_line1, line2: r.data.footer_address_line2, phone: r.data.footer_phone });
       if (r.data?.homepage_video_id) setHomepageVideoId(r.data.homepage_video_id);
       if (r.data?.homepage_video_id_vertical) setVerticalVideoId(r.data.homepage_video_id_vertical);

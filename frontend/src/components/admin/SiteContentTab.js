@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Save, ExternalLink, Play, Loader2, MapPin, Monitor, Smartphone, Gift } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
@@ -24,7 +25,7 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const res = await axios.get(`${API_URL}/admin/platform-settings`, getAuthHeaders());
+        const res = await apiClient.get(`${API_URL}/admin/platform-settings`, getAuthHeaders());
         const id = res.data?.homepage_video_id || 'EhU-jojs1jk';
         setVideoId(id);
         setSavedVideoId(id);
@@ -69,7 +70,7 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
       const payload = { homepage_video_id: parsedLandscape };
       const parsedVertical = parseVideoId(videoIdVertical);
       payload.homepage_video_id_vertical = parsedVertical;
-      await axios.put(`${API_URL}/admin/platform-settings`, payload, getAuthHeaders());
+      await apiClient.put(`${API_URL}/admin/platform-settings`, payload, getAuthHeaders());
       setVideoId(parsedLandscape);
       setSavedVideoId(parsedLandscape);
       setVideoIdVertical(parsedVertical);
@@ -84,7 +85,7 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
   const handleSaveFooter = async () => {
     setSavingFooter(true);
     try {
-      await axios.put(`${API_URL}/admin/platform-settings`, {
+      await apiClient.put(`${API_URL}/admin/platform-settings`, {
         footer_address_line1: footerLine1.trim(),
         footer_address_line2: footerLine2.trim(),
         footer_phone: footerPhone.trim(),
@@ -99,7 +100,7 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
   const handleToggleReferral = async (next) => {
     setReferralBusy(true);
     try {
-      await axios.put(
+      await apiClient.put(
         `${API_URL}/admin/platform-settings`,
         { referral_program_enabled: next },
         getAuthHeaders()

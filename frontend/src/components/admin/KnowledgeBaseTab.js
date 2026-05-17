@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { BookOpen, Plus, Edit2, Trash2, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
@@ -35,7 +36,7 @@ export const KnowledgeBaseTab = ({ getAuthHeaders, isFounder = false }) => {
   const fetch_ = async () => {
     try {
       const url = filter ? `${API_URL}/admin/knowledge-base?category=${filter}` : `${API_URL}/admin/knowledge-base`;
-      const res = await axios.get(url, getAuthHeaders());
+      const res = await apiClient.get(url, getAuthHeaders());
       setArticles(res.data);
     } catch { toast.error('Failed to load knowledge base'); }
     finally { setLoading(false); }
@@ -47,10 +48,10 @@ export const KnowledgeBaseTab = ({ getAuthHeaders, isFounder = false }) => {
     setSaving(true);
     try {
       if (editId) {
-        await axios.put(`${API_URL}/admin/knowledge-base/${editId}`, form, getAuthHeaders());
+        await apiClient.put(`${API_URL}/admin/knowledge-base/${editId}`, form, getAuthHeaders());
         toast.success('Article updated');
       } else {
-        await axios.post(`${API_URL}/admin/knowledge-base`, form, getAuthHeaders());
+        await apiClient.post(`${API_URL}/admin/knowledge-base`, form, getAuthHeaders());
         toast.success('Article created');
       }
       setShowForm(false);
@@ -69,7 +70,7 @@ export const KnowledgeBaseTab = ({ getAuthHeaders, isFounder = false }) => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`${API_URL}/admin/knowledge-base/${id}`, getAuthHeaders());
+      await apiClient.delete(`${API_URL}/admin/knowledge-base/${id}`, getAuthHeaders());
       toast.success('Article deleted');
       fetch_();
     } catch { toast.error('Failed to delete'); }

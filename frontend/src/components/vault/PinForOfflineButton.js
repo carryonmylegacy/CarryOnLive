@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Pin, PinOff, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { toast } from '../../utils/toast';
@@ -61,14 +62,14 @@ const PinForOfflineButton = ({ doc, getAuthHeaders }) => {
     try {
       if (isPinned) {
         // Unpin: server flag first (cheap), then evict local blob.
-        await axios.put(`${API_URL}/documents/${doc.id}/pin-offline?pinned=false`, null, getAuthHeaders());
+        await apiClient.put(`${API_URL}/documents/${doc.id}/pin-offline?pinned=false`, null, getAuthHeaders());
         await unpinDocument(doc.id);
         setIsPinned(false);
         toast.success('Removed from offline pins');
       } else {
         // Pin: server flag first so the user's intent survives even if
         // the blob fetch fails (warmup will retry on next sync).
-        await axios.put(`${API_URL}/documents/${doc.id}/pin-offline?pinned=true`, null, getAuthHeaders());
+        await apiClient.put(`${API_URL}/documents/${doc.id}/pin-offline?pinned=true`, null, getAuthHeaders());
         try {
           const bytes = await pinDocument(doc, getAuthHeaders()?.headers);
           setIsPinned(true);

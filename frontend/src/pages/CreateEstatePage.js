@@ -14,6 +14,7 @@ import { toast } from '../utils/toast';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import DateMaskInput from '../components/DateMaskInput';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 
 const genderOptions = [
@@ -88,7 +89,7 @@ const CreateEstatePage = () => {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const res = await axios.get(`${API_URL}/auth/me`, getAuthHeaders());
+        const res = await apiClient.get(`${API_URL}/auth/me`, getAuthHeaders());
         const p = res.data;
         setFirstName(p.first_name || '');
         setMiddleName(p.middle_name || '');
@@ -255,7 +256,7 @@ const CreateEstatePage = () => {
           address_zip: b.same_address ? addressZip : b.address_zip,
         }));
 
-        const res = await axios.post(`${API_URL}/accounts/create-estate`, {
+        const res = await apiClient.post(`${API_URL}/accounts/create-estate`, {
           name: estateName.trim() || null,
           beneficiary_enrollments: enrollments,
           special_status: specialStatus.length > 0 ? specialStatus : null,
@@ -282,7 +283,7 @@ const CreateEstatePage = () => {
         navigate('/dashboard');
       } else {
         // Beneficiary — link to existing estate
-        const res = await axios.post(`${API_URL}/accounts/add-beneficiary-link`, {
+        const res = await apiClient.post(`${API_URL}/accounts/add-beneficiary-link`, {
           benefactor_email: benefactorEmail,
         }, getAuthHeaders());
 
@@ -303,7 +304,7 @@ const CreateEstatePage = () => {
   const validateBenefactorEmail = async (emailVal) => {
     if (!emailVal?.trim()) { setBenefactorEmailError(''); return; }
     try {
-      const res = await axios.post(`${API_URL}/auth/check-benefactor-email`, { email: emailVal.trim() });
+      const res = await apiClient.post(`${API_URL}/auth/check-benefactor-email`, { email: emailVal.trim() });
       setBenefactorEmailError(res.data.valid ? '' : (res.data.message || 'Invalid benefactor email'));
     } catch { /* silent */ }
   };

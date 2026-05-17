@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -146,7 +147,7 @@ const LegacyTimelinePage = () => {
         }
         
         if (!estateId) { setLoading(false); return; }
-        const res = await axios.get(`${API_URL}/timeline/${estateId}`, {
+        const res = await apiClient.get(`${API_URL}/timeline/${estateId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setEvents(res.data.events || []);

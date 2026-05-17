@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
 import {
@@ -343,14 +344,14 @@ const AdminPage = ({ operatorMode = false }) => {
   const handleCleanup = async () => {
     setCleaning(true);
     try {
-      const res = await axios.post(`${API_URL}/admin/cleanup-orphans`, {}, getAuthHeaders());
+      const res = await apiClient.post(`${API_URL}/admin/cleanup-orphans`, {}, getAuthHeaders());
       const d = res.data.deleted;
       const total = Object.values(d).reduce((a, b) => a + b, 0);
       if (total > 0) {
         toast.success(`Cleaned up ${total} orphaned record(s)`);
         const [statsRes, usersRes] = await Promise.all([
-          axios.get(`${API_URL}/admin/stats`, getAuthHeaders()),
-          axios.get(`${API_URL}/admin/users`, getAuthHeaders()),
+          apiClient.get(`${API_URL}/admin/stats`, getAuthHeaders()),
+          apiClient.get(`${API_URL}/admin/users`, getAuthHeaders()),
         ]);
         setStats(statsRes.data);
         setUsers(usersRes.data);
@@ -366,13 +367,13 @@ const AdminPage = ({ operatorMode = false }) => {
       try {
         if (operatorMode) {
           const fetches = [
-            axios.get(`${API_URL}/admin/stats`, getAuthHeaders()),
-            axios.get(`${API_URL}/admin/users`, getAuthHeaders()),
-            axios.get(`${API_URL}/ops/dashboard-events`, getAuthHeaders()).catch(() => ({ data: null })),
+            apiClient.get(`${API_URL}/admin/stats`, getAuthHeaders()),
+            apiClient.get(`${API_URL}/admin/users`, getAuthHeaders()),
+            apiClient.get(`${API_URL}/ops/dashboard-events`, getAuthHeaders()).catch(() => ({ data: null })),
           ];
           if (user?.operator_role === 'manager') {
-            fetches.push(axios.get(`${API_URL}/ops/dashboard`, getAuthHeaders()).catch(() => ({ data: null })));
-            fetches.push(axios.get(`${API_URL}/ops/team-tasks`, getAuthHeaders()).catch(() => ({ data: null })));
+            fetches.push(apiClient.get(`${API_URL}/ops/dashboard`, getAuthHeaders()).catch(() => ({ data: null })));
+            fetches.push(apiClient.get(`${API_URL}/ops/team-tasks`, getAuthHeaders()).catch(() => ({ data: null })));
           }
           const results = await Promise.all(fetches);
           setStats(results[0].data);
@@ -382,11 +383,11 @@ const AdminPage = ({ operatorMode = false }) => {
           if (results[4]?.data) setTeamTasks(results[4].data);
         } else {
           const [usersRes, statsRes, settingsRes, revenueRes, accessReqsRes] = await Promise.all([
-            axios.get(`${API_URL}/admin/users`, getAuthHeaders()),
-            axios.get(`${API_URL}/admin/stats`, getAuthHeaders()),
-            axios.get(`${API_URL}/admin/platform-settings`, getAuthHeaders()).catch(() => ({ data: {} })),
-            axios.get(`${API_URL}/admin/revenue-metrics`, getAuthHeaders()).catch(() => ({ data: null })),
-            axios.get(`${API_URL}/founder/requests`, getAuthHeaders()).catch(() => ({ data: [] })),
+            apiClient.get(`${API_URL}/admin/users`, getAuthHeaders()),
+            apiClient.get(`${API_URL}/admin/stats`, getAuthHeaders()),
+            apiClient.get(`${API_URL}/admin/platform-settings`, getAuthHeaders()).catch(() => ({ data: {} })),
+            apiClient.get(`${API_URL}/admin/revenue-metrics`, getAuthHeaders()).catch(() => ({ data: null })),
+            apiClient.get(`${API_URL}/founder/requests`, getAuthHeaders()).catch(() => ({ data: [] })),
           ]);
           setUsers(usersRes.data);
           setStats(statsRes.data);
@@ -403,7 +404,7 @@ const AdminPage = ({ operatorMode = false }) => {
 
   const refreshStats = async () => {
     try {
-      const statsRes = await axios.get(`${API_URL}/admin/stats`, getAuthHeaders());
+      const statsRes = await apiClient.get(`${API_URL}/admin/stats`, getAuthHeaders());
       setStats(statsRes.data);
     } catch {}
   };
@@ -413,15 +414,15 @@ const AdminPage = ({ operatorMode = false }) => {
     const poll = setInterval(async () => {
       try {
         const [statsRes, eventsRes] = await Promise.all([
-          axios.get(`${API_URL}/admin/stats`, getAuthHeaders()),
-          axios.get(`${API_URL}/ops/dashboard-events`, getAuthHeaders()).catch(() => null),
+          apiClient.get(`${API_URL}/admin/stats`, getAuthHeaders()),
+          apiClient.get(`${API_URL}/ops/dashboard-events`, getAuthHeaders()).catch(() => null),
         ]);
         setStats(statsRes.data);
         if (eventsRes?.data) setDashEvents(eventsRes.data);
         if (user?.operator_role === 'manager') {
           const [dashRes, tasksRes] = await Promise.all([
-            axios.get(`${API_URL}/ops/dashboard`, getAuthHeaders()).catch(() => null),
-            axios.get(`${API_URL}/ops/team-tasks`, getAuthHeaders()).catch(() => null),
+            apiClient.get(`${API_URL}/ops/dashboard`, getAuthHeaders()).catch(() => null),
+            apiClient.get(`${API_URL}/ops/team-tasks`, getAuthHeaders()).catch(() => null),
           ]);
           if (dashRes?.data) setOpsDash(dashRes.data);
           if (tasksRes?.data) setTeamTasks(tasksRes.data);

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { openStripeCheckout } from '../../utils/stripeRedirect';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import {
   CreditCard, Loader2, Clock, ChevronRight, ChevronDown, Zap, Shield, X, Check,
   Crown, Star, Heart, Award, ArrowRight, Users, Mail, Sparkles, Sun
@@ -158,7 +159,7 @@ export const SubscriptionManagement = ({
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const res = await axios.get(`${API_URL}/subscriptions/plans`);
+        const res = await apiClient.get(`${API_URL}/subscriptions/plans`);
         setPlans(res.data.plans || []);
         setBeneficiaryPlans(res.data.beneficiary_plans || []);
         // Keep the tile checklist in sync with admin Feature Gates config.
@@ -167,7 +168,7 @@ export const SubscriptionManagement = ({
     };
     const fetchVerification = async () => {
       try {
-        const res = await axios.get(`${API_URL}/verification/status`, getAuthHeaders());
+        const res = await apiClient.get(`${API_URL}/verification/status`, getAuthHeaders());
         setVerificationStatus(res.data);
       } catch (e) { /* ignore */ }
     };
@@ -228,7 +229,7 @@ export const SubscriptionManagement = ({
     if (!b2bCode.trim()) { toast.error('Please enter your partner code'); return; }
     setVerifyingCode(true);
     try {
-      const res = await axios.post(`${API_URL}/subscriptions/verify-b2b-code`, { code: b2bCode }, getAuthHeaders());
+      const res = await apiClient.post(`${API_URL}/subscriptions/verify-b2b-code`, { code: b2bCode }, getAuthHeaders());
       if (res.data.verified) {
         refreshSubscription?.();
         setB2bCode('');
@@ -302,7 +303,7 @@ export const SubscriptionManagement = ({
         formData.append('file_data', base64);
         formData.append('file_name', verificationFile.name);
         try {
-          await axios.post(`${API_URL}/verification/upload`, formData, getAuthHeaders());
+          await apiClient.post(`${API_URL}/verification/upload`, formData, getAuthHeaders());
           // toast removed
           setShowVerification(false);
           setVerificationFile(null);
@@ -346,7 +347,7 @@ export const SubscriptionManagement = ({
       }
 
       // Web/PWA → Stripe
-      const res = await axios.post(`${API_URL}/subscriptions/checkout`, {
+      const res = await apiClient.post(`${API_URL}/subscriptions/checkout`, {
         plan_id: planId,
         billing_cycle: billing,
         origin_url: window.location.origin,
@@ -400,7 +401,7 @@ export const SubscriptionManagement = ({
     // Web → Stripe upgrade
     setSubscribing(planId);
     try {
-      const res = await axios.post(`${API_URL}/subscriptions/change-plan`, {
+      const res = await apiClient.post(`${API_URL}/subscriptions/change-plan`, {
         plan_id: planId,
         billing_cycle: billing,
         origin_url: window.location.origin,
@@ -445,7 +446,7 @@ export const SubscriptionManagement = ({
     // Web → Stripe upgrade billing cycle
     setChangingBilling(true);
     try {
-      const res = await axios.post(`${API_URL}/subscriptions/change-billing`, {
+      const res = await apiClient.post(`${API_URL}/subscriptions/change-billing`, {
         billing_cycle: billing,
         origin_url: window.location.origin,
       }, getAuthHeaders());
@@ -464,7 +465,7 @@ export const SubscriptionManagement = ({
   const handleCancelSubscription = async () => {
     setCancellingPlan(true);
     try {
-      await axios.post(`${API_URL}/subscriptions/cancel`, {}, getAuthHeaders());
+      await apiClient.post(`${API_URL}/subscriptions/cancel`, {}, getAuthHeaders());
       // toast removed
       setShowCancelConfirm(false);
       if (refreshSubscription) await refreshSubscription();
@@ -481,7 +482,7 @@ export const SubscriptionManagement = ({
     }
     setSendingRequest(true);
     try {
-      await axios.post(`${API_URL}/subscriptions/family-plan-request`, {
+      await apiClient.post(`${API_URL}/subscriptions/family-plan-request`, {
         benefactor_email: familyEmail.trim(),
       }, getAuthHeaders());
       // toast removed

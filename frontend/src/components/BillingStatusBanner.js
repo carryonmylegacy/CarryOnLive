@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { AlertTriangle, CreditCard, ChevronRight, X } from 'lucide-react';
 import { API_URL } from '../config';
@@ -13,7 +14,7 @@ export default function BillingStatusBanner({ onUpdatePayment }) {
     if (!token) return;
     const fetchStatus = async () => {
       try {
-        const res = await axios.get(`${API_URL}/subscriptions/status`, {
+        const res = await apiClient.get(`${API_URL}/subscriptions/status`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = res.data;

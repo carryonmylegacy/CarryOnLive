@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { FileText, Upload, Shield, ChevronLeft, CheckCircle2, AlertTriangle, Loader2, Lock, Clock, Search } from 'lucide-react';
 import { Button } from '../../components/ui/button';
@@ -28,7 +29,7 @@ const UploadCertificatePage = () => {
       try {
         const estateId = localStorage.getItem('beneficiary_estate_id');
         if (!estateId) { setCheckingStatus(false); return; }
-        const res = await axios.get(`${API_URL}/transition/status/${estateId}`, getAuthHeaders());
+        const res = await apiClient.get(`${API_URL}/transition/status/${estateId}`, getAuthHeaders());
         if (res.data.certificate && ['pending', 'reviewing', 'authenticated', 'approved'].includes(res.data.certificate.status)) {
           setExistingCert(res.data.certificate);
         }
@@ -53,7 +54,7 @@ const UploadCertificatePage = () => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('estate_id', estateId);
-      await axios.post(`${API_URL}/transition/upload-certificate?estate_id=${estateId}`, formData, {
+      await apiClient.post(`${API_URL}/transition/upload-certificate?estate_id=${estateId}`, formData, {
         ...getAuthHeaders(),
         headers: { ...getAuthHeaders().headers, 'Content-Type': 'multipart/form-data' },
       });

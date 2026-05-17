@@ -16,6 +16,7 @@ import { toast } from '../utils/toast';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import DateMaskInput from '../components/DateMaskInput';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 
 const suffixOptions = [
@@ -235,7 +236,7 @@ const SignupPage = () => {
       if (stashedCode) setPartnerCodeInput(stashedCode);
       const stashedSlug = localStorage.getItem('cy_partner_slug');
       if (stashedSlug) {
-        axios.get(`${API_URL}/public/partners/${stashedSlug}`)
+        apiClient.get(`${API_URL}/public/partners/${stashedSlug}`)
           .then(r => {
             setPartnerLandingCompany(r.data?.company_name || '');
             setPartnerLandingLogo(r.data?.logo_data_url || '');
@@ -335,7 +336,7 @@ const SignupPage = () => {
     setPartnerCodeError('');
     try {
       const token = localStorage.getItem('carryon_token');
-      const res = await axios.post(
+      const res = await apiClient.post(
         `${API_URL}/partners/redeem-code`,
         { code },
         { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } },
@@ -374,7 +375,7 @@ const SignupPage = () => {
     // a taken username would only surface as an opaque /auth/register 400.
     if (username.trim().length >= 3) {
       try {
-        const res = await axios.post(`${API_URL}/auth/check-username`, { username });
+        const res = await apiClient.post(`${API_URL}/auth/check-username`, { username });
         if (!res.data.available) {
           const msg = res.data.message || 'Username is already taken';
           setUsernameError(msg);
@@ -387,7 +388,7 @@ const SignupPage = () => {
       }
     }
     try {
-      const response = await axios.post(`${API_URL}/auth/register`, {
+      const response = await apiClient.post(`${API_URL}/auth/register`, {
         first_name: firstName,
         middle_name: middleName || null,
         last_name: lastName,
@@ -430,7 +431,7 @@ const SignupPage = () => {
         try {
           const ref = localStorage.getItem('carryon_referral_code');
           if (ref) {
-            await axios.post(
+            await apiClient.post(
               `${API_URL}/referrals/claim`,
               { code: ref },
               { headers: { Authorization: `Bearer ${response.data.access_token}` } }
@@ -480,7 +481,7 @@ const SignupPage = () => {
         const ref = localStorage.getItem('carryon_referral_code');
         const tk = localStorage.getItem('carryon_token');
         if (ref && tk) {
-          await axios.post(
+          await apiClient.post(
             `${API_URL}/referrals/claim`,
             { code: ref },
             { headers: { Authorization: `Bearer ${tk}` } }
@@ -882,7 +883,7 @@ const SignupPage = () => {
                                 if (username.length < 3) { setUsernameError('Username must be at least 3 characters'); return; }
                                 setUsernameChecking(true);
                                 try {
-                                  const res = await axios.post(`${API_URL}/auth/check-username`, { username });
+                                  const res = await apiClient.post(`${API_URL}/auth/check-username`, { username });
                                   if (!res.data.available) setUsernameError(res.data.message || 'Username is already taken');
                                   else setUsernameError('');
                                 } catch { setUsernameError(''); }

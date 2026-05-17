@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { UserCog, Plus, Loader2, Trash2, Pencil, Shield } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -30,7 +31,7 @@ export const ScopedAdminsTab = ({ getAuthHeaders }) => {
 
   const fetch_ = async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/scoped-admins`, { headers });
+      const res = await apiClient.get(`${API_URL}/admin/scoped-admins`, { headers });
       setAdmins(res.data);
     } catch { toast.error('Failed to load admins'); }
     finally { setLoading(false); }
@@ -49,7 +50,7 @@ export const ScopedAdminsTab = ({ getAuthHeaders }) => {
     }
     setSaving(true);
     try {
-      const res = await axios.post(`${API_URL}/admin/scoped-admins`, form, {
+      const res = await apiClient.post(`${API_URL}/admin/scoped-admins`, form, {
         headers: { ...headers, 'Content-Type': 'application/json' },
       });
       toast.success(res.data.merged ? 'Scopes merged into existing account' : 'Admin created');
@@ -68,7 +69,7 @@ export const ScopedAdminsTab = ({ getAuthHeaders }) => {
       if (editForm.first_name) payload.first_name = editForm.first_name;
       if (editForm.last_name) payload.last_name = editForm.last_name;
       if (editForm.password) payload.password = editForm.password;
-      await axios.put(`${API_URL}/admin/scoped-admins/${id}`, payload, {
+      await apiClient.put(`${API_URL}/admin/scoped-admins/${id}`, payload, {
         headers: { ...headers, 'Content-Type': 'application/json' },
       });
       toast.success('Admin updated');
@@ -81,7 +82,7 @@ export const ScopedAdminsTab = ({ getAuthHeaders }) => {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this admin account?')) return;
     try {
-      await axios.delete(`${API_URL}/admin/scoped-admins/${id}`, { headers });
+      await apiClient.delete(`${API_URL}/admin/scoped-admins/${id}`, { headers });
       toast.success('Admin deleted');
       fetch_();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to delete'); }

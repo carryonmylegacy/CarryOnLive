@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useDebouncedRefetch } from '../hooks/useDebouncedRefetch';
 import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
@@ -337,8 +338,8 @@ const MessagesPage = () => {
         const selected = (savedId && estatesRes.data.find(e => e.id === savedId)) || estatesRes.data[0];
         setEstate(selected);
         const [msgsRes, bensRes] = await Promise.all([
-          axios.get(`${API_URL}/messages/${selected.id}`, getAuthHeaders()),
-          axios.get(`${API_URL}/beneficiaries/${selected.id}`, getAuthHeaders())
+          apiClient.get(`${API_URL}/messages/${selected.id}`, getAuthHeaders()),
+          apiClient.get(`${API_URL}/beneficiaries/${selected.id}`, getAuthHeaders())
         ]);
         // Merge in any locally-`_pending` rows that the server hasn't
         // confirmed yet. Without this, an offline-recorded milestone
@@ -910,10 +911,10 @@ const MessagesPage = () => {
       }
 
       if (editingMessage) {
-        await axios.put(`${API_URL}/messages/${editingMessage.id}`, payload, getAuthHeaders());
+        await apiClient.put(`${API_URL}/messages/${editingMessage.id}`, payload, getAuthHeaders());
         messageId = editingMessage.id;
       } else {
-        const res = await axios.post(`${API_URL}/messages`, { ...payload, estate_id: estate.id }, getAuthHeaders());
+        const res = await apiClient.post(`${API_URL}/messages`, { ...payload, estate_id: estate.id }, getAuthHeaders());
         messageId = res.data?.id;
       }
 
@@ -921,7 +922,7 @@ const MessagesPage = () => {
       if (videoBlob && videoBlob !== 'existing' && messageId) {
         const formData = new FormData();
         formData.append('video', videoBlob, 'video.mp4');
-        await axios.post(`${API_URL}/messages/${messageId}/upload-video`, formData, {
+        await apiClient.post(`${API_URL}/messages/${messageId}/upload-video`, formData, {
           headers: { ...getAuthHeaders().headers, 'Content-Type': 'multipart/form-data' },
           timeout: 300000, // 5 min timeout for large videos
         });
@@ -931,7 +932,7 @@ const MessagesPage = () => {
       if (attachmentFile && messageId) {
         const formData = new FormData();
         formData.append('file', attachmentFile, attachmentFile.name);
-        await axios.post(`${API_URL}/messages/${messageId}/upload-attachment`, formData, {
+        await apiClient.post(`${API_URL}/messages/${messageId}/upload-attachment`, formData, {
           headers: { ...getAuthHeaders().headers, 'Content-Type': 'multipart/form-data' },
           timeout: 120000,
         });
@@ -944,7 +945,7 @@ const MessagesPage = () => {
       fetchData();
       if (wasFirstMessage) {
         try {
-          const prog = await axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
+          const prog = await apiClient.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
           if (!prog.data?.already_graduated) setTimeout(() => setShowReturnPopup(true), 500);
         } catch { /* skip popup */ }
       }
@@ -996,7 +997,7 @@ const MessagesPage = () => {
         toast.success('Deletion queued — will sync when you reconnect.');
         return;
       }
-      await axios.delete(`${API_URL}/messages/${messageId}`, getAuthHeaders());
+      await apiClient.delete(`${API_URL}/messages/${messageId}`, getAuthHeaders());
       // toast removed
       setMessages(messages.filter(m => m.id !== messageId));
     } catch (error) {
@@ -1034,7 +1035,7 @@ const MessagesPage = () => {
             const endpoint = isVideo
               ? `${API_URL}/messages/video/${msg.video_url}`
               : `${API_URL}/messages/voice/${msg.voice_url}`;
-            const res = await axios.get(endpoint, { ...getAuthHeaders(), responseType: 'blob' });
+            const res = await apiClient.get(endpoint, { ...getAuthHeaders(), responseType: 'blob' });
             const blob = new Blob([res.data], { type: res.data.type || (isVideo ? 'video/mp4' : 'audio/webm') });
             await downloadFile(blob, filename);
           },
@@ -1048,7 +1049,7 @@ const MessagesPage = () => {
           title: 'Message',
           subtitle: msg.title || '',
           blobFetcher: async () => {
-            const res = await axios.get(`${API_URL}/messages/${msg.id}/download`, { ...getAuthHeaders(), responseType: 'blob', timeout: 60000 });
+            const res = await apiClient.get(`${API_URL}/messages/${msg.id}/download`, { ...getAuthHeaders(), responseType: 'blob', timeout: 60000 });
             return new Blob([res.data], { type: 'application/pdf' });
           },
         });
@@ -1167,7 +1168,7 @@ const MessagesPage = () => {
 
   const downloadAttachment = async (msg) => {
     try {
-      const res = await axios.get(`${API_URL}/messages/${msg.id}/attachment`, {
+      const res = await apiClient.get(`${API_URL}/messages/${msg.id}/attachment`, {
         ...getAuthHeaders(), responseType: 'blob',
       });
       await iosSafeDownload(res.data, msg.attachment_name || 'attachment', 'Attachment', 'mm_attachment');
@@ -1227,7 +1228,7 @@ const MessagesPage = () => {
     }
     setLoadingPlayback(true);
     try {
-      const res = await axios.get(`${API_URL}/messages/video/${msg.video_url}`, {
+      const res = await apiClient.get(`${API_URL}/messages/video/${msg.video_url}`, {
         ...getAuthHeaders(),
         responseType: 'blob',
         timeout: 30000,

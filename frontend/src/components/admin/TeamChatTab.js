@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { MessageSquare, Send, Hash, User, Loader2, Plus, ArrowLeft } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
@@ -37,14 +38,14 @@ export const TeamChatTab = ({ getAuthHeaders }) => {
 
   const fetchChannels = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/team/channels`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/team/channels`, getAuthHeaders());
       setChannels(res.data);
     } catch { /* silent */ }
   }, [getAuthHeaders]);
 
   const fetchMessages = useCallback(async (channelId) => {
     try {
-      const res = await axios.get(`${API_URL}/team/messages/${channelId}`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/team/messages/${channelId}`, getAuthHeaders());
       setMessages(res.data);
     } catch {
       toast.error('Failed to load messages');
@@ -53,7 +54,7 @@ export const TeamChatTab = ({ getAuthHeaders }) => {
 
   const fetchStaff = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/team/staff`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/team/staff`, getAuthHeaders());
       setStaff(res.data);
     } catch { /* silent */ }
   }, [getAuthHeaders]);
@@ -116,7 +117,7 @@ export const TeamChatTab = ({ getAuthHeaders }) => {
 
     setSending(true);
     try {
-      const res = await axios.post(
+      const res = await apiClient.post(
         `${API_URL}/team/messages`,
         { channel_id: activeChannel, content: newMessage.trim() },
         getAuthHeaders()
@@ -141,7 +142,7 @@ export const TeamChatTab = ({ getAuthHeaders }) => {
 
   const startDirectMessage = async (recipientId) => {
     try {
-      const res = await axios.post(
+      const res = await apiClient.post(
         `${API_URL}/team/channels/direct`,
         { recipient_id: recipientId },
         getAuthHeaders()

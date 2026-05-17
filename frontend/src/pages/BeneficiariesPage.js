@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
 import { formatPhoneUS } from '../utils/phoneFormat';
@@ -343,9 +344,9 @@ const BeneficiariesPage = () => {
         } catch { /* non-fatal */ }
 
         const [bensRes, requestsRes, permsRes] = await Promise.all([
-          axios.get(`${API_URL}/beneficiaries/${ownedEstate.id}`, getAuthHeaders()),
-          axios.get(`${API_URL}/beneficiaries/access-requests/${ownedEstate.id}`, getAuthHeaders()).catch(() => ({ data: [] })),
-          axios.get(`${API_URL}/estate/${ownedEstate.id}/section-permissions`, getAuthHeaders()).catch(() => ({ data: [] })),
+          apiClient.get(`${API_URL}/beneficiaries/${ownedEstate.id}`, getAuthHeaders()),
+          apiClient.get(`${API_URL}/beneficiaries/access-requests/${ownedEstate.id}`, getAuthHeaders()).catch(() => ({ data: [] })),
+          apiClient.get(`${API_URL}/estate/${ownedEstate.id}/section-permissions`, getAuthHeaders()).catch(() => ({ data: [] })),
         ]);
         // Guard against empty-list clobbering: if the response is empty
         // BUT we already have populated state, keep the visible list.
@@ -397,7 +398,7 @@ const BeneficiariesPage = () => {
     try {
       const formData = new FormData();
       formData.append('file', photoFile);
-      await axios.post(`${API_URL}/beneficiaries/${beneficiaryId}/photo`, formData, {
+      await apiClient.post(`${API_URL}/beneficiaries/${beneficiaryId}/photo`, formData, {
         ...getAuthHeaders(),
         headers: { ...getAuthHeaders().headers, 'Content-Type': 'multipart/form-data' }
       });
@@ -413,7 +414,7 @@ const BeneficiariesPage = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      await axios.post(`${API_URL}/beneficiaries/${benId}/photo`, formData, {
+      await apiClient.post(`${API_URL}/beneficiaries/${benId}/photo`, formData, {
         ...getAuthHeaders(),
         headers: { ...getAuthHeaders().headers, 'Content-Type': 'multipart/form-data' }
       });
@@ -483,9 +484,9 @@ const BeneficiariesPage = () => {
           await fetchData();
           return;
         }
-        const res = await axios.put(`${API_URL}/beneficiaries/${editingBeneficiary.id}`, payload, getAuthHeaders());
+        const res = await apiClient.put(`${API_URL}/beneficiaries/${editingBeneficiary.id}`, payload, getAuthHeaders());
         if (photoRemoved && !photoFile) {
-          await axios.delete(`${API_URL}/beneficiaries/${editingBeneficiary.id}/photo`, getAuthHeaders());
+          await apiClient.delete(`${API_URL}/beneficiaries/${editingBeneficiary.id}/photo`, getAuthHeaders());
         }
         if (photoFile) await uploadPhoto(editingBeneficiary.id);
         // If email changed, prompt user to resend invite
@@ -536,7 +537,7 @@ const BeneficiariesPage = () => {
           addInFlightRef.current = false;
           return;
         }
-        const res = await axios.post(`${API_URL}/beneficiaries`, payload, getAuthHeaders());
+        const res = await apiClient.post(`${API_URL}/beneficiaries`, payload, getAuthHeaders());
         if (photoFile && res.data?.id) await uploadPhoto(res.data.id);
         if (res.data?.auto_invited) {
           toast.success('Invitation email sent');
@@ -600,7 +601,7 @@ const BeneficiariesPage = () => {
   const handleSendInvitation = async (beneficiaryId) => {
     setSendingInvite(beneficiaryId);
     try {
-      await axios.post(`${API_URL}/beneficiaries/${beneficiaryId}/invite`, {}, getAuthHeaders());
+      await apiClient.post(`${API_URL}/beneficiaries/${beneficiaryId}/invite`, {}, getAuthHeaders());
       // toast removed
       fetchData();
     } catch (error) {
@@ -652,7 +653,7 @@ const BeneficiariesPage = () => {
         setDeleteTarget(null);
         return;
       }
-      await axios.delete(`${API_URL}/beneficiaries/${beneficiaryId}${params}`, getAuthHeaders());
+      await apiClient.delete(`${API_URL}/beneficiaries/${beneficiaryId}${params}`, getAuthHeaders());
       setBeneficiaries(beneficiaries.filter(b => b.id !== beneficiaryId));
       toast.success('Beneficiary permanently deleted');
       setDeleteTarget(null);
@@ -682,7 +683,7 @@ const BeneficiariesPage = () => {
         setSavingPerms(null);
         return;
       }
-      await axios.put(`${API_URL}/estate/${estate.id}/section-permissions`, permBody, getAuthHeaders());
+      await apiClient.put(`${API_URL}/estate/${estate.id}/section-permissions`, permBody, getAuthHeaders());
       setSectionPerms(prev => ({ ...prev, [beneficiaryId]: updated }));
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to update permissions');
@@ -694,7 +695,7 @@ const BeneficiariesPage = () => {
   const handleAccessRequest = async (requestId, action) => {
     setHandlingRequest(requestId);
     try {
-      await axios.put(`${API_URL}/beneficiaries/access-requests/${requestId}`, { action }, getAuthHeaders());
+      await apiClient.put(`${API_URL}/beneficiaries/access-requests/${requestId}`, { action }, getAuthHeaders());
       toast.success(`Request ${action}d`);
       fetchData();
     } catch (error) {
@@ -807,7 +808,7 @@ const BeneficiariesPage = () => {
         toast.success('Order queued — will sync when you reconnect.');
         return;
       }
-      await axios.put(`${API_URL}/beneficiaries/reorder/${estate?.id}`, reorderBody, getAuthHeaders());
+      await apiClient.put(`${API_URL}/beneficiaries/reorder/${estate?.id}`, reorderBody, getAuthHeaders());
     } catch { toast.error('Failed to save order'); }
   }, [beneficiaries, estate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -824,7 +825,7 @@ const BeneficiariesPage = () => {
         toast.success(`Succession change queued for ${benName} — will sync when you reconnect.`);
         return;
       }
-      const res = await axios.put(`${API_URL}/beneficiaries/${benId}/toggle-succession`, {}, getAuthHeaders());
+      const res = await apiClient.put(`${API_URL}/beneficiaries/${benId}/toggle-succession`, {}, getAuthHeaders());
       if (res.data.in_succession) {
         toast.success(`${benName} added to succession hierarchy`);
       } else {

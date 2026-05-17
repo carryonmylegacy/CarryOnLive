@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { Mail, Lock, Eye, EyeOff, Loader2, Shield, ChevronRight, ChevronDown, Sparkles, ExternalLink, WifiOff, Menu, X } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -166,7 +167,7 @@ const LoginPage = () => {
   const [footerInfo, setFooterInfo] = useState({ line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209 U.S.A.', phone: '(703) 884-1527' });
 
   useEffect(() => {
-    axios.get(`${API_URL}/public/site-content`).then(r => {
+    apiClient.get(`${API_URL}/public/site-content`).then(r => {
       setFooterInfo({ line1: r.data.footer_address_line1, line2: r.data.footer_address_line2, phone: r.data.footer_phone });
     }).catch(() => {});
   }, []);
@@ -232,7 +233,7 @@ const LoginPage = () => {
   const [verticalVideoId, setVerticalVideoId] = useState('');
   const isMobileView = useIsMobileViewport();
   useEffect(() => {
-    axios.get(`${API_URL}/public/site-content`).then(r => {
+    apiClient.get(`${API_URL}/public/site-content`).then(r => {
       if (r.data?.homepage_video_id) setHomepageVideoId(r.data.homepage_video_id);
       if (r.data?.homepage_video_id_vertical) setVerticalVideoId(r.data.homepage_video_id_vertical);
     }).catch(() => {});
@@ -605,7 +606,7 @@ const LoginPage = () => {
                 onClick={() => {
                   const usernameEmail = prompt('Enter the email associated with your account:');
                   if (usernameEmail) {
-                    axios.post(`${API_URL}/auth/forgot-username`, { email: usernameEmail })
+                    apiClient.post(`${API_URL}/auth/forgot-username`, { email: usernameEmail })
                       .then(() => toast.success('If that email exists, your username(s) have been sent.'))
                       .catch(() => toast.error('Something went wrong.'));
                   }
@@ -743,7 +744,7 @@ const LoginPage = () => {
                 onClick={() => {
                   const usernameEmail = prompt('Enter the email associated with your account:');
                   if (usernameEmail) {
-                    axios.post(`${API_URL}/auth/forgot-username`, { email: usernameEmail })
+                    apiClient.post(`${API_URL}/auth/forgot-username`, { email: usernameEmail })
                       .then(() => toast.success('If that email exists, your username(s) have been sent.'))
                       .catch(() => toast.error('Something went wrong.'));
                   }
@@ -1042,7 +1043,7 @@ const LoginPage = () => {
                         onClick={() => {
                           const usernameEmail = prompt('Enter the email associated with your account:');
                           if (usernameEmail) {
-                            axios.post(`${API_URL}/auth/forgot-username`, { email: usernameEmail })
+                            apiClient.post(`${API_URL}/auth/forgot-username`, { email: usernameEmail })
                               .then(() => toast.success('If that email exists, your username(s) have been sent.'))
                               .catch(() => toast.error('Something went wrong.'));
                           }

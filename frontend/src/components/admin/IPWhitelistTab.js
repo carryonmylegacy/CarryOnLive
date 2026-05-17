@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Shield, Plus, Loader2, Trash2, ChevronDown } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -19,7 +20,7 @@ export const IPWhitelistTab = ({ getAuthHeaders }) => {
 
   const fetch_ = async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/ip-whitelist`, { headers });
+      const res = await apiClient.get(`${API_URL}/admin/ip-whitelist`, { headers });
       setConfigs(res.data);
     } catch { toast.error('Failed to load IP whitelist'); }
     finally { setLoading(false); }
@@ -30,7 +31,7 @@ export const IPWhitelistTab = ({ getAuthHeaders }) => {
   const toggleEnabled = async (accountType, currentEnabled, currentIPs, currentNotes) => {
     setSaving(accountType);
     try {
-      await axios.put(`${API_URL}/admin/ip-whitelist`, {
+      await apiClient.put(`${API_URL}/admin/ip-whitelist`, {
         account_type: accountType,
         enabled: !currentEnabled,
         allowed_ips: currentIPs,
@@ -48,7 +49,7 @@ export const IPWhitelistTab = ({ getAuthHeaders }) => {
     const updatedIPs = [...(config?.allowed_ips || []), ip];
     setSaving(accountType);
     try {
-      await axios.put(`${API_URL}/admin/ip-whitelist`, {
+      await apiClient.put(`${API_URL}/admin/ip-whitelist`, {
         account_type: accountType,
         enabled: config?.enabled || false,
         allowed_ips: updatedIPs,
@@ -65,7 +66,7 @@ export const IPWhitelistTab = ({ getAuthHeaders }) => {
     const updatedIPs = (config?.allowed_ips || []).filter(ip => ip !== ipToRemove);
     setSaving(accountType);
     try {
-      await axios.put(`${API_URL}/admin/ip-whitelist`, {
+      await apiClient.put(`${API_URL}/admin/ip-whitelist`, {
         account_type: accountType,
         enabled: config?.enabled || false,
         allowed_ips: updatedIPs,

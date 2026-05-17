@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 import { clearCache } from '../utils/apiCache';
 import { isAutoLogoutSuspended, suspendAutoLogout } from '../utils/autoLogoutSuspend';
@@ -41,7 +42,7 @@ export const AuthProvider = ({ children }) => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await axios.get(`${API_URL}/public/partners/${slug}`, { timeout: 15000 });
+        const res = await apiClient.get(`${API_URL}/public/partners/${slug}`, { timeout: 15000 });
         if (cancelled || !res.data) return;
         setPartnerBranding({
           slug,
@@ -60,7 +61,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchSubscriptionStatus = async (authToken) => {
     try {
-      const res = await axios.get(`${API_URL}/subscriptions/status`, {
+      const res = await apiClient.get(`${API_URL}/subscriptions/status`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       setSubscriptionStatus(res.data);
@@ -80,7 +81,7 @@ export const AuthProvider = ({ children }) => {
   const fetchEnabledFeatures = async (authToken, estateId = null) => {
     try {
       const params = estateId ? `?estate_id=${estateId}` : '';
-      const res = await axios.get(`${API_URL}/subscriptions/enabled-features${params}`, {
+      const res = await apiClient.get(`${API_URL}/subscriptions/enabled-features${params}`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       setEnabledFeatures(res.data?.enabled_features || null);
@@ -128,9 +129,9 @@ export const AuthProvider = ({ children }) => {
           const estateParam = savedEstateId ? `?estate_id=${savedEstateId}` : '';
 
           const [meRes, subRes, featRes] = await Promise.allSettled([
-            axios.get(`${API_URL}/auth/me`, authHeaders),
-            axios.get(`${API_URL}/subscriptions/status`, authHeaders),
-            axios.get(`${API_URL}/subscriptions/enabled-features${estateParam}`, authHeaders),
+            apiClient.get(`${API_URL}/auth/me`, authHeaders),
+            apiClient.get(`${API_URL}/subscriptions/status`, authHeaders),
+            apiClient.get(`${API_URL}/subscriptions/enabled-features${estateParam}`, authHeaders),
           ]);
 
           if (meRes.status !== 'fulfilled') {
@@ -349,7 +350,7 @@ export const AuthProvider = ({ children }) => {
     if (otpMethod === 'sms' && phone) {
       payload.phone = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g, '')}`;
     }
-    const response = await axios.post(`${API_URL}/auth/login`, payload);
+    const response = await apiClient.post(`${API_URL}/auth/login`, payload);
     const data = response.data;
     // Active session on another device — return for UI to handle
     if (data.active_session_exists) {
@@ -376,7 +377,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const verifyOtp = async (email, otp, trustToday = false) => {
-    const response = await axios.post(`${API_URL}/auth/verify-otp`, { email, otp, trust_today: trustToday });
+    const response = await apiClient.post(`${API_URL}/auth/verify-otp`, { email, otp, trust_today: trustToday });
     const { access_token, user: userData } = response.data;
     localStorage.setItem('carryon_token', access_token);
     setToken(access_token);
@@ -388,7 +389,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const resendOtp = async (email, method = 'email') => {
-    const response = await axios.post(`${API_URL}/auth/resend-otp`, { email, method });
+    const response = await apiClient.post(`${API_URL}/auth/resend-otp`, { email, method });
     return response.data;
   };
 
@@ -396,7 +397,7 @@ export const AuthProvider = ({ children }) => {
     // Server-side token blacklisting + session clear
     try {
       if (token) {
-        await axios.post(`${API_URL}/auth/logout`, {}, {
+        await apiClient.post(`${API_URL}/auth/logout`, {}, {
           headers: { Authorization: `Bearer ${token}` },
         });
       }
@@ -569,7 +570,7 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
 
   const devLogin = async (email, password) => {
-    const response = await axios.post(`${API_URL}/auth/dev-login`, { email, password });
+    const response = await apiClient.post(`${API_URL}/auth/dev-login`, { email, password });
     const { access_token, user: userData } = response.data;
     localStorage.setItem('carryon_token', access_token);
     setToken(access_token);
@@ -601,7 +602,7 @@ export const AuthProvider = ({ children }) => {
   const refreshUser = async () => {
     if (!token) return;
     try {
-      const response = await axios.get(`${API_URL}/auth/me`, {
+      const response = await apiClient.get(`${API_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const userData = response.data;

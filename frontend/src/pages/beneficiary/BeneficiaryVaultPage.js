@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { FolderLock, Lock, FileText, Search, ChevronLeft, Download, Eye, Loader2 } from 'lucide-react';
 import { Skeleton } from '../../components/ui/skeleton';
@@ -46,17 +47,17 @@ const BeneficiaryVaultPage = () => {
     }
     try {
       // Check transition status
-      const estateRes = await axios.get(`${API_URL}/estates/${estateId}`, getAuthHeaders());
+      const estateRes = await apiClient.get(`${API_URL}/estates/${estateId}`, getAuthHeaders());
       const transitioned = estateRes.data?.status === 'transitioned';
       cacheBenSection(estateId, 'estate', estateRes.data);
 
       let docs = [];
       if (transitioned) {
-        const res = await axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders());
+        const res = await apiClient.get(`${API_URL}/documents/${estateId}`, getAuthHeaders());
         docs = res.data || [];
       } else {
         // Pre-transition: use the dedicated endpoint that respects visibility_timing
-        const res = await axios.get(`${API_URL}/documents/${estateId}/pre-transition`, getAuthHeaders());
+        const res = await apiClient.get(`${API_URL}/documents/${estateId}/pre-transition`, getAuthHeaders());
         docs = res.data || [];
       }
       setDocuments(docs);
@@ -83,7 +84,7 @@ const BeneficiaryVaultPage = () => {
         setPreviewDoc(null);
         return;
       }
-      const res = await axios.get(`${API_URL}/documents/${doc.id}/preview`, {
+      const res = await apiClient.get(`${API_URL}/documents/${doc.id}/preview`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('carryon_token')}` },
         responseType: 'blob',
       });
@@ -110,7 +111,7 @@ const BeneficiaryVaultPage = () => {
         toast.error('This document is not available offline. Pin it while online to download offline.');
         return;
       }
-      const res = await axios.get(`${API_URL}/documents/${doc.id}/preview`, {
+      const res = await apiClient.get(`${API_URL}/documents/${doc.id}/preview`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('carryon_token')}` },
         responseType: 'blob',
       });

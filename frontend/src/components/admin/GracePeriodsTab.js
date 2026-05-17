@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Shield, Pause, Play, Trash2, Lock, Clock, CheckCircle2, AlertTriangle, Loader2, Mail } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -26,7 +27,7 @@ export const GracePeriodsTab = ({ getAuthHeaders }) => {
 
   const fetchPeriods = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/grace-periods?status=${filter}`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/admin/grace-periods?status=${filter}`, getAuthHeaders());
       setPeriods(res.data || []);
     } catch { toast.error('Failed to load grace periods'); }
     setLoading(false);
@@ -43,7 +44,7 @@ export const GracePeriodsTab = ({ getAuthHeaders }) => {
   const handleHold = async (gpId, holdActive) => {
     setActionLoading(true);
     try {
-      await axios.post(`${API_URL}/admin/grace-periods/${gpId}/hold`,
+      await apiClient.post(`${API_URL}/admin/grace-periods/${gpId}/hold`,
         { hold_active: holdActive, reason: holdReason }, getAuthHeaders());
       toast.success(holdActive ? 'Hold placed — purge paused' : 'Hold removed — countdown resumed');
       setHoldReason('');
@@ -55,7 +56,7 @@ export const GracePeriodsTab = ({ getAuthHeaders }) => {
   const handleConfirm = async (gpId) => {
     setActionLoading(true);
     try {
-      await axios.post(`${API_URL}/admin/grace-periods/${gpId}/confirm`, {}, getAuthHeaders());
+      await apiClient.post(`${API_URL}/admin/grace-periods/${gpId}/confirm`, {}, getAuthHeaders());
       toast.success('Grace period confirmed — 90-day clock started');
       fetchPeriods();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed'); }
@@ -66,7 +67,7 @@ export const GracePeriodsTab = ({ getAuthHeaders }) => {
     if (!window.confirm('This will permanently remove all file content (not Milestone Messages). Continue?')) return;
     setActionLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/admin/grace-periods/${gpId}/purge`, {}, getAuthHeaders());
+      const res = await apiClient.post(`${API_URL}/admin/grace-periods/${gpId}/purge`, {}, getAuthHeaders());
       toast.success(`${res.data.files_purged} file(s) purged. MM purge still pending.`);
       fetchPeriods();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed'); }
@@ -78,7 +79,7 @@ export const GracePeriodsTab = ({ getAuthHeaders }) => {
     if (!window.confirm('FINAL ACTION: This will permanently remove all undelivered Milestone Messages. This cannot be undone.')) return;
     setActionLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/admin/grace-periods/${gpId}/purge-mm`,
+      const res = await apiClient.post(`${API_URL}/admin/grace-periods/${gpId}/purge-mm`,
         { password: mmPassword }, getAuthHeaders());
       toast.success(`${res.data.messages_purged} milestone message(s) purged. Estate purge complete.`);
       setMmPassword('');

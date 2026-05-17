@@ -14,6 +14,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ChevronLeft, Network, List as ListIcon, Loader2, Lock,
@@ -46,7 +47,7 @@ export default function BeneficiaryEntitiesPage() {
     (async () => {
       setLoading(true);
       try {
-        const res = await axios.get(
+        const res = await apiClient.get(
           `${API_URL}/financial/entities/beneficiary-view/${estateId}`,
           getAuthHeaders ? getAuthHeaders() : {}
         );

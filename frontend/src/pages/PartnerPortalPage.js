@@ -16,6 +16,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { Mail, Lock, Eye, EyeOff, Loader2, Shield, ChevronRight, Sparkles, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -72,7 +73,7 @@ const PartnerPortalPage = () => {
     let alive = true;
     (async () => {
       try {
-        const { data } = await axios.get(`${API_URL}/public/partners/${slug}`);
+        const { data } = await apiClient.get(`${API_URL}/public/partners/${slug}`);
         if (!alive) return;
         setPartner(data);
         // Stash the partner context so the signup → onboarding flow

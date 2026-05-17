@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Search, Users, Headphones, Shield, ShieldCheck, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
@@ -23,7 +24,7 @@ export const QuickSearchTab = ({ getAuthHeaders }) => {
     setLoading(true);
     setSearched(true);
     try {
-      const res = await axios.get(`${API_URL}/ops/search?q=${encodeURIComponent(query)}`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/ops/search?q=${encodeURIComponent(query)}`, getAuthHeaders());
       setResults(res.data);
     } catch { toast.error('Search failed'); }
     finally { setLoading(false); }

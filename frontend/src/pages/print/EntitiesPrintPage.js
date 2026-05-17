@@ -30,6 +30,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { ChevronLeft, Printer, Maximize2, AlignVerticalJustifyCenter } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_URL } from '../../config';
@@ -155,9 +156,9 @@ export default function EntitiesPrintPage() {
       try {
         const headers = getAuthHeaders();
         const [entitiesRes, estateRes, bensRes] = await Promise.all([
-          axios.get(`${API_URL}/financial/entities/${estateId}`, headers),
-          axios.get(`${API_URL}/estates/${estateId}`, headers).catch(() => ({ data: null })),
-          axios.get(`${API_URL}/beneficiaries/${estateId}`, headers).catch(() => ({ data: [] })),
+          apiClient.get(`${API_URL}/financial/entities/${estateId}`, headers),
+          apiClient.get(`${API_URL}/estates/${estateId}`, headers).catch(() => ({ data: null })),
+          apiClient.get(`${API_URL}/beneficiaries/${estateId}`, headers).catch(() => ({ data: [] })),
         ]);
         if (!alive) return;
         setData(entitiesRes.data || {});

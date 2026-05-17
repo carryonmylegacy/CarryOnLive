@@ -25,6 +25,7 @@
  */
 import { useCallback, useRef, useState } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 import { mutateWithOutbox } from '../utils/offlineMutation';
 import { toast } from '../utils/toast';
@@ -105,7 +106,7 @@ export const useFinancialForm = ({
       if (!s) {
         setSmartLoading(true);
         try {
-          const res = await axios.post(
+          const res = await apiClient.post(
             `${API_URL}/financial/smart-categorize`,
             { bill_name: name, module },
             getAuthHeaders(),

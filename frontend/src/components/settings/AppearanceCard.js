@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -15,7 +16,7 @@ const AppearanceCard = ({ isStaff }) => {
   const [onboardingVisible, setOnboardingVisible] = useState(false);
 
   useEffect(() => {
-    axios.get(`${API_URL}/onboarding/status`, getAuthHeaders()).then(res => {
+    apiClient.get(`${API_URL}/onboarding/status`, getAuthHeaders()).then(res => {
       setOnboardingVisible(!res.data.dismissed);
     }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -56,11 +57,11 @@ const AppearanceCard = ({ isStaff }) => {
                 if (checked) {
                   localStorage.removeItem('carryon_onboarding_dismissed');
                   localStorage.removeItem('carryon_welcome_guided_shown');
-                  try { await axios.post(`${API_URL}/onboarding/reset`, {}, getAuthHeaders()); } catch (e) { /* ignore */ }
+                  try { await apiClient.post(`${API_URL}/onboarding/reset`, {}, getAuthHeaders()); } catch (e) { /* ignore */ }
                 } else {
                   localStorage.setItem('carryon_onboarding_dismissed', 'true');
                   localStorage.setItem('carryon_welcome_guided_shown', 'true');
-                  try { await axios.post(`${API_URL}/onboarding/dismiss`, {}, getAuthHeaders()); } catch (e) { /* ignore */ }
+                  try { await apiClient.post(`${API_URL}/onboarding/dismiss`, {}, getAuthHeaders()); } catch (e) { /* ignore */ }
                 }
                 toast.success(checked ? 'Getting Started Guide turned on — saved.' : 'Getting Started Guide hidden — saved.');
               }}

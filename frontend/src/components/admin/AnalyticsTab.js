@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import {
   DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight, Clock, CreditCard,
   FileKey, Activity, Eye, Mail, Loader2, X
@@ -42,7 +43,7 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
 
   const fetchStats = async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/subscription-stats`, { headers });
+      const res = await apiClient.get(`${API_URL}/admin/subscription-stats`, { headers });
       setStats(res.data);
     } catch (err) { toast.error('Failed to load analytics'); }
     setLoading(false);
@@ -206,7 +207,7 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
           data-testid="preview-digest"
           onClick={async () => {
             try {
-              const res = await axios.get(`${API_URL}/admin/analytics-digest/preview`, { headers });
+              const res = await apiClient.get(`${API_URL}/admin/analytics-digest/preview`, { headers });
               setDigestPreview(res.data.html);
             } catch (err) { toast.error('Failed to load preview'); }
           }}
@@ -221,7 +222,7 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
           onClick={async () => {
             setSendingDigest(true);
             try {
-              await axios.post(`${API_URL}/admin/analytics-digest/send`, {}, { headers });
+              await apiClient.post(`${API_URL}/admin/analytics-digest/send`, {}, { headers });
               // toast removed
             } catch (err) { toast.error(err.response?.data?.detail || 'Failed to send digest'); }
             setSendingDigest(false);

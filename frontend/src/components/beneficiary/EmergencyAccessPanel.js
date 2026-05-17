@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   AlertTriangle, Clock, CheckCircle, XCircle,
@@ -41,8 +42,8 @@ const EmergencyAccessPanel = ({ estates }) => {
   const fetchData = async () => {
     try {
       const [reqRes, activeRes] = await Promise.all([
-        axios.get(`${API_URL}/emergency-access/my-requests`, getAuthHeaders()),
-        axios.get(`${API_URL}/emergency-access/active`, getAuthHeaders()),
+        apiClient.get(`${API_URL}/emergency-access/my-requests`, getAuthHeaders()),
+        apiClient.get(`${API_URL}/emergency-access/active`, getAuthHeaders()),
       ]);
       setRequests(reqRes.data);
       setActiveAccess(activeRes.data);
@@ -57,7 +58,7 @@ const EmergencyAccessPanel = ({ estates }) => {
     }
     setSubmitting(true);
     try {
-      await axios.post(`${API_URL}/emergency-access/request`, form, getAuthHeaders());
+      await apiClient.post(`${API_URL}/emergency-access/request`, form, getAuthHeaders());
       // toast removed
       setShowForm(false);
       setForm({ estate_id: '', reason: '', relationship_to_benefactor: '', urgency: 'high', contact_phone: '', supporting_details: '' });

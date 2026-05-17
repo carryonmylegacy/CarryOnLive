@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Activity, Database, Shield, CheckCircle2, Loader2, RefreshCw, Zap, AlertTriangle, Bell } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
@@ -13,7 +14,7 @@ const XAICreditsCard = ({ getAuthHeaders }) => {
 
   const fetchCredits = async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/xai-credits`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/admin/xai-credits`, getAuthHeaders());
       setCredits(res.data);
     } catch { /* silent */ }
     finally { setLoading(false); }
@@ -29,7 +30,7 @@ const XAICreditsCard = ({ getAuthHeaders }) => {
     const val = parseFloat(newBalance);
     if (isNaN(val) || val < 0) return;
     try {
-      await axios.post(`${API_URL}/admin/xai-credits/set-balance`, { balance_usd: val }, getAuthHeaders());
+      await apiClient.post(`${API_URL}/admin/xai-credits/set-balance`, { balance_usd: val }, getAuthHeaders());
       toast.success(`Credit balance set to $${val.toFixed(2)}`);
       setShowSetBalance(false);
       setNewBalance('');
@@ -160,7 +161,7 @@ export const SystemHealthTab = ({ getAuthHeaders }) => {
   const fetchHealth = async (showRefresh) => {
     if (showRefresh) setRefreshing(true);
     try {
-      const res = await axios.get(`${API_URL}/admin/system-health`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/admin/system-health`, getAuthHeaders());
       setHealth(res.data);
     } catch { toast.error('Failed to load system health'); }
     finally { setLoading(false); setRefreshing(false); }

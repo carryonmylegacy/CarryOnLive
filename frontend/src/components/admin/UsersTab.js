@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Search, Users, Trash2, Loader2, ChevronDown, ChevronRight, KeyRound, Unlock, GitBranch, User, AlertTriangle, Zap, ArrowUpDown, ShieldOff, Link2, Clock, Sparkles } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -46,7 +47,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   const [trialDays, setTrialDays] = useState(30);
 
   useEffect(() => {
-    axios.get(`${API_URL}/admin/trial-policy`, getAuthHeaders())
+    apiClient.get(`${API_URL}/admin/trial-policy`, getAuthHeaders())
       .then((res) => { if (res.data?.trial_days) setTrialDays(res.data.trial_days); })
       .catch(() => { /* default of 30 is safe */ });
   }, [getAuthHeaders]);
@@ -54,7 +55,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   const handleToggleBeta = async (userId, currentBeta) => {
     setTogglingBeta(userId);
     try {
-      await axios.put(`${API_URL}/admin/user/${userId}/beta`, { is_beta: !currentBeta }, getAuthHeaders());
+      await apiClient.put(`${API_URL}/admin/user/${userId}/beta`, { is_beta: !currentBeta }, getAuthHeaders());
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_beta_tester: !currentBeta } : u));
       toast.success(!currentBeta ? 'Beta mode activated' : `Beta mode deactivated — ${trialDays}-day grace period started`);
     } catch (err) {
@@ -66,7 +67,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   const handleToggleSessionExempt = async (userId, currentExempt) => {
     setTogglingExempt(userId);
     try {
-      const res = await axios.put(`${API_URL}/admin/users/${userId}/session-exempt`, {}, getAuthHeaders());
+      const res = await apiClient.put(`${API_URL}/admin/users/${userId}/session-exempt`, {}, getAuthHeaders());
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, session_exempt: res.data.session_exempt } : u));
       toast.success(res.data.session_exempt ? 'Multi-session enabled — no lockout or session limits' : 'Multi-session disabled — standard restrictions restored');
     } catch (err) {
@@ -78,7 +79,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   const handleToggleAiUnlimited = async (userId, currentVal) => {
     setTogglingAiUnlimited(userId);
     try {
-      const res = await axios.put(`${API_URL}/admin/users/${userId}/ai-unlimited`, {}, getAuthHeaders());
+      const res = await apiClient.put(`${API_URL}/admin/users/${userId}/ai-unlimited`, {}, getAuthHeaders());
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, ai_unlimited: res.data.ai_unlimited } : u));
       toast.success(res.data.ai_unlimited ? 'AI daily limits removed for this user' : 'AI daily limits restored');
     } catch (err) {
@@ -92,7 +93,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     const userId = resetTrialTarget.id;
     setResettingTrial(userId);
     try {
-      const res = await axios.post(`${API_URL}/admin/users/${userId}/reset-trial`, {}, getAuthHeaders());
+      const res = await apiClient.post(`${API_URL}/admin/users/${userId}/reset-trial`, {}, getAuthHeaders());
       setUsers(prev => prev.map(u => u.id === userId ? {
         ...u,
         trial_ends_at: res.data.trial_ends_at,
@@ -109,7 +110,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   const handleSetEstateTier = async (estateId, tier, ownerUserId) => {
     setSettingTier(estateId);
     try {
-      await axios.put(`${API_URL}/admin/estate/${estateId}/tier`, { tier }, { ...getAuthHeaders(), headers: { ...getAuthHeaders().headers, 'Content-Type': 'application/json' } });
+      await apiClient.put(`${API_URL}/admin/estate/${estateId}/tier`, { tier }, { ...getAuthHeaders(), headers: { ...getAuthHeaders().headers, 'Content-Type': 'application/json' } });
       // Update estate_groups in the local state
       setUsers(prev => prev.map(u => {
         if (u.id !== ownerUserId) return u;
@@ -182,7 +183,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     try {
       const targetId = deleteTarget.id;
       const targetName = deleteTarget.name;
-      await axios.delete(`${API_URL}/admin/users/${targetId}?admin_password=${encodeURIComponent(deletePassword)}`, getAuthHeaders());
+      await apiClient.delete(`${API_URL}/admin/users/${targetId}?admin_password=${encodeURIComponent(deletePassword)}`, getAuthHeaders());
       // Close modal FIRST so iOS Safari repaints the underlying content
       setDeleteTarget(null);
       setDeletePassword('');
@@ -203,7 +204,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     if (!masterKeyInput.trim()) { toast.error('Enter the master key'); return; }
     setUnlocking(true);
     try {
-      const res = await axios.post(`${API_URL}/admin/user/${userId}/unlock-all-documents`,
+      const res = await apiClient.post(`${API_URL}/admin/user/${userId}/unlock-all-documents`,
         { master_key: masterKeyInput },
         { headers: { ...getAuthHeaders()?.headers, 'Content-Type': 'application/json' } }
       );
@@ -445,7 +446,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
       setLinking(true);
       try {
         const headers = { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` };
-        const res = await axios.post(`${API_URL}/beneficiaries/force-link`, {
+        const res = await apiClient.post(`${API_URL}/beneficiaries/force-link`, {
           beneficiary_id: ben.id,
           username_or_email: linkInput.trim(),
         }, { headers });
@@ -454,7 +455,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
         setLinkInput('');
         // Refresh user list to reflect the status change
         try {
-          const usersRes = await axios.get(`${API_URL}/admin/users`, { headers });
+          const usersRes = await apiClient.get(`${API_URL}/admin/users`, { headers });
           setUsers(usersRes.data);
         } catch { /* ignore refresh error */ }
       } catch (err) {
@@ -804,12 +805,12 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                                   onClick={async () => {
                                     try {
                                       const headers = { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` };
-                                      await axios.post(`${API_URL}/beneficiaries/force-link`, {
+                                      await apiClient.post(`${API_URL}/beneficiaries/force-link`, {
                                         beneficiary_id: benEntry.id,
                                         username_or_email: bu.email || bu.username,
                                       }, { headers });
                                       toast.success(`Linked ${bu.name} successfully`);
-                                      const usersRes = await axios.get(`${API_URL}/admin/users`, { headers });
+                                      const usersRes = await apiClient.get(`${API_URL}/admin/users`, { headers });
                                       setUsers(usersRes.data);
                                     } catch (err) {
                                       toast.error(err.response?.data?.detail || 'Failed to link');

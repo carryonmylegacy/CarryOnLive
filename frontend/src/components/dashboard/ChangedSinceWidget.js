@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Loader2, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
@@ -48,7 +49,7 @@ const ChangedSinceWidget = () => {
     }
     (async () => {
       try {
-        const res = await axios.get(`${API_URL}/changelog/since`, {
+        const res = await apiClient.get(`${API_URL}/changelog/since`, {
           ...getAuthHeaders(),
           params: { since, limit: 8 },
         });

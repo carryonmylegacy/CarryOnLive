@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import axios from "axios";
+import apiClient from './utils/apiClient';
 import "./index.css";
 import App from "./App";
 import installHistoryRateLimit from "./utils/historyRateLimit";
@@ -22,7 +23,7 @@ installViewportReflow();
 // ── Global axios defaults — MUST run before any page mounts ────────────────
 // Two problems we fix here:
 //   1. iOS Safari in airplane mode does NOT reject outgoing XHRs quickly.
-//      A naked `axios.get(url)` can hang 60-120s on the native TCP layer.
+//      A naked `apiClient.get(url)` can hang 60-120s on the native TCP layer.
 //      Many pages show spinners/skeletons the whole time — making the
 //      offline app feel frozen even though the shell loaded fine.
 //   2. Pages that don't pass an explicit `timeout` would wait forever for

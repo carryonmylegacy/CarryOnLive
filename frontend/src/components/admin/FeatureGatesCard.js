@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Sliders, Lock, Globe, Loader2, AlertTriangle, Check, Shield } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -42,7 +43,7 @@ export const FeatureGatesCard = ({ getAuthHeaders }) => {
 
   const fetchGates = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/feature-gates`, { headers });
+      const res = await apiClient.get(`${API_URL}/admin/feature-gates`, { headers });
       setFeatures(res.data.features || []);
       setTiers(res.data.tiers || []);
       setGates(JSON.parse(JSON.stringify(res.data.gates || {})));
@@ -86,7 +87,7 @@ export const FeatureGatesCard = ({ getAuthHeaders }) => {
 
     setPublishing(true);
     try {
-      await axios.put(
+      await apiClient.put(
         `${API_URL}/admin/feature-gates`,
         { gates },
         { headers: { ...headers, 'Content-Type': 'application/json' } }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { BarChart3, Loader2, TrendingUp, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
@@ -18,7 +19,7 @@ export const PerformanceTab = ({ getAuthHeaders, operatorId = '' }) => {
       const url = operatorId
         ? `${API_URL}/ops/performance?operator_id=${operatorId}&days=${days}`
         : `${API_URL}/ops/performance?days=${days}`;
-      const res = await axios.get(url, { headers });
+      const res = await apiClient.get(url, { headers });
       setData(res.data);
     } catch { toast.error('Failed to load performance data'); }
     finally { setLoading(false); }

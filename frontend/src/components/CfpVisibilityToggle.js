@@ -14,6 +14,7 @@
  */
 import React, { useState } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { Eye, EyeOff, Loader2, Plane } from 'lucide-react';
 import { Button } from './ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
@@ -32,7 +33,7 @@ export default function CfpVisibilityToggle({ estate, onUpdate }) {
     setBusy(true);
     try {
       const token = localStorage.getItem('carryon_token');
-      await axios.patch(
+      await apiClient.patch(
         `${API_URL}/estates/${estate.id}`,
         { cfp_pre_transition_visible: next },
         { headers: { Authorization: `Bearer ${token}` } }

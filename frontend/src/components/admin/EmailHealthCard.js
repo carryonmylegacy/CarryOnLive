@@ -8,6 +8,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Loader2, Mail, RefreshCw, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { API_URL } from '../../config';
 import { toast } from '../../utils/toast';
@@ -60,7 +61,7 @@ export const EmailHealthCard = () => {
     if (force) setRecheck(true);
     else setLoading(true);
     try {
-      const r = await axios.get(`${API_URL}/api/admin/email-health${force ? '?force=true' : ''}`, {
+      const r = await apiClient.get(`${API_URL}/api/admin/email-health${force ? '?force=true' : ''}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setData(r.data);

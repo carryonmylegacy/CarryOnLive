@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
@@ -63,11 +64,11 @@ export function VoicesTab({ getAuthHeaders }) {
         if (featuredFilter) params.featured_only = true;
         if (statusF) params.status = statusF;
         const [listRes, pendingRes] = await Promise.all([
-          axios.get(`${API_URL}/share-cards/admin/voices`, {
+          apiClient.get(`${API_URL}/share-cards/admin/voices`, {
             params,
             ...getAuthHeaders(),
           }),
-          axios.get(`${API_URL}/share-cards/admin/voices/pending-count`, {
+          apiClient.get(`${API_URL}/share-cards/admin/voices/pending-count`, {
             ...getAuthHeaders(),
           }),
         ]);
@@ -95,7 +96,7 @@ export function VoicesTab({ getAuthHeaders }) {
 
   const exportCsv = async () => {
     try {
-      const res = await axios.get(`${API_URL}/share-cards/admin/voices/export`, {
+      const res = await apiClient.get(`${API_URL}/share-cards/admin/voices/export`, {
         ...getAuthHeaders(),
         responseType: 'blob',
       });
@@ -109,7 +110,7 @@ export function VoicesTab({ getAuthHeaders }) {
   const previewDigest = async () => {
     setDigestBusy(true);
     try {
-      const res = await axios.post(
+      const res = await apiClient.post(
         `${API_URL}/share-cards/admin/voices/digest/send-now?dry_run=true`,
         null,
         getAuthHeaders(),
@@ -140,7 +141,7 @@ export function VoicesTab({ getAuthHeaders }) {
     const force = window.confirm('Force-send even if this week already went out?');
     setDigestBusy(true);
     try {
-      const res = await axios.post(
+      const res = await apiClient.post(
         `${API_URL}/share-cards/admin/voices/digest/send-now?force=${force ? 'true' : 'false'}`,
         null,
         getAuthHeaders(),
@@ -165,7 +166,7 @@ export function VoicesTab({ getAuthHeaders }) {
     const force = window.confirm('Force-send even if you already received this week\'s brief?');
     setDigestBusy(true);
     try {
-      const res = await axios.post(
+      const res = await apiClient.post(
         `${API_URL}/share-cards/admin/voices/social-brief/send-now?force=${force ? 'true' : 'false'}`,
         null,
         getAuthHeaders(),
@@ -187,7 +188,7 @@ export function VoicesTab({ getAuthHeaders }) {
     if (!window.confirm('Redact this quote permanently?')) return;
     setDeleting(id);
     try {
-      await axios.delete(`${API_URL}/share-cards/admin/voices/${id}`, {
+      await apiClient.delete(`${API_URL}/share-cards/admin/voices/${id}`, {
         ...getAuthHeaders(),
       });
       setItems((prev) => prev.filter((it) => it.id !== id));
@@ -203,7 +204,7 @@ export function VoicesTab({ getAuthHeaders }) {
   const toggleFeature = async (id, nextValue) => {
     setTogglingFeature(id);
     try {
-      await axios.patch(
+      await apiClient.patch(
         `${API_URL}/share-cards/admin/voices/${id}/feature`,
         null,
         { params: { featured: nextValue }, ...getAuthHeaders() },
@@ -220,7 +221,7 @@ export function VoicesTab({ getAuthHeaders }) {
   const approve = async (id, feature) => {
     setActioning(id);
     try {
-      await axios.patch(
+      await apiClient.patch(
         `${API_URL}/share-cards/admin/voices/${id}/approve`,
         null,
         { params: { feature }, ...getAuthHeaders() },
@@ -245,7 +246,7 @@ export function VoicesTab({ getAuthHeaders }) {
     if (!window.confirm('Reject this quote? It will never appear publicly.')) return;
     setActioning(id);
     try {
-      await axios.patch(
+      await apiClient.patch(
         `${API_URL}/share-cards/admin/voices/${id}/reject`,
         null,
         getAuthHeaders(),

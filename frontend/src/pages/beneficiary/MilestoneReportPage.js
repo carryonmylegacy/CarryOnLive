@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { CheckCircle2, ChevronLeft } from 'lucide-react';
 import { Button } from '../../components/ui/button';
@@ -32,7 +33,7 @@ const MilestoneReportPage = () => {
       const eid = localStorage.getItem('beneficiary_estate_id');
       if (eid) {
         try {
-          const res = await axios.get(`${API_URL}/estates/${eid}`, getAuthHeaders());
+          const res = await apiClient.get(`${API_URL}/estates/${eid}`, getAuthHeaders());
           setEstate(res.data);
         } catch (e) { console.error(e); }
       }
@@ -48,7 +49,7 @@ const MilestoneReportPage = () => {
     setSubmitting(true);
     try {
       const estateId = localStorage.getItem('beneficiary_estate_id');
-      const res = await axios.post(`${API_URL}/milestones/report`, {
+      const res = await apiClient.post(`${API_URL}/milestones/report`, {
         estate_id: estateId,
         event_type: type.toLowerCase(),
         event_description: description || type,

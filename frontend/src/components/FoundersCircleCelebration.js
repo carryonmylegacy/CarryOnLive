@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { Crown, Heart, Infinity as InfinityIcon, Share2, X, Sparkles } from 'lucide-react';
 import { API_URL, BASE_URL } from '../config';
 import { useAuth } from '../contexts/AuthContext';
@@ -29,7 +30,7 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
       if (!token) return;
       setRegenerating(true);
       try {
-        const res = await axios.post(
+        const res = await apiClient.post(
           `${API_URL}/share-cards/founders-circle`,
           {
             first_name: displayName,

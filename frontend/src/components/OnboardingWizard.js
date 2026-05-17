@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Users, FileUp, MessageSquare, CheckSquare,
@@ -51,7 +52,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
 
   const fetchProgress = async () => {
     try {
-      const res = await axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
 
       // Process everything before setting state (single render)
       const steps = res.data.steps || [];
@@ -114,7 +115,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
     setShowAll(false);
     setDismissPhase('idle');
     localStorage.setItem('carryon_onboarding_dismissed', 'true');
-    try { await axios.post(`${API_URL}/onboarding/dismiss`, {}, getAuthHeaders()); }
+    try { await apiClient.post(`${API_URL}/onboarding/dismiss`, {}, getAuthHeaders()); }
     catch (err) { console.error(err); }
   };
 
@@ -122,13 +123,13 @@ const OnboardingWizard = ({ onAllComplete }) => {
     const config = STEP_CONFIG[step.key];
     if (!config) return;
     if (step.key === 'review_readiness' && !step.completed) {
-      try { await axios.post(`${API_URL}/onboarding/complete-step/review_readiness`, {}, getAuthHeaders()); }
+      try { await apiClient.post(`${API_URL}/onboarding/complete-step/review_readiness`, {}, getAuthHeaders()); }
       catch (err) { console.error(err); }
     }
     if (step.key === 'review_settings' && !step.completed) {
       // Mark complete the moment the user clicks through. Visiting the
       // Settings page is the goal — exhaustive interaction is up to them.
-      try { await axios.post(`${API_URL}/onboarding/complete-step/review_settings`, {}, getAuthHeaders()); }
+      try { await apiClient.post(`${API_URL}/onboarding/complete-step/review_settings`, {}, getAuthHeaders()); }
       catch (err) { console.error(err); }
     }
     navigate(config.route, { state: config.route === '/checklist' ? { fromGettingStarted: true } : undefined });

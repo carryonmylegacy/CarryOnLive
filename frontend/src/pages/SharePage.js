@@ -6,6 +6,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import {
   ArrowLeft, Share2, Copy, Download, Check, Loader2, Shuffle,
   Twitter, Linkedin, Facebook, Mail, MessageSquare, Send,
@@ -63,7 +64,7 @@ export default function SharePage() {
     setRegenerating(true);
     setFetchError(false);
     try {
-      const res = await axios.post(
+      const res = await apiClient.post(
         `${API_URL}/share-cards/${endpoint}`,
         {
           first_name: firstName || (isFounders ? 'Founding Member' : 'A CarryOn Member'),

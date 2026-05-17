@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import {
   Shield, Clock, CheckCircle2, XCircle, Loader2, Package, Lock,
   DollarSign, Mail, Flame, ChevronRight, Search, Trash2, AlertTriangle, Eye, EyeOff, RotateCcw
@@ -38,7 +39,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
     // Fetch operators for assignment
     const fetchOps = async () => {
       try {
-        const res = await axios.get(`${API_URL}/founder/operators`, getAuthHeaders());
+        const res = await apiClient.get(`${API_URL}/founder/operators`, getAuthHeaders());
         setOperators(res.data || []);
       } catch {}
     };
@@ -50,7 +51,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
       const url = isFounder && showDeleted
         ? `${API_URL}/dts/tasks/all?include_deleted=true`
         : `${API_URL}/dts/tasks/all`;
-      const res = await axios.get(url, getAuthHeaders());
+      const res = await apiClient.get(url, getAuthHeaders());
       setDtsTasks(res.data || []);
     } catch (err) {
       console.error('Failed to fetch DTS tasks:', err);
@@ -65,7 +66,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
     if (items.length === 0) { toast.error('Add at least one line item'); return; }
     setActionLoading(taskId);
     try {
-      await axios.post(`${API_URL}/dts/tasks/${taskId}/quote`, {
+      await apiClient.post(`${API_URL}/dts/tasks/${taskId}/quote`, {
         task_id: taskId,
         line_items: items.map(i => ({ description: i.description, cost: parseFloat(i.cost) })),
       }, getAuthHeaders());
@@ -80,7 +81,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
   const handleUpdateDtsStatus = async (taskId, status) => {
     setActionLoading(taskId);
     try {
-      await axios.post(`${API_URL}/dts/tasks/${taskId}/status?task_status=${status}`, {}, getAuthHeaders());
+      await apiClient.post(`${API_URL}/dts/tasks/${taskId}/status?task_status=${status}`, {}, getAuthHeaders());
       fetchTasks();
     } catch (err) { toast.error('Failed'); }
     finally { setActionLoading(null); }
@@ -89,7 +90,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
   const handleAssignTask = async (taskId, operatorId) => {
     setAssigning(taskId);
     try {
-      const res = await axios.post(`${API_URL}/dts/tasks/${taskId}/assign`, { operator_id: operatorId }, getAuthHeaders());
+      const res = await apiClient.post(`${API_URL}/dts/tasks/${taskId}/assign`, { operator_id: operatorId }, getAuthHeaders());
       toast.success(res.data.message || 'Task assigned');
       fetchTasks();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to assign'); }
@@ -100,7 +101,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
     if (!deleteTarget || !deletePassword.trim()) return;
     setDeleting(true);
     try {
-      await axios.delete(`${API_URL}/dts/tasks/${deleteTarget.id}?admin_password=${encodeURIComponent(deletePassword)}`, getAuthHeaders());
+      await apiClient.delete(`${API_URL}/dts/tasks/${deleteTarget.id}?admin_password=${encodeURIComponent(deletePassword)}`, getAuthHeaders());
       setDtsTasks(prev => prev.filter(t => t.id !== deleteTarget.id));
       toast.success(`DTS request "${deleteTarget.title}" deleted`);
       setDeleteTarget(null);
@@ -400,7 +401,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        axios.post(`${API_URL}/dts/tasks/${task.id}/restore`, {}, getAuthHeaders())
+                        apiClient.post(`${API_URL}/dts/tasks/${task.id}/restore`, {}, getAuthHeaders())
                           .then(() => { toast.success('DTS task restored'); fetchTasks(); })
                           .catch(() => toast.error('Failed to restore'));
                       }}

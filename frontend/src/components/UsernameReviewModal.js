@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { User, Check, AlertCircle, Loader2, X } from 'lucide-react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from '../utils/toast';
 import { API_URL } from '../config';
@@ -32,7 +33,7 @@ const UsernameReviewModal = () => {
     if (usernameError) return;
     setSaving(true);
     try {
-      await axios.put(`${API_URL}/auth/username`, { username }, {
+      await apiClient.put(`${API_URL}/auth/username`, { username }, {
         headers: { Authorization: `Bearer ${token}` },
       });
       acknowledged.current = true;
@@ -50,7 +51,7 @@ const UsernameReviewModal = () => {
   const handleDismiss = async () => {
     setSaving(true);
     try {
-      await axios.put(`${API_URL}/auth/username`, { username: user.username || username }, {
+      await apiClient.put(`${API_URL}/auth/username`, { username: user.username || username }, {
         headers: { Authorization: `Bearer ${token}` },
       });
       acknowledged.current = true;
@@ -104,7 +105,7 @@ const UsernameReviewModal = () => {
                 if (username.includes('@')) { setUsernameError('Username cannot be an email address'); return; }
                 setChecking(true);
                 try {
-                  const res = await axios.post(`${API_URL}/auth/check-username`, { username });
+                  const res = await apiClient.post(`${API_URL}/auth/check-username`, { username });
                   if (!res.data.available) setUsernameError(res.data.message || 'Username is already taken');
                   else setUsernameError('');
                 } catch { setUsernameError(''); }

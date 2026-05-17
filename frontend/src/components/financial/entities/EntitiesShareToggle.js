@@ -17,6 +17,7 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
+import apiClient from '../../../utils/apiClient';
 import { Eye, X, Check } from 'lucide-react';
 import { API_URL } from '../../../config';
 import { toast } from '../../../utils/toast';
@@ -37,7 +38,7 @@ export default function EntitiesShareToggle({ estateId, beneficiaries = [], getA
     (async () => {
       try {
         setLoading(true);
-        const res = await axios.get(
+        const res = await apiClient.get(
           `${API_URL}/financial/entities-share/${estateId}`,
           getAuthHeaders ? getAuthHeaders() : {}
         );
@@ -76,7 +77,7 @@ export default function EntitiesShareToggle({ estateId, beneficiaries = [], getA
     if (saving) return;
     setSaving(true);
     try {
-      await axios.patch(
+      await apiClient.patch(
         `${API_URL}/financial/entities-share/${estateId}`,
         { show_now: !!showNow, now_beneficiary_ids: showNow ? chosenIds : [] },
         getAuthHeaders ? getAuthHeaders() : {}

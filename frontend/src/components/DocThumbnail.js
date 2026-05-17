@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { FileText, File } from 'lucide-react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { getCachedBlob, setCachedBlob } from '../utils/blobCache';
 import { API_URL } from '../config';
 
@@ -55,7 +56,7 @@ const DocThumbnail = ({ doc }) => {
     if (!token) { setError(true); return; }
 
     setLoading(true);
-    axios.get(`${API_URL}/documents/${doc.id}/preview`, {
+    apiClient.get(`${API_URL}/documents/${doc.id}/preview`, {
       headers: { 'Authorization': `Bearer ${token}` },
       responseType: isText ? 'text' : 'blob',
     }).then(res => {

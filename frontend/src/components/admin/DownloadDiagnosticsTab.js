@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Loader2, Download, RefreshCw, Smartphone, Monitor, Tablet, Apple } from 'lucide-react';
 import { Button } from '../ui/button';
 import { API_URL } from '../../config';
@@ -55,7 +56,7 @@ const DownloadDiagnosticsTab = () => {
   const fetchData = useCallback(async (d = days) => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/admin/download-diagnostics?days=${d}`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/admin/download-diagnostics?days=${d}`, getAuthHeaders());
       setData(res.data);
     } catch {
       toast.error('Failed to load diagnostics');

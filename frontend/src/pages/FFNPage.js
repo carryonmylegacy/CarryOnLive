@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { useLabelCleaner } from '../utils/brandLabel';
 import { useDebouncedRefetch } from '../hooks/useDebouncedRefetch';
@@ -67,7 +68,7 @@ export default function FFNPage() {
       return;
     }
     try {
-      const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
+      const estatesRes = await apiClient.get(`${API_URL}/estates`, getAuthHeaders());
       const owned = (() => {
         const all = estatesRes.data.filter(e => e.user_role_in_estate === 'owner' || (!e.user_role_in_estate && !e.is_beneficiary_estate));
         const savedId = localStorage.getItem('selected_estate_id');
@@ -75,7 +76,7 @@ export default function FFNPage() {
       })();
       if (!owned) { setLoading(false); return; }
       setEstateId(owned.id);
-      const contactsRes = await axios.get(`${API_URL}/ffn/${owned.id}`, getAuthHeaders());
+      const contactsRes = await apiClient.get(`${API_URL}/ffn/${owned.id}`, getAuthHeaders());
       // Empty-response clobber guard.
       const fresh = Array.isArray(contactsRes.data) ? contactsRes.data : [];
       if (fresh.length > 0 || contacts.length === 0) setContacts(fresh);

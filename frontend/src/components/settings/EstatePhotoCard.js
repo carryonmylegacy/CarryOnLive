@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { invalidateCache } from '../../utils/apiCache';
@@ -22,7 +23,7 @@ const EstatePhotoCard = () => {
 
   useEffect(() => {
     if (!user) return;
-    axios.get(`${API_URL}/estates`, getAuthHeaders()).then(res => {
+    apiClient.get(`${API_URL}/estates`, getAuthHeaders()).then(res => {
       const estates = res.data || [];
       if (estates.length > 0) {
         setEstateId(estates[0].id);
@@ -59,7 +60,7 @@ const EstatePhotoCard = () => {
                   reader.onerror = reject;
                   reader.readAsDataURL(file);
                 });
-                const res = await axios.put(`${API_URL}/estates/${estateId}/photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
+                const res = await apiClient.put(`${API_URL}/estates/${estateId}/photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
                 if (res.data?.estate_photo_url) setEstatePhoto(res.data.estate_photo_url);
                 toast.success('Estate photo saved');
               } catch (err) {
@@ -69,7 +70,7 @@ const EstatePhotoCard = () => {
             }}
             onRemove={async () => {
               setEstatePhoto(null);
-              try { await axios.put(`${API_URL}/estates/${estateId}/photo`, { photo_data: '', file_name: '' }, getAuthHeaders()); } catch {}
+              try { await apiClient.put(`${API_URL}/estates/${estateId}/photo`, { photo_data: '', file_name: '' }, getAuthHeaders()); } catch {}
             }}
           />
           <div className="flex-1 min-w-0">

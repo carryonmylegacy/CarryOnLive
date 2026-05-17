@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { cachedGet, invalidateCache } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
 import { ReturnPopup } from '../components/GuidedActivation';
@@ -21,6 +22,7 @@ import { API_URL } from '../config';
 import { openPdfPreview } from '../utils/openPdfPreview';
 import CachedPdfIcon from '../components/CachedPdfIcon';
 import SlidePanel from '../components/SlidePanel';
+import useIacTaskStream from '../hooks/useIacTaskStream';
 
 const CATEGORIES = [
   { value: 'legal', label: 'Legal', icon: FileText, color: '#3b82f6' },
@@ -128,72 +130,53 @@ const ChecklistPage = () => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Poll for EGA IAC task status (real-time updates while Guardian
-  // generates). Adaptive interval (production-scale audit P0.2):
-  // 4s while a task is running (snappy live updates), 30s when idle.
-  // At 1,000 concurrent users this cuts the polling load on this
-  // endpoint by ~85% — most users at any given moment have no active
-  // task and were being polled 8x more aggressively than necessary.
-  useEffect(() => {
-    if (!estate?.id) return;
-    let active = true;
-    let timeoutId = null;
-    const FAST_INTERVAL = 4000;
-    const IDLE_INTERVAL = 30000;
-    let currentInterval = FAST_INTERVAL;
-    const poll = async () => {
-      try {
-        const res = await axios.get(`${API_URL}/guardian/iac-task-status`, getAuthHeadersRef.current());
-        if (!active) return;
-        const task = res.data;
-        if (task.status === 'running') {
-          currentInterval = FAST_INTERVAL;
-          setEgaRunning(true);
-          // Compute elapsed from server-side started_at so the timer
-          // resumes correctly when the user navigates away and back
-          // mid-generation. Only update if the local axios call isn't
-          // already managing the timer (suggestingAI flag is the
-          // source of truth when this tab kicked off the request).
-          if (!suggestingAI && task.started_at) {
-            try {
-              const startedMs = Date.parse(task.started_at);
-              if (!Number.isNaN(startedMs)) {
-                setAiElapsed(Math.max(0, Math.floor((Date.now() - startedMs) / 1000)));
-              }
-            } catch {}
-          }
-        } else if (task.status === 'completed' && task.completed_at) {
-          currentInterval = IDLE_INTERVAL;
-          setEgaRunning(false);
-          if (lastCompletedAtRef.current && lastCompletedAtRef.current !== task.completed_at) {
-            fetchData();
-          }
-          lastCompletedAtRef.current = task.completed_at;
-        } else if (task.status === 'error' || task.status === 'canceled') {
-          currentInterval = IDLE_INTERVAL;
-          // The user's own AI Suggest call (handleAISuggest) toasts
-          // its own error from the catch / inner-poller branches, so
-          // we only surface a toast here for runs that started on a
-          // DIFFERENT mount (e.g. user navigated to the checklist
-          // from elsewhere while EGA was finishing). suggestingAI is
-          // true only on the originating mount.
-          if (egaRunning && !suggestingAI) {
-            const msg = task.error || (task.status === 'canceled' ? 'Generation canceled.' : 'Generation failed — please try again.');
-            toast.error(msg);
-          }
-          setEgaRunning(false);
-        } else {
-          currentInterval = IDLE_INTERVAL;
-          setEgaRunning(false);
+  // EGA IAC task status — SSE-first (production-scale audit P0.3) with
+  // polling fallback inside the hook. Replaces the legacy 4s/30s
+  // adaptive polling loop: at 1,000 concurrent users this collapses
+  // ~250 req/sec into ~1,000 idle long-lived connections AND surfaces
+  // status changes within milliseconds instead of up to 4s late.
+  // The hook auto-falls-back to /iac-task-status polling if SSE fails.
+  useIacTaskStream({
+    enabled: !!estate?.id,
+    onUpdate: useCallback((task) => {
+      if (task.status === 'running') {
+        setEgaRunning(true);
+        // Compute elapsed from server-side started_at so the timer
+        // resumes correctly when the user navigates away and back
+        // mid-generation. Only update if the local axios call isn't
+        // already managing the timer (suggestingAI flag is the
+        // source of truth when this tab kicked off the request).
+        if (!suggestingAI && task.started_at) {
+          try {
+            const startedMs = Date.parse(task.started_at);
+            if (!Number.isNaN(startedMs)) {
+              setAiElapsed(Math.max(0, Math.floor((Date.now() - startedMs) / 1000)));
+            }
+          } catch {}
         }
-      } catch { /* silent */ }
-      if (active) {
-        timeoutId = setTimeout(poll, currentInterval);
+      } else if (task.status === 'completed' && task.completed_at) {
+        setEgaRunning(false);
+        if (lastCompletedAtRef.current && lastCompletedAtRef.current !== task.completed_at) {
+          fetchData();
+        }
+        lastCompletedAtRef.current = task.completed_at;
+      } else if (task.status === 'error' || task.status === 'canceled') {
+        // The user's own AI Suggest call (handleAISuggest) toasts
+        // its own error from the catch / inner-poller branches, so
+        // we only surface a toast here for runs that started on a
+        // DIFFERENT mount (e.g. user navigated to the checklist
+        // from elsewhere while EGA was finishing). suggestingAI is
+        // true only on the originating mount.
+        if (egaRunning && !suggestingAI) {
+          const msg = task.error || (task.status === 'canceled' ? 'Generation canceled.' : 'Generation failed — please try again.');
+          toast.error(msg);
+        }
+        setEgaRunning(false);
+      } else {
+        setEgaRunning(false);
       }
-    };
-    poll();
-    return () => { active = false; if (timeoutId) clearTimeout(timeoutId); };
-  }, [estate?.id, suggestingAI, egaRunning]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [suggestingAI, egaRunning]), // eslint-disable-line react-hooks/exhaustive-deps
+  });
 
   // Drive the local elapsed-seconds timer from a single source so it
   // ticks whether the request started in THIS mount (suggestingAI) OR
@@ -273,7 +256,7 @@ const ChecklistPage = () => {
         // and the rescue would no-op.
         try { localStorage.setItem('selected_estate_id', selected.id); } catch {}
         saveList(`checklist:estate:${selected.id}`, selected);
-        const checklistRes = await axios.get(`${API_URL}/checklists/${selected.id}`, getAuthHeaders());
+        const checklistRes = await apiClient.get(`${API_URL}/checklists/${selected.id}`, getAuthHeaders());
         const next = Array.isArray(checklistRes.data) ? checklistRes.data : [];
         if (next.length > 0 || checklists.length === 0) setChecklists(next);
         saveList(`checklist:items:${selected.id}`, next);
@@ -374,7 +357,7 @@ const ChecklistPage = () => {
         setDeleting(null);
         return;
       }
-      await axios.delete(`${API_URL}/checklists/${itemId}`, getAuthHeaders());
+      await apiClient.delete(`${API_URL}/checklists/${itemId}`, getAuthHeaders());
       setChecklists(prev => prev.filter(c => c.id !== itemId));
       // toast removed
     } catch (err) {
@@ -439,7 +422,7 @@ const ChecklistPage = () => {
     const startPolling = () => {
       pollTimer = setInterval(async () => {
         try {
-          const res = await axios.get(`${API_URL}/guardian/iac-task-status`, getAuthHeaders());
+          const res = await apiClient.get(`${API_URL}/guardian/iac-task-status`, getAuthHeaders());
           const task = res?.data;
           if (!task || task.status === 'none') return;
           if (task.status === 'completed') {
@@ -486,7 +469,7 @@ const ChecklistPage = () => {
     startPolling();
 
     try {
-      const res = await axios.post(`${API_URL}/chat/guardian`, {
+      const res = await apiClient.post(`${API_URL}/chat/guardian`, {
         estate_id: estate.id,
         action: 'generate_iac',
         message: 'Analyze all documents in my Secure Digital Vault and generate specific, actionable checklist items with appropriate priority levels (critical, high, medium, low). Extract contact info where possible. Return items sorted by priority.',
@@ -572,7 +555,7 @@ const ChecklistPage = () => {
     // clears immediately, even on other tabs/devices and even if the
     // user just navigated away/back (no local abort controller).
     try {
-      await axios.post(`${API_URL}/guardian/iac-task/cancel`, null, getAuthHeaders());
+      await apiClient.post(`${API_URL}/guardian/iac-task/cancel`, null, getAuthHeaders());
     } catch {}
     setSuggestingAI(false);
     setEgaRunning(false);
@@ -600,7 +583,7 @@ const ChecklistPage = () => {
         subtitle: `Beneficiary preview · ${dateStr}`,
         blobFetcher: async () => {
           const headers = getAuthHeaders()?.headers;
-          const res = await axios.post(
+          const res = await apiClient.post(
             `${API_URL}/guardian/export-checklist`,
             {},
             { headers, responseType: 'blob', timeout: 120000 },
@@ -643,10 +626,10 @@ const ChecklistPage = () => {
         return;
       }
       if (action === 'remove') {
-        await axios.delete(`${API_URL}/checklists/${itemId}`, getAuthHeaders());
+        await apiClient.delete(`${API_URL}/checklists/${itemId}`, getAuthHeaders());
         setChecklists(prev => prev.filter(c => c.id !== itemId));
       } else {
-        await axios.put(`${API_URL}/checklists/${itemId}`, { activation_status: action }, getAuthHeaders());
+        await apiClient.put(`${API_URL}/checklists/${itemId}`, { activation_status: action }, getAuthHeaders());
         setChecklists(prev => prev.map(c => c.id === itemId ? { ...c, activation_status: action } : c));
       }
     } catch { toast.error('Failed to update'); }
@@ -657,7 +640,7 @@ const ChecklistPage = () => {
   
   const handleCompleteChecklist = async () => {
     try {
-      const prog = await axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
+      const prog = await apiClient.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
       if (prog.data?.already_graduated) return;
     } catch { /* proceed */ }
     setShowReturnPopup(true);
@@ -676,7 +659,7 @@ const ChecklistPage = () => {
         toast.success('Acceptance queued — will sync when you reconnect.');
         return;
       }
-      await axios.post(`${API_URL}/checklists/${itemId}/accept`, {}, getAuthHeaders());
+      await apiClient.post(`${API_URL}/checklists/${itemId}/accept`, {}, getAuthHeaders());
       setChecklists(prev => prev.map(c => c.id === itemId ? { ...c, ai_accepted: true } : c));
     } catch { toast.error('Failed to accept'); }
   };
@@ -703,7 +686,7 @@ const ChecklistPage = () => {
         toast.success('Rejection queued — will sync when you reconnect.');
         return;
       }
-      await axios.post(`${API_URL}/checklists/${feedbackItem}/reject-with-feedback`, { feedback: feedbackText }, getAuthHeaders());
+      await apiClient.post(`${API_URL}/checklists/${feedbackItem}/reject-with-feedback`, { feedback: feedbackText }, getAuthHeaders());
       setChecklists(prev => prev.filter(c => c.id !== feedbackItem));
       setFeedbackItem(null);
       setFeedbackText('');

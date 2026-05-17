@@ -14,6 +14,7 @@ import {
   ChevronLeft, Loader2, HelpCircle, Plus, Trash2,
 } from 'lucide-react';
 import axios from 'axios';
+import apiClient from '../../../utils/apiClient';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useLabelCleaner } from '../../../utils/brandLabel';
 import { Button } from '../../ui/button';
@@ -323,7 +324,7 @@ export default function EntityWizard({
     if (saving) return;
     setSaving(true);
     try {
-      const r = await axios.post(`${API_URL}/financial/external-people`, {
+      const r = await apiClient.post(`${API_URL}/financial/external-people`, {
         estate_id: estateId,
         first_name: extFirst.trim(),
         last_name: extLast.trim() || null,
@@ -355,7 +356,7 @@ export default function EntityWizard({
     const sourceId = assignSourceKey.slice(colonIdx + 1);
     setSaving(true);
     try {
-      const r = await axios.post(`${API_URL}/financial/entity-relationships`, {
+      const r = await apiClient.post(`${API_URL}/financial/entity-relationships`, {
         estate_id: estateId,
         source_id: sourceId,
         source_type: sourceType,
@@ -388,7 +389,7 @@ export default function EntityWizard({
     }
     setSaving(true);
     try {
-      const ent = await axios.post(`${API_URL}/financial/entities`, {
+      const ent = await apiClient.post(`${API_URL}/financial/entities`, {
         estate_id: estateId,
         category: bucketId,
         type: typeId,
@@ -408,7 +409,7 @@ export default function EntityWizard({
       // Save relationships in parallel
       const rels = await Promise.all(valid.map((c) => {
         const [src_type, src_id] = c.sourceKey.split(':');
-        return axios.post(`${API_URL}/financial/entity-relationships`, {
+        return apiClient.post(`${API_URL}/financial/entity-relationships`, {
           estate_id: estateId,
           source_id: src_id,
           source_type: src_type,

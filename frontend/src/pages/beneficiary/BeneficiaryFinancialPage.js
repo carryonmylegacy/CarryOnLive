@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useAuth, useBrand } from '../../contexts/AuthContext';
 import { useLabelCleaner } from '../../utils/brandLabel';
 import {
@@ -101,7 +102,7 @@ const BeneficiaryFinancialPage = () => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await axios.get(
+        const res = await apiClient.get(
           `${API_URL}/financial/entities/beneficiary-view/${id}`,
           getAuthHeaders ? { headers: getAuthHeaders().headers } : {}
         );
@@ -142,16 +143,16 @@ const BeneficiaryFinancialPage = () => {
       if (!headers) { setLoading(false); return; }
 
       // Check transition status
-      const permsRes = await axios.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, { headers }).catch(() => null);
+      const permsRes = await apiClient.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, { headers }).catch(() => null);
       const transitioned = permsRes?.data?.is_transitioned || false;
       setIsTransitioned(transitioned);
       if (permsRes?.data) cacheBenSection(estateId, 'permissions', permsRes.data);
 
       const [billsRes, debtsRes, acctsRes, summaryRes] = await Promise.all([
-        axios.get(`${API_URL}/financial/bills/${estateId}`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/financial/debts/${estateId}`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/financial/accounts/${estateId}`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/financial/summary/${estateId}`, { headers }).catch(() => ({ data: null })),
+        apiClient.get(`${API_URL}/financial/bills/${estateId}`, { headers }).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/debts/${estateId}`, { headers }).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/accounts/${estateId}`, { headers }).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/summary/${estateId}`, { headers }).catch(() => ({ data: null })),
       ]);
       const billsData = Array.isArray(billsRes.data) ? billsRes.data : [];
       const debtsData = Array.isArray(debtsRes.data) ? debtsRes.data : [];
@@ -170,7 +171,7 @@ const BeneficiaryFinancialPage = () => {
       const payMap = {};
       for (const bill of billsData) {
         try {
-          const pRes = await axios.get(`${API_URL}/financial/bills/${bill.id}/payments`, { headers });
+          const pRes = await apiClient.get(`${API_URL}/financial/bills/${bill.id}/payments`, { headers });
           payMap[bill.id] = Array.isArray(pRes.data) ? pRes.data : [];
         } catch { payMap[bill.id] = []; }
       }
@@ -187,7 +188,7 @@ const BeneficiaryFinancialPage = () => {
     }
     setMarkingPaid(billId);
     try {
-      await axios.post(`${API_URL}/financial/bills/${billId}/pay`, { bill_id: billId }, getAuthHeaders());
+      await apiClient.post(`${API_URL}/financial/bills/${billId}/pay`, { bill_id: billId }, getAuthHeaders());
       toast.success('Bill marked as paid');
       fetchAll();
     } catch (err) {

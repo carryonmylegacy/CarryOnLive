@@ -43,6 +43,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import axios from 'axios';
 
+import apiClient from '../utils/apiClient';
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const PREF_KEY = 'carryon_remember_scroll';
 const POSITIONS_KEY = 'carryon_scroll_positions';
@@ -92,7 +93,7 @@ function pushPrefToServer(enabled, positions) {
     serverPushTimer = null;
     const headers = authHeaders();
     if (!headers.Authorization) return; // not logged in yet
-    axios.put(`${API_URL}/user-preferences/scroll-restoration`, {
+    apiClient.put(`${API_URL}/user-preferences/scroll-restoration`, {
       enabled,
       positions: enabled ? positions : {},
     }, { headers }).catch(() => { /* best-effort cross-device sync */ });
@@ -131,7 +132,7 @@ export async function hydrateScrollRestorationFromServer() {
   const headers = authHeaders();
   if (!headers.Authorization) return null;
   try {
-    const res = await axios.get(`${API_URL}/user-preferences/scroll-restoration`, { headers });
+    const res = await apiClient.get(`${API_URL}/user-preferences/scroll-restoration`, { headers });
     const enabled = !!res?.data?.enabled;
     const serverPositions = (res?.data?.positions && typeof res.data.positions === 'object') ? res.data.positions : {};
     // Toggle: server wins.

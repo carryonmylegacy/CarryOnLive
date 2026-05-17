@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLabelCleaner } from '../../utils/brandLabel';
 import {
@@ -39,7 +40,7 @@ const BeneficiaryChecklistPage = () => {
       return;
     }
     try {
-      const res = await axios.get(`${API_URL}/checklists/${estateId}`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/checklists/${estateId}`, getAuthHeaders());
       setChecklists(res.data);
       cacheBenSection(estateId, 'checklist', res.data || []);
     } catch (err) { console.error(err); }
@@ -56,7 +57,7 @@ const BeneficiaryChecklistPage = () => {
     }
     setToggling(itemId);
     try {
-      const res = await axios.patch(`${API_URL}/checklists/${itemId}/toggle`, {}, getAuthHeaders());
+      const res = await apiClient.patch(`${API_URL}/checklists/${itemId}/toggle`, {}, getAuthHeaders());
       setChecklists(prev => {
         const next = prev.map(c => c.id === itemId ? { ...c, is_completed: res.data.is_completed } : c);
         const estateId = localStorage.getItem('beneficiary_estate_id');

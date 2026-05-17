@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useNavigate } from 'react-router-dom';
 import { HardDrive, PinOff, Loader2, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
@@ -54,7 +55,7 @@ const OfflineStorageWidget = () => {
     try {
       // Mirror PinForOfflineButton: clear server flag first, then evict local blob.
       try {
-        await axios.put(`${API_URL}/documents/${docId}/pin-offline?pinned=false`, null, getAuthHeaders());
+        await apiClient.put(`${API_URL}/documents/${docId}/pin-offline?pinned=false`, null, getAuthHeaders());
       } catch {
         // Server may be unreachable offline — the local evict is what matters here.
       }

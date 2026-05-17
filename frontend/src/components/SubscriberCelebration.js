@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { CheckCircle2, Share2, X, FileLock2, MessageSquare, ClipboardCheck } from 'lucide-react';
 import { API_URL, BASE_URL } from '../config';
 import { useAuth } from '../contexts/AuthContext';
@@ -33,7 +34,7 @@ export default function SubscriberCelebration({ firstName, tierName, onDismiss }
       if (!token) return;
       setRegenerating(true);
       try {
-        const res = await axios.post(
+        const res = await apiClient.post(
           `${API_URL}/share-cards/subscriber`,
           { first_name: displayName, tier_name: tierName || '', quote: quoteValue || '', consent_public: !!consentPublic, nonce },
           { headers: { Authorization: `Bearer ${token}` } },

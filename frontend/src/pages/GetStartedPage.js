@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, ChevronRight, Check, X, Users, Shield, FileText,
 import { initFirebase, trackEvent, trackPixel } from '../services/firebase';
 import { API_URL } from '../config';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import confetti from 'canvas-confetti';
 
 const INTERESTS = [
@@ -164,7 +165,7 @@ export default function GetStartedPage() {
 
     const startSession = async () => {
       try {
-        const resp = await axios.post(`${API_URL}/funnel/start`, {
+        const resp = await apiClient.post(`${API_URL}/funnel/start`, {
           utm_source: searchParams.get('utm_source') || '',
           utm_medium: searchParams.get('utm_medium') || '',
           utm_campaign: searchParams.get('utm_campaign') || '',
@@ -195,7 +196,7 @@ export default function GetStartedPage() {
     trackEvent(`funnel_step_${stepNum}_complete`, { step_name: name, ...selections });
     if (!sessionId) return;
     try {
-      await axios.post(`${API_URL}/funnel/step`, {
+      await apiClient.post(`${API_URL}/funnel/step`, {
         session_id: sessionId,
         step: stepNum,
         name,
@@ -249,7 +250,7 @@ export default function GetStartedPage() {
 
     if (sessionId) {
       try {
-        await axios.post(`${API_URL}/funnel/complete`, {
+        await apiClient.post(`${API_URL}/funnel/complete`, {
           session_id: sessionId,
           referral_email: refEmail,
         });

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import {
   Users, Shield, Link2, FileCheck, UserCheck, AlertTriangle,
   Loader2, Heart, ChevronDown, ChevronUp, CheckCircle, Clock, Mail,
@@ -288,7 +289,7 @@ const GhostEstateAlert = ({ ghostEstates, getAuthHeaders, onCleanupDone }) => {
     if (!password.trim() || selected.size === 0) return;
     setCleaning(true);
     try {
-      const res = await axios.post(`${API_URL}/admin/cleanup-ghost-estates`, {
+      const res = await apiClient.post(`${API_URL}/admin/cleanup-ghost-estates`, {
         estate_ids: [...selected],
         admin_password: password,
       }, getAuthHeaders());
@@ -405,7 +406,7 @@ export const EstateHealthTab = ({ getAuthHeaders }) => {
 
   const fetchHealth = async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/estate-health`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/admin/estate-health`, getAuthHeaders());
       setData(res.data);
     } catch (err) {
       toast.error('Failed to load estate health data');

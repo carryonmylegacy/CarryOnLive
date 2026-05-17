@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { SubscriptionManagement } from '../components/settings/SubscriptionManagement';
 import FamilyPlanSettings from '../components/FamilyPlanSettings';
@@ -45,7 +46,7 @@ const SubscriptionPage = () => {
 
     const confirm = async () => {
       try {
-        const res = await axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers });
+        const res = await apiClient.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers });
         if (res.data?.payment_status === 'paid' || res.data?.payment_status === 'complete') {
           setPaymentSuccess(true);
           window.history.replaceState({}, '', window.location.pathname);
@@ -56,7 +57,7 @@ const SubscriptionPage = () => {
         } else {
           // Retry after a few seconds for async processing
           await new Promise(r => setTimeout(r, 5000));
-          const retry = await axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers });
+          const retry = await apiClient.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers });
           if (retry.data?.payment_status === 'paid' || retry.data?.payment_status === 'complete') {
             setPaymentSuccess(true);
             window.history.replaceState({}, '', window.location.pathname);
@@ -84,20 +85,20 @@ const SubscriptionPage = () => {
     // hiding it for a frame while the request is in flight. Failures
     // are silent by design (public endpoint, infra blip shouldn't kill
     // a paywall demo).
-    axios.get(`${API_URL}/founders-circle/plans`).then(r => {
+    apiClient.get(`${API_URL}/founders-circle/plans`).then(r => {
       const active = !!r.data.active;
       setFcActive(active);
       try { sessionStorage.setItem('fc_campaign_active', active ? '1' : '0'); } catch {}
     }).catch(() => {});
     // Check user's FC subscriptions
-    axios.get(`${API_URL}/founders-circle/status`, { headers }).then(r => setFcSubs(r.data.subscriptions || [])).catch(() => {});
+    apiClient.get(`${API_URL}/founders-circle/status`, { headers }).then(r => setFcSubs(r.data.subscriptions || [])).catch(() => {});
 
     // Handle FC checkout redirect
     const params = new URLSearchParams(window.location.search);
     const fcSessionId = params.get('fc_session_id');
     if (fcSessionId) {
       setConfirmingPayment(true);
-      axios.get(`${API_URL}/founders-circle/checkout-status/${fcSessionId}`, { headers })
+      apiClient.get(`${API_URL}/founders-circle/checkout-status/${fcSessionId}`, { headers })
         .then(async (r) => {
           if (r.data.status === 'active' || r.data.status === 'completed') {
             setPaymentSuccess(true);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { AlertTriangle, Loader2, Power, ImagePlus } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -19,7 +20,7 @@ export const MaintenanceModeTab = ({ getAuthHeaders }) => {
 
   const fetch_ = async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/maintenance-mode`, { headers });
+      const res = await apiClient.get(`${API_URL}/admin/maintenance-mode`, { headers });
       setConfig(res.data);
       setMessage(res.data.message || 'CarryOn is undergoing scheduled maintenance. We\'ll be back shortly.');
       setEstimatedEnd(res.data.estimated_end || '');
@@ -32,7 +33,7 @@ export const MaintenanceModeTab = ({ getAuthHeaders }) => {
   const toggle = async (newEnabled) => {
     setSaving(true);
     try {
-      await axios.put(`${API_URL}/admin/maintenance-mode`, {
+      await apiClient.put(`${API_URL}/admin/maintenance-mode`, {
         enabled: newEnabled,
         message,
         estimated_end: estimatedEnd || null,
@@ -139,7 +140,7 @@ const ReprocessAvatarsCard = ({ headers }) => {
   const doScan = async () => {
     setScanning(true); setResult(null);
     try {
-      const res = await axios.get(`${API_URL}/admin/maintenance/reprocess-avatars/scan`, { headers });
+      const res = await apiClient.get(`${API_URL}/admin/maintenance/reprocess-avatars/scan`, { headers });
       setScan(res.data);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Scan failed');
@@ -155,7 +156,7 @@ const ReprocessAvatarsCard = ({ headers }) => {
     )) return;
     setRunning(true);
     try {
-      const res = await axios.post(`${API_URL}/admin/maintenance/reprocess-avatars`, {}, { headers });
+      const res = await apiClient.post(`${API_URL}/admin/maintenance/reprocess-avatars`, {}, { headers });
       setResult(res.data);
       toast.success(`Reprocessed ${res.data.processed} avatars`);
     } catch (err) {

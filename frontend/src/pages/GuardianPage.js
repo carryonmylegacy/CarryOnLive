@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
 import { useLabelCleaner } from '../utils/brandLabel';
@@ -181,7 +182,7 @@ const GuardianPage = () => {
   const fetchSessions = useCallback(async () => {
     setSessionsLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/chat/sessions`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/chat/sessions`, getAuthHeaders());
       setSessions(res.data);
     } catch (err) { /* silent */ }
     finally { setSessionsLoading(false); }
@@ -202,16 +203,16 @@ const GuardianPage = () => {
     fetchSessions();
     fetchEstate();
     // Warm up xAI connection in background (prevents timeout on first EGA use)
-    axios.post(`${API_URL}/warmup`, {}, getAuthHeaders()).catch(() => {});
+    apiClient.post(`${API_URL}/warmup`, {}, getAuthHeaders()).catch(() => {});
     // Check if user has address on file
-    axios.get(`${API_URL}/auth/profile`, getAuthHeaders())
+    apiClient.get(`${API_URL}/auth/profile`, getAuthHeaders())
       .then(res => {
         const profile = res.data || {};
         setHasAddress(!!(profile.address_street && profile.address_state));
       })
       .catch(() => setHasAddress(true)); // Don't block on error
     // Check if onboarding is complete to control pulse animation
-    axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders())
+    apiClient.get(`${API_URL}/onboarding/progress`, getAuthHeaders())
       .then(res => { if (!res.data?.celebration_shown && !res.data?.all_complete) setGuidedFlowDone(false); })
       .catch(() => {});
     // Auto-resume active session if returning from another page
@@ -271,7 +272,7 @@ const GuardianPage = () => {
     setLoading(true);
     try { localStorage.setItem('ega_active_session', sid); } catch (e) { /* silent */ }
     try {
-      const res = await axios.get(`${API_URL}/chat/history/${sid}`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/chat/history/${sid}`, getAuthHeaders());
       const history = res.data.map(m => {
         const msg = { role: m.role, content: m.content };
         if (m.action_result?.action === 'readiness_analyzed' && m.action_result?.readiness) {
@@ -307,7 +308,7 @@ const GuardianPage = () => {
   const deleteSession = async (e, sid) => {
     e.stopPropagation();
     try {
-      await axios.delete(`${API_URL}/chat/sessions/${sid}`, getAuthHeaders());
+      await apiClient.delete(`${API_URL}/chat/sessions/${sid}`, getAuthHeaders());
       setSessions(prev => prev.filter(s => s.session_id !== sid));
       // toast removed
     } catch (err) {
@@ -334,7 +335,7 @@ const GuardianPage = () => {
     if (!sessionId) return;
     if (!window.confirm('Delete this conversation? This cannot be undone.')) return;
     try {
-      await axios.delete(`${API_URL}/chat/sessions/${sessionId}`, getAuthHeaders());
+      await apiClient.delete(`${API_URL}/chat/sessions/${sessionId}`, getAuthHeaders());
     } catch (err) {
       const status = err?.response?.status;
       if (status !== 404) {
@@ -370,7 +371,7 @@ const GuardianPage = () => {
     if (!sessions.length) return;
     if (!window.confirm(`Delete ALL ${sessions.length} conversations? This cannot be undone.`)) return;
     try {
-      await axios.delete(`${API_URL}/chat/sessions`, getAuthHeaders());
+      await apiClient.delete(`${API_URL}/chat/sessions`, getAuthHeaders());
       setSessions([]);
       setSessionId(null);
       setMessages([]);
@@ -396,7 +397,7 @@ const GuardianPage = () => {
         subtitle: dateStr,
         blobFetcher: async () => {
           const headers = getAuthHeaders()?.headers;
-          const res = await axios.post(`${API_URL}/guardian/export-checklist`, {}, { headers, responseType: 'blob', timeout: 120000 });
+          const res = await apiClient.post(`${API_URL}/guardian/export-checklist`, {}, { headers, responseType: 'blob', timeout: 120000 });
           return new Blob([res.data], { type: 'application/pdf' });
         },
       });
@@ -418,7 +419,7 @@ const GuardianPage = () => {
         subtitle: dateStr,
         blobFetcher: async () => {
           const headers = getAuthHeaders()?.headers;
-          const res = await axios.post(`${API_URL}/guardian/export-todo`, { content }, { headers, responseType: 'blob', timeout: 60000 });
+          const res = await apiClient.post(`${API_URL}/guardian/export-todo`, { content }, { headers, responseType: 'blob', timeout: 60000 });
           return new Blob([res.data], { type: 'application/pdf' });
         },
       });
@@ -439,7 +440,7 @@ const GuardianPage = () => {
         subtitle: dateStr,
         blobFetcher: async () => {
           const headers = getAuthHeaders()?.headers;
-          const res = await axios.post(`${API_URL}/guardian/export-iac-report`, { content }, { headers, responseType: 'blob', timeout: 120000 });
+          const res = await apiClient.post(`${API_URL}/guardian/export-iac-report`, { content }, { headers, responseType: 'blob', timeout: 120000 });
           return new Blob([res.data], { type: 'application/pdf' });
         },
       });
@@ -462,7 +463,7 @@ const GuardianPage = () => {
         subtitle: dateStr,
         blobFetcher: async () => {
           const headers = getAuthHeaders()?.headers;
-          const res = await axios.post(`${API_URL}/guardian/export-conversation`, { session_id: sessionId }, { headers, responseType: 'blob', timeout: 60000 });
+          const res = await apiClient.post(`${API_URL}/guardian/export-conversation`, { session_id: sessionId }, { headers, responseType: 'blob', timeout: 60000 });
           return new Blob([res.data], { type: 'application/pdf' });
         },
       });
@@ -485,7 +486,7 @@ const GuardianPage = () => {
         subtitle: dateStr,
         blobFetcher: async () => {
           const headers = getAuthHeaders()?.headers;
-          const res = await axios.post(`${API_URL}/guardian/export-plan-of-action`, { session_id: sessionId }, { headers, responseType: 'blob', timeout: 120000 });
+          const res = await apiClient.post(`${API_URL}/guardian/export-plan-of-action`, { session_id: sessionId }, { headers, responseType: 'blob', timeout: 120000 });
           return new Blob([res.data], { type: 'application/pdf' });
         },
       });
@@ -533,7 +534,7 @@ const GuardianPage = () => {
     const requestConfig = { ...getAuthHeaders(), timeout: 120000, signal: controller.signal };
 
     // Helper — single API call attempt
-    const tryCall = () => axios.post(`${API_URL}/chat/guardian`, requestPayload, requestConfig);
+    const tryCall = () => apiClient.post(`${API_URL}/chat/guardian`, requestPayload, requestConfig);
 
     try {
       let response;
@@ -1086,7 +1087,7 @@ const GuardianPage = () => {
         {showOnboardingReturn && (
           <div className="flex justify-center px-4 py-2">
             <button onClick={async () => {
-              try { await axios.post(`${API_URL}/onboarding/complete-step/review_readiness`, {}, getAuthHeaders()); } catch {}
+              try { await apiClient.post(`${API_URL}/onboarding/complete-step/review_readiness`, {}, getAuthHeaders()); } catch {}
               navigate('/dashboard');
             }}
               className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold transition-transform active:scale-[0.97]"

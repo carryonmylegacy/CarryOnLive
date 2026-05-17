@@ -12,6 +12,7 @@ import { Separator } from './ui/separator';
 import { toast } from '../utils/toast';
 import { useSectionLock } from './security/SectionLock';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 
 const SECTIONS = [
@@ -67,9 +68,9 @@ const SecuritySettings = ({ getAuthHeaders }) => {
   const fetchAll = async () => {
     try {
       const [settingsRes, questionsRes, masterKeyRes] = await Promise.all([
-        axios.get(`${API_URL}/security/settings`, { headers }),
-        axios.get(`${API_URL}/security/questions`, { headers }),
-        axios.get(`${API_URL}/security/master-key-status`, { headers }),
+        apiClient.get(`${API_URL}/security/settings`, { headers }),
+        apiClient.get(`${API_URL}/security/questions`, { headers }),
+        apiClient.get(`${API_URL}/security/master-key-status`, { headers }),
       ]);
       setSettings(settingsRes.data);
       setQuestions(questionsRes.data.questions);
@@ -85,7 +86,7 @@ const SecuritySettings = ({ getAuthHeaders }) => {
     if (masterKeyInput.trim().length < 4) { toast.error('Master key must be at least 4 characters'); return; }
     setSavingMasterKey(true);
     try {
-      await axios.post(`${API_URL}/security/master-key`, { master_key: masterKeyInput }, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      await apiClient.post(`${API_URL}/security/master-key`, { master_key: masterKeyInput }, { headers: { ...headers, 'Content-Type': 'application/json' } });
       setHasMasterKey(true);
       setMasterKeyInput('');
       setShowMasterKeyInput(false);
@@ -344,12 +345,12 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
   const verifyMasterKey = async () => {
     setMasterKeyVerifying(true);
     try {
-      await axios.post(`${API_URL}/security/verify-master-key`, { master_key: masterKeyVerify }, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      await apiClient.post(`${API_URL}/security/verify-master-key`, { master_key: masterKeyVerify }, { headers: { ...headers, 'Content-Type': 'application/json' } });
 
       if (pendingToggle) {
         if (pendingToggle.field === 'remove') {
           // Remove all security for this section
-          await axios.delete(`${API_URL}/security/settings/${section.id}`, { headers });
+          await apiClient.delete(`${API_URL}/security/settings/${section.id}`, { headers });
           setPinEnabled(false);
           setPwEnabled(false);
           setQEnabled(false);
@@ -359,7 +360,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
           const newPw = pendingToggle.field === 'password' ? false : pwEnabled;
           const newQ = pendingToggle.field === 'question' ? false : qEnabled;
 
-          await axios.put(`${API_URL}/security/settings/${section.id}`, {
+          await apiClient.put(`${API_URL}/security/settings/${section.id}`, {
             pin_enabled: newPin && s.has_pin,
             password_enabled: newPw && s.has_password,
             security_question_enabled: newQ && s.has_security_question,
@@ -413,7 +414,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
       if (finalQ) data.security_question = finalQ;
       if (answer) data.security_answer = answer;
 
-      await axios.put(`${API_URL}/security/settings/${section.id}`, data, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      await apiClient.put(`${API_URL}/security/settings/${section.id}`, data, { headers: { ...headers, 'Content-Type': 'application/json' } });
       setPw('');
       setAnswer('');
       setPinDigits('');

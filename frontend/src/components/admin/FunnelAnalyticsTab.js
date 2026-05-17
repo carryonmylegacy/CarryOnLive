@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import {
   BarChart3, TrendingUp, Users, Smartphone, Monitor, Tablet,
   ArrowRight, Globe, MapPin, Heart, Loader2, RefreshCw, Send
@@ -18,7 +19,7 @@ export const FunnelAnalyticsTab = ({ getAuthHeaders }) => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const resp = await axios.get(`${API_URL}/admin/funnel/analytics`, getAuthHeaders());
+      const resp = await apiClient.get(`${API_URL}/admin/funnel/analytics`, getAuthHeaders());
       setData(resp.data);
     } catch (e) {
       console.error('Failed to load funnel analytics:', e);

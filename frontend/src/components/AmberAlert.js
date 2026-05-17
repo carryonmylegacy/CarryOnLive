@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { AlertTriangle, Shield, Volume2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { API_URL } from '../config';
@@ -127,7 +128,7 @@ const AmberAlert = ({ alert, onAcknowledge }) => {
     const token = localStorage.getItem('carryon_token');
     if (token && alert?.id) {
       try {
-        await axios.post(`${API_URL}/notifications/${alert.id}/read`, {}, {
+        await apiClient.post(`${API_URL}/notifications/${alert.id}/read`, {}, {
           headers: { Authorization: `Bearer ${token}` },
         });
       } catch {}
@@ -294,7 +295,7 @@ export const AmberAlertProvider = () => {
     if (!token) return;
 
     try {
-      const res = await axios.get(`${API_URL}/notifications?unread_only=true&limit=10`, {
+      const res = await apiClient.get(`${API_URL}/notifications?unread_only=true&limit=10`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const now = Date.now();

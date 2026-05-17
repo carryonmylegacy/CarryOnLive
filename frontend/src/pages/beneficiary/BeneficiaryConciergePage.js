@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Sparkles, Send, ArrowLeft, Loader2, AlertTriangle, BookOpen, ChevronDown, ChevronUp, FileText, X, MessageCircle, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_URL } from '../../config';
@@ -78,7 +79,7 @@ export default function BeneficiaryConciergePage() {
     if (!estateId || !docId) return;
     setPreviewDoc({ id: docId, loading: true });
     try {
-      const res = await axios.get(`${API_URL}/beneficiary/concierge/document/${docId}`, {
+      const res = await apiClient.get(`${API_URL}/beneficiary/concierge/document/${docId}`, {
         ...getAuthHeaders(),
         params: { estate_id: estateId },
       });
@@ -107,7 +108,7 @@ export default function BeneficiaryConciergePage() {
       return;
     }
     try {
-      const statusRes = await axios.get(
+      const statusRes = await apiClient.get(
         `${API_URL}/beneficiary/concierge/status`,
         { ...getAuthHeaders(), params: { estate_id: estateId } },
       );
@@ -123,7 +124,7 @@ export default function BeneficiaryConciergePage() {
     if (!estateId) return;
     setSessionsLoading(true);
     try {
-      const res = await axios.get(
+      const res = await apiClient.get(
         `${API_URL}/beneficiary/concierge/sessions`,
         { ...getAuthHeaders(), params: { estate_id: estateId } },
       );
@@ -138,7 +139,7 @@ export default function BeneficiaryConciergePage() {
   const loadHistoryFor = useCallback(async (sid) => {
     if (!estateId || !sid) return [];
     try {
-      const res = await axios.get(
+      const res = await apiClient.get(
         `${API_URL}/beneficiary/concierge/history`,
         { ...getAuthHeaders(), params: { estate_id: estateId, session_id: sid } },
       );
@@ -194,7 +195,7 @@ export default function BeneficiaryConciergePage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await axios.get(`${API_URL}/estates`, getAuthHeaders());
+        const res = await apiClient.get(`${API_URL}/estates`, getAuthHeaders());
         const list = res.data || [];
         const ownedIds = new Set(list.filter(e => e.user_role_in_estate === 'owner').map(e => e.id));
         const beneficiaryEstates = list.filter(e => !ownedIds.has(e.id));
@@ -248,7 +249,7 @@ export default function BeneficiaryConciergePage() {
     // a fresh chat with one click. If we ever want a confirmation,
     // gate it on a setting flag.
     try {
-      await axios.delete(
+      await apiClient.delete(
         `${API_URL}/beneficiary/concierge/session/${sid}`,
         { ...getAuthHeaders(), params: { estate_id: estateId } },
       );
@@ -282,7 +283,7 @@ export default function BeneficiaryConciergePage() {
     const controller = new AbortController();
     abortRef.current = controller;
     try {
-      const res = await axios.post(
+      const res = await apiClient.post(
         `${API_URL}/beneficiary/concierge/ask`,
         { estate_id: estateId, question: q, session_id: sid },
         { ...getAuthHeaders(), signal: controller.signal },

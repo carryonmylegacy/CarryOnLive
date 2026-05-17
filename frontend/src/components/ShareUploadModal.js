@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { FileText, Upload, Loader2, X } from 'lucide-react';
 import { API_URL } from '../config';
@@ -14,7 +15,7 @@ const ShareUploadModal = ({ pendingShare, categories, uploading, onUpload, onCan
   useEffect(() => {
     const fetchEstates = async () => {
       try {
-        const res = await axios.get(`${API_URL}/estates`, {
+        const res = await apiClient.get(`${API_URL}/estates`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         const data = Array.isArray(res.data) ? res.data : [];

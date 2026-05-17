@@ -16,6 +16,7 @@
  * knows whether to refresh.
  */
 import axios from 'axios';
+import apiClient from '../../../utils/apiClient';
 import { API_URL } from '../../../config';
 
 const isBlank = (c) =>
@@ -41,7 +42,7 @@ export async function persistEntityCredentials({
     try {
       // Delete persisted row that the user removed in the form
       if (c._delete && c.id) {
-        await axios.delete(`${API_URL}/digital-wallet/${c.id}`, authHeaders);
+        await apiClient.delete(`${API_URL}/digital-wallet/${c.id}`, authHeaders);
         deleted += 1;
         continue;
       }
@@ -49,7 +50,7 @@ export async function persistEntityCredentials({
       // to attach this entity to an existing DAV entry. PATCH the
       // existing row's linked_entity_id; no new DAV record created.
       if (c._link_to_id) {
-        await axios.put(`${API_URL}/digital-wallet/${c._link_to_id}`, {
+        await apiClient.put(`${API_URL}/digital-wallet/${c._link_to_id}`, {
           linked_entity_id: entityId,
         }, authHeaders);
         linked += 1;
@@ -70,10 +71,10 @@ export async function persistEntityCredentials({
       };
 
       if (c._new) {
-        await axios.post(`${API_URL}/digital-wallet`, payload, authHeaders);
+        await apiClient.post(`${API_URL}/digital-wallet`, payload, authHeaders);
         created += 1;
       } else if (c._dirty && c.id) {
-        await axios.put(`${API_URL}/digital-wallet/${c.id}`, payload, authHeaders);
+        await apiClient.put(`${API_URL}/digital-wallet/${c.id}`, payload, authHeaders);
         updated += 1;
       }
     } catch {

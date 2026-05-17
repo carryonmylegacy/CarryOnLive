@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { User, Lock, LogOut, Shield, Moon, Sun, Crown, WifiOff } from 'lucide-react';
@@ -31,7 +32,7 @@ const BeneficiarySettingsPage = () => {
       const eid = localStorage.getItem('beneficiary_estate_id');
       if (eid) {
         try {
-          const res = await axios.get(`${API_URL}/estates/${eid}`, getAuthHeaders());
+          const res = await apiClient.get(`${API_URL}/estates/${eid}`, getAuthHeaders());
           
         } catch (e) { console.error(e); }
       }
@@ -39,9 +40,9 @@ const BeneficiarySettingsPage = () => {
     fetchEstate();
     // Photo priority: user's own profile photo > benefactor-uploaded photo for me
     Promise.all([
-      axios.get(`${API_URL}/auth/me`, getAuthHeaders()).catch(() => ({ data: {} })),
-      axios.get(`${API_URL}/beneficiary/family-connections`, getAuthHeaders()).catch(() => ({ data: [] })),
-      axios.get(`${API_URL}/beneficiary/my-primary-for`, getAuthHeaders()).catch(() => ({ data: [] })),
+      apiClient.get(`${API_URL}/auth/me`, getAuthHeaders()).catch(() => ({ data: {} })),
+      apiClient.get(`${API_URL}/beneficiary/family-connections`, getAuthHeaders()).catch(() => ({ data: [] })),
+      apiClient.get(`${API_URL}/beneficiary/my-primary-for`, getAuthHeaders()).catch(() => ({ data: [] })),
     ]).then(([meRes, connRes, primaryRes]) => {
       if (meRes.data.photo_url) {
         setProfilePhoto(meRes.data.photo_url);
@@ -76,7 +77,7 @@ const BeneficiarySettingsPage = () => {
                 reader.onload = async () => {
                   const base64 = reader.result.split(',')[1];
                   try {
-                    const res = await axios.put(`${API_URL}/auth/profile-photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
+                    const res = await apiClient.put(`${API_URL}/auth/profile-photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
                     if (res.data?.photo_url) setProfilePhoto(res.data.photo_url);
                   } catch {}
                 };
@@ -84,7 +85,7 @@ const BeneficiarySettingsPage = () => {
               }}
               onRemove={async () => {
                 setProfilePhoto(null);
-                try { await axios.put(`${API_URL}/auth/profile-photo`, { photo_data: '', file_name: '' }, getAuthHeaders()); } catch {}
+                try { await apiClient.put(`${API_URL}/auth/profile-photo`, { photo_data: '', file_name: '' }, getAuthHeaders()); } catch {}
               }}
             />
             <div>

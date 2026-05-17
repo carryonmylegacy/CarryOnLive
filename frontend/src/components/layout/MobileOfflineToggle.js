@@ -21,6 +21,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { CloudOff } from 'lucide-react';
 import { API_URL } from '../../config';
 
@@ -36,7 +37,7 @@ const MobileOfflineToggle = () => {
     const token = (() => { try { return localStorage.getItem('carryon_token'); } catch { return null; } })();
     if (!token) return;
     let cancelled = false;
-    axios.get(`${API_URL}/admin/platform-settings`, {
+    apiClient.get(`${API_URL}/admin/platform-settings`, {
       headers: { Authorization: `Bearer ${token}` },
     }).then((res) => {
       if (cancelled) return;
@@ -61,7 +62,7 @@ const MobileOfflineToggle = () => {
     const token = (() => { try { return localStorage.getItem('carryon_token'); } catch { return null; } })();
     if (token) {
       try {
-        await axios.put(
+        await apiClient.put(
           `${API_URL}/admin/platform-settings`,
           { offline_mode: next ? 'on' : 'off' },
           { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } },

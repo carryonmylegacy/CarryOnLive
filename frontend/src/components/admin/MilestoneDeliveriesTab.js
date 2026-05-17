@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import {
   Gift, CheckCircle2, XCircle, Clock, Loader2, ChevronRight,
   MessageSquare, Calendar, User, Eye, ArrowLeft
@@ -28,7 +29,7 @@ export const MilestoneDeliveriesTab = ({ getAuthHeaders }) => {
 
   const fetchDeliveries = async () => {
     try {
-      const res = await axios.get(`${API_URL}/milestones/deliveries?status=${filter}`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/milestones/deliveries?status=${filter}`, getAuthHeaders());
       setDeliveries(res.data || []);
     } catch {}
     finally { setLoading(false); }
@@ -36,7 +37,7 @@ export const MilestoneDeliveriesTab = ({ getAuthHeaders }) => {
 
   const fetchStats = async () => {
     try {
-      const res = await axios.get(`${API_URL}/milestones/deliveries/stats`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/milestones/deliveries/stats`, getAuthHeaders());
       setStats(res.data);
     } catch {}
   };
@@ -50,7 +51,7 @@ export const MilestoneDeliveriesTab = ({ getAuthHeaders }) => {
     setSelectedDelivery(delivery);
     setDetailLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/milestones/deliveries/${delivery.id}`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/milestones/deliveries/${delivery.id}`, getAuthHeaders());
       setDetailData(res.data);
     } catch { toast.error('Failed to load details'); }
     finally { setDetailLoading(false); }
@@ -61,7 +62,7 @@ export const MilestoneDeliveriesTab = ({ getAuthHeaders }) => {
     try {
       const payload = { action, notes };
       if (action === 'schedule' && scheduledDate) payload.scheduled_date = scheduledDate;
-      await axios.post(`${API_URL}/milestones/deliveries/${deliveryId}/review`,
+      await apiClient.post(`${API_URL}/milestones/deliveries/${deliveryId}/review`,
         payload, getAuthHeaders());
       toast.success(
         action === 'approve' ? 'Message delivered to beneficiary now'

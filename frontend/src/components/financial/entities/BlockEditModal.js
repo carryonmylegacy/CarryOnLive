@@ -18,6 +18,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
+import apiClient from '../../../utils/apiClient';
 import { toast } from '../../../utils/toast';
 import { Loader2, Users, X, Plus } from 'lucide-react';
 import { Button } from '../../ui/button';
@@ -112,7 +113,7 @@ export default function BlockEditModal({
     if (!relId || unlinkingRelIds.has(relId)) return;
     setUnlinkingRelIds((prev) => new Set(prev).add(relId));
     try {
-      await axios.delete(
+      await apiClient.delete(
         `${API_URL}/financial/entity-relationships/${relId}`,
         getAuthHeaders(),
       );
@@ -140,7 +141,7 @@ export default function BlockEditModal({
     if (!entityId || !block?.id || !block?.estate_id) return;
     setAttachingEntityId(entityId);
     try {
-      await axios.post(
+      await apiClient.post(
         `${API_URL}/financial/entity-relationships`,
         {
           estate_id: block.estate_id,
@@ -192,7 +193,7 @@ export default function BlockEditModal({
         //      isn't reliable here — fall back to a date-stamped
         //      default the user can rename later.
         const blockName = trimmed || `Group ${new Date().toLocaleDateString()}`;
-        const created = await axios.post(
+        const created = await apiClient.post(
           `${API_URL}/financial/beneficiary-blocks`,
           { estate_id: convert.estateId, name: blockName, members },
           getAuthHeaders(),
@@ -200,7 +201,7 @@ export default function BlockEditModal({
         const newBlockId = created.data?.id;
         if (!newBlockId) throw new Error('Block create did not return id');
         //   2) Attach the new block to the entity the cluster was on.
-        await axios.post(
+        await apiClient.post(
           `${API_URL}/financial/entity-relationships`,
           {
             estate_id: convert.estateId,
@@ -217,7 +218,7 @@ export default function BlockEditModal({
         //      that constituted the auto-cluster. Done in parallel —
         //      the underlying beneficiary records stay intact, only
         //      the entity-attach edges go.
-        await Promise.all((convert.memberRelIds || []).map((relId) => axios.delete(
+        await Promise.all((convert.memberRelIds || []).map((relId) => apiClient.delete(
           `${API_URL}/financial/entity-relationships/${relId}`,
           getAuthHeaders(),
         )));
@@ -225,7 +226,7 @@ export default function BlockEditModal({
       } else {
         // Plain edit on an existing named block — single PATCH.
         if (!trimmed) { toast.error('Give the block a name.'); setSaving(false); return; }
-        await axios.patch(
+        await apiClient.patch(
           `${API_URL}/financial/beneficiary-blocks/${block.id}`,
           { name: trimmed, members },
           getAuthHeaders(),

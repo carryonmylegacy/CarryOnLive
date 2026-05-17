@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { cachedGet } from '../utils/apiCache';
 import {
   Users, Plus, ArrowRight, Loader2, CheckCircle, UserPlus,
@@ -69,7 +70,7 @@ const OnboardingPage = () => {
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       if (estatesRes.data.length > 0) {
         setEstate(estatesRes.data[0]);
-        const bensRes = await axios.get(`${API_URL}/beneficiaries/${estatesRes.data[0].id}`, getAuthHeaders());
+        const bensRes = await apiClient.get(`${API_URL}/beneficiaries/${estatesRes.data[0].id}`, getAuthHeaders());
         setBeneficiaries(bensRes.data);
       }
     } catch (error) {
@@ -87,7 +88,7 @@ const OnboardingPage = () => {
     
     setAdding(true);
     try {
-      const newBen = await axios.post(`${API_URL}/beneficiaries`, {
+      const newBen = await apiClient.post(`${API_URL}/beneficiaries`, {
         estate_id: estate.id,
         first_name: firstName,
         middle_name: middleName || null,

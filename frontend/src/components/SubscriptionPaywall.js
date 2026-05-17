@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { Crown, Shield, Check, Star, ChevronRight, ChevronDown, Loader2,
   Upload, Clock, Users, X, Heart, Award, RotateCcw, Zap, Sun
@@ -81,7 +82,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
     const sessionId = params.get('session_id');
     if (sessionId && token) {
       setConfirmingPayment(true);
-      axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers })
+      apiClient.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers })
         .then(async (res) => {
           if (res.data?.payment_status === 'paid' || res.data?.payment_status === 'complete') {
             // toast removed
@@ -94,7 +95,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
             // Retry after a few seconds
             setTimeout(async () => {
               try {
-                const retry = await axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers });
+                const retry = await apiClient.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers });
                 if (retry.data?.payment_status === 'paid' || retry.data?.payment_status === 'complete') {
                   // toast removed
                   window.history.replaceState({}, '', window.location.pathname);
@@ -119,8 +120,8 @@ export default function SubscriptionPaywall({ onDismiss }) {
   const fetchData = useCallback(async () => {
     try {
       const [plansRes, statusRes] = await Promise.all([
-        axios.get(`${API_URL}/subscriptions/plans`),
-        axios.get(`${API_URL}/subscriptions/status`, { headers }),
+        apiClient.get(`${API_URL}/subscriptions/plans`),
+        apiClient.get(`${API_URL}/subscriptions/status`, { headers }),
       ]);
       setPlans(plansRes.data.plans || []);
       setSubStatus(statusRes.data);
@@ -184,7 +185,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
       // signed in when Stripe sends them back.
       const releaseAutoLogout = suspendAutoLogout();
       try {
-        const res = await axios.post(`${API_URL}/subscriptions/checkout`, {
+        const res = await apiClient.post(`${API_URL}/subscriptions/checkout`, {
           plan_id: plan.id,
           billing_cycle: billing,
           origin_url: window.location.origin,
@@ -242,7 +243,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
         formData.append('file_name', verificationFile.name);
 
         try {
-          await axios.post(`${API_URL}/verification/upload`, formData, { headers });
+          await apiClient.post(`${API_URL}/verification/upload`, formData, { headers });
           // toast removed
           setShowVerification(false);
           setVerificationFile(null);

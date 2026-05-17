@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Shield } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Switch } from '../ui/switch';
@@ -44,7 +45,7 @@ const PublicDeviceModeCard = () => {
     let alive = true;
     (async () => {
       try {
-        const res = await axios.get(`${API_URL}/estates`, {
+        const res = await apiClient.get(`${API_URL}/estates`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const owned = (res.data || []).find(e => e?.role === 'benefactor' || e?.owner_id) || (res.data || [])[0];
@@ -64,7 +65,7 @@ const PublicDeviceModeCard = () => {
   const patchEstate = async (patch, successMsg) => {
     setSaving(true);
     try {
-      await axios.patch(`${API_URL}/estates/${estate.id}`, patch, {
+      await apiClient.patch(`${API_URL}/estates/${estate.id}`, patch, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setEstate(prev => ({ ...prev, ...patch }));

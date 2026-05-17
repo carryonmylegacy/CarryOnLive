@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Users, Loader2, Shield, UserCog } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
@@ -23,7 +24,7 @@ export const SectionMembersTab = ({ getAuthHeaders, sectionScopes, sectionLabel 
   useEffect(() => {
     const fetch_ = async () => {
       try {
-        const res = await axios.get(`${API_URL}/admin/scoped-admins`, { headers });
+        const res = await apiClient.get(`${API_URL}/admin/scoped-admins`, { headers });
         const filtered = res.data.filter(a => {
           const scopes = Array.isArray(a.admin_scope) ? a.admin_scope : [a.admin_scope || ''];
           return scopes.includes('founder') || sectionScopes.some(s => scopes.includes(s));

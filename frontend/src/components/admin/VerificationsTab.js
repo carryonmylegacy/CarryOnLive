@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { FileKey, Activity, Loader2, X, Search, ToggleLeft, ToggleRight, Bell, Check, Trash2, RotateCcw } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -28,7 +29,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
       const url = isFounder && showDeleted
         ? `${API_URL}/admin/verifications?include_deleted=true`
         : `${API_URL}/admin/verifications`;
-      const res = await axios.get(url, { headers });
+      const res = await apiClient.get(url, { headers });
       setVerifications(res.data);
     } catch (err) { toast.error('Failed to load verifications'); }
     setLoading(false);
@@ -37,7 +38,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
   const toggleApproval = async (v) => {
     const newAction = v.status === 'approved' ? 'deny' : 'approve';
     try {
-      await axios.post(`${API_URL}/admin/verifications/${v.id}/review`, {
+      await apiClient.post(`${API_URL}/admin/verifications/${v.id}/review`, {
         action: newAction,
         notes: reviewNotes[v.id] || '',
       }, { headers: { ...headers, 'Content-Type': 'application/json' } });
@@ -49,7 +50,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
   const notifyBenefactor = async (v) => {
     setNotifying(v.id);
     try {
-      await axios.post(`${API_URL}/admin/verifications/${v.id}/notify`, {}, { headers });
+      await apiClient.post(`${API_URL}/admin/verifications/${v.id}/notify`, {}, { headers });
       // toast removed
       fetchVerifications();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to send notification'); }
@@ -58,7 +59,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
 
   const viewDocument = async (id) => {
     try {
-      const res = await axios.get(`${API_URL}/admin/verifications/${id}/document`, { headers });
+      const res = await apiClient.get(`${API_URL}/admin/verifications/${id}/document`, { headers });
       setViewingDoc(res.data);
     } catch (err) { toast.error('Failed to load document'); }
   };
@@ -163,7 +164,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
                       {isDeleted && isFounder ? (
                         <button
                           onClick={() => {
-                            axios.post(`${API_URL}/admin/verifications/${v.id}/restore`, {}, { headers })
+                            apiClient.post(`${API_URL}/admin/verifications/${v.id}/restore`, {}, { headers })
                               .then(() => { toast.success('Verification restored'); fetchVerifications(); })
                               .catch(() => toast.error('Failed to restore'));
                           }}
@@ -216,7 +217,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
                           <button
                             onClick={() => {
                               if (!window.confirm('Delete this verification?')) return;
-                              axios.delete(`${API_URL}/admin/verifications/${v.id}`, { headers })
+                              apiClient.delete(`${API_URL}/admin/verifications/${v.id}`, { headers })
                                 .then(() => { toast.success('Verification deleted'); fetchVerifications(); })
                                 .catch(() => toast.error('Failed to delete'));
                             }}

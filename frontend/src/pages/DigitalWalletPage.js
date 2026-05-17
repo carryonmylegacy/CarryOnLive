@@ -14,6 +14,7 @@ import { ReturnPopup } from '../components/GuidedActivation';
 // of a side panel modal. Keeping the comment as a breadcrumb so future
 // readers understand the historical pattern.
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { cachedGet } from '../utils/apiCache';
 import { API_URL } from '../config';
 import { saveList, readList } from '../utils/localListCache';
@@ -81,8 +82,8 @@ const DigitalWalletPage = () => {
         const savedId = localStorage.getItem('selected_estate_id');
         const eid = (savedId && estatesRes.data.find(e => e.id === savedId)?.id) || estatesRes.data[0].id;
         const [walletRes, benRes] = await Promise.all([
-          axios.get(`${API_URL}/digital-wallet/${eid}`, { headers }).catch(() => ({ data: [] })),
-          axios.get(`${API_URL}/beneficiaries/${eid}`, { headers }).catch(() => ({ data: [] })),
+          apiClient.get(`${API_URL}/digital-wallet/${eid}`, { headers }).catch(() => ({ data: [] })),
+          apiClient.get(`${API_URL}/beneficiaries/${eid}`, { headers }).catch(() => ({ data: [] })),
         ]);
         const nextEntries = Array.isArray(walletRes.data) ? walletRes.data : [];
         const nextBens = Array.isArray(benRes.data) ? benRes.data : [];
@@ -133,8 +134,8 @@ const DigitalWalletPage = () => {
     if (wasFirstEntry && !sessionStorage.getItem('carryon_dav_popup_shown')) {
       sessionStorage.setItem('carryon_dav_popup_shown', 'true');
       try {
-        await axios.post(`${API_URL}/onboarding/complete-step/add_credential`, {}, getAuthHeaders());
-        const prog = await axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
+        await apiClient.post(`${API_URL}/onboarding/complete-step/add_credential`, {}, getAuthHeaders());
+        const prog = await apiClient.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
         if (!prog.data?.already_graduated) setTimeout(() => setShowReturnPopup(true), 1000);
       } catch {}
     }

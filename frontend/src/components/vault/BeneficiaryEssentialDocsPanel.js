@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Heart, FileText, ShieldCheck, Download, Eye, WifiOff, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Switch } from '../ui/switch';
@@ -53,7 +54,7 @@ const BeneficiaryEssentialDocsPanel = ({ estateId, getAuthHeaders }) => {
       try {
         // Online path — fetch authoritative slot data.
         if (typeof navigator === 'undefined' || navigator.onLine !== false) {
-          const res = await axios.get(`${API_URL}/beneficiary/essential-docs/${estateId}`, getAuthHeaders());
+          const res = await apiClient.get(`${API_URL}/beneficiary/essential-docs/${estateId}`, getAuthHeaders());
           if (!alive) return;
           const list = Array.isArray(res.data) ? res.data : [];
           setSlots(list);
@@ -120,7 +121,7 @@ const BeneficiaryEssentialDocsPanel = ({ estateId, getAuthHeaders }) => {
         }
         // Persist server-side flag first so the user's intent survives
         // even if the blob fetch fails — the warmup loop will retry.
-        await axios.put(
+        await apiClient.put(
           `${API_URL}/documents/${doc.id}/pin-offline?pinned=true`,
           null,
           getAuthHeaders(),
@@ -138,7 +139,7 @@ const BeneficiaryEssentialDocsPanel = ({ estateId, getAuthHeaders }) => {
         setPinnedMap((m) => ({ ...m, [doc.id]: true }));
         toast.success(`${slot.label} available offline (${(bytes / 1024).toFixed(0)} KB)`);
       } else {
-        await axios.put(
+        await apiClient.put(
           `${API_URL}/documents/${doc.id}/pin-offline?pinned=false`,
           null,
           getAuthHeaders(),
@@ -170,7 +171,7 @@ const BeneficiaryEssentialDocsPanel = ({ estateId, getAuthHeaders }) => {
         return;
       }
       // Online path — pull a fresh copy from the server.
-      const res = await axios.get(`${API_URL}/documents/${doc.id}/preview`, {
+      const res = await apiClient.get(`${API_URL}/documents/${doc.id}/preview`, {
         ...getAuthHeaders(),
         responseType: 'blob',
       });

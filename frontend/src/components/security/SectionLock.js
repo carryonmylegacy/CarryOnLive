@@ -7,6 +7,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from '../../utils/toast';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { API_URL } from '../../config';
 
 const LOCKABLE_SECTIONS = {
@@ -44,7 +45,7 @@ export const SectionLockProvider = ({ children }) => {
     const token = getToken();
     if (!token) { setLoading(false); return; }
     try {
-      const res = await axios.get(`${API_URL}/security/settings`, {
+      const res = await apiClient.get(`${API_URL}/security/settings`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSettings(res.data);
@@ -265,7 +266,7 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
       if (password) formData.append('password', password);
       if (securityAnswer) formData.append('security_answer', securityAnswer);
 
-      await axios.post(`${API_URL}/security/verify/${sectionId}`, formData, {
+      await apiClient.post(`${API_URL}/security/verify/${sectionId}`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
       onUnlocked();

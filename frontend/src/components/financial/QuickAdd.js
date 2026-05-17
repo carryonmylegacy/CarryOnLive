@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { toast } from '../../utils/toast';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { API_URL } from '../../config';
 
 const BILL_LABELS = {
@@ -41,7 +42,7 @@ const QuickAdd = ({ estateId, module, onDone, getAuthHeaders }) => {
     const processed = [];
     for (const name of names) {
       try {
-        const res = await axios.post(`${API_URL}/financial/smart-categorize`, { bill_name: name, module }, getAuthHeaders());
+        const res = await apiClient.post(`${API_URL}/financial/smart-categorize`, { bill_name: name, module }, getAuthHeaders());
         processed.push({ name, ai: res.data, selected: true, status: 'ready' });
       } catch {
         processed.push({ name, ai: { category: 'other' }, selected: true, status: 'ready' });
@@ -84,7 +85,7 @@ const QuickAdd = ({ estateId, module, onDone, getAuthHeaders }) => {
         } else {
           Object.assign(payload, { institution_phone: ai.biller_phone || null, institution_website: ai.biller_website || null });
         }
-        await axios.post(endpoint, payload, getAuthHeaders());
+        await apiClient.post(endpoint, payload, getAuthHeaders());
         updated[i] = { ...updated[i], status: 'saved' };
         saved++;
       } catch (err) {

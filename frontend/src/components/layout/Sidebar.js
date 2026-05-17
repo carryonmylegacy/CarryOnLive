@@ -6,6 +6,7 @@ import { useLabelCleaner } from '../../utils/brandLabel';
 import { haptics } from '../../utils/haptics';
 import { clearCache } from '../../utils/apiCache';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import {
   LayoutDashboard,
   FolderLock,
@@ -58,7 +59,7 @@ const OtpToggle = ({ collapsed }) => {
   useEffect(() => {
     const token = localStorage.getItem('carryon_token');
     if (token) {
-      axios.get(`${API_URL}/admin/platform-settings`, { headers: { Authorization: `Bearer ${token}` } })
+      apiClient.get(`${API_URL}/admin/platform-settings`, { headers: { Authorization: `Bearer ${token}` } })
         .then(res => setOtpDisabled(!!res.data?.otp_disabled))
         .catch((err) => {
           if (err?.response?.status && err.response.status !== 401) {
@@ -74,7 +75,7 @@ const OtpToggle = ({ collapsed }) => {
     setBusy(true);
     const token = localStorage.getItem('carryon_token');
     try {
-      const res = await axios.put(
+      const res = await apiClient.put(
         `${API_URL}/admin/platform-settings`,
         { otp_disabled: newVal },
         { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } },
@@ -117,7 +118,7 @@ const SignupOtpToggle = ({ collapsed }) => {
   useEffect(() => {
     const token = localStorage.getItem('carryon_token');
     if (token) {
-      axios.get(`${API_URL}/admin/platform-settings`, { headers: { Authorization: `Bearer ${token}` } })
+      apiClient.get(`${API_URL}/admin/platform-settings`, { headers: { Authorization: `Bearer ${token}` } })
         .then(res => setSignupOtpDisabled(!!res.data?.signup_otp_disabled))
         .catch((err) => {
           if (err?.response?.status && err.response.status !== 401) {
@@ -133,7 +134,7 @@ const SignupOtpToggle = ({ collapsed }) => {
     setBusy(true);
     const token = localStorage.getItem('carryon_token');
     try {
-      const res = await axios.put(
+      const res = await apiClient.put(
         `${API_URL}/admin/platform-settings`,
         { signup_otp_disabled: newVal },
         { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } },
@@ -205,7 +206,7 @@ const OfflineModeToggle = ({ collapsed }) => {
     const token = (() => { try { return localStorage.getItem('carryon_token'); } catch { return null; } })();
     if (!token) return;
     let cancelled = false;
-    axios.get(`${API_URL}/admin/platform-settings`, {
+    apiClient.get(`${API_URL}/admin/platform-settings`, {
       headers: { Authorization: `Bearer ${token}` },
     }).then((res) => {
       if (cancelled) return;
@@ -242,7 +243,7 @@ const OfflineModeToggle = ({ collapsed }) => {
     // better failure mode than silently dropping the click.
     if (token) {
       try {
-        await axios.put(
+        await apiClient.put(
           `${API_URL}/admin/platform-settings`,
           { offline_mode: next ? 'on' : 'off' },
           { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } },
@@ -490,7 +491,7 @@ const Sidebar = () => {
 
       const token = localStorage.getItem('carryon_token');
       if (token && (typeof navigator === 'undefined' || navigator.onLine !== false)) {
-        axios.get(`${API_URL}/estates`, { headers: { Authorization: `Bearer ${token}` } })
+        apiClient.get(`${API_URL}/estates`, { headers: { Authorization: `Bearer ${token}` } })
           .then(res => {
             setBenEstates(res.data);
             // Persist for offline use under the same key
@@ -1146,7 +1147,7 @@ const Sidebar = () => {
                             onClick={async (e) => {
                               e.stopPropagation();
                               try {
-                                await axios.put(`${API_URL}/estates/set-primary/${estate.id}`, {}, { headers: { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` } });
+                                await apiClient.put(`${API_URL}/estates/set-primary/${estate.id}`, {}, { headers: { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` } });
                                 clearCache();
                                 await refreshUser();
                               } catch {}
@@ -1255,7 +1256,7 @@ const BetaBanner = ({ collapsed }) => {
   useEffect(() => {
     const check = async () => {
       try {
-        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/subscriptions/plans`);
+        const res = await apiClient.get(`${process.env.REACT_APP_BACKEND_URL}/api/subscriptions/plans`);
         setIsBeta(res.data.beta_mode);
       } catch { setIsBeta(null); }
     };

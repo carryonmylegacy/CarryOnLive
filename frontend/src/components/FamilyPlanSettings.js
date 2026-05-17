@@ -6,6 +6,7 @@ import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from '../utils/toast';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 
 function round2(v) { return Math.round(v * 100) / 100; }
@@ -38,8 +39,8 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
   const fetchStatus = async () => {
     try {
       const [statusRes, plansRes] = await Promise.all([
-        axios.get(`${API_URL}/family-plan/status`, { headers }),
-        axios.get(`${API_URL}/subscriptions/plans`, { headers }),
+        apiClient.get(`${API_URL}/family-plan/status`, { headers }),
+        apiClient.get(`${API_URL}/subscriptions/plans`, { headers }),
       ]);
       setStatus(statusRes.data);
       setPlans(plansRes.data.plans || []);
@@ -63,7 +64,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
     // Best-effort: errors here just collapse the picker into an
     // email-only form, never block the family-plan page.
     try {
-      const res = await axios.get(`${API_URL}/family-plan/eligible-beneficiaries`, { headers });
+      const res = await apiClient.get(`${API_URL}/family-plan/eligible-beneficiaries`, { headers });
       setMyBeneficiaries(res.data?.beneficiaries || []);
     } catch { /* silent — picker just falls back to email-only */ }
     setLoading(false);
@@ -72,7 +73,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
   const fetchSavingsPreview = async () => {
     setLoadingSavings(true);
     try {
-      const res = await axios.get(`${API_URL}/family-plan/preview-savings`, { headers });
+      const res = await apiClient.get(`${API_URL}/family-plan/preview-savings`, { headers });
       setSavingsPreview(res.data);
     } catch (err) { /* silent */ }
     setLoadingSavings(false);
@@ -88,7 +89,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
   const handleCreate = async (planId) => {
     setCreating(true);
     try {
-      await axios.post(`${API_URL}/family-plan/create`, { plan_id: planId }, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      await apiClient.post(`${API_URL}/family-plan/create`, { plan_id: planId }, { headers: { ...headers, 'Content-Type': 'application/json' } });
       // toast removed
       fetchStatus();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to create'); }
@@ -99,7 +100,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
     if (!inviteEmail) return;
     setInviting(true);
     try {
-      await axios.post(`${API_URL}/family-plan/${fp.id}/add-member`, { email: inviteEmail, role: inviteRole }, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      await apiClient.post(`${API_URL}/family-plan/${fp.id}/add-member`, { email: inviteEmail, role: inviteRole }, { headers: { ...headers, 'Content-Type': 'application/json' } });
       const ben = myBeneficiaries.find(b => (b.email || '').toLowerCase() === inviteEmail.toLowerCase());
       toast.success(ben ? `${ben.name} added — discount applied at next renewal.` : 'Family member invited.');
       setInviteEmail('');
@@ -111,7 +112,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
 
   const handleSetSuccessor = async (userId) => {
     try {
-      await axios.put(`${API_URL}/family-plan/${fp.id}/successor`, { successor_user_id: userId }, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      await apiClient.put(`${API_URL}/family-plan/${fp.id}/successor`, { successor_user_id: userId }, { headers: { ...headers, 'Content-Type': 'application/json' } });
       // toast removed
       fetchStatus();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed'); }
@@ -120,7 +121,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
   const handleRemoveMember = async (userId) => {
     if (!window.confirm('Remove this member from the family plan?')) return;
     try {
-      await axios.delete(`${API_URL}/family-plan/${fp.id}/member/${userId}`, { headers });
+      await apiClient.delete(`${API_URL}/family-plan/${fp.id}/member/${userId}`, { headers });
       // toast removed
       fetchStatus();
     } catch (err) { toast.error('Failed to remove member'); }
@@ -129,7 +130,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
   const handleDissolve = async () => {
     if (!window.confirm('Dissolve your family plan? All members return to individual pricing.')) return;
     try {
-      await axios.delete(`${API_URL}/family-plan/${fp.id}`, { headers });
+      await apiClient.delete(`${API_URL}/family-plan/${fp.id}`, { headers });
       // toast removed
       fetchStatus();
     } catch (err) { toast.error('Failed to dissolve'); }

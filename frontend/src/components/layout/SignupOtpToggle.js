@@ -11,6 +11,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { UserPlus, Loader2 } from 'lucide-react';
 import { API_URL } from '../../config';
 import { toast } from '../../utils/toast';
@@ -30,7 +31,7 @@ const SignupOtpToggle = () => {
   useEffect(() => {
     const token = localStorage.getItem('carryon_token');
     if (!token) { setLoaded(true); return; }
-    axios.get(`${API_URL}/admin/platform-settings`, authHeaders())
+    apiClient.get(`${API_URL}/admin/platform-settings`, authHeaders())
       .then(res => {
         setSignupOtpDisabled(!!res.data?.signup_otp_disabled);
         setLoaded(true);
@@ -49,7 +50,7 @@ const SignupOtpToggle = () => {
     setSignupOtpDisabled(newVal); // optimistic
     setBusy(true);
     try {
-      const res = await axios.put(
+      const res = await apiClient.put(
         `${API_URL}/admin/platform-settings`,
         { signup_otp_disabled: newVal },
         authHeaders(),

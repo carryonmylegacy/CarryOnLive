@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { Heart, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
@@ -35,7 +36,7 @@ const CondolencePage = () => {
     const poll = async () => {
       if (!estateId) return;
       try {
-        const res = await axios.get(`${API_URL}/transition/status/${estateId}`, getAuthHeaders());
+        const res = await apiClient.get(`${API_URL}/transition/status/${estateId}`, getAuthHeaders());
         const cert = res.data.certificate;
         const estateStatus = res.data.estate_status;
 

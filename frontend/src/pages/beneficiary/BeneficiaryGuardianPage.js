@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLabelCleaner } from '../../utils/brandLabel';
@@ -49,7 +50,7 @@ const BeneficiaryGuardianPage = () => {
   const fetchDocs = async (eid) => {
     if (!eid) return;
     try {
-      const res = await axios.get(`${API_URL}/documents/${eid}`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/documents/${eid}`, getAuthHeaders());
       setDocuments(res.data);
     } catch (err) { console.error(err); }
   };
@@ -65,7 +66,7 @@ const BeneficiaryGuardianPage = () => {
         title: 'Beneficiary IAC Checklist',
         subtitle: dateStr,
         blobFetcher: async () => {
-          const res = await axios.post(`${API_URL}/guardian/beneficiary-export-checklist`, {}, {
+          const res = await apiClient.post(`${API_URL}/guardian/beneficiary-export-checklist`, {}, {
             ...getAuthHeaders(), responseType: 'blob', timeout: 120000,
           });
           return new Blob([res.data], { type: 'application/pdf' });
@@ -83,7 +84,7 @@ const BeneficiaryGuardianPage = () => {
     setInput('');
     setLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/chat/guardian`, {
+      const res = await apiClient.post(`${API_URL}/chat/guardian`, {
         message: text,
         session_id: sessionId,
         estate_id: estateId

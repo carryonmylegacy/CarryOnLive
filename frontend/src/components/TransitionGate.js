@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { API_URL } from '../config';
@@ -44,7 +45,7 @@ const TransitionGate = ({ section, allowPreTransition, children }) => {
         // Auto-resolve: fetch estates and pick the single estate (or
         // bounce to the dashboard, which will auto-resolve + render
         // the empty state if there are 0 connections).
-        axios.get(`${API_URL}/estates`, { headers: { Authorization: `Bearer ${token}` } })
+        apiClient.get(`${API_URL}/estates`, { headers: { Authorization: `Bearer ${token}` } })
           .then(res => {
             const beneficiaryEstates = (res.data || []).filter(e => e.user_role_in_estate !== 'owner');
             if (beneficiaryEstates.length === 1) {
@@ -67,7 +68,7 @@ const TransitionGate = ({ section, allowPreTransition, children }) => {
       return;
     }
 
-    axios.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, {
+    apiClient.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { toast } from '../utils/toast';
 import { useAuth } from '../contexts/AuthContext';
 import SecuritySettings from '../components/SecuritySettings';
@@ -58,15 +59,15 @@ const SecuritySettingsPage = () => {
     if (!user) return;
     if (window.PublicKeyCredential) {
       setPasskeySupported(true);
-      axios.get(`${API_URL}/auth/passkeys`, headers)
+      apiClient.get(`${API_URL}/auth/passkeys`, headers)
         .then(res => setPasskeyRegistered((res.data.passkeys || []).length > 0))
         .catch(() => {});
     }
-    axios.get(`${API_URL}/auth/2fa-preference`, headers).then(res => {
+    apiClient.get(`${API_URL}/auth/2fa-preference`, headers).then(res => {
       setUserOtpEnabled(res.data.otp_enabled !== false);
       setGlobalOtpDisabled(res.data.global_disabled || false);
     }).catch(() => {});
-    axios.get(`${API_URL}/auth/sms-otp-status`, headers).then(res => {
+    apiClient.get(`${API_URL}/auth/sms-otp-status`, headers).then(res => {
       setSmsOtpEnabled(res.data.sms_otp_enabled || false);
       setSmsMaskedPhone(res.data.masked_phone || null);
     }).catch(() => {});
@@ -79,18 +80,18 @@ const SecuritySettingsPage = () => {
         // Backend routes are mounted at /auth/webauthn/* (not /auth/passkey/*).
         // Earlier code used the wrong prefix and the toggle returned 404
         // "error not found" — fixed to align with backend/routes/webauthn.py.
-        const optionsRes = await axios.post(`${API_URL}/auth/webauthn/register-options`, {}, headers);
+        const optionsRes = await apiClient.post(`${API_URL}/auth/webauthn/register-options`, {}, headers);
         const { startRegistration } = await import('@simplewebauthn/browser');
         const credential = await startRegistration(optionsRes.data);
         // Backend expects { credential: <obj> }, not the credential blob directly.
-        await axios.post(`${API_URL}/auth/webauthn/register`, { credential }, headers);
+        await apiClient.post(`${API_URL}/auth/webauthn/register`, { credential }, headers);
         setPasskeyRegistered(true);
         toast.success('Passkey registered — saved.');
       } else {
-        const res = await axios.get(`${API_URL}/auth/passkeys`, headers);
+        const res = await apiClient.get(`${API_URL}/auth/passkeys`, headers);
         const passkeys = res.data.passkeys || [];
         if (passkeys.length > 0) {
-          await axios.delete(`${API_URL}/auth/passkeys/${passkeys[0].id}`, headers);
+          await apiClient.delete(`${API_URL}/auth/passkeys/${passkeys[0].id}`, headers);
         }
         setPasskeyRegistered(false);
         toast.success('Passkey removed — saved.');
@@ -205,7 +206,7 @@ const SecuritySettingsPage = () => {
               onCheckedChange={async (checked) => {
                 setOtpToggling(true);
                 try {
-                  await axios.put(`${API_URL}/auth/2fa-preference`, { otp_enabled: checked }, headers);
+                  await apiClient.put(`${API_URL}/auth/2fa-preference`, { otp_enabled: checked }, headers);
                   setUserOtpEnabled(checked);
                   toast.success(checked ? 'Two-factor authentication enabled — saved.' : 'Two-factor authentication disabled — saved.');
                 } catch (err) {
@@ -245,7 +246,7 @@ const SecuritySettingsPage = () => {
                       onClick={async () => {
                         setSmsLoading(true);
                         try {
-                          await axios.delete(`${API_URL}/auth/sms-otp`, headers);
+                          await apiClient.delete(`${API_URL}/auth/sms-otp`, headers);
                           setSmsOtpEnabled(false);
                           setSmsMaskedPhone(null);
                           setSmsSetupStep('idle');
@@ -306,7 +307,7 @@ const SecuritySettingsPage = () => {
                         onClick={async () => {
                           setSmsLoading(true);
                           try {
-                            const res = await axios.post(`${API_URL}/auth/sms-otp-setup`, {
+                            const res = await apiClient.post(`${API_URL}/auth/sms-otp-setup`, {
                               phone_number: smsPhoneInput, sms_consent: smsConsent
                             }, headers);
                             toast.success(res.data.message);
@@ -349,7 +350,7 @@ const SecuritySettingsPage = () => {
                         onClick={async () => {
                           setSmsLoading(true);
                           try {
-                            await axios.post(`${API_URL}/auth/sms-otp-verify`, { otp: smsVerifyCode }, headers);
+                            await apiClient.post(`${API_URL}/auth/sms-otp-verify`, { otp: smsVerifyCode }, headers);
                             setSmsOtpEnabled(true);
                             setSmsSetupStep('idle');
                             setSmsVerifyCode('');

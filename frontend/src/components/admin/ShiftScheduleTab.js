@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Calendar, Plus, ChevronLeft, ChevronRight, Loader2, X, Check, Clock, ArrowLeftRight, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
@@ -59,10 +60,10 @@ export const ShiftScheduleTab = ({ getAuthHeaders }) => {
       const endStr = endDate.toISOString().split('T')[0];
 
       const [shiftsRes, summaryRes, staffRes, swapsRes] = await Promise.all([
-        axios.get(`${API_URL}/ops/shifts?start_date=${weekStart}&end_date=${endStr}`, getAuthHeaders()),
-        axios.get(`${API_URL}/ops/shifts/summary?week_start=${weekStart}`, getAuthHeaders()),
-        isManagerOrAdmin ? axios.get(`${API_URL}/team/staff`, getAuthHeaders()) : Promise.resolve({ data: [] }),
-        axios.get(`${API_URL}/ops/shifts/swap-requests?status_filter=pending`, getAuthHeaders()).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/ops/shifts?start_date=${weekStart}&end_date=${endStr}`, getAuthHeaders()),
+        apiClient.get(`${API_URL}/ops/shifts/summary?week_start=${weekStart}`, getAuthHeaders()),
+        isManagerOrAdmin ? apiClient.get(`${API_URL}/team/staff`, getAuthHeaders()) : Promise.resolve({ data: [] }),
+        apiClient.get(`${API_URL}/ops/shifts/swap-requests?status_filter=pending`, getAuthHeaders()).catch(() => ({ data: [] })),
       ]);
 
       setShifts(shiftsRes.data);
@@ -88,7 +89,7 @@ export const ShiftScheduleTab = ({ getAuthHeaders }) => {
     if (!form.operator_id || !form.date) return toast.error('Select an operator and date');
     setSaving(true);
     try {
-      await axios.post(`${API_URL}/ops/shifts`, form, getAuthHeaders());
+      await apiClient.post(`${API_URL}/ops/shifts`, form, getAuthHeaders());
       toast.success('Shift created');
       setShowForm(false);
       setForm({ operator_id: '', shift_type: 'day', date: '', notes: '' });
@@ -102,7 +103,7 @@ export const ShiftScheduleTab = ({ getAuthHeaders }) => {
 
   const handleStatusUpdate = async (shiftId, status) => {
     try {
-      await axios.put(`${API_URL}/ops/shifts/${shiftId}`, { status }, getAuthHeaders());
+      await apiClient.put(`${API_URL}/ops/shifts/${shiftId}`, { status }, getAuthHeaders());
       toast.success(`Shift ${status}`);
       fetchData();
     } catch {
@@ -112,7 +113,7 @@ export const ShiftScheduleTab = ({ getAuthHeaders }) => {
 
   const handleCancel = async (shiftId) => {
     try {
-      await axios.delete(`${API_URL}/ops/shifts/${shiftId}`, getAuthHeaders());
+      await apiClient.delete(`${API_URL}/ops/shifts/${shiftId}`, getAuthHeaders());
       toast.success('Shift cancelled');
       fetchData();
     } catch {
@@ -124,7 +125,7 @@ export const ShiftScheduleTab = ({ getAuthHeaders }) => {
     if (!swapTarget) return toast.error('Select an operator to swap with');
     setSaving(true);
     try {
-      await axios.post(
+      await apiClient.post(
         `${API_URL}/ops/shifts/swap-requests`,
         { shift_id: shiftId, target_operator_id: swapTarget, reason: swapReason },
         getAuthHeaders()
@@ -143,7 +144,7 @@ export const ShiftScheduleTab = ({ getAuthHeaders }) => {
 
   const handleSwapAction = async (requestId, action) => {
     try {
-      await axios.put(
+      await apiClient.put(
         `${API_URL}/ops/shifts/swap-requests/${requestId}`,
         { action },
         getAuthHeaders()

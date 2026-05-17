@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { FileKey, CheckCircle2, Eye, XCircle, Loader2, AlertTriangle, Search, X, Trash2, EyeOff, RotateCcw } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -33,7 +34,7 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
       const url = isFounder && showDeleted
         ? `${API_URL}/transition/certificates/all?include_deleted=true`
         : `${API_URL}/transition/certificates/all`;
-      const res = await axios.get(url, getAuthHeaders());
+      const res = await apiClient.get(url, getAuthHeaders());
       setCertificates(res.data);
     } catch (err) {
       console.error('Failed to fetch certificates:', err);
@@ -46,7 +47,7 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
   const viewDocument = async (cert) => {
     setDocLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/transition/certificate/${cert.id}/document`, {
+      const res = await apiClient.get(`${API_URL}/transition/certificate/${cert.id}/document`, {
         ...getAuthHeaders(),
         responseType: 'blob',
       });
@@ -69,7 +70,7 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
   const handleBeginReview = async (certId) => {
     setActionLoading(certId);
     try {
-      await axios.post(`${API_URL}/transition/begin-review/${certId}`, {}, getAuthHeaders());
+      await apiClient.post(`${API_URL}/transition/begin-review/${certId}`, {}, getAuthHeaders());
       // toast removed
       fetchCertificates();
     } catch (err) { toast.error('Failed to begin review'); }
@@ -79,7 +80,7 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
   const handleApproveCert = async (certId) => {
     setActionLoading(certId);
     try {
-      await axios.post(`${API_URL}/transition/approve/${certId}`, {}, getAuthHeaders());
+      await apiClient.post(`${API_URL}/transition/approve/${certId}`, {}, getAuthHeaders());
       fetchCertificates();
       if (onStatsChange) onStatsChange();
     } catch (err) { toast.error('Failed to approve'); }
@@ -90,7 +91,7 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
     if (!window.confirm('Reject this death certificate?')) return;
     setActionLoading(certId);
     try {
-      await axios.post(`${API_URL}/transition/reject/${certId}`, {}, getAuthHeaders());
+      await apiClient.post(`${API_URL}/transition/reject/${certId}`, {}, getAuthHeaders());
       fetchCertificates();
       if (onStatsChange) onStatsChange();
     } catch (err) { toast.error('Failed to reject'); }
@@ -103,11 +104,11 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
     try {
       // Always require password — founder gets hard delete (with reversal), operators get soft delete
       if (isFounder) {
-        await axios.delete(`${API_URL}/transition/certificates/${deleteTarget.id}?admin_password=${encodeURIComponent(deletePassword)}`, getAuthHeaders());
+        await apiClient.delete(`${API_URL}/transition/certificates/${deleteTarget.id}?admin_password=${encodeURIComponent(deletePassword)}`, getAuthHeaders());
         toast.success('Certificate permanently deleted — transition reversed');
       } else {
         // Operators: verify password then soft delete
-        await axios.post(`${API_URL}/transition/certificates/${deleteTarget.id}/soft-delete`, { admin_password: deletePassword }, getAuthHeaders());
+        await apiClient.post(`${API_URL}/transition/certificates/${deleteTarget.id}/soft-delete`, { admin_password: deletePassword }, getAuthHeaders());
         toast.success('Certificate deleted');
       }
       setDeleteTarget(null);
@@ -122,7 +123,7 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
   const handleSoftDelete = async (certId) => {
     if (!window.confirm('Delete this certificate?')) return;
     try {
-      await axios.post(`${API_URL}/transition/certificates/${certId}/soft-delete`, {}, getAuthHeaders());
+      await apiClient.post(`${API_URL}/transition/certificates/${certId}/soft-delete`, {}, getAuthHeaders());
       toast.success('Certificate deleted');
       fetchCertificates();
     } catch (err) {
@@ -132,7 +133,7 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
 
   const handleRestore = async (certId) => {
     try {
-      await axios.post(`${API_URL}/transition/certificates/${certId}/restore`, {}, getAuthHeaders());
+      await apiClient.post(`${API_URL}/transition/certificates/${certId}/restore`, {}, getAuthHeaders());
       toast.success('Certificate restored');
       fetchCertificates();
     } catch (err) {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { StickyNote, Plus, Check, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
@@ -22,7 +23,7 @@ export const ShiftNotesTab = ({ getAuthHeaders }) => {
 
   const fetch_ = async () => {
     try {
-      const res = await axios.get(`${API_URL}/ops/shift-notes`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/ops/shift-notes`, getAuthHeaders());
       setNotes(res.data);
     } catch { toast.error('Failed to load shift notes'); }
     finally { setLoading(false); }
@@ -33,7 +34,7 @@ export const ShiftNotesTab = ({ getAuthHeaders }) => {
     if (!form.content.trim()) return toast.error('Note content is required');
     setSaving(true);
     try {
-      await axios.post(`${API_URL}/ops/shift-notes`, form, getAuthHeaders());
+      await apiClient.post(`${API_URL}/ops/shift-notes`, form, getAuthHeaders());
       toast.success('Shift note added');
       setShowForm(false);
       setForm({ content: '', category: 'general' });
@@ -44,7 +45,7 @@ export const ShiftNotesTab = ({ getAuthHeaders }) => {
 
   const handleAcknowledge = async (noteId) => {
     try {
-      await axios.post(`${API_URL}/ops/shift-notes/${noteId}/acknowledge`, {}, getAuthHeaders());
+      await apiClient.post(`${API_URL}/ops/shift-notes/${noteId}/acknowledge`, {}, getAuthHeaders());
       toast.success('Acknowledged');
       fetch_();
     } catch { toast.error('Failed to acknowledge'); }

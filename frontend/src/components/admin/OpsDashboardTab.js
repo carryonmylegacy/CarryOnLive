@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import {
   CheckCircle2, AlertTriangle,
   MessageSquare, Shield, FileKey, Loader2, Crown, Wrench,
@@ -43,7 +44,7 @@ export const OpsDashboardTab = ({ getAuthHeaders }) => {
 
   const fetchDashboard = async () => {
     try {
-      const res = await axios.get(`${API_URL}/ops/dashboard`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/ops/dashboard`, getAuthHeaders());
       setData(res.data);
     } catch (err) {
       toast.error('Failed to load dashboard');

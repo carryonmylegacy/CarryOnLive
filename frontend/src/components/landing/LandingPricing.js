@@ -15,6 +15,7 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Link } from 'react-router-dom';
 import { Check, Loader2, Crown, Star, Shield, Award, Heart, Sparkles, Sun, ChevronDown } from 'lucide-react';
 import { API_URL } from '../../config';
@@ -80,8 +81,8 @@ export default function LandingPricing() {
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      axios.get(`${API_URL}/subscriptions/plans`),
-      axios.get(`${API_URL}/founders-circle/plans`).catch(() => ({ data: { active: false, plans: [] } })),
+      apiClient.get(`${API_URL}/subscriptions/plans`),
+      apiClient.get(`${API_URL}/founders-circle/plans`).catch(() => ({ data: { active: false, plans: [] } })),
     ])
       .then(([plansRes, fcRes]) => {
         if (cancelled) return;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { User, Pencil, Loader2 } from 'lucide-react';
@@ -44,7 +45,7 @@ const PersonalInfoCard = ({ initialEditAddress = false }) => {
       } catch { /* ignore */ }
       if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
       try {
-        const res = await axios.get(`${API_URL}/auth/profile`, getAuthHeaders());
+        const res = await apiClient.get(`${API_URL}/auth/profile`, getAuthHeaders());
         if (cancelled) return;
         setProfileData(res.data || {});
         upsertLocalProfile(res.data || {}).catch(() => {});
@@ -88,7 +89,7 @@ const PersonalInfoCard = ({ initialEditAddress = false }) => {
       return;
     }
     try {
-      await axios.put(`${API_URL}/auth/profile`, payload, getAuthHeaders());
+      await apiClient.put(`${API_URL}/auth/profile`, payload, getAuthHeaders());
       // Refresh local mirror so next cold boot reflects the new values.
       updateLocalProfile(payload).catch(() => {});
       toast.success('Profile updated');

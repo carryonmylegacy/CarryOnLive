@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 
 /**
@@ -25,7 +26,7 @@ export default function PartnerBriefPage() {
 
   useEffect(() => {
     let cancelled = false;
-    axios.get(`${API_URL}/partner-brief`)
+    apiClient.get(`${API_URL}/partner-brief`)
       .then((r) => { if (!cancelled) setContent(r.data?.content || null); })
       .catch((e) => { if (!cancelled) setError(e?.message || 'Failed to load brief'); });
     return () => { cancelled = true; };

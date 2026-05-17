@@ -7,6 +7,7 @@
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
+import apiClient from '../../../utils/apiClient';
 import { notify } from '../../AppNotification';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Lock, Unlock, Map, Printer, LocateFixed } from 'lucide-react';
@@ -104,7 +105,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
         pendingSaveRef.current = null;
         if (p && estateId) {
           try {
-            axios.put(
+            apiClient.put(
               `${API_URL}/financial/entities/${estateId}/layout`,
               { overrides: p.overrides || {} },
               getAuthHeaders(),
@@ -159,12 +160,12 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
     if (!estateId) return;
     try {
       const [r, docResp, meResp, walletResp] = await Promise.all([
-        axios.get(`${API_URL}/financial/entities/${estateId}`, getAuthHeaders()),
-        axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/entities/${estateId}`, getAuthHeaders()),
+        apiClient.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()).catch(() => ({ data: [] })),
         // Re-fetch the user so photo_url is always the freshest from settings,
         // even if the AuthContext has a stale value cached from login.
-        axios.get(`${API_URL}/auth/me`, getAuthHeaders()).catch(() => ({ data: null })),
-        axios.get(`${API_URL}/digital-wallet/${estateId}`, getAuthHeaders()).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/auth/me`, getAuthHeaders()).catch(() => ({ data: null })),
+        apiClient.get(`${API_URL}/digital-wallet/${estateId}`, getAuthHeaders()).catch(() => ({ data: [] })),
       ]);
       setEntities(r.data?.entities || []);
       setExternals(r.data?.external_people || []);
@@ -208,7 +209,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
     const headers = getAuthHeaders();
     try {
       if (node.kind === 'entity') {
-        await axios.delete(`${API_URL}/financial/entities/${node.id}`, headers);
+        await apiClient.delete(`${API_URL}/financial/entities/${node.id}`, headers);
       } else if (node.kind === 'cluster') {
         // Cluster represents N beneficiary→entity relationships for
         // a single entity. Delete every matching relationship in
@@ -220,18 +221,18 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           && r.target_id === entityId
           && r.role === 'beneficiary'
         );
-        await Promise.all(rels.map((r) => axios.delete(
+        await Promise.all(rels.map((r) => apiClient.delete(
           `${API_URL}/financial/entity-relationships/${r.id}`,
           headers,
         )));
       } else if (node.kind === 'beneficiary') {
-        await axios.delete(`${API_URL}/beneficiaries/${node.id}`, headers);
+        await apiClient.delete(`${API_URL}/beneficiaries/${node.id}`, headers);
       } else if (node.kind === 'external_person') {
-        await axios.delete(`${API_URL}/financial/external-people/${node.id}`, headers);
+        await apiClient.delete(`${API_URL}/financial/external-people/${node.id}`, headers);
       } else if (node.kind === 'block') {
         // Soft-deletes the block + cascade-unlinks every entity it
         // was attached to (handled server-side).
-        await axios.delete(`${API_URL}/financial/beneficiary-blocks/${node.id}`, headers);
+        await apiClient.delete(`${API_URL}/financial/beneficiary-blocks/${node.id}`, headers);
       } else {
         // node.kind === 'user' shouldn't reach here — the chart's
         // modal hides the Delete button for the benefactor — but
@@ -646,7 +647,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
               // fire its callback.
               if (!opts.userInitiated) {
                 try {
-                  axios.put(
+                  apiClient.put(
                     `${API_URL}/financial/entities/${estateId}/layout`,
                     { overrides: overrides || {} },
                     getAuthHeaders(),
@@ -669,7 +670,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                   return;
                 }
                 try {
-                  const res = await axios.put(
+                  const res = await apiClient.put(
                     `${API_URL}/financial/entities/${estateId}/layout`,
                     { overrides: pending.overrides || {} },
                     getAuthHeaders(),

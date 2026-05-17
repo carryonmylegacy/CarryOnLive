@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Clock, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
@@ -38,7 +39,7 @@ export const MyActivityTab = ({ getAuthHeaders }) => {
   useEffect(() => {
     const fetch_ = async () => {
       try {
-        const res = await axios.get(`${API_URL}/ops/my-activity?limit=100`, getAuthHeaders());
+        const res = await apiClient.get(`${API_URL}/ops/my-activity?limit=100`, getAuthHeaders());
         setEntries(res.data);
       } catch { toast.error('Failed to load activity'); }
       finally { setLoading(false); }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Shield, ChevronDown, ChevronRight, Pencil, Check, X, ToggleLeft, ToggleRight, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
@@ -21,7 +22,7 @@ export function PlatformRulesTab({ getAuthHeaders }) {
 
   const fetchRules = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/platform-rules`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/admin/platform-rules`, getAuthHeaders());
       setRules(res.data.rules || []);
       setEditable(res.data.editable);
     } catch {
@@ -35,7 +36,7 @@ export function PlatformRulesTab({ getAuthHeaders }) {
 
   const saveRule = async (ruleId, value) => {
     try {
-      const res = await axios.put(`${API_URL}/admin/platform-rules`, { rule_id: ruleId, value }, getAuthHeaders());
+      const res = await apiClient.put(`${API_URL}/admin/platform-rules`, { rule_id: ruleId, value }, getAuthHeaders());
       setRules(res.data.rules || []);
       toast.success('Rule updated');
       setEditingId(null);
@@ -46,7 +47,7 @@ export function PlatformRulesTab({ getAuthHeaders }) {
 
   const saveNarrative = async (ruleId, narrative) => {
     try {
-      const res = await axios.put(`${API_URL}/admin/platform-rules/narrative`, { rule_id: ruleId, narrative }, getAuthHeaders());
+      const res = await apiClient.put(`${API_URL}/admin/platform-rules/narrative`, { rule_id: ruleId, narrative }, getAuthHeaders());
       setRules(res.data.rules || []);
       toast.success('Narrative updated');
       setEditingNarrativeId(null);
@@ -58,7 +59,7 @@ export function PlatformRulesTab({ getAuthHeaders }) {
   const generateSingleNarrative = async (ruleId) => {
     setGenerating(ruleId);
     try {
-      const res = await axios.post(`${API_URL}/admin/platform-rules/generate-narrative`, { rule_id: ruleId }, getAuthHeaders());
+      const res = await apiClient.post(`${API_URL}/admin/platform-rules/generate-narrative`, { rule_id: ruleId }, getAuthHeaders());
       setRules(res.data.rules || []);
       toast.success('Narrative generated');
     } catch (err) {
@@ -73,12 +74,12 @@ export function PlatformRulesTab({ getAuthHeaders }) {
   const generateNarratives = async () => {
     setGenerating(true);
     try {
-      await axios.post(`${API_URL}/admin/platform-rules/generate-narratives`, {}, getAuthHeaders());
+      await apiClient.post(`${API_URL}/admin/platform-rules/generate-narratives`, {}, getAuthHeaders());
       toast.success('Generating narratives... will refresh automatically in 30 seconds.');
       // Poll for completion
       const poll = setInterval(async () => {
         try {
-          const res = await axios.get(`${API_URL}/admin/platform-rules`, getAuthHeaders());
+          const res = await apiClient.get(`${API_URL}/admin/platform-rules`, getAuthHeaders());
           const rules = res.data.rules || [];
           const hasNarratives = rules.some(r => r.narrative);
           if (hasNarratives) {

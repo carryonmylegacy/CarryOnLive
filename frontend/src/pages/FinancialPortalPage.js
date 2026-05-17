@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useAuth, useBrand } from '../contexts/AuthContext';
 import { useLabelCleaner } from '../utils/brandLabel';
 import { cachedGet } from '../utils/apiCache';
@@ -227,16 +228,16 @@ const FinancialPortalPage = () => {
       const eid = est.id;
       saveList(`financial:estate:${eid}`, est);
       const [billsRes, debtsRes, acctsRes, propsRes, summaryRes, bensRes, catBills, catDebts, catAccts, davRes] = await Promise.all([
-        axios.get(`${API_URL}/financial/bills/${eid}`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/financial/debts/${eid}`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/financial/accounts/${eid}`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/financial/property/${eid}`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/financial/summary/${eid}`, { headers }).catch(() => ({ data: null })),
-        axios.get(`${API_URL}/beneficiaries/${eid}`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/financial/categories/${eid}?module=bills`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/financial/categories/${eid}?module=debts`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/financial/categories/${eid}?module=accounts`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/digital-wallet/${eid}`, { headers }).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/bills/${eid}`, { headers }).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/debts/${eid}`, { headers }).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/accounts/${eid}`, { headers }).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/property/${eid}`, { headers }).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/summary/${eid}`, { headers }).catch(() => ({ data: null })),
+        apiClient.get(`${API_URL}/beneficiaries/${eid}`, { headers }).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/categories/${eid}?module=bills`, { headers }).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/categories/${eid}?module=debts`, { headers }).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/categories/${eid}?module=accounts`, { headers }).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/digital-wallet/${eid}`, { headers }).catch(() => ({ data: [] })),
       ]);
       // Empty-response clobber guard on every list — only overwrite if
       // the response has data OR the state was already empty. This way
@@ -286,7 +287,7 @@ const FinancialPortalPage = () => {
     if (!estate?.id) return;
     try {
       const headers = (await getAuthHeaders()).headers;
-      const res = await axios.get(`${API_URL}/financial/summary/${estate.id}`, { headers });
+      const res = await apiClient.get(`${API_URL}/financial/summary/${estate.id}`, { headers });
       if (res.data) setSummary(res.data);
     } catch { /* silent */ }
   };
@@ -415,7 +416,7 @@ const FinancialPortalPage = () => {
         subtitle: estate?.name || '',
         blobFetcher: async () => {
           const headers = getAuthHeaders()?.headers;
-          const res = await axios.get(`${API_URL}/financial/handoff-package/${estate.id}`, {
+          const res = await apiClient.get(`${API_URL}/financial/handoff-package/${estate.id}`, {
             headers,
             responseType: 'blob',
             timeout: 120000,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { Bell, Mail, Loader2, Trash2 } from 'lucide-react';
@@ -26,7 +27,7 @@ const DigestCard = () => {
 
   useEffect(() => {
     if (!user) return;
-    axios.get(`${API_URL}/digest/preferences`, getAuthHeaders()).then(res => {
+    apiClient.get(`${API_URL}/digest/preferences`, getAuthHeaders()).then(res => {
       const prefs = res.data || {};
       setWeeklyDigest(prefs.enabled || false);
       setDigestFrequency(prefs.frequency || 'weekly');
@@ -42,7 +43,7 @@ const DigestCard = () => {
       const payload = { ...updates };
       if (updates.frequency) setDigestFrequency(updates.frequency);
       if (updates.sections) setDigestSections(updates.sections);
-      await axios.put(`${API_URL}/digest/preferences`, payload, getAuthHeaders());
+      await apiClient.put(`${API_URL}/digest/preferences`, payload, getAuthHeaders());
     } catch (e) { toast.error('Failed to update digest preferences'); }
     finally { setDigestSaving(false); }
   }, [getAuthHeaders]);
@@ -50,7 +51,7 @@ const DigestCard = () => {
   const toggleDigest = useCallback(async (checked) => {
     setDigestLoading(true);
     try {
-      await axios.put(`${API_URL}/digest/preferences`, { enabled: checked }, getAuthHeaders());
+      await apiClient.put(`${API_URL}/digest/preferences`, { enabled: checked }, getAuthHeaders());
       setWeeklyDigest(checked);
     } catch (e) { toast.error('Failed to update digest settings'); }
     finally { setDigestLoading(false); }
@@ -62,7 +63,7 @@ const DigestCard = () => {
     setDigestSaving(true);
     try {
       const updated = [...additionalRecipients, email];
-      await axios.put(`${API_URL}/digest/preferences`, { additional_recipients: updated }, getAuthHeaders());
+      await apiClient.put(`${API_URL}/digest/preferences`, { additional_recipients: updated }, getAuthHeaders());
       setAdditionalRecipients(updated);
       setNewRecipientEmail('');
     } catch { toast.error('Failed to add recipient'); }
@@ -73,7 +74,7 @@ const DigestCard = () => {
     setDigestSaving(true);
     try {
       const updated = additionalRecipients.filter(e => e !== email);
-      await axios.put(`${API_URL}/digest/preferences`, { additional_recipients: updated }, getAuthHeaders());
+      await apiClient.put(`${API_URL}/digest/preferences`, { additional_recipients: updated }, getAuthHeaders());
       setAdditionalRecipients(updated);
     } catch { toast.error('Failed to remove recipient'); }
     finally { setDigestSaving(false); }
@@ -231,7 +232,7 @@ const DigestCard = () => {
                 onClick={async () => {
                   setDigestSending(true);
                   try {
-                    await axios.post(`${API_URL}/digest/preview-enhanced`, {}, getAuthHeaders());
+                    await apiClient.post(`${API_URL}/digest/preview-enhanced`, {}, getAuthHeaders());
                     toast.success(`Update sent to ${[user?.email, ...additionalRecipients].filter(Boolean).join(', ')}`);
                   } catch (e) {
                     toast.error('Could not send update');

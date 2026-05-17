@@ -270,7 +270,11 @@ async def get_essential_slots(estate_id: str, current_user: dict = Depends(get_c
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     if not estate:
         raise HTTPException(status_code=404, detail="Estate not found")
-    is_owner = estate.get("user_id") == current_user["id"]
+    # Bug fix (Feb 2026 audit): estate stores `owner_id`, NOT `user_id` —
+    # the prior `estate.get("user_id")` lookup ALWAYS returned None,
+    # silently denying owners access to their own essential slots and
+    # surfacing them only to admins. Now correctly compares owner_id.
+    is_owner = estate.get("owner_id") == current_user["id"]
     is_admin = current_user["role"] == "admin"
     if not (is_owner or is_admin):
         raise HTTPException(status_code=403, detail="Access denied")
@@ -742,6 +746,18 @@ async def remove_document_lock(
 @router.get("/vault/security-info/{estate_id}")
 async def get_vault_security_info(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get encryption and security metadata for the vault."""
+    # Security audit (Feb 2026): previously this endpoint returned vault
+    # metadata for ANY estate_id passed by a logged-in user. Now gated
+    # to estate owner / beneficiary / admin to plug a SOC 2 CC6.1 leak.
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1, "beneficiaries": 1})
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
+    is_owner = estate.get("owner_id") == current_user["id"]
+    is_beneficiary = current_user["id"] in estate.get("beneficiaries", [])
+    is_admin = current_user.get("role") == "admin"
+    if not (is_owner or is_beneficiary or is_admin):
+        raise HTTPException(status_code=403, detail="Access denied")
+
     documents = await db.documents.find(
         {"estate_id": estate_id, "deleted_at": None},
         {

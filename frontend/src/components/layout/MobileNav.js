@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLabelCleaner } from '../../utils/brandLabel';
@@ -1095,7 +1096,7 @@ const MobileNav = () => {
                                       onClick={async (e) => {
                                         e.stopPropagation();
                                         try {
-                                          await axios.put(`${API_URL}/estates/set-primary/${estate.id}`, {}, { headers: { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` } });
+                                          await apiClient.put(`${API_URL}/estates/set-primary/${estate.id}`, {}, { headers: { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` } });
                                           clearCache();
                                           await refreshUser();
                                         } catch {}

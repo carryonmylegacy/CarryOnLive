@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import { API_URL } from '../config';
@@ -11,7 +12,7 @@ export default function BetaWelcomeModal({ onAccepted }) {
   const handleAccept = async () => {
     setAccepting(true);
     try {
-      await axios.post(`${API_URL}/beta/accept`, {}, {
+      await apiClient.post(`${API_URL}/beta/accept`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
       onAccepted();

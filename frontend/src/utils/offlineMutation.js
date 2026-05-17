@@ -25,6 +25,7 @@
  */
 
 import axios from 'axios';
+import apiClient from './apiClient';
 import { API_URL } from '../config';
 import { enqueue as enqueueOutbox } from '../offline/outbox';
 
@@ -64,10 +65,10 @@ export async function mutateWithOutbox({
     const fullUrl = url.startsWith('http') ? url : `${API_URL}${url}`;
     const cfg = { ...(authHeaders || {}) };
     let res;
-    if (method === 'POST') res = await axios.post(fullUrl, body, cfg);
-    else if (method === 'PUT') res = await axios.put(fullUrl, body, cfg);
-    else if (method === 'PATCH') res = await axios.patch(fullUrl, body, cfg);
-    else if (method === 'DELETE') res = await axios.delete(fullUrl, cfg);
+    if (method === 'POST') res = await apiClient.post(fullUrl, body, cfg);
+    else if (method === 'PUT') res = await apiClient.put(fullUrl, body, cfg);
+    else if (method === 'PATCH') res = await apiClient.patch(fullUrl, body, cfg);
+    else if (method === 'DELETE') res = await apiClient.delete(fullUrl, cfg);
     else throw new Error(`Unsupported method ${method}`);
     return { ok: true, queued: false, data: res.data, status: res.status };
   } catch (err) {

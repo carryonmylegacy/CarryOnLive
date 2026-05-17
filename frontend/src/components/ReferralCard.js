@@ -7,6 +7,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { Copy, Share2, Check, Gift, Loader2 } from 'lucide-react';
 import { API_URL } from '../config';
 import { recordFunnelEvent } from '../utils/funnelTelemetry';

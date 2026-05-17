@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { ToggleLeft, Users, DollarSign, Loader2, Search, Plus, Trash2, Copy, Check, Briefcase, RotateCcw, Percent, Crown, Pencil, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -36,9 +37,9 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
   const fetchData = async () => {
     try {
       const [settingsRes, usersRes, codesRes] = await Promise.all([
-        axios.get(`${API_URL}/admin/subscription-settings`, { headers }),
-        axios.get(`${API_URL}/admin/user-subscriptions`, { headers }),
-        axios.get(`${API_URL}/admin/b2b-codes`, { headers }).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/admin/subscription-settings`, { headers }),
+        apiClient.get(`${API_URL}/admin/user-subscriptions`, { headers }),
+        apiClient.get(`${API_URL}/admin/b2b-codes`, { headers }).catch(() => ({ data: [] })),
       ]);
       setSettings(settingsRes.data);
       setUserSubs(usersRes.data);
@@ -49,7 +50,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
 
   const toggleBeta = async () => {
     try {
-      await axios.put(`${API_URL}/admin/subscription-settings`, { beta_mode: !settings.beta_mode }, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      await apiClient.put(`${API_URL}/admin/subscription-settings`, { beta_mode: !settings.beta_mode }, { headers: { ...headers, 'Content-Type': 'application/json' } });
       // toast removed
       fetchData();
     } catch (err) { toast.error('Failed to update'); }
@@ -59,7 +60,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
     try {
       const formData = new FormData();
       formData.append('price', parseFloat(newPrice));
-      await axios.put(`${API_URL}/admin/plans/${planId}/price`, formData, { headers });
+      await apiClient.put(`${API_URL}/admin/plans/${planId}/price`, formData, { headers });
       // toast removed
       setEditingPrice(null);
       fetchData();
@@ -68,7 +69,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
 
   const updateUserOverride = async (userId, data) => {
     try {
-      await axios.put(`${API_URL}/admin/user-subscription/${userId}`, data, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      await apiClient.put(`${API_URL}/admin/user-subscription/${userId}`, data, { headers: { ...headers, 'Content-Type': 'application/json' } });
       fetchData();
     } catch (err) { toast.error('Failed to update'); }
   };
@@ -76,7 +77,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
   const createB2bCode = async () => {
     if (!newCodeForm.code.trim()) { toast.error('Code is required'); return; }
     try {
-      await axios.post(`${API_URL}/admin/b2b-codes`, newCodeForm, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      await apiClient.post(`${API_URL}/admin/b2b-codes`, newCodeForm, { headers: { ...headers, 'Content-Type': 'application/json' } });
       setShowNewCode(false);
       setNewCodeForm({ code: '', partner_name: '', discount_percent: 100, max_uses: 0 });
       fetchData();
@@ -85,7 +86,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
 
   const toggleB2bCode = async (codeId, active) => {
     try {
-      await axios.put(`${API_URL}/admin/b2b-codes/${codeId}`, { active }, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      await apiClient.put(`${API_URL}/admin/b2b-codes/${codeId}`, { active }, { headers: { ...headers, 'Content-Type': 'application/json' } });
       fetchData();
     } catch (err) { toast.error('Failed to update'); }
   };
@@ -93,7 +94,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
   const deleteB2bCode = async (codeId) => {
     if (!window.confirm('Delete this B2B code?')) return;
     try {
-      await axios.delete(`${API_URL}/admin/b2b-codes/${codeId}`, { headers });
+      await apiClient.delete(`${API_URL}/admin/b2b-codes/${codeId}`, { headers });
       fetchData();
     } catch (err) { toast.error('Failed to delete'); }
   };
@@ -108,7 +109,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
     try {
       const val = parseFloat(familyDiscountValue);
       if (isNaN(val) || val < 0 || val > 100) { toast.error('Discount must be 0-100%'); return; }
-      await axios.put(`${API_URL}/admin/family-discount-settings`, { [field]: val }, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      await apiClient.put(`${API_URL}/admin/family-discount-settings`, { [field]: val }, { headers: { ...headers, 'Content-Type': 'application/json' } });
       setEditingFamilyDiscount(null);
       fetchData();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update'); }
@@ -124,7 +125,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
     if (!window.confirm(`${modeLabel} for ${userEmail}?\n\nThis will:\n- Delete all subscription records\n- Delete Apple IAP transactions\n- Delete payment history\n- Remove free access / discounts\n- Clear beta acceptance${extraNote}\n\nThis action cannot be undone.`)) return;
     setResettingUser(userId);
     try {
-      const res = await axios.post(`${API_URL}/admin/reset-subscription/${userId}`, 
+      const res = await apiClient.post(`${API_URL}/admin/reset-subscription/${userId}`, 
         { expire_trial: expireTrial }, 
         { headers: { ...headers, 'Content-Type': 'application/json' } });
       toast.success(res.data.message || 'Subscription reset');
@@ -204,7 +205,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
                 checked={settings?.family_plan_enabled || false}
                 onCheckedChange={async () => {
                   try {
-                    await axios.put(`${API_URL}/admin/family-plan-settings`, {}, { headers });
+                    await apiClient.put(`${API_URL}/admin/family-plan-settings`, {}, { headers });
                     fetchData();
                   } catch (err) { toast.error('Failed to update'); }
                 }}
@@ -337,7 +338,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
                         try {
                           const formData = new FormData();
                           formData.append('price', parseFloat(newPrice));
-                          await axios.put(`${API_URL}/admin/beneficiary-plans/${plan.id}/price`, formData, { headers });
+                          await apiClient.put(`${API_URL}/admin/beneficiary-plans/${plan.id}/price`, formData, { headers });
                           setEditingPrice(null);
                           fetchData();
                         } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update'); }
@@ -560,8 +561,8 @@ function FCPricingCard({ headers }) {
     const load = async () => {
       try {
         const [plansRes, subsRes] = await Promise.all([
-          axios.get(`${API_URL}/founders-circle/plans`),
-          axios.get(`${API_URL}/admin/founders-circle/subscriptions`, { headers }),
+          apiClient.get(`${API_URL}/founders-circle/plans`),
+          apiClient.get(`${API_URL}/admin/founders-circle/subscriptions`, { headers }),
         ]);
         setActive(plansRes.data.active);
         setPlans(plansRes.data.plans || []);
@@ -575,11 +576,11 @@ function FCPricingCard({ headers }) {
     const price = parseInt(editPrice);
     if (isNaN(price) || price < 0) { toast.error('Invalid price'); return; }
     try {
-      await axios.put(`${API_URL}/admin/founders-circle/pricing`, { tier, lifetime_price: price }, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      await apiClient.put(`${API_URL}/admin/founders-circle/pricing`, { tier, lifetime_price: price }, { headers: { ...headers, 'Content-Type': 'application/json' } });
       toast.success('Lifetime price updated');
       setEditingTier(null);
       // Refresh plans
-      const res = await axios.get(`${API_URL}/founders-circle/plans`);
+      const res = await apiClient.get(`${API_URL}/founders-circle/plans`);
       setPlans(res.data.plans || []);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Update failed');
@@ -596,11 +597,11 @@ function FCPricingCard({ headers }) {
       return;
     }
     try {
-      const res = await axios.delete(`${API_URL}/admin/founders-circle/subscriptions/pending`, { headers });
+      const res = await apiClient.delete(`${API_URL}/admin/founders-circle/subscriptions/pending`, { headers });
       const deleted = res?.data?.deleted ?? 0;
       toast.success(`Cleared ${deleted} pending row${deleted === 1 ? '' : 's'}.`);
       // Refresh in-place
-      const refreshed = await axios.get(`${API_URL}/admin/founders-circle/subscriptions`, { headers });
+      const refreshed = await apiClient.get(`${API_URL}/admin/founders-circle/subscriptions`, { headers });
       setFcSubs(refreshed.data.subscriptions || []);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to clear pending rows');

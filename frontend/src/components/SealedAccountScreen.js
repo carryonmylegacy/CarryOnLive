@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { Shield, Phone, Mail, MessageSquare, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
 import { API_URL } from '../config';
@@ -19,7 +20,7 @@ const SealedAccountScreen = ({ transitionedAt, onBack }) => {
 
   useEffect(() => {
     // Fetch P1 contact settings (public — no auth needed for this critical safety feature)
-    axios.get(`${API_URL}/founder/p1-contact-settings-public`)
+    apiClient.get(`${API_URL}/founder/p1-contact-settings-public`)
       .then(res => setP1Contact(res.data))
       .catch(() => {});
   }, []);

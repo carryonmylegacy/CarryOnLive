@@ -20,6 +20,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Switch } from '../ui/switch';
@@ -72,7 +73,7 @@ export default function OfflineAccessCard() {
       // so a credential that was revoked from another device drops to
       // OFF here even if the local row is stale.
       try {
-        const res = await axios.get(`${API_URL}/auth/offline/status`, getAuthHeaders());
+        const res = await apiClient.get(`${API_URL}/auth/offline/status`, getAuthHeaders());
         setEnrolled(Boolean(res.data?.enrolled && local));
       } catch {
         // Server unreachable despite navigator saying we're online
@@ -97,7 +98,7 @@ export default function OfflineAccessCard() {
     if (!password) return;
     setEnrolling(true);
     try {
-      const res = await axios.post(`${API_URL}/auth/offline/enroll`, {}, getAuthHeaders());
+      const res = await apiClient.post(`${API_URL}/auth/offline/enroll`, {}, getAuthHeaders());
       const { credential_id: credentialId, token, salt } = res.data;
       const identifier = (user?.email || user?.username || '').toLowerCase();
       await saveOfflineCredential({ identifier, password, credentialId, token, salt, user });
@@ -115,7 +116,7 @@ export default function OfflineAccessCard() {
   const handleDisable = async () => {
     if (!window.confirm('Turn off offline access? You will need an internet connection to sign in on this device.')) return;
     try {
-      await axios.post(`${API_URL}/auth/offline/revoke`, {}, getAuthHeaders());
+      await apiClient.post(`${API_URL}/auth/offline/revoke`, {}, getAuthHeaders());
       await clearAllOfflineCredentials();
       setEnrolled(false);
       toast.success('Offline access disabled.');

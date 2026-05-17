@@ -11,6 +11,7 @@ import {
   ChevronLeft, Loader2, Trash2, Plus, Edit2, Users, X,
 } from 'lucide-react';
 import axios from 'axios';
+import apiClient from '../../../utils/apiClient';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useLabelCleaner } from '../../../utils/brandLabel';
 import { Button } from '../../ui/button';
@@ -189,7 +190,7 @@ export default function EntityDetailPanel({
     if (!ent || saving) return;
     setSaving(true);
     try {
-      await axios.patch(`${API_URL}/financial/entities/${ent.id}`, {
+      await apiClient.patch(`${API_URL}/financial/entities/${ent.id}`, {
         name: name.trim() || ent.name,
         formation_state: state || null,
         notes: notes.trim() || null,
@@ -217,7 +218,7 @@ export default function EntityDetailPanel({
     if (!isExternal || saving) return;
     setSaving(true);
     try {
-      await axios.patch(`${API_URL}/financial/external-people/${node.id}`, {
+      await apiClient.patch(`${API_URL}/financial/external-people/${node.id}`, {
         first_name: extFirst.trim() || 'Person',
         last_name: extLast.trim() || null,
         notes: extNotes.trim() || null,
@@ -238,7 +239,7 @@ export default function EntityDetailPanel({
       message: `Delete "${ent.name}"? This will also remove all of its connections.`,
       action: async () => {
         try {
-          await axios.delete(`${API_URL}/financial/entities/${ent.id}`, getAuthHeaders());
+          await apiClient.delete(`${API_URL}/financial/entities/${ent.id}`, getAuthHeaders());
           toast.success('Deleted.');
           onClose?.();
           onChanged?.();
@@ -255,7 +256,7 @@ export default function EntityDetailPanel({
       message: 'Remove this outside person? Their connections will be removed too.',
       action: async () => {
         try {
-          await axios.delete(`${API_URL}/financial/external-people/${node.id}`, getAuthHeaders());
+          await apiClient.delete(`${API_URL}/financial/external-people/${node.id}`, getAuthHeaders());
           toast.success('Removed.');
           onClose?.();
           onChanged?.();
@@ -271,7 +272,7 @@ export default function EntityDetailPanel({
       message: 'Remove this connection?',
       action: async () => {
         try {
-          await axios.delete(`${API_URL}/financial/entity-relationships/${rel.id}`, getAuthHeaders());
+          await apiClient.delete(`${API_URL}/financial/entity-relationships/${rel.id}`, getAuthHeaders());
           toast.success('Connection removed.');
           onChanged?.();
         } catch (err) {
@@ -287,7 +288,7 @@ export default function EntityDetailPanel({
     const showPct = isEquityRole(newRole);
     setSaving(true);
     try {
-      await axios.post(`${API_URL}/financial/entity-relationships`, {
+      await apiClient.post(`${API_URL}/financial/entity-relationships`, {
         estate_id: ent.estate_id,
         source_id: src_id,
         source_type: src_type,
@@ -321,7 +322,7 @@ export default function EntityDetailPanel({
       // PATH A — user picked an EXISTING named block from the
       // dropdown. One POST: attach that block to this entity.
       if (bulkPickExistingId) {
-        await axios.post(
+        await apiClient.post(
           `${API_URL}/financial/entity-relationships`,
           {
             estate_id: ent.estate_id,
@@ -355,7 +356,7 @@ export default function EntityDetailPanel({
       if (existingIds.length === 0 && bulkNewPeople.length === 0 && !bulkIncludeBenefactor) return;
 
       // 0) Quick-add new people first so we have their IDs.
-      const createdExternals = await Promise.all(bulkNewPeople.map((p) => axios.post(
+      const createdExternals = await Promise.all(bulkNewPeople.map((p) => apiClient.post(
         `${API_URL}/financial/external-people`,
         {
           estate_id: ent.estate_id,
@@ -380,14 +381,14 @@ export default function EntityDetailPanel({
       ];
 
       // 3) Create the block, then attach it to this entity.
-      const created = await axios.post(
+      const created = await apiClient.post(
         `${API_URL}/financial/beneficiary-blocks`,
         { estate_id: ent.estate_id, name: blockName, members },
         headers,
       );
       const blockId = created.data?.id;
       if (!blockId) throw new Error('Block create did not return id');
-      await axios.post(
+      await apiClient.post(
         `${API_URL}/financial/entity-relationships`,
         {
           estate_id: ent.estate_id,

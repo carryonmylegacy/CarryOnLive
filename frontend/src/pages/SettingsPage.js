@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { toast } from '../utils/toast';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocalStorageBoolean } from '../hooks/useLocalStorageBoolean';
@@ -49,13 +50,13 @@ const SettingsPage = () => {
     if (isStaff) {
       setSettingsReady(true);
     } else {
-      axios.get(`${API_URL}/estates`, getAuthHeaders())
+      apiClient.get(`${API_URL}/estates`, getAuthHeaders())
         .then(() => setSettingsReady(true))
         .catch(() => setSettingsReady(true)); // Still show the page even if estate fetch fails
     }
     // Fetch onboarding dismiss state
     if (!isStaff) {
-      axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders())
+      apiClient.get(`${API_URL}/onboarding/progress`, getAuthHeaders())
         .then(r => setGuideHidden(!!r.data?.manually_dismissed))
         .catch(() => {});
     }
@@ -205,7 +206,7 @@ const SettingsPage = () => {
                 checked={!user?.hide_benefactor_reminder}
                 onCheckedChange={async (checked) => {
                   try {
-                    await axios.put(`${API_URL}/auth/profile`, { hide_benefactor_reminder: !checked }, {
+                    await apiClient.put(`${API_URL}/auth/profile`, { hide_benefactor_reminder: !checked }, {
                       headers: { Authorization: `Bearer ${token}` },
                     });
                     // Refresh AuthContext state in place — no full page reload.

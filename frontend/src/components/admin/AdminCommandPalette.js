@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import {
   Command,
   CommandInput,
@@ -57,7 +58,7 @@ export function AdminCommandPalette({ tabs = [], operatorMode = false }) {
     debounceRef.current = setTimeout(async () => {
       setLoadingUsers(true);
       try {
-        const res = await axios.get(
+        const res = await apiClient.get(
           `${API_URL}/admin/users/search`,
           { ...getAuthHeaders(), params: { q: query.trim(), limit: 8 } }
         );
@@ -65,7 +66,7 @@ export function AdminCommandPalette({ tabs = [], operatorMode = false }) {
       } catch {
         // Fallback: fetch all users once and filter client-side
         try {
-          const res = await axios.get(`${API_URL}/admin/users`, getAuthHeaders());
+          const res = await apiClient.get(`${API_URL}/admin/users`, getAuthHeaders());
           const q = query.toLowerCase();
           const filtered = (res.data || [])
             .filter(u => {

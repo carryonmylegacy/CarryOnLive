@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { Link } from 'react-router-dom';
 import { Crown, Sparkles, Quote, ArrowRight } from 'lucide-react';
 import { API_URL } from '../config';
@@ -49,7 +50,7 @@ export default function VoicesPage() {
         }
       }
       try {
-        const res = await axios.get(`${API_URL}/share-cards/voices/public`);
+        const res = await apiClient.get(`${API_URL}/share-cards/voices/public`);
         const list = res.data?.items || [];
         if (!cancelled) setItems(list);
         upsertLocalVoices(list).catch(() => {});

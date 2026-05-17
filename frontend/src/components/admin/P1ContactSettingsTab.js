@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Phone, Mail, MessageSquare, Save, Loader2, AlertTriangle } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -17,7 +18,7 @@ export const P1ContactSettingsTab = ({ getAuthHeaders }) => {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const res = await axios.get(`${API_URL}/founder/p1-contact-settings`, getAuthHeaders());
+        const res = await apiClient.get(`${API_URL}/founder/p1-contact-settings`, getAuthHeaders());
         setSettings(res.data);
       } catch {}
       finally { setLoading(false); }
@@ -28,7 +29,7 @@ export const P1ContactSettingsTab = ({ getAuthHeaders }) => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await axios.put(`${API_URL}/founder/p1-contact-settings`, settings, getAuthHeaders());
+      await apiClient.put(`${API_URL}/founder/p1-contact-settings`, settings, getAuthHeaders());
       toast.success('Priority 1 contact settings updated');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to save');

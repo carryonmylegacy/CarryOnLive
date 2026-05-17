@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLabelCleaner } from '../../utils/brandLabel';
 import { MessageSquare, ChevronLeft, Heart, Play } from 'lucide-react';
@@ -36,7 +37,7 @@ const BeneficiaryMessagesPage = () => {
       return;
     }
     try {
-      const res = await axios.get(`${API_URL}/messages/${estateId}`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/messages/${estateId}`, getAuthHeaders());
       setMessages(res.data);
       cacheBenSection(estateId, 'messages', res.data || []);
     } catch (err) { console.error(err); }
@@ -123,7 +124,7 @@ const BeneficiaryMessagesPage = () => {
                       }
                       setVideoLoading(true);
                       try {
-                        const res = await axios.get(`${API_URL}/messages/video/${m.video_url}`, { ...getAuthHeaders(), responseType: 'blob' });
+                        const res = await apiClient.get(`${API_URL}/messages/video/${m.video_url}`, { ...getAuthHeaders(), responseType: 'blob' });
                         setVideoBlobUrl(URL.createObjectURL(res.data));
                       } catch { /* silent */ }
                       finally { setVideoLoading(false); }

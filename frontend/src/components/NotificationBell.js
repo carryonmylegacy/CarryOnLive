@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { Bell, CheckCheck, X } from 'lucide-react';
 import { API_URL } from '../config';
 import { syncBadge } from '../utils/pwaBadge';
@@ -21,7 +22,7 @@ const NotificationBell = ({ collapsed }) => {
     if (!token) return;
     const fetchCount = async () => {
       try {
-        const res = await axios.get(`${API_URL}/notifications/unread-count`, { headers });
+        const res = await apiClient.get(`${API_URL}/notifications/unread-count`, { headers });
         const count = res.data.unread_count;
         setUnreadCount(count);
         syncBadge(count);
@@ -40,7 +41,7 @@ const NotificationBell = ({ collapsed }) => {
   const fetchNotifications = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/notifications?limit=20`, { headers });
+      const res = await apiClient.get(`${API_URL}/notifications?limit=20`, { headers });
       setNotifications(res.data.notifications);
       const count = res.data.unread_count;
       setUnreadCount(count);
@@ -63,7 +64,7 @@ const NotificationBell = ({ collapsed }) => {
 
   const markRead = async (id) => {
     try {
-      await axios.post(`${API_URL}/notifications/${id}/read`, {}, { headers });
+      await apiClient.post(`${API_URL}/notifications/${id}/read`, {}, { headers });
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
       setUnreadCount(prev => {
         const next = Math.max(0, prev - 1);
@@ -75,7 +76,7 @@ const NotificationBell = ({ collapsed }) => {
 
   const markAllRead = async () => {
     try {
-      await axios.post(`${API_URL}/notifications/read-all`, {}, { headers });
+      await apiClient.post(`${API_URL}/notifications/read-all`, {}, { headers });
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
       syncBadge(0);

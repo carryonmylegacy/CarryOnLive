@@ -3,6 +3,7 @@ import { Bell, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from '../utils/toast';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 
 // Detect if running as installed PWA (Home Screen)
@@ -51,7 +52,7 @@ const PushPrompt = ({ getAuthHeaders }) => {
               if (sw.state === 'activated') { clearTimeout(t); resolve(); }
             });
           }
-          const vapidRes = await axios.get(`${API_URL}/push/vapid-public-key`);
+          const vapidRes = await apiClient.get(`${API_URL}/push/vapid-public-key`);
           const vapidPublicKey = vapidRes.data.public_key;
           const padding = '='.repeat((4 - (vapidPublicKey.length % 4)) % 4);
           const base64 = (vapidPublicKey + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -63,7 +64,7 @@ const PushPrompt = ({ getAuthHeaders }) => {
             applicationServerKey: outputArray,
           });
           const subJson = subscription.toJSON();
-          await axios.post(`${API_URL}/push/subscribe`, {
+          await apiClient.post(`${API_URL}/push/subscribe`, {
             endpoint: subJson.endpoint,
             keys: subJson.keys,
           }, getAuthHeaders());
@@ -136,7 +137,7 @@ const PushPrompt = ({ getAuthHeaders }) => {
         });
       }
 
-      const vapidRes = await axios.get(`${API_URL}/push/vapid-public-key`);
+      const vapidRes = await apiClient.get(`${API_URL}/push/vapid-public-key`);
       if (!vapidRes.data?.public_key) throw new Error('VAPID key missing');
       const vapidPublicKey = vapidRes.data.public_key;
 
@@ -153,7 +154,7 @@ const PushPrompt = ({ getAuthHeaders }) => {
       });
 
       const subJson = subscription.toJSON();
-      await axios.post(`${API_URL}/push/subscribe`, {
+      await apiClient.post(`${API_URL}/push/subscribe`, {
         endpoint: subJson.endpoint,
         keys: subJson.keys,
       }, getAuthHeaders());

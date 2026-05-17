@@ -35,6 +35,7 @@
  */
 
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { getDB } from './db';
 import { isOfflineEnabled, getOfflineMode } from './featureFlag';
 import { API_URL } from '../config';

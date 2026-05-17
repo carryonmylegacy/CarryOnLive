@@ -9,6 +9,7 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { toast } from '../../utils/toast';
 import { Plus, Trash2, Save, Mail, AlertTriangle, Calendar, Check, Pencil } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -36,8 +37,8 @@ export function HouseholdRosterPanel({ estateId, onDirty }) {
     (async () => {
       try {
         const [benefRes, hhRes] = await Promise.all([
-          axios.get(`${API_URL}/beneficiaries/${estateId}`, auth()),
-          axios.get(`${API_URL}/ccp/household/${estateId}`, auth()),
+          apiClient.get(`${API_URL}/beneficiaries/${estateId}`, auth()),
+          apiClient.get(`${API_URL}/ccp/household/${estateId}`, auth()),
         ]);
         if (cancelled) return;
         setBenefs(benefRes.data || []);
@@ -58,7 +59,7 @@ export function HouseholdRosterPanel({ estateId, onDirty }) {
   const save = async () => {
     setSaving(true);
     try {
-      await axios.put(
+      await apiClient.put(
         `${API_URL}/ccp/household/${estateId}`,
         { beneficiary_ids: selectedIds },
         auth(),
@@ -189,7 +190,7 @@ export function GoBagPanel({ estateId, onDirty }) {
 
   useEffect(() => {
     if (!estateId) return;
-    axios.get(`${API_URL}/ccp/go-bag/${estateId}`, auth())
+    apiClient.get(`${API_URL}/ccp/go-bag/${estateId}`, auth())
       .then(r => setItems(r.data.items || []))
       .catch(() => {});
   }, [estateId]);
@@ -208,7 +209,7 @@ export function GoBagPanel({ estateId, onDirty }) {
     setSaving(true);
     try {
       const clean = next.filter(i => i.name?.trim());
-      await axios.put(`${API_URL}/ccp/go-bag/${estateId}`, clean, auth());
+      await apiClient.put(`${API_URL}/ccp/go-bag/${estateId}`, clean, auth());
       setItems(clean);
       onDirty?.();
       return true;
@@ -459,7 +460,7 @@ export function RendezvousPanel({ estateId, onDirty }) {
 
   useEffect(() => {
     if (!estateId) return;
-    axios.get(`${API_URL}/ccp/rendezvous/${estateId}`, auth())
+    apiClient.get(`${API_URL}/ccp/rendezvous/${estateId}`, auth())
       .then(r => setData(r.data || {}))
       .catch(() => {});
   }, [estateId]);
@@ -469,7 +470,7 @@ export function RendezvousPanel({ estateId, onDirty }) {
   const save = async () => {
     setSaving(true);
     try {
-      await axios.put(`${API_URL}/ccp/rendezvous/${estateId}`, data, auth());
+      await apiClient.put(`${API_URL}/ccp/rendezvous/${estateId}`, data, auth());
       toast.success('Meetup points saved');
       onDirty?.();
     } catch (e) {
@@ -516,7 +517,7 @@ export function OutOfAreaPanel({ estateId, onDirty }) {
 
   useEffect(() => {
     if (!estateId) return;
-    axios.get(`${API_URL}/ccp/out-of-area/${estateId}`, auth())
+    apiClient.get(`${API_URL}/ccp/out-of-area/${estateId}`, auth())
       .then(r => setData(r.data || {}))
       .catch(() => {});
   }, [estateId]);
@@ -526,7 +527,7 @@ export function OutOfAreaPanel({ estateId, onDirty }) {
   const save = async () => {
     setSaving(true);
     try {
-      await axios.put(`${API_URL}/ccp/out-of-area/${estateId}`, data, auth());
+      await apiClient.put(`${API_URL}/ccp/out-of-area/${estateId}`, data, auth());
       toast.success('Out-of-area contact saved');
       onDirty?.();
     } catch (e) {
@@ -573,7 +574,7 @@ export function DrillPanel({ estateId, plans, onDone }) {
 
   useEffect(() => {
     if (!estateId) return;
-    axios.get(`${API_URL}/ccp/drill/history/${estateId}`, auth())
+    apiClient.get(`${API_URL}/ccp/drill/history/${estateId}`, auth())
       .then(r => setHistory(r.data || []))
       .catch(() => {});
   }, [estateId]);
@@ -584,7 +585,7 @@ export function DrillPanel({ estateId, plans, onDone }) {
     setSending(true);
     try {
       const plan = plans?.find(p => p.id === planId);
-      const res = await axios.post(`${API_URL}/ccp/drill/run`, {
+      const res = await apiClient.post(`${API_URL}/ccp/drill/run`, {
         estate_id: estateId,
         plan_id: planId || null,
         plan_name: plan?.name || 'Your CarryOn plan',
@@ -595,7 +596,7 @@ export function DrillPanel({ estateId, plans, onDone }) {
       toast.success(`Drill sent to ${sent}/${list.length} recipients`);
       setEmails(''); setNote('');
       // refresh history
-      const h = await axios.get(`${API_URL}/ccp/drill/history/${estateId}`, auth());
+      const h = await apiClient.get(`${API_URL}/ccp/drill/history/${estateId}`, auth());
       setHistory(h.data || []);
       onDone?.();
     } catch (e) {
@@ -672,7 +673,7 @@ export function ActivationPanel({ estateId, plans, rendezvous, onDone }) {
 
   useEffect(() => {
     if (!estateId) return;
-    axios.get(`${API_URL}/ccp/activations/${estateId}`, auth())
+    apiClient.get(`${API_URL}/ccp/activations/${estateId}`, auth())
       .then(r => setRecent((r.data || []).find(a => !a.ended_at) || null))
       .catch(() => {});
   }, [estateId]);
@@ -685,7 +686,7 @@ export function ActivationPanel({ estateId, plans, rendezvous, onDone }) {
     if (!window.confirm('This sends a REAL activation email — not a drill. Proceed?')) return;
     setActivating(true);
     try {
-      const res = await axios.post(`${API_URL}/ccp/activation/start`, {
+      const res = await apiClient.post(`${API_URL}/ccp/activation/start`, {
         estate_id: estateId,
         plan_id: planId,
         plan_name: plan.name,
@@ -696,7 +697,7 @@ export function ActivationPanel({ estateId, plans, rendezvous, onDone }) {
       }, auth());
       const sent = res.data.results.filter(r => r.sent).length;
       toast.success(`Activation sent to ${sent}/${list.length} — track status below`);
-      const r = await axios.get(`${API_URL}/ccp/activations/${estateId}`, auth());
+      const r = await apiClient.get(`${API_URL}/ccp/activations/${estateId}`, auth());
       setRecent((r.data || []).find(a => !a.ended_at) || null);
       onDone?.();
     } catch (e) {
@@ -708,7 +709,7 @@ export function ActivationPanel({ estateId, plans, rendezvous, onDone }) {
     if (!recent) return;
     if (!window.confirm('End this activation? Recipients will be marked accounted for.')) return;
     try {
-      await axios.post(`${API_URL}/ccp/activation/end/${recent.id}`, {}, auth());
+      await apiClient.post(`${API_URL}/ccp/activation/end/${recent.id}`, {}, auth());
       toast.success('Activation closed');
       setRecent(null);
       onDone?.();

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import {
   Loader2, RefreshCw, TrendingUp, Users as UsersIcon,
   MousePointerClick, CreditCard, Apple, Smartphone, Monitor, Tablet,
@@ -52,7 +53,7 @@ export const ProductAnalyticsTab = () => {
   const fetchData = useCallback(async (d) => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/admin/funnel-analytics?days=${d}`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/admin/funnel-analytics?days=${d}`, getAuthHeaders());
       setData(res.data);
     } catch {
       toast.error('Failed to load analytics');

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { AlertTriangle, Plus, Loader2, Undo2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
@@ -30,7 +31,7 @@ export const EscalationsTab = ({ getAuthHeaders, isFounder = false, isManager = 
   const fetch_ = async () => {
     try {
       const url = filter ? `${API_URL}/ops/escalations?status=${filter}` : `${API_URL}/ops/escalations`;
-      const res = await axios.get(url, getAuthHeaders());
+      const res = await apiClient.get(url, getAuthHeaders());
       setItems(res.data);
     } catch { toast.error('Failed to load escalations'); }
     finally { setLoading(false); }
@@ -41,7 +42,7 @@ export const EscalationsTab = ({ getAuthHeaders, isFounder = false, isManager = 
     if (!form.subject.trim() || !form.description.trim()) return toast.error('Subject and description required');
     setSaving(true);
     try {
-      await axios.post(`${API_URL}/ops/escalations`, form, getAuthHeaders());
+      await apiClient.post(`${API_URL}/ops/escalations`, form, getAuthHeaders());
       toast.success('Escalation submitted');
       setShowForm(false);
       setForm({ subject: '', description: '', priority: 'normal', related_type: '', related_id: '' });
@@ -53,7 +54,7 @@ export const EscalationsTab = ({ getAuthHeaders, isFounder = false, isManager = 
   const handleResolve = async () => {
     if (!resolveNote.trim()) return toast.error('Resolution note required');
     try {
-      await axios.put(`${API_URL}/ops/escalations/${resolveId}/resolve`, { resolution_note: resolveNote }, getAuthHeaders());
+      await apiClient.put(`${API_URL}/ops/escalations/${resolveId}/resolve`, { resolution_note: resolveNote }, getAuthHeaders());
       toast.success('Escalation resolved');
       setResolveId(null);
       setResolveNote('');
@@ -64,7 +65,7 @@ export const EscalationsTab = ({ getAuthHeaders, isFounder = false, isManager = 
   const handleVeto = async () => {
     if (!vetoNote.trim()) return toast.error('Veto reason required');
     try {
-      await axios.put(`${API_URL}/ops/escalations/${vetoId}/veto`, { veto_note: vetoNote }, getAuthHeaders());
+      await apiClient.put(`${API_URL}/ops/escalations/${vetoId}/veto`, { veto_note: vetoNote }, getAuthHeaders());
       toast.success('Resolution vetoed — escalation reopened');
       setVetoId(null);
       setVetoNote('');

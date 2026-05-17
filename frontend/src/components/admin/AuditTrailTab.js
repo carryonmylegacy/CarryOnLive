@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Shield, Loader2, Search, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
@@ -30,7 +31,7 @@ export const AuditTrailTab = ({ getAuthHeaders }) => {
       const params = new URLSearchParams({ limit, offset });
       if (categoryFilter) params.set('category', categoryFilter);
       if (severityFilter) params.set('severity', severityFilter);
-      const res = await axios.get(`${API_URL}/founder/audit-trail?${params}`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/founder/audit-trail?${params}`, getAuthHeaders());
       setEntries(res.data.entries);
       setTotal(res.data.total);
     } catch {}
@@ -43,7 +44,7 @@ export const AuditTrailTab = ({ getAuthHeaders }) => {
       const params = new URLSearchParams({ days });
       if (categoryFilter) params.set('category', categoryFilter);
       if (severityFilter) params.set('severity', severityFilter);
-      const res = await axios.get(`${API_URL}/founder/audit-trail/export?${params}`, {
+      const res = await apiClient.get(`${API_URL}/founder/audit-trail/export?${params}`, {
         ...getAuthHeaders(),
         responseType: 'blob',
       });

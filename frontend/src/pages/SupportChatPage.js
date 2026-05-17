@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import {
   MessageCircle, Send, Loader2, Headphones, Plus, ChevronLeft, ArrowLeft,
@@ -64,7 +65,7 @@ const SupportChatPage = () => {
     if (priority === 'p1' && reason && !emergencySent) {
       (async () => {
         try {
-          await axios.post(`${API_URL}/support/p1-emergency`, { reason }, getAuthHeaders());
+          await apiClient.post(`${API_URL}/support/p1-emergency`, { reason }, getAuthHeaders());
           setEmergencySent(true);
           toast.success('Emergency alert sent to the CarryOn team. Someone will contact you immediately.');
           window.history.replaceState({}, '', window.location.pathname);
@@ -81,7 +82,7 @@ const SupportChatPage = () => {
 
   const fetchThreads = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/support/threads`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/support/threads`, getAuthHeaders());
       setThreads(res.data || []);
     } catch (err) {
       console.error('Error fetching threads', err);
@@ -94,7 +95,7 @@ const SupportChatPage = () => {
     if (!threadId) return;
     try {
       setMessagesLoading(true);
-      const res = await axios.get(`${API_URL}/support/messages`, {
+      const res = await apiClient.get(`${API_URL}/support/messages`, {
         ...getAuthHeaders(),
         params: { thread_id: threadId },
       });
@@ -144,7 +145,7 @@ const SupportChatPage = () => {
     if (!newMessage.trim() || !activeThreadId) return;
     setSending(true);
     try {
-      const res = await axios.post(`${API_URL}/support/messages`, {
+      const res = await apiClient.post(`${API_URL}/support/messages`, {
         content: newMessage.trim(),
         thread_id: activeThreadId,
       }, getAuthHeaders());
@@ -168,9 +169,9 @@ const SupportChatPage = () => {
     }
     setCreating(true);
     try {
-      const t = await axios.post(`${API_URL}/support/threads`, { title }, getAuthHeaders());
+      const t = await apiClient.post(`${API_URL}/support/threads`, { title }, getAuthHeaders());
       const threadId = t.data.thread_id;
-      await axios.post(`${API_URL}/support/messages`, {
+      await apiClient.post(`${API_URL}/support/messages`, {
         content: firstMsg,
         thread_id: threadId,
       }, getAuthHeaders());

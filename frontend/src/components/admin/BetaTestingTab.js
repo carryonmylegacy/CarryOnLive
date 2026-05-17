@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Bug, Loader2, Check, X, Clock, ChevronDown, ChevronUp, Image } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -26,7 +27,7 @@ export const BetaTestingTab = ({ getAuthHeaders }) => {
 
   const fetchTickets = async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/beta-tickets`, { headers });
+      const res = await apiClient.get(`${API_URL}/admin/beta-tickets`, { headers });
       setTickets(res.data);
     } catch (err) {
       toast.error('Failed to load beta tickets');
@@ -37,7 +38,7 @@ export const BetaTestingTab = ({ getAuthHeaders }) => {
   const updateStatus = async (ticketId, status) => {
     setUpdatingId(ticketId);
     try {
-      await axios.put(`${API_URL}/admin/beta-tickets/${ticketId}/status`, { status }, {
+      await apiClient.put(`${API_URL}/admin/beta-tickets/${ticketId}/status`, { status }, {
         headers: { ...headers, 'Content-Type': 'application/json' },
       });
       setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, status } : t));

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { Quote, Crown, Sparkles, ChevronRight } from 'lucide-react';
 import { API_URL } from '../config';
 
@@ -27,7 +28,7 @@ export default function HomeVoicesStrip() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await axios.get(`${API_URL}/share-cards/voices/public?limit=24`);
+        const res = await apiClient.get(`${API_URL}/share-cards/voices/public?limit=24`);
         if (!cancelled) setItems(res.data?.items || []);
       } catch {
         /* graceful — component simply renders nothing */

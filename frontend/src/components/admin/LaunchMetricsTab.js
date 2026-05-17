@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Users, UserPlus, ArrowRight, Clock, CreditCard, Loader2, RefreshCw } from 'lucide-react';
 import { API_URL } from '../../config';
 
@@ -12,7 +13,7 @@ export const LaunchMetricsTab = ({ getAuthHeaders }) => {
   const fetchMetrics = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/admin/launch-metrics`, { headers });
+      const res = await apiClient.get(`${API_URL}/admin/launch-metrics`, { headers });
       setMetrics(res.data);
     } catch { /* silent */ }
     finally { setLoading(false); }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { isNative } from '../services/native';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { toast } from '../utils/toast';
 import { API_URL } from '../config';
 
@@ -104,7 +105,7 @@ export const useShareTarget = () => {
       formData.append('category', category);
       formData.append('estate_id', estateId);
 
-      await axios.post(`${API_URL}/documents/upload`, formData, {
+      await apiClient.post(`${API_URL}/documents/upload`, formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLabelCleaner } from '../../utils/brandLabel';
 import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft, Users, Settings, Sparkles, KeyRound, Bell, Scale, Info, BookOpen } from 'lucide-react';
@@ -111,7 +112,7 @@ const BeneficiaryDashboardPage = () => {
       // If the user has no beneficiary connections at all, render an
       // explicit "no estates yet" empty state — never the deleted
       // network-hub limbo, never an upsell modal.
-      const allEstatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders()).catch(() => ({ data: [] }));
+      const allEstatesRes = await apiClient.get(`${API_URL}/estates`, getAuthHeaders()).catch(() => ({ data: [] }));
       const estatesList = allEstatesRes.data || [];
       setAllEstates(estatesList);
       cacheBenEstates(estatesList);
@@ -147,8 +148,8 @@ const BeneficiaryDashboardPage = () => {
       try { refreshEnabledFeatures && refreshEnabledFeatures(estateId); } catch {}
 
       const [estateRes, permRes] = await Promise.all([
-        axios.get(`${API_URL}/estates/${estateId}`, getAuthHeaders()),
-        axios.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, getAuthHeaders()),
+        apiClient.get(`${API_URL}/estates/${estateId}`, getAuthHeaders()),
+        apiClient.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, getAuthHeaders()),
       ]);
 
       // Persist permissions for offline rehydration regardless of
@@ -177,7 +178,7 @@ const BeneficiaryDashboardPage = () => {
       // "View Additional Documents" card can show or hide.
       if (!permRes.data.is_transitioned) {
         try {
-          const docsRes = await axios.get(
+          const docsRes = await apiClient.get(
             `${API_URL}/documents/${estateId}/pre-transition`,
             getAuthHeaders(),
           );
@@ -193,9 +194,9 @@ const BeneficiaryDashboardPage = () => {
 
       // Only fetch data for sections the beneficiary has access to
       const [docsRes, msgsRes, clRes] = await Promise.all([
-        fa.sdv_access !== false ? axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()) : { data: [] },
-        fa.mm_access !== false ? axios.get(`${API_URL}/messages/${estateId}`, getAuthHeaders()) : { data: [] },
-        fa.iac_access !== false ? axios.get(`${API_URL}/checklists/${estateId}`, getAuthHeaders()) : { data: [] },
+        fa.sdv_access !== false ? apiClient.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()) : { data: [] },
+        fa.mm_access !== false ? apiClient.get(`${API_URL}/messages/${estateId}`, getAuthHeaders()) : { data: [] },
+        fa.iac_access !== false ? apiClient.get(`${API_URL}/checklists/${estateId}`, getAuthHeaders()) : { data: [] },
       ]);
       setDocuments(docsRes.data);
       setMessages(msgsRes.data);
@@ -215,8 +216,8 @@ const BeneficiaryDashboardPage = () => {
       if (permRes.data.is_primary) {
         try {
           const [allPermsRes, bensRes] = await Promise.all([
-            axios.get(`${API_URL}/estate/${estateId}/section-permissions`, getAuthHeaders()),
-            axios.get(`${API_URL}/beneficiaries/${estateId}`, getAuthHeaders()),
+            apiClient.get(`${API_URL}/estate/${estateId}/section-permissions`, getAuthHeaders()),
+            apiClient.get(`${API_URL}/beneficiaries/${estateId}`, getAuthHeaders()),
           ]);
           setAllPerms(allPermsRes.data || []);
           setOtherBens((bensRes.data || []).filter(b => b.user_id !== user?.id));
@@ -593,7 +594,7 @@ const BeneficiaryDashboardPage = () => {
                               const updated = { ...sections, [key]: !sections[key] };
                               try {
                                 const estateId = localStorage.getItem('beneficiary_estate_id');
-                                await axios.put(`${API_URL}/estate/${estateId}/section-permissions`, {
+                                await apiClient.put(`${API_URL}/estate/${estateId}/section-permissions`, {
                                   beneficiary_id: ben.id,
                                   sections: updated,
                                 }, getAuthHeaders());

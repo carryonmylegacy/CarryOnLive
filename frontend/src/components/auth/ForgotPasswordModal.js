@@ -1,5 +1,6 @@
 import React from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { toast } from '../../utils/toast';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
@@ -47,7 +48,7 @@ const ForgotPasswordModal = ({
             <button disabled={!forgotEmail || forgotLoading} onClick={async () => {
               setForgotLoading(true);
               try {
-                const res = await axios.post(`${API_URL}/auth/forgot-password`, { username: forgotEmail });
+                const res = await apiClient.post(`${API_URL}/auth/forgot-password`, { username: forgotEmail });
                 setForgotMsg(res.data.message);
                 setForgotError(false);
                 setForgotStep(2);
@@ -61,7 +62,7 @@ const ForgotPasswordModal = ({
               resetAndClose();
               const usernameEmail = prompt('Enter the email associated with your account:');
               if (usernameEmail) {
-                axios.post(`${API_URL}/auth/forgot-username`, { email: usernameEmail })
+                apiClient.post(`${API_URL}/auth/forgot-username`, { email: usernameEmail })
                   .then(() => toast.success('If that email exists, your username(s) have been sent.'))
                   .catch(() => toast.error('Something went wrong.'));
               }
@@ -89,7 +90,7 @@ const ForgotPasswordModal = ({
             <button disabled={!forgotOtp || !forgotNewPw || forgotNewPw !== forgotConfirmPw || forgotLoading} onClick={async () => {
               setForgotLoading(true);
               try {
-                const res = await axios.post(`${API_URL}/auth/reset-password`, { username: forgotEmail, otp: forgotOtp, new_password: forgotNewPw });
+                const res = await apiClient.post(`${API_URL}/auth/reset-password`, { username: forgotEmail, otp: forgotOtp, new_password: forgotNewPw });
                 setForgotMsg(res.data.message);
                 setForgotError(false);
                 setTimeout(resetAndClose, 2000);

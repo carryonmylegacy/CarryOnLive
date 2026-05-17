@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import {
   ArrowLeft,
   Calendar,
@@ -112,8 +113,8 @@ export default function EditMilestoneMessagePage() {
         }
 
         const [messagesRes, beneficiariesRes] = await Promise.all([
-          axios.get(`${API_URL}/messages/${estateId}`, getAuthHeaders()),
-          axios.get(`${API_URL}/beneficiaries/${estateId}`, getAuthHeaders()),
+          apiClient.get(`${API_URL}/messages/${estateId}`, getAuthHeaders()),
+          apiClient.get(`${API_URL}/beneficiaries/${estateId}`, getAuthHeaders()),
         ]);
 
         setBeneficiaries(beneficiariesRes.data || []);
@@ -153,7 +154,7 @@ export default function EditMilestoneMessagePage() {
       }
 
       try {
-        const response = await axios.get(`${API_URL}/messages/video/${messageRecord.video_url}`, {
+        const response = await apiClient.get(`${API_URL}/messages/video/${messageRecord.video_url}`, {
           ...getAuthHeaders(),
           responseType: 'blob',
         });
@@ -450,12 +451,12 @@ export default function EditMilestoneMessagePage() {
       if (videoRemoved && !videoBlob) payload.remove_video = true;
       if (voiceRemoved && !audioBlob) payload.remove_voice = true;
 
-      await axios.put(`${API_URL}/messages/${messageId}`, payload, getAuthHeaders());
+      await apiClient.put(`${API_URL}/messages/${messageId}`, payload, getAuthHeaders());
 
       if (videoBlob && videoBlob !== 'existing') {
         const formData = new FormData();
         formData.append('video', videoBlob, 'video.mp4');
-        await axios.post(`${API_URL}/messages/${messageId}/upload-video`, formData, {
+        await apiClient.post(`${API_URL}/messages/${messageId}/upload-video`, formData, {
           headers: { ...getAuthHeaders().headers, 'Content-Type': 'multipart/form-data' },
           timeout: 300000,
         });

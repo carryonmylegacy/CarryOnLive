@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Activity, UserPlus, FolderLock, FileUp, Shield, Loader2, Search } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -14,7 +15,7 @@ export const ActivityTab = ({ getAuthHeaders }) => {
   const fetchActivityLog = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/admin/activity`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/admin/activity`, getAuthHeaders());
       setActivityLog(res.data);
     } catch (err) { console.error('Error fetching activity:', err); }
     finally { setLoading(false); }

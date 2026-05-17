@@ -14,6 +14,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import {
   Briefcase, Plus, Trash2, Copy, Check, Loader2, ExternalLink,
   Upload, Image as ImageIcon, Power, Mail, Send, Pencil, Users,
@@ -140,7 +141,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
 
   const fetchAll = async () => {
     try {
-      const { data } = await axios.get(`${API_URL}/admin/partners`, { headers: authHeaders() });
+      const { data } = await apiClient.get(`${API_URL}/admin/partners`, { headers: authHeaders() });
       setPartners(data.partners || []);
       setColumns(data.feature_columns || []);
     } catch (err) {
@@ -150,7 +151,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
     }
     // Best-effort legacy fetch — never blocks the main load.
     try {
-      const r = await axios.get(`${API_URL}/admin/b2b-codes`, { headers: authHeaders() });
+      const r = await apiClient.get(`${API_URL}/admin/b2b-codes`, { headers: authHeaders() });
       setLegacyCodes(Array.isArray(r.data) ? r.data : []);
     } catch { setLegacyCodes([]); }
   };
@@ -158,7 +159,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
   const deleteLegacy = async (codeId, codeName) => {
     if (!window.confirm(`Delete legacy code "${codeName}"? This removes it permanently.`)) return;
     try {
-      await axios.delete(`${API_URL}/admin/b2b-codes/${codeId}`, { headers: authHeaders() });
+      await apiClient.delete(`${API_URL}/admin/b2b-codes/${codeId}`, { headers: authHeaders() });
       setLegacyCodes((prev) => prev.filter((c) => c.id !== codeId));
       toast.success('Legacy code deleted');
     } catch (err) {
@@ -173,7 +174,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
     }
     setSaving(true);
     try {
-      await axios.post(`${API_URL}/admin/partners`, {
+      await apiClient.post(`${API_URL}/admin/partners`, {
         ...newForm,
         slug: newForm.slug.toLowerCase().trim(),
         code: newForm.code.toUpperCase().trim(),
@@ -192,7 +193,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
     // snappy. On failure we re-fetch to roll back.
     setPartners((prev) => prev.map(p => p.id === id ? { ...p, ...patch, feature_gates: { ...(p.feature_gates || {}), ...(patch.feature_gates || {}) } } : p));
     try {
-      await axios.put(`${API_URL}/admin/partners/${id}`, patch, { headers: { ...authHeaders(), 'Content-Type': 'application/json' } });
+      await apiClient.put(`${API_URL}/admin/partners/${id}`, patch, { headers: { ...authHeaders(), 'Content-Type': 'application/json' } });
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to update');
       await fetchAll();
@@ -207,7 +208,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
   const deletePartner = async (id, name) => {
     if (!window.confirm(`Delete the partnership with "${name}"? This will remove their custom tier and the public /p/ page.`)) return;
     try {
-      await axios.delete(`${API_URL}/admin/partners/${id}`, { headers: authHeaders() });
+      await apiClient.delete(`${API_URL}/admin/partners/${id}`, { headers: authHeaders() });
       await fetchAll();
       toast.success('Partner deleted');
     } catch (err) {
@@ -221,7 +222,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
     const fd = new FormData();
     fd.append('file', file);
     try {
-      await axios.post(`${API_URL}/admin/partners/${partnerId}/logo`, fd, { headers: authHeaders() });
+      await apiClient.post(`${API_URL}/admin/partners/${partnerId}/logo`, fd, { headers: authHeaders() });
       toast.success('Logo uploaded');
       await fetchAll();
     } catch (err) {
@@ -265,7 +266,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
     }
     setSending(partner.id);
     try {
-      await axios.post(`${API_URL}/admin/partners/${partner.id}/send-welcome`, {}, {
+      await apiClient.post(`${API_URL}/admin/partners/${partner.id}/send-welcome`, {}, {
         headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       });
       toast.success(`Welcome email sent to ${to}`);

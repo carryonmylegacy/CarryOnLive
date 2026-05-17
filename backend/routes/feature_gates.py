@@ -215,6 +215,24 @@ async def get_user_enabled_features(
 
     effective_tier = None
 
+    # Security audit (Feb 2026): if estate_id is supplied, verify the
+    # caller is the owner OR a beneficiary on that estate before using
+    # ANY of its data to drive tier resolution. Previously a malicious
+    # client could probe a random estate_id and have its verified_tier
+    # leak into the response (a SOC 2 CC6.1 information-leak vector).
+    # Admins are exempt — they preview customer views.
+    if estate_id and current_user.get("role") != "admin":
+        scope_estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
+        if not scope_estate:
+            estate_id = None  # fall through to caller's own tier resolution
+        elif scope_estate.get("owner_id") != current_user["id"]:
+            ben_link = await db.beneficiaries.find_one(
+                {"estate_id": estate_id, "user_id": current_user["id"]},
+                {"_id": 0, "id": 1},
+            )
+            if not ben_link:
+                estate_id = None  # unauthorised — pretend it wasn't supplied
+
     # Tier inheritance rule (May 5, 2026, founder-mandated): when the
     # caller is viewing the platform AS A BENEFICIARY of someone
     # else's estate (estate_id supplied AND caller is not the owner

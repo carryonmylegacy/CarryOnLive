@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Clock, Shield, Loader2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
@@ -33,7 +34,7 @@ export const SessionPolicyTab = ({ getAuthHeaders }) => {
 
   const fetchPolicies = async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/session-policy`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/admin/session-policy`, getAuthHeaders());
       setPolicies(res.data);
     } catch {
       toast.error('Failed to load session policies');
@@ -52,7 +53,7 @@ export const SessionPolicyTab = ({ getAuthHeaders }) => {
 
     setSaving(roleType);
     try {
-      await axios.put(
+      await apiClient.put(
         `${API_URL}/admin/session-policy`,
         {
           role_type: roleType,
@@ -76,7 +77,7 @@ export const SessionPolicyTab = ({ getAuthHeaders }) => {
 
     setSaving(roleType);
     try {
-      await axios.put(
+      await apiClient.put(
         `${API_URL}/admin/session-policy`,
         {
           role_type: roleType,

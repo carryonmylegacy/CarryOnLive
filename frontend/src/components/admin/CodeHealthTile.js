@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import {
   Activity, Database, Zap, Shield, Clock, AlertTriangle,
   CheckCircle2, RefreshCw, Loader2, TrendingUp
@@ -16,7 +17,7 @@ export const CodeHealthTile = ({ getAuthHeaders }) => {
   const fetchHealth = async (showRefresh) => {
     if (showRefresh) setRefreshing(true);
     try {
-      const res = await axios.get(`${API_URL}/admin/code-health`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/admin/code-health`, getAuthHeaders());
       setHealth(res.data);
     } catch {
       if (showRefresh) toast.error('Failed to load code health');

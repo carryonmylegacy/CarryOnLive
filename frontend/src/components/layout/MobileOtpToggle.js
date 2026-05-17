@@ -4,6 +4,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { ShieldCheck, Loader2 } from 'lucide-react';
 import { API_URL } from '../../config';
 import { toast } from '../../utils/toast';
@@ -26,7 +27,7 @@ const MobileOtpToggle = () => {
     // real server state is the opposite.
     const token = localStorage.getItem('carryon_token');
     if (!token) { setLoaded(true); return; }
-    axios.get(`${API_URL}/admin/platform-settings`, authHeaders())
+    apiClient.get(`${API_URL}/admin/platform-settings`, authHeaders())
       .then(res => {
         setOtpDisabled(!!res.data?.otp_disabled);
         setLoaded(true);
@@ -45,7 +46,7 @@ const MobileOtpToggle = () => {
     setOtpDisabled(newVal); // optimistic
     setBusy(true);
     try {
-      const res = await axios.put(
+      const res = await apiClient.put(
         `${API_URL}/admin/platform-settings`,
         { otp_disabled: newVal },
         authHeaders(),

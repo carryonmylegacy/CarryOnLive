@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useDebouncedRefetch } from '../hooks/useDebouncedRefetch';
 import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
@@ -343,7 +344,7 @@ const VaultPage = () => {
           setDocuments(local);
           setLoading(false);
         }
-        const docsRes = await axios.get(`${API_URL}/documents/${selected.id}`, getAuthHeaders()).catch(() => ({ data: [] }));
+        const docsRes = await apiClient.get(`${API_URL}/documents/${selected.id}`, getAuthHeaders()).catch(() => ({ data: [] }));
         const docs = Array.isArray(docsRes.data) ? docsRes.data : [];
         // Empty-response clobber guard — never overwrite a populated
         // list with an empty response from a transient airplane-mode
@@ -352,7 +353,7 @@ const VaultPage = () => {
         upsertLocalVaultItems(selected.id, docs).catch(() => {});
         // Fetch beneficiaries for SDV designation
         try {
-          const benRes = await axios.get(`${API_URL}/beneficiaries/${selected.id}`, getAuthHeaders());
+          const benRes = await apiClient.get(`${API_URL}/beneficiaries/${selected.id}`, getAuthHeaders());
           const bens = Array.isArray(benRes.data) ? benRes.data : [];
           if (bens.length > 0 || beneficiaries.length === 0) setBeneficiaries(bens);
         } catch { /* keep existing state — never blank it on error */ }
@@ -446,7 +447,7 @@ const VaultPage = () => {
         }
       }
       
-      const response = await axios.post(url, formData, {
+      const response = await apiClient.post(url, formData, {
         ...getAuthHeaders(),
         headers: {
           ...getAuthHeaders().headers,
@@ -456,7 +457,7 @@ const VaultPage = () => {
       
       // If voice lock, set up the passphrase
       if (uploadLockType === 'voice' && uploadVoicePassphrase) {
-        await axios.post(
+        await apiClient.post(
           `${API_URL}/documents/${response.data.id}/voice/setup?passphrase=${encodeURIComponent(uploadVoicePassphrase)}`,
           {},
           getAuthHeaders()
@@ -493,7 +494,7 @@ const VaultPage = () => {
     
     setUnlocking(true);
     try {
-      await axios.post(
+      await apiClient.post(
         `${API_URL}/documents/${selectedDoc.id}/unlock`,
         {
           password: unlockPassword || null,
@@ -540,7 +541,7 @@ const VaultPage = () => {
           toast.success('Designation queued — will sync when you reconnect.');
           return;
         }
-        await axios.put(`${API_URL}/documents/${docId}/designate-beneficiaries`,
+        await apiClient.put(`${API_URL}/documents/${docId}/designate-beneficiaries`,
           payload,
           { ...getAuthHeaders(), headers: { ...getAuthHeaders().headers, 'Content-Type': 'application/json' } }
         );
@@ -577,7 +578,7 @@ const VaultPage = () => {
     const next = !doc.ai_eligible;
     setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, ai_eligible: next } : d));
     try {
-      await axios.put(
+      await apiClient.put(
         `${API_URL}/documents/${doc.id}/ai-eligible?eligible=${next}`,
         null,
         getAuthHeaders(),
@@ -615,7 +616,7 @@ const VaultPage = () => {
     }
     setLockingDoc(true);
     try {
-      const res = await axios.post(`${API_URL}/documents/${selectedDoc.id}/lock`, { password: newLockPassword }, getAuthHeaders());
+      const res = await apiClient.post(`${API_URL}/documents/${selectedDoc.id}/lock`, { password: newLockPassword }, getAuthHeaders());
       setBackupCode(res.data.backup_code);
       setShowSetLockModal(false);
       setNewLockPassword('');
@@ -633,7 +634,7 @@ const VaultPage = () => {
     if (!selectedDoc) return;
     setLockingDoc(true);
     try {
-      await axios.post(`${API_URL}/documents/${selectedDoc.id}/remove-lock`, {}, getAuthHeaders());
+      await apiClient.post(`${API_URL}/documents/${selectedDoc.id}/remove-lock`, {}, getAuthHeaders());
       setShowRemoveLockConfirm(false);
       fetchData();
     } catch (err) {
@@ -755,7 +756,7 @@ const VaultPage = () => {
         toast.success('Deletion queued — will sync when you reconnect.');
         return;
       }
-      await axios.delete(`${API_URL}/documents/${docId}`, getAuthHeaders());
+      await apiClient.delete(`${API_URL}/documents/${docId}`, getAuthHeaders());
       // toast removed
       setDocuments(documents.filter(d => d.id !== docId));
     } catch (error) {
@@ -808,7 +809,7 @@ const VaultPage = () => {
       formData.append('category', editCategory);
       formData.append('notes', editNotes || '');
 
-      await axios.put(`${API_URL}/documents/${editingDoc.id}`, formData, {
+      await apiClient.put(`${API_URL}/documents/${editingDoc.id}`, formData, {
         ...getAuthHeaders(),
         headers: {
           ...getAuthHeaders().headers,
@@ -884,7 +885,7 @@ const VaultPage = () => {
     try {
       const url = `${API_URL}/documents/${doc.id}/preview`;
       const token = localStorage.getItem('carryon_token');
-      const response = await axios.get(url, {
+      const response = await apiClient.get(url, {
         headers: { 'Authorization': `Bearer ${token}` },
         responseType: 'blob'
       });
@@ -931,7 +932,7 @@ const VaultPage = () => {
     // Get voice hint first
     if (selectedDoc) {
       try {
-        const hintRes = await axios.get(`${API_URL}/documents/${selectedDoc.id}/voice/hint`, getAuthHeaders());
+        const hintRes = await apiClient.get(`${API_URL}/documents/${selectedDoc.id}/voice/hint`, getAuthHeaders());
         setVoiceHint(hintRes.data.hint);
         if (!hintRes.data.has_passphrase) {
           toast.error('Voice passphrase not set up for this document. Use backup code.');
@@ -988,7 +989,7 @@ const VaultPage = () => {
     
     setUnlocking(true);
     try {
-      await axios.post(
+      await apiClient.post(
         `${API_URL}/documents/${selectedDoc.id}/voice/verify`,
         { document_id: selectedDoc.id, spoken_text: spokenText },
         getAuthHeaders()

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { Bell, BellOff, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Switch } from '../components/ui/switch';
@@ -116,7 +117,7 @@ const NotificationSettings = ({ getAuthHeaders }) => {
       const registration = await registerServiceWorker();
 
       // Get VAPID public key from server
-      const vapidRes = await axios.get(`${API_URL}/push/vapid-public-key`);
+      const vapidRes = await apiClient.get(`${API_URL}/push/vapid-public-key`);
       const vapidPublicKey = vapidRes.data.public_key;
 
       // Subscribe to push
@@ -127,7 +128,7 @@ const NotificationSettings = ({ getAuthHeaders }) => {
 
       // Send subscription to backend
       const subJson = subscription.toJSON();
-      await axios.post(`${API_URL}/push/subscribe`, {
+      await apiClient.post(`${API_URL}/push/subscribe`, {
         endpoint: subJson.endpoint,
         keys: subJson.keys
       }, getAuthHeaders());
@@ -163,7 +164,7 @@ const NotificationSettings = ({ getAuthHeaders }) => {
           
           // Remove from backend
           const subJson = subscription.toJSON();
-          await axios.delete(`${API_URL}/push/unsubscribe`, {
+          await apiClient.delete(`${API_URL}/push/unsubscribe`, {
             ...getAuthHeaders(),
             data: {
               endpoint: subJson.endpoint,

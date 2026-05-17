@@ -21,6 +21,7 @@
  */
 
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 import { upsertLocalBeneficiaries } from './repos/beneficiariesRepo';
 import { upsertLocalEstates } from './repos/estatesRepo';
@@ -51,7 +52,7 @@ function taskProfile(headers) {
   return {
     label: 'profile',
     run: async () => {
-      const res = await axios.get(`${API_URL}/auth/profile`, headers);
+      const res = await apiClient.get(`${API_URL}/auth/profile`, headers);
       await upsertLocalProfile(res.data || {});
       prefetchPhotosFrom(res.data);
       // Phase 9b — persist the user's own profile photo BYTES under a
@@ -84,7 +85,7 @@ function taskSubscription(headers) {
   return {
     label: 'subscription',
     run: async () => {
-      const res = await axios.get(`${API_URL}/subscriptions/status`, headers);
+      const res = await apiClient.get(`${API_URL}/subscriptions/status`, headers);
       await upsertLocalSubscription(res.data || {});
     },
   };
@@ -108,7 +109,7 @@ function taskAdminPlatformSettings(headers) {
     label: 'admin-platform-settings',
     run: async () => {
       try {
-        const res = await axios.get(`${API_URL}/admin/platform-settings`, headers);
+        const res = await apiClient.get(`${API_URL}/admin/platform-settings`, headers);
         const serverMode = res?.data?.offline_mode;
         if (serverMode === 'on') {
           try {
@@ -129,15 +130,15 @@ function taskChat(headers) {
     label: 'chat',
     run: async () => {
       const [channelsRes, contactsRes] = await Promise.all([
-        axios.get(`${API_URL}/estate-chat/channels`, headers).catch(() => null),
-        axios.get(`${API_URL}/estate-chat/contacts`, headers).catch(() => null),
+        apiClient.get(`${API_URL}/estate-chat/channels`, headers).catch(() => null),
+        apiClient.get(`${API_URL}/estate-chat/contacts`, headers).catch(() => null),
       ]);
       if (channelsRes?.data) await upsertLocalChannels(channelsRes.data);
       if (contactsRes?.data) await upsertLocalContacts(contactsRes.data);
       const top = (channelsRes?.data || []).slice(0, 5);
       await Promise.all(top.map(async (ch) => {
         try {
-          const msgs = await axios.get(`${API_URL}/estate-chat/channels/${ch.id}/messages`, headers);
+          const msgs = await apiClient.get(`${API_URL}/estate-chat/channels/${ch.id}/messages`, headers);
           if (msgs?.data) await upsertLocalChatMessages(ch.id, msgs.data);
         } catch { /* isolated */ }
       }));
@@ -149,7 +150,7 @@ function taskVoices() {
   return {
     label: 'voices',
     run: async () => {
-      const res = await axios.get(`${API_URL}/share-cards/voices/public?limit=48`);
+      const res = await apiClient.get(`${API_URL}/share-cards/voices/public?limit=48`);
       const items = res?.data?.items || [];
       if (items.length) await upsertLocalVoices(items);
     },
@@ -161,11 +162,11 @@ function taskDashboard(estateId, headers) {
     label: `dashboard:${estateId.slice(0, 6)}`,
     run: async () => {
       const [docs, msgs, bens, checklist, readiness] = await Promise.all([
-        axios.get(`${API_URL}/documents/${estateId}`, headers).catch(() => null),
-        axios.get(`${API_URL}/messages/${estateId}`, headers).catch(() => null),
-        axios.get(`${API_URL}/beneficiaries/${estateId}`, headers).catch(() => null),
-        axios.get(`${API_URL}/checklists/${estateId}`, headers).catch(() => null),
-        axios.get(`${API_URL}/estate/${estateId}/readiness`, headers).catch(() => null),
+        apiClient.get(`${API_URL}/documents/${estateId}`, headers).catch(() => null),
+        apiClient.get(`${API_URL}/messages/${estateId}`, headers).catch(() => null),
+        apiClient.get(`${API_URL}/beneficiaries/${estateId}`, headers).catch(() => null),
+        apiClient.get(`${API_URL}/checklists/${estateId}`, headers).catch(() => null),
+        apiClient.get(`${API_URL}/estate/${estateId}/readiness`, headers).catch(() => null),
       ]);
       const tile = {
         stats: {
@@ -224,7 +225,7 @@ function taskFFN(estateId, headers) {
   return {
     label: `ffn:${estateId.slice(0, 6)}`,
     run: async () => {
-      const res = await axios.get(`${API_URL}/ffn/${estateId}`, headers);
+      const res = await apiClient.get(`${API_URL}/ffn/${estateId}`, headers);
       const list = Array.isArray(res?.data) ? res.data : [];
       saveList(`ffn:${estateId}`, list);
     },
@@ -236,16 +237,16 @@ function taskFinancial(estateId, headers) {
     label: `financial:${estateId.slice(0, 6)}`,
     run: async () => {
       const [bills, debts, accts, props, summary, bens, cBills, cDebts, cAccts, dav] = await Promise.all([
-        axios.get(`${API_URL}/financial/bills/${estateId}`, headers).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/financial/debts/${estateId}`, headers).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/financial/accounts/${estateId}`, headers).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/financial/property/${estateId}`, headers).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/financial/summary/${estateId}`, headers).catch(() => ({ data: null })),
-        axios.get(`${API_URL}/beneficiaries/${estateId}`, headers).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/financial/categories/${estateId}?module=bills`, headers).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/financial/categories/${estateId}?module=debts`, headers).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/financial/categories/${estateId}?module=accounts`, headers).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/digital-wallet/${estateId}`, headers).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/bills/${estateId}`, headers).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/debts/${estateId}`, headers).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/accounts/${estateId}`, headers).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/property/${estateId}`, headers).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/summary/${estateId}`, headers).catch(() => ({ data: null })),
+        apiClient.get(`${API_URL}/beneficiaries/${estateId}`, headers).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/categories/${estateId}?module=bills`, headers).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/categories/${estateId}?module=debts`, headers).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/categories/${estateId}?module=accounts`, headers).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/digital-wallet/${estateId}`, headers).catch(() => ({ data: [] })),
       ]);
       const pick = (r) => (Array.isArray(r?.data) ? r.data : []);
       saveList(`financial:bills:${estateId}`, pick(bills));
@@ -269,8 +270,8 @@ function taskDTS(estateId, headers) {
     label: `dts:${estateId.slice(0, 6)}`,
     run: async () => {
       const [bens, tasks] = await Promise.all([
-        axios.get(`${API_URL}/beneficiaries/${estateId}`, headers).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/dts/tasks/${estateId}`, headers).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/beneficiaries/${estateId}`, headers).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/dts/tasks/${estateId}`, headers).catch(() => ({ data: [] })),
       ]);
       const mapped = (Array.isArray(tasks?.data) ? tasks.data : []).map((t) => ({
         ...t,
@@ -292,7 +293,7 @@ function taskChecklist(estateId, headers) {
   return {
     label: `checklist:${estateId.slice(0, 6)}`,
     run: async () => {
-      const res = await axios.get(`${API_URL}/checklists/${estateId}`, headers);
+      const res = await apiClient.get(`${API_URL}/checklists/${estateId}`, headers);
       saveList(`checklist:items:${estateId}`, Array.isArray(res?.data) ? res.data : []);
     },
   };
@@ -302,7 +303,7 @@ function taskCCP(estateId, headers) {
   return {
     label: `ccp:${estateId.slice(0, 6)}`,
     run: async () => {
-      const res = await axios.get(`${API_URL}/ccp/plans/${estateId}`, headers);
+      const res = await apiClient.get(`${API_URL}/ccp/plans/${estateId}`, headers);
       saveList(`ccp:plans:${estateId}`, Array.isArray(res?.data) ? res.data : []);
     },
   };
@@ -312,7 +313,7 @@ function taskDAVBeneficiaries(estateId, headers) {
   return {
     label: `dav:bens:${estateId.slice(0, 6)}`,
     run: async () => {
-      const res = await axios.get(`${API_URL}/beneficiaries/${estateId}`, headers);
+      const res = await apiClient.get(`${API_URL}/beneficiaries/${estateId}`, headers);
       saveList(`dav:beneficiaries:${estateId}`, Array.isArray(res?.data) ? res.data : []);
     },
   };
@@ -370,7 +371,7 @@ export async function warmUpAfterLogin(token) {
   let allEstates = [];
   let ownedEstateIds = [];
   try {
-    const estates = await axios.get(`${API_URL}/estates`, headers).then((r) => r.data);
+    const estates = await apiClient.get(`${API_URL}/estates`, headers).then((r) => r.data);
     allEstates = estates || [];
     ownedEstateIds = allEstates
       .filter((e) => e.user_role_in_estate === 'owner' || (!e.user_role_in_estate && !e.is_beneficiary_estate))

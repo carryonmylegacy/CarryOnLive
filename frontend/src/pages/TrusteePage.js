@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
 import { useLabelCleaner } from '../utils/brandLabel';
@@ -128,7 +129,7 @@ const PaymentForm = ({ task, onPaymentSaved, getAuthHeaders }) => {
     setProcessing(true);
     try {
       // Create setup intent
-      const setupRes = await axios.post(`${API_URL}/stripe/create-setup-intent`, {}, getAuthHeaders());
+      const setupRes = await apiClient.post(`${API_URL}/stripe/create-setup-intent`, {}, getAuthHeaders());
       const { client_secret } = setupRes.data;
 
       // Confirm card setup
@@ -153,7 +154,7 @@ const PaymentForm = ({ task, onPaymentSaved, getAuthHeaders }) => {
       const card = paymentMethod.paymentMethod?.card;
 
       // Save payment method to task
-      await axios.post(`${API_URL}/dts/tasks/${task.id}/payment-method`, {
+      await apiClient.post(`${API_URL}/dts/tasks/${task.id}/payment-method`, {
         task_id: task.id,
         payment_method_id: setupIntent.payment_method,
         card_last4: card?.last4 || '****',
@@ -333,8 +334,8 @@ const TrusteePage = () => {
           const eid = localStorage.getItem('selected_estate_id') || estatesRes.data[0].id;
           setEstateId(eid);
           const [bensRes, dtsRes] = await Promise.all([
-            axios.get(`${API_URL}/beneficiaries/${eid}`, getAuthHeaders()),
-            axios.get(`${API_URL}/dts/tasks/${eid}`, getAuthHeaders()).catch(() => ({ data: [] })),
+            apiClient.get(`${API_URL}/beneficiaries/${eid}`, getAuthHeaders()),
+            apiClient.get(`${API_URL}/dts/tasks/${eid}`, getAuthHeaders()).catch(() => ({ data: [] })),
           ]);
           setBeneficiaries(bensRes.data);
           const mapped = (dtsRes.data || []).map(mapTask);
@@ -417,7 +418,7 @@ const TrusteePage = () => {
         setView('submitted');
         return;
       }
-      await axios.post(`${API_URL}/dts/tasks`, taskPayload, getAuthHeaders());
+      await apiClient.post(`${API_URL}/dts/tasks`, taskPayload, getAuthHeaders());
       clearDTSDraft();
       clearViewDraft();
       setView('submitted');
@@ -482,7 +483,7 @@ const TrusteePage = () => {
         setSaving(false);
         return;
       }
-      await axios.put(`${API_URL}/dts/tasks/${editTask.id}`, editPayload, getAuthHeaders());
+      await apiClient.put(`${API_URL}/dts/tasks/${editTask.id}`, editPayload, getAuthHeaders());
       
       // toast removed
       setShowEditModal(false);
@@ -546,7 +547,7 @@ const TrusteePage = () => {
         toast.success('Trustee task deletion queued — will sync when you reconnect.');
         return;
       }
-      await axios.delete(`${API_URL}/dts/tasks/${taskId}`, getAuthHeaders());
+      await apiClient.delete(`${API_URL}/dts/tasks/${taskId}`, getAuthHeaders());
       // toast removed
       setShowDeleteDialog(false);
       setTasks(prev => prev.filter(t => t.id !== taskId));

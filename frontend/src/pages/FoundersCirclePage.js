@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
 import { openStripeCheckout } from '../utils/stripeRedirect';
@@ -41,7 +42,7 @@ export default function FoundersCirclePage() {
       // when the plans endpoint itself was healthy. A B2B-demo
       // credibility-killer flagged in iter_105.
       try {
-        const plansRes = await axios.get(`${API_URL}/founders-circle/plans`);
+        const plansRes = await apiClient.get(`${API_URL}/founders-circle/plans`);
         setActive(!!plansRes.data.active);
         setPlans(plansRes.data.plans || []);
       } catch (err) {
@@ -50,7 +51,7 @@ export default function FoundersCirclePage() {
         console.warn('FoundersCircle: plans fetch failed', err);
       }
       try {
-        const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
+        const estatesRes = await apiClient.get(`${API_URL}/estates`, getAuthHeaders());
         const userEstates = (estatesRes.data || []).filter(e => e.owner_id === user?.id || user?.role === 'admin');
         setEstates(userEstates);
         if (userEstates.length === 1) setSelectedEstate(userEstates[0].id);
@@ -69,7 +70,7 @@ export default function FoundersCirclePage() {
     }
     setPurchasing(tier);
     try {
-      const res = await axios.post(`${API_URL}/founders-circle/checkout`, {
+      const res = await apiClient.post(`${API_URL}/founders-circle/checkout`, {
         estate_id: selectedEstate,
         tier,
         num_payments: parseInt(selectedSchedule),

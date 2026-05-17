@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { Card, CardContent } from '../ui/card';
 import {
   Activity, Users, TrendingUp, DollarSign, Database, AlertTriangle,
@@ -26,7 +27,7 @@ export function LaunchWarRoomTab() {
 
   const load = async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/launch-war-room`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/admin/launch-war-room`, getAuthHeaders());
       setData(res.data);
       setError(null);
       setLastRefresh(new Date());

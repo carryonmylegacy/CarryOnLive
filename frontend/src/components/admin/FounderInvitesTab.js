@@ -5,6 +5,7 @@ import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 import axios from 'axios';
 
+import apiClient from '../../utils/apiClient';
 export const FounderInvitesTab = ({ onPendingChange }) => {
   const [invites, setInvites] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -27,8 +28,8 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
   const fetchData = useCallback(async () => {
     try {
       const [invRes, reqRes] = await Promise.all([
-        axios.get(`${API_URL}/founder/invites`, getAuth()),
-        axios.get(`${API_URL}/founder/requests`, getAuth()),
+        apiClient.get(`${API_URL}/founder/invites`, getAuth()),
+        apiClient.get(`${API_URL}/founder/requests`, getAuth()),
       ]);
       setInvites(invRes.data);
       setRequests(reqRes.data);
@@ -45,7 +46,7 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
   const createInvite = async () => {
     setCreating(true);
     try {
-      const res = await axios.post(`${API_URL}/founder/invites`, { note }, getAuth());
+      const res = await apiClient.post(`${API_URL}/founder/invites`, { note }, getAuth());
       setInvites(prev => [res.data, ...prev]);
       setNote('');
       toast.success('Invite link created');
@@ -55,7 +56,7 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
 
   const revokeInvite = async (inviteToken) => {
     try {
-      await axios.delete(`${API_URL}/founder/invites/${inviteToken}`, getAuth());
+      await apiClient.delete(`${API_URL}/founder/invites/${inviteToken}`, getAuth());
       setInvites(prev => prev.map(inv => inv.token === inviteToken ? { ...inv, revoked: true } : inv));
       toast.success('Invite revoked');
     } catch { toast.error('Failed to revoke invite'); }
@@ -88,7 +89,7 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
     if (!pw || pw.length < 4) { toast.error('Password must be at least 4 characters'); return; }
     setApproving(prev => ({ ...prev, [requestId]: true }));
     try {
-      await axios.post(`${API_URL}/founder/requests/${requestId}/approve`, { password: pw }, getAuth());
+      await apiClient.post(`${API_URL}/founder/requests/${requestId}/approve`, { password: pw }, getAuth());
       setRequests(prev => {
         const updated = prev.map(r => r.request_id === requestId ? { ...r, status: 'approved' } : r);
         onPendingChange?.(updated.filter(r => r.status === 'pending').length);
@@ -102,7 +103,7 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
 
   const denyRequest = async (requestId) => {
     try {
-      await axios.post(`${API_URL}/founder/requests/${requestId}/deny`, {}, getAuth());
+      await apiClient.post(`${API_URL}/founder/requests/${requestId}/deny`, {}, getAuth());
       setRequests(prev => {
         const updated = prev.map(r => r.request_id === requestId ? { ...r, status: 'denied' } : r);
         onPendingChange?.(updated.filter(r => r.status === 'pending').length);
@@ -114,7 +115,7 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
 
   const revokeAccess = async (requestId) => {
     try {
-      await axios.post(`${API_URL}/founder/requests/${requestId}/revoke`, {}, getAuth());
+      await apiClient.post(`${API_URL}/founder/requests/${requestId}/revoke`, {}, getAuth());
       setRequests(prev => {
         const updated = prev.map(r => r.request_id === requestId ? { ...r, status: 'revoked' } : r);
         onPendingChange?.(updated.filter(r => r.status === 'pending').length);
@@ -144,22 +145,22 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
       const { kind, target } = deleteConfirm;
       if (target === 'invite') {
         if (kind === 'single') {
-          await axios.delete(`${API_URL}/founder/invites/${deleteConfirm.token}/permanent`, getAuth());
+          await apiClient.delete(`${API_URL}/founder/invites/${deleteConfirm.token}/permanent`, getAuth());
           setInvites(prev => prev.filter(i => i.token !== deleteConfirm.token));
           toast.success('Invite removed');
         } else {
-          const res = await axios.post(`${API_URL}/founder/invites/clear-revoked`, {}, getAuth());
+          const res = await apiClient.post(`${API_URL}/founder/invites/clear-revoked`, {}, getAuth());
           setInvites(prev => prev.filter(i => !i.revoked));
           toast.success(`Removed ${res.data.deleted} revoked invite${res.data.deleted === 1 ? '' : 's'}`);
         }
       } else {
         // target === 'request'
         if (kind === 'single') {
-          await axios.delete(`${API_URL}/founder/requests/${deleteConfirm.requestId}`, getAuth());
+          await apiClient.delete(`${API_URL}/founder/requests/${deleteConfirm.requestId}`, getAuth());
           setRequests(prev => prev.filter(r => r.request_id !== deleteConfirm.requestId));
           toast.success('Request removed');
         } else {
-          const res = await axios.post(`${API_URL}/founder/requests/clear-inactive`, {}, getAuth());
+          const res = await apiClient.post(`${API_URL}/founder/requests/clear-inactive`, {}, getAuth());
           setRequests(prev => prev.filter(r => !['revoked', 'denied'].includes(r.status)));
           toast.success(`Removed ${res.data.deleted} inactive request${res.data.deleted === 1 ? '' : 's'}`);
         }

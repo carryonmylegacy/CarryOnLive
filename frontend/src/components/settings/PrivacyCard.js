@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { toast } from '../../utils/toast';
 import { iosSafeDownload } from '../../utils/iosSafeDownload';
 import { useAuth } from '../../contexts/AuthContext';
@@ -26,7 +27,7 @@ const PrivacyCard = () => {
 
   useEffect(() => {
     if (!user) return;
-    axios.get(`${API_URL}/compliance/consent`, getAuthHeaders())
+    apiClient.get(`${API_URL}/compliance/consent`, getAuthHeaders())
       .then(res => setConsent(res.data))
       .catch(() => {});
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -41,7 +42,7 @@ const PrivacyCard = () => {
     setConsentLoading(true);
     try {
       const updated = { ...consent, [key]: value };
-      await axios.put(`${API_URL}/compliance/consent`, { [key]: value }, getAuthHeaders());
+      await apiClient.put(`${API_URL}/compliance/consent`, { [key]: value }, getAuthHeaders());
       setConsent(updated);
       const label = PREF_LABELS[key] || 'Preference';
       toast.success(`${label} ${value ? 'enabled' : 'disabled'} — saved.`);
@@ -52,7 +53,7 @@ const PrivacyCard = () => {
   const handleDataExport = useCallback(async () => {
     setExportLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/compliance/export`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/compliance/export`, getAuthHeaders());
       const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
       const filename = `carryon-data-export-${new Date().toISOString().split('T')[0]}.json`;
       await iosSafeDownload(blob, filename, 'Data export', 'privacy_data_export');
@@ -62,7 +63,7 @@ const PrivacyCard = () => {
 
   const fetchRetentionPolicy = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/compliance/retention-policy`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/compliance/retention-policy`, getAuthHeaders());
       setRetentionPolicy(res.data);
       setShowRetention(true);
     } catch { toast.error('Failed to load retention policy'); }
@@ -71,7 +72,7 @@ const PrivacyCard = () => {
   const handleDeleteRequest = useCallback(async () => {
     setDeleteLoading(true);
     try {
-      await axios.post(`${API_URL}/compliance/delete-request`, { reason: deleteReason }, getAuthHeaders());
+      await apiClient.post(`${API_URL}/compliance/delete-request`, { reason: deleteReason }, getAuthHeaders());
       toast.success('Account deletion requested. You will receive a confirmation email.');
       setShowDeleteConfirm(false);
       setTimeout(() => logout(), 3000);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { Camera, Pencil, X } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
@@ -72,9 +73,9 @@ const BeneficiaryHubPage = () => {
   const fetchData = async () => {
     try {
       const [estatesRes, connectionsRes, meRes] = await Promise.all([
-        axios.get(`${API_URL}/estates`, getAuthHeaders()),
-        axios.get(`${API_URL}/beneficiary/family-connections`, getAuthHeaders()).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/auth/me`, getAuthHeaders()).catch(() => ({ data: {} })),
+        apiClient.get(`${API_URL}/estates`, getAuthHeaders()),
+        apiClient.get(`${API_URL}/beneficiary/family-connections`, getAuthHeaders()).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/auth/me`, getAuthHeaders()).catch(() => ({ data: {} })),
       ]);
       setEstates((estatesRes.data || []).filter(e => e.user_role_in_estate !== 'owner'));
       setFamilyConnections(connectionsRes.data || []);
@@ -101,7 +102,7 @@ const BeneficiaryHubPage = () => {
       const reader = new FileReader();
       reader.onload = async () => {
         const base64 = reader.result.split(',')[1];
-        await axios.put(`${API_URL}/beneficiary/display-override`, {
+        await apiClient.put(`${API_URL}/beneficiary/display-override`, {
           estate_id: estateId,
           owner_photo_url: `data:image/jpeg;base64,${base64}`,
         }, getAuthHeaders());

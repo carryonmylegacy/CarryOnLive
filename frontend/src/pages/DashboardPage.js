@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { useAuth, useBrand } from '../contexts/AuthContext';
 import { useLabelCleaner } from '../utils/brandLabel';
 import { cachedGet } from '../utils/apiCache';
@@ -44,6 +45,7 @@ import {
 } from '../offline/repos/dashboardRepo';
 
 import PushPrompt from '../components/PushPrompt';
+import useIacTaskStream from '../hooks/useIacTaskStream';
 
 const DashboardPage = () => {
   const { user, getAuthHeaders, enabledFeatures, refreshEnabledFeatures } = useAuth();
@@ -226,24 +228,24 @@ const DashboardPage = () => {
       // Always fetch estate data AND onboarding progress in parallel.
       // financial/summary is now part of the same Promise.all so the
       // CFP tile updates in lockstep with the other tiles instead of
-      // a tick later — previously it fired on a separate axios.get().
+      // a tick later — previously it fired on a separate apiClient.get().
       // Without this, CFP visibly jumped from 0 → real *after* the
       // dashboard had already faded in.
       const [docsRes, msgsRes, bensRes, checklistRes, readinessRes, progressRes, ccpRes, financialRes] = await Promise.all([
-        axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()),
-        axios.get(`${API_URL}/messages/${estateId}`, getAuthHeaders()),
-        axios.get(`${API_URL}/beneficiaries/${estateId}`, getAuthHeaders()),
-        axios.get(`${API_URL}/checklists/${estateId}`, getAuthHeaders()),
-        axios.get(`${API_URL}/estate/${estateId}/readiness`, getAuthHeaders()).catch(() => null),
-        axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders()).catch(() => null),
-        axios.get(`${API_URL}/ccp/plans/${estateId}`, getAuthHeaders()).catch((err) => {
+        apiClient.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()),
+        apiClient.get(`${API_URL}/messages/${estateId}`, getAuthHeaders()),
+        apiClient.get(`${API_URL}/beneficiaries/${estateId}`, getAuthHeaders()),
+        apiClient.get(`${API_URL}/checklists/${estateId}`, getAuthHeaders()),
+        apiClient.get(`${API_URL}/estate/${estateId}/readiness`, getAuthHeaders()).catch(() => null),
+        apiClient.get(`${API_URL}/onboarding/progress`, getAuthHeaders()).catch(() => null),
+        apiClient.get(`${API_URL}/ccp/plans/${estateId}`, getAuthHeaders()).catch((err) => {
           // Surface the failure so we can debug "ccp tile stuck at 0"
           // bugs without silent log loss. Returning null lets ccpCount
           // below fall back to the cached count instead of 0.
           console.warn('[dashboard] /ccp/plans fetch failed:', err?.response?.status || err?.message);
           return null;
         }),
-        axios.get(`${API_URL}/financial/summary/${estateId}`, getAuthHeaders()).catch((err) => {
+        apiClient.get(`${API_URL}/financial/summary/${estateId}`, getAuthHeaders()).catch((err) => {
           // Same protection as ccp_plans: do NOT collapse a transient
           // network failure into a `0` CFP tile. Return null so the
           // fallback below preserves the prior cached summary.
@@ -321,7 +323,7 @@ const DashboardPage = () => {
           } else if (progressRes.data?.all_complete && !progressRes.data?.celebration_shown) {
             // All steps complete — show celebration (one-time, persisted on backend)
             guidedDismissedRef.current = true;
-            try { axios.post(`${API_URL}/onboarding/celebration-shown`, {}, getAuthHeaders()); } catch {}
+            try { apiClient.post(`${API_URL}/onboarding/celebration-shown`, {}, getAuthHeaders()); } catch {}
             setTimeout(() => setShowCelebration(true), 600);
           }
         }
@@ -339,68 +341,51 @@ const DashboardPage = () => {
   // Update ref after fetchEstateData is defined
   fetchEstateDataRef.current = fetchEstateData;
 
-  // Poll for EGA IAC generation task status (real-time updates)
-  useEffect(() => {
-    if (!estate?.id) return;
-    // Skip polling when EGA is gated for this user's tier
-    if (!isFeatureKeyEnabled('ega', enabledFeatures)) return;
-    let active = true;
-    let timeoutId = null;
-    const FAST_INTERVAL = 4000;
-    const IDLE_INTERVAL = 30000;
-    let currentInterval = FAST_INTERVAL;
-    const poll = async () => {
-      try {
-        const res = await axios.get(`${API_URL}/guardian/iac-task-status`, getAuthHeadersRef.current());
-        if (!active) return;
-        const task = res.data;
-        if (task.status === 'running') {
-          currentInterval = FAST_INTERVAL;
-          setEgaRunning(true);
-        } else if (task.status === 'completed' && task.completed_at) {
-          currentInterval = IDLE_INTERVAL;
-          setEgaRunning(false);
-          // Only refresh + toast when a new completion is detected.
-          // We DON'T toast on the very first poll of a user's session
-          // (lastCompletedAtRef.current is null), because that would
-          // surface a stale "X items added!" notice for a run that
-          // finished hours ago and the user already moved on from.
-          if (lastCompletedAtRef.current && lastCompletedAtRef.current !== task.completed_at) {
-            fetchEstateDataRef.current?.(estate.id);
-            const added = task.items_added || 0;
-            const dupes = task.duplicates_skipped || 0;
-            if (added > 0 && dupes > 0) {
-              toast.success(`IAC updated — ${added} new item${added > 1 ? 's' : ''} added (${dupes} duplicate${dupes > 1 ? 's' : ''} skipped)`);
-            } else if (added > 0) {
-              toast.success(`IAC updated — ${added} new item${added > 1 ? 's' : ''} added by Estate Guardian`);
-            } else if (task.error) {
-              toast.error(task.error);
-            } else if (dupes > 0) {
-              toast.success(`Estate Guardian found ${dupes} relevant action${dupes > 1 ? 's' : ''} — all already in your checklist.`);
-            } else {
-              toast.success('Estate Guardian finished generating — no new items this round.');
-            }
+  // EGA IAC task status — SSE-first (production-scale audit P0.3) with
+  // polling fallback inside the hook. Replaces the legacy 4s/30s
+  // adaptive polling loop: at 1,000 concurrent users this collapses
+  // ~250 req/sec into ~1,000 idle long-lived connections AND surfaces
+  // status changes within milliseconds instead of up to 4s late.
+  useIacTaskStream({
+    enabled: !!estate?.id && isFeatureKeyEnabled('ega', enabledFeatures),
+    onUpdate: useCallback((task) => {
+      if (task.status === 'running') {
+        setEgaRunning(true);
+      } else if (task.status === 'completed' && task.completed_at) {
+        setEgaRunning(false);
+        // Only refresh + toast when a new completion is detected.
+        // We DON'T toast on the very first event of a user's session
+        // (lastCompletedAtRef.current is null), because that would
+        // surface a stale "X items added!" notice for a run that
+        // finished hours ago and the user already moved on from.
+        if (lastCompletedAtRef.current && lastCompletedAtRef.current !== task.completed_at) {
+          fetchEstateDataRef.current?.(estate?.id);
+          const added = task.items_added || 0;
+          const dupes = task.duplicates_skipped || 0;
+          if (added > 0 && dupes > 0) {
+            toast.success(`IAC updated — ${added} new item${added > 1 ? 's' : ''} added (${dupes} duplicate${dupes > 1 ? 's' : ''} skipped)`);
+          } else if (added > 0) {
+            toast.success(`IAC updated — ${added} new item${added > 1 ? 's' : ''} added by Estate Guardian`);
+          } else if (task.error) {
+            toast.error(task.error);
+          } else if (dupes > 0) {
+            toast.success(`Estate Guardian found ${dupes} relevant action${dupes > 1 ? 's' : ''} — all already in your checklist.`);
+          } else {
+            toast.success('Estate Guardian finished generating — no new items this round.');
           }
-          lastCompletedAtRef.current = task.completed_at;
-        } else if (task.status === 'error' && lastCompletedAtRef.current !== task.completed_at && task.completed_at) {
-          currentInterval = IDLE_INTERVAL;
-          // Background error surfaced from a different page — let the
-          // user know without forcing them to navigate to /checklist.
-          setEgaRunning(false);
-          toast.error(task.error || 'Estate Guardian run failed — please try again from the Checklist page.');
-          lastCompletedAtRef.current = task.completed_at;
-        } else {
-          currentInterval = IDLE_INTERVAL;
-          setEgaRunning(false);
         }
-      } catch { /* silent */ }
-      if (active) {
-        timeoutId = setTimeout(poll, currentInterval);
+        lastCompletedAtRef.current = task.completed_at;
+      } else if (task.status === 'error' && lastCompletedAtRef.current !== task.completed_at && task.completed_at) {
+        // Background error surfaced from a different page — let the
+        // user know without forcing them to navigate to /checklist.
+        setEgaRunning(false);
+        toast.error(task.error || 'Estate Guardian run failed — please try again from the Checklist page.');
+        lastCompletedAtRef.current = task.completed_at;
+      } else {
+        setEgaRunning(false);
       }
-    };
-    poll();
-    return () => { active = false; if (timeoutId) clearTimeout(timeoutId); };
-  }, [estate?.id, enabledFeatures]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [estate?.id]),
+  });
 
   const completedTasks = checklists.filter(c => c.is_completed).length;
   const totalTasks = checklists.length || 5;
@@ -595,13 +580,13 @@ const DashboardPage = () => {
 
     const confirmOptionalSkip = async () => {
       try {
-        await axios.post(`${API_URL}/onboarding/complete-step/${guidedStep.key}`, {}, getAuthHeaders());
+        await apiClient.post(`${API_URL}/onboarding/complete-step/${guidedStep.key}`, {}, getAuthHeaders());
       } catch {}
       setShowOptionalSkipInfo(false);
       // Advance to the next step instead of dismissing entirely
       if (estate?.id) {
         try {
-          const progressRes = await axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
+          const progressRes = await apiClient.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
           const steps = progressRes.data?.steps || [];
           const nextIncomplete = steps.find(s => !s.completed);
           if (nextIncomplete && !progressRes.data?.all_complete) {
@@ -610,7 +595,7 @@ const DashboardPage = () => {
           } else if (progressRes.data?.all_complete && !progressRes.data?.celebration_shown) {
             guidedDismissedRef.current = true;
             setShowGuidedFlow(false);
-            try { axios.post(`${API_URL}/onboarding/celebration-shown`, {}, getAuthHeaders()); } catch {}
+            try { apiClient.post(`${API_URL}/onboarding/celebration-shown`, {}, getAuthHeaders()); } catch {}
             setTimeout(() => setShowCelebration(true), 600);
             return;
           }
