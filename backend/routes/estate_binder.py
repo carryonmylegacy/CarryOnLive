@@ -479,40 +479,70 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
         raise HTTPException(status_code=500, detail="Failed to assemble binder PDF") from exc
 
     # ── PASS 3b: clickable TOC + sidebar bookmarks.
-    # TOC entries are rendered on page index 1 (cover is page 0). Each
-    # `toc_links` entry already carries the rect in pypdf-native
-    # coordinates; we just need to map pdf_type → target page index.
-    # Also drop an outline (PDF "bookmarks") entry per section so
-    # readers' sidebar gets a navigable tree too.
+    # We MUST construct each Link annotation by hand. pypdf's helper
+    # `Link(target_page_index=N)` produces a `/Dest: [N, /Fit]` array
+    # where N is a raw integer — that's invalid per PDF spec (destination
+    # arrays require an indirect page reference, not an int) and is
+    # silently ignored by Preview, Acrobat, AND our in-browser PDF.js
+    # rendering. So we emit the canonical form ourselves:
+    #     /A → /GoTo → /D → [<page indirect ref>, /Fit]
+    # which every viewer honours.
     try:
-        from pypdf.annotations import Link
-        from pypdf.generic import Fit
+        from pypdf.generic import (
+            ArrayObject,
+            DictionaryObject,
+            NameObject,
+            NumberObject,
+            RectangleObject,
+        )
+        from pypdf.generic import Fit as _Fit
 
         toc_page_index = 1  # cover (0) + TOC (1)
+        toc_page = writer.pages[toc_page_index]
+        if toc_page.get("/Annots") is None:
+            toc_page[NameObject("/Annots")] = ArrayObject()
+        annots_array = toc_page[NameObject("/Annots")]
+
         rect_by_type = {row["pdf_type"]: row["rect_pt"] for row in toc_links}
         for section in available:
-            target_index = section["start_page"] - 1  # 1-indexed → 0-indexed
+            target_index = section["start_page"] - 1
             if target_index < 0 or target_index >= len(writer.pages):
                 continue
 
-            # Sidebar outline (clickable bookmark tree).
+            # Sidebar outline (bookmarks panel).
             writer.add_outline_item(
                 title=section["display_title"],
                 page_number=target_index,
-                fit=Fit.fit(),
+                fit=_Fit.fit(),
             )
 
-            # In-page TOC hot-link.
+            # In-page TOC hot-link (only if we captured a rect).
             rect = rect_by_type.get(section["pdf_type"])
-            if rect:
-                writer.add_annotation(
-                    page_number=toc_page_index,
-                    annotation=Link(
-                        rect=rect,
-                        target_page_index=target_index,
-                        fit=Fit.fit(),
+            if not rect:
+                continue
+            target_page = writer.pages[target_index]
+            link_dict = DictionaryObject(
+                {
+                    NameObject("/Type"): NameObject("/Annot"),
+                    NameObject("/Subtype"): NameObject("/Link"),
+                    NameObject("/Rect"): RectangleObject(rect),
+                    NameObject("/Border"): ArrayObject([NumberObject(0)] * 3),
+                    NameObject("/A"): DictionaryObject(
+                        {
+                            NameObject("/Type"): NameObject("/Action"),
+                            NameObject("/S"): NameObject("/GoTo"),
+                            NameObject("/D"): ArrayObject(
+                                [
+                                    target_page.indirect_reference,
+                                    NameObject("/Fit"),
+                                ]
+                            ),
+                        }
                     ),
-                )
+                    NameObject("/P"): toc_page.indirect_reference,
+                }
+            )
+            annots_array.append(writer._add_object(link_dict))
     except Exception as exc:  # noqa: BLE001
         # TOC links are an enhancement — never abort the assembly.
         logger.warning(f"Estate binder TOC link wiring failed (non-fatal): {exc}")

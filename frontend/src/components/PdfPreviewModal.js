@@ -136,9 +136,13 @@ const PdfPreviewModal = () => {
               const top = Math.min(y1, y2);
               const width = Math.abs(x2 - x1);
               const height = Math.abs(y2 - y1);
-              const a = document.createElement('a');
-              a.href = '#';
+              // Use <button> instead of <a href="#"> so a failed
+              // destination resolve can never trigger a hash-route
+              // navigation that bounces the user back to /dashboard.
+              const a = document.createElement('button');
+              a.type = 'button';
               a.setAttribute('data-pdf-link', '1');
+              a.setAttribute('aria-label', 'Jump to section');
               a.style.position = 'absolute';
               a.style.left = `${left}px`;
               a.style.top = `${top}px`;
@@ -146,25 +150,40 @@ const PdfPreviewModal = () => {
               a.style.height = `${height}px`;
               a.style.pointerEvents = 'auto';
               a.style.cursor = 'pointer';
-              // Resolve target page index — PDF.js gives us either an
-              // explicit `dest` array or a named destination string.
+              a.style.background = 'transparent';
+              a.style.border = 'none';
+              a.style.padding = '0';
+              a.style.margin = '0';
+              // Resolve target page index. PDF.js may give us:
+              //   - annot.dest (string name OR array)
+              //   - annot.action / annot.unsafeUrl for /A actions
+              // We handle the explicit /A → /GoTo → /D path that pypdf
+              // 6.x produces for internal links.
               let targetIndex = null;
               try {
                 let dest = annot.dest;
+                if (!dest && annot.url == null) {
+                  // Some PDF.js versions surface internal /GoTo actions
+                  // via annot.dest being null and the destination
+                  // hiding under `annot.action`/`annot.unsafeUrl`. Pull
+                  // from the raw dict when we can.
+                  const raw = annot;
+                  dest = raw.dest || null;
+                }
                 if (typeof dest === 'string') dest = await pdf.getDestination(dest);
                 if (Array.isArray(dest) && dest[0]) {
                   targetIndex = await pdf.getPageIndex(dest[0]);
                 }
               } catch { /* leave null */ }
-              if (targetIndex != null) {
-                a.addEventListener('click', (ev) => {
-                  ev.preventDefault();
-                  const target = container.querySelector(
-                    `canvas[data-page-index="${targetIndex + 1}"]`,
-                  );
-                  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                });
-              }
+              a.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                if (targetIndex == null) return;
+                const target = container.querySelector(
+                  `canvas[data-page-index="${targetIndex + 1}"]`,
+                );
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              });
               overlay.appendChild(a);
             }
             // Wrap the canvas in a relative positioned container so
