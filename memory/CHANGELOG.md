@@ -1,6 +1,26 @@
 # CarryOn — Changelog
 
 
+## Feb 12, 2026 — UI Fix: Remove cross-wired Essential Offline tiles from benefactor SDV
+
+**User report**: Benefactor SDV was showing the 4 essential-offline document tiles (Living Will, Healthcare Directive, GPoA, FPoA) with "Available offline to all beneficiaries" + "Manage offline access" copy at the top — this UX belongs only on the beneficiary SDV, since pre-transition a benefactor doesn't need to see what auto-caches to their beneficiaries' devices.
+
+**Root cause**: `VaultPage.js` (benefactor) was rendering `<EssentialOfflineSlots />` at line 1141. This was pre-existing behavior, NOT a regression from the IDOR fix or monolith series. The beneficiary side uses a different component (`BeneficiaryEssentialDocsPanel`) for its own essential-docs panel — so removing it from the benefactor side does not affect the beneficiary experience.
+
+**Fix** (all in `/app/frontend/src/pages/VaultPage.js`):
+- Removed `import EssentialOfflineSlots` (line 39).
+- Removed `essentialSlotsRefreshKey` state + `setEssentialSlotsRefreshKey` bump in `fetchData()`.
+- Removed the `<EssentialOfflineSlots ... />` JSX block (lines 1138-1156) including the `onUploadClick` / `onManageDesignation` props wiring.
+- Left explanatory comments at each removal site so future agents know the tiles intentionally moved to beneficiary-only.
+
+**Verification**: ESLint clean, `scripts/check.sh` ALL CLEAR. Live screenshot confirms the strings "auto-cached on designated beneficiaries" and "Living Will" no longer appear on the benefactor vault page body.
+
+**What still works for the benefactor**: Designation of essential documents is still possible via each document's per-row settings in the document list (the "Designate" / "Mark essential" controls — those are unchanged).
+
+**No changes to**: `BeneficiaryVaultPage.js`, `BeneficiaryEssentialDocsPanel.js`, `EssentialOfflineSlots.js` (kept in case it's referenced elsewhere in the future).
+
+
+
 ## Feb 12, 2026 — 🔴 P0 IDOR Security Fix (13 endpoints patched, 17/17 regression tests PASS)
 
 **What the bug was**: A fresh, just-registered user with zero relationship to any estate could read every CarryOn user's beneficiary PII + checklist items, and edit/delete other users' messages, beneficiaries, and checklist items — by passing any estate or item ID to ~13 endpoints. Confirmed exploitable end-to-end via live curl before fixing; demo data corrupted during verification was restored immediately.
