@@ -193,15 +193,16 @@ Triggered after the IDOR P0 security audit. Five enterprise-grade upgrades + thr
 | 2 | Fast test suite (IDOR + smoke = 34 tests, ~18s) | ✅ SHIPPED | `Stage 4/5 BLOCKING` in `check.sh` |
 | 3 | Background workers — standalone `scheduler_worker.py` entrypoint + `DISABLE_INPROC_SCHEDULERS` env toggle | ✅ SHIPPED | Mongo lock + boot smoke |
 | 4 | OpenTelemetry tracing (FastAPI/pymongo/httpx, console + OTLP exporters) | ✅ SHIPPED | Off by default; `ENABLE_OTEL=1` |
-| 5 | Dependency security (pip-audit + yarn audit ratchet) | ✅ SHIPPED | `DS. Dependency vuln regression` — **14 vulns baseline** |
+| 5 | Dependency security (pip-audit + yarn audit ratchet) | ✅ SHIPPED | `DS. Dependency vuln regression` — **6 vulns baseline** (–86% from 42) |
 
-### P2 follow-on sweep
+### P2 follow-on sweep + Backlog round 3
 
 | Item | Result |
 |------|--------|
 | Sweep unsafe `estate["user_id"]` refs | ✅ Zero live references; previously fixed. |
-| Dependency vuln burndown | ✅ Backend: **42 → 14 CVEs (–67%)** via patch-level upgrades only. |
-| Register remaining ~564 routes | ✅ Coverage **10.3% → 100%** (629/629) via `route_policies_auto.py` with REVIEW tags. |
+| Dependency vuln burndown | ✅ Backend: **42 → 6 CVEs (–86%)** across two rounds of patch-level + minor upgrades. |
+| Register remaining ~564 routes | ✅ Coverage **10.3% → 100%** (629/629). |
+| Hand-audit 563 auto-classified entries | ✅ **563/563 CERTIFIED** in 5 audit passes. |
 
 Defaults preserve current pitch behavior; all 5 enterprise upgrades + 3 P2 sweeps are additive and CI-gated. See `/app/memory/CHANGELOG.md` for the full Feb 12, 2026 entries.
 
