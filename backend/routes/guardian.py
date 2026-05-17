@@ -1620,6 +1620,21 @@ async def stream_iac_task_status(current_user: dict = Depends(get_current_user))
     PING_EVERY_S = 25  # idle heartbeat to keep proxies from killing the stream
 
     async def _event_stream():
+        # Anti-buffering primer: emit ~16 KB of SSE comment padding on
+        # connection so HTTP/1.1 proxies with default 4–8 KB output
+        # buffers (nginx, ELB, Cloudflare, k8s ingress) are forced to
+        # flush the chunk through to the client immediately. Without
+        # this, the proxy holds the first `data:` frame in its buffer
+        # until enough subsequent bytes accumulate — which never
+        # happens on an idle EGA task. Comment lines (starting with
+        # `:`) are explicitly ignored by the SSE / EventSource spec.
+        # The kubernetes ingress in this deployment was observed to
+        # buffer the entire response indefinitely with only a 2 KB
+        # primer; 16 KB consistently breaks past every proxy buffer
+        # we've tested. Cost: a one-time ~16 KB on connection — at
+        # 1,000 active users that's 16 MB total, an acceptable price
+        # for real-time event delivery.
+        yield ":" + (" " * (16 * 1024)) + "\n\n"
         started = datetime.now(timezone.utc)
         last_payload_json = None
         last_event_ts = started

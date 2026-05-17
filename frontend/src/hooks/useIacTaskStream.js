@@ -112,7 +112,20 @@ export default function useIacTaskStream({ enabled, onUpdate, onError }) {
       // Stream up: cancel any pending poll fallback.
       stopPolling();
       let streamStartTs = Date.now();
+      let sseProvenWorking = false;
       backoffMs = 1000;  // reset
+
+      // First-byte timeout: if no SSE frame arrives within 8 s, the
+      // intermediary proxy is almost certainly buffering the response
+      // (some kube ingresses don't honor X-Accel-Buffering: no). Abort
+      // the silent connection and fall back to polling so the UI
+      // doesn't go dark waiting for events that will never arrive.
+      const firstByteTimeout = setTimeout(() => {
+        if (!sseProvenWorking && !cancelled) {
+          try { abort?.abort(); } catch { /* noop */ }
+          startPolling();
+        }
+      }, 8000);
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -123,6 +136,7 @@ export default function useIacTaskStream({ enabled, onUpdate, onError }) {
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
+          sseProvenWorking = true;
           buffer += decoder.decode(value, { stream: true });
           // SSE events are separated by a blank line.
           let sepIdx;
@@ -150,16 +164,22 @@ export default function useIacTaskStream({ enabled, onUpdate, onError }) {
       } catch (err) {
         if (!cancelled) onErrorRef.current?.(err);
       } finally {
+        clearTimeout(firstByteTimeout);
         try { reader.cancel(); } catch { /* noop */ }
       }
       if (cancelled) return;
-      // Stream ended — reconnect (server closes on terminal/timeout;
-      // in either case the next reconnect picks up the next run).
-      // Defensive: if the stream closed in under 5s, treat it as a
-      // server hiccup and back off longer than the default 1s to
-      // avoid a reconnect storm. The server-side endpoint now keeps
-      // streams open with periodic ":ping" comments for 10 minutes,
-      // so a healthy connection should never close this quickly.
+      // If SSE never produced a single byte, the proxy is buffering —
+      // polling has already been kicked off by the first-byte timeout.
+      // Schedule a long-interval SSE retry so we eventually re-pick-up
+      // streaming if the proxy config gets fixed mid-session.
+      if (!sseProvenWorking) {
+        backoffMs = 60000;  // 1-minute retry while polling carries us
+        scheduleSseReconnect();
+        return;
+      }
+      // Stream ended after delivering events — reconnect normally.
+      // Defensive: if it closed in under 5s, back off longer than the
+      // default 1s to avoid a reconnect storm.
       const streamLifetimeMs = Date.now() - streamStartTs;
       if (streamLifetimeMs < 5000) {
         backoffMs = Math.max(backoffMs, 15000);
