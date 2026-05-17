@@ -15,9 +15,9 @@
  * animation language as FamilyTree.
  */
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { createPortal } from 'react-dom';
+import { RemoveTileModal } from './RemoveTileModal';
 import { notify } from '../../AppNotification';
-import { Settings, Info, Pencil, X } from 'lucide-react';
+import { Settings, Info, Pencil } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { getEntityPalette, getTypeMeta, ROLE_PALETTE, PALETTE, ROLE_OPTIONS } from '../../../config/entityCatalog';
 import EntityLegend, { LEGEND_W, LEGEND_H } from './EntityLegend';
@@ -1523,103 +1523,14 @@ export default function EntityOrgChart({
           sits above any zoom/pan transforms and any iOS PWA scroll
           containers. The benefactor (user) tile only gets the "Hide
           from chart" action — there's no DB record to delete. */}
-      {confirmRemoveNode && typeof document !== 'undefined' && createPortal(
-        <div
-          className="fixed inset-0 z-[2147483647] flex items-center justify-center px-4"
-          style={{ background: 'rgba(11,17,32,0.78)', backdropFilter: 'blur(6px)' }}
-          onClick={closeRemoveModal}
-          data-testid="entity-remove-modal-backdrop"
-        >
-          <div
-            className="w-full max-w-md rounded-2xl p-5 shadow-2xl overflow-y-auto"
-            style={{
-              background: 'var(--card)',
-              border: '1px solid var(--gold)',
-              color: 'var(--t)',
-              maxHeight: '85vh',
-            }}
-            onClick={(e) => e.stopPropagation()}
-            data-testid="entity-remove-modal"
-          >
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <div>
-                <div className="text-base font-bold" style={{ color: 'var(--gold)' }}>
-                  Remove this tile?
-                </div>
-                <div className="text-[13px] mt-1" style={{ color: 'var(--t3)' }}>
-                  {(() => {
-                    const n = confirmRemoveNode;
-                    if (n.kind === 'entity') {
-                      return `"${n.entity?.name || 'Entity'}" — deleting will also remove every connection to this entity.`;
-                    }
-                    if (n.kind === 'block') {
-                      return `"${n.name || 'Block'}" — deleting permanently removes this block from every entity it's attached to (the underlying beneficiary records are kept).`;
-                    }
-                    if (n.kind === 'cluster') {
-                      const parentName = (entities || []).find((e) => e.id === n.id)?.name || 'this entity';
-                      return `${n.members?.length || 0} beneficiar${(n.members?.length || 0) === 1 ? 'y' : 'ies'} are linked to ${parentName}. Deleting will unlink every one (the underlying beneficiary records are kept).`;
-                    }
-                    if (n.kind === 'user') {
-                      return `"${n.label || 'You'}" — this is your benefactor tile. You can hide it from the chart, but you can't delete yourself from your own estate.`;
-                    }
-                    if (n.kind === 'beneficiary') {
-                      return `"${n.label || 'Beneficiary'}" — deleting permanently removes this beneficiary from your estate (everywhere they appear).`;
-                    }
-                    return `"${n.label || 'Person'}" — deleting permanently removes this person from your estate.`;
-                  })()}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={closeRemoveModal}
-                aria-label="Close"
-                className="rounded-full p-1 hover:bg-[rgba(255,255,255,0.08)] flex-shrink-0"
-                style={{ color: 'var(--t3)' }}
-                data-testid="entity-remove-modal-close"
-              >
-                <X style={{ width: 18, height: 18 }} />
-              </button>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-2 mt-4">
-              <button
-                type="button"
-                onClick={confirmRemoveHide}
-                className="flex-1 rounded-md px-4 py-2.5 text-sm font-semibold"
-                style={{
-                  background: 'rgba(212,165,55,0.12)',
-                  border: '1px solid var(--gold)',
-                  color: 'var(--gold)',
-                }}
-                data-testid="entity-remove-modal-hide"
-              >
-                Hide from chart only
-              </button>
-              {confirmRemoveNode.kind !== 'user' && typeof onDeleteNode === 'function' && (
-                <button
-                  type="button"
-                  onClick={confirmRemoveDelete}
-                  className="flex-1 rounded-md px-4 py-2.5 text-sm font-semibold"
-                  style={{
-                    background: '#7F1D1D',
-                    border: '1px solid #DC2626',
-                    color: '#FEE2E2',
-                  }}
-                  data-testid="entity-remove-modal-delete"
-                >
-                  Delete permanently
-                </button>
-              )}
-            </div>
-            <div className="text-[11px] mt-3" style={{ color: 'var(--t4)' }}>
-              {confirmRemoveNode.kind === 'user'
-                ? 'Tip: click the "N hidden · Show all" pill in the top-right to restore.'
-                : 'Hiding is reversible. Deleting fires after a 5-second Undo window — tap "Undo" in the toast if you change your mind.'}
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+      <RemoveTileModal
+        node={confirmRemoveNode}
+        entities={entities}
+        onClose={closeRemoveModal}
+        onHide={confirmRemoveHide}
+        onDelete={confirmRemoveDelete}
+        canDelete={typeof onDeleteNode === 'function'}
+      />
     </div>
   );
 }

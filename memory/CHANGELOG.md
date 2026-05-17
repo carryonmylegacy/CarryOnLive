@@ -1,6 +1,28 @@
 # CarryOn — Changelog
 
 
+## Feb 12, 2026 — EntityOrgChart Follow-up Extraction: `RemoveTileModal.js`
+
+**Audit correction**: The original P1 recommendation was to extract the chart's toolbar (~150 LOC). Direct inspection revealed the toolbar (Center, Expand, Reset, etc.) actually lives in the **parent `EntitiesSection.js`**, not inside `EntityOrgChart.js`. Substituted with a different safe, well-bounded extraction: the Remove-Tile confirmation modal.
+
+**New module**: `components/financial/entities/RemoveTileModal.js` (125 lines)
+- Pure-presentational portal modal. Receives `{node, entities, onClose, onHide, onDelete, canDelete}` via props.
+- Owns zero internal state. Renders into `document.body` via `createPortal`.
+- All 5 data-testids preserved (`entity-remove-modal-backdrop`, `entity-remove-modal`, `entity-remove-modal-close`, `entity-remove-modal-hide`, `entity-remove-modal-delete`).
+
+**Reduction**: `EntityOrgChart.js` 1,630 → 1,541 lines (−89). Cumulative since Monolith 4/6 start: 2,536 → 1,541 (−39%).
+
+**Cleaned up unused imports**: removed `createPortal` from `react-dom` and `X` from `lucide-react` (both only used by the inline modal).
+
+**Verification**:
+- ESLint clean across all 6 sibling files + main file.
+- `scripts/check.sh`: ALL CLEAR — SAFE TO PUSH.
+- Live smoke-test: `/financial` page renders cleanly as admin (founder@carryon.us); 0 console errors.
+
+**Note**: File is 41 lines over the 1,500 NOTE-level soft threshold. Housekeeping `--strict` still passes (size guard is informational, not blocking). Remaining lines are the core 2D canvas pipeline (drag/zoom/edges/event handlers) which is explicitly protected per the "no regression" mandate.
+
+
+
 ## Feb 12, 2026 — P1 Items 1 & 2 Executed
 
 **Item 1 (N+1 fix in `/admin/user-subscriptions`)** — ✅ DONE
