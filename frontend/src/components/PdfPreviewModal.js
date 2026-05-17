@@ -15,7 +15,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, Printer, AlertTriangle, Loader2 } from 'lucide-react';
+import { ChevronLeft, Printer, Download, AlertTriangle, Loader2 } from 'lucide-react';
 import { isIOS } from '../utils/downloadFile';
 
 const PdfPreviewModal = () => {
@@ -252,6 +252,18 @@ const PdfPreviewModal = () => {
     };
   }, [entry]);
 
+  const handleDownload = useCallback(() => {
+    // Hand the user the ORIGINAL PDF blob — not a print-rasterized
+    // copy — so link annotations, bookmarks, and metadata survive.
+    if (!entry) return;
+    const a = document.createElement('a');
+    a.href = entry.url;
+    a.download = entry.filename || 'document.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }, [entry]);
+
   const handlePrint = async () => {
     if (printing || !entry) return;
     setPrinting(true);
@@ -410,6 +422,16 @@ const PdfPreviewModal = () => {
           <button
             type="button"
             className="pdf-preview-print"
+            onClick={handleDownload}
+            disabled={renderState === 'loading'}
+            data-testid="pdf-preview-download"
+            title="Save the PDF (keeps clickable links)"
+          >
+            <Download size={14} /> Save
+          </button>
+          <button
+            type="button"
+            className="pdf-preview-print"
             onClick={handlePrint}
             disabled={printing || renderState === 'loading'}
             data-testid="pdf-preview-print"
@@ -453,7 +475,7 @@ const PdfPreviewModal = () => {
         />
       </div>
     );
-  }, [entry, printing, renderState, pageCount, handleClose]);
+  }, [entry, printing, renderState, pageCount, handleClose, handleDownload]);
 
   if (typeof document === 'undefined') return null;
   return createPortal(portalContent, document.body);

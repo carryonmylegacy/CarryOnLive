@@ -269,16 +269,37 @@ def _build_title_and_toc_pdf(
 
 
 def _build_footer_overlay_pdf(*, page_count: int, estate_name: str, page_size) -> bytes:
-    """Generate a transparent overlay PDF with the binder footer on every page.
+    """Generate a transparent overlay PDF with the binder brand + footer
+    on every page.
 
-    The overlay matches `page_size` (taken from the first source page so
-    Letter/A4 mismatches don't shift the footer off-page). Each page
-    just has the footer string at the bottom centre.
+    Layout per page:
+      - Upper-left: small gold "CarryOn" brand text + "ESTATE BINDER"
+        kicker. The Link annotation that turns this into a clickable
+        "back to TOC" hot-link is added separately by the assembler
+        (annotations don't survive `merge_page`).
+      - Bottom-centre: "Page N of M · Estate Binder · {Estate Name}"
+        footer string.
+
+    The overlay matches `page_size` (taken from the first source page
+    so Letter/A4 mismatches don't shift the marks off-page).
     """
     pdf = FPDF(unit="pt", format=(page_size[0], page_size[1]))
     pdf.set_auto_page_break(False)
     for i in range(page_count):
         pdf.add_page()
+
+        # ── Upper-LEFT brand mark.
+        pdf.set_xy(20, 18)
+        pdf.set_font("Helvetica", "B", 14)
+        pdf.set_text_color(212, 175, 55)  # CarryOn gold
+        pdf.cell(0, 14, _safe("CarryOn"))
+
+        pdf.set_xy(20, 32)
+        pdf.set_font("Helvetica", "", 7)
+        pdf.set_text_color(150, 130, 80)
+        pdf.cell(0, 8, _safe("ESTATE BINDER"))
+
+        # ── Bottom-centre footer.
         pdf.set_xy(0, page_size[1] - 22)
         pdf.set_font("Helvetica", "", 8)
         pdf.set_text_color(120, 130, 150)
@@ -543,6 +564,59 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
                 }
             )
             annots_array.append(writer._add_object(link_dict))
+
+        # ── Back-to-TOC hot-link on the upper-left brand mark of
+        # EVERY non-TOC, non-cover page. Coordinates match the
+        # "CarryOn" text drawn by `_build_footer_overlay_pdf` above.
+        # We need to attach the annotation directly on the writer's
+        # page (not the overlay) because `merge_page` does not carry
+        # annotations across.
+        toc_page = writer.pages[toc_page_index]
+        for page_idx, page in enumerate(writer.pages):
+            if page_idx in (0, toc_page_index):
+                continue  # don't link the cover or the TOC to itself
+            try:
+                mb = page.mediabox
+                pg_top = float(mb.top)
+                pg_left = float(mb.left)
+            except Exception:
+                pg_top = first_page_size[1]
+                pg_left = 0.0
+
+            # Brand mark sits at x ∈ [20, 110], y_top ∈ [pg_top-18 .. pg_top-46]
+            # in fpdf coords (y measured from top). pypdf rect is y-up so
+            # we flip onto the source page's coordinate system.
+            link_left = pg_left + 14
+            link_right = pg_left + 120
+            link_top_pt = pg_top - 14  # y-up: top edge
+            link_bottom_pt = pg_top - 50  # y-up: bottom edge
+
+            back_link = DictionaryObject(
+                {
+                    NameObject("/Type"): NameObject("/Annot"),
+                    NameObject("/Subtype"): NameObject("/Link"),
+                    NameObject("/Rect"): RectangleObject(
+                        (link_left, link_bottom_pt, link_right, link_top_pt),
+                    ),
+                    NameObject("/Border"): ArrayObject([NumberObject(0)] * 3),
+                    NameObject("/A"): DictionaryObject(
+                        {
+                            NameObject("/Type"): NameObject("/Action"),
+                            NameObject("/S"): NameObject("/GoTo"),
+                            NameObject("/D"): ArrayObject(
+                                [
+                                    toc_page.indirect_reference,
+                                    NameObject("/Fit"),
+                                ]
+                            ),
+                        }
+                    ),
+                    NameObject("/P"): page.indirect_reference,
+                }
+            )
+            if page.get("/Annots") is None:
+                page[NameObject("/Annots")] = ArrayObject()
+            page[NameObject("/Annots")].append(writer._add_object(back_link))
     except Exception as exc:  # noqa: BLE001
         # TOC links are an enhancement — never abort the assembly.
         logger.warning(f"Estate binder TOC link wiring failed (non-fatal): {exc}")
