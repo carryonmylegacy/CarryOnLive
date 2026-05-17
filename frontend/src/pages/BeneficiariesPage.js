@@ -22,10 +22,8 @@ import {
 import {
   SortableContext,
   rectSortingStrategy,
-  useSortable,
   arrayMove,
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import {
   Users,
   Plus,
@@ -64,62 +62,25 @@ import { PhotoPicker } from '../components/PhotoPicker';
 import { AvatarCircle } from '../components/AvatarCircle';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import DateMaskInput from '../components/DateMaskInput';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '../components/ui/alert-dialog';
 import SlidePanel from '../components/SlidePanel';
 import SortControl, { makeSorter } from '../components/ui/SortControl';
 import FamilyTree from '../components/FamilyTree';
 import { API_URL } from '../config';
+import {
+  relations,
+  avatarColors,
+  SUCCESSION_LABELS,
+  getSuccessionLabel,
+  SUCCESSION_COLORS,
+  usStates,
+} from './beneficiariesPageConstants';
+import { SortableBeneficiaryCard } from './beneficiaries/SortableBeneficiaryCard';
+import { DeleteBeneficiaryDialog } from './beneficiaries/DeleteBeneficiaryDialog';
 
-// Sortable wrapper for beneficiary cards. When `disabled` is true the
-// useSortable instance is detached (drag listeners are no-ops) so the
-// user-selected non-succession sort order (e.g. alphabetical) doesn't
-// fight the drag handles.
-const SortableCard = ({ id, disabled, children }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 50 : 'auto',
-    position: 'relative',
-  };
-  return (
-    <div ref={setNodeRef} style={style} {...(disabled ? {} : attributes)} {...(disabled ? {} : listeners)}>
-      {children}
-    </div>
-  );
-};
-
-const relations = [
-  'Spouse', 'Son', 'Daughter', 'Son-in-law', 'Daughter-in-law', 'Mother', 'Father', 'Mother-in-law', 'Father-in-law', 'Brother', 'Sister', 'Aunt', 'Uncle', 'Grandson', 'Granddaughter', 'Grandmother', 'Grandfather', 'Nephew', 'Niece', 'Great-Grandson', 'Great-Granddaughter', 'Great-Grandmother', 'Great-Grandfather', 'Friend', 'Other'
-];
-
-const avatarColors = [
-  '#d4af37', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444', '#f59e0b', '#ec4899', '#06b6d4'
-];
-
-// Succession hierarchy labels — position 0 = Primary, 1 = Secondary, etc.
-const SUCCESSION_LABELS = [
-  'Primary', 'Secondary', 'Tertiary', 'Quaternary', 'Quinary',
-  'Senary', 'Septenary', 'Octonary', 'Nonary', 'Denary',
-];
-const getSuccessionLabel = (index) => SUCCESSION_LABELS[index] || `#${index + 1}`;
-const SUCCESSION_COLORS = {
-  0: { bg: 'rgba(34,201,147,0.15)', color: '#22C993', border: '1px solid rgba(34,201,147,0.3)' },
-  1: { bg: 'rgba(59,130,246,0.15)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)' },
-  2: { bg: 'rgba(139,92,246,0.15)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.3)' },
-};
-
-const usStates = [
-  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC'
-];
+// SortableCard, relation labels, avatar colors, succession constants, and
+// US state codes moved to ./beneficiariesPageConstants.js and
+// ./beneficiaries/SortableBeneficiaryCard.js during Monolith Reduction 6/6
+// (Feb 2026).
 
 const BeneficiariesPage = () => {
   const { user, getAuthHeaders } = useAuth();
@@ -989,7 +950,7 @@ const BeneficiariesPage = () => {
                   : { bg: 'rgba(100,116,139,0.08)', color: '#64748b', border: '1px solid rgba(100,116,139,0.15)' };
                 const isTileExpanded = expandedTiles.has(ben.id);
                 return (
-                <SortableCard key={ben.id} id={ben.id} disabled={benSortKey !== 'succession'}>
+                <SortableBeneficiaryCard key={ben.id} id={ben.id} disabled={benSortKey !== 'succession'}>
                 <Card className="glass-card group" data-testid={`beneficiary-${ben.id}`}>
                   <CardContent className="p-4 sm:p-5">
                     {/* Collapsed header — always visible */}
@@ -1244,7 +1205,7 @@ const BeneficiariesPage = () => {
                     )}
                   </CardContent>
                 </Card>
-                </SortableCard>
+                </SortableBeneficiaryCard>
               );
           })}
         </div>
@@ -1705,41 +1666,11 @@ const BeneficiariesPage = () => {
       />
 
       {/* Admin: Delete beneficiary dialog with "delete from all estates" option */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-[var(--t)]">Delete Beneficiary</AlertDialogTitle>
-            <AlertDialogDescription className="text-[var(--t4)]">
-              You are about to permanently delete <strong className="text-[var(--t)]">{deleteTarget?.name}</strong>.
-              Do you want to remove them from <strong>all connected estates</strong>, or only this estate?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogCancel
-              className="text-[var(--t4)] border-[var(--b)] hover:bg-[var(--s)]"
-              data-testid="delete-ben-cancel"
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => handleDelete(deleteTarget?.id, false)}
-              className="font-bold"
-              style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}
-              data-testid="delete-ben-this-estate"
-            >
-              This Estate Only
-            </AlertDialogAction>
-            <AlertDialogAction
-              onClick={() => handleDelete(deleteTarget?.id, true)}
-              className="font-bold"
-              style={{ background: '#EF4444', color: '#fff' }}
-              data-testid="delete-ben-all-estates"
-            >
-              All Estates
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteBeneficiaryDialog
+        target={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onDelete={handleDelete}
+      />
     </div>
   );
 };

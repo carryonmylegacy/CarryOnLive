@@ -82,20 +82,7 @@ import {
   deletePendingUpload,
 } from '../offline/pendingUploadsRepo';
 import { getDB as getOfflineDB } from '../offline/db';
-
-const triggerIcons = {
-  immediate: Send,
-  age_milestone: Calendar,
-  event: Star,
-  specific_date: CalendarDays,
-};
-
-const eventTypes = [
-  { value: 'birthday', label: 'Birthday', icon: Gift },
-  { value: 'graduation', label: 'Graduation', icon: GraduationCap },
-  { value: 'marriage', label: 'Marriage', icon: Heart },
-  { value: 'custom', label: 'Custom Event', icon: Star },
-];
+import { triggerIcons, eventTypes } from './messagesPageConstants';
 
 const MessagesPage = () => {
   const { user, getAuthHeaders } = useAuth();

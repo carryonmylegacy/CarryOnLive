@@ -1,6 +1,66 @@
 # CarryOn — Changelog
 
 
+## Feb 12, 2026 — Monolith Reduction 6/6: `BeneficiariesPage.js` (1,747 → 1,678 lines)
+
+3 atomic extractions of low-risk pure-presentational pieces:
+
+**New modules**:
+- `pages/beneficiariesPageConstants.js` (35 lines) — `relations`, `avatarColors`, `SUCCESSION_LABELS`, `getSuccessionLabel`, `SUCCESSION_COLORS`, `usStates`. Pure data, zero risk.
+- `pages/beneficiaries/SortableBeneficiaryCard.js` (30 lines) — drag-wrapper component (`@dnd-kit` `useSortable` + `CSS.Transform`). Renamed from `SortableCard` to be self-documenting in its new home.
+- `pages/beneficiaries/DeleteBeneficiaryDialog.js` (58 lines) — confirmation dialog for beneficiary deletion (3-button: cancel / this estate / all estates). Receives target + handlers via props; no internal state.
+
+**Removed from BeneficiariesPage.js**: 
+- `SortableCard` declaration
+- 5 data constants + 1 helper function
+- 34-line inline AlertDialog block (replaced with `<DeleteBeneficiaryDialog ... />`)
+- 2 unused imports (`useSortable`, `CSS`) and 8 AlertDialog re-exports.
+
+**Verification**:
+- ESLint: 0 issues across all 3 new files + main file.
+- `scripts/check.sh`: ALL CLEAR — SAFE TO PUSH.
+- Live smoke-test: `/beneficiaries` page renders cleanly as benefactor (info@carryon.us / Pete Mitchell); empty state with "Add Your First Beneficiary" CTA + sidebar nav intact.
+- Net reduction: 1,747 → 1,678 lines (4%). Remaining state-coupled handlers (~1,500 lines) require dedicated structural-rewrite session.
+
+
+
+## Feb 12, 2026 — Monolith Reduction 5/6: `MessagesPage.js` (1,926 → 1,913 lines, deferred)
+
+**Honest finding**: `MessagesPage.js` is structurally a single-component page where the giant `handleCreate` (375 lines), `fetchData` (119 lines), and recording handlers (camera + voice, ~240 lines combined) have deeply intertwined dependencies on ~30+ pieces of component state (offline outbox, draft persistence, pendingUpload refs, blob lifecycle). Per the user's mandate ("**Extreme caution. Absolute precision. No shortcuts. No regression**"), forcing those into custom hooks introduces real regression risk on offline-milestone resume + draft restore behavior — both of which were carefully tuned over multiple prior sessions.
+
+**Safe extraction completed**:
+- `messagesPageConstants.js` (23 lines) — `triggerIcons` + `eventTypes` (pure lookup data, zero risk).
+
+**Deferred to future structural-rewrite session** (P2, post-pitch):
+- Split `MessagesPage.js` into `useMessagesData()`, `useMessageDraft()`, `useMessageRecording()`, and a thin shell component. Requires a full dedicated session with regression test coverage of the offline outbox + draft persistence paths.
+
+**Verification**: ESLint clean, `scripts/check.sh` ALL CLEAR. Housekeeping size-guard is a NOTE only (informational), not a WARN/FAIL — the 1,913-line file does not block strict-mode push.
+
+
+
+## Feb 12, 2026 — Monolith Reduction 4/6: `EntityOrgChart.js` (2,536 → 1,630 lines)
+
+Surgical split of the largest frontend monolith — the demo-critical 2D org-chart canvas. **Core drag/zoom/event handlers, persistence logic, and rendering pipeline left ENTIRELY untouched.** 5 atomic extractions of clearly-separable pure code.
+
+**New sibling modules** (all in `components/financial/entities/`):
+- `entityChartConstants.js` (75 lines) — tile size, geometry, cluster, localStorage-key constants + `BUCKET_ICON`, `clusterHeight`.
+- `entityChartGeometry.js` (175 lines) — `anchorOn`, `stepOut`, `hSegHitsRect`, `vSegHitsRect`, `hash01`, `routeEdge`, `polylineToRoundedPath`. Pure orthogonal-edge routing math.
+- `entityChartGraph.js` (375 lines) — `buildGraph` + `computeInitialLayout`. Pure graph construction + default layered layout.
+- `entityChartTiles.js` (337 lines) — `TileIconButton`, `PersonTile`, `EntityTile`, `ClusterTile`. Presentational components, props-in/callbacks-out only.
+- `entityChartLayoutUtils.js` (74 lines) — `resetEntityChartPositions`, `cleanUpEntityChartPositions`. localStorage manipulation utilities.
+
+**Backward compatibility**: All previously-exported symbols (`buildGraph`, `computeInitialLayout`, `routeEdge`, `polylineToRoundedPath`, `PRINT_TILE_DIMENSIONS`, `resetEntityChartPositions`, `cleanUpEntityChartPositions`, default `EntityOrgChart`) are re-exported from `EntityOrgChart.js`. External consumers (`EntitiesPrintPage.js`, `EntitiesSection.js`, `BeneficiaryEntitiesPage.js`) need no changes.
+
+**Verification**:
+- ESLint: 0 issues across all 5 new files + main file.
+- `scripts/check.sh`: ALL CLEAR — SAFE TO PUSH.
+- Live smoke-test: `/financial` page renders cleanly as admin (founder@carryon.us); no console errors; imports resolve.
+- 36% reduction. Housekeeping size-guard threshold is 1,500 (NOTE only, not WARN/FAIL).
+
+**Untouched** (per "surgical, no shortcuts" mandate): the main `EntityOrgChart` component function body (drag handling, marquee selection, pan/zoom, edge rendering loop, modal portals) remains intact.
+
+
+
 ## Feb 12, 2026 — Monolith Reduction 3/6: `subscriptions/checkout.py` (1,630 → 838 lines)
 
 Surgical split of the subscriptions checkout monolith, executed during a live B2B pitch window. **Zero behavioral regression** — 24/24 backend tests pass (iter 151).
