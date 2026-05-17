@@ -111,6 +111,7 @@ export default function useIacTaskStream({ enabled, onUpdate, onError }) {
       }
       // Stream up: cancel any pending poll fallback.
       stopPolling();
+      let streamStartTs = Date.now();
       backoffMs = 1000;  // reset
 
       const reader = res.body.getReader();
@@ -154,6 +155,15 @@ export default function useIacTaskStream({ enabled, onUpdate, onError }) {
       if (cancelled) return;
       // Stream ended — reconnect (server closes on terminal/timeout;
       // in either case the next reconnect picks up the next run).
+      // Defensive: if the stream closed in under 5s, treat it as a
+      // server hiccup and back off longer than the default 1s to
+      // avoid a reconnect storm. The server-side endpoint now keeps
+      // streams open with periodic ":ping" comments for 10 minutes,
+      // so a healthy connection should never close this quickly.
+      const streamLifetimeMs = Date.now() - streamStartTs;
+      if (streamLifetimeMs < 5000) {
+        backoffMs = Math.max(backoffMs, 15000);
+      }
       scheduleSseReconnect();
     };
 

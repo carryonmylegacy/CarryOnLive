@@ -1617,11 +1617,12 @@ async def stream_iac_task_status(current_user: dict = Depends(get_current_user))
 
     MAX_STREAM_DURATION_S = 600  # 10-minute defensive ceiling per connection
     POLL_INTERVAL_S = 2
+    PING_EVERY_S = 25  # idle heartbeat to keep proxies from killing the stream
 
     async def _event_stream():
         started = datetime.now(timezone.utc)
         last_payload_json = None
-        terminal_states = {"completed", "error", "canceled"}
+        last_event_ts = started
         while True:
             task = await db.ega_tasks.find_one(
                 {"estate_id": estate_id, "type": "generate_iac"},
@@ -1639,16 +1640,26 @@ async def stream_iac_task_status(current_user: dict = Depends(get_current_user))
                     "error": task.get("error"),
                 }
             payload_json = json_module.dumps(payload, default=str)
+            now = datetime.now(timezone.utc)
             if payload_json != last_payload_json:
                 yield f"data: {payload_json}\n\n"
                 last_payload_json = payload_json
-            # Stop the stream once we observe a terminal state.
-            if payload.get("status") in terminal_states:
-                yield 'event: close\ndata: {"reason":"terminal"}\n\n'
-                return
+                last_event_ts = now
+            else:
+                # No payload change — emit a comment-only heartbeat every
+                # PING_EVERY_S so intermediaries (Cloudflare, nginx, ELB)
+                # don't reap the connection as idle. Comments are ignored
+                # by the EventSource / fetch-stream parser.
+                if (now - last_event_ts).total_seconds() >= PING_EVERY_S:
+                    yield ": ping\n\n"
+                    last_event_ts = now
             # Defensive ceiling so a leaked client connection can't
-            # keep this coroutine running forever.
-            age_s = (datetime.now(timezone.utc) - started).total_seconds()
+            # keep this coroutine running forever. We intentionally do
+            # NOT close on terminal status (completed/error/canceled)
+            # because the SAME client wants to be notified about the
+            # NEXT run that may start a minute later. Closing on every
+            # terminal state caused a client reconnect storm (~1/sec).
+            age_s = (now - started).total_seconds()
             if age_s > MAX_STREAM_DURATION_S:
                 yield 'event: close\ndata: {"reason":"timeout"}\n\n'
                 return
