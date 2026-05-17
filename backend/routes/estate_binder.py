@@ -167,6 +167,12 @@ def _build_title_and_toc_pdf(
     )
 
     # ── TOC PAGE ────────────────────────────────────────────────────
+    toc_links: list[dict] = []
+    # 1 mm = 2.8346456693 pt. Cache for clarity.
+    MM_TO_PT = 2.8346456693
+    page_height_pt = pdf.h * MM_TO_PT
+    page_width_pt = pdf.w * MM_TO_PT
+
     if available_sections:
         pdf.add_page()
         pdf.set_font("Helvetica", "B", 20)
@@ -178,11 +184,21 @@ def _build_title_and_toc_pdf(
         pdf.line(pdf.l_margin, pdf.get_y(), pdf.l_margin + page_w, pdf.get_y())
         pdf.ln(6)
 
+        # Each row is title-cell (110mm) + date (40mm) + page-num
+        # (remainder). For the clickable hit area we want the *whole*
+        # row (left margin → right margin) so taps anywhere on the
+        # entry navigate, not just on the bold title.
+        row_height_mm = 9.0  # 7mm cell + 2mm trailing ln() = visual row
         pdf.set_font("Helvetica", "", 11)
         for idx, section in enumerate(available_sections, start=1):
             title_str = f"{idx}.  {section['display_title']}"
             date_str = section.get("updated_label") or ""
             page_str = f"Page {section['start_page']}"
+
+            # Capture the row's top-y BEFORE rendering it so we can
+            # compute the clickable rect in pypdf coordinates after
+            # the binder is fully stitched.
+            row_top_mm = pdf.get_y()
 
             # Title (left)
             pdf.set_text_color(40, 50, 80)
@@ -200,9 +216,22 @@ def _build_title_and_toc_pdf(
             pdf.cell(0, 7, _safe(page_str), new_x="LMARGIN", new_y="NEXT", align="R")
             pdf.ln(2)
 
+            # Compute the link rect in pypdf coordinates (points,
+            # y-up). fpdf's y is measured from the top so we flip.
+            x1 = pdf.l_margin * MM_TO_PT
+            x2 = (pdf.w - pdf.r_margin) * MM_TO_PT
+            top_pt = page_height_pt - (row_top_mm * MM_TO_PT)
+            bottom_pt = page_height_pt - ((row_top_mm + row_height_mm) * MM_TO_PT)
+            toc_links.append(
+                {
+                    "pdf_type": section["pdf_type"],
+                    "rect_pt": (x1, bottom_pt, x2, top_pt),
+                }
+            )
+
     # Output as bytes (fpdf2 returns bytearray)
     out = pdf.output()
-    return bytes(out)
+    return bytes(out), toc_links, page_width_pt, page_height_pt
 
 
 def _build_footer_overlay_pdf(*, page_count: int, estate_name: str, page_size) -> bytes:
@@ -394,7 +423,7 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
     # use it further because the footer pass derives the real total
     # from the assembled writer.
 
-    cover_toc_bytes = _build_title_and_toc_pdf(
+    cover_toc_bytes, toc_links, _toc_page_w, _toc_page_h = _build_title_and_toc_pdf(
         user_name=user_name,
         estate_name=estate_name,
         address_lines=addr_lines,
@@ -414,6 +443,45 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
     except Exception as exc:  # noqa: BLE001
         logger.exception(f"Estate binder stitch failed for user={user_id}")
         raise HTTPException(status_code=500, detail="Failed to assemble binder PDF") from exc
+
+    # ── PASS 3b: clickable TOC + sidebar bookmarks.
+    # TOC entries are rendered on page index 1 (cover is page 0). Each
+    # `toc_links` entry already carries the rect in pypdf-native
+    # coordinates; we just need to map pdf_type → target page index.
+    # Also drop an outline (PDF "bookmarks") entry per section so
+    # readers' sidebar gets a navigable tree too.
+    try:
+        from pypdf.annotations import Link
+        from pypdf.generic import Fit
+
+        toc_page_index = 1  # cover (0) + TOC (1)
+        rect_by_type = {row["pdf_type"]: row["rect_pt"] for row in toc_links}
+        for section in available:
+            target_index = section["start_page"] - 1  # 1-indexed → 0-indexed
+            if target_index < 0 or target_index >= len(writer.pages):
+                continue
+
+            # Sidebar outline (clickable bookmark tree).
+            writer.add_outline_item(
+                title=section["display_title"],
+                page_number=target_index,
+                fit=Fit.fit(),
+            )
+
+            # In-page TOC hot-link.
+            rect = rect_by_type.get(section["pdf_type"])
+            if rect:
+                writer.add_annotation(
+                    page_number=toc_page_index,
+                    annotation=Link(
+                        rect=rect,
+                        target_page_index=target_index,
+                        fit=Fit.fit(),
+                    ),
+                )
+    except Exception as exc:  # noqa: BLE001
+        # TOC links are an enhancement — never abort the assembly.
+        logger.warning(f"Estate binder TOC link wiring failed (non-fatal): {exc}")
 
     # ── PASS 4: footer overlay. Apply across EVERY page in the binder.
     final_page_count = len(writer.pages)
