@@ -1,6 +1,34 @@
 # CarryOn — Changelog
 
 
+## Feb 12, 2026 — Backlog Sweep (Round 4): Frontend Vuln Burndown + Backend Round 3
+
+Two more backlog items shipped in the same session:
+
+### A. ✅ Frontend yarn audit — **121 → 2 vulns (–98%)**, 0 production-runtime
+- Direct dep upgrade: `axios ^1.13.5 → ^1.15.2` (high+moderate+low CVE fixes; also pulled follow-redirects 1.16.0).
+- Direct dep upgrade: `@capgo/cli ^7.82.0 → ^7.84.6` (1 high CVE).
+- Direct dev-dep upgrade: `postcss ^8.4.49 → ^8.5.10` (1 moderate CVE).
+- Added `resolutions` field to `package.json` forcing patched versions for **17 transitive deps**: `@babel/plugin-transform-modules-systemjs`, `@tootallnate/once`, `@xmldom/xmldom`, `brace-expansion`, `fast-uri`, `flatted`, `follow-redirects`, `jsonpath`, `lodash`, `nth-check`, `path-to-regexp`, `picomatch`, `postcss`, `serialize-javascript`, `svgo`, `underscore`, `yaml`.
+- Tested `webpack-dev-server 5.x` resolution — **REVERTED**: incompatible with react-scripts (CRA) which uses v4's `onAfterSetupMiddleware` API. The remaining 2 moderate webpack-dev-server vulns are **DEV-SERVER ONLY** (never deployed to production); not exploitable on the live app.
+- Net result: 121 vulns (58 high + 59 moderate + 4 low) → 2 (0 high + 2 moderate, dev-only). Production runtime is **100% clean**.
+- Frontend rebuilt successfully (HTTP 200 + "webpack compiled successfully").
+
+### B. ✅ Backend vuln burndown round 3 — **6 → 4 vulns (–33%)**
+- `fastapi 0.115.14 → 0.136.1` (latest stable) — unlocked the starlette range cap.
+- `starlette 0.40.0 → 0.49.1` (fixes both remaining starlette CVEs: CVE-2025-54121 and CVE-2025-62727).
+- Attempted `litellm 1.83.7` upgrade and `emergentintegrations 0.1.0 → 0.1.2` (Emergent private index) → **both reverted in requirements.txt**: emergentintegrations 0.1.2 still pins `openai==1.99.9`, while litellm 1.83+ requires openai 2.x. The 4 remaining litellm CVEs are blocked behind that pin and tracked for the emergentintegrations maintainer.
+- All 34 fast tests pass. Real Grok call verified (HTTP 200, sensible estate-planning response).
+
+**Cumulative score across all rounds**:
+- Backend: 42 → 4 CVEs (**–90%**)
+- Frontend: 121 → 2 CVEs (**–98%**, 100% production-clean)
+- Combined: 163 → 6 CVEs (**–96%**)
+
+**Verified**: `bash scripts/check.sh` → **ALL CLEAR — SAFE TO PUSH**. 34/34 fast tests green. Frontend smoke-screenshot rendered clean landing page.
+
+
+
 ## Feb 12, 2026 — Backlog Sweep (Round 3): Route Audit + Vuln Burndown Round 2
 
 Right after the P2 cleanup, two more backlog items shipped in the same session:
