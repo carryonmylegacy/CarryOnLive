@@ -213,6 +213,118 @@ export const DISASTER_TEMPLATES = {
       { key: 'seal_room', label: 'Best seal-in-place room (fewest windows/vents)', placeholder: 'e.g., Interior hallway bathroom with one small vent — duct tape ready in the cabinet', required: false },
     ],
   },
+
+  // ─── ADDED FEB 2026 — 12 NEW DISASTER TILES ──────────
+  active_shooter: {
+    evacuationType: 'variable',
+    intro: 'Run, Hide, Fight — in that order. The hardest part isn\'t the seconds of the event itself; it\'s the reunification AFTER police clear the scene. Your plan needs a post-incident rendezvous and a way to confirm every family member is safe before anyone moves.',
+    questions: [
+      { key: 'reunification_point', label: 'Post-incident reunification point *', placeholder: 'e.g., Starbucks on Main + 5th — open 24/7, well-lit, away from likely targets', required: true, type: 'address' },
+      { key: 'code_word', label: 'Family code word that confirms a "safe" message is real (not coerced)', placeholder: 'e.g., "Pancakes" — if anyone texts without it, treat the message as suspect', required: false },
+      { key: 'kid_school_protocol', label: 'Schools your kids attend — do they run lockdown drills?', placeholder: 'e.g., Maple Elem runs ALICE drills quarterly; kids know to listen to teachers and not leave', required: false },
+      { key: 'silent_911', label: 'Do you know how to text 911 silently?', placeholder: 'Most US carriers support it — verify it works in your area', required: false, type: 'select', options: ['Yes, tested it', 'I know it exists but haven\'t tested', 'I didn\'t know that was possible'] },
+    ],
+  },
+  heat_wave: {
+    evacuationType: 'shelter',
+    intro: 'Extreme heat kills more Americans per year than every other weather event combined, mostly in homes that lost AC or never had it. Your plan identifies the coolest space, the high-risk people, and a public cooling center as backup.',
+    questions: [
+      { key: 'coolest_room', label: 'Coolest room in the home (lowest floor, north-facing, blackout shades) *', placeholder: 'e.g., Basement guest room — stays 10° cooler than upstairs', required: true },
+      { key: 'cooling_center', label: 'Nearest public cooling center', placeholder: 'e.g., Public library at 5th & Oak — opens 9am during heat advisories', required: false, type: 'address' },
+      { key: 'high_risk_check', label: 'Who in the household needs check-ins every 2 hours?', placeholder: 'e.g., Mom (elderly, on heart meds); Lucas (5, asthma — needs hydration prompts)', required: false },
+      { key: 'ac_failure', label: 'AC failure plan — who do you call first?', placeholder: 'e.g., HVAC contractor on speed dial; emergency window unit in garage', required: false },
+    ],
+  },
+  drought: {
+    evacuationType: 'shelter',
+    intro: 'Drought is slow-onset but compounds with fire risk and well-pump failure. The plan focuses on water reserves, conservation routines, and the increased wildfire-risk posture during dry months.',
+    questions: [
+      { key: 'water_source', label: 'Primary water source *', placeholder: 'e.g., Municipal water; private well 280ft deep tested clean Jan 2026', required: true, type: 'select', options: ['Municipal water', 'Private well', 'Cistern / rainwater', 'Mixed sources'] },
+      { key: 'stored_water', label: 'Days of stored drinking water on hand (1 gal/person/day target)', placeholder: 'e.g., 14 days for a family of 4 = 56 gallons in 7-gal jerry cans in garage', required: false },
+      { key: 'graywater_use', label: 'Graywater reuse — do you capture shower/sink water for plants?', placeholder: 'Optional but a big mindset shift during long droughts', required: false, type: 'select', options: ['Yes, dedicated system', 'Bucket method when reminded', 'Not yet', 'Not allowed by HOA / municipality'] },
+      { key: 'restriction_alerts', label: 'How do you learn about water restrictions in your area?', placeholder: 'e.g., City utility text alerts at 555-WATER', required: false },
+    ],
+  },
+  hailstorm: {
+    evacuationType: 'shelter',
+    intro: 'Hail rarely kills people but routinely costs $10K+ in damage. Your plan moves vehicles under cover, gets everyone inside, and sets up the insurance-documentation routine for the morning after.',
+    questions: [
+      { key: 'covered_parking', label: 'Where do vehicles go when a hail warning hits? *', placeholder: 'e.g., Garage (1 car); covered carport at the office (the other); neighbor\'s garage as backup', required: true },
+      { key: 'safe_interior_room', label: 'Safe interior room (away from skylights / large windows)', placeholder: 'e.g., First-floor laundry room — no windows', required: false },
+      { key: 'insurance_carrier', label: 'Homeowner\'s insurance carrier + claim hotline', placeholder: 'e.g., State Farm — 1-800-SF-CLAIM (saved in vault)', required: false },
+      { key: 'roof_age', label: 'Approximate roof age (insurers ask this)', placeholder: 'e.g., 8 years — asphalt shingle, last inspected 2024', required: false },
+    ],
+  },
+  lightning_storm: {
+    evacuationType: 'shelter',
+    intro: 'Most lightning deaths happen to people who didn\'t see the storm coming. The 30/30 rule: if thunder follows lightning within 30 seconds, go inside and stay inside for 30 minutes after the last clap.',
+    questions: [
+      { key: 'safe_indoor_zone', label: 'Safe indoor area (away from plumbing, corded electronics, windows) *', placeholder: 'e.g., Interior living room — no exterior wall outlets', required: true },
+      { key: 'outdoor_activities', label: 'Family outdoor activities that need clear-out rules', placeholder: 'e.g., Soccer practice at Riverside Park — coach blows whistle, everyone to the clubhouse', required: false },
+      { key: 'surge_protection', label: 'Surge-protected critical electronics', placeholder: 'e.g., Home office + entertainment center on whole-house surge protector; sensitive items unplugged ahead of storms', required: false },
+      { key: 'lightning_app', label: 'Lightning-tracker app or alert source', placeholder: 'e.g., RadarScope / My Lightning Tracker — alerts when strikes within 8 mi', required: false },
+    ],
+  },
+  volcanic: {
+    evacuationType: 'distant',
+    intro: 'Ash, not lava, is what affects most volcano-zone households. It can collapse roofs, ruin engines, and damage lungs. Your plan stockpiles respirators, seals the home, and gets you AWAY from the prevailing-wind plume direction.',
+    questions: [
+      { key: 'evacuation_primary', label: 'Primary evacuation destination (crosswind, not downwind) *', placeholder: 'e.g., Aunt Lisa\'s house in Bend, OR — west of the prevailing wind', required: true, type: 'address' },
+      { key: 'n95_count', label: 'N95+ respirators on hand (1 per person + spares)', placeholder: 'e.g., 12 N95s in the kitchen pantry; replaced annually', required: false },
+      { key: 'ash_sealing', label: 'Plan for sealing windows, doors, and HVAC intakes?', placeholder: 'e.g., Duct tape + plastic sheeting in garage; HVAC switch labeled on thermostat', required: false },
+      { key: 'pet_ash_plan', label: 'Pet protection from ash', placeholder: 'e.g., Dogs come inside; pet face shields ordered after 2023 Mauna Loa scare', required: false },
+    ],
+  },
+  landslide: {
+    evacuationType: 'distant',
+    intro: 'Landslides give minutes of warning at most. The plan recognizes the warning signs (new wall cracks, sticking doors, cracking-tree sounds), commits to a downhill-but-not-river-valley evacuation route, and stays out post-event because secondary slides are common.',
+    questions: [
+      { key: 'evacuation_route', label: 'Evacuation destination (downhill, away from river valleys) *', placeholder: 'e.g., Town center across the highway — 3 miles, downhill route via West Ave', required: true, type: 'address' },
+      { key: 'warning_signs', label: 'Have you noticed any warning signs at the home recently?', placeholder: 'e.g., New cracks in the basement wall last spring; door at the back sticks more than it used to', required: false, type: 'select', options: ['No signs noticed', 'Sticking doors / new wall cracks', 'Sounds of cracking trees / boulders', 'Visible ground movement / leaning trees', 'Not sure what to look for'] },
+      { key: 'wildfire_proximity', label: 'Was a wildfire in the area within the last 2 years?', placeholder: 'Post-burn slopes are massively more landslide-prone in the next rainy season', required: false, type: 'select', options: ['No', 'Yes — within 1 mile', 'Yes — within 5 miles', 'Not sure'] },
+    ],
+  },
+  avalanche: {
+    evacuationType: 'shelter',
+    intro: 'Avalanches are a backcountry-recreation and mountain-residence risk. The plan requires beacons, training, and a clear understanding of the avalanche path that your home or favorite trails sit in.',
+    questions: [
+      { key: 'transceiver_gear', label: 'Every backcountry-going family member has beacon + probe + shovel? *', placeholder: 'e.g., Yes — refreshed batteries Dec 2025; everyone took AIARE Level 1 in 2024', required: true, type: 'select', options: ['Yes — all trained and equipped', 'Equipped but untrained', 'Equipped for some, not all', 'No / don\'t backcountry'] },
+      { key: 'safe_room', label: 'Reinforced shelter area in the home (uphill side, low ceiling, structural walls)', placeholder: 'e.g., Mudroom — backs into the hill, framed in concrete', required: false },
+      { key: 'forecast_source', label: 'Local avalanche forecast service you check before any trip', placeholder: 'e.g., Northwest Avalanche Center — nwac.us; check 12hr before departing', required: false },
+      { key: 'evacuation_route', label: 'Downhill evacuation route if a slide threatens the home', placeholder: 'e.g., Drive south on Mountain Loop Hwy — never north (into the bowl)', required: false },
+    ],
+  },
+  train_derailment: {
+    evacuationType: 'variable',
+    intro: 'East Palestine showed how a single derailment can require multi-mile evacuations. If you live within 2 miles of rail lines, your plan treats any visible smoke/vapor from a derailment as hazmat until proven otherwise.',
+    questions: [
+      { key: 'upwind_destination', label: 'Upwind / uphill evacuation destination *', placeholder: 'e.g., My sister\'s house in Maplewood — 12 miles west, opposite prevailing wind', required: true, type: 'address' },
+      { key: 'rail_distance', label: 'Approximate distance from your home to the nearest rail line', placeholder: 'e.g., 0.4 miles — Norfolk Southern freight runs through downtown', required: false, type: 'select', options: ['Under 0.5 mile', '0.5–1 mile', '1–2 miles', 'Over 2 miles', 'Not sure'] },
+      { key: 'shelter_room', label: 'Seal-in-place room (backup if you can\'t safely leave)', placeholder: 'e.g., Interior bedroom — duct tape + plastic sheeting in the closet', required: false },
+      { key: 'alerts_subscribed', label: 'Are you signed up for local emergency-alert texts?', placeholder: 'e.g., Yes — county RAVE alerts; sign up at county.gov/alerts', required: false, type: 'select', options: ['Yes — text alerts', 'Phone-only (no texts)', 'Not signed up', 'Not sure if my county offers them'] },
+    ],
+  },
+  gas_leak: {
+    evacuationType: 'shelter',
+    intro: 'A natural-gas leak in the home is a "leave NOW, call from outside" emergency. The plan rehearses the do-not-touch list (light switches, phones, anything that sparks) and gets everyone — including pets — to a meetup at least 300 ft away.',
+    questions: [
+      { key: 'outdoor_meetup', label: 'Outdoor meetup at least 300 ft from the home *', placeholder: 'e.g., End of the driveway by the mailbox — well away from the gas meter', required: true },
+      { key: 'gas_meter_location', label: 'Where is the gas meter / main shutoff?', placeholder: 'e.g., Side of house under the kitchen window — wrench hanging next to it', required: false },
+      { key: 'utility_emergency', label: 'Gas utility emergency line', placeholder: 'e.g., SoCalGas: 1-800-427-2200 — saved in everyone\'s phone', required: false },
+      { key: 'detector_check', label: 'Combustible-gas detectors — last battery check?', placeholder: 'e.g., All 3 detectors batteries replaced Jan 2026; tested monthly', required: false, type: 'select', options: ['Tested in last 3 months', 'Tested 3-12 months ago', 'Never tested', 'No detectors yet'] },
+    ],
+  },
+  medical_emergency: {
+    evacuationType: 'shelter',
+    intro: 'Most medical-emergency outcomes are decided in the first 10 minutes — and most households freeze instead of acting. Your plan pre-decides who calls 911, who drives, who notifies family, and where every critical med + the medication list lives.',
+    questions: [
+      { key: 'nearest_er', label: 'Nearest ER *', placeholder: 'e.g., St. Vincent Hospital — 4 miles via West Ave (avoid I-5 during rush)', required: true, type: 'address' },
+      { key: 'med_list_location', label: 'Where is the household medication list (with dosages)?', placeholder: 'e.g., Fridge magnet — pic on every family member\'s phone; copy in the go-bag', required: false },
+      { key: 'role_calls', label: 'Who calls 911 vs. who drives vs. who notifies family?', placeholder: 'e.g., Spouse calls 911 and stays with patient; oldest kid drives any siblings to neighbor\'s; cousin texted as point-of-contact for extended family', required: false },
+      { key: 'condition_triggers', label: 'Known chronic conditions in the home + their action triggers', placeholder: 'e.g., Dad — type 1 diabetic; if disoriented + cold sweats, give Gatorade then check BG; if unconscious, glucagon shot then 911', required: false },
+      { key: 'allergies', label: 'Severe allergies / anaphylaxis risks', placeholder: 'e.g., Lily — peanut anaphylaxis; 2 EpiPens (kitchen + her backpack); 911 even after EpiPen', required: false },
+    ],
+  },
 };
 
 /** Get the template for a given concern ID. Returns null if not found. */

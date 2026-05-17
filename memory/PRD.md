@@ -2633,3 +2633,38 @@ User-reported pair from a 9:11 PM screenshot:
 Housekeeping `--strict` exit 0; JS+Python lint clean.
 
 [END ANCHOR:LIGHT_MODE_MM_TITLES_AND_CCP_PDF_HOTFIX]
+
+
+---
+
+## CCP Wizard widened + 20 new fidelity tiles (Feb 17, 2026)
+
+User directive: widen the CCP Wizard to the platform desktop standard width AND add ≥16 more tiles so generated plans can become much more customized to the household.
+
+### Width
+- `CCPWizard.js` container: `max-w-3xl` (768 px) → `w-full max-w-[1400px] mx-auto px-4 lg:px-6` — matches the rest of CCP (Plans list, History, Checkin) and the platform-wide desktop standard.
+
+### Tile fidelity — +20 tiles (4 + 16)
+Household options 4 → **12** (8 new): infants/toddlers, teenagers, multi-generational, expecting, medical-device dependent, non-English speaker, service animal, livestock. Grid responsive: 2 / sm:3 / lg:4 columns.
+
+Disaster concerns 17 → **29** (12 new): active shooter, extreme heat, drought, hail storm, lightning storm, volcanic activity, landslide / mudslide, avalanche, hail storm, train derailment, gas leak, medical emergency. Grid responsive: 3 / sm:4 / lg:6 columns.
+
+15 additional lucide icons added (GraduationCap, HeartPulse, Stethoscope, PawPrint, Bird, HeartHandshake, Languages, Crosshair, Thermometer, Sun, CloudSnow, CloudLightning, Train, MountainSnow, Cross) — all verified present in the installed `lucide-react`.
+
+### Backend AI context
+Added 12 disaster-specific entries in `_DISASTER_PROMPT_CONTEXT` (`routes/connected_protocol.py`) so the AI generates rich, scenario-tailored plans for each new concern type — not the generic fallback.
+
+### Frontend follow-up question templates
+Added 12 disaster templates in `disasterTemplates.js`. Each template:
+- Marks ONLY the primary destination / safety field as `required` (per the Apr 2026 founder rule).
+- Contains at least one "non-obvious" question that makes the user think (e.g., for active shooter: family code word to confirm "I'm safe" texts aren't coerced; for landslide: post-wildfire proximity check; for lightning: 30/30 rule application).
+- Captures the specific knobs the AI needs: code words, evac directions, equipment inventories, chronic condition triggers, allergens, age of roof for insurance, etc.
+
+### Files touched
+- `/app/frontend/src/components/ccp/CCPWizard.js`
+- `/app/frontend/src/components/ccp/disasterTemplates.js`
+- `/app/backend/routes/connected_protocol.py`
+
+Lint clean (Python + JS); housekeeping `--strict` exit 0; all 15 new lucide icons verified present in node_modules.
+
+[END ANCHOR:CCP_WIZARD_FIDELITY_EXPANSION_FEB_2026]

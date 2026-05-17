@@ -33,13 +33,36 @@ import {
   Info,
   Plus,
   LocateFixed,
+  GraduationCap,
+  HeartPulse,
+  Stethoscope,
+  PawPrint,
+  Bird,
+  HeartHandshake,
+  Languages,
+  Crosshair,
+  Thermometer,
+  Sun,
+  CloudSnow,
+  CloudLightning,
+  Train,
+  MountainSnow,
+  Cross,
 } from 'lucide-react';
 
 const HOUSEHOLD_OPTIONS = [
   { id: 'children', label: 'Children', icon: Baby, color: '#3B7BF7' },
+  { id: 'infants', label: 'Infants/Toddlers', icon: Baby, color: '#FF8FB0' },
+  { id: 'teens', label: 'Teenagers', icon: GraduationCap, color: '#06B6D4' },
   { id: 'elderly', label: 'Elderly', icon: Heart, color: '#B794F6' },
-  { id: 'pets', label: 'Pets', icon: Dog, color: '#22C993' },
+  { id: 'multigen', label: 'Multi-Generational', icon: HeartHandshake, color: '#D4AF37' },
+  { id: 'pregnant', label: 'Expecting', icon: HeartPulse, color: '#FF69B4' },
+  { id: 'medical_equipment', label: 'Medical-Device Dependent', icon: Stethoscope, color: '#F05252' },
   { id: 'disabled', label: 'Special Needs', icon: Accessibility, color: '#F5A623' },
+  { id: 'non_english', label: 'Non-English Speaker', icon: Languages, color: '#A78BFA' },
+  { id: 'pets', label: 'Pets', icon: Dog, color: '#22C993' },
+  { id: 'service_animal', label: 'Service Animal', icon: PawPrint, color: '#10B981' },
+  { id: 'livestock', label: 'Livestock', icon: Bird, color: '#88C8F7' },
 ];
 
 const CONCERN_OPTIONS = [
@@ -47,19 +70,30 @@ const CONCERN_OPTIONS = [
   { id: 'tornado', label: 'Tornado', icon: Wind, color: '#6B7BF7' },
   { id: 'earthquake', label: 'Earthquake', icon: Mountain, color: '#F5A623' },
   { id: 'flood', label: 'Flood', icon: Waves, color: '#3B9BF7' },
+  { id: 'tsunami', label: 'Tsunami', icon: Waves, color: '#1E6BF7' },
   { id: 'wildfire', label: 'Wildfire', icon: Flame, color: '#F05252' },
   { id: 'house_fire', label: 'House Fire', icon: Flame, color: '#FF6B35' },
-  { id: 'nuclear', label: 'Nuclear Event', icon: ShieldAlert, color: '#F05252' },
+  { id: 'gas_leak', label: 'Gas Leak', icon: Flame, color: '#9CA3AF' },
+  { id: 'heat_wave', label: 'Extreme Heat', icon: Thermometer, color: '#FF6B35' },
+  { id: 'drought', label: 'Drought', icon: Sun, color: '#F5A623' },
   { id: 'winter_storm', label: 'Winter Storm', icon: Snowflake, color: '#88C8F7' },
-  { id: 'power_outage', label: 'Power Outage', icon: Zap, color: '#F5A623' },
-  { id: 'terrorism', label: 'Terrorism', icon: Siren, color: '#F05252' },
-  { id: 'pandemic', label: 'Pandemic', icon: ShieldAlert, color: '#B794F6' },
-  { id: 'civil_unrest', label: 'Civil Unrest', icon: AlertTriangle, color: '#F5A623' },
+  { id: 'avalanche', label: 'Avalanche', icon: MountainSnow, color: '#1E6BF7' },
+  { id: 'hailstorm', label: 'Hail Storm', icon: CloudSnow, color: '#7B8BAE' },
+  { id: 'lightning_storm', label: 'Lightning Storm', icon: CloudLightning, color: '#F5A623' },
+  { id: 'volcanic', label: 'Volcanic Activity', icon: Mountain, color: '#FF6B35' },
+  { id: 'landslide', label: 'Landslide / Mudslide', icon: MountainSnow, color: '#8B6A3F' },
   { id: 'water_failure', label: 'Water Failure', icon: Droplets, color: '#3B9BF7' },
-  { id: 'chemical_spill', label: 'Chemical Spill', icon: TriangleAlert, color: '#FF6B35' },
-  { id: 'home_invasion', label: 'Home Invasion', icon: ShieldAlert, color: '#F05252' },
-  { id: 'tsunami', label: 'Tsunami', icon: Waves, color: '#1E6BF7' },
+  { id: 'power_outage', label: 'Power Outage', icon: Zap, color: '#F5A623' },
   { id: 'cyber_attack', label: 'Cyber Attack', icon: Zap, color: '#B794F6' },
+  { id: 'chemical_spill', label: 'Chemical Spill', icon: TriangleAlert, color: '#FF6B35' },
+  { id: 'train_derailment', label: 'Train Derailment', icon: Train, color: '#6B7BF7' },
+  { id: 'nuclear', label: 'Nuclear Event', icon: ShieldAlert, color: '#F05252' },
+  { id: 'pandemic', label: 'Pandemic', icon: ShieldAlert, color: '#B794F6' },
+  { id: 'medical_emergency', label: 'Medical Emergency', icon: Cross, color: '#F05252' },
+  { id: 'home_invasion', label: 'Home Invasion', icon: ShieldAlert, color: '#F05252' },
+  { id: 'active_shooter', label: 'Active Shooter', icon: Crosshair, color: '#DC2626' },
+  { id: 'terrorism', label: 'Terrorism', icon: Siren, color: '#F05252' },
+  { id: 'civil_unrest', label: 'Civil Unrest', icon: AlertTriangle, color: '#F5A623' },
 ];
 
 const TOTAL_STEPS = 4; // household → disaster → details → review
@@ -337,7 +371,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
   const concernLabel = selectedConcern ? CONCERN_OPTIONS.find(c => c.id === selectedConcern)?.label || selectedConcern : '';
 
   return (
-    <div data-testid="ccp-wizard" className="w-full max-w-3xl mx-auto px-4 lg:px-6 py-6 pb-28 lg:pb-6">
+    <div data-testid="ccp-wizard" className="w-full max-w-[1400px] mx-auto px-4 lg:px-6 py-6 pb-28 lg:pb-6">
       {/* Header */}
       <button
         onClick={handleBack}
@@ -377,7 +411,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3" data-testid="ccp-wizard-household-grid">
             {HOUSEHOLD_OPTIONS.map(opt => {
               const Icon = opt.icon;
               const selected = household.includes(opt.id);
@@ -452,7 +486,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2.5" data-testid="ccp-wizard-concern-grid">
             {CONCERN_OPTIONS.map(opt => {
               const Icon = opt.icon;
               const selected = selectedConcern === opt.id;
