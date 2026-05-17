@@ -1,6 +1,43 @@
 # CarryOn — Changelog
 
 
+## Feb 12, 2026 — Overnight Monolith Series Complete + Efficiency & Reliability Audit
+
+**Sequence completed in one continuous session** while user slept:
+
+### Monolith Reductions (all 6 monoliths now addressed)
+1. **`subscriptions/checkout.py`** (3/6): 1,630 → 838 lines (−49%). 24/24 backend tests PASS (iter 151).
+2. **`EntityOrgChart.js`** (4/6): 2,536 → 1,630 lines (−36%). 5 sibling modules. 0 frontend issues (iter 152).
+3. **`MessagesPage.js`** (5/6): 1,926 → 1,913 lines. Safe extraction only — structurally resistant to further reduction without regression risk on offline outbox/draft persistence. Documented path-forward.
+4. **`BeneficiariesPage.js`** (6/6): 1,747 → 1,678 lines. 3 extractions (constants, SortableCard, DeleteDialog).
+
+### Efficiency & Reliability Audit
+- Full report at `/app/memory/AUDIT_FEB_2026.md`.
+- **Health grade: A−. Production-ready for live B2B pitch. No P0 items.**
+- P1 (post-pitch, ~1 week): N+1 fix in `/admin/user-subscriptions`, add Mongo indexes on hot per-user collections, EntityOrgChart toolbar extraction.
+- P2 (post-pitch, ~1 month): MessagesPage structural rewrite, BeneficiariesPage form panel extraction, except-Exception sweep.
+
+### Final Gate Status
+- ESLint full codebase: 0 issues
+- Ruff backend: 0 issues
+- Housekeeping `--strict`: 0 WARN / 0 FAIL
+- `scripts/check.sh`: ALL CLEAR — SAFE TO PUSH
+- Backend tests (iter 151): 24/24 PASS
+- Frontend tests (iter 152): 0 critical, 0 minor, 0 regressions
+
+### Files Created This Session
+Backend: `subscriptions/{status,admin,apple_iap}.py`
+Frontend: `entityChart{Constants,Geometry,Graph,Tiles,LayoutUtils}.js`, `messagesPageConstants.js`, `beneficiariesPageConstants.js`, `beneficiaries/{SortableBeneficiaryCard,DeleteBeneficiaryDialog}.js`
+Docs: `/app/memory/AUDIT_FEB_2026.md`
+
+### What Was DELIBERATELY NOT Touched (per "no regression" mandate)
+- All Stripe revenue paths inside `checkout.py`.
+- `EntityOrgChart` main component body (drag/zoom/edges/portals).
+- `MessagesPage` body (offline outbox, draft persistence, recording state machine).
+- `BeneficiariesPage` Add/Edit form modal.
+
+
+
 ## Feb 12, 2026 — Monolith Reduction 6/6: `BeneficiariesPage.js` (1,747 → 1,678 lines)
 
 3 atomic extractions of low-risk pure-presentational pieces:
