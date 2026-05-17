@@ -7,7 +7,7 @@ import { useLabelCleaner } from '../utils/brandLabel';
 import { useDraftState } from '../hooks/useDraftState';
 import SortControl, { makeSorter } from '../components/ui/SortControl';
 import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
 import {
   Shield,
   Plus,
@@ -59,187 +59,11 @@ import {
 import { resolvePhotoUrl } from '../utils/photoUrl';
 import { API_URL } from '../config';
 import { formatPhoneUS } from '../utils/phoneFormat';
+import { HOW_IT_WORKS, typeConfig, confConfig, statusConfig } from './trusteePageConstants';
+import { DTSPaymentForm } from '../components/trustee/DTSPaymentForm';
 
 // Initialize Stripe with test key
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
-
-const typeConfig = {
-  delivery: { icon: Package, label: 'Delivery / Mailing', desc: 'Send packages, letters, cash, or items to a recipient', color: '#8b5cf6' },
-  account_closure: { icon: Lock, label: 'Account Closure', desc: 'Close online accounts, delete data, terminate billing', color: '#f97316' },
-  financial: { icon: DollarSign, label: 'Financial Transfer', desc: 'Wire transfers, payments, or fund distributions', color: '#22c993' },
-  communication: { icon: Mail, label: 'Communication', desc: 'Send messages, emails, or notifications on your behalf', color: '#3b82f6' },
-  transition_notification: { icon: Bell, label: 'Transition Notification', desc: 'Confidentially notify a specific person of your passing', color: '#d4af37' },
-  destruction: { icon: Flame, label: 'Data / Asset Destruction', desc: 'Destroy physical materials, devices, or digital data', color: '#ef4444' },
-};
-
-const confConfig = {
-  full: { label: 'Fully Confidential', desc: 'No one will ever know. All records permanently destroyed.', color: '#F98080', bg: 'rgba(240,82,82,0.1)' },
-  partial: { label: 'Partial Disclosure', desc: 'Specific individuals you name will be notified upon completion.', color: '#FFCB57', bg: 'rgba(245,166,35,0.1)' },
-  timed: { label: 'Timed Release', desc: 'Confidential for a set period, then disclosed to designated people.', color: '#7AABFD', bg: 'rgba(59,123,247,0.1)' },
-};
-
-const statusConfig = {
-  submitted: { label: 'Submitted — Awaiting Quote', color: 'var(--bl3)', bg: 'var(--blbg)' },
-  quoted: { label: 'Quote Ready — Review Required', color: 'var(--yw)', bg: 'var(--ywbg)' },
-  approved: { label: 'Approved — Payment Set', color: 'var(--gn2)', bg: 'var(--gnbg)' },
-  ready: { label: 'Ready for Execution', color: 'var(--gn2)', bg: 'var(--gnbg)' },
-};
-
-const HOW_IT_WORKS = [
-  '1. Submit a request describing your task',
-  '2. DTS team reviews & sends itemized quote',
-  '3. You approve/reject each line item',
-  '4. Provide payment (charged only upon transition)',
-  '5. Add any required credentials',
-  '6. Task executes after verified transition',
-  '7. All records permanently destroyed',
-];
-
-// Stripe Card Element styles
-const cardElementOptions = {
-  style: {
-    base: {
-      fontSize: '16px',
-      color: '#ffffff',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      '::placeholder': {
-        color: '#64748b',
-      },
-      backgroundColor: 'transparent',
-    },
-    invalid: {
-      color: '#ef4444',
-    },
-  },
-};
-
-// Payment Form Component
-const PaymentForm = ({ task, onPaymentSaved, getAuthHeaders }) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [cardholderName, setCardholderName] = useState('');
-  const [billingZip, setBillingZip] = useState('');
-  const [processing, setProcessing] = useState(false);
-  const [cardComplete, setCardComplete] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!stripe || !elements || !cardholderName) return;
-
-    setProcessing(true);
-    try {
-      // Create setup intent
-      const setupRes = await apiClient.post(`${API_URL}/stripe/create-setup-intent`, {}, getAuthHeaders());
-      const { client_secret } = setupRes.data;
-
-      // Confirm card setup
-      const { setupIntent, error } = await stripe.confirmCardSetup(client_secret, {
-        payment_method: {
-          card: elements.getElement(CardElement),
-          billing_details: {
-            name: cardholderName,
-            address: { postal_code: billingZip || undefined },
-          },
-        },
-      });
-
-      if (error) {
-        toast.error(error.message);
-        setProcessing(false);
-        return;
-      }
-
-      // Get card details from the payment method
-      const paymentMethod = await stripe.retrievePaymentMethod(setupIntent.payment_method);
-      const card = paymentMethod.paymentMethod?.card;
-
-      // Save payment method to task
-      await apiClient.post(`${API_URL}/dts/tasks/${task.id}/payment-method`, {
-        task_id: task.id,
-        payment_method_id: setupIntent.payment_method,
-        card_last4: card?.last4 || '****',
-        card_exp_month: card?.exp_month || 12,
-        card_exp_year: card?.exp_year || 2030,
-        card_holder_name: cardholderName,
-      }, getAuthHeaders());
-
-      // toast removed
-      onPaymentSaved({
-        last4: card?.last4 || '****',
-        exp: `${card?.exp_month}/${String(card?.exp_year).slice(-2)}`,
-        name: cardholderName,
-      });
-    } catch (err) {
-      console.error('Payment error:', err);
-      toast.error(err.response?.data?.detail || 'Failed to save payment method');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label className="text-[var(--t4)]">Cardholder Name <span className="text-red-400">*</span></Label>
-        <Input
-          className="input-field"
-          placeholder="Name on card"
-          value={cardholderName}
-          onChange={(e) => setCardholderName(e.target.value)}
-          required
-          data-testid="cardholder-name-input"
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label className="text-[var(--t4)]">Card Number, Expiry & CVC <span className="text-red-400">*</span></Label>
-        <div className="p-4 rounded-xl bg-[var(--s)] border border-[var(--b)]" style={{ minHeight: 48 }}>
-          <CardElement 
-            options={cardElementOptions} 
-            onChange={(e) => setCardComplete(e.complete)}
-          />
-        </div>
-        <p className="text-xs text-[var(--t5)]">Enter your full card number, expiration date (MM/YY), and security code (CVC)</p>
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-[var(--t4)]">Billing ZIP Code <span className="text-red-400">*</span></Label>
-        <Input
-          className="input-field"
-          placeholder="e.g., 92101"
-          value={billingZip}
-          onChange={(e) => setBillingZip(e.target.value.replace(/\D/g, '').slice(0, 10))}
-          data-testid="billing-zip-input"
-        />
-      </div>
-
-      <div className="rounded-xl p-3 bg-[var(--blbg)] border border-[var(--bl3)]/20">
-        <p className="text-sm text-[var(--bl3)]">
-          <strong>Important:</strong> Your card will NOT be charged now. It will only be charged upon verified transition.
-        </p>
-      </div>
-
-      <Button
-        type="submit"
-        className="gold-button w-full"
-        disabled={!stripe || processing || !cardholderName || !cardComplete}
-        data-testid="save-payment-method-button"
-      >
-        {processing ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Saving Payment Method...
-          </>
-        ) : (
-          <>
-            <CreditCard className="w-4 h-4 mr-2" />
-            Save Payment Method
-          </>
-        )}
-      </Button>
-    </form>
-  );
-};
 
 const TrusteePage = () => {
   const { getAuthHeaders, subscriptionStatus } = useAuth();
@@ -730,7 +554,7 @@ const TrusteePage = () => {
               </div>
               
               <Elements stripe={stripePromise}>
-                <PaymentForm 
+                <DTSPaymentForm 
                   task={t} 
                   getAuthHeaders={getAuthHeaders}
                   onPaymentSaved={(paymentInfo) => {

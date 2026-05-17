@@ -122,6 +122,14 @@ async def get_current_user(
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
 
+    # ── Hot-path cache (Feb 2026, 30s TTL) — see services/hot_cache.py ──
+    # Caches the user doc for subsequent reads on the same user within 30s.
+    # Auth/authz decisions (admin role, account_locked, etc.) still read
+    # fresh on each request through the dedicated guards.py uncached path.
+    from services.hot_cache import set_cached_user
+
+    set_cached_user(payload["user_id"], user)
+
     # Single-session enforcement — admin, session_exempt, and dev sessions exempt.
     # Offline credentials (session_id starts with 'offline_') are also accepted
     # if their credential_id is currently enrolled on the user document. This

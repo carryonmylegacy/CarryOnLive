@@ -206,6 +206,16 @@ Triggered after the IDOR P0 security audit. Five enterprise-grade upgrades + thr
 | Hand-audit 563 auto-classified entries | ✅ **563/563 CERTIFIED** in 5 audit passes. |
 | `memory/SECURITY_POSTURE.md` (B2B procurement one-pager) | ✅ NEW — TL;DR table, IDOR summary, accepted residuals, CI gates, compliance touchpoints, encryption + auth model. |
 
+### A− Polish Sweep (Feb 12, 2026 — all 5 shipped in one session)
+
+| Item | Result |
+|------|--------|
+| Hot-read TTL cache (user/subscription/membership) | ✅ `services/hot_cache.py` — 15-30s TTLs; cuts repeat Mongo round-trips. |
+| Versioned MongoDB migration runner | ✅ `migrations/runner.py` + `0001_baseline.py` — Mongo-locked, idempotent, fail-safe. |
+| Frontend monolith extraction (TrusteePage) | ✅ TrusteePage 1492 → 1316 LOC (–12%). MessagesPage/BeneficiariesPage deferred post-pitch. |
+| Idempotency middleware (Stripe-style) | ✅ `middleware_idempotency.py` — `Idempotency-Key` header → 24h cached replay via `db.idempotency_keys`. |
+| Structured JSON logging + k6 SLO budgets | ✅ `logging_json.py` (opt-in `LOG_FORMAT=json`) + `scripts/k6/baseline.js` wired into CI (`HK_RUN_K6=1`). |
+
 Defaults preserve current pitch behavior; all 5 enterprise upgrades + 3 P2 sweeps are additive and CI-gated. See `/app/memory/CHANGELOG.md` for the full Feb 12, 2026 entries.
 
 ---

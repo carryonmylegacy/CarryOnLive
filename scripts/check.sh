@@ -117,6 +117,29 @@ else
   echo -e "${BOLD}Stage 5/5:${NC} Lighthouse skipped (set HK_RUN_LIGHTHOUSE=1 to run)"
 fi
 
+# 5b. k6 SLO load test (opt-in, requires k6 binary)
+if [ "$HK_RUN_K6" = "1" ]; then
+  echo ""
+  echo -e "${BOLD}Stage 5b/5: k6 SLO load test (BLOCKING)${NC}"
+  if ! command -v k6 >/dev/null 2>&1; then
+    echo -e "  ${YELLOW}SKIP${NC} (k6 binary not installed — see https://k6.io/docs/get-started/installation/)"
+  else
+    API_URL=$(grep REACT_APP_BACKEND_URL /app/frontend/.env | cut -d '=' -f2)
+    if k6 run \
+        --env API_URL="$API_URL" \
+        --env TEST_EMAIL=info@carryon.us \
+        --env TEST_PASSWORD=Demo1234! \
+        /app/scripts/k6/baseline.js > /tmp/check_k6.log 2>&1; then
+      echo -e "  ${GREEN}PASS${NC}"
+      grep -E "p\(95\)|p\(99\)|error_rate|hotpath_latency" /tmp/check_k6.log | tail -5
+    else
+      echo -e "  ${RED}FAIL${NC} (SLO breach)"
+      tail -30 /tmp/check_k6.log
+      BLOCKING_ISSUES=$((BLOCKING_ISSUES + 1))
+    fi
+  fi
+fi
+
 echo ""
 echo -e "${BOLD}═══════════════════════════════════════════${NC}"
 if [ "$BLOCKING_ISSUES" = "0" ]; then

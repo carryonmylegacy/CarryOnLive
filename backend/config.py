@@ -19,6 +19,16 @@ load_dotenv(ROOT_DIR / ".env")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
+# Opt-in: LOG_FORMAT=json flips every log line to structured JSON for
+# Datadog/Honeycomb/CloudWatch/Loki/Sentry auto-ingest. Default stays
+# human-readable so the live pitch console output is unchanged.
+try:
+    from logging_json import install as _install_json_logging
+
+    _install_json_logging()
+except Exception:  # pragma: no cover — never crash boot on logging setup
+    pass
+
 # MongoDB
 mongo_url = os.environ["MONGO_URL"]
 client = AsyncIOMotorClient(

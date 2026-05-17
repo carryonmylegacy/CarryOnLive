@@ -155,6 +155,19 @@ async def lifespan(app):
     await run_migrations(db, logger)
     await ensure_indexes(db, logger)
 
+    # New versioned schema-migration runner (Feb 2026) — applies anything
+    # under /app/backend/migrations/ that hasn't been recorded in
+    # db.schema_migrations yet. Safe to run on every boot; idempotent.
+    try:
+        from migrations.runner import run_pending as _run_pending_migrations
+
+        _migration_result = await _run_pending_migrations()
+        if _migration_result.get("applied"):
+            logger.info(f"Versioned schema migrations: applied {_migration_result['applied']} new")
+    except Exception as _mig_exc:
+        # Migrations failing must NOT block boot — log and continue.
+        logger.error(f"Schema migration runner failed: {_mig_exc}", exc_info=True)
+
     # Best-effort: download-diagnostics + funnel-analytics indexes
     try:
         from routes.admin import (
@@ -461,6 +474,26 @@ except Exception as _otel_exc:  # pragma: no cover — never crash boot on traci
     logger.warning(f"OTel setup skipped: {_otel_exc}")
 
 # ===================== MIDDLEWARE (order: last added = first executed) =====================
+
+# Idempotency: opt-in via `Idempotency-Key` header on writes (Feb 2026).
+# Replays cached response for 24h to make POST/PUT/DELETE/PATCH safely
+# retry-able by mobile clients on flaky networks. Added BEFORE rate
+# limiting so duplicate-keyed retries don't burn through the per-user
+# token bucket.
+try:
+    from middleware_idempotency import IdempotencyMiddleware, _ensure_index as _idem_ensure_index
+
+    app.add_middleware(IdempotencyMiddleware)
+
+    @app.on_event("startup")
+    async def _idempotency_indexes() -> None:
+        try:
+            await _idem_ensure_index()
+            logger.info("Idempotency middleware indexes ensured")
+        except Exception as exc:
+            logger.warning(f"Idempotency index setup failed: {exc}")
+except Exception as _idem_exc:
+    logger.warning(f"Idempotency middleware skipped: {_idem_exc}")
 
 app.add_middleware(RequestTraceMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)

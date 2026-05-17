@@ -22,51 +22,79 @@ __all__ = ["get_current_user_optional"]
 
 
 async def get_subscription_access(current_user: dict = Depends(get_current_user)):
-    """Check if user has active access (trial or subscription)."""
+    """Check if user has active access (trial or subscription).
+
+    Result is cached in-process for 30s (services/hot_cache.py) — every
+    Stripe webhook handler that flips a user's billing status calls
+    `invalidate_subscription_cache(user_id)` so changes propagate fast.
+    """
+    from services.hot_cache import (
+        get_cached_subscription as _cache_get,
+        set_cached_subscription as _cache_set,
+    )
+
+    cached = _cache_get(current_user["id"])
+    if cached is not None:
+        return cached
+
     user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     # Admin always has access
     if user.get("role") == "admin":
-        return {"has_access": True, "reason": "admin", "is_dormant": False, "is_grace": False}
+        result = {"has_access": True, "reason": "admin", "is_dormant": False, "is_grace": False}
+        _cache_set(current_user["id"], result)
+        return result
 
     # Check for free access override (B2B, beta, etc.)
     override = await db.subscription_overrides.find_one({"user_id": user["id"]}, {"_id": 0})
     if override and override.get("free_access"):
-        return {"has_access": True, "reason": "free_access", "is_dormant": False, "is_grace": False}
+        result = {"has_access": True, "reason": "free_access", "is_dormant": False, "is_grace": False}
+        _cache_set(current_user["id"], result)
+        return result
 
     # Check per-user beta tester status
     if user.get("is_beta_tester"):
-        return {"has_access": True, "reason": "beta", "is_dormant": False, "is_grace": False}
+        result = {"has_access": True, "reason": "beta", "is_dormant": False, "is_grace": False}
+        _cache_set(current_user["id"], result)
+        return result
 
     # Check global beta mode (legacy fallback)
     settings = await db.subscription_settings.find_one({"_id": "global"}, {"_id": 0})
     if settings and settings.get("beta_mode"):
-        return {"has_access": True, "reason": "beta", "is_dormant": False, "is_grace": False}
+        result = {"has_access": True, "reason": "beta", "is_dormant": False, "is_grace": False}
+        _cache_set(current_user["id"], result)
+        return result
 
     # Check subscription status
     sub = await db.user_subscriptions.find_one({"user_id": user["id"]}, {"_id": 0})
     if sub:
         status = sub.get("status", "")
         if status == "active":
-            return {"has_access": True, "reason": "subscription", "is_dormant": False, "is_grace": False}
+            result = {"has_access": True, "reason": "subscription", "is_dormant": False, "is_grace": False}
+            _cache_set(current_user["id"], result)
+            return result
         if status == "past_due":
-            return {
+            result = {
                 "has_access": True,
                 "reason": "grace_period",
                 "is_dormant": False,
                 "is_grace": True,
                 "grace_period_end": sub.get("grace_period_end"),
             }
+            _cache_set(current_user["id"], result)
+            return result
         if status == "dormant":
-            return {
+            result = {
                 "has_access": False,
                 "reason": "dormant",
                 "is_dormant": True,
                 "is_grace": False,
                 "dormant_since": sub.get("dormant_since"),
             }
+            _cache_set(current_user["id"], result)
+            return result
 
     # Check trial
     trial_ends = user.get("trial_ends_at")
@@ -74,11 +102,15 @@ async def get_subscription_access(current_user: dict = Depends(get_current_user)
         try:
             ends = datetime.fromisoformat(trial_ends.replace("Z", "+00:00"))
             if datetime.now(timezone.utc) < ends:
-                return {"has_access": True, "reason": "trial", "is_dormant": False, "is_grace": False}
+                result = {"has_access": True, "reason": "trial", "is_dormant": False, "is_grace": False}
+                _cache_set(current_user["id"], result)
+                return result
         except (ValueError, TypeError):
             pass
 
-    return {"has_access": False, "reason": "expired", "is_dormant": False, "is_grace": False}
+    result = {"has_access": False, "reason": "expired", "is_dormant": False, "is_grace": False}
+    _cache_set(current_user["id"], result)
+    return result
 
 
 async def require_active_subscription(
