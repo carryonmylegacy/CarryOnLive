@@ -68,7 +68,7 @@ export default function CCPPlanEditor({
   availableResources,
 }) {
   return (
-    <div data-testid="ccp-plan-edit" className="max-w-2xl mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-4" style={{ overflowX: 'hidden' }}>
+    <div data-testid="ccp-plan-edit" className="w-full max-w-[1400px] mx-auto px-4 lg:px-6 py-6 pb-28 sm:pb-6 space-y-4" style={{ overflowX: 'hidden' }}>
       <button onClick={() => { setEditPlan(null); setView('plans'); }} className="flex items-center gap-2 text-sm font-semibold mb-2" style={{ color: 'var(--t4)' }}>
         <ArrowLeft className="w-4 h-4" />Back to Plans
       </button>
