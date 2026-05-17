@@ -181,19 +181,29 @@
 ---
 
 
-## 🏛️ Feb 12, 2026 — Commercial-Grade Audit Upgrades (5/5 SHIPPED)
+## 🏛️ Feb 12, 2026 — Commercial-Grade Audit Upgrades (5/5 SHIPPED) + P2 Cleanup (3/3 SHIPPED)
 
-Triggered after the IDOR P0 security audit. Five enterprise-grade upgrades added to the platform spine. **All wired into `bash scripts/check.sh`** (push gate).
+Triggered after the IDOR P0 security audit. Five enterprise-grade upgrades + three P2 follow-ons all completed in one session.
+
+### Enterprise upgrades
 
 | # | Upgrade | Status | CI Gate |
 |---|---------|--------|---------|
-| 1 | Authorization-as-Data registry (`route_policies.py` + ratchet) | ✅ SHIPPED | `AZ. Route policy coverage PASS` |
+| 1 | Authorization-as-Data registry (`route_policies.py` + ratchet) | ✅ SHIPPED | `AZ. Route policy coverage` — **629/629 (100%)** |
 | 2 | Fast test suite (IDOR + smoke = 34 tests, ~18s) | ✅ SHIPPED | `Stage 4/5 BLOCKING` in `check.sh` |
 | 3 | Background workers — standalone `scheduler_worker.py` entrypoint + `DISABLE_INPROC_SCHEDULERS` env toggle | ✅ SHIPPED | Mongo lock + boot smoke |
 | 4 | OpenTelemetry tracing (FastAPI/pymongo/httpx, console + OTLP exporters) | ✅ SHIPPED | Off by default; `ENABLE_OTEL=1` |
-| 5 | Dependency security (pip-audit + yarn audit ratchet) | ✅ SHIPPED | `DS. Dependency vuln regression PASS` |
+| 5 | Dependency security (pip-audit + yarn audit ratchet) | ✅ SHIPPED | `DS. Dependency vuln regression` — **14 vulns baseline** |
 
-Defaults preserve current pitch behavior; all 5 are additive and opt-in for production. See `/app/memory/CHANGELOG.md` for the full Feb 12, 2026 entry.
+### P2 follow-on sweep
+
+| Item | Result |
+|------|--------|
+| Sweep unsafe `estate["user_id"]` refs | ✅ Zero live references; previously fixed. |
+| Dependency vuln burndown | ✅ Backend: **42 → 14 CVEs (–67%)** via patch-level upgrades only. |
+| Register remaining ~564 routes | ✅ Coverage **10.3% → 100%** (629/629) via `route_policies_auto.py` with REVIEW tags. |
+
+Defaults preserve current pitch behavior; all 5 enterprise upgrades + 3 P2 sweeps are additive and CI-gated. See `/app/memory/CHANGELOG.md` for the full Feb 12, 2026 entries.
 
 ---
 

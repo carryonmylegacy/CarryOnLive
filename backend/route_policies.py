@@ -263,7 +263,21 @@ ROUTE_POLICIES: dict = {
     "GET /api/admin/support/conversations": {"auth": "required", "roles": ["admin", "operator"]},
     # ── Stripe / payments (public webhooks + authenticated) ─────────────────
     "POST /api/stripe/create-payment-intent": {"auth": "required"},
+    "POST /api/stripe/create-setup-intent": {"auth": "required"},
 }
+
+
+# ── Auto-imported bulk policies (Feb 12, 2026) ──────────────────────────────
+# 563 routes classified via heuristic in scripts/check_route_policies.py
+# helper. ALL entries carry "auto-classified — review" in their notes; expect
+# to manually audit each one in the post-pitch sweep. Stored in a separate
+# file (route_policies_auto.py) so the curated set above stays readable, and
+# merged at import time below.
+from route_policies_auto import AUTO_IMPORTED_POLICIES  # noqa: E402
+
+# Don't override the curated entries above.
+for _k, _v in AUTO_IMPORTED_POLICIES.items():
+    ROUTE_POLICIES.setdefault(_k, _v)
 
 
 def is_route_registered(method: str, path: str) -> bool:

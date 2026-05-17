@@ -1,6 +1,34 @@
 # CarryOn — Changelog
 
 
+## Feb 12, 2026 — Post-Audit P2 Cleanup (3/3 SHIPPED)
+
+Right after the 5/5 commercial-grade upgrades shipped, three follow-on P2 sweeps completed in the same session:
+
+### A. ✅ Codebase sweep for unsafe `estate["user_id"]` references
+- Audit result: **zero live references**. The only matches in the codebase are:
+  1. A historical comment in `routes/documents.py:272` explaining the prior bug.
+  2. The test file name `tests/test_dts_quote_estate_no_user_id.py` (regression test for the fix).
+- All current keyed accesses on the `estate` dict are: `beneficiaries`, `id`, `name`, `owner_id`, `status`, `verified_tier` — all required-by-schema fields that are safe to access directly.
+- **No code changes required**; closing this P2 item.
+
+### B. ✅ Dependency vuln burndown (backend: **42 → 14 CVEs**, –67%)
+- Cherry-picked **safe patch-level upgrades only** (no major bumps; starlette/litellm/pymongo deliberately left alone for post-pitch). Verified the fast test suite (34/34) still green after upgrades.
+- Upgraded: `aiohttp 3.13.3 → 3.13.4` (10 CVEs), `authlib 1.6.8 → 1.6.11` (3), `urllib3 2.6.3 → 2.7.0` (2), `cryptography 46.0.5 → 46.0.7` (2), `python-multipart 0.0.22 → 0.0.27` (2), `ecdsa 0.19.1 → 0.19.2`, `pyasn1 0.6.2 → 0.6.3`, `pyjwt 2.11.0 → 2.12.0`, `python-dotenv 1.2.1 → 1.2.2`, `pygments 2.19.2 → 2.20.0`, `cbor2 5.8.0 → 5.9.0`, `requests 2.32.5 → 2.33.0`, `pytest 9.0.2 → 9.0.3`.
+- Updated `/app/backend/requirements.txt` and re-locked baseline at `/app/.dep_security_baseline.json` so future regressions block CI.
+- Remaining 14 vulns are concentrated in: `starlette (2 — needs major bump to 0.40+/0.47+ which would force FastAPI upgrade)`, `litellm (4 — LLM SDK, demo-critical)`, `pyopenssl (2 — major 25→26 bump)`, `pillow (5 — minor bump 12.1→12.2, deferred to keep image-handling 100% stable for pitch)`, `pymongo (1 — minor 4.5→4.6, also deferred for the same reason)`. These are tracked for the post-pitch maintenance window.
+
+### C. ✅ Route policy registry — **coverage 10.3% → 100.0% (629/629)**
+- New file `/app/backend/route_policies_auto.py` (577 lines) — 563 routes bulk-classified by heuristic, every entry tagged `"auto-classified — review"` in `notes` field so the post-pitch sweep can audit each one before stripping the tag.
+- Classifier heuristics (in commit history): admin routes → `["admin", "operator"]` (or admin-only when destructive); auth login/register/reset → `public`; routes with `{estate_id}` → estate-scoped with verb-based access (`member` for GETs, `owner` for writes); fall-through default → `"required"` + review note.
+- Curated 65-route core in `route_policies.py` left untouched; auto file is merged via `ROUTE_POLICIES.setdefault(...)` at import time so any future hand-edit in the curated file always wins.
+- CI parser (`scripts/check_route_policies.py`) extended to read keys from **both** files. Baseline locked at **629** so any new unannotated route trips the gate.
+- One genuine miss caught in the process: `POST /api/stripe/create-setup-intent` was a real un-policy'd Stripe route → manually added to the curated set with `{"auth": "required"}`.
+
+**Verified**: `bash scripts/check.sh` → **ALL CLEAR — SAFE TO PUSH**. 34/34 fast tests green, route policy coverage 100%, backend vulns dropped to 14, backend boots cleanly with all 11 schedulers acquiring locks.
+
+
+
 ## Feb 12, 2026 — 🏛️ Commercial-Grade Audit Upgrades (5/5 SHIPPED)
 
 Five enterprise-grade platform upgrades requested after the post-IDOR security review. All shipped, CI-gated, and verified green via `scripts/check.sh`. The `scripts/check.sh` push gate is now: ruff → ESLint → fast tests → route policy → dep security.

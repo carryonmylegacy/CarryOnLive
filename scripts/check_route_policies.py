@@ -26,6 +26,7 @@ from pathlib import Path
 
 ROUTES_DIR = Path("/app/backend/routes")
 POLICIES_FILE = Path("/app/backend/route_policies.py")
+AUTO_POLICIES_FILE = Path("/app/backend/route_policies_auto.py")
 BASELINE_FILE = Path("/app/.route_policy_baseline")
 
 ROUTER_DECORATOR = re.compile(
@@ -53,12 +54,16 @@ def discover_routes() -> list[tuple[str, str, str]]:
 
 def load_policy_keys() -> set[str]:
     """Parses ROUTE_POLICIES dict keys without importing (avoids backend
-    side-effects in the CI hook)."""
-    text = POLICIES_FILE.read_text()
+    side-effects in the CI hook). Reads both the curated registry and
+    the auto-imported overflow file."""
     keys: set[str] = set()
-    # crude but robust: find lines like '"METHOD /api/...":'
-    for m in re.finditer(r'^\s*"((?:GET|POST|PUT|DELETE|PATCH)\s+/api/[^"]+)"\s*:', text, re.MULTILINE):
-        keys.add(m.group(1))
+    for src in (POLICIES_FILE, AUTO_POLICIES_FILE):
+        if not src.exists():
+            continue
+        text = src.read_text()
+        # crude but robust: find lines like '"METHOD /api/...":'
+        for m in re.finditer(r'^\s*"((?:GET|POST|PUT|DELETE|PATCH)\s+/api/[^"]+)"\s*:', text, re.MULTILINE):
+            keys.add(m.group(1))
     return keys
 
 
