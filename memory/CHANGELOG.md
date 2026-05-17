@@ -1,6 +1,28 @@
 # CarryOn — Changelog
 
 
+## Feb 12, 2026 — 🔴 P0 IDOR Security Fix (13 endpoints patched, 17/17 regression tests PASS)
+
+**What the bug was**: A fresh, just-registered user with zero relationship to any estate could read every CarryOn user's beneficiary PII + checklist items, and edit/delete other users' messages, beneficiaries, and checklist items — by passing any estate or item ID to ~13 endpoints. Confirmed exploitable end-to-end via live curl before fixing; demo data corrupted during verification was restored immediately.
+
+**Fix shipped**:
+- New shared guards in `/app/backend/guards.py`:
+  - `require_estate_member(estate_id, current_user)` — owner OR beneficiary OR admin (for READS)
+  - `require_estate_owner(estate_id, current_user)` — owner OR admin only (for WRITES)
+- 13 endpoints across `beneficiaries/management.py`, `checklist.py`, `messages.py`, `documents_voice.py`, `subscriptions/plans.py` now call the appropriate guard.
+
+**Verification**:
+- Live re-test: every previously-exploitable curl now returns **403** for an attacker, **200** for owner, **200/403 correctly** for beneficiary based on access type.
+- Regression test file: `/app/backend/tests/test_idor_guards.py` — **17/17 PASS** (11 negative-control attacker tests + 6 positive-control legitimate-flow tests).
+- Ruff: clean. `scripts/check.sh`: ALL CLEAR — SAFE TO PUSH.
+- Bonus fix: `subscriptions/plans.py:97 save_dts_payment_method` had a pre-existing bug where the ownership check filtered on a non-existent `user_id` field (`estates` uses `owner_id`). Endpoint was effectively broken for everyone. Now uses the shared guard and works correctly.
+
+**Files modified**: `guards.py` + 5 route files. ~80 lines added (mostly guard helper + per-endpoint single-line calls). Zero behavioral change for legitimate users.
+
+**Audit doc**: `/app/memory/AUDIT_FEB_2026_V2.md` (header now reads "✅ FIXED Feb 12, 2026").
+
+
+
 ## Feb 12, 2026 — EntityOrgChart Follow-up Extraction: `RemoveTileModal.js`
 
 **Audit correction**: The original P1 recommendation was to extract the chart's toolbar (~150 LOC). Direct inspection revealed the toolbar (Center, Expand, Reset, etc.) actually lives in the **parent `EntitiesSection.js`**, not inside `EntityOrgChart.js`. Substituted with a different safe, well-bounded extraction: the Remove-Tile confirmation modal.

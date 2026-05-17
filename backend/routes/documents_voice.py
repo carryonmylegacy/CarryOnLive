@@ -27,7 +27,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from config import db, logger
-from guards import require_benefactor_role
+from guards import require_benefactor_role, require_estate_member, require_estate_owner
 from utils import get_current_user, hash_password, verify_password
 
 router = APIRouter()
@@ -141,6 +141,8 @@ async def setup_voice_passphrase(document_id: str, passphrase: str, current_user
     document = await db.documents.find_one({"id": document_id}, {"_id": 0})
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
+    # IDOR guard — only the estate owner (or admin) can set a voice passphrase.
+    await require_estate_owner(document.get("estate_id"), current_user)
     if document.get("lock_type") != "voice":
         raise HTTPException(status_code=400, detail="Document is not set up for voice verification")
 
@@ -170,6 +172,9 @@ async def verify_document_voice_passphrase(
     document = await db.documents.find_one({"id": document_id}, {"_id": 0})
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
+    # IDOR guard — only owner/beneficiary/admin can attempt verification.
+    # This blocks any cross-tenant brute-force on voice passphrase hashes.
+    await require_estate_member(document.get("estate_id"), current_user)
     if not document.get("voice_passphrase_hash"):
         raise HTTPException(status_code=400, detail="Voice passphrase not set up. Use backup code.")
 
@@ -189,6 +194,8 @@ async def get_voice_hint(document_id: str, current_user: dict = Depends(get_curr
     document = await db.documents.find_one({"id": document_id}, {"_id": 0})
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
+    # IDOR guard — even the hint is sensitive metadata; require estate membership.
+    await require_estate_member(document.get("estate_id"), current_user)
     return {
         "has_passphrase": bool(document.get("voice_passphrase_hash")),
         "hint": document.get("voice_passphrase_hint", "Not set"),

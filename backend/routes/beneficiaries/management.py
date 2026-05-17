@@ -3,7 +3,7 @@
 from ._core import router
 from fastapi import Depends, File, HTTPException, Request, UploadFile
 from config import db, logger
-from guards import is_benefactor_or_admin, require_benefactor_role
+from guards import is_benefactor_or_admin, require_benefactor_role, require_estate_member, require_estate_owner
 from models import Beneficiary, BeneficiaryCreate
 from utils import (
     get_current_user,
@@ -20,6 +20,8 @@ from datetime import datetime, timezone
 @router.get("/beneficiaries/{estate_id}")
 async def get_beneficiaries(estate_id: str, request: Request = None, current_user: dict = Depends(get_current_user)):
     """List all beneficiaries for an estate, sorted by sort_order."""
+    # IDOR guard — reject any caller who isn't the owner/beneficiary/admin
+    await require_estate_member(estate_id, current_user)
     beneficiaries = await db.beneficiaries.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(100)
     # Normalize dob → date_of_birth for legacy records
     for b in beneficiaries:
@@ -198,6 +200,10 @@ async def delete_beneficiary(
     if not ben:
         raise HTTPException(status_code=404, detail="Beneficiary not found")
 
+    # IDOR guard — only the estate owner (or admin) can delete a beneficiary
+    if not is_admin:
+        await require_estate_owner(ben.get("estate_id"), current_user)
+
     # Collect all beneficiary IDs to delete
     ids_to_delete = [beneficiary_id]
     # Collect affected estates BEFORE deletion for succession reorder
@@ -341,6 +347,9 @@ async def update_beneficiary(
     if not beneficiary:
         raise HTTPException(status_code=404, detail="Beneficiary not found")
 
+    # IDOR guard — only the estate owner (or admin) can edit a beneficiary
+    await require_estate_owner(beneficiary.get("estate_id"), current_user)
+
     # Build full name from parts
     name_parts = [data.first_name]
     if data.middle_name:
@@ -462,6 +471,9 @@ async def upload_beneficiary_photo(
     if not beneficiary:
         raise HTTPException(status_code=404, detail="Beneficiary not found")
 
+    # IDOR guard — only the estate owner (or admin) can change a beneficiary photo
+    await require_estate_owner(beneficiary.get("estate_id"), current_user)
+
     content = await file.read()
     if len(content) > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="File too large (max 10MB)")
@@ -508,11 +520,16 @@ async def delete_beneficiary_photo(beneficiary_id: str, current_user: dict = Dep
         raise HTTPException(status_code=403, detail="Not authorized")
 
     # Delete from storage if it's a stored key
-    ben = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0, "id": 1, "photo_url": 1})
-    if ben:
-        old_key = ben.get("photo_url", "")
-        if old_key and not old_key.startswith("data:"):
-            await delete_photo(old_key)
+    ben = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0, "id": 1, "estate_id": 1, "photo_url": 1})
+    if not ben:
+        raise HTTPException(status_code=404, detail="Beneficiary not found")
+
+    # IDOR guard — only the estate owner (or admin) can delete a beneficiary photo
+    await require_estate_owner(ben.get("estate_id"), current_user)
+
+    old_key = ben.get("photo_url", "")
+    if old_key and not old_key.startswith("data:"):
+        await delete_photo(old_key)
 
     await db.beneficiaries.update_one(
         {"id": beneficiary_id},

@@ -185,3 +185,39 @@ def check_manager_or_admin(user: dict):
     """Inline check for manager or admin role."""
     if user.get("role") != "admin" and user.get("operator_role") != "manager":
         raise HTTPException(status_code=403, detail="Manager or admin access required")
+
+
+# ── IDOR (Insecure Direct Object Reference) guards ──────────────────────────
+# Use these on every endpoint that takes an estate_id (or fetches by item id
+# and then needs to authorize the calling user). Added Feb 2026 after an
+# audit found 13 endpoints leaking PII / accepting cross-tenant mutations.
+#
+# - `require_estate_member` — read access: owner OR listed beneficiary OR admin
+# - `require_estate_owner`  — write access on owner-only resources: owner OR admin
+#
+# Both raise HTTPException(403) on failure with a consistent detail string so
+# the frontend doesn't have to disambiguate.
+from services.estate_auth import is_estate_member, is_estate_owner  # noqa: E402
+
+
+async def require_estate_member(estate_id: str, current_user: dict) -> None:
+    """403 unless the caller is the estate's owner, a listed beneficiary, or
+    a CarryOn admin. Use on READ endpoints scoped to an estate."""
+    if not estate_id:
+        raise HTTPException(status_code=400, detail="estate_id required")
+    if current_user.get("role") == "admin":
+        return
+    if await is_estate_member(current_user["id"], estate_id):
+        return
+    raise HTTPException(status_code=403, detail="Not authorized for this estate")
+
+
+async def require_estate_owner(estate_id: str, current_user: dict) -> None:
+    """403 unless the caller is the estate's owner or a CarryOn admin. Use on
+    WRITE endpoints that should NOT be exercisable by listed beneficiaries
+    (e.g. editing the benefactor's messages, checklist, beneficiary roster)."""
+    if not estate_id:
+        raise HTTPException(status_code=400, detail="estate_id required")
+    if await is_estate_owner(current_user["id"], estate_id):
+        return
+    raise HTTPException(status_code=403, detail="Not authorized for this estate")

@@ -102,14 +102,17 @@ async def save_dts_payment_method(
 ):
     """Save a payment method to a DTS task for charging upon transition"""
     try:
-        # Verify task belongs to user's estate
+        # Verify task belongs to user's estate (IDOR guard — also fixes a bug
+        # where the prior code filtered on `user_id` which doesn't exist on
+        # the `estates` collection; field is `owner_id`. That made the guard
+        # reject every legit user. Switched to the shared helper.)
         task = await db.dts_tasks.find_one({"id": task_id}, {"_id": 0})
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
 
-        estate = await db.estates.find_one({"id": task["estate_id"], "user_id": user["id"]}, {"_id": 0})
-        if not estate:
-            raise HTTPException(status_code=403, detail="Not authorized")
+        from guards import require_estate_owner
+
+        await require_estate_owner(task.get("estate_id"), user)
 
         # Update task with payment method info
         payment_info = {

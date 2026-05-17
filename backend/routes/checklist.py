@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from config import db
-from guards import require_benefactor_role
+from guards import require_benefactor_role, require_estate_member, require_estate_owner
 from models import ChecklistItem, ChecklistItemCreate, ChecklistItemUpdate
 from utils import get_current_user, update_estate_readiness
 
@@ -17,6 +17,8 @@ router = APIRouter()
 @router.get("/checklists/{estate_id}")
 async def get_checklists(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get all checklist items for an estate."""
+    # IDOR guard — only estate members (owner/beneficiary/admin) can read.
+    await require_estate_member(estate_id, current_user)
     checklists = (
         await db.checklists.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).sort("order", 1).to_list(200)
     )
@@ -28,6 +30,9 @@ async def create_checklist_item(data: ChecklistItemCreate, current_user: dict = 
     """Benefactor creates a new IAC item."""
     if current_user["role"] not in ("benefactor", "admin"):
         raise HTTPException(status_code=403, detail="Only benefactors can create checklist items")
+
+    # IDOR guard — only the estate owner (or admin) can add items.
+    await require_estate_owner(data.estate_id, current_user)
 
     # Enforce subscription requirement
     from guards import get_subscription_access
@@ -79,6 +84,9 @@ async def update_checklist_item(
     if not item:
         raise HTTPException(status_code=404, detail="Checklist item not found")
 
+    # IDOR guard — only the estate owner (or admin) can edit checklist items.
+    await require_estate_owner(item.get("estate_id"), current_user)
+
     update_fields = {k: v for k, v in data.model_dump().items() if v is not None}
     if not update_fields:
         raise HTTPException(status_code=400, detail="No fields to update")
@@ -100,6 +108,9 @@ async def delete_checklist_item(item_id: str, current_user: dict = Depends(get_c
     if not item:
         raise HTTPException(status_code=404, detail="Checklist item not found")
 
+    # IDOR guard — only the estate owner (or admin) can delete checklist items.
+    await require_estate_owner(item.get("estate_id"), current_user)
+
     await db.checklists.update_one(
         {"id": item_id},
         {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}},
@@ -117,6 +128,9 @@ async def toggle_checklist_item(item_id: str, current_user: dict = Depends(get_c
     item = await db.checklists.find_one({"id": item_id}, {"_id": 0})
     if not item:
         raise HTTPException(status_code=404, detail="Checklist item not found")
+
+    # IDOR guard — only estate members can toggle (beneficiaries CAN toggle).
+    await require_estate_member(item.get("estate_id"), current_user)
 
     new_status = not item.get("is_completed", False)
     update_data = {
@@ -158,6 +172,16 @@ async def reorder_checklists(data: dict, current_user: dict = Depends(get_curren
         raise HTTPException(status_code=403, detail="Only benefactors can reorder")
 
     item_ids = data.get("item_ids", [])
+    # IDOR guard — for each item, only allow if the estate owner.
+    # We load all items in one query, then enforce per-estate ownership.
+    if item_ids:
+        existing = await db.checklists.find({"id": {"$in": item_ids}}, {"_id": 0, "id": 1, "estate_id": 1}).to_list(
+            len(item_ids)
+        )
+        unique_estates = {e["estate_id"] for e in existing if e.get("estate_id")}
+        for eid in unique_estates:
+            await require_estate_owner(eid, current_user)
+
     for idx, item_id in enumerate(item_ids):
         await db.checklists.update_one({"id": item_id}, {"$set": {"order": idx + 1}})
 
@@ -168,6 +192,10 @@ async def reorder_checklists(data: dict, current_user: dict = Depends(get_curren
 async def accept_ai_item(item_id: str, current_user: dict = Depends(get_current_user)):
     """Accept an AI-suggested checklist item."""
     require_benefactor_role(current_user, "accept items")
+    item = await db.checklists.find_one({"id": item_id}, {"_id": 0, "estate_id": 1})
+    if not item:
+        raise HTTPException(status_code=404, detail="Checklist item not found")
+    await require_estate_owner(item.get("estate_id"), current_user)
     await db.checklists.update_one(
         {"id": item_id},
         {
@@ -184,6 +212,10 @@ async def accept_ai_item(item_id: str, current_user: dict = Depends(get_current_
 async def reject_ai_item(item_id: str, current_user: dict = Depends(get_current_user)):
     """Reject an AI-suggested checklist item with optional feedback."""
     require_benefactor_role(current_user, "reject items")
+    item = await db.checklists.find_one({"id": item_id}, {"_id": 0, "estate_id": 1})
+    if not item:
+        raise HTTPException(status_code=404, detail="Checklist item not found")
+    await require_estate_owner(item.get("estate_id"), current_user)
     return {"success": True}
 
 
@@ -191,6 +223,10 @@ async def reject_ai_item(item_id: str, current_user: dict = Depends(get_current_
 async def reject_ai_item_with_feedback(item_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     """Reject an AI-suggested checklist item with feedback."""
     require_benefactor_role(current_user, "reject items")
+    item = await db.checklists.find_one({"id": item_id}, {"_id": 0, "estate_id": 1})
+    if not item:
+        raise HTTPException(status_code=404, detail="Checklist item not found")
+    await require_estate_owner(item.get("estate_id"), current_user)
     data = await request.json()
     feedback = data.get("feedback", "")
     await db.checklists.update_one(

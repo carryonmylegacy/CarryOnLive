@@ -6,7 +6,34 @@
 
 ---
 
-## 🔴 P0 — LIVE IDOR (Insecure Direct Object Reference) — DO NOT PITCH UNTIL FIXED
+## 🔴 P0 — LIVE IDOR (Insecure Direct Object Reference) — ✅ **FIXED Feb 12, 2026**
+
+### Final Status
+
+| Step | Result |
+|---|---|
+| Vulnerability identified | 13 endpoints leaking PII / accepting cross-tenant mutation |
+| Fix applied | Added `require_estate_member()` + `require_estate_owner()` shared guards in `guards.py`; called from all 13 endpoints |
+| Live re-test of exploit suite | 13/13 endpoints return 403 to a fresh attacker user |
+| Legitimate flows preserved | Owner GETs/PATCHes pass; beneficiary GETs/toggle pass; beneficiary edits properly blocked |
+| Regression test added | `/app/backend/tests/test_idor_guards.py` — **17/17 PASS** |
+| Demo data cleanup | All audit test users + corrupted message/checklist item restored |
+
+### Files modified
+- `/app/backend/guards.py` — added `require_estate_member()` and `require_estate_owner()` shared guards.
+- `/app/backend/routes/beneficiaries/management.py` — 5 endpoints guarded (GET list, PUT, DELETE, photo POST/DELETE).
+- `/app/backend/routes/checklist.py` — 7 endpoints guarded (GET list, POST, PUT, DELETE, PATCH toggle, POST reorder, POST accept, POST reject, POST reject-with-feedback).
+- `/app/backend/routes/messages.py` — 4 endpoints guarded (GET attachment, PUT update, DELETE).
+- `/app/backend/routes/documents_voice.py` — 3 endpoints guarded (setup, verify, hint).
+- `/app/backend/routes/subscriptions/plans.py:97` — `save_dts_payment_method` ownership check fixed (also corrected a pre-existing bug where the guard filtered on a non-existent `user_id` field on the estates collection).
+
+### What Else
+- 🟢 P2 — `support.py:304` admin N+1 (200 sequential find_one) — deferred per audit § 2; admin endpoint, low traffic.
+- 🟢 Codebase remains in known-good, all-clear state. `scripts/check.sh` ALL CLEAR — SAFE TO PUSH.
+
+---
+
+
 
 ### Summary
 

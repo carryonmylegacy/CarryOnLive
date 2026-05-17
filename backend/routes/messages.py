@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, File, HTTPException, Query as QueryParam, Response, UploadFile
 
 from config import db, logger
-from guards import require_benefactor_role
+from guards import require_benefactor_role, require_estate_member, require_estate_owner
 from models import Message, MessageCreate, MessageUpdate
 from services.audit import audit_log
 from services.encryption import (
@@ -555,6 +555,9 @@ async def get_message_attachment(message_id: str, current_user: dict = Depends(g
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
 
+    # IDOR guard — only owner / beneficiary / admin can download an attachment.
+    await require_estate_member(message.get("estate_id"), current_user)
+
     attachment_url = message.get("attachment_url")
     if not attachment_url:
         raise HTTPException(status_code=404, detail="No attachment on this message")
@@ -584,6 +587,8 @@ async def update_message(message_id: str, data: MessageUpdate, current_user: dic
     existing = await db.messages.find_one({"id": message_id}, {"_id": 0})
     if not existing:
         raise HTTPException(status_code=404, detail="Message not found")
+    # IDOR guard — only the estate owner (or admin) can edit a message.
+    await require_estate_owner(existing.get("estate_id"), current_user)
     if existing.get("is_delivered"):
         raise HTTPException(status_code=400, detail="Cannot edit a delivered message")
 
@@ -697,6 +702,9 @@ async def delete_message(message_id: str, current_user: dict = Depends(get_curre
     message = await db.messages.find_one({"id": message_id}, {"_id": 0})
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
+
+    # IDOR guard — only the estate owner (or admin) can delete a message.
+    await require_estate_owner(message.get("estate_id"), current_user)
 
     # Delete video from storage if exists
     if message.get("video_url"):
