@@ -778,8 +778,29 @@ class RiskProfileRequest(BaseModel):
 async def risk_profile(req: RiskProfileRequest, current_user: dict = Depends(get_current_user)):
     await _require_estate_access(req.estate_id, current_user)
 
+    # Address-aware cache key (Feb 2026 founder ask): if the household
+    # address changes mid-demo or mid-session, the prior ranking is now
+    # stale — Phoenix's "Heat Wave on top" is wrong the second you re-
+    # pitch to a Seattle prospect. We key the cache row on (estate_id,
+    # location_key) so changing the address forces a fresh xAI call.
+    # Empty/unknown locations share a single "unknown" bucket so we
+    # don't burn tokens re-ranking the same featureless query.
+    location_key = (
+        "|".join(
+            [
+                (req.city or "").strip().lower(),
+                (req.state or "").strip().lower(),
+                (req.zip_code or "").strip().lower(),
+            ]
+        )
+        or "unknown"
+    )
+
     # Try cache (1 day fresh) so the picker is instant on second open.
-    cached = await db.ccp_risk_profile.find_one({"estate_id": req.estate_id}, {"_id": 0})
+    cached = await db.ccp_risk_profile.find_one(
+        {"estate_id": req.estate_id, "location_key": location_key},
+        {"_id": 0},
+    )
     if cached:
         try:
             ts = datetime.fromisoformat(cached["computed_at"].replace("Z", "+00:00"))
@@ -845,12 +866,13 @@ async def risk_profile(req: RiskProfileRequest, current_user: dict = Depends(get
 
     result = {
         "estate_id": req.estate_id,
+        "location_key": location_key,
         "location_hint": location_hint,
         "ranked": ranked,
         "computed_at": _now_iso(),
     }
     await db.ccp_risk_profile.update_one(
-        {"estate_id": req.estate_id},
+        {"estate_id": req.estate_id, "location_key": location_key},
         {"$set": result},
         upsert=True,
     )
