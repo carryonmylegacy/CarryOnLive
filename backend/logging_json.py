@@ -1,23 +1,27 @@
-"""CarryOn™ — Structured JSON log formatter (Feb 2026).
+"""CarryOn™ — Structured JSON log formatter + PII redaction (Feb 2026).
 
-Opt-in via env var LOG_FORMAT=json. When set, every backend log line is
-emitted as a JSON object instead of the human-readable format. Datadog,
-Honeycomb, CloudWatch, Loki, and Sentry all auto-ingest JSON lines, so
-flipping this in production gives free queryable logs.
+Two opt-in capabilities:
 
-Default (LOG_FORMAT unset) keeps the existing human-readable format so the
-live pitch console output isn't disrupted.
+1. **PII REDACTION** (env: REDACT_PII=1, default ON in production).
+   Every log line is filtered through `_redact()` before serialization. The
+   redactor catches the most common SOC2/GDPR mistakes:
+     * email addresses    → `<redacted:email>`
+     * US SSN (\\d{3}-\\d{2}-\\d{4})     → `<redacted:ssn>`
+     * phone numbers (E.164 + US 10-digit)  → `<redacted:phone>`
+     * credit-card-ish 13-19 digit runs    → `<redacted:cc>`
+     * JWT tokens (eyJ…)  → `<redacted:jwt>`
+     * Bearer tokens in raw strings → `<redacted:bearer>`
 
-Schema per log line:
-{
-  "ts": "2026-02-12T15:30:00.000Z",
-  "level": "INFO",
-  "logger": "config",
-  "msg": "User logged in",
-  "user_id": "...",       # if available
-  "request_id": "...",    # if available
-  "extra": { ... }        # any extra=... kwarg the caller passed
-}
+   Caller can opt-out a particular log line by setting `extra={"_skip_pii_redact": True}`.
+
+2. **STRUCTURED JSON OUTPUT** (env: LOG_FORMAT=json).
+   See JsonFormatter — Datadog/Honeycomb/CloudWatch-ingestible JSON.
+
+DEFAULT
+-------
+Without any env var set, logging falls back to the pre-existing
+human-readable format AND skips PII redaction (so local dev sees full
+values). Production MUST set `REDACT_PII=1` and `LOG_FORMAT=json`.
 """
 
 from __future__ import annotations
@@ -25,8 +29,94 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import time
 from typing import Any
+
+
+# ── PII redactor ────────────────────────────────────────────────────────────
+
+_PII_PATTERNS = [
+    (re.compile(r"\beyJ[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}\b"), "<redacted:jwt>"),
+    (re.compile(r"Bearer\s+[A-Za-z0-9._\-]{20,}", re.IGNORECASE), "Bearer <redacted:bearer>"),
+    (re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"), "<redacted:email>"),
+    (re.compile(r"\b\d{3}-\d{2}-\d{4}\b"), "<redacted:ssn>"),
+    (re.compile(r"\b(?:\d[ -]?){13,19}\b"), "<redacted:cc>"),
+    (re.compile(r"\+[1-9]\d{6,14}\b"), "<redacted:phone>"),
+    (re.compile(r"\(\d{3}\)\s?\d{3}[-\s]?\d{4}"), "<redacted:phone>"),
+    (re.compile(r"(?<!\d)\d{3}[-\s]\d{3}[-\s]\d{4}(?!\d)"), "<redacted:phone>"),
+]
+
+
+def _redact_str(text: str) -> str:
+    if not text:
+        return text
+    for pattern, repl in _PII_PATTERNS:
+        text = pattern.sub(repl, text)
+    return text
+
+
+def _redact_obj(obj: Any) -> Any:
+    if isinstance(obj, str):
+        return _redact_str(obj)
+    if isinstance(obj, dict):
+        return {k: _redact_obj(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return type(obj)(_redact_obj(v) for v in obj)
+    return obj
+
+
+def _redact_enabled() -> bool:
+    val = os.environ.get("REDACT_PII", "").strip().lower()
+    return val in ("1", "true", "yes")
+
+
+class _PIIRedactFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        if getattr(record, "_skip_pii_redact", False):
+            return True
+        try:
+            rendered = record.getMessage()
+            redacted = _redact_str(rendered)
+            if redacted != rendered:
+                record.msg = redacted
+                record.args = ()
+            skip = {
+                "name",
+                "msg",
+                "args",
+                "levelname",
+                "levelno",
+                "pathname",
+                "filename",
+                "module",
+                "exc_info",
+                "exc_text",
+                "stack_info",
+                "lineno",
+                "funcName",
+                "created",
+                "msecs",
+                "relativeCreated",
+                "thread",
+                "threadName",
+                "processName",
+                "process",
+                "message",
+                "asctime",
+            }
+            for key in list(record.__dict__.keys()):
+                if key in skip or key.startswith("_"):
+                    continue
+                val = record.__dict__[key]
+                if isinstance(val, (str, dict, list, tuple)):
+                    record.__dict__[key] = _redact_obj(val)
+        except Exception:
+            pass
+        return True
+
+
+# ── JSON formatter ──────────────────────────────────────────────────────────
 
 
 class JsonFormatter(logging.Formatter):
@@ -37,14 +127,12 @@ class JsonFormatter(logging.Formatter):
             "logger": record.name,
             "msg": record.getMessage(),
         }
-        # Standard request-context fields if present
         for field in ("user_id", "request_id", "estate_id", "trace_id"):
             val = getattr(record, field, None)
             if val:
                 payload[field] = val
         if record.exc_info:
             payload["exc"] = self.formatException(record.exc_info)
-        # Stash anything the caller attached via extra={"foo": "bar"}
         skip = {
             "name",
             "msg",
@@ -76,16 +164,25 @@ class JsonFormatter(logging.Formatter):
 
 
 def install() -> None:
-    """Replace the default formatter on the root logger if LOG_FORMAT=json."""
-    if os.environ.get("LOG_FORMAT", "").strip().lower() != "json":
-        return
     root = logging.getLogger()
-    fmt = JsonFormatter()
-    for handler in root.handlers:
-        handler.setFormatter(fmt)
-    # Also add a fresh handler if root has none
-    if not root.handlers:
-        h = logging.StreamHandler()
-        h.setFormatter(fmt)
-        root.addHandler(h)
-    root.info("Structured JSON logging enabled (LOG_FORMAT=json)")
+
+    if _redact_enabled():
+        pii_filter = _PIIRedactFilter()
+        for handler in root.handlers:
+            handler.addFilter(pii_filter)
+        if not root.handlers:
+            h = logging.StreamHandler()
+            h.addFilter(pii_filter)
+            root.addHandler(h)
+        root.addFilter(pii_filter)
+        root.info("PII redaction filter installed (REDACT_PII=1)")
+
+    if os.environ.get("LOG_FORMAT", "").strip().lower() == "json":
+        fmt = JsonFormatter()
+        for handler in root.handlers:
+            handler.setFormatter(fmt)
+        if not root.handlers:
+            h = logging.StreamHandler()
+            h.setFormatter(fmt)
+            root.addHandler(h)
+        root.info("Structured JSON logging enabled (LOG_FORMAT=json)")

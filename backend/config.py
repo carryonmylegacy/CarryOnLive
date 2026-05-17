@@ -44,6 +44,14 @@ client = AsyncIOMotorClient(
     minPoolSize=5,
     maxIdleTimeMS=60000,
     waitQueueTimeoutMS=10000,
+    # DoS-hardening (Feb 2026): any single MongoDB socket operation MUST
+    # complete within 30s or we abandon it. This catches runaway queries
+    # (missing index, table scan on a huge collection) before they exhaust
+    # the connection pool. Combined with DoSHardeningMiddleware's 60s
+    # wall-clock cap, the worst-case request budget is 30s Mongo + 30s
+    # application code. Override per-query with `.max_time_ms(N)` when needed.
+    socketTimeoutMS=30000,
+    connectTimeoutMS=5000,
 )
 db = client[os.environ["DB_NAME"]]
 

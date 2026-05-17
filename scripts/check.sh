@@ -140,6 +140,25 @@ if [ "$HK_RUN_K6" = "1" ]; then
   fi
 fi
 
+# 5c. WCAG 2.1 AA a11y smoke (opt-in, requires playwright + chromium)
+if [ "$HK_RUN_A11Y" = "1" ]; then
+  echo ""
+  echo -e "${BOLD}Stage 5c/5: WCAG 2.1 AA a11y smoke (BLOCKING)${NC}"
+  cd frontend
+  if E2E_BASE_URL=http://localhost:3000 npx playwright test tests/e2e/a11y.spec.js --reporter=line --workers=1 > /tmp/check_a11y.log 2>&1; then
+    echo -e "  ${GREEN}PASS${NC}"
+    tail -3 /tmp/check_a11y.log
+    cd ..
+    python3 /app/scripts/a11y_report.py > /dev/null 2>&1
+    echo "  Report regenerated: /app/memory/A11Y_AUDIT.md"
+  else
+    echo -e "  ${RED}FAIL${NC} (a11y violations)"
+    tail -30 /tmp/check_a11y.log
+    cd ..
+    BLOCKING_ISSUES=$((BLOCKING_ISSUES + 1))
+  fi
+fi
+
 echo ""
 echo -e "${BOLD}═══════════════════════════════════════════${NC}"
 if [ "$BLOCKING_ISSUES" = "0" ]; then

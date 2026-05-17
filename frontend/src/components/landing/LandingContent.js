@@ -412,17 +412,17 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           <img src="/carryon-logo.png" alt="CarryOn" className="h-8 opacity-60" />
           <div className="flex items-center gap-6">
-            <a href="/privacy" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-privacy-link${testIdSuffix}`}>Privacy Policy</a>
-            <a href="/terms" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-terms-link${testIdSuffix}`}>Terms of Service</a>
-            <span className="text-[#334155] text-xs">Accessibility</span>
+            <a href="/privacy" className="text-[#94a3b8] text-xs hover:text-[#cbd5e1] transition-colors" data-testid={`landing-footer-privacy-link${testIdSuffix}`}>Privacy Policy</a>
+            <a href="/terms" className="text-[#94a3b8] text-xs hover:text-[#cbd5e1] transition-colors" data-testid={`landing-footer-terms-link${testIdSuffix}`}>Terms of Service</a>
+            <span className="text-[#94a3b8] text-xs">Accessibility</span>
           </div>
-          <div className="text-right text-[#334155] text-xs leading-relaxed">
+          <div className="text-right text-[#94a3b8] text-xs leading-relaxed">
             <p>{footerInfo.line1}</p>
             <p>{footerInfo.line2}</p>
             <p>{footerInfo.phone}</p>
           </div>
         </div>
-        <p className="text-center text-[#2A3C55] text-xs mt-6">&copy; {new Date().getFullYear()} CarryOn Technologies LLC. All rights reserved.</p>
+        <p className="text-center text-[#94a3b8] text-xs mt-6">&copy; {new Date().getFullYear()} CarryOn Technologies LLC. All rights reserved.</p>
       </div>
     </footer>
   </>

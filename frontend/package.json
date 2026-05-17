@@ -120,6 +120,7 @@
     }
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
     "@babel/core": "^7.29.0",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@babel/plugin-syntax-flow": "^7.28.6",
@@ -128,6 +129,7 @@
     "@playwright/test": "^1.59.1",
     "@types/node": "^25.5.2",
     "autoprefixer": "^10.4.20",
+    "axe-core": "^4.11.4",
     "eslint-plugin-react-hooks": "4.6.2",
     "eslint-plugin-unused-imports": "^4.4.1",
     "postcss": "^8.5.10",

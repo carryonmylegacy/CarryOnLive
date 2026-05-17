@@ -275,6 +275,41 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
+    summary="Family Preparedness Platform — Partner & B2B Integration API",
+    description=(
+        "CarryOn™ is an offline-first family-preparedness platform. This is the "
+        "public partner API surface. For B2B integrators: authentication uses "
+        "Bearer JWT tokens issued by `POST /api/auth/login`. All write "
+        "operations support Stripe-style `Idempotency-Key` headers for safe "
+        "retry. See `memory/SECURITY_POSTURE.md` for security model details.\n\n"
+        "**Support**: founder@carryon.us\n\n"
+        "**Rate limits**: 600 req/60s per IP, 1200 req/60s per user. "
+        "Auth endpoints: 20 attempts/60s per IP."
+    ),
+    contact={
+        "name": "CarryOn API Support",
+        "url": "https://app.carryon.us",
+        "email": "founder@carryon.us",
+    },
+    license_info={
+        "name": "Proprietary — © 2026 CarryOn Technologies LLC",
+    },
+    servers=[
+        {"url": "https://carryon-api-production.up.railway.app", "description": "Production"},
+        {"url": "http://localhost:8001", "description": "Local dev"},
+    ],
+    openapi_tags=[
+        {"name": "auth", "description": "Login, registration, password reset, 2FA, sessions"},
+        {"name": "estates", "description": "Core estate (family-data grouping) CRUD"},
+        {"name": "beneficiaries", "description": "Beneficiary records tied to an estate"},
+        {"name": "checklists", "description": "Estate-completion checklists"},
+        {"name": "messages", "description": "Time/event-triggered family messages"},
+        {"name": "documents", "description": "Secure Document Vault (SDV)"},
+        {"name": "subscriptions", "description": "Stripe billing & plan management"},
+        {"name": "guardian", "description": "Estate Guardian AI (EGA) — Grok-powered"},
+        {"name": "beneficiary-concierge", "description": "Beneficiary-side AI concierge (BEC)"},
+        {"name": "admin", "description": "Operator/admin-only routes — restricted access"},
+    ],
 )
 
 # API router with /api prefix
@@ -474,6 +509,17 @@ except Exception as _otel_exc:  # pragma: no cover — never crash boot on traci
     logger.warning(f"OTel setup skipped: {_otel_exc}")
 
 # ===================== MIDDLEWARE (order: last added = first executed) =====================
+
+# DoS hardening (Feb 2026): body-size cap + wall-clock timeout + in-flight cap.
+# Added FIRST so it runs LAST in the request pipeline — we want auth and
+# idempotency middleware to fail fast on malicious requests without burning
+# our compute on running them through DoS checks.
+try:
+    from middleware_dos_hardening import DoSHardeningMiddleware
+
+    app.add_middleware(DoSHardeningMiddleware)
+except Exception as _dos_exc:
+    logger.warning(f"DoS hardening middleware skipped: {_dos_exc}")
 
 # Idempotency: opt-in via `Idempotency-Key` header on writes (Feb 2026).
 # Replays cached response for 24h to make POST/PUT/DELETE/PATCH safely
