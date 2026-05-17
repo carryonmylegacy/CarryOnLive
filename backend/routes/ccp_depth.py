@@ -592,7 +592,21 @@ async def readiness_score(estate_id: str, current_user: dict = Depends(get_curre
       • Plan has linked SDV documents ........ 10
     """
     await _require_estate_access(estate_id, current_user)
+    return await compute_ccp_readiness(estate_id)
 
+
+async def compute_ccp_readiness(estate_id: str) -> dict:
+    """Pure-compute CCP readiness — no auth gate. Called by the GET
+    endpoint above AND by the Family Readiness Report PDF generator,
+    so the ring on the CCP landing page and the score printed on the
+    PDF are always derived from the exact same source of truth.
+
+    Fixes the Feb 2026 mismatch where the PDF was calling
+    `services.readiness.calculate_estate_readiness(...)` and reading
+    a field that didn't exist (`overall` vs `overall_score`), which
+    silently floored the printed score to 0% even when the landing
+    ring showed 40+.
+    """
     plans = await db.ccp_plans.find({"estate_id": estate_id}, {"_id": 0}).to_list(50)
     household = await db.ccp_household.find_one({"estate_id": estate_id}, {"_id": 0}) or {}
     go_bag = await db.ccp_go_bag.find_one({"estate_id": estate_id}, {"_id": 0}) or {}

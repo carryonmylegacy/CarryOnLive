@@ -2601,3 +2601,35 @@ Verified all handoff-claimed completed work was still in place (apiClient.js, SS
 Push to GitHub when ready. Live SSE depends on ingress flush config; until then polling fallback is automatic.
 
 [END ANCHOR:PHASE3_AUDIT_COMPLETION]
+
+
+---
+
+## Light-mode MM titles + CCP PDF score mismatch (Feb 17, 2026 hotfix)
+
+User-reported pair from a 9:11 PM screenshot:
+
+### Bug 1: MM titles illegible in light mode
+- File: `/app/frontend/src/components/messages/MessageCard.js` line 57.
+- Cause: `<h3 className="text-white ...">` hardcoded white text on a white card background in light mode → invisible title.
+- Fix: replaced with `style={{ color: 'var(--t)' }}` — theme-aware primary text token (dark in light mode, light in dark mode).
+
+### Bug 2: CCP landing ring showed 40 but Family Readiness Report PDF printed 0%
+- Files: `/app/backend/routes/downloads.py::_handle_family_readiness_report` + `/app/backend/routes/ccp_depth.py::readiness_score`.
+- Root cause (two compounding bugs):
+  1. The PDF was reading from a DIFFERENT readiness function than the landing ring. PDF called `services.readiness.calculate_estate_readiness()` (a cross-cutting estate score: docs+messages+checklist+financials). The landing ring called `routes/ccp_depth.py::readiness_score` (a CCP-specific score with 8 weighted factors totaling 100). These were always going to drift.
+  2. Even within the wrong function, the PDF read `readiness_data.get("overall", 0)` — but the actual field name was `overall_score`. So the PDF ALWAYS printed 0% no matter what the cross-cutting function returned.
+- Fix:
+  - Extracted the CCP scoring body into a pure helper `compute_ccp_readiness(estate_id: str) -> dict` in `ccp_depth.py` (no auth gate — callers gate).
+  - `GET /api/ccp/readiness/{estate_id}` now calls `await compute_ccp_readiness(...)` after the existing `_require_estate_access` check.
+  - The PDF now calls the same helper after its own owner/admin check, and prints the same `score`, `label`, and 8-factor `breakdown` the user sees when expanding the landing-page ring.
+- Verified end-to-end via curl: endpoint returns `score: N`, PDF prints `N%` and the same 8 factors with `[x]`/`[ ]` marks and earned/total values. Em-dash separator replaced with ASCII hyphen to stay inside Helvetica's character set.
+
+### Files touched
+- `/app/frontend/src/components/messages/MessageCard.js`
+- `/app/backend/routes/downloads.py`
+- `/app/backend/routes/ccp_depth.py`
+
+Housekeeping `--strict` exit 0; JS+Python lint clean.
+
+[END ANCHOR:LIGHT_MODE_MM_TITLES_AND_CCP_PDF_HOTFIX]

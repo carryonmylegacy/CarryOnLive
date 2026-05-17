@@ -461,7 +461,7 @@ async def _handle_family_readiness_report(user: dict, params: dict, filename: st
     """Generate a comprehensive Family Readiness Report PDF."""
     from fpdf import FPDF
     from datetime import datetime as dt_cls
-    from services.readiness import calculate_estate_readiness
+    from routes.ccp_depth import compute_ccp_readiness
 
     estate_id = params.get("estate_id")
     if not estate_id:
@@ -492,8 +492,14 @@ async def _handle_family_readiness_report(user: dict, params: dict, filename: st
         .sort("activated_at", -1)
         .to_list(50)
     )
-    readiness_data = await calculate_estate_readiness(estate_id)
-    readiness_score = readiness_data.get("overall", 0) if isinstance(readiness_data, dict) else readiness_data
+    # Pull the CCP-specific readiness score from the SAME helper the
+    # CCP landing-page ring uses, so the printed number on this PDF
+    # and the ring the user just clicked are guaranteed to match.
+    # Prior to Feb 2026 this called calculate_estate_readiness and
+    # read a field name that didn't exist, flooring the printed
+    # score to 0% even when the landing ring showed 40+.
+    ccp_readiness = await compute_ccp_readiness(estate_id)
+    readiness_score = ccp_readiness.get("score", 0)
 
     PLAN_TYPE_LABELS = {
         "natural_disaster": "Natural Disaster",
@@ -556,23 +562,19 @@ async def _handle_family_readiness_report(user: dict, params: dict, filename: st
     pdf.set_text_color(100, 100, 100)
     pdf.cell(0, 20, "overall readiness score", new_x="LMARGIN", new_y="NEXT")
 
-    if isinstance(readiness_data, dict):
-        pillars = []
-        for key, label in [
-            ("documents", "Documents"),
-            ("messages", "Messages"),
-            ("checklists", "Checklists"),
-            ("financials", "Financials"),
-        ]:
-            val = readiness_data.get(key, 0)
-            if isinstance(val, dict):
-                val = val.get("score", 0)
-            pillars.append((label, int(val)))
+    if isinstance(ccp_readiness, dict) and ccp_readiness.get("breakdown"):
+        # Print the same 8 weighted factors the user sees when they
+        # expand the readiness card on the CCP landing page, so the
+        # PDF mirrors the on-screen breakdown exactly.
         pdf.set_font("Helvetica", "", 10)
         pdf.set_text_color(60, 60, 60)
-        for lbl, pct in pillars:
-            pdf.cell(47, 7, f"  {lbl}: {pct}%")
-        pdf.ln(10)
+        for factor in ccp_readiness["breakdown"]:
+            earned = int(factor.get("earned", 0))
+            points = int(factor.get("points", 0))
+            label = safe(str(factor.get("label", "")))
+            mark = "[x]" if earned > 0 else "[ ]"
+            pdf.cell(0, 7, f"  {mark} {label}  -  {earned}/{points}", new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(4)
     pdf.ln(4)
 
     # ── EMERGENCY PLAN COVERAGE ──

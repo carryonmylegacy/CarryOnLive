@@ -54,7 +54,7 @@ const MessageCard = ({
         >
           {TypeIconBlock}
           <div className="flex-1 min-w-0">
-            <h3 className="text-white font-medium text-sm sm:text-base truncate">{msg.title}</h3>
+            <h3 className="font-medium text-sm sm:text-base truncate" style={{ color: 'var(--t)' }}>{msg.title}</h3>
             <p className="text-[#64748b] text-xs flex items-center gap-1 truncate">
               <TriggerIcon className="w-3 h-3 flex-shrink-0" />
               <span className="truncate">
