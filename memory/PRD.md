@@ -2690,3 +2690,60 @@ Follow-up to the CCP Wizard expansion: the xAI risk-profile prompt (`routes/ccp_
 Lint clean; housekeeping `--strict` exit 0.
 
 [END ANCHOR:RISK_PROFILE_PROMPT_EXTENDED]
+
+
+---
+
+## Risk-profile regional-anchor calibration (Feb 17, 2026)
+
+Rebuilt the `risk_profile` prompt in `routes/ccp_depth.py` to bake in **14 explicit U.S. regional hazard anchors + 9 universal calibrations**, so xAI no longer has to guess at sub-regional geography.
+
+### Anchors by region (one-line summary each)
+- **California**: Earthquake + Wildfire top tier; Tsunami coastal; Landslide post-wildfire; chronic Drought; PSPS Power Outage.
+- **Pacific Northwest**: Cascadia → Earthquake + Tsunami top tier; Volcanic within ~50 mi of Rainier/Hood/Baker/St. Helens; 2021 heat dome.
+- **Alaska**: Earthquake, Tsunami, Volcanic, Avalanche, Winter Storm, Wildfire all elevated.
+- **Hawaii**: Volcanic Big Island; Tsunami all islands; Hurricane; Wildfire (Maui Lahaina); Landslide.
+- **Gulf Coast**: Hurricane + Flood top tier; Chemical Spill (Houston Ship Channel, Cancer Alley); Tornado overlap.
+- **Florida Peninsula**: Hurricane + Lightning Storm (FL lightning capital) + Flood.
+- **South Atlantic**: Hurricane; Charleston historic Earthquake; pine-forest Wildfire in drought.
+- **Mid-Atlantic**: Hurricane + Winter Storm + Cyber Attack + Terrorism (DC/NY) + Gas Leak older housing.
+- **New England**: Winter Storm top tier; Hurricane (Sandy/Bob); ice-storm Power Outage.
+- **Great Lakes / Industrial Midwest**: Winter Storm; Tornado (Ohio Valley); Train Derailment (East Palestine); Chemical Spill; metro Civil Unrest.
+- **Tornado Alley**: Tornado + Hailstorm top tier; Heat Wave; Drought.
+- **Dixie Alley**: Tornado (deadlier, nocturnal); Hurricane Gulf; New Madrid Earthquake (Memphis, Little Rock).
+- **Mountain West / Rockies**: Wildfire; Winter Storm; Hailstorm; Avalanche; Wasatch Fault Earthquake (SLC).
+- **Desert Southwest**: Heat Wave + Drought top tier; Wildfire; monsoon Flash Flood; AC-overload Power Outage.
+
+### Universal calibrations
+- Cyber Attack baseline medium nationwide
+- Medical Emergency baseline medium nationwide
+- Active Shooter not buried (medium tier in any populated area)
+- Pandemic medium post-COVID, slightly elevated in dense urban + livestock counties
+- Power Outage elevated everywhere (TX ERCOT, CA PSPS, NE winter)
+- Home Invasion / House Fire / Gas Leak — household-scale, rank by housing-stock age + density + crime
+- Nuclear Event — low for most, elevated within ~50 mi of operating reactor or strategic military
+- Train Derailment — elevated within ~1 mi of Class I freight (Norfolk Southern, CSX, BNSF, UP, CPKC)
+- Water Failure — chronic in Jackson MS, Flint MI, Newark NJ, parts of TX/CA; trending up nationally
+
+### Output rules tightened
+- `reason` must reference a specific local factor (named fault, named rail line, named industry, named climate pattern, named historical event) — not a generic platitude.
+- Distribute tiers honestly: not every category can be high; not every uncomfortable category can be low.
+- Include ALL 28 names exactly as listed.
+
+### Live verification — 12 cities sweep, ALL anchors fired correctly
+- ✅ Los Angeles → Earthquake, Wildfire, Drought, Power Outage, Landslide
+- ✅ Seattle → Earthquake, Tsunami, Volcanic Activity, Winter Storm, Heat Wave
+- ✅ Miami → Hurricane, Lightning Storm, Flood, Heat Wave, Power Outage
+- ✅ Oklahoma City → Tornado, Hailstorm, Heat Wave, Lightning Storm, Drought
+- ✅ Memphis → Tornado, **Earthquake** (New Madrid), Flood, Train Derailment, Chemical Spill
+- ✅ Houston → Hurricane, Flood, Chemical Spill, Tornado, Heat Wave
+- ✅ Boston → Winter Storm, Power Outage, Gas Leak, Hurricane, Flood
+- ✅ Anchorage → Earthquake, Winter Storm, Tsunami, Volcanic Activity, Avalanche
+- ✅ Honolulu → Tsunami, Hurricane, Wildfire, Earthquake, Landslide (correctly distinguished Oahu from Big Island)
+- ✅ Charleston → Hurricane, Flood, Power Outage, **Earthquake** (historic SC zone), Heat Wave
+- ✅ East Palestine → **Train Derailment, Chemical Spill** at #1 and #2
+- ✅ Unknown location → Medical Emergency, Power Outage, House Fire, Home Invasion, Winter Storm (universal calibration)
+
+Lint clean; housekeeping `--strict` exit 0; `max_tokens` 1800 still sufficient.
+
+[END ANCHOR:RISK_PROFILE_REGIONAL_CALIBRATION]
