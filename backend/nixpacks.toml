@@ -1,0 +1,12 @@
+[phases.setup]
+aptPkgs = ["ffmpeg", "libsndfile1", "curl", "fonts-liberation", "fontconfig"]
+
+[phases.install]
+# Default nixpacks install (pip install -r requirements.txt) is followed by
+# install_emergent.sh which pulls emergentintegrations from Emergent's
+# private index WITHOUT its bundled openai==1.99.9 pin (which blocks 4+
+# litellm CVE fixes). See scripts/install_emergent.sh + memory/DEPLOY.md.
+cmds = [
+    "pip install -r requirements.txt",
+    "bash ../scripts/install_emergent.sh",
+]

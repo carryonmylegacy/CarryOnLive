@@ -13,6 +13,16 @@ URL: https://carryon-api-production.up.railway.app
 2. Agent triggers deploy: `curl -X POST <deploy hook URL>`
 3. Vercel builds and deploys to app.carryon.us
 
+## Backend Install (Railway)
+After `pip install -r requirements.txt`, **also run**:
+```
+bash /app/scripts/install_emergent.sh
+```
+This installs `emergentintegrations` from Emergent's private index with
+`--no-deps`, so its bundled `openai==1.99.9` pin doesn't override the
+patched `openai==2.30.0` / `litellm==1.83.7` in requirements.txt. Without
+this step, 4+ litellm CVEs remain unpatched. Idempotent — safe to re-run.
+
 ## Important Railway Env Vars
 - STRIPE_API_KEY
 - RAILWAY_PUBLIC_URL=https://carryon-api-production.up.railway.app

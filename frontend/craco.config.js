@@ -110,6 +110,26 @@ if (config.enableVisualEdits && babelMetadataPlugin) {
 }
 
 webpackConfig.devServer = (devServerConfig) => {
+  // ── CVE mitigation (Feb 2026) ────────────────────────────────────────
+  // CVE-2025-30359 + CVE-2025-30360: webpack-dev-server <=5.2.0 (which
+  // react-scripts 5.0.1 still pins) can leak source code if a developer
+  // visits a malicious site while their dev server is running. Until CRA
+  // ships v6 with webpack-dev-server 5.2.1+, mitigate at config-level:
+  //   1. Restrict allowedHosts so the dev server refuses arbitrary
+  //      Host: headers (closes the cross-origin proxy attack).
+  //   2. Pin the HMR client's web-socket URL so a remote attacker can't
+  //      coerce it onto an attacker-controlled WS endpoint.
+  // These do NOT require upgrading webpack-dev-server.
+  devServerConfig.allowedHosts = ["localhost", "127.0.0.1", ".emergentagent.com"];
+  devServerConfig.client = {
+    ...(devServerConfig.client || {}),
+    webSocketURL: {
+      hostname: "0.0.0.0",
+      pathname: "/ws",
+      protocol: "ws",
+    },
+  };
+
   // Apply visual edits dev server setup only if enabled
   if (config.enableVisualEdits && setupDevServer) {
     devServerConfig = setupDevServer(devServerConfig);

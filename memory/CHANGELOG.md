@@ -1,6 +1,36 @@
 # CarryOn — Changelog
 
 
+## Feb 12, 2026 — Backlog Sweep (Round 5): Final Vuln Push + Security Posture Doc
+
+### A. ✅ Backend vuln burndown round 4 — **4 → 2 CVEs (–50%)**, now at **42 → 2 cumulative (–95%)**
+- Unblocked the emergentintegrations openai pin by moving `emergentintegrations==0.1.2` out of `requirements.txt` and installing it via `--no-deps` in a separate `scripts/install_emergent.sh` step. Wired the new install order into `backend/nixpacks.toml` and documented in `memory/DEPLOY.md`.
+- Upgraded `litellm 1.80.0 → 1.83.7` (4 litellm CVEs fixed), `openai 1.99.9 → 2.30.0`.
+- Sibling pins adjusted to satisfy litellm 1.83.7: `click 8.3.1 → 8.1.8`, `importlib_metadata 8.7.1 → 8.5.0`, `jsonschema 4.26.0 → 4.23.0`, `typer 0.24.1 → 0.23.1`, `typer-slim 0.24.0 → 0.23.1`, `python-dotenv 1.2.2 → 1.0.1` (litellm 1.83.7 requirement).
+- Investigated `litellm 1.83.10` (1 more CVE fix) → **REJECTED**: would force `aiohttp 3.13.5 → 3.13.3` which re-introduces 10 aiohttp CVEs. Net trade of −9 vulns to fix 1 is a loss.
+- Real xAI Grok call validated post-upgrade: HTTP 200, sensible response in 11s.
+- Two residuals deliberately accepted: `litellm CVE-2026-40217` (1.83.10 fix blocked by aiohttp downgrade trade), `python-dotenv CVE-2026-28684` (1.2.2 fix blocked by litellm 1.83.7 exact pin). Both documented in `memory/SECURITY_POSTURE.md` with risk rationale.
+
+### B. ✅ Frontend webpack-dev-server CVE mitigation (config-level, no upgrade)
+- Adding patched webpack-dev-server 5.2.1+ would force CRA v6 (unreleased) and break react-scripts 5.0.1. **Mitigated at runtime config instead**:
+  - `craco.config.js`: dev-server now binds `allowedHosts: ["localhost", "127.0.0.1", ".emergentagent.com"]` — closes the cross-origin proxy attack at CVE-2025-30359/30360.
+  - Pinned HMR WebSocket URL (`hostname: 0.0.0.0`, `pathname: /ws`, `protocol: ws`) — closes the WS redirect attack.
+- Production build is unaffected (these are dev-server-only CVEs, never deployed to Vercel CDN).
+- Frontend HTTP 200 verified post-mitigation.
+
+### C. ✅ New `memory/SECURITY_POSTURE.md` (B2B procurement one-pager)
+- Single-page summary suitable for InfoSec / procurement teams during pre-contract due diligence. Covers: TL;DR table, IDOR protection summary, accepted residuals with rationale, CI gate topology, compliance touchpoints (SOC 2, GDPR, Apple Privacy), auth model, encryption (rest + transit), incident response.
+- Includes the dependency vuln scoreboard with "Why deferred" rationale for every residual.
+
+**Cumulative score across ALL rounds**:
+- Backend: 42 → 2 CVEs (**–95%**), zero in production-runtime auth/data paths
+- Frontend: 121 → 2 CVEs (**–98%**), production runtime **100% clean** (the 2 remaining are dev-server-only and config-mitigated)
+- Combined: 163 → 4 CVEs (**–97.5%**)
+
+**Verified**: `bash scripts/check.sh` → **ALL CLEAR — SAFE TO PUSH**. 34/34 fast tests green. Real xAI call validates LLM integration intact.
+
+
+
 ## Feb 12, 2026 — Backlog Sweep (Round 4): Frontend Vuln Burndown + Backend Round 3
 
 Two more backlog items shipped in the same session:

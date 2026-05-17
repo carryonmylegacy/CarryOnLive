@@ -193,17 +193,18 @@ Triggered after the IDOR P0 security audit. Five enterprise-grade upgrades + thr
 | 2 | Fast test suite (IDOR + smoke = 34 tests, ~18s) | ✅ SHIPPED | `Stage 4/5 BLOCKING` in `check.sh` |
 | 3 | Background workers — standalone `scheduler_worker.py` entrypoint + `DISABLE_INPROC_SCHEDULERS` env toggle | ✅ SHIPPED | Mongo lock + boot smoke |
 | 4 | OpenTelemetry tracing (FastAPI/pymongo/httpx, console + OTLP exporters) | ✅ SHIPPED | Off by default; `ENABLE_OTEL=1` |
-| 5 | Dependency security (pip-audit + yarn audit ratchet) | ✅ SHIPPED | `DS. Dependency vuln regression` — **6 total vulns baseline** (–96% from 163: backend 4 + frontend 2 dev-only) |
+| 5 | Dependency security (pip-audit + yarn audit ratchet) | ✅ SHIPPED | `DS. Dependency vuln regression` — **4 total vulns baseline** (–97.5% from 163: backend 2 + frontend 2 dev-only) |
 
-### P2 follow-on sweep + Backlog rounds 3+4
+### P2 follow-on sweep + Backlog rounds 3+4+5
 
 | Item | Result |
 |------|--------|
 | Sweep unsafe `estate["user_id"]` refs | ✅ Zero live references; previously fixed. |
-| Backend vuln burndown | ✅ **42 → 4 CVEs (–90%)** across three rounds. Last 4 blocked by emergentintegrations openai pin. |
-| Frontend vuln burndown | ✅ **121 → 2 CVEs (–98%)**. 100% production-runtime clean; 2 remaining are dev-server only. |
+| Backend vuln burndown | ✅ **42 → 2 CVEs (–95%)** across four rounds. Last 2 are dep-pin trade-offs documented in SECURITY_POSTURE.md. |
+| Frontend vuln burndown | ✅ **121 → 2 CVEs (–98%)**. 100% production-runtime clean; 2 remaining are dev-server only AND config-mitigated in craco.config.js. |
 | Register remaining ~564 routes | ✅ Coverage **10.3% → 100%** (629/629). |
 | Hand-audit 563 auto-classified entries | ✅ **563/563 CERTIFIED** in 5 audit passes. |
+| `memory/SECURITY_POSTURE.md` (B2B procurement one-pager) | ✅ NEW — TL;DR table, IDOR summary, accepted residuals, CI gates, compliance touchpoints, encryption + auth model. |
 
 Defaults preserve current pitch behavior; all 5 enterprise upgrades + 3 P2 sweeps are additive and CI-gated. See `/app/memory/CHANGELOG.md` for the full Feb 12, 2026 entries.
 
