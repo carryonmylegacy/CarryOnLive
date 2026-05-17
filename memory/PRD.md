@@ -2668,3 +2668,25 @@ Added 12 disaster templates in `disasterTemplates.js`. Each template:
 Lint clean (Python + JS); housekeeping `--strict` exit 0; all 15 new lucide icons verified present in node_modules.
 
 [END ANCHOR:CCP_WIZARD_FIDELITY_EXPANSION_FEB_2026]
+
+
+---
+
+## Risk-profile prompt extended to all 28 disasters (Feb 17, 2026)
+
+Follow-up to the CCP Wizard expansion: the xAI risk-profile prompt (`routes/ccp_depth.py::risk_profile`) was still ranking only the original 17 disasters. Extended `DISASTER_CATALOG` from 17 → **28 entries**, all with names that normalize cleanly into the front-end tile IDs (e.g., "Heat Wave" → `heat_wave`, "Hailstorm" → `hailstorm` — no space — to match tile id; "Landslide" without `/Mudslide` for clean fuzzy match).
+
+### Prompt upgrades
+- Persona: explicit FEMA-style analyst with NOAA + USGS + FBI/DHS + freight-rail + EPA + CDC heat-vulnerability data sources.
+- Calibration anchors baked into the prompt: Phoenix → Heat + Drought top; Bend OR → Volcanic Activity elevated; East Palestine adjacent → Train Derailment surfaced; PNW coast → Tsunami + Earthquake elevated; school-age suburbs → Active Shooter not buried out of squeamishness.
+- Reason field bumped from ≤12 to ≤15 words to accommodate richer reasoning.
+- `max_tokens` raised 900 → 1800 so the model has room to rank all 28 with reasons.
+
+### Verified end-to-end
+- Cleared `db.ccp_risk_profile` cache.
+- POST /api/ccp/risk-profile for Phoenix AZ 85001 returned all 28 entries. Top 6: Heat Wave, Drought, Power Outage (AC overload), Medical Emergency, Lightning Storm (monsoon), Hailstorm. Bottom 3: Nuclear Event, Tsunami, Avalanche.
+- Catalog → tile-ID mapping verified programmatically: 28/28 clean (zero gaps both directions).
+
+Lint clean; housekeeping `--strict` exit 0.
+
+[END ANCHOR:RISK_PROFILE_PROMPT_EXTENDED]

@@ -732,23 +732,38 @@ def _readiness_label(score: int) -> str:
 # 8.  AI RISK PROFILE — rank disaster types by likelihood for this zip
 # ═══════════════════════════════════════════════════════════════════
 DISASTER_CATALOG = [
+    # Weather & climate
     "Hurricane",
     "Tornado",
     "Earthquake",
     "Flood",
+    "Tsunami",
     "Wildfire",
     "House Fire",
-    "Nuclear Event",
+    "Gas Leak",
+    "Heat Wave",
+    "Drought",
     "Winter Storm",
-    "Power Outage",
-    "Terrorism",
-    "Pandemic",
-    "Civil Unrest",
+    "Avalanche",
+    "Hailstorm",
+    "Lightning Storm",
+    "Volcanic Activity",
+    "Landslide",
+    # Infrastructure & utilities
     "Water Failure",
-    "Chemical Spill",
-    "Home Invasion",
-    "Tsunami",
+    "Power Outage",
     "Cyber Attack",
+    "Chemical Spill",
+    "Train Derailment",
+    "Nuclear Event",
+    # Health
+    "Pandemic",
+    "Medical Emergency",
+    # Security & social
+    "Home Invasion",
+    "Active Shooter",
+    "Terrorism",
+    "Civil Unrest",
 ]
 
 
@@ -775,12 +790,30 @@ async def risk_profile(req: RiskProfileRequest, current_user: dict = Depends(get
 
     location_hint = ", ".join([p for p in [req.city, req.state, req.zip_code] if p]) or "unknown US location"
     catalog = ", ".join(DISASTER_CATALOG)
+    catalog_count = len(DISASTER_CATALOG)
+    # The catalog is intentionally broad — it covers everything from
+    # FEMA-tracked natural disasters (hurricanes, wildfires, earthquakes)
+    # to security threats (active shooter, terrorism, home invasion) and
+    # infrastructure/utility failures (train derailment, gas leak, cyber
+    # attack). The model should NOT default to a one-size-fits-all
+    # ranking; we explicitly ask it to weight each category appropriately
+    # for the household's specific geography, climate, AND its proximity
+    # to critical infrastructure (rail lines, chemical plants, fault
+    # lines, fire-prone wildland-urban interface, etc.).
     prompt = (
-        f'You are a FEMA-style risk analyst. For a household located at "{location_hint}", '
-        f"rank the following 17 potential emergencies from MOST LIKELY to LEAST LIKELY, "
-        f"considering geography, climate, infrastructure, and population density. "
+        f"You are a FEMA-style risk analyst with deep knowledge of U.S. regional hazards, including "
+        f"NOAA climate data, USGS seismic + volcanic hazard maps, FBI/DHS threat assessments, "
+        f"Norfolk Southern + BNSF + Union Pacific freight corridors, EPA chemical-facility registries, "
+        f'and CDC heat-vulnerability indices. For a household located at "{location_hint}", '
+        f"rank the following {catalog_count} potential emergencies from MOST LIKELY to LEAST LIKELY for this household. "
+        f"Weight each category honestly — a Phoenix family should see Heat Wave and Drought in the top tier; "
+        f"a Bend OR family should see Volcanic Activity ranked appropriately; an East Palestine-style household "
+        f"within a mile of major freight rail should see Train Derailment elevated; a coastal Pacific Northwest "
+        f"address should rank Tsunami and Earthquake higher than the national median; a school-age suburban household "
+        f"should not see Active Shooter buried at the bottom just because it's uncomfortable. "
+        f"Consider geography, climate, infrastructure proximity, population density, and known regional patterns. "
         f"Return STRICT JSON only, no prose, in the shape: "
-        f'{{"ranked":[{{"name":"...","tier":"high|medium|low","reason":"≤12 words"}}]}}. '
+        f'{{"ranked":[{{"name":"...","tier":"high|medium|low","reason":"≤15 words"}}]}}. '
         f"Use ALL of these names exactly: {catalog}."
     )
 
@@ -790,7 +823,7 @@ async def risk_profile(req: RiskProfileRequest, current_user: dict = Depends(get
             model="grok-3-mini",  # Risk-ranking is a simple classification
             messages=[{"role": "user", "content": prompt}],  # task; mini returns in 3-5s vs grok-4-latest's 80s+.
             temperature=0.2,
-            max_tokens=900,
+            max_tokens=1800,
         )
         text = (resp.choices[0].message.content or "").strip()
         # strip markdown fences if present
