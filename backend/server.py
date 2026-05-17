@@ -38,6 +38,9 @@ from routes.emergency_access import router as emergency_access_router
 from routes.estates import router as estates_router
 from routes.family_plan import router as family_plan_router
 from routes.guardian import router as guardian_router
+from routes.guardian_chat_sessions import router as guardian_chat_sessions_router
+from routes.guardian_iac_tasks import router as guardian_iac_tasks_router
+from routes.guardian_warmup import router as guardian_warmup_router
 from routes.messages import router as messages_router
 from routes.onboarding import router as onboarding_router
 from routes.pdf_export import router as pdf_export_router
@@ -211,7 +214,7 @@ async def lifespan(app):
     ]
 
     # Warm up xAI connection + start periodic keepalive (local per-pod, no lock needed)
-    from routes.guardian import warmup_xai
+    from routes.guardian_warmup import warmup_xai
 
     asyncio.create_task(warmup_xai())
 
@@ -271,6 +274,9 @@ api_router.include_router(emergency_access_router)
 api_router.include_router(estates_router)
 api_router.include_router(family_plan_router)
 api_router.include_router(guardian_router)
+api_router.include_router(guardian_chat_sessions_router)
+api_router.include_router(guardian_iac_tasks_router)
+api_router.include_router(guardian_warmup_router)
 api_router.include_router(messages_router)
 api_router.include_router(onboarding_router)
 api_router.include_router(pdf_export_router)
