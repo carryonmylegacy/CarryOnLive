@@ -2848,3 +2848,45 @@ Each new module mounts its own `APIRouter` in `server.py` (lines ~32-35, ~262-26
 - `/app/backend/tests/test_documents_extraction_iter149.py` (NEW — by testing agent)
 
 [END ANCHOR:MONOLITH_REDUCTION_DOCUMENTS_PY]
+
+---
+
+## Monolith reduction — file 2 of 6: `guardian.py` ✅ (Feb 17, 2026)
+
+### Result
+1,691 lines → **1,346 lines** (−345, −20%). Now UNDER the 1,500-line monolith threshold.
+
+Three atomic verbatim extractions:
+- `/app/backend/routes/guardian_chat_sessions.py` (99 lines) — 4 endpoints: GET /chat/history/{id}, GET /chat/sessions, DELETE /chat/sessions/{id}, DELETE /chat/sessions (mass-clear).
+- `/app/backend/routes/guardian_iac_tasks.py` (269 lines) — 4 endpoints: GET /guardian/iac-task-status (with 9-min stale-task self-heal), POST /guardian/iac-task/cancel, GET /guardian/usage/today, GET /guardian/iac-task-stream (SSE with 16 KB anti-buffer primer + 25 s ping heartbeat + 600 s defensive ceiling).
+- `/app/backend/routes/guardian_warmup.py` (79 lines) — POST /warmup + the `warmup_xai()` startup function (server.py import path moved from routes.guardian → routes.guardian_warmup).
+
+Each new module mounts its own APIRouter in `server.py` (lines ~40-44, ~273-278). `PER_USER_DAILY_TOKEN_BUDGET` and `_get_user_estate` are imported FROM `routes.guardian` INTO `routes.guardian_iac_tasks` — one-way dependency, no circular-import risk (guardian.py never imports from iac_tasks).
+
+### Verification
+- ruff lint clean on all 4 guardian files.
+- `housekeeping.sh --strict` exit 0.
+- testing_agent_v3_fork iteration 150: **13/13 backend tests PASS**, zero regressions.
+- SSE smoke against localhost:8001 confirmed: 16 KB primer + `data: {...status: completed...}` event received within 2 s + `text/event-stream` content-type + `X-Accel-Buffering: no` header.
+- Backend startup log shows `xAI connection warmed up successfully at startup` from the new import path.
+- Reusable regression suite saved at `/app/backend/tests/test_guardian_extraction_iter150.py`.
+
+### Architectural note
+`guardian.py` now hosts a single `@router` endpoint (POST /chat/guardian at line 411) plus the multi-thousand-line chat-completion pipeline + estate-context-gathering. That's the heart that should stay in one file — every other surface (sessions, IAC tasks, SSE, warmup) is now properly isolated.
+
+### Remaining monoliths (next sessions, in order)
+1. `subscriptions/checkout.py` (1,630) — NEXT; Stripe — extra surgical care
+2. `BeneficiariesPage.js` (1,747)
+3. `MessagesPage.js` (1,926)
+4. `EntityOrgChart.js` (2,536) — last, highest blast radius
+
+### Files touched this session
+- `/app/backend/routes/guardian.py` (3 blocks removed; 1 short reference comment added where warmup used to live)
+- `/app/backend/routes/guardian_chat_sessions.py` (NEW)
+- `/app/backend/routes/guardian_iac_tasks.py` (NEW)
+- `/app/backend/routes/guardian_warmup.py` (NEW)
+- `/app/backend/server.py` (+3 imports, +3 mount lines, 1 import path change for `warmup_xai`)
+- `/app/backend/tests/test_guardian_extraction_iter150.py` (NEW — by testing agent)
+
+[END ANCHOR:MONOLITH_REDUCTION_GUARDIAN_PY]
+
