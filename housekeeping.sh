@@ -1698,6 +1698,74 @@ fi
 echo ""
 
 # ══════════════════════════════════════════════════════════════
+# AUTHZ-AS-DATA: route policy registry coverage (ratchet)
+# Added Feb 2026 after the P0 IDOR audit. Every backend route must have
+# an entry in /app/backend/route_policies.py (or be in WAIVED_ROUTES).
+# The gate is ratchet-style — it only fails when coverage drops below
+# /app/.route_policy_baseline, never when it improves.
+# ══════════════════════════════════════════════════════════════
+echo -e "${BOLD}Authorization-as-Data: route policy coverage${NC}"
+echo "------------------------------------------"
+RP_OUT=$(python3 /app/scripts/check_route_policies.py --strict 2>&1)
+RP_RC=$?
+echo "$RP_OUT" | head -5
+if [ "$RP_RC" -ne 0 ]; then
+  echo -e "AZ. Route policy coverage ............... ${RED}FAIL${NC}"
+  echo "$RP_OUT" | tail -20
+  ISSUES=$((ISSUES + 1))
+else
+  echo -e "AZ. Route policy coverage ............... ${GREEN}PASS${NC}"
+fi
+echo ""
+
+# ══════════════════════════════════════════════════════════════
+# DEPENDENCY SECURITY (ratchet)
+# pip-audit on backend, yarn audit on frontend. Records baseline in
+# /app/.dep_security_baseline.json. Fails if vuln counts INCREASE.
+# Heavy by default — set HK_SKIP_DEPSEC=1 to skip during rapid iteration.
+# Default to --quick mode (backend only, ~3s); set HK_DEPSEC_FULL=1 for
+# the full frontend yarn audit pass (~2 min).
+# ══════════════════════════════════════════════════════════════
+if [ "$HK_SKIP_DEPSEC" != "1" ]; then
+  echo -e "${BOLD}Dependency Security (pip-audit + yarn audit)${NC}"
+  echo "------------------------------------------"
+  DEPSEC_FLAGS="--strict"
+  if [ "$HK_DEPSEC_FULL" != "1" ]; then
+    DEPSEC_FLAGS="$DEPSEC_FLAGS --quick"
+  fi
+  DS_OUT=$(python3 /app/scripts/check_dependency_security.py $DEPSEC_FLAGS 2>&1)
+  DS_RC=$?
+  echo "$DS_OUT" | head -10
+  if [ "$DS_RC" -ne 0 ]; then
+    echo -e "DS. Dependency vuln regression .......... ${RED}FAIL${NC}"
+    ISSUES=$((ISSUES + 1))
+  else
+    echo -e "DS. Dependency vuln regression .......... ${GREEN}PASS${NC}"
+  fi
+  echo ""
+fi
+
+# ══════════════════════════════════════════════════════════════
+# FAST TEST SUITE (IDOR + core-endpoints smoke, ~13s)
+# Skipped by default in housekeeping (advisory tool); always runs in
+# scripts/check.sh and the pre-push hook. Set HK_FAST_TESTS=1 to opt in.
+# ══════════════════════════════════════════════════════════════
+if [ "$HK_FAST_TESTS" = "1" ]; then
+  echo -e "${BOLD}Fast test suite (IDOR + core-endpoints smoke)${NC}"
+  echo "------------------------------------------"
+  FT_OUT=$(python3 /app/scripts/check_tests_fast.py --strict 2>&1)
+  FT_RC=$?
+  echo "$FT_OUT" | tail -8
+  if [ "$FT_RC" -ne 0 ]; then
+    echo -e "FT. Fast test suite ..................... ${RED}FAIL${NC}"
+    ISSUES=$((ISSUES + 1))
+  else
+    echo -e "FT. Fast test suite ..................... ${GREEN}PASS${NC}"
+  fi
+  echo ""
+fi
+
+# ══════════════════════════════════════════════════════════════
 # OPTIONAL: Backend pytest suite (HK_RUN_TESTS=1)
 # ══════════════════════════════════════════════════════════════
 if [ "$HK_RUN_TESTS" = "1" ]; then

@@ -199,19 +199,33 @@ async def lifespan(app):
             backoff = min(300, 30 * (2 ** min(failure_count, 4)))
             await asyncio.sleep(backoff)
 
-    scheduler_tasks = [
-        asyncio.create_task(_supervise("weekly_digest", weekly_digest_scheduler)),
-        asyncio.create_task(_supervise("trial_reminders", trial_reminder_scheduler)),
-        asyncio.create_task(_supervise("daily_dob_check", daily_dob_check_scheduler)),
-        asyncio.create_task(_supervise("billing_lifecycle", billing_lifecycle_scheduler)),
-        asyncio.create_task(_supervise("data_retention", data_retention_scheduler)),
-        asyncio.create_task(_supervise("milestone_delivery", milestone_delivery_scheduler)),
-        asyncio.create_task(_supervise("grace_period", grace_period_scheduler)),
-        asyncio.create_task(_supervise("bill_reminder", bill_reminder_scheduler)),
-        asyncio.create_task(_supervise("drill_reminder", drill_reminder_scheduler)),
-        asyncio.create_task(_supervise("onboarding_drip", onboarding_drip_scheduler, ttl=600)),
-        asyncio.create_task(_supervise("email_health", email_health_scheduler, ttl=600)),
-    ]
+    scheduler_tasks: list[asyncio.Task] = []
+
+    # ── Optional: skip in-process schedulers ─────────────────────────────
+    # When deployed with a dedicated scheduler worker process (see
+    # /app/backend/scheduler_worker.py), set DISABLE_INPROC_SCHEDULERS=1 in
+    # the API pods so only the worker pod owns the scheduler loops. This
+    # decouples background jobs from API process crashes/restarts.
+    _disable_inproc = _os.environ.get("DISABLE_INPROC_SCHEDULERS", "").strip() in ("1", "true", "True", "yes")
+    if _disable_inproc:
+        logger.info(
+            "DISABLE_INPROC_SCHEDULERS=1 — in-process schedulers skipped. "
+            "Make sure scheduler_worker.py is running in a separate pod."
+        )
+    else:
+        scheduler_tasks = [
+            asyncio.create_task(_supervise("weekly_digest", weekly_digest_scheduler)),
+            asyncio.create_task(_supervise("trial_reminders", trial_reminder_scheduler)),
+            asyncio.create_task(_supervise("daily_dob_check", daily_dob_check_scheduler)),
+            asyncio.create_task(_supervise("billing_lifecycle", billing_lifecycle_scheduler)),
+            asyncio.create_task(_supervise("data_retention", data_retention_scheduler)),
+            asyncio.create_task(_supervise("milestone_delivery", milestone_delivery_scheduler)),
+            asyncio.create_task(_supervise("grace_period", grace_period_scheduler)),
+            asyncio.create_task(_supervise("bill_reminder", bill_reminder_scheduler)),
+            asyncio.create_task(_supervise("drill_reminder", drill_reminder_scheduler)),
+            asyncio.create_task(_supervise("onboarding_drip", onboarding_drip_scheduler, ttl=600)),
+            asyncio.create_task(_supervise("email_health", email_health_scheduler, ttl=600)),
+        ]
 
     # Warm up xAI connection + start periodic keepalive (local per-pod, no lock needed)
     from routes.guardian_warmup import warmup_xai
@@ -437,6 +451,14 @@ async def debug_user_state(email: str, current_user: dict = Depends(require_admi
 
 
 app.include_router(api_router)
+
+# ===================== OBSERVABILITY (OpenTelemetry, opt-in via ENABLE_OTEL=1) =====================
+try:
+    from tracing import setup_tracing
+
+    setup_tracing(app)
+except Exception as _otel_exc:  # pragma: no cover — never crash boot on tracing errors
+    logger.warning(f"OTel setup skipped: {_otel_exc}")
 
 # ===================== MIDDLEWARE (order: last added = first executed) =====================
 

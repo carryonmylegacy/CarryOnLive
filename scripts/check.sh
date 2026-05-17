@@ -65,10 +65,22 @@ else
 fi
 cd ..
 
-# 4. Backend tests (opt-in, blocking when run)
+# 4. Fast test suite (IDOR + core-endpoints smoke) — ALWAYS blocking
+echo ""
+echo -e "${BOLD}Stage 4/5: Fast test suite (BLOCKING)${NC}"
+if python3 /app/scripts/check_tests_fast.py --strict > /tmp/check_fast_tests.log 2>&1; then
+  echo -e "  ${GREEN}PASS${NC}"
+  tail -3 /tmp/check_fast_tests.log
+else
+  echo -e "  ${RED}FAIL${NC}"
+  tail -30 /tmp/check_fast_tests.log
+  BLOCKING_ISSUES=$((BLOCKING_ISSUES + 1))
+fi
+
+# 4b. Backend pytest full suite (opt-in)
 if [ "$HK_RUN_TESTS" = "1" ]; then
   echo ""
-  echo -e "${BOLD}Stage 4/5: Backend tests (BLOCKING)${NC}"
+  echo -e "${BOLD}Stage 4b/5: Backend full pytest (BLOCKING)${NC}"
   cd backend
   if pytest tests/ -x -q --tb=short > /tmp/check_pytest.log 2>&1; then
     echo -e "  ${GREEN}PASS${NC}"
@@ -81,7 +93,7 @@ if [ "$HK_RUN_TESTS" = "1" ]; then
   cd ..
 else
   echo ""
-  echo -e "${BOLD}Stage 4/5:${NC} Backend tests skipped (set HK_RUN_TESTS=1 to run)"
+  echo -e "${BOLD}Stage 4b/5:${NC} Full pytest skipped (set HK_RUN_TESTS=1 to run)"
 fi
 
 # 5. Lighthouse (opt-in)

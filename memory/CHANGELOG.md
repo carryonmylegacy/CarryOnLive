@@ -1,6 +1,54 @@
 # CarryOn — Changelog
 
 
+## Feb 12, 2026 — 🏛️ Commercial-Grade Audit Upgrades (5/5 SHIPPED)
+
+Five enterprise-grade platform upgrades requested after the post-IDOR security review. All shipped, CI-gated, and verified green via `scripts/check.sh`. The `scripts/check.sh` push gate is now: ruff → ESLint → fast tests → route policy → dep security.
+
+### 1/5 ✅ Authorization-as-Data
+- New `/app/backend/route_policies.py` (155 lines) — single source of truth: every route declares its `auth` / `roles` / `estate_access` / `estate_id_source`. 65 hottest routes pre-populated (auth, subscriptions, estates, beneficiaries, checklists, messages, documents, guardian, BEC, admin).
+- New CI gate `/app/scripts/check_route_policies.py` — ratchet-style coverage check. Baseline 65/629 (10.3%) recorded in `/app/.route_policy_baseline`. CI fails if coverage DROPS below baseline (i.e. new unannotated routes get added). Existing un-annotated routes are grandfathered until next touch.
+- Wired into `housekeeping.sh --strict` → emits **AZ. Route policy coverage PASS**.
+
+### 2/5 ✅ Test Coverage (Fast Suite)
+- New `/app/backend/tests/test_core_endpoints_smoke.py` (17 tests, ~13s) — end-to-end smoke over the 20% of routes that handle 80% of pitch traffic: health, auth, estates, beneficiaries, checklists, messages, documents, subscriptions, admin, EGA chat.
+- Added `pytest-cov 7.1.0` + `coverage 7.14.0` to `requirements.txt`.
+- New `/app/scripts/check_tests_fast.py` runs IDOR + smoke = **34 fast tests** in ~18s.
+- `scripts/check.sh` now runs the fast suite as **BLOCKING Stage 4/5** on every push. Full pytest still available via `HK_RUN_TESTS=1`.
+
+### 3/5 ✅ Background Workers (Decouplable)
+- Existing MongoDB-backed distributed lock (`services/scheduler_lock.py`) already provides multi-pod leader election with TTL-based liveness — verified working at boot ("scheduler[X] acquired lock; running" for all 11 schedulers).
+- NEW: `/app/backend/scheduler_worker.py` — standalone entrypoint that runs *only* the scheduler loops with zero HTTP overhead. Wire it into a dedicated worker pod and set `DISABLE_INPROC_SCHEDULERS=1` on the API pods to decouple jobs from API process lifecycle.
+- Default preview/dev behavior unchanged (schedulers still in-process). Zero pitch risk; production can opt-in any time.
+
+### 4/5 ✅ OpenTelemetry Tracing
+- New `/app/backend/tracing.py` — installs FastAPI + pymongo + httpx instrumentation. Off by default (`ENABLE_OTEL=1` to enable; zero overhead otherwise). Console exporter by default, OTLP exporter if `OTEL_EXPORTER=otlp` (Honeycomb/Datadog/Tempo etc).
+- Excluded URLs: health probes + docs (won't spam traces).
+- Verified: `ENABLE_OTEL=1 python -c 'from tracing import setup_tracing; ...'` → "✅ OpenTelemetry tracing active".
+
+### 5/5 ✅ Dependency Security
+- Installed `pip-audit 2.10.0`; recorded backend baseline at 42 vulns + frontend baseline at 121 (high=58, critical=0, moderate=59) in `/app/.dep_security_baseline.json`.
+- New `/app/scripts/check_dependency_security.py` — ratchet gate. CI fails when vuln counts INCREASE vs baseline (i.e. someone introduced a vulnerable dependency).
+- Wired into `housekeeping.sh --strict` (default mode: `--quick` = backend-only ~3s; `HK_DEPSEC_FULL=1` does the full ~2-min yarn audit pass).
+- Vuln burndown deferred post-pitch — most flags touch starlette/litellm/pymongo (high-risk to bump pre-demo).
+
+### CI Topology (final)
+```
+scripts/check.sh
+  Stage 1: housekeeping.sh (advisory, includes AZ + DS gates)
+  Stage 2: backend ruff  [BLOCKING]
+  Stage 3: frontend ESLint  [BLOCKING]
+  Stage 4: fast test suite (34 tests, ~18s)  [BLOCKING]
+  Stage 4b: full pytest  (opt-in via HK_RUN_TESTS=1)
+  Stage 5: Lighthouse  (opt-in)
+```
+
+**Files touched**: `housekeeping.sh`, `scripts/check.sh`, `scripts/check_route_policies.py`, `scripts/check_dependency_security.py`, `scripts/check_tests_fast.py`, `backend/route_policies.py`, `backend/tracing.py`, `backend/scheduler_worker.py`, `backend/server.py`, `backend/requirements.txt`, `backend/tests/test_core_endpoints_smoke.py`, baselines `/app/.route_policy_baseline` + `/app/.dep_security_baseline.json`.
+
+**Verified**: `bash scripts/check.sh` → **ALL CLEAR — SAFE TO PUSH**. 34/34 fast tests green. Backend boots cleanly with all 11 schedulers acquiring locks. No behavioral change for end-users; everything additive + opt-in.
+
+
+
 ## Feb 12, 2026 — UI Fix: Remove cross-wired Essential Offline tiles from benefactor SDV
 
 **User report**: Benefactor SDV was showing the 4 essential-offline document tiles (Living Will, Healthcare Directive, GPoA, FPoA) with "Available offline to all beneficiaries" + "Manage offline access" copy at the top — this UX belongs only on the beneficiary SDV, since pre-transition a benefactor doesn't need to see what auto-caches to their beneficiaries' devices.

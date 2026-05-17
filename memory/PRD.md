@@ -178,6 +178,26 @@
 
 ---
 
+---
+
+
+## 🏛️ Feb 12, 2026 — Commercial-Grade Audit Upgrades (5/5 SHIPPED)
+
+Triggered after the IDOR P0 security audit. Five enterprise-grade upgrades added to the platform spine. **All wired into `bash scripts/check.sh`** (push gate).
+
+| # | Upgrade | Status | CI Gate |
+|---|---------|--------|---------|
+| 1 | Authorization-as-Data registry (`route_policies.py` + ratchet) | ✅ SHIPPED | `AZ. Route policy coverage PASS` |
+| 2 | Fast test suite (IDOR + smoke = 34 tests, ~18s) | ✅ SHIPPED | `Stage 4/5 BLOCKING` in `check.sh` |
+| 3 | Background workers — standalone `scheduler_worker.py` entrypoint + `DISABLE_INPROC_SCHEDULERS` env toggle | ✅ SHIPPED | Mongo lock + boot smoke |
+| 4 | OpenTelemetry tracing (FastAPI/pymongo/httpx, console + OTLP exporters) | ✅ SHIPPED | Off by default; `ENABLE_OTEL=1` |
+| 5 | Dependency security (pip-audit + yarn audit ratchet) | ✅ SHIPPED | `DS. Dependency vuln regression PASS` |
+
+Defaults preserve current pitch behavior; all 5 are additive and opt-in for production. See `/app/memory/CHANGELOG.md` for the full Feb 12, 2026 entry.
+
+---
+
+
 ## 🎯 STRATEGIC DIRECTION — B2B-First (Feb 2026, persisted across forks)
 
 **User mandate (verbatim, Feb 2026):**

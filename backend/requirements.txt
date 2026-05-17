@@ -142,3 +142,17 @@ webauthn==2.7.1
 websockets==15.0.1
 yarl==1.22.0
 zipp==3.23.0
+coverage==7.14.0
+pytest-cov==7.1.0
+opentelemetry-api==1.41.1
+opentelemetry-sdk==1.41.1
+opentelemetry-instrumentation==0.62b1
+opentelemetry-instrumentation-asgi==0.62b1
+opentelemetry-instrumentation-fastapi==0.62b1
+opentelemetry-instrumentation-pymongo==0.62b1
+opentelemetry-instrumentation-httpx==0.62b1
+opentelemetry-semantic-conventions==0.62b1
+opentelemetry-util-http==0.62b1
+asgiref==3.11.1
+wrapt==2.1.2
+pip-audit==2.10.0
