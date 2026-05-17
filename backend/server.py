@@ -30,6 +30,9 @@ from routes.compliance import router as compliance_router
 from routes.digest import router as digest_router
 from routes.digital_wallet import router as digital_wallet_router
 from routes.documents import router as documents_router
+from routes.documents_designate import router as documents_designate_router
+from routes.documents_vault_security import router as documents_vault_security_router
+from routes.documents_voice import router as documents_voice_router
 from routes.dts import router as dts_router
 from routes.emergency_access import router as emergency_access_router
 from routes.estates import router as estates_router
@@ -260,6 +263,9 @@ api_router.include_router(compliance_router)
 api_router.include_router(digest_router)
 api_router.include_router(digital_wallet_router)
 api_router.include_router(documents_router)
+api_router.include_router(documents_vault_security_router)
+api_router.include_router(documents_voice_router)
+api_router.include_router(documents_designate_router)
 api_router.include_router(dts_router)
 api_router.include_router(emergency_access_router)
 api_router.include_router(estates_router)
