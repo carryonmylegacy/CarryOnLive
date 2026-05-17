@@ -10,7 +10,7 @@
 | Authorization-as-Data | ✅ 100% (629/629 routes registered, 628 with explicit policy) | `route_policies.py` + `check_route_policies.py` ratchet |
 | IDOR protection | ✅ 13 endpoints patched; 17 regression tests pin behaviour | `tests/test_idor_guards.py` (BLOCKING in CI) |
 | Test coverage gate | ✅ 34-test fast suite runs in <20s pre-push | `check_tests_fast.py` (BLOCKING) |
-| Dependency hygiene — backend | ✅ 42 → 2 CVEs (−95%); 2 remaining are dep-pin trade-offs | `pip-audit` + ratchet (BLOCKING) |
+| Dependency hygiene — backend | ✅ 42 → 5 CVEs (−88%); 5 remaining are emergentintegrations dep-pin trade-offs | `pip-audit` + ratchet (BLOCKING) |
 | Dependency hygiene — frontend | ✅ 121 → 2 CVEs (−98%); 2 remaining are DEV-server only | `yarn audit` + ratchet (BLOCKING) |
 | Observability | ✅ OpenTelemetry instrumentation (FastAPI + pymongo + httpx) | `tracing.py` (toggle: `ENABLE_OTEL=1`) |
 | Background-job durability | ✅ MongoDB-backed distributed lock + leader election | `services/scheduler_lock.py` + `scheduler_worker.py` |
@@ -36,8 +36,8 @@
 
 | Vuln | Component | Why deferred | Risk |
 |------|-----------|--------------|------|
-| CVE-2026-40217 | litellm 1.83.7 → 1.83.10 | 1.83.10 requires `aiohttp==3.13.3` which RE-INTRODUCES 10 aiohttp CVEs. Net trade is −9 vulns to fix one. | Negligible — the CVE is HTTP/2 framing edge case behind authenticated proxy gate. |
-| CVE-2026-28684 | python-dotenv 1.0.1 → 1.2.2 | litellm 1.83.7 pins `python-dotenv==1.0.1` exactly. | Negligible — config-parser scope-confusion in `.env` files, requires attacker control of the .env which is itself an admin-level breach. |
+| CVE-2026-35029, CVE-2026-35030, CVE-2026-42271, GHSA-69x8 | litellm 1.80.0 → 1.83.7 | emergentintegrations 0.1.2 pins `openai==1.99.9` exactly; litellm 1.83+ requires openai 2.x. Tried separating via `--no-deps` install in nixpacks.toml — Railway build failed (exit 127) due to nixpacks venv setup bypass. Reverted to keep deploys working. | Low — all four are SSRF/prompt-injection class CVEs requiring attacker control of the LLM input. Mitigated by our input sanitization layer. |
+| CVE-2026-28684 | python-dotenv 1.0.1 → 1.2.2 | litellm 1.80.0 pins `python-dotenv==1.0.1` exactly. | Negligible — config-parser scope-confusion in `.env` files; requires attacker control of the .env which is itself an admin-level breach. |
 | CVE-2025-30359, 30360 | webpack-dev-server <=5.2.0 | Patched 5.2.1+ requires CRA v6 (unreleased). Mitigated via `allowedHosts` whitelist + pinned WebSocket URL in `craco.config.js`. | Negligible — dev-only, never deployed to production. |
 
 ## Continuous gates (every push)

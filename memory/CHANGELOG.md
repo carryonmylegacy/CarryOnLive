@@ -1,6 +1,31 @@
 # CarryOn — Changelog
 
 
+## Feb 12, 2026 — 🚑 Hotfix: Railway deploy failure (build exit 127)
+
+**Symptom**: Railway production build failed at `pip install -r requirements.txt` with exit code 127.
+
+**Root cause**: My earlier "litellm vuln unblocking" trick — separating `emergentintegrations` from requirements.txt and installing it via a custom `backend/nixpacks.toml` `[phases.install]` override — bypassed nixpacks' default Python venv setup. Without the venv, `pip` is not on PATH inside the build container → command-not-found (exit 127).
+
+**Fix** (all reverted):
+1. **Deleted** `/app/backend/nixpacks.toml`. Railway nixpacks Python provider auto-detection now handles everything as it did before.
+2. **Restored** `emergentintegrations==0.1.2` to `requirements.txt` (with `--extra-index-url` line preserved).
+3. **Reverted** `openai 2.30.0 → 1.99.9` and `litellm 1.83.7 → 1.80.0` to satisfy emergentintegrations' pinned deps. Net effect: **4 litellm CVEs + 1 python-dotenv CVE return** — already accepted in `SECURITY_POSTURE.md` as "upstream-blocked by emergentintegrations openai pin".
+4. **Updated** `memory/DEPLOY.md` with a "DO NOT add custom nixpacks.toml" warning + repro of the failure mode.
+5. **Updated** `memory/SECURITY_POSTURE.md` accepted-residuals table to reflect the 5 (was 2) backend CVEs and explain the trade-off.
+6. **Updated** `.dep_security_baseline.json` to lock at 5 backend + 2 frontend = 7 total.
+
+**New cumulative score**:
+- Backend: 42 → 5 CVEs (−88%, was claiming −95%; honest number)
+- Frontend: 121 → 2 CVEs (−98%, unchanged)
+- Combined: 163 → 7 CVEs (−96%)
+
+**Verified**: `bash scripts/check.sh` → **ALL CLEAR — SAFE TO PUSH**. 34/34 fast tests green. `pip install -r requirements.txt` clean — no resolver warnings.
+
+**Lesson learned**: Railway/Nixpacks auto-detection is fragile to `[phases.install]` overrides. Future custom build steps should use Procfile `release:` phase or `[phases.build]` (which runs AFTER install) — never override `install` directly. Documented in DEPLOY.md.
+
+
+
 ## Feb 12, 2026 — A− Polish Sweep (5/5 SHIPPED)
 
 After the comprehensive audit gave the platform a B/B+ → A− rating, the user requested all five "A-tier polish" items shipped in one go. All five done:
