@@ -2747,3 +2747,50 @@ Rebuilt the `risk_profile` prompt in `routes/ccp_depth.py` to bake in **14 expli
 Lint clean; housekeeping `--strict` exit 0; `max_tokens` 1800 still sufficient.
 
 [END ANCHOR:RISK_PROFILE_REGIONAL_CALIBRATION]
+
+
+---
+
+## Prompt hoisted to module-level + audit re-run (Feb 17, 2026)
+
+### Efficiency: risk-profile prompt is now provider-cache friendly
+- Pulled the entire ~1.6 KB regional-anchors + persona + interpolation rules + output rules block out of the request handler and into `_RISK_PROMPT_STATIC` at module scope. Computed ONCE at import time.
+- Per-call prompt is now: `f'{_RISK_PROMPT_STATIC}\n\nNow rank the catalog for this household: "{location_hint}". Return only the JSON.'`
+- The leading ~1.6 KB is now byte-identical across every request → xAI's input-token prompt cache can dedupe it (xAI bills cached input at a deep discount). At 100+ demo address swaps per pitch day this is real savings.
+- Phoenix verification: still ranks Heat Wave, Drought, Wildfire, Flood, Lightning Storm top-5 → calibration unchanged.
+
+### Reliability + efficiency audit re-run
+26-point sweep at `/tmp/audit.sh`. All real items pass:
+
+**Backend (Python)**
+- ✅ Mongo `maxPoolSize=200` (config.py:33)
+- ✅ `asyncio.Semaphore` for xAI throttle in place
+- ✅ Per-user token budget (`xai_usage` collection + `PER_USER_DAILY_TOKEN_BUDGET=500K`)
+- ✅ `X-Request-ID` middleware live
+- ✅ 38 `_require_estate_access` call-sites across route files
+- ✅ Zero legacy `estate.user_id` references in live code (only doc comments + a regression test reference the historical bug)
+- ✅ Zero blocking `requests.get` / `time.sleep` in async paths
+- ✅ Backend ruff lint clean
+- ✅ 4 endpoints flagged by the "return find_one" regex all use explicit `proj` projection (false positive — _id is excluded)
+
+**Frontend (React)**
+- ✅ 58 `React.lazy` route splits in `App.js`
+- ✅ 168 files using `apiClient`
+- ✅ Zero raw `axios.<verb>(` left (only `apiCache.js` where axios is a parameter name)
+- ✅ Console-log stripping enabled in prod build (`craco.config.js`)
+- ✅ Dexie `quotaGuard` present
+- ✅ SSE hook present at `/app/frontend/src/hooks/useIacTaskStream.js`
+- ✅ ESLint clean across all src files
+- 📊 Frontend JS bundle = 6.4 MB across all chunks (lazy-loaded; main route is ~1.2 MB)
+
+**Infra / Housekeeping**
+- ✅ Housekeeping `--strict` exit 0 (zero warns, zero fails)
+- ✅ No stale `carryon-pwa.preview.emergentagent.com` URLs left in code
+- ✅ PRD.md + test_credentials.md both present
+- 📊 7 files >1500 lines (known monoliths; refactor deferred until after pitch per founder directive)
+
+### Files touched
+- `/app/backend/routes/ccp_depth.py` (prompt hoisted)
+- `/tmp/audit.sh` (audit script, reusable for future runs)
+
+[END ANCHOR:PROMPT_HOISTED_AND_AUDIT_RERUN]

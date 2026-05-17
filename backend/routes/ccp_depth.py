@@ -774,6 +774,137 @@ class RiskProfileRequest(BaseModel):
     state: Optional[str] = None
 
 
+# ─── Static risk-profile prompt (built ONCE at module import) ──────
+#
+# Why this lives at module scope: the prompt is ~1.6 KB of regional
+# anchors that NEVER change between calls. Building it on every request
+# wastes a few microseconds AND — more importantly — makes the prompt
+# byte-stream non-identical at the leading characters, which defeats
+# any prefix-based prompt cache the upstream provider offers.
+#
+# By emitting the same static prefix on every call we let xAI's input-
+# token cache deduplicate the long opening, which during a busy demo
+# day (hundreds of address swaps) is a real cost saving on top of
+# slightly lower latency.
+#
+# The ONLY dynamic part is the household location string, which is
+# appended at the very end as the final user instruction.
+_REGIONAL_ANCHORS = (
+    "REGIONAL HAZARD ANCHORS — apply these patterns when the household location matches:\n"
+    "\n"
+    "• CALIFORNIA (all metros — LA, SF Bay, San Diego, Sacramento, Inland Empire, Central Valley): "
+    "Earthquake AND Wildfire MUST be in the top tier (San Andreas + WUI). "
+    "Coastal CA also Tsunami + Landslide (post-wildfire slopes). "
+    "Drought is chronic. Power Outage elevated (PSPS shutoffs in fire season).\n"
+    "\n"
+    "• PACIFIC NORTHWEST (Seattle, Portland, Tacoma, Olympia, Eugene, coastal WA/OR): "
+    "Cascadia Subduction Zone means Earthquake + Tsunami MUST be top tier "
+    "(USGS estimates 1-in-3 megaquake probability over 50 years). "
+    "Volcanic Activity elevated within ~50 mi of Mt. Rainier, Mt. Hood, Mt. Baker, Mt. St. Helens. "
+    "Wildfire elevated east of the Cascades. Heat Wave elevated (2021 heat dome).\n"
+    "\n"
+    "• ALASKA: Most seismic state in the U.S. — Earthquake top tier always. "
+    "Tsunami coastal, Volcanic Activity, Avalanche, Winter Storm, Wildfire (interior summers) all elevated.\n"
+    "\n"
+    "• HAWAII: Volcanic Activity top tier on Big Island; Tsunami all islands; "
+    "Hurricane (less frequent but possible); Wildfire (Maui Lahaina 2023 proved this); Landslide.\n"
+    "\n"
+    "• GULF COAST (TX coastal, LA, MS, AL, FL Panhandle): "
+    "Hurricane AND Flood MUST be top tier. Heat Wave elevated. "
+    "Chemical Spill elevated in Houston Ship Channel, Louisiana Cancer Alley, Mobile, Baton Rouge corridors. "
+    "Tornado elevated (Dixie Alley overlap).\n"
+    "\n"
+    "• FLORIDA PENINSULA: Hurricane top tier. Lightning Storm top tier (FL is the lightning capital "
+    "of the U.S. by strike density). Flood (storm surge + freshwater). Heat Wave south FL.\n"
+    "\n"
+    "• SOUTH ATLANTIC (GA, SC, NC, VA coast & piedmont): Hurricane elevated. "
+    "Charleston SC has a historic major-earthquake record. Wildfire risk in NC/SC pine forests during drought.\n"
+    "\n"
+    "• MID-ATLANTIC (DE, MD, NJ, NY, PA east, DC): Hurricane (post-tropical impacts), Winter Storm, "
+    "Civil Unrest in dense metros, Cyber Attack elevated (DC/NY are tier-1 targets), "
+    "Terrorism awareness elevated (DC/NYC). Gas Leak elevated in older Boston/NYC/Philly housing stock.\n"
+    "\n"
+    "• NEW ENGLAND (MA, CT, RI, VT, NH, ME): Winter Storm top tier. Hurricane (Sandy + Bob proved it). "
+    "Power Outage from ice storms. Gas Leak elevated in older Boston housing.\n"
+    "\n"
+    "• GREAT LAKES / INDUSTRIAL MIDWEST (MI, OH, IN, IL, WI, western PA): "
+    "Winter Storm, Tornado (Ohio Valley supercell season), Train Derailment elevated "
+    "(East Palestine 2023 — Norfolk Southern + CSX corridors blanket this region), "
+    "Chemical Spill (industrial), Civil Unrest in Detroit/Chicago/Cleveland metros.\n"
+    "\n"
+    "• TORNADO ALLEY (TX, OK, KS, NE, IA, MO): Tornado MUST be top tier. "
+    "Heat Wave elevated. Hailstorm top tier (Hail Alley). Drought (High Plains). "
+    "Lightning Storm elevated.\n"
+    "\n"
+    "• DIXIE ALLEY (MS, AL, TN, AR, northern LA): Tornado MUST be top tier "
+    "(deadlier than Tornado Alley — nocturnal, heavily-forested, manufactured-home density). "
+    "Hurricane for Gulf states. New Madrid Seismic Zone: Memphis, Little Rock, "
+    "western TN/KY/MO must rank Earthquake high.\n"
+    "\n"
+    "• MOUNTAIN WEST / ROCKIES (CO, WY, MT, ID, ND, SD, UT, NM, northern NV): "
+    "Wildfire top tier, Winter Storm, Hailstorm (CO/WY/NE Hail Alley), "
+    "Avalanche (mountain residences + backcountry rec), Drought. "
+    "Utah Wasatch Fault — Salt Lake City must rank Earthquake high.\n"
+    "\n"
+    "• DESERT SOUTHWEST (AZ, NM, southern NV, west TX): "
+    "Heat Wave MUST be top tier (Phoenix routinely kills hundreds per heat season). "
+    "Drought chronic. Wildfire. Flash Flood during monsoon. Lightning Storm during monsoon. "
+    "Power Outage elevated (AC overload).\n"
+    "\n"
+    "UNIVERSAL CALIBRATIONS — apply regardless of region:\n"
+    "• Cyber Attack: every internet-connected household is exposed (phishing, ransomware, identity); "
+    "  baseline medium tier nationwide.\n"
+    "• Medical Emergency: every household needs a plan — baseline medium tier.\n"
+    "• Active Shooter: medium tier in any populated area. Do NOT bury it just because it's uncomfortable; "
+    "  schools, workplaces, places of worship, and entertainment districts are all real exposure surfaces.\n"
+    "• Pandemic: medium tier nationwide post-COVID; slightly elevated in dense urban centers, "
+    "  international port cities, and agricultural-livestock counties (zoonotic spillover risk).\n"
+    "• Power Outage: elevated EVERYWHERE — the U.S. grid is aging. Texas (ERCOT isolation), "
+    "  California (PSPS), and the Northeast (winter storms) get an extra bump.\n"
+    "• Home Invasion / House Fire / Gas Leak: household-scale events that occur nationwide; "
+    "  rank by housing-stock age, population density, and known local crime patterns.\n"
+    "• Nuclear Event: LOW for most addresses. Elevated within ~50 mi of an operating reactor "
+    "  (PA, IL, SC, AL, GA, TN, NY, MI, CT, NJ, NC, FL, VA, etc.) or near strategic military targets "
+    "  (DC metro, Norfolk VA, San Diego CA, Omaha NE, Cheyenne WY).\n"
+    "• Train Derailment: elevated within ~1 mi of Class I freight main lines "
+    "  (Norfolk Southern, CSX, BNSF, Union Pacific, Canadian Pacific Kansas City) — "
+    "  this covers most of OH, PA, IN, IL, TX, plus rail-hub counties nationwide.\n"
+    "• Water Failure: chronic risk elevated in Jackson MS, Flint MI, Newark NJ, "
+    "  parts of TX (winter 2021), parts of CA Central Valley; trending up nationally as infrastructure ages.\n"
+)
+
+_RISK_PROMPT_STATIC = (
+    "You are a FEMA-style risk analyst with deep knowledge of U.S. regional hazards. "
+    "Your data sources include: NOAA climate + storm climatologies, USGS seismic + volcanic hazard maps, "
+    "FEMA disaster-declaration history (1953–present), FBI/DHS threat assessments, "
+    "Class I freight corridor maps (Norfolk Southern, CSX, BNSF, Union Pacific), EPA chemical-facility "
+    "registries, USDA wildland-urban-interface mapping, and CDC heat-vulnerability indices.\n"
+    "\n"
+    f"You rank a fixed catalog of {len(DISASTER_CATALOG)} potential emergencies from MOST LIKELY to "
+    "LEAST LIKELY for a specific U.S. household. The catalog is fixed; the only thing that changes "
+    "between calls is the household location.\n"
+    "\n"
+    f"{_REGIONAL_ANCHORS}\n"
+    "INTERPOLATION RULES:\n"
+    "• If the household is in a sub-region not explicitly listed, interpolate from the nearest anchor region.\n"
+    "• Suburban households inherit the same hazard profile as their nearest metro.\n"
+    "• Rural households in a state get the state-level baseline + any specific corridor exposure "
+    "  (freight rail / chemical plant / nuclear reactor / fault line / wildland-urban interface).\n"
+    "• When the location is ambiguous or unknown, default to a national-median ranking and lean toward "
+    "  the universal calibrations above.\n"
+    "\n"
+    "OUTPUT RULES:\n"
+    "• Return STRICT JSON only, no prose, no markdown fences.\n"
+    '• Shape: {"ranked":[{"name":"...","tier":"high|medium|low","reason":"≤15 words"}]}.\n'
+    f"• Include ALL {len(DISASTER_CATALOG)} names exactly as listed. Do not omit any.\n"
+    "• `reason` must reference a SPECIFIC local factor (named fault, named rail line, named industry, "
+    "  named climate pattern, named historical event, etc.) — not a generic platitude.\n"
+    "• Distribute tiers honestly: not every category can be high; not every uncomfortable category should be low.\n"
+    "\n"
+    f"Use ALL of these names exactly, in your output: {', '.join(DISASTER_CATALOG)}."
+)
+
+
 @router.post("/ccp/risk-profile")
 async def risk_profile(req: RiskProfileRequest, current_user: dict = Depends(get_current_user)):
     await _require_estate_access(req.estate_id, current_user)
@@ -810,125 +941,11 @@ async def risk_profile(req: RiskProfileRequest, current_user: dict = Depends(get
             pass
 
     location_hint = ", ".join([p for p in [req.city, req.state, req.zip_code] if p]) or "unknown US location"
-    catalog = ", ".join(DISASTER_CATALOG)
-    catalog_count = len(DISASTER_CATALOG)
-    # ─── Regional-anchor calibration (Feb 2026 founder ask) ──────────
-    # The catalog is intentionally broad — natural disasters, security
-    # threats, and infrastructure failures all share the same ranking.
-    # WITHOUT explicit anchors, the model defaults to a one-size-fits-
-    # all ranking ("Power Outage and Medical Emergency are top-3
-    # everywhere"). The anchors below force the model to apply known
-    # U.S. regional patterns — FEMA disaster declarations, USGS hazard
-    # maps, NOAA storm climatologies, EPA chemical-corridor registries,
-    # USDA wildland-urban-interface mapping, and Class I freight routes.
-    # These anchors come from public sources (no individual data used).
-    regional_anchors = (
-        "REGIONAL HAZARD ANCHORS — apply these patterns when the household location matches:\n"
-        "\n"
-        "• CALIFORNIA (all metros — LA, SF Bay, San Diego, Sacramento, Inland Empire, Central Valley): "
-        "Earthquake AND Wildfire MUST be in the top tier (San Andreas + WUI). "
-        "Coastal CA also Tsunami + Landslide (post-wildfire slopes). "
-        "Drought is chronic. Power Outage elevated (PSPS shutoffs in fire season).\n"
-        "\n"
-        "• PACIFIC NORTHWEST (Seattle, Portland, Tacoma, Olympia, Eugene, coastal WA/OR): "
-        "Cascadia Subduction Zone means Earthquake + Tsunami MUST be top tier "
-        "(USGS estimates 1-in-3 megaquake probability over 50 years). "
-        "Volcanic Activity elevated within ~50 mi of Mt. Rainier, Mt. Hood, Mt. Baker, Mt. St. Helens. "
-        "Wildfire elevated east of the Cascades. Heat Wave elevated (2021 heat dome).\n"
-        "\n"
-        "• ALASKA: Most seismic state in the U.S. — Earthquake top tier always. "
-        "Tsunami coastal, Volcanic Activity, Avalanche, Winter Storm, Wildfire (interior summers) all elevated.\n"
-        "\n"
-        "• HAWAII: Volcanic Activity top tier on Big Island; Tsunami all islands; "
-        "Hurricane (less frequent but possible); Wildfire (Maui Lahaina 2023 proved this); Landslide.\n"
-        "\n"
-        "• GULF COAST (TX coastal, LA, MS, AL, FL Panhandle): "
-        "Hurricane AND Flood MUST be top tier. Heat Wave elevated. "
-        "Chemical Spill elevated in Houston Ship Channel, Louisiana Cancer Alley, Mobile, Baton Rouge corridors. "
-        "Tornado elevated (Dixie Alley overlap).\n"
-        "\n"
-        "• FLORIDA PENINSULA: Hurricane top tier. Lightning Storm top tier (FL is the lightning capital "
-        "of the U.S. by strike density). Flood (storm surge + freshwater). Heat Wave south FL.\n"
-        "\n"
-        "• SOUTH ATLANTIC (GA, SC, NC, VA coast & piedmont): Hurricane elevated. "
-        "Charleston SC has a historic major-earthquake record. Wildfire risk in NC/SC pine forests during drought.\n"
-        "\n"
-        "• MID-ATLANTIC (DE, MD, NJ, NY, PA east, DC): Hurricane (post-tropical impacts), Winter Storm, "
-        "Civil Unrest in dense metros, Cyber Attack elevated (DC/NY are tier-1 targets), "
-        "Terrorism awareness elevated (DC/NYC). Gas Leak elevated in older Boston/NYC/Philly housing stock.\n"
-        "\n"
-        "• NEW ENGLAND (MA, CT, RI, VT, NH, ME): Winter Storm top tier. Hurricane (Sandy + Bob proved it). "
-        "Power Outage from ice storms. Gas Leak elevated in older Boston housing.\n"
-        "\n"
-        "• GREAT LAKES / INDUSTRIAL MIDWEST (MI, OH, IN, IL, WI, western PA): "
-        "Winter Storm, Tornado (Ohio Valley supercell season), Train Derailment elevated "
-        "(East Palestine 2023 — Norfolk Southern + CSX corridors blanket this region), "
-        "Chemical Spill (industrial), Civil Unrest in Detroit/Chicago/Cleveland metros.\n"
-        "\n"
-        "• TORNADO ALLEY (TX, OK, KS, NE, IA, MO): Tornado MUST be top tier. "
-        "Heat Wave elevated. Hailstorm top tier (Hail Alley). Drought (High Plains). "
-        "Lightning Storm elevated.\n"
-        "\n"
-        "• DIXIE ALLEY (MS, AL, TN, AR, northern LA): Tornado MUST be top tier "
-        "(deadlier than Tornado Alley — nocturnal, heavily-forested, manufactured-home density). "
-        "Hurricane for Gulf states. New Madrid Seismic Zone: Memphis, Little Rock, "
-        "western TN/KY/MO must rank Earthquake high.\n"
-        "\n"
-        "• MOUNTAIN WEST / ROCKIES (CO, WY, MT, ID, ND, SD, UT, NM, northern NV): "
-        "Wildfire top tier, Winter Storm, Hailstorm (CO/WY/NE Hail Alley), "
-        "Avalanche (mountain residences + backcountry rec), Drought. "
-        "Utah Wasatch Fault — Salt Lake City must rank Earthquake high.\n"
-        "\n"
-        "• DESERT SOUTHWEST (AZ, NM, southern NV, west TX): "
-        "Heat Wave MUST be top tier (Phoenix routinely kills hundreds per heat season). "
-        "Drought chronic. Wildfire. Flash Flood during monsoon. Lightning Storm during monsoon. "
-        "Power Outage elevated (AC overload).\n"
-        "\n"
-        "UNIVERSAL CALIBRATIONS — apply regardless of region:\n"
-        "• Cyber Attack: every internet-connected household is exposed (phishing, ransomware, identity); "
-        "  baseline medium tier nationwide.\n"
-        "• Medical Emergency: every household needs a plan — baseline medium tier.\n"
-        "• Active Shooter: medium tier in any populated area. Do NOT bury it just because it's uncomfortable; "
-        "  schools, workplaces, places of worship, and entertainment districts are all real exposure surfaces.\n"
-        "• Pandemic: medium tier nationwide post-COVID; slightly elevated in dense urban centers, "
-        "  international port cities, and agricultural-livestock counties (zoonotic spillover risk).\n"
-        "• Power Outage: elevated EVERYWHERE — the U.S. grid is aging. Texas (ERCOT isolation), "
-        "  California (PSPS), and the Northeast (winter storms) get an extra bump.\n"
-        "• Home Invasion / House Fire / Gas Leak: household-scale events that occur nationwide; "
-        "  rank by housing-stock age, population density, and known local crime patterns.\n"
-        "• Nuclear Event: LOW for most addresses. Elevated within ~50 mi of an operating reactor "
-        "  (PA, IL, SC, AL, GA, TN, NY, MI, CT, NJ, NC, FL, VA, etc.) or near strategic military targets "
-        "  (DC metro, Norfolk VA, San Diego CA, Omaha NE, Cheyenne WY).\n"
-        "• Train Derailment: elevated within ~1 mi of Class I freight main lines "
-        "  (Norfolk Southern, CSX, BNSF, Union Pacific, Canadian Pacific Kansas City) — "
-        "  this covers most of OH, PA, IN, IL, TX, plus rail-hub counties nationwide.\n"
-        "• Water Failure: chronic risk elevated in Jackson MS, Flint MI, Newark NJ, "
-        "  parts of TX (winter 2021), parts of CA Central Valley; trending up nationally as infrastructure ages.\n"
-    )
+    # Static prefix is identical across all calls (cached at module
+    # import) → xAI's input-token cache can deduplicate it. Only the
+    # location tail varies per request.
     prompt = (
-        f"You are a FEMA-style risk analyst with deep knowledge of U.S. regional hazards. "
-        f"Your data sources include: NOAA climate + storm climatologies, USGS seismic + volcanic hazard maps, "
-        f"FEMA disaster-declaration history (1953–present), FBI/DHS threat assessments, "
-        f"Class I freight corridor maps (Norfolk Southern, CSX, BNSF, Union Pacific), EPA chemical-facility "
-        f"registries, USDA wildland-urban-interface mapping, and CDC heat-vulnerability indices.\n"
-        f'\nFor a household located at "{location_hint}", rank the following {catalog_count} potential '
-        f"emergencies from MOST LIKELY to LEAST LIKELY for this specific household.\n\n"
-        f"{regional_anchors}\n"
-        f"INTERPOLATION RULES:\n"
-        f"• If the household is in a sub-region not explicitly listed, interpolate from the nearest anchor region.\n"
-        f"• Suburban households inherit the same hazard profile as their nearest metro.\n"
-        f"• Rural households in a state get the state-level baseline + any specific corridor exposure "
-        f"  (freight rail / chemical plant / nuclear reactor / fault line / wildland-urban interface).\n"
-        f"• When the location is ambiguous or unknown, default to a national-median ranking and lean toward "
-        f"  the universal calibrations above.\n\n"
-        f"OUTPUT RULES:\n"
-        f"• Return STRICT JSON only, no prose, no markdown fences.\n"
-        f'• Shape: {{"ranked":[{{"name":"...","tier":"high|medium|low","reason":"≤15 words"}}]}}.\n'
-        f"• Include ALL {catalog_count} names exactly as listed. Do not omit any.\n"
-        f"• `reason` must reference a SPECIFIC local factor (named fault, named rail line, named industry, "
-        f"  named climate pattern, named historical event, etc.) — not a generic platitude.\n"
-        f"• Distribute tiers honestly: not every category can be high; not every uncomfortable category should be low.\n\n"
-        f"Use ALL of these names exactly: {catalog}."
+        f'{_RISK_PROMPT_STATIC}\n\nNow rank the catalog for this household: "{location_hint}". Return only the JSON.'
     )
 
     try:
