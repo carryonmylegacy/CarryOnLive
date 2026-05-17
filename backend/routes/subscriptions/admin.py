@@ -80,9 +80,22 @@ async def get_admin_user_subscriptions(current_user: dict = Depends(get_current_
     users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(500)
     now = datetime.now(timezone.utc)
 
+    # Batch per-user lookups into 2 $in queries instead of 2×N sequential
+    # find_one calls. At 500 users this drops the wait time from ~5s
+    # (1,000 round-trips × ~5ms RTT) to ~50ms.
+    user_ids = [u["id"] for u in users]
+    subs_by_user = {
+        s["user_id"]: s
+        for s in await db.user_subscriptions.find({"user_id": {"$in": user_ids}}, {"_id": 0}).to_list(len(user_ids))
+    }
+    overrides_by_user = {
+        o["user_id"]: o
+        for o in await db.subscription_overrides.find({"user_id": {"$in": user_ids}}, {"_id": 0}).to_list(len(user_ids))
+    }
+
     for user in users:
-        sub = await db.user_subscriptions.find_one({"user_id": user["id"]}, {"_id": 0})
-        override = await db.subscription_overrides.find_one({"user_id": user["id"]}, {"_id": 0})
+        sub = subs_by_user.get(user["id"])
+        override = overrides_by_user.get(user["id"])
         user["subscription"] = sub
         user["override"] = override
 

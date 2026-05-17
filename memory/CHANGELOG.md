@@ -1,6 +1,25 @@
 # CarryOn — Changelog
 
 
+## Feb 12, 2026 — P1 Items 1 & 2 Executed
+
+**Item 1 (N+1 fix in `/admin/user-subscriptions`)** — ✅ DONE
+- `/app/backend/routes/subscriptions/admin.py:80-101`: replaced sequential 2×N `find_one` loop with 2 batched `$in` queries.
+- **Verified end-to-end**: 374 users returned in **54ms** (HTTP 200), all 8 expected per-user keys (`subscription`, `override`, `billing_status`, `grace_days_remaining`, `is_trial`, `trial_days_remaining`, `id`, `email`). Replaces 749 sequential Mongo round-trips with 3 queries total.
+- Ruff: clean. `scripts/check.sh`: ALL CLEAR.
+
+**Item 2 (Mongo indexes on hot user-scoped collections)** — ✅ NO ACTION NEEDED (audit correction)
+- Direct inspection of live MongoDB confirms all 4 indexes recommended by the audit **already exist**:
+  - `user_subscriptions.user_id` (+ compound `user_id_1_status_1`) — `db_indexes.py:111, 199`
+  - `subscription_overrides.user_id` — `db_indexes.py:177`
+  - `estates.owner_id` — `db_indexes.py:65`
+  - `beneficiaries.estate_id` (+ compound `estate_id_1_user_id_1`) — `db_indexes.py:74`
+- Audit correction recorded in `/app/memory/AUDIT_FEB_2026.md` § 2. The initial sweep missed `db_indexes.py` — future audits should grep that file first.
+
+**Net impact**: admin tab N+1 hot-spot resolved (projected ~5s → measured 54ms). Index posture confirmed correct. No backend regression.
+
+
+
 ## Feb 12, 2026 — Overnight Monolith Series Complete + Efficiency & Reliability Audit
 
 **Sequence completed in one continuous session** while user slept:

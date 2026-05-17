@@ -38,29 +38,30 @@
 
 ## §2. Performance Findings (Backend)
 
-### 🟡 P1 — N+1 query pattern in `/admin/user-subscriptions`
+### 🟢 P1 — N+1 query pattern in `/admin/user-subscriptions` — **FIXED (Feb 12, 2026)**
 
-**Location**: `/app/backend/routes/subscriptions/admin.py:82-90`
+**Location**: `/app/backend/routes/subscriptions/admin.py:80-101`
 
+**Before**:
 ```python
 for user in users:  # up to 500 users
     sub = await db.user_subscriptions.find_one({"user_id": user["id"]}, {"_id": 0})
     override = await db.subscription_overrides.find_one({"user_id": user["id"]}, {"_id": 0})
 ```
 
-**Impact**: 2 sequential round-trips per user × 500 users = 1,000 sequential awaits. At a 5 ms RTT to Mongo, that's ~5 s of pure wait time on a busy admin tab.
-
-**Fix** (~30 LOC, single PR):
+**After** (deployed):
 ```python
 user_ids = [u["id"] for u in users]
-subs = {s["user_id"]: s for s in await db.user_subscriptions.find({"user_id": {"$in": user_ids}}, {"_id": 0}).to_list(1000)}
-overrides = {o["user_id"]: o for o in await db.subscription_overrides.find({"user_id": {"$in": user_ids}}, {"_id": 0}).to_list(1000)}
+subs_by_user = {s["user_id"]: s for s in await db.user_subscriptions.find(
+    {"user_id": {"$in": user_ids}}, {"_id": 0}).to_list(len(user_ids))}
+overrides_by_user = {o["user_id"]: o for o in await db.subscription_overrides.find(
+    {"user_id": {"$in": user_ids}}, {"_id": 0}).to_list(len(user_ids))}
 for user in users:
-    user["subscription"] = subs.get(user["id"])
-    user["override"] = overrides.get(user["id"])
+    user["subscription"] = subs_by_user.get(user["id"])
+    user["override"] = overrides_by_user.get(user["id"])
 ```
 
-Saves ~995 round-trips. Reduces 5 s → ~50 ms.
+**Verified**: 374 users returned in **54ms** end-to-end (HTTP 200, all 8 expected per-user keys present). Replaces 749 sequential round-trips with 3 queries total.
 
 ### 🟢 Other N+1 candidates found (46 total)
 
@@ -68,17 +69,18 @@ Sampling shows most are bounded by small data sets (≤10 estates per admin call
 
 Other notable spots worth checking when convenient: `section_permissions.py:51`, `compliance.py:137`, `team_chat.py:44`. None are P1.
 
-### 🟡 P2 — Missing Mongo indexes on hot user-scoped collections
+### 🟢 P2 — Mongo indexes on hot user-scoped collections — **ALREADY DEPLOYED (audit correction)**
 
-We index `funnel_events`, `download_events`, `referral_*`, `scheduler_locks`, `rate_limits` — but the **most-frequently-queried per-user collections lack explicit indexes**:
-- `user_subscriptions.user_id`
-- `subscription_overrides.user_id`
-- `estates.owner_id`
-- `beneficiaries.estate_id` and `beneficiaries.user_id`
+The audit initially flagged `user_subscriptions.user_id`, `subscription_overrides.user_id`, `estates.owner_id`, and `beneficiaries.estate_id` as missing indexes. **This was incorrect.** Direct inspection of the live MongoDB instance and `/app/backend/db_indexes.py` confirms all four indexes are already in place:
 
-Mongo creates collection scans for these by default. At ~500 active users today the cost is invisible; at ~5,000+ this becomes the dominant DB cost.
+| Collection | Index | Source |
+|---|---|---|
+| `user_subscriptions.user_id` | `user_id_1` (+ compound `user_id_1_status_1`) | `db_indexes.py:111, 199` |
+| `subscription_overrides.user_id` | `user_id_1` | `db_indexes.py:177` |
+| `estates.owner_id` | `owner_id_1` | `db_indexes.py:65` |
+| `beneficiaries.estate_id` | `estate_id_1` (+ compound `estate_id_1_user_id_1`) | `db_indexes.py:74` |
 
-**Fix**: Add idempotent `create_index` calls in `config.py` startup, or in a one-time `ensure_indexes()` task. ~20 LOC.
+**No action needed.** The audit's initial scan missed `db_indexes.py` (the canonical startup-index registry). Future audits should `grep db_indexes.py` as the first check before recommending new indexes.
 
 ---
 
@@ -174,8 +176,8 @@ Verified across `admin.py`, `subscriptions/admin.py`, `staff_tools.py`. All admi
 The codebase is pitch-ready. All blocking gates pass. No critical or P0 items outstanding.
 
 ### 🟡 P1 — Within 1 week of pitch
-1. **Fix N+1 in `/admin/user-subscriptions`** (~30 LOC, 5 s → 50 ms admin tab speedup). § 2.
-2. **Add Mongo indexes** for `user_subscriptions.user_id`, `subscription_overrides.user_id`, `estates.owner_id`, `beneficiaries.estate_id`. (~20 LOC, prepares for scale.) § 2.
+1. **~~Fix N+1 in `/admin/user-subscriptions`~~** — ✅ **DONE Feb 12, 2026.** Verified 374 users / 54ms. § 2.
+2. **~~Add Mongo indexes~~** — ✅ **ALREADY DEPLOYED** (audit correction; see § 2). No action needed.
 3. **EntityOrgChart toolbar extraction** (~150 LOC, brings file under 1,500 threshold cleanly). § 3.
 
 ### 🟢 P2 — Within 1 month
