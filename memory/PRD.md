@@ -2540,3 +2540,64 @@ The platform is ready to support 1,000+ concurrent users without scaling cliffs 
 
 [END ANCHOR:PROD_SCALE_AUDIT_PHASE2]
 
+
+
+---
+
+## Phase 3 Audit Completion (Feb 17, 2026)
+
+Forked job. User directive: "Back track to 1945 and ensure everything was done correctly then continue and do everything."
+
+Verified all handoff-claimed completed work was still in place (apiClient.js, SSE endpoint, scalability infra, lazy-loaded App.js, quotaGuard, console.log stripping, X-Request-ID middleware), then executed the 3 remaining P0 audit items:
+
+### A. Platform-wide `apiClient` adoption ✅
+- Wrote `/tmp/migrate_axios.py` — Python AST-light script that adds `import apiClient` alongside `import axios` and rewrites `axios.<verb>(` → `apiClient.<verb>(` for get/post/put/patch/delete/head, computing the correct relative path per file. Idempotent.
+- **172 frontend files migrated** in one pass. ESLint clean. Housekeeping `--strict` passes with zero warns.
+- Confirmed `X-Request-ID: cli-<uuid>` header now lands on every `/api/*` request (iter 147+148 verified live).
+
+### B. Backend ownership-guard fixes ✅
+- 20 routes were flagged in `/tmp/estate_ownership_gaps.txt`. After audit, 17 of those had equivalent inline access checks. **3 true gaps were fixed**:
+  - `routes/documents.py::get_essential_slots` — replaced `estate.get("user_id")` (a field that doesn't exist on estate documents) with `estate.get("owner_id")`. Previously locked legitimate owners out unless admin.
+  - `routes/documents.py::get_vault_security_info` — had **zero auth check**; added explicit owner / beneficiary / admin gate.
+  - `routes/feature_gates.py::get_user_enabled_features` — short-circuits unauthorised `estate_id` parameter so a stranger can't probe an arbitrary estate's `verified_tier`.
+- All 3 verified live by main agent (curl) and 13/13 pytest in iter 146.
+
+### C. Frontend SSE migration ✅
+- Created `/app/frontend/src/hooks/useIacTaskStream.js`. Uses `fetch()` + `ReadableStream` (NOT native `EventSource`, because the latter can't send `Authorization: Bearer` headers and this app's auth is JWT-in-localStorage).
+- Replaced the legacy 4s/30s adaptive polling loop in both `ChecklistPage.js` and `DashboardPage.js` with the hook.
+- Hook is self-managing: aborts on unmount, on `enabled=false`, and when the server closes the stream. Reconnects with exponential backoff capped at 30 s; if a stream closes in <5 s a 15 s minimum kicks in.
+- **iter 146** found: server closed on terminal status → client reconnect storm (~1/sec). **Fixed** by removing the close-on-terminal branch in `routes/guardian.py::stream_iac_task_status`; the stream now stays open with `:` comment heartbeats every 25 s and naturally closes after a 10-minute defensive ceiling.
+- **iter 147** found: kube ingress on the preview URL buffers SSE end-to-end (returns 200 + correct headers but no chunks). Even a 16 KB anti-buffer primer didn't break through. **Mitigated** by:
+  - Server: keep the 16 KB primer for proxies that have a smaller buffer.
+  - Client: 8-second first-byte timeout. If the stream produces zero bytes within 8 s, abort it and fall back to the legacy polling endpoint, then retry SSE in the background every 60 s so we auto-upgrade back to streaming when the ingress is reconfigured.
+- **iter 148** verified: on the preview URL, polling engages exactly at t≈8 s after SSE opens; cadence holds at 8 s; zero reconnect storm (compared to 13 connections/15 s before).
+- Action item for ops: **add `proxy_buffering off` for `Content-Type: text/event-stream` in the production ingress** so live SSE works on the deployed app. Until that happens, polling-fallback carries the load — no user-visible regression.
+
+### Open follow-up (not in scope)
+
+- 🟡 `/financial` route redirects info@carryon.us (benefactor) to `/login` after some navigation sequences. iter 148 reproduced this WITHOUT any pytest interference, ruling out the iter 147 hypothesis. Confirmed independent of the apiClient migration (no `axios.<verb>` calls remain that would behave differently; AuthContext's signed_in_elsewhere interceptor still fires on the raw axios used by `cachedGet(axios, ...)`). Most likely a server-side `signed_in_elsewhere` 401 surfacing from one of `/api/financial/*` or `/api/digital-wallet/*` during steady-state navigation. Triage points: re-examine single-session enforcement around these endpoints, check `feature_gates.is_feature_enabled('financial', tier)` cohort for Pete Mitchell, and inspect the order in which subscription/feature data is refreshed on /financial mount.
+
+### Backlog / Future tasks (unchanged from handoff)
+
+- 🟢 (P1) Cloudflare CDN config for frontend caching + proxy_buffering off for `text/event-stream`
+- 🟢 (P1) iOS Share Extension — AFTER App Store build
+- 🟢 (P1) Reactivate Capgo Live Updates — AFTER App Store build
+- 🟡 (P1) Apple IAP flow — BLOCKED on user's Apple Developer agreement
+- 🟡 (P1) Twilio SMS OTP — BLOCKED on A2P 10DLC approval
+- 🟢 (P2) FFmpeg-wasm aggressive video re-compression
+- 🟢 (P2) Refactor `EntityOrgChart.js`, `MessagesPage.js`, `BeneficiariesPage.js` (DO NOT ATTEMPT BEFORE PITCH)
+- 🟢 (P3) Sweep hardcoded gold RGBA → `--gold-rgb` CSS variable
+
+### Files added/changed this fork
+
+- **NEW** `/app/frontend/src/hooks/useIacTaskStream.js` — fetch-based SSE consumer with first-byte timeout + polling fallback.
+- **EDIT** `/app/frontend/src/pages/ChecklistPage.js` — polling useEffect replaced by `useIacTaskStream`.
+- **EDIT** `/app/frontend/src/pages/DashboardPage.js` — polling useEffect replaced by `useIacTaskStream`; added `useCallback` to imports.
+- **EDIT** `/app/backend/routes/guardian.py::stream_iac_task_status` — removed close-on-terminal; added 16 KB anti-buffer primer + 25 s `:` ping heartbeat; kept 10-min defensive ceiling.
+- **EDIT** `/app/backend/routes/documents.py` — `get_essential_slots` field fix; `get_vault_security_info` access gate added.
+- **EDIT** `/app/backend/routes/feature_gates.py::get_user_enabled_features` — short-circuit unauthorised `estate_id`.
+- **EDIT** 172 frontend files (auto-migration) — `axios.<verb>(` → `apiClient.<verb>(`.
+
+Push to GitHub when ready. Live SSE depends on ingress flush config; until then polling fallback is automatic.
+
+[END ANCHOR:PHASE3_AUDIT_COMPLETION]
