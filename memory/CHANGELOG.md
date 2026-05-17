@@ -1,6 +1,34 @@
 # CarryOn — Changelog
 
 
+## Feb 12, 2026 — Monolith Reduction 3/6: `subscriptions/checkout.py` (1,630 → 838 lines)
+
+Surgical split of the subscriptions checkout monolith, executed during a live B2B pitch window. **Zero behavioral regression** — 24/24 backend tests pass (iter 151).
+
+**New modules created** (all register on the shared `router` from `plans.py`):
+- `routes/subscriptions/status.py` (240 lines) — read-only `/subscriptions/plans` (public) + `/subscriptions/status` (auth). Pure read paths, no Stripe.
+- `routes/subscriptions/admin.py` (440 lines) — 10 admin endpoints: `/admin/subscription-settings` (GET/PUT), `/admin/user-subscriptions`, `/admin/user-subscription/{id}` (PUT), `/admin/reset-subscription/{id}`, `/admin/plans/{id}/price`, `/admin/beneficiary-plans/{id}/price`, `/admin/family-discount-settings` (GET/PUT), `/admin/plans/{id}/paired-price`.
+- `routes/subscriptions/apple_iap.py` (175 lines) — Apple In-App Purchase receipt validation + sync (`/subscriptions/validate-apple-receipt`, `/subscriptions/sync-apple`). Distinct from `apple_webhook.py` which owns Apple → backend server-to-server notifications.
+
+**Stayed in `checkout.py`** (LIVE revenue paths, untouched):
+- `POST /subscriptions/checkout` (Stripe Checkout session creation)
+- `GET /subscriptions/checkout-status/{id}` (Stripe Checkout poll)
+- `POST /webhook/stripe` (Stripe webhook)
+- `POST /subscriptions/change-plan`, `/subscriptions/change-billing`, `/subscriptions/cancel`
+
+**Files changed**:
+- `routes/subscriptions/__init__.py` — registers `status`, `admin`, `apple_iap` modules alongside existing ones.
+- `routes/subscriptions/checkout.py` — orphan code blocks deleted, imports trimmed.
+
+**Verification**:
+- Housekeeping `--strict`: 0 WARN / 0 FAIL.
+- `scripts/check.sh`: ALL CLEAR — SAFE TO PUSH.
+- ruff: clean.
+- Backend testing agent: 24/24 PASS (iter 151).
+- Test artifact: `/app/backend/tests/test_subscription_extraction_iter151.py`.
+
+
+
 ## May 14, 2026 — Inline-expand sweep (Go-Bag bug + FFN/DAV/CCP conversion + MM stack)
 
 **Five UX changes shipped in one pass**:
