@@ -20,6 +20,7 @@ from .estate_health import router as estate_health_router
 from .grace_periods import router as grace_periods_router
 from .ip_whitelist import router as ip_whitelist_router
 from .launch_war_room import router as launch_war_room_router
+from .llm_cost import router as llm_cost_router
 from .maintenance import router as maintenance_router
 from .partners import router as partners_router
 from .platform import router as platform_router
@@ -52,6 +53,7 @@ router.include_router(download_diagnostics_router)
 router.include_router(funnel_analytics_router)
 router.include_router(email_health_router)
 router.include_router(trial_policy_router)
+router.include_router(llm_cost_router)
 
 __all__ = [
     "router",

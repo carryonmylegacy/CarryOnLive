@@ -261,6 +261,10 @@ ROUTE_POLICIES: dict = {
     "POST /api/admin/announcements": {"auth": "required", "roles": ["admin"]},
     "GET /api/admin/email-health": {"auth": "required", "roles": ["admin"]},
     "GET /api/admin/support/conversations": {"auth": "required", "roles": ["admin", "operator"]},
+    "GET /api/admin/llm-cost-summary": {"auth": "required", "roles": ["admin"]},
+    # ── Estate Binder (combined PDF assembly) ──────────────────────────────
+    "POST /api/estate-binder/generate": {"auth": "required"},
+    "GET /api/estate-binder/manifest": {"auth": "required"},
     # ── Stripe / payments (public webhooks + authenticated) ─────────────────
     "POST /api/stripe/create-payment-intent": {"auth": "required"},
     "POST /api/stripe/create-setup-intent": {"auth": "required"},

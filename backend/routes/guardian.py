@@ -987,6 +987,25 @@ Be exhaustive. The user is preparing for a B2B pitch where this output is a key 
                 _sem_acquired = False
             raise last_error
 
+        # Cost ledger — fire-and-forget after the successful xAI completion.
+        try:
+            import time as _time_lg
+
+            from services.llm_cost_ledger import record_xai_response as _rec_lg
+
+            _elapsed_ms = int((asyncio.get_event_loop().time() - _started_at) * 1000)
+            await _rec_lg(
+                completion,
+                endpoint=f"guardian.chat[{data.action or 'message'}]",
+                model=model_name,
+                user_id=current_user.get("id"),
+                estate_id=estate_id,
+                duration_ms=_elapsed_ms,
+            )
+            _ = _time_lg  # silence linter — kept for symmetry with other call sites
+        except Exception:
+            pass
+
         # Heavy-action concurrency token is held only across the xAI
         # call(s) themselves. The rest of the request handler (JSON
         # parsing, DB writes, response shaping) is fast and doesn't

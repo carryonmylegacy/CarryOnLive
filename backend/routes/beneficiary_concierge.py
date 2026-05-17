@@ -522,6 +522,23 @@ async def concierge_ask(
                     f"({type(e).__name__}: {str(e)[:200]})"
                 )
 
+    # Cost ledger — fire-and-forget after a successful xAI call.
+    if completion is not None and completion_model:
+        try:
+            from services.llm_cost_ledger import record_xai_response as _rec_bec
+
+            _ms = int((asyncio.get_event_loop().time() - _started_at) * 1000)
+            await _rec_bec(
+                completion,
+                endpoint="beneficiary_concierge.ask",
+                model=completion_model,
+                user_id=current_user.get("id"),
+                estate_id=payload.estate_id,
+                duration_ms=_ms,
+            )
+        except Exception:
+            pass
+
     if completion is None:
         # ── GRACEFUL FALLBACK ──
         # Three retries across grok-3-mini, grok-3, grok-4 all failed.

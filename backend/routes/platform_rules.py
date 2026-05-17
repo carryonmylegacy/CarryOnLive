@@ -267,7 +267,9 @@ Write only the paragraph. No headers, no bullet points. Keep it under 100 words.
 
     try:
         import asyncio
+        import time as _time
 
+        _t0 = _time.time()
         resp = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: xai_client.chat.completions.create(
@@ -277,6 +279,17 @@ Write only the paragraph. No headers, no bullet points. Keep it under 100 words.
                 temperature=0.3,
             ),
         )
+        try:
+            from services.llm_cost_ledger import record_xai_response as _rec
+
+            await _rec(
+                resp,
+                endpoint="platform_rules.generate_narrative",
+                model=XAI_MODEL_LIGHT,
+                started_at=_t0,
+            )
+        except Exception:
+            pass
         return resp.choices[0].message.content.strip()
     except Exception as e:
         logger.error(f"Narrative generation failed for {rule['id']}: {e}")

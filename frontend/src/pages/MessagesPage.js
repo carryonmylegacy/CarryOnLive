@@ -261,14 +261,19 @@ const MessagesPage = () => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-open guided creation when arriving from Getting Started
+  // Auto-open the FULL Milestone Message creation modal when arriving
+  // from the Getting Started guided flow. Previously this opened a
+  // simplified `guidedMode` mini-form ("title + a few words"); per
+  // user direction we now drop straight into the real MM platform so
+  // the Getting Started step yields a fully-featured milestone
+  // message (trigger, recipient, video, scheduling) instead of a
+  // pared-down typed note.
   useEffect(() => {
     if (!loading && fromGettingStarted && !autoOpenedRef.current && messages.length === 0 && estate) {
       autoOpenedRef.current = true;
-      setGuidedMode(true);
-      setGuidedStep(1);
       setMessageType('text');
-      // Auto-select all beneficiaries
+      // Auto-select all beneficiaries to mirror the prior guided
+      // behavior — the user can still de-select before saving.
       if (beneficiaries.length > 0) {
         setSelectedRecipients(beneficiaries.map(b => b.user_id || b.id));
       }
@@ -1282,8 +1287,8 @@ const MessagesPage = () => {
             <MessageSquare className="w-5 h-5 text-[#8b5cf6]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-[var(--t)]">Getting Started — Leave a Message</p>
-            <p className="text-xs text-[var(--t4)]">Write a short message for your loved ones. You can always edit it later.</p>
+            <p className="text-sm font-bold text-[var(--t)]">Getting Started — Leave a Milestone Message</p>
+            <p className="text-xs text-[var(--t4)]">Record a real Milestone Message — pick the moment it should be delivered, who receives it, and add text or video. You can always edit it later.</p>
           </div>
           <button onClick={() => navigate('/dashboard')}
             className="flex-shrink-0 text-xs font-bold text-[var(--t4)] px-3 py-2 rounded-xl transition-colors hover:bg-[var(--s)]"

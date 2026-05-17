@@ -23,6 +23,7 @@ import {
   KeyRound,
   ArrowLeftRight,
   Loader2,
+  Play,
   DollarSign,
   Receipt,
   TrendingUp,
@@ -45,6 +46,7 @@ import {
 } from '../offline/repos/dashboardRepo';
 
 import PushPrompt from '../components/PushPrompt';
+import EstateBinderButton from '../components/EstateBinderButton';
 import useIacTaskStream from '../hooks/useIacTaskStream';
 
 const DashboardPage = () => {
@@ -68,6 +70,10 @@ const DashboardPage = () => {
   const [showOptionalSkipInfo, setShowOptionalSkipInfo] = useState(false);
   const [dashboardReady, setDashboardReady] = useState(false);
   const [egaRunning, setEgaRunning] = useState(false);
+  // Latest onboarding progress snapshot — used to render the
+  // "Pick Up Where You Left Off" resume button when the user has
+  // manually dismissed the wizard but still has incomplete steps.
+  const [onboardingProgress, setOnboardingProgress] = useState(null);
   const guidedDismissedRef = useRef(false);
   const lastCompletedAtRef = useRef(null);
 
@@ -297,6 +303,10 @@ const DashboardPage = () => {
         upsertLocalReadiness(estateId, readinessRes.data).catch(() => {});
       }
 
+      // Persist the latest onboarding snapshot so the "Pick Up Where You
+      // Left Off" resume button can render conditionally on the dashboard.
+      if (progressRes?.data) setOnboardingProgress(progressRes.data);
+
       // Show guided flow overlay if there are incomplete steps and user hasn't dismissed this visit
       if (!guidedDismissedRef.current && progressRes?.data) {
         // If user already graduated (celebration shown before), skip all guided flow
@@ -522,7 +532,7 @@ const DashboardPage = () => {
     };
     const STEP_LABELS = {
       add_beneficiary: { title: 'Add Someone You Love', desc: "Let's start by adding a family member or loved one. You just need their first name and your relationship — that's it! You can add details later.", step: 1 },
-      create_message: { title: 'Write a Short Message', desc: "You'll give your message a simple title like \"To My Family,\" then write a few words from the heart. That's all — just two easy steps.", step: 2 },
+      create_message: { title: 'Leave a Milestone Message', desc: "We'll open the Milestone Messages tool so you can record a real milestone-triggered message for your loved ones — pick the moment it should be delivered, who receives it, and add text or video.", step: 2 },
       upload_document: { title: 'Upload an Important Document', desc: "Pick a document from your device — like a will, insurance policy, or any important paper. Just select the file and give it a name.", step: 3 },
       review_readiness: { title: 'Check Your Readiness Score', desc: "Let our AI assistant look over your progress and give you a simple readiness score. Tip: Set your address in Settings first for the best results.", step: 4 },
       customize_checklist: { title: 'Review Your Action Checklist', desc: 'Take a look at the step-by-step checklist your loved ones will follow. You can customize it to fit your family.', step: 5 },
@@ -795,6 +805,63 @@ const DashboardPage = () => {
         </div>
       </div>
 
+      {/* Pick Up Where You Left Off — visible when the wizard has been
+          manually dismissed but the user still has incomplete onboarding
+          steps. Re-opens the same guided overlay at the next step. */}
+      {(user?.role === 'benefactor' || user?.is_also_benefactor) &&
+       onboardingProgress?.manually_dismissed === true &&
+       !onboardingProgress?.all_complete &&
+       (onboardingProgress?.steps || []).some(s => !s.completed) && (
+        <button
+          type="button"
+          data-testid="resume-getting-started-btn"
+          onClick={async () => {
+            // Re-fetch progress to be safe — state may be stale if the
+            // user completed a step in another tab/device.
+            let prog = onboardingProgress;
+            try {
+              const res = await apiClient.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
+              prog = res.data;
+              setOnboardingProgress(prog);
+            } catch { /* fall back to cached progress */ }
+            const steps = prog?.steps || [];
+            const next = steps.find(s => !s.completed);
+            if (!next) return;
+            guidedDismissedRef.current = false;
+            setGuidedStep({ ...next, beneficiary_names: prog?.beneficiary_names || [] });
+            setShowGuidedFlow(true);
+          }}
+          className="glass-card w-full p-4 lg:p-5 mb-4 border-l-4 border-l-[#d4af37] text-left transition-transform duration-150 active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(212,175,55,0.25)]"
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className="flex-shrink-0 w-10 h-10 lg:w-11 lg:h-11 rounded-full flex items-center justify-center"
+                style={{
+                  background: 'radial-gradient(circle, rgba(212,175,55,0.22) 0%, rgba(212,175,55,0.08) 70%)',
+                  border: '1px solid rgba(212,175,55,0.35)',
+                }}
+              >
+                <Play className="w-5 h-5" style={{ color: '#d4af37', fill: '#d4af37' }} />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-base lg:text-lg font-semibold text-[var(--t)] truncate">
+                  Pick Up Where You Left Off
+                </h3>
+                <p className="text-xs lg:text-sm text-[var(--t4)] truncate">
+                  {(() => {
+                    const remaining = (onboardingProgress?.steps || []).filter(s => !s.completed).length;
+                    return `Resume Getting Started — ${remaining} step${remaining === 1 ? '' : 's'} remaining`;
+                  })()}
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 flex-shrink-0 text-[var(--t5)]" />
+          </div>
+        </button>
+      )}
+
       {/* Onboarding Wizard — shown early so it's visible on mobile */}
       <TileErrorBoundary name="onboarding-wizard">
         <OnboardingWizard onAllComplete={() => {
@@ -1048,6 +1115,7 @@ const DashboardPage = () => {
               <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
               <span className="text-[11px] font-bold tracking-wider leading-none">EGA</span>
             </button>
+            <EstateBinderButton />
           </div>
         );
 
@@ -1179,6 +1247,7 @@ const DashboardPage = () => {
                   <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
                   <span className="text-[11px] font-bold tracking-wider leading-none">EGA</span>
                 </button>
+                <EstateBinderButton />
               </div>
             </div>
           );

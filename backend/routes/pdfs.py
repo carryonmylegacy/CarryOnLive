@@ -53,6 +53,7 @@ PDF_TYPE_REGISTRY = {
     "ccp_card": {"label": "Emergency Card"},
     "ccp_report": {"label": "Family Readiness Report"},
     "beneficiary_packet": {"label": "Beneficiary IAC Packet"},
+    "estate_binder": {"label": "Estate Binder"},
 }
 ALLOWED_PDF_TYPES = set(PDF_TYPE_REGISTRY.keys())
 

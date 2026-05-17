@@ -92,6 +92,62 @@ async def record_llm_call(
     return cost
 
 
+def _extract_usage(response) -> tuple[int, int]:
+    """Pull prompt/completion tokens from an xAI response object.
+
+    The xAI SDK mirrors OpenAI's `response.usage` shape. We defensively
+    handle both attribute and dict access — never raise; ledger
+    accuracy is non-essential to the user-facing response.
+    """
+    try:
+        usage = getattr(response, "usage", None) or {}
+        if hasattr(usage, "prompt_tokens"):
+            return int(getattr(usage, "prompt_tokens", 0) or 0), int(getattr(usage, "completion_tokens", 0) or 0)
+        if isinstance(usage, dict):
+            return int(usage.get("prompt_tokens", 0) or 0), int(usage.get("completion_tokens", 0) or 0)
+    except Exception:
+        pass
+    return 0, 0
+
+
+async def record_xai_response(
+    response,
+    *,
+    endpoint: str,
+    model: str,
+    user_id: str | None = None,
+    estate_id: str | None = None,
+    started_at: float | None = None,
+    duration_ms: int | None = None,
+    success: bool = True,
+    error_class: str | None = None,
+) -> None:
+    """Fire-and-forget convenience wrapper.
+
+    Call AFTER a successful xAI completion to log token usage. Pass
+    either `started_at=time.time()` captured BEFORE the call, OR a
+    pre-computed `duration_ms`. Failures are swallowed — ledger insert
+    is observational, never critical-path.
+    """
+    try:
+        prompt_tokens, completion_tokens = _extract_usage(response) if response is not None else (0, 0)
+        if duration_ms is None:
+            duration_ms = int((time.time() - started_at) * 1000) if started_at else 0
+        await record_llm_call(
+            user_id=user_id,
+            estate_id=estate_id,
+            endpoint=endpoint,
+            model=model,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            duration_ms=duration_ms,
+            success=success,
+            error_class=error_class,
+        )
+    except Exception as exc:
+        logger.warning(f"record_xai_response failed (non-fatal): {exc}")
+
+
 @asynccontextmanager
 async def track_llm_call(
     *,

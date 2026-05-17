@@ -888,6 +888,9 @@ CONVERSATION:
 {conv_text}"""
 
     try:
+        import time as _time2
+
+        _t0 = _time2.time()
         completion = await asyncio.to_thread(
             xai_client.chat.completions.create,
             model=XAI_MODEL,
@@ -896,6 +899,19 @@ CONVERSATION:
             max_tokens=4096,
         )
         plan_content = completion.choices[0].message.content
+        try:
+            from services.llm_cost_ledger import record_xai_response as _rec
+
+            await _rec(
+                completion,
+                endpoint="guardian_exports.plan_of_action",
+                model=XAI_MODEL,
+                user_id=current_user.get("id"),
+                estate_id=estate_id,
+                started_at=_t0,
+            )
+        except Exception:
+            pass
     except Exception as e:
         logger.error(f"Plan of Action generation failed: {e}")
         raise HTTPException(status_code=502, detail="Failed to generate Plan of Action")

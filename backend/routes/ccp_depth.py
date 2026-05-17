@@ -949,6 +949,9 @@ async def risk_profile(req: RiskProfileRequest, current_user: dict = Depends(get
     )
 
     try:
+        import time as _time
+
+        _t0 = _time.time()
         resp = await _asyncio.to_thread(
             xai_client.chat.completions.create,
             model="grok-3-mini",  # Risk-ranking is a simple classification
@@ -956,6 +959,19 @@ async def risk_profile(req: RiskProfileRequest, current_user: dict = Depends(get
             temperature=0.2,
             max_tokens=1800,
         )
+        try:
+            from services.llm_cost_ledger import record_xai_response as _rec
+
+            await _rec(
+                resp,
+                endpoint="ccp.risk_profile",
+                model="grok-3-mini",
+                user_id=current_user.get("id"),
+                estate_id=req.estate_id,
+                started_at=_t0,
+            )
+        except Exception:
+            pass
         text = (resp.choices[0].message.content or "").strip()
         # strip markdown fences if present
         if text.startswith("```"):

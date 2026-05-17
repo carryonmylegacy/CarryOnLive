@@ -1,6 +1,166 @@
 # CarryOn — Changelog
 
 
+## Feb 17, 2026 — 📖 Estate Binder freshness stamp
+
+Added a tiny "Last built X ago" sub-line directly under the BNDR
+button on the Readiness gauge. Mirrors the existing `CachedPdfIcon`
+date-stamp pattern so demo prospects see at-a-glance freshness
+without having to tap.
+
+- Hydrates once on mount from `/api/pdfs/latest` (looks up the
+  `estate_binder` cache slot the backend self-saves after every
+  successful build).
+- Updates **optimistically** to "just now" the moment a regeneration
+  succeeds — no extra round-trip required.
+- Subtle blue glow text (`#60a5fa` @ 85%) sized at `text-[11px]` to
+  stay inside the iOS typography floor.
+- `data-testid="readiness-estate-binder-stamp"`.
+- Wrapper uses `pointer-events: none` so the stamp never blocks the
+  Readiness gauge underneath.
+
+**File touched:** `frontend/src/components/EstateBinderButton.js`.
+**CI:** housekeeping --strict + ESLint → clean.
+
+
+## Feb 17, 2026 — 📖 Estate Binder + MM-leveraged Getting Started
+
+**Two related shipments:**
+
+### 1. Estate Binder (new feature)
+A single button that assembles every cached PDF on the platform into
+one continuous, properly paginated document with an adaptive title
+page and table of contents.
+
+- **Button:** Bottom-LEFT corner of the Readiness gauge — mirror of
+  the gold EGA pill in the bottom-right. **Blue glow** styling
+  (`#60a5fa`) with the same w-12 h-12 footprint. Icon: `BookOpenCheck`
+  + "BNDR" label. Visible on both ReadinessCard layouts.
+  `data-testid="readiness-estate-binder-btn"`.
+- **Title Page (adaptive):** Estate name, "Prepared by {user}", and
+  ONLY the address / phone / email lines that exist in Settings
+  (nothing is fabricated; empty fields are silently omitted).
+- **TOC (adaptive):** Lists only the sections the user has actually
+  cached at click-time, with section title, date generated, and
+  starting page number.
+- **Footer overlay:** "Page N of M · Estate Binder · {Estate Name}"
+  rendered on **every** page (including the merged source PDFs) via
+  a `pypdf` merge_page overlay.
+- **Empty / partial guidance:** If the user has zero cached PDFs, a
+  blue-bordered modal opens listing every missing section with a
+  one-tap row that navigates to the source page (e.g. "Tap to open
+  the Estate Guardian page — use its print button to add it"). If
+  some are missing but at least one is cached, the binder still
+  generates and shows a toast with the missing-count and identical
+  guidance.
+- **Self-caches:** Each successful assembly is uploaded as
+  `pdf_type="estate_binder"` so the existing CachedPdfIcon
+  infrastructure picks it up everywhere else.
+
+**Backend (new):**
+- `POST /api/estate-binder/generate` — returns `application/pdf` on
+  success or `application/json {empty, available, missing}` when
+  nothing is cached.
+- `GET /api/estate-binder/manifest` — fast pre-flight returning
+  `{available, missing, can_generate}`.
+- Registered in `route_policies.py` (auth-as-data CI gate still 100%).
+- New section ordering: IAC → EGA (To-Do, IAC, Checklist, Plan,
+  Transcript) → CFP Hand-off → CCP (Plan, Card, Family Readiness) →
+  Beneficiary Packet.
+- New dep: `pypdf==6.11.0` (pinned in `requirements.txt`).
+
+### 2. Getting Started "Create a Message" → real MM platform
+Dropped the simplified `guidedMode` mini-form ("title + a few
+words"). Arriving from Getting Started now opens the **full Milestone
+Messages creation modal** with feature parity — trigger, recipient,
+text/video, scheduling.
+
+- Updated copy on the Onboarding tile and the in-MessagesPage banner
+  to read "Leave a Milestone Message" (vs. "Write a Short Message").
+- Auto-selects all beneficiaries on entry to preserve the prior
+  affordance; user can de-select before saving.
+- Step still marks complete on first MM save (no backend change).
+
+**Validation:**
+- `bash housekeeping.sh --strict` → 0 warn / 0 fail.
+- ESLint clean on all touched JS files.
+- `pytest tests/test_llm_cost_ledger.py` → 7/7.
+- End-to-end curl test against `POST /api/estate-binder/generate`:
+  returns a valid 4-page PDF (cover + TOC + cached IAC + footer
+  overlay) plus correct `X-CarryOn-Binder-{Included,Missing,Page-Count}`
+  headers.
+
+
+## Feb 17, 2026 — 💰 A-Tier 5/5 SHIPPED: LLM cost ledger wired (per-endpoint xAI $$ tracking)
+
+**Closes the A-tier polish sweep (5/5).** The cost-ledger scaffolding
+from the prior session is now LIVE: every xAI Grok call is recorded
+with token counts, estimated USD cost, latency, and success/failure
+class. Per-user and per-endpoint summaries are queryable for the
+admin dashboard.
+
+**Wired call sites (7 total):**
+- `routes/guardian.py` — main EGA chat (heavy + light actions)
+- `routes/guardian_exports.py` — Plan of Action PDF generator
+- `routes/beneficiary_concierge.py` — BEC ask
+- `routes/connected_protocol.py` — CCP wizard plan generation
+- `routes/ccp_depth.py` — risk-profile ranking
+- `routes/platform_rules.py` — admin narrative generator
+- `routes/financial_portal/summary.py` — bill smart-categorize
+
+**Public surface:**
+- `GET /api/admin/llm-cost-summary?days=7[&user_id=...]` — admin-only.
+  Returns `{total_calls, total_cost_usd, by_endpoint_model[]}` for a
+  platform-wide spend tile or `{by_endpoint{}}` for a single user
+  drilldown. Registered in `route_policies.py` (auth-as-data CI gate
+  remains 100%).
+
+**Plumbing:**
+- New convenience helper `record_xai_response(response, ...)` in
+  `services/llm_cost_ledger.py` — accepts the raw xAI response and
+  extracts `usage` (attribute or dict shape), swallows all failures so
+  the ledger never blocks the user-facing response.
+- `ensure_indexes()` called at lifespan startup; collection has TTL
+  index (180 days) for SOC 2 / compliance.
+
+**Tests:**
+- New `tests/test_llm_cost_ledger.py` — 7 unit tests covering pricing
+  math, usage extraction (both shapes), fallback to grok-3 pricing for
+  unknown models, and DB-failure tolerance.
+- `pytest tests/test_llm_cost_ledger.py` → 7/7 passing.
+- `housekeeping.sh --strict` → 0 warn / 0 fail.
+
+**Pricing table** (xAI public pricing, USD per 1M tokens):
+- grok-4: $3 in / $15 out
+- grok-3: $1.50 in / $7.50 out
+- grok-3-mini: $0.50 in / $2 out
+
+
+## Feb 17, 2026 — ✨ Dashboard: "Pick Up Where You Left Off" resume button
+
+**Request:** Add a button on the Dashboard so users can resume the
+Getting Started flow after dismissing it.
+
+**Shipped:**
+- New "Pick Up Where You Left Off" tile on the dashboard, gated to
+  benefactor / is_also_benefactor users.
+- Renders only when `onboardingProgress.manually_dismissed === true` AND
+  there is still at least one incomplete step (auto-hides once Getting
+  Started is fully completed or never dismissed).
+- Tile shows the remaining step count ("Resume Getting Started —
+  4 steps remaining").
+- On click: re-fetches `/api/onboarding/progress` (handles cross-device
+  state drift), locates the next incomplete step, and re-opens the
+  same guided overlay used during initial onboarding.
+- Uses the existing gold accent (`#d4af37`) + `Play` icon for clear
+  affordance; matches the established glass-card styling and respects
+  `text-[11px]` minimum font rule.
+- `data-testid="resume-getting-started-btn"` for testing.
+
+**Files touched:** `frontend/src/pages/DashboardPage.js` only.
+**CI:** `housekeeping.sh --strict` PASS · ESLint PASS.
+
+
 ## Feb 17, 2026 — 🚑 Hotfix: CCP wizard hurricane plan generation hang
 
 **Bug:** First attempt at CCP "Hurricane Plan" generation failed; second

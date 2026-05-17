@@ -45,6 +45,7 @@ from routes.messages import router as messages_router
 from routes.onboarding import router as onboarding_router
 from routes.pdf_export import router as pdf_export_router
 from routes.pdfs import router as pdfs_router
+from routes.estate_binder import router as estate_binder_router
 from routes.push import router as push_router
 from routes.uploads_chunked import router as uploads_chunked_router
 from routes.security import router as security_router
@@ -182,6 +183,14 @@ async def lifespan(app):
         await ensure_email_health_indexes()
     except Exception as e:
         logger.warning(f"diagnostics index init failed: {e}")
+
+    # LLM cost ledger indexes — observability for xAI spend.
+    try:
+        from services.llm_cost_ledger import ensure_indexes as _ensure_llm_indexes
+
+        await _ensure_llm_indexes()
+    except Exception as e:
+        logger.warning(f"llm cost ledger index init failed: {e}")
 
     # Each scheduler is wrapped with a distributed lock. `_locked()` is itself
     # infinite so we restart the scheduler if it ever returns/crashes.
@@ -353,6 +362,7 @@ api_router.include_router(transition_router)
 api_router.include_router(webauthn_router)
 api_router.include_router(errors_router)
 api_router.include_router(pdfs_router)
+api_router.include_router(estate_binder_router)
 api_router.include_router(section_permissions_router)
 api_router.include_router(operators_router)
 api_router.include_router(staff_tools_router)

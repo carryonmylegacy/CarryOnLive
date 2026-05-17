@@ -329,7 +329,9 @@ Example: {{"category":"utilities","biller_phone":"(800) 777-9898","biller_websit
 
     try:
         import asyncio
+        import time as _time
 
+        _t0 = _time.time()
         response = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: xai_client.chat.completions.create(
@@ -339,6 +341,18 @@ Example: {{"category":"utilities","biller_phone":"(800) 777-9898","biller_websit
                 temperature=0.1,
             ),
         )
+        try:
+            from services.llm_cost_ledger import record_xai_response as _rec
+
+            await _rec(
+                response,
+                endpoint="financial.smart_categorize",
+                model=XAI_MODEL_LIGHT,
+                user_id=current_user.get("id"),
+                started_at=_t0,
+            )
+        except Exception:
+            pass
         text = response.choices[0].message.content.strip()
         # Parse JSON from response
         import json

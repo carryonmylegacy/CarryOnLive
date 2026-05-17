@@ -344,6 +344,8 @@ Generate a complete, actionable emergency plan for this specific disaster. Retur
     plan_data: dict | None = None
     last_error: Exception | None = None
     started_at = _asyncio.get_event_loop().time()
+    _used_model: str | None = None
+    _last_response = None
 
     for model_name in _LADDER:
         elapsed = _asyncio.get_event_loop().time() - started_at
@@ -367,6 +369,8 @@ Generate a complete, actionable emergency plan for this specific disaster. Retur
             )
             raw = response.choices[0].message.content.strip()
             plan_data = _json.loads(raw)
+            _used_model = model_name
+            _last_response = response
             logger.info(f"CCP wizard plan generated via {model_name} for {primary_concern}")
             break  # success
         except _asyncio.TimeoutError as e:
@@ -381,6 +385,20 @@ Generate a complete, actionable emergency plan for this specific disaster. Retur
             last_error = e
             logger.warning(f"CCP wizard {model_name} call failed: {e} — failing over")
             continue
+
+    # Cost ledger — fire-and-forget
+    from services.llm_cost_ledger import record_xai_response as _record_xai
+
+    if _last_response is not None and _used_model:
+        duration_ms = int((_asyncio.get_event_loop().time() - started_at) * 1000)
+        await _record_xai(
+            _last_response,
+            endpoint="ccp.wizard_generate_plan",
+            model=_used_model,
+            user_id=current_user.get("id"),
+            estate_id=data.estate_id,
+            duration_ms=duration_ms,
+        )
 
     if plan_data is None:
         logger.error(f"CCP wizard AI exhausted all models. Last error: {last_error}")
