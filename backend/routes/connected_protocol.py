@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
-from config import db, xai_client, XAI_MODEL, logger
+from config import db, xai_client, XAI_MODEL, XAI_MODEL_LIGHT, logger
 from services.estate_auth import is_estate_member as _is_estate_member, is_estate_owner as _is_estate_owner
 from utils import get_current_user
 from services.photo_urls import resolve_photo_url
@@ -329,26 +329,65 @@ DISASTER-SPECIFIC GUIDANCE:
 
 Generate a complete, actionable emergency plan for this specific disaster. Return ONLY valid JSON."""
 
-    try:
-        response = await _asyncio.to_thread(
-            xai_client.chat.completions.create,
-            model=XAI_MODEL,
-            messages=[
-                {"role": "system", "content": _WIZARD_SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt},
-            ],
-            max_tokens=2000,
-            temperature=0.7,
-            response_format={"type": "json_object"},
+    # Failover ladder — lead with grok-3 (consistently healthy & fast),
+    # fall back to grok-4 (higher quality), then grok-3-mini (last resort).
+    # Mirrors the EGA pattern in guardian.py so a flaky grok-4 doesn't
+    # hang the CCP wizard for 60+ seconds.
+    _LADDER: list[str] = []
+    for m in ("grok-3", XAI_MODEL, XAI_MODEL_LIGHT):
+        if m and m not in _LADDER:
+            _LADDER.append(m)
+    _PER_CALL_TIMEOUT_S = 45.0  # hard per-attempt ceiling
+    _SOFT_DEADLINE_S = 90.0  # total ladder budget
+
+    raw: str = ""
+    plan_data: dict | None = None
+    last_error: Exception | None = None
+    started_at = _asyncio.get_event_loop().time()
+
+    for model_name in _LADDER:
+        elapsed = _asyncio.get_event_loop().time() - started_at
+        if elapsed > _SOFT_DEADLINE_S - 5:
+            logger.warning(f"CCP wizard deadline guard: skipping {model_name} (elapsed {elapsed:.1f}s)")
+            break
+        try:
+            response = await _asyncio.wait_for(
+                _asyncio.to_thread(
+                    xai_client.chat.completions.create,
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": _WIZARD_SYSTEM_PROMPT},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    max_tokens=2000,
+                    temperature=0.7,
+                    response_format={"type": "json_object"},
+                ),
+                timeout=_PER_CALL_TIMEOUT_S,
+            )
+            raw = response.choices[0].message.content.strip()
+            plan_data = _json.loads(raw)
+            logger.info(f"CCP wizard plan generated via {model_name} for {primary_concern}")
+            break  # success
+        except _asyncio.TimeoutError as e:
+            last_error = e
+            logger.warning(f"CCP wizard {model_name} timed out after {_PER_CALL_TIMEOUT_S}s — failing over")
+            continue
+        except _json.JSONDecodeError as e:
+            last_error = e
+            logger.warning(f"CCP wizard {model_name} returned invalid JSON: {raw[:300]} — failing over")
+            continue
+        except Exception as e:
+            last_error = e
+            logger.warning(f"CCP wizard {model_name} call failed: {e} — failing over")
+            continue
+
+    if plan_data is None:
+        logger.error(f"CCP wizard AI exhausted all models. Last error: {last_error}")
+        raise HTTPException(
+            status_code=502,
+            detail="AI service is busy right now. Please try again in a moment.",
         )
-        raw = response.choices[0].message.content.strip()
-        plan_data = _json.loads(raw)
-    except _json.JSONDecodeError:
-        logger.error(f"Wizard AI returned invalid JSON: {raw[:500]}")
-        raise HTTPException(status_code=502, detail="AI generated an invalid response. Please try again.")
-    except Exception as e:
-        logger.error(f"Wizard AI call failed: {e}")
-        raise HTTPException(status_code=502, detail="AI service temporarily unavailable. Please try again.")
 
     # Determine plan_type from the concern
     plan_type = _CONCERN_TO_PLAN_TYPE.get(primary_concern, "custom")

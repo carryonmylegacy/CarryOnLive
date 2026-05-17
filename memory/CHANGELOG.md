@@ -1,6 +1,32 @@
 # CarryOn — Changelog
 
 
+## Feb 17, 2026 — 🚑 Hotfix: CCP wizard hurricane plan generation hang
+
+**Bug:** First attempt at CCP "Hurricane Plan" generation failed; second
+attempt hung indefinitely.
+
+**Root cause:** `POST /api/ccp/wizard/generate` in
+`backend/routes/connected_protocol.py` hardcoded `XAI_MODEL` (grok-4) with
+no timeout and no fallback. When grok-4 rate-limited or stalled, the
+request hung waiting for a response that never came — the exact same
+class of bug previously fixed in `guardian.py`.
+
+**Fix:**
+- Added failover ladder `grok-3 → grok-4 → grok-3-mini` (lead with the
+  faster, healthier model; grok-4 only as a quality fallback).
+- Per-call hard ceiling: `asyncio.wait_for(..., timeout=45s)`.
+- Total ladder budget: 90s soft deadline (worst-case user wait, vs.
+  prior 60+s hang then HTTP 502).
+- Clean structured logging at each fail-over hop so we can see which
+  model rescued the call in production logs.
+- Friendly 502 error message ("AI service is busy right now") if all
+  three models exhaust.
+
+**Files touched:** `backend/routes/connected_protocol.py` only.
+**CI:** `bash housekeeping.sh --strict` — PASS (0 warnings).
+
+
 ## Feb 12, 2026 — 🚑 Hotfix: Railway deploy failure (build exit 127)
 
 **Symptom**: Railway production build failed at `pip install -r requirements.txt` with exit code 127.
