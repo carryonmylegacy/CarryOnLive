@@ -104,12 +104,13 @@ export const DISASTER_TEMPLATES = {
   },
   home_invasion: {
     evacuationType: 'immediate',
-    intro: 'A home invasion plan focuses on a fortified safe room, a silent alert system, and a clear escape route with a neighbor on the receiving end.',
+    intro: 'A home invasion plan layers Run / Hide / Fight on top of a fortified safe room, a silent alert, and clear escape options. Self-defense tools are a LAST resort — but if you have them, the plan needs to know where they are.',
     questions: [
       { key: 'safe_room', label: 'Designated safe room *', placeholder: 'e.g., Master bedroom — solid-core door with deadbolt', required: true },
       { key: 'escape_destination', label: 'Where to run if you escape', placeholder: 'e.g., Neighbor at 148 Maple — they know to call 911', required: false, type: 'address' },
       { key: 'silent_codeword', label: 'Silent alert codeword (a phrase that means "call 911" if you must speak in front of someone)', placeholder: 'e.g., "Tell Aunt Linda I said hi" — distinct enough to be unmistakable on a phone call', required: false },
       { key: 'door_reinforcement', label: 'Safe-room door — is it solid core with a deadbolt?', placeholder: 'Hollow doors fail to a kick in under 5 seconds', required: false, type: 'select', options: ['Solid core + deadbolt', 'Solid core, no deadbolt', 'Hollow door', 'Not sure'] },
+      { key: 'defensive_resources', label: 'Self-defense items and where each is stored (LAST resort only)', placeholder: 'e.g., Pistol — bedroom safe (combo XXXX); shotgun — closet, top shelf; aluminum bat — under bed; pepper spray — nightstand drawer', required: false, type: 'textarea' },
     ],
   },
 
@@ -223,6 +224,7 @@ export const DISASTER_TEMPLATES = {
       { key: 'code_word', label: 'Family code word that confirms a "safe" message is real (not coerced)', placeholder: 'e.g., "Pancakes" — if anyone texts without it, treat the message as suspect', required: false },
       { key: 'kid_school_protocol', label: 'Schools your kids attend — do they run lockdown drills?', placeholder: 'e.g., Maple Elem runs ALICE drills quarterly; kids know to listen to teachers and not leave', required: false },
       { key: 'silent_911', label: 'Do you know how to text 911 silently?', placeholder: 'Most US carriers support it — verify it works in your area', required: false, type: 'select', options: ['Yes, tested it', 'I know it exists but haven\'t tested', 'I didn\'t know that was possible'] },
+      { key: 'defensive_resources', label: 'Self-defense items at home and where each is stored (Fight stage — LAST resort only)', placeholder: 'e.g., Pistol — bedroom safe; bear spray — kitchen pantry; aluminum bat — hall closet', required: false, type: 'textarea' },
     ],
   },
   heat_wave: {

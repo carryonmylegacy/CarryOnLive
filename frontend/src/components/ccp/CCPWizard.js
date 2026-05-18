@@ -629,6 +629,22 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                     </p>
                   )}
                 </>
+              ) : q.type === 'textarea' ? (
+                <textarea
+                  value={followUpAnswers[q.key] || ''}
+                  onChange={(e) => updateFollowUp(q.key, e.target.value)}
+                  placeholder={q.placeholder}
+                  rows={4}
+                  className="w-full rounded-xl px-4 py-3 text-base resize-y"
+                  data-testid={`ccp-wizard-followup-${q.key}`}
+                  style={{
+                    background: 'var(--s)',
+                    border: inputBorder((followUpAnswers[q.key] || '').trim()),
+                    color: 'var(--t)',
+                    fontSize: '16px',
+                    minHeight: '90px',
+                  }}
+                />
               ) : (
                 <input
                   value={followUpAnswers[q.key] || ''}
