@@ -51,6 +51,10 @@ class PlanCreate(BaseModel):
     linked_dav_entry_ids: list[str] = []
     assigned_beneficiary_ids: Optional[list[str]] = None  # None = all beneficiaries
     drill_schedule: Optional[dict] = None  # {frequency, recommended_months, next_drill_date, enabled}
+    # AI-generated state self-defense law summary (FIGHT-stage disasters
+    # only — home_invasion / active_shooter / terrorism / civil_unrest).
+    # Always carries a "not legal advice" disclaimer.
+    self_defense_law_note: Optional[str] = None
 
 
 class PlanUpdate(BaseModel):
@@ -65,6 +69,7 @@ class PlanUpdate(BaseModel):
     linked_dav_entry_ids: Optional[list[str]] = None
     assigned_beneficiary_ids: Optional[list[str]] = None
     drill_schedule: Optional[dict] = None
+    self_defense_law_note: Optional[str] = None
 
 
 class ActivatePlanRequest(BaseModel):
@@ -237,7 +242,8 @@ You MUST return valid JSON with exactly these fields:
     {"name": "Critical Documents", "location": "Accessible via CarryOn Secure Document Vault (SDV)", "notes": "Already uploaded and available from any device"}
   ],
   "instructions": "Numbered step-by-step instructions tailored to this specific disaster type.",
-  "warnings": ["Specific risk or mistake to watch for"]
+  "warnings": ["Specific risk or mistake to watch for"],
+  "self_defense_law_note": "ONLY include this field for FIGHT-stage disasters (home_invasion, active_shooter, terrorism, civil_unrest) AND only when the user's location contains a US state. 2–4 sentences summarizing that state's self-defense framework (Stand Your Ground vs Duty to Retreat, Castle Doctrine scope, use-of-force standard) — strictly factual, no advocacy. ALWAYS end with: 'This is general information, NOT legal advice. Self-defense laws vary by state and change over time. Consult a licensed attorney in your jurisdiction before relying on this in any plan.' Omit the field entirely for non-FIGHT disasters or unknown locations."
 }
 
 CRITICAL RULES:
@@ -430,6 +436,7 @@ Generate a complete, actionable emergency plan for this specific disaster. Retur
         "resource_locations": plan_data.get("resource_locations", []),
         "instructions": plan_data.get("instructions", ""),
         "warnings": plan_data.get("warnings", []),
+        "self_defense_law_note": plan_data.get("self_defense_law_note") or None,
         "drill_schedule": {
             "frequency": drill_sched["frequency"],
             "recommended_months": drill_sched["months"],
@@ -543,6 +550,7 @@ async def create_plan(data: PlanCreate, current_user: dict = Depends(get_current
         "linked_dav_entry_ids": data.linked_dav_entry_ids,
         "assigned_beneficiary_ids": data.assigned_beneficiary_ids,
         "drill_schedule": data.drill_schedule,
+        "self_defense_law_note": data.self_defense_law_note,
         "created_by": current_user["id"],
         "created_at": now,
         "updated_at": now,
@@ -573,6 +581,7 @@ async def update_plan(plan_id: str, data: PlanUpdate, current_user: dict = Depen
         "linked_dav_entry_ids",
         "assigned_beneficiary_ids",
         "drill_schedule",
+        "self_defense_law_note",
     ]:
         val = getattr(data, field)
         if val is not None:

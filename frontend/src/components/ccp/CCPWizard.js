@@ -23,6 +23,7 @@ import {
   Wind,
   Mountain,
   ShieldAlert,
+  Scale,
   Siren,
   Droplets,
   Snowflake,
@@ -286,6 +287,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
           communication_plan: data.communication_plan || '',
           resource_locations: data.resource_locations || [],
           instructions: data.instructions || '',
+          self_defense_law_note: data.self_defense_law_note || '',
         });
         setDrillSchedule(data.drill_schedule || null);
         setWarnings(data.warnings || []);
@@ -317,6 +319,7 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
           linked_dav_entry_ids: [],
           assigned_beneficiary_ids: null,
           drill_schedule: drillSchedule,
+          self_defense_law_note: generatedPlan.self_defense_law_note || null,
         }),
       });
       if (res.ok) {
@@ -807,6 +810,47 @@ export default function CCPWizard({ estateId, token, onComplete, onCancel }) {
                   <p className="text-sm whitespace-pre-line" style={{ color: 'var(--t)' }}>{generatedPlan.instructions}</p>
                 )}
               </ReviewSection>
+
+              {/* Self-Defense Law Note — only present when the AI judged the
+                  plan FIGHT-applicable AND knew the user's state. Strictly
+                  informational; the disclaimer is built into the body text. */}
+              {generatedPlan.self_defense_law_note && (
+                <div
+                  className="rounded-xl overflow-hidden"
+                  data-testid="ccp-wizard-self-defense-law"
+                  style={{ background: 'rgba(212,175,55,0.05)', border: '1px solid rgba(212,175,55,0.20)' }}
+                >
+                  <div className="flex items-center gap-2 px-4 py-3">
+                    <Scale className="w-3.5 h-3.5" style={{ color: '#d4af37' }} />
+                    <span
+                      className="text-xs font-bold uppercase tracking-wider"
+                      style={{ color: '#d4af37' }}
+                    >
+                      Self-Defense Law Note
+                    </span>
+                  </div>
+                  <div className="px-4 pb-4">
+                    <textarea
+                      value={generatedPlan.self_defense_law_note}
+                      onChange={(e) => updatePlanField('self_defense_law_note', e.target.value)}
+                      rows={5}
+                      className="w-full rounded-lg px-3 py-2 text-sm leading-relaxed resize-y"
+                      data-testid="ccp-wizard-self-defense-law-input"
+                      style={{
+                        background: 'var(--s)',
+                        border: '1px solid var(--b)',
+                        color: 'var(--t)',
+                        fontSize: '14px',
+                        minHeight: '110px',
+                      }}
+                    />
+                    <p className="text-[11px] mt-2 italic" style={{ color: 'var(--t5)' }}>
+                      General information, not legal advice. Self-defense laws vary by state and
+                      change over time — please verify with a licensed attorney in your jurisdiction.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Drill Schedule */}
               {drillSchedule && (
