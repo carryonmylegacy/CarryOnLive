@@ -10,11 +10,10 @@
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpenCheck, FileText, ChevronRight, Loader2, X, Share2 } from 'lucide-react';
+import { BookOpenCheck, FileText, ChevronRight, Loader2, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
 import { toast } from '../utils/toast';
-import ShareBinderModal from './ShareBinderModal';
 
 // Pretty-print a delta in compact form: "now" / "2m" / "1h" / "2d".
 const formatAgo = (iso) => {
@@ -42,35 +41,6 @@ const EstateBinderButton = () => {
   // regenerated X ago" sub-line under the button so demo prospects
   // see at-a-glance freshness without tapping.
   const [lastGeneratedAt, setLastGeneratedAt] = useState(null);
-  // Share modal — opened on long-press of the BNDR button, or via the
-  // "Share Link" affordance inside the empty-state modal.
-  const [shareOpen, setShareOpen] = useState(false);
-  // Detect long-press separately from a normal click so we don't break
-  // the existing "tap to generate" flow.
-  const [pressTimer, setPressTimer] = useState(null);
-  const [longPressed, setLongPressed] = useState(false);
-
-  const startPress = useCallback(() => {
-    setLongPressed(false);
-    const t = setTimeout(() => {
-      setLongPressed(true);
-      setShareOpen(true);
-      if (navigator?.vibrate) {
-        try {
-          navigator.vibrate(8);
-        } catch {
-          /* iOS Safari no-op */
-        }
-      }
-    }, 550);
-    setPressTimer(t);
-  }, []);
-  const cancelPress = useCallback(() => {
-    if (pressTimer) {
-      clearTimeout(pressTimer);
-      setPressTimer(null);
-    }
-  }, [pressTimer]);
 
   // Hydrate the "last generated" stamp once on mount.
   useEffect(() => {
@@ -93,11 +63,6 @@ const EstateBinderButton = () => {
   }, [getAuthHeaders]);
 
   const handleClick = useCallback(async () => {
-    if (longPressed) {
-      // Long-press already opened the share modal — skip the generate action.
-      setLongPressed(false);
-      return;
-    }
     if (loading) return;
     setLoading(true);
     try {
@@ -142,6 +107,7 @@ const EstateBinderButton = () => {
             subtitle: `${includedHeader.split(',').filter(Boolean).length} section${
               includedHeader.split(',').filter(Boolean).length === 1 ? '' : 's'
             } · ${pageCount || '?'} pages`,
+            shareEnabled: true,
           },
         }),
       );
@@ -164,7 +130,7 @@ const EstateBinderButton = () => {
     } finally {
       setLoading(false);
     }
-  }, [loading, longPressed, getAuthHeaders]);
+  }, [loading, getAuthHeaders]);
 
   const closeEmpty = () => setEmptyState(null);
 
@@ -182,12 +148,6 @@ const EstateBinderButton = () => {
         <button
           type="button"
           onClick={handleClick}
-          onMouseDown={startPress}
-          onMouseUp={cancelPress}
-          onMouseLeave={cancelPress}
-          onTouchStart={startPress}
-          onTouchEnd={cancelPress}
-          onTouchCancel={cancelPress}
           disabled={loading}
           className="flex flex-col items-center justify-center gap-0.5 w-12 h-12 lg:w-14 lg:h-14 rounded-xl transition-transform duration-150 active:scale-[0.94]"
           style={{
@@ -201,8 +161,8 @@ const EstateBinderButton = () => {
           }}
           title={
             lastGeneratedAt
-              ? `Assemble Estate Binder · last built ${formatAgo(lastGeneratedAt)} ago · long-press to share`
-              : 'Assemble Estate Binder · long-press to share'
+              ? `Assemble Estate Binder · last built ${formatAgo(lastGeneratedAt)} ago`
+              : 'Assemble Estate Binder'
           }
           aria-label="Assemble Estate Binder"
           data-testid="readiness-estate-binder-btn"
@@ -226,28 +186,7 @@ const EstateBinderButton = () => {
             {`Built ${formatAgo(lastGeneratedAt)}`}
           </span>
         )}
-        {lastGeneratedAt && (
-          <button
-            type="button"
-            onClick={() => setShareOpen(true)}
-            className="mt-1 flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-transform duration-150 active:scale-[0.96]"
-            style={{
-              color: '#93c5fd',
-              background: 'rgba(96,165,250,0.10)',
-              border: '1px solid rgba(96,165,250,0.35)',
-              pointerEvents: 'auto',
-            }}
-            aria-label="Share Estate Binder"
-            title="Create a private link to share your binder"
-            data-testid="readiness-estate-binder-share-btn"
-          >
-            <Share2 className="w-3 h-3" />
-            Share
-          </button>
-        )}
       </div>
-
-      <ShareBinderModal open={shareOpen} onClose={() => setShareOpen(false)} />
 
       {emptyState && (
         <div

@@ -1,6 +1,76 @@
 # CarryOn — Changelog
 
 
+## May 18, 2026 (later) — 🎯 Binder polish: no more blanks, Share moves to header
+
+User reported 3 issues from a real binder run (Pete Mitchell / Mitchell
+Family Estate). All three diagnosed via PDF artifact analysis + fixed:
+
+### 1. Blank pages around the E&S section (root cause)
+The standalone E&S PDF was producing 4 pages: **blank, chart, blank,
+beneficiary-blocks** instead of the expected 2. The Binder was then
+dutifully embedding all 4. Root cause: the `html2pdf.js` worker-chain
+in `EntitiesPrintPage.js#_captureBlob` was running
+
+    .from(p0).toPdf() →
+    .get('pdf').then(pdf => pdf.addPage(...)).from(p1).toCanvas().toPdf()
+
+— which seeds a blank page via `addPage` AND THEN appends another page
+via `toPdf`, producing one extra blank per iteration.
+
+**Fix:** rewrote `_captureBlob` to drive `html2canvas` + `jsPDF`
+directly (both already bundled by html2pdf.js as deps, no new yarn
+dependency). The new loop initialises jsPDF on the first page, then
+calls `addPage()` only once per subsequent page with no chained
+`toPdf()`. Output is now exactly N pages for N source DIVs.
+
+### 2. "E&S Page isn't populating imagery" (symptom of #1)
+This was a side-effect: the visual chart WAS rendering (on page 2 of
+the standalone, page 27 of the binder), but the blank page 1
+immediately before it made it look like the imagery was missing on
+first scroll. Resolved by #1 — no more leading blank page.
+
+### 3. Dashboard symmetry / Share button placement
+User disliked the "Share" pill underneath the BNDR button — broke
+symmetry with the EGA pill on the other side of the readiness gauge.
+
+**Fix:**
+- Removed `Share` pill (+ long-press handler) from `EstateBinderButton.js`.
+  BNDR + EGA are visually symmetric again.
+- Added `Share` button to the **PdfPreviewModal toolbar**, beside
+  `Save PDF` and `Print`. Renders only when the preview entry carries
+  `shareEnabled: true` — currently dispatched by `EstateBinderButton`
+  on a successful binder generation. Future PDF types can opt-in by
+  setting the flag.
+- `ShareBinderModal` is now embedded inside `PdfPreviewModal` (single
+  source of truth, no double-mounting from the dashboard).
+
+### Files touched
+- `/app/frontend/src/pages/print/EntitiesPrintPage.js`
+  (`_captureBlob` rewrite — html2canvas + jsPDF direct)
+- `/app/frontend/src/components/PdfPreviewModal.js`
+  (Share button in toolbar; mounts ShareBinderModal)
+- `/app/frontend/src/components/EstateBinderButton.js`
+  (drops Share pill + long-press; dispatches `shareEnabled:true`)
+
+ESLint clean on all 3.
+
+### Why the user still saw the tabular fallback PDF
+The Binder uses `ensure_entities_structures_cached` (server-side
+fallback) ONLY when no fresh client capture exists. The user's run
+on May 18 produced the html2pdf capture successfully — that's why
+the chart appears on binder page 27. The fallback never fired this
+time; both blanks come from the standalone html2pdf output, which is
+now fixed at the source.
+
+### What the user needs to do after deploy
+1. Re-visit `/print/entities/<estate>` once (auto-cache fires on
+   mount) so the new clean client PDF replaces the previous one.
+2. Re-open the binder — pages 26 & 28 will be gone, E&S sits cleanly
+   between the prior section and Beneficiary Blocks.
+
+
+
 ## May 18, 2026 — 🔗 Share Binder (signed, revocable, audit-tracked) + overwrite audit + S3 lifecycle
 
 User wanted a "share my binder" link they can hand to attorneys / CPAs / family.

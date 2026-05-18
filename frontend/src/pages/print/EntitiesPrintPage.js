@@ -190,9 +190,19 @@ export default function EntitiesPrintPage() {
   const [autoCachedAt, setAutoCachedAt] = useState(null);
 
   const _captureBlob = useCallback(async () => {
-    // Lazy-import html2pdf so the bundle isn't bloated when this page
-    // is never opened in a session.
-    const html2pdf = (await import('html2pdf.js')).default;
+    // Lazy-import html2canvas + jsPDF directly. We previously used
+    // html2pdf.js's chainable worker for multi-page, but its
+    // `.addPage().from().toCanvas().toPdf()` pattern produced an extra
+    // blank page between every real page (addPage seeded a blank slate,
+    // toPdf then appended a NEW page with content → 1 blank per
+    // iteration). Driving html2canvas + jsPDF directly is both faster
+    // and avoids the off-by-one.
+    const [html2canvasMod, jspdfMod] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf'),
+    ]);
+    const html2canvas = html2canvasMod.default || html2canvasMod;
+    const jsPDF = jspdfMod.jsPDF || jspdfMod.default || jspdfMod;
 
     // Collect the page elements (filter out unmounted ones — e.g. an
     // earlier React render where conditional pages were absent).
@@ -230,34 +240,35 @@ export default function EntitiesPrintPage() {
     // html2canvas config: useCORS pulls cross-origin avatars cleanly when
     // they carry CORS headers; allowTaint is a fallback for assets that
     // don't (we still get a usable canvas — just can't toDataURL it, but
-    // html2pdf renders via toBlob which works either way).
+    // we only call toDataURL when allowTaint===false, so we set it false
+    // and rely on CORS headers from S3 presigned URLs).
     const html2canvasOpts = {
       scale: 2,
       useCORS: true,
-      allowTaint: true,
       backgroundColor: '#FFFFFF',
       logging: false,
       imageTimeout: 8000,
     };
 
-    // Build a worker; html2pdf returns a chainable promise.
-    let worker = html2pdf().set({
-      filename: 'EntitiesAndStructures.pdf',
-      margin: 0,
-      image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: html2canvasOpts,
-      jsPDF: { unit: 'in', format: 'letter', orientation: orientationOf(pages[0]) },
-      pagebreak: { mode: ['avoid-all'] },
-    }).from(pages[0]).toPdf();
-    for (let i = 1; i < pages.length; i += 1) {
-      const o = orientationOf(pages[i]);
-      // Append each subsequent page by re-feeding the worker.
+    // Build the PDF page-by-page. First page initialises jsPDF; every
+    // subsequent page is appended via `addPage()`. No extra blank
+    // pages because we never invoke `toPdf()` on a worker-chain.
+    let pdf = null;
+    for (let i = 0; i < pages.length; i += 1) {
+      const el = pages[i];
+      const o = orientationOf(el);
+      const pageW = o === 'landscape' ? 11 : 8.5; // inches
+      const pageH = o === 'landscape' ? 8.5 : 11;
       // eslint-disable-next-line no-await-in-loop
-      worker = worker.get('pdf').then((pdf) => {
+      const canvas = await html2canvas(el, html2canvasOpts);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+      if (i === 0) {
+        pdf = new jsPDF({ unit: 'in', format: 'letter', orientation: o });
+      } else {
         pdf.addPage('letter', o);
-      }).from(pages[i]).toContainer().toCanvas().toPdf();
+      }
+      pdf.addImage(dataUrl, 'JPEG', 0, 0, pageW, pageH);
     }
-    const pdf = await worker.get('pdf');
     const blob = pdf.output('blob');
     if (process.env.NODE_ENV !== 'production') {
       // eslint-disable-next-line no-console

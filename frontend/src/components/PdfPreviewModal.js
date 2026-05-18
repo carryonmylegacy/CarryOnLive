@@ -15,8 +15,9 @@
  */
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, Printer, Download, AlertTriangle, Loader2 } from 'lucide-react';
+import { ChevronLeft, Printer, Download, AlertTriangle, Loader2, Share2 } from 'lucide-react';
 import { isIOS } from '../utils/downloadFile';
+import ShareBinderModal from './ShareBinderModal';
 
 const PdfPreviewModal = () => {
   const [entry, setEntry] = useState(null); // { blob, url, filename, title, subtitle }
@@ -26,6 +27,7 @@ const PdfPreviewModal = () => {
   const [printing, setPrinting] = useState(false);
   const [renderState, setRenderState] = useState('idle'); // 'idle' | 'loading' | 'ready' | 'error'
   const [pageCount, setPageCount] = useState(0);
+  const [shareOpen, setShareOpen] = useState(false);
 
   // Global listener — any caller dispatches an event with the blob entry.
   useEffect(() => {
@@ -429,6 +431,23 @@ const PdfPreviewModal = () => {
           >
             <Download size={14} /> Save PDF
           </button>
+          {entry?.shareEnabled && (
+            <button
+              type="button"
+              className="pdf-preview-print"
+              onClick={() => setShareOpen(true)}
+              disabled={renderState === 'loading'}
+              data-testid="pdf-preview-share"
+              title="Create a private link to share this binder"
+              style={{
+                background: 'linear-gradient(180deg, rgba(212,175,55,0.25), rgba(184,147,42,0.25))',
+                borderColor: 'rgba(212,175,55,0.55)',
+                color: '#f5d97a',
+              }}
+            >
+              <Share2 size={14} /> Share
+            </button>
+          )}
           <button
             type="button"
             className="pdf-preview-print"
@@ -473,9 +492,10 @@ const PdfPreviewModal = () => {
           aria-hidden="true"
           tabIndex={-1}
         />
+        <ShareBinderModal open={shareOpen} onClose={() => setShareOpen(false)} />
       </div>
     );
-  }, [entry, printing, renderState, pageCount, handleClose, handleDownload]);
+  }, [entry, printing, renderState, pageCount, shareOpen, handleClose, handleDownload]);
 
   if (typeof document === 'undefined') return null;
   return createPortal(portalContent, document.body);
