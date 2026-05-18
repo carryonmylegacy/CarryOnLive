@@ -242,10 +242,17 @@ export const SubscriptionManagement = ({
   };
 
   // Should a plan be greyed out (not selectable)?
-  const isPlanLocked = (planId) => {
-    if (!autoTier) return false;
-    return planId !== autoTier;
-  };
+  //
+  // Hard locks live in the beneficiary `lockedTier` path (handled in
+  // the `currentSub`/beneficiary grid elsewhere). `autoTier` is a
+  // SUGGESTION — it highlights "Your Tier" + the verification banner —
+  // but never restricts the user from choosing Premium/Standard/Base
+  // at full price if they want to. Returning true here would apply
+  // `pointer-events-none` to the card and silently break the Subscribe
+  // button for every eligibility-flagged user (regression fixed
+  // Feb 18, 2026 — was blocking Veterans / Military / Seniors / New
+  // Adults from subscribing to any main tier).
+  const isPlanLocked = (_planId) => false;
 
   // Check if beneficiary's locked plan allows billing toggle (military does not)
   const lockedPlan = lockedTier ? beneficiaryPlans.find(p => p.id === lockedTier) : null;
