@@ -410,7 +410,7 @@ const ShareBinderModal = ({ open, onClose }) => {
                           <Lock className="inline w-3 h-3 ml-1 text-amber-300" />
                         )}
                       </p>
-                      <p className="text-[10px] text-[var(--t4)]">
+                      <p className="text-[11px] text-[var(--t4)]">
                         {s.opens}/{s.max_opens} opens · expires{' '}
                         {formatExpiry(s.expires_at)}
                       </p>

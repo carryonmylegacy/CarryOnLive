@@ -250,7 +250,7 @@ const SharedBinderPage = () => {
           </div>
         )}
 
-        <p className="mt-6 text-[10px] text-[var(--t5)] uppercase tracking-wider">
+        <p className="mt-6 text-[11px] text-[var(--t5)] uppercase tracking-wider">
           Secured by CarryOn™
         </p>
       </div>
