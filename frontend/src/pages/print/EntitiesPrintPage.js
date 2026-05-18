@@ -199,16 +199,53 @@ export default function EntitiesPrintPage() {
     const pages = pageRefs.current.filter(Boolean);
     if (pages.length === 0) throw new Error('No printable pages mounted yet');
 
+    // ── Wait for every <img> inside the printable pages to be fully
+    // loaded before we hand them to html2canvas — otherwise the chart's
+    // avatar tiles get captured as blank squares and the Binder ends
+    // up with white-looking pages.
+    const waitForImages = async (root) => {
+      const imgs = Array.from(root.querySelectorAll('img'));
+      await Promise.all(
+        imgs.map((img) => {
+          if (img.complete && img.naturalHeight > 0) return Promise.resolve();
+          return new Promise((resolve) => {
+            const done = () => { img.removeEventListener('load', done); img.removeEventListener('error', done); resolve(); };
+            img.addEventListener('load', done, { once: true });
+            img.addEventListener('error', done, { once: true });
+            // Hard timeout so one broken avatar can't stall the whole capture.
+            setTimeout(done, 6000);
+          });
+        })
+      );
+    };
+    for (const el of pages) {
+      // eslint-disable-next-line no-await-in-loop
+      await waitForImages(el);
+    }
+
     // Detect each page's orientation by its rendered aspect ratio so the
     // landscape page-1 prints as landscape and the tabular pages as portrait.
     const orientationOf = (el) => (el.offsetWidth > el.offsetHeight ? 'landscape' : 'portrait');
+
+    // html2canvas config: useCORS pulls cross-origin avatars cleanly when
+    // they carry CORS headers; allowTaint is a fallback for assets that
+    // don't (we still get a usable canvas — just can't toDataURL it, but
+    // html2pdf renders via toBlob which works either way).
+    const html2canvasOpts = {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#FFFFFF',
+      logging: false,
+      imageTimeout: 8000,
+    };
 
     // Build a worker; html2pdf returns a chainable promise.
     let worker = html2pdf().set({
       filename: 'EntitiesAndStructures.pdf',
       margin: 0,
       image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#FFFFFF', logging: false },
+      html2canvas: html2canvasOpts,
       jsPDF: { unit: 'in', format: 'letter', orientation: orientationOf(pages[0]) },
       pagebreak: { mode: ['avoid-all'] },
     }).from(pages[0]).toPdf();
@@ -221,7 +258,16 @@ export default function EntitiesPrintPage() {
       }).from(pages[i]).toContainer().toCanvas().toPdf();
     }
     const pdf = await worker.get('pdf');
-    return pdf.output('blob');
+    const blob = pdf.output('blob');
+    if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.log(`[EntitiesPrintPage] Captured ${pages.length} page(s), blob size: ${blob.size} bytes`);
+    }
+    // Sanity floor — anything under 5 KB is almost certainly blank.
+    if (blob.size < 5000) {
+      throw new Error(`Captured PDF suspiciously small (${blob.size} bytes) — likely blank`);
+    }
+    return blob;
   }, []);
 
   const _postToBinderCache = useCallback(async (blob) => {
@@ -243,18 +289,25 @@ export default function EntitiesPrintPage() {
   }, [estateName, getAuthHeaders]);
 
   // Auto-cache on first successful render so the Binder picks it up
-  // even if the user never explicitly taps "Save PDF". Runs once per
-  // page mount, ~2 s after the SVG has stabilized.
+  // even if the user never explicitly taps "Save PDF". We give the
+  // chart a beat to stabilize (3 s) AND `_captureBlob` itself waits
+  // for every <img> in the print pages to finish loading before
+  // handing them to html2canvas — so the resulting cached PDF can't
+  // be a blank/half-loaded snapshot.
   useEffect(() => {
     if (!data || autoCachedAt) return undefined;
     const t = setTimeout(async () => {
       try {
         const blob = await _captureBlob();
         await _postToBinderCache(blob);
-      } catch {
+      } catch (err) {
+        if (process.env.NODE_ENV !== 'production') {
+          // eslint-disable-next-line no-console
+          console.warn('[EntitiesPrintPage] Auto-cache skipped:', err?.message);
+        }
         /* swallow — the explicit Save PDF button still works */
       }
-    }, 2200);
+    }, 3000);
     return () => clearTimeout(t);
   }, [data, autoCachedAt, _captureBlob, _postToBinderCache]);
 
@@ -281,6 +334,29 @@ export default function EntitiesPrintPage() {
       setSaving(false);
     }
   }, [saving, _captureBlob, _postToBinderCache]);
+
+  // When the user clicks Print, also kick off a background capture →
+  // cache write IF the auto-fire hasn't run yet. This ensures that
+  // every interaction path with the print page (auto-load, Save PDF
+  // click, Print click) results in a fresh E&S blob in the Binder
+  // cache. The browser print dialog opens first so the user isn't
+  // delayed.
+  const handlePrintClick = useCallback(() => {
+    try { window.print(); } catch { /* user dismissed */ }
+    if (autoCachedAt) return;
+    // Fire-and-forget — same capture pipeline used by Save PDF
+    (async () => {
+      try {
+        const blob = await _captureBlob();
+        await _postToBinderCache(blob);
+      } catch (err) {
+        if (process.env.NODE_ENV !== 'production') {
+          // eslint-disable-next-line no-console
+          console.warn('[EntitiesPrintPage] Print-triggered cache skipped:', err?.message);
+        }
+      }
+    })();
+  }, [autoCachedAt, _captureBlob, _postToBinderCache]);
 
   // Compute layout + bbox once data lands.
   const layout = useMemo(() => {
@@ -1153,20 +1229,25 @@ export default function EntitiesPrintPage() {
           background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1;
         }
         .cfp-print-orient {
-          background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1;
+          /* De-emphasized orientation toggle — sits on the far right
+             as a small ghost button so it doesn't compete with the
+             primary Save PDF / Print actions. */
+          background: transparent; color: #475569; border: 1px solid #cbd5e1;
+          padding: 6px 10px; font-size: 12px;
         }
         .cfp-print-reprint {
           background: #fffaf0; color: #B8860B; border: 1px solid #B8860B;
         }
+        /* Save PDF matches the platform-wide PdfPreviewModal pattern:
+           pushed to the right of the toolbar via margin-left:auto so the
+           layout reads: Back ... gap ... Save PDF · Print, identical to
+           every other PDF preview screen across CarryOn. */
         .cfp-print-save {
-          background: var(--gold, #D4AF37); color: #ffffff; border: 1px solid var(--gold, #D4AF37);
-          box-shadow: 0 1px 0 rgba(var(--gold-rgb), 0.35);
+          background: #fffaf0; color: #B8860B; border: 1px solid #B8860B;
+          margin-left: auto;
         }
         .cfp-print-save:disabled {
-          opacity: 0.6; cursor: progress;
-        }
-        .cfp-print-save:hover:not(:disabled) {
-          filter: brightness(1.05);
+          opacity: 0.55; cursor: progress;
         }
         @keyframes cfp-spin { to { transform: rotate(360deg); } }
         .cfp-spin { animation: cfp-spin 0.9s linear infinite; }
@@ -1281,7 +1362,7 @@ export default function EntitiesPrintPage() {
           disabled={saving || !data}
           data-testid="entity-print-save-pdf"
           aria-label="Save Entities & Structures PDF"
-          title={autoCachedAt ? 'Save PDF (also cached for the Estate Binder)' : 'Save PDF'}
+          title={autoCachedAt ? 'Save PDF (already cached for the Estate Binder)' : 'Save PDF'}
         >
           {saving ? (
             <><Loader2 size={14} className="cfp-spin" /> Saving…</>
@@ -1292,7 +1373,7 @@ export default function EntitiesPrintPage() {
         <button
           type="button"
           className="cfp-print-reprint"
-          onClick={() => { try { window.print(); } catch { /* user dismissed */ } }}
+          onClick={handlePrintClick}
           data-testid="entity-print-reprint"
         >
           <Printer size={14} /> Print
@@ -1305,9 +1386,9 @@ export default function EntitiesPrintPage() {
           title="Toggle page-1 orientation"
         >
           {page1Orientation === 'landscape' ? (
-            <><Maximize2 size={14} /> Landscape</>
+            <><Maximize2 size={12} /> Landscape</>
           ) : (
-            <><AlignVerticalJustifyCenter size={14} /> Portrait</>
+            <><AlignVerticalJustifyCenter size={12} /> Portrait</>
           )}
         </button>
       </div>
