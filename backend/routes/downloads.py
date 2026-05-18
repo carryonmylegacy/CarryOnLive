@@ -940,6 +940,8 @@ async def _handle_emergency_card(user: dict, params: dict, filename: str) -> Res
         sd_h = 0.0
         if self_defense:
             sd_h = gap + header_h + 0.4 + measure_lines(safe(self_defense), font_size, line_h, text_w) * line_h
+            # +1 thin line for the audit footnote ("vYYYY-MM · ST · review annually")
+            sd_h += font_size * 0.4 + 0.4
 
         res_h = 0.0
         if include_resources and res_lines:
@@ -1036,6 +1038,83 @@ async def _handle_emergency_card(user: dict, params: dict, filename: str) -> Res
         pdf.set_xy(text_x, cur_y)
         pdf.multi_cell(text_w, line_h, sd_text, new_x="LMARGIN", new_y="NEXT")
         cur_y = pdf.get_y()
+
+        # Audit footnote: vYYYY-MM · ST · review annually
+        import re as _re
+        from datetime import datetime as _ft_dt, timezone as _ft_tz
+
+        _US_STATES = {
+            "AL",
+            "AK",
+            "AZ",
+            "AR",
+            "CA",
+            "CO",
+            "CT",
+            "DE",
+            "FL",
+            "GA",
+            "HI",
+            "ID",
+            "IL",
+            "IN",
+            "IA",
+            "KS",
+            "KY",
+            "LA",
+            "ME",
+            "MD",
+            "MA",
+            "MI",
+            "MN",
+            "MS",
+            "MO",
+            "MT",
+            "NE",
+            "NV",
+            "NH",
+            "NJ",
+            "NM",
+            "NY",
+            "NC",
+            "ND",
+            "OH",
+            "OK",
+            "OR",
+            "PA",
+            "RI",
+            "SC",
+            "SD",
+            "TN",
+            "TX",
+            "UT",
+            "VT",
+            "VA",
+            "WA",
+            "WV",
+            "WI",
+            "WY",
+            "DC",
+        }
+        _state_code = None
+        for _rp in rps or []:
+            _m = _re.search(r",\s*([A-Z]{2})(?:\s+\d{5})?\b", (_rp.get("address") or "").upper())
+            if _m and _m.group(1) in _US_STATES:
+                _state_code = _m.group(1)
+                break
+        _stamp_parts = [f"v{_ft_dt.now(_ft_tz.utc):%Y-%m}"]
+        if _state_code:
+            _stamp_parts.append(_state_code)
+        _stamp_parts.append("review annually")
+        _stamp = "  -  ".join(_stamp_parts)
+
+        # Only render footnote if there's room (one tiny line above the back footer)
+        if cur_y + (chosen_font * 0.4 + 0.4) <= avail_bottom:
+            pdf.set_font("Helvetica", "I", max(3.5, chosen_font - 0.6))
+            pdf.set_text_color(150, 138, 100)  # muted gold
+            pdf.set_xy(text_x, cur_y)
+            pdf.cell(text_w, chosen_font * 0.4 + 0.4, _stamp, new_x="LMARGIN", new_y="NEXT")
+            cur_y = pdf.get_y()
 
     # ─── Render resources (only if room) ───
     if chosen_include_res and res_lines and cur_y < avail_bottom - line_h:
