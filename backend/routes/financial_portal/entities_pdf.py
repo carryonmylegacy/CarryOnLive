@@ -377,6 +377,106 @@ def _render_pdf(
     return bytes(pdf.output())
 
 
+async def ensure_entities_structures_cached(
+    estate_id: str,
+    user_id: str,
+    *,
+    max_age_hours: float = 24.0,
+) -> dict:
+    """Idempotent helper for the Estate Binder pipeline.
+
+    If a cached `entities_structures` PDF exists for this user AND is
+    younger than `max_age_hours`, returns `{"refreshed": False}`.
+
+    Otherwise, regenerates the tabular fpdf2 fallback (entities grouped
+    by bucket + relationships + beneficiary blocks) for `estate_id`,
+    uploads it to S3, and upserts the `latest_pdfs` row — so the very
+    next Binder assembly picks it up. Returns
+    `{"refreshed": True, "size_bytes": N}` on success.
+
+    This is the **server-side safety net** that guarantees E&S appears
+    in every Binder even when:
+      • the user never opened `/print/entities/<estate_id>` (so the
+        client-side html2pdf capture never fired), or
+      • the client-side capture failed silently (ad-blockers, CORS, etc.)
+
+    The client-side html2pdf flow still produces a richer chart-shaped
+    PDF — and overwrites this fallback the next time it succeeds.
+    """
+    cached = await db.latest_pdfs.find_one(
+        {"user_id": user_id, "pdf_type": "entities_structures"},
+        {"_id": 0, "updated_at": 1, "size_bytes": 1},
+    )
+    if cached:
+        updated_at = cached.get("updated_at")
+        size = cached.get("size_bytes") or 0
+        # Fresh AND non-trivial → keep the existing (likely client-rendered) blob.
+        if size >= 5000 and updated_at:
+            try:
+                ts = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+                if (datetime.now(timezone.utc) - ts).total_seconds() < max_age_hours * 3600:
+                    return {"refreshed": False, "reason": "fresh"}
+            except (ValueError, TypeError):
+                pass
+
+    # Stale, missing, or trivially-small → regenerate.
+    estate = await db.estates.find_one(
+        {"id": estate_id, "deleted_at": None},
+        {"_id": 0, "id": 1, "name": 1, "owner_id": 1, "user_id": 1},
+    )
+    if not estate:
+        return {"refreshed": False, "reason": "estate_not_found"}
+
+    entities = await db.cfp_entities.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(2000)
+    externals = await db.cfp_external_people.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(
+        2000
+    )
+    relationships = await db.cfp_entity_relationships.find(
+        {"estate_id": estate_id, "deleted_at": None}, {"_id": 0}
+    ).to_list(5000)
+    blocks = await db.cfp_beneficiary_blocks.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(
+        2000
+    )
+    beneficiaries = await db.beneficiaries.find(
+        {"estate_id": estate_id, "deleted_at": None},
+        {"_id": 0, "id": 1, "first_name": 1, "last_name": 1},
+    ).to_list(500)
+    user_doc = await db.users.find_one({"id": user_id}, {"_id": 0, "first_name": 1, "last_name": 1})
+
+    pdf_bytes = _render_pdf(
+        estate_name=(estate or {}).get("name", ""),
+        entities=entities,
+        externals=externals,
+        relationships=relationships,
+        blocks=blocks,
+        beneficiaries=beneficiaries,
+        user_doc=user_doc,
+    )
+
+    s3_key = f"latest-pdfs/{user_id}/entities_structures.pdf"
+    await storage.upload_raw(pdf_bytes, s3_key, content_type="application/pdf")
+    now_iso = datetime.now(timezone.utc).isoformat()
+    await db.latest_pdfs.update_one(
+        {"user_id": user_id, "pdf_type": "entities_structures"},
+        {
+            "$set": {
+                "user_id": user_id,
+                "pdf_type": "entities_structures",
+                "s3_key": s3_key,
+                "title": "Entities & Structures",
+                "subtitle": (estate or {}).get("name", "")[:200],
+                "filename": "EntitiesAndStructures.pdf",
+                "size_bytes": len(pdf_bytes),
+                "updated_at": now_iso,
+                "source": "server_fallback",
+            },
+            "$setOnInsert": {"created_at": now_iso},
+        },
+        upsert=True,
+    )
+    return {"refreshed": True, "size_bytes": len(pdf_bytes), "source": "server_fallback"}
+
+
 @router.get("/financial/entities/{estate_id}/pdf")
 async def generate_entities_structures_pdf(
     estate_id: str,

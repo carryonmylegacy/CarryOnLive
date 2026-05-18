@@ -374,6 +374,23 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
     email = (user.get("email") or "").strip()
     user_name = (user.get("name") or f"{user.get('first_name', '')} {user.get('last_name', '')}").strip()
 
+    # ─── Server-side safety net: ensure E&S has a cached PDF before
+    # we read latest_pdfs. The client-side html2pdf capture on the
+    # /print/entities/<id> page produces a richer chart-shaped PDF
+    # whenever the user visits that page, but B2B prospects may
+    # generate a binder cold without ever opening the print page —
+    # this fallback guarantees E&S still appears in the binder.
+    # See `services.financial_portal.entities_pdf.ensure_entities_structures_cached`
+    # for cache freshness/source logic.
+    try:
+        from routes.financial_portal.entities_pdf import ensure_entities_structures_cached
+
+        _est_id = (estate or {}).get("id")
+        if _est_id:
+            await ensure_entities_structures_cached(_est_id, user_id, max_age_hours=24.0)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(f"Binder: E&S server fallback failed for user={user_id}: {exc}")
+
     # Pull all cached PDFs for this user in one query.
     cached_docs = await db.latest_pdfs.find(
         {"user_id": user_id},
