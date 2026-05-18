@@ -1,6 +1,49 @@
 # CarryOn — Changelog
 
 
+## Feb 18, 2026 — 🪪 Emergency Card PDF: text wrap + self-defense law section
+
+Fixed the live-pitch P0 on `_handle_emergency_card`
+(`backend/routes/downloads.py`).
+
+**What broke:** Back-side text was getting cut mid-sentence because
+each section truncated with hard char caps (`[:120]`, `[:140]`) and
+clipped on a raw `cur_y` check that didn't account for wrapped line
+counts. The newly-saved `self_defense_law_note` field never made it
+onto the printed card at all.
+
+**Fix:** Rewrote the back-side as an adaptive layout that:
+- Pre-measures every section's wrapped line count via
+  `multi_cell(..., dry_run=True, output="LINES")` at candidate font
+  sizes (4.6 → 3.6 pt).
+- Picks the largest font where Instructions + Self-Defense + Supplies
+  all fit; falls back to dropping Supplies before falling back to
+  whole-line-truncating Instructions.
+- **Self-defense law is mandatory** when present — its space is
+  reserved BEFORE Instructions render, guaranteeing it always
+  appears on FIGHT-stage cards (Home Invasion, Active Shooter,
+  Terrorism, Civil Unrest).
+- New "STATE SELF-DEFENSE — NOT LEGAL ADVICE" header in CarryOn
+  gold (`#D4AF37`) with the body text in a softened gold-cream
+  tone (`#E4DABC`) for readable contrast on the dark card.
+- Mid-line cuts are impossible: truncation snaps to whole wrapped
+  lines and appends `...`.
+
+**Verified with 3 scenarios** (full normal / overflow / no-SD):
+- Normal: all 3 sections render at 4.6pt with no truncation.
+- Overflow (11 long-instruction steps): SD law preserved, instructions
+  truncate by whole lines with trailing `...`.
+- Non-FIGHT plans (no `self_defense_law_note`): SD section omitted
+  cleanly, no empty header.
+
+**CI:** `housekeeping.sh --strict` → 0 new warnings (one pre-existing
+WARN on `checklist.py` mongo projections is unrelated).
+
+**File touched:** `backend/routes/downloads.py` (~150 lines replaced
+inside `_handle_emergency_card`).
+
+
+
 ## Feb 17, 2026 — 📖 Estate Binder freshness stamp
 
 Added a tiny "Last built X ago" sub-line directly under the BNDR

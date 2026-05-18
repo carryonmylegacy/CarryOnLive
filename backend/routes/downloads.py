@@ -778,6 +778,7 @@ async def _handle_emergency_card(user: dict, params: dict, filename: str) -> Res
     comm = (plan.get("communication_plan", "") or "").strip()
     resources = plan.get("resource_locations", [])
     instructions = (plan.get("instructions", "") or "").strip()
+    self_defense = (plan.get("self_defense_law_note", "") or "").strip()
     estate_name = estate.get("name", "")
 
     # Card dimensions — credit card sized (86mm x 54mm)
@@ -897,43 +898,162 @@ async def _handle_emergency_card(user: dict, params: dict, filename: str) -> Res
     text_x = bx + 3
     text_w = CARD_W - 6
 
-    # Instructions (full)
-    if instructions:
-        pdf.set_font("Helvetica", "B", 4.5)
+    # ─── Adaptive back-side layout ───
+    # Self-defense law is MANDATORY when present (user demand) — reserve its space first.
+    FOOTER_RESERVE = 3.5
+    avail_top = cur_y
+    avail_bottom = by + CARD_H - FOOTER_RESERVE
+    avail_h = avail_bottom - avail_top
+
+    instr_lines = [line.strip() for line in instructions.split("\n") if line.strip()] if instructions else []
+
+    res_lines = []
+    for rl in resources or []:
+        rl_text = safe(rl.get("name", "")) + ": " + safe(rl.get("location", ""))
+        if rl.get("notes"):
+            rl_text += " (" + safe(rl["notes"]) + ")"
+        res_lines.append(rl_text)
+
+    def measure_lines(text, font_size, line_h, width):
+        if not text:
+            return 0
+        pdf.set_font("Helvetica", "", font_size)
+        try:
+            lines = pdf.multi_cell(width, line_h, text, dry_run=True, output="LINES")
+            return len(lines) if lines else 0
+        except (TypeError, ValueError):
+            char_per_line = max(1, int(width / (font_size * 0.18)))
+            return max(1, -(-len(text) // char_per_line))
+
+    def section_heights(font_size, include_resources):
+        """Return (instr_h, sd_h, res_h) at this font — each block's total height incl. header."""
+        line_h = font_size * 0.45 + 0.5
+        header_h = 2.2
+        gap = 0.8
+
+        instr_h = 0.0
+        if instr_lines:
+            instr_h = header_h + 0.5
+            for ln in instr_lines:
+                instr_h += measure_lines(safe(ln), font_size, line_h, text_w) * line_h + 0.2
+
+        sd_h = 0.0
+        if self_defense:
+            sd_h = gap + header_h + 0.4 + measure_lines(safe(self_defense), font_size, line_h, text_w) * line_h
+
+        res_h = 0.0
+        if include_resources and res_lines:
+            res_h = gap + header_h + 0.4
+            for ln in res_lines:
+                res_h += measure_lines(safe(ln), font_size, line_h, text_w) * line_h + 0.2
+
+        return instr_h, sd_h, res_h
+
+    # Choose largest font such that self-defense + supplies fit; instructions can truncate by whole lines.
+    chosen_font = 3.6
+    chosen_include_res = False
+    # Pass 1: everything fits including supplies
+    for fs in (4.6, 4.4, 4.2, 4.0, 3.8, 3.6):
+        i_h, s_h, r_h = section_heights(fs, include_resources=True)
+        if s_h + r_h <= avail_h and i_h + s_h + r_h <= avail_h:
+            chosen_font = fs
+            chosen_include_res = True
+            break
+    else:
+        # Pass 2: drop supplies, keep instructions + self-defense
+        for fs in (4.6, 4.4, 4.2, 4.0, 3.8, 3.6):
+            i_h, s_h, _ = section_heights(fs, include_resources=False)
+            if s_h <= avail_h and i_h + s_h <= avail_h:
+                chosen_font = fs
+                chosen_include_res = False
+                break
+        else:
+            # Pass 3: self-defense MUST fit — let instructions truncate by whole lines
+            for fs in (4.4, 4.2, 4.0, 3.8, 3.6):
+                _, s_h, _ = section_heights(fs, include_resources=False)
+                if s_h <= avail_h - 2.5:  # leave at least one instr header + 1 line
+                    chosen_font = fs
+                    chosen_include_res = False
+                    break
+
+    line_h = chosen_font * 0.45 + 0.5
+    header_h = 2.2
+
+    # Compute reservation for self-defense + supplies; whatever is left is for instructions.
+    _, sd_reserve, res_reserve = section_heights(chosen_font, chosen_include_res)
+    instr_budget_bottom = avail_bottom - sd_reserve - res_reserve
+
+    # ─── Render instructions (capped at reserved bottom) ───
+    if instr_lines and cur_y < instr_budget_bottom - line_h:
+        pdf.set_font("Helvetica", "B", max(4.5, chosen_font))
         pdf.set_text_color(245, 166, 35)
         pdf.set_xy(text_x, cur_y)
-        pdf.cell(text_w, 2, "STEP-BY-STEP INSTRUCTIONS", new_x="LMARGIN", new_y="NEXT")
-        cur_y += 2.5
-        pdf.set_font("Helvetica", "", 4.5)
+        pdf.cell(text_w, header_h, "STEP-BY-STEP INSTRUCTIONS", new_x="LMARGIN", new_y="NEXT")
+        cur_y += header_h + 0.5
+        pdf.set_font("Helvetica", "", chosen_font)
         pdf.set_text_color(208, 222, 233)
-        pdf.set_xy(text_x, cur_y)
-        # Fit as much as possible
-        instr_lines = [line.strip() for line in instructions.split("\n") if line.strip()]
-        for line in instr_lines:
-            if cur_y >= by + CARD_H - 12:
+        for ln in instr_lines:
+            n_lines = measure_lines(safe(ln), chosen_font, line_h, text_w)
+            needed = n_lines * line_h + 0.2
+            if cur_y + needed > instr_budget_bottom:
+                # Render as many whole wrapped lines as fit, then ellipsis
+                try:
+                    wrapped = pdf.multi_cell(text_w, line_h, safe(ln), dry_run=True, output="LINES") or []
+                    max_lines = max(0, int((instr_budget_bottom - cur_y) / line_h))
+                    if max_lines > 0:
+                        partial = " ".join(wrapped[:max_lines]).rstrip() + "..."
+                        pdf.set_xy(text_x, cur_y)
+                        pdf.multi_cell(text_w, line_h, partial, new_x="LMARGIN", new_y="NEXT")
+                        cur_y = pdf.get_y() + 0.2
+                except (TypeError, ValueError):
+                    pass
                 break
             pdf.set_xy(text_x, cur_y)
-            pdf.multi_cell(text_w, 2, safe(line)[:120], new_x="LMARGIN", new_y="NEXT")
+            pdf.multi_cell(text_w, line_h, safe(ln), new_x="LMARGIN", new_y="NEXT")
             cur_y = pdf.get_y() + 0.2
 
-    # Resource locations
-    if resources and cur_y < by + CARD_H - 8:
-        cur_y += 0.5
-        pdf.set_font("Helvetica", "B", 4.5)
+    # ─── Render self-defense law (MANDATORY when present) ───
+    if self_defense:
+        cur_y = max(cur_y, avail_bottom - sd_reserve - res_reserve + 0.6)
+        pdf.set_font("Helvetica", "B", max(4.5, chosen_font))
+        pdf.set_text_color(212, 175, 55)
+        pdf.set_xy(text_x, cur_y)
+        pdf.cell(text_w, header_h, "STATE SELF-DEFENSE  -  NOT LEGAL ADVICE", new_x="LMARGIN", new_y="NEXT")
+        cur_y += header_h + 0.4
+        pdf.set_font("Helvetica", "", chosen_font)
+        pdf.set_text_color(228, 218, 188)
+        sd_text = safe(self_defense)
+        sd_bottom = avail_bottom - res_reserve
+        max_lines = max(1, int((sd_bottom - cur_y) / line_h))
+        try:
+            wrapped = pdf.multi_cell(text_w, line_h, sd_text, dry_run=True, output="LINES") or []
+            if len(wrapped) > max_lines:
+                sd_text = " ".join(wrapped[:max_lines]).rstrip()
+                if not sd_text.endswith("."):
+                    sd_text = sd_text[: max(0, len(sd_text) - 1)].rstrip() + "..."
+        except (TypeError, ValueError):
+            pass
+        pdf.set_xy(text_x, cur_y)
+        pdf.multi_cell(text_w, line_h, sd_text, new_x="LMARGIN", new_y="NEXT")
+        cur_y = pdf.get_y()
+
+    # ─── Render resources (only if room) ───
+    if chosen_include_res and res_lines and cur_y < avail_bottom - line_h:
+        cur_y += 0.6
+        pdf.set_font("Helvetica", "B", max(4.5, chosen_font))
         pdf.set_text_color(59, 123, 247)
         pdf.set_xy(text_x, cur_y)
-        pdf.cell(text_w, 2, "SUPPLIES & RESOURCES", new_x="LMARGIN", new_y="NEXT")
-        cur_y += 2.5
-        pdf.set_font("Helvetica", "", 4.5)
+        pdf.cell(text_w, header_h, "SUPPLIES & RESOURCES", new_x="LMARGIN", new_y="NEXT")
+        cur_y += header_h + 0.4
+        pdf.set_font("Helvetica", "", chosen_font)
         pdf.set_text_color(208, 222, 233)
-        for rl in resources:
-            if cur_y >= by + CARD_H - 5:
+        for ln in res_lines:
+            n_lines = measure_lines(safe(ln), chosen_font, line_h, text_w)
+            needed = n_lines * line_h + 0.2
+            if cur_y + needed > avail_bottom:
                 break
-            rl_text = safe(rl.get("name", "")) + ": " + safe(rl.get("location", ""))
-            if rl.get("notes"):
-                rl_text += " (" + safe(rl["notes"])[:50] + ")"
             pdf.set_xy(text_x, cur_y)
-            pdf.multi_cell(text_w, 2, rl_text[:140], new_x="LMARGIN", new_y="NEXT")
+            pdf.multi_cell(text_w, line_h, safe(ln), new_x="LMARGIN", new_y="NEXT")
             cur_y = pdf.get_y() + 0.2
 
     # Back footer
