@@ -53,6 +53,21 @@ class StorageBackend(ABC):
         """Download a blob by arbitrary key."""
         return await self.download(key)
 
+    def presign_get_url(
+        self,
+        storage_key: str,
+        *,
+        expires_in: int = 300,
+        download_filename: str | None = None,
+    ) -> str | None:
+        """Return a short-lived presigned GET URL, or None if backend can't presign.
+
+        Production (S3) returns a real URL. LocalStorage (dev/preview)
+        returns None — callers should fall back to streaming the bytes
+        through the backend instead of redirecting.
+        """
+        return None
+
 
 class LocalStorage(StorageBackend):
     """Filesystem-backed storage for dev/preview environments."""
@@ -203,6 +218,35 @@ class S3Storage(StorageBackend):
         )
         logger.info(f"S3Storage: uploaded {len(blob)} bytes to s3://{self.bucket}/{key}")
         return key
+
+    def presign_get_url(
+        self,
+        storage_key: str,
+        *,
+        expires_in: int = 300,
+        download_filename: str | None = None,
+    ) -> str:
+        """Return a short-lived presigned GET URL for `storage_key`.
+
+        Default 5-minute expiry. Pass `download_filename` to force the
+        browser to save with a friendly name via Content-Disposition.
+
+        Use case: the share-link recipient endpoint redirects (302) to
+        this URL so the actual PDF bytes stream from S3 directly,
+        skipping our backend entirely. Default `application/pdf` content
+        type is preserved by S3 from the original PUT.
+        """
+        params = {"Bucket": self.bucket, "Key": storage_key}
+        if download_filename:
+            # Force a friendly download filename without trusting the
+            # recipient to pick one. Escape quotes defensively.
+            safe = download_filename.replace('"', "")[:200]
+            params["ResponseContentDisposition"] = f'attachment; filename="{safe}"'
+        return self.client.generate_presigned_url(
+            "get_object",
+            Params=params,
+            ExpiresIn=int(expires_in),
+        )
 
 
 def get_storage_backend() -> StorageBackend:

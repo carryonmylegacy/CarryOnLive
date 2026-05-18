@@ -1,6 +1,97 @@
 # CarryOn — Changelog
 
 
+## May 18, 2026 — 🔗 Share Binder (signed, revocable, audit-tracked) + overwrite audit + S3 lifecycle
+
+User wanted a "share my binder" link they can hand to attorneys / CPAs / family.
+Built end-to-end with the guardrails baked in from day one so we don't
+have to retrofit them later.
+
+### What shipped — Backend (`routes/share.py`, new)
+- `POST /api/share/binder` — owner mints a tokenised public link. 32-byte
+  URL-safe token, configurable TTL (1h–7d, default 24h), configurable
+  `max_opens` (1–50, default 10), optional ≥6-char passphrase.
+- `GET /api/share/binder/{token}` — public endpoint, no auth.
+  - Validates: not revoked, not expired, opens < max_opens.
+  - 401 with `{passphrase_required:true, title, estate_name}` hint when
+    a passphrase is required and not provided.
+  - 401 (no open burned) on wrong passphrase.
+  - 302 → 5-min presigned S3 URL on success → recipient downloads PDF
+    **directly from S3**; our pod is touched once per open, never sees
+    the bytes.
+  - Streams from backend on LocalStorage (dev) as fallback.
+- `GET /api/share/my` — owner lists active + recent shares.
+- `DELETE /api/share/binder/{token}` — owner revokes (returns 410 on
+  subsequent opens).
+- **Guardrails (all server-enforced, can't be bypassed by client):**
+  - `MAX_ACTIVE_SHARES_PER_USER = 5` (409 once hit)
+  - `MAX_OPENS_PER_SHARE = 50` ceiling, default 10
+  - `MIN_TTL_HOURS = 1`, `MAX_TTL_HOURS = 168` (7 days)
+  - `SHARE_CREATE_RATE_LIMIT = 10/hr` per user (429)
+  - `SHARE_OPEN_RATE_LIMIT = 30/min` per `(token, ip)` (429)
+  - `PASSPHRASE_MIN_LEN = 6`, PBKDF2-SHA256 stored hash (never reversible)
+  - Refuses to share a binder smaller than 500 bytes (corruption guard)
+- **Audit** (hash-chained, SOC2-grade): every `share.binder.{created,
+  opened,revoked}` writes to `audit_trail` with actor, IP, UA, opens,
+  and resource id. Recipient opens log IP+UA to a per-share rolling
+  `open_log` (last 50).
+- **Indexes** (auto-created on first request): `token` unique, TTL on
+  `expires_at` for auto-cleanup, compound on
+  `(user_id, revoked, expires_at)`.
+
+### What shipped — Frontend
+- `components/ShareBinderModal.js` — modal launched from a new "Share"
+  pill underneath the BNDR button. TTL chips, max-opens chips, optional
+  passphrase, one-click copy. Lists active shares with open counts +
+  inline revoke. Also opens via long-press on the BNDR button.
+- `pages/SharedBinderPage.js` — public `/s/:token` recipient page. Probes
+  the share, renders passphrase prompt if needed, fires the download via
+  302 → S3 presigned URL. Friendly error states for invalid/expired/
+  revoked/rate-limited.
+
+### What shipped — Infra hygiene
+- `scripts/install_s3_lifecycle.py` — one-shot installer for three S3
+  bucket lifecycle rules (applied to `carryon-vault` already):
+  1. `expire-noncurrent-pdfs-30d` — delete noncurrent versions under
+     `latest-pdfs/` after 30 days. Closes the silent versioning gap the
+     user asked about ("we shouldn't be saving multiple copies").
+  2. `expire-noncurrent-everything-else-30d` — same, bucket-wide.
+  3. `abort-incomplete-multipart-7d` — clean up failed uploads.
+- `services/storage.py` — added `presign_get_url()` on the S3 backend
+  (5-min default, supports forced download filename via
+  `ResponseContentDisposition`). LocalStorage returns None → caller
+  streams from backend.
+
+### What shipped — Regression tests
+- `tests/test_share_binder.py` — 8 e2e tests against live preview, all
+  guardrails. **7 PASSED / 1 SKIPPED** (skip is rate-limit aware).
+- `tests/test_latest_pdfs_overwrite_only.py` — locks in the
+  overwrite-only contract the user explicitly asked us to confirm.
+  Uploads three sequential PDFs to the same slot and asserts:
+    - exactly 1 row in `latest_pdfs`,
+    - retained row size matches the 3rd write,
+    - deterministic S3 key, `created_at <= updated_at`. **PASS**.
+- All previous regression tests still green (10 passed total).
+
+### Files
+- `/app/backend/routes/share.py` (new, 481 lines)
+- `/app/backend/services/storage.py` (+ presign helper)
+- `/app/backend/route_policies.py` (new 4 route entries)
+- `/app/backend/server.py` (router registration)
+- `/app/backend/tests/test_share_binder.py` (new)
+- `/app/backend/tests/test_latest_pdfs_overwrite_only.py` (new)
+- `/app/scripts/install_s3_lifecycle.py` (new)
+- `/app/frontend/src/components/ShareBinderModal.js` (new)
+- `/app/frontend/src/pages/SharedBinderPage.js` (new)
+- `/app/frontend/src/components/EstateBinderButton.js` (Share pill +
+  long-press)
+- `/app/frontend/src/App.js` (+ `/s/:token` route)
+- `/app/frontend/craco.config.js` (added `.emergentcf.cloud` to
+  `allowedHosts` — preview proxy rewrites Host header, previously
+  bricked the frontend after pod restarts)
+
+
+
 ## May 18, 2026 — 🛡️ Estate Binder E&S fallback verified + estate["user_id"] static guardrail
 
 Pitch-week hardening pass requested by the user (tasks b + c from the

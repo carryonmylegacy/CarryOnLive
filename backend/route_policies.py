@@ -266,6 +266,20 @@ ROUTE_POLICIES: dict = {
     # ── Estate Binder (combined PDF assembly) ──────────────────────────────
     "POST /api/estate-binder/generate": {"auth": "required"},
     "GET /api/estate-binder/manifest": {"auth": "required"},
+    # ── Share Binder (anonymous public links + owner management) ───────────
+    "POST /api/share/binder": {
+        "auth": "required",
+        "notes": "Owner mints a tokenised public link for their cached estate binder",
+    },
+    "GET /api/share/my": {"auth": "required", "notes": "Owner lists their active shares"},
+    "DELETE /api/share/binder/{token}": {
+        "auth": "required",
+        "notes": "Owner revokes a share",
+    },
+    "GET /api/share/binder/{token}": {
+        "auth": "public",
+        "notes": "Anonymous recipient — token + optional passphrase + rate-limit + open audit",
+    },
     # ── Stripe / payments (public webhooks + authenticated) ─────────────────
     "POST /api/stripe/create-payment-intent": {"auth": "required"},
     "POST /api/stripe/create-setup-intent": {"auth": "required"},

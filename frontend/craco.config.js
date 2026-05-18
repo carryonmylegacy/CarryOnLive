@@ -120,7 +120,17 @@ webpackConfig.devServer = (devServerConfig) => {
   //   2. Pin the HMR client's web-socket URL so a remote attacker can't
   //      coerce it onto an attacker-controlled WS endpoint.
   // These do NOT require upgrading webpack-dev-server.
-  devServerConfig.allowedHosts = ["localhost", "127.0.0.1", ".emergentagent.com"];
+  devServerConfig.allowedHosts = [
+    "localhost",
+    "127.0.0.1",
+    ".emergentagent.com",
+    // Internal cluster ingress hostname used by the Emergent preview proxy.
+    // The proxy rewrites the public `*.preview.emergentagent.com` Host to
+    // `*.preview.emergentcf.cloud` before forwarding to webpack-dev-server,
+    // so we must accept it here too or every preview request 404's with
+    // "Invalid Host header".
+    ".emergentcf.cloud",
+  ];
   devServerConfig.client = {
     ...(devServerConfig.client || {}),
     webSocketURL: {

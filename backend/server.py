@@ -46,6 +46,7 @@ from routes.onboarding import router as onboarding_router
 from routes.pdf_export import router as pdf_export_router
 from routes.pdfs import router as pdfs_router
 from routes.estate_binder import router as estate_binder_router
+from routes.share import router as share_router
 from routes.push import router as push_router
 from routes.uploads_chunked import router as uploads_chunked_router
 from routes.security import router as security_router
@@ -364,6 +365,7 @@ api_router.include_router(webauthn_router)
 api_router.include_router(errors_router)
 api_router.include_router(pdfs_router)
 api_router.include_router(estate_binder_router)
+api_router.include_router(share_router)
 api_router.include_router(section_permissions_router)
 api_router.include_router(operators_router)
 api_router.include_router(staff_tools_router)

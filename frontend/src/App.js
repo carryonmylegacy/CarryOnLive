@@ -118,6 +118,7 @@ const SharedPlanPage = lazy(() => import('./pages/SharedPlanPage'));
 
 const SpeakWithUsPage = lazy(() => import('./pages/SpeakWithUsPage'));
 const SharePage = lazy(() => import('./pages/SharePage'));
+const SharedBinderPage = lazy(() => import('./pages/SharedBinderPage'));
 
 import UsernameReviewModal from './components/UsernameReviewModal';
 import FeatureGate from './components/FeatureGate';
@@ -640,6 +641,7 @@ function AppRoutes() {
 
       {/* Shared Plan - Public (no auth required) */}
       <Route path="/shared/plan/:token" element={<SharedPlanPage />} />
+      <Route path="/s/:token" element={<SharedBinderPage />} />
 
       {/* Create Estate Wizard - accessible by both beneficiaries and benefactors */}
       <Route path="/create-estate" element={
