@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from fastapi.security import HTTPBearer
 from motor.motor_asyncio import AsyncIOMotorClient
 from openai import OpenAI as XAIClient
+from pymongo import ReadPreference as _ReadPreference
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -54,6 +55,41 @@ client = AsyncIOMotorClient(
     connectTimeoutMS=5000,
 )
 db = client[os.environ["DB_NAME"]]
+
+# Optional read-replica view of `db` for heavy read-only endpoints (admin
+# dashboards, analytics, search aggregations). Set MONGO_READ_PREFERENCE to
+# one of: primary | primaryPreferred | secondary | secondaryPreferred | nearest
+# When unset (or set to "primary"), `db_read` is the same object as `db`, so
+# behavior is byte-identical to the previous build.
+#
+# Usage at call site:
+#     from config import db_read
+#     docs = await db_read.users.find({...}).to_list(100)
+#
+# Atlas auto-replicates within ~10ms in-region; only use db_read for queries
+# where 10–500ms eventual-consistency lag is acceptable (NEVER for writes,
+# auth, billing, or just-after-write reads).
+_MONGO_READ_PREF_RAW = os.environ.get("MONGO_READ_PREFERENCE", "").strip().lower()
+_READ_PREF_MAP = {
+    "primary": _ReadPreference.PRIMARY,
+    "primarypreferred": _ReadPreference.PRIMARY_PREFERRED,
+    "secondary": _ReadPreference.SECONDARY,
+    "secondarypreferred": _ReadPreference.SECONDARY_PREFERRED,
+    "nearest": _ReadPreference.NEAREST,
+}
+if _MONGO_READ_PREF_RAW and _MONGO_READ_PREF_RAW != "primary":
+    _read_pref = _READ_PREF_MAP.get(_MONGO_READ_PREF_RAW)
+    if _read_pref is None:
+        logger.warning(
+            f"MONGO_READ_PREFERENCE={_MONGO_READ_PREF_RAW!r} is invalid — falling "
+            f"back to primary. Valid values: {sorted(_READ_PREF_MAP)}"
+        )
+        db_read = db
+    else:
+        db_read = db.with_options(read_preference=_read_pref)
+        logger.info(f"Mongo db_read using read_preference={_MONGO_READ_PREF_RAW}")
+else:
+    db_read = db
 
 # JWT — NO FALLBACK: missing secret MUST fail fast
 JWT_SECRET = os.environ.get("JWT_SECRET")

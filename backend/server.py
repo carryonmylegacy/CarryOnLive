@@ -321,8 +321,9 @@ app = FastAPI(
     ],
 )
 
-# API router with /api prefix
-api_router = APIRouter(prefix="/api")
+# API router — mounted at BOTH `/api` (legacy) and `/api/v1` (canonical)
+# below. No prefix here so we can include it under multiple mount points.
+api_router = APIRouter()
 
 # Include all route modules
 api_router.include_router(admin_digest_router)
@@ -508,7 +509,16 @@ async def debug_user_state(email: str, current_user: dict = Depends(require_admi
     }
 
 
-app.include_router(api_router)
+app.include_router(api_router, prefix="/api")
+
+# ───── API v1 alias ─────
+# Same router mounted under `/api/v1/*` in addition to `/api/*`. Existing
+# frontend keeps using `/api` — no breaking change. New clients (partner
+# B2B integrations, mobile SDKs) should target `/api/v1/*` so we can
+# introduce `/api/v2/*` later without touching the legacy surface.
+# Adding a new endpoint to `api_router` automatically exposes it at both
+# `/api/<route>` AND `/api/v1/<route>` at zero maintenance cost.
+app.include_router(api_router, prefix="/api/v1")
 
 # ===================== OBSERVABILITY (OpenTelemetry, opt-in via ENABLE_OTEL=1) =====================
 try:

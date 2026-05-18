@@ -1,6 +1,64 @@
 # CarryOn — Changelog
 
 
+## Feb 18, 2026 — 🏗️ Five P2 hardening items (API v1, read replica, webhooks, audit chain, drill doc)
+
+### 1. API v1 alias
+`server.py` — `api_router` is now mounted at BOTH `/api/*` (legacy) and
+`/api/v1/*` (canonical). Existing frontend keeps using `/api`; every new
+route added to `api_router` is automatically exposed under both prefixes
+at zero maintenance cost. Verified `/api/health` and `/api/v1/health`
+return identical payloads.
+
+### 2. Mongo read-replica opt-in
+`config.py` — added `db_read`, a `with_options(read_preference=...)`-flavored
+view of `db` controlled by the `MONGO_READ_PREFERENCE` env var
+(default unset → identical to `db`). Heavy read-only endpoints (admin
+dashboards, analytics) can opt in by importing `db_read` instead of `db`.
+Invalid env values log a warning and fall back to primary.
+
+### 3. Outbound webhook signing (HMAC-SHA256)
+New module `services/webhook_signer.py` with Stripe-compatible
+`X-CarryOn-Signature: t=<ts>,v1=<hex>` headers + 5-min replay window.
+10 unit tests in `tests/test_webhook_signer.py` covering happy path,
+tampering, wrong secret, replay rejection, garbage headers, str/bytes
+parity, empty-secret guard. No existing outbound webhooks to convert
+yet — module ships as a ready-to-wire utility.
+
+### 4. Audit-trail hash chain (`services/audit.py`)
+Each new audit entry's `integrity_hash` now incorporates the previous
+entry's hash via a `prev_hash` field. Tampering with any historical
+entry invalidates every subsequent hash. Added `verify_audit_chain()`
+helper that walks the chain and returns the first break location
+(or `ok=True`). Legacy pre-chain entries are counted as `skipped_legacy`,
+not flagged. 3 integration tests in `tests/test_audit_chain.py` cover
+clean walk / tampered entry detection / legacy skip.
+
+### 5. Backup-restore drill runbook
+- `/app/memory/BACKUP_RESTORE_DRILL.md` — full quarterly operator runbook
+  with RTO ≤ 60 min / RPO ≤ 24h targets, pass criteria table, evidence
+  checklist, roles.
+- `/app/backend/scripts/backup_drill_smoke.py` — read-only smoke pack
+  that verifies critical collections, walks the audit hash chain, and
+  cross-references the latest 5 estates against their owners. Exits 0
+  on success, 1 on any failure.
+
+**CI:** `housekeeping.sh --strict` → 0 WARN, 0 FAIL. `ruff check`
+clean. 19/19 backend tests pass (`test_webhook_signer` + `test_audit_chain`
++ `test_ccp_cross_state_self_defense` + `test_dts_quote_estate_no_user_id`).
+
+**Files touched:**
+- `backend/server.py` (api_router prefix → no-prefix; dual mount)
+- `backend/config.py` (db_read + ReadPreference)
+- `backend/services/audit.py` (prev_hash chain + verify_audit_chain)
+- `backend/services/webhook_signer.py` (new)
+- `backend/scripts/backup_drill_smoke.py` (new)
+- `backend/tests/test_webhook_signer.py` (new, 10 tests)
+- `backend/tests/test_audit_chain.py` (new, 3 tests)
+- `memory/BACKUP_RESTORE_DRILL.md` (new)
+
+
+
 ## Feb 18, 2026 — 🧹 Three P2 housekeeping items shipped
 
 ### 1. Cross-state self-defense contrast (CCP wizard)
