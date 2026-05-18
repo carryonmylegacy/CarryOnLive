@@ -189,6 +189,40 @@ async def create_subscription_checkout(
         }
     )
 
+    # ── Optimistic UI breadcrumb ─────────────────────────────────────
+    # The instant the user is sent to Stripe, write a TTL-bounded
+    # `subscription_intents` row so the Subscription page can render
+    # the chosen plan as the active tier with a "Processing payment…"
+    # ribbon — even though the webhook hasn't settled yet. The intent
+    # auto-expires from MongoDB after 30 minutes (TTL index) and is
+    # explicitly deleted in the webhook handler + /reconcile path once
+    # the real `user_subscriptions` row goes active. Result: zero
+    # flicker in the pitch demo (no "subscribe" → cancelled UI flash).
+    intent_expires = datetime.now(timezone.utc) + timedelta(minutes=30)
+    await db.subscription_intents.update_one(
+        {"user_id": current_user["id"]},
+        {
+            "$set": {
+                "user_id": current_user["id"],
+                "session_id": session.session_id,
+                "plan_id": data.plan_id,
+                "plan_name": plan["name"],
+                "billing_cycle": data.billing_cycle,
+                "amount": amount,
+                "currency": "usd",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "expires_at": intent_expires,
+            }
+        },
+        upsert=True,
+    )
+    # Idempotent index install (cheap when it already exists).
+    try:
+        await db.subscription_intents.create_index("expires_at", expireAfterSeconds=0)
+        await db.subscription_intents.create_index("user_id")
+    except Exception:  # noqa: BLE001
+        pass
+
     return {"url": session.url, "session_id": session.session_id}
 
 
@@ -243,6 +277,9 @@ async def get_checkout_status(session_id: str, current_user: dict = Depends(get_
                 },
                 upsert=True,
             )
+
+            # Clear the optimistic intent now that we have the real thing.
+            await db.subscription_intents.delete_one({"user_id": txn["user_id"]})
 
             # Cancel any active grace periods — user re-subscribed
             from services.grace_period import cancel_grace_period
@@ -371,6 +408,9 @@ async def reconcile_pending_subscriptions(current_user: dict = Depends(get_curre
             upsert=True,
         )
 
+        # Clear the optimistic-UI intent for this user.
+        await db.subscription_intents.delete_one({"user_id": current_user["id"]})
+
         # Cancel any active grace periods — user re-subscribed.
         try:
             from services.grace_period import cancel_grace_period
@@ -491,6 +531,10 @@ async def stripe_webhook(request: Request):
                     },
                     upsert=True,
                 )
+
+                # Clear the optimistic-UI intent (its purpose is done now
+                # that we have a real active row).
+                await db.subscription_intents.delete_one({"user_id": txn["user_id"]})
 
                 # Reactivate if was in grace/dormant
                 from services.billing_lifecycle import handle_payment_succeeded

@@ -1,6 +1,69 @@
 # CarryOn — Changelog
 
 
+## May 18, 2026 (final) — 🪙 Zero-flicker optimistic checkout + 2 pre-existing bugs squashed
+
+User asked for the "pre-warm" optimistic Premium tile so the pitch
+demo never shows that 5-second "Confirming your payment…" gap. While
+wiring it I uncovered TWO pre-existing bugs that explain a lot of
+old "still shows unsubscribed" complaints:
+
+### Pre-existing bug 1 — `SubscriptionPaywall.js` always painted "Current Plan: false"
+The component read `subStatus?.plan_id` from the response root, but
+`/subscriptions/status` nests the real document under `.subscription`.
+`activePlanId` was therefore `undefined` for every user, ever — the
+green "Your Plan" badge never lit up regardless of webhook state.
+Fixed to read `subStatus?.subscription?.plan_id` and only treat it
+as active when `subscription?.status === 'active'`.
+
+### Pre-existing bug 2 — `SubscriptionManagement.js` ignored `status`
+`currentPlanId = currentSub?.plan_id` (no status check). So a row
+with `status: 'cancelled'` STILL highlighted the cancelled plan as
+"Current Plan." Hard-gated to `status in ('active','past_due')` only.
+
+### New feature — optimistic intent ("Processing Payment…")
+- New `subscription_intents` collection (TTL index = 30 min auto-cleanup).
+- `/api/subscriptions/checkout` writes the intent BEFORE handing the
+  user to Stripe (`{user_id, plan_id, plan_name, billing_cycle,
+  session_id, expires_at}`). Idempotent: upsert per user.
+- `/api/subscriptions/status` surfaces `pending_intent` ONLY when the
+  user has no active sub (so a real upgrade tile is never shadowed).
+- Webhook activation path + `/reconcile` both delete the intent the
+  moment a real `user_subscriptions` row goes active. Self-cleans on
+  cancel via the 30-min TTL.
+
+### Frontend wiring
+- `SubscriptionManagement` (the primary view at `/subscription`) and
+  `SubscriptionPaywall` (the modal) both render the chosen tile with:
+  - Gold dashed border
+  - Pulsing gold glow animation (`pendingPulseMgmt` / `pendingPulse`)
+  - Top-center ribbon: "🌀 Processing Payment…" (animated spinner)
+  - CTA disabled with "Confirming your payment…"
+  - Other tiles dim to 50% so the chosen tier is unmistakable
+- `SubscriptionPage` polls every 5s while a `pending_intent` is set,
+  refreshing `subscriptionStatus` + opportunistically calling
+  `/reconcile` so the gold tile flips to green "Current Plan" the
+  instant the webhook lands. Hard ceiling at 3 minutes of polling so
+  forgotten tabs can't hammer the API.
+
+### Tests
+- `tests/test_subscription_pending_intent.py` (new, 3 tests):
+  intent is shadowed below active sub · surfaces when no active sub ·
+  webhook activation path deletes intent.
+- `tests/test_subscription_reconcile.py` (5 tests, still green).
+- Full subscription suite: **18 passed / 1 skipped** (skip is rate-
+  limit aware).
+
+### Files touched
+- `/app/backend/routes/subscriptions/checkout.py` (intent insert + deletes)
+- `/app/backend/routes/subscriptions/status.py` (surface `pending_intent`)
+- `/app/backend/tests/test_subscription_pending_intent.py` (new)
+- `/app/frontend/src/components/SubscriptionPaywall.js` (subStatus shape fix + pending tile state)
+- `/app/frontend/src/components/settings/SubscriptionManagement.js` (status gate + pending tile state)
+- `/app/frontend/src/pages/SubscriptionPage.js` (5-s poll while intent present)
+
+
+
 ## May 18, 2026 (later still) — 💳 Payment flow hardened end-to-end (PWA-safe)
 
 User paid for an annual Premium subscription via the live site from

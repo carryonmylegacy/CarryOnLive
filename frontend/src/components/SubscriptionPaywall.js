@@ -523,12 +523,26 @@ export default function SubscriptionPaywall({ onDismiss }) {
             const eligibleTiers = subStatus?.eligible_tiers || [];
             const eligible = plan.id !== 'new_adult' || eligibleTiers.includes('new_adult');
 
-            // Subscription state
-            const activePlanId = subStatus?.plan_id;
-            const activeBilling = subStatus?.billing_cycle;
-            const hasActiveSub = activePlanId && subStatus?.status === 'active';
+            // Subscription state — the `/subscriptions/status` payload
+            // nests the real subscription document under `.subscription`,
+            // NOT at the response root. Reading from the root (legacy
+            // code path) made `isActivePlan` ALWAYS false: the
+            // "Current Plan" badge never lit up for any user, no matter
+            // how many times the webhook had successfully activated
+            // them server-side. (This is the root cause of the
+            // "still showed unsubscribed after payment" complaint.)
+            const activeSub = subStatus?.subscription || null;
+            const activePlanId = activeSub?.plan_id;
+            const activeBilling = activeSub?.billing_cycle;
+            const hasActiveSub = activePlanId && activeSub?.status === 'active';
             const isActivePlan = hasActiveSub && activePlanId === plan.id;
             const isGreyedOut = hasActiveSub && !isActivePlan;
+
+            // Optimistic "Processing payment…" overlay — shows the
+            // moment the user is sent to Stripe, clears when the
+            // webhook/reconcile lands. Never shadows a real active sub.
+            const pendingIntent = !hasActiveSub ? subStatus?.pending_intent : null;
+            const isPendingPlan = !!(pendingIntent && pendingIntent.plan_id === plan.id);
 
             // Should show "Recommended" pulse: user is subscribed but NOT on premium annual
             const isPremiumAnnual = isPremium && billing === 'annual';
@@ -551,7 +565,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                   // from collapsing all idle cards into the same flat
                   // surface color (tier identity stays visible at a
                   // glance). Alpha kept low so dark-mode contrast holds.
-                  background: isActivePlan
+                  background: isActivePlan || isPendingPlan
                     ? `linear-gradient(168deg, ${colors.bg} 0%, var(--s) 40%)`
                     : isPremium
                       ? `linear-gradient(168deg, rgba(var(--gold-rgb), 0.15) 0%, var(--s) 40%)`
@@ -560,19 +574,25 @@ export default function SubscriptionPaywall({ onDismiss }) {
                         : `linear-gradient(168deg, ${colors.accent}14, var(--s) 75%)`,
                   border: isActivePlan
                     ? `2px solid ${colors.border}`
-                    : isPremium
-                      ? '2px solid rgba(var(--gold-rgb), 0.4)'
-                      : isSelected && !isGreyedOut
-                        ? `2px solid ${colors.border}`
-                        : `1px solid ${colors.accent}30`,
-                  boxShadow: isActivePlan
+                    : isPendingPlan
+                      ? `2px dashed ${colors.border}`
+                      : isPremium
+                        ? '2px solid rgba(var(--gold-rgb), 0.4)'
+                        : isSelected && !isGreyedOut
+                          ? `2px solid ${colors.border}`
+                          : `1px solid ${colors.accent}30`,
+                  boxShadow: isActivePlan || isPendingPlan
                     ? `0 8px 32px -6px ${colors.accent}44, 0 2px 8px rgba(0,0,0,0.25)`
                     : isPremium
                       ? '0 12px 48px -8px rgba(var(--gold-rgb), 0.3), 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
                       : isSelected && !isGreyedOut
                         ? `0 8px 32px -6px ${colors.accent}44, 0 2px 8px rgba(0,0,0,0.25)`
                         : '0 4px 16px -4px rgba(0,0,0,0.3)',
-                  animation: showRecommendedPulse ? 'recommendedPulse 2.5s ease-in-out infinite' : 'none',
+                  animation: isPendingPlan
+                    ? 'pendingPulse 1.6s ease-in-out infinite'
+                    : showRecommendedPulse
+                      ? 'recommendedPulse 2.5s ease-in-out infinite'
+                      : 'none',
                 }}
                 data-testid={`paywall-plan-${plan.id}`}
               >
@@ -582,6 +602,14 @@ export default function SubscriptionPaywall({ onDismiss }) {
                     @keyframes recommendedPulse {
                       0%, 100% { box-shadow: 0 12px 48px -8px rgba(var(--gold-rgb), 0.3), 0 4px 16px rgba(0,0,0,0.3); }
                       50% { box-shadow: 0 12px 48px -8px rgba(var(--gold-rgb), 0.5), 0 4px 24px rgba(var(--gold-rgb), 0.15), 0 0 0 3px rgba(var(--gold-rgb), 0.12); }
+                    }
+                  `}</style>
+                )}
+                {isPendingPlan && (
+                  <style>{`
+                    @keyframes pendingPulse {
+                      0%, 100% { box-shadow: 0 8px 32px -6px ${colors.accent}55, 0 2px 8px rgba(0,0,0,0.25); }
+                      50%      { box-shadow: 0 8px 32px -6px ${colors.accent}88, 0 0 0 3px ${colors.accent}33; }
                     }
                   `}</style>
                 )}
@@ -599,8 +627,26 @@ export default function SubscriptionPaywall({ onDismiss }) {
                   </div>
                 )}
 
+                {/* Pending-payment ribbon (optimistic) — same slot as
+                    the "Your Plan" badge so cards never jump when the
+                    webhook lands and the badge swaps over. */}
+                {isPendingPlan && (
+                  <div
+                    className="absolute -top-0 left-1/2 -translate-x-1/2 text-xs font-bold px-4 py-1.5 rounded-b-xl flex items-center gap-1.5"
+                    style={{
+                      background: 'linear-gradient(180deg, #d4af37, #b8962e)',
+                      color: 'var(--bg2)',
+                      boxShadow: '0 4px 16px rgba(var(--gold-rgb), 0.4)',
+                    }}
+                    data-testid={`paywall-plan-${plan.id}-pending-ribbon`}
+                  >
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Processing Payment…
+                  </div>
+                )}
+
                 {/* Premium label or Recommended CTA */}
-                {isPremium && !isActivePlan && (
+                {isPremium && !isActivePlan && !isPendingPlan && (
                   <div className="absolute -top-0 left-1/2 -translate-x-1/2 text-xs font-bold px-4 py-1.5 rounded-b-xl"
                     style={{
                       background: showRecommendedPulse
@@ -686,6 +732,19 @@ export default function SubscriptionPaywall({ onDismiss }) {
                       style={{ background: 'rgba(34,201,147,0.08)', border: '1px solid rgba(34,201,147,0.2)' }}
                       data-testid={`paywall-active-${plan.id}`}>
                       Current Plan
+                    </div>
+                  ) : isPendingPlan ? (
+                    <div
+                      className="w-full text-center text-xs font-bold py-3 rounded-xl flex items-center justify-center gap-2"
+                      style={{
+                        background: 'rgba(var(--gold-rgb), 0.10)',
+                        border: '1px dashed rgba(var(--gold-rgb), 0.45)',
+                        color: 'var(--gold)',
+                      }}
+                      data-testid={`paywall-pending-${plan.id}`}
+                    >
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Confirming your payment…
                     </div>
                   ) : isGreyedOut && !showRecommendedPulse ? (
                     <div className="w-full text-center text-xs font-medium py-3 rounded-xl text-[var(--t5)]" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>

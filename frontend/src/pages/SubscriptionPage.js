@@ -120,6 +120,39 @@ const SubscriptionPage = () => {
     confirm();
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Pending-intent watcher ──────────────────────────────────────
+  // While the optimistic "Processing payment…" tile is showing
+  // (server-side `subscription_intents` row exists), poll the status
+  // endpoint every 5s so the tile flips to "Current Plan" the moment
+  // the webhook activates — no manual refresh required. Stops as
+  // soon as `pending_intent` clears or the user navigates away.
+  useEffect(() => {
+    if (!token || !subscriptionStatus?.pending_intent) return;
+    const headers = { Authorization: `Bearer ${token}` };
+    let cancelled = false;
+    let attempts = 0;
+    const tick = async () => {
+      if (cancelled) return;
+      attempts += 1;
+      // Hard ceiling: 3 minutes of polling, then stop (the 30-min
+      // server-side TTL takes over anyway). Prevents a forgotten tab
+      // from hammering the API.
+      if (attempts > 36) return;
+      try {
+        if (refreshSubscription) await refreshSubscription();
+      } catch { /* network blip — try again next tick */ }
+      if (cancelled) return;
+      // Also opportunistically reconcile in case the webhook is late
+      // but Stripe already says the session is paid.
+      try {
+        await apiClient.post(`${API_URL}/subscriptions/reconcile`, {}, { headers });
+      } catch { /* idempotent — best-effort */ }
+      setTimeout(tick, 5000);
+    };
+    const handle = setTimeout(tick, 5000);
+    return () => { cancelled = true; clearTimeout(handle); };
+  }, [token, subscriptionStatus?.pending_intent]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Load Founders Circle status
   useEffect(() => {
     if (!token) return;

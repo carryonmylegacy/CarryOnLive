@@ -210,6 +210,24 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
                     paired_price = p.get("paired_price")
                     break
 
+    # ── Optimistic checkout intent ───────────────────────────────────
+    # If the user clicked "Subscribe" within the last 30 minutes,
+    # `/subscriptions/checkout` wrote an intent row that we surface
+    # here so the SubscriptionPage can render the chosen tile with a
+    # "Processing payment…" overlay while we wait for the webhook or
+    # the user's return to /subscription. The intent is cleared
+    # automatically when activation lands or after 30 minutes (TTL).
+    # We only surface it when there's no active sub for the same plan
+    # already (else it would shadow the real active tile).
+    pending_intent = None
+    if not has_active_sub:
+        intent_doc = await db.subscription_intents.find_one(
+            {"user_id": current_user["id"]},
+            {"_id": 0, "plan_id": 1, "plan_name": 1, "billing_cycle": 1, "session_id": 1, "created_at": 1},
+        )
+        if intent_doc:
+            pending_intent = intent_doc
+
     return {
         "subscription": sub,
         "trial": trial,
@@ -224,6 +242,7 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         "grace_period_end": sub.get("grace_period_end") if is_grace else None,
         "is_dormant": bool(is_dormant),
         "dormant_since": sub.get("dormant_since") if is_dormant else None,
+        "pending_intent": pending_intent,
         "verification": {
             "status": verification.get("status", "none") if verification else "none",
             "tier_requested": verification.get("tier_requested") if verification else None,

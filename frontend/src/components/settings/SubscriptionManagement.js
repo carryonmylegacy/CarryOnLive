@@ -146,11 +146,25 @@ export const SubscriptionManagement = ({
   const currentSub = subscriptionStatus?.subscription;
   // Only recognize a subscription as "active" if it matches the current portal context
   // (e.g., a ben_* plan shouldn't grey out benefactor plans, and vice versa)
-  const rawPlanId = currentSub?.plan_id;
+  // ── AND only when the underlying status is genuinely active. The
+  // legacy code path treated any row with a `plan_id` set as current,
+  // so a `cancelled` or `past_due` row still painted "Current Plan"
+  // — which made post-Stripe regressions feel like "still
+  // unsubscribed" because no plan visibly matched what the user just
+  // bought. (Root cause of the user's May-18 complaint.)
+  const subIsActive = currentSub?.status === 'active' || currentSub?.status === 'past_due';
+  const rawPlanId = subIsActive ? currentSub?.plan_id : null;
   const currentPlanId = isBeneficiary
     ? (rawPlanId?.startsWith('ben_') ? rawPlanId : null)
     : (rawPlanId && !rawPlanId.startsWith('ben_') ? rawPlanId : null);
-  const currentBilling = currentSub?.billing_cycle;
+  const currentBilling = subIsActive ? currentSub?.billing_cycle : null;
+  // Optimistic intent — only surfaces here when no active sub is in
+  // play (server-side /status already enforces this). Used below to
+  // paint the chosen tile with a gold "Processing payment…" ribbon
+  // during the Stripe round-trip.
+  const pendingIntent = !currentPlanId ? subscriptionStatus?.pending_intent : null;
+  const pendingPlanId = pendingIntent?.plan_id || null;
+  const pendingBilling = pendingIntent?.billing_cycle || null;
   const isBeta = subscriptionStatus?.beta_mode;
   const lockedTier = subscriptionStatus?.beneficiary_locked_tier;
   const estateTransitioned = subscriptionStatus?.estate_transitioned || false;
@@ -641,6 +655,11 @@ export const SubscriptionManagement = ({
             const style = TIER_STYLES[plan.id] || TIER_STYLES.base;
             const Icon = style.icon;
             const isCurrent = currentPlanId === plan.id;
+            // Optimistic-payment tile state. Painted when there is no
+            // active sub yet AND this plan matches the just-clicked
+            // checkout intent. Flips back to `isCurrent` automatically
+            // when the webhook activates (intent is then deleted).
+            const isPendingThisPlan = !!(pendingPlanId && pendingPlanId === plan.id);
             const isRecommended = plan.id === 'ben_premium' || plan.id === 'premium';
             const locked = isPlanLocked(plan.id);
             const isAutoSelected = autoTier === plan.id;
@@ -663,25 +682,31 @@ export const SubscriptionManagement = ({
                 // mode picks up just enough color to differentiate tiers.
                 background: isAutoSelected
                   ? `linear-gradient(168deg, ${style.accent}22, ${style.accent}0a)`
-                  : isCurrent
+                  : isCurrent || isPendingThisPlan
                   ? `linear-gradient(168deg, ${style.accent}1c, ${style.accent}06)`
                   : `linear-gradient(168deg, ${style.accent}14, var(--s) 75%)`,
                 border: isAutoSelected
                   ? `2px solid ${style.accent}`
                   : isCurrent
                   ? `2px solid ${style.accent}`
-                  : isRecommended
-                    ? `2px solid ${style.accent}50`
-                    : `1px solid ${style.accent}30`,
+                  : isPendingThisPlan
+                    ? `2px dashed ${style.accent}`
+                    : isRecommended
+                      ? `2px solid ${style.accent}50`
+                      : `1px solid ${style.accent}30`,
                 boxShadow: isAutoSelected
                   ? `0 8px 32px ${style.accent}25`
-                  : isCurrent
+                  : isCurrent || isPendingThisPlan
                   ? `0 8px 32px ${style.accent}20`
                   : isRecommended
                     ? `0 8px 32px ${style.accent}15`
                     : '0 2px 8px rgba(0,0,0,0.05)',
-                opacity: currentPlanId && !isCurrent && !showRecommendedPulse ? 0.5 : 1,
-                animation: showRecommendedPulse ? 'recommendedPulseMgmt 2.5s ease-in-out infinite' : 'none',
+                opacity: (currentPlanId || pendingPlanId) && !isCurrent && !isPendingThisPlan && !showRecommendedPulse ? 0.5 : 1,
+                animation: isPendingThisPlan
+                  ? 'pendingPulseMgmt 1.6s ease-in-out infinite'
+                  : showRecommendedPulse
+                    ? 'recommendedPulseMgmt 2.5s ease-in-out infinite'
+                    : 'none',
               }} data-testid={`plan-${plan.id}`}>
                 {/* Recommended pulse animation */}
                 {showRecommendedPulse && (
@@ -692,15 +717,32 @@ export const SubscriptionManagement = ({
                     }
                   `}</style>
                 )}
+                {isPendingThisPlan && (
+                  <style>{`
+                    @keyframes pendingPulseMgmt {
+                      0%, 100% { box-shadow: 0 8px 32px ${style.accent}33; }
+                      50%      { box-shadow: 0 8px 32px ${style.accent}66, 0 0 0 3px ${style.accent}22; }
+                    }
+                  `}</style>
+                )}
 
                 {/* Label badges */}
-                {(style.label || isCurrent || isAutoSelected || showRecommendedPulse) && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[11px] font-bold px-3 py-0.5 rounded-b-lg z-10"
+                {(style.label || isCurrent || isAutoSelected || isPendingThisPlan || showRecommendedPulse) && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[11px] font-bold px-3 py-0.5 rounded-b-lg z-10 flex items-center gap-1"
                     style={{
-                      background: showRecommendedPulse ? '#22C993' : style.accent,
+                      background: isPendingThisPlan
+                        ? 'linear-gradient(180deg, #d4af37, #b8962e)'
+                        : showRecommendedPulse
+                          ? '#22C993'
+                          : style.accent,
                       color: showRecommendedPulse ? '#fff' : 'var(--bg2)',
                     }}>
-                    {isCurrent ? 'Current Plan' : isAutoSelected ? 'Your Tier' : showRecommendedPulse ? 'Recommended — Best Value' : style.label}
+                    {isPendingThisPlan ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Processing Payment…
+                      </>
+                    ) : isCurrent ? 'Current Plan' : isAutoSelected ? 'Your Tier' : showRecommendedPulse ? 'Recommended — Best Value' : style.label}
                   </div>
                 )}
 
