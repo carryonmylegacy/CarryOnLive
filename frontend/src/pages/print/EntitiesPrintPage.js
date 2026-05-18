@@ -26,12 +26,12 @@
  * the SVG so it prints at the same scale and at the position the user
  * dragged it to in the live chart.
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import apiClient from '../../utils/apiClient';
-import { ChevronLeft, Printer, Maximize2, AlignVerticalJustifyCenter } from 'lucide-react';
+import { ChevronLeft, Printer, Maximize2, AlignVerticalJustifyCenter, Download, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_URL } from '../../config';
 import {
@@ -164,25 +164,6 @@ export default function EntitiesPrintPage() {
         setData(entitiesRes.data || {});
         setBeneficiaries(Array.isArray(bensRes?.data) ? bensRes.data : []);
         setEstateName(estateRes?.data?.name || '');
-        // Fire-and-forget: ask the backend to render the canonical
-        // Entities & Structures PDF and cache it under pdf_type
-        // "entities_structures" so the Estate Binder picks it up on
-        // its next assembly. We don't need the bytes here — the user
-        // sees this page's interactive SVG + browser print pipeline.
-        // Any failure (network blip, S3 hiccup) is non-fatal.
-        apiClient
-          .get(`${API_URL}/financial/entities/${estateId}/pdf`, {
-            ...headers,
-            responseType: 'blob',
-            timeout: 30000,
-          })
-          .catch((err) => {
-            if (process.env.NODE_ENV !== 'production') {
-              // Surface in dev only — production swallows it.
-              // eslint-disable-next-line no-console
-              console.warn('[EntitiesPrintPage] E&S binder-cache write failed:', err?.message);
-            }
-          });
       } catch (e) {
         if (!alive) return;
         setError(e?.response?.data?.detail || e?.message || 'Could not load chart data');
@@ -190,6 +171,116 @@ export default function EntitiesPrintPage() {
     })();
     return () => { alive = false; };
   }, [estateId, getAuthHeaders]);
+
+  // Refs to the printable page DIVs so the html2pdf capture can grab
+  // exactly what the user sees (the SVG chart on page 1, the tabular
+  // sections on pages 2/3) instead of approximating it server-side.
+  const pageRefs = useRef([]);
+  const registerPageRef = useCallback((idx) => (el) => {
+    pageRefs.current[idx] = el || null;
+  }, []);
+
+  // ─── Save PDF / Binder-cache pipeline ───
+  // Captures every `.cfp-print-page` element via html2pdf and produces
+  // one multi-page PDF blob that visually MATCHES the on-screen render
+  // (chart + tabular sections). The blob is both downloaded for the
+  // user AND uploaded to /pdfs/cache under pdf_type="entities_structures"
+  // so the Estate Binder picks it up on its next assembly.
+  const [saving, setSaving] = useState(false);
+  const [autoCachedAt, setAutoCachedAt] = useState(null);
+
+  const _captureBlob = useCallback(async () => {
+    // Lazy-import html2pdf so the bundle isn't bloated when this page
+    // is never opened in a session.
+    const html2pdf = (await import('html2pdf.js')).default;
+
+    // Collect the page elements (filter out unmounted ones — e.g. an
+    // earlier React render where conditional pages were absent).
+    const pages = pageRefs.current.filter(Boolean);
+    if (pages.length === 0) throw new Error('No printable pages mounted yet');
+
+    // Detect each page's orientation by its rendered aspect ratio so the
+    // landscape page-1 prints as landscape and the tabular pages as portrait.
+    const orientationOf = (el) => (el.offsetWidth > el.offsetHeight ? 'landscape' : 'portrait');
+
+    // Build a worker; html2pdf returns a chainable promise.
+    let worker = html2pdf().set({
+      filename: 'EntitiesAndStructures.pdf',
+      margin: 0,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#FFFFFF', logging: false },
+      jsPDF: { unit: 'in', format: 'letter', orientation: orientationOf(pages[0]) },
+      pagebreak: { mode: ['avoid-all'] },
+    }).from(pages[0]).toPdf();
+    for (let i = 1; i < pages.length; i += 1) {
+      const o = orientationOf(pages[i]);
+      // Append each subsequent page by re-feeding the worker.
+      // eslint-disable-next-line no-await-in-loop
+      worker = worker.get('pdf').then((pdf) => {
+        pdf.addPage('letter', o);
+      }).from(pages[i]).toContainer().toCanvas().toPdf();
+    }
+    const pdf = await worker.get('pdf');
+    return pdf.output('blob');
+  }, []);
+
+  const _postToBinderCache = useCallback(async (blob) => {
+    try {
+      const fd = new FormData();
+      fd.append('file', blob, 'EntitiesAndStructures.pdf');
+      fd.append('pdf_type', 'entities_structures');
+      fd.append('title', 'Entities & Structures');
+      if (estateName) fd.append('subtitle', estateName);
+      fd.append('filename', 'EntitiesAndStructures.pdf');
+      await apiClient.post(`${API_URL}/pdfs/cache`, fd, { ...getAuthHeaders(), timeout: 30000 });
+      setAutoCachedAt(new Date());
+    } catch (err) {
+      if (process.env.NODE_ENV !== 'production') {
+        // eslint-disable-next-line no-console
+        console.warn('[EntitiesPrintPage] Binder-cache upload failed:', err?.message);
+      }
+    }
+  }, [estateName, getAuthHeaders]);
+
+  // Auto-cache on first successful render so the Binder picks it up
+  // even if the user never explicitly taps "Save PDF". Runs once per
+  // page mount, ~2 s after the SVG has stabilized.
+  useEffect(() => {
+    if (!data || autoCachedAt) return undefined;
+    const t = setTimeout(async () => {
+      try {
+        const blob = await _captureBlob();
+        await _postToBinderCache(blob);
+      } catch {
+        /* swallow — the explicit Save PDF button still works */
+      }
+    }, 2200);
+    return () => clearTimeout(t);
+  }, [data, autoCachedAt, _captureBlob, _postToBinderCache]);
+
+  const handleSavePdf = useCallback(async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const blob = await _captureBlob();
+      // Browser-side download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `EntitiesAndStructures-${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      // Also push to the Binder cache (in case the auto-fire missed)
+      await _postToBinderCache(blob);
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      alert('Could not save PDF: ' + (err?.message || 'unknown error'));
+    } finally {
+      setSaving(false);
+    }
+  }, [saving, _captureBlob, _postToBinderCache]);
 
   // Compute layout + bbox once data lands.
   const layout = useMemo(() => {
@@ -1067,6 +1158,18 @@ export default function EntitiesPrintPage() {
         .cfp-print-reprint {
           background: #fffaf0; color: #B8860B; border: 1px solid #B8860B;
         }
+        .cfp-print-save {
+          background: var(--gold, #D4AF37); color: #ffffff; border: 1px solid var(--gold, #D4AF37);
+          box-shadow: 0 1px 0 rgba(var(--gold-rgb), 0.35);
+        }
+        .cfp-print-save:disabled {
+          opacity: 0.6; cursor: progress;
+        }
+        .cfp-print-save:hover:not(:disabled) {
+          filter: brightness(1.05);
+        }
+        @keyframes cfp-spin { to { transform: rotate(360deg); } }
+        .cfp-spin { animation: cfp-spin 0.9s linear infinite; }
 
         /* On-screen page cards (mock the printed sheets). */
         .cfp-print-page {
@@ -1173,6 +1276,29 @@ export default function EntitiesPrintPage() {
         </button>
         <button
           type="button"
+          className="cfp-print-save"
+          onClick={handleSavePdf}
+          disabled={saving || !data}
+          data-testid="entity-print-save-pdf"
+          aria-label="Save Entities & Structures PDF"
+          title={autoCachedAt ? 'Save PDF (also cached for the Estate Binder)' : 'Save PDF'}
+        >
+          {saving ? (
+            <><Loader2 size={14} className="cfp-spin" /> Saving…</>
+          ) : (
+            <><Download size={14} /> Save PDF</>
+          )}
+        </button>
+        <button
+          type="button"
+          className="cfp-print-reprint"
+          onClick={() => { try { window.print(); } catch { /* user dismissed */ } }}
+          data-testid="entity-print-reprint"
+        >
+          <Printer size={14} /> Print
+        </button>
+        <button
+          type="button"
           className="cfp-print-orient"
           onClick={() => setPage1Orientation((o) => (o === 'landscape' ? 'portrait' : 'landscape'))}
           data-testid="entity-print-orient-toggle"
@@ -1184,17 +1310,9 @@ export default function EntitiesPrintPage() {
             <><AlignVerticalJustifyCenter size={14} /> Portrait</>
           )}
         </button>
-        <button
-          type="button"
-          className="cfp-print-reprint"
-          onClick={() => { try { window.print(); } catch { /* user dismissed */ } }}
-          data-testid="entity-print-reprint"
-        >
-          <Printer size={14} /> Print
-        </button>
       </div>
 
-      <div className="cfp-print-page cfp-print-page-1">
+      <div ref={registerPageRef(0)} className="cfp-print-page cfp-print-page-1">
         <div className="cfp-print-header">
           <h1>Entities &amp; Structures</h1>
           <div className="subtitle">
@@ -1249,7 +1367,7 @@ export default function EntitiesPrintPage() {
           this page is set to ≥ 12pt per the user's "no less than 12
           point font anywhere in any text PDFs" requirement. */}
       {(layout.blocks || []).length > 0 && (
-        <div className="cfp-print-page cfp-print-page-2" data-testid="entity-print-blocks-page">
+        <div ref={registerPageRef(1)} className="cfp-print-page cfp-print-page-2" data-testid="entity-print-blocks-page">
           <div className="cfp-print-header">
             <h1>Beneficiary Blocks</h1>
             <div className="subtitle">

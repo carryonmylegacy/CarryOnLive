@@ -1,6 +1,54 @@
 # CarryOn — Changelog
 
 
+## Feb 18, 2026 — 🎯 Entities & Structures: Save PDF button + Binder includes the REAL chart
+
+User correction: the existing `EntitiesPrintPage` already renders the beautiful
+chart-on-page-1 + tabular-on-page-2 layout via `window.print()`. The previous
+"server-side fpdf2 reimplementation" I built was inferior (tables only) and
+the wrong shape entirely. **Reverted that approach** and built the right one:
+**client-side DOM capture** of the EXACT same output the user sees, fed into
+the existing `/pdfs/cache` → Binder pipeline.
+
+### What shipped
+- **New "Save PDF" button** in the E&S Print toolbar matching the platform's
+  standard PDF preview pattern (Back · Save PDF · Print · Landscape). The
+  Save PDF button is in CarryOn gold to draw the eye; spins while capturing.
+- **Client-side capture via `html2pdf.js`** (yarn-added; lazy-imported on
+  first use so it stays out of the main bundle). Captures every
+  `.cfp-print-page` element via refs → builds a multi-page PDF blob whose
+  per-page orientation is detected from the rendered aspect ratio (so page-1
+  prints landscape when the user has it in landscape mode, etc.).
+- **Auto-cache on mount** — ~2.2 s after the chart finishes rendering, the
+  page silently captures itself and uploads to `/api/pdfs/cache` under
+  `pdf_type="entities_structures"`. The Binder picks it up automatically.
+  Just opening the Print page once = E&S is in your next Binder.
+- **Manual Save PDF** does the same capture, downloads the file to the
+  user's machine AND posts the cache blob as a backup.
+- **Print button is unchanged** — still `window.print()` → browser's PDF
+  pipeline → user picks "Save as PDF" if desired.
+
+### Reverted
+- The frontend's fire-and-forget call to the inferior
+  `GET /api/financial/entities/{estate_id}/pdf` endpoint is removed
+  (the endpoint file remains as a never-called server fallback;
+  can be deleted post-pitch).
+
+### Files touched
+- `frontend/src/pages/print/EntitiesPrintPage.js`
+  - Added `Download` + `Loader2` imports, refs to each printable page
+  - New `_captureBlob` / `_postToBinderCache` / `handleSavePdf` helpers
+  - Auto-cache `useEffect` (~2.2 s after data lands)
+  - Reordered toolbar: Back · Save PDF · Print · Landscape
+  - Inline CSS for `.cfp-print-save` gold button + `.cfp-spin` animation
+- `frontend/package.json` — added `html2pdf.js` (lazy-imported)
+
+### CI
+- `housekeeping.sh --strict` → 0 WARN, 0 FAIL.
+- ESLint clean on EntitiesPrintPage.
+
+
+
 ## Feb 18, 2026 — 🗂️ Entities & Structures now in the Estate Binder
 
 The CFP **Entities & Structures** section was missing from the assembled
