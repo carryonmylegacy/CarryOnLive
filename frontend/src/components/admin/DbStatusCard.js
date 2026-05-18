@@ -149,14 +149,14 @@ export const DbStatusCard = ({ getAuthHeaders }) => {
             <div className="text-sm font-bold text-[var(--t)]" data-testid="db-stats-version">
               {data.server?.version || '—'}
             </div>
-            <div className="text-[10px] text-[var(--t5)] uppercase tracking-wider mt-1">Server version</div>
+            <div className="text-[11px] text-[var(--t5)] uppercase tracking-wider mt-1">Server version</div>
           </div>
           <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
             <div className="text-sm font-bold text-[var(--t)] flex items-center justify-center gap-1">
               <GitBranch className="w-3.5 h-3.5 text-[var(--t4)]" />
               {rs ? `${rs.healthy_count}/${rs.member_count}` : '—'}
             </div>
-            <div className="text-[10px] text-[var(--t5)] uppercase tracking-wider mt-1">
+            <div className="text-[11px] text-[var(--t5)] uppercase tracking-wider mt-1">
               {rs?.set_name ? `RS: ${rs.set_name}` : 'Replica set'}
             </div>
           </div>
@@ -165,11 +165,11 @@ export const DbStatusCard = ({ getAuthHeaders }) => {
               <HardDrive className="w-3.5 h-3.5 text-[var(--t4)]" />
               {fmtBytes(stats.data_size)}
             </div>
-            <div className="text-[10px] text-[var(--t5)] uppercase tracking-wider mt-1">Data size</div>
+            <div className="text-[11px] text-[var(--t5)] uppercase tracking-wider mt-1">Data size</div>
           </div>
           <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
             <div className="text-sm font-bold text-[var(--t)]">{fmtNum(stats.objects)}</div>
-            <div className="text-[10px] text-[var(--t5)] uppercase tracking-wider mt-1">Total documents</div>
+            <div className="text-[11px] text-[var(--t5)] uppercase tracking-wider mt-1">Total documents</div>
           </div>
         </div>
 
@@ -189,7 +189,7 @@ export const DbStatusCard = ({ getAuthHeaders }) => {
                 >
                   <span className="font-bold text-[var(--t)] truncate flex-1" title={c.name}>
                     {c.name}
-                    {c.extra && <span className="ml-1 text-[10px] text-[var(--t5)]">·extra</span>}
+                    {c.extra && <span className="ml-1 text-[11px] text-[var(--t5)]">·extra</span>}
                   </span>
                   <span className="text-[var(--t4)] tabular-nums ml-2">{fmtNum(c.count)}</span>
                 </div>

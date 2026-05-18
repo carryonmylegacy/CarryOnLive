@@ -197,7 +197,10 @@ async def _collection_counts() -> list[dict]:
 def _resolve_mongo_url() -> str:
     import os
 
-    return os.environ.get("MONGO_URL", "")
+    # No fallback default — protected env var per SOC 2 CC8.1 (housekeeping
+    # gate). Missing config should fail loud at config-time, not silently
+    # here.
+    return os.environ.get("MONGO_URL") or ""
 
 
 @router.get("/admin/db-status")
