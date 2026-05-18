@@ -37,12 +37,56 @@ const SubscriptionPage = () => {
 
   // Handle post-checkout redirect from Stripe
   useEffect(() => {
+    if (!token) return;
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get('session_id');
-    if (!sessionId || !token) return;
+    const headers = { Authorization: `Bearer ${token}` };
+
+    // ── Safety-net: ALWAYS reconcile any pending Stripe transactions
+    // on mount, even when the URL has no `session_id`. This catches
+    // the case where a standalone macOS PWA bounced the Stripe redirect
+    // to the user's default browser and the JWT was lost — when the
+    // user finally logs back into the PWA, the URL is bare but the
+    // server still has a `pending` row that needs to be marked paid.
+    // The endpoint is idempotent: it's a fast no-op once everything
+    // has already settled.
+    const reconcile = async () => {
+      try {
+        const r = await apiClient.post(`${API_URL}/subscriptions/reconcile`, {}, { headers });
+        const activated = r.data?.activated || [];
+        if (activated.length > 0) {
+          // Webhook + redirect both failed; we just fixed it ourselves.
+          if (refreshSubscription) await refreshSubscription();
+          const first = activated[0];
+          setSubCelebration({ tierName: first.plan_name || '' });
+          toast.success(
+            first.plan_name
+              ? `${first.plan_name} (${first.billing_cycle}) is now active.`
+              : 'Your subscription is now active.',
+          );
+        } else if (r.data?.current && refreshSubscription) {
+          // Nothing to activate, but pull the latest snapshot anyway so
+          // the page never paints stale "unsubscribed" copy after a
+          // webhook activated us seconds earlier.
+          await refreshSubscription();
+        }
+      } catch (err) {
+        // Silent — reconcile is best-effort. The happy path below
+        // (session_id confirm) still owns the user-visible flow.
+        if (process.env.NODE_ENV !== 'production') {
+          // eslint-disable-next-line no-console
+          console.warn('[SubscriptionPage] reconcile failed:', err?.response?.status);
+        }
+      }
+    };
+    reconcile();
+
+    // Clear our localStorage breadcrumb so we don't loop the redirect.
+    try { localStorage.removeItem('carryon_pending_stripe_session'); } catch {}
+
+    if (!sessionId) return;
 
     setConfirmingPayment(true);
-    const headers = { Authorization: `Bearer ${token}` };
 
     const confirm = async () => {
       try {

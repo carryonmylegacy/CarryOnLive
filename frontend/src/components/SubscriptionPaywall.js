@@ -195,6 +195,29 @@ export default function SubscriptionPaywall({ onDismiss }) {
           fetchData();
           releaseAutoLogout();
         } else if (res.data.url) {
+          // ── Persist the pending checkout session BEFORE handing the
+          // user to Stripe. On standalone macOS PWAs, Stripe's redirect
+          // back to our success_url lands in the user's default browser
+          // (NOT the PWA window) which doesn't carry the JWT — so the
+          // user lands on /login. Without this localStorage breadcrumb
+          // we'd lose the session_id at that point and never reconcile.
+          // Honored by LoginPage (redirects post-login to
+          // /subscription?session_id=…) and SubscriptionPage (calls
+          // /api/subscriptions/reconcile on mount as a safety-net).
+          if (res.data.session_id) {
+            try {
+              localStorage.setItem(
+                'carryon_pending_stripe_session',
+                JSON.stringify({
+                  session_id: res.data.session_id,
+                  plan_id: plan.id,
+                  plan_name: plan.name,
+                  billing_cycle: billing,
+                  created_at: Date.now(),
+                }),
+              );
+            } catch { /* private mode — fall through */ }
+          }
           // Push (not replace): we want a Stripe history entry between
           // the paywall and the user's prior page so browser-back from
           // Standalone PWA: open in a new window so the in-app session

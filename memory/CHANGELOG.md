@@ -1,6 +1,76 @@
 # CarryOn — Changelog
 
 
+## May 18, 2026 (later still) — 💳 Payment flow hardened end-to-end (PWA-safe)
+
+User paid for an annual Premium subscription via the live site from
+the macOS dock PWA. After paying, three things went wrong, in this
+order:
+
+1. Stripe's redirect-back landed in their default web browser instead
+   of the PWA window (Safari standalone limitation).
+2. The browser didn't carry the PWA's JWT → bounced to `/login`.
+3. After re-login, the `?session_id=…` query param was lost so the
+   frontend's checkout-status confirmation never fired. The webhook
+   DID activate `user_subscriptions` server-side, but the in-app
+   `subscriptionStatus` stayed stale → page kept showing "unsubscribed".
+
+### What shipped — five layers of belt-and-suspenders
+
+1. **Backend safety-net (`POST /api/subscriptions/reconcile`)** —
+   New idempotent endpoint that walks every `pending`
+   `payment_transactions` row < 24h old for the calling user, pings
+   Stripe for status, activates the subscription if paid, and
+   returns the latest `user_subscriptions` doc. Used by
+   `SubscriptionPage` on every mount as the deterministic
+   "even-if-everything-else-failed" path. Registered with the route
+   policy registry so auth coverage stays at 99.7%.
+2. **`SubscriptionPaywall.js`** — Now persists the pending session
+   to `localStorage.carryon_pending_stripe_session` BEFORE handing
+   the user to Stripe. This breadcrumb survives the PWA→browser
+   handoff so a bounce-to-/login can still recover.
+3. **`FoundersCirclePage.js`** — Same breadcrumb, flagged `fc:true`
+   so the post-login redirect uses the right query param
+   (`fc_session_id` vs `session_id`).
+4. **`LoginPage.navigateToHome`** — Checks both the localStorage
+   breadcrumb (≤60min) AND the current URL's `?session_id`/
+   `?fc_session_id`. If either is set, post-login navigates to
+   `/subscription?session_id=…` instead of `/dashboard` — wiring
+   the user straight into the existing celebration flow.
+5. **`SubscriptionPage` mount** — Now calls `/reconcile` on EVERY
+   mount, regardless of URL params. Activated transactions pop the
+   celebration banner + force-refresh `subscriptionStatus`. Idempotent,
+   so a no-op once everything is settled.
+
+### Failure modes now handled
+
+| Path | Outcome |
+|---|---|
+| PWA → Stripe → PWA (happy path) | celebration on return ✓ |
+| PWA → Stripe → browser → /login → re-login | localStorage breadcrumb survives; redirect to /subscription?session_id=… → celebration ✓ |
+| PWA → Stripe → browser → /login → quit browser → reopen PWA | /reconcile-on-mount catches the paid webhook activation, pops celebration + refreshes status ✓ |
+| Webhook + redirect both fail | next /subscription visit triggers /reconcile → activates ✓ |
+| Already-paid txn re-reconciled | endpoint is idempotent (skips non-pending rows) ✓ |
+| Stale txn (> 24h) | endpoint skips (Stripe sessions expire anyway) ✓ |
+
+### Regression tests
+- `/app/backend/tests/test_subscription_reconcile.py` — 5 tests
+  covering: auth gate, no-pending return shape, already-paid skip,
+  unknown Stripe session resilience, stale-row cutoff. **5/5 PASS**.
+
+### Files touched
+- `/app/backend/routes/subscriptions/checkout.py` (+ /reconcile endpoint)
+- `/app/backend/route_policies.py` (+ /reconcile auth registration)
+- `/app/backend/tests/test_subscription_reconcile.py` (new)
+- `/app/frontend/src/components/SubscriptionPaywall.js` (persist breadcrumb)
+- `/app/frontend/src/pages/FoundersCirclePage.js` (persist breadcrumb)
+- `/app/frontend/src/pages/LoginPage.js` (honor breadcrumb in navigateToHome)
+- `/app/frontend/src/pages/SubscriptionPage.js` (reconcile-on-mount)
+
+All four frontend files ESLint clean.
+
+
+
 ## May 18, 2026 (later) — 🎯 Binder polish: no more blanks, Share moves to header
 
 User reported 3 issues from a real binder run (Pete Mitchell / Mitchell

@@ -77,6 +77,22 @@ export default function FoundersCirclePage() {
         origin_url: window.location.origin,
       }, getAuthHeaders());
       if (res.data.url) {
+        // Persist pending session so a PWA → external-browser redirect
+        // bounce-back to /login can still reconcile (see
+        // SubscriptionPaywall.js for full rationale).
+        if (res.data.session_id) {
+          try {
+            localStorage.setItem(
+              'carryon_pending_stripe_session',
+              JSON.stringify({
+                session_id: res.data.session_id,
+                fc: true,
+                tier,
+                created_at: Date.now(),
+              }),
+            );
+          } catch { /* private mode */ }
+        }
         // Standalone PWA: opens in a new window so the in-app
         // session/route stays put. Browser tab: legacy in-window
         // redirect.

@@ -259,6 +259,148 @@ async def get_checkout_status(session_id: str, current_user: dict = Depends(get_
     }
 
 
+@router.post("/subscriptions/reconcile")
+async def reconcile_pending_subscriptions(current_user: dict = Depends(get_current_user)):
+    """Safety net: reconcile any pending Stripe payment for the calling user.
+
+    Why this exists
+    ───────────────
+    When a user pays via Stripe Checkout from a standalone PWA (macOS
+    dock app, iOS Add-to-Home-Screen), the post-payment redirect lands
+    in a fresh browser window — NOT the PWA. The browser doesn't carry
+    the user's JWT, so they get bounced to /login. After re-login the
+    `?session_id=…` query param is lost and the frontend's normal
+    "/checkout-status/{session_id}" reconciliation never fires. The
+    server-side webhook DOES activate the subscription, but the user's
+    in-app `subscriptionStatus` stays stale and the Subscription page
+    looks like the payment failed → screams prototype.
+
+    What this does
+    ──────────────
+    On any /subscription page mount we POST here once. The endpoint:
+      1. Finds every `pending` row in `payment_transactions` for this
+         user that's < 24h old.
+      2. For each, pings Stripe `get_checkout_status` to see if it
+         settled. If yes, it activates `user_subscriptions` (same
+         logic as the polled /checkout-status endpoint).
+      3. Returns the latest `user_subscriptions` row + a list of any
+         transactions that just transitioned to paid, so the frontend
+         can pop the celebration banner even when the URL has lost
+         its `session_id`.
+
+    Idempotent: rerunning is a no-op once everything is settled.
+    """
+    api_key = os.environ.get("STRIPE_API_KEY")
+    if not api_key:
+        return {"activated": [], "current": None, "stripe_unavailable": True}
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    pending = await db.payment_transactions.find(
+        {
+            "user_id": current_user["id"],
+            "payment_status": {"$ne": "paid"},
+            "created_at": {"$gte": cutoff},
+        },
+        {"_id": 0},
+    ).to_list(20)
+
+    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url="")
+    activated: list[dict] = []
+
+    for txn in pending:
+        session_id = txn.get("session_id")
+        if not session_id:
+            continue
+        try:
+            status = await asyncio.wait_for(
+                stripe_checkout.get_checkout_status(session_id),
+                timeout=10.0,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "reconcile: stripe lookup failed for txn=%s user=%s: %s",
+                session_id,
+                current_user["id"],
+                exc,
+            )
+            continue
+
+        if status.payment_status not in ("paid", "complete"):
+            continue
+
+        # Mark txn paid + activate subscription (mirror of /checkout-status).
+        await db.payment_transactions.update_one(
+            {"session_id": session_id},
+            {
+                "$set": {
+                    "payment_status": "paid",
+                    "status": status.status,
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "reconciled": True,
+                }
+            },
+        )
+
+        plan_id = txn.get("plan_id", "")
+        cycle = txn.get("billing_cycle", "monthly")
+        now = datetime.now(timezone.utc)
+        if cycle == "annual":
+            period_end = now + timedelta(days=365)
+        elif cycle == "quarterly":
+            period_end = now + timedelta(days=90)
+        else:
+            period_end = now + timedelta(days=30)
+
+        await db.user_subscriptions.update_one(
+            {"user_id": current_user["id"]},
+            {
+                "$set": {
+                    "user_id": current_user["id"],
+                    "plan_id": plan_id,
+                    "plan_name": txn.get("plan_name", ""),
+                    "status": "active",
+                    "billing_cycle": cycle,
+                    "amount": txn.get("amount", 0),
+                    "stripe_session_id": session_id,
+                    "current_period_start": now.isoformat(),
+                    "current_period_end": period_end.isoformat(),
+                    "activated_at": now.isoformat(),
+                    "payment_provider": "stripe",
+                }
+            },
+            upsert=True,
+        )
+
+        # Cancel any active grace periods — user re-subscribed.
+        try:
+            from services.grace_period import cancel_grace_period
+
+            user_estates = await db.estates.find(
+                {"owner_id": current_user["id"]},
+                {"_id": 0, "id": 1},
+            ).to_list(50)
+            for est in user_estates:
+                await cancel_grace_period(est["id"], current_user["id"], "re-subscribed")
+        except Exception as exc:  # noqa: BLE001
+            logger.debug(f"reconcile: grace cancel skipped: {exc}")
+
+        activated.append(
+            {
+                "session_id": session_id,
+                "plan_id": plan_id,
+                "plan_name": txn.get("plan_name", ""),
+                "billing_cycle": cycle,
+                "amount": txn.get("amount", 0),
+            }
+        )
+
+    current = await db.user_subscriptions.find_one(
+        {"user_id": current_user["id"]},
+        {"_id": 0},
+    )
+    return {"activated": activated, "current": current}
+
+
 @router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
     """Handle Stripe webhooks — payment success, failure, and subscription events.

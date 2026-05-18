@@ -258,6 +258,42 @@ const LoginPage = () => {
 
   const navigateToHome = (result) => {
     haptics.success();
+
+    // ── Stripe-return safety net ─────────────────────────────────────
+    // If the user JUST completed a Stripe checkout and got bounced
+    // back to /login (typical macOS dock-PWA → external-browser
+    // redirect path), we routed the pending `session_id` into
+    // localStorage before handing them to Stripe. Honor it now so the
+    // post-login redirect lands them on /subscription with the
+    // session_id intact — that fires the celebration + reconciliation
+    // flow already wired into SubscriptionPage. Falls back to the
+    // current URL's `?session_id=…` if present (case where Stripe
+    // redirected directly to /login).
+    try {
+      let pending = null;
+      const raw = localStorage.getItem('carryon_pending_stripe_session');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const ageMs = Date.now() - (parsed?.created_at || 0);
+        if (parsed?.session_id && ageMs < 60 * 60 * 1000) {
+          pending = parsed;
+        } else {
+          // Expired — clear so we don't loop.
+          localStorage.removeItem('carryon_pending_stripe_session');
+        }
+      }
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlSession = urlParams.get('session_id');
+      const urlFcSession = urlParams.get('fc_session_id');
+      const sid = pending?.session_id || urlSession || urlFcSession;
+      if (sid && result.user?.role !== 'admin' && result.user?.role !== 'operator') {
+        // Founders Circle sessions use a different query param name.
+        const qp = pending?.fc || urlFcSession ? 'fc_session_id' : 'session_id';
+        navigate(`/subscription?${qp}=${encodeURIComponent(sid)}`);
+        return;
+      }
+    } catch { /* fall through to default routing */ }
+
     if (result.user?.role === 'admin') navigate('/admin');
     else if (result.user?.role === 'operator') navigate('/ops');
     else {

@@ -53,6 +53,11 @@ ROUTE_POLICIES: dict = {
     "GET /api/subscriptions/plans": {"auth": "public", "notes": "Public plan-catalog read"},
     "GET /api/subscriptions/status": {"auth": "required", "roles": "self"},
     "POST /api/subscriptions/checkout": {"auth": "required", "roles": ["benefactor", "beneficiary", "admin"]},
+    "POST /api/subscriptions/reconcile": {
+        "auth": "required",
+        "roles": "self",
+        "notes": "Safety net — reconciles pending Stripe txns after PWA→browser handoff lost the redirect",
+    },
     "POST /api/subscriptions/change-plan": {"auth": "required", "roles": "self"},
     "POST /api/subscriptions/change-billing": {"auth": "required", "roles": "self"},
     "POST /api/subscriptions/cancel": {"auth": "required", "roles": "self"},
