@@ -745,6 +745,23 @@ export const SubscriptionManagement = ({
                     ) : isCurrent ? 'Current Plan' : isAutoSelected ? 'Your Tier' : showRecommendedPulse ? 'Recommended — Best Value' : style.label}
                   </div>
                 )}
+                {/* ETA hint — sits flush under the gold ribbon so the
+                    user knows we're seconds from settling, not minutes.
+                    Suppresses tab-away churn on a slow webhook day. */}
+                {isPendingThisPlan && (
+                  <div
+                    className="absolute top-5 left-1/2 -translate-x-1/2 text-[11px] font-medium px-2 py-0.5 rounded-b-md whitespace-nowrap z-10"
+                    style={{
+                      color: 'rgba(var(--gold-rgb), 0.95)',
+                      background: 'rgba(var(--gold-rgb), 0.10)',
+                      border: '1px solid rgba(var(--gold-rgb), 0.25)',
+                      borderTop: 'none',
+                    }}
+                    data-testid={`plan-${plan.id}-pending-eta`}
+                  >
+                    usually ≤ 5 seconds
+                  </div>
+                )}
 
                 <div className="p-5 pt-7 flex flex-col h-full">
                   {/* Plan header */}

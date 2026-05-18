@@ -631,18 +631,32 @@ export default function SubscriptionPaywall({ onDismiss }) {
                     the "Your Plan" badge so cards never jump when the
                     webhook lands and the badge swaps over. */}
                 {isPendingPlan && (
-                  <div
-                    className="absolute -top-0 left-1/2 -translate-x-1/2 text-xs font-bold px-4 py-1.5 rounded-b-xl flex items-center gap-1.5"
-                    style={{
-                      background: 'linear-gradient(180deg, #d4af37, #b8962e)',
-                      color: 'var(--bg2)',
-                      boxShadow: '0 4px 16px rgba(var(--gold-rgb), 0.4)',
-                    }}
-                    data-testid={`paywall-plan-${plan.id}-pending-ribbon`}
-                  >
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    Processing Payment…
-                  </div>
+                  <>
+                    <div
+                      className="absolute -top-0 left-1/2 -translate-x-1/2 text-xs font-bold px-4 py-1.5 rounded-b-xl flex items-center gap-1.5"
+                      style={{
+                        background: 'linear-gradient(180deg, #d4af37, #b8962e)',
+                        color: 'var(--bg2)',
+                        boxShadow: '0 4px 16px rgba(var(--gold-rgb), 0.4)',
+                      }}
+                      data-testid={`paywall-plan-${plan.id}-pending-ribbon`}
+                    >
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Processing Payment…
+                    </div>
+                    <div
+                      className="absolute top-7 left-1/2 -translate-x-1/2 text-[11px] font-medium px-2 py-0.5 rounded-b-md whitespace-nowrap"
+                      style={{
+                        color: 'rgba(var(--gold-rgb), 0.95)',
+                        background: 'rgba(var(--gold-rgb), 0.10)',
+                        border: '1px solid rgba(var(--gold-rgb), 0.25)',
+                        borderTop: 'none',
+                      }}
+                      data-testid={`paywall-plan-${plan.id}-pending-eta`}
+                    >
+                      usually ≤ 5 seconds
+                    </div>
+                  </>
                 )}
 
                 {/* Premium label or Recommended CTA */}
