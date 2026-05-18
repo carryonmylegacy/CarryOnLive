@@ -209,7 +209,7 @@ export function LaunchWarRoomTab() {
         <Card className="glass-card" data-testid="wr-schedulers-card">
           <CardContent className="p-4">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.12)' }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.12)' }}>
                 <Activity className="w-5 h-5 text-[var(--gold)]" />
               </div>
               <div>

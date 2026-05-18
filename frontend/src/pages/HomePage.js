@@ -92,7 +92,7 @@ const HomePage = () => {
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 90% 80% at 20% 80%, rgba(255,255,255,0.12) 0%, transparent 60%)' }} />
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 80% 60% at 10% 50%, rgba(255,255,255,0.08) 0%, transparent 50%)' }} />
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 80% 70% at 85% 85%, rgba(255,255,255,0.14) 0%, transparent 55%)' }} />
-        <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
+        <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(var(--gold-rgb), 0.04) 0%, transparent 70%)' }} />
 
         <div className="max-w-[900px] mx-auto px-6 w-full relative z-10 text-center">
           <RevealSection delay={0.1}>
@@ -147,7 +147,7 @@ const HomePage = () => {
                 <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(0.7) contrast(1.05) saturate(0.9)' }} />
               </div>
               <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(14,24,41,1) 0%, rgba(14,24,41,0.97) 80px, rgba(11,18,33,0.6) 50%, rgba(11,18,33,0.8) 100%)' }} />
-              <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
+              <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(var(--gold-rgb), 0.04) 0%, transparent 70%)' }} />
               <RevealSection className="max-w-[900px] mx-auto px-6 text-center relative z-10">
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight" style={{ fontFamily: 'var(--sans)' }}>
                   See CarryOn in Action
@@ -157,7 +157,7 @@ const HomePage = () => {
                 </p>
                 {showVertical ? (
                   /* Vertical (portrait) video for mobile PWA */
-                  <div className="relative rounded-2xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.05)', maxWidth: '360px' }}>
+                  <div className="relative rounded-2xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(var(--gold-rgb), 0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(var(--gold-rgb), 0.05)', maxWidth: '360px' }}>
                     <div style={{ position: 'relative', paddingBottom: '177.78%', height: 0 }}>
                       <iframe
                         src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
@@ -171,7 +171,7 @@ const HomePage = () => {
                   </div>
                 ) : (
                   /* Landscape (16:9) video for desktop */
-                  <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.05)' }}>
+                  <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(var(--gold-rgb), 0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(var(--gold-rgb), 0.05)' }}>
                     <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
                       <iframe
                         src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}

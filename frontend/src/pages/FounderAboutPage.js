@@ -118,7 +118,7 @@ const FounderAboutPage = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: '#0d1b2a', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} data-testid="founder-page-denied">
         <div className="max-w-md text-center">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-5 sm:mb-6" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)' }}>
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-5 sm:mb-6" style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.15)' }}>
             <ShieldX className="w-7 h-7 sm:w-9 sm:h-9 text-[#d4af37]" />
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-white mb-3" style={{ fontFamily: 'var(--sans)' }}>Access Restricted</h1>
@@ -207,7 +207,7 @@ const FounderAboutPage = () => {
           <ArrowLeft className="w-3.5 h-3.5" /> Back
         </button>
 
-        <div className="rounded-2xl p-6 sm:p-8" style={{ background: 'rgba(13,27,42,0.8)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(212,175,55,0.12)', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
+        <div className="rounded-2xl p-6 sm:p-8" style={{ background: 'rgba(13,27,42,0.8)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(var(--gold-rgb), 0.12)', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
 
           {/* Request Access Mode */}
           {gateMode === 'request' && !reqStatus && (
@@ -253,7 +253,7 @@ const FounderAboutPage = () => {
               )}
               {reqStatus === 'already_pending' && (
                 <>
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(var(--gold-rgb), 0.1)', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}>
                     <Send className="w-6 h-6 text-[#d4af37]" />
                   </div>
                   <h3 className="text-base sm:text-lg font-bold text-white mb-2">Request Already Pending</h3>

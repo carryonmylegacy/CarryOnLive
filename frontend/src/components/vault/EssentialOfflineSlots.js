@@ -102,7 +102,7 @@ const EssentialOfflineSlots = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5" data-testid="essential-slots-loading">
         {[0, 1, 2, 3].map((i) => (
           <div key={i} className="h-[112px] rounded-2xl animate-pulse"
-            style={{ background: 'rgba(212,175,55,0.06)', border: '1px dashed rgba(212,175,55,0.3)' }} />
+            style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px dashed rgba(var(--gold-rgb), 0.3)' }} />
         ))}
       </div>
     );
@@ -131,11 +131,11 @@ const EssentialOfflineSlots = ({
               className="rounded-2xl p-4 transition-all hover:scale-[1.01]"
               style={{
                 background: occupied
-                  ? 'linear-gradient(135deg, rgba(212,175,55,0.08), rgba(212,175,55,0.04))'
-                  : 'rgba(212,175,55,0.03)',
+                  ? 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.08), rgba(var(--gold-rgb), 0.04))'
+                  : 'rgba(var(--gold-rgb), 0.03)',
                 border: occupied
-                  ? '2px solid rgba(212,175,55,0.55)'
-                  : '2px dashed rgba(212,175,55,0.4)',
+                  ? '2px solid rgba(var(--gold-rgb), 0.55)'
+                  : '2px dashed rgba(var(--gold-rgb), 0.4)',
                 cursor: 'pointer',
               }}
               onClick={() => {
@@ -148,7 +148,7 @@ const EssentialOfflineSlots = ({
             >
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{ background: 'rgba(212,175,55,0.18)' }}>
+                  style={{ background: 'rgba(var(--gold-rgb), 0.18)' }}>
                   <Icon className="w-5 h-5" style={{ color: 'var(--gold, #d4af37)' }} />
                 </div>
                 <div className="flex-1 min-w-0">

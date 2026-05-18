@@ -47,7 +47,7 @@ export default function EntityDocumentsModal({ open, entity, documents, onClose 
           >
             <div
               className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
-              style={{ background: 'rgba(212,165,55,0.12)', color: 'var(--gold)' }}
+              style={{ background: 'rgba(var(--gold-rgb), 0.12)', color: 'var(--gold)' }}
             >
               <FileText className="w-3.5 h-3.5" />
             </div>

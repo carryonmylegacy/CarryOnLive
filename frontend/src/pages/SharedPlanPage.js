@@ -169,7 +169,7 @@ export default function SharedPlanPage() {
           <a
             href="/"
             className="inline-block mt-4 px-6 py-2.5 rounded-xl text-sm font-bold"
-            style={{ background: 'rgba(212,175,55,0.12)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.3)' }}
+            style={{ background: 'rgba(var(--gold-rgb), 0.12)', color: '#d4af37', border: '1px solid rgba(var(--gold-rgb), 0.3)' }}
           >
             Learn more about CarryOn
           </a>

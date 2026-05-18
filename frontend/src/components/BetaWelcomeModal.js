@@ -41,7 +41,7 @@ export default function BetaWelcomeModal({ onAccepted }) {
         <div className="flex justify-center mb-5">
           <span
             className="px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase"
-            style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.3)' }}
+            style={{ background: 'rgba(var(--gold-rgb), 0.15)', color: '#d4af37', border: '1px solid rgba(var(--gold-rgb), 0.3)' }}
           >
             Beta Program
           </span>

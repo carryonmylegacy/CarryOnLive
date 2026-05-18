@@ -52,7 +52,7 @@ const SealedAccountScreen = ({ transitionedAt, onBack }) => {
           className="rounded-2xl p-8 text-center"
           style={{
             background: 'rgba(15, 22, 41, 0.8)',
-            border: '1px solid rgba(212, 175, 55, 0.15)',
+            border: '1px solid rgba(var(--gold-rgb), 0.15)',
             backdropFilter: 'blur(24px)',
             boxShadow: '0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03) inset',
           }}
@@ -60,7 +60,7 @@ const SealedAccountScreen = ({ transitionedAt, onBack }) => {
         >
           {/* Shield icon */}
           <div className="mx-auto mb-6 w-16 h-16 rounded-2xl flex items-center justify-center"
-            style={{ background: 'rgba(212, 175, 55, 0.1)', border: '1px solid rgba(212, 175, 55, 0.2)' }}>
+            style={{ background: 'rgba(var(--gold-rgb), 0.1)', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}>
             <Shield className="w-8 h-8" style={{ color: '#d4af37' }} />
           </div>
 
@@ -74,7 +74,7 @@ const SealedAccountScreen = ({ transitionedAt, onBack }) => {
             and is therefore immutably sealed.
           </p>
 
-          <div className="w-full h-px mb-6" style={{ background: 'rgba(212, 175, 55, 0.15)' }} />
+          <div className="w-full h-px mb-6" style={{ background: 'rgba(var(--gold-rgb), 0.15)' }} />
 
           {/* Priority 1 Contact Section */}
           <div

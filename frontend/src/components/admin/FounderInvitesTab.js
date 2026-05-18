@@ -278,7 +278,7 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
                         {invite.revoked ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold" style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}><XCircle className="w-3 h-3" /> Revoked</span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold" style={{ background: 'rgba(212,175,55,0.12)', color: '#d4af37' }}><CheckCircle className="w-3 h-3" /> Active</span>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold" style={{ background: 'rgba(var(--gold-rgb), 0.12)', color: '#d4af37' }}><CheckCircle className="w-3 h-3" /> Active</span>
                         )}
                         {invite.note && <span className="text-white text-xs font-medium truncate">{invite.note}</span>}
                       </div>

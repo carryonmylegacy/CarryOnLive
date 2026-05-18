@@ -63,7 +63,7 @@ export default function HomeVoicesStrip() {
       className="relative py-14 sm:py-20 px-6"
       style={{
         background:
-          'linear-gradient(180deg, rgba(11,18,33,0) 0%, rgba(212,175,55,0.05) 50%, rgba(11,18,33,0) 100%)',
+          'linear-gradient(180deg, rgba(11,18,33,0) 0%, rgba(var(--gold-rgb), 0.05) 50%, rgba(11,18,33,0) 100%)',
       }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
@@ -74,8 +74,8 @@ export default function HomeVoicesStrip() {
         <div
           className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-6"
           style={{
-            background: 'rgba(212,175,55,0.12)',
-            border: '1px solid rgba(212,175,55,0.28)',
+            background: 'rgba(var(--gold-rgb), 0.12)',
+            border: '1px solid rgba(var(--gold-rgb), 0.28)',
           }}
         >
           <Quote className="w-3.5 h-3.5" style={{ color: '#d4af37' }} />
@@ -163,7 +163,7 @@ export default function HomeVoicesStrip() {
           <Link
             to="/voices"
             className="text-xs uppercase tracking-[0.18em] font-semibold inline-flex items-center gap-1.5"
-            style={{ color: 'rgba(212,175,55,0.85)' }}
+            style={{ color: 'rgba(var(--gold-rgb), 0.85)' }}
             data-testid="home-voices-link"
           >
             Read more voices

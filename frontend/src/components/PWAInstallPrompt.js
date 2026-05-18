@@ -72,15 +72,15 @@ export default function PWAInstallPrompt() {
       className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-sm w-[calc(100%-2rem)] rounded-xl shadow-2xl"
       style={{
         background: 'var(--bg-card)',
-        border: '1px solid rgba(212,175,55,0.55)',
-        boxShadow: '0 0 24px rgba(212,175,55,0.20), 0 8px 32px rgba(0,0,0,0.40)',
+        border: '1px solid rgba(var(--gold-rgb), 0.55)',
+        boxShadow: '0 0 24px rgba(var(--gold-rgb), 0.20), 0 8px 32px rgba(0,0,0,0.40)',
       }}
       data-testid="pwa-install-prompt"
     >
       <div className="flex items-start gap-3 p-4">
         <div
           className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center"
-          style={{ background: 'rgba(212,175,55,0.10)', color: 'var(--gold)' }}
+          style={{ background: 'rgba(var(--gold-rgb), 0.10)', color: 'var(--gold)' }}
         >
           <Download className="w-5 h-5" />
         </div>

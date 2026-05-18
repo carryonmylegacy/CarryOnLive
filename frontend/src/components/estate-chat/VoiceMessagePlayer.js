@@ -67,7 +67,7 @@ export default function VoiceMessagePlayer({ fileId }) {
       <button
         onClick={togglePlay}
         className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
-        style={{ background: 'rgba(212,175,55,0.2)' }}
+        style={{ background: 'rgba(var(--gold-rgb), 0.2)' }}
         data-testid="voice-play-btn"
       >
         {playing

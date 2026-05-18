@@ -1,6 +1,67 @@
 # CarryOn — Changelog
 
 
+## Feb 18, 2026 — 🎯 Three more polish items: db_read wiring, gold sweep, audit-integrity badge
+
+### 1. `db_read` wiring (P3 follow-up)
+- `routes/admin/db_status.py` → `_db_stats()` and `_collection_counts()` now
+  use `db_read` (the secondaryPreferred view added earlier today).
+- `services/llm_cost_ledger.py` → `summary_for_user()` and `summary_global()`
+  aggregations also route through `db_read`.
+- Behavior unchanged when `MONGO_READ_PREFERENCE` is unset (defaults to
+  primary). Heaviest admin reads now opt-in to replica offload once the
+  env var is flipped on Atlas multi-region.
+
+### 2. Brand-gold sweep (P3) — Option (a)
+- Updated CSS variables in `frontend/src/index.css`:
+  - `--gold`: `#D4A537` → `#D4AF37` (canonical metallic gold)
+  - `--gold-rgb`: `212, 165, 55` → `212, 175, 55`
+- Mass-swept `rgba(212, 175, 55, X)` → `rgba(var(--gold-rgb), X)`:
+  - 151 frontend files modified
+  - 776 inline-style rgba substitutions
+  - 19 additional substitutions inside `index.css` (variable definitions
+    that referenced the literal rgba)
+  - 12 hex `#D4A537` → `#D4AF37` substitutions
+- Result: **single source of truth** for brand gold. Existing app pixels
+  are visually identical (the dominant 175-gold already matched the new
+  canonical); the ~649 `var(--gold)` spots brighten by ~10 units in the
+  green channel — a brand alignment, not a regression.
+- 0 remaining literal `rgba(212, 175, 55)` or `rgba(212, 165, 55)` in
+  app source (the lone match is the documentation comment in index.css).
+
+### 3. SOC 2 Audit Integrity badge (Enhancement)
+- New backend: `GET /api/admin/audit-chain-status` (admin-gated) calls
+  `services.audit.verify_audit_chain(limit=10000)` and returns
+  `ok / entries_checked / skipped_legacy / first_break_*`.
+- New frontend: `components/admin/AuditIntegrityCard.js`, wired into
+  `SystemHealthTab.js` right under `DbStatusCard`. Auto-refreshes every
+  10 min, with a manual refresh button.
+- Three visual states:
+  - 🟢 **Chain verified** — at least 1 entry chained, all hashes pass
+  - 🔵 **Chain armed** — newly enabled, 0 entries chained yet (existing
+    legacy entries archived). Surfaces during the rollout window.
+  - 🔴 **Chain broken** — surfaces the first broken `timestamp` + `_id`
+    for forensic follow-up.
+- Live-verified on the prod DB via curl: `ok:true,
+  entries_checked:0, skipped_legacy:10000` — the chain is armed and
+  ready to verify every new entry written from this build forward.
+
+**CI:** Backend `ruff check` clean. Frontend ESLint clean on the new card.
+19/19 backend tests pass (unchanged). Both `/api/admin/audit-chain-status`
+and `/api/v1/admin/audit-chain-status` confirmed responding (auth-gated).
+
+**Files touched / created:**
+- `backend/routes/admin/audit_chain_status.py` (new endpoint)
+- `backend/routes/admin/__init__.py` (router registration)
+- `backend/routes/admin/db_status.py` (db_read wiring)
+- `backend/services/llm_cost_ledger.py` (db_read wiring)
+- `frontend/src/components/admin/AuditIntegrityCard.js` (new)
+- `frontend/src/components/admin/SystemHealthTab.js` (mount the card)
+- `frontend/src/index.css` (canonical gold + 19 var-ref substitutions)
+- 151 other frontend files (gold-rgba sweep)
+
+
+
 ## Feb 18, 2026 — 🏗️ Five P2 hardening items (API v1, read replica, webhooks, audit chain, drill doc)
 
 ### 1. API v1 alias

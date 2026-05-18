@@ -87,10 +87,10 @@ const TrialPolicyCard = ({ policy, onChange, getAuthHeaders, saving, setSaving, 
   const activeCadence = policy.cadence_map?.[String(policy.trial_days)] || policy.reminder_intervals || [];
 
   return (
-    <Card className="glass-card" style={{ borderColor: 'rgba(212,175,55,0.25)' }} data-testid="trial-policy-card">
+    <Card className="glass-card" style={{ borderColor: 'rgba(var(--gold-rgb), 0.25)' }} data-testid="trial-policy-card">
       <CardContent className="p-4">
         <div className="flex items-start gap-3 mb-3">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.12)' }}>
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(var(--gold-rgb), 0.12)' }}>
             <Clock className="w-4 h-4 text-[var(--gold)]" />
           </div>
           <div className="min-w-0 flex-1">

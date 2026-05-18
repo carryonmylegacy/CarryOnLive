@@ -77,13 +77,13 @@ const pillBase = {
 };
 
 const pillSelected = {
-  background: 'linear-gradient(135deg, rgba(240,216,96,0.2), rgba(212,175,55,0.1))',
+  background: 'linear-gradient(135deg, rgba(240,216,96,0.2), rgba(var(--gold-rgb), 0.1))',
   border: '2.5px solid #d4af37',
   borderRadius: '0.875rem',
   color: '#1a1200',
   fontWeight: 800,
   fontSize: '0.875rem',
-  boxShadow: '0 4px 14px rgba(212,175,55,0.25), 0 2px 4px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,240,160,0.4), inset 0 -1px 0 rgba(140,100,20,0.05)',
+  boxShadow: '0 4px 14px rgba(var(--gold-rgb), 0.25), 0 2px 4px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,240,160,0.4), inset 0 -1px 0 rgba(140,100,20,0.05)',
   transition: 'all 0.15s ease',
 };
 
@@ -321,7 +321,7 @@ export default function GetStartedPage() {
       {/* Lift the bottom right */}
       <div className="fixed inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 80% 70% at 85% 85%, rgba(255,255,255,0.14) 0%, transparent 55%)' }} />
       {/* Gold accent */}
-      <div className="fixed inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
+      <div className="fixed inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(var(--gold-rgb), 0.04) 0%, transparent 70%)' }} />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col" style={{ minHeight: '100dvh' }}>
@@ -352,7 +352,7 @@ export default function GetStartedPage() {
           <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.5)', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)', border: '1px solid rgba(255,255,255,0.4)' }}>
             <div
               className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #d4af37, #e8c84a, #d4af37)', boxShadow: '0 0 8px rgba(212,175,55,0.4)' }}
+              style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #d4af37, #e8c84a, #d4af37)', boxShadow: '0 0 8px rgba(var(--gold-rgb), 0.4)' }}
               data-testid="funnel-progress-bar"
             />
           </div>
@@ -559,10 +559,10 @@ export default function GetStartedPage() {
                           <div className="space-y-2">
                             {kept.map(f => (
                               <div key={f.id} className="flex items-center gap-3 py-2.5 px-3.5" style={{
-                                background: 'linear-gradient(135deg, rgba(212,175,55,0.1), rgba(212,175,55,0.04))',
-                                borderRadius: '0.75rem', border: '1px solid rgba(212,175,55,0.2)',
+                                background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.1), rgba(var(--gold-rgb), 0.04))',
+                                borderRadius: '0.75rem', border: '1px solid rgba(var(--gold-rgb), 0.2)',
                               }}>
-                                <div style={{ width: '1.5rem', height: '1.5rem', borderRadius: '50%', background: 'linear-gradient(135deg, #d4af37, #e8c84a)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 4px rgba(212,175,55,0.3)' }}>
+                                <div style={{ width: '1.5rem', height: '1.5rem', borderRadius: '50%', background: 'linear-gradient(135deg, #d4af37, #e8c84a)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 4px rgba(var(--gold-rgb), 0.3)' }}>
                                   <Check className="w-3.5 h-3.5 text-white" />
                                 </div>
                                 <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e293b' }}>{f.title}</span>
@@ -656,7 +656,7 @@ export default function GetStartedPage() {
                       <h3 style={{ fontWeight: 800, fontSize: '0.6875rem', color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Your picks</h3>
                       {FEATURES.filter(f => keptFeatures.includes(f.id)).map(f => (
                         <div key={f.id} className="flex items-center gap-3">
-                          <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '50%', background: 'linear-gradient(135deg, #d4af37, #e8c84a)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 4px rgba(212,175,55,0.3)' }}>
+                          <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '50%', background: 'linear-gradient(135deg, #d4af37, #e8c84a)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 4px rgba(var(--gold-rgb), 0.3)' }}>
                             <Check className="w-3 h-3 text-white" />
                           </div>
                           <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#334155' }}>{f.title}</span>

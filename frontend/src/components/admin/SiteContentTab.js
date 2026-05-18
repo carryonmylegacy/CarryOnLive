@@ -154,7 +154,7 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
                     <ExternalLink className="w-3 h-3" /> YouTube
                   </a>
                 </div>
-                <div className="relative rounded-xl overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.15)' }}>
+                <div className="relative rounded-xl overflow-hidden" style={{ border: '1px solid rgba(var(--gold-rgb), 0.15)' }}>
                   <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
                     <iframe
                       src={`https://www.youtube.com/embed/${savedVideoId}?rel=0&modestbranding=1`}
@@ -196,7 +196,7 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
                     <ExternalLink className="w-3 h-3" /> YouTube
                   </a>
                 </div>
-                <div className="relative rounded-xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(212,175,55,0.15)', maxWidth: '280px' }}>
+                <div className="relative rounded-xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(var(--gold-rgb), 0.15)', maxWidth: '280px' }}>
                   <div style={{ position: 'relative', paddingBottom: '177.78%', height: 0 }}>
                     <iframe
                       src={`https://www.youtube.com/embed/${savedVideoIdVertical}?rel=0&modestbranding=1`}

@@ -73,7 +73,7 @@ export default function PartnerBriefPage() {
       `}</style>
 
       {/* Top bar */}
-      <div className="no-print" style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(15,22,41,0.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(212,175,55,0.18)' }}>
+      <div className="no-print" style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(15,22,41,0.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(var(--gold-rgb), 0.18)' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 600, color: '#d4af37' }}>CarryOn<span style={{ fontSize: 12, verticalAlign: 'top' }}>™</span></span>
@@ -226,7 +226,7 @@ export default function PartnerBriefPage() {
 }
 
 const shellStyle = { minHeight: '100vh', background: 'var(--bg)', color: '#E5E7EB' };
-const tocStyle = { background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.18)', borderRadius: 12, padding: '16px 20px', marginBottom: 36 };
+const tocStyle = { background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.18)', borderRadius: 12, padding: '16px 20px', marginBottom: 36 };
 const tocLabelStyle = { fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#d4af37', margin: '0 0 10px 0' };
 const linkStyle = { color: '#CBD5E1', textDecoration: 'none', padding: '4px 0', display: 'block' };
 const pStyle = { fontSize: 15, color: '#CBD5E1', lineHeight: 1.7, margin: '0 0 14px 0' };
@@ -235,12 +235,12 @@ const ulStyle = { margin: '0 0 8px 0', paddingLeft: 20 };
 const olStyle = { margin: '0 0 8px 0', paddingLeft: 22 };
 const liStyle = { fontSize: 14, color: '#CBD5E1', lineHeight: 1.6, marginBottom: 6 };
 const pillarCardStyle = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '14px 16px' };
-const verticalCardStyle = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(212,175,55,0.18)', borderRadius: 14, padding: '20px 22px' };
+const verticalCardStyle = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(var(--gold-rgb), 0.18)', borderRadius: 14, padding: '20px 22px' };
 
 function Section({ id, title, children }) {
   return (
     <section id={id} className="pb-anchor" style={{ marginBottom: 44 }}>
-      <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 30, fontWeight: 600, color: '#F8FAFC', margin: '0 0 14px 0', borderBottom: '1px solid rgba(212,175,55,0.25)', paddingBottom: 8 }}>{title}</h2>
+      <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 30, fontWeight: 600, color: '#F8FAFC', margin: '0 0 14px 0', borderBottom: '1px solid rgba(var(--gold-rgb), 0.25)', paddingBottom: 8 }}>{title}</h2>
       {children}
     </section>
   );

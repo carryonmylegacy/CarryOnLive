@@ -116,7 +116,7 @@ const AboutPage = () => {
 
             {/* Quote */}
             <RevealSection delay={0.35}>
-              <div className="rounded-xl p-6 lg:p-8 transition-all duration-700 hover:border-l-[#d4af37]" style={{ borderLeft: '3px solid #d4af37', background: 'rgba(212,175,55,0.04)' }}>
+              <div className="rounded-xl p-6 lg:p-8 transition-all duration-700 hover:border-l-[#d4af37]" style={{ borderLeft: '3px solid #d4af37', background: 'rgba(var(--gold-rgb), 0.04)' }}>
                 <p className="text-white text-base lg:text-lg italic leading-relaxed">
                   We&apos;re not just an app. We build infrastructure for family preparedness &mdash; so that when the hardest day comes, your family isn&apos;t searching. They&apos;re ready.
                 </p>
@@ -130,7 +130,7 @@ const AboutPage = () => {
       <section className="relative z-20 -mt-1">
         <div className="rounded-t-[2rem] py-16 lg:py-24 relative overflow-hidden" style={{ background: '#0d1b2a', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
           <div className="absolute inset-0 opacity-[0.18]" style={{ backgroundImage: 'url(/texture-roots.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 50%, rgba(212,175,55,0.04) 0%, transparent 60%)' }} />
+          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 50%, rgba(var(--gold-rgb), 0.04) 0%, transparent 60%)' }} />
           <div className="max-w-[900px] mx-auto px-6 relative z-10">
             <div className="grid md:grid-cols-2 gap-6">
               <RevealSection delay={0} direction="left">
@@ -181,7 +181,7 @@ const AboutPage = () => {
                 },
               ].map(({ title, desc }, i) => (
                 <RevealSection key={title} delay={i * 0.1}>
-                  <div className="rounded-xl p-6 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 hover:shadow-[0_8px_40px_rgba(212,175,55,0.04)]" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
+                  <div className="rounded-xl p-6 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 hover:shadow-[0_8px_40px_rgba(var(--gold-rgb), 0.04)]" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
                     <h4 className="text-white text-base font-bold mb-3">{title}</h4>
                     <p className="text-[#7b879e] text-sm leading-relaxed">{desc}</p>
                   </div>
@@ -200,7 +200,7 @@ const AboutPage = () => {
                 },
               ].map(({ title, desc }, i) => (
                 <RevealSection key={title} delay={0.3 + i * 0.12} direction={i === 0 ? 'left' : 'right'}>
-                  <div className="rounded-xl p-6 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 hover:shadow-[0_8px_40px_rgba(212,175,55,0.04)]" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
+                  <div className="rounded-xl p-6 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 hover:shadow-[0_8px_40px_rgba(var(--gold-rgb), 0.04)]" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
                     <h4 className="text-white text-base font-bold mb-3">{title}</h4>
                     <p className="text-[#7b879e] text-sm leading-relaxed">{desc}</p>
                   </div>
@@ -265,7 +265,7 @@ const AboutPage = () => {
       <section className="relative z-50 -mt-1">
         <div className="rounded-t-[2rem] py-20 lg:py-28 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #152238, #0d1b2a)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
           <div className="absolute inset-0 opacity-[0.25]" style={{ backgroundImage: 'url(/texture-pulse.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 50% 50% at 50% 60%, rgba(212,175,55,0.05) 0%, transparent 70%)' }} />
+          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 50% 50% at 50% 60%, rgba(var(--gold-rgb), 0.05) 0%, transparent 70%)' }} />
           <RevealSection className="max-w-[600px] mx-auto px-6 text-center relative z-10">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white italic mb-8" style={{ fontFamily: 'var(--sans)' }}>
               Your Family Deserves to Be Ready.

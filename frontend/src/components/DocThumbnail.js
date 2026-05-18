@@ -102,7 +102,7 @@ const DocThumbnail = ({ doc }) => {
   const Shimmer = () => (
     <div
       className="w-full h-full overflow-hidden relative"
-      style={{ background: 'linear-gradient(180deg, var(--s) 0%, rgba(212,175,55,0.04) 100%)' }}
+      style={{ background: 'linear-gradient(180deg, var(--s) 0%, rgba(var(--gold-rgb), 0.04) 100%)' }}
       data-testid="doc-thumbnail-shimmer"
     >
       <div
@@ -114,7 +114,7 @@ const DocThumbnail = ({ doc }) => {
           opacity: 0.5,
         }}
       >
-        <div style={{ height: 6, width: '60%', borderRadius: 3, background: 'rgba(212,175,55,0.18)' }} />
+        <div style={{ height: 6, width: '60%', borderRadius: 3, background: 'rgba(var(--gold-rgb), 0.18)' }} />
         <div style={{ height: 4, width: '85%', borderRadius: 2, background: 'rgba(255,255,255,0.06)' }} />
         <div style={{ height: 4, width: '78%', borderRadius: 2, background: 'rgba(255,255,255,0.06)' }} />
         <div style={{ height: 4, width: '90%', borderRadius: 2, background: 'rgba(255,255,255,0.06)' }} />
@@ -125,7 +125,7 @@ const DocThumbnail = ({ doc }) => {
         aria-hidden
         style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(110deg, transparent 25%, rgba(212,175,55,0.14) 50%, transparent 75%)',
+          background: 'linear-gradient(110deg, transparent 25%, rgba(var(--gold-rgb), 0.14) 50%, transparent 75%)',
           animation: 'doc-shimmer 1.6s ease-in-out infinite',
         }}
       />

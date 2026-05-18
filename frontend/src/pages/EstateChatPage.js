@@ -1036,7 +1036,7 @@ export default function EstateChatPage() {
                   <div className="max-w-[80%]">
                     {!isMe && <div className="text-[11px] font-semibold mb-1 ml-1" style={{ color: '#d4af37' }}>{msg.sender_name}</div>}
                     {editingMsg && editingMsg.id === msg.id ? (
-                      <div className="flex flex-col gap-1.5 rounded-2xl px-3 py-2" style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)' }}>
+                      <div className="flex flex-col gap-1.5 rounded-2xl px-3 py-2" style={{ background: 'rgba(var(--gold-rgb), 0.15)', border: '1px solid rgba(var(--gold-rgb), 0.3)' }}>
                         <input autoFocus value={editingMsg.content} onChange={(e) => setEditingMsg({ ...editingMsg, content: e.target.value })}
                           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleEditMessage(); } if (e.key === 'Escape') setEditingMsg(null); }}
                           className="w-full rounded-lg px-3 py-2 text-sm" data-testid="edit-message-input"
@@ -1063,7 +1063,7 @@ export default function EstateChatPage() {
                           onTouchStart={(e) => onMsgTouchStart(e, msg.id)} onTouchMove={onMsgTouchMove} onTouchEnd={(e) => onMsgTouchEnd(e, msg.id)}
                           onMouseDown={(e) => onMsgMouseDown(e, msg.id)} onMouseMove={onMsgMouseMove} onMouseUp={onMsgMouseUp} onMouseLeave={onMsgMouseLeave}
                           onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); if (previewGuardRef.current) return; lastContextMenuAtRef.current = Date.now(); onMsgMouseLeave(); openMsgAction(msg.id); setReactingMsgId(null); }}
-                          style={{ background: isMe ? 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1))' : 'rgba(255,255,255,0.05)', border: `1px solid ${isMe ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`, color: 'var(--t)', borderTopRightRadius: isMe ? '6px' : '18px', borderTopLeftRadius: isMe ? '18px' : '6px', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none', marginTop: hasReactions ? '10px' : '0' }}>
+                          style={{ background: isMe ? 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.2), rgba(var(--gold-rgb), 0.1))' : 'rgba(255,255,255,0.05)', border: `1px solid ${isMe ? 'rgba(var(--gold-rgb), 0.2)' : 'rgba(255,255,255,0.06)'}`, color: 'var(--t)', borderTopRightRadius: isMe ? '6px' : '18px', borderTopLeftRadius: isMe ? '18px' : '6px', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none', marginTop: hasReactions ? '10px' : '0' }}>
                           {msg.reply_to && (
                             <div className="mb-1.5 px-2.5 py-1.5 rounded-lg text-xs" style={{ background: 'rgba(255,255,255,0.06)', borderLeft: '2px solid #d4af37' }}>
                               <div className="font-semibold" style={{ color: '#d4af37' }}>{msg.reply_to.sender_name}</div>
@@ -1105,7 +1105,7 @@ export default function EstateChatPage() {
                               const cfg = REACTION_EMOJIS[r.emoji];
                               return (
                                 <div key={ri} className="flex items-center gap-2.5 px-3 py-2" style={{ borderBottom: ri < (msg.reactions || []).length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
-                                  <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-[11px] font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>{r.user_name?.charAt(0)?.toUpperCase() || '?'}</div>
+                                  <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-[11px] font-bold" style={{ background: 'rgba(var(--gold-rgb), 0.15)', color: '#d4af37' }}>{r.user_name?.charAt(0)?.toUpperCase() || '?'}</div>
                                   <span className="text-xs flex-1 truncate" style={{ color: 'var(--t)' }}>{r.user_name || 'Unknown'}</span>
                                   <span className="text-base">{cfg?.display || r.emoji}</span>
                                 </div>
@@ -1123,13 +1123,13 @@ export default function EstateChatPage() {
                                   return (
                                     <button key={emoji} onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, emoji); }}
                                       className="w-8 h-8 rounded-lg flex items-center justify-center text-base transition-all hover:scale-110 active:scale-95"
-                                      style={{ background: myReaction ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)', border: myReaction ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent' }}>{emoji}</button>
+                                      style={{ background: myReaction ? 'rgba(var(--gold-rgb), 0.2)' : 'rgba(255,255,255,0.06)', border: myReaction ? '1px solid rgba(var(--gold-rgb), 0.3)' : '1px solid transparent' }}>{emoji}</button>
                                   );
                                 })}
                                 <EmojiPickerButtonSmall onClick={() => setShowInlineEmojiPicker(showInlineEmojiPicker === msg.id ? null : msg.id)} />
                                 {canPin && (
                                   <button onClick={(e) => { e.stopPropagation(); togglePin(msg.id); }} className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                                    data-testid={`pin-btn-${msg.id}`} style={{ background: msg.pinned ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)', border: msg.pinned ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent' }} title={msg.pinned ? 'Unpin' : 'Pin'}>
+                                    data-testid={`pin-btn-${msg.id}`} style={{ background: msg.pinned ? 'rgba(var(--gold-rgb), 0.2)' : 'rgba(255,255,255,0.06)', border: msg.pinned ? '1px solid rgba(var(--gold-rgb), 0.3)' : '1px solid transparent' }} title={msg.pinned ? 'Unpin' : 'Pin'}>
                                     <Pin className="w-4 h-4" style={{ color: msg.pinned ? '#d4af37' : 'var(--t4)' }} />
                                   </button>
                                 )}
@@ -1249,14 +1249,14 @@ export default function EstateChatPage() {
           <>
             <div className="fixed inset-0" style={{ zIndex: 200 }} onClick={() => setShowListMembersId(null)} onTouchEnd={(e) => { e.preventDefault(); setShowListMembersId(null); }} />
             <div className="fixed rounded-xl overflow-hidden" data-testid={`ect-list-members-dropdown-${ch.id}`}
-              style={{ zIndex: 201, background: '#1A2238', border: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 8px 32px rgba(0,0,0,0.6)', minWidth: '220px', maxWidth: '280px', maxHeight: '300px', overflowY: 'auto', left: `${pos.left}px`, top: `${pos.top}px` }}>
+              style={{ zIndex: 201, background: '#1A2238', border: '1px solid rgba(var(--gold-rgb), 0.25)', boxShadow: '0 8px 32px rgba(0,0,0,0.6)', minWidth: '220px', maxWidth: '280px', maxHeight: '300px', overflowY: 'auto', left: `${pos.left}px`, top: `${pos.top}px` }}>
               <div className="px-3 py-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}><span className="text-[11px] font-semibold" style={{ color: 'var(--t4)' }}>Members</span></div>
               {resolveChannelMembers(ch.members || [], ch.estate_id).map(m => {
                 const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
                 const isYou = m.id === user?.id;
                 return (
                   <div key={m.id} className="flex items-center gap-2.5 px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-[11px] font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-[11px] font-bold" style={{ background: 'rgba(var(--gold-rgb), 0.15)', color: '#d4af37' }}>
                       {m.photo_url ? <img src={m.photo_url} alt="" className="w-7 h-7 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.textContent = initials; }} /> : initials}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -1271,7 +1271,7 @@ export default function EstateChatPage() {
                 if (!available.length) return null;
                 return (
                   <>
-                    <div className="px-3 py-1.5" style={{ borderTop: '1px solid rgba(212,175,55,0.15)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}><span className="text-[11px] font-semibold" style={{ color: '#d4af37' }}>Add to Chat</span></div>
+                    <div className="px-3 py-1.5" style={{ borderTop: '1px solid rgba(var(--gold-rgb), 0.15)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}><span className="text-[11px] font-semibold" style={{ color: '#d4af37' }}>Add to Chat</span></div>
                     {available.map(m => {
                       const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
                       return (

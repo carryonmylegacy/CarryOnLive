@@ -6,6 +6,7 @@ Combines all admin sub-routers into a single `router` for server.py.
 from fastapi import APIRouter
 
 from .analytics import router as analytics_router
+from .audit_chain_status import router as audit_chain_status_router
 from .bulk_ops import router as bulk_ops_router
 from .canned_responses import router as canned_responses_router
 from .dev_switcher import router as dev_switcher_router
@@ -56,6 +57,7 @@ router.include_router(email_health_router)
 router.include_router(trial_policy_router)
 router.include_router(llm_cost_router)
 router.include_router(db_status_router)
+router.include_router(audit_chain_status_router)
 
 __all__ = [
     "router",

@@ -13,7 +13,7 @@ import { Button } from '../components/ui/button';
 import { API_URL } from '../config';
 
 const CATEGORY_CONFIG = {
-  milestone:  { icon: Shield,        color: '#d4af37', bg: 'rgba(212,175,55,0.12)',  label: 'Milestones' },
+  milestone:  { icon: Shield,        color: '#d4af37', bg: 'rgba(var(--gold-rgb), 0.12)',  label: 'Milestones' },
   document:   { icon: FileText,      color: '#60A5FA', bg: 'rgba(96,165,250,0.12)',  label: 'Documents' },
   family:     { icon: Users,         color: '#22C993', bg: 'rgba(34,201,147,0.12)',  label: 'Family' },
   message:    { icon: MessageSquare, color: '#A78BFA', bg: 'rgba(167,139,250,0.12)', label: 'Messages' },
@@ -260,10 +260,10 @@ const LegacyTimelinePage = () => {
               {/* Date header */}
               <div className="flex items-center gap-3 mb-4">
                 <div className="px-3 py-1 rounded-lg text-xs font-bold text-[var(--gold)]"
-                  style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)' }}>
+                  style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.15)' }}>
                   {date}
                 </div>
-                <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, rgba(212,175,55,0.15), transparent)' }} />
+                <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, rgba(var(--gold-rgb), 0.15), transparent)' }} />
               </div>
 
               {/* Events for this date */}

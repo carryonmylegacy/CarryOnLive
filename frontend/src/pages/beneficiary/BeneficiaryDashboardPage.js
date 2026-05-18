@@ -339,7 +339,7 @@ const BeneficiaryDashboardPage = () => {
               navigate('/beneficiary');
             }}
             className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
-            style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.35)', color: 'var(--gold)' }}
+            style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.35)', color: 'var(--gold)' }}
             data-testid="back-to-all-estates"
           >
             <ChevronLeft className="w-4 h-4" /> All Estates
@@ -435,7 +435,7 @@ const BeneficiaryDashboardPage = () => {
         {(myPerms?.feature_access?.bec_access === true) && (
         <div
           className="rounded-2xl p-4 lg:p-6 cursor-pointer transition-all hover:scale-[1.02] flex flex-col items-center justify-center text-white col-span-3 lg:col-span-3"
-          style={{ background: 'linear-gradient(135deg, #78350F, #92400E, #D4AF37)', boxShadow: '0 12px 48px -4px rgba(212,175,55,0.45), 0 2px 0 0 rgba(255,224,138,0.25) inset, 0 -6px 16px rgba(0,0,0,0.3) inset', border: '1px solid rgba(251,191,36,0.25)' }}
+          style={{ background: 'linear-gradient(135deg, #78350F, #92400E, #D4AF37)', boxShadow: '0 12px 48px -4px rgba(var(--gold-rgb), 0.45), 0 2px 0 0 rgba(255,224,138,0.25) inset, 0 -6px 16px rgba(0,0,0,0.3) inset', border: '1px solid rgba(251,191,36,0.25)' }}
           onClick={() => navigate('/beneficiary/concierge')}
           data-testid="stat-concierge"
         >
@@ -618,7 +618,7 @@ const BeneficiaryDashboardPage = () => {
       )}
 
       {/* Beneficiary → Create Estate / Join Another Estate */}
-      <div className="glass-card p-5 text-center mt-6 lg:mt-8" style={{ borderColor: 'rgba(212,175,55,0.15)' }}>
+      <div className="glass-card p-5 text-center mt-6 lg:mt-8" style={{ borderColor: 'rgba(var(--gold-rgb), 0.15)' }}>
         <h3 className="text-base font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>Protect Your Own Family</h3>
         <p className="text-xs text-[var(--t4)] mb-4">You can start your own estate plan or join another estate — using this same account.</p>
         <button onClick={() => navigate('/create-estate')} className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-transform active:scale-95" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }} data-testid="create-estate-cta">

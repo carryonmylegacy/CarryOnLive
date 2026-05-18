@@ -58,7 +58,7 @@ const BeneficiaryBillingToggle = ({ billing, onChange }) => {
                 : 'transparent',
               color: billing === c.id ? '#0F1629' : 'var(--t5)',
               boxShadow: billing === c.id
-                ? c.id === 'annual' ? '0 4px 16px rgba(34,201,147,0.35)' : '0 4px 16px rgba(212,175,55,0.35)'
+                ? c.id === 'annual' ? '0 4px 16px rgba(34,201,147,0.35)' : '0 4px 16px rgba(var(--gold-rgb), 0.35)'
                 : 'none',
             }}
             data-testid={`billing-${c.id}`}
@@ -499,7 +499,7 @@ export const SubscriptionManagement = ({
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-[var(--t)] flex items-center gap-2.5" style={{ fontFamily: 'var(--sans)' }}>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))', border: '1px solid rgba(212,175,55,0.2)' }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.15), rgba(var(--gold-rgb), 0.05))', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}>
               <CreditCard className="w-4.5 h-4.5 text-[var(--gold)]" />
             </div>
             {isBeneficiary ? 'Your Plan' : 'Subscription'}
@@ -522,8 +522,8 @@ export const SubscriptionManagement = ({
           <div className="mb-6 p-4 rounded-xl relative overflow-hidden" style={{
             background: isBeta
               ? 'linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.05))'
-              : 'linear-gradient(135deg, rgba(212,175,55,0.08), rgba(212,175,55,0.02))',
-            border: `1px solid ${isBeta ? 'rgba(139,92,246,0.15)' : 'rgba(212,175,55,0.15)'}`,
+              : 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.08), rgba(var(--gold-rgb), 0.02))',
+            border: `1px solid ${isBeta ? 'rgba(139,92,246,0.15)' : 'rgba(var(--gold-rgb), 0.15)'}`,
           }}>
             <div className="flex items-center gap-2.5">
               {isBeta ? (
@@ -576,7 +576,7 @@ export const SubscriptionManagement = ({
 
         {/* Founders Circle beneficiary message */}
         {isBeneficiary && subscriptionStatus?.free_access && (
-          <div className="mb-5 p-4 rounded-xl flex items-start gap-3" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)' }}>
+          <div className="mb-5 p-4 rounded-xl flex items-start gap-3" style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.25)' }}>
             <Crown className="w-5 h-5 text-[var(--gold)] flex-shrink-0 mt-0.5" />
             <p className="text-xs text-[var(--t3)] leading-relaxed">
               Your benefactor was gracious and forward-thinking enough to become a <span className="font-bold text-[var(--gold)]">Founders Circle</span> member, securing your lifetime access to CarryOn at no cost to you — ever. This applies to all current and future beneficiaries of their estate.
@@ -894,7 +894,7 @@ export const SubscriptionManagement = ({
                       style={{
                         background: 'var(--gold)',
                         border: '2px solid #b89220',
-                        boxShadow: '0 0 48px -16px rgba(212,175,55,0.45)',
+                        boxShadow: '0 0 48px -16px rgba(var(--gold-rgb), 0.45)',
                       }}
                     >
                       <span
@@ -1028,7 +1028,7 @@ export const SubscriptionManagement = ({
                     onClick={() => setVerificationDocType(doc)}
                     className="p-3 rounded-xl text-sm text-left transition-all"
                     style={{
-                      background: verificationDocType === doc ? 'rgba(212,175,55,0.1)' : 'var(--s)',
+                      background: verificationDocType === doc ? 'rgba(var(--gold-rgb), 0.1)' : 'var(--s)',
                       border: verificationDocType === doc ? '1px solid var(--gold)' : '1px solid var(--b)',
                       color: verificationDocType === doc ? 'var(--gold)' : 'var(--t3)',
                     }}

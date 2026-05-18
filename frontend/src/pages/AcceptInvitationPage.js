@@ -150,10 +150,10 @@ const AcceptInvitationPage = () => {
   return (
     <div style={bgStyle} className="relative overflow-hidden">
       {/* Background accents */}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 80% 50% at 20% 40%, rgba(212,175,55,0.04), transparent 60%), radial-gradient(ellipse 60% 40% at 80% 60%, rgba(59,130,246,0.03), transparent 50%)' }} />
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--gold-rgb), 0.04), transparent 60%), radial-gradient(ellipse 60% 40% at 80% 60%, rgba(59,130,246,0.03), transparent 50%)' }} />
 
       {/* Nav */}
-      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)', background: 'rgba(8,14,26,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(var(--gold-rgb), 0.08)', background: 'rgba(8,14,26,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <h1 className="text-lg font-bold" style={{ fontFamily: 'var(--sans)' }}>
             <span className="text-[#d4af37]">CarryOn</span><span className="text-white text-xs align-top">™</span>
@@ -169,7 +169,7 @@ const AcceptInvitationPage = () => {
             
             {/* Left: Hero message */}
             <div className="mb-10 lg:mb-0 lg:sticky lg:top-24">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))', border: '1px solid rgba(212,175,55,0.2)' }}>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6" style={{ background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.15), rgba(var(--gold-rgb), 0.05))', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}>
                 <Heart className="w-8 h-8 text-[#d4af37]" />
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-4" style={{ fontFamily: 'var(--sans)' }}>
@@ -231,7 +231,7 @@ const AcceptInvitationPage = () => {
                 </div>
 
                 {/* Your info */}
-                <div className="p-4 rounded-xl" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.1)' }}>
+                <div className="p-4 rounded-xl" style={{ background: 'rgba(var(--gold-rgb), 0.04)', border: '1px solid rgba(var(--gold-rgb), 0.1)' }}>
                   <p className="text-[11px] text-[#525c72] uppercase font-bold tracking-wider mb-2">Your Information</p>
                   <p className="text-white font-bold">{invitationData?.beneficiary?.first_name} {invitationData?.beneficiary?.last_name}</p>
                   <p className="text-sm text-[#94a3b8]">{invitationData?.beneficiary?.email}</p>
@@ -239,7 +239,7 @@ const AcceptInvitationPage = () => {
                 </div>
 
                 {/* CTA */}
-                <Button onClick={() => setStep(2)} className="w-full h-12 text-base font-bold" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 4px 24px rgba(212,175,55,0.3)' }} data-testid="continue-to-account-btn">
+                <Button onClick={() => setStep(2)} className="w-full h-12 text-base font-bold" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 4px 24px rgba(var(--gold-rgb), 0.3)' }} data-testid="continue-to-account-btn">
                   Continue to Create Account <ChevronRight className="w-5 h-5 ml-2" />
                 </Button>
 
@@ -337,7 +337,7 @@ const AcceptInvitationPage = () => {
 
                     <Button onClick={handleLinkExisting} disabled={submitting || !loginUsername || !loginPassword}
                       className="w-full h-12 text-base font-bold mt-6"
-                      style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 4px 24px rgba(212,175,55,0.3)' }}
+                      style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 4px 24px rgba(var(--gold-rgb), 0.3)' }}
                       data-testid="link-account-submit">
                       {submitting ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Connecting...</> : <><CheckCircle className="w-5 h-5 mr-2" />Sign In & Connect</>}
                     </Button>
@@ -442,7 +442,7 @@ const AcceptInvitationPage = () => {
 
                     <Button onClick={handleAccept} disabled={submitting || !password || !confirmPassword}
                       className="w-full h-12 text-base font-bold mt-6"
-                      style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 4px 24px rgba(212,175,55,0.3)' }}
+                      style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 4px 24px rgba(var(--gold-rgb), 0.3)' }}
                       data-testid="accept-invitation-submit">
                       {submitting ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Creating Account...</> : <><CheckCircle className="w-5 h-5 mr-2" />Create Account & Connect</>}
                     </Button>

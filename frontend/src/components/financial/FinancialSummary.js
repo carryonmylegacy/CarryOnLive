@@ -215,7 +215,7 @@ const FinancialSummary = ({
           display: block !important;
         }
         .summary-detail-scrollarea::-webkit-scrollbar-thumb {
-          background: rgba(212, 165, 55, 0.55);
+          background: rgba(var(--gold-rgb), 0.55);
           border-radius: 3px;
         }
         .summary-detail-scrollarea::-webkit-scrollbar-track {

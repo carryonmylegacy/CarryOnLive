@@ -481,7 +481,7 @@ export function VoicesTab({ getAuthHeaders }) {
               : isRejected
                 ? 'rgba(239,68,68,0.45)'
                 : it.variant === 'fc'
-                  ? 'rgba(212,175,55,0.35)'
+                  ? 'rgba(var(--gold-rgb), 0.35)'
                   : 'rgba(52,211,153,0.28)';
             return (
               <Card
@@ -495,9 +495,9 @@ export function VoicesTab({ getAuthHeaders }) {
                       <div
                         className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider"
                         style={{
-                          background: it.variant === 'fc' ? 'rgba(212,175,55,0.14)' : 'rgba(52,211,153,0.14)',
+                          background: it.variant === 'fc' ? 'rgba(var(--gold-rgb), 0.14)' : 'rgba(52,211,153,0.14)',
                           color: it.variant === 'fc' ? 'var(--gold)' : '#34d399',
-                          border: `1px solid ${it.variant === 'fc' ? 'rgba(212,175,55,0.28)' : 'rgba(52,211,153,0.28)'}`,
+                          border: `1px solid ${it.variant === 'fc' ? 'rgba(var(--gold-rgb), 0.28)' : 'rgba(52,211,153,0.28)'}`,
                         }}
                       >
                         {it.variant === 'fc' ? <Crown className="w-3 h-3" /> : <Sparkles className="w-3 h-3" />}
@@ -607,7 +607,7 @@ export function VoicesTab({ getAuthHeaders }) {
                             disabled={togglingFeature === it.id}
                             className="text-[11px] px-2.5 py-1 rounded-md flex items-center gap-1"
                             style={{
-                              background: it.featured ? 'rgba(212,175,55,0.18)' : 'var(--b)',
+                              background: it.featured ? 'rgba(var(--gold-rgb), 0.18)' : 'var(--b)',
                               color: it.featured ? '#d4af37' : 'var(--t2)',
                               border: `1px solid ${it.featured ? '#d4af37' : 'var(--b)'}`,
                             }}

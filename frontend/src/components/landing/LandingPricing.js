@@ -179,10 +179,10 @@ export default function LandingPricing() {
         className="rounded-2xl p-6 flex flex-col"
         style={{
           background: highlighted
-            ? 'linear-gradient(180deg, rgba(212,175,55,0.08), var(--card))'
+            ? 'linear-gradient(180deg, rgba(var(--gold-rgb), 0.08), var(--card))'
             : 'var(--card)',
-          border: highlighted ? '1.5px solid rgba(212,175,55,0.4)' : '1px solid var(--b)',
-          boxShadow: highlighted ? '0 0 32px -16px rgba(212,175,55,0.3)' : 'none',
+          border: highlighted ? '1.5px solid rgba(var(--gold-rgb), 0.4)' : '1px solid var(--b)',
+          boxShadow: highlighted ? '0 0 32px -16px rgba(var(--gold-rgb), 0.3)' : 'none',
         }}
         data-testid={`landing-tier-${p.id}`}
       >
@@ -285,7 +285,7 @@ export default function LandingPricing() {
           style={{
             background: 'var(--gold)',
             border: '2px solid #b89220',
-            boxShadow: '0 0 48px -16px rgba(212,175,55,0.45)',
+            boxShadow: '0 0 48px -16px rgba(var(--gold-rgb), 0.45)',
           }}
         >
           <span
@@ -350,14 +350,14 @@ export default function LandingPricing() {
             className="rounded-3xl p-7 sm:p-10 relative overflow-hidden"
             style={{
               background:
-                'radial-gradient(ellipse at top left, rgba(212,175,55,0.18), transparent 60%), radial-gradient(ellipse at bottom right, rgba(96,165,250,0.10), transparent 60%), var(--card)',
-              border: '1.5px solid rgba(212,175,55,0.35)',
-              boxShadow: '0 0 64px -32px rgba(212,175,55,0.4)',
+                'radial-gradient(ellipse at top left, rgba(var(--gold-rgb), 0.18), transparent 60%), radial-gradient(ellipse at bottom right, rgba(96,165,250,0.10), transparent 60%), var(--card)',
+              border: '1.5px solid rgba(var(--gold-rgb), 0.35)',
+              boxShadow: '0 0 64px -32px rgba(var(--gold-rgb), 0.4)',
             }}
           >
             <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 items-center relative">
               <div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm mb-4" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)', color: 'var(--gold)' }}>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm mb-4" style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.3)', color: 'var(--gold)' }}>
                   <Sparkles className="w-3 h-3" /> Founders Circle · Lifetime
                 </div>
                 <h3 className="text-2xl sm:text-3xl font-semibold leading-tight mb-3 text-white" style={{ fontFamily: 'var(--serif)' }}>
@@ -376,7 +376,7 @@ export default function LandingPricing() {
 
               <div
                 className="rounded-2xl p-6"
-                style={{ background: 'rgba(11,18,32,0.6)', border: '1px solid rgba(212,175,55,0.25)', backdropFilter: 'blur(12px)' }}
+                style={{ background: 'rgba(11,18,32,0.6)', border: '1px solid rgba(var(--gold-rgb), 0.25)', backdropFilter: 'blur(12px)' }}
               >
                 <p className="text-sm uppercase tracking-wider mb-2" style={{ color: 'var(--gold)' }}>Premium · One-time</p>
                 <div className="flex items-baseline gap-2 mb-1">

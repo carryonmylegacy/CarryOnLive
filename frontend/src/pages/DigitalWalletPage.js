@@ -339,8 +339,8 @@ const DigitalWalletPage = () => {
                                   className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold transition-colors"
                                   style={{
                                     color: 'var(--gold)',
-                                    background: 'rgba(212,165,55,0.10)',
-                                    border: '1px solid rgba(212,165,55,0.35)',
+                                    background: 'rgba(var(--gold-rgb), 0.10)',
+                                    border: '1px solid rgba(var(--gold-rgb), 0.35)',
                                   }}
                                   data-testid={`wallet-entity-link-${entry.id}`}
                                   title="Open this entity in your Financial Picture"

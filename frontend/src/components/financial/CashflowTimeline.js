@@ -73,8 +73,8 @@ const CashflowTimeline = ({ estateId }) => {
               key={d.date}
               className="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-sm"
               style={{
-                background: d.items.length ? 'rgba(212,175,55,0.05)' : 'transparent',
-                borderLeft: d.items.length ? '2px solid rgba(212,175,55,0.4)' : '2px solid transparent',
+                background: d.items.length ? 'rgba(var(--gold-rgb), 0.05)' : 'transparent',
+                borderLeft: d.items.length ? '2px solid rgba(var(--gold-rgb), 0.4)' : '2px solid transparent',
               }}
               data-testid={`cashflow-day-${d.date}`}
             >

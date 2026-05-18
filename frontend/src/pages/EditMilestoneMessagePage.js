@@ -551,7 +551,7 @@ export default function EditMilestoneMessagePage() {
                 </p>
               </div>
 
-              <div className="rounded-2xl border p-4" style={{ background: 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.15)' }} data-testid="edit-message-status-card">
+              <div className="rounded-2xl border p-4" style={{ background: 'rgba(var(--gold-rgb), 0.06)', borderColor: 'rgba(var(--gold-rgb), 0.15)' }} data-testid="edit-message-status-card">
                 <div className="flex items-center gap-2 text-sm text-[var(--gold)]">
                   <Users className="h-4 w-4" />
                   {selectedRecipients.length} recipient{selectedRecipients.length === 1 ? '' : 's'} selected
@@ -573,8 +573,8 @@ export default function EditMilestoneMessagePage() {
                         type="button"
                         className="flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-transform active:scale-[0.98]"
                         style={{
-                          background: active ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
-                          borderColor: active ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.08)',
+                          background: active ? 'rgba(var(--gold-rgb), 0.12)' : 'rgba(255,255,255,0.03)',
+                          borderColor: active ? 'rgba(var(--gold-rgb), 0.3)' : 'rgba(255,255,255,0.08)',
                           color: active ? '#d4af37' : 'var(--t)',
                         }}
                         onClick={() => setMessageType(option.key)}
@@ -684,7 +684,7 @@ export default function EditMilestoneMessagePage() {
                 </div>
                 <div className="flex flex-shrink-0 items-center justify-center px-6 py-8" style={{ background: 'rgba(0,0,0,0.8)', paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}>
                   {!isRecording && countdown === null ? (
-                    <button onClick={startRecording} className="flex h-20 w-20 items-center justify-center rounded-full transition-transform active:scale-90" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', boxShadow: '0 4px 24px rgba(212,175,55,0.4)' }} data-testid="edit-message-start-recording-button" aria-label="Start recording">
+                    <button onClick={startRecording} className="flex h-20 w-20 items-center justify-center rounded-full transition-transform active:scale-90" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', boxShadow: '0 4px 24px rgba(var(--gold-rgb), 0.4)' }} data-testid="edit-message-start-recording-button" aria-label="Start recording">
                       <Camera className="h-8 w-8 text-[#080e1a]" />
                     </button>
                   ) : isRecording ? (
@@ -760,8 +760,8 @@ export default function EditMilestoneMessagePage() {
                         type="button"
                         className="flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-transform active:scale-[0.99]"
                         style={{
-                          background: active ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.03)',
-                          borderColor: active ? 'rgba(212,175,55,0.25)' : 'rgba(255,255,255,0.08)',
+                          background: active ? 'rgba(var(--gold-rgb), 0.08)' : 'rgba(255,255,255,0.03)',
+                          borderColor: active ? 'rgba(var(--gold-rgb), 0.25)' : 'rgba(255,255,255,0.08)',
                         }}
                         onClick={() => toggleRecipient(recipientId)}
                         data-testid={`edit-message-recipient-${beneficiary.id}`}
@@ -816,8 +816,8 @@ export default function EditMilestoneMessagePage() {
                             onClick={() => setTriggerValue(event.value)}
                             className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition-transform duration-150 active:scale-[0.96]"
                             style={{
-                              background: active ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
-                              border: active ? '2px solid rgba(212,175,55,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                              background: active ? 'rgba(var(--gold-rgb), 0.12)' : 'rgba(255,255,255,0.03)',
+                              border: active ? '2px solid rgba(var(--gold-rgb), 0.5)' : '1px solid rgba(255,255,255,0.08)',
                               color: active ? '#d4af37' : '#94a3b8',
                             }}
                             data-testid={`edit-message-event-${event.value}`}

@@ -28,7 +28,7 @@ import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-from config import db, logger
+from config import db, db_read, logger
 
 # Per-1M-token pricing in USD. Update when pricing changes.
 PRICING = {
@@ -216,7 +216,9 @@ async def summary_for_user(user_id: str, days: int = 30) -> dict:
     by_endpoint: dict[str, dict] = {}
     total_calls = total_tokens = 0
     total_cost = 0.0
-    async for row in db.llm_cost_ledger.aggregate(pipeline):
+    # Aggregation reads route through db_read (secondaryPreferred when configured)
+    # — admin dashboard tolerates ~100ms replication lag for these summaries.
+    async for row in db_read.llm_cost_ledger.aggregate(pipeline):
         by_endpoint[row["_id"]] = {
             "calls": row["calls"],
             "tokens": row["tokens"],
@@ -256,7 +258,7 @@ async def summary_global(days: int = 7) -> dict:
     rows: list[dict] = []
     total_cost = 0.0
     total_calls = 0
-    async for row in db.llm_cost_ledger.aggregate(pipeline):
+    async for row in db_read.llm_cost_ledger.aggregate(pipeline):
         rows.append(
             {
                 "endpoint": row["_id"]["endpoint"],

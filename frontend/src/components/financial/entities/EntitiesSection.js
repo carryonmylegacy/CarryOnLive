@@ -283,7 +283,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
         }}
       >
         <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.10)' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.10)' }}>
             <Network className="w-4 h-4" style={{ color: '#d4af37' }} />
           </div>
           <div className="flex-1">
@@ -310,8 +310,8 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                 height: n.size,
                 marginLeft: -(n.size / 2),
                 borderRadius: '50%',
-                background: 'rgba(212,175,55,0.06)',
-                border: '1px solid rgba(212,175,55,0.12)',
+                background: 'rgba(var(--gold-rgb), 0.06)',
+                border: '1px solid rgba(var(--gold-rgb), 0.12)',
               }}
             />
           ))}
@@ -319,7 +319,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
             aria-hidden
             style={{
               position: 'absolute', inset: 0, pointerEvents: 'none',
-              background: 'linear-gradient(110deg, transparent 25%, rgba(212,175,55,0.10) 50%, transparent 75%)',
+              background: 'linear-gradient(110deg, transparent 25%, rgba(var(--gold-rgb), 0.10) 50%, transparent 75%)',
               animation: 'entities-section-shimmer 1.6s ease-in-out infinite',
             }}
           />
@@ -389,7 +389,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           <button
             onClick={() => setShowWizard(true)}
             className="text-xs font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors hover:bg-[var(--s)]"
-            style={{ color: 'var(--gold)', border: '1px solid rgba(212,165,55,0.3)' }}
+            style={{ color: 'var(--gold)', border: '1px solid rgba(var(--gold-rgb), 0.3)' }}
             data-testid="entities-add-empty"
           >
             <Plus className="w-3.5 h-3.5" /> Map your entities &amp; trusts
@@ -417,7 +417,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
       ref={sectionRef}
       className="rounded-2xl"
       style={{
-        background: 'radial-gradient(ellipse at top, rgba(212,165,55,0.08), transparent 60%), var(--card)',
+        background: 'radial-gradient(ellipse at top, rgba(var(--gold-rgb), 0.08), transparent 60%), var(--card)',
         // Defined gold-tinted boundary so E&S visually pops away from the
         // softer `var(--b)` borders used by the rest of the CFP cards.
         border: '1px solid rgba(var(--gold-rgb, 212,165,55), 0.32)',
@@ -428,7 +428,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--b)] flex-wrap gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: 'rgba(212,165,55,0.14)', color: 'var(--gold)' }}>
+            style={{ background: 'rgba(var(--gold-rgb), 0.14)', color: 'var(--gold)' }}>
             <Network className="w-4 h-4" />
           </div>
           <div className="min-w-0">
@@ -450,7 +450,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           {/* eslint-disable-next-line no-unused-vars */}
           <button
             onClick={() => setViewMode((v) => v === 'chart' ? 'list' : 'chart')}
-            className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(212,165,55,0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
+            className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
             data-testid="entities-toggle-view"
             title={viewMode === 'chart' ? 'Switch to list view' : 'Switch to chart view'}
             aria-label={viewMode === 'chart' ? 'List view' : 'Chart view'}
@@ -467,7 +467,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                 color: '#1A1A1A',
                 background: 'var(--gold)',
                 border: '1px solid var(--gold)',
-                boxShadow: '0 0 12px rgba(212,165,55,0.55), 0 0 24px rgba(212,165,55,0.25)',
+                boxShadow: '0 0 12px rgba(var(--gold-rgb), 0.55), 0 0 24px rgba(var(--gold-rgb), 0.25)',
               } : {
                 color: 'var(--t4)',
                 background: 'transparent',
@@ -485,7 +485,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           {viewMode === 'chart' && (
             <button
               onClick={() => setCenterNonce((n) => n + 1)}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(212,165,55,0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-center-chart"
               title="Center the tree in the viewport"
               aria-label="Center chart"
@@ -496,7 +496,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           {viewMode === 'chart' && (
             <button
               onClick={() => setShowResetConfirm(true)}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(212,165,55,0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-reset-layout"
               title="Reset tile positions to auto-layout (works while locked too)"
               aria-label="Reset layout"
@@ -507,7 +507,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           {viewMode === 'chart' && (
             <button
               onClick={() => setExpanded((x) => !x)}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(212,165,55,0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-toggle-expand"
               title={expanded ? 'Collapse' : 'Expand'}
               aria-label={expanded ? 'Collapse' : 'Expand'}
@@ -518,7 +518,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           {viewMode === 'chart' && hiddenInfo.count > 0 && (
             <button
               onClick={hiddenInfo.showAll}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(212,165,55,0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-show-hidden"
               title={`Restore all ${hiddenInfo.count} hidden tile${hiddenInfo.count === 1 ? '' : 's'}`}
               aria-label={`Show ${hiddenInfo.count} hidden tile${hiddenInfo.count === 1 ? '' : 's'}`}
@@ -530,7 +530,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           {viewMode === 'chart' && legendHidden && (
             <button
               onClick={showLegend}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(212,165,55,0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-show-legend"
               title="Show legend"
               aria-label="Show legend"
@@ -550,7 +550,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                 // the live chart on a single tap.
                 navigate(`/financial/entities/${estateId}/print`);
               }}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(212,165,55,0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
+              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-print-button"
               title="Print as PDF (8.5×11)"
               aria-label="Print"

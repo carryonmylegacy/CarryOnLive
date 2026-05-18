@@ -147,7 +147,7 @@ const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className
                 handleSelectSuggestion(s);
                 setTimeout(() => { selectingRef.current = false; }, 200);
               }}
-              className="w-full text-left px-4 py-3 text-sm hover:bg-[rgba(212,175,55,0.1)] transition-colors"
+              className="w-full text-left px-4 py-3 text-sm hover:bg-[rgba(var(--gold-rgb), 0.1)] transition-colors"
               style={{ color: 'var(--t)', borderBottom: '1px solid var(--b)' }}
             >
               <span style={{ fontWeight: 'bold', color: 'var(--t)' }}>

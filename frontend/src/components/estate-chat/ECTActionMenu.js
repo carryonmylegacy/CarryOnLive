@@ -64,7 +64,7 @@ const ECTActionMenu = ({
             return (
               <button key={emoji} onClick={(e) => { e.stopPropagation(); toggleReaction(actionMsg.id, emoji); closeMsgAction(); }}
                 className="w-9 h-9 rounded-full flex items-center justify-center text-lg active:scale-90 transition-transform"
-                style={{ background: myReaction ? 'rgba(212,175,55,0.3)' : 'rgba(30,40,60,0.9)', border: '1px solid rgba(255,255,255,0.1)' }}
+                style={{ background: myReaction ? 'rgba(var(--gold-rgb), 0.3)' : 'rgba(30,40,60,0.9)', border: '1px solid rgba(255,255,255,0.1)' }}
                 data-testid={`action-reaction-${emoji}`}
               >{emoji}</button>
             );

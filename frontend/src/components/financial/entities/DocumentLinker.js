@@ -86,7 +86,7 @@ export default function DocumentLinker({ value, onChange, documents }) {
                 onChange={handleSwap(docId)}
                 className="input-field select-themed flex-1"
                 data-testid={`doc-link-edit-picker-${docId}`}
-                style={{ borderColor: 'rgba(212,165,55,0.55)' }}
+                style={{ borderColor: 'rgba(var(--gold-rgb), 0.55)' }}
               >
                 {opts.length === 0 ? (
                   <option value={docId}>{doc ? docLabel(doc) : 'Document'}</option>
@@ -114,7 +114,7 @@ export default function DocumentLinker({ value, onChange, documents }) {
             className="flex items-center gap-2 px-3 py-2 rounded-lg"
             style={{
               background: 'var(--card)',
-              border: '1px solid rgba(212,165,55,0.35)',
+              border: '1px solid rgba(var(--gold-rgb), 0.35)',
             }}
             data-testid={`doc-link-row-${docId}`}
           >
@@ -154,7 +154,7 @@ export default function DocumentLinker({ value, onChange, documents }) {
           <button
             type="button"
             onClick={() => setPicking(true)}
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[var(--gold)] whitespace-nowrap border border-[var(--gold)]/70 bg-[rgba(212,165,55,0.10)] hover:bg-[rgba(212,165,55,0.20)] hover:border-[var(--gold)] transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[var(--gold)] whitespace-nowrap border border-[var(--gold)]/70 bg-[rgba(var(--gold-rgb), 0.10)] hover:bg-[rgba(var(--gold-rgb), 0.20)] hover:border-[var(--gold)] transition-colors"
             data-testid="doc-link-add"
           >
             <Plus className="w-3.5 h-3.5" /> Add linked document
@@ -170,7 +170,7 @@ export default function DocumentLinker({ value, onChange, documents }) {
             onChange={handlePick}
             className="input-field select-themed flex-1"
             data-testid="doc-link-picker"
-            style={{ borderColor: 'rgba(212,165,55,0.55)' }}
+            style={{ borderColor: 'rgba(var(--gold-rgb), 0.55)' }}
             disabled={available.length === 0}
           >
             {available.length === 0 ? (

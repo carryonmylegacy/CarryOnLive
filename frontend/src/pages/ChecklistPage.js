@@ -830,7 +830,7 @@ const ChecklistPage = () => {
                     </div>
                   </div>
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); openEdit(item); handleActivationAction(item.id, 'edited'); }} className="px-2 py-1 rounded-lg text-[11px] font-bold text-[#d4af37] active:scale-90 transition-transform" style={{ border: '1px solid rgba(212,175,55,0.3)' }}>
+                <button onClick={(e) => { e.stopPropagation(); openEdit(item); handleActivationAction(item.id, 'edited'); }} className="px-2 py-1 rounded-lg text-[11px] font-bold text-[#d4af37] active:scale-90 transition-transform" style={{ border: '1px solid rgba(var(--gold-rgb), 0.3)' }}>
                   Edit
                 </button>
                 <button onClick={() => handleActivationAction(item.id, 'remove')} className="px-2 py-1 rounded-lg text-[11px] font-bold text-[#ef4444] active:scale-90 transition-transform" style={{ border: '1px solid rgba(239,68,68,0.3)' }}>
@@ -879,7 +879,7 @@ const ChecklistPage = () => {
           ) : (
             <div
               className="mt-2.5 w-full flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-bold whitespace-nowrap overflow-hidden text-ellipsis"
-              style={{ background: 'rgba(212,175,55,0.10)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.25)' }}
+              style={{ background: 'rgba(var(--gold-rgb), 0.10)', color: '#d4af37', border: '1px solid rgba(var(--gold-rgb), 0.25)' }}
               title={`Derived from: ${item.source}`}
               data-testid={`iac-source-${item.id}`}
             >
@@ -937,7 +937,7 @@ const ChecklistPage = () => {
 
       {egaRunning && (
         <div className="flex items-start gap-2 px-4 py-3 rounded-xl text-sm font-bold"
-          style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)', color: '#d4af37' }}
+          style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.15)', color: '#d4af37' }}
           data-testid="ega-generating-banner">
           <Loader2 className="w-4 h-4 animate-spin flex-shrink-0 mt-0.5" />
           <div className="flex-1 leading-snug">

@@ -122,9 +122,9 @@ export const DTSTab = ({ getAuthHeaders }) => {
       <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 overflow-y-auto" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
         <div className="w-full max-w-sm rounded-2xl p-6 space-y-4 animate-fade-in"
           style={{
-            background: 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(15,22,41,0.98) 40%)',
-            border: '1.5px solid rgba(212,175,55,0.3)',
-            boxShadow: '0 0 40px rgba(212,175,55,0.08)',
+            background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.08) 0%, rgba(15,22,41,0.98) 40%)',
+            border: '1.5px solid rgba(var(--gold-rgb), 0.3)',
+            boxShadow: '0 0 40px rgba(var(--gold-rgb), 0.08)',
           }}
           data-testid="dts-delete-confirm-modal">
           <div className="flex items-center gap-3">

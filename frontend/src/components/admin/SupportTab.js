@@ -117,9 +117,9 @@ export const SupportTab = ({ getAuthHeaders }) => {
                 }}
                 className="text-[11px] font-bold px-2 py-0.5 rounded"
                 style={{
-                  background: groupByThread ? 'rgba(212,175,55,0.12)' : 'var(--s)',
+                  background: groupByThread ? 'rgba(var(--gold-rgb), 0.12)' : 'var(--s)',
                   color: groupByThread ? 'var(--gold)' : 'var(--t5)',
-                  border: `1px solid ${groupByThread ? 'rgba(212,175,55,0.3)' : 'var(--b)'}`,
+                  border: `1px solid ${groupByThread ? 'rgba(var(--gold-rgb), 0.3)' : 'var(--b)'}`,
                 }}
                 data-testid="support-group-by-thread-toggle"
               >
@@ -172,7 +172,7 @@ export const SupportTab = ({ getAuthHeaders }) => {
                       {groupByThread && conv.thread_title && conv.thread_id !== 'default' && (
                         <span
                           className="text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                          style={{ background: 'rgba(212,175,55,0.12)', color: 'var(--gold)' }}
+                          style={{ background: 'rgba(var(--gold-rgb), 0.12)', color: 'var(--gold)' }}
                           data-testid="conv-thread-title"
                         >
                           {conv.thread_title}

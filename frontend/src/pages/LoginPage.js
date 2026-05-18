@@ -533,7 +533,7 @@ const LoginPage = () => {
         <img src="/carryon-logo.png" alt="CarryOn" className="w-[180px] h-auto mb-8" />
         <div className="w-full max-w-sm rounded-2xl p-7 relative" style={{
           background: 'linear-gradient(160deg, rgba(17,27,48,0.97), rgba(13,22,40,0.99))',
-          border: '1px solid rgba(212,175,55,0.12)',
+          border: '1px solid rgba(var(--gold-rgb), 0.12)',
           boxShadow: '0 8px 80px rgba(0,0,0,0.5)',
         }}>
           <div className="absolute top-0 left-7 right-7 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
@@ -568,7 +568,7 @@ const LoginPage = () => {
                 <p className="text-amber-300/80 text-xs mt-1.5">{activeSessionWarning}</p>
                 <button type="button" onClick={(e) => { setActiveSessionWarning(null); handleLogin(e, true); }}
                   className="mt-2.5 w-full h-10 rounded-lg text-sm font-bold transition-all active:scale-[0.97]"
-                  style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#d4af37' }}
+                  style={{ background: 'rgba(var(--gold-rgb), 0.15)', border: '1px solid rgba(var(--gold-rgb), 0.3)', color: '#d4af37' }}
                   data-testid="force-login-btn">
                   {loading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Sign In Here Instead'}
                 </button>
@@ -665,7 +665,7 @@ const LoginPage = () => {
 
           <div className="w-full rounded-2xl p-6 relative" style={{
             background: 'linear-gradient(160deg, rgba(17,27,48,0.97), rgba(13,22,40,0.99))',
-            border: '1px solid rgba(212,175,55,0.12)',
+            border: '1px solid rgba(var(--gold-rgb), 0.12)',
             boxShadow: '0 8px 80px rgba(0,0,0,0.5)',
           }}>
             <div className="absolute top-0 left-6 right-6 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
@@ -706,7 +706,7 @@ const LoginPage = () => {
                 <p className="text-amber-300/80 text-[11px] mt-1">{activeSessionWarning}</p>
                 <button type="button" onClick={(e) => { setActiveSessionWarning(null); handleLogin(e, true); }}
                   className="mt-2 w-full h-9 rounded-lg text-xs font-bold transition-all active:scale-[0.97]"
-                  style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#d4af37' }}
+                  style={{ background: 'rgba(var(--gold-rgb), 0.15)', border: '1px solid rgba(var(--gold-rgb), 0.3)', color: '#d4af37' }}
                   data-testid="force-login-pwa">
                   {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" /> : 'Sign In Here Instead'}
                 </button>
@@ -781,7 +781,7 @@ const LoginPage = () => {
         {/* OTP Modal */}
         {showOtpModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="w-full max-w-md rounded-2xl p-7" style={{ background: 'linear-gradient(145deg, rgba(20,30,52,0.98), rgba(15,22,41,1))', border: '1px solid rgba(212,175,55,0.15)' }}>
+            <div className="w-full max-w-md rounded-2xl p-7" style={{ background: 'linear-gradient(145deg, rgba(20,30,52,0.98), rgba(15,22,41,1))', border: '1px solid rgba(var(--gold-rgb), 0.15)' }}>
               <h3 className="text-white text-lg font-semibold mb-2" style={{ fontFamily: 'var(--sans)' }}>Two-Factor Authentication</h3>
               <p className="text-[#6b7a90] text-sm mb-5">
                 {otpMethod === 'sms' ? `Enter the 6-digit code sent to ${maskedPhone || 'your phone'}` : 'Enter the 6-digit code sent to your email'}
@@ -789,7 +789,7 @@ const LoginPage = () => {
               <Input type="text" inputMode="numeric" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 placeholder="000000" className="h-14 text-center text-2xl tracking-[0.4em] font-mono bg-[#0D1829] border-[#1E3048] text-white focus:border-[#d4af37] rounded-lg mb-4" data-testid="otp-input-pwa" autoFocus />
               {hasSmsOtp && (
-                <div className="flex items-center gap-2 mb-4 p-2 rounded-lg" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.1)' }}>
+                <div className="flex items-center gap-2 mb-4 p-2 rounded-lg" style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.1)' }}>
                   <span className="text-[#6b7a90] text-xs">Send code via:</span>
                   <button onClick={() => handleResendOtp('sms')} disabled={resendCooldown > 0}
                     className={`text-xs px-3 py-1 rounded-full transition-all ${otpMethod === 'sms' ? 'bg-[#d4af37] text-[#0B1221] font-semibold' : 'text-[#6b7a90] hover:text-white'}`}>SMS {maskedPhone ? `(${maskedPhone})` : ''}</button>
@@ -921,7 +921,7 @@ const LoginPage = () => {
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 80% 60% at 10% 50%, rgba(255,255,255,0.08) 0%, transparent 50%)' }} />
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 80% 70% at 85% 85%, rgba(255,255,255,0.14) 0%, transparent 55%)' }} />
         {/* Radial accent */}
-        <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
+        <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(var(--gold-rgb), 0.04) 0%, transparent 70%)' }} />
 
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 w-full relative z-10">
           <div className="grid lg:grid-cols-[1fr_350px] xl:grid-cols-[1fr_420px] gap-10 lg:gap-10 xl:gap-14 items-center">
@@ -965,8 +965,8 @@ const LoginPage = () => {
               <div className="flex justify-center lg:justify-end">
                 <div className="w-full rounded-2xl p-8 relative login-card-glow" style={{
                   background: 'linear-gradient(160deg, rgba(17,27,48,0.97), rgba(13,22,40,0.99))',
-                  border: '1px solid rgba(212,175,55,0.12)',
-                  boxShadow: '0 8px 80px rgba(0,0,0,0.5), 0 0 50px rgba(212,175,55,0.02)',
+                  border: '1px solid rgba(var(--gold-rgb), 0.12)',
+                  boxShadow: '0 8px 80px rgba(0,0,0,0.5), 0 0 50px rgba(var(--gold-rgb), 0.02)',
                 }}>
                   <div className="absolute top-0 left-8 right-8 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
                   <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Sign In</h2>
@@ -1005,7 +1005,7 @@ const LoginPage = () => {
                         <p className="text-amber-300/80 text-xs mt-1.5">{activeSessionWarning}</p>
                         <button type="button" onClick={(e) => { setActiveSessionWarning(null); handleLogin(e, true); }}
                           className="mt-2.5 w-full h-10 rounded-lg text-sm font-bold transition-all active:scale-[0.97]"
-                          style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#d4af37' }}
+                          style={{ background: 'rgba(var(--gold-rgb), 0.15)', border: '1px solid rgba(var(--gold-rgb), 0.3)', color: '#d4af37' }}
                           data-testid="force-login-btn-desktop">
                           {loading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Sign In Here Instead'}
                         </button>
@@ -1118,7 +1118,7 @@ const LoginPage = () => {
                 <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(0.7) contrast(1.05) saturate(0.9)' }} />
               </div>
               <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(8,14,26,1) 0%, rgba(8,14,26,0.97) 80px, rgba(11,18,33,0.6) 50%, rgba(11,18,33,0.8) 100%)' }} />
-              <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
+              <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(var(--gold-rgb), 0.04) 0%, transparent 70%)' }} />
               <RevealSection className="max-w-[900px] mx-auto px-6 text-center relative z-10">
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight" style={{ fontFamily: 'var(--sans)' }}>
                   See CarryOn in Action
@@ -1127,7 +1127,7 @@ const LoginPage = () => {
                   Learn how CarryOn&#8482; keeps your family ready for anything.
                 </p>
                 {showVertical ? (
-                  <div className="relative rounded-2xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.05)', maxWidth: '360px' }}>
+                  <div className="relative rounded-2xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(var(--gold-rgb), 0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(var(--gold-rgb), 0.05)', maxWidth: '360px' }}>
                     <div style={{ position: 'relative', paddingBottom: '177.78%', height: 0 }}>
                       <iframe
                         src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
@@ -1140,7 +1140,7 @@ const LoginPage = () => {
                     </div>
                   </div>
                 ) : (
-                <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.05)' }}>
+                <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(var(--gold-rgb), 0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(var(--gold-rgb), 0.05)' }}>
                   <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
                     <iframe
                       src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
@@ -1162,7 +1162,7 @@ const LoginPage = () => {
       {/* Option C: Mobile browser "Add to Home Screen" banner */}
       {isMobileNonPWA && !installBannerDismissed && (
         <div className="fixed bottom-0 left-0 right-0 z-[90] p-3 safe-area-pb" style={{ background: 'linear-gradient(180deg, transparent, rgba(8,14,26,0.95) 20%)', paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }} data-testid="install-banner">
-          <div className="max-w-sm mx-auto rounded-xl p-3.5 flex items-center gap-3" style={{ background: 'rgba(17,27,48,0.95)', border: '1px solid rgba(212,175,55,0.2)', backdropFilter: 'blur(12px)' }}>
+          <div className="max-w-sm mx-auto rounded-xl p-3.5 flex items-center gap-3" style={{ background: 'rgba(17,27,48,0.95)', border: '1px solid rgba(var(--gold-rgb), 0.2)', backdropFilter: 'blur(12px)' }}>
             <img src="/carryon-logo.png" alt="" className="w-8 h-8 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-white text-sm font-semibold leading-tight">Get the CarryOn App</p>
@@ -1185,7 +1185,7 @@ const LoginPage = () => {
       {/* OTP MODAL */}
       {showOtpModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="w-full max-w-md rounded-2xl p-8" style={{ background: 'linear-gradient(145deg, rgba(20,30,52,0.98), rgba(15,22,41,1))', border: '1px solid rgba(212,175,55,0.15)' }}>
+          <div className="w-full max-w-md rounded-2xl p-8" style={{ background: 'linear-gradient(145deg, rgba(20,30,52,0.98), rgba(15,22,41,1))', border: '1px solid rgba(var(--gold-rgb), 0.15)' }}>
             <h3 className="text-white text-xl font-semibold mb-2" style={{ fontFamily: 'var(--sans)' }}>Two-Factor Authentication</h3>
             <p className="text-[#6b7a90] text-sm mb-6">
               {otpMethod === 'sms'
@@ -1197,7 +1197,7 @@ const LoginPage = () => {
             
             {/* SMS/Email toggle when user has both options */}
             {hasSmsOtp && (
-              <div className="flex items-center gap-2 mb-4 p-2 rounded-lg" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.1)' }}>
+              <div className="flex items-center gap-2 mb-4 p-2 rounded-lg" style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.1)' }}>
                 <span className="text-[#6b7a90] text-xs">Send code via:</span>
                 <button
                   onClick={() => handleResendOtp('sms')}

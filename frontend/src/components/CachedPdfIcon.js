@@ -154,20 +154,20 @@ const CachedPdfIcon = ({ pdfType, className = '', size = 18, testIdSuffix = '' }
       style={{
         width: size + 14,
         height: size + 14,
-        background: 'rgba(212,175,55,0.10)',
-        border: '1px solid rgba(212,175,55,0.35)',
+        background: 'rgba(var(--gold-rgb), 0.10)',
+        border: '1px solid rgba(var(--gold-rgb), 0.35)',
         color: '#d4af37',
         cursor: loading ? 'wait' : 'pointer',
         flexShrink: 0,
       }}
       onMouseEnter={(e) => {
         if (loading) return;
-        e.currentTarget.style.background = 'rgba(212,175,55,0.18)';
-        e.currentTarget.style.borderColor = 'rgba(212,175,55,0.55)';
+        e.currentTarget.style.background = 'rgba(var(--gold-rgb), 0.18)';
+        e.currentTarget.style.borderColor = 'rgba(var(--gold-rgb), 0.55)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'rgba(212,175,55,0.10)';
-        e.currentTarget.style.borderColor = 'rgba(212,175,55,0.35)';
+        e.currentTarget.style.background = 'rgba(var(--gold-rgb), 0.10)';
+        e.currentTarget.style.borderColor = 'rgba(var(--gold-rgb), 0.35)';
       }}
     >
       {loading

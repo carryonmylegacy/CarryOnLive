@@ -133,7 +133,7 @@ const QuickAdd = ({ estateId, module, onDone, getAuthHeaders }) => {
       {/* Step 1: Enter names */}
       {results.length === 0 && (
         <>
-          <div className="rounded-xl p-3" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
+          <div className="rounded-xl p-3" style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.15)' }}>
             <div className="flex items-center gap-2 mb-1">
               <Sparkles className="w-4 h-4 text-[var(--gold)]" />
               <span className="text-sm font-bold text-[var(--t)]">AI-Powered Quick Add</span>
@@ -178,8 +178,8 @@ const QuickAdd = ({ estateId, module, onDone, getAuthHeaders }) => {
             {results.map((item, idx) => (
               <div key={idx} className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all"
                 style={{
-                  background: item.status === 'saved' ? 'rgba(16,185,129,0.06)' : item.status === 'error' ? 'rgba(239,68,68,0.06)' : item.selected ? 'rgba(212,175,55,0.04)' : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${item.status === 'saved' ? 'rgba(16,185,129,0.2)' : item.status === 'error' ? 'rgba(239,68,68,0.2)' : item.selected ? 'rgba(212,175,55,0.15)' : 'var(--b)'}`,
+                  background: item.status === 'saved' ? 'rgba(16,185,129,0.06)' : item.status === 'error' ? 'rgba(239,68,68,0.06)' : item.selected ? 'rgba(var(--gold-rgb), 0.04)' : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${item.status === 'saved' ? 'rgba(16,185,129,0.2)' : item.status === 'error' ? 'rgba(239,68,68,0.2)' : item.selected ? 'rgba(var(--gold-rgb), 0.15)' : 'var(--b)'}`,
                   opacity: item.selected || item.status !== 'ready' ? 1 : 0.5,
                 }}
                 data-testid={`quick-add-item-${idx}`}

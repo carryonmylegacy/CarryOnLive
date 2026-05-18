@@ -95,8 +95,8 @@ const VaultEditPanel = ({
                     className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold transition-colors"
                     style={{
                       color: 'var(--gold)',
-                      background: 'rgba(212,165,55,0.10)',
-                      border: '1px solid rgba(212,165,55,0.35)',
+                      background: 'rgba(var(--gold-rgb), 0.10)',
+                      border: '1px solid rgba(var(--gold-rgb), 0.35)',
                     }}
                     data-testid={`vault-entity-link-${ent.id}`}
                     title="Open this entity in your Financial Picture"

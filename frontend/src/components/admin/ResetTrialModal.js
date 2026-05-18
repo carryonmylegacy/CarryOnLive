@@ -26,14 +26,14 @@ export const ResetTrialModal = ({
       <div
         className="w-full max-w-sm rounded-2xl p-6 space-y-4 animate-fade-in"
         style={{
-          background: 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(15,22,41,0.98) 40%)',
-          border: '1.5px solid rgba(212,175,55,0.3)',
-          boxShadow: '0 0 40px rgba(212,175,55,0.08)',
+          background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.08) 0%, rgba(15,22,41,0.98) 40%)',
+          border: '1.5px solid rgba(var(--gold-rgb), 0.3)',
+          boxShadow: '0 0 40px rgba(var(--gold-rgb), 0.08)',
         }}
         data-testid="reset-trial-modal"
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.25)' }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.25)' }}>
             <Clock className="w-5 h-5 text-[var(--gold)]" />
           </div>
           <div>
@@ -42,7 +42,7 @@ export const ResetTrialModal = ({
           </div>
         </div>
 
-        <div className="p-3 rounded-xl" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }}>
+        <div className="p-3 rounded-xl" style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.12)' }}>
           <p className="text-sm text-[var(--t3)]">
             Restart the {trialDays}-day free trial for <strong className="text-white">{resetTarget.name}</strong> ({resetTarget.role})?
           </p>

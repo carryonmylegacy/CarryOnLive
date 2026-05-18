@@ -42,10 +42,10 @@ export function TileIconButton({ icon: Icon, onClick, label, color = 'rgba(255,2
       onPointerDown={stopAll}
       onMouseDown={stopAll}
       onClick={(e) => { stopAll(e); onClick?.(e); }}
-      className="rounded-full flex items-center justify-center transition-colors hover:bg-[rgba(212,165,55,0.18)]"
+      className="rounded-full flex items-center justify-center transition-colors hover:bg-[rgba(var(--gold-rgb), 0.18)]"
       style={{
         width: 22, height: 22,
-        border: '1px solid rgba(212,165,55,0.45)',
+        border: '1px solid rgba(var(--gold-rgb), 0.45)',
         background: 'rgba(11,17,32,0.55)',
         color,
         backdropFilter: 'blur(4px)',
@@ -113,9 +113,9 @@ export function PersonTile({ node, palette, dragging, locked, onPointerDownDrag,
                 }}
                 className="text-[11px] font-bold leading-none rounded-full px-1.5 py-0.5 transition-all max-w-full truncate"
                 style={{
-                  background: active ? 'var(--gold)' : 'rgba(212,165,55,0.10)',
+                  background: active ? 'var(--gold)' : 'rgba(var(--gold-rgb), 0.10)',
                   color: active ? '#080e1a' : 'var(--gold)',
-                  border: active ? '1px solid var(--gold)' : '1px solid rgba(212,165,55,0.45)',
+                  border: active ? '1px solid var(--gold)' : '1px solid rgba(var(--gold-rgb), 0.45)',
                 }}
                 title={`Filter by ${t}`}
                 data-testid={`entity-node-title-chip-${node.key}-${t}`}
@@ -131,8 +131,8 @@ export function PersonTile({ node, palette, dragging, locked, onPointerDownDrag,
           className="inline-block text-[11px] font-bold rounded-full px-1.5 py-0.5 leading-none"
           style={{
             background: 'var(--bg2)',
-            color: '#D4A537',
-            border: '1px solid #D4A537',
+            color: '#D4AF37',
+            border: '1px solid #D4AF37',
             pointerEvents: 'none',
           }}
           data-testid={`entity-node-equity-${node.key}`}

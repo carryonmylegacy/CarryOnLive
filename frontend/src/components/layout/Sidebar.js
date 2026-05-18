@@ -265,7 +265,7 @@ const OfflineModeToggle = ({ collapsed }) => {
         className="mx-1 my-2 flex items-center justify-center px-2 py-2 rounded-lg cursor-pointer"
         onClick={toggle}
         title={`Offline mode ${on ? 'On' : 'Off'}`}
-        style={{ background: on ? 'rgba(212,175,55,0.10)' : 'var(--s)', border: `1px solid ${on ? 'rgba(212,175,55,0.35)' : 'var(--b)'}` }}
+        style={{ background: on ? 'rgba(var(--gold-rgb), 0.10)' : 'var(--s)', border: `1px solid ${on ? 'rgba(var(--gold-rgb), 0.35)' : 'var(--b)'}` }}
         data-testid="sidebar-offline-toggle-collapsed"
       >
         <CloudOff className="w-5 h-5" style={{ color: on ? '#d4af37' : 'var(--t3)' }} />
@@ -275,7 +275,7 @@ const OfflineModeToggle = ({ collapsed }) => {
   return (
     <div
       className="mx-3 my-2 flex items-center justify-between px-3 py-2 rounded-lg"
-      style={{ background: on ? 'rgba(212,175,55,0.10)' : 'var(--s)', border: `1px solid ${on ? 'rgba(212,175,55,0.35)' : 'var(--b)'}` }}
+      style={{ background: on ? 'rgba(var(--gold-rgb), 0.10)' : 'var(--s)', border: `1px solid ${on ? 'rgba(var(--gold-rgb), 0.35)' : 'var(--b)'}` }}
       data-testid="sidebar-offline-toggle"
     >
       <div className="flex items-center gap-2">
@@ -829,7 +829,7 @@ const Sidebar = () => {
                         onClick={(e) => { e.stopPropagation(); handleRestoreFounder(); }}
                         style={{
                           display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
-                          background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)',
+                          background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.25)',
                           borderRadius: 8, cursor: 'pointer', transition: 'all .15s',
                         }}
                         data-testid="scope-restore-founder"
@@ -1073,9 +1073,9 @@ const Sidebar = () => {
                   className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
                   style={{
                     background: isBenefactorActive
-                      ? theme === 'light' ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.1)'
+                      ? theme === 'light' ? 'rgba(var(--gold-rgb), 0.15)' : 'rgba(var(--gold-rgb), 0.1)'
                       : undefined,
-                    borderColor: isBenefactorActive ? 'rgba(212,175,55,0.4)' : undefined,
+                    borderColor: isBenefactorActive ? 'rgba(var(--gold-rgb), 0.4)' : undefined,
                     color: isBenefactorActive
                       ? theme === 'light' ? '#1a2744' : '#d4af37'
                       : undefined,
@@ -1135,8 +1135,8 @@ const Sidebar = () => {
                             className="flex-1 flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition-colors"
                             style={{
                               color: isCurrent ? '#d4af37' : 'var(--t)',
-                              background: isCurrent ? 'rgba(212,175,55,0.15)' : 'transparent',
-                              border: isCurrent ? '2px solid rgba(212,175,55,0.5)' : '1px solid transparent',
+                              background: isCurrent ? 'rgba(var(--gold-rgb), 0.15)' : 'transparent',
+                              border: isCurrent ? '2px solid rgba(var(--gold-rgb), 0.5)' : '1px solid transparent',
                               fontWeight: isCurrent ? 700 : 500,
                             }}
                           >
@@ -1170,7 +1170,7 @@ const Sidebar = () => {
                         data-testid="create-new-estate-btn"
                         className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
                         style={{ color: '#d4af37' }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.08)'}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(var(--gold-rgb), 0.08)'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
                         <Plus className="w-4 h-4" /> Create New Estate
@@ -1199,9 +1199,9 @@ const Sidebar = () => {
                   className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
                   style={{
                     background: isBenActive
-                      ? theme === 'light' ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.1)'
+                      ? theme === 'light' ? 'rgba(var(--gold-rgb), 0.15)' : 'rgba(var(--gold-rgb), 0.1)'
                       : undefined,
-                    borderColor: isBenActive ? 'rgba(212,175,55,0.4)' : undefined,
+                    borderColor: isBenActive ? 'rgba(var(--gold-rgb), 0.4)' : undefined,
                     color: isBenActive
                       ? theme === 'light' ? '#1a2744' : '#d4af37'
                       : undefined,

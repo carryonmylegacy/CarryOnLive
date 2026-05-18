@@ -324,7 +324,7 @@ function BriefEditor({ draft, upd, listAdd, listRemove }) {
 
         <div className="mt-4 mb-2 flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-[var(--gold)]">Pillar items</span>
-          <button onClick={() => listAdd(['pillars', 'items'], { n: '', name: '', abbr: '', desc: '' })} className="text-xs px-2 py-1 rounded-md inline-flex items-center gap-1" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.30)', color: 'var(--gold)' }} data-testid="add-pillar">
+          <button onClick={() => listAdd(['pillars', 'items'], { n: '', name: '', abbr: '', desc: '' })} className="text-xs px-2 py-1 rounded-md inline-flex items-center gap-1" style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.30)', color: 'var(--gold)' }} data-testid="add-pillar">
             <Plus className="w-3 h-3" /> Add pillar
           </button>
         </div>
@@ -346,7 +346,7 @@ function BriefEditor({ draft, upd, listAdd, listRemove }) {
 
         <div className="mt-4 mb-2 flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-[var(--gold)]">Industry entries</span>
-          <button onClick={() => listAdd(['verticals', 'items'], { id: `v-${Date.now()}`, title: 'New industry', cares: [''], pillars: '', questions: [''], disqualify: '' })} className="text-xs px-2 py-1 rounded-md inline-flex items-center gap-1" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.30)', color: 'var(--gold)' }} data-testid="add-vertical">
+          <button onClick={() => listAdd(['verticals', 'items'], { id: `v-${Date.now()}`, title: 'New industry', cares: [''], pillars: '', questions: [''], disqualify: '' })} className="text-xs px-2 py-1 rounded-md inline-flex items-center gap-1" style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.30)', color: 'var(--gold)' }} data-testid="add-vertical">
             <Plus className="w-3 h-3" /> Add industry
           </button>
         </div>
@@ -365,7 +365,7 @@ function BriefEditor({ draft, upd, listAdd, listRemove }) {
         <Field label="Section title" value={draft.adjacent?.title || ''} onChange={(v) => upd(['adjacent', 'title'], v)} testid="f-a-title" />
         <div className="mt-3 mb-2 flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-[var(--gold)]">Entries</span>
-          <button onClick={() => listAdd(['adjacent', 'items'], { name: '', frame: '' })} className="text-xs px-2 py-1 rounded-md inline-flex items-center gap-1" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.30)', color: 'var(--gold)' }} data-testid="add-adjacent">
+          <button onClick={() => listAdd(['adjacent', 'items'], { name: '', frame: '' })} className="text-xs px-2 py-1 rounded-md inline-flex items-center gap-1" style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.30)', color: 'var(--gold)' }} data-testid="add-adjacent">
             <Plus className="w-3 h-3" /> Add entry
           </button>
         </div>
@@ -391,7 +391,7 @@ function BriefEditor({ draft, upd, listAdd, listRemove }) {
         <Field label="Section intro" value={draft.elevator?.intro || ''} onChange={(v) => upd(['elevator', 'intro'], v)} multiline rows={2} testid="f-e-intro" />
         <div className="mt-3 mb-2 flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-[var(--gold)]">Lines</span>
-          <button onClick={() => listAdd(['elevator', 'items'], { abbr: '', line: '' })} className="text-xs px-2 py-1 rounded-md inline-flex items-center gap-1" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.30)', color: 'var(--gold)' }} data-testid="add-elevator">
+          <button onClick={() => listAdd(['elevator', 'items'], { abbr: '', line: '' })} className="text-xs px-2 py-1 rounded-md inline-flex items-center gap-1" style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.30)', color: 'var(--gold)' }} data-testid="add-elevator">
             <Plus className="w-3 h-3" /> Add line
           </button>
         </div>
@@ -450,7 +450,7 @@ function StringList({ label, items, onAdd, onRemove, onChange, testid }) {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--t4)]">{label}</span>
-        <button onClick={onAdd} className="text-[11px] px-2 py-0.5 rounded inline-flex items-center gap-1" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.30)', color: 'var(--gold)' }} data-testid={`${testid}-add`}>
+        <button onClick={onAdd} className="text-[11px] px-2 py-0.5 rounded inline-flex items-center gap-1" style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.30)', color: 'var(--gold)' }} data-testid={`${testid}-add`}>
           <Plus className="w-3 h-3" /> Add
         </button>
       </div>

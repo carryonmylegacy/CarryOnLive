@@ -104,7 +104,7 @@ export default function ImagePreviewModal({ previewImage, onClose }) {
           onTouchEnd={(e) => { e.stopPropagation(); }}
           style={{
             padding: '6px 14px', borderRadius: 8,
-            background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)',
+            background: 'rgba(var(--gold-rgb), 0.15)', border: '1px solid rgba(var(--gold-rgb), 0.3)',
             color: '#d4af37', fontSize: 13, fontWeight: 600, cursor: 'pointer',
           }}
         >

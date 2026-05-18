@@ -180,7 +180,7 @@ const SubscriptionPage = () => {
 
       {/* Founders Circle member status */}
       {fcSubs.filter(s => s.status === 'active' || s.status === 'completed').map(fc => (
-        <div key={fc.id} className="rounded-xl p-4 flex items-start gap-3" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)' }} data-testid="fc-member-status">
+        <div key={fc.id} className="rounded-xl p-4 flex items-start gap-3" style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.25)' }} data-testid="fc-member-status">
           <Crown className="w-6 h-6 text-[var(--gold)] flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-bold text-[var(--gold)]">Founders Circle — {fc.tier_name} (Lifetime)</p>
@@ -197,7 +197,7 @@ const SubscriptionPage = () => {
         <button
           onClick={() => navigate('/founders-circle')}
           className="w-full rounded-xl p-4 flex items-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99] text-left"
-          style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.04))', border: '1px solid rgba(212,175,55,0.3)' }}
+          style={{ background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.12), rgba(var(--gold-rgb), 0.04))', border: '1px solid rgba(var(--gold-rgb), 0.3)' }}
           data-testid="fc-cta-link"
         >
           <Crown className="w-8 h-8 text-[var(--gold)] flex-shrink-0" />

@@ -116,7 +116,7 @@ const PWAInstallGuide = ({ open, onClose }) => {
   if (ios && !safari) {
     return (
       <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center" style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }} data-testid="pwa-install-guide">
-        <div className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6" style={{ background: 'var(--bg)', border: '1px solid rgba(212,175,55,0.2)' }}>
+        <div className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6" style={{ background: 'var(--bg)', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}>
           <h2 className="text-white text-lg font-bold mb-2" style={{ fontFamily: 'var(--sans)' }}>Open in Safari</h2>
           <p className="text-[#7b879e] text-sm mb-4">Adding to your Home Screen only works in Safari. Copy <span className="text-[#d4af37] font-semibold">carryon.us</span> and paste it into Safari.</p>
           <button onClick={onClose} className="w-full py-3 rounded-xl text-sm font-bold active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }} data-testid="install-guide-done">Got it</button>
@@ -128,15 +128,15 @@ const PWAInstallGuide = ({ open, onClose }) => {
   if (android) {
     return (
       <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center" style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }} data-testid="pwa-install-guide">
-        <div className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6" style={{ background: 'var(--bg)', border: '1px solid rgba(212,175,55,0.2)' }}>
+        <div className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6" style={{ background: 'var(--bg)', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}>
           <div className="flex items-start justify-between mb-4">
             <h2 className="text-white text-lg font-bold" style={{ fontFamily: 'var(--sans)' }}>Install CarryOn</h2>
             <button onClick={onClose} className="text-[#475569] hover:text-white p-2" data-testid="install-guide-close" aria-label="Close"><X className="w-5 h-5" /></button>
           </div>
           <div className="space-y-4 mb-5">
-            <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>1</div><span className="text-white text-sm">Tap <strong className="text-[#d4af37]">the three dots</strong> at the top-right</span></div>
-            <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>2</div><span className="text-white text-sm">Tap <strong className="text-[#d4af37]">&ldquo;Install app&rdquo;</strong></span></div>
-            <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>3</div><span className="text-white text-sm">Tap <strong className="text-[#d4af37]">&ldquo;Install&rdquo;</strong></span></div>
+            <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'rgba(var(--gold-rgb), 0.15)', color: '#d4af37' }}>1</div><span className="text-white text-sm">Tap <strong className="text-[#d4af37]">the three dots</strong> at the top-right</span></div>
+            <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'rgba(var(--gold-rgb), 0.15)', color: '#d4af37' }}>2</div><span className="text-white text-sm">Tap <strong className="text-[#d4af37]">&ldquo;Install app&rdquo;</strong></span></div>
+            <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'rgba(var(--gold-rgb), 0.15)', color: '#d4af37' }}>3</div><span className="text-white text-sm">Tap <strong className="text-[#d4af37]">&ldquo;Install&rdquo;</strong></span></div>
           </div>
           <button onClick={onClose} className="w-full py-3 rounded-xl text-sm font-bold active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }} data-testid="install-guide-done">Got it</button>
         </div>
@@ -147,7 +147,7 @@ const PWAInstallGuide = ({ open, onClose }) => {
   /* ── iOS Safari: 4-step with real iOS-style mockups ── */
   return (
     <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center" style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }} data-testid="pwa-install-guide">
-      <div className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl overflow-hidden max-h-[92vh] overflow-y-auto" style={{ background: 'var(--bg)', border: '1px solid rgba(212,175,55,0.2)', borderBottom: 'none' }}>
+      <div className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl overflow-hidden max-h-[92vh] overflow-y-auto" style={{ background: 'var(--bg)', border: '1px solid rgba(var(--gold-rgb), 0.2)', borderBottom: 'none' }}>
         <div className="sticky top-0 z-10 flex items-center justify-between p-4 pb-2" style={{ background: 'var(--bg)' }}>
           <h2 className="text-white text-base font-bold" style={{ fontFamily: 'var(--sans)' }}>Install CarryOn</h2>
           <button onClick={onClose} className="text-[#475569] hover:text-white p-2" data-testid="install-guide-close" aria-label="Close"><X className="w-5 h-5" /></button>

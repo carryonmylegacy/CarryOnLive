@@ -60,11 +60,11 @@ const PDFViewerModal = ({ open, onClose, doc, blobUrl, loading, onDownload }) =>
         style={{
           background: 'var(--bg, #0F1629)',
           border: '1px solid var(--b, rgba(255,255,255,0.08))',
-          boxShadow: '0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(212,175,55,0.1)',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(var(--gold-rgb), 0.1)',
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--b)]" style={{ background: 'rgba(212,175,55,0.04)' }}>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--b)]" style={{ background: 'rgba(var(--gold-rgb), 0.04)' }}>
           <div className="flex items-center gap-3 min-w-0">
             <Eye className="w-5 h-5 text-[#d4af37] shrink-0" />
             <div className="min-w-0">

@@ -165,7 +165,7 @@ const LandingPage = () => {
 
       {/* Hero */}
       <section className="relative pt-32 pb-20 sm:pt-40 sm:pb-28 px-5 sm:px-8" data-testid="landing-hero">
-        <div className="absolute inset-0 -z-10" style={{ background: 'radial-gradient(ellipse 1100px 700px at 50% 0%, rgba(212,175,55,0.10), transparent 60%)' }} />
+        <div className="absolute inset-0 -z-10" style={{ background: 'radial-gradient(ellipse 1100px 700px at 50% 0%, rgba(var(--gold-rgb), 0.10), transparent 60%)' }} />
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-[1.05] tracking-tight mb-6 text-white"
               style={{ fontFamily: 'var(--serif)' }}>
@@ -261,7 +261,7 @@ const LandingPage = () => {
                   <div className="flex items-start justify-between mb-3">
                     <div
                       className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}
+                      style={{ background: 'rgba(var(--gold-rgb), 0.1)', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}
                     >
                       <Icon className="w-5 h-5" style={{ color: 'var(--gold)' }} />
                     </div>
@@ -318,7 +318,7 @@ const LandingPage = () => {
               const Icon = t.icon;
               return (
                 <div key={t.label}>
-                  <div className="w-10 h-10 mx-auto mb-3 rounded-lg flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.18)' }}>
+                  <div className="w-10 h-10 mx-auto mb-3 rounded-lg flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.18)' }}>
                     <Icon className="w-5 h-5" style={{ color: 'var(--gold)' }} />
                   </div>
                   <div className="text-sm font-semibold text-white mb-1">{t.label}</div>

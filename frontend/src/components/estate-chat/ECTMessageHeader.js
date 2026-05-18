@@ -61,14 +61,14 @@ const ECTMessageHeader = ({
       </button>
       {showHeaderMembers && (
         <div className="absolute left-0 top-full mt-1 rounded-xl overflow-hidden z-50" data-testid="ect-header-members-dropdown"
-          style={{ background: '#1A2238', border: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', minWidth: '220px', maxWidth: '280px', maxHeight: '300px', overflowY: 'auto' }}>
+          style={{ background: '#1A2238', border: '1px solid rgba(var(--gold-rgb), 0.25)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', minWidth: '220px', maxWidth: '280px', maxHeight: '300px', overflowY: 'auto' }}>
           <div className="px-3 py-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}><span className="text-[11px] font-semibold" style={{ color: 'var(--t4)' }}>Members</span></div>
           {resolveChannelMembers(activeChannel.members || [], activeChannel.estate_id).map(m => {
             const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
             const isYou = m.id === user?.id;
             return (
               <div key={m.id} className="flex items-center gap-2.5 px-3 py-2" data-testid={`header-member-${m.id}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-xs font-bold" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-xs font-bold" style={{ background: 'rgba(var(--gold-rgb), 0.15)', color: '#d4af37' }}>
                   {m.photo_url ? (
                     <OfflineImage
                       src={m.photo_url}
@@ -91,7 +91,7 @@ const ECTMessageHeader = ({
             if (!available.length) return null;
             return (
               <>
-                <div className="px-3 py-1.5" style={{ borderTop: '1px solid rgba(212,175,55,0.15)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}><span className="text-[11px] font-semibold" style={{ color: '#d4af37' }}>Add to Chat</span></div>
+                <div className="px-3 py-1.5" style={{ borderTop: '1px solid rgba(var(--gold-rgb), 0.15)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}><span className="text-[11px] font-semibold" style={{ color: '#d4af37' }}>Add to Chat</span></div>
                 {available.map(m => {
                   const initials = m.name ? m.name.split(' ').map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '?';
                   return (
@@ -117,8 +117,8 @@ const ECTMessageHeader = ({
           className="h-8 px-2.5 rounded-full flex items-center gap-1.5"
           data-testid="ect-header-pinned-btn"
           style={{
-            background: showPinned ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)',
-            border: showPinned ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent',
+            background: showPinned ? 'rgba(var(--gold-rgb), 0.2)' : 'rgba(255,255,255,0.06)',
+            border: showPinned ? '1px solid rgba(var(--gold-rgb), 0.3)' : '1px solid transparent',
           }}
         >
           <Pin className="w-3.5 h-3.5" style={{ color: '#d4af37' }} />
@@ -141,7 +141,7 @@ const ECTMessageHeader = ({
                 right: 0,
                 width: 'min(320px, calc(100vw - 32px))',
                 background: 'var(--bg2)',
-                border: '1px solid rgba(212,175,55,0.3)',
+                border: '1px solid rgba(var(--gold-rgb), 0.3)',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                 maxHeight: 'calc(100dvh - 64px - 80px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))',
               }}
@@ -149,7 +149,7 @@ const ECTMessageHeader = ({
               {/* Dropdown header */}
               <div
                 className="flex items-center gap-2 px-4 py-3 flex-shrink-0"
-                style={{ borderBottom: '1px solid rgba(212,175,55,0.15)' }}
+                style={{ borderBottom: '1px solid rgba(var(--gold-rgb), 0.15)' }}
               >
                 <Pin className="w-4 h-4 flex-shrink-0" style={{ color: '#d4af37' }} />
                 <span className="text-xs font-bold flex-1" style={{ color: '#d4af37' }}>
@@ -183,7 +183,7 @@ const ECTMessageHeader = ({
                           if (el) {
                             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             el.style.transition = 'background 300ms ease';
-                            el.style.background = 'rgba(212,175,55,0.18)';
+                            el.style.background = 'rgba(var(--gold-rgb), 0.18)';
                             setTimeout(() => { el.style.background = ''; }, 1500);
                           }
                         }, 100);

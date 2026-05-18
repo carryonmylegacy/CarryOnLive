@@ -195,7 +195,7 @@ const NotificationBell = ({ collapsed }) => {
                   key={n.id}
                   className="px-4 py-3 cursor-pointer transition-colors"
                   style={{
-                    background: n.read ? 'transparent' : 'rgba(212,175,55,0.03)',
+                    background: n.read ? 'transparent' : 'rgba(var(--gold-rgb), 0.03)',
                     borderBottom: '1px solid var(--b)',
                   }}
                   onClick={() => {

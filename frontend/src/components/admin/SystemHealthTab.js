@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 import { DbStatusCard } from './DbStatusCard';
+import { AuditIntegrityCard } from './AuditIntegrityCard';
 
 const XAICreditsCard = ({ getAuthHeaders }) => {
   const [credits, setCredits] = useState(null);
@@ -199,6 +200,10 @@ export const SystemHealthTab = ({ getAuthHeaders }) => {
           healthy, and how much do we have?" at a glance. Live to both
           /admin/system-health and /ops/system-health. */}
       <DbStatusCard getAuthHeaders={getAuthHeaders} />
+
+      {/* SOC 2 audit-trail hash-chain integrity — proves to auditors and
+          B2B prospects that the audit log is self-verifying every 10 min. */}
+      <AuditIntegrityCard getAuthHeaders={getAuthHeaders} />
 
       {/* Status timestamp */}
       <p className="text-[11px] text-[var(--t5)]">Last checked: {new Date(health.timestamp).toLocaleString()}</p>

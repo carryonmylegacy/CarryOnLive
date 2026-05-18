@@ -44,7 +44,7 @@ export default function ReadinessScoreCard({ estateId, refreshKey = 0 }) {
       className="rounded-2xl overflow-hidden"
       data-testid="ccp-readiness-card"
       style={{
-        background: 'linear-gradient(135deg, rgba(212,175,55,0.05), rgba(212,175,55,0.01))',
+        background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.05), rgba(var(--gold-rgb), 0.01))',
         border: `1px solid ${ringColor}55`,
       }}
     >

@@ -156,7 +156,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
           <div className="space-y-4">
             {/* Your price with discount */}
             {currentTierPlan && (
-              <div className="p-4 rounded-xl" style={{ background: 'rgba(212,175,55,0.05)', border: '1px solid rgba(212,175,55,0.15)' }}>
+              <div className="p-4 rounded-xl" style={{ background: 'rgba(var(--gold-rgb), 0.05)', border: '1px solid rgba(var(--gold-rgb), 0.15)' }}>
                 <p className="text-xs text-[var(--t4)] mb-1">Your cost as Family Plan Owner</p>
                 <div className="flex items-center gap-3">
                   <span className="text-lg line-through text-[var(--t5)]">${currentTierPlan.price?.toFixed(2)}/mo</span>
@@ -209,7 +209,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
                   ))}
                 </div>
                 {/* Total row */}
-                <div className="px-4 py-3 flex items-center justify-between" style={{ background: 'rgba(212,175,55,0.04)' }}>
+                <div className="px-4 py-3 flex items-center justify-between" style={{ background: 'rgba(var(--gold-rgb), 0.04)' }}>
                   <span className="text-sm font-bold text-[var(--t)]">Monthly Total</span>
                   <div className="text-right">
                     <div className="flex items-center gap-2 justify-end">
@@ -231,7 +231,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
               style={{ 
                 background: 'linear-gradient(135deg, #d4af37, #b8962e)', 
                 color: 'var(--bg2)',
-                boxShadow: '0 4px 20px rgba(212,175,55,0.3)',
+                boxShadow: '0 4px 20px rgba(var(--gold-rgb), 0.3)',
               }}
               data-testid="activate-family-plan"
             >
@@ -306,7 +306,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
                     ? c.id === 'annual' ? 'linear-gradient(135deg, #22C993, #10b981)' : 'linear-gradient(135deg, #d4af37, #c9a033)'
                     : 'transparent',
                   color: fpBilling === c.id ? '#0F1629' : 'var(--t5)',
-                  boxShadow: fpBilling === c.id ? (c.id === 'annual' ? '0 4px 16px rgba(34,201,147,0.35)' : '0 4px 16px rgba(212,175,55,0.35)') : 'none',
+                  boxShadow: fpBilling === c.id ? (c.id === 'annual' ? '0 4px 16px rgba(34,201,147,0.35)' : '0 4px 16px rgba(var(--gold-rgb), 0.35)') : 'none',
                 }}
                 data-testid={`family-billing-${c.id}`}
               >
@@ -372,7 +372,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
           </div>
 
           {/* Total row — Family Plan Price vs Without */}
-          <div className="px-4 py-5" style={{ background: 'rgba(212,175,55,0.04)', borderTop: '2px solid var(--b)' }} data-testid="family-total-row">
+          <div className="px-4 py-5" style={{ background: 'rgba(var(--gold-rgb), 0.04)', borderTop: '2px solid var(--b)' }} data-testid="family-total-row">
             <div className="grid grid-cols-2 gap-6">
               {/* Family Plan Price column */}
               <div>

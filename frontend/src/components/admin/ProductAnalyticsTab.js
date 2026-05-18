@@ -82,8 +82,8 @@ export const ProductAnalyticsTab = () => {
             <button key={d} onClick={() => setDays(d)} data-testid={`pa-days-${d}`}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
               style={{
-                background: days === d ? 'rgba(212,175,55,0.15)' : 'transparent',
-                border: `1px solid ${days === d ? 'rgba(212,175,55,0.4)' : 'var(--b)'}`,
+                background: days === d ? 'rgba(var(--gold-rgb), 0.15)' : 'transparent',
+                border: `1px solid ${days === d ? 'rgba(var(--gold-rgb), 0.4)' : 'var(--b)'}`,
                 color: days === d ? 'var(--gold)' : 'var(--t4)',
               }}>{d}d</button>
           ))}
@@ -178,7 +178,7 @@ const PlatformChips = ({ byPlatform, total }) => {
           const pct = total ? Math.round((byPlatform[p] / total) * 100) : 0;
           return (
             <div key={p} className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-              style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
+              style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.15)' }}>
               <Icon className="w-3.5 h-3.5 text-[var(--gold)]" />
               <span className="text-xs text-[var(--t3)]">{meta.label}</span>
               <span className="text-xs font-semibold text-white">{byPlatform[p]}</span>

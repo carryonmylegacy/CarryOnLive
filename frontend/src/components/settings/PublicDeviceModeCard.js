@@ -86,7 +86,7 @@ const PublicDeviceModeCard = () => {
       <CardContent className="pt-5 space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.1)' }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(var(--gold-rgb), 0.1)' }}>
               <Shield className="w-5 h-5 text-[var(--gold)]" />
             </div>
             <div className="min-w-0">
@@ -135,8 +135,8 @@ const PublicDeviceModeCard = () => {
                   className="px-3 py-1.5 rounded-full text-xs font-bold transition-transform duration-150 active:scale-95"
                   data-testid={`pdm-idle-${opt.value}`}
                   style={{
-                    background: idleSeconds === opt.value ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.04)',
-                    border: idleSeconds === opt.value ? '1.5px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                    background: idleSeconds === opt.value ? 'rgba(var(--gold-rgb), 0.15)' : 'rgba(255,255,255,0.04)',
+                    border: idleSeconds === opt.value ? '1.5px solid rgba(var(--gold-rgb), 0.4)' : '1px solid rgba(255,255,255,0.08)',
                     color: idleSeconds === opt.value ? '#d4af37' : 'var(--t4)',
                   }}
                 >

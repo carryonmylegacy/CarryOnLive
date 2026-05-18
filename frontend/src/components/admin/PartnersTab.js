@@ -31,9 +31,9 @@ const LOGO_PLACEHOLDER = (
   <div
     className="w-12 h-12 rounded-lg flex flex-col items-center justify-center text-center"
     style={{
-      background: 'rgba(212,175,55,0.08)',
-      border: '1px dashed rgba(212,175,55,0.35)',
-      color: 'rgba(212,175,55,0.7)',
+      background: 'rgba(var(--gold-rgb), 0.08)',
+      border: '1px dashed rgba(var(--gold-rgb), 0.35)',
+      color: 'rgba(var(--gold-rgb), 0.7)',
     }}
   >
     <ImageIcon className="w-4 h-4 mb-0.5" />

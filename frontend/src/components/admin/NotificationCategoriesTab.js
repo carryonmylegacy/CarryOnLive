@@ -94,7 +94,7 @@ export const NotificationCategoriesTab = ({ getAuthHeaders }) => {
 
       {/* Add Category Form */}
       {showAdd && (
-        <div className="rounded-xl p-5" style={{ background: 'var(--s)', border: '1px solid var(--gold, rgba(212,175,55,0.3))' }}>
+        <div className="rounded-xl p-5" style={{ background: 'var(--s)', border: '1px solid var(--gold, rgba(var(--gold-rgb), 0.3))' }}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-[var(--t)]">New Notification Category</h3>
             <button onClick={() => setShowAdd(false)}><X className="w-4 h-4 text-[var(--t5)]" /></button>
@@ -141,7 +141,7 @@ export const NotificationCategoriesTab = ({ getAuthHeaders }) => {
           <div key={cat.id} className="rounded-xl p-4 flex items-center gap-4"
             data-testid={`category-row-${cat.id}`}
             style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold" style={{ background: 'rgba(212,175,55,0.1)', color: '#d4af37' }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold" style={{ background: 'rgba(var(--gold-rgb), 0.1)', color: '#d4af37' }}>
               {i + 1}
             </div>
             <div className="flex-1">

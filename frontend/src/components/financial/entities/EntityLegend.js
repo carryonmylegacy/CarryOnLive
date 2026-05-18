@@ -75,12 +75,12 @@ function EntityLegend({ entities, relationships, onHide, onPointerDownDrag, drag
       style={{
         width: LEGEND_W,
         background: 'var(--bg2)',
-        border: '1px solid rgba(212,165,55,0.45)',
+        border: '1px solid rgba(var(--gold-rgb), 0.45)',
         borderRadius: 12,
         backdropFilter: 'blur(8px)',
         boxShadow: dragging
-          ? '0 12px 28px rgba(0,0,0,0.25), 0 0 18px rgba(212,165,55,0.4)'
-          : '0 8px 24px rgba(0,0,0,0.18), 0 0 14px rgba(212,165,55,0.18)',
+          ? '0 12px 28px rgba(0,0,0,0.25), 0 0 18px rgba(var(--gold-rgb), 0.4)'
+          : '0 8px 24px rgba(0,0,0,0.18), 0 0 14px rgba(var(--gold-rgb), 0.18)',
         cursor: dragging ? 'grabbing' : 'grab',
         touchAction: 'none',
       }}
@@ -90,7 +90,7 @@ function EntityLegend({ entities, relationships, onHide, onPointerDownDrag, drag
       {/* Header (drag affordance + close) */}
       <div
         className="flex items-center justify-between px-2.5 py-1.5"
-        style={{ borderBottom: '1px solid rgba(212,165,55,0.25)' }}
+        style={{ borderBottom: '1px solid rgba(var(--gold-rgb), 0.25)' }}
       >
         <span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--gold)' }}>
           <GripVertical style={{ width: 11, height: 11, opacity: 0.75 }} />
@@ -102,10 +102,10 @@ function EntityLegend({ entities, relationships, onHide, onPointerDownDrag, drag
           onClick={(e) => { e.stopPropagation(); onHide?.(); }}
           aria-label="Hide legend"
           title="Hide legend"
-          className="inline-flex items-center justify-center rounded-full transition-colors hover:bg-[rgba(212,165,55,0.18)]"
+          className="inline-flex items-center justify-center rounded-full transition-colors hover:bg-[rgba(var(--gold-rgb), 0.18)]"
           style={{
             width: 18, height: 18,
-            border: '1px solid rgba(212,165,55,0.55)',
+            border: '1px solid rgba(var(--gold-rgb), 0.55)',
             color: 'var(--gold)',
           }}
           data-testid="entity-legend-hide"
@@ -123,7 +123,7 @@ function EntityLegend({ entities, relationships, onHide, onPointerDownDrag, drag
           {presentRoles.map((role) => {
             const palette = ROLE_PALETTE[role.id] || ROLE_PALETTE.owner;
             const isEquity = EQUITY_ROLE_IDS.has(role.id);
-            const stroke = isEquity ? '#D4A537' : palette.color;
+            const stroke = isEquity ? '#D4AF37' : palette.color;
             return (
               <div key={role.id} className="flex items-center gap-2">
                 <svg width="28" height="8" style={{ flexShrink: 0 }} aria-hidden="true">
@@ -149,7 +149,7 @@ function EntityLegend({ entities, relationships, onHide, onPointerDownDrag, drag
         <div
           className="px-2.5 py-2 space-y-1.5"
           style={{
-            borderTop: presentRoles.length > 0 ? '1px solid rgba(212,165,55,0.18)' : undefined,
+            borderTop: presentRoles.length > 0 ? '1px solid rgba(var(--gold-rgb), 0.18)' : undefined,
           }}
         >
           <div className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--t5)' }}>

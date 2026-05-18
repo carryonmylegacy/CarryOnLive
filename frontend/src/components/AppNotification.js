@@ -114,12 +114,12 @@ const NotificationCard = ({ notification, onDismiss }) => {
   const cardBg = isDark ? 'rgba(12, 19, 38, 0.95)' : 'rgba(255, 248, 230, 0.97)';
   const cardBorder = isDark ? '#d4af37' : '#0f1629';
   const labelColor = isDark ? '#d4af37' : '#0f1629';
-  const timeColor = isDark ? 'rgba(212,175,55,0.5)' : 'rgba(15,22,41,0.45)';
+  const timeColor = isDark ? 'rgba(var(--gold-rgb), 0.5)' : 'rgba(15,22,41,0.45)';
   const msgColor = textColor;
-  const iconBg = isDark ? 'rgba(212,175,55,0.1)' : 'rgba(15,22,41,0.08)';
-  const pillColor = isDark ? 'rgba(212,175,55,0.25)' : 'rgba(15,22,41,0.15)';
+  const iconBg = isDark ? 'rgba(var(--gold-rgb), 0.1)' : 'rgba(15,22,41,0.08)';
+  const pillColor = isDark ? 'rgba(var(--gold-rgb), 0.25)' : 'rgba(15,22,41,0.15)';
   const shadow = isDark
-    ? '0 8px 32px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(212,175,55,0.15)'
+    ? '0 8px 32px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(var(--gold-rgb), 0.15)'
     : '0 8px 32px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(15,22,41,0.1)';
 
   const dismiss = useCallback(() => {

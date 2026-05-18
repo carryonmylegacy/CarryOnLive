@@ -643,7 +643,7 @@ const GuardianPage = () => {
             opacity: 0,
           }}>
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
-            style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
+            style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}>
             <Landmark className="w-8 h-8 text-[var(--gold)]" />
           </div>
           <h2 className="text-xl font-bold mb-3" style={{ fontFamily: 'var(--sans)', color: 'var(--t, #ffffff)' }}>
@@ -654,7 +654,7 @@ const GuardianPage = () => {
           </p>
           <button onClick={() => navigate(`/settings?editAddress=true${fromGettingStarted ? '&fromOnboarding=true' : ''}`)}
             className="w-full py-3.5 rounded-xl text-sm font-bold mb-3 flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
+            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 8px 32px rgba(var(--gold-rgb), 0.3)' }}
             data-testid="address-gate-settings-btn">
             Go to Settings <ChevronRight className="w-4 h-4" />
           </button>
@@ -681,13 +681,13 @@ const GuardianPage = () => {
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto flex flex-col" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y',
           // Signature page glow — matches MM/SDV/CFP/IAC/Beneficiaries pattern.
-          background: 'radial-gradient(ellipse at top left, rgba(212,175,55,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(240,201,92,0.06), transparent 55%)' }}>
+          background: 'radial-gradient(ellipse at top left, rgba(var(--gold-rgb), 0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(240,201,92,0.06), transparent 55%)' }}>
           <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-4 space-y-5">
             {/* Header — standardized icon-box + title + 1-line description,
                 matching MM/SDV/CFP/IAC/Beneficiaries/DTS. */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(240,201,92,0.15))' }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.2), rgba(240,201,92,0.15))' }}>
                   <Sparkles className="w-5 h-5 text-[var(--gold)]" />
                 </div>
                 <div>
@@ -738,7 +738,7 @@ const GuardianPage = () => {
                     <div key={s.session_id} onClick={() => resumeSession(s.session_id)} role="button" tabIndex={0}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-transform duration-150 active:scale-[0.98] cursor-pointer"
                       style={{ border: '1px solid var(--b)' }} data-testid={`session-${s.session_id}`}>
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.12)' }}>
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.12)' }}>
                         <MessageSquare className="w-3 h-3 text-[var(--gold)]" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -846,7 +846,7 @@ const GuardianPage = () => {
             <ArrowLeft className="w-5 h-5 text-[var(--t3)]" />
           </button>
           <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
+            style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}>
             <Sparkles className="w-4 h-4 text-[var(--gold)]" />
           </div>
           <div className="min-w-0 flex-1">
@@ -1094,13 +1094,13 @@ const GuardianPage = () => {
               style={{
                 background: 'linear-gradient(135deg, #d4af37, #b8962e)',
                 color: 'var(--bg)',
-                boxShadow: '0 4px 20px rgba(212,175,55,0.3)',
+                boxShadow: '0 4px 20px rgba(var(--gold-rgb), 0.3)',
                 animation: 'onboardingPulse 2.5s ease-in-out infinite',
               }}
               data-testid="ega-return-dashboard-btn">
               Done — Return to Dashboard
             </button>
-            <style>{`@keyframes onboardingPulse { 0%,100% { transform: scale(1); box-shadow: 0 4px 20px rgba(212,175,55,0.3); } 50% { transform: scale(1.03); box-shadow: 0 6px 28px rgba(212,175,55,0.5); } }`}</style>
+            <style>{`@keyframes onboardingPulse { 0%,100% { transform: scale(1); box-shadow: 0 4px 20px rgba(var(--gold-rgb), 0.3); } 50% { transform: scale(1.03); box-shadow: 0 6px 28px rgba(var(--gold-rgb), 0.5); } }`}</style>
           </div>
         )}
 

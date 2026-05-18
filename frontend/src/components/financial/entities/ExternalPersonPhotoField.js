@@ -287,7 +287,7 @@ export default function ExternalPersonPhotoField({
             />
             <circle
               cx={FRAME / 2} cy={FRAME / 2} r={CIRCLE_R}
-              fill="none" stroke="rgba(212,165,55,0.95)" strokeWidth="2"
+              fill="none" stroke="rgba(var(--gold-rgb), 0.95)" strokeWidth="2"
             />
           </svg>
         </div>
@@ -343,8 +343,8 @@ export default function ExternalPersonPhotoField({
       <div
         className="relative w-16 h-16 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0"
         style={{
-          background: 'rgba(212,165,55,0.10)',
-          border: '2px solid rgba(212,165,55,0.45)',
+          background: 'rgba(var(--gold-rgb), 0.10)',
+          border: '2px solid rgba(var(--gold-rgb), 0.45)',
         }}
       >
         {!showFallback ? (
@@ -365,9 +365,9 @@ export default function ExternalPersonPhotoField({
           onClick={handlePick}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-bold transition-all"
           style={{
-            background: 'rgba(212,165,55,0.10)',
+            background: 'rgba(var(--gold-rgb), 0.10)',
             color: 'var(--gold)',
-            border: '1px solid rgba(212,165,55,0.45)',
+            border: '1px solid rgba(var(--gold-rgb), 0.45)',
           }}
           data-testid="external-person-photo-upload"
         >

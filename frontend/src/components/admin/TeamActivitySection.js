@@ -28,8 +28,8 @@ export const TeamActivitySection = ({ teamTasks, opsDash }) => {
               key={op.id}
               className="rounded-xl p-3 transition-all"
               style={{
-                background: hasTasks ? 'rgba(212,175,55,0.06)' : 'var(--s)',
-                border: `1px solid ${hasTasks ? 'rgba(212,175,55,0.2)' : 'var(--b)'}`,
+                background: hasTasks ? 'rgba(var(--gold-rgb), 0.06)' : 'var(--s)',
+                border: `1px solid ${hasTasks ? 'rgba(var(--gold-rgb), 0.2)' : 'var(--b)'}`,
               }}
               data-testid={`team-op-${op.id}`}
             >

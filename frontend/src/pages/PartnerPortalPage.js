@@ -162,7 +162,7 @@ const PartnerPortalPage = () => {
       </div>
       <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.10) 0%, rgba(11,18,33,0.35) 50%, rgba(14,24,41,0.65) 100%)' }} />
       <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 90% 80% at 20% 80%, rgba(255,255,255,0.10) 0%, transparent 60%)' }} />
-      <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
+      <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(var(--gold-rgb), 0.04) 0%, transparent 70%)' }} />
 
       {/* Top-right "Sign up" link */}
       <div className="absolute top-0 right-0 z-20 px-6 lg:px-10 py-4" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
@@ -189,7 +189,7 @@ const PartnerPortalPage = () => {
                   className="w-[260px] h-[160px] rounded-xl mb-6 flex flex-col items-center justify-center"
                   style={{
                     background: 'rgba(255,255,255,0.06)',
-                    border: '2px dashed rgba(212,175,55,0.45)',
+                    border: '2px dashed rgba(var(--gold-rgb), 0.45)',
                     boxShadow: '0 8px 40px rgba(0,0,0,0.35)',
                   }}>
                   <span className="text-[#d4af37] text-base font-bold tracking-widest uppercase">Your Logo</span>
@@ -211,7 +211,7 @@ const PartnerPortalPage = () => {
                 <div className="flex flex-wrap gap-2 justify-center lg:justify-start" data-testid="partner-portal-pillars">
                   {partner.enabled_pillars.map(p => (
                     <span key={p.key} className="px-3 py-1 rounded-full text-xs font-semibold"
-                      style={{ background: 'rgba(212,175,55,0.14)', border: '1px solid rgba(212,175,55,0.32)', color: '#fcd34d' }}>
+                      style={{ background: 'rgba(var(--gold-rgb), 0.14)', border: '1px solid rgba(var(--gold-rgb), 0.32)', color: '#fcd34d' }}>
                       {p.label}
                     </span>
                   ))}
@@ -223,7 +223,7 @@ const PartnerPortalPage = () => {
             <div className="flex justify-center lg:justify-end">
               <div className="w-full max-w-md rounded-2xl p-7 relative" style={{
                 background: 'linear-gradient(160deg, rgba(17,27,48,0.97), rgba(13,22,40,0.99))',
-                border: '1px solid rgba(212,175,55,0.12)',
+                border: '1px solid rgba(var(--gold-rgb), 0.12)',
                 boxShadow: '0 8px 80px rgba(0,0,0,0.5)',
               }}>
                 <div className="absolute top-0 left-7 right-7 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
@@ -308,7 +308,7 @@ function PartnerNotFoundTile({ slug, reason }) {
       <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.55) 0%, rgba(11,18,33,0.85) 100%)' }} />
       <div className="relative z-10 max-w-lg w-full mx-6 rounded-2xl p-8 text-center" style={{
         background: 'linear-gradient(160deg, rgba(17,27,48,0.97), rgba(13,22,40,0.99))',
-        border: '1px solid rgba(212,175,55,0.18)',
+        border: '1px solid rgba(var(--gold-rgb), 0.18)',
         boxShadow: '0 8px 80px rgba(0,0,0,0.5)',
       }}>
         <div className="w-14 h-14 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)' }}>

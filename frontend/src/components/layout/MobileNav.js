@@ -703,7 +703,7 @@ const MobileNav = () => {
                             onClick={(e) => { e.stopPropagation(); handleMobileRestoreFounder(); }}
                             style={{
                               display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
-                              background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)',
+                              background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.25)',
                               borderRadius: 8, cursor: 'pointer',
                             }}
                             data-testid="mobile-scope-restore-founder"
@@ -786,7 +786,7 @@ const MobileNav = () => {
                       width: 9,
                       height: 9,
                       background: syncHasConflict ? '#ef4444' : '#d4af37',
-                      boxShadow: `0 0 0 2px var(--bg, #0B1221), 0 0 8px ${syncHasConflict ? 'rgba(239,68,68,0.6)' : 'rgba(212,175,55,0.55)'}`,
+                      boxShadow: `0 0 0 2px var(--bg, #0B1221), 0 0 8px ${syncHasConflict ? 'rgba(239,68,68,0.6)' : 'rgba(var(--gold-rgb), 0.55)'}`,
                       animation: syncHasConflict ? 'pulse 1.4s ease-in-out infinite' : undefined,
                     }}
                     data-testid="menu-pending-sync-dot"
@@ -1046,9 +1046,9 @@ const MobileNav = () => {
                             data-testid="mobile-switch-benefactor"
                             className="w-full flex flex-col items-center px-4 py-3 rounded-xl transition-all"
                             style={{
-                              border: `1px solid ${isBenefactorActive ? 'rgba(212,175,55,0.4)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                              border: `1px solid ${isBenefactorActive ? 'rgba(var(--gold-rgb), 0.4)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
                               color: isBenefactorActive ? (theme === 'light' ? '#1a2744' : '#d4af37') : theme === 'dark' ? '#A0AABF' : '#475569',
-                              backgroundColor: isBenefactorActive ? (theme === 'light' ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.08)') : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
+                              backgroundColor: isBenefactorActive ? (theme === 'light' ? 'rgba(var(--gold-rgb), 0.15)' : 'rgba(var(--gold-rgb), 0.08)') : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
                               fontWeight: isBenefactorActive ? 700 : undefined,
                               gap: 2,
                             }}>
@@ -1085,8 +1085,8 @@ const MobileNav = () => {
                                       className="flex-1 flex items-center gap-2 text-left px-3 py-3 rounded-lg text-sm"
                                       style={{
                                         color: isCurrent ? '#d4af37' : 'var(--t)',
-                                        background: isCurrent ? 'rgba(212,175,55,0.15)' : 'transparent',
-                                        border: isCurrent ? '2px solid rgba(212,175,55,0.5)' : '1px solid transparent',
+                                        background: isCurrent ? 'rgba(var(--gold-rgb), 0.15)' : 'transparent',
+                                        border: isCurrent ? '2px solid rgba(var(--gold-rgb), 0.5)' : '1px solid transparent',
                                         fontWeight: isCurrent ? 700 : 500,
                                       }}>
                                       {isCurrent && <Check className="w-4 h-4 flex-shrink-0" style={{ color: '#d4af37' }} />}
@@ -1140,9 +1140,9 @@ const MobileNav = () => {
                           data-testid="mobile-switch-beneficiary"
                           className="w-full flex flex-col items-center px-4 py-3 rounded-xl transition-all"
                           style={{
-                            border: `1px solid ${isOnBeneficiary ? 'rgba(212,175,55,0.4)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                            border: `1px solid ${isOnBeneficiary ? 'rgba(var(--gold-rgb), 0.4)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
                             color: isOnBeneficiary ? (theme === 'light' ? '#1a2744' : '#d4af37') : theme === 'dark' ? '#A0AABF' : '#475569',
-                            backgroundColor: isOnBeneficiary ? (theme === 'light' ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.08)') : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
+                            backgroundColor: isOnBeneficiary ? (theme === 'light' ? 'rgba(var(--gold-rgb), 0.15)' : 'rgba(var(--gold-rgb), 0.08)') : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
                             fontWeight: isOnBeneficiary ? 700 : undefined,
                             gap: 2,
                           }}>

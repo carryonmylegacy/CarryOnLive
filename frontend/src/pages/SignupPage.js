@@ -602,7 +602,7 @@ const SignupPage = () => {
       `}</style>
 
       {/* NAV */}
-      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)', background: 'rgba(8,14,26,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(var(--gold-rgb), 0.08)', background: 'rgba(8,14,26,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <Link to="/login"><img src={partnerLandingLogo || "/carryon-logo.png"} alt={partnerLandingCompany || "CarryOn"} className="h-12" /></Link>
           <Link to="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
@@ -675,8 +675,8 @@ const SignupPage = () => {
             }}>
               <div className="w-full max-w-[100vw] rounded-2xl relative overflow-hidden" style={{
                 background: 'linear-gradient(160deg, rgba(18,28,48,0.97), rgba(12,20,38,0.99))',
-                border: '1px solid rgba(212,175,55,0.12)',
-                boxShadow: '0 8px 80px rgba(0,0,0,0.5), 0 0 50px rgba(212,175,55,0.02)',
+                border: '1px solid rgba(var(--gold-rgb), 0.12)',
+                boxShadow: '0 8px 80px rgba(0,0,0,0.5), 0 0 50px rgba(var(--gold-rgb), 0.02)',
               }}>
                 {/* Gold top accent */}
                 <div className="absolute top-0 left-8 right-8 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
@@ -695,7 +695,7 @@ const SignupPage = () => {
                           <div className={`${STEPS.length > 8 ? 'w-6 h-6 text-xs' : 'w-7 h-7 text-sm'} sm:w-9 sm:h-9 sm:text-base rounded-full flex items-center justify-center font-bold transition-all duration-500`} style={{
                             background: i <= step ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(255,255,255,0.05)',
                             color: i <= step ? '#080e1a' : '#3a4a63',
-                            boxShadow: i === step ? '0 0 16px rgba(212,175,55,0.4)' : 'none',
+                            boxShadow: i === step ? '0 0 16px rgba(var(--gold-rgb), 0.4)' : 'none',
                           }}>
                             {i + 1}
                           </div>
@@ -1108,9 +1108,9 @@ const SignupPage = () => {
                     <Button onClick={handleNext} disabled={loading || usernameChecking || applyingPartnerCode}
                       className="h-11 sm:h-12 px-6 sm:px-8 rounded-xl font-semibold text-sm"
                       style={{
-                        background: canAdvance() ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(212,175,55,0.15)',
+                        background: canAdvance() ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(var(--gold-rgb), 0.15)',
                         color: canAdvance() ? '#080e1a' : '#d4af3780',
-                        boxShadow: canAdvance() ? '0 4px 24px rgba(212,175,55,0.3)' : 'none',
+                        boxShadow: canAdvance() ? '0 4px 24px rgba(var(--gold-rgb), 0.3)' : 'none',
                         transition: 'all 0.3s',
                       }}
                       data-testid="signup-next-btn"
@@ -1157,7 +1157,7 @@ const SignupPage = () => {
         <DialogContent className="sm:max-w-md border-0 p-0 bg-transparent shadow-none">
           <div className="rounded-2xl p-8" style={{
             background: 'linear-gradient(145deg, rgba(20,30,52,0.98), rgba(15,22,41,1))',
-            border: '1px solid rgba(212,175,55,0.15)',
+            border: '1px solid rgba(var(--gold-rgb), 0.15)',
             boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
           }}>
             <DialogHeader>

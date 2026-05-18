@@ -261,11 +261,11 @@ const BeneficiaryFinancialPage = () => {
         <div
           onClick={() => navigate(`/beneficiary/entities/${esEstateId}`)}
           className="rounded-2xl p-4 cursor-pointer flex items-center gap-3 transition-transform duration-150 active:scale-[0.99]"
-          style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.45)' }}
+          style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.45)' }}
           data-testid="ben-financial-entities-cta"
         >
           <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'rgba(212,175,55,0.18)' }}>
+            style={{ background: 'rgba(var(--gold-rgb), 0.18)' }}>
             <Network className="w-5 h-5 text-[var(--gold)]" />
           </div>
           <div className="flex-1 min-w-0">
@@ -521,7 +521,7 @@ const BeneficiaryFinancialPage = () => {
                   ].map(item => (
                     <div key={item.step} className="flex items-start gap-3 py-2 px-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)' }}>
                       <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[11px] font-bold"
-                        style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.3)' }}>
+                        style={{ background: 'rgba(var(--gold-rgb), 0.15)', color: '#d4af37', border: '1px solid rgba(var(--gold-rgb), 0.3)' }}>
                         {item.step}
                       </div>
                       <span className="text-xs text-[var(--t3)] leading-relaxed">{item.text}</span>
@@ -532,7 +532,7 @@ const BeneficiaryFinancialPage = () => {
 
               {/* Benefactor's instructions */}
               {cancelAdvisor.notes && (
-                <div className="rounded-xl p-3" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
+                <div className="rounded-xl p-3" style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.15)' }}>
                   <div className="text-[11px] font-bold text-[var(--gold)] uppercase tracking-wider mb-1.5">Instructions from Benefactor</div>
                   <p className="text-xs text-[var(--t3)] leading-relaxed">{cancelAdvisor.notes}</p>
                 </div>

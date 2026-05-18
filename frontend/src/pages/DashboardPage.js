@@ -658,8 +658,8 @@ const DashboardPage = () => {
             style={{ animation: 'bubbleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}>
             <div className="w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-6"
               style={{
-                background: 'radial-gradient(circle, rgba(212,175,55,0.2) 0%, rgba(96,165,250,0.08) 70%)',
-                border: '2px solid rgba(212,175,55,0.35)',
+                background: 'radial-gradient(circle, rgba(var(--gold-rgb), 0.2) 0%, rgba(96,165,250,0.08) 70%)',
+                border: '2px solid rgba(var(--gold-rgb), 0.35)',
                 animation: 'pulseRing 2.5s ease-in-out infinite',
               }}>
               <ArrowLeftRight className="w-14 h-14 text-[var(--gold)]" />
@@ -673,7 +673,7 @@ const DashboardPage = () => {
             </p>
             <button onClick={() => { localStorage.setItem('carryon_welcome_guided_shown', 'true'); setShowWelcomeStep(false); }}
               className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
+              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 8px 32px rgba(var(--gold-rgb), 0.3)' }}
               data-testid="welcome-step-continue">
               Let's Get Started <ChevronRight className="w-5 h-5" />
             </button>
@@ -832,7 +832,7 @@ const DashboardPage = () => {
             setGuidedStep({ ...next, beneficiary_names: prog?.beneficiary_names || [] });
             setShowGuidedFlow(true);
           }}
-          className="glass-card w-full p-4 lg:p-5 mb-4 border-l-4 border-l-[#d4af37] text-left transition-transform duration-150 active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(212,175,55,0.25)]"
+          className="glass-card w-full p-4 lg:p-5 mb-4 border-l-4 border-l-[#d4af37] text-left transition-transform duration-150 active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(var(--gold-rgb), 0.25)]"
           style={{ cursor: 'pointer' }}
         >
           <div className="flex items-center justify-between gap-3">
@@ -840,8 +840,8 @@ const DashboardPage = () => {
               <div
                 className="flex-shrink-0 w-10 h-10 lg:w-11 lg:h-11 rounded-full flex items-center justify-center"
                 style={{
-                  background: 'radial-gradient(circle, rgba(212,175,55,0.22) 0%, rgba(212,175,55,0.08) 70%)',
-                  border: '1px solid rgba(212,175,55,0.35)',
+                  background: 'radial-gradient(circle, rgba(var(--gold-rgb), 0.22) 0%, rgba(var(--gold-rgb), 0.08) 70%)',
+                  border: '1px solid rgba(var(--gold-rgb), 0.35)',
                 }}
               >
                 <Play className="w-5 h-5" style={{ color: '#d4af37', fill: '#d4af37' }} />
@@ -1125,7 +1125,7 @@ const DashboardPage = () => {
           egaRunning && isFeatureKeyEnabled('ega', enabledFeatures) ? (
             <div
               className="flex items-start gap-2.5 w-full px-4 py-3 rounded-xl text-sm font-bold mb-4"
-              style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.20)', color: '#d4af37' }}
+              style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.20)', color: '#d4af37' }}
               data-testid="ega-running-banner"
             >
               <Loader2 className="w-4 h-4 animate-spin flex-shrink-0 mt-0.5" />
@@ -1463,11 +1463,11 @@ const DashboardPage = () => {
           <div className="relative max-w-lg w-full mx-6 text-center p-8 rounded-3xl"
             style={{
               animation: 'celebrationBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both',
-              background: 'radial-gradient(ellipse at center, rgba(212,175,55,0.08) 0%, transparent 70%)',
-              border: '1px solid rgba(212,175,55,0.15)',
+              background: 'radial-gradient(ellipse at center, rgba(var(--gold-rgb), 0.08) 0%, transparent 70%)',
+              border: '1px solid rgba(var(--gold-rgb), 0.15)',
             }}>
             <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5"
-              style={{ background: 'rgba(212,175,55,0.12)', border: '2px solid rgba(212,175,55,0.3)' }}>
+              style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '2px solid rgba(var(--gold-rgb), 0.3)' }}>
               <Sparkles className="w-10 h-10 text-[var(--gold)]" />
             </div>
             <h1 className="text-3xl lg:text-4xl font-bold mb-4"
@@ -1484,7 +1484,7 @@ const DashboardPage = () => {
             </p>
             <button onClick={handleCelebrationDismiss}
               className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold transition-transform active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
+              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 8px 32px rgba(var(--gold-rgb), 0.3)' }}
               data-testid="celebration-explore-btn">
               Explore Your Dashboard
             </button>

@@ -35,7 +35,7 @@ export const VisibilityTimingPills = ({ timing = {}, onChange, recordKind = 'bil
     }`;
 
   return (
-    <div className="rounded-xl p-3 mb-4" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.18)' }}>
+    <div className="rounded-xl p-3 mb-4" style={{ background: 'rgba(var(--gold-rgb), 0.04)', border: '1px solid rgba(var(--gold-rgb), 0.18)' }}>
       <div className="text-[11px] font-bold text-[var(--t)] uppercase tracking-wider mb-2">
         Who sees this {recordKind}, and when?
       </div>

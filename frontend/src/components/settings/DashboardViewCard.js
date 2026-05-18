@@ -26,10 +26,10 @@ const LAYOUT_CHOICES = [
       <div className="flex gap-1.5 w-full">
         <div className="flex-1 grid grid-cols-2 gap-1">
           {Array.from({ length: 6 }).map((_, i) => (
-            <span key={i} className="h-3 rounded" style={{ background: 'rgba(212,175,55,0.35)' }} />
+            <span key={i} className="h-3 rounded" style={{ background: 'rgba(var(--gold-rgb), 0.35)' }} />
           ))}
         </div>
-        <div className="w-10 rounded" style={{ background: 'rgba(212,175,55,0.65)' }} />
+        <div className="w-10 rounded" style={{ background: 'rgba(var(--gold-rgb), 0.65)' }} />
       </div>
     ),
   },
@@ -39,10 +39,10 @@ const LAYOUT_CHOICES = [
     sub: 'Mirror — gauge sticky on the left.',
     diagram: (
       <div className="flex gap-1.5 w-full">
-        <div className="w-10 rounded" style={{ background: 'rgba(212,175,55,0.65)' }} />
+        <div className="w-10 rounded" style={{ background: 'rgba(var(--gold-rgb), 0.65)' }} />
         <div className="flex-1 grid grid-cols-2 gap-1">
           {Array.from({ length: 6 }).map((_, i) => (
-            <span key={i} className="h-3 rounded" style={{ background: 'rgba(212,175,55,0.35)' }} />
+            <span key={i} className="h-3 rounded" style={{ background: 'rgba(var(--gold-rgb), 0.35)' }} />
           ))}
         </div>
       </div>
@@ -54,10 +54,10 @@ const LAYOUT_CHOICES = [
     sub: 'Single column — gauge above a row of 6 chiclets.',
     diagram: (
       <div className="flex flex-col gap-1.5 w-full">
-        <div className="h-7 rounded w-full" style={{ background: 'rgba(212,175,55,0.65)' }} />
+        <div className="h-7 rounded w-full" style={{ background: 'rgba(var(--gold-rgb), 0.65)' }} />
         <div className="grid grid-cols-6 gap-1">
           {Array.from({ length: 6 }).map((_, i) => (
-            <span key={i} className="h-3 rounded" style={{ background: 'rgba(212,175,55,0.35)' }} />
+            <span key={i} className="h-3 rounded" style={{ background: 'rgba(var(--gold-rgb), 0.35)' }} />
           ))}
         </div>
       </div>
@@ -77,7 +77,7 @@ const ChoiceTile = ({ active, onClick, title, sub, children, testId }) => (
     data-testid={testId}
     className="text-left rounded-2xl p-4 transition-all"
     style={{
-      background: active ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
+      background: active ? 'rgba(var(--gold-rgb), 0.12)' : 'rgba(255,255,255,0.03)',
       border: `1px solid ${active ? 'var(--gold)' : 'rgba(255,255,255,0.08)'}`,
       cursor: 'pointer',
     }}

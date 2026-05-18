@@ -648,7 +648,7 @@ export default function EntityDetailPanel({
                     <div className="flex flex-col items-stretch gap-2 pt-1">
                       <button
                         onClick={() => setAddingConn(true)}
-                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[var(--gold)] whitespace-nowrap border border-[var(--gold)]/70 bg-[rgba(212,165,55,0.10)] hover:bg-[rgba(212,165,55,0.20)] hover:border-[var(--gold)] transition-colors"
+                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[var(--gold)] whitespace-nowrap border border-[var(--gold)]/70 bg-[rgba(var(--gold-rgb), 0.10)] hover:bg-[rgba(var(--gold-rgb), 0.20)] hover:border-[var(--gold)] transition-colors"
                         data-testid="detail-add-conn"
                       >
                         <Plus className="w-3.5 h-3.5" /> Add a connection
@@ -698,7 +698,7 @@ export default function EntityDetailPanel({
                             type="button"
                             onClick={() => setShowAllRolesAdd(true)}
                             className="text-[11px] font-bold px-2.5 py-1 rounded-full transition-all text-[var(--gold)]"
-                            style={{ border: '1px dashed rgba(212,165,55,0.45)' }}
+                            style={{ border: '1px dashed rgba(var(--gold-rgb), 0.45)' }}
                             data-testid="detail-add-conn-role-show-all"
                           >
                             + Show all roles
@@ -1023,7 +1023,7 @@ export default function EntityDetailPanel({
                             key="__benefactor__"
                             className="flex items-center gap-3 p-2 rounded-md cursor-pointer"
                             style={{
-                              background: bulkIncludeBenefactor ? 'rgba(212,165,55,0.10)' : 'var(--card)',
+                              background: bulkIncludeBenefactor ? 'rgba(var(--gold-rgb), 0.10)' : 'var(--card)',
                               border: `1px solid ${bulkIncludeBenefactor ? 'var(--gold)' : 'var(--b2)'}`,
                             }}
                             data-testid="bulk-add-row-benefactor"

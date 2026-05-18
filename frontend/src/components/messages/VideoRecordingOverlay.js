@@ -243,7 +243,7 @@ const VideoRecordingOverlay = ({
               height: 56,
               padding: '0 24px',
               background: 'linear-gradient(135deg, #d4af37, #b8962e)',
-              boxShadow: '0 4px 24px rgba(212,175,55,0.4)',
+              boxShadow: '0 4px 24px rgba(var(--gold-rgb), 0.4)',
             }}
             data-testid="start-recording-btn"
           >

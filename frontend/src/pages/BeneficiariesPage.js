@@ -885,7 +885,7 @@ const BeneficiariesPage = () => {
           {/* LEFT: Family Tree */}
           <div className="glass-card p-4 rounded-2xl" data-testid="family-tree-panel">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.12)' }}>
+              <div className="w-6 h-6 rounded flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.12)' }}>
                 <Users className="w-3.5 h-3.5 text-[var(--gold)]" />
               </div>
               <h3 className="text-sm font-bold text-[var(--t)] flex-1" style={{ fontFamily: 'var(--sans)' }}>{user?.first_name || user?.name?.split(' ')[0] || 'My'}'s Estate Tree</h3>
@@ -909,7 +909,7 @@ const BeneficiariesPage = () => {
           {/* RIGHT: Succession Hierarchy — drag to reorder */}
           <div>
             {/* Succession explainer + Sort control */}
-            <div className="mb-3 p-3 rounded-xl flex items-start gap-2.5" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }} data-testid="succession-explainer">
+            <div className="mb-3 p-3 rounded-xl flex items-start gap-2.5" style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.12)' }} data-testid="succession-explainer">
               <Shield className="w-4 h-4 text-[var(--gold)] flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-[var(--t)] font-semibold">Succession Hierarchy</p>
@@ -1416,7 +1416,7 @@ const BeneficiariesPage = () => {
                 </div>
               </div>
 
-              <div className="p-2.5 rounded-xl" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }}>
+              <div className="p-2.5 rounded-xl" style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.12)' }}>
                 <p className="text-[var(--gold)] text-[11px] leading-relaxed flex items-start gap-2">
                   <Shield className="w-3 h-3 flex-shrink-0 mt-0.5" />
                   Address is encrypted and stored securely. It's only used for estate law analysis and is never shared.

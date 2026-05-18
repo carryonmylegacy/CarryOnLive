@@ -22,7 +22,7 @@ export default function BenefactorPrompt({ onDismiss }) {
           background: 'rgba(26, 31, 54, 0.85)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          border: '1px solid rgba(212, 175, 55, 0.2)',
+          border: '1px solid rgba(var(--gold-rgb), 0.2)',
         }}
       >
         {/* Close / Skip */}
@@ -39,7 +39,7 @@ export default function BenefactorPrompt({ onDismiss }) {
         <div className="flex justify-center mb-5">
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center"
-            style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.25)' }}
+            style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.25)' }}
           >
             <Sparkles className="w-7 h-7" style={{ color: '#d4af37' }} />
           </div>

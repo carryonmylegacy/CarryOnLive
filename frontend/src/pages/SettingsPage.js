@@ -94,13 +94,13 @@ const SettingsPage = () => {
 
   return (
     <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-28 sm:pb-8 space-y-5 animate-page-in" data-testid="settings-page"
-      style={{ background: 'radial-gradient(ellipse at top left, rgba(212,175,55,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(240,201,92,0.06), transparent 55%)' }}>
+      style={{ background: 'radial-gradient(ellipse at top left, rgba(var(--gold-rgb), 0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(240,201,92,0.06), transparent 55%)' }}>
       {/* Header — standardized icon-box + title + 1-line description,
           matching MM / SDV / IAC / Beneficiaries. Back + Save utility
           buttons preserved on the right. */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(240,201,92,0.15))' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.2), rgba(240,201,92,0.15))' }}>
             <Shield className="w-5 h-5 text-[var(--gold)]" />
           </div>
           <div className="min-w-0">
@@ -132,7 +132,7 @@ const SettingsPage = () => {
 
       {/* Onboarding Notice */}
       {fromOnboarding && (
-        <div className="rounded-xl p-4 flex items-center gap-3" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)' }}>
+        <div className="rounded-xl p-4 flex items-center gap-3" style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}>
           <span className="text-[var(--gold)] text-lg font-bold">!</span>
           <div>
             <p className="text-[var(--t)] text-sm font-semibold">Complete Your Profile</p>
@@ -180,7 +180,7 @@ const SettingsPage = () => {
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.1)' }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.1)' }}>
                 <ShieldCheck className="w-5 h-5 text-[var(--gold)]" />
               </div>
               <div>

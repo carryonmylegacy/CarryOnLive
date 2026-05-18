@@ -293,7 +293,7 @@ const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, bene
         as a Digital Access Vault row linked to this bill — beneficiaries
         get the credentials in the right place, no manual DAV step.
       */}
-      <div className="rounded-xl p-3" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.18)' }}>
+      <div className="rounded-xl p-3" style={{ background: 'rgba(var(--gold-rgb), 0.04)', border: '1px solid rgba(var(--gold-rgb), 0.18)' }}>
         <div className="flex items-center justify-between mb-2">
           <div className="text-[11px] font-bold text-[var(--gold)] uppercase tracking-wider">
             Beneficiary login (auto-saved to Digital Access Vault)

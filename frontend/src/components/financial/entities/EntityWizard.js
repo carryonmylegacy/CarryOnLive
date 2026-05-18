@@ -489,13 +489,13 @@ export default function EntityWizard({
                           className="flex items-start gap-3 p-3 rounded-xl text-left transition-all hover:bg-[var(--s)]"
                           style={{
                             border: selected ? '1.5px solid var(--gold)' : '1px solid var(--b)',
-                            background: selected ? 'rgba(212,165,55,0.08)' : 'var(--card)',
+                            background: selected ? 'rgba(var(--gold-rgb), 0.08)' : 'var(--card)',
                           }}
                           data-testid={`wizard-bucket-${b.id}`}
                           aria-pressed={selected}
                         >
                           <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                            style={{ background: 'rgba(212,165,55,0.10)', color: 'var(--gold)' }}>
+                            style={{ background: 'rgba(var(--gold-rgb), 0.10)', color: 'var(--gold)' }}>
                             <Icon className="w-5 h-5" />
                           </div>
                           <div>
@@ -533,7 +533,7 @@ export default function EntityWizard({
                         className="w-full text-left p-3 rounded-xl transition-all hover:bg-[var(--s)]"
                         style={{
                           border: typeId === t.id ? '1.5px solid var(--gold)' : '1px solid var(--b)',
-                          background: typeId === t.id ? 'rgba(212,165,55,0.08)' : 'var(--card)',
+                          background: typeId === t.id ? 'rgba(var(--gold-rgb), 0.08)' : 'var(--card)',
                         }}
                         data-testid={`wizard-type-${t.id}`}
                       >
@@ -565,7 +565,7 @@ export default function EntityWizard({
                       data-testid="wizard-external-kind-person"
                     >
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ background: 'rgba(212,165,55,0.10)', color: 'var(--gold)' }}>
+                        style={{ background: 'rgba(var(--gold-rgb), 0.10)', color: 'var(--gold)' }}>
                         <UserIcon className="w-5 h-5" />
                       </div>
                       <div>
@@ -592,7 +592,7 @@ export default function EntityWizard({
                       data-testid="wizard-external-kind-entity"
                     >
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ background: 'rgba(212,165,55,0.10)', color: 'var(--gold)' }}>
+                        style={{ background: 'rgba(var(--gold-rgb), 0.10)', color: 'var(--gold)' }}>
                         <Building2 className="w-5 h-5" />
                       </div>
                       <div>
@@ -647,7 +647,7 @@ export default function EntityWizard({
             <>
               <div
                 className="rounded-xl p-3"
-                style={{ background: 'rgba(212,165,55,0.06)', border: '1px solid rgba(212,165,55,0.18)' }}
+                style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.18)' }}
               >
                 <div className="text-[11px] font-bold text-[var(--gold)]">{selectedBucket?.label}</div>
                 <div className="text-sm font-bold text-[var(--t)]">{typeMeta?.friendly}</div>
@@ -878,7 +878,7 @@ export default function EntityWizard({
                       type="button"
                       onClick={() => setShowAllRolesStep3(true)}
                       className="text-[11px] font-bold px-2.5 py-1 rounded-full transition-all text-[var(--gold)]"
-                      style={{ border: '1px dashed rgba(212,165,55,0.45)' }}
+                      style={{ border: '1px dashed rgba(var(--gold-rgb), 0.45)' }}
                       data-testid="wizard-assign-role-show-all"
                     >
                       + Show all roles
@@ -922,7 +922,7 @@ export default function EntityWizard({
                 return (
                   <div
                     className="rounded-xl p-3 text-[12px] leading-snug"
-                    style={{ background: 'rgba(212,165,55,0.08)', border: '1px solid rgba(212,165,55,0.35)', color: 'var(--t)' }}
+                    style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.35)', color: 'var(--t)' }}
                     data-testid="wizard-prefill-banner"
                   >
                     <span className="font-bold text-[var(--gold)]">{displayName}</span>{' '}
@@ -1001,7 +1001,7 @@ export default function EntityWizard({
                             type="button"
                             onClick={() => setShowAllRolesStep3(true)}
                             className="text-[11px] font-bold px-2.5 py-1 rounded-full transition-all text-[var(--gold)]"
-                            style={{ border: '1px dashed rgba(212,165,55,0.45)', background: 'transparent' }}
+                            style={{ border: '1px dashed rgba(var(--gold-rgb), 0.45)', background: 'transparent' }}
                             data-testid="wizard-conn-role-show-all"
                           >
                             + Show all roles

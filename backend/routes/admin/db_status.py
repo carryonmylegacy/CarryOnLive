@@ -26,7 +26,7 @@ from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends
 
-from config import db
+from config import db, db_read
 from guards import require_admin
 
 router = APIRouter()
@@ -140,9 +140,14 @@ async def _replica_set_status() -> dict | None:
 
 
 async def _db_stats() -> dict:
-    """Logical db size + index size + collection count."""
+    """Logical db size + index size + collection count.
+
+    Uses `db_read` (secondaryPreferred when MONGO_READ_PREFERENCE is set)
+    because admin dashboards tolerate ~100ms of replication lag and
+    offloading this hot path off the primary helps under load.
+    """
     try:
-        stats = await asyncio.wait_for(db.command("dbStats"), timeout=4.0)
+        stats = await asyncio.wait_for(db_read.command("dbStats"), timeout=4.0)
     except Exception:
         return {"collections": None, "data_size": None, "storage_size": None, "index_size": None}
     return {
@@ -159,16 +164,17 @@ async def _collection_counts() -> list[dict]:
 
     We use `estimated_document_count()` because it's O(1) (reads
     collection metadata) — `count_documents({})` would scan every
-    doc which is too slow for a dashboard fetch.
+    doc which is too slow for a dashboard fetch. Reads route through
+    `db_read` so secondary replicas can absorb the load.
     """
-    names = await asyncio.wait_for(db.list_collection_names(), timeout=4.0)
+    names = await asyncio.wait_for(db_read.list_collection_names(), timeout=4.0)
     names_set = set(names)
     out: list[dict] = []
     for headline in _HEADLINE_COLLECTIONS:
         if headline not in names_set:
             continue
         try:
-            count = await asyncio.wait_for(db[headline].estimated_document_count(), timeout=2.0)
+            count = await asyncio.wait_for(db_read[headline].estimated_document_count(), timeout=2.0)
         except Exception:
             count = None
         out.append({"name": headline, "count": count})
@@ -181,7 +187,7 @@ async def _collection_counts() -> list[dict]:
         if name in seen or name.startswith("system."):
             continue
         try:
-            c = await asyncio.wait_for(db[name].estimated_document_count(), timeout=1.5)
+            c = await asyncio.wait_for(db_read[name].estimated_document_count(), timeout=1.5)
         except Exception:
             continue
         if c >= 1000:

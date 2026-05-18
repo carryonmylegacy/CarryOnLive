@@ -54,7 +54,7 @@ const ECTMessageInput = ({
       </div>
     )}
     {replyTo && (
-      <div className="flex items-center gap-2 px-3 py-2 mx-3 mb-1 rounded-xl" style={{ background: 'rgba(212,175,55,0.08)', borderLeft: '3px solid #d4af37' }}>
+      <div className="flex items-center gap-2 px-3 py-2 mx-3 mb-1 rounded-xl" style={{ background: 'rgba(var(--gold-rgb), 0.08)', borderLeft: '3px solid #d4af37' }}>
         <div className="flex-1 min-w-0">
           <div className="text-[11px] font-semibold" style={{ color: '#d4af37' }}>{replyTo.sender_name}</div>
           <div className="text-xs truncate" style={{ color: 'var(--t4)' }}>{replyTo.content}</div>
@@ -63,7 +63,7 @@ const ECTMessageInput = ({
       </div>
     )}
     {pendingFiles.length > 0 && (
-      <div className="flex items-center gap-2 px-3 py-2 mx-3 mb-1 rounded-xl" style={{ background: 'var(--s)', border: '1px solid rgba(212,175,55,0.3)' }}>
+      <div className="flex items-center gap-2 px-3 py-2 mx-3 mb-1 rounded-xl" style={{ background: 'var(--s)', border: '1px solid rgba(var(--gold-rgb), 0.3)' }}>
         <div className="flex gap-2 flex-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
           {pendingFiles.map((pf, idx) => (
             <div key={idx} className="relative flex-shrink-0">
@@ -75,7 +75,7 @@ const ECTMessageInput = ({
               ) : pf.previewUrl ? (
                 <img src={pf.previewUrl} alt="Preview" className="w-14 h-14 rounded-lg object-cover" />
               ) : (
-                <div className="w-14 h-14 rounded-lg flex flex-col items-center justify-center" style={{ background: 'rgba(212,175,55,0.1)' }}>
+                <div className="w-14 h-14 rounded-lg flex flex-col items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.1)' }}>
                   <FileText className="w-4 h-4 text-[var(--gold)]" />
                   <span className="text-[11px] text-[var(--t5)] mt-0.5 truncate max-w-[50px]">{pf.file.name.split('.').pop()}</span>
                 </div>
@@ -132,7 +132,7 @@ const ECTMessageInput = ({
           <button type="button" onMouseDown={(e) => e.preventDefault()}
             onClick={() => { if (inputRef.current) inputRef.current.blur(); setInputFocused(false); }}
             className="lg:hidden absolute top-1 right-1 z-10 w-7 h-7 rounded-full flex items-center justify-center"
-            style={{ background: 'rgba(212,175,55,0.18)', border: '1px solid rgba(212,175,55,0.35)' }}
+            style={{ background: 'rgba(var(--gold-rgb), 0.18)', border: '1px solid rgba(var(--gold-rgb), 0.35)' }}
             data-testid="ect-dismiss-keyboard-btn" aria-label="Dismiss keyboard">
             <ChevronDown className="w-3.5 h-3.5" style={{ color: '#d4af37' }} strokeWidth={3} />
           </button>

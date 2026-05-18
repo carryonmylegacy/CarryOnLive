@@ -84,8 +84,8 @@ const MobileOfflineToggle = () => {
       onClick={toggle}
       className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all"
       style={{
-        background: on ? 'rgba(212,175,55,0.10)' : 'var(--b)',
-        border: `1px solid ${on ? 'rgba(212,175,55,0.35)' : 'rgba(255,255,255,0.1)'}`,
+        background: on ? 'rgba(var(--gold-rgb), 0.10)' : 'var(--b)',
+        border: `1px solid ${on ? 'rgba(var(--gold-rgb), 0.35)' : 'rgba(255,255,255,0.1)'}`,
       }}
       data-testid="mobile-offline-toggle"
     >

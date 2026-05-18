@@ -21,7 +21,7 @@ const ENTITY_ICON = {
 const ENTITY_TINT = {
   business: '#3B82F6',
   trust: '#6366F1',
-  charity: '#D4A537',
+  charity: '#D4AF37',
   property: '#0E7490',
   external_person: '#64748B',
   specialized: '#64748B',
@@ -56,8 +56,8 @@ const VaultDocumentCard = ({
       style={doc.ai_eligible ? {
         // Thick, unmistakable gold frame. Inline so it cannot be
         // overridden by glass-card box-shadow.
-        boxShadow: '0 0 0 3px #d4af37, 0 0 18px rgba(212,165,55,0.35), 0 8px 24px rgba(0,0,0,0.25)',
-        background: 'linear-gradient(180deg, rgba(212,165,55,0.10), rgba(212,165,55,0.02))',
+        boxShadow: '0 0 0 3px #d4af37, 0 0 18px rgba(var(--gold-rgb), 0.35), 0 8px 24px rgba(0,0,0,0.25)',
+        background: 'linear-gradient(180deg, rgba(var(--gold-rgb), 0.10), rgba(var(--gold-rgb), 0.02))',
       } : undefined}
     >
       {/* Lock Overlay */}
@@ -115,9 +115,9 @@ const VaultDocumentCard = ({
                 className="flex items-center gap-1 px-2 py-1 rounded-full transition-all"
                 style={{
                   background: doc.ai_eligible ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(10,14,26,0.85)',
-                  border: `1px solid ${doc.ai_eligible ? '#d4af37' : 'rgba(212,165,55,0.5)'}`,
+                  border: `1px solid ${doc.ai_eligible ? '#d4af37' : 'rgba(var(--gold-rgb), 0.5)'}`,
                   color: doc.ai_eligible ? '#080e1a' : '#d4af37',
-                  boxShadow: doc.ai_eligible ? '0 0 14px rgba(212,165,55,0.55)' : 'none',
+                  boxShadow: doc.ai_eligible ? '0 0 14px rgba(var(--gold-rgb), 0.55)' : 'none',
                 }}
                 title={doc.ai_eligible ? 'In your AI analysis — tap to remove' : 'Tap to include this document in your AI analyses'}
                 aria-pressed={!!doc.ai_eligible}
@@ -282,8 +282,8 @@ const VaultDocumentCard = ({
                   const initials = `${ben.first_name?.charAt(0) || ''}${ben.last_name?.charAt(0) || ''}`;
                   return (
                     <div key={ben.id} className="rounded-xl overflow-hidden" style={{
-                      background: isOn ? 'rgba(212,175,55,0.06)' : 'rgba(255,255,255,0.02)',
-                      border: `1px solid ${isOn ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                      background: isOn ? 'rgba(var(--gold-rgb), 0.06)' : 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${isOn ? 'rgba(var(--gold-rgb), 0.2)' : 'rgba(255,255,255,0.06)'}`,
                     }}>
                       {/* Row: avatar + name + on/off switch */}
                       <div className="flex items-center gap-3 px-3 py-2">

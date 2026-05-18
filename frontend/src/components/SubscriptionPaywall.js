@@ -26,7 +26,7 @@ const TIER_ICONS = {
 };
 
 const TIER_COLORS = {
-  premium: { border: '#d4af37', bg: 'rgba(212,175,55,0.08)', accent: '#d4af37' },
+  premium: { border: '#d4af37', bg: 'rgba(var(--gold-rgb), 0.08)', accent: '#d4af37' },
   standard: { border: '#60A5FA', bg: 'rgba(96,165,250,0.08)', accent: '#60A5FA' },
   base: { border: '#22C993', bg: 'rgba(34,201,147,0.08)', accent: '#22C993' },
   new_adult: { border: '#B794F6', bg: 'rgba(183,148,246,0.08)', accent: '#B794F6' },
@@ -531,21 +531,21 @@ export default function SubscriptionPaywall({ onDismiss }) {
                   background: isActivePlan
                     ? `linear-gradient(168deg, ${colors.bg} 0%, var(--s) 40%)`
                     : isPremium
-                      ? `linear-gradient(168deg, rgba(212,175,55,0.15) 0%, var(--s) 40%)`
+                      ? `linear-gradient(168deg, rgba(var(--gold-rgb), 0.15) 0%, var(--s) 40%)`
                       : isSelected && !isGreyedOut
                         ? `linear-gradient(168deg, ${colors.bg} 0%, var(--s) 100%)`
                         : `linear-gradient(168deg, ${colors.accent}14, var(--s) 75%)`,
                   border: isActivePlan
                     ? `2px solid ${colors.border}`
                     : isPremium
-                      ? '2px solid rgba(212,175,55,0.4)'
+                      ? '2px solid rgba(var(--gold-rgb), 0.4)'
                       : isSelected && !isGreyedOut
                         ? `2px solid ${colors.border}`
                         : `1px solid ${colors.accent}30`,
                   boxShadow: isActivePlan
                     ? `0 8px 32px -6px ${colors.accent}44, 0 2px 8px rgba(0,0,0,0.25)`
                     : isPremium
-                      ? '0 12px 48px -8px rgba(212,175,55,0.3), 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
+                      ? '0 12px 48px -8px rgba(var(--gold-rgb), 0.3), 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
                       : isSelected && !isGreyedOut
                         ? `0 8px 32px -6px ${colors.accent}44, 0 2px 8px rgba(0,0,0,0.25)`
                         : '0 4px 16px -4px rgba(0,0,0,0.3)',
@@ -557,15 +557,15 @@ export default function SubscriptionPaywall({ onDismiss }) {
                 {showRecommendedPulse && (
                   <style>{`
                     @keyframes recommendedPulse {
-                      0%, 100% { box-shadow: 0 12px 48px -8px rgba(212,175,55,0.3), 0 4px 16px rgba(0,0,0,0.3); }
-                      50% { box-shadow: 0 12px 48px -8px rgba(212,175,55,0.5), 0 4px 24px rgba(212,175,55,0.15), 0 0 0 3px rgba(212,175,55,0.12); }
+                      0%, 100% { box-shadow: 0 12px 48px -8px rgba(var(--gold-rgb), 0.3), 0 4px 16px rgba(0,0,0,0.3); }
+                      50% { box-shadow: 0 12px 48px -8px rgba(var(--gold-rgb), 0.5), 0 4px 24px rgba(var(--gold-rgb), 0.15), 0 0 0 3px rgba(var(--gold-rgb), 0.12); }
                     }
                   `}</style>
                 )}
 
                 {/* Premium shimmer line */}
                 {isPremium && (
-                  <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.6), transparent)' }} />
+                  <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(var(--gold-rgb), 0.6), transparent)' }} />
                 )}
 
                 {/* Active subscription badge */}
@@ -586,7 +586,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                       color: showRecommendedPulse ? 'white' : 'var(--bg2)',
                       boxShadow: showRecommendedPulse
                         ? '0 4px 16px rgba(34,201,147,0.4)'
-                        : '0 4px 16px rgba(212,175,55,0.4)',
+                        : '0 4px 16px rgba(var(--gold-rgb), 0.4)',
                     }}>
                     {showRecommendedPulse ? 'Recommended — Best Value' : 'Most Popular'}
                   </div>
@@ -674,7 +674,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                       disabled={checkoutLoading}
                       className={`w-full text-sm font-bold py-5 transition-all duration-300 ${
                         isPremium || showRecommendedPulse
-                          ? 'gold-button shadow-[0_4px_20px_rgba(212,175,55,0.3)]'
+                          ? 'gold-button shadow-[0_4px_20px_rgba(var(--gold-rgb), 0.3)]'
                           : isSelected
                             ? 'gold-button'
                             : 'bg-transparent border-2 hover:bg-[var(--s)]'
@@ -713,7 +713,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                       style={{
                         background: 'var(--gold)',
                         border: '2px solid #b89220',
-                        boxShadow: '0 0 48px -16px rgba(212,175,55,0.45)',
+                        boxShadow: '0 0 48px -16px rgba(var(--gold-rgb), 0.45)',
                       }}
                     >
                       <span
@@ -754,11 +754,11 @@ export default function SubscriptionPaywall({ onDismiss }) {
             className="relative rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 flex flex-col overflow-hidden group"
             style={{
               background: selectedPlan === 'family' 
-                ? `linear-gradient(168deg, rgba(212,175,55,0.12) 0%, var(--s) 100%)` 
+                ? `linear-gradient(168deg, rgba(var(--gold-rgb), 0.12) 0%, var(--s) 100%)` 
                 : 'var(--s)',
-              border: `${selectedPlan === 'family' ? '2px' : '1px'} solid ${selectedPlan === 'family' ? 'rgba(212,175,55,0.4)' : 'var(--b)'}`,
+              border: `${selectedPlan === 'family' ? '2px' : '1px'} solid ${selectedPlan === 'family' ? 'rgba(var(--gold-rgb), 0.4)' : 'var(--b)'}`,
               boxShadow: selectedPlan === 'family' 
-                ? '0 8px 32px -6px rgba(212,175,55,0.2)' 
+                ? '0 8px 32px -6px rgba(var(--gold-rgb), 0.2)' 
                 : '0 4px 16px -4px rgba(0,0,0,0.3)',
             }}
             onClick={() => setSelectedPlan('family')}
@@ -767,7 +767,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
             <div className="p-5 flex-1 flex flex-col">
               <div className="flex items-center gap-2.5 mb-4">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center" 
-                  style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.25)' }}>
+                  style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.25)' }}>
                   <Users className="w-5 h-5 text-[#d4af37]" />
                 </div>
                 <h3 className="font-bold text-lg text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Family Plan</h3>
@@ -780,12 +780,12 @@ export default function SubscriptionPaywall({ onDismiss }) {
               </div>
               <p className="text-xs text-[var(--t5)] mb-4">All beneficiaries: <span className="text-[var(--t5)]">flat $3.49/mo</span></p>
 
-              <div className="h-px mb-4" style={{ background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.2), transparent)' }} />
+              <div className="h-px mb-4" style={{ background: 'linear-gradient(90deg, transparent, rgba(var(--gold-rgb), 0.2), transparent)' }} />
 
               <div className="space-y-2.5 mb-5 flex-1">
                 {['Owner pays standard tier rate', 'Added benefactors save $1/mo', 'Successor inherits ownership', 'Floor tiers exempt from discount'].map((f, i) => (
                   <div key={i} className="flex items-start gap-2.5 text-sm">
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(212,175,55,0.12)' }}>
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(var(--gold-rgb), 0.12)' }}>
                       <Check className="w-3 h-3 text-[#d4af37]" />
                     </div>
                     <span className="text-[var(--t4)]">{f}</span>
@@ -798,7 +798,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
               <Button
                 onClick={(e) => { e.stopPropagation(); setShowFamilyInfo(!showFamilyInfo); }}
                 className="w-full text-sm font-bold py-5 bg-transparent border-2 hover:bg-[var(--s)]"
-                style={{ borderColor: 'rgba(212,175,55,0.35)', color: '#d4af37' }}
+                style={{ borderColor: 'rgba(var(--gold-rgb), 0.35)', color: '#d4af37' }}
                 data-testid="paywall-select-family"
               >
                 Learn More <ChevronRight className="w-4 h-4 ml-1" />
@@ -812,8 +812,8 @@ export default function SubscriptionPaywall({ onDismiss }) {
         {showFamilyInfo && (
           <div className="max-w-5xl w-full mb-8 animate-fade-in">
             <div className="rounded-2xl p-5" style={{
-              background: 'rgba(212,175,55,0.04)',
-              border: '2px solid rgba(212,175,55,0.15)',
+              background: 'rgba(var(--gold-rgb), 0.04)',
+              border: '2px solid rgba(var(--gold-rgb), 0.15)',
             }}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-[var(--t)] text-lg flex items-center gap-2">

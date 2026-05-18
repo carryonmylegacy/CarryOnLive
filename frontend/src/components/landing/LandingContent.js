@@ -86,7 +86,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
     <section id="about" className="relative z-10 -mt-2">
       <div className="rounded-t-[2.5rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#0E1829', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
         <div className="absolute inset-0 opacity-[0.25]" style={{ backgroundImage: 'url(/texture-roots.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 40%, rgba(212,175,55,0.03) 0%, transparent 60%), linear-gradient(180deg, rgba(14,24,41,0.35) 0%, rgba(14,24,41,0.85) 100%)' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 40%, rgba(var(--gold-rgb), 0.03) 0%, transparent 60%), linear-gradient(180deg, rgba(14,24,41,0.35) 0%, rgba(14,24,41,0.85) 100%)' }} />
         <RevealSection className="max-w-[800px] mx-auto px-6 text-center relative z-10">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white mb-6 leading-tight tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
             More Than Estate Planning.<br />
@@ -158,7 +158,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                   width: '100px',
                   top: '20px',
                   bottom: '-20px',
-                  background: 'linear-gradient(180deg, rgba(212,175,55,0.10) 0%, rgba(212,175,55,0.25) 10%, rgba(212,175,55,0.30) 100%)',
+                  background: 'linear-gradient(180deg, rgba(var(--gold-rgb), 0.10) 0%, rgba(var(--gold-rgb), 0.25) 10%, rgba(var(--gold-rgb), 0.30) 100%)',
                   borderRadius: '50px 50px 0 0',
                 }} />
               {/* Arrow head */}
@@ -169,7 +169,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                   bottom: '-60px',
                   borderLeft: '70px solid transparent',
                   borderRight: '70px solid transparent',
-                  borderTop: '40px solid rgba(212,175,55,0.32)',
+                  borderTop: '40px solid rgba(var(--gold-rgb), 0.32)',
                 }} />
 
               <div className="relative z-10 flex flex-col gap-6">
@@ -178,17 +178,17 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                     <div className="rounded-2xl p-6 lg:p-8 relative overflow-hidden"
                       style={{
                         background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)',
-                        border: '1.5px solid rgba(212,175,55,0.45)',
+                        border: '1.5px solid rgba(var(--gold-rgb), 0.45)',
                         boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
                       }}>
                       <div className="flex items-start gap-5">
                         <div className="flex flex-col items-center gap-2.5 flex-shrink-0 pt-0.5">
                           <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm"
-                            style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.06))', border: '1.5px solid rgba(212,175,55,0.25)', color: '#d4af37' }}>
+                            style={{ background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.12), rgba(var(--gold-rgb), 0.06))', border: '1.5px solid rgba(var(--gold-rgb), 0.25)', color: '#d4af37' }}>
                             {num}
                           </div>
                           <div className="w-9 h-9 rounded-full flex items-center justify-center"
-                            style={{ background: 'rgba(212,175,55,0.06)' }}>
+                            style={{ background: 'rgba(var(--gold-rgb), 0.06)' }}>
                             <Icon className="w-4 h-4 text-[#d4af37]/70" />
                           </div>
                         </div>
@@ -214,11 +214,11 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                   data-testid={`complete-preparedness-tile${testIdSuffix}`}
                   style={{
                     background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)',
-                    border: '2px solid rgba(212,175,55,0.30)',
-                    boxShadow: '0 8px 48px rgba(0,0,0,0.35), 0 0 60px rgba(212,175,55,0.08), inset 0 1px 0 rgba(212,175,55,0.06)',
+                    border: '2px solid rgba(var(--gold-rgb), 0.30)',
+                    boxShadow: '0 8px 48px rgba(0,0,0,0.35), 0 0 60px rgba(var(--gold-rgb), 0.08), inset 0 1px 0 rgba(var(--gold-rgb), 0.06)',
                   }}>
                   <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
-                    style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.08))', border: '1.5px solid rgba(212,175,55,0.25)' }}>
+                    style={{ background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.15), rgba(var(--gold-rgb), 0.08))', border: '1.5px solid rgba(var(--gold-rgb), 0.25)' }}>
                     <Shield className="w-6 h-6 text-[#d4af37]" />
                   </div>
                   <h3 className="text-2xl sm:text-3xl font-semibold text-[#d4af37] mb-3 tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
@@ -260,8 +260,8 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
             {PLATFORM_FEATURES.map(({ icon: Icon, title, desc }, i) => (
               <RevealSection key={title} delay={i * 0.06}>
                 <div className="rounded-xl p-5 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/30"
-                  style={{ background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)', border: '1px solid rgba(212,175,55,0.35)' }}>
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.12)' }}>
+                  style={{ background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)', border: '1px solid rgba(var(--gold-rgb), 0.35)' }}>
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ background: 'rgba(var(--gold-rgb), 0.1)', border: '1px solid rgba(var(--gold-rgb), 0.12)' }}>
                     <Icon className="w-4 h-4 text-[#d4af37]" />
                   </div>
                   <h4 className="text-white text-sm font-semibold mb-1.5">{title}</h4>
@@ -280,7 +280,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden opacity-[0.85]" style={{ backgroundImage: 'url(/texture-pathway.jpg)', backgroundSize: '140%', backgroundPosition: 'center 40%' }} />
         <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden" style={{ background: 'linear-gradient(180deg, transparent 50%, #111F34 100%)' }} />
         <div className="absolute inset-0 opacity-[0.4] hidden sm:block" style={{ backgroundImage: 'url(/texture-pathway.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 30%, rgba(212,175,55,0.03) 0%, transparent 70%)' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 30%, rgba(var(--gold-rgb), 0.03) 0%, transparent 70%)' }} />
         <div className="max-w-[800px] mx-auto px-6 text-center relative z-10">
           <RevealSection>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white mb-5 tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
@@ -294,7 +294,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
             {FIVE_STEPS.map(({ step, title, desc }, i) => (
               <RevealSection key={step} delay={i * 0.15}>
                 <div className="flex gap-5 group">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-base" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.25)' }}>
+                  <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-base" style={{ background: 'rgba(var(--gold-rgb), 0.15)', color: '#d4af37', border: '1px solid rgba(var(--gold-rgb), 0.25)' }}>
                     {step}
                   </div>
                   <div>
@@ -348,7 +348,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="absolute inset-0 opacity-[0.3] hidden sm:block" style={{ backgroundImage: 'url(/texture-pulse.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
         <div className="absolute inset-0 hidden sm:block" style={{ background: 'radial-gradient(ellipse 80% 80% at 50% 50%, rgba(17,31,52,0.4) 0%, rgba(17,31,52,0.75) 60%, #111F34 100%)' }} />
         <RevealSection className="max-w-[800px] mx-auto px-6 relative z-10" delay={0.15} distance={60} duration={0.9}>
-          <div className="rounded-2xl p-8 lg:p-12 text-center transition-all duration-700 hover:border-[#d4af37]/40 backdrop-blur-md" style={{ border: '1px solid rgba(212,175,55,0.25)', background: 'rgba(212,175,55,0.04)', boxShadow: '0 4px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)' }}>
+          <div className="rounded-2xl p-8 lg:p-12 text-center transition-all duration-700 hover:border-[#d4af37]/40 backdrop-blur-md" style={{ border: '1px solid rgba(var(--gold-rgb), 0.25)', background: 'rgba(var(--gold-rgb), 0.04)', boxShadow: '0 4px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)' }}>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-[#d4af37] mb-5 tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
               Free for Every American in Hospice Care.
             </h2>

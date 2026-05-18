@@ -194,11 +194,11 @@ const PushPrompt = ({ getAuthHeaders }) => {
   return (
     <div
       className="fixed bottom-24 left-4 right-4 z-50 mx-auto max-w-sm rounded-2xl px-4 py-3 shadow-2xl"
-      style={{ background: 'var(--bg2)', border: '1px solid rgba(212,175,55,0.3)' }}
+      style={{ background: 'var(--bg2)', border: '1px solid rgba(var(--gold-rgb), 0.3)' }}
       data-testid="push-notification-prompt"
     >
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.15)' }}>
+        <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(var(--gold-rgb), 0.15)' }}>
           <Bell className="w-5 h-5" style={{ color: '#d4af37' }} />
         </div>
         <div className="flex-1">

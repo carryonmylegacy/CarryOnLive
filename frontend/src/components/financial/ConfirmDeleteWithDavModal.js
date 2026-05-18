@@ -60,7 +60,7 @@ export default function ConfirmDeleteWithDavModal({
           <>
             <div
               className="rounded-xl p-3 my-3 flex items-start gap-2.5"
-              style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.2)' }}
+              style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}
             >
               <Link2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--gold)' }} />
               <div className="flex-1 min-w-0">

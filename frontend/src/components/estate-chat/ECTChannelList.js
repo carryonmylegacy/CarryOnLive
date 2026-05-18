@@ -82,7 +82,7 @@ const ECTChannelList = ({
         {selectMode ? (
           <>
             <button onClick={toggleSelectAll} className="h-10 px-3 rounded-full flex items-center justify-center gap-1.5 transition-all" data-testid="ect-select-all-btn"
-              style={{ background: selectedChannels.size === channels.length ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${selectedChannels.size === channels.length ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.08)'}` }}>
+              style={{ background: selectedChannels.size === channels.length ? 'rgba(var(--gold-rgb), 0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${selectedChannels.size === channels.length ? 'rgba(var(--gold-rgb), 0.3)' : 'rgba(255,255,255,0.08)'}` }}>
               <span className="text-xs font-semibold" style={{ color: selectedChannels.size === channels.length ? '#d4af37' : 'var(--t4)' }}>
                 {selectedChannels.size === channels.length ? 'Deselect All' : 'Select All'}
               </span>
@@ -100,7 +100,7 @@ const ECTChannelList = ({
                 <CheckSquare2 className="w-5 h-5" style={{ color: 'var(--t4)' }} />
               </button>
             )}
-            <button onClick={() => setShowSearch(!showSearch)} className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105" data-testid="ect-search-btn" style={{ background: showSearch ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.06)' }}>
+            <button onClick={() => setShowSearch(!showSearch)} className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105" data-testid="ect-search-btn" style={{ background: showSearch ? 'rgba(var(--gold-rgb), 0.15)' : 'rgba(255,255,255,0.06)' }}>
               <Search className="w-5 h-5" style={{ color: showSearch ? '#d4af37' : 'var(--t4)' }} />
             </button>
             <button onClick={() => setShowNewChat(true)} className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105" data-testid="ect-new-chat-btn" style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}>
@@ -119,13 +119,13 @@ const ECTChannelList = ({
     )}
     <div className="flex-1 overflow-y-auto p-2">
       <button onClick={() => setShowSecurityInfo(!showSecurityInfo)} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl mb-2 transition-all" data-testid="ect-security-info-toggle"
-        style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
+        style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.15)' }}>
         <Shield className="w-4 h-4" style={{ color: '#d4af37' }} />
         <span className="text-xs font-bold" style={{ color: '#d4af37' }}>Why ECT is different</span>
         <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform ${showSecurityInfo ? 'rotate-180' : ''}`} style={{ color: '#d4af37' }} />
       </button>
       {showSecurityInfo && (
-        <div className="mb-3 rounded-xl p-3 space-y-2" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.1)' }}>
+        <div className="mb-3 rounded-xl p-3 space-y-2" style={{ background: 'rgba(var(--gold-rgb), 0.04)', border: '1px solid rgba(var(--gold-rgb), 0.1)' }}>
           {[
             ['Closed Network', 'Only estate members can message you'],
             ['No Phone Required', 'No numbers exposed, no contact scanning'],
@@ -184,7 +184,7 @@ const ECTChannelList = ({
               )}
               <button onClick={() => { if (selectMode) { toggleChannelSelection(ch.id); } else if (swipedChannel === ch.id) { setSwipedChannel(null); } else { openChannel(ch); } }}
                 className="w-full flex items-center gap-3 p-3 transition-transform text-left relative" data-testid={`ect-channel-${ch.id}`}
-                style={{ background: selectMode && selectedChannels.has(ch.id) ? 'rgba(220,38,38,0.08)' : activeChannel?.id === ch.id ? 'rgba(212,175,55,0.1)' : 'var(--bg, #0B1120)', border: selectMode && selectedChannels.has(ch.id) ? '1px solid rgba(220,38,38,0.25)' : activeChannel?.id === ch.id ? '1px solid rgba(212,175,55,0.2)' : '1px solid transparent', borderRadius: '12px', transform: !selectMode && swipedChannel === ch.id ? 'translateX(-72px)' : 'translateX(0)', transition: 'transform 0.2s ease' }}>
+                style={{ background: selectMode && selectedChannels.has(ch.id) ? 'rgba(220,38,38,0.08)' : activeChannel?.id === ch.id ? 'rgba(var(--gold-rgb), 0.1)' : 'var(--bg, #0B1120)', border: selectMode && selectedChannels.has(ch.id) ? '1px solid rgba(220,38,38,0.25)' : activeChannel?.id === ch.id ? '1px solid rgba(var(--gold-rgb), 0.2)' : '1px solid transparent', borderRadius: '12px', transform: !selectMode && swipedChannel === ch.id ? 'translateX(-72px)' : 'translateX(0)', transition: 'transform 0.2s ease' }}>
                 {selectMode && (
                   <div className="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center transition-all" style={{ background: selectedChannels.has(ch.id) ? '#dc2626' : 'rgba(255,255,255,0.06)', border: `2px solid ${selectedChannels.has(ch.id) ? '#dc2626' : 'rgba(255,255,255,0.15)'}` }}>
                     {selectedChannels.has(ch.id) && <Check className="w-3.5 h-3.5" style={{ color: '#fff' }} />}
@@ -217,7 +217,7 @@ const ECTChannelList = ({
                   <div className="flex items-center gap-1.5 mt-0.5 overflow-hidden">
                     <span className="text-[11px] font-medium px-1.5 py-0.5 rounded cursor-pointer flex-shrink-0 whitespace-nowrap" data-testid={`ect-list-members-link-${ch.id}`}
                       onClick={(e) => { e.stopPropagation(); if (showListMembersId === ch.id) { setShowListMembersId(null); } else { const rect = e.currentTarget.getBoundingClientRect(); listMembersPosRef.current = { top: rect.bottom + 4, left: rect.left }; setShowListMembersId(ch.id); } }}
-                      style={{ background: 'rgba(212,175,55,0.08)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.15)' }}>{ch.estate_name}</span>
+                      style={{ background: 'rgba(var(--gold-rgb), 0.08)', color: '#d4af37', border: '1px solid rgba(var(--gold-rgb), 0.15)' }}>{ch.estate_name}</span>
                     {ch.last_message && <span className="text-xs truncate flex-1 min-w-0" style={{ color: 'var(--t5)' }}>{ch.last_message.content}</span>}
                   </div>
                 </div>

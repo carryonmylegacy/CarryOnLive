@@ -96,7 +96,7 @@ export default function ShareYourCarryOn({
           style={{
             background: 'linear-gradient(135deg, #d4af37 0%, #f0c94c 50%, #d4af37 100%)',
             color: '#080e1a',
-            boxShadow: '0 4px 20px rgba(212,175,55,0.35), 0 2px 8px rgba(0,0,0,0.2)',
+            boxShadow: '0 4px 20px rgba(var(--gold-rgb), 0.35), 0 2px 8px rgba(0,0,0,0.2)',
             letterSpacing: '0.01em',
           }}
           data-testid="share-pill-btn"
@@ -136,7 +136,7 @@ export default function ShareYourCarryOn({
         >
           <div className="flex items-center gap-3 mb-1.5">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'rgba(212,175,55,0.12)' }}>
+              style={{ background: 'rgba(var(--gold-rgb), 0.12)' }}>
               <Share2 className="w-4 h-4" style={{ color: 'var(--gold)' }} />
             </div>
             <span className="text-sm font-bold" style={{ color: 'var(--t)' }}>{displayLabel}</span>

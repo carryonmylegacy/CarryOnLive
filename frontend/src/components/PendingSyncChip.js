@@ -145,7 +145,7 @@ export function PendingSyncChipInline() {
         type="button"
         onClick={() => setPanelOpen(true)}
         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold"
-        style={{ background: '#d4af37', color: '#0B1221', border: '1px solid rgba(212,175,55,0.9)' }}
+        style={{ background: '#d4af37', color: '#0B1221', border: '1px solid rgba(var(--gold-rgb), 0.9)' }}
         data-testid="pending-sync-chip-inline"
         data-variant="pending"
         aria-label="View queued items"

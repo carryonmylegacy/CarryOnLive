@@ -748,7 +748,7 @@ export default function ConnectedProtocolPage() {
             onClick={() => setView('wizard')}
             className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center gap-3 px-5"
             data-testid="ccp-wizard-btn"
-            style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(240,201,92,0.08))', border: '1px solid rgba(212,175,55,0.3)', color: '#d4af37' }}
+            style={{ background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.12), rgba(240,201,92,0.08))', border: '1px solid rgba(var(--gold-rgb), 0.3)', color: '#d4af37' }}
           >
             <Sparkles className="w-6 h-6 flex-shrink-0" />
             <div className="text-left flex-1">
@@ -850,7 +850,7 @@ export default function ConnectedProtocolPage() {
               <button onClick={() => downloadEmergencyCard(p)}
                 className="w-full py-2.5 rounded-xl text-xs font-bold transition-all active:scale-[0.97] flex items-center justify-center gap-1.5 mt-2"
                 data-testid={`ccp-emergency-card-${p.id}`}
-                style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)', color: '#d4af37' }}>
+                style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.15)', color: '#d4af37' }}>
                 <CreditCard className="w-3.5 h-3.5" />Emergency Card (wallet PDF + QR)
               </button>
               </>
@@ -991,12 +991,12 @@ export default function ConnectedProtocolPage() {
   return (
     <>
     <div data-testid="ccp-home" className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in"
-      style={{ background: 'radial-gradient(ellipse at top left, rgba(212,175,55,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(240,201,92,0.06), transparent 55%)' }}>
+      style={{ background: 'radial-gradient(ellipse at top left, rgba(var(--gold-rgb), 0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(240,201,92,0.06), transparent 55%)' }}>
       {/* Header — standardized icon-box + title + 1-line description to
           match MM, SDV, DAV, EPT, etc. (centered hero replaced). */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(240,201,92,0.15))' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.2), rgba(240,201,92,0.15))' }}>
             <Shield className="w-5 h-5 text-[#d4af37]" />
           </div>
           <div>
@@ -1029,7 +1029,7 @@ export default function ConnectedProtocolPage() {
         <button onClick={() => setView('wizard')}
           className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center gap-3 px-5"
           data-testid="ccp-wizard-home-btn"
-          style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(240,201,92,0.08))', border: '1px solid rgba(212,175,55,0.3)', color: '#d4af37' }}>
+          style={{ background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.12), rgba(240,201,92,0.08))', border: '1px solid rgba(var(--gold-rgb), 0.3)', color: '#d4af37' }}>
           <Sparkles className="w-6 h-6 flex-shrink-0" />
           <div className="text-left flex-1">
             <div style={{ fontFamily: 'var(--sans)' }}>Build My Plan</div>
@@ -1042,7 +1042,7 @@ export default function ConnectedProtocolPage() {
       <button onClick={() => setView('plans')}
         className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center gap-3 px-5"
         data-testid="ccp-plans-btn"
-        style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)', color: '#d4af37' }}>
+        style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.2)', color: '#d4af37' }}>
         <FileText className="w-6 h-6 flex-shrink-0" />
         <div className="text-left flex-1">
           <div style={{ fontFamily: 'var(--sans)' }}>Contingency Protocols</div>

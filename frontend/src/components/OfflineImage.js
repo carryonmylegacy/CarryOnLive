@@ -172,7 +172,7 @@ export default function OfflineImage({
             aria-hidden
             style={{
               position: 'absolute', inset: 0, pointerEvents: 'none',
-              background: 'linear-gradient(110deg, transparent 25%, rgba(212,175,55,0.22) 50%, transparent 75%)',
+              background: 'linear-gradient(110deg, transparent 25%, rgba(var(--gold-rgb), 0.22) 50%, transparent 75%)',
               animation: 'offline-image-shimmer 1.4s ease-in-out infinite',
             }}
           />

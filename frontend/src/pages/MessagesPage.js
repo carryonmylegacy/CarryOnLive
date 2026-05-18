@@ -1555,7 +1555,7 @@ const MessagesPage = () => {
                 <div className="border border-[var(--b)] rounded-xl p-4 bg-black/20">
                   {attachmentFile ? (
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.15)' }}>
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.15)' }}>
                         <FileText className="w-5 h-5 text-[var(--gold)]" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -1671,7 +1671,7 @@ const MessagesPage = () => {
                       setSelectedRecipients(allSelected ? [] : allIds);
                     }}
                     className="w-full flex items-center gap-3 p-3 rounded-xl cursor-pointer active:scale-[0.98] transition-transform duration-150"
-                    style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}
+                    style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.15)' }}
                     data-testid="select-all-recipients"
                   >
                     <Checkbox
@@ -1798,8 +1798,8 @@ const MessagesPage = () => {
                       <button key={event.value} type="button" onClick={() => setTriggerValue(event.value)}
                         className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-transform duration-150 active:scale-[0.96]"
                         style={{
-                          background: active ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
-                          border: active ? '2px solid rgba(212,175,55,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                          background: active ? 'rgba(var(--gold-rgb), 0.12)' : 'rgba(255,255,255,0.03)',
+                          border: active ? '2px solid rgba(var(--gold-rgb), 0.5)' : '1px solid rgba(255,255,255,0.08)',
                           color: active ? '#d4af37' : '#94a3b8',
                         }}
                         data-testid={`event-type-${event.value}`}
@@ -1819,8 +1819,8 @@ const MessagesPage = () => {
                           onClick={() => { if (evt === 'Custom') { setCustomEventLabel(''); } else { setCustomEventLabel(evt); } }}
                           className="px-3 py-1.5 rounded-full text-xs font-bold transition-transform duration-150 active:scale-95"
                           style={{
-                            background: customEventLabel === evt ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.04)',
-                            border: customEventLabel === evt ? '1.5px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                            background: customEventLabel === evt ? 'rgba(var(--gold-rgb), 0.15)' : 'rgba(255,255,255,0.04)',
+                            border: customEventLabel === evt ? '1.5px solid rgba(var(--gold-rgb), 0.4)' : '1px solid rgba(255,255,255,0.08)',
                             color: customEventLabel === evt ? '#d4af37' : '#94a3b8',
                           }}
                           data-testid={`custom-event-${evt.toLowerCase().replace(/\s+/g, '-')}`}

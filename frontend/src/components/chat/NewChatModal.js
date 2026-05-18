@@ -99,8 +99,8 @@ const NewChatModal = ({
                   className="w-full flex items-center gap-3 p-3 rounded-xl mb-2 transition-all"
                   data-testid={`ect-member-${m.id}`}
                   style={{
-                    background: isSelected ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.03)',
-                    border: `1px solid ${isSelected ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                    background: isSelected ? 'rgba(var(--gold-rgb), 0.08)' : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${isSelected ? 'rgba(var(--gold-rgb), 0.3)' : 'rgba(255,255,255,0.06)'}`,
                   }}
                 >
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden" style={{

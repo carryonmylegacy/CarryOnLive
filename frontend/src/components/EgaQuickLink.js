@@ -68,10 +68,10 @@ const EgaQuickLink = ({ testId = 'readiness-ega-quicklink' }) => {
         className="flex flex-col items-center justify-center gap-0.5 w-12 h-12 lg:w-14 lg:h-14 rounded-xl transition-transform duration-150 active:scale-[0.94]"
         style={{
           color: 'var(--gold)',
-          background: 'rgba(212,175,55,0.08)',
-          border: '1px solid rgba(212,175,55,0.55)',
+          background: 'rgba(var(--gold-rgb), 0.08)',
+          border: '1px solid rgba(var(--gold-rgb), 0.55)',
           boxShadow:
-            '0 0 12px rgba(212,175,55,0.45), 0 0 24px rgba(212,175,55,0.18), inset 0 0 8px rgba(212,175,55,0.12)',
+            '0 0 12px rgba(var(--gold-rgb), 0.45), 0 0 24px rgba(var(--gold-rgb), 0.18), inset 0 0 8px rgba(var(--gold-rgb), 0.12)',
           pointerEvents: 'auto',
         }}
         title={
@@ -89,8 +89,8 @@ const EgaQuickLink = ({ testId = 'readiness-ega-quicklink' }) => {
         <span
           className="mt-1 text-[11px] font-medium leading-none whitespace-nowrap"
           style={{
-            color: 'rgba(212,175,55,0.85)',
-            textShadow: '0 0 6px rgba(212,175,55,0.35)',
+            color: 'rgba(var(--gold-rgb), 0.85)',
+            textShadow: '0 0 6px rgba(var(--gold-rgb), 0.35)',
           }}
           data-testid="readiness-ega-stamp"
         >

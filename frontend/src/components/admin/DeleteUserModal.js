@@ -20,9 +20,9 @@ export const DeleteUserModal = ({
       <div
         className="w-full max-w-sm rounded-2xl p-6 space-y-4 animate-fade-in"
         style={{
-          background: 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(15,22,41,0.98) 40%)',
-          border: '1.5px solid rgba(212,175,55,0.3)',
-          boxShadow: '0 0 40px rgba(212,175,55,0.08)',
+          background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.08) 0%, rgba(15,22,41,0.98) 40%)',
+          border: '1.5px solid rgba(var(--gold-rgb), 0.3)',
+          boxShadow: '0 0 40px rgba(var(--gold-rgb), 0.08)',
         }}
         data-testid="delete-confirm-modal"
       >

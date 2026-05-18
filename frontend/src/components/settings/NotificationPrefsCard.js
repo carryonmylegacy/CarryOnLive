@@ -63,7 +63,7 @@ export const NotificationPrefsCard = () => {
     <div className="rounded-2xl p-6" data-testid="notification-prefs-card" style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}>
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: prefs.master_enabled ? 'rgba(212,175,55,0.12)' : 'rgba(240,82,82,0.1)' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: prefs.master_enabled ? 'rgba(var(--gold-rgb), 0.12)' : 'rgba(240,82,82,0.1)' }}>
             {prefs.master_enabled ? <Bell className="w-5 h-5" style={{ color: '#d4af37' }} /> : <BellOff className="w-5 h-5" style={{ color: '#F05252' }} />}
           </div>
           <div>

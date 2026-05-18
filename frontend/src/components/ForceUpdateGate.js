@@ -61,7 +61,7 @@ const ForceUpdateGate = ({ children }) => {
         <div className="text-center max-w-sm">
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: 'rgba(212,175,55,0.12)' }}
+            style={{ background: 'rgba(var(--gold-rgb), 0.12)' }}
           >
             <AlertTriangle className="w-8 h-8 text-[#d4af37]" />
           </div>

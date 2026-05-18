@@ -90,7 +90,7 @@ export default function CCPDebriefView({ activationId, planName, token, onComple
                 style={{
                   color: s <= displayRating ? '#d4af37' : 'var(--b)',
                   fill: s <= displayRating ? '#d4af37' : 'none',
-                  filter: s <= displayRating ? 'drop-shadow(0 0 4px rgba(212,175,55,0.3))' : 'none',
+                  filter: s <= displayRating ? 'drop-shadow(0 0 4px rgba(var(--gold-rgb), 0.3))' : 'none',
                 }}
               />
             </button>

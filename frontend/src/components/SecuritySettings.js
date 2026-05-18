@@ -248,7 +248,7 @@ const PinKeypad = ({ digits, onDigit, onBackspace, onClear, error, maxLen = MAX_
       {Array.from({ length: maxLen }).map((_, i) => (
         <div key={i} className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-all"
           style={{
-            background: i < digits.length ? 'rgba(212,175,55,0.15)' : 'var(--s)',
+            background: i < digits.length ? 'rgba(var(--gold-rgb), 0.15)' : 'var(--s)',
             border: `2px solid ${i < digits.length ? 'var(--gold)' : error ? '#EF4444' : 'var(--b)'}`,
             color: 'var(--t)',
             opacity: i < digits.length ? 1 : 0.4,

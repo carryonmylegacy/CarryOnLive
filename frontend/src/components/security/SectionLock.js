@@ -225,7 +225,7 @@ export const SectionLockedOverlay = ({ sectionId, children }) => {
   return (
     <div className="flex items-center justify-center py-24" data-testid={`locked-overlay-${sectionId}`}>
       <div className="glass-card p-10 text-center max-w-md">
-        <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.1)', border: '2px solid rgba(212,175,55,0.2)' }}>
+        <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.1)', border: '2px solid rgba(var(--gold-rgb), 0.2)' }}>
           <Lock className="w-10 h-10 text-[var(--gold)]" />
         </div>
         <h3 className="text-xl font-bold text-[var(--t)] mb-2">{sec?.name} is Locked</h3>
@@ -354,7 +354,7 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
                 {Array.from({ length: 8 }).map((_, i) => (
                   <div key={i} className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-all"
                     style={{
-                      background: i < pinDigits.length ? 'rgba(212,175,55,0.15)' : 'var(--s)',
+                      background: i < pinDigits.length ? 'rgba(var(--gold-rgb), 0.15)' : 'var(--s)',
                       border: `2px solid ${i < pinDigits.length ? 'var(--gold)' : pinError ? '#EF4444' : 'var(--b)'}`,
                       color: 'var(--t)',
                       opacity: i < pinDigits.length ? 1 : 0.4,

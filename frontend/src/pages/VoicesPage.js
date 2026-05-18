@@ -121,11 +121,11 @@ export default function VoicesPage() {
 
       {/* Hero */}
       <section className="relative pt-32 pb-12 sm:pt-40 sm:pb-16 px-5 sm:px-8" data-testid="voices-hero">
-        <div className="absolute inset-0 -z-10" style={{ background: 'radial-gradient(ellipse 1100px 700px at 50% 0%, rgba(212,175,55,0.10), transparent 60%)' }} />
+        <div className="absolute inset-0 -z-10" style={{ background: 'radial-gradient(ellipse 1100px 700px at 50% 0%, rgba(var(--gold-rgb), 0.10), transparent 60%)' }} />
         <div className="max-w-4xl mx-auto text-center">
           <div
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-7 text-[22px] font-semibold uppercase tracking-[0.18em]"
-            style={{ background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.32)', color: 'var(--gold)' }}
+            style={{ background: 'rgba(var(--gold-rgb), 0.10)', border: '1px solid rgba(var(--gold-rgb), 0.32)', color: 'var(--gold)' }}
           >
             <Quote className="w-4 h-4" /> Voices
           </div>
@@ -158,10 +158,10 @@ export default function VoicesPage() {
           ) : items.length === 0 ? (
             <div
               className="max-w-xl mx-auto text-center rounded-2xl p-10"
-              style={{ background: 'var(--card)', border: '1px dashed rgba(212,175,55,0.3)' }}
+              style={{ background: 'var(--card)', border: '1px dashed rgba(var(--gold-rgb), 0.3)' }}
               data-testid="voices-empty"
             >
-              <Quote className="w-12 h-12 mx-auto mb-4" style={{ color: 'rgba(212,175,55,0.6)' }} />
+              <Quote className="w-12 h-12 mx-auto mb-4" style={{ color: 'rgba(var(--gold-rgb), 0.6)' }} />
               <p className="text-2xl italic mb-2" style={{ fontFamily: 'var(--serif)', color: 'var(--t)' }}>
                 The first voice will land here soon.
               </p>
@@ -179,7 +179,7 @@ export default function VoicesPage() {
                     className="rounded-2xl p-7 flex flex-col"
                     style={{
                       background: 'var(--card)',
-                      border: `1px solid ${isFC ? 'rgba(212,175,55,0.35)' : 'rgba(52,211,153,0.28)'}`,
+                      border: `1px solid ${isFC ? 'rgba(var(--gold-rgb), 0.35)' : 'rgba(52,211,153,0.28)'}`,
                       boxShadow: '0 10px 40px rgba(0,0,0,0.28)',
                       animation: 'voiceFadeUp 520ms ease-out both',
                       animationDelay: `${Math.min(idx * 60, 480)}ms`,
@@ -190,8 +190,8 @@ export default function VoicesPage() {
                       <div
                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[22px] font-semibold uppercase tracking-wider"
                         style={{
-                          background: isFC ? 'rgba(212,175,55,0.14)' : 'rgba(52,211,153,0.14)',
-                          border: `1px solid ${isFC ? 'rgba(212,175,55,0.28)' : 'rgba(52,211,153,0.28)'}`,
+                          background: isFC ? 'rgba(var(--gold-rgb), 0.14)' : 'rgba(52,211,153,0.14)',
+                          border: `1px solid ${isFC ? 'rgba(var(--gold-rgb), 0.28)' : 'rgba(52,211,153,0.28)'}`,
                           color: isFC ? 'var(--gold)' : '#34d399',
                         }}
                       >

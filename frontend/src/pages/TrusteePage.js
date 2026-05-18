@@ -883,7 +883,7 @@ const TrusteePage = () => {
 
             {newTask.type === 'transition_notification' ? (
               <>
-                <div className="rounded-xl p-3 mb-4" style={{ background: 'rgba(212,175,55,0.05)', border: '1px solid rgba(212,175,55,0.15)' }}>
+                <div className="rounded-xl p-3 mb-4" style={{ background: 'rgba(var(--gold-rgb), 0.05)', border: '1px solid rgba(var(--gold-rgb), 0.15)' }}>
                   <p className="text-sm text-[var(--t3)] leading-relaxed">Provide as much contact information as you have for the person you want notified of your passing. None of these fields are required — but the more you provide, the better DTS can ensure they are reached.</p>
                 </div>
                 <div className="space-y-4">

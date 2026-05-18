@@ -144,7 +144,7 @@ export default function EntityCredentialsField({
         <button
           type="button"
           onClick={add}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[var(--gold)] whitespace-nowrap border border-[var(--gold)]/70 bg-[rgba(212,165,55,0.10)] hover:bg-[rgba(212,165,55,0.20)] hover:border-[var(--gold)] transition-colors"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold text-[var(--gold)] whitespace-nowrap border border-[var(--gold)]/70 bg-[rgba(var(--gold-rgb), 0.10)] hover:bg-[rgba(var(--gold-rgb), 0.20)] hover:border-[var(--gold)] transition-colors"
           data-testid="entity-credential-add"
         >
           <Plus className="w-3.5 h-3.5" /> Add credential
@@ -177,8 +177,8 @@ export default function EntityCredentialsField({
               key={`linked-${c._link_to_id}-${idx}`}
               className="flex items-center gap-2 px-3 py-2 rounded-xl"
               style={{
-                background: 'rgba(212,165,55,0.08)',
-                border: '1px solid rgba(212,165,55,0.45)',
+                background: 'rgba(var(--gold-rgb), 0.08)',
+                border: '1px solid rgba(var(--gold-rgb), 0.45)',
               }}
               data-testid={`entity-credential-linked-${idx}`}
             >
@@ -344,8 +344,8 @@ export default function EntityCredentialsField({
               <div
                 className="rounded-lg p-2.5 flex items-start gap-2"
                 style={{
-                  background: 'rgba(212,165,55,0.08)',
-                  border: '1px solid rgba(212,165,55,0.45)',
+                  background: 'rgba(var(--gold-rgb), 0.08)',
+                  border: '1px solid rgba(var(--gold-rgb), 0.45)',
                 }}
                 data-testid={`entity-credential-dup-hint-${idx}`}
               >
@@ -406,7 +406,7 @@ export default function EntityCredentialsField({
               const vis = c.beneficiary_visibility || 'private';
               const STATES = [
                 { id: 'private',          label: 'Private',         Icon: Lock,      bg: 'transparent', fg: 'var(--t5)', border: 'var(--b)' },
-                { id: 'posthumous_only',  label: 'Posthumous only', Icon: Hourglass, bg: 'rgba(212,165,55,0.08)', fg: 'var(--gold)', border: 'rgba(212,165,55,0.45)' },
+                { id: 'posthumous_only',  label: 'Posthumous only', Icon: Hourglass, bg: 'rgba(var(--gold-rgb), 0.08)', fg: 'var(--gold)', border: 'rgba(var(--gold-rgb), 0.45)' },
                 { id: 'show_now',         label: 'Show now',        Icon: Eye,       bg: 'var(--gold)', fg: '#0b1120', border: 'var(--gold)' },
               ];
               const cur = STATES.find((s) => s.id === vis) || STATES[0];

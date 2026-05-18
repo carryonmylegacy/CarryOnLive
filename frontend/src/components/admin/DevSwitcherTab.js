@@ -145,7 +145,7 @@ export const DevSwitcherTab = ({ users, getAuthHeaders }) => {
       </div>
 
       {/* ── Portal Preview ── */}
-      <Card className="glass-card" style={{ border: '2px solid rgba(212,175,55,0.2)' }}>
+      <Card className="glass-card" style={{ border: '2px solid rgba(var(--gold-rgb), 0.2)' }}>
         <CardContent className="p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

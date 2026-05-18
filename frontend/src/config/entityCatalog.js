@@ -23,19 +23,19 @@ export const PALETTE = {
   bronze:   { stroke: '#7A5A23', fill: 'rgba(122,90,35,0.16)',   text: '#C49545', glow: '#7A5A2380' },
   indigo:   { stroke: '#6366F1', fill: 'rgba(99,102,241,0.14)',  text: '#A5A9F8', glow: '#6366F180' },
   steel:    { stroke: '#3B82F6', fill: 'rgba(59,130,246,0.14)',  text: '#7AAAFA', glow: '#3B82F680' },
-  champagne:{ stroke: '#D4A537', fill: 'rgba(212,165,55,0.14)',  text: '#E8C66A', glow: '#D4A53780' },
+  champagne:{ stroke: '#D4AF37', fill: 'rgba(var(--gold-rgb), 0.14)',  text: '#E8C66A', glow: '#D4A53780' },
   teal:     { stroke: '#0E7490', fill: 'rgba(14,116,144,0.16)',  text: '#3FB6CD', glow: '#0E749080' },
   slate:    { stroke: '#64748B', fill: 'rgba(100,116,139,0.18)', text: '#9AA8BC', glow: '#64748B80' },
 };
 
 // Edge / role colours
 export const ROLE_PALETTE = {
-  owner:       { color: '#D4A537', dash: null,    label: 'Owner' },
-  gp:          { color: '#D4A537', dash: null,    label: 'General Partner' },
-  lp:          { color: '#D4A537', dash: '3 4',   label: 'Limited Partner' },
+  owner:       { color: '#D4AF37', dash: null,    label: 'Owner' },
+  gp:          { color: '#D4AF37', dash: null,    label: 'General Partner' },
+  lp:          { color: '#D4AF37', dash: '3 4',   label: 'Limited Partner' },
   trustee:     { color: '#6366F1', dash: '6 4',   label: 'Trustee' },
   beneficiary: { color: '#0E7490', dash: '2 3',   label: 'Beneficiary' },
-  grantor:     { color: '#D4A537', dash: '1 3',   label: 'Creator (Grantor)' },
+  grantor:     { color: '#D4AF37', dash: '1 3',   label: 'Creator (Grantor)' },
   manager:     { color: '#9AA8BC', dash: null,    label: 'Manager' },
   officer:     { color: '#9AA8BC', dash: null,    label: 'Officer' },
   director:    { color: '#9AA8BC', dash: null,    label: 'Director' },

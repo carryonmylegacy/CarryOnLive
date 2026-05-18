@@ -95,8 +95,8 @@ const BillCalendar = ({ bills, month, onMonthChange, selectedDay, onDaySelect, c
                 onClick={() => onDaySelect(isSelected ? null : day)}
                 className="h-9 flex flex-col items-center justify-center rounded-lg transition-all relative"
                 style={{
-                  background: isSelected ? 'rgba(16,185,129,0.2)' : isToday ? 'rgba(212,175,55,0.1)' : 'transparent',
-                  border: isSelected ? '1px solid rgba(16,185,129,0.4)' : isToday ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent',
+                  background: isSelected ? 'rgba(16,185,129,0.2)' : isToday ? 'rgba(var(--gold-rgb), 0.1)' : 'transparent',
+                  border: isSelected ? '1px solid rgba(16,185,129,0.4)' : isToday ? '1px solid rgba(var(--gold-rgb), 0.3)' : '1px solid transparent',
                 }}
                 data-testid={`cal-day-${day}`}
               >

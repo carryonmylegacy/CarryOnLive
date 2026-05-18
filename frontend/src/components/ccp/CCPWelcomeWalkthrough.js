@@ -30,7 +30,7 @@ const CCPWelcomeWalkthrough = ({ welcomeStep, setWelcomeStep, onDismiss }) => {
 
   const NumberRow = ({ num, title, desc }) => (
     <div className="flex items-start gap-3 px-4 py-3 rounded-2xl" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
-      <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-black" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37' }}>
+      <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-black" style={{ background: 'rgba(var(--gold-rgb), 0.15)', color: '#d4af37' }}>
         {num}
       </div>
       <div className="flex-1 min-w-0">
@@ -68,7 +68,7 @@ const CCPWelcomeWalkthrough = ({ welcomeStep, setWelcomeStep, onDismiss }) => {
       >
         {/* Header badge */}
         <div className="flex items-center justify-center mb-4">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}>
             <Shield className="w-3.5 h-3.5" style={{ color: '#d4af37' }} />
             <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#d4af37' }}>{cleanLabel('Contingency Protocols (CCP)')}</span>
           </div>

@@ -1209,7 +1209,7 @@ export default function EntityOrgChart({
   const edgesSvgInner = (() => {
     const parts = [
       `<defs><linearGradient id="ec-flow-gold" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="${canvasH}">` +
-      `<stop offset="0%" stop-color="#D4A537" stop-opacity="0.95"/>` +
+      `<stop offset="0%" stop-color="#D4AF37" stop-opacity="0.95"/>` +
       `<stop offset="100%" stop-color="#7A5A23" stop-opacity="0.7"/></linearGradient></defs>`,
     ];
     edges.forEach((edge) => {
@@ -1239,8 +1239,8 @@ export default function EntityOrgChart({
         `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"${dash} opacity="${edgeOpacity}" class="ec-edge"/>` +
         (isEquity && edge.ownership_pct != null
           ? `<g transform="translate(${midPoint.x - 18}, ${midPoint.y - 9})">` +
-            `<rect width="36" height="18" rx="9" fill="#0b1120" stroke="#D4A537" stroke-width="1" opacity="0.92"/>` +
-            `<text x="18" y="13" text-anchor="middle" font-size="10" font-weight="700" fill="#D4A537">${Math.round(edge.ownership_pct)}%</text>` +
+            `<rect width="36" height="18" rx="9" fill="#0b1120" stroke="#D4AF37" stroke-width="1" opacity="0.92"/>` +
+            `<text x="18" y="13" text-anchor="middle" font-size="10" font-weight="700" fill="#D4AF37">${Math.round(edge.ownership_pct)}%</text>` +
             `</g>`
           : '') +
         `</g>`
@@ -1284,7 +1284,7 @@ export default function EntityOrgChart({
             border: '1px solid var(--gold)',
             color: 'var(--gold)',
             backdropFilter: 'blur(8px)',
-            boxShadow: '0 4px 18px rgba(0,0,0,0.45), 0 0 14px rgba(212,165,55,0.35)',
+            boxShadow: '0 4px 18px rgba(0,0,0,0.45), 0 0 14px rgba(var(--gold-rgb), 0.35)',
             position: 'sticky',
           }}
           data-testid="entity-role-filter-pill"
@@ -1294,10 +1294,10 @@ export default function EntityOrgChart({
           <button
             type="button"
             onClick={() => setRoleFilter(null)}
-            className="ml-1 inline-flex items-center justify-center rounded-full transition-colors hover:bg-[rgba(212,165,55,0.18)]"
+            className="ml-1 inline-flex items-center justify-center rounded-full transition-colors hover:bg-[rgba(var(--gold-rgb), 0.18)]"
             style={{
               width: 20, height: 20,
-              border: '1px solid rgba(212,165,55,0.55)',
+              border: '1px solid rgba(var(--gold-rgb), 0.55)',
               color: 'var(--gold)',
             }}
             aria-label="Clear role filter"
@@ -1362,8 +1362,8 @@ export default function EntityOrgChart({
                 width: w,
                 height: h,
                 pointerEvents: 'none',
-                background: 'rgba(212,175,55,0.10)',
-                border: '1.5px dashed rgba(212,175,55,0.75)',
+                background: 'rgba(var(--gold-rgb), 0.10)',
+                border: '1.5px dashed rgba(var(--gold-rgb), 0.75)',
                 borderRadius: 6,
                 zIndex: 40,
               }}
@@ -1437,9 +1437,9 @@ export default function EntityOrgChart({
                 // a 2-sec gold halo via CSS keyframes (`ec-pulse-ring`
                 // defined in index.css).
                 boxShadow: pulseKeys.has(n.key)
-                  ? '0 0 0 4px rgba(212,175,55,0.95), 0 0 36px rgba(212,175,55,0.85)'
+                  ? '0 0 0 4px rgba(var(--gold-rgb), 0.95), 0 0 36px rgba(var(--gold-rgb), 0.85)'
                   : selectedKeys.has(n.key)
-                    ? '0 0 0 3px rgba(212,175,55,0.85), 0 0 18px rgba(212,175,55,0.55)'
+                    ? '0 0 0 3px rgba(var(--gold-rgb), 0.85), 0 0 18px rgba(var(--gold-rgb), 0.55)'
                     : undefined,
                 borderRadius: (selectedKeys.has(n.key) || pulseKeys.has(n.key)) ? 12 : undefined,
                 animation: pulseKeys.has(n.key) ? 'ec-pulse-ring 2.2s ease-out 1' : undefined,

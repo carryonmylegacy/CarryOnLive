@@ -38,7 +38,7 @@ const ShareUploadModal = ({ pendingShare, categories, uploading, onUpload, onCan
         </button>
 
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.12)' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.12)' }}>
             <Upload className="w-5 h-5 text-[#d4af37]" />
           </div>
           <div>
@@ -58,8 +58,8 @@ const ShareUploadModal = ({ pendingShare, categories, uploading, onUpload, onCan
                 <button key={e.id} onClick={() => setSelectedEstate(e.id)}
                   className="w-full text-left px-3 py-2 rounded-lg text-sm font-bold transition-all active:scale-[0.98]"
                   style={{
-                    background: selectedEstate === e.id ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
-                    border: selectedEstate === e.id ? '1.5px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                    background: selectedEstate === e.id ? 'rgba(var(--gold-rgb), 0.12)' : 'rgba(255,255,255,0.03)',
+                    border: selectedEstate === e.id ? '1.5px solid rgba(var(--gold-rgb), 0.4)' : '1px solid rgba(255,255,255,0.06)',
                     color: selectedEstate === e.id ? '#d4af37' : '#94a3b8',
                   }}>
                   {e.name}
@@ -76,8 +76,8 @@ const ShareUploadModal = ({ pendingShare, categories, uploading, onUpload, onCan
             <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-[0.97]"
               style={{
-                background: selectedCategory === cat.id ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
-                border: selectedCategory === cat.id ? '1.5px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                background: selectedCategory === cat.id ? 'rgba(var(--gold-rgb), 0.12)' : 'rgba(255,255,255,0.03)',
+                border: selectedCategory === cat.id ? '1.5px solid rgba(var(--gold-rgb), 0.4)' : '1px solid rgba(255,255,255,0.06)',
                 color: selectedCategory === cat.id ? '#d4af37' : '#94a3b8',
               }}>
               <FileText className="w-3 h-3" />

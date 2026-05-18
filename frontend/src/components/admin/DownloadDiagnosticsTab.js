@@ -103,8 +103,8 @@ const DownloadDiagnosticsTab = () => {
               data-testid={`dd-days-${d}`}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
               style={{
-                background: days === d ? 'rgba(212,175,55,0.15)' : 'transparent',
-                border: `1px solid ${days === d ? 'rgba(212,175,55,0.4)' : 'var(--b)'}`,
+                background: days === d ? 'rgba(var(--gold-rgb), 0.15)' : 'transparent',
+                border: `1px solid ${days === d ? 'rgba(var(--gold-rgb), 0.4)' : 'var(--b)'}`,
                 color: days === d ? 'var(--gold)' : 'var(--t4)',
               }}
             >
@@ -196,7 +196,7 @@ const PlatformBreakdown = ({ totals }) => {
             <div
               key={p}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-              style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}
+              style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.15)' }}
               data-testid={`dd-platform-${p}`}
             >
               <Icon className="w-3.5 h-3.5 text-[var(--gold)]" />

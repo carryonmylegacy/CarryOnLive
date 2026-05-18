@@ -165,7 +165,7 @@ export default function EntityQuickInfoPopover({
             <button
               onClick={onShowDocuments}
               className="flex-1 text-[11px] font-bold py-1.5 rounded-md flex items-center justify-center gap-1 transition-colors"
-              style={{ color: 'var(--gold)', border: '1px solid rgba(212,165,55,0.4)' }}
+              style={{ color: 'var(--gold)', border: '1px solid rgba(var(--gold-rgb), 0.4)' }}
               data-testid="quick-info-docs"
             >
               <FileText className="w-3 h-3" /> Docs ({docsCount})

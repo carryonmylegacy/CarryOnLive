@@ -87,7 +87,7 @@ export const RemoveTileModal = ({
             onClick={onHide}
             className="flex-1 rounded-md px-4 py-2.5 text-sm font-semibold"
             style={{
-              background: 'rgba(212,165,55,0.12)',
+              background: 'rgba(var(--gold-rgb), 0.12)',
               border: '1px solid var(--gold)',
               color: 'var(--gold)',
             }}

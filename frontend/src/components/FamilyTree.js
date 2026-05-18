@@ -450,7 +450,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
       {/* Legend — color key for benefactor + linked/unlinked */}
       <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 mt-4 px-2" data-testid="family-tree-legend">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full" style={{ background: '#d4af37', boxShadow: '0 0 6px rgba(212,175,55,0.5)' }} />
+          <div className="w-3 h-3 rounded-full" style={{ background: '#d4af37', boxShadow: '0 0 6px rgba(var(--gold-rgb), 0.5)' }} />
           <span className="text-xs font-medium text-[var(--t3)]">You (Benefactor)</span>
         </div>
         <div className="flex items-center gap-1.5">

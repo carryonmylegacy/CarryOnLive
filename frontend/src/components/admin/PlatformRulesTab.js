@@ -133,7 +133,7 @@ export function PlatformRulesTab({ getAuthHeaders }) {
             onClick={generateNarratives}
             disabled={generating}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95"
-            style={{ background: 'rgba(212,175,55,0.15)', color: 'var(--gold)', border: '1px solid rgba(212,175,55,0.3)' }}
+            style={{ background: 'rgba(var(--gold-rgb), 0.15)', color: 'var(--gold)', border: '1px solid rgba(var(--gold-rgb), 0.3)' }}
             data-testid="generate-narratives-btn"
           >
             {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}

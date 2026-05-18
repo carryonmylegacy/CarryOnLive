@@ -64,7 +64,7 @@ export const BetaTestingTab = ({ getAuthHeaders }) => {
       {/* Header stats */}
       <div className="flex gap-3 flex-wrap">
         {['all', 'open', 'accepted', 'complete', 'rejected'].map(status => {
-          const cfg = STATUS_CONFIG[status] || { label: 'All', color: '#d4af37', bg: 'rgba(212,175,55,0.1)' };
+          const cfg = STATUS_CONFIG[status] || { label: 'All', color: '#d4af37', bg: 'rgba(var(--gold-rgb), 0.1)' };
           const isActive = filterStatus === status;
           return (
             <button

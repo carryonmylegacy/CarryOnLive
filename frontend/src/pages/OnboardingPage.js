@@ -203,7 +203,7 @@ const OnboardingPage = () => {
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
-                style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1))' }}>
+                style={{ background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.2), rgba(var(--gold-rgb), 0.1))' }}>
                 <Users className="w-6 h-6 text-[#d4af37]" />
               </div>
               <div>

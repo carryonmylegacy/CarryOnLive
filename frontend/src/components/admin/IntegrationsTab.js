@@ -147,7 +147,7 @@ const IntegrationCard = ({ integration, revealed, onToggle, onEdit }) => {
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                 <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${statusColor}15`, color: statusColor }}>{integration.status}</span>
                 {integration.cost_monthly > 0 && (
-                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(212,175,55,0.1)', color: 'var(--gold)' }}>
+                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(var(--gold-rgb), 0.1)', color: 'var(--gold)' }}>
                     ${integration.cost_monthly.toFixed(2)}/mo
                   </span>
                 )}
@@ -252,7 +252,7 @@ const COGSSummary = ({ cogs, integrations }) => {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-          <div className="text-center p-3 rounded-lg" style={{ background: 'rgba(212,175,55,0.06)' }}>
+          <div className="text-center p-3 rounded-lg" style={{ background: 'rgba(var(--gold-rgb), 0.06)' }}>
             <div className="text-2xl font-bold text-[var(--gold)]">${cogs.total_monthly.toFixed(2)}</div>
             <div className="text-[11px] text-[var(--t5)]">Total Monthly COGS</div>
           </div>
@@ -275,7 +275,7 @@ const COGSSummary = ({ cogs, integrations }) => {
               </div>
             </div>
           ))}
-          <div className="flex justify-between items-center p-2 rounded text-xs font-bold" style={{ background: 'rgba(212,175,55,0.08)' }}>
+          <div className="flex justify-between items-center p-2 rounded text-xs font-bold" style={{ background: 'rgba(var(--gold-rgb), 0.08)' }}>
             <span className="text-[var(--gold)]">TOTAL</span>
             <span className="font-mono text-[var(--gold)]">${cogs.total_monthly.toFixed(2)}/mo</span>
           </div>
@@ -552,7 +552,7 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
                 {pinDigits.map((d, i) => (
                   <div key={i} className="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold transition-all"
                     style={{
-                      background: d ? 'rgba(212,175,55,0.15)' : 'var(--s)',
+                      background: d ? 'rgba(var(--gold-rgb), 0.15)' : 'var(--s)',
                       border: `2px solid ${d ? 'var(--gold)' : pinError ? '#EF4444' : 'var(--b)'}`,
                       color: 'var(--t)',
                     }}>
@@ -691,7 +691,7 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
                 {(changePinStep === 'current' ? pinDigits : newPinDigits).map((d, i) => (
                   <div key={i} className="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold transition-all"
                     style={{
-                      background: d ? 'rgba(212,175,55,0.15)' : 'var(--s)',
+                      background: d ? 'rgba(var(--gold-rgb), 0.15)' : 'var(--s)',
                       border: `2px solid ${d ? 'var(--gold)' : pinError ? '#EF4444' : 'var(--b)'}`,
                       color: 'var(--t)',
                     }}>
@@ -749,7 +749,7 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
           </button>
           <button onClick={() => requirePin('soc2', handleSOC2Download)} disabled={pdfLoading}
             className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-            style={{ background: 'rgba(212,175,55,0.1)', color: 'var(--gold)' }}
+            style={{ background: 'rgba(var(--gold-rgb), 0.1)', color: 'var(--gold)' }}
             data-testid="soc2-download-btn">
             <Download className="w-3 h-3" /> {pdfLoading ? 'Generating...' : 'SOC 2 Report'}
           </button>

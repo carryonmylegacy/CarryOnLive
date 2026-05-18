@@ -1167,8 +1167,8 @@ const VaultPage = () => {
                 <div
                   className="mb-4 rounded-xl p-3 flex items-center gap-3"
                   style={{
-                    background: 'linear-gradient(180deg, rgba(212,165,55,0.10), rgba(212,165,55,0.03))',
-                    border: '1px solid rgba(212,165,55,0.35)',
+                    background: 'linear-gradient(180deg, rgba(var(--gold-rgb), 0.10), rgba(var(--gold-rgb), 0.03))',
+                    border: '1px solid rgba(var(--gold-rgb), 0.35)',
                   }}
                   data-testid="ai-eligibility-banner"
                 >
@@ -1355,7 +1355,7 @@ const VaultPage = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowInvitePrompt(false)} />
           <div className="relative rounded-2xl p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto text-center" style={{ background: 'var(--bg2)', border: '1px solid var(--b)', boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}>
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}>
               <Heart className="w-8 h-8 text-[var(--gold)]" />
             </div>
             <h3 className="text-xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>Your Estate Plan Has Begun</h3>

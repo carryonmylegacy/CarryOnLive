@@ -96,8 +96,8 @@ export default function BeneficiaryOfflineCapabilitiesCard() {
         <div
           className="mt-2 rounded-lg px-3 py-2 text-[11px]"
           style={{
-            background: 'rgba(212,175,55,0.08)',
-            border: '1px solid rgba(212,175,55,0.18)',
+            background: 'rgba(var(--gold-rgb), 0.08)',
+            border: '1px solid rgba(var(--gold-rgb), 0.18)',
             color: 'var(--t2)',
           }}
         >

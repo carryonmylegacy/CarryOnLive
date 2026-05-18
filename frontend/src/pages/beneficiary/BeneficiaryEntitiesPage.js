@@ -108,7 +108,7 @@ export default function BeneficiaryEntitiesPage() {
           data-testid="beneficiary-entities-locked"
         >
           <div className="w-12 h-12 rounded-2xl mx-auto mb-3 flex items-center justify-center"
-            style={{ background: 'rgba(212,175,55,0.1)' }}>
+            style={{ background: 'rgba(var(--gold-rgb), 0.1)' }}>
             <Lock className="w-6 h-6 text-[var(--gold)]" />
           </div>
           <h3 className="font-bold text-[var(--t)] mb-1">Entities & Structures Locked</h3>

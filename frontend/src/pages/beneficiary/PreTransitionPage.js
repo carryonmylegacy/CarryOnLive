@@ -161,7 +161,7 @@ const PreTransitionPage = () => {
           onClick={() => navigate('/beneficiary/vault')}
           data-testid="pre-transition-vault-btn">
           <CardContent className="p-5 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.1)' }}>
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(var(--gold-rgb), 0.1)' }}>
               <FolderOpen className="w-6 h-6 text-[var(--gold)]" />
             </div>
             <div className="flex-1">

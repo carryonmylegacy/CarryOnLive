@@ -50,7 +50,7 @@ const SpeakWithUsPage = () => {
       <section id="speak-calendar" className="relative overflow-hidden" style={{ minHeight: '100vh' }}>
         {/* Dark gradient background — no flag */}
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, #0a1628 0%, #0d1a30 40%, #111f34 100%)' }} />
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 20%, rgba(212,175,55,0.04) 0%, transparent 60%)' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 20%, rgba(var(--gold-rgb), 0.04) 0%, transparent 60%)' }} />
 
         <div className="relative z-10 flex flex-col items-center px-6 pt-12 pb-8 lg:pt-20 lg:pb-10">
 
@@ -102,7 +102,7 @@ const SpeakWithUsPage = () => {
         beforeAbout={
           <section className="relative z-10">
             <div className="py-16 lg:py-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111F34, #0E1829)' }}>
-              <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
+              <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(var(--gold-rgb), 0.04) 0%, transparent 70%)' }} />
               <RevealSection className="max-w-[900px] mx-auto px-6 text-center relative z-10">
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight" style={{ fontFamily: 'var(--sans)' }}>
                   See CarryOn in Action
@@ -111,7 +111,7 @@ const SpeakWithUsPage = () => {
                   Learn how CarryOn&#8482; keeps your family ready for anything.
                 </p>
                 {showVertical ? (
-                  <div className="relative rounded-2xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4)', maxWidth: '360px' }}>
+                  <div className="relative rounded-2xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(var(--gold-rgb), 0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4)', maxWidth: '360px' }}>
                     <div style={{ position: 'relative', paddingBottom: '177.78%', height: 0 }}>
                       <iframe
                         src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
@@ -124,7 +124,7 @@ const SpeakWithUsPage = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4)' }}>
+                  <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(var(--gold-rgb), 0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4)' }}>
                     <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
                       <iframe
                         src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}

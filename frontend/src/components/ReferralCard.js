@@ -78,7 +78,7 @@ const ReferralCard = () => {
       <div className="flex items-start gap-3 mb-4">
         <div
           className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.25)' }}
+          style={{ background: 'rgba(var(--gold-rgb), 0.10)', border: '1px solid rgba(var(--gold-rgb), 0.25)' }}
         >
           <Gift className="w-5 h-5" style={{ color: 'var(--gold)' }} />
         </div>

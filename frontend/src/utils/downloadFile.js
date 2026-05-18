@@ -43,7 +43,7 @@ function promptToSave(file) {
 
     overlay.innerHTML = `
       <div style="text-align:center;padding:32px 24px;max-width:320px;">
-        <div style="width:64px;height:64px;border-radius:50%;background:rgba(212,175,55,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;color:#d4af37;">${icon}</div>
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(var(--gold-rgb), 0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;color:#d4af37;">${icon}</div>
         <p style="font-size:20px;font-weight:700;color:#F1F3F8;margin:0 0 6px;">${label}</p>
         <p style="font-size:14px;color:#7B879E;margin:0 0 28px;">${file.name} (${size})</p>
         <button id="__co_save_btn" data-testid="save-prompt-save-btn" style="width:100%;padding:16px;border:none;border-radius:14px;background:linear-gradient(135deg,#d4af37,#F0C95C);color:#080e1a;font-size:17px;font-weight:700;cursor:pointer;margin-bottom:12px;-webkit-tap-highlight-color:transparent;">Tap to Save</button>

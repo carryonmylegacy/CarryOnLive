@@ -345,7 +345,7 @@ const CreateEstatePage = () => {
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ background: 'var(--bg)' }}>
       {/* NAV */}
-      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)', background: 'rgba(8,14,26,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(var(--gold-rgb), 0.08)', background: 'rgba(8,14,26,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <img src={partnerBranding?.logoUrl || "/carryon-logo.png"} alt={partnerBranding?.companyName || "CarryOn"} className="h-12 cursor-pointer" onClick={() => navigate('/dashboard')} />
           <button onClick={() => { if (step > 0) setStep(step - 1); else navigate('/dashboard'); }} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1" data-testid="create-estate-back">
@@ -377,7 +377,7 @@ const CreateEstatePage = () => {
               <p className="text-[#7b879e] text-base max-w-sm leading-relaxed mb-6">
                 Use your existing account to create a new estate plan or connect to another family member's estate.
               </p>
-              <div className="p-4 rounded-xl mb-6 max-w-sm" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
+              <div className="p-4 rounded-xl mb-6 max-w-sm" style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.15)' }}>
                 <div className="flex items-start gap-3">
                   <AlertCircle className="w-4 h-4 text-[#d4af37] flex-shrink-0 mt-0.5" />
                   <p className="text-[#d4af37] text-xs leading-relaxed">
@@ -399,7 +399,7 @@ const CreateEstatePage = () => {
             <div className="flex justify-center lg:justify-end">
               <div className="w-full max-w-[100vw] rounded-2xl relative overflow-hidden" style={{
                 background: 'linear-gradient(160deg, rgba(18,28,48,0.97), rgba(12,20,38,0.99))',
-                border: '1px solid rgba(212,175,55,0.12)',
+                border: '1px solid rgba(var(--gold-rgb), 0.12)',
                 boxShadow: '0 8px 80px rgba(0,0,0,0.5)',
               }}>
                 <div className="absolute top-0 left-8 right-8 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
@@ -413,7 +413,7 @@ const CreateEstatePage = () => {
                           <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-bold text-sm sm:text-base transition-all duration-500" style={{
                             background: i <= step ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(255,255,255,0.05)',
                             color: i <= step ? '#080e1a' : '#3a4a63',
-                            boxShadow: i === step ? '0 0 16px rgba(212,175,55,0.4)' : 'none',
+                            boxShadow: i === step ? '0 0 16px rgba(var(--gold-rgb), 0.4)' : 'none',
                           }}>
                             {i + 1}
                           </div>
@@ -498,7 +498,7 @@ const CreateEstatePage = () => {
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>What would you like to do?</h2>
                           <p className="text-[#6b7a90] text-sm">Choose how you want to connect to a new estate.</p>
                         </div>
-                        <div className="rounded-xl p-3" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
+                        <div className="rounded-xl p-3" style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.15)' }}>
                           <p className="text-xs text-[#d4af37] leading-relaxed">
                             Your existing beneficiary access is never affected. This adds a new estate connection to your account.
                           </p>

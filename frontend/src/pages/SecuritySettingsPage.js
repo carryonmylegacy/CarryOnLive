@@ -123,12 +123,12 @@ const SecuritySettingsPage = () => {
 
   return (
     <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="security-settings-page"
-      style={{ background: 'radial-gradient(ellipse at top left, rgba(212,175,55,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(240,201,92,0.06), transparent 55%)' }}>
+      style={{ background: 'radial-gradient(ellipse at top left, rgba(var(--gold-rgb), 0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(240,201,92,0.06), transparent 55%)' }}>
       {/* Header — standardized icon-box + title + 1-line description to
           match MM / SDV / IAC / Settings. Back + Save preserved on right. */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(240,201,92,0.15))' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.2), rgba(240,201,92,0.15))' }}>
             <ShieldCheck className="w-5 h-5 text-[var(--gold)]" />
           </div>
           <div className="min-w-0">
@@ -273,7 +273,7 @@ const SecuritySettingsPage = () => {
                 {!smsOtpEnabled && smsSetupStep === 'entering' && (
                   <div className="mt-3 space-y-3 p-3 rounded-lg" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
                     <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--t5)]" data-testid="sms-step-indicator">
-                      <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.2)', color: '#d4af37' }}>1</span>
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.2)', color: '#d4af37' }}>1</span>
                       <span style={{ color: '#d4af37' }}>Phone</span>
                       <span className="mx-1 opacity-40">›</span>
                       <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)' }}>2</span>
@@ -334,7 +334,7 @@ const SecuritySettingsPage = () => {
                       <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(34,201,147,0.2)', color: '#22C993' }}><Check className="w-3 h-3" /></span>
                       <span>Phone</span>
                       <span className="mx-1 opacity-40">›</span>
-                      <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.2)', color: '#d4af37' }}>2</span>
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.2)', color: '#d4af37' }}>2</span>
                       <span style={{ color: '#d4af37' }}>Verify</span>
                     </div>
                     <p className="text-[var(--t5)] text-sm">Enter the 6-digit code sent to {smsMaskedPhone}</p>
@@ -414,7 +414,7 @@ const StatusChip = ({ tone = 'off', label }) => {
   const palette = {
     on:       { bg: 'rgba(34,201,147,0.12)', border: 'rgba(34,201,147,0.3)', fg: '#22C993' },
     off:      { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', fg: 'var(--t5)' },
-    admin:    { bg: 'rgba(212,175,55,0.12)',  border: 'rgba(212,175,55,0.3)',  fg: '#d4af37' },
+    admin:    { bg: 'rgba(var(--gold-rgb), 0.12)',  border: 'rgba(var(--gold-rgb), 0.3)',  fg: '#d4af37' },
   }[tone] || {};
   return (
     <span

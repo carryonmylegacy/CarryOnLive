@@ -165,8 +165,8 @@ const PropertyAssetTile = ({ asset, beneficiaries, onEdit, onDelete, onDesignati
                     const initials = `${ben.first_name?.charAt(0) || ''}${ben.last_name?.charAt(0) || ''}`;
                     return (
                       <div key={ben.id} className="rounded-xl overflow-hidden" style={{
-                        background: isOn ? 'rgba(212,175,55,0.06)' : 'rgba(255,255,255,0.02)',
-                        border: `1px solid ${isOn ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                        background: isOn ? 'rgba(var(--gold-rgb), 0.06)' : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${isOn ? 'rgba(var(--gold-rgb), 0.2)' : 'rgba(255,255,255,0.06)'}`,
                       }}>
                         <div className="flex items-center gap-3 px-3 py-2">
                           <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0" style={{

@@ -18,9 +18,9 @@
   --os-track-bg: transparent;
   --os-track-bg-hover: transparent;
   --os-track-bg-active: transparent;
-  --os-handle-bg: rgba(212, 175, 55, 0.6);
-  --os-handle-bg-hover: rgba(212, 175, 55, 0.85);
-  --os-handle-bg-active: rgba(212, 175, 55, 1);
+  --os-handle-bg: rgba(var(--gold-rgb), 0.6);
+  --os-handle-bg-hover: rgba(var(--gold-rgb), 0.85);
+  --os-handle-bg-active: rgba(var(--gold-rgb), 1);
   --os-handle-border-radius: 999px;
   --os-handle-min-size: 44px;
   --os-handle-max-size: 72px;
@@ -87,9 +87,9 @@ html.os-dragging * {
   .os-scrollbar.os-theme-carryon-gold {
     /* 15px ≈ 3px slimmer than the v2 18px — still a clear grab target */
     --os-size: 15px;
-    --os-handle-bg: rgba(212, 175, 55, 0.75);
-    --os-handle-bg-hover: rgba(212, 175, 55, 0.95);
-    --os-handle-bg-active: rgba(212, 175, 55, 1);
+    --os-handle-bg: rgba(var(--gold-rgb), 0.75);
+    --os-handle-bg-hover: rgba(var(--gold-rgb), 0.95);
+    --os-handle-bg-active: rgba(var(--gold-rgb), 1);
     --os-handle-min-size: 52px;
     --os-handle-max-size: 68px;
   }

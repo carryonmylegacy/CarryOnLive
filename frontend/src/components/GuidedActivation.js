@@ -138,13 +138,13 @@ export const ActivationCelebration = ({ onDismiss }) => {
     <div className="relative rounded-2xl p-8 max-w-sm w-full text-center"
       style={{
         background: 'var(--bg2, #0F1629)',
-        border: '1px solid rgba(212,175,55,0.2)',
-        boxShadow: '0 0 80px rgba(212,175,55,0.15), 0 25px 60px rgba(0,0,0,0.5)',
+        border: '1px solid rgba(var(--gold-rgb), 0.2)',
+        boxShadow: '0 0 80px rgba(var(--gold-rgb), 0.15), 0 25px 60px rgba(0,0,0,0.5)',
         animation: 'celebPulse 1s cubic-bezier(0.34, 1.56, 0.64, 1) 1s forwards',
         opacity: 0,
       }}>
       <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5"
-        style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))', border: '2px solid rgba(212,175,55,0.3)' }}>
+        style={{ background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.15), rgba(var(--gold-rgb), 0.05))', border: '2px solid rgba(var(--gold-rgb), 0.3)' }}>
         <Sparkles className="w-10 h-10 text-[#d4af37]" />
       </div>
       <h2 className="text-2xl font-bold text-white mb-3" style={{ fontFamily: 'var(--sans)' }}>
@@ -173,9 +173,9 @@ export const popAnimationCSS = `
     100% { transform: scale(1); }
   }
   @keyframes ripplePulse {
-    0% { box-shadow: 0 0 0 0 rgba(212,175,55,0.4); }
-    70% { box-shadow: 0 0 0 15px rgba(212,175,55,0); }
-    100% { box-shadow: 0 0 0 0 rgba(212,175,55,0); }
+    0% { box-shadow: 0 0 0 0 rgba(var(--gold-rgb), 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(var(--gold-rgb), 0); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--gold-rgb), 0); }
   }
   .tile-pop {
     animation: waterBalloonPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), ripplePulse 1s ease-out;

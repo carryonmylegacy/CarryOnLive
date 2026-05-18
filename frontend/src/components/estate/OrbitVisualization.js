@@ -44,7 +44,7 @@ const getOrbitLevel = (relation) => {
 
 // Visual style for each ring level
 const orbitColors = [
-  ['linear-gradient(135deg, #D4AF37, #F5D76E)', 'rgba(212,175,55,0.3)'],
+  ['linear-gradient(135deg, #D4AF37, #F5D76E)', 'rgba(var(--gold-rgb), 0.3)'],
   ['linear-gradient(135deg, #6D28D9, #A855F7)', 'rgba(139,92,246,0.3)'],
   ['linear-gradient(135deg, #0D9488, #14B8A6)', 'rgba(20,184,166,0.3)'],
   ['linear-gradient(135deg, #1E40AF, #3B82F6)', 'rgba(59,130,246,0.3)'],
@@ -326,9 +326,9 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
               fontSize: Math.round(centerSize * 0.32),
               fontWeight: 700,
               color: 'white',
-              border: '3px solid rgba(212,175,55,0.5)',
+              border: '3px solid rgba(var(--gold-rgb), 0.5)',
               boxShadow:
-                '0 0 40px rgba(124,58,237,0.5), 0 0 80px rgba(212,175,55,0.2), 0 8px 32px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.2)',
+                '0 0 40px rgba(124,58,237,0.5), 0 0 80px rgba(var(--gold-rgb), 0.2), 0 8px 32px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.2)',
               position: 'relative',
               overflow: 'hidden',
             }}
@@ -338,7 +338,7 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
                 position: 'absolute',
                 inset: -8,
                 borderRadius: '50%',
-                border: '2px solid rgba(212,175,55,0.2)',
+                border: '2px solid rgba(var(--gold-rgb), 0.2)',
                 animation: 'pulse 3s ease-in-out infinite',
               }}
             />
@@ -436,10 +436,10 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
                           fontWeight: 700,
                           color: level === 0 ? '#1a1a2e' : 'white',
                           boxShadow: isTransitioned
-                            ? '0 0 20px rgba(212,175,55,0.5), 0 4px 16px rgba(0,0,0,0.35), inset 0 1px 2px rgba(255,255,255,0.2)'
+                            ? '0 0 20px rgba(var(--gold-rgb), 0.5), 0 4px 16px rgba(0,0,0,0.35), inset 0 1px 2px rgba(255,255,255,0.2)'
                             : '0 4px 16px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.15)',
                           border: isTransitioned
-                            ? '2px solid rgba(212,175,55,0.6)'
+                            ? '2px solid rgba(var(--gold-rgb), 0.6)'
                             : '2px solid rgba(255,255,255,0.2)',
                           cursor: 'pointer',
                           transition: 'transform 0.2s, box-shadow 0.2s',
@@ -448,12 +448,12 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.transform = 'scale(1.15)';
-                          e.currentTarget.style.boxShadow = '0 0 20px rgba(212,175,55,0.5)';
+                          e.currentTarget.style.boxShadow = '0 0 20px rgba(var(--gold-rgb), 0.5)';
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.transform = 'scale(1)';
                           e.currentTarget.style.boxShadow = isTransitioned
-                            ? '0 0 15px rgba(212,175,55,0.4)'
+                            ? '0 0 15px rgba(var(--gold-rgb), 0.4)'
                             : '0 2px 8px rgba(0,0,0,0.3)';
                         }}
                       >

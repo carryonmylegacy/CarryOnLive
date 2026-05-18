@@ -382,7 +382,7 @@ export default function BeneficiaryConciergePage() {
           <ArrowLeft className="w-4 h-4" /> {view === 'chat' ? 'Back to chats' : 'Back to dashboard'}
         </button>
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.35)' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.35)' }}>
             <Sparkles className="w-5 h-5 text-[var(--gold)]" />
           </div>
           <div>
@@ -417,7 +417,7 @@ export default function BeneficiaryConciergePage() {
       {showSharedPanel && status.accessible_doc_count > 0 && (
         <div
           className="rounded-2xl p-4 lg:p-5 mb-4"
-          style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.25)' }}
+          style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.25)' }}
           data-testid="concierge-shared-panel"
         >
           <div className="flex items-baseline justify-between gap-3 mb-2">
@@ -457,7 +457,7 @@ export default function BeneficiaryConciergePage() {
       {isPreTransitionEmpty ? (
         <Card className="glass-card" data-testid="concierge-pre-empty">
           <CardContent className="p-8 lg:p-10 text-center">
-            <div className="w-14 h-14 rounded-full mx-auto flex items-center justify-center mb-4" style={{ background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.35)' }}>
+            <div className="w-14 h-14 rounded-full mx-auto flex items-center justify-center mb-4" style={{ background: 'rgba(var(--gold-rgb), 0.10)', border: '1px solid rgba(var(--gold-rgb), 0.35)' }}>
               <BookOpen className="w-6 h-6 text-[var(--gold)]" />
             </div>
             <h2 className="text-base lg:text-lg font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>
@@ -495,7 +495,7 @@ export default function BeneficiaryConciergePage() {
                       type="button"
                       onClick={() => send(q)}
                       className="px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--t2)] hover:text-[var(--gold)] transition-colors"
-                      style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.30)' }}
+                      style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.30)' }}
                       data-testid={`concierge-quick-question-${i}`}
                     >
                       {q}
@@ -560,13 +560,13 @@ function DocPreviewModal({ doc, onClose }) {
     >
       <div
         className="rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col"
-        style={{ background: 'var(--bg2)', border: '1px solid rgba(212,175,55,0.35)' }}
+        style={{ background: 'var(--bg2)', border: '1px solid rgba(var(--gold-rgb), 0.35)' }}
         onClick={(e) => e.stopPropagation()}
         data-testid="concierge-doc-preview-modal"
       >
         <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[var(--b)]">
           <div className="flex items-start gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.35)' }}>
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.35)' }}>
               <FileText className="w-4 h-4 text-[var(--gold)]" />
             </div>
             <div className="min-w-0">
@@ -646,7 +646,7 @@ function Bubble({ role, content, citations, error, modelUsed, isFallback, onCita
               title={`View source: ${cite.name}`}
               onClick={() => onCitationClick(cite.id)}
               className="inline-flex items-center align-baseline mx-0.5 px-1.5 py-0.5 rounded text-[11px] font-bold leading-tight cursor-pointer hover:brightness-110 transition"
-              style={{ background: 'rgba(212,175,55,0.18)', border: '1px solid rgba(212,175,55,0.45)', color: '#FCD34D' }}
+              style={{ background: 'rgba(var(--gold-rgb), 0.18)', border: '1px solid rgba(var(--gold-rgb), 0.45)', color: '#FCD34D' }}
               data-testid={`concierge-citation-${marker}`}
             >
               {label}
@@ -656,7 +656,7 @@ function Bubble({ role, content, citations, error, modelUsed, isFallback, onCita
               key={`c-${chipIdx++}`}
               title={cite.name}
               className="inline-flex items-center align-baseline mx-0.5 px-1.5 py-0.5 rounded text-[11px] font-bold leading-tight"
-              style={{ background: 'rgba(212,175,55,0.18)', border: '1px solid rgba(212,175,55,0.45)', color: '#FCD34D' }}
+              style={{ background: 'rgba(var(--gold-rgb), 0.18)', border: '1px solid rgba(var(--gold-rgb), 0.45)', color: '#FCD34D' }}
               data-testid={`concierge-citation-${marker}`}
             >
               {label}
@@ -709,7 +709,7 @@ function Bubble({ role, content, citations, error, modelUsed, isFallback, onCita
                   type="button"
                   onClick={() => onCitationClick(cite.id)}
                   className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer hover:brightness-110 transition"
-                  style={{ background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.30)', color: '#FCD34D' }}
+                  style={{ background: 'rgba(var(--gold-rgb), 0.10)', border: '1px solid rgba(var(--gold-rgb), 0.30)', color: '#FCD34D' }}
                   data-testid={`concierge-source-${mk}`}
                   title={`View source: ${label}`}
                 >
@@ -719,7 +719,7 @@ function Bubble({ role, content, citations, error, modelUsed, isFallback, onCita
                 <span
                   key={mk}
                   className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold"
-                  style={{ background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.30)', color: '#FCD34D' }}
+                  style={{ background: 'rgba(var(--gold-rgb), 0.10)', border: '1px solid rgba(var(--gold-rgb), 0.30)', color: '#FCD34D' }}
                   data-testid={`concierge-source-${mk}`}
                 >
                   {label}
@@ -878,7 +878,7 @@ function SessionsList({ benefactorFirst, sessions, loading, onEnter, onDelete, o
               type="button"
               onClick={onNew}
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-bold text-[var(--gold)] hover:brightness-110 transition"
-              style={{ background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.40)' }}
+              style={{ background: 'rgba(var(--gold-rgb), 0.10)', border: '1px solid rgba(var(--gold-rgb), 0.40)' }}
               data-testid="concierge-new-chat-btn"
             >
               <Plus className="w-3.5 h-3.5" /> New chat
@@ -891,7 +891,7 @@ function SessionsList({ benefactorFirst, sessions, loading, onEnter, onDelete, o
                 type="button"
                 onClick={() => onPickQuick(q)}
                 className="px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--t2)] hover:text-[var(--gold)] transition-colors text-left"
-                style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.30)' }}
+                style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.30)' }}
                 data-testid={`concierge-list-quick-${i}`}
               >
                 {q}

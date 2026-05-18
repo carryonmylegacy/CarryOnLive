@@ -199,13 +199,13 @@ export default function PendingSyncPanel({ open, onClose }) {
         className="w-full sm:max-w-lg bg-[#0F1A33] sm:rounded-2xl rounded-t-2xl overflow-hidden flex flex-col"
         style={{
           maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 24px)',
-          border: '1px solid rgba(212,175,55,0.25)',
+          border: '1px solid rgba(var(--gold-rgb), 0.25)',
           boxShadow: '0 24px 72px rgba(0,0,0,0.55)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(212,175,55,0.18)]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(var(--gold-rgb), 0.18)]">
           <div className="flex items-center gap-2">
             <CloudUpload className="w-5 h-5 text-[#d4af37]" />
             <div>
@@ -315,7 +315,7 @@ export default function PendingSyncPanel({ open, onClose }) {
                     <div className="grid grid-cols-2 gap-2">
                       <div
                         className="p-2 rounded-lg"
-                        style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.35)' }}
+                        style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.35)' }}
                       >
                         <div className="text-[11px] uppercase tracking-wide font-bold text-[#d4af37] mb-1">Your version</div>
                         <div className="text-[11px] text-[#F4E7C1] font-mono break-words">{mineSummary || '—'}</div>
@@ -422,7 +422,7 @@ export default function PendingSyncPanel({ open, onClose }) {
 
         {/* Footer */}
         <div
-          className="px-5 py-3 border-t border-[rgba(212,175,55,0.18)] text-[11px] text-[rgba(244,231,193,0.55)]"
+          className="px-5 py-3 border-t border-[rgba(var(--gold-rgb), 0.18)] text-[11px] text-[rgba(244,231,193,0.55)]"
           style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
         >
           Queued changes are stored on your device only. They sync automatically once you're back online.

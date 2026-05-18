@@ -107,7 +107,7 @@ export default function EntitiesShareToggle({ estateId, beneficiaries = [], getA
           color: '#1A1A1A',
           background: 'var(--gold)',
           border: '1px solid var(--gold)',
-          boxShadow: '0 0 12px rgba(212,165,55,0.55), 0 0 24px rgba(212,165,55,0.25)',
+          boxShadow: '0 0 12px rgba(var(--gold-rgb), 0.55), 0 0 24px rgba(var(--gold-rgb), 0.25)',
         } : {
           color: 'var(--t4)',
           background: 'transparent',

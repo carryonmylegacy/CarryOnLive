@@ -113,11 +113,11 @@ export default function BeneficiaryPreTransitionPanel({ estate, hasExtraDocs }) 
           {esShareNow && (
             <div
               className="flex items-center gap-3 p-4 rounded-xl mb-2 cursor-pointer transition-transform duration-150 active:scale-[0.98]"
-              style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.18)' }}
+              style={{ background: 'rgba(var(--gold-rgb), 0.04)', border: '1px solid rgba(var(--gold-rgb), 0.18)' }}
               onClick={() => navigate(`/beneficiary/entities/${estate?.id}`)}
               data-testid="pre-entities-structures"
             >
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.15)' }}>
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.15)' }}>
                 <Network className="w-5 h-5 text-[var(--gold)]" />
               </div>
               <div className="flex-1">
@@ -130,11 +130,11 @@ export default function BeneficiaryPreTransitionPanel({ estate, hasExtraDocs }) 
           {/* Living Will / Healthcare Directive (gold slot) */}
           <div
             className="flex items-center gap-3 p-4 rounded-xl mb-2 cursor-pointer transition-transform duration-150 active:scale-[0.98]"
-            style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.18)' }}
+            style={{ background: 'rgba(var(--gold-rgb), 0.04)', border: '1px solid rgba(var(--gold-rgb), 0.18)' }}
             onClick={() => navigate('/beneficiary/vault?category=living_will')}
             data-testid="pre-medical-directive"
           >
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.15)' }}>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.15)' }}>
               <Heart className="w-5 h-5 text-[var(--gold)]" />
             </div>
             <div className="flex-1">
@@ -146,11 +146,11 @@ export default function BeneficiaryPreTransitionPanel({ estate, hasExtraDocs }) 
           {/* General POA (gold slot) */}
           <div
             className="flex items-center gap-3 p-4 rounded-xl mb-2 cursor-pointer transition-transform duration-150 active:scale-[0.98]"
-            style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.18)' }}
+            style={{ background: 'rgba(var(--gold-rgb), 0.04)', border: '1px solid rgba(var(--gold-rgb), 0.18)' }}
             onClick={() => navigate('/beneficiary/vault?category=general_poa')}
             data-testid="pre-general-poa"
           >
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.15)' }}>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.15)' }}>
               <FileText className="w-5 h-5 text-[var(--gold)]" />
             </div>
             <div className="flex-1">
@@ -162,11 +162,11 @@ export default function BeneficiaryPreTransitionPanel({ estate, hasExtraDocs }) 
           {/* Financial POA (gold slot) */}
           <div
             className="flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-transform duration-150 active:scale-[0.98]"
-            style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.18)' }}
+            style={{ background: 'rgba(var(--gold-rgb), 0.04)', border: '1px solid rgba(var(--gold-rgb), 0.18)' }}
             onClick={() => navigate('/beneficiary/vault?category=financial_poa')}
             data-testid="pre-financial-poa"
           >
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.15)' }}>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.15)' }}>
               <ShieldCheck className="w-5 h-5 text-[var(--gold)]" />
             </div>
             <div className="flex-1">
@@ -185,7 +185,7 @@ export default function BeneficiaryPreTransitionPanel({ estate, hasExtraDocs }) 
           data-testid="pre-transition-vault-btn"
         >
           <CardContent className="p-5 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.1)' }}>
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(var(--gold-rgb), 0.1)' }}>
               <FolderOpen className="w-6 h-6 text-[var(--gold)]" />
             </div>
             <div className="flex-1">

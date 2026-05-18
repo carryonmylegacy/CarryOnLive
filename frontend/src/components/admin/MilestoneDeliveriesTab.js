@@ -164,8 +164,8 @@ export const MilestoneDeliveriesTab = ({ getAuthHeaders }) => {
                       <div key={msg.id}
                         className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
                         style={{
-                          background: msg.id === selectedDelivery.message_id ? 'rgba(212,175,55,0.08)' : 'var(--s)',
-                          border: msg.id === selectedDelivery.message_id ? '1px solid rgba(212,175,55,0.2)' : '1px solid var(--b)',
+                          background: msg.id === selectedDelivery.message_id ? 'rgba(var(--gold-rgb), 0.08)' : 'var(--s)',
+                          border: msg.id === selectedDelivery.message_id ? '1px solid rgba(var(--gold-rgb), 0.2)' : '1px solid var(--b)',
                         }}>
                         <div className={`w-2 h-2 rounded-full flex-shrink-0 ${msg.is_delivered ? 'bg-[#22C993]' : 'bg-[var(--t5)]'}`} />
                         <span className="text-[var(--t)] font-bold truncate flex-1">{msg.title || 'Untitled'}</span>

@@ -59,8 +59,8 @@ export const FeatureGate = ({ children }) => {
         <div
           className="w-16 h-16 rounded-full mx-auto mb-5 flex items-center justify-center"
           style={{
-            background: 'rgba(212,175,55,0.12)',
-            border: '1px solid rgba(212,175,55,0.25)',
+            background: 'rgba(var(--gold-rgb), 0.12)',
+            border: '1px solid rgba(var(--gold-rgb), 0.25)',
           }}
         >
           <Lock className="w-7 h-7" style={{ color: 'var(--gold)' }} />

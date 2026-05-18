@@ -16,7 +16,7 @@ const STEP_CONFIG = {
   add_beneficiary: { icon: Users, color: '#3b82f6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)', route: '/beneficiaries', label: 'Add Someone You Love', desc: 'Just a name and relationship to get started' },
   create_message: { icon: MessageSquare, color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)', route: '/messages', label: 'Leave a Milestone Message', desc: 'Use the Milestone Messages tool to record one' },
   upload_document: { icon: FileUp, color: '#10b981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)', route: '/vault', label: 'Upload a Document', desc: 'Pick a file and give it a name' },
-  review_readiness: { icon: Sparkles, color: '#d4af37', bg: 'rgba(212,175,55,0.08)', border: 'rgba(212,175,55,0.2)', route: '/guardian', label: 'Check Your Readiness', desc: 'Get your personalized readiness score' },
+  review_readiness: { icon: Sparkles, color: '#d4af37', bg: 'rgba(var(--gold-rgb), 0.08)', border: 'rgba(var(--gold-rgb), 0.2)', route: '/guardian', label: 'Check Your Readiness', desc: 'Get your personalized readiness score' },
   customize_checklist: { icon: CheckSquare, color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', route: '/checklist', label: 'Review Your Checklist', desc: 'See the steps your loved ones will follow' },
   designate_primary: { icon: ArrowLeftRight, color: '#06b6d4', bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.2)', route: '/beneficiaries', label: 'Set Succession Order', desc: 'Arrange your beneficiary order (optional)' },
   add_credential: { icon: KeyRound, color: '#ec4899', bg: 'rgba(236,72,153,0.08)', border: 'rgba(236,72,153,0.2)', route: '/digital-wallet', label: 'Save a Digital Login', desc: 'Store an account login for your loved ones (optional)' },
@@ -223,7 +223,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
               setDismissPhase('info');
             }}
               className="px-8 py-4 rounded-2xl text-base font-bold transition-transform active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
+              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 8px 32px rgba(var(--gold-rgb), 0.3)' }}
               data-testid="onboarding-dismiss-confirm-btn">
               Yes, Close It
             </button>
@@ -245,9 +245,9 @@ const OnboardingWizard = ({ onAllComplete }) => {
             100% { opacity: 1; transform: scale(1) translateY(0); }
           }
           @keyframes dismissPulseInfo {
-            0% { box-shadow: 0 0 0 0 rgba(212,175,55,0.25); }
-            70% { box-shadow: 0 0 0 20px rgba(212,175,55,0); }
-            100% { box-shadow: 0 0 0 0 rgba(212,175,55,0); }
+            0% { box-shadow: 0 0 0 0 rgba(var(--gold-rgb), 0.25); }
+            70% { box-shadow: 0 0 0 20px rgba(var(--gold-rgb), 0); }
+            100% { box-shadow: 0 0 0 0 rgba(var(--gold-rgb), 0); }
           }
         `}</style>
         <div className="absolute inset-0" style={{
@@ -259,8 +259,8 @@ const OnboardingWizard = ({ onAllComplete }) => {
           style={{ animation: 'dismissBubbleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both' }}>
           <div className="w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-6"
             style={{
-              background: 'radial-gradient(circle, rgba(212,175,55,0.2) 0%, rgba(212,175,55,0.08) 70%)',
-              border: '2px solid rgba(212,175,55,0.35)',
+              background: 'radial-gradient(circle, rgba(var(--gold-rgb), 0.2) 0%, rgba(var(--gold-rgb), 0.08) 70%)',
+              border: '2px solid rgba(var(--gold-rgb), 0.35)',
               animation: 'dismissPulseInfo 2.5s ease-in-out infinite',
             }}>
             <Settings className="w-14 h-14" style={{ color: '#d4af37' }} />
@@ -278,7 +278,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
             setManuallyDismissed(true);
           }}
             className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
+            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: 'var(--bg)', boxShadow: '0 8px 32px rgba(var(--gold-rgb), 0.3)' }}
             data-testid="onboarding-dismiss-proceed">
             Proceed
           </button>
@@ -309,16 +309,16 @@ const OnboardingWizard = ({ onAllComplete }) => {
           100% { transform: scale(1); }
         }
         @keyframes ripplePulse {
-          0% { box-shadow: 0 0 0 0 rgba(212,175,55,0.4); }
-          70% { box-shadow: 0 0 0 15px rgba(212,175,55,0); }
-          100% { box-shadow: 0 0 0 0 rgba(212,175,55,0); }
+          0% { box-shadow: 0 0 0 0 rgba(var(--gold-rgb), 0.4); }
+          70% { box-shadow: 0 0 0 15px rgba(var(--gold-rgb), 0); }
+          100% { box-shadow: 0 0 0 0 rgba(var(--gold-rgb), 0); }
         }
         .tile-pop { animation: waterBalloonPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), ripplePulse 1s ease-out; }
       `}</style>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}>
             <Sparkles className="w-6 h-6 text-[#d4af37]" />
           </div>
           <div>
@@ -338,9 +338,9 @@ const OnboardingWizard = ({ onAllComplete }) => {
         {/* Welcome tile for beneficiaries who just created their own estate */}
         {user?.is_also_benefactor && !welcomeDismissed && (
           <div className="rounded-2xl p-5 flex items-center gap-4 text-left"
-            style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.08), rgba(96,165,250,0.08))', border: '1px solid rgba(212,175,55,0.2)' }}>
+            style={{ background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.08), rgba(96,165,250,0.08))', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}>
             <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.25)' }}>
+              style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.25)' }}>
               <ArrowLeftRight className="w-7 h-7 text-[#d4af37]" />
             </div>
             <div className="flex-1 min-w-0">
@@ -360,7 +360,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
             walking through the checklist. */}
         {!offlineCoachDismissed && (
           <div className="rounded-2xl p-5 flex items-start gap-4 text-left"
-            style={{ background: 'linear-gradient(135deg, rgba(96,165,250,0.08), rgba(212,175,55,0.06))', border: '1px solid rgba(96,165,250,0.2)' }}
+            style={{ background: 'linear-gradient(135deg, rgba(96,165,250,0.08), rgba(var(--gold-rgb), 0.06))', border: '1px solid rgba(96,165,250,0.2)' }}
             data-testid="onboarding-offline-coach">
             <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.25)' }}>

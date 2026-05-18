@@ -85,7 +85,7 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
       className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto"
       style={{
         background:
-          'radial-gradient(ellipse 80% 60% at 50% 20%, rgba(212,175,55,0.18) 0%, rgba(11,18,33,0.96) 55%, rgba(11,18,33,0.99) 100%)',
+          'radial-gradient(ellipse 80% 60% at 50% 20%, rgba(var(--gold-rgb), 0.18) 0%, rgba(11,18,33,0.96) 55%, rgba(11,18,33,0.99) 100%)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         paddingTop: 'calc(24px + env(safe-area-inset-top, 0px))',
@@ -115,19 +115,19 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
       {/* Sparkle decorations (CSS-only) */}
       <Sparkles
         className="absolute w-4 h-4"
-        style={{ top: '18%', left: '16%', color: 'rgba(212,175,55,0.5)', animation: 'fcTwinkle 2.4s ease-in-out infinite' }}
+        style={{ top: '18%', left: '16%', color: 'rgba(var(--gold-rgb), 0.5)', animation: 'fcTwinkle 2.4s ease-in-out infinite' }}
       />
       <Sparkles
         className="absolute w-5 h-5"
-        style={{ top: '24%', right: '18%', color: 'rgba(212,175,55,0.4)', animation: 'fcTwinkle 3.1s ease-in-out infinite 0.4s' }}
+        style={{ top: '24%', right: '18%', color: 'rgba(var(--gold-rgb), 0.4)', animation: 'fcTwinkle 3.1s ease-in-out infinite 0.4s' }}
       />
       <Sparkles
         className="absolute w-3 h-3"
-        style={{ bottom: '22%', left: '22%', color: 'rgba(212,175,55,0.35)', animation: 'fcTwinkle 2.8s ease-in-out infinite 0.8s' }}
+        style={{ bottom: '22%', left: '22%', color: 'rgba(var(--gold-rgb), 0.35)', animation: 'fcTwinkle 2.8s ease-in-out infinite 0.8s' }}
       />
       <Sparkles
         className="absolute w-4 h-4"
-        style={{ bottom: '28%', right: '14%', color: 'rgba(212,175,55,0.45)', animation: 'fcTwinkle 2.2s ease-in-out infinite 1.1s' }}
+        style={{ bottom: '28%', right: '14%', color: 'rgba(var(--gold-rgb), 0.45)', animation: 'fcTwinkle 2.2s ease-in-out infinite 1.1s' }}
       />
 
       {/* Content card */}
@@ -135,9 +135,9 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
         className="relative w-full max-w-xl mx-4 rounded-3xl px-6 py-10 sm:px-10 sm:py-14 text-center"
         style={{
           background: 'linear-gradient(160deg, rgba(26,45,77,0.95) 0%, rgba(20,34,64,0.95) 100%)',
-          border: '1.5px solid rgba(212,175,55,0.4)',
+          border: '1.5px solid rgba(var(--gold-rgb), 0.4)',
           boxShadow:
-            '0 24px 80px rgba(0,0,0,0.5), 0 0 80px rgba(212,175,55,0.12), inset 0 1px 0 rgba(212,175,55,0.14)',
+            '0 24px 80px rgba(0,0,0,0.5), 0 0 80px rgba(var(--gold-rgb), 0.12), inset 0 1px 0 rgba(var(--gold-rgb), 0.14)',
           animation: 'fcBubbleIn 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
         }}
       >
@@ -146,8 +146,8 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
           className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center mx-auto mb-6"
           style={{
             background:
-              'radial-gradient(circle, rgba(212,175,55,0.25) 0%, rgba(212,175,55,0.08) 70%)',
-            border: '2px solid rgba(212,175,55,0.45)',
+              'radial-gradient(circle, rgba(var(--gold-rgb), 0.25) 0%, rgba(var(--gold-rgb), 0.08) 70%)',
+            border: '2px solid rgba(var(--gold-rgb), 0.45)',
             animation: 'fcPulseRing 2.8s ease-in-out infinite',
           }}
         >
@@ -158,8 +158,8 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
         <div
           className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-5"
           style={{
-            background: 'rgba(212,175,55,0.14)',
-            border: '1px solid rgba(212,175,55,0.32)',
+            background: 'rgba(var(--gold-rgb), 0.14)',
+            border: '1px solid rgba(var(--gold-rgb), 0.32)',
           }}
         >
           <span
@@ -248,7 +248,7 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
             style={{
               background: 'linear-gradient(135deg, #d4af37, #b8962e)',
               color: 'var(--bg)',
-              boxShadow: '0 8px 28px rgba(212,175,55,0.35)',
+              boxShadow: '0 8px 28px rgba(var(--gold-rgb), 0.35)',
             }}
             data-testid="fc-celebration-continue"
           >
@@ -272,8 +272,8 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
           100% { opacity: 1; transform: scale(1) translateY(0); }
         }
         @keyframes fcPulseRing {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(212,175,55,0.35); }
-          50% { box-shadow: 0 0 0 14px rgba(212,175,55,0); }
+          0%, 100% { box-shadow: 0 0 0 0 rgba(var(--gold-rgb), 0.35); }
+          50% { box-shadow: 0 0 0 14px rgba(var(--gold-rgb), 0); }
         }
         @keyframes fcTwinkle {
           0%, 100% { opacity: 0.2; transform: scale(0.9); }

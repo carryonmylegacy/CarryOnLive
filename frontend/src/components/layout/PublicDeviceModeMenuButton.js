@@ -178,9 +178,9 @@ const PublicDeviceModeMenuButton = ({ flavor = 'sidebar', collapsed = false, onA
         disabled={busy}
         className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all mb-2"
         style={{
-          border: `1px solid ${goldOn ? 'rgba(212,175,55,0.45)' : 'rgba(212,175,55,0.25)'}`,
+          border: `1px solid ${goldOn ? 'rgba(var(--gold-rgb), 0.45)' : 'rgba(var(--gold-rgb), 0.25)'}`,
           color: goldOn ? '#080e1a' : '#d4af37',
-          background: goldOn ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(212,175,55,0.06)',
+          background: goldOn ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(var(--gold-rgb), 0.06)',
           fontWeight: goldOn ? 700 : 500,
         }}
         data-testid="mobile-public-device-btn"
@@ -218,7 +218,7 @@ const EstatePicker = ({ estates, busyId, onPick, onClose, position }) => (
       right: 0,
       zIndex: 60,
       background: 'var(--bg2, #131A2B)',
-      border: '1px solid rgba(212,175,55,0.3)',
+      border: '1px solid rgba(var(--gold-rgb), 0.3)',
       borderRadius: 12,
       overflow: 'hidden',
       boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
@@ -250,7 +250,7 @@ const EstatePicker = ({ estates, busyId, onPick, onClose, position }) => (
               data-testid={`pdm-estate-row-${e.id}`}
               className="w-full flex items-center gap-2 px-3 py-2.5 transition-colors hover:bg-white/5"
               style={{
-                background: armed ? 'rgba(212,175,55,0.08)' : 'transparent',
+                background: armed ? 'rgba(var(--gold-rgb), 0.08)' : 'transparent',
                 color: 'var(--t)',
                 textAlign: 'left',
                 borderBottom: '1px solid rgba(255,255,255,0.04)',
