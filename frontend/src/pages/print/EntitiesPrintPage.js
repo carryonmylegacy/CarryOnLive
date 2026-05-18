@@ -164,6 +164,25 @@ export default function EntitiesPrintPage() {
         setData(entitiesRes.data || {});
         setBeneficiaries(Array.isArray(bensRes?.data) ? bensRes.data : []);
         setEstateName(estateRes?.data?.name || '');
+        // Fire-and-forget: ask the backend to render the canonical
+        // Entities & Structures PDF and cache it under pdf_type
+        // "entities_structures" so the Estate Binder picks it up on
+        // its next assembly. We don't need the bytes here — the user
+        // sees this page's interactive SVG + browser print pipeline.
+        // Any failure (network blip, S3 hiccup) is non-fatal.
+        apiClient
+          .get(`${API_URL}/financial/entities/${estateId}/pdf`, {
+            ...headers,
+            responseType: 'blob',
+            timeout: 30000,
+          })
+          .catch((err) => {
+            if (process.env.NODE_ENV !== 'production') {
+              // Surface in dev only — production swallows it.
+              // eslint-disable-next-line no-console
+              console.warn('[EntitiesPrintPage] E&S binder-cache write failed:', err?.message);
+            }
+          });
       } catch (e) {
         if (!alive) return;
         setError(e?.response?.data?.detail || e?.message || 'Could not load chart data');

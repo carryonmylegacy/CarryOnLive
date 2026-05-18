@@ -57,6 +57,7 @@ SECTION_ORDER: list[tuple[str, str, str, str]] = [
     ("ega_plan", "Estate Guardian — Plan of Action", "/guardian", "Estate Guardian"),
     ("ega_transcript", "Estate Guardian — Conversation Transcript", "/guardian", "Estate Guardian"),
     ("cfp_handoff", "CarryOn Financial Picture — Hand-off Package", "/financial", "Financial Picture"),
+    ("entities_structures", "Entities & Structures", "/financial", "Financial Picture"),
     ("ccp_plan", "Contingency Care Plan", "/connected-protocol", "Connected Protocol"),
     ("ccp_card", "Emergency Card", "/connected-protocol", "Connected Protocol"),
     ("ccp_report", "Family Readiness Report", "/connected-protocol", "Connected Protocol"),

@@ -49,6 +49,7 @@ PDF_TYPE_REGISTRY = {
     "ega_plan": {"label": "EGA Plan of Action"},
     "iac_standalone": {"label": "Immediate Action Checklist"},
     "cfp_handoff": {"label": "CFP Hand-off Package"},
+    "entities_structures": {"label": "Entities & Structures"},
     "ccp_plan": {"label": "Contingency Care Plan"},
     "ccp_card": {"label": "Emergency Card"},
     "ccp_report": {"label": "Family Readiness Report"},

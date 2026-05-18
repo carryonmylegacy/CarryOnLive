@@ -1,6 +1,73 @@
 # CarryOn — Changelog
 
 
+## Feb 18, 2026 — 🗂️ Entities & Structures now in the Estate Binder
+
+The CFP **Entities & Structures** section was missing from the assembled
+Estate Binder. Root cause: the E&S Print page renders an interactive SVG
+org-chart client-side and calls `window.print()` — there was no PDF blob
+to push into the `latest_pdfs` cache, so the Binder generator had nothing
+to pull from.
+
+### Fix (leverages the existing PDF cache → Binder pipeline)
+- **New endpoint:** `GET /api/financial/entities/{estate_id}/pdf`
+  (`routes/financial_portal/entities_pdf.py`). Renders a canonical
+  print-ready E&S PDF using fpdf2 — entities grouped by category bucket
+  (Business / Trust / Charity / Property / Specialized), external
+  people, beneficiary blocks, and a relationships table with role +
+  ownership %. Same data the SVG chart visualizes, in tabular form.
+- **Auto-cache:** the endpoint upserts the freshly-rendered bytes into
+  `latest_pdfs` under `pdf_type="entities_structures"` (S3 + Mongo)
+  before returning, so the Binder picks it up on its next assembly
+  without the frontend doing anything extra.
+- **Registry:** `"entities_structures"` added to `PDF_TYPE_REGISTRY`
+  (`routes/pdfs.py`) and to `SECTION_ORDER` in
+  `routes/estate_binder.py`, placed right after `cfp_handoff` so it
+  sits in the Financial Picture grouping in the binder TOC.
+- **Frontend hook:** `EntitiesPrintPage.js` fires a fire-and-forget
+  GET to the new endpoint immediately after the chart data lands.
+  Print + window.print() pipeline left completely untouched — the
+  background call only writes the cache. Failures are swallowed
+  (dev-only warning).
+
+### Bugs caught and fixed during live verification
+- fpdf2's `multi_cell(0, ...)` leaves the cursor at the right edge,
+  causing "Not enough horizontal space" on the *next* multi_cell call.
+  Fixed by passing explicit `new_x="LMARGIN", new_y="NEXT"` on every
+  `multi_cell` call (5 sites in this module).
+- The relationships table header widths summed to 186 mm, 0.1 mm
+  wider than the usable Letter portrait width with 15 mm margins
+  (185.9 mm) — trimmed the OWN% column 18 → 17 mm.
+- `_safe()` sanitization map covers `·` (U+00B7) → `-` but I was
+  joining sanitized parts with an *unsanitized* `"  ·  "` literal,
+  so the middle dot snuck through into multi_cell and tripped the
+  latin-1 width calculator. Swapped to a `_safe("  -  ".join(...))`
+  pattern.
+
+### Live verification (preview pod)
+Seeded a test estate with 2 entities, 1 external person, 1 beneficiary
+block, and 2 relationships:
+
+```
+GET /api/financial/entities/<estate_id>/pdf         → HTTP 200, 2 057 bytes
+GET /api/pdfs/latest  (filtered)                    → entities_structures cached
+GET /api/estate-binder/manifest?estate_id=<...>     → entities_structures in `available`
+POST /api/estate-binder/generate                    → 3-page Binder, TOC lists "Entities & Structures"
+```
+
+Test data cleaned up post-verification.
+
+**Files touched / created:**
+- `backend/routes/financial_portal/entities_pdf.py` (new endpoint)
+- `backend/routes/financial_portal/__init__.py` (registration)
+- `backend/routes/pdfs.py` (PDF_TYPE_REGISTRY)
+- `backend/routes/estate_binder.py` (SECTION_ORDER)
+- `frontend/src/pages/print/EntitiesPrintPage.js` (fire-and-forget cache write)
+
+CI: `housekeeping.sh --strict` → 0 WARN, 0 FAIL. 21/21 tests pass.
+
+
+
 ## Feb 18, 2026 — 🪨 Audit chain genesis anchor
 
 Implemented the one-shot `audit_chain_genesis` entry plus a critical
