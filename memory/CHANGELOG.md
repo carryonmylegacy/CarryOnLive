@@ -1,6 +1,46 @@
 # CarryOn — Changelog
 
 
+## May 18, 2026 — 🛡️ Estate Binder E&S fallback verified + estate["user_id"] static guardrail
+
+Pitch-week hardening pass requested by the user (tasks b + c from the
+fork plan):
+
+### What shipped
+- **Static regression test (`test_no_unsafe_estate_user_id.py`)** — scans
+  every backend `.py` file for the unsafe `estate["user_id"]` /
+  `estate_doc["user_id"]` / etc. pattern and fails the suite if anyone
+  reintroduces it. Locks in the DTS-quote 500 fix permanently. ✅ PASS
+  (codebase is already clean).
+- **End-to-end Estate Binder E&S fallback regression
+  (`test_estate_binder_es_fallback.py`)** — seeds a synthetic estate +
+  CFP entities and exercises `ensure_entities_structures_cached` across
+  five cache states:
+  1. Cold (no row) → must produce a row tagged `source="server_fallback"`.
+  2. Fresh + non-trivial → must short-circuit (`reason="fresh"`), preserving
+     any richer client `html2pdf` capture.
+  3. Stale (> max_age_hours) → must regenerate and overwrite.
+  4. Trivially small (`size_bytes < 5000`) → must regenerate.
+  5. Missing estate → graceful no-op (`reason="estate_not_found"`).
+  All five paths now have green coverage.
+- **Live preview smoke** — confirmed against `info@carryon.us` /
+  Admin Estate on the preview pod:
+  - `GET /api/financial/entities/<id>/pdf` → 200, valid PDF, writes
+    `latest_pdfs.source=server_fallback`.
+  - `POST /api/estate-binder/generate` → 200, headers
+    `X-CarryOn-Binder-Included: iac_standalone,entities_structures`,
+    `X-CarryOn-Binder-Page-Count: 5`. TOC text-extracted reads
+    "2. Entities & Structures … Page 5" verbatim. Idempotent on repeat
+    invocation (identical MD5).
+
+### Files touched
+- `/app/backend/tests/test_no_unsafe_estate_user_id.py` (new)
+- `/app/backend/tests/test_estate_binder_es_fallback.py` (new)
+
+Housekeeping `--strict`: 0 WARN / 0 FAIL.
+
+
+
 ## Feb 18, 2026 — 🎯 Entities & Structures: Save PDF button + Binder includes the REAL chart
 
 User correction: the existing `EntitiesPrintPage` already renders the beautiful
