@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 
 from guards import require_admin
-from services.audit import verify_audit_chain
+from services.audit import ensure_chain_genesis, verify_audit_chain
 
 router = APIRouter()
 
@@ -27,10 +27,16 @@ router = APIRouter()
 async def get_audit_chain_status(_admin: dict = Depends(require_admin)):
     """Walk the audit-trail hash chain and return its integrity verdict.
 
-    Pure read-only. The chain walk is bounded to the latest 10k entries
-    to keep dashboard latency under ~500ms; the full historical chain
-    can be verified out-of-band via `scripts/backup_drill_smoke.py`.
+    On the very first call after deploy, writes a one-shot
+    `audit_chain_genesis` audit entry so the chain has a named anchor
+    point (SOC 2 evidence). Subsequent calls are idempotent.
+
+    Pure read-only after genesis. The chain walk is bounded to the
+    latest 10k entries to keep dashboard latency under ~500ms; the full
+    historical chain can be verified out-of-band via
+    `scripts/backup_drill_smoke.py`.
     """
+    genesis = await ensure_chain_genesis()
     result = await verify_audit_chain(limit=10000)
     return {
         "checked_at": datetime.now(timezone.utc).isoformat(),
@@ -40,4 +46,5 @@ async def get_audit_chain_status(_admin: dict = Depends(require_admin)):
         "first_break_at": result["first_break_at"],
         "first_break_id": result["first_break_id"],
         "limit": 10000,
+        "genesis_created_now": genesis["created"],
     }

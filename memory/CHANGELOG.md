@@ -1,6 +1,66 @@
 # CarryOn — Changelog
 
 
+## Feb 18, 2026 — 🪨 Audit chain genesis anchor
+
+Implemented the one-shot `audit_chain_genesis` entry plus a critical
+bug-fix discovered while wiring it up.
+
+### What shipped
+- `services/audit.py` → new `ensure_chain_genesis()`: idempotent, only
+  writes when no chained entries exist yet. Inserts a single audit entry
+  with `action="audit_chain_genesis"`, `actor_id="system"`,
+  `category="security"`, and a self-documenting `details` block.
+- `routes/admin/audit_chain_status.py` → calls `ensure_chain_genesis()`
+  immediately before `verify_audit_chain()` and surfaces a new
+  `genesis_created_now` field in the response (true on the very first
+  call after deploy, false thereafter).
+- `tests/test_audit_chain.py` → 2 new tests
+  (`test_ensure_chain_genesis_writes_once`,
+  `test_genesis_starts_a_verifiable_chain`). 5/5 audit-chain tests pass.
+
+### Bug discovered during live verification
+`_latest_chain_hash()` originally filtered on `integrity_hash` exists —
+which **also matched the 143,569 legacy pre-chain entries**. The first
+real chained entry inherited a legacy entry's hash as its `prev_hash`,
+poisoning the chain root and triggering `ok: false` immediately.
+
+Also, the cursor in `verify_audit_chain()` originally filtered on
+`integrity_hash` exists with a 10k limit — same root cause: legacy
+entries crowded out the chain window so chained entries fell past the
+limit and were never walked.
+
+**Fix:** both functions now filter on `prev_hash` exists (the
+distinguishing field of chained entries). `verify_audit_chain` also
+counts `skipped_legacy` out-of-band via `count_documents` so the
+metric still surfaces accurately for the dashboard.
+
+### Live production verification
+After fix + restart + one-time delete of the polluted prior genesis:
+
+```
+GET /api/admin/audit-chain-status
+{
+  "ok": true,
+  "entries_checked": 1,
+  "skipped_legacy": 143569,
+  "first_break_at": null,
+  "genesis_created_now": true
+}
+```
+
+Second call → `genesis_created_now: false` (idempotent). Inspected the
+new anchor: `prev_hash = "0" * 64`, valid integrity_hash, and a
+self-documenting details block. SOC 2 evidence-ready.
+
+**Files touched:**
+- `backend/services/audit.py` (`ensure_chain_genesis` + filter fix in
+  `_latest_chain_hash` and `verify_audit_chain`)
+- `backend/routes/admin/audit_chain_status.py` (genesis call)
+- `backend/tests/test_audit_chain.py` (2 new tests)
+
+
+
 ## Feb 18, 2026 — 🎯 Three more polish items: db_read wiring, gold sweep, audit-integrity badge
 
 ### 1. `db_read` wiring (P3 follow-up)
