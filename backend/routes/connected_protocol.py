@@ -331,6 +331,153 @@ async def wizard_generate_plan(data: WizardRequest, current_user: dict = Depends
         primary_concern, f"Create a thorough emergency plan for {concern_label}."
     )
 
+    # Cross-state self-defense detection — surface contrast when the family's
+    # locations span >1 US state so the AI can address both frameworks.
+    _US_STATE_CODES = {
+        "AL",
+        "AK",
+        "AZ",
+        "AR",
+        "CA",
+        "CO",
+        "CT",
+        "DE",
+        "FL",
+        "GA",
+        "HI",
+        "ID",
+        "IL",
+        "IN",
+        "IA",
+        "KS",
+        "KY",
+        "LA",
+        "ME",
+        "MD",
+        "MA",
+        "MI",
+        "MN",
+        "MS",
+        "MO",
+        "MT",
+        "NE",
+        "NV",
+        "NH",
+        "NJ",
+        "NM",
+        "NY",
+        "NC",
+        "ND",
+        "OH",
+        "OK",
+        "OR",
+        "PA",
+        "RI",
+        "SC",
+        "SD",
+        "TN",
+        "TX",
+        "UT",
+        "VT",
+        "VA",
+        "WA",
+        "WV",
+        "WI",
+        "WY",
+        "DC",
+    }
+    _STATE_NAMES = {
+        "ALABAMA": "AL",
+        "ALASKA": "AK",
+        "ARIZONA": "AZ",
+        "ARKANSAS": "AR",
+        "CALIFORNIA": "CA",
+        "COLORADO": "CO",
+        "CONNECTICUT": "CT",
+        "DELAWARE": "DE",
+        "FLORIDA": "FL",
+        "GEORGIA": "GA",
+        "HAWAII": "HI",
+        "IDAHO": "ID",
+        "ILLINOIS": "IL",
+        "INDIANA": "IN",
+        "IOWA": "IA",
+        "KANSAS": "KS",
+        "KENTUCKY": "KY",
+        "LOUISIANA": "LA",
+        "MAINE": "ME",
+        "MARYLAND": "MD",
+        "MASSACHUSETTS": "MA",
+        "MICHIGAN": "MI",
+        "MINNESOTA": "MN",
+        "MISSISSIPPI": "MS",
+        "MISSOURI": "MO",
+        "MONTANA": "MT",
+        "NEBRASKA": "NE",
+        "NEVADA": "NV",
+        "NEW HAMPSHIRE": "NH",
+        "NEW JERSEY": "NJ",
+        "NEW MEXICO": "NM",
+        "NEW YORK": "NY",
+        "NORTH CAROLINA": "NC",
+        "NORTH DAKOTA": "ND",
+        "OHIO": "OH",
+        "OKLAHOMA": "OK",
+        "OREGON": "OR",
+        "PENNSYLVANIA": "PA",
+        "RHODE ISLAND": "RI",
+        "SOUTH CAROLINA": "SC",
+        "SOUTH DAKOTA": "SD",
+        "TENNESSEE": "TN",
+        "TEXAS": "TX",
+        "UTAH": "UT",
+        "VERMONT": "VT",
+        "VIRGINIA": "VA",
+        "WASHINGTON": "WA",
+        "WEST VIRGINIA": "WV",
+        "WISCONSIN": "WI",
+        "WYOMING": "WY",
+    }
+
+    def _scan_states(s: str) -> set[str]:
+        import re as _re
+
+        if not s:
+            return set()
+        found = set()
+        upper = s.upper()
+        # 2-letter codes: ", XX" or ", XX 12345"
+        for m in _re.finditer(r",\s*([A-Z]{2})(?:\s+\d{5})?\b", upper):
+            if m.group(1) in _US_STATE_CODES:
+                found.add(m.group(1))
+        # Full state names (longest first to catch "NEW YORK" before "YORK")
+        for name in sorted(_STATE_NAMES, key=len, reverse=True):
+            if _re.search(r"\b" + name + r"\b", upper):
+                found.add(_STATE_NAMES[name])
+        return found
+
+    _states = _scan_states(data.location)
+    for _v in (data.follow_up_answers or {}).values():
+        if isinstance(_v, str):
+            _states |= _scan_states(_v)
+        elif isinstance(_v, list):
+            for _x in _v:
+                if isinstance(_x, str):
+                    _states |= _scan_states(_x)
+
+    _is_fight_disaster = primary_concern in ("home_invasion", "active_shooter", "terrorism", "civil_unrest")
+    cross_state_block = ""
+    if _is_fight_disaster and len(_states) > 1:
+        _state_list = ", ".join(sorted(_states))
+        cross_state_block = (
+            f"\n\nCROSS-STATE SELF-DEFENSE CONTEXT: The family's locations span multiple US states "
+            f"({_state_list}). When generating `self_defense_law_note`, briefly contrast the relevant "
+            f"frameworks of each state (e.g., Stand-Your-Ground vs. Duty-to-Retreat, Castle Doctrine "
+            f"scope, use-of-force standard) and note that the applicable rule depends on which state "
+            f"the incident occurs in. Keep the entire note under 5 sentences and end with the standard "
+            f"'This is general information, NOT legal advice...' disclaimer."
+        )
+
     user_prompt = f"""Create a {concern_label} emergency plan for this family:
 
 Home Location: {data.location.strip()}
@@ -339,7 +486,7 @@ Disaster Type: {concern_label}
 
 DISASTER-SPECIFIC GUIDANCE:
 {disaster_context}
-{follow_up_text}
+{follow_up_text}{cross_state_block}
 
 Generate a complete, actionable emergency plan for this specific disaster. Return ONLY valid JSON."""
 

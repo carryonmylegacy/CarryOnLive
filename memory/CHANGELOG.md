@@ -1,6 +1,44 @@
 # CarryOn — Changelog
 
 
+## Feb 18, 2026 — 🧹 Three P2 housekeeping items shipped
+
+### 1. Cross-state self-defense contrast (CCP wizard)
+When the family's `data.location` + `follow_up_answers` reference >1 US state
+AND the disaster is FIGHT-stage (`home_invasion`, `active_shooter`,
+`terrorism`, `civil_unrest`), the AI prompt now injects a **CROSS-STATE
+SELF-DEFENSE CONTEXT** block instructing the model to contrast each state's
+framework (Stand-Your-Ground vs. Duty-to-Retreat, Castle Doctrine scope,
+use-of-force standard).
+
+- State detection scans both 2-letter codes (`, TX`, `, CA 90001`) and full
+  state names (`California`, `New York`) using a longest-match-first regex
+  so "New York" wins over a stray "York".
+- Non-FIGHT disasters (e.g., hurricane) are unaffected even with multi-state
+  inputs — keeps the SD note correctly omitted.
+- File touched: `backend/routes/connected_protocol.py` (`wizard_generate_plan`).
+- Coverage: `backend/tests/test_ccp_cross_state_self_defense.py`
+  (5 new tests, all passing).
+
+### 2. `estate["user_id"]` sweep
+Audited the entire `/app/backend` tree for unsafe `estate["user_id"]`
+subscript access. **Zero occurrences** in production code — the only mention
+is a docstring inside the regression test
+`tests/test_dts_quote_estate_no_user_id.py`. No code changes required;
+documenting the all-clear here for the audit trail.
+
+### 3. Mongo projection safety (`checklist.py`)
+Added `"id": 1` to the three `find_one(..., {"_id": 0, "estate_id": 1})`
+projections on lines 195/215/226 of `routes/checklist.py`. The previous
+housekeeping WARN (`Mongo projection safety — 3 projection(s) may omit
+'id'`) is now `PASS`.
+
+**CI:** `housekeeping.sh --strict` → 0 WARN, 0 FAIL.
+**Tests:** 6 passed in 0.9s (5 new cross-state + the existing
+`test_dts_quote_estate_no_user_id.py` regression).
+
+
+
 ## Feb 18, 2026 — 🪪 Emergency Card PDF: text wrap + self-defense law section
 
 Fixed the live-pitch P0 on `_handle_emergency_card`

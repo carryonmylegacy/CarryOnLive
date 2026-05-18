@@ -192,7 +192,7 @@ async def reorder_checklists(data: dict, current_user: dict = Depends(get_curren
 async def accept_ai_item(item_id: str, current_user: dict = Depends(get_current_user)):
     """Accept an AI-suggested checklist item."""
     require_benefactor_role(current_user, "accept items")
-    item = await db.checklists.find_one({"id": item_id}, {"_id": 0, "estate_id": 1})
+    item = await db.checklists.find_one({"id": item_id}, {"_id": 0, "id": 1, "estate_id": 1})
     if not item:
         raise HTTPException(status_code=404, detail="Checklist item not found")
     await require_estate_owner(item.get("estate_id"), current_user)
@@ -212,7 +212,7 @@ async def accept_ai_item(item_id: str, current_user: dict = Depends(get_current_
 async def reject_ai_item(item_id: str, current_user: dict = Depends(get_current_user)):
     """Reject an AI-suggested checklist item with optional feedback."""
     require_benefactor_role(current_user, "reject items")
-    item = await db.checklists.find_one({"id": item_id}, {"_id": 0, "estate_id": 1})
+    item = await db.checklists.find_one({"id": item_id}, {"_id": 0, "id": 1, "estate_id": 1})
     if not item:
         raise HTTPException(status_code=404, detail="Checklist item not found")
     await require_estate_owner(item.get("estate_id"), current_user)
@@ -223,7 +223,7 @@ async def reject_ai_item(item_id: str, current_user: dict = Depends(get_current_
 async def reject_ai_item_with_feedback(item_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     """Reject an AI-suggested checklist item with feedback."""
     require_benefactor_role(current_user, "reject items")
-    item = await db.checklists.find_one({"id": item_id}, {"_id": 0, "estate_id": 1})
+    item = await db.checklists.find_one({"id": item_id}, {"_id": 0, "id": 1, "estate_id": 1})
     if not item:
         raise HTTPException(status_code=404, detail="Checklist item not found")
     await require_estate_owner(item.get("estate_id"), current_user)
