@@ -1156,7 +1156,7 @@ export default function ConnectedProtocolPage() {
             </div>
             <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />
           </button>
-          <CachedPdfIcon pdfType="ccp_report" size={20} />
+          <CachedPdfIcon pdfType="ccp_report" />
         </div>
       )}
 

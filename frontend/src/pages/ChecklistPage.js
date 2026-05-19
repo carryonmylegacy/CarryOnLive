@@ -993,7 +993,7 @@ const ChecklistPage = () => {
           {iacPrinting ? <Loader2 className="w-4 h-4 animate-spin text-[var(--gold)]" /> : <Printer className="w-4 h-4 text-[var(--gold)]" />}
           Print PDF
         </button>
-        <CachedPdfIcon pdfType="iac_standalone" size={18} />
+        <CachedPdfIcon pdfType="iac_standalone" />
       </div>
 
       {/* Add/Edit form — slides in from the right matching all other

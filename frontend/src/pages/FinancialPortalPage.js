@@ -849,7 +849,7 @@ const FinancialPortalPage = () => {
               {exportingHandoff ? 'Generating…' : 'Hand-off PDF'}
             </Button>
           )}
-          {estate?.id && <CachedPdfIcon pdfType="cfp_handoff" size={16} />}
+          {estate?.id && <CachedPdfIcon pdfType="cfp_handoff" />}
         </div>
       </div>
 

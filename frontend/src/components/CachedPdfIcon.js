@@ -1,12 +1,26 @@
 /**
- * CachedPdfIcon — inline "view latest PDF" affordance.
+ * CachedPdfIcon — standardized "Latest PDF · X ago" pill.
  *
  * Drops in next to each section's "Generate PDF" button. Polls the
  * backend cache for the section's most recently generated PDF; if
- * present, renders a small gold FileText icon button. Tap → fetches
- * the bytes back from `/api/pdfs/latest/{type}`, builds a blob URL,
- * and dispatches `carryon:open-pdf-preview` to pop the existing
- * preview modal (same code path the live-generated preview uses).
+ * present, renders a single gold-tinted pill containing:
+ *
+ *   [FileText icon]  Latest PDF · 3m ago
+ *
+ * Tap → fetches the bytes back from `/api/pdfs/latest/{type}`,
+ * builds a blob URL, and dispatches `carryon:open-pdf-preview` to
+ * pop the existing preview modal (same code path the live-generated
+ * preview uses).
+ *
+ * Design contract (May 22, 2026 — pitch-prep standardization):
+ *   • ONE visual treatment, used identically on every section page
+ *     that can produce a PDF (E&S, EGA-transcript/-plan/-checklist,
+ *     IAC, CFP Handoff, CCP Report, Beneficiary Packet).
+ *   • NO warning/red state for stale dates. Estate documents are
+ *     valid for years; we never imply the user should regenerate.
+ *   • On mobile (< sm) the label collapses to "{X}m ago" / "{X}h ago"
+ *     to preserve toolbar real-estate without dropping the
+ *     freshness cue entirely.
  *
  * Stays in sync via two channels:
  *   • Listens for `carryon:pdf-job-complete` events with a matching
@@ -16,10 +30,7 @@
  *     start, route navigation, or device switch.
  *
  * Usage:
- *   <CachedPdfIcon pdfType="ega_todo" />
- *
- * The component is intentionally tiny — no labels, no toasts. The
- * icon is its own affordance; tooltip on hover shows the title.
+ *   <CachedPdfIcon pdfType="entities_structures" />
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
@@ -27,13 +38,26 @@ import { FileText, Loader2 } from 'lucide-react';
 import { API_URL } from '../config';
 import { toast } from '../utils/toast';
 
-const CachedPdfIcon = ({ pdfType, className = '', size = 18, testIdSuffix = '' }) => {
+const _formatAgo = (iso) => {
+  if (!iso) return '';
+  const then = new Date(iso).getTime();
+  const diff = Math.max(0, Date.now() - then);
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+};
+
+const CachedPdfIcon = ({ pdfType, className = '', testIdSuffix = '' }) => {
   const [meta, setMeta] = useState(null);    // {title, subtitle, filename, updated_at}
   const [loading, setLoading] = useState(false); // tap → fetching bytes
 
-  // Read token straight from localStorage — same race-safe pattern we
-  // use in PartnersTab. AuthContext's React state isn't always
-  // hydrated when this component first mounts during a deep-link.
+  // Read token straight from localStorage — AuthContext's React state
+  // isn't always hydrated when this component first mounts during a
+  // deep-link.
   const authHeader = () => {
     const t = (typeof window !== 'undefined' && window.localStorage)
       ? window.localStorage.getItem('carryon_token') : null;
@@ -43,42 +67,26 @@ const CachedPdfIcon = ({ pdfType, className = '', size = 18, testIdSuffix = '' }
   // Hydrate from backend on mount and whenever pdfType changes.
   useEffect(() => {
     let alive = true;
-    if (process.env.NODE_ENV !== 'production') {
-      // eslint-disable-next-line no-console
-      console.log('[CachedPdfIcon] mount', pdfType);
-    }
     (async () => {
       try {
-        const headers = authHeader();
-        // eslint-disable-next-line no-console
-        console.log('[CachedPdfIcon] before-fetch', pdfType, 'has-auth=', !!headers.Authorization);
-        const res = await fetch(`${API_URL}/pdfs/latest`, { headers });
-        // eslint-disable-next-line no-console
-        console.log('[CachedPdfIcon] after-fetch', pdfType, 'status=', res.status, 'alive=', alive);
+        const res = await fetch(`${API_URL}/pdfs/latest`, { headers: authHeader() });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const hit = (data.pdfs || []).find((p) => p.pdf_type === pdfType);
-        // eslint-disable-next-line no-console
-        console.log('[CachedPdfIcon] parsed', pdfType, 'pdfs_count=', (data.pdfs || []).length, 'hit=', !!hit, 'alive=', alive);
         if (alive) setMeta(hit || null);
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.warn('[CachedPdfIcon] caught', pdfType, err?.message);
+      } catch {
         if (alive) setMeta(null);
       }
     })();
     return () => { alive = false; };
   }, [pdfType]);
 
-  // Update the icon state when ANY freshly generated PDF tagged with
+  // Update the pill state when ANY freshly generated PDF tagged with
   // this same type completes (event fired from openPdfPreview).
   useEffect(() => {
     const onComplete = (e) => {
       const d = e.detail || {};
       if (d.pdfType !== pdfType) return;
-      // Optimistic: use the freshly delivered title/subtitle so the
-      // icon appears instantly even before the backend cache write
-      // finishes. The next mount will reconcile against the server.
       setMeta((prev) => ({
         ...(prev || {}),
         pdf_type: pdfType,
@@ -92,12 +100,20 @@ const CachedPdfIcon = ({ pdfType, className = '', size = 18, testIdSuffix = '' }
     return () => window.removeEventListener('carryon:pdf-job-complete', onComplete);
   }, [pdfType]);
 
+  // Re-render every 30s so the "X ago" label stays accurate without
+  // forcing a network round-trip. Lightweight: only re-renders the
+  // visible pill string, no state churn.
+  const [, _setTick] = useState(0);
+  useEffect(() => {
+    if (!meta) return undefined;
+    const t = setInterval(() => _setTick((n) => n + 1), 30000);
+    return () => clearInterval(t);
+  }, [meta]);
+
   const handleClick = useCallback(async () => {
     if (!meta || loading) return;
     setLoading(true);
     try {
-      // Plain fetch (see hydrate effect for rationale) — bypasses
-      // the global axios offline interceptor.
       const res = await fetch(`${API_URL}/pdfs/latest/${pdfType}`, { headers: authHeader() });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.blob();
@@ -126,20 +142,8 @@ const CachedPdfIcon = ({ pdfType, className = '', size = 18, testIdSuffix = '' }
 
   if (!meta) return null;
 
-  const updatedAgo = (() => {
-    if (!meta.updated_at) return '';
-    const then = new Date(meta.updated_at).getTime();
-    const diff = Math.max(0, Date.now() - then);
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins} min ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    const days = Math.floor(hrs / 24);
-    return `${days}d ago`;
-  })();
-
-  const tooltip = `View latest ${meta.title}${updatedAgo ? ` · ${updatedAgo}` : ''}`;
+  const ago = _formatAgo(meta.updated_at);
+  const tooltip = `View latest ${meta.title || 'PDF'}${ago ? ` · generated ${ago}` : ''}`;
   const testId = `cached-pdf-icon-${pdfType}${testIdSuffix ? `-${testIdSuffix}` : ''}`;
 
   return (
@@ -150,15 +154,14 @@ const CachedPdfIcon = ({ pdfType, className = '', size = 18, testIdSuffix = '' }
       title={tooltip}
       aria-label={tooltip}
       data-testid={testId}
-      className={`inline-flex items-center justify-center rounded-lg transition-all ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all text-[11px] font-bold ${className}`}
       style={{
-        width: size + 14,
-        height: size + 14,
         background: 'rgba(var(--gold-rgb), 0.10)',
         border: '1px solid rgba(var(--gold-rgb), 0.35)',
         color: '#d4af37',
         cursor: loading ? 'wait' : 'pointer',
         flexShrink: 0,
+        lineHeight: 1.1,
       }}
       onMouseEnter={(e) => {
         if (loading) return;
@@ -171,8 +174,13 @@ const CachedPdfIcon = ({ pdfType, className = '', size = 18, testIdSuffix = '' }
       }}
     >
       {loading
-        ? <Loader2 size={size} className="animate-spin" />
-        : <FileText size={size} />}
+        ? <Loader2 size={12} className="animate-spin" />
+        : <FileText size={12} />}
+      {/* Full label on sm+; compact "X ago" on mobile to keep the
+          toolbar from overflowing. The freshness cue is visible at
+          every breakpoint — only the prefix word is dropped. */}
+      <span className="hidden sm:inline">Latest PDF{ago ? ` · ${ago}` : ''}</span>
+      {ago && <span className="sm:hidden">{ago}</span>}
     </button>
   );
 };

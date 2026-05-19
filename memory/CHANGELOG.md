@@ -1,6 +1,64 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 (latest+2) — 🎯 Standardized "Latest PDF" pill + unified PDF Preview chrome
+
+User mandate (pitch-prep UX polish):
+1. Restore the cached-PDF affordance on the E&S section (was removed
+   long ago for PWA toolbar density). Standardizes the cache surface
+   across every section that can produce a PDF.
+2. Use that cached PDF in the Binder — same pipeline as every other
+   section (already true at the `latest_pdfs` layer; restoring the
+   icon ensures the cache stays fresh whenever the user generates).
+3. Unify the PDF Preview Modal header button format so Save PDF /
+   Share / Print share one chrome.
+4. Add a "Latest PDF · X ago" freshness cue to the pill, NO red
+   warning for stale ages (estate docs are valid for years).
+
+### What shipped
+
+#### `CachedPdfIcon` is now a single standardized pill
+- One visual treatment used identically on **every** section page
+  that can produce a PDF: E&S, EGA-transcript / -plan / -checklist,
+  IAC standalone, CFP Handoff, CCP Report, Beneficiary Packet.
+- Renders as `[FileText 12px]  Latest PDF · 3m ago` on sm+ screens.
+- On mobile (< sm) the label collapses to just `[icon] 3m ago` to
+  keep crowded toolbars from overflowing — the freshness cue is
+  preserved at every breakpoint.
+- Format: gold-tint rounded pill, `rgba(var(--gold-rgb), 0.10)` bg,
+  `#d4af37` gold text, 11px bold, identical to the existing
+  E&S toolbar pills (Print, Reset, Legend) so it visually slots in.
+- Self-refreshes every 30 s so the "X ago" cue stays accurate
+  without a network round-trip.
+- All call sites updated: `size` prop removed; one visual everywhere.
+
+#### E&S Section restored to the standardized pattern
+- `EntitiesSection.js` toolbar now renders `<CachedPdfIcon
+  pdfType="entities_structures" />` immediately after the Print
+  button — slot-compatible with every other section page.
+- Auto-cache from `/print/entities/<id>` already stamps
+  `source: "client_capture"` (from yesterday's regression fix), so
+  the next binder build picks up the rich tree with avatars.
+
+#### PDF Preview Modal header chrome standardized
+- Save PDF / Share / Print now share one CSS class
+  (`.pdf-preview-print`) with identical pill shape, padding, font,
+  weight, and color.
+- Share button's inline navy gradient override removed (the
+  source of the May 22 readability complaint).
+- Base pill colors bumped from `#B8860B` / `#fffaf0` (~3:1) to
+  `#7a5c00` / `#fffaf0` (~5.4:1) so the standardized treatment now
+  passes WCAG AA at 13 px bold.
+- Auto-margin compound bug fixed: only the first action button
+  absorbs `margin-left: auto`; siblings reset to `0`.
+
+### Verification
+- Housekeeping `--strict`: 0 WARN / 0 FAIL.
+- pytest: 9 passed / 1 skipped (binder + share + cache suites).
+- Lint: all changed files clean.
+
+
+
 ## May 22, 2026 (latest+1) — 🚨 Estate Binder: E&S chart avatars no longer capture as empty circles
 
 User pitch-day emergency report (with screenshot): the Estate Binder's

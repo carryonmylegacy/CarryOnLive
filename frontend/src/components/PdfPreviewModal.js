@@ -345,8 +345,15 @@ const PdfPreviewModal = () => {
             background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1;
           }
           .pdf-preview-modal .pdf-preview-print {
-            background: #fffaf0; color: #B8860B; border: 1px solid #B8860B;
+            background: #fffaf0; color: #7a5c00; border: 1px solid #a87a00;
             margin-left: auto;
+          }
+          .pdf-preview-modal .pdf-preview-print + .pdf-preview-print {
+            /* Subsequent action buttons stack flush against the first
+               (which already absorbed the auto-margin). Resetting the
+               margin here prevents per-button auto-margin from
+               creating uneven gaps in the toolbar. */
+            margin-left: 0;
           }
           .pdf-preview-modal .pdf-preview-header {
             border-bottom: 2px solid #B8860B;
@@ -439,14 +446,6 @@ const PdfPreviewModal = () => {
               disabled={renderState === 'loading'}
               data-testid="pdf-preview-share"
               title="Create a private link to share this binder"
-              style={{
-                background: 'linear-gradient(180deg, rgb(15, 23, 42) 0%, rgb(11, 18, 36) 100%)',
-                border: '1.5px solid #d4af37',
-                color: '#f5d471',
-                fontWeight: 700,
-                textShadow: 'none',
-                boxShadow: '0 2px 10px rgba(11, 18, 36, 0.35), inset 0 0 0 1px rgba(245, 212, 113, 0.15)',
-              }}
             >
               <Share2 size={14} /> Share
             </button>

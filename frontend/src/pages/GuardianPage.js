@@ -857,7 +857,7 @@ const GuardianPage = () => {
           </div>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="hidden lg:inline-flex"><CachedPdfIcon pdfType="ega_transcript" size={14} /></span>
+          <span className="hidden lg:inline-flex"><CachedPdfIcon pdfType="ega_transcript" /></span>
           <button onClick={handleExportTranscript} disabled={exporting || !sessionId} title="Download Transcript"
             className="h-9 px-2 lg:px-3 rounded-lg flex items-center gap-1.5 transition-all hover:bg-[var(--s)]"
             style={{ color: '#94a3b8' }}
@@ -865,7 +865,7 @@ const GuardianPage = () => {
             {exporting ? <PieProgress size={18} color="#94a3b8" duration={4} /> : <FileDown className="w-4.5 h-4.5" />}
             <span className="hidden lg:inline text-xs font-bold">Transcript</span>
           </button>
-          <span className="hidden lg:inline-flex"><CachedPdfIcon pdfType="ega_plan" size={14} /></span>
+          <span className="hidden lg:inline-flex"><CachedPdfIcon pdfType="ega_plan" /></span>
           <button onClick={handleExportPlan} disabled={planExporting || !sessionId} title="Download Plan of Action"
             className="h-9 px-2 lg:px-3 rounded-lg flex items-center gap-1.5 transition-all hover:bg-[var(--s)]"
             style={{ color: 'var(--gold)' }}
@@ -873,7 +873,7 @@ const GuardianPage = () => {
             {planExporting ? <PieProgress size={18} color="#d4af37" duration={15} /> : <ClipboardList className="w-4.5 h-4.5" />}
             <span className="hidden lg:inline text-xs font-bold">Plan</span>
           </button>
-          <span className="hidden lg:inline-flex"><CachedPdfIcon pdfType="ega_checklist" size={14} /></span>
+          <span className="hidden lg:inline-flex"><CachedPdfIcon pdfType="ega_checklist" /></span>
           <button onClick={handleChecklistExport} disabled={checklistExporting} title="Export IAC Checklist"
             className="h-9 px-2 lg:px-3 rounded-lg flex items-center gap-1.5 transition-all hover:bg-[var(--s)]"
             style={{ color: '#22C993' }}

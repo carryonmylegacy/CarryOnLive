@@ -122,7 +122,7 @@ const BeneficiaryGuardianPage = () => {
           >
             <Download className="w-3.5 h-3.5" /> Download IAC
           </Button>
-          <CachedPdfIcon pdfType="beneficiary_packet" size={16} />
+          <CachedPdfIcon pdfType="beneficiary_packet" />
         </div>
       </div>
       <div className="flex flex-col sm:flex-row gap-2 mb-3">
