@@ -1029,7 +1029,12 @@ export default function ConnectedProtocolPage() {
         <button onClick={() => setView('wizard')}
           className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center gap-3 px-5"
           data-testid="ccp-wizard-home-btn"
-          style={{ background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.12), rgba(240,201,92,0.08))', border: '1px solid rgba(var(--gold-rgb), 0.3)', color: '#d4af37' }}>
+          style={{
+            background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.22), rgba(240,201,92,0.14))',
+            border: '1.5px solid rgba(var(--gold-rgb), 0.50)',
+            color: '#a07810',
+            boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 2px 10px rgba(212,175,55,0.10)',
+          }}>
           <Sparkles className="w-6 h-6 flex-shrink-0" />
           <div className="text-left flex-1">
             <div style={{ fontFamily: 'var(--sans)' }}>Build My Plan</div>
@@ -1042,7 +1047,12 @@ export default function ConnectedProtocolPage() {
       <button onClick={() => setView('plans')}
         className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center gap-3 px-5"
         data-testid="ccp-plans-btn"
-        style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.2)', color: '#d4af37' }}>
+        style={{
+          background: 'rgba(var(--gold-rgb), 0.16)',
+          border: '1.5px solid rgba(var(--gold-rgb), 0.42)',
+          color: '#a07810',
+          boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 2px 10px rgba(212,175,55,0.08)',
+        }}>
         <FileText className="w-6 h-6 flex-shrink-0" />
         <div className="text-left flex-1">
           <div style={{ fontFamily: 'var(--sans)' }}>Contingency Protocols</div>
@@ -1054,7 +1064,12 @@ export default function ConnectedProtocolPage() {
       <button onClick={() => { fetchHistory(); setView('history'); }}
         className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center gap-3 px-5"
         data-testid="ccp-history-btn"
-        style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t4)' }}>
+        style={{
+          background: 'rgba(100,116,139,0.10)',
+          border: '1.5px solid rgba(100,116,139,0.32)',
+          color: 'var(--t)',
+          boxShadow: '0 1px 3px rgba(15,23,42,0.06)',
+        }}>
         <Clock className="w-6 h-6 flex-shrink-0" />
         <span className="flex-1 text-left" style={{ fontFamily: 'var(--sans)' }}>Past Activations</span>
         <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--t4)' }} />
@@ -1065,6 +1080,13 @@ export default function ConnectedProtocolPage() {
               with inline expand-to-edit: tapping a tile expands its
               panel below the header, pushing every subsequent tile down.
               Matches the platform-wide GoBag / FFN / DAV inline pattern.
+
+              Light-mode contrast (May 19, 2026 fix): tiles used to render
+              with `background: var(--bg2)` which is near-white on light
+              theme, so they blended into the page. Switched to an 11%
+              alpha tint of each tile's accent color so the cards keep
+              their identity in BOTH themes, paired with a stronger
+              border and a soft elevation shadow.
       */}
       {estateId && isBenefactor && (
         <div className="space-y-3 pt-1">
@@ -1082,14 +1104,21 @@ export default function ConnectedProtocolPage() {
                 key={key}
                 data-testid={`ccp-depth-${key}`}
                 className="rounded-2xl overflow-hidden transition-all"
-                style={{ background: 'var(--bg2)', border: `1px solid ${color}33` }}
+                style={{
+                  // 1C ≈ 11% alpha — strong enough to read as a colored
+                  // card on white, soft enough not to look heavy in dark
+                  // mode where the page background is already dark.
+                  background: `${color}1C`,
+                  border: `1.5px solid ${color}66`,
+                  boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 2px 10px rgba(15,23,42,0.04)',
+                }}
               >
                 <button
                   onClick={() => setDepthPanel(isOpen ? null : key)}
                   className="w-full p-4 text-left transition-all active:scale-[0.99] flex items-center gap-3"
                   data-testid={`ccp-depth-toggle-${key}`}
                 >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${color}1A` }}>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${color}28`, border: `1px solid ${color}55` }}>
                     <Icon className="w-5 h-5" style={{ color }} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -1097,11 +1126,11 @@ export default function ConnectedProtocolPage() {
                     <div className="text-xs text-[var(--t4)] truncate">{sub}</div>
                   </div>
                   {isOpen
-                    ? <ChevronDown className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--t5)' }} />
-                    : <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--t5)' }} />}
+                    ? <ChevronDown className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--t4)' }} />
+                    : <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--t4)' }} />}
                 </button>
                 {isOpen && (
-                  <div className="px-4 pb-4 pt-2 border-t" style={{ borderColor: `${color}1F` }} data-testid={`ccp-depth-panel-${key}`}>
+                  <div className="px-4 pb-4 pt-2 border-t" style={{ borderColor: `${color}33` }} data-testid={`ccp-depth-panel-${key}`}>
                     {key === 'roster' && <HouseholdRosterPanel estateId={estateId} onDirty={bumpDepth} />}
                     {key === 'gobag' && <GoBagPanel estateId={estateId} onDirty={bumpDepth} />}
                     {key === 'rendezvous' && <RendezvousPanel estateId={estateId} onDirty={bumpDepth} />}
@@ -1147,7 +1176,12 @@ export default function ConnectedProtocolPage() {
             }}
             className="flex-1 py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97] flex items-center gap-3 px-5"
             data-testid="ccp-readiness-report-btn"
-            style={{ background: 'rgba(34,201,147,0.06)', border: '1px solid rgba(34,201,147,0.15)', color: '#22C993' }}
+            style={{
+              background: 'rgba(34,201,147,0.14)',
+              border: '1.5px solid rgba(34,201,147,0.42)',
+              color: '#138353',
+              boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 2px 10px rgba(34,201,147,0.10)',
+            }}
           >
             <Download className="w-6 h-6 flex-shrink-0" />
             <div className="text-left flex-1">
@@ -1165,7 +1199,12 @@ export default function ConnectedProtocolPage() {
         onClick={() => { setWelcomeStep(1); setShowWelcome(true); }}
         className="w-full py-3 rounded-2xl text-sm font-semibold transition-all active:scale-[0.97] flex items-center justify-center gap-2"
         data-testid="ccp-recall-walkthrough"
-        style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t4)' }}
+        style={{
+          background: 'rgba(100,116,139,0.10)',
+          border: '1.5px solid rgba(100,116,139,0.30)',
+          color: 'var(--t3)',
+          boxShadow: '0 1px 3px rgba(15,23,42,0.05)',
+        }}
       >
         <Info className="w-4 h-4" />
         How CCP Works
