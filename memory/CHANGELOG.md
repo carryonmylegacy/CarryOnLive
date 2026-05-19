@@ -1,6 +1,37 @@
 # CarryOn — Changelog
 
 
+## May 23, 2026 — 🚨 EMERGENCY: ReferenceError on /print/entities fixed
+
+User report (with screenshot): tapping the E&S Print icon redirected
+to a "Something went wrong" error page reading:
+> ReferenceError: Cannot access 'G' before initialization.
+
+### Root cause
+The autoCache `useEffect` I added in yesterday's commit referenced
+`layout` in its dependency array, but the `useMemo` declaring
+`layout` lives ~60 lines BELOW the useEffect call site. JavaScript's
+temporal dead zone fires synchronously when the deps array is read
+during render — the minified identifier `G` was `layout`.
+
+### Fix
+Moved the autoCache useEffect to AFTER the `layout = useMemo(...)`
+declaration. The behavior is identical; only the source order
+changed. Trivially correct — but I should have caught it the
+moment lint passed (lint doesn't detect TDZ across useMemo
+ordering).
+
+### Files changed
+- `frontend/src/pages/print/EntitiesPrintPage.js` — relocated the
+  ~50-line useEffect block. Added a leading comment noting the TDZ
+  pitfall so it doesn't regress.
+
+### Verification
+- Lint: clean.
+- Housekeeping `--strict`: 0 WARN / 0 FAIL.
+
+
+
 ## May 22, 2026 (latest+8) — 🪦 fpdf2 fallback PERMANENTLY KILLED
 
 User report (verbatim): "The binder still has the motherfucking

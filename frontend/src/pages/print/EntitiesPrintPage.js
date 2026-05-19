@@ -348,55 +348,6 @@ export default function EntitiesPrintPage() {
     })();
   }, [saving, _captureBlob, _postToBinderCache]);
 
-  // ── autoCache mode (May 22, 2026 user mandate: in-place Refresh) ──
-  // When the Binder preview's "Refresh" pill spawns a hidden iframe
-  // pointed at `/financial/entities/<id>/print?autoCache=1`, this
-  // useEffect auto-fires the capture+upload pipeline (NO window.print
-  // dialog) and postMessages the parent window with the result so
-  // the modal can re-fetch the binder PDF and update in place. The
-  // parent's listener is keyed off `type === "carryon:section-cached"`
-  // and `pdfType === "entities_structures"`. We only run once per
-  // mount and bail if the user hit this page directly (no parent
-  // window, or `autoCache` flag missing).
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('autoCache') !== '1') return;
-    if (!data || layout == null) return;            // wait for render
-    if (saving) return;
-    let cancelled = false;
-    setSaving(true);
-    (async () => {
-      // One extra animation frame to be sure SVG <text>/<image>
-      // elements have committed to the live DOM before html2canvas
-      // samples them.
-      await new Promise((r) => requestAnimationFrame(() => r()));
-      let ok = false;
-      let errMsg = '';
-      try {
-        const blob = await _captureBlob();
-        await _postToBinderCache(blob);
-        ok = true;
-      } catch (err) {
-        errMsg = err?.message || 'capture failed';
-      }
-      if (cancelled) return;
-      setSaving(false);
-      try {
-        window.parent?.postMessage(
-          {
-            type: 'carryon:section-cached',
-            pdfType: 'entities_structures',
-            ok,
-            error: errMsg || undefined,
-          },
-          window.location.origin,
-        );
-      } catch { /* postMessage failed — parent isn't listening */ }
-    })();
-    return () => { cancelled = true; };
-  }, [data, layout, saving, _captureBlob, _postToBinderCache]);
-
   // Compute layout + bbox once data lands.
   const layout = useMemo(() => {
     if (!data) return null;
@@ -566,6 +517,57 @@ export default function EntitiesPrintPage() {
       blocks: data.beneficiary_blocks || [],
     };
   }, [data, user, beneficiaries]);
+
+  // ── autoCache mode (May 22, 2026 user mandate: in-place Refresh) ──
+  // Declared AFTER `layout` so its dep array doesn't reference
+  // `layout` in the temporal dead zone (the May 23, 2026 crash:
+  // "Cannot access 'G' before initialization" after minification).
+  //
+  // When the Binder preview's "Refresh" pill spawns a hidden iframe
+  // pointed at `/financial/entities/<id>/print?autoCache=1`, this
+  // useEffect auto-fires the capture+upload pipeline (NO window.print
+  // dialog) and postMessages the parent window with the result so
+  // the modal can re-fetch the binder PDF and update in place. The
+  // parent's listener is keyed off `type === "carryon:section-cached"`
+  // and `pdfType === "entities_structures"`. We bail when the user
+  // hit this page directly (no autoCache flag).
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('autoCache') !== '1') return undefined;
+    if (!data || layout == null) return undefined;          // wait for render
+    if (saving) return undefined;
+    let cancelled = false;
+    setSaving(true);
+    (async () => {
+      // One extra animation frame so SVG <text>/<image> commits to
+      // the live DOM before html2canvas samples them.
+      await new Promise((r) => requestAnimationFrame(() => r()));
+      let ok = false;
+      let errMsg = '';
+      try {
+        const blob = await _captureBlob();
+        await _postToBinderCache(blob);
+        ok = true;
+      } catch (err) {
+        errMsg = err?.message || 'capture failed';
+      }
+      if (cancelled) return;
+      setSaving(false);
+      try {
+        window.parent?.postMessage(
+          {
+            type: 'carryon:section-cached',
+            pdfType: 'entities_structures',
+            ok,
+            error: errMsg || undefined,
+          },
+          window.location.origin,
+        );
+      } catch { /* postMessage failed — parent isn't listening */ }
+    })();
+    return () => { cancelled = true; };
+  }, [data, layout, saving, _captureBlob, _postToBinderCache]);
 
   // No auto-print: iOS Safari blocks programmatic window.print() that
   // isn't a direct response to a user tap, and re-rendering on memo
