@@ -96,10 +96,29 @@ export const CircleGauge = ({ score, id = 'main', labelText, labelColor }) => {
               className="mt-2 uppercase"
               style={{
                 fontFamily: 'var(--sans)',
-                letterSpacing: '0.22em',
-                fontSize: '5.5cqi',
+                // Tightened from 0.22em to 0.18em — 0.22 was pushing
+                // "GETTING STARTED" (15 characters) past the inner
+                // circle on desktop (380px container) so the label
+                // visually kissed the inside edge of the gold ring.
+                letterSpacing: '0.18em',
+                // Dropped from 5.5cqi to 4.6cqi for an extra safety
+                // margin, and capped at 18px so even an oversized
+                // container can never produce a label that overflows
+                // the inner ring. Container queries keep this scaling
+                // correctly from the 240px mobile PWA gauge all the
+                // way up to the desktop 380px width.
+                fontSize: 'min(4.6cqi, 18px)',
                 fontWeight: 600,
                 color: labelColor || 'var(--t4)',
+                // Hard horizontal ceiling — at the bottom-of-circle
+                // chord (where the label sits ~30% below center) the
+                // safe inner width is roughly 62% of the container.
+                // 58cqi leaves a clean visual gutter on both sides.
+                maxWidth: '58cqi',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                textAlign: 'center',
               }}
             >
               {labelText}
