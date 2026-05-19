@@ -713,8 +713,8 @@ async def estate_binder_manifest(current_user: dict = Depends(get_current_user))
     # Look up the user's primary estate ONCE so we can stamp a
     # per-type capture route (e.g. /financial/entities/<id>/print) on
     # each manifest item. The Binder preview's "Refresh" pill uses
-    # this to open a hidden iframe with `?autoCache=1` and re-mint
-    # the cached PDF without dragging the user out of the modal.
+    # this to drive the server-side headless-Chromium render pipeline
+    # (POST /render-pdf) without dragging the user out of the modal.
     primary_estate = await db.estates.find_one(
         {"owner_id": user_id, "is_primary": True},
         {"_id": 0, "id": 1},
@@ -724,12 +724,15 @@ async def estate_binder_manifest(current_user: dict = Depends(get_current_user))
     )
     primary_estate_id = (primary_estate or {}).get("id")
     capture_route_map = {
-        # Only `entities_structures` has the client-side autoCache hook
-        # wired today; other section pages can be extended to the same
-        # pattern without backend changes (we just add their path here
-        # once the frontend supports `?autoCache=1`).
+        # `entities_structures` is the only section currently wired
+        # to server-side headless-Chromium rendering. Tapping the
+        # modal's "Refresh" pill POSTs to
+        # `/api/financial/entities/<id>/render-pdf`, which spawns
+        # Playwright and visits this `?serverRender=1` route. The
+        # frontend uses the path portion (estate id) to build the
+        # POST URL — the query string is informational only.
         "entities_structures": (
-            f"/financial/entities/{primary_estate_id}/print?autoCache=1" if primary_estate_id else None
+            f"/financial/entities/{primary_estate_id}/print?serverRender=1" if primary_estate_id else None
         ),
     }
     available = []
