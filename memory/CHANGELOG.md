@@ -1,6 +1,48 @@
 # CarryOn — Changelog
 
 
+## May 19, 2026 — Headless Chromium E&S PDF migration finalized
+
+Closed out the Option 3 (Playwright) migration that was mid-flight at
+the start of this fork. The end-to-end pipeline is now:
+
+  Refresh tap (modal) → POST /api/financial/entities/<id>/render-pdf
+  → Playwright launches Chromium → token injected via add_init_script
+  → page visits /financial/entities/<id>/print?serverRender=1
+  → page sets window.__carryOnPrintReady once layout + images settle
+  → page.pdf() captures a real %PDF-1.4 vector PDF
+  → S3 upload + latest_pdfs row written with source=server_render
+  → modal re-fetches /estate-binder/generate + manifest, swaps in place
+
+### Verification (iter 153, testing agent)
+- Backend 4/4: 200 in ~6s, 401 on missing auth, manifest exposes the
+  new `?serverRender=1` capture_route, binder generation stitches the
+  fresh E&S page in (%PDF-1.4 header present, X-CarryOn-Binder-Included
+  contains entities_structures).
+- Frontend E2E (Pete Mitchell): BNDR modal opens, Refresh pill shows
+  "Refreshing…", network chain render-pdf → generate → manifest all 200,
+  binder re-renders with E&S timestamp flipping from "1m ago" to "just now".
+- Real %PDF-1.4 (22 KB) verified in S3.
+
+### Cleanups in this commit
+- `frontend/src/pages/print/EntitiesPrintPage.js`
+  - Removed dead `autoCache=1` useEffect (no caller — modal now
+    POSTs to /render-pdf, not via iframe).
+  - Removed orphaned `_captureBlob` + `_postToBinderCache` callbacks
+    (only consumed by the dead useEffect). Net -180 LOC.
+- `backend/routes/estate_binder.py`
+  - Updated `capture_route_map` query string from `?autoCache=1` to
+    `?serverRender=1` so the manifest reflects what actually happens.
+    Frontend regex only matches the path portion, so this is cosmetic.
+  - Comment block updated to reference the headless-Chromium path.
+
+### Housekeeping
+- `bash /app/housekeeping.sh --strict` → 0 WARN / 0 FAIL.
+- `ruff` clean on the modified backend files.
+- ESLint clean on `EntitiesPrintPage.js`.
+
+
+
 ## May 23, 2026 — 🚨 EMERGENCY: ReferenceError on /print/entities fixed
 
 User report (with screenshot): tapping the E&S Print icon redirected
