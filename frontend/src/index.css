@@ -729,20 +729,54 @@
     background: linear-gradient(135deg, #C39A2A, #E0B94A);
   }
   [data-theme="light"] .sb-pill {
-    border-color: rgba(0,0,0,0.08);
-    background: rgba(0,0,0,0.03);
-    color: #475569;
+    /* Light-mode contrast bump (May 19, 2026): old values were
+       rgba(0,0,0,0.03) bg + rgba(0,0,0,0.08) border — both
+       essentially invisible on the sidebar's tinted background, so
+       every standalone pill (Notifications, Dark Mode, Collapse,
+       Public Device Mode, Sign Out) bled into the page. Bumped to
+       a readable card with a soft elevation shadow that's only
+       visible in light mode. */
+    border-color: rgba(15,23,42,0.18);
+    background: rgba(255,255,255,0.78);
+    color: #1e293b;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.06), 0 1px 6px rgba(15,23,42,0.04);
   }
   [data-theme="light"] .sb-pill:hover {
-    background: rgba(0,0,0,0.06);
-    color: #1e293b;
+    background: rgba(255,255,255,1);
+    border-color: rgba(15,23,42,0.32);
+    color: #0f172a;
+    box-shadow: 0 2px 4px rgba(15,23,42,0.10), 0 2px 10px rgba(15,23,42,0.06);
   }
   [data-theme="light"] .sb-pill.danger {
-    border-color: rgba(244,63,94,0.25);
-    color: #F43F5E;
-    background: rgba(244,63,94,0.06);
+    border-color: rgba(244,63,94,0.45);
+    color: #be123c;
+    background: rgba(254,242,242,0.95);
+    box-shadow: 0 1px 2px rgba(244,63,94,0.10), 0 1px 6px rgba(244,63,94,0.06);
   }
-  
+  [data-theme="light"] .sb-pill.danger:hover {
+    background: rgba(254,226,226,1);
+    color: #9f1239;
+  }
+  [data-theme="light"] .sb-pill.gold {
+    /* Idle gold pill (PDM panic switch when NOT armed) — needs to
+       read as gold-on-cream in light mode, not the dark-mode 6%
+       alpha which is invisible against light sidebar. */
+    border-color: rgba(var(--gold-rgb), 0.50);
+    color: #8a6810;
+    background: rgba(var(--gold-rgb), 0.16);
+    box-shadow: 0 1px 2px rgba(212,175,55,0.10), 0 1px 6px rgba(212,175,55,0.06);
+  }
+  [data-theme="light"] .sb-pill.gold:hover {
+    background: rgba(var(--gold-rgb), 0.24);
+    color: #6d520c;
+  }
+  /* Armed gold (PDM ON) keeps its dark-mode filled-gradient look in
+     both themes — high-contrast intentionally because it's a
+     security-critical "you're in stripped-mode" indicator. */
+  [data-theme="light"] .sb-pill.gold.armed {
+    box-shadow: 0 1px 3px rgba(212,175,55,0.30), 0 4px 12px rgba(212,175,55,0.18);
+  }
+
   /* User Area - Sidebar Footer */
   .sb-user {
     margin-top: auto;
