@@ -111,11 +111,13 @@ const PdfPreviewModal = () => {
       const url = URL.createObjectURL(pdfBlob);
       // Also refresh the manifest so the row timestamps update.
       let nextSections = entry?.sections || [];
+      let nextMissing = entry?.missingSections || [];
       try {
         const mres = await fetch(`${API_URL}/estate-binder/manifest`, { headers });
         if (mres.ok) {
           const mdata = await mres.json();
           nextSections = mdata.available || [];
+          nextMissing = mdata.missing || [];
         }
       } catch { /* keep stale manifest — better than blanking it */ }
       // Swap the preview blob in place. Reusing the open-pdf-preview
@@ -123,7 +125,7 @@ const PdfPreviewModal = () => {
       setEntry((prev) => {
         if (!prev) return prev;
         try { URL.revokeObjectURL(prev.url); } catch { /* ignore */ }
-        return { ...prev, blob: pdfBlob, url, sections: nextSections };
+        return { ...prev, blob: pdfBlob, url, sections: nextSections, missingSections: nextMissing };
       });
       setRenderState('loading');
       setPageCount(0);
@@ -552,6 +554,15 @@ const PdfPreviewModal = () => {
             color: #0f172a;
             min-width: 0;
           }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-row-missing .manifest-title-missing {
+            color: #64748b;
+            font-style: italic;
+            font-weight: 600;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-row-missing .manifest-ago-missing {
+            color: #94a3b8;
+            font-style: italic;
+          }
           .pdf-preview-modal .pdf-preview-manifest .manifest-row .manifest-title {
             font-weight: 700;
             /* Truncate long titles instead of pushing the Refresh pill
@@ -685,11 +696,12 @@ const PdfPreviewModal = () => {
           ) : null}
         </div>
 
-        {Array.isArray(entry.sections) && entry.sections.length > 0 && (
+        {(Array.isArray(entry.sections) && entry.sections.length > 0)
+          || (Array.isArray(entry.missingSections) && entry.missingSections.length > 0) ? (
           <div className="pdf-preview-manifest" data-testid="pdf-preview-manifest">
             <div className="manifest-label">Sections in this binder</div>
             <div className="manifest-rows">
-              {entry.sections.map((s) => {
+              {(entry.sections || []).map((s) => {
                 const ago = _formatAgo(s.updated_at);
                 const isRefreshing = refreshingType === s.pdf_type;
                 const supportsInPlace = IN_PLACE_REFRESH_TYPES.has(s.pdf_type) && !!s.capture_route;
@@ -719,9 +731,38 @@ const PdfPreviewModal = () => {
                   </div>
                 );
               })}
+              {(entry.missingSections || []).map((s) => {
+                const isRefreshing = refreshingType === s.pdf_type;
+                const supportsInPlace = IN_PLACE_REFRESH_TYPES.has(s.pdf_type) && !!s.capture_route;
+                return (
+                  <div
+                    key={s.pdf_type}
+                    className="manifest-row manifest-row-missing"
+                    data-testid={`pdf-preview-manifest-row-${s.pdf_type}`}
+                  >
+                    <span className="manifest-title manifest-title-missing">{s.display_title}</span>
+                    <span className="manifest-ago manifest-ago-missing">· not yet generated</span>
+                    <button
+                      type="button"
+                      className="manifest-refresh"
+                      onClick={() => handleSectionRefresh(s)}
+                      disabled={!!refreshingType}
+                      title={supportsInPlace
+                        ? `Generate ${s.display_title} and add it to the binder in place`
+                        : `Open ${s.display_title} to generate its PDF, then re-open the binder`}
+                      data-testid={`pdf-preview-manifest-refresh-${s.pdf_type}`}
+                    >
+                      {isRefreshing
+                        ? <Loader2 size={11} className="animate-spin" />
+                        : <RefreshCw size={11} />}
+                      {isRefreshing ? 'Generating…' : 'Generate'}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        )}
+        ) : null}
 
         <div className="pdf-preview-canvas-wrap" data-testid="pdf-preview-canvas-wrap" ref={wrapRef}>
           {renderState === 'loading' && (

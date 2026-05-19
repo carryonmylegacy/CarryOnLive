@@ -381,112 +381,45 @@ async def ensure_entities_structures_cached(
     estate_id: str,
     user_id: str,
     *,
-    max_age_hours: float = 24.0,
+    max_age_hours: float = 24.0,  # noqa: ARG001 — kept for backwards-compat caller signatures
 ) -> dict:
-    """Idempotent helper for the Estate Binder pipeline.
+    """Read-only helper for the Estate Binder pipeline.
 
-    If a cached `entities_structures` PDF exists for this user AND is
-    younger than `max_age_hours`, returns `{"refreshed": False}`.
+    Historically this function ALSO regenerated a tabular `fpdf2`
+    fallback whenever no client capture existed. The user's May 22,
+    2026 emergency report ("the binder still has the motherfucking
+    shitty E&S and the blank pages before and after it!") proved that
+    fallback was actively harmful: it produced a 1.5 KB tabular text
+    PDF that looked nothing like the chart, had wrong page sizes
+    that rendered as "blank space" inside the binder reader, and
+    silently overwrote nothing — meaning the user could never get a
+    clean binder until they manually visited `/print/entities` to
+    mint a client capture.
 
-    Otherwise, regenerates the tabular fpdf2 fallback (entities grouped
-    by bucket + relationships + beneficiary blocks) for `estate_id`,
-    uploads it to S3, and upserts the `latest_pdfs` row — so the very
-    next Binder assembly picks it up. Returns
-    `{"refreshed": True, "size_bytes": N}` on success.
-
-    This is the **server-side safety net** that guarantees E&S appears
-    in every Binder even when:
-      • the user never opened `/print/entities/<estate_id>` (so the
-        client-side html2pdf capture never fired), or
-      • the client-side capture failed silently (ad-blockers, CORS, etc.)
-
-    The client-side html2pdf flow still produces a richer chart-shaped
-    PDF — and overwrites this fallback the next time it succeeds.
+    NEW CONTRACT: this function NEVER writes. It exists only to
+    surface whether a client capture is present so the Binder
+    generator can either include E&S (if one exists) or list it as
+    missing (with a deep-link Refresh pill the user already
+    understands). The fallback path is permanently removed.
     """
     cached = await db.latest_pdfs.find_one(
         {"user_id": user_id, "pdf_type": "entities_structures"},
-        {"_id": 0, "updated_at": 1, "size_bytes": 1, "source": 1},
+        {"_id": 0, "size_bytes": 1, "source": 1},
     )
-    if cached:
-        size = cached.get("size_bytes") or 0
-        source = cached.get("source") or ""
-        # ── Rich client capture wins ALWAYS. We only ever regenerate
-        # the server fpdf2 fallback to replace (a) nothing, (b) a
-        # tiny/empty blob, or (c) an existing server_fallback that
-        # we wrote on a prior run with no client capture available.
-        # Replacing a rich client-captured tree PDF with a tabular
-        # fpdf2 PDF is the May 22, 2026 binder-graphics regression —
-        # we MUST NOT do that just because >24 h has passed.
-        if size >= 5000 and source != "server_fallback":
-            return {"refreshed": False, "reason": "client_capture_preserved"}
-        # Server-fallback refresh is still rate-limited to once per
-        # `max_age_hours` so we don't re-render the same fpdf2 bytes
-        # on every binder build.
-        updated_at = cached.get("updated_at")
-        if size >= 5000 and updated_at:
-            try:
-                ts = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
-                if (datetime.now(timezone.utc) - ts).total_seconds() < max_age_hours * 3600:
-                    return {"refreshed": False, "reason": "fresh"}
-            except (ValueError, TypeError):
-                pass
-
-    # Stale, missing, or trivially-small → regenerate.
-    estate = await db.estates.find_one(
-        {"id": estate_id, "deleted_at": None},
-        {"_id": 0, "id": 1, "name": 1, "owner_id": 1, "user_id": 1},
-    )
-    if not estate:
-        return {"refreshed": False, "reason": "estate_not_found"}
-
-    entities = await db.cfp_entities.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(2000)
-    externals = await db.cfp_external_people.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(
-        2000
-    )
-    relationships = await db.cfp_entity_relationships.find(
-        {"estate_id": estate_id, "deleted_at": None}, {"_id": 0}
-    ).to_list(5000)
-    blocks = await db.cfp_beneficiary_blocks.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(
-        2000
-    )
-    beneficiaries = await db.beneficiaries.find(
-        {"estate_id": estate_id, "deleted_at": None},
-        {"_id": 0, "id": 1, "first_name": 1, "last_name": 1},
-    ).to_list(500)
-    user_doc = await db.users.find_one({"id": user_id}, {"_id": 0, "first_name": 1, "last_name": 1})
-
-    pdf_bytes = _render_pdf(
-        estate_name=(estate or {}).get("name", ""),
-        entities=entities,
-        externals=externals,
-        relationships=relationships,
-        blocks=blocks,
-        beneficiaries=beneficiaries,
-        user_doc=user_doc,
-    )
-
-    s3_key = f"latest-pdfs/{user_id}/entities_structures.pdf"
-    await storage.upload_raw(pdf_bytes, s3_key, content_type="application/pdf")
-    now_iso = datetime.now(timezone.utc).isoformat()
-    await db.latest_pdfs.update_one(
-        {"user_id": user_id, "pdf_type": "entities_structures"},
-        {
-            "$set": {
-                "user_id": user_id,
-                "pdf_type": "entities_structures",
-                "s3_key": s3_key,
-                "title": "Entities & Structures",
-                "subtitle": (estate or {}).get("name", "")[:200],
-                "filename": "EntitiesAndStructures.pdf",
-                "size_bytes": len(pdf_bytes),
-                "updated_at": now_iso,
-                "source": "server_fallback",
-            },
-            "$setOnInsert": {"created_at": now_iso},
-        },
-        upsert=True,
-    )
-    return {"refreshed": True, "size_bytes": len(pdf_bytes), "source": "server_fallback"}
+    if cached and (cached.get("size_bytes") or 0) >= 5000 and cached.get("source") != "server_fallback":
+        return {"refreshed": False, "reason": "client_capture_preserved"}
+    # Purge any lingering server-fallback row so the Binder lists
+    # E&S as missing (the correct outcome — the user will see a
+    # "Refresh" pill on the manifest and one tap mints a real
+    # client capture via the new in-place iframe flow).
+    if cached and cached.get("source") == "server_fallback":
+        try:
+            await db.latest_pdfs.delete_one(
+                {"user_id": user_id, "pdf_type": "entities_structures", "source": "server_fallback"}
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.debug(f"Failed to evict server_fallback row for user={user_id}: {exc}")
+    return {"refreshed": False, "reason": "no_client_capture"}
 
 
 @router.get("/financial/entities/{estate_id}/pdf")

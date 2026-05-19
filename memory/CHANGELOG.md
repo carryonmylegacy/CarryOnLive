@@ -1,6 +1,81 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 (latest+8) — 🪦 fpdf2 fallback PERMANENTLY KILLED
+
+User report (verbatim): "The binder still has the motherfucking
+shitty E&S and the blank pages before and after it!"
+
+### Root cause
+The server-side `fpdf2` fallback in
+`routes/financial_portal/entities_pdf.py::ensure_entities_structures_cached`
+was silently producing a 1.5 KB tabular text PDF every time the
+binder was assembled for a user with no client capture. Its page
+sizes mismatched what the binder reader expected, so the
+single-page fallback rendered with massive white margins above and
+below the chart-less text — exactly the "blank pages before and
+after" the user kept hammering.
+
+My earlier May 22 fix was insufficient: it only preserved EXISTING
+non-trivial client captures. When the user had NO capture, the
+fallback regenerated unimpeded.
+
+### What shipped — the fallback is permanently disabled
+- `ensure_entities_structures_cached` rewritten as a **read-only**
+  helper that NEVER writes a fallback row, regardless of cache state.
+  Old code (~120 lines of fpdf2 rendering + S3 upload + Mongo upsert)
+  removed.
+- New contract: returns `client_capture_preserved` (good capture
+  present), or `no_client_capture` (any other state, including
+  legacy server_fallback rows which it actively EVICTS so the binder
+  lists E&S as missing instead of including the garbage).
+- Pod data: purged 1 stale `server_fallback` row.
+- Regression test rewritten from scratch — asserts 4 scenarios
+  (cold/client/legacy fallback/tiny) all produce zero writes and
+  proper eviction.
+
+### Binder manifest UI now surfaces missing sections
+With the fallback gone, E&S now shows up in the binder's `missing`
+list whenever the user hasn't tapped Print on `/print/entities`.
+Previously the modal only displayed the `available` rows, so the
+user had no in-place way to fix a missing section. Now:
+- `EstateBinderButton` passes BOTH `available` and `missingSections`
+  arrays into the preview event.
+- `PdfPreviewModal` renders missing rows in muted italic ("not yet
+  generated") with the same Refresh pill — except the pill says
+  "Generate" instead of "Refresh".
+- Tapping Generate on a missing E&S row uses the existing in-place
+  iframe flow (`/financial/entities/<id>/print?autoCache=1`) to
+  capture client-side and then refresh the binder PDF in place,
+  promoting that row from missing → available with a fresh
+  timestamp — all without the user leaving the modal.
+- Missing-row chrome: italic muted title (#64748b), italic muted
+  "· not yet generated" tail (#94a3b8), gold Refresh/Generate pill
+  matching the available rows.
+
+### Verification
+- pytest: 11 passed / 1 skipped (binder + share + admin tier).
+- Housekeeping `--strict`: 0 WARN / 0 FAIL.
+- Lint: clean.
+- Live curl as `info@carryon.us`: manifest now correctly shows E&S
+  in `missing` with `capture_route` populated — exactly what the
+  modal needs to one-tap mint a real capture.
+
+### What the user will see after pushing to prod
+1. Open the binder. E&S no longer appears as a blank-padded text
+   page. Instead, it shows up in the manifest as a muted italic row
+   reading `Entities & Structures · not yet generated  [Generate]`.
+2. Tap Generate. A hidden iframe captures the real chart with
+   avatars, postMessages back, the binder regenerates in place, the
+   row promotes to `Entities & Structures · just now [Refresh]`,
+   and the binder preview now includes the rich chart page.
+3. Tap Refresh on any future visit — same in-place flow, never
+   leaves the modal.
+
+The "motherfucking shitty E&S" cannot regenerate itself anymore.
+
+
+
 ## May 22, 2026 (latest+7) — 🎯 Readiness dial: instant on first paint, animate on refresh
 
 User mandate: dial should commit its score instantly on cold load

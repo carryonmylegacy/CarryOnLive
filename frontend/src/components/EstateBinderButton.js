@@ -119,12 +119,18 @@ const EstateBinderButton = ({ lastGeneratedAt: lastGeneratedAtProp } = {}) => {
       // sections list lands a beat later and the modal upgrades in
       // place. If manifest fetch fails, the modal still renders the
       // binder PDF without the manifest row (graceful degrade).
+      // We pass BOTH `available` (cached) AND `missing` (not yet
+      // generated) so the modal can render a unified manifest where
+      // the user can one-tap mint the missing sections via the
+      // in-place iframe refresh flow.
       let sections = [];
+      let missingSections = [];
       try {
         const mres = await fetch(`${API_URL}/estate-binder/manifest`, { headers });
         if (mres.ok) {
           const mdata = await mres.json();
           sections = mdata.available || [];
+          missingSections = mdata.missing || [];
         }
       } catch {
         /* non-fatal */
@@ -142,6 +148,7 @@ const EstateBinderButton = ({ lastGeneratedAt: lastGeneratedAtProp } = {}) => {
             } · ${pageCount || '?'} pages`,
             shareEnabled: true,
             sections,
+            missingSections,
           },
         }),
       );
