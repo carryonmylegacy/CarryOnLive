@@ -143,61 +143,70 @@ const UploadCertificatePage = () => {
           </div>
         </div>
 
-        {/* Progress Steps */}
+        {/* Progress Steps. The card body below is intentionally a dark
+            navy gradient regardless of theme (it carries a security /
+            authority feel), so the step labels here use slate tones
+            that read cleanly on EITHER the light-mode white page or
+            the dark-mode background — not theme vars (var(--t5) is
+            near-white in light mode and disappears against the
+            page). */}
         <div className="flex gap-2 mb-5">
           {steps.map((s, i) => (
             <div key={i} className="flex-1">
               <div className="h-1.5 rounded-full mb-2 transition-all duration-500"
                 style={{
-                  background: i < step ? '#22C993' : i === step ? 'linear-gradient(90deg, #2563EB, #7C3AED)' : 'var(--b)',
+                  background: i < step ? '#22C993' : i === step ? 'linear-gradient(90deg, #2563EB, #7C3AED)' : 'rgba(148,163,184,0.25)',
                   boxShadow: i === step ? '0 0 12px rgba(37,99,235,0.3)' : 'none',
                 }} />
               <p className="text-[11px] text-center transition-colors duration-300"
-                style={{ color: i <= step ? '#93C5FD' : 'var(--t5)', fontWeight: i === step ? 700 : 400 }}>
+                style={{ color: i <= step ? '#3B82F6' : '#64748B', fontWeight: i === step ? 700 : 500 }}>
                 {s}
               </p>
             </div>
           ))}
         </div>
 
-        {/* Card */}
+        {/* Card — locked dark-navy gradient on both themes. All text
+            inside uses explicit slate/white colors (NOT var(--t*)) so
+            it stays readable in light mode where the theme vars flip
+            dark and would otherwise disappear into the card. */}
         <div className="rounded-2xl p-5 transition-all duration-300"
           style={{
-            background: 'linear-gradient(168deg, rgba(26,36,64,0.6), rgba(15,22,41,0.8))',
-            border: '1px solid rgba(96,165,250,0.1)',
-            boxShadow: '0 16px 48px -12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)',
+            background: 'linear-gradient(168deg, rgba(26,36,64,0.92), rgba(15,22,41,0.95))',
+            border: '1px solid rgba(96,165,250,0.18)',
+            boxShadow: '0 16px 48px -12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
           }}>
 
           {/* Step 0: Before You Begin */}
           {step === 0 && (<>
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-              style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.08))', border: '1px solid rgba(96,165,250,0.15)' }}>
+              style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.18), rgba(139,92,246,0.12))', border: '1px solid rgba(96,165,250,0.25)' }}>
               <FileText className="w-7 h-7 text-[#60A5FA]" />
             </div>
-            <h2 className="text-lg font-bold text-center text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>Before You Begin</h2>
-            <p className="text-sm text-[var(--t4)] text-center leading-relaxed mb-4">
+            <h2 className="text-lg font-bold text-center text-white mb-1" style={{ fontFamily: 'var(--sans)' }}>Before You Begin</h2>
+            <p className="text-sm text-slate-300 text-center leading-relaxed mb-4">
               We need an official death certificate to verify the transition and unlock estate access.
             </p>
 
-            <div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(37,99,235,0.04)', border: '1px solid rgba(37,99,235,0.1)' }}>
+            <div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(37,99,235,0.10)', border: '1px solid rgba(37,99,235,0.20)' }}>
               <div className="text-xs font-bold text-[#93C5FD] uppercase tracking-wider mb-2">Requirements</div>
               {['Official or certified copy', 'Legible and complete', 'PDF, JPG, PNG, or HEIC format', 'Max 25MB'].map((r, i) => (
                 <div key={i} className="flex items-center gap-2 py-1">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#22C993] flex-shrink-0" />
-                  <span className="text-sm text-[var(--t3)]">{r}</span>
+                  <span className="text-sm text-slate-200">{r}</span>
                 </div>
               ))}
             </div>
 
-            <div className="rounded-xl p-3 mb-4 flex items-start gap-2" style={{ background: 'rgba(139,92,246,0.04)', border: '1px solid rgba(139,92,246,0.1)' }}>
-              <Lock className="w-4 h-4 text-purple-400 mt-0.5 shrink-0" />
-              <p className="text-xs text-purple-300/80 leading-relaxed">
+            <div className="rounded-xl p-3 mb-4 flex items-start gap-2" style={{ background: 'rgba(139,92,246,0.10)', border: '1px solid rgba(139,92,246,0.20)' }}>
+              <Lock className="w-4 h-4 text-purple-300 mt-0.5 shrink-0" />
+              <p className="text-xs text-purple-100/90 leading-relaxed">
                 Encrypted end-to-end (AES-256). Reviewed only by our Transition Verification Team.
               </p>
             </div>
 
             <div className="flex gap-3">
-              <Button variant="outline" className="border-[var(--b)] text-[var(--t4)] hover:text-[var(--t)]" onClick={() => navigate('/beneficiary/dashboard')}>
+              <Button variant="outline" className="border-slate-600 text-slate-200 hover:text-white hover:bg-slate-700/50" onClick={() => navigate('/beneficiary/dashboard')}>
                 <ChevronLeft className="w-4 h-4 mr-1" /> Back
               </Button>
               <Button className="flex-1 justify-center text-sm font-bold" onClick={() => setStep(1)}
@@ -209,31 +218,31 @@ const UploadCertificatePage = () => {
 
           {/* Step 1: Upload */}
           {step === 1 && (<>
-            <h2 className="text-lg font-bold text-center text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>Upload Death Certificate</h2>
-            <p className="text-sm text-[var(--t5)] text-center mb-4">Drag and drop or tap to select</p>
+            <h2 className="text-lg font-bold text-center text-white mb-1" style={{ fontFamily: 'var(--sans)' }}>Upload Death Certificate</h2>
+            <p className="text-sm text-slate-300 text-center mb-4">Drag and drop or tap to select</p>
 
             {!file ? (
               <label className="block cursor-pointer">
-                <div className="rounded-2xl p-8 text-center transition-all duration-300 hover:border-[#60A5FA]/50 group"
-                  style={{ border: '2px dashed rgba(96,165,250,0.2)', background: 'rgba(37,99,235,0.02)' }}>
+                <div className="rounded-2xl p-8 text-center transition-all duration-300 hover:border-[#60A5FA]/60 group"
+                  style={{ border: '2px dashed rgba(96,165,250,0.35)', background: 'rgba(37,99,235,0.06)' }}>
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-transform duration-300 group-hover:scale-110"
-                    style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.08))', border: '1px solid rgba(96,165,250,0.15)' }}>
+                    style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.18), rgba(139,92,246,0.12))', border: '1px solid rgba(96,165,250,0.25)' }}>
                     <Upload className="w-6 h-6 text-[#60A5FA]" />
                   </div>
                   <div className="text-sm font-bold text-[#93C5FD] mb-1">Drop file here or click to browse</div>
-                  <div className="text-xs text-[var(--t5)]">PDF, JPG, PNG, HEIC · Max 25MB</div>
+                  <div className="text-xs text-slate-400">PDF, JPG, PNG, HEIC · Max 25MB</div>
                 </div>
                 <input type="file" accept=".pdf,.jpg,.jpeg,.png,.heic" onChange={handleFileSelect} className="hidden" data-testid="cert-file-input" />
               </label>
             ) : (
-              <div className="rounded-xl p-6 text-center" style={{ background: 'rgba(34,201,147,0.04)', border: '1px solid rgba(34,201,147,0.12)' }}>
+              <div className="rounded-xl p-6 text-center" style={{ background: 'rgba(34,201,147,0.10)', border: '1px solid rgba(34,201,147,0.25)' }}>
                 <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-                  style={{ background: 'rgba(34,201,147,0.1)', border: '1px solid rgba(34,201,147,0.2)' }}>
+                  style={{ background: 'rgba(34,201,147,0.18)', border: '1px solid rgba(34,201,147,0.35)' }}>
                   <CheckCircle2 className="w-7 h-7 text-[#22C993]" />
                 </div>
                 <div className="text-sm font-bold text-[#22C993] mb-1">Document Selected</div>
-                <div className="text-sm text-[var(--t3)]">{file.name}</div>
-                <div className="text-xs text-[var(--t5)] mt-1">{(file.size / 1024 / 1024).toFixed(1)} MB · AES-256 Encrypted</div>
+                <div className="text-sm text-slate-200">{file.name}</div>
+                <div className="text-xs text-slate-400 mt-1">{(file.size / 1024 / 1024).toFixed(1)} MB · AES-256 Encrypted</div>
                 <button onClick={() => setFile(null)} className="mt-4 text-xs text-[#60A5FA] font-bold hover:text-[#93C5FD] transition-colors">
                   Change File
                 </button>
@@ -241,7 +250,7 @@ const UploadCertificatePage = () => {
             )}
 
             <div className="flex gap-3 mt-4">
-              <Button variant="outline" className="border-[var(--b)] text-[var(--t4)] hover:text-[var(--t)]" onClick={() => setStep(0)}>
+              <Button variant="outline" className="border-slate-600 text-slate-200 hover:text-white hover:bg-slate-700/50" onClick={() => setStep(0)}>
                 <ChevronLeft className="w-4 h-4 mr-1" /> Back
               </Button>
               {file && (
@@ -255,12 +264,12 @@ const UploadCertificatePage = () => {
 
           {/* Step 2: Confirm & Submit */}
           {step === 2 && (<>
-            <h2 className="text-lg font-bold text-center text-[var(--t)] mb-1" style={{ fontFamily: 'var(--sans)' }}>Confirm Submission</h2>
-            <p className="text-sm text-[var(--t5)] text-center leading-relaxed mb-4">
+            <h2 className="text-lg font-bold text-center text-white mb-1" style={{ fontFamily: 'var(--sans)' }}>Confirm Submission</h2>
+            <p className="text-sm text-slate-300 text-center leading-relaxed mb-4">
               Verify the details below before submitting.
             </p>
 
-            <div className="rounded-xl overflow-hidden mb-4" style={{ border: '1px solid var(--b)' }}>
+            <div className="rounded-xl overflow-hidden mb-4" style={{ border: '1px solid rgba(96,165,250,0.18)' }}>
               {[
                 ['Document', file?.name || 'Unknown'],
                 ['File Size', file ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : ''],
@@ -268,22 +277,22 @@ const UploadCertificatePage = () => {
                 ['Encryption', 'AES-256 End-to-End'],
               ].map(([k, v], i, a) => (
                 <div key={k} className="flex justify-between px-5 py-3 text-sm"
-                  style={{ background: i % 2 === 0 ? 'rgba(37,99,235,0.02)' : 'transparent', borderBottom: i < a.length - 1 ? '1px solid var(--b)' : 'none' }}>
-                  <span className="text-[var(--t4)]">{k}</span>
-                  <span className="text-[var(--t)] font-bold">{v}</span>
+                  style={{ background: i % 2 === 0 ? 'rgba(37,99,235,0.08)' : 'transparent', borderBottom: i < a.length - 1 ? '1px solid rgba(96,165,250,0.12)' : 'none' }}>
+                  <span className="text-slate-300">{k}</span>
+                  <span className="text-white font-bold">{v}</span>
                 </div>
               ))}
             </div>
 
-            <div className="rounded-xl p-3 mb-4 flex items-start gap-2" style={{ background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.1)' }}>
-              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-300/80 leading-relaxed">
+            <div className="rounded-xl p-3 mb-4 flex items-start gap-2" style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.22)' }}>
+              <AlertTriangle className="w-4 h-4 text-amber-300 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-100/90 leading-relaxed">
                 By submitting, you confirm this is an authentic, official death certificate.
               </p>
             </div>
 
             <div className="flex gap-3">
-              <Button variant="outline" className="border-[var(--b)] text-[var(--t4)] hover:text-[var(--t)]" onClick={() => setStep(1)}>
+              <Button variant="outline" className="border-slate-600 text-slate-200 hover:text-white hover:bg-slate-700/50" onClick={() => setStep(1)}>
                 <ChevronLeft className="w-4 h-4 mr-1" /> Back
               </Button>
               <Button
