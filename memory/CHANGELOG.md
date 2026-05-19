@@ -1,6 +1,48 @@
 # CarryOn — Changelog
 
 
+## May 18, 2026 (latest+1) — ✨ "Granted by Founder" badge on admin-tier tiles
+
+User mandate: surface the grant origin on both the **benefactor**
+and **beneficiary** paywall views, so a family inheriting a tier can
+see "this is paid for by CarryOn, not by me" — instead of believing
+they're being silently charged.
+
+### What shipped
+- `SubscriptionManagement.js` derives `isAdminGranted` from
+  `currentSub.source === 'admin_override' || 'estate_admin_tier'`
+  and renders a small green pill with a `<Sparkles>` icon flush
+  under the "Current Plan" badge on the active tile.
+  - `data-testid="plan-<id>-granted-by-founder"`
+  - Hover tooltip: "This tier was granted to your account by CarryOn
+    — you are not being charged."
+- `SubscriptionPaywall.js` mirrors the same badge for the modal
+  paywall path (`data-testid="paywall-plan-<id>-granted-by-founder"`).
+- `Sparkles` icon imported into `SubscriptionPaywall.js`
+  (already present in `SubscriptionManagement.js`).
+
+### Benefactor path re-verified end-to-end
+User had reported the benefactor path felt broken in their earlier
+test. Re-verified all 3 scenarios via curl:
+- No `user_subscriptions` row at all → synthesizes `premium/active/admin_override` ✓
+- Stale `status=cancelled` row → synthesizes `premium/active/admin_override` ✓
+- `status=dormant` row → synthesizes `premium/active/admin_override` ✓
+
+The earlier "doesn't show" was almost certainly the pre-existing
+`subStatus.plan_id` root-vs-nested bug fixed earlier in this session.
+Both visual smoke test + automated tests now green.
+
+### Files touched
+- `/app/frontend/src/components/SubscriptionPaywall.js`
+- `/app/frontend/src/components/settings/SubscriptionManagement.js`
+
+### Status
+- Full subscription test suite: **21 passed / 1 skipped**
+- Visual smoke: benefactor admin-Premium grant renders gold "Current
+  Plan" + green "Granted by Founder" badge + dimmed other tiles.
+
+
+
 ## May 18, 2026 (latest) — 👤 Admin-set tier surfaces on user's paywall (beneficiary path fixed)
 
 User asked: "If I set a user's tier in my admin portal users tab, it

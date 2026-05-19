@@ -158,6 +158,12 @@ export const SubscriptionManagement = ({
     ? (rawPlanId?.startsWith('ben_') ? rawPlanId : null)
     : (rawPlanId && !rawPlanId.startsWith('ben_') ? rawPlanId : null);
   const currentBilling = subIsActive ? currentSub?.billing_cycle : null;
+  // True when the active sub was set by a Founder/admin instead of a
+  // real payment. We surface a small "Granted by Founder" badge on
+  // the tile so a family inheriting a tier knows the grant origin
+  // (and doesn't believe they're being silently charged).
+  const subSource = currentSub?.source;
+  const isAdminGranted = subIsActive && (subSource === 'admin_override' || subSource === 'estate_admin_tier');
   // Optimistic intent — only surfaces here when no active sub is in
   // play (server-side /status already enforces this). Used below to
   // paint the chosen tile with a gold "Processing payment…" ribbon
@@ -743,6 +749,26 @@ export const SubscriptionManagement = ({
                         Processing Payment…
                       </>
                     ) : isCurrent ? 'Current Plan' : isAutoSelected ? 'Your Tier' : showRecommendedPulse ? 'Recommended — Best Value' : style.label}
+                  </div>
+                )}
+                {/* Founder-granted attribution — only on the active
+                    tile, only when source proves admin origin. Sits
+                    flush under the Current Plan badge so the user can
+                    see "this is paid for by CarryOn, not by me." */}
+                {isCurrent && isAdminGranted && (
+                  <div
+                    className="absolute top-5 left-1/2 -translate-x-1/2 text-[11px] font-medium px-2 py-0.5 rounded-b-md whitespace-nowrap z-10 flex items-center gap-1"
+                    style={{
+                      color: '#22C993',
+                      background: 'rgba(34, 201, 147, 0.10)',
+                      border: '1px solid rgba(34, 201, 147, 0.30)',
+                      borderTop: 'none',
+                    }}
+                    title="This tier was granted to your account by CarryOn — you are not being charged."
+                    data-testid={`plan-${plan.id}-granted-by-founder`}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Granted by Founder
                   </div>
                 )}
                 {/* ETA hint — sits flush under the gold ribbon so the

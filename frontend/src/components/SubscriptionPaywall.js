@@ -3,7 +3,7 @@ import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { Crown, Shield, Check, Star, ChevronRight, ChevronDown, Loader2,
-  Upload, Clock, Users, X, Heart, Award, RotateCcw, Zap, Sun
+  Upload, Clock, Users, X, Heart, Award, RotateCcw, Zap, Sun, Sparkles
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from '../utils/toast';
@@ -537,6 +537,10 @@ export default function SubscriptionPaywall({ onDismiss }) {
             const hasActiveSub = activePlanId && activeSub?.status === 'active';
             const isActivePlan = hasActiveSub && activePlanId === plan.id;
             const isGreyedOut = hasActiveSub && !isActivePlan;
+            // Founder-granted attribution — surfaces only on the
+            // active tile, only when the source proves admin origin.
+            const subSource = activeSub?.source;
+            const isAdminGranted = hasActiveSub && (subSource === 'admin_override' || subSource === 'estate_admin_tier');
 
             // Optimistic "Processing payment…" overlay — shows the
             // moment the user is sent to Stripe, clears when the
@@ -624,6 +628,25 @@ export default function SubscriptionPaywall({ onDismiss }) {
                   <div className="absolute -top-0 left-1/2 -translate-x-1/2 text-xs font-bold px-4 py-1.5 rounded-b-xl"
                     style={{ background: 'linear-gradient(180deg, #22C993, #16A34A)', color: 'white', boxShadow: '0 4px 16px rgba(34,201,147,0.4)' }}>
                     Your Plan
+                  </div>
+                )}
+                {/* Founder-granted attribution — sits flush under the
+                    "Your Plan" badge when the active sub came from an
+                    admin grant rather than a real payment. */}
+                {isActivePlan && isAdminGranted && (
+                  <div
+                    className="absolute top-7 left-1/2 -translate-x-1/2 text-[11px] font-medium px-2 py-0.5 rounded-b-md whitespace-nowrap flex items-center gap-1"
+                    style={{
+                      color: '#22C993',
+                      background: 'rgba(34, 201, 147, 0.10)',
+                      border: '1px solid rgba(34, 201, 147, 0.30)',
+                      borderTop: 'none',
+                    }}
+                    title="This tier was granted to your account by CarryOn — you are not being charged."
+                    data-testid={`paywall-plan-${plan.id}-granted-by-founder`}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Granted by Founder
                   </div>
                 )}
 
