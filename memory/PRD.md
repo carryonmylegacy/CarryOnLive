@@ -2631,6 +2631,55 @@ Verified all handoff-claimed completed work was still in place (apiClient.js, SS
 - 🟢 (P2) Refactor `EntityOrgChart.js`, `MessagesPage.js`, `BeneficiariesPage.js` (DO NOT ATTEMPT BEFORE PITCH)
 - 🟢 (P3) Sweep hardcoded gold RGBA → `--gold-rgb` CSS variable
 
+### 🆕 Backlog — NEW (May 19, 2026 user request)
+
+#### (P1) Pro / Wealth-Service / Executor / Trustee role with co-managed estates
+
+User requirement (verbatim, May 19, 2026 evening):
+> "I need to create a way for a professional wealth/service/executor/trustee
+> provider to create and manage an estate for a family. They will input
+> everything and manage everything, creating E&S, uploading documents, etc.
+> The family, specifically benefactors that have permission, tiered
+> permission, are able to log in and also alter things to their satisfaction.
+> It being their/his/her estate, they have veto authority of all, however,
+> any change is highlighted in the notification section so that all other
+> users with login credentials can see what other users have changed. Two
+> users can't change it at the same time."
+
+**Scope (needs a dedicated design pass, NOT before live pitch):**
+- New role: `pro` / `service_provider` / `trustee` (one umbrella role with
+  sub-types? OR three distinct roles?) — decide in scoping session.
+- Pro account creates an estate ON BEHALF OF a family; benefactor is the
+  estate "owner of record" (veto authority).
+- Tiered ACL on the estate: each user document (E&S, vault item, message,
+  etc.) carries a permission grant (read / propose / edit / approve) per role.
+- **Change-proposal model:** any non-owner change is a "proposed change" that
+  surfaces in the notification feed for ALL credentialed users with read
+  access to that estate. Owner has 1-click veto.
+- **Concurrency lock (optimistic + advisory):** "Two users can't edit at the
+  same time." Per-document soft lock with TTL (15 min auto-expire) so a
+  stuck tab can't permanently block other users. Visible "X is editing this"
+  banner with a "Take over" link that gracefully kicks the other session.
+- **Audit log** per estate — append-only collection of every diff with
+  actor + timestamp + before/after.
+- Subscription/billing implications: who pays? The Pro? The benefactor? Both?
+  Tiered (Pro pays a flat platform fee + per-estate add-on; benefactor pays
+  their own tier on top)? Hooks into Stripe products + the existing tier
+  verification flow.
+
+**Estimated scope:** ~2-3 weeks of careful design + build. Touches estates
+schema, ACL middleware, every API endpoint that mutates estate-owned data,
+the entire notification subsystem, and the billing surface. Requires a
+proper PRD pass with the user before any code is written.
+
+**Pre-work needed before kickoff:**
+1. Roles list (one `pro` role with sub-types, or three distinct roles?)
+2. Permission matrix per object (E&S, vault, messages, contacts, BEC, etc.)
+3. Concurrency lock UX — modal? Banner? Inline pencil indicator?
+4. Notification feed enhancement — does today's "Messages" tab grow into
+   this, or is it a new dedicated "Activity" tab?
+5. Billing model — see above.
+
 ### Files added/changed this fork
 
 - **NEW** `/app/frontend/src/hooks/useIacTaskStream.js` — fetch-based SSE consumer with first-byte timeout + polling fallback.

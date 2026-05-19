@@ -136,6 +136,30 @@ export default function SubscriptionPaywall({ onDismiss }) {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // ── Poll subscription status every 30s while the paywall is open ──
+  // May 19, 2026 live-pitch fix: previously the paywall fetched
+  // /subscriptions/status exactly ONCE on mount. If the user sat on
+  // the paywall waiting for verification (Senior / Military / etc.),
+  // the admin could approve them on the admin side AND auto-notify
+  // would fire — but the user's React state never re-fetched, so the
+  // paywall stayed stuck on "verification pending". A lightweight
+  // 30-second polling loop closes the gap with zero noticeable load.
+  //
+  // We only poll when there's something to wait for (pending
+  // verification OR pending checkout intent). Stop polling once
+  // verification flips to approved/denied so we don't hammer
+  // /subscriptions/status forever.
+  useEffect(() => {
+    const status = subStatus?.verification?.status;
+    const hasPendingIntent = !!subStatus?.pending_intent;
+    const shouldPoll = status === 'pending' || hasPendingIntent;
+    if (!shouldPoll) return undefined;
+    const timer = setInterval(() => {
+      fetchData();
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [subStatus?.verification?.status, subStatus?.pending_intent, fetchData]);
+
   const getPrice = (plan) => {
     if (plan.price === 0) return 'Free';
     if (billing === 'quarterly') return `$${plan.quarterly_price?.toFixed(2) || (plan.price * 0.9).toFixed(2)}`;
@@ -254,33 +278,63 @@ export default function SubscriptionPaywall({ onDismiss }) {
       return;
     }
 
+    // May 19, 2026 live-pitch fix: auto-logout was only suspended
+    // during the file-picker step. A 5-15s base64 upload of a large
+    // doc on mobile could be interrupted by a brief tab-hide or
+    // network blip, the auto-logout fired, AND the offline-aware
+    // error boundary kicked the user to /login + into offline-mode
+    // PWA shell — exact symptom report from the field. Suspending
+    // for the ENTIRE upload window (with a 5-minute ceiling) makes
+    // the round-trip safe.
+    const releaseAutoLogout = suspendAutoLogout();
     setUploadingVerification(true);
-    try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const base64 = e.target.result.split(',')[1];
-        const formData = new FormData();
-        formData.append('tier_requested', verificationTier);
-        formData.append('doc_type', verificationDocType);
-        formData.append('file_data', base64);
-        formData.append('file_name', verificationFile.name);
 
-        try {
-          await apiClient.post(`${API_URL}/verification/upload`, formData, { headers });
-          // toast removed
-          setShowVerification(false);
-          setVerificationFile(null);
-          setVerificationDocType('');
-          fetchData();
-        } catch (err) {
-          toast.error(err.response?.data?.detail || 'Upload failed');
-        }
-        setUploadingVerification(false);
-      };
-      reader.readAsDataURL(verificationFile);
+    // Wrap the FileReader → upload chain in a single promise so we
+    // can guarantee `setUploadingVerification(false)` + release()
+    // always fire, even on FileReader.onerror / unexpected throws,
+    // and never let any exception bubble to the app's error
+    // boundary (which on offline-detect would log the user out).
+    try {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            resolve(e.target.result.split(',')[1]);
+          } catch (parseErr) {
+            reject(parseErr);
+          }
+        };
+        reader.onerror = () => reject(new Error('Could not read the selected file'));
+        reader.readAsDataURL(verificationFile);
+      });
+
+      const formData = new FormData();
+      formData.append('tier_requested', verificationTier);
+      formData.append('doc_type', verificationDocType);
+      formData.append('file_data', base64);
+      formData.append('file_name', verificationFile.name);
+
+      // Explicit per-request timeout (90s) covers the worst-case
+      // slow-uplink scenario without hanging the UI forever.
+      await apiClient.post(`${API_URL}/verification/upload`, formData, {
+        headers,
+        timeout: 90000,
+      });
+      setShowVerification(false);
+      setVerificationFile(null);
+      setVerificationDocType('');
+      // Re-fetch immediately so the paywall flips to the "verification
+      // pending" banner — even before the 30s polling loop kicks in.
+      fetchData();
     } catch (err) {
-      toast.error('Failed to process file');
+      const msg = err?.response?.data?.detail
+        || (err?.code === 'ECONNABORTED' ? 'Upload timed out. Please try a smaller file or check your connection.' : null)
+        || err?.message
+        || 'Upload failed';
+      toast.error(msg);
+    } finally {
       setUploadingVerification(false);
+      releaseAutoLogout();
     }
   };
 

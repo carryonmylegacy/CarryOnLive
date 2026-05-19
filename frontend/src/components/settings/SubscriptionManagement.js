@@ -15,6 +15,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
+import { suspendAutoLogout } from '../../utils/autoLogoutSuspend';
 
 const TIER_STYLES = {
   ben_premium: { accent: '#d4af37', icon: Crown, label: 'Best Value' },
@@ -319,32 +320,45 @@ export const SubscriptionManagement = ({
       toast.error('Please select a document type and upload a file');
       return;
     }
+    // Suspend auto-logout for the ENTIRE upload window — see
+    // matching comment in SubscriptionPaywall.handleVerificationUpload.
+    const releaseAutoLogout = suspendAutoLogout();
     setUploadingVerification(true);
     try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const base64 = e.target.result.split(',')[1];
-        const formData = new FormData();
-        formData.append('tier_requested', verificationTier);
-        formData.append('doc_type', verificationDocType);
-        formData.append('file_data', base64);
-        formData.append('file_name', verificationFile.name);
-        try {
-          await apiClient.post(`${API_URL}/verification/upload`, formData, getAuthHeaders());
-          // toast removed
-          setShowVerification(false);
-          setVerificationFile(null);
-          setVerificationDocType('');
-          setVerificationStatus({ status: 'pending', tier_requested: verificationTier });
-        } catch (err) {
-          toast.error(err.response?.data?.detail || 'Verification upload failed');
-        }
-        setUploadingVerification(false);
-      };
-      reader.readAsDataURL(verificationFile);
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            resolve(e.target.result.split(',')[1]);
+          } catch (parseErr) {
+            reject(parseErr);
+          }
+        };
+        reader.onerror = () => reject(new Error('Could not read the selected file'));
+        reader.readAsDataURL(verificationFile);
+      });
+      const formData = new FormData();
+      formData.append('tier_requested', verificationTier);
+      formData.append('doc_type', verificationDocType);
+      formData.append('file_data', base64);
+      formData.append('file_name', verificationFile.name);
+      await apiClient.post(`${API_URL}/verification/upload`, formData, {
+        ...getAuthHeaders(),
+        timeout: 90000,
+      });
+      setShowVerification(false);
+      setVerificationFile(null);
+      setVerificationDocType('');
+      setVerificationStatus({ status: 'pending', tier_requested: verificationTier });
     } catch (err) {
-      toast.error('Failed to process file');
+      const msg = err?.response?.data?.detail
+        || (err?.code === 'ECONNABORTED' ? 'Upload timed out. Please try a smaller file or check your connection.' : null)
+        || err?.message
+        || 'Verification upload failed';
+      toast.error(msg);
+    } finally {
       setUploadingVerification(false);
+      releaseAutoLogout();
     }
   };
 

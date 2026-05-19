@@ -155,6 +155,80 @@ async def review_verification(
                 }
             },
         )
+        # ── Auto-notify the user that their tier is approved ──
+        # Previously, admins had to ALSO click a separate "Notify"
+        # button after approval, which was easy to forget — leaving
+        # the user on their paywall with no idea their tier had been
+        # approved (May 19, 2026 live-pitch bug report). The notify
+        # step is now baked into the approve action itself: same
+        # support-portal message + same push notification fire
+        # automatically. Errors in either side-effect are swallowed
+        # so an approval never fails because a downstream notify
+        # path is misconfigured.
+        try:
+            tier_label = {
+                "military": "Military / First Responder",
+                "veteran": "Veteran",
+                "hospice": "Hospice",
+                "seniors": "Seniors (65+)",
+                "new_adult": "New Adult (18–25)",
+                "enterprise": "Enterprise / B2B Partner",
+            }.get(verification["tier_requested"], verification["tier_requested"])
+            is_free_tier = verification["tier_requested"] == "hospice"
+            support_msg = {
+                "id": str(uuid.uuid4()),
+                "conversation_id": verification["user_id"],
+                "sender_id": current_user["id"],
+                "sender_name": "CarryOn Support",
+                "sender_role": "admin",
+                "content": (
+                    f"Your {tier_label} verification has been approved. "
+                    f"You can now subscribe to the {tier_label} plan at no cost. "
+                    f"Go to Settings → Subscription and click Subscribe under the {tier_label} plan. "
+                    f"We're here for you."
+                )
+                if is_free_tier
+                else (
+                    f"Great news! Your {tier_label} verification has been approved. "
+                    f"You can now subscribe to the {tier_label} plan. "
+                    f"Go to Settings → Subscription and click Subscribe under the {tier_label} plan — "
+                    f"it will go through without any further verification needed. "
+                    f"Thank you for your service!"
+                ),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "read": False,
+            }
+            await db.support_messages.insert_one(support_msg)
+            await db.tier_verifications.update_one(
+                {"id": verification_id},
+                {
+                    "$set": {
+                        "notified": True,
+                        "notified_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                },
+            )
+            # Fire the push notification in the background (don't
+            # block the approve response on it).
+            try:
+                from services.notifications import send_push_notification
+                import asyncio
+
+                asyncio.create_task(
+                    send_push_notification(
+                        verification["user_id"],
+                        "Verification Approved!",
+                        f"Your {tier_label} verification is approved. Go to Settings to subscribe.",
+                        "/settings",
+                        "verification-approved",
+                        "support",
+                    )
+                )
+            except Exception as push_err:  # noqa: BLE001
+                logger.warning(f"Auto-notify push failed for verification={verification_id}: {push_err}")
+        except Exception as notify_err:  # noqa: BLE001
+            # NEVER let a notify side-effect fail the approve itself.
+            logger.warning(f"Auto-notify failed for verification={verification_id}: {notify_err}")
 
     action_label = "approved" if data.action == "approve" else "denied"
     return {
