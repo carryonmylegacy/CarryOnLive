@@ -151,7 +151,8 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
             ben_link = await db.beneficiaries.find_one({"email": current_user.get("email")}, {"_id": 0, "estate_id": 1})
         if ben_link and ben_link.get("estate_id"):
             ben_estate = await db.estates.find_one(
-                {"id": ben_link["estate_id"]}, {"_id": 0, "owner_id": 1, "status": 1}
+                {"id": ben_link["estate_id"]},
+                {"_id": 0, "id": 1, "owner_id": 1, "status": 1, "verified_tier": 1},
             )
             benefactor_id = ben_estate.get("owner_id") if ben_estate else None
 
@@ -159,7 +160,7 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         if not benefactor_id:
             ben_estate = await db.estates.find_one(
                 {"beneficiaries": current_user["id"]},
-                {"_id": 0, "owner_id": 1, "status": 1},
+                {"_id": 0, "id": 1, "owner_id": 1, "status": 1, "verified_tier": 1},
             )
             if ben_estate:
                 benefactor_id = ben_estate.get("owner_id")
@@ -180,10 +181,41 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
                 "veteran": "ben_veteran",
                 "enterprise": "ben_enterprise",
             }
-            if ben_sub and ben_sub.get("plan_id"):
+            # Source-of-truth precedence for the beneficiary's locked tier:
+            #   1. Estate-level `verified_tier` — set by Founder via Admin →
+            #      Users → Assign Tier. MUST take precedence; otherwise an
+            #      admin grant on a benefactor estate would never surface
+            #      on the beneficiary's own paywall, which is exactly the
+            #      regression the user just reported.
+            #   2. Benefactor's real `user_subscriptions` row.
+            #   3. Benefactor's legacy `users.verified_tier` (rarely set).
+            estate_admin_tier = (ben_estate or {}).get("verified_tier")
+            if estate_admin_tier:
+                beneficiary_locked_tier = plan_map.get(estate_admin_tier, "ben_base")
+            elif ben_sub and ben_sub.get("plan_id"):
                 beneficiary_locked_tier = plan_map.get(ben_sub["plan_id"], "ben_base")
             elif benefactor_user and benefactor_user.get("verified_tier"):
                 beneficiary_locked_tier = plan_map.get(benefactor_user["verified_tier"], "ben_base")
+
+            # ── Synthesize an active sub for the beneficiary so the
+            # paywall lights up the ben_<tier> card as "Current Plan",
+            # mirroring what the benefactor sees. Without this, the
+            # beneficiary's paywall stays blank (no Current Plan badge)
+            # even though the admin granted access — exactly the
+            # regression the user reported on May 18, 2026.
+            if not has_active_sub and beneficiary_locked_tier:
+                sub = {
+                    "id": f"beneficiary-locked-{ben_estate.get('id') if ben_estate else 'unknown'}",
+                    "user_id": current_user["id"],
+                    "plan_id": beneficiary_locked_tier,
+                    "billing_cycle": "annual",
+                    "status": "active",
+                    "source": "estate_admin_tier" if estate_admin_tier else "benefactor_locked",
+                    "current_period_start": datetime.now(timezone.utc).isoformat(),
+                    "current_period_end": (datetime.now(timezone.utc) + timedelta(days=365)).isoformat(),
+                }
+                has_active_sub = True
+                has_access = True
 
     # Check if beneficiary is a minor (under 18)
     is_minor = False

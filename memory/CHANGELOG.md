@@ -1,6 +1,44 @@
 # CarryOn — Changelog
 
 
+## May 18, 2026 (latest) — 👤 Admin-set tier surfaces on user's paywall (beneficiary path fixed)
+
+User asked: "If I set a user's tier in my admin portal users tab, it
+should show as the subscribed tier on that user's paywall. It isn't
+right now. This should be independent of the user having a confirmed
+payment for that tier."
+
+### Diagnosis
+- **Benefactor path**: already worked. `/subscriptions/status` synthesizes a virtual active sub from `estates.verified_tier` whenever the benefactor has no real payment.
+- **Beneficiary path**: broken. The endpoint looked at `users.verified_tier` (rarely set) for the beneficiary's locked tier — but admin writes to `estates.verified_tier`. So an admin grant on a benefactor's estate **never surfaced** on the beneficiary's own paywall.
+
+### Fix
+`routes/subscriptions/status.py` — beneficiary tier resolution now has explicit precedence:
+1. `estates.verified_tier` (admin Founder grant) — **NEW, highest precedence**
+2. Benefactor's real `user_subscriptions.plan_id`
+3. Legacy `users.verified_tier` fallback
+
+When this resolves to a non-empty `ben_*` plan AND the beneficiary has no active sub of their own, a synthetic active subscription is materialised with `source="estate_admin_tier"` so the paywall renders the matching tile as "Current Plan" — exactly mirroring the benefactor's experience.
+
+Estate projections expanded to include `verified_tier` + `id` so the synthesis has everything it needs in one round trip.
+
+### Tests
+`tests/test_admin_tier_surfaces_on_paywall.py` (new, 3 tests):
+1. Benefactor sees admin-set tier as `source="admin_override"`.
+2. Beneficiary sees admin-set tier as `ben_<tier>` with `source="estate_admin_tier"`.
+3. A real active payment is NEVER shadowed by a residual admin grant (real payment wins).
+
+Also hardened `tests/test_subscription_pending_intent.py` to defensively clear `estates.verified_tier` during setup (otherwise the admin-tier synthesis would shadow the test's intent assertion).
+
+**21 passed / 1 skipped** across the full subscription suite (admin-tier + pending-intent + reconcile + share + overwrite + estate-binder).
+
+### Files touched
+- `/app/backend/routes/subscriptions/status.py`
+- `/app/backend/tests/test_admin_tier_surfaces_on_paywall.py` (new)
+- `/app/backend/tests/test_subscription_pending_intent.py` (test hardening)
+
+
+
 ## May 18, 2026 (final) — 🪙 Zero-flicker optimistic checkout + 2 pre-existing bugs squashed
 
 User asked for the "pre-warm" optimistic Premium tile so the pitch
