@@ -27,14 +27,21 @@ const fmt = (iso) => {
   return `${days}d`;
 };
 
-const EgaQuickLink = ({ testId = 'readiness-ega-quicklink' }) => {
+const EgaQuickLink = ({ testId = 'readiness-ega-quicklink', lastAnalyzedAt: lastAnalyzedAtProp }) => {
   const navigate = useNavigate();
   const { getAuthHeaders } = useAuth();
-  const [lastAnalyzedAt, setLastAnalyzedAt] = useState(null);
+  const [lastAnalyzedAtState, setLastAnalyzedAt] = useState(null);
+  // Caller-injected stamp wins (Dashboard batches it into its own
+  // Promise.all so the pill label lands in the same render tick as
+  // the rest of the tiles). When no caller passes the prop we
+  // gracefully fall back to a self-hydrate on mount so this
+  // component still works standalone elsewhere.
+  const lastAnalyzedAt = lastAnalyzedAtProp !== undefined ? lastAnalyzedAtProp : lastAnalyzedAtState;
 
   // One-shot hydrate. EGA tasks live in `db.ega_tasks`; the endpoint
   // returns the latest IAC generation task for the user's estate.
   useEffect(() => {
+    if (lastAnalyzedAtProp !== undefined) return undefined;
     let alive = true;
     (async () => {
       try {
@@ -55,7 +62,7 @@ const EgaQuickLink = ({ testId = 'readiness-ega-quicklink' }) => {
     return () => {
       alive = false;
     };
-  }, [getAuthHeaders]);
+  }, [getAuthHeaders, lastAnalyzedAtProp]);
 
   return (
     <div

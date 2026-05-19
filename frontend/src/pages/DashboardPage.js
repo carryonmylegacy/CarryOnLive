@@ -62,6 +62,13 @@ const DashboardPage = () => {
   const [stats, setStats] = useState({ documents: 0, messages: 0, beneficiaries: 0, ccp_plans: 0, ccp_drilled: 0 });
   const [readiness, setReadiness] = useState({ documents: { score: 0 }, messages: { score: 0 }, checklist: { score: 0 } });
   const [financialSummary, setFinancialSummary] = useState(null);
+  // Freshness stamps for the bottom BNDR + EGA pills. Hoisted out
+  // of those child components so the timestamps land in the same
+  // render tick as the rest of the dashboard — used to pop in ~1 s
+  // after the tile grid because each pill ran its own useEffect
+  // fetch on mount (May 22, 2026 user report).
+  const [lastBinderAt, setLastBinderAt] = useState(null);
+  const [lastEgaAt, setLastEgaAt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCelebration, setShowCelebration] = useState(false);
   const [justCompletedActivation, setJustCompletedActivation] = useState(false);
@@ -187,20 +194,29 @@ const DashboardPage = () => {
         }
         if (tile.checklists) setChecklists(tile.checklists);
         if (tile.financialSummary) setFinancialSummary(tile.financialSummary);
+        // Sticky freshness stamps for the BNDR + EGA pills. Without
+        // these in the cache snapshot, the two pill labels would still
+        // pop in ~1 s after the tile grid (because each component
+        // hydrates from its own /pdfs/latest + /guardian/iac-task-status
+        // useEffect on mount).
+        if (tile.lastBinderAt) setLastBinderAt(tile.lastBinderAt);
+        if (tile.lastEgaAt) setLastEgaAt(tile.lastEgaAt);
         // Cache-first reveal (Feb 16, 2026 user-perf report): we used
         // to hold the splash up until the network call returned so
         // CFP/CCP values never jumped from 0 → real. The compromise:
         // reveal IMMEDIATELY when the cached snapshot is complete
         // (stats has CFP+CCP numerics + we have a cached financial
-        // summary). Otherwise hold the splash so the user never sees
-        // a stale 0 morph to a real number 1s later — the exact
-        // regression flagged on May 22, 2026.
+        // summary AND the BNDR/EGA freshness stamps). Otherwise hold
+        // the splash so the user never sees a stale 0 morph to a real
+        // number 1s later — the regression flagged on May 22, 2026.
         const cacheComplete = !!(
           tile.stats
           && typeof tile.stats.ccp_plans === 'number'
           && typeof tile.stats.ccp_drilled === 'number'
           && tile.financialSummary
           && tile.readiness
+          && 'lastBinderAt' in tile
+          && 'lastEgaAt' in tile
         );
         if (cacheComplete) {
           revealedFromCache = true;
@@ -243,7 +259,7 @@ const DashboardPage = () => {
       // a tick later — previously it fired on a separate apiClient.get().
       // Without this, CFP visibly jumped from 0 → real *after* the
       // dashboard had already faded in.
-      const [docsRes, msgsRes, bensRes, checklistRes, readinessRes, progressRes, ccpRes, financialRes] = await Promise.all([
+      const [docsRes, msgsRes, bensRes, checklistRes, readinessRes, progressRes, ccpRes, financialRes, pdfsRes, egaTaskRes] = await Promise.all([
         apiClient.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()),
         apiClient.get(`${API_URL}/messages/${estateId}`, getAuthHeaders()),
         apiClient.get(`${API_URL}/beneficiaries/${estateId}`, getAuthHeaders()),
@@ -264,6 +280,12 @@ const DashboardPage = () => {
           console.warn('[dashboard] /financial/summary fetch failed:', err?.response?.status || err?.message);
           return null;
         }),
+        // BNDR + EGA freshness stamps batched into the SAME Promise.all
+        // so the bottom pill labels land in the same render tick as the
+        // tile grid (otherwise their child-level useEffect fetches
+        // produced a visible 1 s pop-in below the BNDR/EGA buttons).
+        apiClient.get(`${API_URL}/pdfs/latest`, getAuthHeaders()).catch(() => null),
+        apiClient.get(`${API_URL}/guardian/iac-task-status`, getAuthHeaders()).catch(() => null),
       ]);
       // Preserve the previously-known count when the request failed.
       // Reading from the cache (priorCcpCount) is the right fallback —
@@ -285,12 +307,24 @@ const DashboardPage = () => {
         ccp_drilled: ccpDrilledCount,
       };
       const financialPayload = financialRes?.data ?? priorFinancial;
+      // Extract the BNDR + EGA freshness stamps from the parallel
+      // responses. Both are nullable — if the user has never
+      // generated a binder or run EGA, the corresponding pill simply
+      // shows no "Built X ago" / "Analyzed X ago" tail (graceful).
+      const binderHit = (pdfsRes?.data?.pdfs || []).find((p) => p.pdf_type === 'estate_binder');
+      const nextBinderAt = binderHit?.updated_at || null;
+      const egaTask = egaTaskRes?.data;
+      const nextEgaAt = (egaTask?.status === 'completed' && egaTask?.completed_at)
+        ? egaTask.completed_at : null;
       // ── Single batched render so every tile (Beneficiaries, IAC,
-      // MM, SDV, CCP, CFP) updates in the same tick. Eliminates the
-      // visible "0 → real" jump on CFP/CCP that the user reported.
+      // MM, SDV, CCP, CFP) AND the bottom BNDR + EGA freshness pills
+      // update in the same tick. Eliminates the visible "0 → real"
+      // jump on CFP/CCP that the user reported.
       setStats(statsPayload);
       setFinancialSummary(financialPayload);
       setChecklists(checklistRes.data);
+      setLastBinderAt(nextBinderAt);
+      setLastEgaAt(nextEgaAt);
       if (readinessRes) {
         setReadiness(readinessRes.data);
         setEstate(prev => prev ? { ...prev, readiness_score: readinessRes.data.overall_score } : prev);
@@ -303,6 +337,8 @@ const DashboardPage = () => {
         readiness: readinessRes ? readinessRes.data : null,
         checklists: checklistRes.data,
         financialSummary: financialPayload,
+        lastBinderAt: nextBinderAt,
+        lastEgaAt: nextEgaAt,
       }).catch(() => {});
       // Also mirror the readiness scorecard into its own singleton table.
       if (readinessRes) {
@@ -1102,8 +1138,8 @@ const DashboardPage = () => {
             <ReadinessDial score={readinessScore} id="readiness" labelText={scoreInfo.label} labelColor={scoreInfo.color} />
             {/* Bottom-right EGA + bottom-left BNDR pills. Each owns a
                 tiny freshness stamp under the icon. */}
-            <EgaQuickLink testId="readiness-ega-quicklink" />
-            <EstateBinderButton />
+            <EgaQuickLink testId="readiness-ega-quicklink" lastAnalyzedAt={lastEgaAt} />
+            <EstateBinderButton lastGeneratedAt={lastBinderAt} />
           </div>
         );
 

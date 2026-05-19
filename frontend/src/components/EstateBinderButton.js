@@ -30,7 +30,7 @@ const formatAgo = (iso) => {
   return `${days}d`;
 };
 
-const EstateBinderButton = () => {
+const EstateBinderButton = ({ lastGeneratedAt: lastGeneratedAtProp } = {}) => {
   const navigate = useNavigate();
   const { getAuthHeaders } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -40,10 +40,25 @@ const EstateBinderButton = () => {
   // after every successful regeneration. Surfaced as a tiny "Last
   // regenerated X ago" sub-line under the button so demo prospects
   // see at-a-glance freshness without tapping.
-  const [lastGeneratedAt, setLastGeneratedAt] = useState(null);
+  const [lastGeneratedAtState, setLastGeneratedAt] = useState(null);
+  // Caller-injected stamp seeds the first render so the pill label
+  // lands in the same render tick as the rest of the dashboard
+  // tiles (no 1-second pop-in). After a successful regeneration the
+  // local state's optimistic timestamp takes over via the
+  // most-recent-wins picker below.
+  const lastGeneratedAt = (() => {
+    const a = lastGeneratedAtProp !== undefined ? lastGeneratedAtProp : null;
+    const b = lastGeneratedAtState;
+    if (!a) return b;
+    if (!b) return a;
+    return new Date(a).getTime() >= new Date(b).getTime() ? a : b;
+  })();
 
-  // Hydrate the "last generated" stamp once on mount.
+  // Hydrate the "last generated" stamp once on mount. Skipped when
+  // the caller provided the stamp (Dashboard) — keeps the existing
+  // standalone usage working unchanged.
   useEffect(() => {
+    if (lastGeneratedAtProp !== undefined) return undefined;
     let alive = true;
     (async () => {
       try {
@@ -60,7 +75,7 @@ const EstateBinderButton = () => {
     return () => {
       alive = false;
     };
-  }, [getAuthHeaders]);
+  }, [getAuthHeaders, lastGeneratedAtProp]);
 
   const handleClick = useCallback(async () => {
     if (loading) return;

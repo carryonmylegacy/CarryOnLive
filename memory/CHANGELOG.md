@@ -1,6 +1,61 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 (latest+6) — ⏱ BNDR + EGA freshness stamps now load in the same tick as the dashboard
+
+User report: "The time since refresh below the BNDR and EGA
+buttons loads a second after the page loads, sort of like the CFP
+and CCP numbers used to before you fixed that."
+
+### Root cause
+Both `EstateBinderButton` and `EgaQuickLink` mounted their own
+`useEffect` on render and fired:
+- `EstateBinderButton`: `GET /api/pdfs/latest` (for estate_binder.updated_at)
+- `EgaQuickLink`: `GET /api/guardian/iac-task-status`
+
+These ran AFTER the dashboard's Promise.all completed and triggered
+its single batched render — so the "Built 3 d ago" / "Analyzed 5 h
+ago" labels appeared ~250 ms–1 s after everything else.
+
+### What shipped
+
+#### Dashboard hoists both freshness stamps into its initial fetch
+- Two new entries added to the parallel `Promise.all` in
+  `fetchEstateData`:
+  - `GET /api/pdfs/latest` → `lastBinderAt` (from estate_binder hit)
+  - `GET /api/guardian/iac-task-status` → `lastEgaAt` (only when
+    `status === "completed"`, mirroring child logic)
+- Both batched into the same `setStats / setFinancialSummary /
+  setReadiness / setLastBinderAt / setLastEgaAt` render tick — zero
+  pop-in.
+- Both persisted to the Dexie dashboard-tile cache so subsequent
+  navigations hydrate from cache instantly with the stamps already
+  present.
+- Cache-complete reveal gate extended: now requires
+  `'lastBinderAt' in tile && 'lastEgaAt' in tile`. Cache reveals
+  immediately ONLY when those stamps are present; otherwise the
+  splash holds until the network fetch completes (no half-loaded
+  reveal).
+
+#### Children accept optional prop, retain standalone fallback
+- `EgaQuickLink` and `EstateBinderButton` now accept
+  `lastAnalyzedAt` / `lastGeneratedAt` props respectively. When the
+  caller passes the prop the child's self-hydrate useEffect short-
+  circuits — no duplicate network call.
+- `EstateBinderButton` uses a "most-recent wins" picker so an
+  optimistic post-generation timestamp from the user's own
+  successful binder build still wins over a slightly older
+  dashboard-batched value (no visual rollback after a fresh build).
+- Standalone usage of either component elsewhere in the app is
+  unchanged — the prop is optional, so the original useEffect path
+  remains the default when no prop is provided.
+
+### Verification
+- Lint: clean.
+- Housekeeping `--strict`: 0 WARN / 0 FAIL.
+
+
+
 ## May 22, 2026 (latest+5) — 🔄 In-place section Refresh + unified 4-button toolbar
 
 User mandate, three parts:
