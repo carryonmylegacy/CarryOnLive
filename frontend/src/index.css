@@ -768,17 +768,21 @@
     color: #9f1239;
   }
   [data-theme="light"] .sb-pill.gold {
-    /* Idle gold pill (PDM panic switch when NOT armed) — needs to
-       read as gold-on-cream in light mode, not the dark-mode 6%
-       alpha which is invisible against light sidebar. */
-    border-color: rgba(var(--gold-rgb), 0.50);
-    color: #8a6810;
-    background: rgba(var(--gold-rgb), 0.16);
+    /* Idle gold pill (PDM panic switch when NOT armed). Updated
+       May 19, 2026 (user feedback): a transparent-gold tint
+       (rgba(gold,0.16)) on the slate-blue sidebar gradient was
+       compositing as a muddy gray. Matched Sign Out's pattern —
+       near-opaque pale color sitting clearly above the sidebar
+       background — but in cream/gold instead of rose so the two
+       pills are visually distinct. */
+    border-color: rgba(var(--gold-rgb), 0.55);
+    color: #7a5c00;
+    background: rgba(254,249,231,0.95);
     box-shadow: 0 1px 2px rgba(212,175,55,0.10), 0 1px 6px rgba(212,175,55,0.06);
   }
   [data-theme="light"] .sb-pill.gold:hover {
-    background: rgba(var(--gold-rgb), 0.24);
-    color: #6d520c;
+    background: rgba(252,243,202,1);
+    color: #5d4500;
   }
   /* Armed gold (PDM ON) keeps its dark-mode filled-gradient look in
      both themes — high-contrast intentionally because it's a

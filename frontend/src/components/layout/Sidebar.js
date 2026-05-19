@@ -1073,11 +1073,16 @@ const Sidebar = () => {
                   className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
                   style={{
                     background: isBenefactorActive
-                      ? theme === 'light' ? 'rgba(var(--gold-rgb), 0.15)' : 'rgba(var(--gold-rgb), 0.1)'
+                      ? theme === 'light' ? 'rgba(254,249,231,0.95)' : 'rgba(var(--gold-rgb), 0.1)'
                       : undefined,
-                    borderColor: isBenefactorActive ? 'rgba(var(--gold-rgb), 0.4)' : undefined,
+                    borderColor: isBenefactorActive
+                      ? theme === 'light' ? 'rgba(var(--gold-rgb), 0.55)' : 'rgba(var(--gold-rgb), 0.4)'
+                      : undefined,
                     color: isBenefactorActive
-                      ? theme === 'light' ? '#1a2744' : '#d4af37'
+                      ? theme === 'light' ? '#7a5c00' : '#d4af37'
+                      : undefined,
+                    boxShadow: isBenefactorActive && theme === 'light'
+                      ? '0 1px 2px rgba(212,175,55,0.10), 0 1px 6px rgba(212,175,55,0.06)'
                       : undefined,
                     fontWeight: isBenefactorActive ? 700 : undefined,
                     padding: collapsed ? undefined : '10px 16px',
@@ -1086,7 +1091,7 @@ const Sidebar = () => {
                     gap: collapsed ? undefined : 2,
                   }}>
                     {collapsed ? (
-                      <Shield className="w-[18px] h-[18px]" style={{ color: isBenefactorActive ? (theme === 'light' ? '#1a2744' : '#d4af37') : undefined }} />
+                      <Shield className="w-[18px] h-[18px]" style={{ color: isBenefactorActive ? (theme === 'light' ? '#7a5c00' : '#d4af37') : undefined }} />
                     ) : (
                       <>
                         <span style={{ fontWeight: 600, fontSize: 14 }}>My Benefactor Portal</span>

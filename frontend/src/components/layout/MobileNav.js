@@ -1046,9 +1046,10 @@ const MobileNav = () => {
                             data-testid="mobile-switch-benefactor"
                             className="w-full flex flex-col items-center px-4 py-3 rounded-xl transition-all"
                             style={{
-                              border: `1px solid ${isBenefactorActive ? 'rgba(var(--gold-rgb), 0.4)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                              color: isBenefactorActive ? (theme === 'light' ? '#1a2744' : '#d4af37') : theme === 'dark' ? '#A0AABF' : '#475569',
-                              backgroundColor: isBenefactorActive ? (theme === 'light' ? 'rgba(var(--gold-rgb), 0.15)' : 'rgba(var(--gold-rgb), 0.08)') : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
+                              border: `1px solid ${isBenefactorActive ? 'rgba(var(--gold-rgb), 0.55)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                              color: isBenefactorActive ? (theme === 'light' ? '#7a5c00' : '#d4af37') : theme === 'dark' ? '#A0AABF' : '#475569',
+                              backgroundColor: isBenefactorActive ? (theme === 'light' ? 'rgba(254,249,231,0.95)' : 'rgba(var(--gold-rgb), 0.08)') : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
+                              boxShadow: isBenefactorActive && theme === 'light' ? '0 1px 2px rgba(212,175,55,0.10), 0 1px 6px rgba(212,175,55,0.06)' : undefined,
                               fontWeight: isBenefactorActive ? 700 : undefined,
                               gap: 2,
                             }}>
