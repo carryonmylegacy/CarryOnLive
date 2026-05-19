@@ -31,7 +31,7 @@ import ReactDOM from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import apiClient from '../../utils/apiClient';
-import { ChevronLeft, Printer, Maximize2, AlignVerticalJustifyCenter, Download, Loader2 } from 'lucide-react';
+import { ChevronLeft, Printer, Maximize2, AlignVerticalJustifyCenter, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_URL } from '../../config';
 import {
@@ -187,7 +187,6 @@ export default function EntitiesPrintPage() {
   // user AND uploaded to /pdfs/cache under pdf_type="entities_structures"
   // so the Estate Binder picks it up on its next assembly.
   const [saving, setSaving] = useState(false);
-  const [autoCachedAt, setAutoCachedAt] = useState(null);
 
   const _captureBlob = useCallback(async () => {
     // Lazy-import html2canvas + jsPDF directly. We previously used
@@ -306,7 +305,6 @@ export default function EntitiesPrintPage() {
       if (estateName) fd.append('subtitle', estateName);
       fd.append('filename', 'EntitiesAndStructures.pdf');
       await apiClient.post(`${API_URL}/pdfs/cache`, fd, { ...getAuthHeaders(), timeout: 30000 });
-      setAutoCachedAt(new Date());
     } catch (err) {
       if (process.env.NODE_ENV !== 'production') {
         // eslint-disable-next-line no-console
@@ -315,63 +313,26 @@ export default function EntitiesPrintPage() {
     }
   }, [estateName, getAuthHeaders]);
 
-  // Auto-cache on first successful render so the Binder picks it up
-  // even if the user never explicitly taps "Save PDF". We give the
-  // chart a beat to stabilize (3 s) AND `_captureBlob` itself waits
-  // for every <img> in the print pages to finish loading before
-  // handing them to html2canvas — so the resulting cached PDF can't
-  // be a blank/half-loaded snapshot.
-  useEffect(() => {
-    if (!data || autoCachedAt) return undefined;
-    const t = setTimeout(async () => {
-      try {
-        const blob = await _captureBlob();
-        await _postToBinderCache(blob);
-      } catch (err) {
-        if (process.env.NODE_ENV !== 'production') {
-          // eslint-disable-next-line no-console
-          console.warn('[EntitiesPrintPage] Auto-cache skipped:', err?.message);
-        }
-        /* swallow — the explicit Save PDF button still works */
-      }
-    }, 3000);
-    return () => clearTimeout(t);
-  }, [data, autoCachedAt, _captureBlob, _postToBinderCache]);
-
-  const handleSavePdf = useCallback(async () => {
+  // ── Single-action pipeline (May 22, 2026 user mandate) ────────────
+  // We used to have THREE generators racing on this page:
+  //   • a 3-second fire-and-forget auto-cache on mount
+  //   • a "Save PDF" button that downloaded + cached
+  //   • a "Print" button that called window.print() + cached
+  // The user (correctly) flagged this as wasteful and inconsistent
+  // with every other section of the platform, which has exactly
+  // ONE generator. We're consolidating: the Print button now does
+  // BOTH the browser-native print (the perfect PDF the user keeps
+  // on their device) AND the html2canvas upload to /pdfs/cache
+  // (which feeds the gold "Latest PDF" pill and the Binder). The
+  // user sees one button; the cache stays in sync with their
+  // explicit intent.
+  const handlePrintClick = useCallback(() => {
+    // Browser-native print runs synchronously — the OS print dialog
+    // pops immediately. We don't await it, so the cache upload
+    // proceeds in parallel without blocking the print UX.
+    try { window.print(); } catch { /* user dismissed the dialog */ }
     if (saving) return;
     setSaving(true);
-    try {
-      const blob = await _captureBlob();
-      // Browser-side download
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `EntitiesAndStructures-${new Date().toISOString().slice(0, 10)}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 4000);
-      // Also push to the Binder cache (in case the auto-fire missed)
-      await _postToBinderCache(blob);
-    } catch (err) {
-      // eslint-disable-next-line no-alert
-      alert('Could not save PDF: ' + (err?.message || 'unknown error'));
-    } finally {
-      setSaving(false);
-    }
-  }, [saving, _captureBlob, _postToBinderCache]);
-
-  // When the user clicks Print, also kick off a background capture →
-  // cache write IF the auto-fire hasn't run yet. This ensures that
-  // every interaction path with the print page (auto-load, Save PDF
-  // click, Print click) results in a fresh E&S blob in the Binder
-  // cache. The browser print dialog opens first so the user isn't
-  // delayed.
-  const handlePrintClick = useCallback(() => {
-    try { window.print(); } catch { /* user dismissed */ }
-    if (autoCachedAt) return;
-    // Fire-and-forget — same capture pipeline used by Save PDF
     (async () => {
       try {
         const blob = await _captureBlob();
@@ -381,9 +342,11 @@ export default function EntitiesPrintPage() {
           // eslint-disable-next-line no-console
           console.warn('[EntitiesPrintPage] Print-triggered cache skipped:', err?.message);
         }
+      } finally {
+        setSaving(false);
       }
     })();
-  }, [autoCachedAt, _captureBlob, _postToBinderCache]);
+  }, [saving, _captureBlob, _postToBinderCache]);
 
   // Compute layout + bbox once data lands.
   const layout = useMemo(() => {
@@ -1265,24 +1228,23 @@ export default function EntitiesPrintPage() {
           background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1;
         }
         .cfp-print-orient {
-          /* De-emphasized orientation toggle — sits on the far right
-             as a small ghost button so it doesn't compete with the
-             primary Save PDF / Print actions. */
+          /* De-emphasized orientation toggle — sits as a small ghost
+             button on the toolbar so it doesn't compete with the
+             primary Print action. */
           background: transparent; color: #475569; border: 1px solid #cbd5e1;
           padding: 6px 10px; font-size: 12px;
         }
+        /* Print pill matches the platform-wide PdfPreviewModal chrome:
+           cream background, dark-gold text/border (~5.4:1 contrast,
+           passes WCAG AA at 13 px bold). Pushed to the right of the
+           toolbar via margin-left:auto so the layout reads:
+           Back ... gap ... Print · Orient — identical to every other
+           PDF preview surface across CarryOn. */
         .cfp-print-reprint {
-          background: #fffaf0; color: #B8860B; border: 1px solid #B8860B;
-        }
-        /* Save PDF matches the platform-wide PdfPreviewModal pattern:
-           pushed to the right of the toolbar via margin-left:auto so the
-           layout reads: Back ... gap ... Save PDF · Print, identical to
-           every other PDF preview screen across CarryOn. */
-        .cfp-print-save {
-          background: #fffaf0; color: #B8860B; border: 1px solid #B8860B;
+          background: #fffaf0; color: #7a5c00; border: 1px solid #a87a00;
           margin-left: auto;
         }
-        .cfp-print-save:disabled {
+        .cfp-print-reprint:disabled {
           opacity: 0.55; cursor: progress;
         }
         @keyframes cfp-spin { to { transform: rotate(360deg); } }
@@ -1393,26 +1355,18 @@ export default function EntitiesPrintPage() {
         </button>
         <button
           type="button"
-          className="cfp-print-save"
-          onClick={handleSavePdf}
-          disabled={saving || !data}
-          data-testid="entity-print-save-pdf"
-          aria-label="Save Entities & Structures PDF"
-          title={autoCachedAt ? 'Save PDF (already cached for the Estate Binder)' : 'Save PDF'}
-        >
-          {saving ? (
-            <><Loader2 size={14} className="cfp-spin" /> Saving…</>
-          ) : (
-            <><Download size={14} /> Save PDF</>
-          )}
-        </button>
-        <button
-          type="button"
           className="cfp-print-reprint"
           onClick={handlePrintClick}
+          disabled={saving || !data}
           data-testid="entity-print-reprint"
+          aria-label="Print Entities & Structures and refresh the binder cache"
+          title="Print this page (and refresh the cached version for the Estate Binder)"
         >
-          <Printer size={14} /> Print
+          {saving ? (
+            <><Loader2 size={14} className="cfp-spin" /> Caching…</>
+          ) : (
+            <><Printer size={14} /> Print</>
+          )}
         </button>
         <button
           type="button"

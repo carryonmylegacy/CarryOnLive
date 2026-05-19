@@ -1,6 +1,84 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 (latest+4) — 🎯 E&S print page consolidated to ONE generator (user mandate)
+
+User report (with three side-by-side screenshots):
+> "The printer button produces a PDF that is perfect... no blank
+> pages... all avatars and graphics are properly displayed.
+>
+> The button next to it in Gold yields a PDF that has blank pages
+> both above and below the diagram and has missing avatars.
+>
+> Why do you even have the second one? Why can't you just use the
+> first one... then the button next to it [the gold pill] simply
+> allows you to access that cached PDF like every other section
+> does. Then the binder should just use that cached PDF instead
+> of the stupid one that keeps getting generated."
+
+User is right — three generators were racing on `EntitiesPrintPage`:
+1. **3-second fire-and-forget auto-cache** on mount.
+2. **"Save PDF"** button → html2canvas → download + cache.
+3. **"Print"** button → window.print() (+ html2canvas as a fallback).
+
+Each had different timing/wait semantics, which is exactly why the
+auto-cached PDF (which the binder/gold-pill consume) was the worst
+of the three: blank pages on either side of the chart + empty
+avatar circles. Other sections (EGA, IAC, CFP Handoff, CCP Report,
+Beneficiary Packet) all have **one** generator. E&S now matches.
+
+### What shipped
+
+#### Single-action toolbar
+- **Removed** "Save PDF" button entirely — it produced a download
+  AND wrote the cache, which duplicated what Print already does
+  with `window.print()` (the user's preferred quality path).
+- **Removed** the 3-second auto-cache `useEffect` on mount — the
+  Binder no longer relies on a fire-and-forget that might race
+  beneficiary photo loads.
+- **Removed** the now-unused `Download` icon import + the
+  `autoCachedAt` state + the `.cfp-print-save` CSS class.
+- **Print** button is now the **only** generator on the page:
+  - Opens the OS print dialog instantly via `window.print()` so the
+    user gets their perfect browser-native PDF as before.
+  - In parallel, runs `_captureBlob()` (html2canvas with
+    yesterday's SVG-image-wait fix + initials-as-base-layer fix
+    for failed photo loads) and uploads to `/pdfs/cache` so the
+    gold "Latest PDF" pill and the Estate Binder pick it up.
+  - Shows `[Loader] Caching…` state during the upload so the user
+    knows the binder is being refreshed in the background.
+
+#### Chrome standardization
+- `.cfp-print-reprint` now uses `#fffaf0` bg + `#7a5c00` text +
+  `#a87a00` border — same WCAG-AA palette adopted across the
+  PdfPreviewModal and CachedPdfIcon pills earlier today.
+- `margin-left: auto` moved from `.cfp-print-save` (deleted) to
+  `.cfp-print-reprint` so the toolbar still reads:
+  `Back ... gap ... Print · Orient`.
+
+#### Server-side cache cleanup
+- Purged the stale `entities_structures` row on the preview pod so
+  the next `/print/entities` Print tap mints a fresh capture with
+  the avatar + page-count fixes from yesterday.
+
+### Verification
+- Lint: clean.
+- Housekeeping `--strict`: 0 WARN / 0 FAIL.
+- pytest: 2 passed (estate-binder + latest-pdfs-overwrite suites).
+
+### What the user will see after pushing to prod
+- E&S section toolbar:
+  `[Print 🖨] [Latest PDF · 3m ago]` — only two icons, no redundancy.
+- Tapping Print: OS print dialog opens (perfect vector PDF as
+  always) + the gold pill timestamp refreshes to "just now".
+- Tapping the gold pill: opens the cached version inside the
+  standardized PDF Preview modal.
+- The Estate Binder consumes the same cached version on every
+  assembly — no more "stupid one that keeps getting generated"
+  out of phase with what the user expects.
+
+
+
 ## May 22, 2026 (latest+3) — 📑 Per-section manifest inside the Estate Binder preview
 
 User mandate: "Yes, wire that." (referring to the per-section
