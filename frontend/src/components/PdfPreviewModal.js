@@ -21,12 +21,23 @@ import { isIOS } from '../utils/downloadFile';
 import ShareBinderModal from './ShareBinderModal';
 import { API_URL } from '../config';
 
-// pdf_types that the modal can refresh IN-PLACE via a hidden
-// iframe + autoCache=1 query param. Other types fall back to the
-// "navigate to the section" behavior (the manifest's `route` field).
-// Extending this is a one-line addition once the destination print
-// page implements the autoCache useEffect + postMessage handshake.
-const IN_PLACE_REFRESH_TYPES = new Set(['entities_structures']);
+// Sections that support in-place server-side regeneration. Each
+// entry maps a `pdf_type` to a builder that returns the absolute API
+// path to POST to (no body required — the endpoint reads the
+// authenticated user and authorizes from there). The handler below
+// awaits that POST, then refetches the binder PDF + manifest so the
+// modal swaps in place. No iframes, no postMessage handshake — just
+// the same server-renders-bytes pattern every other section uses.
+const SERVER_REFRESH_ENDPOINTS = {
+  entities_structures: (section) => {
+    // section.capture_route is supplied by the binder manifest and
+    // always points at `/financial/entities/<estateId>/print?...` —
+    // extract the estate id from the second-to-last segment so we
+    // don't need a separate field on the manifest payload.
+    const m = (section.capture_route || '').match(/\/financial\/entities\/([^/?]+)\/print/);
+    return m ? `${API_URL}/financial/entities/${m[1]}/render-pdf` : null;
+  },
+};
 
 const _formatAgo = (iso) => {
   if (!iso) return '';
@@ -52,76 +63,77 @@ const PdfPreviewModal = () => {
   const [pageCount, setPageCount] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
   const [refreshingType, setRefreshingType] = useState(null);
-  const refreshIframeRef = useRef(null);
-  const refreshTimerRef = useRef(null);
 
-  // ── In-place "Refresh" for a binder section (May 22, 2026 mandate) ─
-  // Spawns a hidden iframe at the section's print page with
-  // `?autoCache=1`, listens for a `carryon:section-cached`
-  // postMessage from that page, then re-runs the binder generate
-  // endpoint and swaps the modal's PDF blob with the fresh one —
-  // all without the user leaving the preview. Other sections that
-  // haven't yet implemented the autoCache hook fall back to
-  // navigating to their page (graceful degrade — same UX as before).
+  // ── In-place "Refresh" for a binder section (May 23, 2026 mandate) ─
+  // For sections registered in `SERVER_REFRESH_ENDPOINTS`, we POST to
+  // the backend's headless-Chromium render endpoint. The endpoint
+  // returns once the cache is updated, then we re-fetch the binder
+  // PDF + manifest and swap the modal's preview in place. No iframes,
+  // no postMessage handshake — same architecture as every other
+  // section that produces a server-rendered PDF.
+  //
+  // For sections NOT yet wired to a server endpoint, we fall back to
+  // navigating the user to that section's page (graceful degrade —
+  // identical to the original behavior).
   const handleSectionRefresh = useCallback(async (section) => {
     if (!section || refreshingType) return;
-    if (!IN_PLACE_REFRESH_TYPES.has(section.pdf_type) || !section.capture_route) {
-      // Graceful fallback: navigate (legacy behavior). Other section
-      // pages can opt-in to in-place by adding an autoCache useEffect
-      // mirroring EntitiesPrintPage's pattern.
+    const endpointBuilder = SERVER_REFRESH_ENDPOINTS[section.pdf_type];
+    const endpoint = endpointBuilder ? endpointBuilder(section) : null;
+    if (!endpoint) {
+      // Graceful fallback: navigate to the section's page so the user
+      // can generate it manually. Same UX as the legacy Refresh flow
+      // for sections without a server-render path.
       handleClose();
       navigate(section.route || '/dashboard');
       return;
     }
 
     setRefreshingType(section.pdf_type);
+    const token = (typeof window !== 'undefined' && window.localStorage)
+      ? window.localStorage.getItem('carryon_token') : null;
+    const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
-    // Build the hidden iframe.
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:absolute;left:-99999px;top:-99999px;width:1280px;height:900px;border:0;opacity:0;pointer-events:none;';
-    iframe.setAttribute('aria-hidden', 'true');
-    iframe.src = section.capture_route;
-    refreshIframeRef.current = iframe;
-
-    const cleanup = () => {
-      if (refreshTimerRef.current) {
-        clearTimeout(refreshTimerRef.current);
-        refreshTimerRef.current = null;
-      }
-      window.removeEventListener('message', onMessage);
-      try { iframe.parentNode?.removeChild(iframe); } catch { /* already detached */ }
-      refreshIframeRef.current = null;
-    };
-
-    const refreshBinderBlob = async () => {
-      // Re-call the binder generator so the modal's preview reflects
-      // the new cached section. Same endpoint EstateBinderButton hits.
-      const token = (typeof window !== 'undefined' && window.localStorage)
-        ? window.localStorage.getItem('carryon_token') : null;
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await fetch(`${API_URL}/estate-binder/generate`, {
+    try {
+      // 1) Trigger the server render. Endpoint blocks until the
+      //    headless Chromium has captured the PDF and written it to
+      //    S3 + `latest_pdfs`. 30 s soft deadline matches the Python
+      //    side's `timeout_ms`.
+      const renderRes = await fetch(endpoint, {
         method: 'POST',
-        headers: { ...headers, 'Content-Type': 'application/json' },
+        headers: { ...authHeaders, 'Content-Type': 'application/json' },
       });
-      if (!res.ok) throw new Error(`binder regen failed: ${res.status}`);
-      const ct = res.headers.get('content-type') || '';
+      if (!renderRes.ok) {
+        const detail = await renderRes.text().catch(() => '');
+        throw new Error(`render ${renderRes.status}: ${detail.slice(0, 200)}`);
+      }
+
+      // 2) Regenerate the binder PDF so the modal reflects the
+      //    new cached section. Same endpoint EstateBinderButton hits.
+      const binderRes = await fetch(`${API_URL}/estate-binder/generate`, {
+        method: 'POST',
+        headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      });
+      if (!binderRes.ok) throw new Error(`binder regen ${binderRes.status}`);
+      const ct = binderRes.headers.get('content-type') || '';
       if (!ct.includes('application/pdf')) throw new Error('binder regen returned non-PDF');
-      const blob = await res.blob();
+      const blob = await binderRes.blob();
       const pdfBlob = new Blob([blob], { type: 'application/pdf' });
       const url = URL.createObjectURL(pdfBlob);
-      // Also refresh the manifest so the row timestamps update.
+
+      // 3) Refresh the manifest so timestamps + missing-list update.
       let nextSections = entry?.sections || [];
       let nextMissing = entry?.missingSections || [];
       try {
-        const mres = await fetch(`${API_URL}/estate-binder/manifest`, { headers });
+        const mres = await fetch(`${API_URL}/estate-binder/manifest`, { headers: authHeaders });
         if (mres.ok) {
           const mdata = await mres.json();
           nextSections = mdata.available || [];
           nextMissing = mdata.missing || [];
         }
       } catch { /* keep stale manifest — better than blanking it */ }
-      // Swap the preview blob in place. Reusing the open-pdf-preview
-      // event triggers the existing render pipeline for free.
+
+      // 4) Swap the preview blob in place; the existing render
+      //    pipeline picks up the new entry transparently.
       setEntry((prev) => {
         if (!prev) return prev;
         try { URL.revokeObjectURL(prev.url); } catch { /* ignore */ }
@@ -129,47 +141,13 @@ const PdfPreviewModal = () => {
       });
       setRenderState('loading');
       setPageCount(0);
-    };
-
-    const onMessage = async (e) => {
-      if (e.origin !== window.location.origin) return;
-      const d = e.data || {};
-      if (d.type !== 'carryon:section-cached') return;
-      if (d.pdfType !== section.pdf_type) return;
-      cleanup();
-      if (!d.ok) {
-        setRefreshingType(null);
-        // eslint-disable-next-line no-alert
-        alert(`Couldn't refresh ${section.display_title}: ${d.error || 'unknown error'}`);
-        return;
-      }
-      try {
-        await refreshBinderBlob();
-      } catch (err) {
-        // eslint-disable-next-line no-alert
-        alert(`Section refreshed but binder regen failed: ${err?.message || 'unknown'}`);
-      } finally {
-        setRefreshingType(null);
-      }
-    };
-
-    window.addEventListener('message', onMessage);
-    refreshTimerRef.current = setTimeout(() => {
-      cleanup();
-      setRefreshingType(null);
+    } catch (err) {
       // eslint-disable-next-line no-alert
-      alert(`Refresh of ${section.display_title} timed out. Try again from the section page.`);
-    }, 45000);
-
-    document.body.appendChild(iframe);
-  }, [refreshingType, navigate, entry?.sections]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Clean up the iframe + timer if the modal closes mid-refresh.
-  useEffect(() => () => {
-    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-    const iframe = refreshIframeRef.current;
-    if (iframe?.parentNode) iframe.parentNode.removeChild(iframe);
-  }, []);
+      alert(`Couldn't refresh ${section.display_title}: ${err?.message || 'unknown error'}`);
+    } finally {
+      setRefreshingType(null);
+    }
+  }, [refreshingType, navigate, entry?.sections, entry?.missingSections]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Global listener — any caller dispatches an event with the blob entry.
   useEffect(() => {
@@ -704,7 +682,7 @@ const PdfPreviewModal = () => {
               {(entry.sections || []).map((s) => {
                 const ago = _formatAgo(s.updated_at);
                 const isRefreshing = refreshingType === s.pdf_type;
-                const supportsInPlace = IN_PLACE_REFRESH_TYPES.has(s.pdf_type) && !!s.capture_route;
+                const supportsServerRefresh = !!SERVER_REFRESH_ENDPOINTS[s.pdf_type];
                 return (
                   <div
                     key={s.pdf_type}
@@ -718,8 +696,8 @@ const PdfPreviewModal = () => {
                       className="manifest-refresh"
                       onClick={() => handleSectionRefresh(s)}
                       disabled={!!refreshingType}
-                      title={supportsInPlace
-                        ? `Regenerate ${s.display_title} and refresh the binder in place`
+                      title={supportsServerRefresh
+                        ? `Regenerate ${s.display_title} on the server and refresh the binder in place`
                         : `Open ${s.display_title} to regenerate its PDF`}
                       data-testid={`pdf-preview-manifest-refresh-${s.pdf_type}`}
                     >
@@ -733,7 +711,7 @@ const PdfPreviewModal = () => {
               })}
               {(entry.missingSections || []).map((s) => {
                 const isRefreshing = refreshingType === s.pdf_type;
-                const supportsInPlace = IN_PLACE_REFRESH_TYPES.has(s.pdf_type) && !!s.capture_route;
+                const supportsServerRefresh = !!SERVER_REFRESH_ENDPOINTS[s.pdf_type];
                 return (
                   <div
                     key={s.pdf_type}
@@ -747,8 +725,8 @@ const PdfPreviewModal = () => {
                       className="manifest-refresh"
                       onClick={() => handleSectionRefresh(s)}
                       disabled={!!refreshingType}
-                      title={supportsInPlace
-                        ? `Generate ${s.display_title} and add it to the binder in place`
+                      title={supportsServerRefresh
+                        ? `Generate ${s.display_title} on the server and add it to the binder in place`
                         : `Open ${s.display_title} to generate its PDF, then re-open the binder`}
                       data-testid={`pdf-preview-manifest-refresh-${s.pdf_type}`}
                     >

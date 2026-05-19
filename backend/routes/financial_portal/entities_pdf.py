@@ -28,11 +28,13 @@ browser-print pipeline untouched.
 """
 
 from datetime import datetime, timezone
+import os
 
-from fastapi import Depends, HTTPException, Response
+from fastapi import Depends, HTTPException, Request, Response
 
 from config import db, logger
 from services.storage import storage
+from services.pdf_renderer import render_entities_pdf as _chromium_render_entities_pdf
 from utils import get_current_user
 
 from ._core import router, _verify_estate_access
@@ -510,3 +512,109 @@ async def generate_entities_structures_pdf(
             "Content-Disposition": 'inline; filename="EntitiesAndStructures.pdf"',
         },
     )
+
+
+@router.post("/financial/entities/{estate_id}/render-pdf")
+async def render_entities_structures_pdf_via_chromium(
+    estate_id: str,
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    """Render E&S to a TRUE VECTOR PDF via headless Chromium.
+
+    This is the rock-solid replacement for the legacy client-side
+    html2canvas pipeline. Same architectural pattern as every other
+    section in the platform: server makes the bytes → server caches
+    the bytes → binder reads from cache. No browser-side capture
+    quirks ever again.
+
+    Auth flow:
+        1. Caller's JWT is extracted from the incoming request's
+           Authorization header (the same one `get_current_user`
+           validated above — guaranteed valid).
+        2. We pass that JWT to the renderer, which injects it into a
+           headless browser's localStorage before any page script
+           runs. The React app boots fully authenticated and renders
+           an identical view to what the user sees on `/print/entities`.
+
+    The endpoint is intentionally fire-and-forget friendly:
+        • Returns within ~3–5 s on a warm browser.
+        • Cache row writes BEFORE the response so subsequent binder
+          builds see the fresh bytes immediately.
+        • On failure, the cache is NOT touched — keeps the previous
+          good capture intact rather than blanking it on a transient
+          render hiccup.
+    """
+    estate, can_manage = await _verify_estate_access(estate_id, current_user)
+    if not can_manage:
+        raise HTTPException(status_code=403, detail="Only the benefactor can render Entities & Structures.")
+
+    # Extract the raw token from the Authorization header. `get_current_user`
+    # already validated it, so we know it's well-formed and unexpired.
+    auth_header = request.headers.get("authorization", "")
+    if not auth_header.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Missing bearer token for render auth")
+    token = auth_header.split(" ", 1)[1].strip()
+
+    # Build the in-pod URL the headless browser should navigate to.
+    # Prefer the explicit RENDER_BASE_URL env var (so we can use the
+    # external host in staging/prod where the React app is served from
+    # a CDN), falling back to the public REACT base.
+    base_url = (
+        os.environ.get("RENDER_BASE_URL") or os.environ.get("REACT_APP_BACKEND_URL") or "http://localhost:3000"
+    ).rstrip("/")
+    # If we resolved to the API URL (which serves /api but not the SPA),
+    # strip the trailing path so we land on the SPA host root.
+    if base_url.endswith("/api"):
+        base_url = base_url[:-4]
+
+    try:
+        pdf_bytes = await _chromium_render_entities_pdf(
+            base_url=base_url,
+            estate_id=estate_id,
+            auth_token=token,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.exception(f"Chromium render failed for estate={estate_id}: {exc}")
+        raise HTTPException(status_code=500, detail=f"Render failed: {exc}") from exc
+
+    # Cache write — only on success, so a failed render can never blank
+    # out a previously-good capture.
+    s3_key = f"latest-pdfs/{current_user['id']}/entities_structures.pdf"
+    now_iso = datetime.now(timezone.utc).isoformat()
+    try:
+        await storage.upload_raw(pdf_bytes, s3_key, content_type="application/pdf")
+        await db.latest_pdfs.update_one(
+            {"user_id": current_user["id"], "pdf_type": "entities_structures"},
+            {
+                "$set": {
+                    "user_id": current_user["id"],
+                    "pdf_type": "entities_structures",
+                    "s3_key": s3_key,
+                    "title": "Entities & Structures",
+                    "subtitle": (estate or {}).get("name", "")[:200],
+                    "filename": "EntitiesAndStructures.pdf",
+                    "size_bytes": len(pdf_bytes),
+                    "updated_at": now_iso,
+                    # `server_render` distinguishes this from the legacy
+                    # `client_capture` and the now-removed `server_fallback`.
+                    # The binder's `ensure_*` helper preserves any non-
+                    # `server_fallback` row, so we're safe.
+                    "source": "server_render",
+                },
+                "$setOnInsert": {"created_at": now_iso},
+            },
+            upsert=True,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(f"Entities & Structures: cache write failed for user={current_user['id']}: {exc}")
+        # Bubble the failure so the caller knows the bytes weren't cached.
+        raise HTTPException(status_code=500, detail="Render succeeded but cache write failed") from exc
+
+    return {
+        "ok": True,
+        "size_bytes": len(pdf_bytes),
+        "updated_at": now_iso,
+        "source": "server_render",
+        "pdf_type": "entities_structures",
+    }

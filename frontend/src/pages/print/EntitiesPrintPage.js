@@ -137,6 +137,21 @@ export default function EntitiesPrintPage() {
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [estateName, setEstateName] = useState('');
   const [error, setError] = useState(null);
+  // `?serverRender=1` is set by the headless-Chromium worker
+  // (`services/pdf_renderer.py`). In that mode we strip every piece
+  // of screen-only chrome (toolbar, scroll bars, fade-in animations)
+  // and signal readiness via `window.__carryOnPrintReady = true` so
+  // the worker's `page.wait_for_function` can fire `page.pdf()` at
+  // the exact right moment. Regular human visits get the full
+  // interactive page as before.
+  const isServerRender = (() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('serverRender') === '1';
+    } catch {
+      return false;
+    }
+  })();
   // Page-1 orientation toggle. User picked landscape as the default
   // for their pitch deck (widest possible tree). Toggle button in
   // the screen-only toolbar lets them flip to portrait without a
@@ -313,40 +328,41 @@ export default function EntitiesPrintPage() {
     }
   }, [estateName, getAuthHeaders]);
 
-  // ── Single-action pipeline (May 22, 2026 user mandate) ────────────
-  // We used to have THREE generators racing on this page:
-  //   • a 3-second fire-and-forget auto-cache on mount
-  //   • a "Save PDF" button that downloaded + cached
-  //   • a "Print" button that called window.print() + cached
-  // The user (correctly) flagged this as wasteful and inconsistent
-  // with every other section of the platform, which has exactly
-  // ONE generator. We're consolidating: the Print button now does
-  // BOTH the browser-native print (the perfect PDF the user keeps
-  // on their device) AND the html2canvas upload to /pdfs/cache
-  // (which feeds the gold "Latest PDF" pill and the Binder). The
-  // user sees one button; the cache stays in sync with their
-  // explicit intent.
+  // ── Single-action pipeline (May 23, 2026 user mandate) ────────────
+  // The Print button does TWO things in parallel:
+  //   1. window.print() — opens the OS print dialog instantly so the
+  //      user gets the same perfect browser-native PDF they always had.
+  //   2. Fires `POST /api/financial/entities/<id>/render-pdf` in the
+  //      background. That endpoint spins up headless Chromium on the
+  //      backend pod, renders the SAME print page, and writes the
+  //      resulting vector PDF to S3 + `latest_pdfs` for the Estate
+  //      Binder to pull. Identical bytes to what the user just saved
+  //      to their device — no html2canvas, no rasterization, no
+  //      blank-page bug.
+  //
+  // The user sees ONE button. No "Save PDF" + "Print" + auto-cache
+  // race. Cache stays in sync with their explicit intent.
   const handlePrintClick = useCallback(() => {
-    // Browser-native print runs synchronously — the OS print dialog
-    // pops immediately. We don't await it, so the cache upload
-    // proceeds in parallel without blocking the print UX.
     try { window.print(); } catch { /* user dismissed the dialog */ }
     if (saving) return;
     setSaving(true);
     (async () => {
       try {
-        const blob = await _captureBlob();
-        await _postToBinderCache(blob);
+        await apiClient.post(
+          `${API_URL}/financial/entities/${estateId}/render-pdf`,
+          {},
+          { ...getAuthHeaders(), timeout: 45000 },
+        );
       } catch (err) {
         if (process.env.NODE_ENV !== 'production') {
           // eslint-disable-next-line no-console
-          console.warn('[EntitiesPrintPage] Print-triggered cache skipped:', err?.message);
+          console.warn('[EntitiesPrintPage] Server render skipped:', err?.message);
         }
       } finally {
         setSaving(false);
       }
     })();
-  }, [saving, _captureBlob, _postToBinderCache]);
+  }, [saving, estateId, getAuthHeaders]);
 
   // Compute layout + bbox once data lands.
   const layout = useMemo(() => {
@@ -517,6 +533,65 @@ export default function EntitiesPrintPage() {
       blocks: data.beneficiary_blocks || [],
     };
   }, [data, user, beneficiaries]);
+
+  // ── Server-render readiness signal ─────────────────────────────────
+  // The headless Chromium renderer polls `window.__carryOnPrintReady`.
+  // We set it once the layout has settled AND every avatar image
+  // (HTML <img> AND SVG <image>) inside the printable pages has loaded.
+  // We also stamp `<html data-print-orient="landscape|portrait">` so
+  // the worker can decide the page orientation from the DOM rather
+  // than guessing — keeps server and client in lockstep.
+  useEffect(() => {
+    if (!isServerRender) return undefined;
+    if (!data || !layout) return undefined;
+    let cancelled = false;
+    // Tag the root so the screen-only chrome CSS branches above kick in.
+    document.documentElement.setAttribute('data-server-render', '1');
+    document.documentElement.setAttribute(
+      'data-print-orient',
+      page1Orientation === 'landscape' ? 'landscape' : 'portrait',
+    );
+    (async () => {
+      // Two animation frames so React's commit + layout + paint have
+      // all flushed before we sample image readiness.
+      await new Promise((r) => requestAnimationFrame(() => r()));
+      await new Promise((r) => requestAnimationFrame(() => r()));
+      // Wait for every HTML <img> AND SVG <image> on the print
+      // surfaces to finish loading (or error). This is the exact same
+      // logic the legacy html2canvas pipeline used — preserved here
+      // because the headless browser respects image loads natively
+      // but we want a hard sync point before declaring ready.
+      const roots = pageRefs.current.filter(Boolean);
+      const imgs = [];
+      roots.forEach((root) => {
+        imgs.push(...Array.from(root.querySelectorAll('img, image')));
+      });
+      await Promise.all(
+        imgs.map((node) => {
+          if (node.tagName === 'IMG' && node.complete && node.naturalHeight > 0) return Promise.resolve();
+          return new Promise((resolve) => {
+            const done = () => {
+              node.removeEventListener('load', done);
+              node.removeEventListener('error', done);
+              resolve();
+            };
+            node.addEventListener('load', done, { once: true });
+            node.addEventListener('error', done, { once: true });
+            setTimeout(done, 6000); // hard timeout per image
+          });
+        }),
+      );
+      if (cancelled) return;
+      // Final paint flush then arm the flag. Chromium picks it up
+      // immediately via its `wait_for_function` poll.
+      requestAnimationFrame(() => {
+        window.__carryOnPrintReady = true;
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isServerRender, data, layout, page1Orientation]);
 
   // ── autoCache mode (May 22, 2026 user mandate: in-place Refresh) ──
   // Declared AFTER `layout` so its dep array doesn't reference
@@ -1309,6 +1384,19 @@ export default function EntitiesPrintPage() {
           box-sizing: border-box;
           color: #0f172a;
           width: 100%;
+        }
+        /* In ?serverRender=1 mode the page is being driven by a
+           headless Chromium for PDF capture. Strip every screen-only
+           affordance so the PDF doesn't carry margins, shadows, or
+           wrapper backgrounds we don't want in the binder. */
+        html[data-server-render="1"] .cfp-print-toolbar { display: none !important; }
+        html[data-server-render="1"] body,
+        html[data-server-render="1"] .cfp-print-screen-bg {
+          background: #ffffff !important;
+        }
+        html[data-server-render="1"] .cfp-print-page {
+          margin: 0 auto !important;
+          box-shadow: none !important;
         }
         .cfp-print-page-1 {
           max-width: ${page1Dims.pageW}in;
