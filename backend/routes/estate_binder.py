@@ -454,12 +454,30 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
     # again" affordance. Cached bytes stay in S3 / latest_pdfs.
     skipped_set = await _get_skipped_pdf_types(user_id)
 
-    # Pull all cached PDFs for this user in one query.
+    # Pull all cached PDFs for this user in one query. We project
+    # `source` too so we can auto-exclude legacy html2canvas captures
+    # of `entities_structures` from the binder (those produce the
+    # "blank avatar circles + ghost blank pages" the user saw on
+    # production until a server_render-quality PDF replaces them).
     cached_docs = await db.latest_pdfs.find(
         {"user_id": user_id},
-        {"_id": 0, "id": 1, "pdf_type": 1, "s3_key": 1, "title": 1, "subtitle": 1, "updated_at": 1},
+        {"_id": 0, "id": 1, "pdf_type": 1, "s3_key": 1, "title": 1, "subtitle": 1, "updated_at": 1, "source": 1},
     ).to_list(50)
     cached_map = {d["pdf_type"]: d for d in cached_docs}
+
+    # Sections whose cached row MUST come from the server-side
+    # Chromium render pipeline (source == "server_render") to be
+    # considered fit for the binder. Legacy / unknown sources are
+    # treated as if no cache existed — surfaced in `missing` so the
+    # user sees "Generate" instead of an embarrassing stale page.
+    _CHROMIUM_ONLY_TYPES = {"entities_structures"}
+
+    def _is_acceptable_cache(pdf_type_: str, meta_: dict | None) -> bool:
+        if not meta_:
+            return False
+        if pdf_type_ in _CHROMIUM_ONLY_TYPES:
+            return meta_.get("source") == "server_render"
+        return True
 
     # Walk SECTION_ORDER to preserve the curated binder flow.
     available: list[dict] = []
@@ -477,7 +495,7 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
                 }
             )
             continue
-        if meta:
+        if _is_acceptable_cache(pdf_type, meta):
             available.append(
                 {
                     "pdf_type": pdf_type,
@@ -819,9 +837,16 @@ async def estate_binder_manifest(current_user: dict = Depends(get_current_user))
     user_id = current_user["id"]
     cached_docs = await db.latest_pdfs.find(
         {"user_id": user_id, "pdf_type": {"$in": [s[0] for s in SECTION_ORDER]}},
-        {"_id": 0, "id": 1, "pdf_type": 1, "updated_at": 1},
+        {"_id": 0, "id": 1, "pdf_type": 1, "updated_at": 1, "source": 1},
     ).to_list(50)
     cached_map = {d["pdf_type"]: d for d in cached_docs}
+
+    # Match the binder generator: entities_structures is only fit for
+    # the binder when its cached source is the new Chromium pipeline.
+    # Legacy html2canvas captures get downgraded to "missing" so the
+    # frontend's manifest shows a "Generate" pill instead of bundling
+    # the stale page into the binder.
+    _CHROMIUM_ONLY_TYPES = {"entities_structures"}
     # Look up the user's primary estate ONCE so we can stamp a
     # per-type capture route (e.g. /financial/entities/<id>/print) on
     # each manifest item. The Binder preview's "Refresh" pill uses
@@ -860,7 +885,10 @@ async def estate_binder_manifest(current_user: dict = Depends(get_current_user))
             "capture_route": capture_route_map.get(pdf_type),
         }
         cached = cached_map.get(pdf_type)
-        if cached:
+        is_acceptable = bool(cached) and (
+            pdf_type not in _CHROMIUM_ONLY_TYPES or cached.get("source") == "server_render"
+        )
+        if cached and is_acceptable:
             # Freshness cue surfaced to the Binder preview manifest UI
             # so the user can see at a glance which sections in the
             # assembled binder are stale vs fresh, and one-tap deep-link
@@ -870,7 +898,7 @@ async def estate_binder_manifest(current_user: dict = Depends(get_current_user))
             # Skipped sections live in their own list so the frontend
             # can render them distinctly with an "Include again" CTA.
             skipped.append(item)
-        elif cached:
+        elif is_acceptable:
             available.append(item)
         else:
             missing.append(item)
