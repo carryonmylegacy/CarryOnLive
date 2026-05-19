@@ -37,10 +37,16 @@ const IDLE_OPTIONS = [
  * `pagehide` + idle handlers.
  */
 const PublicDeviceModeCard = () => {
-  const { token, refreshUser } = useAuth();
+  const { user, token, refreshUser } = useAuth();
   const [estate, setEstate] = useState(null);
   const [saving, setSaving] = useState(false);
 
+  // Re-fetch /estates whenever the AuthContext's effective PDM flag
+  // changes — that includes the sidebar's `PublicDeviceModeMenuButton`
+  // toggle, which fires `refreshUser()` after a successful patch. Was
+  // a bug (May 19, 2026): sidebar tap would flip the DB + AuthContext
+  // state but this card's local `estate` was fetched once at mount and
+  // never updated, so the Switch stayed stuck on the stale value.
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -55,7 +61,7 @@ const PublicDeviceModeCard = () => {
       }
     })();
     return () => { alive = false; };
-  }, [token]);
+  }, [token, user?.public_device_mode, user?.public_device_idle_seconds]);
 
   if (!estate) return null;
 

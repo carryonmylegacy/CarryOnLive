@@ -44,6 +44,11 @@ const PublicDeviceModeMenuButton = ({ flavor = 'sidebar', collapsed = false, onA
   // Fetch estates once when the component mounts. We need this to know
   // whether to render the dropdown or the direct-toggle path. The list
   // is small (typically 1–3 entries) so refetching is cheap.
+  //
+  // ALSO re-fetch whenever the AuthContext's effective PDM flag
+  // changes — that's how this button stays in sync when the user
+  // toggles PDM from the Settings → Public Device Mode slider while
+  // this button is still mounted (May 19, 2026 desync bug).
   const refreshEstates = useCallback(async () => {
     if (!token) return;
     try {
@@ -59,7 +64,7 @@ const PublicDeviceModeMenuButton = ({ flavor = 'sidebar', collapsed = false, onA
     }
   }, [token]);
 
-  useEffect(() => { refreshEstates(); }, [refreshEstates]);
+  useEffect(() => { refreshEstates(); }, [refreshEstates, user?.public_device_mode, user?.public_device_idle_seconds]);
 
   // Close the popover on outside-click.
   useEffect(() => {
