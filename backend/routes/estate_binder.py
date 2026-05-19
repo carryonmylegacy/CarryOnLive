@@ -709,12 +709,18 @@ async def estate_binder_manifest(current_user: dict = Depends(get_current_user))
         {"user_id": user_id, "pdf_type": {"$in": [s[0] for s in SECTION_ORDER]}},
         {"_id": 0, "id": 1, "pdf_type": 1, "updated_at": 1},
     ).to_list(50)
-    cached_set = {d["pdf_type"] for d in cached_docs}
+    cached_map = {d["pdf_type"]: d for d in cached_docs}
     available = []
     missing = []
     for pdf_type, display_title, route, route_label in SECTION_ORDER:
         item = {"pdf_type": pdf_type, "display_title": display_title, "route": route, "route_label": route_label}
-        if pdf_type in cached_set:
+        cached = cached_map.get(pdf_type)
+        if cached:
+            # Freshness cue surfaced to the Binder preview manifest UI
+            # so the user can see at a glance which sections in the
+            # assembled binder are stale vs fresh, and one-tap deep-link
+            # to refresh them.
+            item["updated_at"] = cached.get("updated_at")
             available.append(item)
         else:
             missing.append(item)

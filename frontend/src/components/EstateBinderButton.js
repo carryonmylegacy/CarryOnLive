@@ -97,6 +97,24 @@ const EstateBinderButton = () => {
       const blob = await res.blob();
       const pdfBlob = new Blob([blob], { type: 'application/pdf' });
       const url = URL.createObjectURL(pdfBlob);
+
+      // Fire-and-forget manifest fetch so the preview modal can show
+      // a per-section freshness row ("E&S · 3m ago · Refresh"). We
+      // intentionally don't block the preview open on this — the
+      // sections list lands a beat later and the modal upgrades in
+      // place. If manifest fetch fails, the modal still renders the
+      // binder PDF without the manifest row (graceful degrade).
+      let sections = [];
+      try {
+        const mres = await fetch(`${API_URL}/estate-binder/manifest`, { headers });
+        if (mres.ok) {
+          const mdata = await mres.json();
+          sections = mdata.available || [];
+        }
+      } catch {
+        /* non-fatal */
+      }
+
       window.dispatchEvent(
         new CustomEvent('carryon:open-pdf-preview', {
           detail: {
@@ -108,6 +126,7 @@ const EstateBinderButton = () => {
               includedHeader.split(',').filter(Boolean).length === 1 ? '' : 's'
             } · ${pageCount || '?'} pages`,
             shareEnabled: true,
+            sections,
           },
         }),
       );

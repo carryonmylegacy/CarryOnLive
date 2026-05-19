@@ -1,6 +1,55 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 (latest+3) — 📑 Per-section manifest inside the Estate Binder preview
+
+User mandate: "Yes, wire that." (referring to the per-section
+freshness manifest with inline Refresh deep-links inside the Binder
+preview modal).
+
+### What shipped
+
+#### Backend
+- `GET /api/estate-binder/manifest` now returns `updated_at` per
+  available section in addition to the existing `pdf_type`,
+  `display_title`, `route`, and `route_label` fields. Drives the
+  freshness cue inside the binder preview manifest UI.
+
+#### Frontend
+- `EstateBinderButton` fetches the manifest immediately after the
+  generate request succeeds and passes the `sections` array into
+  the `carryon:open-pdf-preview` event. Fire-and-forget — if the
+  manifest fetch fails the preview still renders, just without the
+  per-section row (graceful degrade).
+- `PdfPreviewModal` accepts `entry.sections` and renders a small
+  gold-tinted manifest panel between the header and the canvas:
+  - One row per section: `<section title> · <X ago>  [Refresh ↗]`
+  - The "Refresh" pill closes the modal AND navigates to that
+    section's page (from the manifest's `route` field), so the user
+    can re-trigger that section's cache in one tap.
+  - Empty/single-section PDFs (E&S standalone, IAC, etc.) DO NOT
+    show the manifest — it only renders for multi-section bundles
+    like the Binder.
+- Manifest chrome matches the standardized "Latest PDF" pill colors
+  for consistency (`rgba(212, 175, 55, 0.10)` background, `#7a5c00`
+  Refresh-pill text, `#0f172a` section title) — same WCAG AA
+  treatment used throughout the PDF Preview modal toolbar.
+
+### `data-testid`s
+- `pdf-preview-manifest`
+- `pdf-preview-manifest-row-<pdf_type>` (one per section)
+- `pdf-preview-manifest-refresh-<pdf_type>` (one Refresh button per row)
+
+### Verification
+- Manifest endpoint live-tested via curl as `info@carryon.us` —
+  returns 2 available sections (E&S, IAC) with correct
+  `updated_at` timestamps + 9 missing sections.
+- Housekeeping `--strict`: 0 WARN / 0 FAIL.
+- pytest: 8 passed / 1 skipped (binder + share suites).
+- Lint: all changed files clean.
+
+
+
 ## May 22, 2026 (latest+2) — 🎯 Standardized "Latest PDF" pill + unified PDF Preview chrome
 
 User mandate (pitch-prep UX polish):

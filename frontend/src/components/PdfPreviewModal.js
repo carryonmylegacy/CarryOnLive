@@ -15,12 +15,27 @@
  */
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, Printer, Download, AlertTriangle, Loader2, Share2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronLeft, Printer, Download, AlertTriangle, Loader2, Share2, RefreshCw } from 'lucide-react';
 import { isIOS } from '../utils/downloadFile';
 import ShareBinderModal from './ShareBinderModal';
 
+const _formatAgo = (iso) => {
+  if (!iso) return '';
+  const then = new Date(iso).getTime();
+  const diff = Math.max(0, Date.now() - then);
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+};
+
 const PdfPreviewModal = () => {
-  const [entry, setEntry] = useState(null); // { blob, url, filename, title, subtitle }
+  const [entry, setEntry] = useState(null); // { blob, url, filename, title, subtitle, sections }
+  const navigate = useNavigate();
   const canvasContainerRef = useRef(null);
   const wrapRef = useRef(null);
   const printIframeRef = useRef(null);
@@ -382,6 +397,62 @@ const PdfPreviewModal = () => {
             letter-spacing: 0.04em;
             text-transform: uppercase;
           }
+          .pdf-preview-modal .pdf-preview-manifest {
+            margin: 0 4px 10px;
+            padding: 8px 16px 10px;
+            background: rgba(212, 175, 55, 0.06);
+            border: 1px solid rgba(212, 175, 55, 0.18);
+            border-radius: 10px;
+            flex: 0 0 auto;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: #94a3b8;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            line-height: 1.3;
+            color: #0f172a;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-row .manifest-title {
+            font-weight: 700;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-row .manifest-ago {
+            color: #64748b;
+            font-weight: 500;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-row .manifest-refresh {
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #7a5c00;
+            background: rgba(212, 175, 55, 0.10);
+            border: 1px solid rgba(212, 175, 55, 0.35);
+            border-radius: 9999px;
+            padding: 3px 9px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 120ms ease, border-color 120ms ease;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-row .manifest-refresh:hover {
+            background: rgba(212, 175, 55, 0.20);
+            border-color: rgba(212, 175, 55, 0.55);
+          }
           .pdf-preview-modal .pdf-preview-canvas-wrap {
             flex: 1 1 auto;
             min-height: 0;
@@ -471,6 +542,38 @@ const PdfPreviewModal = () => {
           ) : null}
         </div>
 
+        {Array.isArray(entry.sections) && entry.sections.length > 0 && (
+          <div className="pdf-preview-manifest" data-testid="pdf-preview-manifest">
+            <div className="manifest-label">Sections in this binder</div>
+            <div className="manifest-rows">
+              {entry.sections.map((s) => {
+                const ago = _formatAgo(s.updated_at);
+                const route = s.route || '/dashboard';
+                return (
+                  <div
+                    key={s.pdf_type}
+                    className="manifest-row"
+                    data-testid={`pdf-preview-manifest-row-${s.pdf_type}`}
+                  >
+                    <span className="manifest-title">{s.display_title}</span>
+                    {ago && <span className="manifest-ago">· {ago}</span>}
+                    <button
+                      type="button"
+                      className="manifest-refresh"
+                      onClick={() => { handleClose(); navigate(route); }}
+                      title={`Open ${s.display_title} to regenerate its PDF`}
+                      data-testid={`pdf-preview-manifest-refresh-${s.pdf_type}`}
+                    >
+                      <RefreshCw size={11} />
+                      Refresh
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="pdf-preview-canvas-wrap" data-testid="pdf-preview-canvas-wrap" ref={wrapRef}>
           {renderState === 'loading' && (
             <div className="pdf-preview-loading" data-testid="pdf-preview-loading">
@@ -497,7 +600,7 @@ const PdfPreviewModal = () => {
         <ShareBinderModal open={shareOpen} onClose={() => setShareOpen(false)} />
       </div>
     );
-  }, [entry, printing, renderState, pageCount, shareOpen, handleClose, handleDownload]);
+  }, [entry, printing, renderState, pageCount, shareOpen, handleClose, handleDownload, navigate]);
 
   if (typeof document === 'undefined') return null;
   return createPortal(portalContent, document.body);
