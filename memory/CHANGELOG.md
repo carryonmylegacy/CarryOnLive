@@ -1,6 +1,82 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 (latest+5) — 🔄 In-place section Refresh + unified 4-button toolbar
+
+User mandate, three parts:
+1. Refresh pill should regenerate the section's PDF AND swap the
+   binder preview in place — not yank the user to the section page.
+2. The "Refresh" label was wrapping (the H of "Refresh" dropping to
+   a second line) when the row's title chewed up the horizontal
+   space.
+3. Back / Save PDF / Share / Print were three different visual
+   treatments. Standardize all four to identical chrome.
+
+### What shipped
+
+#### In-place section refresh (E&S, with infra for others)
+- `GET /api/estate-binder/manifest` now stamps a `capture_route`
+  field on each section. For sections that support the new
+  autoCache hook, it's a fully-qualified deep link like
+  `/financial/entities/<estate_id>/print?autoCache=1`. For sections
+  not yet wired, it's `null` (graceful fallback to legacy navigate
+  behavior — same UX as before).
+- `EntitiesPrintPage` honors `?autoCache=1`:
+  - Auto-fires the existing `_captureBlob` + `_postToBinderCache`
+    pipeline once the chart layout has rendered. No `window.print()`,
+    no toolbar interaction.
+  - On success/failure, postMessages the parent window with
+    `{ type: "carryon:section-cached", pdfType, ok, error }`.
+  - `targetOrigin` locked to `window.location.origin` — same-origin
+    only, no cross-origin leak.
+- `PdfPreviewModal` adds `handleSectionRefresh`:
+  - Spawns a hidden (1280×900) iframe pointed at the section's
+    `capture_route`.
+  - Listens for `carryon:section-cached` postMessage with matching
+    `pdfType`. Origin-checked.
+  - On success: POST `/estate-binder/generate` → swap modal's blob in
+    place (revoking the old URL), re-fetch the manifest so the row's
+    timestamp updates to "just now", trigger the existing render
+    pipeline via `setRenderState('loading')`.
+  - On error: alert, leave the modal as-is.
+  - 45-second timeout safety with cleanup.
+  - All Refresh pills disabled while one is in-flight (prevents
+    racing iframes). The active row swaps to `[Loader2] Refreshing…`.
+- Other section types fall back to the original navigate behavior —
+  zero regression. Extending in-place to a new section is a
+  one-line addition to `IN_PLACE_REFRESH_TYPES` + that page's
+  autoCache useEffect.
+
+#### Refresh button wrap fix
+- `.manifest-row .manifest-refresh` gets `white-space: nowrap` +
+  `flex-shrink: 0` so the pill text never wraps.
+- `.manifest-row .manifest-title` gets `min-width: 0` +
+  `flex-shrink: 1` + `text-overflow: ellipsis` so long titles
+  truncate gracefully instead of pushing the Refresh pill.
+- `.manifest-row` gets `min-width: 0` so it participates in flex
+  shrinkage.
+
+#### Toolbar button standardization (Back / Save PDF / Share / Print)
+- Old: Back was white-bg slate-text; Save/Share/Print were
+  cream-bg gold-text.
+- New: ALL FOUR use the same `#fffaf0` / `#7a5c00` / `#a87a00`
+  WCAG-AA pill chrome via merged
+  `.pdf-preview-back, .pdf-preview-print` selector.
+- Visual hierarchy retained via positioning: Back lives at the left
+  of the toolbar, the action group (Save → Share → Print) is pushed
+  right via `margin-left: auto` on the FIRST `.pdf-preview-print`
+  sibling.
+
+### Verification
+- pytest: 8 passed / 1 skipped (binder + share suites).
+- Housekeeping `--strict`: 0 WARN / 0 FAIL.
+- Lint: clean.
+- Manifest endpoint live-tested as `info@carryon.us` — returns
+  `capture_route` for `entities_structures` and `null` for the
+  other 11 sections (as designed).
+
+
+
 ## May 22, 2026 (latest+4) — 🎯 E&S print page consolidated to ONE generator (user mandate)
 
 User report (with three side-by-side screenshots):

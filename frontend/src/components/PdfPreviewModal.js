@@ -19,6 +19,14 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Printer, Download, AlertTriangle, Loader2, Share2, RefreshCw } from 'lucide-react';
 import { isIOS } from '../utils/downloadFile';
 import ShareBinderModal from './ShareBinderModal';
+import { API_URL } from '../config';
+
+// pdf_types that the modal can refresh IN-PLACE via a hidden
+// iframe + autoCache=1 query param. Other types fall back to the
+// "navigate to the section" behavior (the manifest's `route` field).
+// Extending this is a one-line addition once the destination print
+// page implements the autoCache useEffect + postMessage handshake.
+const IN_PLACE_REFRESH_TYPES = new Set(['entities_structures']);
 
 const _formatAgo = (iso) => {
   if (!iso) return '';
@@ -43,6 +51,123 @@ const PdfPreviewModal = () => {
   const [renderState, setRenderState] = useState('idle'); // 'idle' | 'loading' | 'ready' | 'error'
   const [pageCount, setPageCount] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
+  const [refreshingType, setRefreshingType] = useState(null);
+  const refreshIframeRef = useRef(null);
+  const refreshTimerRef = useRef(null);
+
+  // ── In-place "Refresh" for a binder section (May 22, 2026 mandate) ─
+  // Spawns a hidden iframe at the section's print page with
+  // `?autoCache=1`, listens for a `carryon:section-cached`
+  // postMessage from that page, then re-runs the binder generate
+  // endpoint and swaps the modal's PDF blob with the fresh one —
+  // all without the user leaving the preview. Other sections that
+  // haven't yet implemented the autoCache hook fall back to
+  // navigating to their page (graceful degrade — same UX as before).
+  const handleSectionRefresh = useCallback(async (section) => {
+    if (!section || refreshingType) return;
+    if (!IN_PLACE_REFRESH_TYPES.has(section.pdf_type) || !section.capture_route) {
+      // Graceful fallback: navigate (legacy behavior). Other section
+      // pages can opt-in to in-place by adding an autoCache useEffect
+      // mirroring EntitiesPrintPage's pattern.
+      handleClose();
+      navigate(section.route || '/dashboard');
+      return;
+    }
+
+    setRefreshingType(section.pdf_type);
+
+    // Build the hidden iframe.
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:absolute;left:-99999px;top:-99999px;width:1280px;height:900px;border:0;opacity:0;pointer-events:none;';
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.src = section.capture_route;
+    refreshIframeRef.current = iframe;
+
+    const cleanup = () => {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = null;
+      }
+      window.removeEventListener('message', onMessage);
+      try { iframe.parentNode?.removeChild(iframe); } catch { /* already detached */ }
+      refreshIframeRef.current = null;
+    };
+
+    const refreshBinderBlob = async () => {
+      // Re-call the binder generator so the modal's preview reflects
+      // the new cached section. Same endpoint EstateBinderButton hits.
+      const token = (typeof window !== 'undefined' && window.localStorage)
+        ? window.localStorage.getItem('carryon_token') : null;
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch(`${API_URL}/estate-binder/generate`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) throw new Error(`binder regen failed: ${res.status}`);
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/pdf')) throw new Error('binder regen returned non-PDF');
+      const blob = await res.blob();
+      const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+      const url = URL.createObjectURL(pdfBlob);
+      // Also refresh the manifest so the row timestamps update.
+      let nextSections = entry?.sections || [];
+      try {
+        const mres = await fetch(`${API_URL}/estate-binder/manifest`, { headers });
+        if (mres.ok) {
+          const mdata = await mres.json();
+          nextSections = mdata.available || [];
+        }
+      } catch { /* keep stale manifest — better than blanking it */ }
+      // Swap the preview blob in place. Reusing the open-pdf-preview
+      // event triggers the existing render pipeline for free.
+      setEntry((prev) => {
+        if (!prev) return prev;
+        try { URL.revokeObjectURL(prev.url); } catch { /* ignore */ }
+        return { ...prev, blob: pdfBlob, url, sections: nextSections };
+      });
+      setRenderState('loading');
+      setPageCount(0);
+    };
+
+    const onMessage = async (e) => {
+      if (e.origin !== window.location.origin) return;
+      const d = e.data || {};
+      if (d.type !== 'carryon:section-cached') return;
+      if (d.pdfType !== section.pdf_type) return;
+      cleanup();
+      if (!d.ok) {
+        setRefreshingType(null);
+        // eslint-disable-next-line no-alert
+        alert(`Couldn't refresh ${section.display_title}: ${d.error || 'unknown error'}`);
+        return;
+      }
+      try {
+        await refreshBinderBlob();
+      } catch (err) {
+        // eslint-disable-next-line no-alert
+        alert(`Section refreshed but binder regen failed: ${err?.message || 'unknown'}`);
+      } finally {
+        setRefreshingType(null);
+      }
+    };
+
+    window.addEventListener('message', onMessage);
+    refreshTimerRef.current = setTimeout(() => {
+      cleanup();
+      setRefreshingType(null);
+      // eslint-disable-next-line no-alert
+      alert(`Refresh of ${section.display_title} timed out. Try again from the section page.`);
+    }, 45000);
+
+    document.body.appendChild(iframe);
+  }, [refreshingType, navigate, entry?.sections]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Clean up the iframe + timer if the modal closes mid-refresh.
+  useEffect(() => () => {
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    const iframe = refreshIframeRef.current;
+    if (iframe?.parentNode) iframe.parentNode.removeChild(iframe);
+  }, []);
 
   // Global listener — any caller dispatches an event with the blob entry.
   useEffect(() => {
@@ -356,11 +481,11 @@ const PdfPreviewModal = () => {
           .pdf-preview-modal .pdf-preview-toolbar button[disabled] {
             opacity: 0.55; cursor: not-allowed;
           }
-          .pdf-preview-modal .pdf-preview-back {
-            background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1;
-          }
+          .pdf-preview-modal .pdf-preview-back,
           .pdf-preview-modal .pdf-preview-print {
             background: #fffaf0; color: #7a5c00; border: 1px solid #a87a00;
+          }
+          .pdf-preview-modal .pdf-preview-print {
             margin-left: auto;
           }
           .pdf-preview-modal .pdf-preview-print + .pdf-preview-print {
@@ -425,13 +550,25 @@ const PdfPreviewModal = () => {
             font-size: 12px;
             line-height: 1.3;
             color: #0f172a;
+            min-width: 0;
           }
           .pdf-preview-modal .pdf-preview-manifest .manifest-row .manifest-title {
             font-weight: 700;
+            /* Truncate long titles instead of pushing the Refresh pill
+               into a two-line wrap (May 22, 2026 user report: the "H"
+               of "Refresh" was wrapping to its own line because the
+               title chewed up the row). */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+            flex-shrink: 1;
           }
           .pdf-preview-modal .pdf-preview-manifest .manifest-row .manifest-ago {
             color: #64748b;
             font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
           }
           .pdf-preview-modal .pdf-preview-manifest .manifest-row .manifest-refresh {
             margin-left: auto;
@@ -448,6 +585,12 @@ const PdfPreviewModal = () => {
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
             transition: background 120ms ease, border-color 120ms ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-row .manifest-refresh:disabled {
+            opacity: 0.55;
+            cursor: progress;
           }
           .pdf-preview-modal .pdf-preview-manifest .manifest-row .manifest-refresh:hover {
             background: rgba(212, 175, 55, 0.20);
@@ -548,7 +691,8 @@ const PdfPreviewModal = () => {
             <div className="manifest-rows">
               {entry.sections.map((s) => {
                 const ago = _formatAgo(s.updated_at);
-                const route = s.route || '/dashboard';
+                const isRefreshing = refreshingType === s.pdf_type;
+                const supportsInPlace = IN_PLACE_REFRESH_TYPES.has(s.pdf_type) && !!s.capture_route;
                 return (
                   <div
                     key={s.pdf_type}
@@ -560,12 +704,17 @@ const PdfPreviewModal = () => {
                     <button
                       type="button"
                       className="manifest-refresh"
-                      onClick={() => { handleClose(); navigate(route); }}
-                      title={`Open ${s.display_title} to regenerate its PDF`}
+                      onClick={() => handleSectionRefresh(s)}
+                      disabled={!!refreshingType}
+                      title={supportsInPlace
+                        ? `Regenerate ${s.display_title} and refresh the binder in place`
+                        : `Open ${s.display_title} to regenerate its PDF`}
                       data-testid={`pdf-preview-manifest-refresh-${s.pdf_type}`}
                     >
-                      <RefreshCw size={11} />
-                      Refresh
+                      {isRefreshing
+                        ? <Loader2 size={11} className="animate-spin" />
+                        : <RefreshCw size={11} />}
+                      {isRefreshing ? 'Refreshing…' : 'Refresh'}
                     </button>
                   </div>
                 );
@@ -600,7 +749,7 @@ const PdfPreviewModal = () => {
         <ShareBinderModal open={shareOpen} onClose={() => setShareOpen(false)} />
       </div>
     );
-  }, [entry, printing, renderState, pageCount, shareOpen, handleClose, handleDownload, navigate]);
+  }, [entry, printing, renderState, pageCount, shareOpen, handleClose, handleDownload, navigate, refreshingType, handleSectionRefresh]);
 
   if (typeof document === 'undefined') return null;
   return createPortal(portalContent, document.body);

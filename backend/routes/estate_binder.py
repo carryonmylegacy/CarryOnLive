@@ -710,10 +710,38 @@ async def estate_binder_manifest(current_user: dict = Depends(get_current_user))
         {"_id": 0, "id": 1, "pdf_type": 1, "updated_at": 1},
     ).to_list(50)
     cached_map = {d["pdf_type"]: d for d in cached_docs}
+    # Look up the user's primary estate ONCE so we can stamp a
+    # per-type capture route (e.g. /financial/entities/<id>/print) on
+    # each manifest item. The Binder preview's "Refresh" pill uses
+    # this to open a hidden iframe with `?autoCache=1` and re-mint
+    # the cached PDF without dragging the user out of the modal.
+    primary_estate = await db.estates.find_one(
+        {"owner_id": user_id, "is_primary": True},
+        {"_id": 0, "id": 1},
+    ) or await db.estates.find_one(
+        {"owner_id": user_id},
+        {"_id": 0, "id": 1},
+    )
+    primary_estate_id = (primary_estate or {}).get("id")
+    capture_route_map = {
+        # Only `entities_structures` has the client-side autoCache hook
+        # wired today; other section pages can be extended to the same
+        # pattern without backend changes (we just add their path here
+        # once the frontend supports `?autoCache=1`).
+        "entities_structures": (
+            f"/financial/entities/{primary_estate_id}/print?autoCache=1" if primary_estate_id else None
+        ),
+    }
     available = []
     missing = []
     for pdf_type, display_title, route, route_label in SECTION_ORDER:
-        item = {"pdf_type": pdf_type, "display_title": display_title, "route": route, "route_label": route_label}
+        item = {
+            "pdf_type": pdf_type,
+            "display_title": display_title,
+            "route": route,
+            "route_label": route_label,
+            "capture_route": capture_route_map.get(pdf_type),
+        }
         cached = cached_map.get(pdf_type)
         if cached:
             # Freshness cue surfaced to the Binder preview manifest UI
