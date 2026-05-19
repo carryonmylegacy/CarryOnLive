@@ -187,21 +187,26 @@ const DashboardPage = () => {
         }
         if (tile.checklists) setChecklists(tile.checklists);
         if (tile.financialSummary) setFinancialSummary(tile.financialSummary);
-        // Cache-first reveal (Feb 16, 2026 user-perf report): users
-        // were staring at a skeleton splash for ~1s on every Dashboard
-        // navigation because the original logic deliberately HELD the
-        // splash until the network fetch confirmed — to avoid a
-        // visible "tile jumps from 0 → real" on first paint. In
-        // practice the cached values are already accurate the vast
-        // majority of the time (we just wrote them after the prior
-        // visit), so revealing immediately makes navigation feel
-        // instant. The network fetch below still runs and silently
-        // updates state; if any tile changes, it's a single sub-frame
-        // tick that's barely perceptible. The skeleton stays up only
-        // for the genuine first-load case (no cache yet).
-        revealedFromCache = true;
-        setLoading(false);
-        requestAnimationFrame(() => requestAnimationFrame(() => setDashboardReady(true)));
+        // Cache-first reveal (Feb 16, 2026 user-perf report): we used
+        // to hold the splash up until the network call returned so
+        // CFP/CCP values never jumped from 0 → real. The compromise:
+        // reveal IMMEDIATELY when the cached snapshot is complete
+        // (stats has CFP+CCP numerics + we have a cached financial
+        // summary). Otherwise hold the splash so the user never sees
+        // a stale 0 morph to a real number 1s later — the exact
+        // regression flagged on May 22, 2026.
+        const cacheComplete = !!(
+          tile.stats
+          && typeof tile.stats.ccp_plans === 'number'
+          && typeof tile.stats.ccp_drilled === 'number'
+          && tile.financialSummary
+          && tile.readiness
+        );
+        if (cacheComplete) {
+          revealedFromCache = true;
+          setLoading(false);
+          requestAnimationFrame(() => requestAnimationFrame(() => setDashboardReady(true)));
+        }
       }
     } catch { /* non-fatal */ }
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {

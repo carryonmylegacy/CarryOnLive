@@ -440,12 +440,12 @@ const PdfPreviewModal = () => {
               data-testid="pdf-preview-share"
               title="Create a private link to share this binder"
               style={{
-                background: 'linear-gradient(180deg, #d4af37 0%, #b8932a 100%)',
-                borderColor: '#d4af37',
-                color: '#0b1224',
+                background: 'linear-gradient(180deg, rgb(15, 23, 42) 0%, rgb(11, 18, 36) 100%)',
+                border: '1.5px solid #d4af37',
+                color: '#f5d471',
                 fontWeight: 700,
                 textShadow: 'none',
-                boxShadow: '0 2px 12px rgba(212, 175, 55, 0.35)',
+                boxShadow: '0 2px 10px rgba(11, 18, 36, 0.35), inset 0 0 0 1px rgba(245, 212, 113, 0.15)',
               }}
             >
               <Share2 size={14} /> Share

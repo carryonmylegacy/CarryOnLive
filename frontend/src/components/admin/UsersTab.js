@@ -248,7 +248,9 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   <span className="text-[11px] px-1.5 py-0.5 rounded font-bold capitalize" style={{ background: 'rgba(var(--gold-rgb), 0.1)', color: '#d4af37' }}>
                     {u.subscription.plan_name || u.subscription.plan_id}
                   </span>
-                  <span className="text-[11px] text-[var(--t5)] capitalize">{u.subscription.billing_cycle || 'monthly'}</span>
+                  <span className="text-[11px] text-[var(--t5)]" title="Billing cadence">
+                    · Billed {({ monthly: 'monthly', quarterly: 'quarterly', annual: 'annually', lifetime: 'once (lifetime)' })[u.subscription.billing_cycle] || 'monthly'}
+                  </span>
                   {u.subscription.beta_plan && <span className="text-[11px] text-purple-400">(beta)</span>}
                 </div>
               )}

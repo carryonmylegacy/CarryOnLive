@@ -537,10 +537,20 @@ export default function SubscriptionPaywall({ onDismiss }) {
             const hasActiveSub = activePlanId && activeSub?.status === 'active';
             const isActivePlan = hasActiveSub && activePlanId === plan.id;
             const isGreyedOut = hasActiveSub && !isActivePlan;
-            // Founder-granted attribution — surfaces only on the
-            // active tile, only when the source proves admin origin.
+            // Founder-granted attribution — surfaces on the matching
+            // tier card whenever EITHER (a) the active sub itself was
+            // synthesized from an admin grant (source flag), OR (b)
+            // the top-level `admin_granted_tier` (from /status) names
+            // this plan. Case (b) is critical when the user ALSO has
+            // a real/beta active sub on the same tier — the active
+            // sub wins for the "Your Plan" badge AND we still show
+            // "Granted by Founder" so the admin's action is visible.
             const subSource = activeSub?.source;
-            const isAdminGranted = hasActiveSub && (subSource === 'admin_override' || subSource === 'estate_admin_tier');
+            const adminGrantedTier = subStatus?.admin_granted_tier;
+            const isAdminGranted = (
+              (hasActiveSub && (subSource === 'admin_override' || subSource === 'estate_admin_tier'))
+              || (adminGrantedTier && adminGrantedTier === plan.id)
+            );
 
             // Optimistic "Processing payment…" overlay — shows the
             // moment the user is sent to Stripe, clears when the
@@ -630,12 +640,15 @@ export default function SubscriptionPaywall({ onDismiss }) {
                     Your Plan
                   </div>
                 )}
-                {/* Founder-granted attribution — sits flush under the
-                    "Your Plan" badge when the active sub came from an
-                    admin grant rather than a real payment. */}
-                {isActivePlan && isAdminGranted && (
+                {/* Founder-granted attribution — appears whenever an
+                    admin grant names this plan. When this is also the
+                    active sub it sits flush under the "Your Plan"
+                    badge; otherwise it docks at the same top slot so
+                    the admin's selection is clearly visible even when
+                    the user's billable sub is on a different tier. */}
+                {isAdminGranted && (
                   <div
-                    className="absolute top-7 left-1/2 -translate-x-1/2 text-[11px] font-medium px-2 py-0.5 rounded-b-md whitespace-nowrap flex items-center gap-1"
+                    className={`absolute ${isActivePlan ? 'top-7' : '-top-0'} left-1/2 -translate-x-1/2 text-[11px] font-medium px-2 py-0.5 rounded-b-md whitespace-nowrap flex items-center gap-1`}
                     style={{
                       color: '#22C993',
                       background: 'rgba(34, 201, 147, 0.10)',

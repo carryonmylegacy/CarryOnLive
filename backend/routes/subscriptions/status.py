@@ -96,27 +96,38 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
     # bug in two places. Now we synthesize a virtual "active" sub from
     # the override and the rest of the response naturally lights up.
     admin_assigned_tier = None
-    if not has_active_sub and current_user.get("role") in ("benefactor", "admin", "operator"):
-        admin_estate = await db.estates.find_one(
+    # First pass: ALWAYS resolve the admin-assigned tier from the
+    # estate row (independent of whether there is an active sub). This
+    # is surfaced as a top-level `admin_granted_tier` on the response
+    # so the paywall can render a "Granted by Founder" attribution
+    # even when the user ALSO has a real (or beta) active sub
+    # covering the same tier. Without this, the user's reported case
+    # (admin grants Premium → user already has active beta Premium →
+    # paywall shows "Your Plan" with no admin attribution at all) had
+    # zero visible signal that the admin had acted, which is the
+    # exact regression flagged on May 22, 2026.
+    if current_user.get("role") in ("benefactor", "admin", "operator"):
+        admin_estate_any = await db.estates.find_one(
             {"owner_id": current_user["id"], "verified_tier": {"$exists": True, "$ne": ""}},
             {"_id": 0, "id": 1, "verified_tier": 1},
         )
-        if admin_estate and admin_estate.get("verified_tier"):
-            admin_assigned_tier = admin_estate["verified_tier"]
-            # Synthesize a sub-shaped dict so every downstream code path
-            # (page render, plan-card highlight, BEC gate, etc.) treats
-            # this exactly like an active subscription.
-            sub = {
-                "id": f"admin-override-{admin_estate['id']}",
-                "user_id": current_user["id"],
-                "plan_id": admin_assigned_tier,
-                "billing_cycle": "annual",
-                "status": "active",
-                "source": "admin_override",
-                "current_period_start": datetime.now(timezone.utc).isoformat(),
-                "current_period_end": (datetime.now(timezone.utc) + timedelta(days=365)).isoformat(),
-            }
-            has_active_sub = True
+        if admin_estate_any and admin_estate_any.get("verified_tier"):
+            admin_assigned_tier = admin_estate_any["verified_tier"]
+    if not has_active_sub and admin_assigned_tier:
+        # No real/beta sub — synthesize a virtual active sub from the
+        # admin grant so the page renders the chosen tile as "Your Plan
+        # / Granted by Founder".
+        sub = {
+            "id": f"admin-override-{current_user['id']}",
+            "user_id": current_user["id"],
+            "plan_id": admin_assigned_tier,
+            "billing_cycle": "annual",
+            "status": "active",
+            "source": "admin_override",
+            "current_period_start": datetime.now(timezone.utc).isoformat(),
+            "current_period_end": (datetime.now(timezone.utc) + timedelta(days=365)).isoformat(),
+        }
+        has_active_sub = True
 
     # User has access if: beta mode OR per-user beta OR free override OR active subscription OR trial active
     has_access = is_beta or is_beta_tester or has_free_access or has_active_sub or trial.get("trial_active", False)
@@ -142,9 +153,8 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
     beneficiary_locked_tier = None
     estate_transitioned = False
     benefactor_id = None
+    ben_estate = None  # hoisted: read by the response builder below
     if current_user.get("role") == "beneficiary":
-        ben_estate = None
-
         # Method 1: Check `beneficiaries` collection (user_id or email match)
         ben_link = await db.beneficiaries.find_one({"user_id": current_user["id"]}, {"_id": 0, "estate_id": 1})
         if not ben_link:
@@ -288,4 +298,25 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         "beneficiary_locked_tier": beneficiary_locked_tier,
         "estate_transitioned": estate_transitioned,
         "paired_price": paired_price,
+        # Top-level admin attribution — always set whenever the founder
+        # has assigned a tier to this user's estate (benefactor) or the
+        # benefactor's estate (beneficiary). Read by the paywall to
+        # render "Granted by Founder" on the matching plan card even
+        # when the user ALSO has a real/beta active sub covering the
+        # same tier. Independent of `subscription.source` so paid
+        # customers don't lose the attribution.
+        "admin_granted_tier": (
+            admin_assigned_tier
+            if admin_assigned_tier
+            # For beneficiaries: surface the benefactor's
+            # admin-granted tier (mapped to ben_<tier>) so the
+            # paywall shows attribution there too.
+            else (
+                beneficiary_locked_tier
+                if (
+                    current_user.get("role") == "beneficiary" and ben_estate and (ben_estate.get("verified_tier") or "")  # noqa: E501
+                )
+                else None
+            )
+        ),
     }
