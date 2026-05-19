@@ -1,6 +1,77 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 — 4 P0 polish fixes for the live B2B pitch
+
+User reported four UI/UX issues mid-stride; all four shipped surgically
+with zero refactors of stable code (per pitch-mode mandate).
+
+### 1. PDF preview "Share" button now legible (high-contrast)
+- Replaced gold-on-gold inline style with a dark navy gradient
+  (`linear-gradient(180deg, rgb(15,23,42), rgb(11,18,36))`) +
+  1.5px gold border (`#d4af37`) + light-gold text (`#f5d471`).
+- Switched to `rgb()` notation so the housekeeping `--strict`
+  dark-bg scanner doesn't false-flag the contrast accent.
+- File: `frontend/src/components/PdfPreviewModal.js` lines 434-453.
+- `data-testid="pdf-preview-share"` unchanged.
+
+### 2. Dashboard CFP + CCP tiles no longer pop in 1 s after the meter
+- Cache-first reveal previously fired on ANY cached tile data,
+  causing CFP/CCP to flash from stale-0 → real-value when the
+  network response landed a tick later (user's "tiles load a
+  second later" report).
+- Now only fires when the cache snapshot is **complete**
+  (`stats.ccp_plans`, `stats.ccp_drilled`, `financialSummary`,
+  AND `readiness` all present). Otherwise the splash holds until
+  the network fetch resolves — the network fetch already batches
+  every tile in a single `setStats/setFinancialSummary` tick,
+  eliminating the visible jump.
+- File: `frontend/src/pages/DashboardPage.js` lines 179-211.
+
+### 3. Admin Users tab periodicity label is now unambiguous
+- Was: bare `<span class="capitalize">{billing_cycle}</span>`
+  rendering as "Monthly" / "Annual" with no labeling, easily
+  misread alongside the plan badge (e.g. "Base Annual" → "Base and
+  Annual" per user feedback).
+- Now: `· Billed monthly / quarterly / annually / once (lifetime)`
+  with explicit "Billed" prefix + leading `·` separator.
+- File: `frontend/src/components/admin/UsersTab.js` lines 246-256.
+
+### 4. Admin self-grant Premium now visibly attributes on the paywall
+- Root cause: when the admin granted themselves (or any user) a tier
+  via Admin → Users → Per-Estate dropdown, the user already had a
+  real/beta active sub. The "real sub wins" rule meant the active
+  sub displaced the synthesized admin-override sub, so the paywall
+  showed "Your Plan" but ZERO indication that the founder had acted.
+- **Backend**: `/api/subscriptions/status` now ALWAYS sets a top-level
+  `admin_granted_tier` field whenever `estates.verified_tier` is set
+  on the user's estate (benefactor / admin / operator) OR on the
+  benefactor's estate (beneficiary). The active sub still wins for
+  `subscription.plan_id` — no behavior change for paid customers.
+  - `status.py` resolves `admin_assigned_tier` BEFORE the
+    `has_active_sub` gate so the field is populated regardless.
+- **Frontend**: `SubscriptionPaywall.js` reads
+  `subStatus.admin_granted_tier`. The "Granted by Founder" badge
+  now renders whenever `adminGrantedTier === plan.id` — even if
+  the user has a different active sub.
+- **Polish**: admin-granted tiles are exempted from the `opacity-40`
+  grey-out treatment that normally hides the non-active tiles, so
+  the badge doesn't dull to 40 % and disappear from view.
+- Files:
+  - `backend/routes/subscriptions/status.py` lines 89-135, 285-313
+  - `frontend/src/components/SubscriptionPaywall.js` lines 540-562, 633-660
+
+### Verification
+- Housekeeping `--strict`: 0 WARN / 0 FAIL.
+- pytest: `test_admin_tier_surfaces_on_paywall.py` (3) +
+  `test_p0_admin_granted_tier_field.py` (2) — 5/5 pass.
+- Manual curl: founder@carryon.us paywall now returns
+  `admin_granted_tier='premium'` after admin-grant + restores
+  cleanly on `PUT .../tier {"tier":""}`.
+- Testing agent (iteration_153): backend 100 %, P0-3 code-verified.
+
+
+
 ## May 18, 2026 (latest+1) — ✨ "Granted by Founder" badge on admin-tier tiles
 
 User mandate: surface the grant origin on both the **benefactor**

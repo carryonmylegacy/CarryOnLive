@@ -536,7 +536,6 @@ export default function SubscriptionPaywall({ onDismiss }) {
             const activeBilling = activeSub?.billing_cycle;
             const hasActiveSub = activePlanId && activeSub?.status === 'active';
             const isActivePlan = hasActiveSub && activePlanId === plan.id;
-            const isGreyedOut = hasActiveSub && !isActivePlan;
             // Founder-granted attribution — surfaces on the matching
             // tier card whenever EITHER (a) the active sub itself was
             // synthesized from an admin grant (source flag), OR (b)
@@ -551,6 +550,12 @@ export default function SubscriptionPaywall({ onDismiss }) {
               (hasActiveSub && (subSource === 'admin_override' || subSource === 'estate_admin_tier'))
               || (adminGrantedTier && adminGrantedTier === plan.id)
             );
+            // Grey-out the non-active tier cards when the user is
+            // already subscribed — EXCEPT when this card is the one
+            // the founder admin-granted them (we keep it bright so the
+            // "Granted by Founder" attribution doesn't fade to 40%
+            // opacity and disappear visually).
+            const isGreyedOut = hasActiveSub && !isActivePlan && !isAdminGranted;
 
             // Optimistic "Processing payment…" overlay — shows the
             // moment the user is sent to Stripe, clears when the
