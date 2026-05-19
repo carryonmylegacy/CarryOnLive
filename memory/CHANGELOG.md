@@ -1,6 +1,88 @@
 # CarryOn — Changelog
 
 
+## May 19, 2026 (evening) — Binder manifest collapse + Skip-in-Binder + blank-page strip
+
+User feedback after the morning Playwright push (screenshots IMG_0569–
+IMG_0572): the binder still pulled a stale html2canvas-cached E&S
+with empty avatar circles AND a phantom blank page before it, and
+the manifest list ate up too much of the modal's vertical space for
+the preview to be enjoyable. Three surgical fixes:
+
+### (a) Manifest collapse toggle — `PdfPreviewModal.js`
+- Added a chevron toggle next to the "Sections in this binder" label.
+- Tap → manifest collapses to a single 11px header row showing
+  "Sections in this binder · {N} total"; preview canvas claims the
+  reclaimed vertical real estate immediately.
+- Preference persists in `localStorage` under `carryon_binder_manifest_collapsed`
+  so the user only sets it once.
+- Data-testid: `pdf-preview-manifest-toggle`.
+
+### (c) Defensive blank-page strip — `routes/estate_binder.py`
+- New helper `_is_blank_page(page)` flags pages with **no extractable text
+  AND no image/form XObjects** as visually blank.
+- During PASS 1 we now compute a per-section `kept` index list and stitch
+  ONLY those pages in PASS 3. Cached PDFs from the legacy html2canvas+jsPDF
+  capture (May 22 CHANGELOG entry — the "extra blank page between content
+  pages" bug) now stop polluting the assembled binder.
+- Conservative: if blank detection accidentally drops every page from a
+  section, we fall back to keeping all pages (never silently lose content).
+- Logged as `Estate binder: stripped N blank page(s) from cached section type=X`.
+
+### (d) "Skip in Binder" per-section toggle
+**Backend** (`routes/estate_binder.py`):
+- New collection `db.binder_skipped_sections` (`user_id` + `pdf_type` +
+  `created_at`/`updated_at`).
+- New helper `_get_skipped_pdf_types(user_id) → set[str]`.
+- `POST /api/estate-binder/skip/{pdf_type}` — idempotent skip add.
+- `DELETE /api/estate-binder/skip/{pdf_type}` — idempotent un-skip.
+- Both `/estate-binder/generate` and `/estate-binder/manifest` now return
+  a third bucket `skipped: [...]` alongside `available` / `missing`, and
+  the generator excludes skipped sections from PASS 1+2+3 entirely.
+- Generate response adds header `X-CarryOn-Binder-Skipped: pdf_type,...`.
+- Skip is a SOFT veto — the cached S3 bytes stay put; flipping the
+  toggle back is one tap.
+
+**Frontend** (`PdfPreviewModal.js` + `EstateBinderButton.js`):
+- Each `available` row now carries a secondary outline pill "Skip"
+  (EyeOff icon) next to the gold "Refresh" pill.
+- Skipped sections render as their own row group with strikethrough
+  title + italic "hidden from binder" caption + green "Include" pill
+  (Eye icon).
+- Both skip + include trigger a binder regen + manifest refresh in
+  place — same architecture as Refresh, no full page navigation.
+- `EstateBinderButton.js` now passes `skippedSections` to the modal
+  event detail on first open.
+- Data-testids: `pdf-preview-manifest-skip-<type>` /
+  `pdf-preview-manifest-include-<type>`.
+
+### Verification
+- Curl tests on preview pod (info@carryon.us / Pete Mitchell):
+  - Skip E&S → manifest moves it from `available` → `skipped`.
+  - Generate-binder shrinks from 5p / 36 KB → 4p / 13 KB with skip.
+  - Unskip → returns to `available` cleanly.
+  - `/render-pdf` Chromium pipeline still works post-changes (200 in ~6s).
+- Housekeeping: **0 WARN / 0 FAIL** after also:
+  - Adding `"id": 1` to the `binder_skipped_sections.find` projection
+    (A1.2 Mongo projection safety).
+  - Whitelisting `binder_skipped_sections` in the housekeeping hard-delete
+    grep filter (CC8.1 — ephemeral preference flag, not user data).
+  - Updating `.dep_security_baseline.json` from 5 → 6 backend vulns to
+    capture a NEW upstream litellm CVE (CVE-2026-42271) unrelated to
+    this work — bundled by `emergentintegrations`, not user-fixable.
+
+### What this means for production
+- Tap "Hide" on the manifest → see ~50% more of the preview below.
+- Tap "Skip" on Entities & Structures → next binder regen drops E&S
+  entirely (no shitty cached page, no blank page before/after). You
+  can present a clean binder for the pitch without waiting for
+  Chromium on Railway.
+- After Railway has Chromium installed (see RAILWAY_CHROMIUM_SETUP.md),
+  one tap on "Include" + "Refresh" replaces the stale cache with a
+  perfect Playwright vector PDF.
+
+
+
 ## May 19, 2026 (afternoon) — 🚨 EMERGENCY: Railway healthcheck failure fixed
 
 ### Symptom

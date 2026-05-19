@@ -125,12 +125,14 @@ const EstateBinderButton = ({ lastGeneratedAt: lastGeneratedAtProp } = {}) => {
       // in-place iframe refresh flow.
       let sections = [];
       let missingSections = [];
+      let skippedSections = [];
       try {
         const mres = await fetch(`${API_URL}/estate-binder/manifest`, { headers });
         if (mres.ok) {
           const mdata = await mres.json();
           sections = mdata.available || [];
           missingSections = mdata.missing || [];
+          skippedSections = mdata.skipped || [];
         }
       } catch {
         /* non-fatal */
@@ -149,6 +151,7 @@ const EstateBinderButton = ({ lastGeneratedAt: lastGeneratedAtProp } = {}) => {
             shareEnabled: true,
             sections,
             missingSections,
+            skippedSections,
           },
         }),
       );

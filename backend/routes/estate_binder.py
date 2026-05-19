@@ -107,6 +107,63 @@ def _format_date(dt: str | datetime | None) -> str:
         return ""
 
 
+def _is_blank_page(page) -> bool:
+    """Conservatively detect a 'visually blank' PDF page.
+
+    A page is treated as blank when it has NO extractable text AND
+    no embedded image/form XObjects. This catches the legacy
+    html2canvas+jsPDF "extra blank page between content pages" bug
+    (CHANGELOG May 22, 2026) that lingers in old cached section PDFs
+    on production. We only strip pages we are CONFIDENT are empty —
+    pages with even a single XObject are kept untouched so we never
+    eat a chart-only / photo-only page by accident.
+    """
+    try:
+        text = (page.extract_text() or "").strip()
+        if text:
+            return False
+    except Exception:  # noqa: BLE001
+        # If text extraction errors out, assume non-blank (safer).
+        return False
+    # Inspect the page resources for any image / form XObject.
+    try:
+        resources = page.get("/Resources")
+        if resources is not None:
+            res_obj = resources.get_object() if hasattr(resources, "get_object") else resources
+            xobjects = res_obj.get("/XObject") if hasattr(res_obj, "get") else None
+            if xobjects is not None:
+                xo = xobjects.get_object() if hasattr(xobjects, "get_object") else xobjects
+                # Any XObject reference = something visual on the page.
+                try:
+                    if len(xo) > 0:
+                        return False
+                except TypeError:
+                    return False
+    except Exception:  # noqa: BLE001
+        # Resource inspection failed — be safe and keep the page.
+        return False
+    return True
+
+
+async def _get_skipped_pdf_types(user_id: str) -> set[str]:
+    """Return the set of section pdf_types the user has chosen to skip in
+    their binder. Skip rows live in `db.binder_skipped_sections`,
+    keyed by (user_id, pdf_type). Skipping is a soft veto — the
+    cached PDF stays in `latest_pdfs` so the user can include the
+    section again with one tap.
+    """
+    try:
+        cursor = db.binder_skipped_sections.find(
+            {"user_id": user_id},
+            {"_id": 0, "id": 1, "pdf_type": 1},
+        )
+        rows = await cursor.to_list(50)
+        return {r["pdf_type"] for r in rows if r.get("pdf_type")}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(f"Failed to load binder skip list for user={user_id}: {exc}")
+        return set()
+
+
 def _build_title_and_toc_pdf(
     *,
     user_name: str,
@@ -391,6 +448,12 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
     except Exception as exc:  # noqa: BLE001
         logger.warning(f"Binder: E&S server fallback failed for user={user_id}: {exc}")
 
+    # Honor the user's "Skip in Binder" preferences before any heavy
+    # PDF work — skipped sections are simply omitted from `available`
+    # and surfaced separately so the frontend can offer an "Include
+    # again" affordance. Cached bytes stay in S3 / latest_pdfs.
+    skipped_set = await _get_skipped_pdf_types(user_id)
+
     # Pull all cached PDFs for this user in one query.
     cached_docs = await db.latest_pdfs.find(
         {"user_id": user_id},
@@ -401,8 +464,19 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
     # Walk SECTION_ORDER to preserve the curated binder flow.
     available: list[dict] = []
     missing: list[dict] = []
+    skipped: list[dict] = []
     for pdf_type, display_title, route, route_label in SECTION_ORDER:
         meta = cached_map.get(pdf_type)
+        if pdf_type in skipped_set:
+            skipped.append(
+                {
+                    "pdf_type": pdf_type,
+                    "display_title": display_title,
+                    "route": route,
+                    "route_label": route_label,
+                }
+            )
+            continue
         if meta:
             available.append(
                 {
@@ -432,6 +506,7 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
                 "estate_name": estate_name,
                 "available": [],
                 "missing": missing,
+                "skipped": skipped,
                 "message": "Generate a PDF from any section first, then come back to assemble your binder.",
             }
         )
@@ -439,7 +514,16 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
     # ── PASS 1: read each cached PDF, count pages, compute start pages.
     # We need this BEFORE rendering the TOC because the TOC has to
     # cite the page numbers correctly.
+    #
+    # We also strip "visually blank" pages from each cached PDF here
+    # (see `_is_blank_page` for the safety guard). The legacy
+    # html2canvas+jsPDF capture used by the old client-side print
+    # path emitted an extra blank page between content pages —
+    # leftover cached copies on production show that bug as random
+    # blanks inside the binder. Stripping is conservative: only
+    # pages with NO text AND NO image XObjects get dropped.
     section_pdf_bytes: dict[str, bytes] = {}
+    section_kept_indices: dict[str, list[int]] = {}
     section_page_counts: dict[str, int] = {}
     first_page_size: tuple[float, float] | None = None  # (width, height) in points
 
@@ -453,18 +537,40 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
             continue
         try:
             reader = PdfReader(io.BytesIO(blob))
-            n = len(reader.pages)
-            if n <= 0:
+            total_pages = len(reader.pages)
+            if total_pages <= 0:
                 continue
+            # Determine which pages to keep (non-blank).
+            kept: list[int] = []
+            for idx in range(total_pages):
+                try:
+                    if not _is_blank_page(reader.pages[idx]):
+                        kept.append(idx)
+                except Exception:  # noqa: BLE001
+                    # If detection fails, keep the page — never silently
+                    # eat content.
+                    kept.append(idx)
+            if not kept:
+                # All pages looked blank — that's almost certainly a
+                # detection false-positive on a heavily-graphical page.
+                # Fall back to keeping everything so we never produce
+                # a binder with a missing section.
+                kept = list(range(total_pages))
+            if len(kept) < total_pages:
+                logger.info(
+                    f"Estate binder: stripped {total_pages - len(kept)} blank page(s) "
+                    f"from cached section type={section['pdf_type']} user={user_id}"
+                )
             if first_page_size is None:
-                pg = reader.pages[0]
+                pg = reader.pages[kept[0]]
                 # mediabox returns RectangleObject (floats already in points)
                 first_page_size = (float(pg.mediabox.width), float(pg.mediabox.height))
         except Exception as exc:  # noqa: BLE001
             logger.warning(f"Estate binder: PDF parse failed for user={user_id} type={section['pdf_type']}: {exc}")
             continue
         section_pdf_bytes[section["pdf_type"]] = blob
-        section_page_counts[section["pdf_type"]] = n
+        section_kept_indices[section["pdf_type"]] = kept
+        section_page_counts[section["pdf_type"]] = len(kept)
 
     # Filter `available` to only those that actually parsed cleanly.
     available = [s for s in available if s["pdf_type"] in section_page_counts]
@@ -475,6 +581,7 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
                 "estate_name": estate_name,
                 "available": [],
                 "missing": missing,
+                "skipped": skipped,
                 "message": "Your cached PDFs couldn't be read. Please regenerate any section's PDF.",
             }
         )
@@ -504,14 +611,18 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
         available_sections=available,
     )
 
-    # ── PASS 3: stitch it all together.
+    # ── PASS 3: stitch it all together. We re-use the per-section
+    # `kept` index list from PASS 1 so blank pages stay stripped.
     writer = PdfWriter()
     try:
         for page in PdfReader(io.BytesIO(cover_toc_bytes)).pages:
             writer.add_page(page)
         for section in available:
-            for page in PdfReader(io.BytesIO(section_pdf_bytes[section["pdf_type"]])).pages:
-                writer.add_page(page)
+            kept = section_kept_indices.get(section["pdf_type"], [])
+            reader = PdfReader(io.BytesIO(section_pdf_bytes[section["pdf_type"]]))
+            for idx in kept:
+                if 0 <= idx < len(reader.pages):
+                    writer.add_page(reader.pages[idx])
     except Exception as exc:  # noqa: BLE001
         logger.exception(f"Estate binder stitch failed for user={user_id}")
         raise HTTPException(status_code=500, detail="Failed to assemble binder PDF") from exc
@@ -691,6 +802,7 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
         "Content-Disposition": 'inline; filename="estate_binder.pdf"',
         "X-CarryOn-Binder-Included": ",".join(s["pdf_type"] for s in available),
         "X-CarryOn-Binder-Missing": ",".join(m["pdf_type"] for m in missing),
+        "X-CarryOn-Binder-Skipped": ",".join(s["pdf_type"] for s in skipped),
         "X-CarryOn-Binder-Page-Count": str(final_page_count),
         "Cache-Control": "private, max-age=60",
     }
@@ -737,6 +849,8 @@ async def estate_binder_manifest(current_user: dict = Depends(get_current_user))
     }
     available = []
     missing = []
+    skipped = []
+    skipped_set = await _get_skipped_pdf_types(user_id)
     for pdf_type, display_title, route, route_label in SECTION_ORDER:
         item = {
             "pdf_type": pdf_type,
@@ -752,7 +866,64 @@ async def estate_binder_manifest(current_user: dict = Depends(get_current_user))
             # assembled binder are stale vs fresh, and one-tap deep-link
             # to refresh them.
             item["updated_at"] = cached.get("updated_at")
+        if pdf_type in skipped_set:
+            # Skipped sections live in their own list so the frontend
+            # can render them distinctly with an "Include again" CTA.
+            skipped.append(item)
+        elif cached:
             available.append(item)
         else:
             missing.append(item)
-    return {"available": available, "missing": missing, "can_generate": len(available) > 0}
+    return {
+        "available": available,
+        "missing": missing,
+        "skipped": skipped,
+        "can_generate": len(available) > 0,
+    }
+
+
+@router.post("/estate-binder/skip/{pdf_type}")
+async def estate_binder_skip_section(
+    pdf_type: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Mark a section as 'skip in binder' for the current user.
+
+    Soft veto — the section's cached PDF stays in `latest_pdfs` so
+    the user can include it again with one tap. Idempotent.
+    """
+    valid_types = {s[0] for s in SECTION_ORDER}
+    if pdf_type not in valid_types:
+        raise HTTPException(status_code=400, detail=f"Unknown section type: {pdf_type}")
+    now_iso = datetime.now(timezone.utc).isoformat()
+    await db.binder_skipped_sections.update_one(
+        {"user_id": current_user["id"], "pdf_type": pdf_type},
+        {
+            "$set": {
+                "user_id": current_user["id"],
+                "pdf_type": pdf_type,
+                "updated_at": now_iso,
+            },
+            "$setOnInsert": {"created_at": now_iso},
+        },
+        upsert=True,
+    )
+    return {"ok": True, "pdf_type": pdf_type, "skipped": True}
+
+
+@router.delete("/estate-binder/skip/{pdf_type}")
+async def estate_binder_unskip_section(
+    pdf_type: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Remove the skip flag — include the section in the binder again.
+
+    Idempotent — succeeds even if no skip record exists.
+    """
+    valid_types = {s[0] for s in SECTION_ORDER}
+    if pdf_type not in valid_types:
+        raise HTTPException(status_code=400, detail=f"Unknown section type: {pdf_type}")
+    await db.binder_skipped_sections.delete_one(
+        {"user_id": current_user["id"], "pdf_type": pdf_type},
+    )
+    return {"ok": True, "pdf_type": pdf_type, "skipped": False}

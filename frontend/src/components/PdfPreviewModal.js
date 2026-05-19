@@ -16,10 +16,14 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Printer, Download, AlertTriangle, Loader2, Share2, RefreshCw } from 'lucide-react';
+import { ChevronLeft, Printer, Download, AlertTriangle, Loader2, Share2, RefreshCw, EyeOff, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { isIOS } from '../utils/downloadFile';
 import ShareBinderModal from './ShareBinderModal';
 import { API_URL } from '../config';
+
+// LocalStorage key for remembering the user's "collapse manifest"
+// preference across binder opens — they pick once, we honor it forever.
+const MANIFEST_COLLAPSED_KEY = 'carryon_binder_manifest_collapsed';
 
 // Sections that support in-place server-side regeneration. Each
 // entry maps a `pdf_type` to a builder that returns the absolute API
@@ -63,6 +67,110 @@ const PdfPreviewModal = () => {
   const [pageCount, setPageCount] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
   const [refreshingType, setRefreshingType] = useState(null);
+  const [skippingType, setSkippingType] = useState(null);
+  // Persistent collapse state for the manifest — frees up screen
+  // real estate for the actual PDF preview below it.
+  const [manifestCollapsed, setManifestCollapsed] = useState(() => {
+    try {
+      return window.localStorage.getItem(MANIFEST_COLLAPSED_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const toggleManifestCollapsed = useCallback(() => {
+    setManifestCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(MANIFEST_COLLAPSED_KEY, next ? '1' : '0');
+      } catch { /* localStorage unavailable */ }
+      return next;
+    });
+  }, []);
+
+  // ── Helper: regen the binder + refetch the manifest after any
+  // mutation (refresh, skip, unskip). Re-used by both the Refresh
+  // handler and the Skip / Include-again handlers so the modal
+  // always reflects the post-mutation state with no manual page
+  // reload from the user.
+  const _regenBinderInPlace = useCallback(async (authHeaders) => {
+    const binderRes = await fetch(`${API_URL}/estate-binder/generate`, {
+      method: 'POST',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    });
+    if (!binderRes.ok) throw new Error(`binder regen ${binderRes.status}`);
+    const ct = binderRes.headers.get('content-type') || '';
+    let nextSections = entry?.sections || [];
+    let nextMissing = entry?.missingSections || [];
+    let nextSkipped = entry?.skippedSections || [];
+    try {
+      const mres = await fetch(`${API_URL}/estate-binder/manifest`, { headers: authHeaders });
+      if (mres.ok) {
+        const mdata = await mres.json();
+        nextSections = mdata.available || [];
+        nextMissing = mdata.missing || [];
+        nextSkipped = mdata.skipped || [];
+      }
+    } catch { /* keep stale manifest — better than blanking it */ }
+
+    if (ct.includes('application/pdf')) {
+      const blob = await binderRes.blob();
+      const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+      const url = URL.createObjectURL(pdfBlob);
+      setEntry((prev) => {
+        if (!prev) return prev;
+        try { URL.revokeObjectURL(prev.url); } catch { /* ignore */ }
+        return {
+          ...prev,
+          blob: pdfBlob,
+          url,
+          sections: nextSections,
+          missingSections: nextMissing,
+          skippedSections: nextSkipped,
+        };
+      });
+      setRenderState('loading');
+      setPageCount(0);
+    } else {
+      // Empty-binder JSON case — manifest still updates so the user
+      // can see what's left to skip / un-skip.
+      setEntry((prev) => prev ? {
+        ...prev,
+        sections: nextSections,
+        missingSections: nextMissing,
+        skippedSections: nextSkipped,
+      } : prev);
+    }
+  }, [entry?.sections, entry?.missingSections, entry?.skippedSections]);
+
+  // ── Skip / Include-again handler (May 19, 2026 user mandate) ──────
+  // Skipping a section soft-vetos it from the binder — the cached
+  // PDF stays in S3 + latest_pdfs, so the user can include it again
+  // with one tap. Solves the immediate pain of a stale/ugly cached
+  // E&S sitting in the binder before Chromium is installed on prod.
+  const handleSectionSkipToggle = useCallback(async (section, skip) => {
+    if (!section || skippingType) return;
+    setSkippingType(section.pdf_type);
+    const token = (typeof window !== 'undefined' && window.localStorage)
+      ? window.localStorage.getItem('carryon_token') : null;
+    const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+    try {
+      const url = `${API_URL}/estate-binder/skip/${encodeURIComponent(section.pdf_type)}`;
+      const skipRes = await fetch(url, {
+        method: skip ? 'POST' : 'DELETE',
+        headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      });
+      if (!skipRes.ok) {
+        const detail = await skipRes.text().catch(() => '');
+        throw new Error(`skip ${skipRes.status}: ${detail.slice(0, 200)}`);
+      }
+      await _regenBinderInPlace(authHeaders);
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      alert(`Couldn't ${skip ? 'skip' : 'include'} ${section.display_title}: ${err?.message || 'unknown error'}`);
+    } finally {
+      setSkippingType(null);
+    }
+  }, [skippingType, _regenBinderInPlace]);
 
   // ── In-place "Refresh" for a binder section (May 23, 2026 mandate) ─
   // For sections registered in `SERVER_REFRESH_ENDPOINTS`, we POST to
@@ -123,12 +231,14 @@ const PdfPreviewModal = () => {
       // 3) Refresh the manifest so timestamps + missing-list update.
       let nextSections = entry?.sections || [];
       let nextMissing = entry?.missingSections || [];
+      let nextSkipped = entry?.skippedSections || [];
       try {
         const mres = await fetch(`${API_URL}/estate-binder/manifest`, { headers: authHeaders });
         if (mres.ok) {
           const mdata = await mres.json();
           nextSections = mdata.available || [];
           nextMissing = mdata.missing || [];
+          nextSkipped = mdata.skipped || [];
         }
       } catch { /* keep stale manifest — better than blanking it */ }
 
@@ -137,7 +247,14 @@ const PdfPreviewModal = () => {
       setEntry((prev) => {
         if (!prev) return prev;
         try { URL.revokeObjectURL(prev.url); } catch { /* ignore */ }
-        return { ...prev, blob: pdfBlob, url, sections: nextSections, missingSections: nextMissing };
+        return {
+          ...prev,
+          blob: pdfBlob,
+          url,
+          sections: nextSections,
+          missingSections: nextMissing,
+          skippedSections: nextSkipped,
+        };
       });
       setRenderState('loading');
       setPageCount(0);
@@ -510,8 +627,41 @@ const PdfPreviewModal = () => {
             border-radius: 10px;
             flex: 0 0 auto;
           }
+          .pdf-preview-modal .pdf-preview-manifest.manifest-collapsed {
+            padding: 6px 12px 6px;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin-bottom: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+          }
+          .pdf-preview-modal .pdf-preview-manifest.manifest-collapsed .manifest-toggle {
+            margin-bottom: 0;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-toggle:hover {
+            color: #7a5c00;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-toggle-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: inherit;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+          }
           .pdf-preview-modal .pdf-preview-manifest .manifest-label {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 700;
             color: #94a3b8;
             letter-spacing: 0.06em;
@@ -584,6 +734,45 @@ const PdfPreviewModal = () => {
           .pdf-preview-modal .pdf-preview-manifest .manifest-row .manifest-refresh:hover {
             background: rgba(212, 175, 55, 0.20);
             border-color: rgba(212, 175, 55, 0.55);
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-row .manifest-skip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            background: transparent;
+            border: 1px solid rgba(100, 116, 139, 0.35);
+            border-radius: 9999px;
+            padding: 3px 9px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-row .manifest-skip:disabled {
+            opacity: 0.55;
+            cursor: progress;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-row .manifest-skip:hover {
+            background: rgba(100, 116, 139, 0.10);
+            border-color: rgba(100, 116, 139, 0.55);
+            color: #334155;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-row-skipped .manifest-title-skipped {
+            color: #64748b;
+            font-weight: 600;
+            text-decoration: line-through;
+            text-decoration-color: rgba(100, 116, 139, 0.45);
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-row-skipped .manifest-ago-skipped {
+            color: #94a3b8;
+            font-style: italic;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-row .manifest-include-again {
+            margin-left: auto;
           }
           .pdf-preview-modal .pdf-preview-canvas-wrap {
             flex: 1 1 auto;
@@ -675,70 +864,138 @@ const PdfPreviewModal = () => {
         </div>
 
         {(Array.isArray(entry.sections) && entry.sections.length > 0)
-          || (Array.isArray(entry.missingSections) && entry.missingSections.length > 0) ? (
-          <div className="pdf-preview-manifest" data-testid="pdf-preview-manifest">
-            <div className="manifest-label">Sections in this binder</div>
-            <div className="manifest-rows">
-              {(entry.sections || []).map((s) => {
-                const ago = _formatAgo(s.updated_at);
-                const isRefreshing = refreshingType === s.pdf_type;
-                const supportsServerRefresh = !!SERVER_REFRESH_ENDPOINTS[s.pdf_type];
-                return (
-                  <div
-                    key={s.pdf_type}
-                    className="manifest-row"
-                    data-testid={`pdf-preview-manifest-row-${s.pdf_type}`}
-                  >
-                    <span className="manifest-title">{s.display_title}</span>
-                    {ago && <span className="manifest-ago">· {ago}</span>}
-                    <button
-                      type="button"
-                      className="manifest-refresh"
-                      onClick={() => handleSectionRefresh(s)}
-                      disabled={!!refreshingType}
-                      title={supportsServerRefresh
-                        ? `Regenerate ${s.display_title} on the server and refresh the binder in place`
-                        : `Open ${s.display_title} to regenerate its PDF`}
-                      data-testid={`pdf-preview-manifest-refresh-${s.pdf_type}`}
+          || (Array.isArray(entry.missingSections) && entry.missingSections.length > 0)
+          || (Array.isArray(entry.skippedSections) && entry.skippedSections.length > 0) ? (
+          <div
+            className={`pdf-preview-manifest${manifestCollapsed ? ' manifest-collapsed' : ''}`}
+            data-testid="pdf-preview-manifest"
+          >
+            <button
+              type="button"
+              className="manifest-toggle"
+              onClick={toggleManifestCollapsed}
+              data-testid="pdf-preview-manifest-toggle"
+              aria-expanded={!manifestCollapsed}
+              title={manifestCollapsed
+                ? 'Show binder sections list'
+                : 'Hide binder sections list (frees up screen for the preview below)'}
+            >
+              <span className="manifest-toggle-label">
+                Sections in this binder
+                {manifestCollapsed && (entry.sections?.length || entry.missingSections?.length || entry.skippedSections?.length)
+                  ? ` · ${(entry.sections?.length || 0) + (entry.missingSections?.length || 0) + (entry.skippedSections?.length || 0)} total`
+                  : ''}
+              </span>
+              {manifestCollapsed
+                ? <ChevronDown size={14} aria-hidden="true" />
+                : <ChevronUp size={14} aria-hidden="true" />}
+            </button>
+            {!manifestCollapsed && (
+              <div className="manifest-rows">
+                {(entry.sections || []).map((s) => {
+                  const ago = _formatAgo(s.updated_at);
+                  const isRefreshing = refreshingType === s.pdf_type;
+                  const isSkipping = skippingType === s.pdf_type;
+                  const busy = !!refreshingType || !!skippingType;
+                  const supportsServerRefresh = !!SERVER_REFRESH_ENDPOINTS[s.pdf_type];
+                  return (
+                    <div
+                      key={s.pdf_type}
+                      className="manifest-row"
+                      data-testid={`pdf-preview-manifest-row-${s.pdf_type}`}
                     >
-                      {isRefreshing
-                        ? <Loader2 size={11} className="animate-spin" />
-                        : <RefreshCw size={11} />}
-                      {isRefreshing ? 'Refreshing…' : 'Refresh'}
-                    </button>
-                  </div>
-                );
-              })}
-              {(entry.missingSections || []).map((s) => {
-                const isRefreshing = refreshingType === s.pdf_type;
-                const supportsServerRefresh = !!SERVER_REFRESH_ENDPOINTS[s.pdf_type];
-                return (
-                  <div
-                    key={s.pdf_type}
-                    className="manifest-row manifest-row-missing"
-                    data-testid={`pdf-preview-manifest-row-${s.pdf_type}`}
-                  >
-                    <span className="manifest-title manifest-title-missing">{s.display_title}</span>
-                    <span className="manifest-ago manifest-ago-missing">· not yet generated</span>
-                    <button
-                      type="button"
-                      className="manifest-refresh"
-                      onClick={() => handleSectionRefresh(s)}
-                      disabled={!!refreshingType}
-                      title={supportsServerRefresh
-                        ? `Generate ${s.display_title} on the server and add it to the binder in place`
-                        : `Open ${s.display_title} to generate its PDF, then re-open the binder`}
-                      data-testid={`pdf-preview-manifest-refresh-${s.pdf_type}`}
+                      <span className="manifest-title">{s.display_title}</span>
+                      {ago && <span className="manifest-ago">· {ago}</span>}
+                      <button
+                        type="button"
+                        className="manifest-refresh"
+                        onClick={() => handleSectionRefresh(s)}
+                        disabled={busy}
+                        title={supportsServerRefresh
+                          ? `Regenerate ${s.display_title} on the server and refresh the binder in place`
+                          : `Open ${s.display_title} to regenerate its PDF`}
+                        data-testid={`pdf-preview-manifest-refresh-${s.pdf_type}`}
+                      >
+                        {isRefreshing
+                          ? <Loader2 size={11} className="animate-spin" />
+                          : <RefreshCw size={11} />}
+                        {isRefreshing ? 'Refreshing…' : 'Refresh'}
+                      </button>
+                      <button
+                        type="button"
+                        className="manifest-skip"
+                        onClick={() => handleSectionSkipToggle(s, true)}
+                        disabled={busy}
+                        title={`Hide ${s.display_title} from this binder (keeps the cached PDF — include it again anytime)`}
+                        data-testid={`pdf-preview-manifest-skip-${s.pdf_type}`}
+                      >
+                        {isSkipping
+                          ? <Loader2 size={11} className="animate-spin" />
+                          : <EyeOff size={11} />}
+                        {isSkipping ? 'Skipping…' : 'Skip'}
+                      </button>
+                    </div>
+                  );
+                })}
+                {(entry.missingSections || []).map((s) => {
+                  const isRefreshing = refreshingType === s.pdf_type;
+                  const busy = !!refreshingType || !!skippingType;
+                  const supportsServerRefresh = !!SERVER_REFRESH_ENDPOINTS[s.pdf_type];
+                  return (
+                    <div
+                      key={s.pdf_type}
+                      className="manifest-row manifest-row-missing"
+                      data-testid={`pdf-preview-manifest-row-${s.pdf_type}`}
                     >
-                      {isRefreshing
-                        ? <Loader2 size={11} className="animate-spin" />
-                        : <RefreshCw size={11} />}
-                      {isRefreshing ? 'Generating…' : 'Generate'}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+                      <span className="manifest-title manifest-title-missing">{s.display_title}</span>
+                      <span className="manifest-ago manifest-ago-missing">· not yet generated</span>
+                      <button
+                        type="button"
+                        className="manifest-refresh"
+                        onClick={() => handleSectionRefresh(s)}
+                        disabled={busy}
+                        title={supportsServerRefresh
+                          ? `Generate ${s.display_title} on the server and add it to the binder in place`
+                          : `Open ${s.display_title} to generate its PDF, then re-open the binder`}
+                        data-testid={`pdf-preview-manifest-refresh-${s.pdf_type}`}
+                      >
+                        {isRefreshing
+                          ? <Loader2 size={11} className="animate-spin" />
+                          : <RefreshCw size={11} />}
+                        {isRefreshing ? 'Generating…' : 'Generate'}
+                      </button>
+                    </div>
+                  );
+                })}
+                {(entry.skippedSections || []).map((s) => {
+                  const isSkipping = skippingType === s.pdf_type;
+                  const busy = !!refreshingType || !!skippingType;
+                  return (
+                    <div
+                      key={s.pdf_type}
+                      className="manifest-row manifest-row-skipped"
+                      data-testid={`pdf-preview-manifest-row-${s.pdf_type}`}
+                    >
+                      <span className="manifest-title manifest-title-skipped">{s.display_title}</span>
+                      <span className="manifest-ago manifest-ago-skipped">· hidden from binder</span>
+                      <button
+                        type="button"
+                        className="manifest-refresh manifest-include-again"
+                        onClick={() => handleSectionSkipToggle(s, false)}
+                        disabled={busy}
+                        title={`Include ${s.display_title} in this binder again`}
+                        data-testid={`pdf-preview-manifest-include-${s.pdf_type}`}
+                      >
+                        {isSkipping
+                          ? <Loader2 size={11} className="animate-spin" />
+                          : <Eye size={11} />}
+                        {isSkipping ? 'Including…' : 'Include'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ) : null}
 
@@ -768,7 +1025,7 @@ const PdfPreviewModal = () => {
         <ShareBinderModal open={shareOpen} onClose={() => setShareOpen(false)} />
       </div>
     );
-  }, [entry, printing, renderState, pageCount, shareOpen, handleClose, handleDownload, navigate, refreshingType, handleSectionRefresh]);
+  }, [entry, printing, renderState, pageCount, shareOpen, handleClose, handleDownload, navigate, refreshingType, skippingType, manifestCollapsed, toggleManifestCollapsed, handleSectionRefresh, handleSectionSkipToggle]);
 
   if (typeof document === 'undefined') return null;
   return createPortal(portalContent, document.body);
