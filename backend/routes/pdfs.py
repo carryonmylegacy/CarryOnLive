@@ -125,6 +125,14 @@ async def cache_latest_pdf(
         "filename": (filename or f"{pdf_type}.pdf")[:200],
         "size_bytes": size,
         "updated_at": now,
+        # Explicitly label this as a client-side rendered upload so the
+        # Estate Binder generator's server-fallback gate
+        # (`ensure_entities_structures_cached`) NEVER replaces it with
+        # the tabular fpdf2 fallback once it lands. Without this mark
+        # we were silently regressing rich tree captures back to plain
+        # text >24 h after the user last visited /print/entities (the
+        # exact May 22, 2026 pitch-day regression).
+        "source": "client_capture",
     }
     await db.latest_pdfs.update_one(
         {"user_id": user_id, "pdf_type": pdf_type},

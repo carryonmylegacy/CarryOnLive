@@ -209,19 +209,35 @@ export default function EntitiesPrintPage() {
     const pages = pageRefs.current.filter(Boolean);
     if (pages.length === 0) throw new Error('No printable pages mounted yet');
 
-    // ── Wait for every <img> inside the printable pages to be fully
-    // loaded before we hand them to html2canvas — otherwise the chart's
-    // avatar tiles get captured as blank squares and the Binder ends
-    // up with white-looking pages.
+    // ── Wait for every <img> AND every SVG <image> inside the
+    // printable pages to be fully loaded before we hand them to
+    // html2canvas — otherwise the chart's avatar tiles get captured
+    // as blank squares and the Binder ends up with white-looking
+    // pages. SVG <image> elements were previously missed by a
+    // plain `img` selector (they're not HTMLImageElements), which
+    // is the exact root cause of the May 22, 2026 binder-avatar
+    // regression: beneficiary photos referenced via SVG <image
+    // href="..."/> never had their load awaited, so html2canvas
+    // sampled them before the bytes landed and the cluster circles
+    // captured as empty.
     const waitForImages = async (root) => {
-      const imgs = Array.from(root.querySelectorAll('img'));
+      const htmlImgs = Array.from(root.querySelectorAll('img'));
+      const svgImgs = Array.from(root.querySelectorAll('image'));
+      const allImgs = [...htmlImgs, ...svgImgs];
       await Promise.all(
-        imgs.map((img) => {
-          if (img.complete && img.naturalHeight > 0) return Promise.resolve();
+        allImgs.map((node) => {
+          // HTMLImageElement uses .complete + .naturalHeight.
+          if (node.tagName === 'IMG') {
+            if (node.complete && node.naturalHeight > 0) return Promise.resolve();
+          }
           return new Promise((resolve) => {
-            const done = () => { img.removeEventListener('load', done); img.removeEventListener('error', done); resolve(); };
-            img.addEventListener('load', done, { once: true });
-            img.addEventListener('error', done, { once: true });
+            const done = () => {
+              node.removeEventListener('load', done);
+              node.removeEventListener('error', done);
+              resolve();
+            };
+            node.addEventListener('load', done, { once: true });
+            node.addEventListener('error', done, { once: true });
             // Hard timeout so one broken avatar can't stall the whole capture.
             setTimeout(done, 6000);
           });
@@ -808,7 +824,17 @@ export default function EntitiesPrintPage() {
                       </clipPath>
                     </defs>
                     <circle cx={cx} cy={cy} r={CLUSTER_AVATAR_R} fill="#FFFFFF" stroke={m.avatar_color || '#22C993'} strokeWidth={1.3} />
-                    {m.photo ? (
+                    {/* Initials are ALWAYS rendered as the base layer.
+                        If `m.photo` resolves cleanly, the <image> is
+                        layered on top and visually covers them. If the
+                        photo fails to load (CORS, expired presigned
+                        URL, slow S3 — the exact pitch-day failure
+                        mode), the initials stay visible instead of
+                        leaving the user with a blank capture circle. */}
+                    <text x={cx} y={cy + 4} textAnchor="middle" fontSize={mf(10)} fontWeight="700" fill="#0F766E">
+                      {initials}
+                    </text>
+                    {m.photo && (
                       <image
                         href={m.photo}
                         xlinkHref={m.photo}
@@ -819,10 +845,6 @@ export default function EntitiesPrintPage() {
                         preserveAspectRatio="xMidYMid slice"
                         clipPath={`url(#${memberClip})`}
                       />
-                    ) : (
-                      <text x={cx} y={cy + 4} textAnchor="middle" fontSize={mf(10)} fontWeight="700" fill="#0F766E">
-                        {initials}
-                      </text>
                     )}
                     <text
                       x={cx}
@@ -857,7 +879,21 @@ export default function EntitiesPrintPage() {
               stroke={avatarColor}
               strokeWidth={1.8}
             />
-            {photoUrl ? (
+            {/* Initials are ALWAYS rendered as the base layer (same
+                pitch-day robustness fix as the cluster avatars above).
+                If `photoUrl` resolves, the <image> overlays them
+                cleanly; if it fails, the initials stay visible. */}
+            <text
+              x={rect.w / 2}
+              y={33}
+              textAnchor="middle"
+              fontSize={mf(14)}
+              fontWeight="700"
+              fill="#92400E"
+            >
+              {((n.label?.[0] || '') + (n.sublabel?.[0] || '')).toUpperCase().slice(0, 2)}
+            </text>
+            {photoUrl && (
               <image
                 href={photoUrl}
                 xlinkHref={photoUrl}
@@ -868,17 +904,6 @@ export default function EntitiesPrintPage() {
                 preserveAspectRatio="xMidYMid slice"
                 clipPath={`url(#${clipId})`}
               />
-            ) : (
-              <text
-                x={rect.w / 2}
-                y={33}
-                textAnchor="middle"
-                fontSize={mf(14)}
-                fontWeight="700"
-                fill="#92400E"
-              >
-                {((n.label?.[0] || '') + (n.sublabel?.[0] || '')).toUpperCase().slice(0, 2)}
-              </text>
             )}
             {/* Name */}
             <text

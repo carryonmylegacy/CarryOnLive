@@ -1,6 +1,77 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 (latest+1) — 🚨 Estate Binder: E&S chart avatars no longer capture as empty circles
+
+User pitch-day emergency report (with screenshot): the Estate Binder's
+Entities & Structures page shows the tree skeleton (entity boxes,
+beneficiary cluster, legend, owner/beneficiary circles) but the avatar
+circles are EMPTY — no photos, no initials. The standalone E&S PDF
+(generated from the Save PDF button) renders the avatars correctly.
+
+### Root causes (two independent regressions, both fixed)
+
+1. **SVG `<image>` elements never had their load awaited.**
+   `EntitiesPrintPage._captureBlob.waitForImages` queried only
+   `querySelectorAll('img')`, which does NOT match SVG `<image>`
+   nodes. Beneficiary photos referenced via `<image href={m.photo}/>`
+   were handed to html2canvas before the bytes landed; the capture
+   sampled empty raster. Manual Save PDF clicks happened far enough
+   after page load that photos were already cached in the browser —
+   so it looked fine. The fire-and-forget 3-second auto-cache that
+   the Binder consumes routinely raced photo loads.
+
+2. **Avatars rendered photo XOR initials.**
+   `m.photo ? <image/> : <text>{initials}</text>` — if the photo URL
+   ever fails to load (CORS rejection on a stale presigned URL,
+   slow S3, ad-blocker), the user gets NEITHER. We now ALWAYS render
+   the initials as the base layer and overlay the photo on top; if
+   the photo loads, it covers the initials cleanly. If not, the
+   initials stay visible. Applied to BOTH cluster avatars and
+   person tile avatars.
+
+### Server fallback was also clobbering rich captures
+
+`ensure_entities_structures_cached` (the server-side fpdf2 safety
+net) was treating ANY cached PDF >24 h old as stale and replacing
+it with the tabular fpdf2 fallback. This silently regressed users
+who had a perfectly good rich client-captured tree PDF in their
+cache. The binder generator runs `ensure_*` on every assembly, so
+the regression kicked in 24 h after the user's last
+`/print/entities` visit.
+
+- Client-uploaded `/pdfs/cache` now stamps `source: "client_capture"`.
+- Server fallback **NEVER** replaces a non-trivial client capture
+  regardless of age. Only ever overwrites: (a) nothing, (b) a tiny
+  blob (<5 KB), (c) a prior server_fallback.
+- Existing stale `server_fallback` rows purged from preview pod;
+  next `/print/entities` visit will mint a fresh client capture.
+
+### Files changed
+- `frontend/src/pages/print/EntitiesPrintPage.js`
+  - `waitForImages` now queries `img, image` and uses the right
+    completion detection per element type.
+  - Cluster avatar rendering (lines ~803-839): initials always
+    rendered; photo layered on top when present.
+  - Person tile rendering (lines ~860-882): identical pattern.
+- `backend/routes/financial_portal/entities_pdf.py`
+  - `ensure_entities_structures_cached` now early-returns
+    `client_capture_preserved` whenever the existing cache has
+    `size>=5000 AND source != "server_fallback"` — regardless of age.
+- `backend/routes/pdfs.py`
+  - `POST /pdfs/cache` now writes `source: "client_capture"`.
+- `backend/tests/test_estate_binder_es_fallback.py`
+  - Test #3 updated to assert that stale client captures are now
+    PRESERVED (was previously asserting they should be replaced —
+    that was the bug).
+
+### Verification
+- pytest: `test_estate_binder_es_fallback.py` + every admin/share/
+  subscription regression suite — 16 passed / 1 skipped.
+- Housekeeping `--strict`: 0 WARN / 0 FAIL.
+
+
+
 ## May 22, 2026 — 4 P0 polish fixes for the live B2B pitch
 
 User reported four UI/UX issues mid-stride; all four shipped surgically

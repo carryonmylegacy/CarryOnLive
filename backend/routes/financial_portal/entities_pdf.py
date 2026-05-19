@@ -405,12 +405,24 @@ async def ensure_entities_structures_cached(
     """
     cached = await db.latest_pdfs.find_one(
         {"user_id": user_id, "pdf_type": "entities_structures"},
-        {"_id": 0, "updated_at": 1, "size_bytes": 1},
+        {"_id": 0, "updated_at": 1, "size_bytes": 1, "source": 1},
     )
     if cached:
-        updated_at = cached.get("updated_at")
         size = cached.get("size_bytes") or 0
-        # Fresh AND non-trivial → keep the existing (likely client-rendered) blob.
+        source = cached.get("source") or ""
+        # ── Rich client capture wins ALWAYS. We only ever regenerate
+        # the server fpdf2 fallback to replace (a) nothing, (b) a
+        # tiny/empty blob, or (c) an existing server_fallback that
+        # we wrote on a prior run with no client capture available.
+        # Replacing a rich client-captured tree PDF with a tabular
+        # fpdf2 PDF is the May 22, 2026 binder-graphics regression —
+        # we MUST NOT do that just because >24 h has passed.
+        if size >= 5000 and source != "server_fallback":
+            return {"refreshed": False, "reason": "client_capture_preserved"}
+        # Server-fallback refresh is still rate-limited to once per
+        # `max_age_hours` so we don't re-render the same fpdf2 bytes
+        # on every binder build.
+        updated_at = cached.get("updated_at")
         if size >= 5000 and updated_at:
             try:
                 ts = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
