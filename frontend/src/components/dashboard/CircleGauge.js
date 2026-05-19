@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 /**
  * CircleGauge — slim gold-arc circular readiness gauge.
@@ -18,6 +18,20 @@ export const CircleGauge = ({ score, id = 'main', labelText, labelColor }) => {
   const radius = 94 - STROKE / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - safe / 100);
+
+  // First-paint = instant; user-driven refresh = animate (May 22, 2026
+  // user mandate). The cold dashboard reveal can update the score
+  // through multiple ticks (initial 0 → cache hydrate → network) and
+  // the prospect's eye is drawn to a ring rolling up rather than the
+  // rest of the page. We hold animations off for 1.5 s after mount
+  // so all reveal-time score changes commit instantly; subsequent
+  // score updates (manual refresh, post-action recompute, etc.)
+  // animate naturally as before.
+  const [animEnabled, setAnimEnabled] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setAnimEnabled(true), 1500);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <div className="flex flex-col items-center w-full max-w-[240px] lg:max-w-[380px] mx-auto">
@@ -51,7 +65,9 @@ export const CircleGauge = ({ score, id = 'main', labelText, labelColor }) => {
             strokeDasharray={circumference}
             strokeDashoffset={offset}
             style={{
-              transition: 'stroke-dashoffset 1200ms cubic-bezier(0.16,1,0.3,1)',
+              transition: animEnabled
+                ? 'stroke-dashoffset 1200ms cubic-bezier(0.16,1,0.3,1)'
+                : 'none',
               filter: 'drop-shadow(0 0 8px rgba(var(--gold-rgb), 0.3))',
             }}
           />

@@ -1,6 +1,40 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 (latest+7) — 🎯 Readiness dial: instant on first paint, animate on refresh
+
+User mandate: dial should commit its score instantly on cold load
+(no roll-up that pulls the prospect's eye away from the rest of the
+page) but still animate on subsequent score changes so the user
+gets visual feedback when something they did moved the needle.
+
+### Implementation
+Both gauges (`CircleGauge` and `SpeedometerGauge`) now hold their
+CSS transition off for 1.5 s after mount. During reveal, all the
+score updates (initial `0` → cache hydrate → network response)
+commit in zero animation time. After the 1.5 s timer fires, the
+transition is re-enabled so any subsequent score change (manual
+refresh, post-action recompute, etc.) animates as before with the
+original cubic-bezier ease curve.
+
+The 1.5 s window is comfortably wider than the dashboard's cold
+fetch (~250 ms warm, ~600 ms cold) but well under any plausible
+user-initiated refresh interval — so cold paint feels instant and
+in-session score changes still get the satisfying roll-up.
+
+### Files changed
+- `frontend/src/components/dashboard/CircleGauge.js` — `useState` +
+  `useEffect` timer + conditional `transition: 'none'`.
+- `frontend/src/components/dashboard/DashboardWidgets.js`
+  (`SpeedometerGauge`) — identical pattern for the needle's
+  `transform` transition.
+
+### Verification
+- Lint: clean.
+- Housekeeping `--strict`: 0 WARN / 0 FAIL.
+
+
+
 ## May 22, 2026 (latest+6) — ⏱ BNDR + EGA freshness stamps now load in the same tick as the dashboard
 
 User report: "The time since refresh below the BNDR and EGA

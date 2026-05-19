@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 /**
  * SpeedometerGauge — SVG half-circle gauge with animated needle.
@@ -7,6 +7,17 @@ import React from 'react';
 export const SpeedometerGauge = ({ score, id = 'main', labelText, labelColor }) => {
   const angle = (score / 100) * 180 - 90;
   const gId = `gauge-${id}`;
+
+  // First-paint = instant; user-driven refresh = animate (May 22,
+  // 2026 user mandate). Same rationale as CircleGauge — see comment
+  // there. We hold the needle's transition off for 1.5 s after mount
+  // so the score commits to its final angle instantly during cold
+  // reveal, and subsequent score changes animate as before.
+  const [animEnabled, setAnimEnabled] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setAnimEnabled(true), 1500);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <div className="flex flex-col items-center w-full max-w-[240px] lg:max-w-[460px] mx-auto">
@@ -37,7 +48,14 @@ export const SpeedometerGauge = ({ score, id = 'main', labelText, labelColor }) 
 
         <path d="M 20 95 A 80 80 0 0 1 180 95" fill="none" stroke={`url(#${gId}-arc)`} strokeWidth="26" strokeLinecap="round" />
 
-        <g transform={`rotate(${angle}, 100, 95)`} style={{ transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+        <g
+          transform={`rotate(${angle}, 100, 95)`}
+          style={{
+            transition: animEnabled
+              ? 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)'
+              : 'none',
+          }}
+        >
           <polygon points="100,20 97,78 94,110 100,114 106,110 103,78" fill={`url(#${gId}-needle)`} stroke="#64748b" strokeWidth="0.5" />
           <polygon points="100,20 98,40 100,43 102,40" fill="#dc2626" />
           <circle cx="100" cy="95" r="9" fill={`url(#${gId}-hub)`} stroke="#475569" strokeWidth="1.5" />
