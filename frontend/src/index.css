@@ -150,16 +150,26 @@
   [data-theme="light"] {
     color-scheme: light;
     --bg: #E4EFF9;
-    --bg2: #DCE8F4;
+    /* `--bg2` was #DCE8F4 — only 5% darker than --bg, which made
+       every tile / card using it bleed into the page in light mode.
+       Mirroring the dark-mode "elevated tile" idea correctly: in
+       light mode the elevated surface should be LIGHTER than the
+       page, not darker. Pure white reads as a crisp raised card
+       against the soft sky-blue page (May 19, 2026 platform-wide
+       contrast pass). Dark mode `--bg2` is UNCHANGED. */
+    --bg2: #FFFFFF;
     --bg3: #D2E0EF;
     --content-bg: #E8F1FB;
     --notification-bg: rgba(228, 239, 249, 0.92);
-    
-    /* Surface & Border */
-    --s: rgba(14,165,233,0.06);
-    --b: rgba(14,165,233,0.13);
-    --b2: rgba(14,165,233,0.19);
-    
+
+    /* Surface & Border. `--s` was 6% alpha — invisible. `--b` was
+       13% — barely a hairline. Both were used everywhere for tile
+       backgrounds + borders, so bumping these two values bumps
+       contrast across the entire platform in one pass. */
+    --s: rgba(14,165,233,0.14);
+    --b: rgba(14,165,233,0.32);
+    --b2: rgba(14,165,233,0.48);
+
     /* Text Colors */
     --t: #0F172A;
     --t2: #1E293B;
