@@ -574,7 +574,26 @@ async def render_entities_structures_pdf_via_chromium(
             estate_id=estate_id,
             auth_token=token,
         )
+    except ImportError as exc:
+        # Playwright python package isn't installed on this pod.
+        # Surface a 503 so the frontend can show a friendly "feature
+        # temporarily unavailable" message instead of a crash alert.
+        logger.error(f"Playwright not installed; /render-pdf unavailable: {exc}")
+        raise HTTPException(
+            status_code=503,
+            detail="PDF render service is not configured on this pod (Playwright missing).",
+        ) from exc
     except Exception as exc:  # noqa: BLE001
+        # Chromium binary missing, browser launch failed, or render
+        # itself threw. Common Railway case: pip-installed playwright
+        # but never ran `playwright install chromium` post-deploy.
+        msg = str(exc)
+        if "Executable doesn't exist" in msg or "BrowserType.launch" in msg:
+            logger.error(f"Chromium binary missing on pod; /render-pdf unavailable: {exc}")
+            raise HTTPException(
+                status_code=503,
+                detail="PDF render service is not fully configured on this pod (Chromium binary missing).",
+            ) from exc
         logger.exception(f"Chromium render failed for estate={estate_id}: {exc}")
         raise HTTPException(status_code=500, detail=f"Render failed: {exc}") from exc
 

@@ -33,9 +33,12 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from playwright.async_api import Browser, async_playwright
+if TYPE_CHECKING:  # pragma: no cover — typing-only, never imported at runtime
+    from playwright.async_api import Browser
+else:
+    Browser = "Browser"  # placeholder so the annotation below stays valid
 
 logger = logging.getLogger(__name__)
 
@@ -54,13 +57,22 @@ _browser_lock = asyncio.Lock()
 
 
 async def _get_browser():
-    """Return a live Browser instance, launching one if needed."""
+    """Return a live Browser instance, launching one if needed.
+
+    Playwright is imported lazily here (NOT at module level) so the
+    backend can boot on environments that don't ship Chromium — e.g.
+    Railway pods that haven't run `playwright install chromium` post-
+    deploy. In that case the import will fail at first use and the
+    caller of `render_entities_pdf` will surface a 500 with a clear
+    message; the rest of the app remains healthy.
+    """
     global _browser  # noqa: PLW0603 — module-level singleton is intentional
     async with _browser_lock:
         if _browser is not None and _browser.is_connected():
             return _browser
-        # Lazy import so we never start Playwright at module import time
-        # (avoids paying boot cost in workers that never render).
+        # Lazy import — see docstring.
+        from playwright.async_api import async_playwright
+
         pw = await async_playwright().start()
         _browser = await pw.chromium.launch(
             headless=True,

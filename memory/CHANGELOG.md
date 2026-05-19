@@ -1,6 +1,71 @@
 # CarryOn — Changelog
 
 
+## May 19, 2026 (afternoon) — 🚨 EMERGENCY: Railway healthcheck failure fixed
+
+### Symptom
+User pushed today's E&S Chromium PDF migration to GitHub → Railway build +
+deploy succeeded but `Network > Healthcheck` failed after 4:52. Production
+backend was down.
+
+### Root cause
+This morning's commit added `from playwright.async_api import Browser,
+async_playwright` at the TOP of `backend/services/pdf_renderer.py`. That
+module is imported transitively at app boot via:
+
+  server.py → routes/financial_portal/__init__.py → entities_pdf.py →
+  services/pdf_renderer.py
+
+On Railway, `playwright` was **never installed** because it was missing
+from `backend/requirements.txt` (the previous agent installed it manually
+on the preview pod via `pip install playwright` but didn't pin it). On
+Railway, `pip install -r requirements.txt` ran fine, but at uvicorn boot
+the import raised `ModuleNotFoundError: No module named 'playwright'`,
+the FastAPI app failed to construct, and `/api/health` never started
+responding → Railway healthcheck timed out → deploy marked Failed.
+
+### Fix
+1. **Lazy-import Playwright** in `services/pdf_renderer.py`. The `from
+   playwright.async_api import ...` line now lives inside `_get_browser()`
+   (not at module level). The `Browser` type used in the
+   `_browser: Optional[Browser]` annotation is gated behind
+   `TYPE_CHECKING` so it never actually imports at runtime.
+2. **Pinned `playwright==1.58.0` in `requirements.txt`** so future Railway
+   builds install the python package automatically.
+3. **Graceful 503 on missing Chromium** — the `/render-pdf` endpoint now
+   catches `ImportError` (no Python package) and the
+   `Executable doesn't exist` Playwright error (no Chromium binary) and
+   returns a 503 with a clear message. The frontend's existing error
+   handler shows that message in the Refresh-pill alert.
+4. **Documented the Railway Chromium install path** in
+   `/app/memory/RAILWAY_CHROMIUM_SETUP.md` (two options: Nixpacks build
+   hook OR Microsoft Playwright Docker base image).
+
+### What works on prod after this push
+- Every backend endpoint works.
+- E&S Print button (`window.print()`) still produces a perfect browser-
+  native PDF.
+- E&S "Refresh" pill in the Binder modal returns 503 with a friendly
+  message until Chromium is installed (separate, post-pitch ticket).
+- Preview pod is unchanged — Chromium is installed there, Refresh works.
+
+### Verification
+- Simulated Railway env (no playwright module) → backend boots cleanly,
+  all `/api/health*` return 200, `/render-pdf` endpoint stays registered.
+- Preview pod still works end-to-end: POST `/render-pdf` returns 200 with
+  real %PDF in S3 in 6.1s.
+- Housekeeping `--strict`: 0 WARN / 0 FAIL.
+- Ruff + ESLint clean.
+
+### Files changed
+- `backend/services/pdf_renderer.py` — lazy-import refactor.
+- `backend/routes/financial_portal/entities_pdf.py` — graceful 503 on
+  ImportError / Chromium-missing.
+- `backend/requirements.txt` — pinned `playwright==1.58.0`.
+- `memory/RAILWAY_CHROMIUM_SETUP.md` — post-pitch playbook for full enable.
+
+
+
 ## May 19, 2026 — Headless Chromium E&S PDF migration finalized
 
 Closed out the Option 3 (Playwright) migration that was mid-flight at
