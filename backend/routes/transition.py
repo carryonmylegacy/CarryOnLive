@@ -644,7 +644,11 @@ async def get_transition_status(estate_id: str, current_user: dict = Depends(get
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
 
     return {
-        "estate_status": estate["status"] if estate else "unknown",
+        # Defensive `.get()` — legacy estate docs predating the
+        # `status` field can still appear in this lookup. Falling back
+        # to "unknown" keeps the TVT review screen rendering instead
+        # of 500-ing on a KeyError.
+        "estate_status": (estate or {}).get("status", "unknown"),
         "certificate": certificate,
     }
 

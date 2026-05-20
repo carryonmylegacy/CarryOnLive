@@ -333,7 +333,13 @@ const NotificationContainer = () => {
         top: 0,
         left: 0,
         right: 0,
-        zIndex: 99999,
+        // Must sit ABOVE every other surface in the app — including the
+        // PdfPreviewModal (z-index 2147482000) — otherwise toasts fired
+        // from inside an open modal (e.g. "Estate Binder Updated" after
+        // the Refresh Binder button) render behind the modal and feel
+        // missing to the user. 2147483647 is the max signed 32-bit int
+        // and is the highest legal CSS z-index.
+        zIndex: 2147483647,
         pointerEvents: 'none',
         paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)',
         paddingLeft: '12px',

@@ -1,6 +1,30 @@
 # CarryOn — Changelog
 
 
+## May 20, 2026 — "Estate Binder Updated" green toast was being hidden by the modal (z-index bug)
+
+**User report**: After clicking "Refresh Binder" inside the Binder modal, the expected green confirmation toast never appears.
+
+**Root cause**: The toast WAS firing — `handleRefreshBinder` in `PdfPreviewModal.js` calls `toast.success('Estate Binder Updated')` after a successful regen, and the notify system was dispatching correctly. The problem was a z-index collision:
+- `PdfPreviewModal` z-index = **2147482000**
+- `AppNotification` container z-index = **99999**
+
+So whenever the toast fired from inside an open modal, it rendered *behind* the modal — invisible to the user.
+
+**Fix**: `frontend/src/components/AppNotification.js` — bumped the toast container z-index to **2147483647** (max signed 32-bit int, the highest legal CSS z-index). Toast now sits above every modal in the app. Documented the constraint inline so future modal authors know they can't safely exceed it.
+
+## May 20, 2026 — P2 sweep: unguarded `estate["…"]` dict access
+
+Audited every `estate[...]` / `beneficiary[...]` / `b["user_id"]` bracket access across `/app/backend`. Found only **one** legitimately unguarded path: `routes/transition.py` line 647 returned `estate["status"]` for legacy estate docs that predate the `status` field. Converted to `(estate or {}).get("status", "unknown")` with an inline comment explaining the guard.
+
+Every other suspect access in the grep results was already protected by either:
+- A preceding `.get()` truthy-check on the same control path, OR
+- A `find()` filter that requires the field via `{"$exists": True}` / `{"$ne": None}` / `{"$in": […]}`.
+
+Build tag bumped to `V2026.05.20.10`. Housekeeping (strict): 0 WARN / 0 FAIL.
+
+
+
 ## May 20, 2026 — Perf fix: post-Render migration page-nav slowdown (Dashboard + every page)
 
 **User report**: After the Render migration, page navigations feel slower across the board on Desktop Safari production. Backend latency measurements showed every API hovering around 100-150ms (healthy), so the slowdown wasn't backend-bound. Troubleshoot RCA pinned the cause at the service worker layer.
