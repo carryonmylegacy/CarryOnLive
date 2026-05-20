@@ -1,7 +1,7 @@
 """Auth — Profile management (get, update, photo, username, display name)."""
 
 from fastapi import Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 from config import db, logger
 from utils import get_current_user
@@ -317,6 +317,56 @@ async def set_username(data: UsernameUpdate, current_user: dict = Depends(get_cu
 
 class DisplayNameUpdate(BaseModel):
     name: str
+
+
+class EmailUpdate(BaseModel):
+    email: EmailStr
+
+
+@router.put("/auth/email")
+async def update_email(data: EmailUpdate, current_user: dict = Depends(get_current_user)):
+    """Update the current user's email address.
+
+    Email is one of two login identifiers (the other being username).
+    Updating the email here:
+      • Validates RFC 5322 format via pydantic EmailStr.
+      • Enforces uniqueness against all other users (case-insensitive).
+      • Updates both `email` and `email_lower` so subsequent logins
+        with the new email resolve to this user.
+      • Returns the new email so the frontend can refresh state.
+
+    The admin Users tab reads from the same `users` collection, so the
+    change propagates automatically — no separate admin write needed.
+    """
+    new_email = (data.email or "").strip()
+    if not new_email:
+        raise HTTPException(status_code=400, detail="Email cannot be empty")
+    new_email_lower = new_email.lower()
+
+    # Uniqueness check — scan both `email` and `email_lower` to cover
+    # legacy users that may not have `email_lower` indexed yet.
+    existing = await db.users.find_one(
+        {
+            "$and": [
+                {"id": {"$ne": current_user["id"]}},
+                {"$or": [{"email_lower": new_email_lower}, {"email": new_email_lower}]},
+            ]
+        },
+        {"_id": 0, "id": 1},
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="That email is already in use")
+
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        # Login lowercases the input email before lookup (see
+        # routes/auth/login.py), so store `email` lowercased to keep
+        # email-based login working post-change. We also stamp
+        # `email_lower` for any future queries that key off it.
+        {"$set": {"email": new_email_lower, "email_lower": new_email_lower}},
+    )
+    logger.info(f"User {current_user['id']} updated email from {current_user.get('email', '?')!r} to {new_email!r}")
+    return {"email": new_email_lower}
 
 
 @router.put("/auth/display-name")
