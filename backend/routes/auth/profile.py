@@ -357,6 +357,7 @@ async def update_email(data: EmailUpdate, current_user: dict = Depends(get_curre
     if existing:
         raise HTTPException(status_code=400, detail="That email is already in use")
 
+    old_email = (current_user.get("email") or "").strip()
     await db.users.update_one(
         {"id": current_user["id"]},
         # Login lowercases the input email before lookup (see
@@ -365,7 +366,42 @@ async def update_email(data: EmailUpdate, current_user: dict = Depends(get_curre
         # `email_lower` for any future queries that key off it.
         {"$set": {"email": new_email_lower, "email_lower": new_email_lower}},
     )
-    logger.info(f"User {current_user['id']} updated email from {current_user.get('email', '?')!r} to {new_email!r}")
+    logger.info(f"User {current_user['id']} updated email from {old_email!r} to {new_email!r}")
+
+    # Account-takeover protection: notify BOTH the old and new email
+    # address that the change occurred. Best-effort — never blocks
+    # the response. Skip if old == new (defensive; uniqueness check
+    # above already makes this unreachable for a real change).
+    if old_email and old_email.lower() != new_email_lower:
+        try:
+            from services.email import send_email
+
+            display_name = current_user.get("name") or current_user.get("first_name") or "there"
+            subject = "Your CarryOn email address was changed"
+            old_html = (
+                f"<p>Hi {display_name},</p>"
+                f"<p>The email address on your CarryOn account was just changed from "
+                f"<strong>{old_email}</strong> to <strong>{new_email_lower}</strong>.</p>"
+                f"<p>If this was you, no action is needed — future sign-in links and "
+                f"notifications will go to your new address.</p>"
+                f"<p><strong>If this was NOT you</strong>, reply to this email immediately "
+                f'or contact <a href="mailto:founder@carryon.us">founder@carryon.us</a> '
+                f"so we can lock down the account.</p>"
+                f"<p>— The CarryOn team</p>"
+            )
+            new_html = (
+                f"<p>Hi {display_name},</p>"
+                f"<p>This is your new sign-in email for CarryOn. The change from "
+                f"<strong>{old_email}</strong> to <strong>{new_email_lower}</strong> "
+                f"was completed successfully.</p>"
+                f"<p>Going forward, every CarryOn notification will land here.</p>"
+                f"<p>— The CarryOn team</p>"
+            )
+            await send_email(old_email, subject, old_html)
+            await send_email(new_email_lower, subject, new_html)
+        except Exception as e:
+            logger.warning(f"Email-change confirmation send failed: {e}")
+
     return {"email": new_email_lower}
 
 

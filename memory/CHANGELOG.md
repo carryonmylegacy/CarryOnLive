@@ -1,6 +1,48 @@
 # CarryOn — Changelog
 
 
+## May 20, 2026 — Change Email feature (user-side, propagates to admin)
+
+The user can now change their sign-in email from Settings → Profile. The new
+field sits between Username and Change Password (same pencil-icon edit
+pattern as Username) with helper copy: *"Used for sign-in and
+notifications. We'll confirm any change at both your old and new
+address."*
+
+**Backend** — `PUT /api/auth/email` in `routes/auth/profile.py`:
+- Validates RFC 5322 format via pydantic `EmailStr`.
+- Case-insensitive uniqueness check against all other users (`email_lower`
+  + legacy `email`).
+- Stores both `email` and `email_lower` lowercased so email-based login
+  continues to resolve correctly post-change.
+- JWT is **not** invalidated — the token is keyed on `id`, not email,
+  so the user stays signed in.
+- Fires two best-effort confirmation emails via Resend: one to the OLD
+  address (with a "this wasn't me — contact founder@" CTA) and one to
+  the NEW address (confirming the change landed). Wrapped in
+  try/except so email failures never break the save path.
+
+**Frontend** — `components/settings/ProfileCard.js`:
+- New `email` / `editingEmail` / `emailDraft` / `emailSaving` state.
+- Editor mirrors the Username pattern (pencil → input + Save/Cancel,
+  Enter to save, Esc to cancel, `fontSize: 16px` to defeat iOS zoom).
+- On success calls `refreshUser()` so the admin Users tab + header
+  reflect the new email without a relogin.
+- `data-testid`s wired: `email-edit`, `email-input`, `email-save`,
+  `email-cancel`.
+
+**Build tag** bumped to `V2026.05.20.3`.
+
+**Verified**
+- `curl PUT /api/auth/email` with invalid format → 422.
+- With another user's email → 400 "That email is already in use".
+- Idempotent self-set (same email) → 200.
+- Settings screenshot: editor renders below Username with helper copy,
+  pencil-edit affordance, and live value `info@carryon.us`.
+- Housekeeping (strict): 0 WARN / 0 FAIL.
+
+
+
 ## May 20, 2026 — Estate Binder IAC redundancy purge
 
 User feedback during pitch prep: the Estate Binder was rendering the *same*

@@ -16,7 +16,7 @@ import { getOfflineMode } from '../../offline/featureFlag';
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
 const ProfileCard = () => {
-  const { user, getAuthHeaders } = useAuth();
+  const { user, getAuthHeaders, refreshUser } = useAuth();
 
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [displayName, setDisplayName] = useState('');
@@ -27,6 +27,10 @@ const ProfileCard = () => {
   const [editingUsername, setEditingUsername] = useState(false);
   const [usernameDraft, setUsernameDraft] = useState('');
   const [usernameSaving, setUsernameSaving] = useState(false);
+  const [email, setEmail] = useState('');
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [emailDraft, setEmailDraft] = useState('');
+  const [emailSaving, setEmailSaving] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -38,6 +42,7 @@ const ProfileCard = () => {
   useEffect(() => {
     if (!user) return;
     setDisplayName(user.name || '');
+    setEmail(user.email || '');
     // Seed photo + name + username synchronously from the user object —
     // AuthContext's offline hydrate path already merges the cached
     // profile into user via { ...cachedProfile, _offlineHydrated }, so
@@ -66,6 +71,7 @@ const ProfileCard = () => {
         setProfilePhoto(res.data.photo_url || null);
         setDisplayName(res.data.name || user.name || '');
         setUsername(res.data.username || '');
+        setEmail(res.data.email || '');
         // Refresh the cache so the next offline relaunch has the
         // newest photo URL + name. Fire-and-forget, never throws.
         upsertLocalProfile(res.data || {}).catch(() => {});
@@ -183,7 +189,7 @@ const ProfileCard = () => {
                 </button>
               </div>
             )}
-            <p className="text-[var(--t4)] text-sm">{user?.email || ''}</p>
+            <p className="text-[var(--t4)] text-sm">{email || user?.email || ''}</p>
             <span className="inline-block mt-1 px-2 py-0.5 bg-[var(--gold)]/20 text-[var(--gold)] text-xs rounded-full capitalize">
               {user?.role || 'benefactor'}
             </span>
@@ -251,6 +257,80 @@ const ProfileCard = () => {
                 onClick={() => { setUsernameDraft(username); setEditingUsername(true); }}
                 className="p-1 rounded-md hover:bg-[var(--s)]"
                 data-testid="username-edit"
+              >
+                <Pencil className="w-3.5 h-3.5 text-[var(--t4)]" />
+              </button>
+            </div>
+          )}
+        </div>
+        <Separator className="bg-[var(--b)]" />
+        <div>
+          <h4 className="text-[var(--t)] font-medium text-sm mb-1">Email</h4>
+          <p className="text-[var(--t5)] text-xs mb-2">Used for sign-in and notifications. We'll confirm any change at both your old and new address.</p>
+          {editingEmail ? (
+            <div className="flex flex-col gap-2">
+              <Input
+                type="email"
+                value={emailDraft}
+                onChange={(e) => setEmailDraft(e.target.value)}
+                className="h-9 text-base"
+                style={{ fontSize: '16px' }}
+                placeholder="you@example.com"
+                autoFocus
+                autoComplete="email"
+                inputMode="email"
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter' && emailDraft.trim()) {
+                    setEmailSaving(true);
+                    try {
+                      const res = await apiClient.put(`${API_URL}/auth/email`, { email: emailDraft.trim() }, getAuthHeaders());
+                      setEmail(res.data?.email || emailDraft.trim().toLowerCase());
+                      setEditingEmail(false);
+                      toast.success('Email updated — confirmation sent to both addresses');
+                      try { await refreshUser?.(); } catch { /* ignore */ }
+                    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update email'); }
+                    finally { setEmailSaving(false); }
+                  } else if (e.key === 'Escape') {
+                    setEditingEmail(false);
+                  }
+                }}
+                data-testid="email-input"
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={emailSaving || !emailDraft.trim()}
+                  onClick={async () => {
+                    if (emailDraft.trim()) {
+                      setEmailSaving(true);
+                      try {
+                        const res = await apiClient.put(`${API_URL}/auth/email`, { email: emailDraft.trim() }, getAuthHeaders());
+                        setEmail(res.data?.email || emailDraft.trim().toLowerCase());
+                        toast.success('Email updated — confirmation sent to both addresses');
+                        try { await refreshUser?.(); } catch { /* ignore */ }
+                      } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update email'); }
+                      finally { setEmailSaving(false); }
+                    }
+                    setEditingEmail(false);
+                  }}
+                  className="h-8 px-4 rounded-md text-sm font-bold btn-gold-cta"
+                  data-testid="email-save"
+                >
+                  {emailSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}
+                </button>
+                <button onClick={() => setEditingEmail(false)}
+                  className="h-8 px-4 rounded-md text-sm btn-outline-cta"
+                  data-testid="email-cancel">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-[var(--t)] text-sm font-medium break-all">{email || user?.email || <span className="text-[var(--t5)] italic">No email on file</span>}</span>
+              <button
+                onClick={() => { setEmailDraft(email || user?.email || ''); setEditingEmail(true); }}
+                className="p-1 rounded-md hover:bg-[var(--s)]"
+                data-testid="email-edit"
               >
                 <Pencil className="w-3.5 h-3.5 text-[var(--t4)]" />
               </button>
