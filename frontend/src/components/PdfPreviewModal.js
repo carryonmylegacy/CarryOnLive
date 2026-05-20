@@ -170,7 +170,7 @@ const PdfPreviewModal = () => {
     const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
     try {
       await _regenBinderInPlace(authHeaders);
-      toast.success('Binder refreshed');
+      toast.success('Estate Binder Updated');
     } catch (err) {
       // eslint-disable-next-line no-alert
       alert(`Couldn't refresh the binder: ${err?.message || 'unknown error'}`);
