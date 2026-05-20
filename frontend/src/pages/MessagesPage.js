@@ -1338,18 +1338,18 @@ const MessagesPage = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="overflow-x-auto -mx-4 px-4 pb-1" style={{ WebkitOverflowScrolling: 'touch' }}>
           <TabsList className="bg-[var(--s)] p-1 w-max">
-            <TabsTrigger value="all" className="text-sm data-[state=active]:bg-[#d4af37] data-[state=active]:text-[#0b1120]">
+            <TabsTrigger value="all" className="text-sm font-bold data-[state=active]:bg-[rgba(254,249,231,0.95)] data-[state=active]:text-[#7a5c00] data-[state=active]:shadow-[0_1px_2px_rgba(212,175,55,0.10),_0_1px_6px_rgba(212,175,55,0.06)] data-[state=active]:border data-[state=active]:border-[rgba(212,175,55,0.55)] dark:data-[state=active]:bg-[rgba(212,175,55,0.12)] dark:data-[state=active]:text-[#d4af37] dark:data-[state=active]:border-[rgba(212,175,55,0.4)]">
               All
             </TabsTrigger>
-            <TabsTrigger value="immediate" className="text-sm data-[state=active]:bg-[#d4af37] data-[state=active]:text-[#0b1120]">
+            <TabsTrigger value="immediate" className="text-sm font-bold data-[state=active]:bg-[rgba(254,249,231,0.95)] data-[state=active]:text-[#7a5c00] data-[state=active]:shadow-[0_1px_2px_rgba(212,175,55,0.10),_0_1px_6px_rgba(212,175,55,0.06)] data-[state=active]:border data-[state=active]:border-[rgba(212,175,55,0.55)] dark:data-[state=active]:bg-[rgba(212,175,55,0.12)] dark:data-[state=active]:text-[#d4af37] dark:data-[state=active]:border-[rgba(212,175,55,0.4)]">
               <Send className="w-3.5 h-3.5 mr-1.5" />
               Immediate
             </TabsTrigger>
-            <TabsTrigger value="age_milestone" className="text-sm data-[state=active]:bg-[#d4af37] data-[state=active]:text-[#0b1120]">
+            <TabsTrigger value="age_milestone" className="text-sm font-bold data-[state=active]:bg-[rgba(254,249,231,0.95)] data-[state=active]:text-[#7a5c00] data-[state=active]:shadow-[0_1px_2px_rgba(212,175,55,0.10),_0_1px_6px_rgba(212,175,55,0.06)] data-[state=active]:border data-[state=active]:border-[rgba(212,175,55,0.55)] dark:data-[state=active]:bg-[rgba(212,175,55,0.12)] dark:data-[state=active]:text-[#d4af37] dark:data-[state=active]:border-[rgba(212,175,55,0.4)]">
               <Calendar className="w-3.5 h-3.5 mr-1.5" />
               Age
             </TabsTrigger>
-            <TabsTrigger value="event" className="text-sm data-[state=active]:bg-[#d4af37] data-[state=active]:text-[#0b1120]">
+            <TabsTrigger value="event" className="text-sm font-bold data-[state=active]:bg-[rgba(254,249,231,0.95)] data-[state=active]:text-[#7a5c00] data-[state=active]:shadow-[0_1px_2px_rgba(212,175,55,0.10),_0_1px_6px_rgba(212,175,55,0.06)] data-[state=active]:border data-[state=active]:border-[rgba(212,175,55,0.55)] dark:data-[state=active]:bg-[rgba(212,175,55,0.12)] dark:data-[state=active]:text-[#d4af37] dark:data-[state=active]:border-[rgba(212,175,55,0.4)]">
               <Star className="w-3.5 h-3.5 mr-1.5" />
               Event
             </TabsTrigger>
