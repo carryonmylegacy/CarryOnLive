@@ -663,7 +663,17 @@ export default function EntityOrgChart({
     const cw = el.clientWidth;
     const ch = el.clientHeight;
     if (cw === 0 || ch === 0) return; // viewport not measured yet
-    const key = `${estateId}|${fitOnLoad ? 'fit' : 'center'}|${relayoutTick}|${viewportTick}`;
+    // Include an "overrides hydrated" bit in the key so the initial
+    // fit re-runs once the saved tile positions arrive from local-
+    // Storage + serverOverrides (both populate AFTER first render).
+    // Without this bit, the first render stamped its key with
+    // overrides={} and used `initial` (default) positions to compute
+    // the bbox centroid — leaving the tree visibly off-center on
+    // every CFP page load until the user manually tapped Center.
+    // After overrides populate, the key stabilises and subsequent
+    // user drags do NOT yank the viewport.
+    const overridesHydrated = Object.keys(overrides).length > 0 ? '1' : '0';
+    const key = `${estateId}|${fitOnLoad ? 'fit' : 'center'}|${relayoutTick}|${viewportTick}|${overridesHydrated}`;
     if (initialLayoutKeyRef.current === key) return;
     initialLayoutKeyRef.current = key;
 
