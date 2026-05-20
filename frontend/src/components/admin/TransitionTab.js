@@ -136,16 +136,10 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
     } finally { setDeleteLoading(false); }
   };
 
-  const handleSoftDelete = async (certId) => {
-    if (!window.confirm('Delete this certificate?')) return;
-    try {
-      await apiClient.post(`${API_URL}/transition/certificates/${certId}/soft-delete`, {}, getAuthHeaders());
-      toast.success('Certificate deleted');
-      fetchCertificates();
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to delete');
-    }
-  };
+  // (Soft-delete is initiated through the password-confirmation modal
+  // via `setDeleteTarget(cert)` → `handleDeleteCert`; the direct call
+  // helper that used to live here was removed because it skipped the
+  // password prompt and the backend correctly 400'd "Password required".)
 
   const handleRestore = async (certId) => {
     try {
@@ -261,7 +255,7 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
                       onClick={() => viewDocument(cert)} disabled={docLoading} data-testid={`view-cert-${cert.id}`}>
                       {docLoading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Eye className="w-3 h-3 mr-1" />} View Document
                     </Button>
-                    <button onClick={() => handleSoftDelete(cert.id)}
+                    <button onClick={() => setDeleteTarget(cert)}
                       className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold text-[var(--rd)] hover:bg-[var(--rdbg)] transition-colors"
                       data-testid={`delete-cert-${cert.id}`}>
                       <Trash2 className="w-3.5 h-3.5" /> Delete
@@ -281,7 +275,7 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
                       onClick={() => viewDocument(cert)} disabled={docLoading} data-testid={`view-cert-${cert.id}`}>
                       {docLoading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Eye className="w-3 h-3 mr-1" />} View Document
                     </Button>
-                    <button onClick={() => handleSoftDelete(cert.id)}
+                    <button onClick={() => setDeleteTarget(cert)}
                       className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold text-[var(--rd)] hover:bg-[var(--rdbg)] transition-colors"
                       data-testid={`delete-cert-${cert.id}`}>
                       <Trash2 className="w-3.5 h-3.5" /> Delete
@@ -293,7 +287,7 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
                       onClick={() => viewDocument(cert)} disabled={docLoading}>
                       {docLoading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Eye className="w-3 h-3 mr-1" />} View Document
                     </Button>
-                    <button onClick={() => handleSoftDelete(cert.id)}
+                    <button onClick={() => setDeleteTarget(cert)}
                       className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold text-[var(--rd)] hover:bg-[var(--rdbg)] transition-colors"
                       data-testid={`delete-cert-${cert.id}`}>
                       <Trash2 className="w-3.5 h-3.5" /> Delete
