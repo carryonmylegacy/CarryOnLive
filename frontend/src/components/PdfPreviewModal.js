@@ -20,6 +20,7 @@ import { ChevronLeft, Printer, Download, AlertTriangle, Loader2, Share2, Refresh
 import { isIOS } from '../utils/downloadFile';
 import ShareBinderModal from './ShareBinderModal';
 import { API_URL } from '../config';
+import { toast } from '../utils/toast';
 
 // LocalStorage key for remembering the user's "collapse manifest"
 // preference across binder opens — they pick once, we honor it forever.
@@ -169,6 +170,7 @@ const PdfPreviewModal = () => {
     const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
     try {
       await _regenBinderInPlace(authHeaders);
+      toast.success('Binder refreshed');
     } catch (err) {
       // eslint-disable-next-line no-alert
       alert(`Couldn't refresh the binder: ${err?.message || 'unknown error'}`);
