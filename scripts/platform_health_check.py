@@ -53,8 +53,8 @@ TARGETS = {
         "api": "https://carryon-api-production.up.railway.app",
     },
     "preview": {
-        "frontend": "https://org-chart-fix-2.preview.emergentagent.com",
-        "api": "https://org-chart-fix-2.preview.emergentagent.com",
+        "frontend": "https://render-migration-5.preview.emergentagent.com",
+        "api": "https://render-migration-5.preview.emergentagent.com",
     },
 }
 
