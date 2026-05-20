@@ -432,11 +432,11 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
     # again" affordance. Cached bytes stay in S3 / latest_pdfs.
     skipped_set = await _get_skipped_pdf_types(user_id)
 
-    # Pull all cached PDFs for this user in one query. We project
-    # `source` too so we can auto-exclude legacy html2canvas captures
-    # of `entities_structures` from the binder (those produce the
-    # "blank avatar circles + ghost blank pages" the user saw on
-    # production until a server_render-quality PDF replaces them).
+    # Pull all cached PDFs for this user in one query. Policy
+    # (May 20, 2026): ANY cached row gets included in the binder
+    # regardless of age, regardless of source — if the user has ever
+    # generated a section's PDF, the binder pulls it in. The user
+    # never has to "go regenerate" what's already cached.
     cached_docs = await db.latest_pdfs.find(
         {"user_id": user_id},
         {"_id": 0, "id": 1, "pdf_type": 1, "s3_key": 1, "title": 1, "subtitle": 1, "updated_at": 1, "source": 1},
@@ -444,6 +444,7 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
     cached_map = {d["pdf_type"]: d for d in cached_docs}
 
     def _is_acceptable_cache(pdf_type_: str, meta_: dict | None) -> bool:
+        # Inclusive-by-default: any cached row is fit for the binder.
         return bool(meta_)
 
     # Walk SECTION_ORDER to preserve the curated binder flow.
