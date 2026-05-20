@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { useAuth, useBrand } from '../../contexts/AuthContext';
-import { useLabelCleaner } from '../../utils/brandLabel';
+import { useLabelCleaner, useBrandedLabelBuilder } from '../../utils/brandLabel';
 import {
   DollarSign, Receipt, Landmark, PiggyBank, Search, CheckCircle2,
   ChevronLeft, ChevronRight, Loader2, TrendingUp, TrendingDown,
@@ -71,6 +71,7 @@ const BeneficiaryFinancialPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const brand = useBrand();
   const cleanLabel = useLabelCleaner();
+  const buildBrandedLabel = useBrandedLabelBuilder();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('bills');
   const [bills, setBills] = useState([]);
@@ -248,7 +249,7 @@ const BeneficiaryFinancialPage = () => {
           <DollarSign className="w-5 h-5 text-[#22C993]" />
         </div>
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>{cleanLabel(`${brand} Financial Picture (CFP)`)}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>{buildBrandedLabel(brand, 'Financial Picture (CFP)')}</h1>
           <p className="text-xs text-[var(--t5)]">Bills, debts, and accounts for your reference</p>
         </div>
       </div>

@@ -508,6 +508,11 @@ export const PartnersTab = ({ getAuthHeaders }) => {
 };
 
 function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUploadLogo, onDelete, onCopy, onCopyEmail, onSendEmail, sending, copied }) {
+  // Pre-pitch UX (May 20, 2026): default partner rows to a read-only
+  // identity view with pencil + trash icons next to the logo. Tap the
+  // pencil to expand into the editable Input fields. Keeps rows
+  // compact so the founder portal scales to many partner rows.
+  const [editMode, setEditMode] = useState(false);
   const [draft, setDraft] = useState({
     company_name: partner.company_name,
     slug: partner.slug,
@@ -580,9 +585,56 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
             >
               <Upload className="w-2.5 h-2.5" /> {partner.logo_key ? 'Replace' : 'Upload'}
             </button>
+            <div className="flex items-center gap-2 mt-0.5">
+              <button
+                onClick={() => setEditMode((v) => !v)}
+                className={`p-1 rounded ${editMode ? 'bg-[var(--gold)] text-[#080e1a]' : 'text-[var(--t5)] hover:text-[var(--gold)]'}`}
+                title={editMode ? 'Done editing' : 'Edit partner'}
+                aria-label={editMode ? `Stop editing ${partner.company_name}` : `Edit ${partner.company_name}`}
+                data-testid={`partner-edit-${partner.slug}`}
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() => onDelete(partner.id, partner.company_name)}
+                className="p-1 rounded text-[var(--t5)] hover:text-[var(--rd)]"
+                title="Delete partner"
+                aria-label={`Delete ${partner.company_name}`}
+                data-testid={`partner-delete-${partner.slug}`}
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
           </div>
           {/* Identity */}
           <div className="flex-1 min-w-0 space-y-1.5">
+            {!editMode ? (
+              <>
+                <div className="text-sm font-bold text-[var(--t)] truncate" data-testid={`partner-name-display-${partner.slug}`}>
+                  {partner.company_name}
+                </div>
+                <div className="text-[11px] text-[var(--t5)] flex flex-wrap gap-x-2 gap-y-0.5">
+                  <span className="font-mono">/p/{partner.slug}</span>
+                  <span>·</span>
+                  <span className="font-mono">{partner.code}</span>
+                  <span>·</span>
+                  <span>{partner.discount_percent}% off</span>
+                  <span>·</span>
+                  <span>{partner.max_uses > 0 ? `${partner.max_uses} seats` : 'unlimited'}</span>
+                </div>
+                {partner.tagline && (
+                  <div className="text-[11px] text-[var(--t4)] italic truncate" title={partner.tagline}>
+                    {partner.tagline}
+                  </div>
+                )}
+                {partner.partner_email && (
+                  <div className="text-[11px] text-[var(--t4)] truncate" title={partner.partner_email}>
+                    {partner.partner_email}
+                  </div>
+                )}
+              </>
+            ) : (
+            <>
             <Input
               value={draft.company_name}
               onChange={e => setDraft({ ...draft, company_name: e.target.value })}
@@ -642,7 +694,9 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
             </div>
             {/* Live seat utilization — count of users currently
                 linked via partner_id (decoded server-side). When
-                max_uses = 0 we show "unlimited". */}
+                max_uses = 0 we show "unlimited". Shown only in edit
+                mode (the read-only header above already shows seat
+                count compactly). */}
             <div className="text-[11px] text-[var(--t5)] flex items-center gap-1.5 flex-wrap" data-testid={`partner-seats-${partner.slug}`}>
               <Users className="w-3 h-3" />
               <span>
@@ -683,6 +737,22 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
               maxLength={120}
               data-testid={`partner-email-${partner.slug}`}
             />
+            </>
+            )}
+            {/* Live seat utilization (always visible) */}
+            <div className="text-[11px] text-[var(--t5)] flex items-center gap-1.5 flex-wrap" data-testid={`partner-seats-live-${partner.slug}`}>
+              <Users className="w-3 h-3" />
+              <span>
+                <span className={`font-bold ${partner.max_uses > 0 && partner.active_users_count >= partner.max_uses ? 'text-[var(--rd)]' : 'text-[var(--gold)]'}`}>
+                  {partner.active_users_count || 0}
+                </span>
+                {' '}of{' '}
+                <span className="font-bold text-[var(--t3)]">
+                  {partner.max_uses > 0 ? partner.max_uses : '∞'}
+                </span>
+                {' '}users active
+              </span>
+            </div>
             <div className="flex items-center gap-1.5 text-[11px] flex-wrap">
               <a href={url} target="_blank" rel="noopener noreferrer"
                 className="font-mono text-[var(--gold)] hover:text-[#fcd34d] truncate flex items-center gap-1 max-w-[200px]"
@@ -762,14 +832,6 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
           >
             <Power className="w-3.5 h-3.5" />
             {partner.active ? 'ON' : 'OFF'}
-          </button>
-          <button
-            onClick={() => onDelete(partner.id, partner.company_name)}
-            className="text-[var(--t5)] hover:text-[var(--rd)]"
-            aria-label={`Delete ${partner.company_name}`}
-            data-testid={`partner-delete-${partner.slug}`}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </td>

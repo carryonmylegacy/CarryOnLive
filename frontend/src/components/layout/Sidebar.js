@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useLabelCleaner } from '../../utils/brandLabel';
+import { useLabelCleaner, joinBrandSuffix } from '../../utils/brandLabel';
 import { haptics } from '../../utils/haptics';
 import { clearCache } from '../../utils/apiCache';
 import axios from 'axios';
@@ -562,7 +562,7 @@ const Sidebar = () => {
         { to: '/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
         { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
         { to: '/guardian', icon: Sparkles, label: 'Estate Guardian AI (EGA)' },
-        { to: '/financial', icon: DollarSign, label: `${brand} Financial Picture (CFP)` },
+        { to: '/financial', icon: DollarSign, label: joinBrandSuffix(brand, 'Financial Picture (CFP)') },
         { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
         { to: '/ffn', icon: Heart, label: 'Friends & Family Notification (FFN)' },
         { to: '/connected-protocol', icon: Shield, label: `${brand} Contingency Protocols (CCP)` },
@@ -612,7 +612,7 @@ const Sidebar = () => {
         { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
         { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
         { to: '/beneficiary/concierge', icon: BookOpen, label: 'Beneficiary Estate Concierge (BEC)' },
-        { to: '/beneficiary/financial', icon: DollarSign, label: `${brand} Financial Picture (CFP)` },
+        { to: '/beneficiary/financial', icon: DollarSign, label: joinBrandSuffix(brand, 'Financial Picture (CFP)') },
         { to: '/beneficiary/connected-protocol', icon: Shield, label: `${brand} Contingency Protocols (CCP)` },
         { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Comms Tool (ECT)', badge: ectUnread },
         { to: '/beneficiary/milestone', icon: Home, label: 'Report Milestone' },
@@ -742,7 +742,27 @@ const Sidebar = () => {
           >
             <Shield className="w-5 h-5" />
           </div>
-          {!collapsed && <span className="sb-logo-title">{partnerBranding?.companyName || 'CarryOn™'}</span>}
+          {!collapsed && (() => {
+            const _brand = partnerBranding?.companyName || 'CarryOn™';
+            // Scale the title down for long brand names so they fit
+            // the sidebar width without ugly multi-line wraps.
+            //   ≤14 chars → 28px (default)
+            //   15-22     → 22px
+            //   23-32     → 18px
+            //   >32       → 15px
+            let _fs = 28;
+            if (_brand.length > 32) _fs = 15;
+            else if (_brand.length > 22) _fs = 18;
+            else if (_brand.length > 14) _fs = 22;
+            return (
+              <span
+                className="sb-logo-title"
+                style={{ fontSize: _fs, lineHeight: 1.15, wordBreak: 'break-word' }}
+              >
+                {_brand}
+              </span>
+            );
+          })()}
         </div>
         {!collapsed && <span className="sb-logo-subtitle" data-testid="sidebar-portal-label">{getRoleLabel()}</span>}
       </div>

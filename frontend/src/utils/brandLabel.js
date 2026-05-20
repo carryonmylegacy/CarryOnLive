@@ -30,6 +30,46 @@ export function stripParentheticalAcronyms(text) {
 }
 
 /**
+ * Joins a partner brand name with a product suffix, intelligently
+ * de-duplicating word overlap at the boundary.
+ *
+ *   joinBrandSuffix("LTD Financial", "Financial Picture")
+ *     → "LTD Financial Picture"     // dropped duplicate "Financial"
+ *
+ *   joinBrandSuffix("Smith Insurance", "Insurance Co.")
+ *     → "Smith Insurance Co."
+ *
+ *   joinBrandSuffix("The People's Insurance Co.", "Financial Picture")
+ *     → "The People's Insurance Co. Financial Picture"   // no overlap
+ *
+ * Algorithm: tokenize, find the largest suffix of `brand` that equals
+ * a prefix of `suffix` (case-insensitive, ignoring trailing punctuation),
+ * then drop that overlap from the suffix.
+ */
+export function joinBrandSuffix(brand, suffix) {
+  if (!brand || !suffix) return [brand, suffix].filter(Boolean).join(' ').trim();
+  const normalize = (w) => w.toLowerCase().replace(/[.,'’"]+$/g, '');
+  const brandTokens = String(brand).trim().split(/\s+/);
+  const suffixTokens = String(suffix).trim().split(/\s+/);
+  // Find largest k such that the last k brand tokens match the first k
+  // suffix tokens (case + trailing-punct insensitive). Cap k at the
+  // smaller of the two arrays to avoid wraparound.
+  const maxK = Math.min(brandTokens.length, suffixTokens.length);
+  let overlap = 0;
+  for (let k = maxK; k >= 1; k -= 1) {
+    let match = true;
+    for (let i = 0; i < k; i += 1) {
+      if (normalize(brandTokens[brandTokens.length - k + i]) !== normalize(suffixTokens[i])) {
+        match = false;
+        break;
+      }
+    }
+    if (match) { overlap = k; break; }
+  }
+  return [...brandTokens, ...suffixTokens.slice(overlap)].join(' ');
+}
+
+/**
  * Hook returning a label-cleaner function.
  * In a B2B partner portal → strips parenthetical acronyms.
  * Otherwise → identity (returns text unchanged).
@@ -38,4 +78,20 @@ export function useLabelCleaner() {
   const { partnerBranding } = useAuth();
   const isPartner = !!partnerBranding?.companyName;
   return isPartner ? stripParentheticalAcronyms : (t) => t;
+}
+
+/**
+ * Hook returning a `buildBrandedLabel(suffix)` function that pairs a
+ * partner brand with a product suffix using the suffix dedupe
+ * algorithm above AND the parenthetical-acronym strip in B2B context.
+ *
+ *   buildBrandedLabel('Financial Picture (CFP)')
+ *     → "LTD Financial Picture"    (B2B, brand="LTD Financial")
+ *     → "CarryOn Financial Picture (CFP)"  (direct consumer)
+ */
+export function useBrandedLabelBuilder() {
+  const { partnerBranding } = useAuth();
+  const isPartner = !!partnerBranding?.companyName;
+  const cleaner = isPartner ? stripParentheticalAcronyms : (t) => t;
+  return (brand, suffix) => cleaner(joinBrandSuffix(brand, suffix));
 }

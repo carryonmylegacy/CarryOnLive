@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { useAuth, useBrand } from '../contexts/AuthContext';
-import { useLabelCleaner } from '../utils/brandLabel';
+import { useLabelCleaner, useBrandedLabelBuilder, joinBrandSuffix } from '../utils/brandLabel';
 import { cachedGet } from '../utils/apiCache';
 import { isFeatureKeyEnabled, isFeatureEnabled } from '../utils/featureGates';
 import { SpeedometerGauge, StatCard } from '../components/dashboard/DashboardWidgets';
@@ -53,6 +53,7 @@ const DashboardPage = () => {
   const { user, getAuthHeaders, enabledFeatures, refreshEnabledFeatures } = useAuth();
   const brand = useBrand();
   const cleanLabel = useLabelCleaner();
+  const buildBrandedLabel = useBrandedLabelBuilder();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [estates, setEstates] = useState([]);
@@ -1015,7 +1016,7 @@ const DashboardPage = () => {
               <StatCard
                 icon={DollarSign}
                 value={(financialSummary?.bills_count || 0) + (financialSummary?.debts_count || 0) + (financialSummary?.accounts_count || 0) + (financialSummary?.property_count || 0)}
-                label={cleanLabel(`${brand} Financial Picture (CFP)`)}
+                label={buildBrandedLabel(brand, 'Financial Picture (CFP)')}
                 cardClass="stat-card-financial"
                 onClick={() => navigate('/financial')}
                 sectionKey="financial_portal"
@@ -1196,14 +1197,19 @@ const DashboardPage = () => {
           // LEFT and the readiness card on the RIGHT (default). tiles-
           // right reverses it. The 380-col reservation for the dial is
           // wide enough to never clip the 6 chips at 13" laptop widths.
+          const _coreTitle = joinBrandSuffix(brand, 'Core Pillars');
+          // Scale font + allow wrap when the branded title is long
+          // (e.g., "The People's Insurance Co. Core Pillars" was
+          // getting clipped at the right edge of the card).
+          const _coreLong = _coreTitle.length > 22;
           const tiles = (
             <div className="lg:col-span-1">
               <div className="glass-card p-4 lg:p-5 h-full flex flex-col" data-testid="core-pillars-card">
                 <h2
-                  className="text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl whitespace-nowrap font-semibold text-[var(--t)] mb-4 text-center tracking-tight"
+                  className={`${_coreLong ? 'text-xl sm:text-2xl lg:text-3xl' : 'text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl whitespace-nowrap'} font-semibold text-[var(--t)] mb-4 text-center tracking-tight break-words`}
                   style={{ fontFamily: 'var(--serif)' }}
                 >
-                  {brand} Core Pillars
+                  {_coreTitle}
                 </h2>
                 {/*
                   Uniform cells via flex-1 grid + auto-rows 1fr:
@@ -1412,7 +1418,7 @@ const DashboardPage = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-[#10b981]" />
-              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">{cleanLabel(`${brand} Financial Picture (CFP)`)}</h3>
+              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">{buildBrandedLabel(brand, 'Financial Picture (CFP)')}</h3>
             </div>
             <span className="text-[var(--t4)] text-sm">
               {financialSummary ? `${(financialSummary.bills_count || 0) + (financialSummary.debts_count || 0) + (financialSummary.accounts_count || 0) + (financialSummary.property_count || 0)} items` : '0 items'}

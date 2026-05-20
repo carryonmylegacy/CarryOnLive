@@ -4,7 +4,7 @@ import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useLabelCleaner } from '../../utils/brandLabel';
+import { useLabelCleaner, joinBrandSuffix } from '../../utils/brandLabel';
 import { haptics } from '../../utils/haptics';
 import { clearCache } from '../../utils/apiCache';
 import {
@@ -411,7 +411,7 @@ const MobileNav = () => {
     { to: '/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
     { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
     { to: '/guardian', icon: Sparkles, label: 'Estate Guardian AI (EGA)' },
-    { to: '/financial', icon: DollarSign, label: `${brand} Financial Picture (CFP)` },
+    { to: '/financial', icon: DollarSign, label: joinBrandSuffix(brand, 'Financial Picture (CFP)') },
     { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
     { to: '/ffn', icon: Heart, label: 'Friends & Family Notification (FFN)' },
     { to: '/connected-protocol', icon: Shield, label: `${brand} Contingency Protocols (CCP)` },
@@ -446,7 +446,7 @@ const MobileNav = () => {
     { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
     { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
     { to: '/beneficiary/concierge', icon: BookOpen, label: 'Beneficiary Estate Concierge (BEC)' },
-    { to: '/beneficiary/financial', icon: DollarSign, label: `${brand} Financial Picture (CFP)` },
+    { to: '/beneficiary/financial', icon: DollarSign, label: joinBrandSuffix(brand, 'Financial Picture (CFP)') },
     { to: '/beneficiary/connected-protocol', icon: Shield, label: `${brand} Contingency Protocols (CCP)` },
     { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Comms Tool (ECT)', badge: ectUnread },
     { to: '/beneficiary/milestone', icon: Gift, label: 'Report Milestone' },
