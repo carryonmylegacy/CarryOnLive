@@ -844,9 +844,12 @@ const DashboardPage = () => {
 
       {/* Pick Up Where You Left Off — visible when the wizard has been
           manually dismissed but the user still has incomplete onboarding
-          steps. Re-opens the same guided overlay at the next step. */}
+          steps. Re-opens the same guided overlay at the next step.
+          Hidden entirely when the user has explicitly turned the
+          Getting Started Guide OFF in Settings (`resume_banner_hidden`). */}
       {(user?.role === 'benefactor' || user?.is_also_benefactor) &&
        onboardingProgress?.manually_dismissed === true &&
+       onboardingProgress?.resume_banner_hidden !== true &&
        !onboardingProgress?.all_complete &&
        (onboardingProgress?.steps || []).some(s => !s.completed) && (
         <button

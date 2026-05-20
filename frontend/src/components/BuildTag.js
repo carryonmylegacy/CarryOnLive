@@ -9,7 +9,7 @@
  */
 import React from 'react';
 
-export const BUILD_VERSION = 'V2026.05.20.3';
+export const BUILD_VERSION = 'V2026.05.20.4';
 
 const BuildTag = () => (
   <div

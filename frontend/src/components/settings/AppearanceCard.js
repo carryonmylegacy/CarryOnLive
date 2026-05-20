@@ -61,7 +61,7 @@ const AppearanceCard = ({ isStaff }) => {
                 } else {
                   localStorage.setItem('carryon_onboarding_dismissed', 'true');
                   localStorage.setItem('carryon_welcome_guided_shown', 'true');
-                  try { await apiClient.post(`${API_URL}/onboarding/dismiss`, {}, getAuthHeaders()); } catch (e) { /* ignore */ }
+                  try { await apiClient.post(`${API_URL}/onboarding/dismiss`, { hide_resume_banner: true }, getAuthHeaders()); } catch (e) { /* ignore */ }
                 }
                 toast.success(checked ? 'Getting Started Guide turned on — saved.' : 'Getting Started Guide hidden — saved.');
               }}

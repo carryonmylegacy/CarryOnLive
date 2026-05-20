@@ -162,6 +162,14 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
         ]
 
     manually_dismissed = progress.get("manually_dismissed", False)
+    # `resume_banner_hidden` is set explicitly when the user toggles OFF
+    # the "Getting Started Guide" preference in Settings. It is NOT set
+    # when the user merely closes the wizard via its X button. The two
+    # surfaces (wizard + "Pick Up Where You Left Off" resume banner)
+    # share `manually_dismissed`, but the resume banner should ALSO
+    # respect this stronger Settings-driven preference. See
+    # DashboardPage banner gate.
+    resume_banner_hidden = bool(progress.get("resume_banner_hidden", False))
 
     return {
         "steps": steps_with_status,
@@ -173,6 +181,7 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
         "celebration_shown": already_graduated,
         "already_graduated": already_graduated,
         "manually_dismissed": manually_dismissed,
+        "resume_banner_hidden": resume_banner_hidden,
         "beneficiary_names": ben_names[:3],
     }
 
@@ -198,12 +207,31 @@ async def complete_onboarding_step(step_key: str, current_user: dict = Depends(g
     return {"success": True, "step": step_key}
 
 
+class DismissOnboardingBody(BaseModel):
+    """Optional body for `/onboarding/dismiss`.
+
+    `hide_resume_banner=True` is sent ONLY by the Settings toggle path,
+    expressing a stronger user preference ("don't show this guide on
+    my dashboard at all" — including the "Pick Up Where You Left Off"
+    resume banner). The wizard's own X button posts an empty body so
+    the resume banner stays visible (its whole purpose).
+    """
+
+    hide_resume_banner: bool = False
+
+
 @router.post("/onboarding/dismiss")
-async def dismiss_onboarding(current_user: dict = Depends(get_current_user)):
+async def dismiss_onboarding(
+    body: DismissOnboardingBody | None = None,
+    current_user: dict = Depends(get_current_user),
+):
     """Permanently dismiss the onboarding wizard until user re-enables in Settings."""
+    update: dict = {"dismissed": True, "manually_dismissed": True, "user_id": current_user["id"]}
+    if body and body.hide_resume_banner:
+        update["resume_banner_hidden"] = True
     await db.onboarding_progress.update_one(
         {"user_id": current_user["id"]},
-        {"$set": {"dismissed": True, "manually_dismissed": True, "user_id": current_user["id"]}},
+        {"$set": update},
         upsert=True,
     )
     return {"success": True}
@@ -219,13 +247,19 @@ async def get_onboarding_status(current_user: dict = Depends(get_current_user)):
     progress = await db.onboarding_progress.find_one({"user_id": current_user["id"]}) or {}
     manually_dismissed = bool(progress.get("manually_dismissed", False))
     celebration_shown = bool(progress.get("celebration_shown", False))
-    # `dismissed` here is the UI-facing single boolean used by the
-    # Settings toggle: true ⇒ wizard hidden.
-    dismissed = manually_dismissed or celebration_shown
+    resume_banner_hidden = bool(progress.get("resume_banner_hidden", False))
+    # The Settings toggle reflects the strongest off-state: if the
+    # user explicitly turned the feature OFF via Settings, the toggle
+    # must come back as `dismissed=true` on next render. We treat
+    # `resume_banner_hidden` as that authoritative settings-off
+    # signal so a soft wizard-X dismissal doesn't accidentally flip
+    # the Settings switch.
+    dismissed = manually_dismissed or celebration_shown or resume_banner_hidden
     return {
         "dismissed": dismissed,
         "manually_dismissed": manually_dismissed,
         "celebration_shown": celebration_shown,
+        "resume_banner_hidden": resume_banner_hidden,
     }
 
 
@@ -245,7 +279,7 @@ async def reset_onboarding(current_user: dict = Depends(get_current_user)):
     """Re-enable the onboarding wizard (undo dismiss)."""
     await db.onboarding_progress.update_one(
         {"user_id": current_user["id"]},
-        {"$set": {"dismissed": False, "manually_dismissed": False}},
+        {"$set": {"dismissed": False, "manually_dismissed": False, "resume_banner_hidden": False}},
     )
     return {"success": True}
 

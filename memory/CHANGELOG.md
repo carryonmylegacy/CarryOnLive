@@ -1,6 +1,50 @@
 # CarryOn — Changelog
 
 
+## May 20, 2026 — Fix: Settings "Getting Started Guide" OFF was leaving the Dashboard resume banner visible
+
+**User report**: Toggled Getting Started Guide OFF in Settings, but the
+Dashboard still showed *"Pick Up Where You Left Off — Resume Getting
+Started — 2 steps remaining."*
+
+**Root cause**: Both the wizard's X button and the Settings toggle hit
+`POST /onboarding/dismiss`, which set `manually_dismissed=true`. The
+Dashboard's "Pick Up Where You Left Off" banner is *gated on
+`manually_dismissed === true`* — meaning toggling Settings OFF was the
+one thing that made the banner appear, instead of hiding it. The two
+intents (wizard-X soft dismiss vs Settings hard preference) needed
+distinct signals.
+
+**Fix**
+- **Backend** (`routes/onboarding.py`):
+  - New `DismissOnboardingBody` accepting optional `hide_resume_banner: bool`.
+  - `POST /onboarding/dismiss` now persists `resume_banner_hidden=true`
+    when that flag is sent (Settings path) but leaves it false for
+    the wizard's own X dismissal (preserving the resume banner's
+    raison d'être).
+  - `POST /onboarding/reset` clears `resume_banner_hidden` alongside
+    `manually_dismissed`.
+  - `GET /onboarding/progress` + `GET /onboarding/status` now return
+    `resume_banner_hidden`. Status's `dismissed` boolean OR's it in
+    so the Settings toggle hydrates correctly after a Settings-OFF.
+- **Frontend Settings** (`components/settings/AppearanceCard.js`):
+  - Settings OFF now posts `{ hide_resume_banner: true }` on dismiss.
+- **Frontend Dashboard** (`pages/DashboardPage.js`):
+  - "Pick Up Where You Left Off" banner now also requires
+    `resume_banner_hidden !== true`. With the toggle OFF, both the
+    wizard AND the resume banner stay hidden.
+
+**Verified end-to-end via curl** (5 states):
+1. Wizard X dismiss → `manually_dismissed=true, resume_banner_hidden=false` (banner SHOWS — by design).
+2. Reset → both false.
+3. Settings OFF (`hide_resume_banner=true`) → both true (banner HIDDEN).
+4. `/onboarding/status` correctly reports `dismissed=true` post-Settings-OFF so the toggle hydrates accurately.
+5. Reset restores both to false cleanly.
+
+Housekeeping (strict): 0 WARN / 0 FAIL. Build bumped to `V2026.05.20.4`.
+
+
+
 ## May 20, 2026 — Change Email feature (user-side, propagates to admin)
 
 The user can now change their sign-in email from Settings → Profile. The new
