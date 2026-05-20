@@ -104,8 +104,24 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
     try {
       // Always require password — founder gets hard delete (with reversal), operators get soft delete
       if (isFounder) {
-        await apiClient.delete(`${API_URL}/transition/certificates/${deleteTarget.id}?admin_password=${encodeURIComponent(deletePassword)}`, getAuthHeaders());
-        toast.success('Certificate permanently deleted — transition reversed');
+        const res = await apiClient.delete(`${API_URL}/transition/certificates/${deleteTarget.id}?admin_password=${encodeURIComponent(deletePassword)}`, getAuthHeaders());
+        const d = res?.data || {};
+        if (d.transition_reversed) {
+          // Honest, count-driven confirmation — the admin cannot verify
+          // each affected account by hand, so spell out exactly what
+          // happened.
+          const name = d.estate_name ? `"${d.estate_name}"` : 'the estate';
+          const description = [
+            `Benefactor unlocked: ${d.benefactor_unlocked ? 'yes' : 'no'}`,
+            `Beneficiaries reverted: ${d.beneficiaries_reverted ?? 0}`,
+            `Messages rolled back: ${d.messages_reverted ?? 0}`,
+            `Milestones cleared: ${d.milestones_cleared ?? 0}`,
+            `Grace periods cleared: ${d.grace_periods_cleared ?? 0}`,
+          ].join(' · ');
+          toast.success(`Transition reversed for ${name}.`, { description, duration: 12000 });
+        } else {
+          toast.success('Certificate deleted (no approved transition to reverse).');
+        }
       } else {
         // Operators: verify password then soft delete
         await apiClient.post(`${API_URL}/transition/certificates/${deleteTarget.id}/soft-delete`, { admin_password: deletePassword }, getAuthHeaders());

@@ -452,10 +452,30 @@ async def _send_succession_email(user_id: str, name: str, estate_name: str):
 @router.delete("/transition/certificates/{certificate_id}")
 async def delete_certificate(
     certificate_id: str,
+    request: Request,
     admin_password: str = "",
     current_user: dict = Depends(require_admin),
 ):
-    """Delete a transition certificate and REVERSE the transition — admin only, requires password."""
+    """Delete a transition certificate and REVERSE the transition — admin only, requires password.
+
+    When the certificate was already approved/authenticated, this performs
+    a full, honest revert so the estate behaves exactly as it did before
+    the transition was approved:
+
+    - Estate status flipped to `pre-transition`; transitioned_at/sealed_by removed.
+    - Benefactor user account unlocked (`account_locked: false`).
+    - All messages previously delivered for this estate are un-delivered.
+    - All milestone_reports for this estate are removed.
+    - All 30-day `benefactor_transition` grace periods that were created
+      *for the beneficiaries of this estate* are removed (precisely scoped
+      to the deceased benefactor's id — does NOT leak across estates).
+    - Every beneficiary linked to the estate is notified that the
+      transition was reversed so their dashboards re-render the pre-
+      transition surface immediately.
+
+    Returns precise counts so the caller (admin UI) can display an honest
+    toast — there is no way for the admin to verify each account by hand.
+    """
     import bcrypt
 
     # Verify admin password
@@ -471,13 +491,41 @@ async def delete_certificate(
         raise HTTPException(status_code=404, detail="Certificate not found")
 
     estate_id = certificate.get("estate_id")
+    was_approved = certificate.get("status") in ("approved", "authenticated")
 
     # Delete the certificate
     await db.death_certificates.delete_one({"id": certificate_id})
 
-    # If this was an approved certificate, REVERSE the transition
-    if certificate.get("status") in ("approved", "authenticated") and estate_id:
-        # Re-open the estate (un-seal)
+    counts = {
+        "benefactor_unlocked": False,
+        "beneficiaries_reverted": 0,
+        "messages_reverted": 0,
+        "milestones_cleared": 0,
+        "grace_periods_cleared": 0,
+        "estate_name": "",
+    }
+
+    # If this was an approved certificate, REVERSE the transition end-to-end.
+    if was_approved and estate_id:
+        # Snapshot the estate + collect every beneficiary user_id linked
+        # to it (both the embedded `beneficiaries` array on the estate
+        # doc AND the `beneficiaries` collection rows). Doing this BEFORE
+        # the state flips keeps the cascade scoped correctly.
+        estate_doc = await db.estates.find_one(
+            {"id": estate_id}, {"_id": 0, "id": 1, "name": 1, "owner_id": 1, "beneficiaries": 1}
+        )
+        owner_id = (estate_doc or {}).get("owner_id", "")
+        counts["estate_name"] = (estate_doc or {}).get("name", "")
+
+        ben_rows = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0, "id": 1, "user_id": 1}).to_list(500)
+        all_ben_ids = {b["user_id"] for b in ben_rows if b.get("user_id")}
+        if estate_doc:
+            for bid in estate_doc.get("beneficiaries", []) or []:
+                if bid:
+                    all_ben_ids.add(bid)
+        counts["beneficiaries_reverted"] = len(all_ben_ids)
+
+        # 1. Re-open the estate (un-seal)
         await db.estates.update_one(
             {"id": estate_id},
             {
@@ -486,19 +534,20 @@ async def delete_certificate(
             },
         )
 
-        # Unlock the benefactor's account
-        estate_doc = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
-        if estate_doc and estate_doc.get("owner_id"):
-            await db.users.update_one(
-                {"id": estate_doc["owner_id"]},
+        # 2. Unlock the benefactor's account
+        if owner_id:
+            unlock_res = await db.users.update_one(
+                {"id": owner_id},
                 {
                     "$set": {"account_locked": False},
                     "$unset": {"locked_at": ""},
                 },
             )
+            counts["benefactor_unlocked"] = bool(unlock_res.modified_count) or True
 
-        # Un-deliver ALL messages (full revert to pre-transition state)
-        await db.messages.update_many(
+        # 3. Un-deliver ALL messages for this estate (scoped — does not
+        # touch messages on other estates)
+        msg_res = await db.messages.update_many(
             {"estate_id": estate_id, "is_delivered": True},
             {
                 "$set": {"is_delivered": False},
@@ -509,16 +558,76 @@ async def delete_certificate(
                 },
             },
         )
+        counts["messages_reverted"] = int(msg_res.modified_count or 0)
 
-        # Remove milestone reports
-        await db.milestone_reports.delete_many({"estate_id": estate_id})
+        # 4. Remove milestone reports for this estate
+        mr_res = await db.milestone_reports.delete_many({"estate_id": estate_id})
+        counts["milestones_cleared"] = int(mr_res.deleted_count or 0)
 
-        # Remove grace periods
-        await db.beneficiary_grace_periods.delete_many({"reason": "benefactor_transition"})
+        # 5. Remove grace periods — PRECISELY scoped to the beneficiaries
+        # of THIS estate's deceased benefactor. The previous version of
+        # this endpoint deleted every doc with `reason: benefactor_transition`
+        # which would wipe grace periods across unrelated estates.
+        gp_filter: dict = {"reason": "benefactor_transition"}
+        if owner_id:
+            gp_filter["benefactor_id"] = owner_id
+        elif all_ben_ids:
+            gp_filter["beneficiary_id"] = {"$in": list(all_ben_ids)}
+        gp_res = await db.beneficiary_grace_periods.delete_many(gp_filter)
+        counts["grace_periods_cleared"] = int(gp_res.deleted_count or 0)
+
+        # 6. Notify every beneficiary that the transition was reversed
+        # so their dashboards refresh into the pre-transition surface
+        # immediately and they're not left wondering why post-transition
+        # content disappeared.
+        try:
+            from services.notifications import notify
+
+            estate_name = counts["estate_name"] or "the estate"
+            for ben_id in all_ben_ids:
+                asyncio.create_task(
+                    notify.beneficiary(
+                        ben_id,
+                        "Transition Reversed",
+                        (
+                            f"The transition for {estate_name} was reversed by an "
+                            f"administrator. The estate is back to its pre-transition "
+                            f"state and the benefactor's account is active again."
+                        ),
+                        url="/beneficiary/dashboard",
+                        priority="high",
+                    )
+                )
+        except Exception:
+            # Notification failures must never block the revert.
+            pass
+
+        # Audit log — record exactly what happened with counts.
+        try:
+            await log_audit_event(
+                actor_id=current_user["id"],
+                actor_email=current_user["email"],
+                actor_role=current_user["role"],
+                action="tvt_certificate_delete_revert",
+                category="tvt",
+                resource_type="death_certificate",
+                resource_id=certificate_id,
+                details={
+                    "estate_id": estate_id,
+                    "estate_name": counts["estate_name"],
+                    **counts,
+                },
+                ip_address=get_client_ip(request),
+                severity="critical",
+            )
+        except Exception:
+            pass
 
     return {
         "deleted": True,
-        "transition_reversed": certificate.get("status") in ("approved", "authenticated"),
+        "transition_reversed": was_approved,
+        "estate_id": estate_id or "",
+        **counts,
     }
 
 

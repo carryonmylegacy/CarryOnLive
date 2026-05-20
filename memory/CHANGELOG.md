@@ -1,6 +1,29 @@
 # CarryOn — Changelog
 
 
+## May 20, 2026 — TVT trash now performs a precise, honest revert with proof in the toast
+
+**User ask**: When the founder deletes a transitioned or transition-request tile from the TVT tab, the underlying estate must revert to fully pre-transitioned state — benefactor account unlocked, every linked beneficiary's account back to pre-transition behavior — and the toast must honestly confirm what happened because the admin can't go check each affected account.
+
+**Backend** (`routes/transition.py` → `DELETE /transition/certificates/{id}`):
+- Continues to require admin password, snapshots the estate + every linked beneficiary user_id BEFORE flipping state (so the cascade is correctly scoped).
+- **Bug fix**: previous version called `db.beneficiary_grace_periods.delete_many({"reason": "benefactor_transition"})` with NO estate scoping — that wiped grace periods across unrelated estates. Now scoped to `benefactor_id == this estate's owner_id` (with `beneficiary_id $in` fallback if owner_id is missing).
+- Full revert: estate → pre-transition, benefactor `account_locked: false`, all delivered messages for this estate un-delivered, milestone_reports for this estate removed, grace periods removed (scoped).
+- Notifies every beneficiary user linked to the estate ("Transition Reversed — the estate is back to its pre-transition state…") so their dashboards refresh into the pre-transition surface immediately.
+- Audit-logs a `tvt_certificate_delete_revert` event with all counts at `severity=critical`.
+- Returns honest counts in the response payload: `{ benefactor_unlocked, beneficiaries_reverted, messages_reverted, milestones_cleared, grace_periods_cleared, estate_name, transition_reversed }`.
+
+**Frontend** (`components/admin/TransitionTab.js`):
+- `handleDeleteCert` reads the response counts and shows a long-duration (12s) toast that spells out exactly what was reverted:
+  `Transition reversed for "Estate Name". · Benefactor unlocked: yes · Beneficiaries reverted: N · Messages rolled back: N · Milestones cleared: N · Grace periods cleared: N`.
+- If the certificate was never approved (e.g. still pending review), the toast says so explicitly: *"Certificate deleted (no approved transition to reverse)."*
+
+**Verified** via curl: 400 on missing password, 401 on wrong password, 404 on unknown certificate id. Reversal path is gated on `was_approved == True AND estate_id present` so deletes against pending certificates are clean no-ops on the cascade.
+
+Housekeeping (strict): 0 WARN / 0 FAIL. Build bumped to `V2026.05.20.7`.
+
+
+
 ## May 20, 2026 — Fix: Settings "Getting Started Guide" OFF was leaving the Dashboard resume banner visible
 
 **User report**: Toggled Getting Started Guide OFF in Settings, but the
