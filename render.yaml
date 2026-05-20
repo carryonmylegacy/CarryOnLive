@@ -1,0 +1,104 @@
+# Render Blueprint — one-click deploy for the CarryOn API backend.
+#
+# How to use:
+#   1) Commit this file (and backend/Dockerfile + backend/docker-entrypoint.sh) to your repo.
+#   2) Push to GitHub.
+#   3) On Render: New + → Blueprint → connect your repo → Render auto-detects this file.
+#   4) Fill in the env-var values prompted (or paste them in from the Railway dashboard).
+#   5) Deploy. First build is ~3-5 min (Playwright image is ~250 MB).
+#
+# After first deploy, Render gives you a https://carryon-api.onrender.com URL.
+# Point your frontend's REACT_APP_BACKEND_URL there, redeploy on Vercel, and you're live.
+#
+# Custom domain (api.carryon.us): Render dashboard → Service → Settings → Custom Domains.
+# Add the domain, copy the CNAME target Render gives you, paste it into your DNS provider.
+# Render auto-issues Let's Encrypt certs in ~60s.
+
+services:
+  - type: web
+    name: carryon-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: starter            # 512 MB RAM, $7/mo, always-on. Bump to "standard" if Playwright OOMs.
+    region: virginia         # East-Coast latency for US users. Other options: oregon, frankfurt, singapore.
+    branch: main             # Match this to your Vercel-watched branch (likely `main` or `production`).
+    autoDeploy: true         # Re-deploys on every push to `branch` — same UX as Railway.
+
+    # Render hits this endpoint on startup. Returns 200 from server.py.
+    healthCheckPath: /api/health
+
+    # Disk: NOT needed — all persistent storage is in MongoDB + S3.
+    # If you ever need ephemeral scratch space for PDF generation
+    # (we don't currently — Playwright writes bytes in-memory), bolt
+    # on a `disk:` block here.
+
+    envVars:
+      # ─── Public, non-secret config ───
+      - key: PORT
+        value: "10000"
+      - key: VAPID_PRIVATE_KEY_PATH
+        value: /app/vapid_private.pem
+      - key: VAPID_PUBLIC_KEY_PATH
+        value: /app/vapid_public.pem
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+      # ─── Secrets — fill these in via the Render dashboard.
+      # `sync: false` tells Blueprint NOT to commit them to the repo.
+      # On first deploy Render prompts you for each value. ───
+      - key: MONGO_URL
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+
+      # ─── 3rd-party integrations (paste values from Railway) ───
+      - key: EMERGENT_LLM_KEY
+        sync: false
+      - key: XAI_API_KEY
+        sync: false
+      - key: XAI_TEAM_ID
+        sync: false
+      - key: STRIPE_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: SENDER_EMAIL
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
+        sync: false
+      - key: APPLE_SHARED_SECRET
+        sync: false
+
+      # ─── AWS S3 (Emergent Object Storage) ───
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+
+      # ─── Web Push (VAPID) — the PEM CONTENTS go in these env vars.
+      # The docker-entrypoint.sh writes them to disk at boot. ───
+      - key: VAPID_PRIVATE_KEY_PEM
+        sync: false
+      - key: VAPID_PUBLIC_KEY_PEM
+        sync: false
+      - key: VAPID_CLAIMS_EMAIL
+        sync: false
+
+      # ─── Demo / testing review account (optional) ───
+      - key: DEMO_REVIEW_EMAIL
+        sync: false
+      - key: DEMO_REVIEW_OTP
+        sync: false
