@@ -321,7 +321,7 @@ async def _handle_ccp_plan(user: dict, params: dict, filename: str) -> Response:
     # Header
     pdf.set_font("Helvetica", "B", 22)
     pdf.set_text_color(212, 175, 55)
-    pdf.cell(0, 14, "CarryOn Contingency Protocol", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 14, "CarryOn Contingency Protocols", new_x="LMARGIN", new_y="NEXT")
 
     pdf.set_font("Helvetica", "", 11)
     pdf.set_text_color(100, 100, 100)

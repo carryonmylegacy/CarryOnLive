@@ -54,8 +54,7 @@ SECTION_ORDER: list[tuple[str, str, str, str]] = [
     ("ega_plan", "Estate Guardian — Plan of Action", "/guardian", "Estate Guardian"),
     ("ega_transcript", "Estate Guardian — Conversation Transcript", "/guardian", "Estate Guardian"),
     ("cfp_handoff", "CarryOn Financial Picture — Hand-off Package", "/financial", "Financial Picture"),
-    ("entities_structures", "Entities & Structures", "/financial", "Financial Picture"),
-    ("ccp_plan", "Contingency Care Plan", "/connected-protocol", "Connected Protocol"),
+    ("ccp_plan", "CarryOn Contingency Protocols", "/connected-protocol", "Connected Protocol"),
     ("ccp_card", "Emergency Card", "/connected-protocol", "Connected Protocol"),
     ("ccp_report", "Family Readiness Report", "/connected-protocol", "Connected Protocol"),
 ]
@@ -427,23 +426,6 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
     email = (user.get("email") or "").strip()
     user_name = (user.get("name") or f"{user.get('first_name', '')} {user.get('last_name', '')}").strip()
 
-    # ─── Server-side safety net: ensure E&S has a cached PDF before
-    # we read latest_pdfs. The client-side html2pdf capture on the
-    # /print/entities/<id> page produces a richer chart-shaped PDF
-    # whenever the user visits that page, but B2B prospects may
-    # generate a binder cold without ever opening the print page —
-    # this fallback guarantees E&S still appears in the binder.
-    # See `services.financial_portal.entities_pdf.ensure_entities_structures_cached`
-    # for cache freshness/source logic.
-    try:
-        from routes.financial_portal.entities_pdf import ensure_entities_structures_cached
-
-        _est_id = (estate or {}).get("id")
-        if _est_id:
-            await ensure_entities_structures_cached(_est_id, user_id, max_age_hours=24.0)
-    except Exception as exc:  # noqa: BLE001
-        logger.warning(f"Binder: E&S server fallback failed for user={user_id}: {exc}")
-
     # Honor the user's "Skip in Binder" preferences before any heavy
     # PDF work — skipped sections are simply omitted from `available`
     # and surfaced separately so the frontend can offer an "Include
@@ -461,19 +443,8 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
     ).to_list(50)
     cached_map = {d["pdf_type"]: d for d in cached_docs}
 
-    # Sections whose cached row MUST come from the server-side
-    # Chromium render pipeline (source == "server_render") to be
-    # considered fit for the binder. Legacy / unknown sources are
-    # treated as if no cache existed — surfaced in `missing` so the
-    # user sees "Generate" instead of an embarrassing stale page.
-    _CHROMIUM_ONLY_TYPES = {"entities_structures"}
-
     def _is_acceptable_cache(pdf_type_: str, meta_: dict | None) -> bool:
-        if not meta_:
-            return False
-        if pdf_type_ in _CHROMIUM_ONLY_TYPES:
-            return meta_.get("source") == "server_render"
-        return True
+        return bool(meta_)
 
     # Walk SECTION_ORDER to preserve the curated binder flow.
     available: list[dict] = []
@@ -837,37 +808,6 @@ async def estate_binder_manifest(current_user: dict = Depends(get_current_user))
     ).to_list(50)
     cached_map = {d["pdf_type"]: d for d in cached_docs}
 
-    # Match the binder generator: entities_structures is only fit for
-    # the binder when its cached source is the new Chromium pipeline.
-    # Legacy html2canvas captures get downgraded to "missing" so the
-    # frontend's manifest shows a "Generate" pill instead of bundling
-    # the stale page into the binder.
-    _CHROMIUM_ONLY_TYPES = {"entities_structures"}
-    # Look up the user's primary estate ONCE so we can stamp a
-    # per-type capture route (e.g. /financial/entities/<id>/print) on
-    # each manifest item. The Binder preview's "Refresh" pill uses
-    # this to drive the server-side headless-Chromium render pipeline
-    # (POST /render-pdf) without dragging the user out of the modal.
-    primary_estate = await db.estates.find_one(
-        {"owner_id": user_id, "is_primary": True},
-        {"_id": 0, "id": 1},
-    ) or await db.estates.find_one(
-        {"owner_id": user_id},
-        {"_id": 0, "id": 1},
-    )
-    primary_estate_id = (primary_estate or {}).get("id")
-    capture_route_map = {
-        # `entities_structures` is the only section currently wired
-        # to server-side headless-Chromium rendering. Tapping the
-        # modal's "Refresh" pill POSTs to
-        # `/api/financial/entities/<id>/render-pdf`, which spawns
-        # Playwright and visits this `?serverRender=1` route. The
-        # frontend uses the path portion (estate id) to build the
-        # POST URL — the query string is informational only.
-        "entities_structures": (
-            f"/financial/entities/{primary_estate_id}/print?serverRender=1" if primary_estate_id else None
-        ),
-    }
     available = []
     missing = []
     skipped = []
@@ -878,12 +818,10 @@ async def estate_binder_manifest(current_user: dict = Depends(get_current_user))
             "display_title": display_title,
             "route": route,
             "route_label": route_label,
-            "capture_route": capture_route_map.get(pdf_type),
+            "capture_route": None,
         }
         cached = cached_map.get(pdf_type)
-        is_acceptable = bool(cached) and (
-            pdf_type not in _CHROMIUM_ONLY_TYPES or cached.get("source") == "server_render"
-        )
+        is_acceptable = bool(cached)
         if cached and is_acceptable:
             # Freshness cue surfaced to the Binder preview manifest UI
             # so the user can see at a glance which sections in the

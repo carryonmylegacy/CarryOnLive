@@ -23,7 +23,6 @@ import EntityDocumentsModal from './EntityDocumentsModal';
 import EntitiesShareToggle from './EntitiesShareToggle';
 import EntityLegend from './EntityLegend';
 import BlockEditModal from './BlockEditModal';
-import CachedPdfIcon from '../../CachedPdfIcon';
 
 const DRAFT_KEY = (estateId) => `cfp:entityWizard:draft:${estateId || 'global'}`;
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
@@ -558,9 +557,6 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
             >
               <Printer className="w-3 h-3" /><span className="hidden sm:inline">Print</span>
             </button>
-          )}
-          {viewMode === 'chart' && estateId && (
-            <CachedPdfIcon pdfType="entities_structures" />
           )}
           <EntitiesShareToggle
             estateId={estateId}

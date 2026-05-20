@@ -472,7 +472,7 @@ export default function ConnectedProtocolPage() {
         navigate,
         pdfType: 'ccp_plan',
         filename,
-        title: 'Contingency Care Plan',
+        title: 'CarryOn Contingency Protocols',
         subtitle: plan.name || '',
         blobFetcher: async () => {
           const t = localStorage.getItem('carryon_token');

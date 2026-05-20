@@ -50,7 +50,7 @@ PDF_TYPE_REGISTRY = {
     "iac_standalone": {"label": "Immediate Action Checklist"},
     "cfp_handoff": {"label": "CFP Hand-off Package"},
     "entities_structures": {"label": "Entities & Structures"},
-    "ccp_plan": {"label": "Contingency Care Plan"},
+    "ccp_plan": {"label": "CarryOn Contingency Protocols"},
     "ccp_card": {"label": "Emergency Card"},
     "ccp_report": {"label": "Family Readiness Report"},
     "beneficiary_packet": {"label": "Beneficiary IAC Packet"},
