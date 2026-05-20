@@ -84,11 +84,13 @@ export function AvatarCircle({
             cacheKey={cacheKey}
             alt=""
             className="w-full h-full object-cover"
-            // Bias the visible crop slightly upward — most face-pose
-            // photos place the face in the upper third. Prevents
-            // "white circle with hair at the bottom" rendering when an
-            // older avatar predates the backend's top-biased crop.
-            style={{ objectPosition: 'center 30%' }}
+            // Center the photo within the circle. The backend already
+            // applies a top-biased crop during upload (see
+            // services/photo_storage.py), so the frontend doing a
+            // second upward shift double-biases portraits that have
+            // any dark/empty space near the top of the source frame
+            // (e.g., Louise Mitchell's pre-circle-cropped photo).
+            style={{ objectPosition: 'center center' }}
             fallback={initialsBlock}
           />
         ) : initialsBlock}

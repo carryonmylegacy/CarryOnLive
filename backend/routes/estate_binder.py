@@ -37,6 +37,7 @@ from fpdf import FPDF
 from pypdf import PdfReader, PdfWriter
 
 from config import db, logger
+from services.ccp_combined_cards import build_combined_ccp_cards_pdf
 from services.ccp_combined_pdf import build_combined_ccp_pdf
 from services.storage import storage
 from utils import get_current_user
@@ -523,6 +524,20 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
         # graceful degrade.
         if section["pdf_type"] == "ccp_plan":
             combined = await build_combined_ccp_pdf(estate.get("id")) if estate else None
+            if combined:
+                blob = combined
+            else:
+                try:
+                    blob = await storage.download(section["s3_key"])
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning(
+                        f"Estate binder: cached PDF download failed for user={user_id} type={section['pdf_type']}: {exc}"
+                    )
+                    continue
+        # `ccp_card` follows the same pattern — single-card cache
+        # becomes one wallet card per plan in the binder.
+        elif section["pdf_type"] == "ccp_card":
+            combined = await build_combined_ccp_cards_pdf(estate.get("id"), user_id) if estate else None
             if combined:
                 blob = combined
             else:

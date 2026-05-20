@@ -936,7 +936,6 @@ const GuardianPage = () => {
       {/* Input Area */}
       <div className="flex-shrink-0 px-3 pb-3 pt-2 relative" style={{
         borderTop: '1px solid var(--s)',
-        background: 'linear-gradient(180deg, transparent 0%, rgba(15,22,41,0.5) 100%)',
       }}>
         {showQuestions && (
           <div className="absolute bottom-full left-3 right-3 mb-2 rounded-xl overflow-hidden z-10" style={{

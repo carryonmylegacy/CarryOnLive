@@ -76,7 +76,7 @@ const TreeNode = ({ initials, photo, cacheKey, color, label, sublabel, size = 60
               // Top-biased crop matches the AvatarCircle + messages
               // recipient avatar so portrait-framed photos display the
               // face inside the circle instead of white space.
-              style={{ objectPosition: 'center 30%' }}
+              style={{ objectPosition: 'center center' }}
               fallback={
                 <>
                   {onUpload && (
