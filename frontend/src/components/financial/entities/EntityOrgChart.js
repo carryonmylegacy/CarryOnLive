@@ -758,6 +758,14 @@ export default function EntityOrgChart({
   // positions directly and let us write zoom + scroll synchronously
   // in the same event tick, so the visible content stays anchored.
   const pinchRef = useRef(null);
+  // Grab-to-pan state for LOCKED mode. Lets the user click-and-drag the
+  // entire chart around the viewport (mouse only — touch keeps using
+  // native momentum scroll via overflow:auto + touch-action:auto, which
+  // already feels right on iPad/iPhone). Active only when `locked` is
+  // true; in unlocked mode the user is moving individual tiles instead.
+  //   { startX, startY, scrollLeft, scrollTop }
+  const panRef = useRef(null);
+  const [isPanning, setIsPanning] = useState(false);
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -1116,7 +1124,27 @@ export default function EntityOrgChart({
   // drawing a marquee rect (`setMarquee`). Otherwise it's just a tap
   // or a regular scroll/pan and we cancel.
   const onContainerPointerDown = (e) => {
-    if (locked) return;
+    // LOCKED mode: start a grab-pan. Mouse only — touch already gets
+    // native momentum scroll from overflow:auto. We start panning even
+    // if the pointerdown lands on a tile, because tiles aren't movable
+    // when locked anyway, so the cursor's "grab" affordance is correct
+    // everywhere on the chart.
+    if (locked) {
+      if (e.pointerType && e.pointerType !== 'mouse') return;
+      if (e.button === 2) return; // ignore right-click
+      const el = containerRef.current;
+      if (!el) return;
+      panRef.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        scrollLeft: el.scrollLeft,
+        scrollTop: el.scrollTop,
+      };
+      setIsPanning(true);
+      try { el.setPointerCapture?.(e.pointerId); } catch { /* ignore */ }
+      e.preventDefault();
+      return;
+    }
     if (e.button === 2) return;
     if (pinchRef.current) return;
     const pt = eventToCanvasXY(e.clientX, e.clientY);
@@ -1133,6 +1161,19 @@ export default function EntityOrgChart({
   };
 
   const onContainerPointerMove = (e) => {
+    // Grab-pan in locked mode: drive scrollLeft/scrollTop manually so
+    // the chart follows the cursor. Use clientX/Y deltas from the
+    // captured starting point — same math as a native scrollbar drag.
+    if (panRef.current) {
+      const el = containerRef.current;
+      if (el) {
+        const dx = e.clientX - panRef.current.startX;
+        const dy = e.clientY - panRef.current.startY;
+        el.scrollLeft = panRef.current.scrollLeft - dx;
+        el.scrollTop = panRef.current.scrollTop - dy;
+      }
+      return;
+    }
     // Existing drag-move logic stays first.
     applyDragMove(e.clientX, e.clientY);
     // Cancel pending long-press if the finger drifts before the timer.
@@ -1157,7 +1198,15 @@ export default function EntityOrgChart({
     }
   };
 
-  const onContainerPointerUp = () => {
+  const onContainerPointerUp = (e) => {
+    // End a grab-pan if one was in flight; everything below it is
+    // marquee/long-press cleanup that doesn't apply in locked mode.
+    if (panRef.current) {
+      try { containerRef.current?.releasePointerCapture?.(e?.pointerId); } catch { /* ignore */ }
+      panRef.current = null;
+      setIsPanning(false);
+      return;
+    }
     cancelLongPress();
     // Finalize marquee — compute selection.
     if (marqueeRef.current) {
@@ -1271,6 +1320,12 @@ export default function EntityOrgChart({
         overflow: 'auto',
         WebkitOverflowScrolling: 'touch',
         touchAction: draggingKey ? 'none' : 'auto',
+        // Affordance: in locked mode the entire chart pans on mouse
+        // drag, so show the grab/grabbing hand cursor. In unlocked
+        // mode tiles are individually draggable, so leave the cursor
+        // to the tiles themselves.
+        cursor: locked ? (isPanning ? 'grabbing' : 'grab') : undefined,
+        userSelect: isPanning ? 'none' : undefined,
       }}
       onPointerDown={onContainerPointerDown}
       onPointerMove={onContainerPointerMove}

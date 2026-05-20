@@ -1,6 +1,22 @@
 # CarryOn — Changelog
 
 
+## May 20, 2026 — EntityOrgChart: click-and-drag panning in Locked mode (CFP page)
+
+**User ask**: On the CFP page's Entities & Structures chart, when the chart is in Locked mode, the only way to move around is via scrollbars. User wants to click-hold-drag the canvas around the same way you'd grab a Figma canvas — cursor turns into a closed fist while dragging.
+
+**Fix** (`frontend/src/components/financial/entities/EntityOrgChart.js`):
+- New `panRef` + `isPanning` state. On mouse pointerdown in Locked mode the handler captures `{ startX, startY, scrollLeft, scrollTop }` and starts panning (calls `setPointerCapture` so the drag survives leaving the chart bounds).
+- On pointer move while panning, drives `scrollLeft / scrollTop` from the delta — feels native and integrates with `overflow:auto` so the scrollbars track in real time and momentum scroll still works.
+- On pointer up the pan ends, capture is released, state resets.
+- Cursor reflects state: `grab` when locked and idle, `grabbing` while actively dragging, untouched in unlocked mode (tiles handle their own cursor).
+- Touch is intentionally untouched — `e.pointerType !== 'mouse'` returns early so iPads / iPhones keep their native one-finger momentum scroll via `overflow:auto + touch-action:auto`.
+- Unlocked-mode tile dragging, marquee long-press, two-finger pinch — all unchanged.
+
+Build tag bumped to `V2026.05.20.11`. Housekeeping (strict): 0 WARN / 0 FAIL.
+
+
+
 ## May 20, 2026 — "Estate Binder Updated" green toast was being hidden by the modal (z-index bug)
 
 **User report**: After clicking "Refresh Binder" inside the Binder modal, the expected green confirmation toast never appears.
