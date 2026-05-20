@@ -76,7 +76,7 @@ const OfflineStorageWidget = () => {
   return (
     <Card className="glass-card" data-testid="offline-storage-widget">
       <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <HardDrive className="w-4 h-4 text-[var(--gold)]" />
             <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--t3)]">
@@ -90,6 +90,12 @@ const OfflineStorageWidget = () => {
             {formatBytes(total)} · {rows.length} {rows.length === 1 ? 'doc' : 'docs'}
           </span>
         </div>
+        <p className="text-xs text-[var(--t4)] mb-3 leading-relaxed">
+          These documents are saved to this device so you can open them without
+          internet (on a plane, in a hospital, during an outage). Tap the pin
+          icon to remove a document from this device — it stays safely in your
+          vault.
+        </p>
         <ul className="space-y-1">
           {rows.slice(0, 5).map((r) => (
             <li

@@ -29,6 +29,7 @@ import { toast } from '../utils/toast';
 import { enqueue as enqueueOutbox } from '../offline/outbox';
 import { platformDownload, downloadFile as legacyDownloadFile } from '../utils/downloadFile';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
+import OfflineStorageWidget from '../components/dashboard/OfflineStorageWidget';
 import { Skeleton } from '../components/ui/skeleton';
 import DocThumbnail from '../components/DocThumbnail';
 import { ReturnPopup } from '../components/GuidedActivation';
@@ -1095,6 +1096,7 @@ const VaultPage = () => {
       <SectionLockBanner sectionId="vault" />
 
       <SectionLockedOverlay sectionId="vault">
+      <OfflineStorageWidget />
       {/* Search bar */}
       <div className="flex items-center gap-2 pb-2" style={{ borderBottom: '1px solid var(--b)' }}>
         <Search className="w-4 h-4 text-[var(--t5)]" />

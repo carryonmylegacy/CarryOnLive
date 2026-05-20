@@ -33,7 +33,6 @@ import TrialBanner from '../components/TrialBanner';
 import BillingStatusBanner from '../components/BillingStatusBanner';
 import OnboardingWizard from '../components/OnboardingWizard';
 import ShareYourCarryOn from '../components/ShareYourCarryOn';
-import OfflineStorageWidget from '../components/dashboard/OfflineStorageWidget';
 import TileErrorBoundary from '../components/TileErrorBoundary';
 import { API_URL } from '../config';
 import { toast } from '../utils/toast';
@@ -823,11 +822,6 @@ const DashboardPage = () => {
       </div>
       {/* Billing Status Banner — Grace Period or Dormant */}
       <BillingStatusBanner onUpdatePayment={() => navigate('/settings')} />
-
-      {/* "Storage used offline" — only renders when the user has pinned docs */}
-      <div className="mb-5">
-        <OfflineStorageWidget />
-      </div>
 
       {/* Header + Estate Selector */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
