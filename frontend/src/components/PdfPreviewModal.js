@@ -68,6 +68,10 @@ const PdfPreviewModal = () => {
   const [shareOpen, setShareOpen] = useState(false);
   const [refreshingType, setRefreshingType] = useState(null);
   const [skippingType, setSkippingType] = useState(null);
+  // "Refresh Binder" toolbar button — rebuilds the binder PDF
+  // in-place using whatever cached section PDFs exist right now.
+  // Shown only for the Estate Binder preview (not for one-off PDFs).
+  const [refreshingBinder, setRefreshingBinder] = useState(false);
   // Persistent collapse state for the manifest — frees up screen
   // real estate for the actual PDF preview below it. Defaults to
   // COLLAPSED on first open (Barnet's preference) so the preview
@@ -144,6 +148,28 @@ const PdfPreviewModal = () => {
       } : prev);
     }
   }, [entry?.sections, entry?.missingSections, entry?.skippedSections]);
+
+  // ── "Refresh Binder" toolbar button (Part A of May 23, 2026 ask) ──
+  // One-tap rebuild of the binder PDF using whatever cached sections
+  // exist NOW. Useful when the user has refreshed an underlying
+  // section page in a separate tab and wants the binder to pick up
+  // the new cache without closing/re-opening the modal. Does NOT
+  // regenerate individual section PDFs — that's Part B (post-pitch).
+  const handleRefreshBinder = useCallback(async () => {
+    if (refreshingBinder) return;
+    setRefreshingBinder(true);
+    const token = (typeof window !== 'undefined' && window.localStorage)
+      ? window.localStorage.getItem('carryon_token') : null;
+    const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+    try {
+      await _regenBinderInPlace(authHeaders);
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      alert(`Couldn't refresh the binder: ${err?.message || 'unknown error'}`);
+    } finally {
+      setRefreshingBinder(false);
+    }
+  }, [refreshingBinder, _regenBinderInPlace]);
 
   // ── Skip / Include-again handler (May 19, 2026 user mandate) ──────
   // Skipping a section soft-vetos it from the binder — the cached
@@ -833,6 +859,21 @@ const PdfPreviewModal = () => {
           >
             <Download size={14} /> Save PDF
           </button>
+          {entry?.title === 'Estate Binder' && (
+            <button
+              type="button"
+              className="pdf-preview-print"
+              onClick={handleRefreshBinder}
+              disabled={refreshingBinder || renderState === 'loading'}
+              data-testid="pdf-preview-refresh-binder"
+              title="Rebuild the binder from all currently cached sections"
+            >
+              {refreshingBinder
+                ? <Loader2 size={14} className="spin" />
+                : <RefreshCw size={14} />}
+              {refreshingBinder ? 'Refreshing…' : 'Refresh Binder'}
+            </button>
+          )}
           {entry?.shareEnabled && (
             <button
               type="button"
@@ -1028,7 +1069,7 @@ const PdfPreviewModal = () => {
         <ShareBinderModal open={shareOpen} onClose={() => setShareOpen(false)} />
       </div>
     );
-  }, [entry, printing, renderState, pageCount, shareOpen, handleClose, handleDownload, navigate, refreshingType, skippingType, manifestCollapsed, toggleManifestCollapsed, handleSectionRefresh, handleSectionSkipToggle]);
+  }, [entry, printing, renderState, pageCount, shareOpen, handleClose, handleDownload, navigate, refreshingType, skippingType, refreshingBinder, handleRefreshBinder, manifestCollapsed, toggleManifestCollapsed, handleSectionRefresh, handleSectionSkipToggle]);
 
   if (typeof document === 'undefined') return null;
   return createPortal(portalContent, document.body);
