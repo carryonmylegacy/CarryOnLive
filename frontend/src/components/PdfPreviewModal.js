@@ -69,12 +69,15 @@ const PdfPreviewModal = () => {
   const [refreshingType, setRefreshingType] = useState(null);
   const [skippingType, setSkippingType] = useState(null);
   // Persistent collapse state for the manifest — frees up screen
-  // real estate for the actual PDF preview below it.
+  // real estate for the actual PDF preview below it. Defaults to
+  // COLLAPSED on first open (Barnet's preference) so the preview
+  // jumps straight to the PDF. Once the user toggles it open, the
+  // expanded state is persisted via localStorage.
   const [manifestCollapsed, setManifestCollapsed] = useState(() => {
     try {
-      return window.localStorage.getItem(MANIFEST_COLLAPSED_KEY) === '1';
+      return window.localStorage.getItem(MANIFEST_COLLAPSED_KEY) !== '0';
     } catch {
-      return false;
+      return true;
     }
   });
   const toggleManifestCollapsed = useCallback(() => {
