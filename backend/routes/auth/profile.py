@@ -113,6 +113,15 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         # signups never have these fields, so their UX is untouched.
         "partner_slug": user_doc.get("partner_slug", "") or "",
         "partner_company": user_doc.get("partner_company", "") or "",
+        # ── Trustee Mode (TMA) ────────────────────────────────────
+        # When the current session was created via a trustee login,
+        # `current_user` (resolved in utils.get_current_user) carries
+        # `_trustee_mode=True`. Expose it on /auth/me so the
+        # frontend can render the persistent banner and grey out
+        # the trustee management surface.
+        "trustee_mode": bool(current_user.get("_trustee_mode", False)),
+        "trustee_display_name": current_user.get("_trustee_display_name", "") or "",
+        "trustee_can_access_beneficiaries": bool(current_user.get("_trustee_can_access_beneficiaries", False)),
     }
 
 

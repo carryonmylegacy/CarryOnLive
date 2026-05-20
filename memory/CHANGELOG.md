@@ -1,6 +1,47 @@
 # CarryOn — Changelog
 
 
+## May 20, 2026 — Trustee Mode Access (TMA): non-beneficiary delegate identity with audit + undo
+
+**User ask**: Let an estate trustee (attorney / fiduciary / family steward) operate the benefactor's portal under their own username/password. Visible "TRUSTEE MODE" banner on every page. Full mutation parity with the benefactor *except* the trustee management panel itself (greyed). Every completed mutation logs an undoable notification on the benefactor's account. Per-tier toggle in Admin → Subs and per-partner toggle in Admin → Partners. Benefactor chooses optional beneficiary-account inclusion and an expiry window (indefinite / 1d / 3d / 5d / 1w / custom days). Undo must work for everything, including deletions.
+
+**How it ships (additive only — zero schema changes to existing collections)**:
+
+- **New feature key `tma`** in `routes/feature_gates.py::PLATFORM_FEATURES` with `default_off: True`. Auto-flows into Admin → Subs feature-gates matrix. Mirrored row added to `routes/admin/partners.py::PARTNER_FEATURE_PILLARS` with per-pillar `default_off` so partners default OFF unless founder opts them in.
+- **New router** `routes/trustee_access.py`:
+  - `POST/GET/PATCH/DELETE /api/trustee/grants` — benefactor creates, lists, toggles beneficiary inclusion / extends expiry / revokes.
+  - `POST /api/trustee/audit/{event_id}/undo` — benefactor restores the pre-mutation snapshot for a trustee-audit notification. Works for create, update, AND delete (snapshot is replayed via `insert_one` / `replace_one(upsert=True)`).
+- **One surgical edit** to `utils.get_current_user`: if JWT carries `acting_as` + `trustee_grant_id`, validate the grant is active+unexpired+non-revoked, then return the benefactor's user doc with flags `_trustee_mode`, `_trustee_grant_id`, `_trustee_display_name`, `_trustee_can_access_beneficiaries`. Every downstream handler keeps operating on the benefactor's identity unchanged — no other routes touched.
+- **Auth login fast-path** (`routes/auth/login.py`): if the identifier doesn't match a CarryOn user, check `trustee_grants`. Match issues a JWT with the `acting_as` claim. Feature-gated via new helper `routes/feature_gates.is_feature_enabled_for_user(user, key)` — a flag-off tier returns 403 immediately.
+- **ASGI middleware** `middleware_trustee_audit.py`: zero-cost early-out for non-trustee traffic. For trustee writes it captures a pre-mutation snapshot via a curated URL → collection map (entities / estates / messages / documents / FFN / beneficiaries / wills / DAV / CCP / IAC). After a successful 2xx response it records `trustee_audit_events` + creates a `notifications` row of type `trustee_audit` with `supports_undo` flag.
+- **Frontend banner** `components/TrusteeBanner.js`: amber sticky banner mounted once at the BrowserRouter root in `App.js`. Reads `user.trustee_mode` — renders nothing for regular sessions. Text: "TRUSTEE MODE — {trustee_display_name} acting on behalf of {benefactor.name}".
+- **Settings card** `components/settings/TrusteeAccessCard.js`:
+  - Hidden unless `tma` is in `enabledFeatures` (founder-controlled per tier).
+  - **Fully greyed + read-only** when the active session IS a trustee — explicit message: "Trustee accounts cannot manage trustee access."
+  - Otherwise: lists existing grants (display name / username / expiry), trash-icon revoke, beneficiary-inclusion toggle, "Grant trustee access" creation form (username / display name / password / beneficiary toggle / duration dropdown with `indefinite / 1d / 3d / 5d / 1w / custom days`).
+- **Notifications drawer** (`components/NotificationBell.js`): items of `type === 'trustee_audit'` get an inline "Undo this change" button (or "✓ Undone" / "Undo unavailable" if not snapshotable).
+- **Token refinement** (`utils.create_token`): accepts an `extra_claims` kwarg (whitelisted to `acting_as`, `trustee_grant_id`, `trustee_display_name`) so the auth login fast-path can mint a trustee JWT without bypassing the JWT pipeline.
+- **Model update** (`models.UserResponse`): added `trustee_mode`, `trustee_display_name`, `trustee_can_access_beneficiaries` (all default `False/""`) so the login response is fully typed.
+
+**Zero-risk guardrails**:
+- Every code path is gated on `payload.acting_as` being present — no impact on existing sessions.
+- The audit middleware wraps EVERY exception in try/except so an audit-layer bug can never block a real request.
+- `default_off: True` everywhere — no user sees this until the founder explicitly enables it.
+- Revoking a grant immediately invalidates any still-valid JWT (verified by pytest).
+- Trustee `/api/trustee/*` is hard-blocked server-side via `_require_benefactor` — `_trustee_mode=True` → 403.
+
+**Tests**: `backend/tests/test_trustee_mode.py` — 8 cases, **8/8 pass in 4.4s**. Covers: grant CRUD, duplicate-username 409, trustee login resolves to benefactor, trustee /auth/me reports flags, trustee cannot manage grants (403), revoke immediately invalidates session, login rejected when TMA disabled for tier.
+
+**Manual end-to-end smoke (verified on preview pod)**:
+- Benefactor creates grant → trustee logs in via same `/login` → sees BENEFACTOR portal with amber TRUSTEE MODE banner sticky at top of every page.
+- Trustee PATCH /api/estates/{id} renames the estate → benefactor's notification feed shows `trustee_audit` entry with Undo button → click Undo → estate name reverts to original.
+- Settings page: real benefactor sees full management UI; trustee sees same card fully greyed with explanatory message.
+
+Build tag bumped to `V2026.05.20.13`. Housekeeping (strict): 0 WARN / 0 FAIL. Route policy coverage: 638 → 642/653 (now 98.3%, +4 new TMA routes registered).
+
+
+
+
 ## May 20, 2026 — EntityOrgChart: click-and-drag panning in Locked mode (CFP page)
 
 **User ask**: On the CFP page's Entities & Structures chart, when the chart is in Locked mode, the only way to move around is via scrollbars. User wants to click-hold-drag the canvas around the same way you'd grab a Figma canvas — cursor turns into a closed fist while dragging.

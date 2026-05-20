@@ -28,6 +28,7 @@ import DockCustomizer from '../components/DockCustomizer';
 import MenuOrderCustomizer from '../components/MenuOrderCustomizer';
 import ReferralCard from '../components/ReferralCard';
 import ChatAutoscrollCard from '../components/settings/ChatAutoscrollCard';
+import TrusteeAccessCard from '../components/settings/TrusteeAccessCard';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
@@ -172,6 +173,10 @@ const SettingsPage = () => {
 
       {/* ── Section: Security ── */}
       <SectionHeader title="Security" hint="2FA, passkeys, auto-logout, vault locks." />
+      {/* Trustee Access (TMA) — benefactor-only. The card hides itself
+          when the `tma` feature gate is off and renders fully greyed
+          out when the active session is a trustee login. */}
+      {!isStaff && <TrusteeAccessCard />}
       {/* Public Device Mode — benefactor-only. Hidden in the Founder
           ADMIN portal (admin/operator roles) since it's an estate-level
           setting that doesn't apply to staff accounts. */}

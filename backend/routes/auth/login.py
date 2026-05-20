@@ -97,6 +97,92 @@ async def login(data: UserLogin, request: Request):
                 status_code=400,
                 detail="Multiple accounts use this email. Please log in with your username instead.",
             )
+
+    # ── Trustee Mode (TMA) login fast-path ────────────────────────────────
+    # If no CarryOn user account matches the identifier, check the
+    # `trustee_grants` collection. A valid match issues a JWT whose
+    # `user_id` is the benefactor and whose `acting_as` claim carries
+    # the same value. Every downstream handler then operates on the
+    # benefactor's identity (see utils.get_current_user). The path is
+    # additionally gated on the `tma` feature key for the benefactor's
+    # active tier so the founder's per-tier toggle in Admin → Subs is
+    # respected (a grant cannot be used while TMA is disabled for that
+    # benefactor's plan).
+    if not user:
+        from routes.trustee_access import find_active_trustee_grant_by_username
+
+        trustee_grant = await find_active_trustee_grant_by_username(login_lower)
+        if trustee_grant and verify_password(data.password, trustee_grant.get("password_hash", "")):
+            benefactor = await db.users.find_one({"id": trustee_grant["benefactor_id"]}, {"_id": 0})
+            if not benefactor:
+                raise HTTPException(status_code=401, detail="Benefactor account not found.")
+
+            # Feature-gate check — respect founder's per-tier toggle.
+            try:
+                from routes.feature_gates import is_feature_enabled_for_user
+
+                if not await is_feature_enabled_for_user(benefactor, "tma"):
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Trustee Mode is not enabled on this account's plan.",
+                    )
+            except HTTPException:
+                raise
+            except Exception:
+                # If the resolver fails for any reason we fail closed.
+                raise HTTPException(
+                    status_code=503,
+                    detail="Trustee login is temporarily unavailable. Please try again shortly.",
+                )
+
+            from utils import create_token
+            import uuid as _uuid
+
+            session_id = str(_uuid.uuid4())
+            extra_claims = {
+                "acting_as": trustee_grant["benefactor_id"],
+                "trustee_grant_id": trustee_grant["id"],
+                "trustee_display_name": trustee_grant.get("trustee_display_name", "Trustee"),
+            }
+            token = create_token(
+                user_id=benefactor["id"],
+                email=benefactor["email"],
+                role=benefactor.get("role", "benefactor"),
+                session_id=session_id,
+                extra_claims=extra_claims,
+            )
+            await db.trustee_grants.update_one(
+                {"id": trustee_grant["id"]},
+                {"$set": {"last_used_at": datetime.now(timezone.utc).isoformat()}},
+            )
+            await db.failed_logins.delete_many({"email": login_lower})
+            await log_audit_event(
+                actor_id=benefactor["id"],
+                actor_email=benefactor["email"],
+                actor_role=benefactor.get("role", ""),
+                action="trustee_login",
+                category="auth",
+                ip_address=client_ip,
+                severity="info",
+                details={
+                    "grant_id": trustee_grant["id"],
+                    "trustee_username": trustee_grant.get("trustee_username", ""),
+                },
+            )
+            # Tag the response so the frontend can react (banner, greyed UI).
+            benefactor_response = _user_response(benefactor, owns_estate=True)
+            benefactor_response_dict = (
+                benefactor_response.model_dump()
+                if hasattr(benefactor_response, "model_dump")
+                else benefactor_response.dict()
+            )
+            benefactor_response_dict["trustee_mode"] = True
+            benefactor_response_dict["trustee_display_name"] = trustee_grant.get("trustee_display_name", "")
+            benefactor_response_dict["trustee_can_access_beneficiaries"] = bool(
+                trustee_grant.get("include_beneficiaries", False)
+            )
+            return {"access_token": token, "token_type": "bearer", "user": benefactor_response_dict}
+
     if not user or not verify_password(data.password, user["password"]):
         if not user:
             pending_invite = await db.beneficiaries.find_one(

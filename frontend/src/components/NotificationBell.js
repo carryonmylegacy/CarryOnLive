@@ -83,6 +83,28 @@ const NotificationBell = ({ collapsed }) => {
     } catch {}
   };
 
+  // Trustee Mode (TMA): undo a completed trustee mutation. Disabled on
+  // notifications that don't carry an audit_event_id or whose supports_undo
+  // flag is false (rare — destructive ops with no captured snapshot).
+  const undoTrusteeAction = async (n, e) => {
+    e.stopPropagation();
+    if (!n.audit_event_id) return;
+    if (!window.confirm('Undo this change made by the trustee?')) return;
+    try {
+      await apiClient.post(`${API_URL}/trustee/audit/${n.audit_event_id}/undo`, {}, { headers });
+      setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, undone: true, read: true } : x));
+      setUnreadCount(prev => {
+        const next = Math.max(0, prev - (n.read ? 0 : 1));
+        syncBadge(next);
+        return next;
+      });
+    } catch (err) {
+      const msg = err?.response?.data?.detail || 'Could not undo that change.';
+      // Surface inline since we don't import toast here.
+      alert(msg);
+    }
+  };
+
   // Close on outside click
   useEffect(() => {
     const handler = (e) => {
@@ -220,6 +242,25 @@ const NotificationBell = ({ collapsed }) => {
                           hour: '2-digit', minute: '2-digit',
                         })}
                       </div>
+                      {n.type === 'trustee_audit' && (
+                        <div className="mt-2">
+                          {n.undone ? (
+                            <span className="text-[11px] font-bold text-green-500">✓ Undone</span>
+                          ) : n.supports_undo ? (
+                            <button
+                              onClick={(e) => undoTrusteeAction(n, e)}
+                              className="text-[11px] font-bold text-[var(--gold)] hover:underline"
+                              data-testid={`notification-undo-${n.id}`}
+                            >
+                              Undo this change
+                            </button>
+                          ) : (
+                            <span className="text-[11px] font-bold text-[var(--t5)]" title="This change cannot be undone automatically. Manual restore may be required.">
+                              Undo unavailable
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

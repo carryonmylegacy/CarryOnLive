@@ -77,6 +77,7 @@ def create_token(
     role: str,
     session_id: str = None,
     dev_session: bool = False,
+    extra_claims: dict | None = None,
 ) -> str:
     now = datetime.now(timezone.utc)
     payload = {
@@ -89,6 +90,11 @@ def create_token(
     }
     if dev_session:
         payload["dev_session"] = True
+    if extra_claims:
+        # Only allow whitelisted extra claims to avoid accidental leakage.
+        for k in ("acting_as", "trustee_grant_id", "trustee_display_name"):
+            if k in extra_claims:
+                payload[k] = extra_claims[k]
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
@@ -117,6 +123,43 @@ async def get_current_user(
     issued_at = payload.get("issued_at", "")
     if issued_at and await is_user_tokens_revoked(payload["user_id"], issued_at):
         raise HTTPException(status_code=401, detail="Session expired — please log in again")
+
+    # ── Trustee Mode (TMA) ────────────────────────────────────────────────
+    # If the token carries an `acting_as` claim, the caller is a trustee
+    # operating on behalf of a benefactor. Resolve the underlying grant
+    # (must exist, not be revoked, not be expired) and return the
+    # benefactor's user document with trustee flags attached. Every
+    # existing downstream handler then operates on the benefactor's
+    # identity unchanged.
+    acting_as = payload.get("acting_as")
+    grant_id_claim = payload.get("trustee_grant_id")
+    if acting_as and grant_id_claim:
+        grant = await db.trustee_grants.find_one(
+            {"id": grant_id_claim, "benefactor_id": acting_as, "revoked_at": None},
+            {"_id": 0},
+        )
+        if not grant:
+            raise HTTPException(status_code=401, detail="Trustee grant has been revoked.")
+        expires_at = grant.get("expires_at")
+        if expires_at:
+            try:
+                from datetime import datetime as _dt
+                from datetime import timezone as _tz
+
+                if _dt.fromisoformat(expires_at) <= _dt.now(_tz.utc):
+                    raise HTTPException(status_code=401, detail="Trustee access has expired.")
+            except HTTPException:
+                raise
+            except (ValueError, TypeError):
+                pass
+        benefactor = await db.users.find_one({"id": acting_as}, {"_id": 0})
+        if not benefactor:
+            raise HTTPException(status_code=401, detail="Benefactor account not found.")
+        benefactor["_trustee_mode"] = True
+        benefactor["_trustee_grant_id"] = grant["id"]
+        benefactor["_trustee_display_name"] = grant.get("trustee_display_name", "")
+        benefactor["_trustee_can_access_beneficiaries"] = bool(grant.get("include_beneficiaries", False))
+        return benefactor
 
     user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
     if not user:

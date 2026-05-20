@@ -60,6 +60,8 @@ PARTNER_FEATURE_PILLARS = [
     {"key": "cfp", "label": "Financial Picture"},
     {"key": "bec", "label": "Beneficiary Estate Concierge"},
     {"key": "beneficiaries", "label": "Beneficiaries"},
+    # Trustee Mode Access defaults OFF — partners must explicitly opt in.
+    {"key": "tma", "label": "Trustee Mode Access", "default_off": True},
 ]
 PARTNER_FEATURE_KEYS = [f["key"] for f in PARTNER_FEATURE_PILLARS]
 
@@ -83,13 +85,17 @@ def _default_gates() -> dict:
     """Default new partners to ALL pillars enabled — the founder will
     toggle individual ones OFF based on what was negotiated. This is
     the inverse of the per-tier default-off convention because partner
-    contracts almost always start as "everything in, then trim"."""
-    return {key: True for key in PARTNER_FEATURE_KEYS}
+    contracts almost always start as "everything in, then trim".
+
+    Exception: any pillar carrying `default_off: True` (e.g. Trustee
+    Mode Access) defaults to False — the founder must explicitly opt
+    a partner in to that capability."""
+    return {f["key"]: (not f.get("default_off", False)) for f in PARTNER_FEATURE_PILLARS}
 
 
 def _coerce_gates(gates: Optional[dict]) -> dict:
-    """Normalise an incoming gates dict — drops unknown keys, defaults
-    any missing pillar to True, coerces each value to bool."""
+    """Normalise an incoming gates dict — drops unknown keys, respects
+    per-pillar defaults for missing values, coerces each value to bool."""
     out = _default_gates()
     if not isinstance(gates, dict):
         return out

@@ -181,6 +181,47 @@
 ---
 
 
+## 🔐 May 20, 2026 — Trustee Mode Access (TMA) shipped
+
+A founder-toggleable feature gate that lets a benefactor provision a **non-beneficiary** delegate (estate attorney, fiduciary, family steward) to operate the benefactor's portal under their own username/password. Full mutation parity with the benefactor except the trustee management surface itself (greyed out). Every completed trustee mutation is logged as an undoable notification on the benefactor's account.
+
+**Founder controls (per-tier and per-partner)**:
+- Admin → Subs → Feature Gates → row `Trustee Mode Access (TMA)` — default OFF for every tier.
+- Admin → Partners → per-partner feature gates — TMA row also defaults OFF (opposite of every other partner pillar, which default ON) so a B2B partner has to explicitly contract for the capability.
+
+**Benefactor controls (Settings → Security)**:
+- New "Trustee Access" card. Hidden unless founder has flipped TMA on for the benefactor's tier or partner.
+- Create / list / revoke grants. Per-grant toggle for beneficiary-account inclusion (default OFF). Per-grant expiry dropdown: indefinite / 1d / 3d / 5d / 1w / custom days.
+
+**Trustee experience**:
+- Logs in via the same `/login` page using their unique username + password.
+- Sees the benefactor portal with a persistent amber **"TRUSTEE MODE — {name} acting on behalf of {benefactor}"** banner sticky on every page.
+- Can mutate anything the benefactor can. The Trustee Access settings card is rendered fully greyed-out + read-only — the trustee cannot create / modify / revoke any grant or toggle beneficiary access.
+
+**Audit + undo**:
+- Trustee writes are intercepted by `middleware_trustee_audit.py` (zero-cost early-out for non-trustee traffic).
+- Pre-mutation snapshot is captured for ~11 hot collections (entities / estates / messages / documents / FFN / beneficiaries / wills / DAV / CCP / IAC).
+- After a successful 2xx response, `db.trustee_audit_events` row is written + an in-app notification of `type="trustee_audit"` fires on the benefactor's account with `supports_undo: true`.
+- Benefactor sees an "Undo this change" button inline in the notifications drawer → `POST /api/trustee/audit/{event_id}/undo` replays the snapshot. Works for create / update / delete.
+- Destructive ops for collections NOT in the route map still notify the benefactor (visibility) but mark the undo button "Undo unavailable" with a tooltip indicating manual restore may be required.
+
+**Security model**:
+- JWT carries `acting_as: <benefactor_user_id>` + `trustee_grant_id`. `utils.get_current_user` validates the grant on EVERY request — revocation or expiry is enforced immediately (no token-replay window).
+- Trustee management endpoints (`/api/trustee/grants/*`) are hard-gated server-side: any session with `_trustee_mode=True` is refused with 403.
+- Trustee login is hard-gated at the auth layer on the `tma` feature being enabled for the benefactor's resolved tier (or partner override). Flipping TMA off in Admin → Subs instantly blocks every active grant's next login.
+
+**Tests + housekeeping**:
+- New `backend/tests/test_trustee_mode.py` — **8/8 pass in 4.4s**. Covers CRUD, login fast-path, acting_as resolution, /auth/me flags, 403 self-management, immediate revoke invalidation, and tier gate enforcement.
+- Backend ruff / frontend ESLint / route policy coverage / dependency security all PASS.
+- 0 WARN / 0 FAIL on `bash /app/scripts/check.sh`.
+
+Build tag bumped to `V2026.05.20.13`.
+
+---
+
+
+
+
 ## 🏛️ Feb 12, 2026 — Commercial-Grade Audit Upgrades (5/5 SHIPPED) + P2 Cleanup (3/3 SHIPPED)
 
 Triggered after the IDOR P0 security audit. Five enterprise-grade upgrades + three P2 follow-ons all completed in one session.

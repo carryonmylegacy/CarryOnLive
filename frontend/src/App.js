@@ -12,6 +12,7 @@ import DashboardLayout from './components/layout/DashboardLayout';
 import ShareUploadModal from './components/ShareUploadModal';
 import ForceUpdateGate from './components/ForceUpdateGate';
 import NetworkStatusBanner from './components/NetworkStatusBanner';
+import TrusteeBanner from './components/TrusteeBanner';
 import NotificationContainer from './components/AppNotification';
 import OfflineSyncProgress from './components/OfflineSyncProgress';
 import PendingUploadsIndicator from './components/PendingUploadsIndicator';
@@ -867,6 +868,7 @@ function App() {
         <SectionLockProvider>
         <BrowserRouter>
           <NetworkStatusBanner />
+          <TrusteeBanner />
           <PendingSyncChip />
           <NotificationContainer />
           <OfflineSyncProgress />

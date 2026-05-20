@@ -72,6 +72,24 @@ PLATFORM_FEATURES = [
         "core": False,
         "default_off": True,
     },
+    {
+        # Trustee Mode Access — benefactor-provisioned read/write
+        # delegate identity. NOT a beneficiary, NOT a co-owner. The
+        # benefactor creates a separate username/password that, when
+        # used to log in, acts on behalf of the benefactor with full
+        # mutation parity (one exception: the trustee can NEVER edit
+        # the trustee management panel itself). Every completed
+        # mutation by the trustee is logged as an undoable
+        # notification on the benefactor's account. Default OFF for
+        # every tier and every partner — founder enables it per tier
+        # via Admin → Subs → Feature Gates and per partner via
+        # Admin → Partners.
+        "key": "tma",
+        "label": "Trustee Mode Access (TMA)",
+        "route": "/settings",
+        "core": False,
+        "default_off": True,
+    },
 ]
 
 FEATURE_KEYS = [f["key"] for f in PLATFORM_FEATURES]
@@ -378,3 +396,38 @@ async def _get_benefactor_tier(current_user: dict, estate_id: str = None) -> str
         return benefactor_user["verified_tier"]
 
     return None
+
+
+async def is_feature_enabled_for_user(user_doc: dict, feature_key: str) -> bool:
+    """Authoritative server-side feature gate check for a benefactor.
+
+    Mirrors the tier-resolution order used by `get_user_enabled_features`
+    but without the request scaffolding — callable from any module that
+    needs to gate a non-routed action (e.g., trustee login). Honors the
+    B2B partner override.
+    """
+    # Partner override first — same precedence as the request-scoped path.
+    if user_doc.get("partner_id"):
+        partner_doc = await db.b2b_partners.find_one(
+            {"id": user_doc["partner_id"], "active": True},
+            {"_id": 0, "feature_gates": 1},
+        )
+        if partner_doc and isinstance(partner_doc.get("feature_gates"), dict):
+            return bool(partner_doc["feature_gates"].get(feature_key, False))
+
+    effective_tier = None
+    sub = await db.user_subscriptions.find_one({"user_id": user_doc["id"]}, {"_id": 0, "plan_id": 1, "status": 1})
+    if sub and sub.get("status") in ("active", "past_due"):
+        effective_tier = sub.get("plan_id")
+    if not effective_tier:
+        owned = await db.estates.find_one(
+            {"owner_id": user_doc["id"], "verified_tier": {"$exists": True, "$ne": ""}},
+            {"_id": 0, "verified_tier": 1},
+        )
+        if owned and owned.get("verified_tier"):
+            effective_tier = owned["verified_tier"]
+    if not effective_tier:
+        effective_tier = user_doc.get("verified_tier") or "premium"
+
+    gates = await get_feature_gates()
+    return bool(gates.get(feature_key, {}).get(effective_tier, False))

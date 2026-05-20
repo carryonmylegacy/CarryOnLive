@@ -44,6 +44,19 @@
 
 ---
 
+### Preview Trustee — `trustee_screenshot` (Trustee Mode Access test grant)
+- URL: `https://estate-stable.preview.emergentagent.com`
+- Login (username): `trustee_screenshot`
+- Password: `TPass1234!`
+- Type: **TMA grant** (NOT a CarryOn user). Resolves at login to act on behalf of `info@carryon.us` (Pete Mitchell).
+- Visible flag on success: persistent amber "TRUSTEE MODE — Screenshot Trustee acting on behalf of …" banner across every page.
+- Notes:
+  - Grant has a 3-day expiry from creation.
+  - Founder must enable the `tma` feature gate in Admin → Subs for at least one tier OR for the partner override before this login works (login returns 403 otherwise).
+  - To remove: `DELETE /api/trustee/grants/{id}` as the benefactor, or re-create via the Trustee Access card in Settings.
+
+
+
 ## Gap: No non-staff benefactor test account seeded
 - This gap is now CLOSED — `info@carryon.us` is a real benefactor on preview (matches production).
 

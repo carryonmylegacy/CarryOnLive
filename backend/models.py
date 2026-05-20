@@ -75,6 +75,13 @@ class UserResponse(BaseModel):
     # Empty string for direct consumer signups (no behaviour change).
     partner_slug: str = ""
     partner_company: str = ""
+    # Trustee Mode (TMA) — only present on the response when the
+    # session was created via a trustee login. The frontend uses
+    # `trustee_mode` to render the persistent banner and grey out
+    # the trustee management panel.
+    trustee_mode: bool = False
+    trustee_display_name: str = ""
+    trustee_can_access_beneficiaries: bool = False
 
 
 class TokenResponse(BaseModel):

@@ -86,6 +86,7 @@ from routes.guardian_exports import router as guardian_exports_router
 from routes.staff_ops import router as staff_ops_router
 from routes.referrals import router as referrals_router
 from routes.referrals import ensure_indexes as ensure_referral_indexes
+from routes.trustee_access import router as trustee_access_router
 from routes.admin import email_health_scheduler
 from services.onboarding_drip import onboarding_drip_scheduler
 from schedulers import (
@@ -394,6 +395,7 @@ api_router.include_router(staff_ops_router)
 api_router.include_router(platform_rules_router)
 api_router.include_router(changelog_router)
 api_router.include_router(referrals_router)
+api_router.include_router(trustee_access_router)
 
 
 BUILD_HASH = "2026-04-28T00:00:00Z-pre-launch-refactor"
@@ -562,6 +564,16 @@ try:
             logger.warning(f"Idempotency index setup failed: {exc}")
 except Exception as _idem_exc:
     logger.warning(f"Idempotency middleware skipped: {_idem_exc}")
+
+# Trustee Audit (TMA) — snapshots + notifications on every mutation
+# performed by a trustee operating in `acting_as` mode. Wrapped in a
+# try/except so a packaging issue can never block server boot.
+try:
+    from middleware_trustee_audit import TrusteeAuditMiddleware
+
+    app.add_middleware(TrusteeAuditMiddleware)
+except Exception as _tma_exc:
+    logger.warning(f"Trustee audit middleware skipped: {_tma_exc}")
 
 app.add_middleware(RequestTraceMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
