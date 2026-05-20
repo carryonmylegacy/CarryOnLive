@@ -1,6 +1,82 @@
 # CarryOn — Changelog
 
 
+## May 20, 2026 (early hours) — Production back online after Railway outage migration
+
+Continuation of the May 19 emergency Railway → Render migration. The
+backend Docker image had deployed cleanly but the live production stack
+was still broken at three layers. We walked through them one at a time
+with the user (zero terminal use on their end) and brought everything
+back up.
+
+### Layer 1 — Render: MongoDB auth failure
+- Symptom: `pymongo.errors.OperationFailure: Authentication failed.` crash-loop on Render.
+- Root cause: User had pasted `mongodb+srv://barnetharris_db_user:barnetharris_db_user@...`
+  (placeholder password equal to username) into Render's `MONGO_URL`.
+- Fix (user-side in Atlas): Rotated DB user password, ensured "Read and write to any
+  database" role, confirmed Network Access `0.0.0.0/0`, pasted the new
+  alphanumeric-only password into Render `MONGO_URL`. App health flipped
+  to `database: connected` with all 12 schedulers running.
+
+### Layer 2 — Vercel frontend still pointing at dead Railway backend
+- Symptom: `www.carryon.us` JS bundle still embedded `https://carryon-api-production.up.railway.app`.
+- Root cause A: User updated `REACT_APP_BACKEND_URL` in Vercel env vars
+  (set correctly to `https://carryon-api-kacr.onrender.com`, "All Environments"
+  scope) but then "Promoted" a pre-existing Staged build (`GmR133xD9`,
+  commit `5950413`) that was compiled BEFORE the env-var change. Promoting
+  flips Current — it does NOT rebuild.
+- Root cause B: Subsequent "Redeploy" attempts canceled in ~2 seconds.
+  This was traced to `frontend/vercel.json` line 2:
+  ```
+  "ignoreCommand": "git diff --quiet $VERCEL_GIT_PREVIOUS_SHA HEAD -- ./ 2>/dev/null || exit 1"
+  ```
+  Redeploying the same commit produces an empty frontend diff → ignore
+  returns exit 0 → Vercel cancels the build to save build minutes.
+- Fix: Added a one-line build-trigger comment at top of `frontend/src/App.js`:
+  ```
+  // Build trigger 2026-05-20: Render backend migration (carryon-api-kacr.onrender.com)
+  ```
+  User pushed via "Save to GitHub" in chat; Vercel webhook fired, diff
+  was non-empty, build proceeded with the new env var baked in, auto-promoted
+  to Production. Bundle `main.256c40d3.js` now correctly calls
+  `carryon-api-kacr.onrender.com`.
+
+### Layer 3 — Render backend pointing at wrong Mongo database name
+- Symptom: All logins (including `founder@carryon.us` admin) returned
+  401 Invalid credentials even though `database: connected` was healthy.
+- Diagnostic curl against `/api/auth/login` on Render confirmed 401, while
+  frontend bundle was correctly pointed at Render — so the failure was
+  inside the DB layer, not network.
+- Root cause: Cluster was correct (`carryonprebeta.mudyecf.mongodb.net` on
+  both Railway and Render) but Render's `DB_NAME` env var did not match
+  Railway's. Backend reads `db = client[os.environ["DB_NAME"]]` in
+  `/app/backend/config.py:57`. Railway had `DB_NAME=carryon_db`. Render
+  was set to something else (likely a default the agent had guessed
+  during initial Render config), so the connection landed on an
+  empty/wrong database with no user records.
+- Fix: User pulled the real `DB_NAME=carryon_db` from Railway's Variables
+  tab (Railway dashboard had recovered from the outage by this point),
+  pasted into Render `DB_NAME`, Render auto-redeployed. Login validated
+  end-to-end on `app.carryon.us`.
+
+### Production state at fork
+- Frontend: Vercel — `www.carryon.us` / `app.carryon.us`, bundle `main.256c40d3.js`.
+- Backend: Render — `carryon-api-kacr.onrender.com` (Docker, Python 3.12 + Playwright, Virginia).
+- Database: MongoDB Atlas — `carryonprebeta.mudyecf.mongodb.net` / database `carryon_db` (unchanged from Railway era).
+- Old Railway service kept alive but no longer wired to traffic.
+
+### Lessons / Notes for next agent
+- The `ignoreCommand` in `frontend/vercel.json` will silently cancel any
+  manual Vercel "Redeploy" on the same commit. To force a rebuild on an
+  unchanged commit, touch any file under `frontend/` and push.
+- Render auto-redeploys on env-var changes. Vercel does NOT — it requires
+  a manual redeploy OR a new commit.
+- DB_NAME and MONGO_URL must both be set on any new backend host;
+  the cluster URL alone is insufficient because the connection string
+  carries no database segment.
+
+
+
 ## May 19, 2026 (evening) — Binder manifest collapse + Skip-in-Binder + blank-page strip
 
 User feedback after the morning Playwright push (screenshots IMG_0569–
