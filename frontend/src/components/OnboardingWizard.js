@@ -322,7 +322,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
             <Sparkles className="w-6 h-6 text-[#d4af37]" />
           </div>
           <div>
-            <h3 className="text-[var(--t)] font-bold text-xl lg:text-2xl" style={{ fontFamily: 'var(--sans)' }}>Get Started with CarryOn</h3>
+            <h3 className="text-[var(--t)] font-bold text-xl lg:text-2xl" style={{ fontFamily: 'var(--sans)' }}>{user?.partner_slug ? 'Get Started' : 'Get Started with CarryOn'}</h3>
             <p className="text-[var(--t5)] text-base">{progress.completed_count} of {progress.total_steps} complete</p>
           </div>
         </div>
