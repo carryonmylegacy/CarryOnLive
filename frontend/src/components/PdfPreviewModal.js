@@ -72,6 +72,11 @@ const PdfPreviewModal = () => {
   // in-place using whatever cached section PDFs exist right now.
   // Shown only for the Estate Binder preview (not for one-off PDFs).
   const [refreshingBinder, setRefreshingBinder] = useState(false);
+  // Timestamp of the last successful binder assembly. Set on initial
+  // open (any open of the binder modal IS a fresh assembly — the
+  // EstateBinderButton calls POST /generate before dispatching the
+  // event) and re-set whenever any in-place regen finishes.
+  const [lastBinderRefreshAt, setLastBinderRefreshAt] = useState(null);
   // Persistent collapse state for the manifest — frees up screen
   // real estate for the actual PDF preview below it. Defaults to
   // COLLAPSED on first open (Barnet's preference) so the preview
@@ -137,6 +142,7 @@ const PdfPreviewModal = () => {
       });
       setRenderState('loading');
       setPageCount(0);
+      setLastBinderRefreshAt(new Date().toISOString());
     } else {
       // Empty-binder JSON case — manifest still updates so the user
       // can see what's left to skip / un-skip.
@@ -287,6 +293,7 @@ const PdfPreviewModal = () => {
       });
       setRenderState('loading');
       setPageCount(0);
+      setLastBinderRefreshAt(new Date().toISOString());
     } catch (err) {
       // eslint-disable-next-line no-alert
       alert(`Couldn't refresh ${section.display_title}: ${err?.message || 'unknown error'}`);
@@ -302,6 +309,13 @@ const PdfPreviewModal = () => {
       setEntry(e.detail);
       setRenderState('loading');
       setPageCount(0);
+      // Any open of the binder modal IS a fresh assembly (the
+      // EstateBinderButton calls POST /generate before dispatching).
+      // Stamp "now" so the manifest note reads correctly even before
+      // the user hits Refresh Binder.
+      if (e.detail?.title === 'Estate Binder') {
+        setLastBinderRefreshAt(new Date().toISOString());
+      }
     };
     window.addEventListener('carryon:open-pdf-preview', handler);
     return () => window.removeEventListener('carryon:open-pdf-preview', handler);
@@ -702,6 +716,16 @@ const PdfPreviewModal = () => {
             flex-direction: column;
             gap: 4px;
           }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-note {
+            font-size: 11px;
+            line-height: 1.45;
+            color: #64748b;
+            background: rgba(212, 175, 55, 0.08);
+            border-left: 3px solid #d4af37;
+            padding: 8px 10px;
+            border-radius: 0 6px 6px 0;
+            margin-bottom: 6px;
+          }
           .pdf-preview-modal .pdf-preview-manifest .manifest-row {
             display: flex;
             align-items: center;
@@ -936,6 +960,16 @@ const PdfPreviewModal = () => {
             </button>
             {!manifestCollapsed && (
               <div className="manifest-rows">
+                {entry?.title === 'Estate Binder' && (
+                  <div
+                    className="manifest-note"
+                    data-testid="pdf-preview-manifest-note"
+                  >
+                    Binder {lastBinderRefreshAt ? `last refreshed ${_formatAgo(lastBinderRefreshAt)}` : 'refreshed'} —
+                    pulls all currently cached PDFs across the platform.
+                    To update a cached PDF, visit that section.
+                  </div>
+                )}
                 {(entry.sections || []).map((s) => {
                   const ago = _formatAgo(s.updated_at);
                   const isRefreshing = refreshingType === s.pdf_type;
@@ -1069,7 +1103,7 @@ const PdfPreviewModal = () => {
         <ShareBinderModal open={shareOpen} onClose={() => setShareOpen(false)} />
       </div>
     );
-  }, [entry, printing, renderState, pageCount, shareOpen, handleClose, handleDownload, navigate, refreshingType, skippingType, refreshingBinder, handleRefreshBinder, manifestCollapsed, toggleManifestCollapsed, handleSectionRefresh, handleSectionSkipToggle]);
+  }, [entry, printing, renderState, pageCount, shareOpen, handleClose, handleDownload, navigate, refreshingType, skippingType, refreshingBinder, handleRefreshBinder, lastBinderRefreshAt, manifestCollapsed, toggleManifestCollapsed, handleSectionRefresh, handleSectionSkipToggle]);
 
   if (typeof document === 'undefined') return null;
   return createPortal(portalContent, document.body);
