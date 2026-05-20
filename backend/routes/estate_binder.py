@@ -37,6 +37,7 @@ from fpdf import FPDF
 from pypdf import PdfReader, PdfWriter
 
 from config import db, logger
+from services.ccp_combined_pdf import build_combined_ccp_pdf
 from services.storage import storage
 from utils import get_current_user
 
@@ -514,13 +515,32 @@ async def generate_estate_binder(current_user: dict = Depends(get_current_user))
     first_page_size: tuple[float, float] | None = None  # (width, height) in points
 
     for section in available:
-        try:
-            blob = await storage.download(section["s3_key"])
-        except Exception as exc:  # noqa: BLE001
-            logger.warning(
-                f"Estate binder: cached PDF download failed for user={user_id} type={section['pdf_type']}: {exc}"
-            )
-            continue
+        # `ccp_plan` is special: the cached row is just the LAST single
+        # plan the user downloaded, but the binder needs ALL of the
+        # user's emergency plans. Build a fresh combined PDF on the
+        # fly instead of pulling the single-plan cache. If the build
+        # fails or yields no plans, fall through to the cache as a
+        # graceful degrade.
+        if section["pdf_type"] == "ccp_plan":
+            combined = await build_combined_ccp_pdf(estate.get("id")) if estate else None
+            if combined:
+                blob = combined
+            else:
+                try:
+                    blob = await storage.download(section["s3_key"])
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning(
+                        f"Estate binder: cached PDF download failed for user={user_id} type={section['pdf_type']}: {exc}"
+                    )
+                    continue
+        else:
+            try:
+                blob = await storage.download(section["s3_key"])
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    f"Estate binder: cached PDF download failed for user={user_id} type={section['pdf_type']}: {exc}"
+                )
+                continue
         try:
             reader = PdfReader(io.BytesIO(blob))
             total_pages = len(reader.pages)
