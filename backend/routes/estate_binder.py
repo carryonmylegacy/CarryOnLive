@@ -51,9 +51,6 @@ router = APIRouter()
 # missing-sections JSON so the frontend can offer a tap-to-cache CTA.
 SECTION_ORDER: list[tuple[str, str, str, str]] = [
     ("iac_standalone", "Immediate Action Checklist", "/checklist", "Checklist page"),
-    ("ega_todo", "Estate Guardian — To-Do List", "/guardian", "Estate Guardian"),
-    ("ega_iac", "Estate Guardian — Immediate Action Report", "/guardian", "Estate Guardian"),
-    ("ega_checklist", "Estate Guardian — IAC Checklist", "/guardian", "Estate Guardian"),
     ("ega_plan", "Estate Guardian — Plan of Action", "/guardian", "Estate Guardian"),
     ("ega_transcript", "Estate Guardian — Conversation Transcript", "/guardian", "Estate Guardian"),
     ("cfp_handoff", "CarryOn Financial Picture — Hand-off Package", "/financial", "Financial Picture"),
@@ -61,7 +58,6 @@ SECTION_ORDER: list[tuple[str, str, str, str]] = [
     ("ccp_plan", "Contingency Care Plan", "/connected-protocol", "Connected Protocol"),
     ("ccp_card", "Emergency Card", "/connected-protocol", "Connected Protocol"),
     ("ccp_report", "Family Readiness Report", "/connected-protocol", "Connected Protocol"),
-    ("beneficiary_packet", "Beneficiary IAC Packet", "/beneficiaries", "Beneficiaries"),
 ]
 
 # 1-line sanitizer for PDF strings (fpdf2 uses latin-1 by default,

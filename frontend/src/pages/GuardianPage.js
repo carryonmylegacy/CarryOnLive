@@ -16,7 +16,6 @@ import {
   ArrowUp,
   StopCircle,
   FileSearch,
-  ListChecks,
   ScanSearch,
   ClipboardList,
   Gauge,
@@ -33,14 +32,12 @@ import {
   Copy,
   Mic,
   MicOff,
-  Download,
   Landmark,
   AlertCircle,
   ChevronRight
 } from 'lucide-react';
 
 import { toast } from '../utils/toast';
-import { downloadFile, platformDownload } from '../utils/downloadFile';
 import CachedPdfIcon from '../components/CachedPdfIcon';
 import { openPdfPreview } from '../utils/openPdfPreview';
 import { API_URL } from '../config';
@@ -57,7 +54,6 @@ const suggestedQuestions = [
 
 const actionButtons = [
   { key: 'analyze_vault', label: 'Analyze Vault', icon: FileSearch, color: '#3B7BF7' },
-  { key: 'generate_todo', label: 'Generate To-Do List', icon: ClipboardList, color: '#22C993' },
   { key: 'find_inconsistencies', label: 'Find Inconsistencies', icon: ScanSearch, color: '#F59E0B' },
   { key: 'analyze_readiness', label: 'Readiness Score', icon: Gauge, color: '#F5A623' },
   { key: 'beneficiary_review', label: 'Beneficiary Review', icon: Users, color: '#8b5cf6' },
@@ -137,7 +133,6 @@ const GuardianPage = () => {
   const [showQuestions, setShowQuestions] = useState(false);
   const [showActions, setShowActions] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [checklistExporting, setChecklistExporting] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const landingInputRef = useRef(null);
@@ -283,15 +278,11 @@ const GuardianPage = () => {
           if (m.action_result.duplicates_skipped > 0) {
             msg.actionBadge += ` · ${m.action_result.duplicates_skipped} duplicate${m.action_result.duplicates_skipped !== 1 ? 's' : ''} skipped`;
           }
-          msg.showIacDownload = true;
           msg.iacSummary = {
             added: m.action_result.items_added,
             skipped: m.action_result.duplicates_skipped || 0,
             titles: m.action_result.duplicate_titles || [],
           };
-        }
-        if (m.action_result?.action === 'todo_generated') {
-          msg.showTodoDownload = true;
         }
         return msg;
       });
@@ -384,71 +375,6 @@ const GuardianPage = () => {
     }
   };
 
-  const handleChecklistExport = async () => {
-    setChecklistExporting(true);
-    try {
-      const dateStr = new Date().toISOString().split('T')[0];
-      const filename = `CarryOn_IAC_${dateStr}.pdf`;
-      await openPdfPreview({
-        navigate,
-        pdfType: 'ega_checklist',
-        filename,
-        title: 'IAC Checklist',
-        subtitle: dateStr,
-        blobFetcher: async () => {
-          const headers = getAuthHeaders()?.headers;
-          const res = await apiClient.post(`${API_URL}/guardian/export-checklist`, {}, { headers, responseType: 'blob', timeout: 120000 });
-          return new Blob([res.data], { type: 'application/pdf' });
-        },
-      });
-    } catch (err) {
-      toast.error(err.response?.status === 404 ? 'No IAC items found — generate one first' : 'Failed to export checklist');
-    }
-    setChecklistExporting(false);
-  };
-
-  const handleTodoDownload = async (content) => {
-    try {
-      const dateStr = new Date().toISOString().split('T')[0];
-      const filename = `CarryOn_ToDo_${dateStr}.pdf`;
-      await openPdfPreview({
-        navigate,
-        pdfType: 'ega_todo',
-        filename,
-        title: 'EGA To-Do List',
-        subtitle: dateStr,
-        blobFetcher: async () => {
-          const headers = getAuthHeaders()?.headers;
-          const res = await apiClient.post(`${API_URL}/guardian/export-todo`, { content }, { headers, responseType: 'blob', timeout: 60000 });
-          return new Blob([res.data], { type: 'application/pdf' });
-        },
-      });
-    } catch (err) {
-      toast.error('Failed to generate PDF');
-    }
-  };
-
-  const handleIacDownload = async (content) => {
-    try {
-      const dateStr = new Date().toISOString().split('T')[0];
-      const filename = `CarryOn_IAC_Report_${dateStr}.pdf`;
-      await openPdfPreview({
-        navigate,
-        pdfType: 'ega_iac',
-        filename,
-        title: 'IAC Report',
-        subtitle: dateStr,
-        blobFetcher: async () => {
-          const headers = getAuthHeaders()?.headers;
-          const res = await apiClient.post(`${API_URL}/guardian/export-iac-report`, { content }, { headers, responseType: 'blob', timeout: 120000 });
-          return new Blob([res.data], { type: 'application/pdf' });
-        },
-      });
-    } catch (err) {
-      toast.error('Failed to generate IAC Report PDF');
-    }
-  };
-
   const handleExportTranscript = async () => {
     if (!sessionId) { toast.error('No active conversation'); return; }
     setExporting(true);
@@ -513,7 +439,7 @@ const GuardianPage = () => {
     const activeSessionId = overrideSessionId || sessionId;
 
     const displayText = action
-      ? { analyze_vault: 'Analyze my Document Vault', generate_todo: 'Generate my Estate To-Do List', find_inconsistencies: 'Find inconsistencies, mismatches, and gaps in my estate documents and recommend specific fixes', analyze_readiness: 'Analyze my Estate Readiness Score', beneficiary_review: 'Review my beneficiary designations and coverage', state_law_brief: 'Give me a brief on my state\'s estate planning laws' }[action] || messageText
+      ? { analyze_vault: 'Analyze my Document Vault', find_inconsistencies: 'Find inconsistencies, mismatches, and gaps in my estate documents and recommend specific fixes', analyze_readiness: 'Analyze my Estate Readiness Score', beneficiary_review: 'Review my beneficiary designations and coverage', state_law_brief: 'Give me a brief on my state\'s estate planning laws' }[action] || messageText
       : messageText;
 
     setMessages(prev => [...prev, { role: 'user', content: displayText }]);
@@ -561,7 +487,6 @@ const GuardianPage = () => {
             badge += ` · ${result.duplicates_skipped} duplicate${result.duplicates_skipped !== 1 ? 's' : ''} skipped`;
           }
           assistantMsg.actionBadge = badge;
-          assistantMsg.showIacDownload = true;
           assistantMsg.iacSummary = {
             added: result.items_added,
             skipped: result.duplicates_skipped || 0,
@@ -575,8 +500,6 @@ const GuardianPage = () => {
           } else if (result.duplicates_skipped > 0) {
             toast(`All ${result.duplicates_skipped} items already exist in your checklist — no duplicates added`);
           }
-        } else if (result.action === 'todo_generated') {
-          assistantMsg.showTodoDownload = true;
         } else if (result.action === 'readiness_analyzed' && result.readiness) {
           assistantMsg.readiness = result.readiness;
         }
@@ -873,14 +796,6 @@ const GuardianPage = () => {
             {planExporting ? <PieProgress size={18} color="#d4af37" duration={15} /> : <ClipboardList className="w-4.5 h-4.5" />}
             <span className="hidden lg:inline text-xs font-bold">Plan</span>
           </button>
-          <span className="hidden lg:inline-flex"><CachedPdfIcon pdfType="ega_checklist" /></span>
-          <button onClick={handleChecklistExport} disabled={checklistExporting} title="Export IAC Checklist"
-            className="h-9 px-2 lg:px-3 rounded-lg flex items-center gap-1.5 transition-all hover:bg-[var(--s)]"
-            style={{ color: '#22C993' }}
-            data-testid="export-checklist-pdf-btn">
-            {checklistExporting ? <PieProgress size={18} color="#22C993" duration={4} /> : <ListChecks className="w-4.5 h-4.5" />}
-            <span className="hidden lg:inline text-xs font-bold">Checklist</span>
-          </button>
           <button onClick={deleteCurrentSession} disabled={!sessionId} title="Delete this conversation"
             className="h-9 px-2 lg:px-3 rounded-lg flex items-center gap-1.5 transition-all hover:bg-[var(--s)] disabled:opacity-40"
             style={{ color: '#ef4444' }}
@@ -967,22 +882,6 @@ const GuardianPage = () => {
                   <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#22c993]">
                     <CheckCircle2 className="w-3.5 h-3.5" /> {msg.actionBadge}
                   </div>
-                )}
-                {msg.showTodoDownload && !loading && (
-                  <button onClick={() => handleTodoDownload(msg.content)}
-                    className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
-                    style={{ background: 'rgba(34,201,147,0.12)', border: '1px solid rgba(34,201,147,0.3)', color: '#22C993' }}
-                    data-testid={`download-todo-${index}`}>
-                    <Download className="w-3.5 h-3.5" /> Download To-Do List PDF
-                  </button>
-                )}
-                {msg.showIacDownload && !loading && (
-                  <button onClick={() => handleIacDownload(msg.content)}
-                    className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
-                    style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', color: '#F59E0B' }}
-                    data-testid={`download-iac-report-${index}`}>
-                    <Download className="w-3.5 h-3.5" /> Download IAC Report PDF
-                  </button>
                 )}
                 {msg.readiness && (
                   <div className="mt-3 grid grid-cols-3 gap-2">

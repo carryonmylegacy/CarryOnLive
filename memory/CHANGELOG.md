@@ -1,6 +1,59 @@
 # CarryOn — Changelog
 
 
+## May 20, 2026 — Estate Binder IAC redundancy purge
+
+User feedback during pitch prep: the Estate Binder was rendering the *same*
+Immediate Action Checklist four separate times under different titles
+(plus a Beneficiary IAC Packet copy), and there was a separate "Estate
+Guardian — To-Do List" that duplicated the "Plan of Action". Cleaned this up
+so there is exactly ONE IAC document in the platform (on the IAC page) and
+ONE forward-looking action document (Plan of Action).
+
+### Removed from Estate Binder SECTION_ORDER (`backend/routes/estate_binder.py`)
+- `ega_todo` — Estate Guardian — To-Do List
+- `ega_iac` — Estate Guardian — Immediate Action Report
+- `ega_checklist` — Estate Guardian — IAC Checklist
+- `beneficiary_packet` — Beneficiary IAC Packet (binder copy only)
+
+Binder TOC now lists 8 curated sections instead of 12. Verified by hitting
+`POST /api/estate-binder/generate` on prod-credentialed test account — TOC
+shows no duplicates.
+
+### Removed from `GuardianPage.js`
+- Quick action button: "Generate To-Do List" (`generate_todo`)
+- Header export button: "Export Checklist" (Checklist PDF / `ega_checklist`)
+- Chat in-message: "Download To-Do List PDF" button
+- Chat in-message: "Download IAC Report PDF" button
+- Handlers: `handleChecklistExport`, `handleTodoDownload`, `handleIacDownload`
+- State: `checklistExporting`
+- Unused imports: `ListChecks`, `Download`, `downloadFile`, `platformDownload`
+- `generate_todo` entry in `displayText` map
+- `todo_generated` action_result handler in `sendMessage` and history loader
+- `iac_generated` still adds items to the IAC checklist (badge + toast +
+  iacSummary) — only the now-redundant PDF download button was stripped.
+
+### Kept
+- Beneficiary IAC Packet button on `BeneficiaryGuardianPage.js` — beneficiaries
+  still need to be able to print this post-transition. It's only removed from
+  the benefactor-side Estate Binder.
+- AI's ability to populate IAC items into the user's actual IAC checklist
+  from Guardian chat (this is how the `/checklist` page gets content).
+- Plan of Action export, Transcript export, all other Guardian features.
+- Backend export endpoints (`/api/guardian/export-todo`, `export-iac-report`,
+  `export-checklist`) left in place — no callers, no harm, avoiding any
+  pre-pitch backend surface area changes.
+
+### Verified
+- Lint: `eslint` clean on `GuardianPage.js`; `ruff` clean on `estate_binder.py`.
+- Functional: Logged in as `info@carryon.us`, hit `/api/estate-binder/generate`,
+  decoded the returned PDF — TOC reads exactly "Immediate Action Checklist" +
+  "Entities & Structures" (the two cached sections on that account) with no
+  duplicates.
+- Housekeeping: `bash /app/housekeeping.sh --strict` → ALL CHECKS PASSED.
+
+
+
 ## May 20, 2026 (early hours) — Production back online after Railway outage migration
 
 Continuation of the May 19 emergency Railway → Render migration. The
