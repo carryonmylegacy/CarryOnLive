@@ -1,31 +1,34 @@
 # CarryOn API — Render production image
 # ------------------------------------------------------------------
-# Base: Microsoft's official Playwright Python image with Chromium +
-# every system dep pre-installed. Saves ~3 minutes per build vs
-# `pip install playwright && playwright install --with-deps chromium`
-# on a vanilla Python image, and avoids the apt-get failures that
-# can break Nixpacks builds.
+# Base: Python 3.12 slim. Required because the project pins numpy
+# 2.4.2 which needs Python >= 3.11. (The Microsoft Playwright image
+# v1.58.0-jammy was tried first but ships Python 3.10 — produced
+# `No matching distribution found for numpy==2.4.2` during pip
+# install on Render's first build.)
 #
-# Playwright 1.58.0 (matching backend/requirements.txt) is included.
-# Chromium binary is at /ms-playwright/chromium-* — Playwright finds
-# it automatically via the bundled env vars in the base image.
+# Chromium is installed via `playwright install --with-deps chromium`
+# which auto-pulls every system library Chromium needs via apt. Slower
+# build than the pre-baked MS image (~2 extra min on first build),
+# but it's compatible with our Python version pin AND reliable.
 # ------------------------------------------------------------------
-FROM mcr.microsoft.com/playwright/python:v1.58.0-jammy
+FROM python:3.12-slim-bookworm
 
-# Extra apt packages we needed on Railway's Nixpacks (ffmpeg, libsndfile1,
-# fonts-liberation, fontconfig). The Playwright base already ships
-# fontconfig + most fonts; we just add ffmpeg + libsndfile1 for any
-# audio-processing paths.
+# Base system deps:
+#  - ffmpeg / libsndfile1   → matched the Railway Nixpacks aptPkgs.
+#  - curl                   → healthcheck.
+#  - fonts-liberation / fontconfig → improves PDF font rendering.
+#  - ca-certificates        → outbound HTTPS to S3 / Atlas / Resend / xAI.
+# Chromium's own system deps are installed in a later step via
+# `playwright install --with-deps`.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         ffmpeg \
         libsndfile1 \
         curl \
+        ca-certificates \
+        fonts-liberation \
+        fontconfig \
     && rm -rf /var/lib/apt/lists/*
-
-# Non-root user is fine — the Playwright base image already creates
-# `pwuser`, but uvicorn binding to $PORT (any > 1024) doesn't need root,
-# so we just stay with the default for simplicity.
 
 WORKDIR /app
 
@@ -35,6 +38,14 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt \
     && pip install --no-cache-dir emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/
+
+# Install Chromium AFTER the Python deps so pip's playwright package
+# is already on disk. `--with-deps` triggers apt-get install of every
+# Chromium system lib (libnss3, libatk-bridge2.0-0, libxss1, etc.) —
+# Playwright's own subcommand knows the exact list for the version
+# pinned in requirements.txt (1.58.0).
+RUN playwright install --with-deps chromium \
+    && rm -rf /var/lib/apt/lists/*
 
 # Now copy the rest of the backend source. Anything in `.dockerignore`
 # (node_modules, .git, *.pem, etc.) is excluded.
