@@ -53,8 +53,8 @@ TARGETS = {
         "api": "https://carryon-api-production.up.railway.app",
     },
     "preview": {
-        "frontend": "https://render-migration-5.preview.emergentagent.com",
-        "api": "https://render-migration-5.preview.emergentagent.com",
+        "frontend": "https://estate-stable.preview.emergentagent.com",
+        "api": "https://estate-stable.preview.emergentagent.com",
     },
 }
 
