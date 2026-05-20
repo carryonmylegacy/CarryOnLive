@@ -1,3 +1,4 @@
+// Build trigger 2026-05-20: Render backend migration (carryon-api-kacr.onrender.com)
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
