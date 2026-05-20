@@ -1,6 +1,26 @@
 # CarryOn — Changelog
 
 
+## May 20, 2026 — Perf fix: post-Render migration page-nav slowdown (Dashboard + every page)
+
+**User report**: After the Render migration, page navigations feel slower across the board on Desktop Safari production. Backend latency measurements showed every API hovering around 100-150ms (healthy), so the slowdown wasn't backend-bound. Troubleshoot RCA pinned the cause at the service worker layer.
+
+**Root cause**: Dashboard fires ~10 parallel reads on every estate change. Only **1** of those 10 endpoints was in the service worker's `CACHEABLE_API_PREFIXES` list, so the other 9 hit the network on every navigation. Pre-Render (Railway), each round-trip was fast enough that the cache miss was invisible. Post-Render each call costs an extra ~50-80ms, and 9 × that is half a second of compounded latency on every dashboard mount.
+
+**Fix** (`frontend/public/sw-push.js`):
+- Added 9 missing safe-to-cache GET prefixes to `CACHEABLE_API_PREFIXES`:
+  `/api/estate/`, `/api/documents/`, `/api/messages/`, `/api/checklists/`, `/api/onboarding/`, `/api/ccp/`, `/api/financial/`, `/api/pdfs/`, `/api/guardian/`.
+- These all serve stale-while-revalidate: cached payload paints instantly, network refresh runs in background.
+- Only GET requests are intercepted (line 330 of the SW), so POST/PUT/DELETE always bypass — no risk of caching mutations.
+- `/api/admin/`, `/api/webhook/`, `/api/stripe/`, and the auth-login family remain in `API_NEVER_CACHE` — untouched.
+- Bumped `SHELL_VERSION` from `v47-2026-02-13-…` → `v48-2026-05-20-dashboard-api-swr` so installed SWs invalidate their old caches and pick up the new prefix list on the next page load.
+
+**Expected impact**: Dashboard re-mounts and SPA navigations to pages that read these endpoints should feel ~500-700ms faster on Render. First-ever load (cold cache) is unchanged. Subsequent loads will be near-instant.
+
+**Build tag** bumped to `V2026.05.20.8`. Housekeeping (strict): 0 WARN / 0 FAIL.
+
+
+
 ## May 20, 2026 — TVT trash now performs a precise, honest revert with proof in the toast
 
 **User ask**: When the founder deletes a transitioned or transition-request tile from the TVT tab, the underlying estate must revert to fully pre-transitioned state — benefactor account unlocked, every linked beneficiary's account back to pre-transition behavior — and the toast must honestly confirm what happened because the admin can't go check each affected account.

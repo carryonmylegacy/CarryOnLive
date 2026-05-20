@@ -206,6 +206,15 @@ try {
           'Java object is gone',
           'Error invoking postMessage',
           'navigation_performance_logger_android',
+          // AbortError: Fetch is aborted — fires when the user navigates
+          // away from a page (or a component unmounts) while a `fetch()`
+          // is still in flight and the in-flight promise rejection isn't
+          // caught locally. This is expected browser behavior, not a
+          // bug. Matches both the bare message and the wrapped variants.
+          'AbortError',
+          'Fetch is aborted',
+          'The user aborted a request',
+          'The operation was aborted',
         ],
         // Also drop events whose entire stack is inside iabjs:// — that
         // protocol is exclusively the in-app browser JS bridge.
@@ -223,6 +232,24 @@ try {
             const frames = event?.exception?.values?.[0]?.stacktrace?.frames || [];
             if (frames.length > 0 && frames.every((f) => (f.filename || '').startsWith('iabjs://'))) {
               return null;
+            }
+          } catch {}
+          // Drop AbortError / DOMException 20 regardless of how it was
+          // wrapped. Some browsers surface these as `name: 'AbortError'`
+          // on the value object rather than in the message string, so
+          // `ignoreErrors` above doesn't always catch them. AbortErrors
+          // are virtually always a user navigating away during an
+          // in-flight fetch — expected behavior, not a regression.
+          try {
+            const exc = event?.exception?.values?.[0];
+            if (exc) {
+              const isAbort =
+                exc.type === 'AbortError' ||
+                /aborted/i.test(exc.value || '') ||
+                exc.mechanism?.handled === false &&
+                  exc.mechanism?.type === 'onunhandledrejection' &&
+                  /aborted/i.test(exc.value || '');
+              if (isAbort) return null;
             }
           } catch {}
           return event;

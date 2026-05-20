@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'v47-2026-02-13-ega-safearea-and-global-pdf-chip';
+const SHELL_VERSION = 'v48-2026-05-20-dashboard-api-swr';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
@@ -86,17 +86,35 @@ const OFFLINE_FALLBACK_HTML = `<!doctype html>
 </html>`;
 
 // API endpoints that are SAFE to cache (idempotent reads, no sensitive data
-// that changes per-second). Matched by path prefix.
+// that changes per-second). Matched by path prefix. ONLY GET requests are
+// ever intercepted (see fetch handler), so POST/PUT/DELETE bypass.
+//
+// Why these prefixes: the Dashboard fires ~10 parallel reads on every
+// estate change. Without these in SWR, every navigation back to the
+// dashboard waits on 10 network round-trips. With SWR the cached payload
+// paints instantly and the network refresh happens in the background.
+// Post-Render migration each round-trip costs ~50-80ms more than it did
+// on Railway, so the cumulative penalty was making every page feel
+// sluggish even after the SPA was warm.
 const CACHEABLE_API_PREFIXES = [
   '/api/dashboard/tiles',
   '/api/beneficiaries/',
   '/api/estates/',
+  '/api/estate/',          // /api/estate/{id}/readiness
   '/api/estate-chat/contacts',
   '/api/subscriptions/enabled-features',
   '/api/subscriptions/status',
   '/api/auth/me',
   '/api/notification-prefs',
   '/api/share-cards/voices',
+  '/api/documents/',       // /api/documents/{estateId}
+  '/api/messages/',        // /api/messages/{estateId}
+  '/api/checklists/',      // /api/checklists/{estateId}
+  '/api/onboarding/',      // /api/onboarding/progress
+  '/api/ccp/',             // /api/ccp/plans/{estateId}
+  '/api/financial/',       // /api/financial/summary/{estateId}
+  '/api/pdfs/',            // /api/pdfs/latest
+  '/api/guardian/',        // /api/guardian/iac-task-status
 ];
 
 // API paths that MUST NEVER be cached (sensitive, realtime, or mutative).
