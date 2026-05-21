@@ -1,6 +1,23 @@
 # CarryOn — Changelog
 
 
+## May 21, 2026 — Platform-wide gold button unification in light mode (V2026.05.21.6)
+
+**User reported**: After the initial Public-Device-Mode unification pass, two buttons in the CFP Entities & Structures toolbar were still rendering in the loud dark-gold style — the "Locked" toggle and the "+ Add" CTA. User asked: *"I said platform wide, but you missed these two (circled in red)! What else did you miss?!?!"*
+
+**Fix shipped (additive — surgical, no JS rewrites)**:
+- **`.btn-gold-cta` light-mode override** added in `/app/frontend/src/index.css`. Mirrors the existing `.gold-button` / `.gold-pill` light-mode treatment (cream bg `rgba(254,249,231,0.95)`, dark-gold text `#7a5c00`, soft gold border at 0.55 opacity, gentle gold shadow). The "+ Add" entity CTA picks this up automatically.
+- **"Locked" toggle button** rewired to use `.gold-pill` class instead of inline `var(--gold)` style. The class already has the platform-wide light-mode override so the button now matches Public Device Mode without any per-component code.
+- **Attribute-selector safety net** added: `[data-theme="light"] button[style*="background: var(--gold)"]` (plus `#d4af37` / `#daa520` variants) re-style any remaining call-site that still uses inline gold backgrounds. Marketing surfaces (HomePage, FounderAboutPage, LoginPage install banner, LandingContent) tag their buttons with `.gold-keep-dark` so they keep the dark-hero treatment.
+- **Light-mode glow neutralized on `.gold-pill`** so the cream background blends correctly (the original dark-mode gold halo would've washed out on the cream surface).
+
+**Verified visually** on `https://estate-stable.preview.emergentagent.com/financial` in light mode: "+ Add Bill", "Quick Add", "All" filter pill, "Map your entities & trusts", sidebar portal switchers, and the Public Device Mode pill all render identically. Build tag bumped to `V2026.05.21.6`.
+
+**Housekeeping**: `bash /app/housekeeping.sh --strict` → **ALL CHECKS PASSED** (0 WARN / 0 FAIL).
+
+
+
+
 ## May 21, 2026 (UX polish) — Trustee banner no longer overlaps sidebar logo or notifications
 
 **User reported**: The trustee banner was visually clashing — its sticky position at z-60 covered (1) the top of the sidebar including the CarryOn logo and (2) the notifications dropdown when it opened.

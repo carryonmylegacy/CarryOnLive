@@ -98,7 +98,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
           <p className="text-[#7b879e] text-base lg:text-lg leading-relaxed mb-8">
             CarryOn&#8482; is the first complete digital family preparedness platform &mdash; a secure place to organize your documents, leave messages for the people you love, build action plans for any scenario, and ensure that no matter what happens, your family has everything they need to maintain continuity, stay connected, and move forward together.
           </p>
-          <button onClick={() => navigateWithFade('/signup')} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-transform duration-150 active:scale-95"
+          <button onClick={() => navigateWithFade('/signup')} className="gold-keep-dark inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-transform duration-150 active:scale-95"
             style={{ background: '#d4af37', color: '#0B1221', transition: 'all 0.3s' }}>
             Get Started <ChevronRight className="w-4 h-4" />
           </button>
@@ -398,7 +398,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
           <p className="text-[#7b879e] text-base mb-8">
             Join the families who are choosing preparedness over uncertainty. Whatever comes next &mdash; your family will be ready.
           </p>
-          <button onClick={ctaOverride?.onClick || (() => navigateWithFade('/signup'))} className="inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-base transition-transform duration-150 active:scale-95"
+          <button onClick={ctaOverride?.onClick || (() => navigateWithFade('/signup'))} className="gold-keep-dark inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-base transition-transform duration-150 active:scale-95"
             style={{ background: '#d4af37', color: '#0B1221', transition: 'all 0.3s' }}>
             {ctaOverride?.label || 'Start Your Free Trial'} <ChevronRight className="w-4 h-4" />
           </button>

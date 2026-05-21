@@ -123,7 +123,7 @@ const FounderAboutPage = () => {
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-white mb-3" style={{ fontFamily: 'var(--sans)' }}>Access Restricted</h1>
           <p className="text-[#9aa5b4] text-sm sm:text-base mb-8 leading-relaxed">{messages[reason] || messages.error}</p>
-          <button onClick={() => navigate('/about')} className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95" style={{ background: '#d4af37', color: '#0d1b2a' }} data-testid="founder-page-back-btn">
+          <button onClick={() => navigate('/about')} className="gold-keep-dark inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95" style={{ background: '#d4af37', color: '#0d1b2a' }} data-testid="founder-page-back-btn">
             Visit About CarryOn
           </button>
         </div>
@@ -226,7 +226,7 @@ const FounderAboutPage = () => {
                 <textarea value={reqMsg} onChange={e => setReqMsg(e.target.value)} placeholder="Why are you interested? (optional)" rows={3} autoComplete="one-time-code" name="founder_visitor_note"
                   className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568] resize-none" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }} data-testid="founder-req-message" />
                 <button type="submit" disabled={reqLoading}
-                  className="w-full py-3 rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="gold-keep-dark w-full py-3 rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                   style={{ background: '#d4af37', color: '#0d1b2a' }} data-testid="founder-req-submit">
                   {reqLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4" /> Request Access</>}
                 </button>
@@ -301,7 +301,7 @@ const FounderAboutPage = () => {
                 </div>
                 {loginError && <p className="text-red-400 text-xs text-center" data-testid="founder-login-error">{loginError}</p>}
                 <button type="submit" disabled={loginLoading}
-                  className="w-full py-3 rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="gold-keep-dark w-full py-3 rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                   style={{ background: '#d4af37', color: '#0d1b2a' }} data-testid="founder-login-submit">
                   {loginLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'View Founder Page'}
                 </button>

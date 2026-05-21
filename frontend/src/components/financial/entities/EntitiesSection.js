@@ -462,17 +462,16 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           {viewMode === 'chart' && (
             <button
               onClick={toggleLocked}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-all whitespace-nowrap"
+              className={
+                locked
+                  ? 'gold-pill text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-all whitespace-nowrap'
+                  : 'text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-all whitespace-nowrap border border-[var(--b)] text-[var(--t4)] bg-transparent'
+              }
               style={locked ? {
-                color: '#1A1A1A',
-                background: 'var(--gold)',
-                border: '1px solid var(--gold)',
-                boxShadow: '0 0 12px rgba(var(--gold-rgb), 0.55), 0 0 24px rgba(var(--gold-rgb), 0.25)',
-              } : {
-                color: 'var(--t4)',
-                background: 'transparent',
-                border: '1px solid var(--b)',
-              }}
+                /* Dark-mode keeps the original glow; the light-mode rule
+                   on `.gold-pill` swaps to the Public Device Mode style. */
+                boxShadow: 'var(--locked-glow, 0 0 12px rgba(var(--gold-rgb), 0.55), 0 0 24px rgba(var(--gold-rgb), 0.25))',
+              } : undefined}
               data-testid="entities-toggle-lock"
               title={locked ? 'Unlock tile positions' : 'Lock tile positions'}
               aria-label={locked ? 'Unlock tile positions' : 'Lock tile positions'}

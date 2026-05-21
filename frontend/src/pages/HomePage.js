@@ -105,7 +105,7 @@ const HomePage = () => {
               The digital family preparedness platform that brings together every aspect of your life &mdash; so you and your loved ones can CarryOn through anything.
             </p>
             <div className="flex items-center gap-4 justify-center flex-wrap mb-8">
-              <button onClick={() => navigateWithFade('/signup')} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base transition-transform duration-150 active:scale-95" data-testid="home-get-started-hero"
+              <button onClick={() => navigateWithFade('/signup')} className="gold-keep-dark inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base transition-transform duration-150 active:scale-95" data-testid="home-get-started-hero"
                 style={{ background: '#d4af37', color: '#0B1221' }}>
                 Get Started <ChevronRight className="w-4 h-4" />
               </button>

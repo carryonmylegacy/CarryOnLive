@@ -1204,7 +1204,7 @@ const LoginPage = () => {
               <p className="text-white text-sm font-semibold leading-tight">Get the CarryOn App</p>
               <p className="text-[#6b7a90] text-[11px]">Add to your home screen &mdash; no download needed</p>
             </div>
-            <button onClick={() => setShowInstallGuide(true)} className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
+            <button onClick={() => setShowInstallGuide(true)} className="gold-keep-dark flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
               style={{ background: '#d4af37', color: '#0B1221' }} data-testid="install-banner-cta">
               Install
             </button>
