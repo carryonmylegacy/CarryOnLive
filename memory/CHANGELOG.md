@@ -1,6 +1,55 @@
 # CarryOn — Changelog
 
 
+## May 21, 2026 — TMA hardened: email-invite + trustee-picks-own-password + required email-OTP
+
+**User intuition was right** — the original "benefactor types the password and emails it" flow had three killer holes: (1) plaintext password in email is a cardinal sin (Gmail archives forever, easy to forward); (2) the benefactor knowing the trustee password destroys the audit-trail guarantee (no way to prove a logged action was truly the trustee's); (3) two-password ceremony + OTP-fatigue would have driven 40+ attorneys to drop off mid-onboarding.
+
+**Replaced with the industry-standard claim-link flow (all additive, zero schema breakage)**:
+
+1. **Benefactor → Settings → Trustee Access** form now collects **email + display name + duration + optional beneficiary toggle** — *no password, no username*. Hits **"Send invite"**.
+2. **Backend** creates `trustee_grants` row in `status: pending`, generates a single-use 32-byte URL-safe `claim_token` with 48-hour TTL, fires the invitation via Resend.
+3. **Trustee clicks the link** → public page `/trustee/claim/{token}` shows the benefactor's name and a suggested username (derived from their email local-part). Trustee picks **their own username + password** (with confirm-password validation).
+4. **Backend** fires a 6-digit email OTP to the trustee's address; grant goes to `status: otp_pending`.
+5. **Trustee enters the OTP** → backend activates grant: token burned, `password_hash` stored, `claimed_at = now`, `expires_at` computed from `now + duration` (so a "3 day" grant always delivers 3 full days starting at claim, not invite).
+6. **Benefactor's notification feed fires**: *"Trustee {name} ({email}) just claimed trustee access to your account."*
+7. Trustee from now on logs in normally via `/login` with their chosen credentials.
+
+**New endpoints (all additive)**:
+- `POST /api/trustee/grants` — invite-by-email (replaces the old direct-credential create)
+- `POST /api/trustee/grants/{id}/resend` — rotates the claim token, re-fires the invite email, invalidates the previous link
+- `GET  /api/trustee/claim/{token}` — public, returns benefactor name + suggested username
+- `POST /api/trustee/claim/{token}/start` — public, trustee picks username + password → OTP sent
+- `POST /api/trustee/claim/{token}/complete` — public, OTP verified → grant activated
+- Unchanged: list / patch / revoke grants, undo audit events
+
+**Security hardening**:
+- Plaintext password NEVER crosses email or the benefactor's UI — trustee picks it directly on a CarryOn HTTPS page.
+- Claim token is 32 random bytes (URL-safe base64), single-use, 48h TTL. Reusing or replaying a consumed token returns 404.
+- **Required email OTP** at claim time (6 digits, 10-minute TTL). Wrong code → 401, expired → 410.
+- Username uniqueness checked against both `users.username_lower` and other active `trustee_grants`.
+- Email collisions with existing CarryOn users are refused at invite time with a clear 409.
+- Duplicate invites to the same email (non-expired/revoked) refused.
+- Resend rotates the token AND clears any in-progress username/password/OTP state, so a partial claim can't be hijacked across rotations.
+- Backward-compatible: legacy grants written before `status` existed are accepted as active by `find_active_trustee_grant_by_username` (via `$or: [{status: active}, {status: {$exists: false}}]`). Migration job ran in-pod to backfill 4 legacy rows.
+
+**Frontend (additive only)**:
+- New public route `/trustee/claim/:token` mounted via `App.js` lazy import.
+- New page `pages/TrusteeClaimPage.js` — three-stage flow (form → OTP → done) with auto-redirect to `/login` on success.
+- `components/settings/TrusteeAccessCard.js` rewritten to use the invite flow: replaced username/password fields with email field, added Resend button on pending grants, added colored status badges (Invite sent / Verifying email / Active / Expired / Revoked).
+- Helper copy added: *"The invite link will be emailed here. They'll set their own username and password."* and *"Countdown begins when the trustee claims access — not when you send the invite."*
+
+**Tests**: `backend/tests/test_trustee_mode.py` rewritten — **9/9 pass in 5.07s**. Covers: pending-state grant creation, email-collision refusal, duplicate-invite refusal, public claim preview, invalid-token 404, full claim flow (start + OTP + complete + login), wrong-OTP rejection, resend rotates token + invalidates old, claimed trustee 403 from /trustee/grants.
+
+**Smoke screenshots**: claim page renders correctly with suggested username pre-filled; settings card shows status-coloured badges (Invite sent / Active) with resend + revoke icons.
+
+**Migration**: 14 stale pytest grants removed from the preview pod; 4 legacy v1 grants backfilled with `status: active` for consistency.
+
+Build tag bumped to `V2026.05.21.1`. Housekeeping (strict): 0 WARN / 0 FAIL.
+
+
+
+
 ## May 20, 2026 — Trustee Mode Access (TMA): non-beneficiary delegate identity with audit + undo
 
 **User ask**: Let an estate trustee (attorney / fiduciary / family steward) operate the benefactor's portal under their own username/password. Visible "TRUSTEE MODE" banner on every page. Full mutation parity with the benefactor *except* the trustee management panel itself (greyed). Every completed mutation logs an undoable notification on the benefactor's account. Per-tier toggle in Admin → Subs and per-partner toggle in Admin → Partners. Benefactor chooses optional beneficiary-account inclusion and an expiry window (indefinite / 1d / 3d / 5d / 1w / custom days). Undo must work for everything, including deletions.

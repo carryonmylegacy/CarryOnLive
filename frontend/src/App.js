@@ -52,6 +52,7 @@ const BeneficiariesPage = lazy(() => import('./pages/BeneficiariesPage'));
 const DigitalWalletPage = lazy(() => import('./pages/DigitalWalletPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const AcceptInvitationPage = lazy(() => import('./pages/AcceptInvitationPage'));
+const TrusteeClaimPage = lazy(() => import('./pages/TrusteeClaimPage'));
 // EditBeneficiaryPage removed — editing now handled by SlidePanel in BeneficiariesPage
 const EditMilestoneMessagePage = lazy(() => import('./pages/EditMilestoneMessagePage'));
 const GuardianPage = lazy(() => import('./pages/GuardianPage'));
@@ -641,6 +642,9 @@ function AppRoutes() {
 
       {/* Invitation Accept Route - Public */}
       <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />
+
+      {/* Trustee Claim Route - Public (TMA invite flow) */}
+      <Route path="/trustee/claim/:token" element={<TrusteeClaimPage />} />
 
       {/* Shared Plan - Public (no auth required) */}
       <Route path="/shared/plan/:token" element={<SharedPlanPage />} />

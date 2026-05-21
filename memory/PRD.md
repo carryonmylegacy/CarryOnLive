@@ -181,6 +181,37 @@
 ---
 
 
+## 🔐 May 21, 2026 — TMA hardened to invite-by-email + claim-link + required email OTP
+
+The previous direct-credential flow (benefactor types username/password, emails them) was replaced with the industry-standard invite + claim flow before any production exposure. **No plaintext password ever crosses email; the trustee picks their own on a CarryOn HTTPS page; the benefactor never learns the trustee's auth secret** (so the audit trail remains meaningful).
+
+**Benefactor invite UI** (Settings → Security → Trustee Access):
+- Email · Display name · "Also grant beneficiary-account access" toggle · Duration dropdown (Indefinite / 1d / 3d / 5d / 1w / custom days) · **Send invite** button.
+- Status badges per grant: Invite sent · Verifying email · Active · Expired · Revoked.
+- Pending invites get an inline **Resend** button — rotates the claim token (old link 404s immediately) and re-fires the email.
+
+**Trustee claim flow** (public route `/trustee/claim/{token}`):
+- Stage 1 — Choose username (suggested from email local-part, editable) + password + confirm.
+- Stage 2 — Enter 6-digit email OTP (required, 10-minute TTL).
+- Stage 3 — Auto-redirect to `/login` with a success toast.
+
+**Key security guarantees**:
+- 32-byte URL-safe single-use claim token, 48h TTL. Reuse → 404. Resend rotates and burns the previous.
+- Required email-OTP — no escape from email-ownership verification.
+- Expiry countdown begins at **claim time**, not invite time (a 3-day grant always delivers 3 full usable days).
+- Invites refused if the email matches an existing CarryOn user account (409).
+- Duplicate non-revoked invites to the same email refused (409).
+- Backward-compatible: legacy grants without a `status` field still authenticate as active.
+
+**Test coverage**: `backend/tests/test_trustee_mode.py` — 9/9 pass in 5.07s.
+
+Build tag bumped to `V2026.05.21.1`. Housekeeping (strict): 0 WARN / 0 FAIL.
+
+---
+
+
+
+
 ## 🔐 May 20, 2026 — Trustee Mode Access (TMA) shipped
 
 A founder-toggleable feature gate that lets a benefactor provision a **non-beneficiary** delegate (estate attorney, fiduciary, family steward) to operate the benefactor's portal under their own username/password. Full mutation parity with the benefactor except the trustee management surface itself (greyed out). Every completed trustee mutation is logged as an undoable notification on the benefactor's account.
