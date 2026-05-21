@@ -90,17 +90,25 @@ const AdminSectionNav = ({ collapsed = false, variant = 'sidebar', onNavClick, a
         const isSectionActive = location.pathname === `/admin/${s.key}`;
         const isTabInSectionActive = s.tabs.some(t => t.path === location.pathname);
         const isOpen = !!expanded[s.key];
+        const isActive = isSectionActive || isTabInSectionActive;
+        // Operations is the only gold-accented section — when it's the
+        // active section, fall through to the platform-wide `.gold-pill`
+        // cream-gold light-mode rule (matches Public Device Mode etc.).
+        const isGoldAccent = s.color.toLowerCase() === '#d4af37';
+        const useGoldPill = isActive && isGoldAccent;
 
         return (
           <div key={s.key} className="admin-section-block" style={{ marginBottom: 4 }}>
             <div
-              className={`flex items-center gap-2 rounded-lg transition-all`}
+              className={`flex items-center gap-2 rounded-lg transition-all ${useGoldPill ? 'gold-pill' : ''}`}
               style={{
                 padding: isMobile ? '10px 12px' : '8px 12px',
-                background: (isSectionActive || isTabInSectionActive)
-                  ? `rgba(${rgb}, 0.10)` : 'transparent',
-                border: (isSectionActive || isTabInSectionActive)
-                  ? `1px solid rgba(${rgb}, 0.25)` : '1px solid transparent',
+                background: useGoldPill
+                  ? undefined
+                  : (isActive ? `rgba(${rgb}, 0.10)` : 'transparent'),
+                border: useGoldPill
+                  ? undefined
+                  : (isActive ? `1px solid rgba(${rgb}, 0.25)` : '1px solid transparent'),
               }}
             >
               {/* LABEL — navigates to section page */}
@@ -112,14 +120,14 @@ const AdminSectionNav = ({ collapsed = false, variant = 'sidebar', onNavClick, a
               >
                 <Icon
                   className="flex-shrink-0"
-                  style={{ width: 18, height: 18, color: s.color }}
+                  style={{ width: 18, height: 18, color: useGoldPill ? '#7a5c00' : s.color }}
                 />
                 <span
                   className="font-bold uppercase tracking-wider truncate"
                   style={{
                     fontSize: isMobile ? 13 : 12,
                     letterSpacing: '0.08em',
-                    color: (isSectionActive || isTabInSectionActive) ? s.color : 'var(--t)',
+                    color: useGoldPill ? '#7a5c00' : (isActive ? s.color : 'var(--t)'),
                   }}
                 >
                   {s.label}
@@ -140,7 +148,7 @@ const AdminSectionNav = ({ collapsed = false, variant = 'sidebar', onNavClick, a
                     height: 16,
                     transition: 'transform 180ms',
                     transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    color: s.color,
+                    color: useGoldPill ? '#7a5c00' : s.color,
                   }}
                 />
               </button>
