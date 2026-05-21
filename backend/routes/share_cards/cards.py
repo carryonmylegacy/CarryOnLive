@@ -2,7 +2,7 @@
 
 Image files are cached in /tmp/carryon_share_cards/ (ephemeral).
 Card parameters are stored in MongoDB (persistent) so images can be
-regenerated on demand after a Railway restart or container swap.
+regenerated on demand after a Render restart or container swap.
 """
 
 from datetime import datetime, timezone
@@ -71,7 +71,7 @@ async def create_fc_card(req: CardRequest, current_user: dict = Depends(get_curr
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Card render failed: {e}")
 
-    # Persist params so the image survives Railway restarts
+    # Persist params so the image survives Render restarts
     await _save_card_params(cid, "fc", fname, req.tier_name.strip(), quote)
 
     share_text = (
@@ -115,7 +115,7 @@ async def create_subscriber_card(req: CardRequest, current_user: dict = Depends(
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Card render failed: {e}")
 
-    # Persist params so the image survives Railway restarts
+    # Persist params so the image survives Render restarts
     await _save_card_params(cid, "sub", fname, req.tier_name.strip(), quote)
 
     share_text = (
@@ -143,7 +143,7 @@ async def create_subscriber_card(req: CardRequest, current_user: dict = Depends(
 @router.get("/image/{card_id}")
 async def get_card_image(card_id: str):
     """Public endpoint — serves the generated PNG.
-    If the file is missing (e.g. Railway restart wiped /tmp/),
+    If the file is missing (e.g. Render restart wiped /tmp/),
     regenerates it from MongoDB-stored parameters.
     """
     if not card_id.isalnum() or len(card_id) != 24:

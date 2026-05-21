@@ -493,6 +493,29 @@
   border-color: rgba(var(--gold-rgb, 212,165,55), 0.75) !important;
 }
 
+/* ===== Tailwind-arbitrary-value gold buttons unify in light mode =====
+   Many admin buttons use Tailwind's arbitrary-value class
+   `bg-[var(--gold)]` (often paired with `text-[#0F1629]` or `#0b1120`).
+   Tailwind JIT compiles that to a CSS class literally named
+   `.bg-\[var\(--gold\)\]`, so my earlier inline-style attribute
+   selector misses them. This rule catches every <button> using that
+   class (skipping chat bubbles which use <div>) and routes it through
+   the same cream Public Device Mode treatment in light mode. */
+[data-theme="light"] button.bg-\[var\(--gold\)\]:not(.gold-keep-dark) {
+  background: rgba(254, 249, 231, 0.95) !important;
+  color: #7a5c00 !important;
+  border: 1px solid rgba(var(--gold-rgb, 212,165,55), 0.55) !important;
+  box-shadow:
+    0 1px 2px rgba(212, 175, 55, 0.10),
+    0 1px 6px rgba(212, 175, 55, 0.06) !important;
+}
+[data-theme="light"] button.bg-\[var\(--gold\)\]:not(.gold-keep-dark):hover:not(:disabled) {
+  background: rgba(252, 243, 202, 1) !important;
+  color: #5d4500 !important;
+  border-color: rgba(var(--gold-rgb, 212,165,55), 0.75) !important;
+}
+
+
 /* ===== Shared neutral-action pill (.outline-pill-button) =============
    Secondary/toolbar pill — matches the dominant pattern in the CFP
    toolbar (List, Center, Reset, Expand, Print, Share). Use on any

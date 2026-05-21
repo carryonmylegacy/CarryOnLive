@@ -585,7 +585,7 @@ async def render_entities_structures_pdf_via_chromium(
         ) from exc
     except Exception as exc:  # noqa: BLE001
         # Chromium binary missing, browser launch failed, or render
-        # itself threw. Common Railway case: pip-installed playwright
+        # itself threw. Common Render case: pip-installed playwright
         # but never ran `playwright install chromium` post-deploy.
         msg = str(exc)
         if "Executable doesn't exist" in msg or "BrowserType.launch" in msg:

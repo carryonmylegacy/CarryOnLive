@@ -61,7 +61,7 @@ async def _get_browser():
 
     Playwright is imported lazily here (NOT at module level) so the
     backend can boot on environments that don't ship Chromium — e.g.
-    Railway pods that haven't run `playwright install chromium` post-
+    Render pods that haven't run `playwright install chromium` post-
     deploy. In that case the import will fail at first use and the
     caller of `render_entities_pdf` will surface a 500 with a clear
     message; the rest of the app remains healthy.

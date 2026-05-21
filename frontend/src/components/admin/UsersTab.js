@@ -1157,7 +1157,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   html.style.scrollBehavior = '';
                 }, 200);
               }
-            }} className={`flex-1 py-2 rounded-lg text-xs font-bold whitespace-nowrap text-center ${roleFilter === r ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`} data-testid={`admin-role-filter-${r}`}>{r === 'all' ? 'All' : r === 'beneficiary' ? 'Beneficiaries' : 'Benefactors'}</button>
+            }} className={`flex-1 py-2 rounded-lg text-xs font-bold whitespace-nowrap text-center ${roleFilter === r ? 'gold-pill' : 'bg-[var(--s)] text-[var(--t4)]'}`} data-testid={`admin-role-filter-${r}`}>{r === 'all' ? 'All' : r === 'beneficiary' ? 'Beneficiaries' : 'Benefactors'}</button>
           ))}
           <div className="w-px bg-[var(--b)]" />
           <button

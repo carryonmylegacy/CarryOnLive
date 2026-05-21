@@ -561,7 +561,7 @@ const AdminPage = ({ operatorMode = false }) => {
               className={`flex items-center gap-1.5 rounded-lg font-bold transition-all whitespace-nowrap flex-shrink-0 active:scale-[0.97] ${
                 operatorMode ? 'px-3.5 py-2.5 text-sm min-h-[44px]' : 'px-3 py-2 text-xs'
               } ${
-                effectiveTab === t.key ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'
+                effectiveTab === t.key ? 'gold-pill' : 'bg-[var(--s)] text-[var(--t4)]'
               }`} data-testid={`admin-tab-${t.key}`}>
               <t.icon className={operatorMode ? 'w-4 h-4' : 'w-3.5 h-3.5'} /> {t.label}
               {t.key === 'founder-invites' && pendingAccessReqs > 0 && (

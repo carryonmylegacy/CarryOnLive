@@ -154,7 +154,7 @@ def _clean_expired() -> None:
 
 def _font(path: str, size: int) -> ImageFont.FreeTypeFont:
     """Load a font by path.  Falls back to the shipped Cormorant Garamond if the
-    system font is missing (e.g. Railway containers without fonts-liberation)."""
+    system font is missing (e.g. Render containers without fonts-liberation)."""
     try:
         return ImageFont.truetype(path, size)
     except OSError:

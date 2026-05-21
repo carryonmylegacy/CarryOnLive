@@ -432,13 +432,13 @@ async def health_check():
 
 @api_router.get("/health/live")
 async def health_live():
-    """Kubernetes/Railway liveness probe — process is alive, do NOT touch DB."""
+    """Kubernetes/Render liveness probe — process is alive, do NOT touch DB."""
     return {"status": "alive"}
 
 
 @api_router.get("/health/ready")
 async def health_ready():
-    """Kubernetes/Railway readiness probe — pod ready to accept traffic.
+    """Kubernetes/Render readiness probe — pod ready to accept traffic.
 
     Returns 503 if critical dependencies are unreachable so the orchestrator
     pulls the pod out of rotation.

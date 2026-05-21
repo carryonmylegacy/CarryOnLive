@@ -386,10 +386,12 @@ _TRACKED_SECRETS = [
     ("XAI_API_KEY", "high", "xAI/Grok direct API key"),
     ("RESEND_API_KEY", "high", "Resend transactional email"),
     ("STRIPE_API_KEY", "high", "Stripe live secret key (sk_live_...)"),
+    ("STRIPE_WEBHOOK_SECRET", "high", "Stripe webhook signing secret — without it, ALL webhooks are rejected"),
     ("AWS_ACCESS_KEY_ID", "high", "S3 / object storage access key"),
     ("AWS_SECRET_ACCESS_KEY", "high", "S3 / object storage secret"),
     ("TWILIO_AUTH_TOKEN", "high", "Twilio account auth token"),
     ("APPLE_SHARED_SECRET", "high", "App Store IAP receipt validation"),
+    ("SENTRY_DSN", "high", "Sentry error monitoring — without it, prod errors are silent"),
     # --- low: rotation rarely needed, included for completeness ---
     ("VAPID_PRIVATE_KEY_INLINE", "low", "Web push signing key"),
     ("TWILIO_ACCOUNT_SID", "low", "Twilio account SID (not strictly secret)"),

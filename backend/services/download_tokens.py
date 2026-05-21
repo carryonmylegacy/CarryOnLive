@@ -4,7 +4,7 @@ Creates short-lived tokens that allow unauthenticated GET requests to serve
 files with Content-Disposition: attachment — triggering the native iOS download tile.
 
 Tokens are stored in MongoDB so they survive backend restarts and work
-across multiple Railway instances.
+across multiple Render instances.
 """
 
 from datetime import datetime, timezone
