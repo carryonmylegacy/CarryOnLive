@@ -134,8 +134,14 @@ const DashboardLayout = () => {
   // handles freezing the position during the React render swap.
   const prevPathRef = useRef(location.pathname);
   useEffect(() => {
-    let pref = false;
-    try { pref = localStorage.getItem('carryon_remember_scroll') === '1'; } catch { /* ignore */ }
+    // Default-ON semantics (May 21 2026): the scroll-restoration pref
+    // is treated as ON unless the user has explicitly stored '0'. This
+    // mirrors `isScrollRestorationEnabled()` in useScrollRestoration.js
+    // — keep both in sync. Anything other than the literal string '0'
+    // (including a null / missing key) means the feature is active and
+    // `<ScrollRestorationProvider />` is the authority on scroll.
+    let pref = true;
+    try { pref = localStorage.getItem('carryon_remember_scroll') !== '0'; } catch { /* ignore */ }
     const prev = prevPathRef.current;
     prevPathRef.current = location.pathname;
     const isSameAdminSection = (prev.startsWith('/admin/') && location.pathname.startsWith('/admin/'))

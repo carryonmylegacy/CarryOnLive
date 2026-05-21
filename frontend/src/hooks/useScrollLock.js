@@ -77,6 +77,13 @@ export const useScrollLock = (activeTab) => {
   //   • iOS PWAs occasionally fire a delayed scrollTo(0) on layout flush.
   // 250ms of belt-and-suspenders writes catches all three and is short
   // enough to be invisible to the user.
+  //
+  // NOTE: For pages where each tab navigates to a NEW pathname (e.g.
+  // AdminPage uses /admin/users → /admin/transition), do NOT call this
+  // hook — <ScrollRestorationProvider /> handles per-pathname memory
+  // and this hook would race against it. Use this only for in-page
+  // tab swaps that keep the same URL (e.g. FinancialPortal's
+  // Bills/Debts/Accounts tabs).
   const prevTab = useRef(activeTab);
   useEffect(() => {
     if (prevTab.current === activeTab) return;

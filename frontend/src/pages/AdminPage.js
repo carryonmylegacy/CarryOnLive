@@ -15,7 +15,9 @@ import {
 import { Card, CardContent } from '../components/ui/card';
 import { toast } from '../utils/toast';
 import { Skeleton } from '../components/ui/skeleton';
-import { useScrollLock } from '../hooks/useScrollLock';
+// Note (May 21 2026): `useScrollLock` import removed — see comment near
+// where it was called below. `<ScrollRestorationProvider />` is now the
+// sole authority on scroll memory for admin tab navigation.
 import { RevenuePanel } from '../components/admin/RevenuePanel';
 import { OpsWorkTiles } from '../components/admin/OpsWorkTiles';
 import { TeamActivitySection } from '../components/admin/TeamActivitySection';
@@ -319,7 +321,14 @@ const AdminPage = ({ operatorMode = false }) => {
   const tab = PATH_TO_TAB[location.pathname] || defaultTab;
   const effectiveTab = (!operatorMode && location.pathname === '/admin') ? defaultTab : tab;
 
-  useScrollLock(effectiveTab);
+  // NOTE (May 21 2026): removed `useScrollLock(effectiveTab)` here.
+  // Each admin tab is its own pathname (e.g. /admin/users vs
+  // /admin/transition), so <ScrollRestorationProvider /> handles
+  // per-tab scroll memory natively. Keeping useScrollLock active here
+  // raced against the provider — the lock kept reapplying the OLD
+  // tab's scroll position over the provider's per-tab restore, which
+  // is why "tap a tab → land at top" kept regressing. Per-tab memory
+  // now works as expected.
 
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
